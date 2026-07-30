@@ -261,7 +261,13 @@ function onBidderError(errorData) {
     return;
   }
 
-  _trackEvent('error', errorData.bidderRequest);
+  _trackEvent('error', {
+    bidderRequest: errorData.bidderRequest,
+    error: {
+        status: errorData.error?.status,
+        timedOut: errorData.error?.timedOut,
+    },
+  });
 }
 
 function onBidWon(bid) {
