@@ -385,15 +385,12 @@ function resolveTmax(bidderRequest) {
  * `ext.tmaxmax` — the ORTB signal for the maximum tmax the caller will honour — so PBS still knows
  * the real ceiling it is working against (this mirrors what Prebid's own PBS adapter sends). An
  * `ext.tmaxmax` already present from first-party data is left alone.
- * @param {Object} request - The ORTB request, mutated in place
+ * @param {Object} request - The ORTB request, mutated in place. Always an object: the converter's
+ *   REQUEST builder either returns one or rethrows, and the caller has already dereferenced it.
  * @param {Object} bidderRequest - The bidder request
  * @returns {void}
  */
 function setRequestTimeouts(request, bidderRequest) {
-  if (!request) {
-    return;
-  }
-
   const tmax = resolveTmax(bidderRequest);
   if (tmax !== undefined) {
     request.tmax = tmax;
