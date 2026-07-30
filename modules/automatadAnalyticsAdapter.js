@@ -14,7 +14,8 @@ import { getStorageManager } from '../src/storageManager.js';
 /** Prebid Event Handlers */
 
 const ADAPTER_CODE = 'automatadAnalytics';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: ADAPTER_CODE });
+const GVLID = 1464;
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: ADAPTER_CODE, gvlid: GVLID });
 const trialCountMilsMapping = [1500, 3000, 5000, 10000];
 
 var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null; var __atmtdAnalyticsQueue = []; var qBeingUsed; var qTraversalComplete;
@@ -317,7 +318,8 @@ atmtdAdapter.enableAnalytics = function (configuration) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: atmtdAdapter,
-  code: ADAPTER_CODE
+  code: ADAPTER_CODE,
+  gvlid: GVLID
 });
 
 export var self = {

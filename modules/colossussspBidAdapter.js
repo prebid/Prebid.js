@@ -71,6 +71,7 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   }
 
   delete placement.bidfloor;
+  delete placement.floors;
   delete placement.plcmt;
   delete placement.ext;
 };
