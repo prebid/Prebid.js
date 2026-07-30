@@ -261,13 +261,17 @@ export function intersections(mkObserver) {
    */
   async function observe(element) {
     element = dep.getElement(element);
-    if (element != null && obs != null && !intersections.has(element)) {
-      obs.observe(element);
-      intersections.set(element, null);
-      return waitFor(element);
-    } else {
+    if (element == null || obs == null) {
       return PbPromise.resolve(getIntersection(element));
     }
+    if (!intersections.has(element)) {
+      obs.observe(element);
+      intersections.set(element, null);
+    }
+    // a null entry marks an element that is being observed but has not been reported on yet; wait
+    // for it, so that observing the same element again does not resolve the second caller with
+    // nothing to measure
+    return getIntersection(element) ?? waitFor(element);
   }
 
   /**

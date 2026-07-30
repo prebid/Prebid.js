@@ -146,6 +146,14 @@ describe('percentInView', () => {
         expect(result).to.eql(entry);
       });
     });
+    it('observe should wait when the element is already observed but has no entry yet', async () => {
+      obs.observe(el);
+      const pm = obs.observe(el);
+      const entry = { target: el, time: 1 };
+      callback([entry]);
+      expect(await pm).to.eql(entry);
+    });
+
     it('should ignore stale entries', async () => {
       const entry = {
         target: el,
@@ -431,6 +439,30 @@ describe('percentInView', () => {
       hook(next, request);
       sinon.assert.notCalled(intersections.observe);
       sinon.assert.calledWith(next, request);
+    });
+  });
+
+  describe('prewarm followed by the auction hook', () => {
+    it('still waits for the observer when prewarm has already observed the element', async () => {
+      let callback;
+      const nakedObs = { observe: sinon.stub() };
+      const obs = intersections((cb) => { callback = cb; return nakedObs; });
+      const el = document.createElement('div');
+      const request = { adUnits: [{ element: el }] };
+
+      // requestBids: prewarm starts the observation
+      mkPrewarmHook(obs)(sinon.stub(), request);
+      // startAuction runs before anything has yielded, so no entry has arrived yet
+      const next = sinon.stub();
+      mkIntersectionHook(obs)(next, request);
+
+      await delay(0);
+      expect(obs.getIntersection(el)).to.eql(null);
+      sinon.assert.notCalled(next);
+
+      callback([{ target: el, time: 1, isIntersecting: true, intersectionRatio: 1 }]);
+      await delay(0);
+      sinon.assert.called(next);
     });
   });
 
