@@ -1,6 +1,6 @@
 import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
-import { defer, PbPromise, delay } from '../../src/utils/promise.js';
+import { PbPromise, delay } from '../../src/utils/promise.js';
 import { startAuction } from '../../src/prebid.js';
 import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
@@ -122,13 +122,20 @@ export const dep = {
  */
 export function intersections(mkObserver) {
   const intersections = new WeakMap();
-  let next = defer();
+  // resolvers waiting on the first entry for an element, keyed by that element.
+  // only elements that someone is actually waiting on appear here; they are dropped
+  // as soon as they are woken, so a page that is merely scrolling allocates nothing.
+  const waiting = new WeakMap();
+
   function observerCallback(entries) {
     entries.forEach(entry => {
       if ((intersections.get(entry.target)?.time ?? -1) < entry.time) {
         intersections.set(entry.target, entry);
-        next.resolve();
-        next = defer();
+        const resolvers = waiting.get(entry.target);
+        if (resolvers != null) {
+          waiting.delete(entry.target);
+          resolvers.forEach(resolve => resolve(entry));
+        }
       }
     });
   }
@@ -140,13 +147,15 @@ export function intersections(mkObserver) {
     // IntersectionObserver not supported
   }
 
-  async function waitFor(element) {
-    const intersection = getIntersection(element);
-    if (intersection != null) {
-      return intersection;
-    } else {
-      return next.promise.then(() => waitFor(element));
-    }
+  function waitFor(element) {
+    return new PbPromise(resolve => {
+      const resolvers = waiting.get(element);
+      if (resolvers == null) {
+        waiting.set(element, [resolve]);
+      } else {
+        resolvers.push(resolve);
+      }
+    });
   }
   /**
    * Observe the given element; returns a promise to the first available intersection observed for it.
