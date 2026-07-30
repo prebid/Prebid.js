@@ -288,12 +288,12 @@ describe('omsBidAdapter', function () {
     });
 
     it('sends device.dnt when ortb2.device.dnt is 0', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { dnt: 0 }} }).data);
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { dnt: 0 } } }).data);
       expect(data.device.dnt).to.equal(0);
     });
 
     it('sends device.dnt when ortb2.device.dnt is 1', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { dnt: 1 }} }).data);
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { dnt: 1 } } }).data);
       expect(data.device.dnt).to.equal(1);
     });
 
@@ -303,22 +303,22 @@ describe('omsBidAdapter', function () {
     });
 
     it('sends device.language when ortb2.device.language is provided', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { language: 'de' }}}).data);
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { language: 'de' } } }).data);
       expect(data.device.language).to.equal('de');
     });
 
     it('sends site.cat when ortb2.site.cat is provided', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { site: { cat: ['CAT-1', 'CAT-2'] }}}).data);
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { site: { cat: ['CAT-1', 'CAT-2'] } } }).data);
       expect(data.site.cat).to.deep.equal(['CAT-1', 'CAT-2']);
     });
 
     it('sends site.pagecat when ortb2.site.pagecat is provided', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { site: { pagecat: ['CAT-1', 'CAT-2'] }}}).data);
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { site: { pagecat: ['CAT-1', 'CAT-2'] } } }).data);
       expect(data.site.pagecat).to.deep.equal(['CAT-1', 'CAT-2']);
     });
 
     it('sends banner.api when ortb2Imp.banner.api is provided', function () {
-      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { api: [1, 2] }}}]).data);
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { api: [1, 2] } } }]).data);
       expect(data.imp[0].banner.api).to.deep.equal([1, 2]);
     });
 
@@ -329,7 +329,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('sends banner.battr when ortb2Imp.banner.battr is provided', function () {
-      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { battr: [1, 3] }}}]).data);
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { battr: [1, 3] } } }]).data);
       expect(data.imp[0].banner.battr).to.deep.equal([1, 3]);
     });
 
@@ -340,7 +340,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('sends banner.pos when ortb2Imp.banner.pos is provided', function () {
-      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { pos: 0 }}}]).data);
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { pos: 0 } } }]).data);
       expect(data.imp[0].banner.pos).to.equal(0);
     });
 
