@@ -75,7 +75,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: [
-    { code: 'revbid', gvlid: GVLID },
+    { code: 'revortb', gvlid: GVLID },
     { code: 'xrevantage', gvlid: GVLID },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -180,7 +180,7 @@ export const spec = {
 
   onBidWon(bid) {
     if (bid && isStr(bid.nurl) && bid.nurl !== '') {
-      triggerPixel(replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm));
+      triggerPixel(replaceAuctionPrice(bid.nurl, bid.originalCpm ?? bid.cpm));
     }
   },
 };

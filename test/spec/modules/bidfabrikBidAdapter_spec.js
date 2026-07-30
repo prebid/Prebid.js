@@ -71,13 +71,19 @@ describe('BidFabrik bid adapter', function () {
       gppString: 'DBABMA~CPXxRfA',
       applicableSections: [7],
     },
+    // Core folds consent into ortb2 before calling buildRequests; the
+    // ortbConverter reads it from here (not from the top-level fields above).
+    ortb2: {
+      regs: { ext: { gdpr: 1, us_privacy: '1YNN' } },
+      user: { ext: { consent: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA' } },
+    },
   });
 
   describe('aliases', function () {
-    it('exposes revbid and revantage aliases sharing the gvlid', function () {
+    it('exposes revortb and xrevantage aliases sharing the gvlid', function () {
       const aliasFor = (code) => spec.aliases.find((a) => a.code === code);
-      expect(spec.aliases.map((a) => a.code)).to.have.members(['revbid', 'xrevantage']);
-      expect(aliasFor('revbid').gvlid).to.equal(spec.gvlid);
+      expect(spec.aliases.map((a) => a.code)).to.have.members(['revortb', 'xrevantage']);
+      expect(aliasFor('revortb').gvlid).to.equal(spec.gvlid);
       expect(aliasFor('xrevantage').gvlid).to.equal(spec.gvlid);
     });
   });
@@ -237,12 +243,13 @@ describe('BidFabrik bid adapter', function () {
 
     it('parses a native bid (mtype 4)', function () {
       const request = spec.buildRequests([nativeBid()], bidderRequest)[0];
+      // ORTB native `adm` is the native object itself (assets at top level);
+      // the ortbConverter throws away a response whose parsed adm has no
+      // top-level `assets` array.
       const nativeAdm = JSON.stringify({
-        native: {
-          ver: '1.1',
-          link: { url: 'https://click.example.com' },
-          assets: [{ id: 1, title: { text: 'Test Title' } }],
-        }
+        ver: '1.2',
+        link: { url: 'https://click.example.com' },
+        assets: [{ id: 1, title: { text: 'Test Title' } }],
       });
       const response = {
         body: {
@@ -283,7 +290,8 @@ describe('BidFabrik bid adapter', function () {
                 price: 1.00,
                 adm: '<div>ad1</div>',
                 mtype: 1,
-                w: 300, h: 250,
+                w: 300,
+                h: 250,
               }],
             },
             {
@@ -294,7 +302,8 @@ describe('BidFabrik bid adapter', function () {
                 price: 2.00,
                 adm: '<div>ad2</div>',
                 mtype: 1,
-                w: 300, h: 250,
+                w: 300,
+                h: 250,
               }],
             },
           ],
@@ -318,7 +327,8 @@ describe('BidFabrik bid adapter', function () {
               price: 0,
               adm: '<div>house</div>',
               mtype: 1,
-              w: 300, h: 250,
+              w: 300,
+              h: 250,
             }],
           }],
         },
@@ -340,7 +350,8 @@ describe('BidFabrik bid adapter', function () {
               impid: request.data.imp[0].id,
               price: 1.00,
               mtype: 1,
-              w: 300, h: 250,
+              w: 300,
+              h: 250,
             }],
           }],
         },
