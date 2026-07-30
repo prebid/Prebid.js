@@ -6,7 +6,7 @@ import {
   viewportIntersections,
 } from '../../../libraries/percentInView/percentInView.js';
 import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
-import { enable, disable } from 'test/mocks/percentInView.js';
+import { enable, disable, enableFrameRect, disableFrameRect } from 'test/mocks/percentInView.js';
 
 import { defer } from 'src/utils/promise.js';
 
@@ -301,6 +301,94 @@ describe('percentInView', () => {
           intersectionRatio: 1
         };
         expect(percentInView({})).to.eql(0);
+      });
+    });
+  });
+
+  describe('frame rect mock', () => {
+    // only applies when karma runs the tests in an iframe, which excludes the debug page
+    if (window.frameElement == null) return;
+
+    afterEach(() => {
+      enableFrameRect();
+    });
+
+    it('reports the top window viewport while enabled', () => {
+      const { left, top, width, height } = window.frameElement.getBoundingClientRect();
+      const doc = window.top.document.documentElement;
+      expect({ left, top, width, height }).to.eql({
+        left: 0, top: 0, width: doc.clientWidth, height: doc.clientHeight
+      });
+    });
+
+    it('reports the real frame rect once disabled', () => {
+      disableFrameRect();
+      // the frame element belongs to the containing document, so its rect comes from that realm
+      const { DOMRect } = window.frameElement.ownerDocument.defaultView;
+      expect(window.frameElement.getBoundingClientRect()).to.be.instanceOf(DOMRect);
+    });
+  });
+
+  describe('percentInView, with no intersection available', () => {
+    let container;
+
+    beforeEach(() => {
+      // no intersection entry, so the measurement runs off the DOM
+      sandbox.stub(viewportIntersections, 'getIntersection').returns(undefined);
+      sandbox.stub(viewportIntersections, 'observe');
+      bbox.clearCache();
+      container = document.createElement('div');
+      container.style.cssText = 'position:absolute;left:0;top:0';
+      document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+      container.remove();
+      bbox.clearCache();
+    });
+
+    function measure(html) {
+      container.innerHTML = html;
+      bbox.clearCache();
+      return percentInView(container.querySelector('#target'));
+    }
+
+    const TARGET = '<div id="target" style="width:50px;height:50px"></div>';
+
+    it('is clipped by an overflow-hidden ancestor', () => {
+      const unclipped = measure(TARGET);
+      expect(unclipped).to.be.greaterThan(0);
+      const clipped = measure(`<div style="overflow:hidden;width:50px;height:25px">${TARGET}</div>`);
+      expect(clipped).to.be.greaterThan(0);
+      expect(clipped).to.be.lessThan(unclipped);
+    });
+
+    it('returns 0 for an element held entirely outside an overflow-hidden ancestor', () => {
+      expect(measure(
+        `<div style="overflow:hidden;width:50px;height:25px">
+           <div style="position:relative;top:200px">${TARGET}</div>
+         </div>`
+      )).to.eql(0);
+    });
+
+    it('returns 0 for an element scrolled out of a scrolling ancestor', () => {
+      expect(measure(
+        `<div style="overflow:auto;width:50px;height:25px">
+           <div style="height:400px"></div>${TARGET}
+         </div>`
+      )).to.eql(0);
+    });
+
+    Object.entries({
+      'visibility:hidden': 'visibility:hidden',
+      'opacity:0': 'opacity:0',
+    }).forEach(([label, css]) => {
+      it(`returns 0 for an element with ${label}`, () => {
+        expect(measure(`<div id="target" style="width:50px;height:50px;${css}"></div>`)).to.eql(0);
+      });
+
+      it(`returns 0 for an element under an ancestor with ${label}`, () => {
+        expect(measure(`<div style="${css}">${TARGET}</div>`)).to.eql(0);
       });
     });
   });

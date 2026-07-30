@@ -72,11 +72,13 @@ function getIntersectionOfRects(rects) {
 }
 
 /**
- * Percentage of the given bounding box that lies within the top window's viewport.
+ * Percentage of the given bounding box that lies within the top window's viewport,
+ * and within each of `clipRects`.
  *
  * `elementBoundingBox` is taken relative to `win`'s viewport, and is modified in place.
+ * `clipRects` are in top window coordinates.
  */
-function percentInViewOfBox(elementBoundingBox, win) {
+function percentInViewOfBox(elementBoundingBox, win, clipRects = []) {
   // when in an iframe, the bounding box is relative to the iframe's viewport
   // since we are intersecting it with the top window's viewport, attempt to
   // compensate for the offset between them
@@ -89,13 +91,13 @@ function percentInViewOfBox(elementBoundingBox, win) {
 
   const dims = getWinDimensions();
 
-  // Obtain the intersection of the element and the viewport
+  // Obtain the intersection of the element, the viewport, and everything that clips the element
   const elementInViewBoundingBox = getIntersectionOfRects([{
     left: 0,
     top: 0,
     right: dims.document.documentElement.clientWidth,
     bottom: dims.document.documentElement.clientHeight
-  }, elementBoundingBox]);
+  }, elementBoundingBox, ...clipRects]);
 
   let elementInViewArea, elementTotalArea;
 
@@ -112,10 +114,59 @@ function percentInViewOfBox(elementBoundingBox, win) {
   return 0;
 }
 
-const percentInViewStatic = (element, { w, h } = {}) => percentInViewOfBox(
-  getBoundingBox(element, { w, h }),
-  element?.ownerDocument?.defaultView
-);
+/**
+ * Rectangles that clip the given element, in top window coordinates: the boxes of its
+ * scrolling or overflow-hidden ancestors, and of every frame that contains it.
+ *
+ * Returns null if the element or one of its ancestors is styled so that nothing renders.
+ *
+ * Clipping is approximated: the boxes include the ancestors' borders rather than stopping
+ * at their padding edge, an ancestor that clips only one axis is treated as clipping both,
+ * and an out-of-flow element is treated as clipped by ancestors that are not in its
+ * containing block chain (a fixed position element is clipped by no ancestor at all).
+ */
+function getClipRects(element) {
+  const rects = [];
+  let el = element;
+  let win = element?.ownerDocument?.defaultView;
+  try {
+    while (el != null && win != null) {
+      const { x, y } = getViewportOffset(win);
+      let node = el;
+      while (node != null) {
+        const style = getComputedStyle(node);
+        if (style.visibility === 'hidden' || style.opacity === '0') {
+          return null;
+        }
+        if (node !== el && style.overflow !== 'visible') {
+          const rect = getBoundingClientRect(node);
+          rects.push({ left: rect.left + x, top: rect.top + y, right: rect.right + x, bottom: rect.bottom + y });
+        }
+        node = node.parentElement;
+      }
+      // nothing can render outside the frame that contains it
+      const frame = win.frameElement;
+      if (frame == null) break;
+      win = frame.ownerDocument?.defaultView;
+      const offset = getViewportOffset(win);
+      const rect = getBoundingClientRect(frame);
+      rects.push({ left: rect.left + offset.x, top: rect.top + offset.y, right: rect.right + offset.x, bottom: rect.bottom + offset.y });
+      el = frame;
+    }
+  } catch (e) {
+    // some ancestors are cross-frame and cannot be inspected; clip against those we could reach
+  }
+  return rects;
+}
+
+const percentInViewStatic = (element, { w, h } = {}) => {
+  const clipRects = getClipRects(element);
+  return clipRects == null ? 0 : percentInViewOfBox(
+    getBoundingBox(element, { w, h }),
+    element?.ownerDocument?.defaultView,
+    clipRects
+  );
+};
 
 export const dep = {
   // for stubbing in tests, see test/mocks/percentInView.js
