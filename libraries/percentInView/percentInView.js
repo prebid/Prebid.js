@@ -3,6 +3,16 @@ import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.
 import { PbPromise, urgentDelay } from '../../src/utils/promise.js';
 import { requestBids, startAuction } from '../../src/prebid.js';
 import { getAdUnitElement } from '../../src/utils/adUnits.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
+
+/**
+ * Whether viewability may be measured with an intersection observer. Doing so means waiting for the
+ * observer to deliver, and so yielding the main thread; where that is not allowed, measurements are
+ * taken from the element's bounding rect instead.
+ */
+function observerAllowed() {
+  return getGlobal().yield ?? true;
+}
 
 /**
  * return the offset between the given window's viewport and the top window's.
@@ -275,6 +285,11 @@ export const viewportIntersections = intersections((callback) => new Intersectio
 
 export function mkIntersectionHook(intersections = viewportIntersections) {
   return function (next, request) {
+    if (!observerAllowed()) {
+      // measurements will not consult the observer, so there is nothing to wait for
+      next.call(this, request);
+      return;
+    }
     PbPromise.race([
       PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>
         intersections.observe(getAdUnitElement(adUnit))
@@ -306,12 +321,14 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
  */
 export function mkPrewarmHook(intersections = viewportIntersections) {
   return function (next, request) {
-    (request?.adUnits ?? []).forEach(adUnit => {
-      // deliberately not waited on; this only needs to get the observation started
-      intersections.observe(getAdUnitElement(adUnit)).catch(() => {
-        // the element cannot be observed, so percentInView measures the DOM directly instead
+    if (observerAllowed()) {
+      (request?.adUnits ?? []).forEach(adUnit => {
+        // deliberately not waited on; this only needs to get the observation started
+        intersections.observe(getAdUnitElement(adUnit)).catch(() => {
+          // the element cannot be observed, so percentInView measures the DOM directly instead
+        });
       });
-    });
+    }
     next.call(this, request);
   };
 }
@@ -322,6 +339,9 @@ startAuction.before(mkIntersectionHook());
 requestBids.before(mkPrewarmHook(), 100);
 
 export function percentInView(element, { w, h } = {}) {
+  if (!observerAllowed()) {
+    return percentInViewStatic(element, { w, h });
+  }
   const intersection = viewportIntersections.getIntersection(element);
   if (intersection == null) {
     viewportIntersections.observe(element);

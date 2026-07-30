@@ -10,6 +10,7 @@ import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
 import { enable, disable, enableFrameRect, disableFrameRect } from 'test/mocks/percentInView.js';
 
 import { defer } from 'src/utils/promise.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 
 describe('percentInView', () => {
   before(() => {
@@ -303,6 +304,49 @@ describe('percentInView', () => {
         };
         expect(percentInView({})).to.eql(0);
       });
+    });
+  });
+
+  describe('when yielding is disabled', () => {
+    beforeEach(() => {
+      getGlobal().yield = false;
+    });
+    afterEach(() => {
+      delete getGlobal().yield;
+    });
+
+    it('the intersection hook does not wait', () => {
+      const next = sinon.stub();
+      const request = { adUnits: [{ element: 'el1' }] };
+      const intersections = { observe: sinon.stub().returns(new Promise(() => {})) };
+      mkIntersectionHook(intersections)(next, request);
+      // synchronously, with no observation started
+      sinon.assert.calledWith(next, request);
+      sinon.assert.notCalled(intersections.observe);
+    });
+
+    it('the prewarm hook does not observe', () => {
+      const next = sinon.stub();
+      const request = { adUnits: [{ element: 'el1' }] };
+      const intersections = { observe: sinon.stub().resolves() };
+      mkPrewarmHook(intersections)(next, request);
+      sinon.assert.notCalled(intersections.observe);
+      sinon.assert.calledWith(next, request);
+    });
+
+    it('percentInView measures the DOM instead of consulting the observer', () => {
+      const getIntersection = sandbox.stub(viewportIntersections, 'getIntersection');
+      const observe = sandbox.stub(viewportIntersections, 'observe');
+      const el = document.createElement('div');
+      el.style.cssText = 'position:absolute;left:0;top:0;width:50px;height:50px';
+      document.body.appendChild(el);
+      try {
+        expect(percentInView(el)).to.be.a('number');
+        sinon.assert.notCalled(getIntersection);
+        sinon.assert.notCalled(observe);
+      } finally {
+        el.remove();
+      }
     });
   });
 
