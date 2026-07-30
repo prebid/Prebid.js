@@ -39,8 +39,8 @@ describe('Unicorn RTD submodule', function () {
       expect(unicornSubmodule.name).to.equal('unicorn');
     });
 
-    it('init returns true when IntersectionObserver is supported', function () {
-      expect(unicornSubmodule.init({})).to.equal(true);
+    it('init returns true', function () {
+      expect(unicornSubmodule.init()).to.equal(true);
     });
 
     it('exposes getBidRequestData', function () {

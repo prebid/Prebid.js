@@ -1,8 +1,12 @@
 /**
- * This module measures, for each ad slot, its on-screen position and
- * viewability (visible ratio) on the client, and injects the result into
- * `adUnit.ortb2Imp.ext.data.adslot` so that it flows into every bidder's
- * bid request. The UNICORN bid adapter reads it back from `bidRequest.ortb2Imp`.
+ * This module measures, for each ad slot, its on-screen position/geometry and
+ * viewability on the client, and injects the result into
+ * `adUnit.ortb2Imp.ext.data.adslot` so that it flows into every bidder's bid
+ * request. The UNICORN bid adapter reads it back from `bidRequest.ortb2Imp`.
+ *
+ * Geometry (x/y/w/h/fixed) and the OpenRTB position come from the slot's
+ * bounding box; the visibility ratio is delegated to Prebid's shared
+ * `percentInView` helper.
  *
  * This is the "measurement" half of the UNICORN attention-first signal.
  * The "send" half lives in modules/unicornBidAdapter.js.
@@ -12,45 +16,20 @@
  */
 import { submodule } from '../src/hook.js';
 import { deepAccess, deepSetValue, logInfo, logWarn } from '../src/utils.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWinDimensions } from '../src/utils/winDimensions.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
 
 const MODULE_NAME = 'unicorn';
 const ORTB2_NAMESPACE = 'adslot'; // -> ortb2Imp.ext.data.adslot (adapter re-maps to wire imp.ext.adslot)
 const SIGNAL_VERSION = 1; // imp.ext.adslot schema version
 
-const CLIENT_SUPPORTS_IO =
-  window.IntersectionObserver &&
-  window.IntersectionObserverEntry &&
-  'intersectionRatio' in window.IntersectionObserverEntry.prototype;
-
-// adUnitCode(=div id) -> { ratio, fixed, slotPosition }
-const measurements = {};
-let observer;
-
 /**
- * RTD submodule init. Starts an IntersectionObserver to keep visibility
- * ratios fresh as the user scrolls. Returns false if unsupported.
+ * RTD submodule init. Measurement only needs a DOM, so the submodule is
+ * always enabled.
  */
-function init(config) {
-  if (!CLIENT_SUPPORTS_IO) {
-    logWarn('[UNICORN RTD] IntersectionObserver unsupported');
-    return false;
-  }
-  observer = new IntersectionObserver(handleIntersection, {
-    threshold: [0, 0.25, 0.5, 0.75, 1]
-  });
+function init() {
   return true;
-}
-
-function handleIntersection(entries) {
-  entries.forEach(entry => {
-    const code = entry.target.id;
-    if (!code) return;
-    measurements[code] = measurements[code] || {};
-    measurements[code].ratio = entry.intersectionRatio;
-  });
 }
 
 /**
@@ -68,31 +47,27 @@ function resolveDivId(adUnit) {
 }
 
 /**
- * Synchronous initial measurement via getBoundingClientRect — this is what
- * makes the value usable on the *first* auction, before IntersectionObserver
- * has had a chance to fire its async callback.
+ * Measure a slot's geometry, fixed/sticky state, OpenRTB position and
+ * viewability ratio. Returns null when the element cannot be found.
  */
 function measureNow(divId) {
   const el = document.getElementById(divId);
   if (!el) return null;
-  const code = divId;
 
-  // start observing for ongoing updates (idempotent enough for a PoC)
-  try { observer && observer.observe(el); } catch (e) { /* noop */ }
-
-  const rect = getBoundingClientRect(el);
+  // Read current geometry directly. The shared getBoundingClientRect helper
+  // caches per-auction and could return a prior-auction rectangle here.
+  // eslint-disable-next-line no-restricted-properties
+  const rect = el.getBoundingClientRect();
   const dims = getWinDimensions();
-  const { innerHeight: vh, innerWidth: vw } = dims;
-  // scroll offset of the top document; used to turn viewport-relative rect
+  const { innerHeight: vh } = dims;
+  // scroll offset of the top document; used to turn the viewport-relative rect
   // into document-relative (page-absolute) coordinates.
   const scrollX = dims.document.documentElement.scrollLeft || dims.document.body.scrollLeft || 0;
   const scrollY = dims.document.documentElement.scrollTop || dims.document.body.scrollTop || 0;
 
-  // visible area ratio of the element against the viewport (sync, no Observer)
-  const visW = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
-  const visH = Math.max(0, Math.min(rect.bottom, vh) - Math.max(rect.top, 0));
-  const area = rect.width * rect.height;
-  const ratio = area > 0 ? (visW * visH) / area : 0;
+  // Visibility ratio (0..1). percentInView is Prebid's shared viewability
+  // helper and returns a 0..100 percentage.
+  const ratio = Number((percentInView(el) / 100).toFixed(2));
 
   // "fixed/sticky" detection — attention-first wants non-fixed slots
   const cs = window.getComputedStyle(el);
@@ -108,7 +83,7 @@ function measureNow(divId) {
     // imp.ext.adslot payload (ver 1). x/y are document-relative CSS px.
     signal: {
       ver: SIGNAL_VERSION,
-      ratio: measurements[code]?.ratio ?? Number(ratio.toFixed(2)),
+      ratio,
       fixed,
       w: Math.round(rect.width),
       h: Math.round(rect.height),
@@ -138,7 +113,7 @@ function getBidRequestData(reqBidsConfigObj, callback) {
         logWarn(`[UNICORN RTD] element not found for adUnit "${adUnit.code}" (divId="${divId}")`);
       }
     });
-    logInfo('[UNICORN RTD] injected measurements', measurements);
+    logInfo('[UNICORN RTD] injected adslot signals');
     callback();
   };
 

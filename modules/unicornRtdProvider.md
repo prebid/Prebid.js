@@ -1,7 +1,7 @@
 # Overview
 
-Module Name: Unicorn Rtd Provider
-Module Type: Rtd Provider
+Module Name: Unicorn RTD Provider
+Module Type: RTD Provider
 Maintainer: service+prebid.js@bulbit.jp
 
 # Description
@@ -16,6 +16,8 @@ The module measures:
 
 - the standard OpenRTB ad position `ortb2Imp.banner.pos`, per AdCOM 1.0 Placement Positions (2 = locked/fixed, 1 = above the fold, 3 = below the fold);
 - an object `ortb2Imp.ext.data.adslot` holding the slot's visibility ratio, a sticky/fixed flag, its document-relative position and its rendered size.
+
+The visibility ratio is sourced from Prebid's shared `percentInView` helper; geometry and position come from the slot's bounding box.
 
 Measurement runs once, on the animation frame after the DOM is ready, within the
 configured `auctionDelay`. No page-side timing wiring is required — the publisher
