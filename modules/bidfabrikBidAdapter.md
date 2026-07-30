@@ -10,7 +10,7 @@ Maintainer:   bern@revantage.io
 
 BidFabrik is a white-label OpenRTB bid adapter supporting banner, video, and native. Each supply feed is identified by a `feed` parameter. The adapter groups impressions by `(host, feed)` and sends one OpenRTB 2.x request per group.
 
-Aliases: `revbid`, `xrevantage`
+Aliases: `revortb`, `xrevantage`
 
 # Test Parameters
 
