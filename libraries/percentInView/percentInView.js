@@ -1,7 +1,7 @@
 import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
-import { PbPromise, delay } from '../../src/utils/promise.js';
-import { startAuction } from '../../src/prebid.js';
+import { PbPromise, urgentDelay } from '../../src/utils/promise.js';
+import { requestBids, startAuction } from '../../src/prebid.js';
 import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
 /**
@@ -257,13 +257,37 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
       // according to MDN, with threshold 0 "the callback will be run as soon as the target element intersects or touches the boundary of the root, even if no pixels are yet visible"
       // https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
       // However, browsers appear to run it even when the element is outside the DOM
-      // just to be sure, cap the amount of time we wait for intersections
-      delay(20)
+      // just to be sure, cap the amount of time we wait for intersections.
+      // this needs high priority scheduling to be an upper bound: intersections are delivered as
+      // part of the rendering lifecycle, and an ordinary timer queues behind the same ready work,
+      // so on a busy page both sides of this race are held up together
+      urgentDelay(20)
     ]).then(() => next.call(this, request));
   };
 }
 
+/**
+ * Begin observing ad unit elements as soon as bids are requested, rather than when the auction
+ * starts, so that entries are already available by the time `mkIntersectionHook` needs them and it
+ * does not have to wait. The hooks that run in between are asynchronous (consent, price floors,
+ * currency, user ids), which gives the observer the main thread time it needs to deliver.
+ */
+export function mkPrewarmHook(intersections = viewportIntersections) {
+  return function (next, request) {
+    (request?.adUnits ?? []).forEach(adUnit => {
+      // deliberately not waited on; this only needs to get the observation started
+      intersections.observe(getAdUnitElement(adUnit)).catch(() => {
+        // the element cannot be observed, so percentInView measures the DOM directly instead
+      });
+    });
+    next.call(this, request);
+  };
+}
+
 startAuction.before(mkIntersectionHook());
+// ahead of the asynchronous requestBids hooks (all of which are priority 50 or lower), so that their
+// main thread time is available to the observer
+requestBids.before(mkPrewarmHook(), 100);
 
 export function percentInView(element, { w, h } = {}) {
   const intersection = viewportIntersections.getIntersection(element);

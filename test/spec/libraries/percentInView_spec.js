@@ -2,6 +2,7 @@ import {
   getViewportOffset,
   intersections,
   mkIntersectionHook,
+  mkPrewarmHook,
   percentInView,
   viewportIntersections,
 } from '../../../libraries/percentInView/percentInView.js';
@@ -302,6 +303,48 @@ describe('percentInView', () => {
         };
         expect(percentInView({})).to.eql(0);
       });
+    });
+  });
+
+  describe('prewarm hook', () => {
+    let intersections, hook, next, request;
+    beforeEach(() => {
+      next = sinon.stub();
+      intersections = { observe: sinon.stub().resolves() };
+      hook = mkPrewarmHook(intersections);
+      request = {};
+    });
+
+    it('observes the element of every ad unit', () => {
+      request.adUnits = [{ element: 'el1' }, { code: 'el2' }];
+      sandbox.stub(document, 'getElementById').returns('el2');
+      hook(next, request);
+      sinon.assert.calledWith(intersections.observe, 'el1');
+      sinon.assert.calledWith(intersections.observe, 'el2');
+    });
+
+    it('does not wait for the observations to resolve', () => {
+      let observed;
+      intersections.observe.returns(new Promise((resolve) => { observed = resolve; }));
+      request.adUnits = [{ element: 'el1' }];
+      hook(next, request);
+      sinon.assert.calledWith(next, request);
+      observed();
+    });
+
+    it('continues when an element cannot be observed', async () => {
+      intersections.observe.rejects(new Error());
+      request.adUnits = [{ element: 'el1' }];
+      hook(next, request);
+      sinon.assert.calledWith(next, request);
+      // give the rejection a chance to surface as an unhandled rejection
+      await delay();
+    });
+
+    it('does not choke on a request with no ad units', () => {
+      hook(next, request);
+      sinon.assert.notCalled(intersections.observe);
+      sinon.assert.calledWith(next, request);
     });
   });
 
