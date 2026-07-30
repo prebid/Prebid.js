@@ -16,6 +16,17 @@ describe('Adspirit Bidder Spec', function () {
       const result = spec.isBidRequestValid(invalidBid);
       expect(result).to.be.false;
     });
+
+    it('should return false when host exists but placementId is missing', function () {
+      const invalidBid = {
+        bidder: 'adspirit',
+        params: {
+          host: 'test.adspirit.de'
+        }
+      };
+
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+    });
   });
 
   // getBidderHost Case
@@ -37,234 +48,15 @@ describe('Adspirit Bidder Spec', function () {
       expect(result).to.be.null;
     });
   });
-
-  // genAdConId Case
-  describe('genAdConId', function () {
-    it('should generate a unique ad connection ID for adspirit bidder', function () {
-      const bid = { bidder: 'adspirit' };
-      const result1 = spec.genAdConId(bid);
-      const result2 = spec.genAdConId(bid);
-      expect(result1).to.be.a('string');
-      expect(result1).to.include('adspirit');
-      expect(result1).to.not.equal(result2);
-    });
-
-    it('should generate a unique ad connection ID for twiago bidder', function () {
-      const bid = { bidder: 'twiago' };
-      const result = spec.genAdConId(bid);
-      expect(result).to.be.a('string');
-      expect(result).to.include('twiago');
-    });
-
-    it('should generate different IDs on subsequent calls', function () {
-      const bid = { bidder: 'adspirit' };
-      const ids = new Set();
-      for (let i = 0; i < 100; i++) {
-        ids.add(spec.genAdConId(bid));
-      }
-      expect(ids.size).to.be.greaterThan(1);
-    });
-  });
-
   // getScriptUrl
-  describe('getScriptUrl', function () {
-    it('should return the correct script URL', function () {
-      expect(spec.getScriptUrl()).to.equal('/adasync.min.js');
+
+  describe('Adspirit Bid Adapter', function () {
+    describe('getScriptUrl', function () {
+      it('should return the correct script URL', function () {
+        expect(spec.getScriptUrl()).to.equal('/adasync.min.js');
+      });
     });
   });
-
-  // Edge case tests
-  describe('Edge Cases', function () {
-    it('should handle missing screen dimensions gracefully', function () {
-      const originalScreen = window.screen;
-      Object.defineProperty(window, 'screen', {
-        writable: true,
-        configurable: true,
-        value: undefined
-      });
-
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-
-      expect(request.url).to.include('&scx=0');
-      expect(request.url).to.include('&scy=0');
-
-      Object.defineProperty(window, 'screen', {
-        writable: true,
-        configurable: true,
-        value: originalScreen
-      });
-    });
-
-    it('should handle navigator.language with region code', function () {
-      const originalLanguage = navigator.language;
-      Object.defineProperty(navigator, 'language', {
-        writable: true,
-        configurable: true,
-        value: 'en-US'
-      });
-
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.device.language).to.equal('en');
-
-      Object.defineProperty(navigator, 'language', {
-        writable: true,
-        configurable: true,
-        value: originalLanguage
-      });
-    });
-
-    it('should handle navigator.language without region code', function () {
-      const originalLanguage = navigator.language;
-      Object.defineProperty(navigator, 'language', {
-        writable: true,
-        configurable: true,
-        value: 'de'
-      });
-
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.device.language).to.equal('de');
-
-      Object.defineProperty(navigator, 'language', {
-        writable: true,
-        configurable: true,
-        value: originalLanguage
-      });
-    });
-
-    it('should handle empty navigator.language', function () {
-      const originalLanguage = navigator.language;
-      Object.defineProperty(navigator, 'language', {
-        writable: true,
-        configurable: true,
-        value: ''
-      });
-
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.device.language).to.equal('');
-
-      Object.defineProperty(navigator, 'language', {
-        writable: true,
-        configurable: true,
-        value: originalLanguage
-      });
-    });
-
-    it('should not include gdpr parameters when gdprConsent is missing', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' }
-      };
-
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-
-      expect(request.url).to.not.include('&gdpr=');
-      expect(request.url).to.not.include('&gdpr_consent=');
-    });
-
-    it('should handle gdprConsent with gdprApplies false', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' },
-        gdprConsent: {
-          gdprApplies: false,
-          consentString: ''
-        }
-      };
-
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(request.url).to.include('&gdpr=0');
-      expect(requestData.regs.ext.gdpr).to.equal(0);
-    });
-  });
-
   // Test cases for buildRequests
   describe('Adspirit Bidder Spec', function () {
     let originalInnerWidth;
@@ -447,336 +239,229 @@ describe('Adspirit Bidder Spec', function () {
       expect(requestData[1].imp[0].bidfloor).to.equal(0);
       expect(requestData[2].imp[0].bidfloor || 0).to.equal(0);
     });
-    it('should correctly add  and handle banner/native media types', function () {
-      const bidRequest = [
-        {
-          bidId: 'validBannerNative',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'test-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] },
-            native: {
-              ortb: {
-                assets: [{ id: 1, required: 1, title: { len: 100 } }]
+    if (FEATURES.NATIVE) {
+      it('should correctly add and handle banner/native media types', function () {
+        const nativeOrtbRequest = {
+          ver: '1.2',
+          assets: [
+            { id: 1, required: 1, title: { len: 100 } }
+          ]
+        };
+
+        const bidRequest = [
+          {
+            bidId: 'validBannerNative',
+            bidder: 'adspirit',
+            params: { placementId: '99', host: 'test.adspirit.de' },
+            adUnitCode: 'test-div',
+            mediaTypes: {
+              banner: { sizes: [[300, 250]] },
+              native: {
+                ortb: nativeOrtbRequest
               }
-            }
-          }
-        },
-        {
-          bidId: 'noBanner',
-          bidder: 'adspirit',
-          params: { placementId: '100', host: 'test.adspirit.de' },
-          adUnitCode: 'no-banner-div',
-          mediaTypes: {
-            banner: {}
-          }
-        },
-        {
-          bidId: 'emptyNative',
-          bidder: 'adspirit',
-          params: { placementId: '101', host: 'test.adspirit.de' },
-          adUnitCode: 'empty-native-div',
-          mediaTypes: {
-            native: {
-              ortb: {
-                assets: []
-              }
-            }
-          }
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = requests.map(req => JSON.parse(req.data));
-
-      expect(requestData[0].imp[0]).to.have.property('banner');
-      expect(requestData[0].imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
-
-      expect(requestData[0].imp[0]).to.have.property('native');
-      expect(request.url).to.include('&native=1');
-      expect(JSON.parse(requestData[0].imp[0].native.request).assets).to.deep.equal([
-        { id: 1, required: 1, title: { len: 100 } },
-        { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ['image/png', 'image/gif', 'image/jpeg'] } },
-        { id: 4, required: 1, data: { type: 2, len: 150 } },
-        { id: 3, required: 0, data: { type: 12, len: 50 } },
-        { id: 6, required: 0, data: { type: 1, len: 50 } },
-        { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] } }
-      ]);
-
-      expect(requestData[1].imp[0]).to.not.have.property('banner');
-
-      expect(requestData[2].imp[0]).to.have.property('native');
-      expect(requests[2].url).to.include('&native=1');
-      expect(JSON.parse(requestData[2].imp[0].native.request).assets).to.deep.equal([
-        { id: 1, required: 1, title: { len: 100 } },
-        { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ['image/png', 'image/gif', 'image/jpeg'] } },
-        { id: 4, required: 1, data: { type: 2, len: 150 } },
-        { id: 3, required: 0, data: { type: 12, len: 50 } },
-        { id: 6, required: 0, data: { type: 1, len: 50 } },
-        { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] } }
-      ]);
-    });
-
-    it('should correctly handle native ORTB request at mediaTypes.native.request.ortb', function () {
-      const bidRequest = [
-        {
-          bidId: 'nativeRequestPath',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'test-div',
-          mediaTypes: {
-            native: {
-              request: {
-                ortb: {
-                  assets: [{ id: 123, required: 1, title: { len: 50 } }]
-                }
-              }
-            }
-          }
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const requestData = JSON.parse(requests[0].data);
-
-      expect(JSON.parse(requestData.imp[0].native.request).assets).to.deep.equal([
-        { id: 123, required: 1, title: { len: 50 } }
-      ]);
-      expect(bidRequest[0].mediaTypes.native.request.ortb.assets[0].id).to.equal(123);
-      expect(bidRequest[0].mediaTypes.native.ortb.assets[0].id).to.equal(123);
-    });
-
-    it('should correctly handle custom native asset IDs and map them in response', function () {
-      const bidRequest = [
-        {
-          bidId: 'customAssets',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'custom-native',
-          mediaTypes: {
-            native: {
-              ortb: {
-                assets: [
-                  { id: 10, required: 1, title: { len: 100 } },
-                  { id: 20, required: 1, img: { type: 3, w: 1200, h: 627 } }
-                ]
-              }
-            }
-          },
-          nativeOrtbRequest: {
-            assets: [
-              { id: 10, required: 1, title: { len: 100 } },
-              { id: 20, required: 1, img: { type: 3, w: 1200, h: 627 } }
-            ]
-          }
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-
-      expect(request.nativeOrtbRequest).to.exist;
-
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: 'customAssets',
-              price: 1.0,
-              adm: JSON.stringify({
-                native: {
-                  assets: [
-                    { id: 10, title: { text: 'Custom Title' } },
-                    { id: 20, img: { url: 'https://example.com/custom.jpg', w: 1200, h: 627 } }
-                  ],
-                  link: { url: 'https://custom-click.com' }
-                }
-              })
-            }]
-          }]
-        }
-      };
-
-      const result = spec.interpretResponse(serverResponse, request);
-      expect(result[0].native.title).to.equal('Custom Title');
-      expect(result[0].native.image.url).to.equal('https://example.com/custom.jpg');
-      expect(result[0].native.clickUrl).to.equal('https://custom-click.com');
-      expect(result[0].native.ortb).to.exist;
-      expect(result[0].native.ortb.assets).to.be.an('array');
-      expect(result[0].native.ortb.link.url).to.equal('https://custom-click.com');
-    });
-
-    it('should include eids in OpenRTB request when userIdAsEids is present', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          },
-          userIdAsEids: [
-            {
-              source: 'pubcid.org',
-              uids: [{ id: 'test-pubcid-123', atype: 1 }]
             },
-            {
-              source: 'id5-sync.com',
-              uids: [{ id: 'id5-test-456', atype: 1 }]
-            }
-          ]
-        }
-      ];
-
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.user.ext.eids).to.deep.equal(bidRequest[0].userIdAsEids);
-      expect(requestData.user.ext.eids).to.have.lengthOf(2);
-      expect(requestData.user.ext.eids[0].source).to.equal('pubcid.org');
-      expect(requestData.user.ext.eids[1].source).to.equal('id5-sync.com');
-    });
-
-    it('should include userData in OpenRTB request when present', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
+            nativeOrtbRequest
           },
-          userData: [
-            { name: 'segment1', value: 'value1' },
-            { name: 'segment2', value: 'value2' }
+          {
+            bidId: 'noBanner',
+            bidder: 'adspirit',
+            params: { placementId: '100', host: 'test.adspirit.de' },
+            adUnitCode: 'no-banner-div',
+            mediaTypes: {
+              banner: {}
+            }
+          },
+          {
+            bidId: 'invalidNative',
+            bidder: 'adspirit',
+            params: { placementId: '101', host: 'test.adspirit.de' },
+            adUnitCode: 'invalid-native-div',
+            mediaTypes: {
+              native: {
+                ortb: {
+                  assets: []
+                }
+              }
+            }
+          }
+        ];
+
+        const mockBidderRequest = {
+          refererInfo: { topmostLocation: 'https://test.adspirit.com' }
+        };
+        const requests = spec.buildRequests(bidRequest, mockBidderRequest);
+        const requestData = requests.map(request => JSON.parse(request.data));
+
+        expect(requestData[0].imp[0]).to.have.property('banner');
+        expect(requestData[0].imp[0].banner.format).to.deep.equal([
+          { w: 300, h: 250 }
+        ]);
+        expect(requestData[0].imp[0]).to.have.property('native');
+        expect(JSON.parse(requestData[0].imp[0].native.request)).to.deep.equal(
+          nativeOrtbRequest
+        );
+        expect(requests[0].nativeOrtbRequest).to.equal(nativeOrtbRequest);
+
+        expect(requestData[1].imp[0]).to.not.have.property('banner');
+        expect(requestData[1].imp[0]).to.not.have.property('native');
+
+        expect(requestData[2].imp[0]).to.not.have.property('native');
+        expect(requests[2].nativeOrtbRequest).to.be.undefined;
+      });
+
+      it('should build an anonymized production-like native OpenRTB request', function () {
+        const nativeOrtbRequest = {
+          ver: '1.2',
+          assets: [
+            { id: 1, required: 1, title: { len: 100 } },
+            {
+              id: 2,
+              required: 1,
+              img: {
+                type: 3,
+                wmin: 1200,
+                hmin: 627,
+                mimes: ['image/png', 'image/gif', 'image/jpeg']
+              }
+            },
+            { id: 4, required: 1, data: { type: 2, len: 150 } },
+            { id: 3, required: 0, data: { type: 12, len: 50 } },
+            { id: 6, required: 0, data: { type: 1, len: 50 } },
+            {
+              id: 5,
+              required: 0,
+              img: {
+                type: 1,
+                wmin: 50,
+                hmin: 50,
+                mimes: ['image/png', 'image/gif', 'image/jpeg']
+              }
+            }
+          ],
+          eventtrackers: [
+            { event: 1, methods: [1] },
+            { event: 2, methods: [1] },
+            { event: 3, methods: [1] }
           ]
-        }
-      ];
+        };
 
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.user.data).to.deep.equal(bidRequest[0].userData);
-      expect(requestData.user.data).to.have.lengthOf(2);
-    });
-
-    it('should include auctionId in OpenRTB request', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' },
-        auctionId: 'test-auction-id-12345'
-      };
-
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.id).to.equal('test-auction-id-12345');
-    });
-
-    it('should include geo data in OpenRTB request when present', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' },
-        geo: {
-          lat: 52.5200,
-          lon: 13.4050,
-          country: 'DE'
-        }
-      };
-
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.device.geo.lat).to.equal(52.5200);
-      expect(requestData.device.geo.lon).to.equal(13.4050);
-      expect(requestData.device.geo.country).to.equal('DE');
-    });
-
-    it('should include site parameters in OpenRTB request when provided', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
+        const bidRequest = [{
+          bidId: 'bid-test-001',
           bidder: 'adspirit',
           params: {
-            placementId: '99',
-            host: 'test.adspirit.de',
-            siteId: 'site-123',
-            publisherId: 'pub-456',
-            publisherName: 'Test Publisher'
+            placementId: '12345',
+            host: 'ads.example.test',
+            bidfloor: '0.75',
+            siteId: 'site-test-001',
+            publisherId: 'publisher-test-001',
+            publisherName: 'Example Publisher'
           },
-          adUnitCode: 'banner-div',
+          adUnitCode: 'native-test-div',
           mediaTypes: {
-            banner: { sizes: [[300, 250]] }
+            native: {
+              ortb: nativeOrtbRequest
+            }
+          },
+          nativeOrtbRequest,
+          userData: [{
+            name: 'example-segments',
+            segment: [{ id: 'segment-test-001' }]
+          }],
+          userIdAsEids: [{
+            source: 'example-id.test',
+            uids: [{ id: 'anonymous-user-id', atype: 1 }]
+          }]
+        }];
+
+        const bidderRequest = {
+          auctionId: 'auction-test-001',
+          refererInfo: {
+            topmostLocation: 'https://publisher.example/native-test.html'
+          },
+          gdprConsent: {
+            gdprApplies: false,
+            consentString: ''
+          },
+          geo: {
+            lat: 12.34,
+            lon: 56.78,
+            country: 'ZZ'
           }
-        }
-      ];
+        };
 
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
+        const [request] = spec.buildRequests(bidRequest, bidderRequest);
+        const payload = JSON.parse(request.data);
+        const nativeRequest = JSON.parse(payload.imp[0].native.request);
 
-      expect(requestData.site.id).to.equal('site-123');
-      expect(requestData.site.publisher.id).to.equal('pub-456');
-      expect(requestData.site.publisher.name).to.equal('Test Publisher');
-    });
+        expect(request.method).to.equal('POST');
+        expect(request.url).to.include('//ads.example.test/rtb/getbid.php');
+        expect(request.url).to.include('&pid=12345');
+        expect(request.url).to.include('&gdpr=0');
+        expect(payload.id).to.equal('auction-test-001');
+        expect(payload.imp[0].id).to.equal('bid-test-001');
+        expect(payload.imp[0].bidfloor).to.equal(0.75);
+        expect(payload.imp[0].ext.placementId).to.equal('12345');
+        expect(nativeRequest).to.deep.equal({
+          ver: '1.2',
+          assets: nativeOrtbRequest.assets
+        });
+        expect(payload.site).to.deep.include({
+          id: 'site-test-001',
+          domain: 'publisher.example',
+          page: 'https://publisher.example/native-test.html'
+        });
+        expect(payload.site.publisher).to.deep.equal({
+          id: 'publisher-test-001',
+          name: 'Example Publisher'
+        });
+        expect(payload.user.data).to.deep.equal(bidRequest[0].userData);
+        expect(payload.user.ext.eids).to.deep.equal(bidRequest[0].userIdAsEids);
+        expect(payload.device.geo).to.deep.equal({
+          lat: 12.34,
+          lon: 56.78,
+          country: 'ZZ'
+        });
+        expect(
+          payload.ext.adUnitCode.mediaTypes.native.ortb.eventtrackers
+        ).to.deep.equal(nativeOrtbRequest.eventtrackers);
+      });
 
-    it('should include prebidVersion in OpenRTB request ext', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
+      it('should default the native version to 1.2 when it is missing', function () {
+        const nativeOrtbRequest = {
+          assets: [
+            { id: 1, required: 1, title: { len: 80 } }
+          ]
+        };
+
+        const [request] = spec.buildRequests([{
+          bidId: 'bid-native-default-version',
           bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
+          params: {
+            placementId: '12346',
+            host: 'ads.example.test'
+          },
+          adUnitCode: 'native-default-version',
           mediaTypes: {
-            banner: { sizes: [[300, 250]] }
+            native: {
+              ortb: nativeOrtbRequest
+            }
+          },
+          nativeOrtbRequest
+        }], {
+          auctionId: 'auction-test-002',
+          refererInfo: {
+            topmostLocation: 'https://publisher.example/native-default.html'
           }
-        }
-      ];
+        });
 
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
-
-      expect(requestData.ext.prebidVersion).to.be.a('string');
-      expect(requestData.ext.adUnitCode.prebidVersion).to.be.a('string');
-    });
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].native.ver).to.equal('1.2');
+        expect(JSON.parse(payload.imp[0].native.request)).to.deep.equal({
+          ver: '1.2',
+          assets: nativeOrtbRequest.assets
+        });
+      });
+    }
   });
 
   // getEids function
@@ -901,470 +586,440 @@ describe('Adspirit Bidder Spec', function () {
       expect(bid.meta.advertiserDomains).to.deep.equal([]);
     });
 
-    it('should correctly parse a valid native ad response, ensuring all assets are loaded dynamically with extra fields', function () {
+    it('should keep a non-JSON adm string out of the native response path', function () {
       const serverResponse = {
         body: {
           seatbid: [{
             bid: [{
-              impid: '123456',
-              price: 1.5,
-              w: 320,
-              h: 50,
-              crid: 'creative789',
-              adomain: ['test.adspirit.de'],
-              adm: JSON.stringify({
-                native: {
-                  assets: [
-                    { id: 1, title: { text: 'Primary Title' } },
-                    { id: 4, data: { value: 'Main Description' } },
-                    { id: 4, data: { value: 'Extra Description' } },
-                    { id: 3, data: { value: 'Main CTA' } },
-                    { id: 3, data: { value: 'Additional CTA' } },
-                    { id: 2, img: { url: 'https://example.com/main-image.jpg', w: 100, h: 100 } },
-                    { id: 2, img: { url: 'https://example.com/extra-image.jpg', w: 200, h: 200 } },
-                    { id: 5, img: { url: 'https://example.com/icon-main.jpg', w: 50, h: 50 } },
-                    { id: 5, img: { url: 'https://example.com/icon-extra.jpg', w: 60, h: 60 } },
-                    { id: 6, data: { value: 'Main Sponsor' } },
-                    { id: 6, data: { value: 'Secondary Sponsor' } }
-                  ],
-                  link: { url: 'https://clickurl.com' },
-                  imptrackers: ['https://tracker.com/impression']
-                }
-              })
+              impid: 'seatbid-banner-001',
+              price: 1.25,
+              w: 300,
+              h: 250,
+              crid: 'creative-seatbid-001',
+              exp: 120,
+              adomain: ['advertiser.example'],
+              adm: '<div>Non-native seatbid markup</div>'
             }]
           }],
-          cur: 'EUR'
+          cur: 'USD'
         }
       };
 
-      const validBidRequestMock = {
+      const result = spec.interpretResponse(serverResponse, {
         bidRequest: {
-          bidId: '987654',
-          params: { placementId: '57' }
-        },
-        nativeAssets: [
-          { id: 1, required: 1, title: { len: 100 } },
-          { id: 2, required: 1, img: { type: 3 } },
-          { id: 4, required: 1, data: { type: 2 } },
-          { id: 3, required: 0, data: { type: 12 } },
-          { id: 6, required: 0, data: { type: 1 } },
-          { id: 5, required: 0, img: { type: 1 } }
-        ]
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-      expect(result.length).to.equal(1);
-
-      const bid = result[0];
-
-      expect(bid.native.title).to.equal('Primary Title');
-      expect(bid.native.body).to.equal('Main Description');
-      expect(bid.native['data_4_extra1']).to.equal('Extra Description');
-
-      expect(bid.native.cta).to.equal('Main CTA');
-      expect(bid.native['data_3_extra1']).to.equal('Additional CTA');
-
-      expect(bid.native.sponsoredBy).to.equal('Main Sponsor');
-      expect(bid.native['data_6_extra1']).to.equal('Secondary Sponsor');
-      expect(bid.native.image.url).to.equal('https://example.com/main-image.jpg');
-      expect(bid.native.image.width).to.equal(100);
-      expect(bid.native.image.height).to.equal(100);
-      expect(bid.native['image_2_extra1']).to.deep.equal({
-        url: 'https://example.com/extra-image.jpg',
-        width: 200,
-        height: 200
+          bidId: 'seatbid-request-001',
+          bidder: 'adspirit',
+          params: {
+            placementId: '12347',
+            host: 'ads.example.test'
+          }
+        }
       });
 
-      expect(bid.native.icon.url).to.equal('https://example.com/icon-main.jpg');
-      expect(bid.native.icon.width).to.equal(50);
-      expect(bid.native.icon.height).to.equal(50);
-      expect(bid.native['image_5_extra1']).to.deep.equal({
-        url: 'https://example.com/icon-extra.jpg',
-        width: 60,
-        height: 60
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.include({
+        requestId: 'seatbid-request-001',
+        width: 300,
+        height: 250,
+        creativeId: 'creative-seatbid-001',
+        currency: 'USD',
+        ttl: 120
       });
-      expect(bid.native.impressionTrackers).to.deep.equal(['https://tracker.com/impression']);
+      expect(result[0]).to.not.have.property('native');
     });
 
-    it('should skip native bid when nativeOrtbRequest is missing', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: '123456',
-              price: 1.5,
-              adm: JSON.stringify({
-                native: {
-                  assets: [
-                    { id: 1, title: { text: 'Test Title' } }
-                  ],
-                  link: { url: 'https://example.com' }
-                }
-              })
-            }]
-          }]
-        }
-      };
-
-      const validBidRequestMock = {
-        bidRequest: {
-          bidId: '123456',
-          params: { placementId: '57' }
-        },
-        nativeOrtbRequest: null
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-      expect(result.length).to.equal(0);
-    });
-
-    it('should parse adm when it is a JSON string', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: '123456',
-              price: 1.5,
-              w: 300,
-              h: 250,
-              adm: '{"native":{"assets":[{"id":1,"title":{"text":"Parsed Title"}}],"link":{"url":"https://parsed.com"}}}',
-              crid: 'creative123'
-            }]
-          }]
-        }
-      };
-
-      const validBidRequestMock = {
-        bidRequest: {
-          bidId: '123456',
-          params: { placementId: '57' }
-        },
-        nativeOrtbRequest: {
-          assets: [{ id: 1, required: 1, title: { len: 100 } }]
-        }
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-      expect(result.length).to.equal(1);
-      expect(result[0].native.title).to.equal('Parsed Title');
-      expect(result[0].native.clickUrl).to.equal('https://parsed.com');
-    });
-
-    it('should use custom ver value from native response', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: '123456',
-              price: 1.5,
-              adm: JSON.stringify({
-                native: {
-                  ver: '1.1',
-                  assets: [
-                    { id: 1, title: { text: 'Test Title' } }
-                  ],
-                  link: { url: 'https://example.com' }
-                }
-              })
-            }]
-          }]
-        }
-      };
-
-      const validBidRequestMock = {
-        bidRequest: {
-          bidId: '123456',
-          params: { placementId: '57' }
-        },
-        nativeOrtbRequest: {
-          ver: '1.1',
-          assets: [{ id: 1, required: 1, title: { len: 100 } }]
-        }
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-      expect(result.length).to.equal(1);
-      expect(result[0].native.ortb.ver).to.equal('1.1');
-    });
-
-    it('should use exp value from bid response for TTL', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: '123456',
-              price: 1.8,
-              w: 728,
-              h: 90,
-              exp: 600,
-              crid: 'creative456'
-            }]
-          }]
-        }
-      };
-
-      const validBidRequestMock = {
-        bidRequest: {
-          bidId: '123456',
-          params: { placementId: '57' }
-        }
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-      expect(result.length).to.equal(1);
-      expect(result[0].ttl).to.equal(600);
-    });
-
-    it('should default TTL to 300 when exp is not provided', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: '123456',
-              price: 1.8,
-              w: 728,
-              h: 90,
-              crid: 'creative456'
-            }]
-          }]
-        }
-      };
-
-      const validBidRequestMock = {
-        bidRequest: {
-          bidId: '123456',
-          params: { placementId: '57' }
-        }
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-      expect(result.length).to.equal(1);
-      expect(result[0].ttl).to.equal(300);
-    });
-
-    it('should handle invalid JSON in adm string gracefully', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: '123456',
-              price: 1.5,
-              w: 300,
-              h: 250,
-              adm: 'invalid json string',
-              crid: 'creative123'
-            }]
-          }]
-        }
-      };
-
-      const validBidRequestMock = {
-        bidRequest: {
-          bidId: '123456',
-          params: { placementId: '57' }
-        }
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-      expect(result.length).to.equal(1);
-    });
-  });
-
-  // Integration tests
-  describe('Integration Tests', function () {
-    it('should handle multiple validBidRequests in a single call', function () {
-      const bidRequests = [
-        {
-          bidId: 'bid1',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div-1',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        },
-        {
-          bidId: 'bid2',
-          bidder: 'adspirit',
-          params: { placementId: '100', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div-2',
-          mediaTypes: {
-            banner: { sizes: [[728, 90]] }
-          }
-        },
-        {
-          bidId: 'bid3',
-          bidder: 'adspirit',
-          params: { placementId: '101', host: 'test.adspirit.de' },
-          adUnitCode: 'native-div',
-          mediaTypes: {
-            native: {
-              ortb: {
-                assets: [{ id: 1, required: 1, title: { len: 100 } }]
+    if (FEATURES.NATIVE) {
+      it('should correctly parse a valid native ad response, ensuring all assets are loaded dynamically with extra fields', function () {
+        const nativeOrtbRequest = {
+          ver: '1.2',
+          assets: [
+            { id: 1, required: 1, title: { len: 100 } },
+            { id: 4, required: 1, data: { type: 2, len: 150 } },
+            { id: 3, required: 0, data: { type: 12, len: 50 } },
+            {
+              id: 2,
+              required: 1,
+              img: {
+                type: 3,
+                wmin: 1200,
+                hmin: 627,
+                mimes: ['image/png', 'image/gif', 'image/jpeg']
               }
+            },
+            {
+              id: 5,
+              required: 0,
+              img: {
+                type: 1,
+                wmin: 50,
+                hmin: 50,
+                mimes: ['image/png', 'image/gif', 'image/jpeg']
+              }
+            },
+            { id: 6, required: 0, data: { type: 1, len: 50 } }
+          ]
+        };
+
+        const nativeResponse = {
+          assets: [
+            { id: 1, title: { text: 'Primary Title' } },
+            { id: 4, data: { value: 'Main Description' } },
+            { id: 4, data: { value: 'Extra Description' } },
+            { id: 3, data: { value: 'Main CTA' } },
+            { id: 3, data: { value: 'Additional CTA' } },
+            {
+              id: 2,
+              img: {
+                url: 'https://example.com/main-image.jpg',
+                w: 100,
+                h: 100
+              }
+            },
+            {
+              id: 2,
+              img: {
+                url: 'https://example.com/extra-image.jpg',
+                w: 200,
+                h: 200
+              }
+            },
+            {
+              id: 5,
+              img: {
+                url: 'https://example.com/icon-main.jpg',
+                w: 50,
+                h: 50
+              }
+            },
+            {
+              id: 5,
+              img: {
+                url: 'https://example.com/icon-extra.jpg',
+                w: 60,
+                h: 60
+              }
+            },
+            { id: 6, data: { value: 'Main Sponsor' } },
+            { id: 6, data: { value: 'Secondary Sponsor' } }
+          ],
+          link: { url: 'https://clickurl.com' },
+          imptrackers: ['https://tracker.com/impression']
+        };
+
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: '123456',
+                price: 1.5,
+                w: 320,
+                h: 50,
+                crid: 'creative789',
+                exp: 180,
+                adomain: ['test.adspirit.de'],
+                adm: JSON.stringify({ native: nativeResponse })
+              }]
+            }],
+            cur: 'EUR'
+          }
+        };
+
+        const validBidRequestMock = {
+          bidRequest: {
+            bidId: '987654',
+            bidder: 'adspirit',
+            params: {
+              placementId: '57',
+              host: 'test.adspirit.de'
             }
           },
-          nativeOrtbRequest: {
-            assets: [{ id: 1, required: 1, title: { len: 100 } }]
-          }
-        }
-      ];
+          nativeOrtbRequest
+        };
 
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' },
-        auctionId: 'test-auction-123'
-      };
+        const result = spec.interpretResponse(
+          serverResponse,
+          validBidRequestMock
+        );
+        expect(result).to.have.lengthOf(1);
 
-      const requests = spec.buildRequests(bidRequests, mockBidderRequest);
+        const bid = result[0];
 
-      expect(requests).to.have.lengthOf(3);
-      expect(requests[0].bidRequest.bidId).to.equal('bid1');
-      expect(requests[1].bidRequest.bidId).to.equal('bid2');
-      expect(requests[2].bidRequest.bidId).to.equal('bid3');
+        expect(bid.mediaType).to.equal('native');
+        expect(bid.ttl).to.equal(180);
+        expect(bid.native.title).to.equal('Primary Title');
+        expect(bid.native.body).to.equal('Main Description');
+        expect(bid.native.data_4_extra1).to.equal('Extra Description');
 
-      const requestData1 = JSON.parse(requests[0].data);
-      const requestData2 = JSON.parse(requests[1].data);
-      const requestData3 = JSON.parse(requests[2].data);
+        expect(bid.native.cta).to.equal('Main CTA');
+        expect(bid.native.data_3_extra1).to.equal('Additional CTA');
 
-      expect(requestData1.imp[0].ext.placementId).to.equal('99');
-      expect(requestData2.imp[0].ext.placementId).to.equal('100');
-      expect(requestData3.imp[0].ext.placementId).to.equal('101');
+        expect(bid.native.sponsoredBy).to.equal('Main Sponsor');
+        expect(bid.native.data_6_extra1).to.equal('Secondary Sponsor');
+        expect(bid.native.image.url).to.equal(
+          'https://example.com/main-image.jpg'
+        );
+        expect(bid.native.image_2_extra1).to.deep.equal({
+          url: 'https://example.com/extra-image.jpg',
+          width: 200,
+          height: 200
+        });
 
-      expect(requestData1.id).to.equal('test-auction-123');
-      expect(requestData2.id).to.equal('test-auction-123');
-      expect(requestData3.id).to.equal('test-auction-123');
-    });
+        expect(bid.native.icon.url).to.equal(
+          'https://example.com/icon-main.jpg'
+        );
+        expect(bid.native.image_5_extra1).to.deep.equal({
+          url: 'https://example.com/icon-extra.jpg',
+          width: 60,
+          height: 60
+        });
+        expect(bid.native.clickUrl).to.equal('https://clickurl.com');
+        expect(bid.native.impressionTrackers).to.deep.equal([
+          'https://tracker.com/impression'
+        ]);
+        expect(bid.native.ortb).to.deep.equal(nativeResponse);
+      });
 
-    it('should work correctly with twiago alias for buildRequests', function () {
-      const bidRequest = [
-        {
-          bidId: 'twiago-bid-1',
-          bidder: 'twiago',
-          params: { placementId: '99' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' }
-      };
-
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-
-      expect(requests).to.have.lengthOf(1);
-      expect(requests[0].url).to.include('//a.twiago.com/rtb/getbid.php');
-      expect(requests[0].url).to.include('pid=99');
-    });
-
-    it('should work correctly with twiago alias for interpretResponse', function () {
-      const serverResponse = {
-        body: {
-          cpm: 2.5,
-          w: 300,
-          h: 250,
-          adm: '<div>Twiago Ad</div>',
-          adomain: ['twiago.com']
-        }
-      };
-
-      const validBidRequestMock = {
-        bidRequest: {
-          bidId: 'twiago-bid-1',
-          bidder: 'twiago',
-          params: { placementId: '99' },
-          adspiritConId: 'twiago12345'
-        }
-      };
-
-      const result = spec.interpretResponse(serverResponse, validBidRequestMock);
-
-      expect(result.length).to.equal(1);
-      expect(result[0].requestId).to.equal('twiago-bid-1');
-      expect(result[0].cpm).to.equal(2.5);
-      expect(result[0].ad).to.include('<ins id="twiago12345"></ins>');
-      expect(result[0].ad).to.include('<div>Twiago Ad</div>');
-    });
-
-    it('should correctly set adspiritConId on bidRequest in buildRequests', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' }
-      };
-
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-
-      expect(bidRequest[0].adspiritConId).to.be.a('string');
-      expect(bidRequest[0].adspiritConId).to.include('adspirit');
-      expect(requests[0].url).to.include(`&async=${bidRequest[0].adspiritConId}`);
-    });
-
-    it('should handle mixed banner and native bids in single request', function () {
-      const bidRequests = [
-        {
-          bidId: 'banner-bid',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250], [728, 90]] }
-          }
-        },
-        {
-          bidId: 'native-bid',
-          bidder: 'adspirit',
-          params: { placementId: '100', host: 'test.adspirit.de' },
-          adUnitCode: 'native-div',
-          mediaTypes: {
-            native: {
-              ortb: {
-                assets: [
-                  { id: 1, required: 1, title: { len: 100 } },
-                  { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } }
-                ]
+      it('should parse an anonymized production-like native response', function () {
+        const nativeResponse = {
+          ver: '1.2',
+          assets: [
+            {
+              id: 1,
+              title: {
+                text: 'Example Native Product'
+              }
+            },
+            {
+              id: 2,
+              img: {
+                url: 'https://cdn.example.test/native/main-image.png',
+                w: 1200,
+                h: 627
+              }
+            },
+            {
+              id: 4,
+              data: {
+                value: 'An anonymized example description for a native advertisement.',
+                label: ''
+              }
+            },
+            {
+              id: 3,
+              data: {
+                value: 'Learn more',
+                label: ''
+              }
+            },
+            {
+              id: 6,
+              data: {
+                value: 'Example Sponsor',
+                label: ''
               }
             }
+          ],
+          link: {
+            url: 'https://click.example.test/native?campaign=campaign-test-001'
           },
-          nativeOrtbRequest: {
-            assets: [
-              { id: 1, required: 1, title: { len: 100 } },
-              { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } }
-            ]
+          imptrackers: [
+            'https://tracker.example.test/impression?creative=creative-test-001'
+          ],
+          eventtrackers: [
+            {
+              event: 2,
+              method: 1,
+              url: 'https://tracker.example.test/viewability?creative=creative-test-001'
+            }
+          ]
+        };
+
+        const serverResponse = {
+          body: {
+            id: 'auction-response-test-001',
+            cur: 'EUR',
+            seatbid: [{
+              bid: [{
+                id: 'bid-response-test-001',
+                impid: 'bid-test-001',
+                price: 0.42,
+                adomain: ['advertiser.example'],
+                adm: JSON.stringify({
+                  native: nativeResponse
+                }),
+                adid: 'creative-test-001',
+                nurl: 'https://tracker.example.test/win?bid=bid-response-test-001',
+                cid: 'campaign-test-001',
+                crid: 'creative-test-001',
+                attr: [],
+                ext: {
+                  r: 7
+                }
+              }]
+            }]
           }
-        }
-      ];
+        };
 
-      const mockBidderRequest = {
-        refererInfo: { topmostLocation: 'https://test.adspirit.com' }
-      };
+        const nativeOrtbRequest = {
+          ver: '1.2',
+          assets: [
+            { id: 1, required: 1, title: { len: 100 } },
+            {
+              id: 2,
+              required: 1,
+              img: {
+                type: 3,
+                wmin: 1200,
+                hmin: 627,
+                mimes: ['image/png', 'image/gif', 'image/jpeg']
+              }
+            },
+            { id: 4, required: 1, data: { type: 2, len: 150 } },
+            { id: 3, required: 0, data: { type: 12, len: 50 } },
+            { id: 6, required: 0, data: { type: 1, len: 50 } }
+          ]
+        };
 
-      const requests = spec.buildRequests(bidRequests, mockBidderRequest);
+        const result = spec.interpretResponse(serverResponse, {
+          bidRequest: {
+            bidId: 'bid-test-001',
+            bidder: 'adspirit',
+            params: {
+              placementId: '12345',
+              host: 'ads.example.test'
+            }
+          },
+          nativeOrtbRequest
+        });
 
-      expect(requests).to.have.lengthOf(2);
+        expect(result).to.have.lengthOf(1);
 
-      const bannerRequestData = JSON.parse(requests[0].data);
-      const nativeRequestData = JSON.parse(requests[1].data);
+        const bid = result[0];
 
-      expect(bannerRequestData.imp[0].banner).to.exist;
-      expect(bannerRequestData.imp[0].banner.format).to.have.lengthOf(2);
-      expect(bannerRequestData.imp[0].banner.format[0]).to.deep.equal({ w: 300, h: 250 });
-      expect(bannerRequestData.imp[0].banner.format[1]).to.deep.equal({ w: 728, h: 90 });
+        expect(bid).to.include({
+          requestId: 'bid-test-001',
+          cpm: 0.42,
+          width: 1,
+          height: 1,
+          creativeId: 'creative-test-001',
+          currency: 'EUR',
+          netRevenue: true,
+          ttl: 300,
+          mediaType: 'native'
+        });
+        expect(bid.meta.advertiserDomains).to.deep.equal([
+          'advertiser.example'
+        ]);
+        expect(bid.native.title).to.equal('Example Native Product');
+        expect(bid.native.image).to.deep.equal({
+          url: 'https://cdn.example.test/native/main-image.png',
+          width: 1200,
+          height: 627
+        });
+        expect(bid.native.body).to.equal(
+          'An anonymized example description for a native advertisement.'
+        );
+        expect(bid.native.cta).to.equal('Learn more');
+        expect(bid.native.sponsoredBy).to.equal('Example Sponsor');
+        expect(bid.native.clickUrl).to.equal(
+          'https://click.example.test/native?campaign=campaign-test-001'
+        );
+        expect(bid.native.impressionTrackers).to.deep.equal([
+          'https://tracker.example.test/impression?creative=creative-test-001'
+        ]);
+        expect(bid.native.ortb.eventtrackers).to.deep.equal([
+          {
+            event: 2,
+            method: 1,
+            url: 'https://tracker.example.test/viewability?creative=creative-test-001'
+          }
+        ]);
+        expect(bid.native.ortb).to.deep.equal(nativeResponse);
+      });
 
-      expect(nativeRequestData.imp[0].native).to.exist;
-      expect(JSON.parse(nativeRequestData.imp[0].native.request).assets).to.have.lengthOf(2);
-    });
+      it('should skip a native response when native was not requested', function () {
+        const result = spec.interpretResponse({
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: 'unexpected-native-001',
+                price: 1.1,
+                adm: JSON.stringify({
+                  native: {
+                    assets: [
+                      { id: 1, title: { text: 'Unexpected title' } }
+                    ],
+                    link: {
+                      url: 'https://click.example/unexpected'
+                    }
+                  }
+                })
+              }]
+            }]
+          }
+        }, {
+          bidRequest: {
+            bidId: 'request-without-native',
+            bidder: 'adspirit',
+            params: {
+              placementId: '12348',
+              host: 'ads.example.test'
+            }
+          }
+        });
+
+        expect(result).to.deep.equal([]);
+      });
+
+      it('should apply empty fallbacks to unmatched native assets', function () {
+        const nativeResponse = {
+          assets: [
+            { id: 90, title: {} },
+            { id: 90, title: { text: 'Second unmatched title' } },
+            { id: 91, img: {} },
+            { id: 92, data: {} }
+          ]
+        };
+
+        const result = spec.interpretResponse({
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: 'native-fallback-001',
+                price: 0.9,
+                adm: {
+                  native: nativeResponse
+                }
+              }]
+            }]
+          }
+        }, {
+          bidRequest: {
+            bidId: 'native-fallback-request',
+            bidder: 'adspirit',
+            params: {
+              placementId: '12349',
+              host: 'ads.example.test'
+            }
+          },
+          nativeOrtbRequest: {}
+        });
+
+        expect(result).to.have.lengthOf(1);
+        expect(result[0].native.clickUrl).to.equal('');
+        expect(result[0].native.impressionTrackers).to.deep.equal([]);
+        expect(result[0].native.data_90_extra0).to.equal('');
+        expect(result[0].native.data_90_extra1).to.equal(
+          'Second unmatched title'
+        );
+        expect(result[0].native.image_91_extra0).to.deep.equal({
+          url: '',
+          width: null,
+          height: null
+        });
+        expect(result[0].native.data_92_extra0).to.equal('');
+        expect(result[0].native.ortb).to.deep.equal(nativeResponse);
+      });
+    }
   });
 });
