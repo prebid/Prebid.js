@@ -212,10 +212,16 @@ export function percentInView(element, { w, h } = {}) {
     viewportIntersections.observe(element);
     return percentInViewStatic(element, { w, h });
   } else {
-    const adjusted = applySize(intersection.boundingClientRect, { w, h });
-    if (adjusted.width !== intersection.boundingClientRect.width || adjusted.height !== intersection.boundingClientRect.height) {
+    const bbox = intersection.boundingClientRect;
+    const adjusted = applySize(bbox, { w, h });
+    if (adjusted.width !== bbox.width || adjusted.height !== bbox.height) {
       // use w/h override
       return percentInViewStatic(element, { w, h });
+    }
+    if (bbox.width === 0 || bbox.height === 0) {
+      // an element with no area renders nothing, but intersection observers report a ratio
+      // of 1 for a zero-area target that touches the viewport, which would read as fully in view
+      return 0;
     }
     return intersection.isIntersecting ? intersection.intersectionRatio * 100 : 0;
   }

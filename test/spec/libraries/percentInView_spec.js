@@ -275,5 +275,32 @@ describe('percentInView', () => {
       };
       expect(percentInView({}, { w: 100, h: 200 })).to.not.eql(100);
     });
+
+    it('uses the intersection ratio when the element has an area', () => {
+      intersection = {
+        boundingClientRect: {
+          width: 300,
+          height: 250,
+        },
+        isIntersecting: true,
+        intersectionRatio: 0.5
+      };
+      expect(percentInView({})).to.eql(50);
+    });
+
+    Object.entries({
+      'height': { width: 300, height: 0 },
+      'width': { width: 0, height: 250 },
+    }).forEach(([dimension, boundingClientRect]) => {
+      it(`returns 0 for an element with no ${dimension} and no size override`, () => {
+        // intersection observers report a ratio of 1 for zero-area targets
+        intersection = {
+          boundingClientRect,
+          isIntersecting: true,
+          intersectionRatio: 1
+        };
+        expect(percentInView({})).to.eql(0);
+      });
+    });
   });
 });
