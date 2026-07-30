@@ -115,15 +115,30 @@ function percentInViewOfBox(elementBoundingBox, win, clipRects = []) {
 }
 
 /**
+ * Whether an ancestor with the given style contains an element positioned as `position`, and can
+ * therefore clip it. Out of flow elements are laid out against something further up the tree, and
+ * are not clipped by the ancestors they skip over.
+ */
+function contains(style, position) {
+  if (position !== 'absolute' && position !== 'fixed') {
+    return true;
+  }
+  return (position === 'absolute' && style.position !== 'static') ||
+    style.transform !== 'none' ||
+    style.perspective !== 'none' ||
+    style.filter !== 'none' ||
+    /transform|perspective|filter/.test(style.willChange) ||
+    /paint|layout|strict|content/.test(style.contain);
+}
+
+/**
  * Rectangles that clip the given element, in top window coordinates: the boxes of its
  * scrolling or overflow-hidden ancestors, and of every frame that contains it.
  *
  * Returns null if the element or one of its ancestors is styled so that nothing renders.
  *
- * Clipping is approximated: the boxes include the ancestors' borders rather than stopping
- * at their padding edge, an ancestor that clips only one axis is treated as clipping both,
- * and an out-of-flow element is treated as clipped by ancestors that are not in its
- * containing block chain (a fixed position element is clipped by no ancestor at all).
+ * Clipping is approximated: the boxes include the ancestors' borders rather than stopping at their
+ * padding edge.
  */
 function getClipRects(element) {
   const rects = [];
@@ -133,14 +148,24 @@ function getClipRects(element) {
     while (el != null && win != null) {
       const { x, y } = getViewportOffset(win);
       let node = el;
+      // how the subtree being walked is positioned, which decides which ancestors can clip it
+      let position;
       while (node != null) {
         const style = getComputedStyle(node);
+        // an ancestor that is transparent or hidden hides the element regardless of positioning
         if (style.visibility === 'hidden' || style.opacity === '0') {
           return null;
         }
-        if (node !== el && style.overflow !== 'visible') {
-          const rect = getBoundingClientRect(node);
-          rects.push({ left: rect.left + x, top: rect.top + y, right: rect.right + x, bottom: rect.bottom + y });
+        if (node === el) {
+          position = style.position;
+        } else if (contains(style, position)) {
+          if (style.overflow !== 'visible') {
+            const rect = getBoundingClientRect(node);
+            rects.push({ left: rect.left + x, top: rect.top + y, right: rect.right + x, bottom: rect.bottom + y });
+          }
+          // from here up it is this ancestor that carries the element, so its own positioning
+          // decides which of the remaining ancestors can clip it
+          position = style.position;
         }
         node = node.parentElement;
       }

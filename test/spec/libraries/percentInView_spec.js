@@ -422,6 +422,34 @@ describe('percentInView', () => {
       )).to.eql(0);
     });
 
+    // identical markup except for what makes the clipper contain the target, so the only thing
+    // the comparison can be measuring is whether the clip was applied
+    const ABS_TARGET = '<div id="target" style="position:absolute;top:0;left:0;width:50px;height:50px"></div>';
+    const escaping = () => measure(`<div style="overflow:hidden;width:50px;height:25px">${ABS_TARGET}</div>`);
+
+    it('is not clipped by an ancestor that does not contain it', () => {
+      const contained = measure(
+        `<div style="overflow:hidden;width:50px;height:25px;position:relative">${ABS_TARGET}</div>`
+      );
+      expect(contained).to.be.lessThan(escaping());
+    });
+
+    it('is clipped by an ancestor that establishes a containing block', () => {
+      const contained = measure(
+        `<div style="overflow:hidden;width:50px;height:25px;transform:translateX(0)">${ABS_TARGET}</div>`
+      );
+      expect(contained).to.be.lessThan(escaping());
+    });
+
+    it('is not clipped by an ancestor when it is fixed to the viewport', () => {
+      // the target sits well clear of the clipper, so any clipping at all would report 0
+      expect(measure(
+        `<div style="overflow:hidden;width:50px;height:25px;position:relative">
+           <div id="target" style="position:fixed;top:200px;left:200px;width:50px;height:50px"></div>
+         </div>`
+      )).to.be.greaterThan(0);
+    });
+
     Object.entries({
       'visibility:hidden': 'visibility:hidden',
       'opacity:0': 'opacity:0',
