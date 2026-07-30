@@ -593,10 +593,13 @@ function getPPID(eids = getUserIdsAsEids() || []) {
   const matchingUserId = ppidSource && eids.find(userID => userID.source === ppidSource);
   if (matchingUserId && typeof matchingUserId?.uids?.[0]?.id === 'string') {
     const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
-    if (ppidValue.length >= 32 && ppidValue.length <= 150) {
+    // Regex copied from https://support.google.com/admanager/answer/2880055?hl=en#requirements,
+    // and removed the uncessary escape character inside the character class
+    const regex = /^[0-9a-zA-Z+.=/_\-$,{}]{22,150}$/;
+    if (regex.test(ppidValue)) {
       return ppidValue;
     } else {
-      logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+      logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} doesn't match the PPID requirements - ${ppidValue}`);
     }
   }
 }
