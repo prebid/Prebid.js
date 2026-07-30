@@ -251,9 +251,17 @@ Flow:
 
 1. `getUserSyncs` reads the bidders PBS actually invoked from the auction response
    (`ext.responsetimemillis` keys, plus any `seatbid[].seat`).
-2. It emits a sync to the endpoint above with those bidders, the publisher `account` (echoed by PBS
-   at `ext.account`), the sync `limit`, `coopSync=0`, the publisher's `filterSettings` (see below),
-   and all consent signals (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`, `gpp_sid`).
+2. It emits a sync to the endpoint above with those bidders, the publisher `account`, the sync
+   `limit`, `coopSync=0`, the publisher's `filterSettings` (see below), and all consent signals
+   (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`, `gpp_sid`).
+
+   The `account` is the `publisherId` the auction ran under — the same value PBS resolves the auction's
+   account from (`site.publisher.id` / `app.publisher.id`). Since `getUserSyncs` is handed only the
+   responses, it is matched back to its auction by the ORTB request id echoed as the response `id`,
+   rather than kept in a single shared value that an overlapping auction (or a second pbjs instance)
+   could overwrite. A response that matches no auction the adapter built carries no `account` at all —
+   PBS applies the named account's cookie-sync policy, so naming the wrong publisher is worse than
+   naming none.
 3. The endpoint POSTs `{ bidders, account, limit, coopSync, filterSettings, gdpr, ... }` to
    `https://pbam.orangeclickmedia.com/cookie_sync` and delivers the syncs it returns.
 

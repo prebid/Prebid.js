@@ -339,8 +339,8 @@ describe('ocmBidAdapter', function () {
       });
 
       // Raising tmax past the client deadline must never produce a request that asks PBS for longer
-      // than the ceiling advertised in the same payload.
-      it('never sends a tmax above the advertised ext.tmaxmax ceiling', function () {
+      // than the ceiling this adapter advertises in the same payload.
+      it('never sends a tmax above the ext.tmaxmax it advertises itself', function () {
         const request = spec.buildRequests([bannerBid], {
           ...bannerBidderRequest,
           timeout: 1000,
@@ -348,6 +348,23 @@ describe('ocmBidAdapter', function () {
         });
         expect(request.data.tmax).to.equal(800);
         expect(request.data.tmax).to.be.at.most(request.data.ext.tmaxmax);
+      });
+
+      // A publisher who pins ext.tmaxmax in first-party data keeps it verbatim, and tmax is NOT
+      // narrowed to it. That is deliberate: core's own PBS adapter behaves identically (it preserves a
+      // supplied ext.tmaxmax and computes tmax from the s2s timeout — see
+      // modules/prebidServerBidAdapter/ortbConverter.js), ortb2.tmax is the documented knob for
+      // tightening the server budget, and no PBS reads tmaxmax as a hard cap (PBS-Go has no such field;
+      // PBS-Java clamps timeouts rather than rejecting them). Reusing it as a second tmax knob would
+      // silently cut the server's budget from a field that states the client's total ceiling.
+      it('preserves a publisher-pinned ext.tmaxmax without narrowing tmax to it', function () {
+        const request = spec.buildRequests([bannerBid], {
+          ...bannerBidderRequest,
+          timeout: 1000,
+          ortb2: { ext: { tmaxmax: 100 } }
+        });
+        expect(request.data.ext.tmaxmax).to.equal(100);
+        expect(request.data.tmax).to.equal(800);
       });
 
       // With no auction timeout there is no deadline to clamp against, so the publisher's explicit
@@ -1140,19 +1157,75 @@ describe('ocmBidAdapter', function () {
       });
     });
 
-    it('includes the account echoed by PBS in the auction response', function () {
-      const responses = [{ body: { ext: { account: 'echoed-789', responsetimemillis: { appnexus: 80 } } } }];
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses);
-      expect(syncs[0].url).to.contain('account=echoed-789');
+    // Builds an auction response that answers a request the adapter actually produced. ORTB requires
+    // BidResponse.id to be the id of the request it answers (PBS sets it from exactly that), and the
+    // adapter relies on it to match a sync back to the publisher account of its auction.
+    function responseTo(serverRequest) {
+      return [{ body: { id: serverRequest.data.id, ext: { responsetimemillis: { appnexus: 80 } } } }];
+    }
+
+    it('includes the publisher account the auction ran under', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responseTo(request));
+      expect(syncs[0].url).to.contain('account=pub-123');
     });
 
-    it('scopes the sync account to the auction response and never a captured fallback', function () {
-      // Regression: the cookie_sync account must come only from THIS auction's response (ext.account),
-      // not from a module-level value captured during buildRequests — otherwise an overlapping auction
-      // could leak its publisher account into this sync. buildRequests runs first (it used to capture
-      // account=pub-123) but the response below echoes no account, so no account must be emitted.
+    // In-app traffic carries the publisher on `app` rather than `site` (see buildRequests above), and
+    // that is the object PBS resolves the account from, so the sync has to follow it there.
+    it('takes the account from the app publisher for in-app traffic', function () {
+      const request = spec.buildRequests([bannerBid], {
+        ...bannerBidderRequest,
+        ortb2: { app: { bundle: 'com.orangeclickmedia.demo' } }
+      });
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responseTo(request));
+      expect(syncs[0].url).to.contain('account=pub-123');
+    });
+
+    // Regression: the account must be scoped to the auction that produced the response. The original
+    // implementation kept a single module-level value captured in buildRequests, which any overlapping
+    // OCM auction (or a second pbjs instance) overwrote — leaking one publisher's account into
+    // another publisher's sync.
+    it('keeps each auction account separate when two auctions overlap', function () {
+      const otherBid = { ...bannerBid, params: { ...baseParams, publisherId: 'pub-999' } };
+
+      const first = spec.buildRequests([bannerBid], bannerBidderRequest);
+      const second = spec.buildRequests([otherBid], { ...bannerBidderRequest, bids: [otherBid] });
+
+      // Second auction built last: a captured scalar would answer pub-999 for both.
+      const syncForFirst = spec.getUserSyncs({ iframeEnabled: true }, responseTo(first));
+      const syncForSecond = spec.getUserSyncs({ iframeEnabled: true }, responseTo(second));
+
+      expect(syncForFirst[0].url).to.contain('account=pub-123');
+      expect(syncForSecond[0].url).to.contain('account=pub-999');
+    });
+
+    // No account at all is better than the wrong one: PBS applies the named account's cookie-sync
+    // policy, so falling back to some other auction's publisher would sync under the wrong rules.
+    it('omits the account when no request matches the response', function () {
       spec.buildRequests([bannerBid], bannerBidderRequest);
+      // syncResponses carries no id, so it answers none of the requests built above.
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
+      expect(syncs[0].url).to.not.contain('account=');
+    });
+
+    // Nothing to name when the auction itself carried no publisher, so the sync omits the account
+    // rather than emitting an empty one. (isBidRequestValid rejects such a bid before buildRequests in
+    // the real pipeline; addOrtbPublisherData guards the same case on the request side.)
+    it('omits the account when the auction carried no publisher', function () {
+      const noPublisherBid = { ...bannerBid, params: { placementId: 'plc-456' } };
+      const request = spec.buildRequests([noPublisherBid], { ...bannerBidderRequest, bids: [noPublisherBid] });
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responseTo(request));
+      expect(syncs[0].url).to.not.contain('account=');
+    });
+
+    // The tracked accounts are capped so a long-lived page cannot grow them without bound; the oldest
+    // auction is evicted first and its sync then simply carries no account.
+    it('stops naming the account of an auction evicted by newer ones', function () {
+      const oldest = spec.buildRequests([bannerBid], bannerBidderRequest);
+      for (let i = 0; i < 20; i++) {
+        spec.buildRequests([bannerBid], bannerBidderRequest);
+      }
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responseTo(oldest));
       expect(syncs[0].url).to.not.contain('account=');
     });
 

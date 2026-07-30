@@ -364,7 +364,7 @@ function bufferedDeadline(bidderRequest) {
  * the publisher anything: the auction timer is not extended by the value we send, so the extra time
  * is spent producing a response that arrives too late to be used. A publisher tightening the
  * server's budget is respected; one loosening it beyond the client deadline is capped, which also
- * keeps `tmax` consistent with the `ext.tmaxmax` ceiling advertised alongside it.
+ * keeps `tmax` within the `ext.tmaxmax` this adapter itself advertises (see setRequestTimeouts).
  * @param {Object} bidderRequest - The bidder request (source of `timeout` and `ortb2`)
  * @returns {number|undefined} The tmax to send, or undefined when no timeout is known
  */
@@ -383,8 +383,14 @@ function resolveTmax(bidderRequest) {
 /**
  * Applies the buffered `tmax` to the ORTB request and advertises the un-buffered auction timeout as
  * `ext.tmaxmax` — the ORTB signal for the maximum tmax the caller will honour — so PBS still knows
- * the real ceiling it is working against (this mirrors what Prebid's own PBS adapter sends). An
- * `ext.tmaxmax` already present from first-party data is left alone.
+ * the real ceiling it is working against (this mirrors what Prebid's own PBS adapter sends).
+ *
+ * An `ext.tmaxmax` already present from first-party data is left alone, and `tmax` is deliberately not
+ * narrowed to it — core's own PBS adapter makes the same trade (ortbConverter.js preserves a supplied
+ * `ext.tmaxmax` while computing `tmax` independently of it), and `ortb2.tmax` stays the one knob for
+ * tightening the server's budget. So a publisher who pins a `tmaxmax` under the buffered deadline can
+ * end up advertising a ceiling below the `tmax` sent with it; that is their stated ceiling, honoured
+ * verbatim, and no PBS treats the field as a hard cap.
  * @param {Object} request - The ORTB request, mutated in place. Always an object: the converter's
  *   REQUEST builder either returns one or rethrows, and the caller has already dereferenced it.
  * @param {Object} bidderRequest - The bidder request
@@ -403,6 +409,72 @@ function setRequestTimeouts(request, bidderRequest) {
 }
 
 /**
+ * Publisher account of each in-flight auction, keyed by its ORTB request id.
+ *
+ * `getUserSyncs` is handed only the auction responses — never the bid requests — so the account the
+ * cookie_sync must name cannot be read from `params` there. It is recorded here when the request is
+ * built and matched back by the request id PBS echoes as the response id (see resolveSyncAccount).
+ * Keying on that id, rather than holding one module-level value, is what keeps overlapping OCM
+ * auctions (or a second pbjs instance on the page) from leaking one publisher's account into
+ * another's sync.
+ */
+const requestAccounts = new Map();
+
+// Cap on the retained request-id → account entries. Entries are deliberately not removed once read:
+// getUserSyncs is not guaranteed to run for an auction at all (syncing may be disabled, blocked by
+// COPPA/GDPR, or the response may name no bidders), so deleting only on read would leak the rest.
+// Evicting the oldest entry bounds the map instead; only a handful of auctions are ever in flight.
+const MAX_TRACKED_ACCOUNTS = 20;
+
+/**
+ * Records the publisher account an auction is being sent under, keyed by its ORTB request id.
+ *
+ * The account is read back off the built request (`app.publisher.id` / `site.publisher.id`, in the
+ * precedence addOrtbPublisherData writes them) rather than from `params.publisherId`, so the value
+ * handed to cookie_sync is exactly the one PBS resolves this auction's account from — including when
+ * it came from first-party data rather than the bid params.
+ * @param {Object} request - The built ORTB request
+ * @returns {void}
+ */
+function trackRequestAccount(request) {
+  const account = request?.app?.publisher?.id || request?.site?.publisher?.id;
+  if (!account) {
+    return;
+  }
+
+  // Re-insert rather than overwrite so a repeated id (only possible when first-party data pins
+  // `ortb2.id`) moves to the back of the eviction order instead of keeping its original position.
+  requestAccounts.delete(request.id);
+  requestAccounts.set(request.id, account);
+
+  while (requestAccounts.size > MAX_TRACKED_ACCOUNTS) {
+    requestAccounts.delete(requestAccounts.keys().next().value);
+  }
+}
+
+/**
+ * Resolves the publisher account for a cookie_sync from the auction responses in hand, by matching
+ * each response's id against the account recorded when that request was built (see
+ * trackRequestAccount). ORTB requires `BidResponse.id` to be the id of the request it answers, and
+ * PBS sets it from exactly that, so the id is a reliable per-auction key.
+ *
+ * A response matching no tracked request yields no account rather than any fallback: naming the wrong
+ * publisher is worse than naming none, since PBS applies the account's own cookie-sync policy. A
+ * response with no id therefore matches nothing — checked here, so an entry that somehow ended up
+ * keyed `undefined` could never be handed to every id-less response instead.
+ * @param {Array} serverResponses - Auction responses
+ * @returns {string|undefined} The account, or undefined when no response matches a tracked request
+ */
+function resolveSyncAccount(serverResponses) {
+  return (serverResponses || [])
+    .map((response) => {
+      const id = response?.body?.id;
+      return id ? requestAccounts.get(id) : undefined;
+    })
+    .find(Boolean);
+}
+
+/**
  * Constructs server requests from the list of valid bid requests.
  * Builds OpenRTB-formatted requests to send to the OCM bid server.
  * @param {Array<BidRequest>} bidRequests - Array of valid bid requests
@@ -411,6 +483,10 @@ function setRequestTimeouts(request, bidderRequest) {
  */
 function buildRequests(bidRequests, bidderRequest) {
   const ortbRequest = converter.toORTB({ bidderRequest, bidRequests });
+
+  // Remember which publisher account this auction runs under, so the cookie_sync registered after it
+  // can name the same one (see trackRequestAccount).
+  trackRequestAccount(ortbRequest);
 
   return {
     method: 'POST',
@@ -556,7 +632,8 @@ function syncsAllowedByPrivacy(gdprConsent) {
  * @param {Object} syncOptions - Allowed sync types for this bidder (iframeEnabled/pixelEnabled). They
  *   select the endpoint above, and are folded into the `filterSettings` forwarded to PBS so a type the
  *   publisher did not authorise is never dropped downstream either.
- * @param {Array} serverResponses - Auction responses; source of the participating bidder list
+ * @param {Array} serverResponses - Auction responses; source of the participating bidder list and,
+ *   through the request id each one echoes, of the publisher account the sync is made under
  * @param {Object} gdprConsent - GDPR consent data (gdprApplies, consentString)
  * @param {string} uspConsent - US privacy (CCPA) consent string
  * @param {Object} gppConsent - GPP consent data (gppString, applicableSections)
@@ -592,14 +669,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     'coopSync=0'
   ];
 
-  // The cookie_sync `account` is taken solely from the account PBS echoes in the auction response
-  // (ext.account), which is scoped to exactly these responses. Deriving it per-auction here — rather
-  // than from a shared module-level value captured in buildRequests — is what keeps overlapping OCM
-  // auctions (or multiple pbjs instances) from leaking one auction's publisher account into another's
-  // sync. OCM's PBS echoes ext.account for this purpose.
-  const account = (serverResponses || [])
-    .map((response) => response?.body?.ext?.account)
-    .find(Boolean);
+  // The publisher account this auction ran under, matched to these exact responses by ORTB request id
+  // (see resolveSyncAccount). PBS resolves the cookie_sync against it — the account's sync limits,
+  // coop-sync default and privacy enforcement all come from it — and a host running with
+  // `account_required` rejects a cookie_sync that names no account at all.
+  const account = resolveSyncAccount(serverResponses);
   if (account) {
     params.push(`account=${encodeURIComponent(account)}`);
   }
