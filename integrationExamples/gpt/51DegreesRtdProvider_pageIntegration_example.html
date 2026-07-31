@@ -5,6 +5,8 @@
     <script>
         var RESOURCE_KEY = new URLSearchParams(location.search).get('resourceKey') || '';
         // The 51Degrees script is included synchronously, before Prebid.
+        // id.usage=personalized is a test-only shortcut: this demo collects
+        // no consent. A real page must derive the value from the user's choice.
         if (RESOURCE_KEY) {
             document.write('<script src="https://cloud.51degrees.com/api/v4/' + RESOURCE_KEY + '.js?id.usage=personalized"><\/script>');
         }
