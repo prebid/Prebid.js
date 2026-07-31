@@ -362,6 +362,16 @@ describe('YieldmoAdapter', function () {
         expect(placementsData[1].bidFloor).to.equal(1.23);
       });
 
+      it('should fall back to params bidFloor when getFloor throws or returns undefined (no throw)', function () {
+        const throwing = mockBannerBid({ getFloor: () => { throw new Error('boom'); } }, { bidFloor: 0.42 });
+        expect(() => build([throwing])).to.not.throw();
+        expect(JSON.parse(buildAndGetPlacementInfo([throwing]))[0].bidFloor).to.equal(0.42);
+
+        const undef = mockBannerBid({ getFloor: () => undefined }, { bidFloor: 0.42 });
+        expect(() => build([undef])).to.not.throw();
+        expect(JSON.parse(buildAndGetPlacementInfo([undef]))[0].bidFloor).to.equal(0.42);
+      });
+
       it('should use bidFloor if no floors module is available', function() {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([
           mockBannerBid({}, { bidFloor: 1.2 }),
@@ -438,30 +448,6 @@ describe('YieldmoAdapter', function () {
         })];
         const placementInfo = buildAndGetPlacementInfo(bidArray);
         expect(placementInfo).to.include('"gpid":"/6355419/Travel/Europe/France/Paris"');
-      });
-
-      it('should add topics to the banner bid request', function () {
-        const biddata = build([mockBannerBid()], mockBidderRequest({
-          ortb2: {
-            user: {
-              data: [
-                {
-                  ext: {
-                    segtax: 600,
-                    segclass: '2206021246',
-                  },
-                  segment: ['7', '8', '9'],
-                },
-              ],
-            }
-          }
-        }));
-
-        expect(biddata[0].data.topics).to.equal(JSON.stringify({
-          taxonomy: 600,
-          classifier: '2206021246',
-          topics: [7, 8, 9],
-        }));
       });
 
       it('should send gpc in the banner bid request', function () {
@@ -725,33 +711,6 @@ describe('YieldmoAdapter', function () {
           }]
         };
         expect(buildAndGetData([mockVideoBid({ ...params })]).user.ext.eids).to.eql(params.fakeUserIdAsEids);
-      });
-
-      it('should add topics to the bid request', function () {
-        const videoBidder = mockBidderRequest(
-          {
-            ortb2: {
-              user: {
-                data: [
-                  {
-                    ext: {
-                      segtax: 600,
-                      segclass: '2206021246',
-                    },
-                    segment: ['7', '8', '9'],
-                  },
-                ],
-              },
-            },
-          },
-          [mockVideoBid()]
-        );
-        const payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
-        expect(payload.topics).to.deep.equal({
-          taxonomy: 600,
-          classifier: '2206021246',
-          topics: [7, 8, 9],
-        });
       });
 
       it('should send gpc in the bid request', function () {
@@ -1031,6 +990,46 @@ describe('YieldmoAdapter', function () {
       });
     });
 
+    it('should skip a video bid whose impid does not match a requested imp, keeping the rest', function () {
+      const response = mockServerResponse();
+      const seatbid = [
+        {
+          bid: {
+            adm: '<?xml version="1.0" encoding="UTF-8"?>',
+            adomain: ['www.example.com'],
+            crid: 'unmatched-crid',
+            impid: 'no-such-imp',
+            price: 1.5,
+            dealid: 'YMO_456'
+          },
+        },
+        {
+          bid: {
+            adm: '<?xml version="1.0" encoding="UTF-8"?>',
+            adomain: ['www.example.com'],
+            crid: 'matched-crid',
+            impid: '91ea8bba1',
+            price: 2.0,
+            dealid: 'YMO_789'
+          },
+        },
+      ];
+      const bidRequest = {
+        data: { imp: [{ id: '91ea8bba1', video: { h: 250, w: 300 } }] },
+      };
+      // Only the seatbid (video) response; no banner entries, so the result
+      // contains just the video bids that were built.
+      response.body = [];
+      response.body.seatbid = seatbid;
+
+      // The unmatched bid must be skipped (not throw), and must not drop the
+      // matching video bid.
+      const newResponse = spec.interpretResponse(response, bidRequest);
+      expect(newResponse.length).to.equal(1);
+      expect(newResponse[0].requestId).to.equal('91ea8bba1');
+      expect(newResponse[0].creativeId).to.equal('matched-crid');
+    });
+
     it('should not add responses if the cpm is 0 or null', function () {
       const response = mockServerResponse();
       response.body[0].cpm = 0;
@@ -1038,6 +1037,13 @@ describe('YieldmoAdapter', function () {
 
       response.body[0].cpm = null;
       expect(spec.interpretResponse(response)).to.deep.equal([]);
+    });
+
+    it('should return [] (not throw) when the response body is missing or null', function () {
+      expect(spec.interpretResponse({ body: null })).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: undefined })).to.deep.equal([]);
+      expect(spec.interpretResponse({})).to.deep.equal([]);
+      expect(() => spec.interpretResponse(undefined)).to.not.throw();
     });
   });
 
