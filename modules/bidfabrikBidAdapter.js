@@ -43,7 +43,7 @@ function resolveHost(params) {
   // path. Fall back to the default if what's left is empty or has whitespace.
   const raw = params && isStr(params.host) ? params.host.trim() : '';
   const host = raw.replace(/^https?:\/\//i, '').split('/')[0].split('?')[0].split('#')[0];
-  return host && !/\s/.test(host) ? host : DEFAULT_HOST;
+  return host && !/[\s@]/.test(host) ? host : DEFAULT_HOST;
 }
 
 function appendConsentParams(url, gdprConsent, uspConsent, gppConsent) {
