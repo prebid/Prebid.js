@@ -482,6 +482,18 @@ describe('51DegreesRtdProvider', function() {
       expect(convert51DegreesDeviceToOrtb2()).to.deep.equal({});
     });
 
+    it('drops values of unexpected types', function() {
+      const device = {
+        hardwarevendor: { nested: 'object' },
+        platformname: 42,
+        pixelratio: 'not-a-number',
+        screenpixelsheight: '800',
+        hardwarename: 'not-an-array',
+      };
+      const result = convert51DegreesDeviceToOrtb2(device).device;
+      expect(result).to.not.have.any.keys('make', 'os', 'pxratio', 'h', 'model');
+    });
+
     it('does not set the deviceid if it is not provided', function() {
       const device = { ...fiftyOneDegreesDevice };
       delete device.deviceid;
@@ -604,6 +616,17 @@ describe('51DegreesRtdProvider', function() {
       });
     });
 
+    it('drops values of unexpected types', function() {
+      const result = convert51DegreesIpToOrtb2({
+        ip: 1234,
+        latitude: 'not-a-number',
+        countrycode3: 7,
+        locationconfidence: 'high',
+      });
+      expect(result.device || {}).to.not.have.any.keys('ip');
+      expect((result.device || {}).geo || {}).to.not.have.any.keys('lat', 'country');
+    });
+
     it('maps full ip data with locationconfidence=high → ipservice=511', function() {
       const result = convert51DegreesIpToOrtb2(fullIp);
       expect(result).to.deep.equal({
@@ -717,6 +740,13 @@ describe('51DegreesRtdProvider', function() {
 
     it('emits an empty object when both uids are absent', function() {
       expect(convert51DegreesFoDiDToOrtb2({}, TDL_URL)).to.deep.equal({});
+    });
+
+    it('drops non-string id values', function() {
+      const result = convert51DegreesFoDiDToOrtb2(
+        { idproblic: 123, idprobglobal: 'global-uid-base64' }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(1);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'global-uid-base64', atype: 1 }]);
     });
 
     it('emits a full eids entry with tdlUrl', function() {

@@ -254,6 +254,11 @@ export const convert51DegreesDataToOrtb2 = (data51, options = {}) => {
   return ortb2Data;
 };
 
+// The payload can come from an on-page integration the module does not
+// control, so only values of the expected primitive type are merged.
+const asString = (value) => (typeof value === 'string' && value.length > 0) ? value : undefined;
+const asNumber = (value) => (typeof value === 'number' && isFinite(value)) ? value : undefined;
+
 /**
  * Converts 51Degrees device data to ORTB2 format
  *
@@ -285,32 +290,32 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   }
 
   const deviceModel =
-    device.hardwarenameprefix ||
-    device.hardwaremodel || (
+    asString(device.hardwarenameprefix) ||
+    asString(device.hardwaremodel) || (
       Array.isArray(device.hardwarename) && device.hardwarename.length
         ? device.hardwarename.join(',')
         : null
     );
 
-  const devicePhysicalPPI = device.screenpixelsphysicalheight && device.screeninchesheight
+  const devicePhysicalPPI = asNumber(device.screenpixelsphysicalheight) && asNumber(device.screeninchesheight)
     ? Math.round(device.screenpixelsphysicalheight / device.screeninchesheight)
     : null;
 
-  const devicePPI = device.screenpixelsheight && device.screeninchesheight
+  const devicePPI = asNumber(device.screenpixelsheight) && asNumber(device.screeninchesheight)
     ? Math.round(device.screenpixelsheight / device.screeninchesheight)
     : null;
 
   deepSetNotEmptyValue(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype));
-  deepSetNotEmptyValue(ortb2Device, 'make', device.hardwarevendor);
+  deepSetNotEmptyValue(ortb2Device, 'make', asString(device.hardwarevendor));
   deepSetNotEmptyValue(ortb2Device, 'model', deviceModel);
-  deepSetNotEmptyValue(ortb2Device, 'hwv', device.hardwarenameversion);
-  deepSetNotEmptyValue(ortb2Device, 'os', device.platformname);
-  deepSetNotEmptyValue(ortb2Device, 'osv', device.platformversion);
-  deepSetNotEmptyValue(ortb2Device, 'h', device.screenpixelsphysicalheight || device.screenpixelsheight);
-  deepSetNotEmptyValue(ortb2Device, 'w', device.screenpixelsphysicalwidth || device.screenpixelswidth);
-  deepSetNotEmptyValue(ortb2Device, 'pxratio', device.pixelratio);
+  deepSetNotEmptyValue(ortb2Device, 'hwv', asString(device.hardwarenameversion));
+  deepSetNotEmptyValue(ortb2Device, 'os', asString(device.platformname));
+  deepSetNotEmptyValue(ortb2Device, 'osv', asString(device.platformversion));
+  deepSetNotEmptyValue(ortb2Device, 'h', asNumber(device.screenpixelsphysicalheight) || asNumber(device.screenpixelsheight));
+  deepSetNotEmptyValue(ortb2Device, 'w', asNumber(device.screenpixelsphysicalwidth) || asNumber(device.screenpixelswidth));
+  deepSetNotEmptyValue(ortb2Device, 'pxratio', asNumber(device.pixelratio));
   deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI);
-  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', device.deviceid);
+  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', asString(device.deviceid));
   if (['True', 'False'].includes(device.thirdpartycookiesenabled)) {
     deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0);
   }
@@ -343,8 +348,8 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
   }
 
   // device.ip / device.ipv6 are not gated on confidence.
-  deepSetNotEmptyValue(ortb2, 'device.ip', ip.ip);
-  deepSetNotEmptyValue(ortb2, 'device.ipv6', ip.ipv6);
+  deepSetNotEmptyValue(ortb2, 'device.ip', asString(ip.ip));
+  deepSetNotEmptyValue(ortb2, 'device.ipv6', asString(ip.ipv6));
 
   const confidence = typeof ip.locationconfidence === 'string'
     ? ip.locationconfidence.toLowerCase()
@@ -366,17 +371,16 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
     }
   };
 
-  setIfDefined('device.geo.lat', ip.latitude);
-  setIfDefined('device.geo.lon', ip.longitude);
-  deepSetNotEmptyValue(ortb2, 'device.geo.country', ip.countrycode3);
-  deepSetNotEmptyValue(ortb2, 'device.geo.region', ip.iso31662lvl4);
-  deepSetNotEmptyValue(ortb2, 'device.geo.zip', ip.zipcode);
-  setIfDefined('device.geo.utcoffset', ip.timezoneoffset);
+  setIfDefined('device.geo.lat', asNumber(ip.latitude));
+  setIfDefined('device.geo.lon', asNumber(ip.longitude));
+  deepSetNotEmptyValue(ortb2, 'device.geo.country', asString(ip.countrycode3));
+  deepSetNotEmptyValue(ortb2, 'device.geo.region', asString(ip.iso31662lvl4));
+  deepSetNotEmptyValue(ortb2, 'device.geo.zip', asString(ip.zipcode));
+  setIfDefined('device.geo.utcoffset', asNumber(ip.timezoneoffset));
+  const accuracyKm = asNumber(ip.accuracyradiusmin);
   setIfDefined(
     'device.geo.accuracy',
-    ip.accuracyradiusmin === null || ip.accuracyradiusmin === undefined
-      ? undefined
-      : ip.accuracyradiusmin * 1000,
+    accuracyKm === undefined ? undefined : accuracyKm * 1000,
   );
 
   // Only stamp type+ipservice if at least one geo.* field actually landed.
