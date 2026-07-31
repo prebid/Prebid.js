@@ -151,7 +151,6 @@
             <input type="text" id="rk-input" size="40" placeholder="paste your 51Degrees resource key">
         </label>
         <button type="submit">Apply &amp; reload</button>
-        <button type="button" onclick="sessionStorage.removeItem('__51d_rtd_cache'); location.reload();">Clear RTD cache &amp; reload</button>
         <small> &mdash; or pass <code>?resourceKey=...</code> in the URL.</small>
     </form>
     <script>
@@ -187,7 +186,7 @@
             <li>The RTD module has no <code>resourceKey</code>: it detects the on-page integration automatically and consumes it instead of loading a second script</li>
             <li>Open DevTools Network and confirm the 51Degrees script is requested exactly once</li>
             <li>Observe the enriched ORTB shown below: <code>device</code> and <code>user.eids</code></li>
-            <li>Reload the page: the first auction is now enriched instantly from <code>sessionStorage['__51d_rtd_cache']</code></li>
+            <li>Reload the page: the auction is enriched from the on-page integration again</li>
         </ol>
     </div>
     <div id="enriched-51" style="display: none">

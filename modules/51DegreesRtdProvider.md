@@ -44,6 +44,11 @@ pbjs.setConfig({
 
 In this mode the module converts the integration's payload and enriches the ORTB2 request; `tdlUrl` is still honoured. The module sends nothing to the cloud itself, so the integration's script URL must carry the same parameters the module would send: `id.usage` (or the `tcstring` / `gppstring` consent strings) and any client-hint parameters. When an integration is present on the page, the module uses it even if `resourceKey` is configured.
 
+Two limitations follow from consuming the page integration directly:
+
+- A consent change during the session does not re-run the page integration. Its payload reflects the consent state it was loaded under; the new preference takes effect from the next page load.
+- If the integration never completes, the module never calls back and the auction proceeds only after the configured `auctionDelay`. The module does not fall back to loading its own script while `window.fod` is present, because two integrations on one page would conflict.
+
 Publisher requirements:
 
 - Load the 51Degrees script synchronously, before Prebid runs the auction.
@@ -167,7 +172,8 @@ pbjs.setConfig({
 | waitForIt             | Boolean | Should be `true` if there's an `auctionDelay` defined (mandatory)                                                                          | `false`            |
 | params                | Object  |                                                                                                                                            |                    |
 | params.resourceKey    | String  | Your 51Degrees Cloud Resource Key                                                                                                          |                    |
-| params.onPremiseJSUrl | String  | Direct URL to your self-hosted on-premise JS file (e.g. https://localhost/51Degrees.core.js)                                              |                    || params.tdlUrl         | String  | URL of your Terms Document Locator (TDL) — a machine-readable document declaring the data usage terms under which the identifier is shared, per the [data-labels proposal](https://github.com/jwrosewell/data-labels/tree/main) and its [OpenRTB extension](https://github.com/jwrosewell/data-labels/blob/main/OpenRTB.md). The URL is placed in the `ext.tdl` array of the `51d.es` eids entry. Omit if you do not publish a TDL; the module will log a warning and emit the eids entry without `ext.tdl`. |                    |
+| params.onPremiseJSUrl | String  | Direct URL to your self-hosted on-premise JS file (e.g. https://localhost/51Degrees.core.js)                                              |                    |
+| params.tdlUrl         | String  | URL of your Terms Document Locator (TDL): a machine-readable document declaring the data usage terms under which the identifier is shared, per the [data-labels proposal](https://github.com/jwrosewell/data-labels/tree/main) and its [OpenRTB extension](https://github.com/jwrosewell/data-labels/blob/main/OpenRTB.md). The URL is placed in the `ext.tdl` array of the `51d.es` eids entry. Omit if you do not publish a TDL; the module will log a warning and emit the eids entry without `ext.tdl`. |                    |
 
 > Note: if you use a third-party Prebid.js wrapper, there might be a chance that the UI will force you to input both `resourceKey` and `onPremiseJSUrl`. In this case, you can set a redundant parameter to a string equal to "0", which will be ignored by the module.
 

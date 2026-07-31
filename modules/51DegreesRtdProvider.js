@@ -287,7 +287,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   const deviceModel =
     device.hardwarenameprefix ||
     device.hardwaremodel || (
-      device.hardwarename && device.hardwarename.length
+      Array.isArray(device.hardwarename) && device.hardwarename.length
         ? device.hardwarename.join(',')
         : null
     );
@@ -437,7 +437,7 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
   const byMm = new Map();
   Object.keys(FODID_EID).forEach((prop) => {
     const value = fodid[prop];
-    if (!value) {
+    if (!value || typeof value !== 'string') {
       return;
     }
     const { mm, atype } = FODID_EID[prop];
@@ -530,11 +530,10 @@ export const resolveGpp = (userConsent) => {
 /**
  * Returns the on-page 51Degrees integration object, if present.
  *
- * @param {Window} [win] Window object (mainly for testing)
  * @returns {Object|null}
  */
-export const getPageFod = (win) => {
-  const fod = (win || window).fod;
+export const getPageFod = () => {
+  const fod = window.fod;
   return (fod && typeof fod.complete === 'function') ? fod : null;
 };
 
@@ -548,10 +547,8 @@ let ownFod = null;
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {string} [tdlUrl] TDL URL passed from module config
  * @param {Function} callback Called on completion
- * @returns {boolean} False when the payload could not be converted
  */
 const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
-  let enriched = true;
   try {
     logMessage('51Degrees raw data: ', data);
     const global = reqBidsConfigObj.ortb2Fragments.global;
@@ -565,11 +562,9 @@ const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
     mergeDeep(global, enrichment);
     logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
   } catch (e) {
-    enriched = false;
     logError(e);
   }
   callback();
-  return enriched;
 };
 
 /**
