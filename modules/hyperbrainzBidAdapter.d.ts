@@ -1,4 +1,4 @@
-import type { Ext } from '../src/types/ortb/common';
+import type { Ext } from "../src/types/ortb/common";
 
 export interface HyperbrainzBidderParams {
   /**
@@ -13,19 +13,19 @@ export interface HyperbrainzBidderParams {
    * Hard floor in USD. Takes precedence over the priceFloors module.
    */
   bidFloor?: number;
- /**
- * User ID to send as `user.id`. Used as a fallback when no ID is found
- * in local storage.
- */
+  /**
+   * User ID to send as `user.id`. Used as a fallback when no ID is found
+   * in local storage.
+   */
   userId?: string;
   /**
    * Custom bidder extension fields, passed through as `imp.ext`.
    */
   ext?: Ext;
   /**
-   * Per-placement bid endpoint override. Bids are grouped by endpoint, so bids using
-   * different values are sent as separate requests. Defaults to the endpoint from
-   * `config.hyperbrainz.endpoint`, then to the production endpoint.
+   * Per-placement bid endpoint override. Bids with different endpoint
+   * values are sent as separate requests. Defaults to
+   * `config.hyperbrainz.endpoint`, then the production endpoint.
    */
   endpoint?: string;
 }
@@ -38,13 +38,13 @@ export interface HyperbrainzConfig {
   endpoint?: string;
 }
 
-declare module '../src/adUnits' {
+declare module "../src/adUnits" {
   interface BidderParams {
     hyperbrainz: HyperbrainzBidderParams;
   }
 }
 
-declare module '../src/config' {
+declare module "../src/config" {
   interface Config {
     hyperbrainz?: HyperbrainzConfig;
   }
