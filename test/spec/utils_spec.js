@@ -842,35 +842,51 @@ describe('Utils', function () {
         });
       });
 
-      // Characters that can terminate a double-quoted HTML attribute value, or begin a new
-      // attribute or tag. Encoded tracker URLs are emitted into `<img src="...">` by
-      // createTrackPixelHtml, so none of these may survive unescaped anywhere in the URL.
+      // Characters that may not survive unescaped anywhere in the URL, since createTrackPixelHtml
+      // emits it into `<img src="...">`. The escape is asserted exactly rather than by absence of
+      // the character: dropping the character, or emitting a truncated escape, would also make it
+      // absent. A tab escaped as '%9' rather than '%09' reads the character that follows it as part
+      // of the escape, so `${A<tab>B}` would become the single byte 0x9B.
       const HTML_UNSAFE = [
-        ['a double quote', '"'],
-        ['a less-than sign', '<'],
-        ['a greater-than sign', '>'],
-        ['a space', ' '],
-        ['a tab', '\t'],
-        ['a line feed', '\n'],
-        ['a carriage return', '\r'],
-        ['a form feed', '\f'],
-        ['a vertical tab', '\v'],
-        ['a backtick', '`']
+        ['a double quote', '"', '%22'],
+        ['a less-than sign', '<', '%3C'],
+        ['a greater-than sign', '>', '%3E'],
+        ['a space', ' ', '%20'],
+        ['a tab', '\t', '%09'],
+        ['a line feed', '\n', '%0A'],
+        ['a carriage return', '\r', '%0D'],
+        ['a form feed', '\f', '%0C'],
+        ['a vertical tab', '\v', '%0B'],
+        ['a backtick', '`', '%60']
       ];
 
-      HTML_UNSAFE.forEach(([label, char]) => {
+      HTML_UNSAFE.forEach(([label, char, escape]) => {
         it(`escapes ${label} inside a macro`, () => {
-          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`)).to.not.contain(char);
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=\${A${escape}B}`);
         });
 
         it(`escapes ${label} outside a macro`, () => {
-          expect(encodeMacroURI(`https://www.example.com/?p=A${char}B`)).to.not.contain(char);
+          expect(encodeMacroURI(`https://www.example.com/?p=A${char}B`))
+            .to.eql(`https://www.example.com/?p=A${escape}B`);
+        });
+      });
+
+      // A brace expression whose name holds one of the characters encodeURI and encodeURIComponent
+      // escape differently is not recognised as a macro, so its braces stay encoded along with the
+      // rest of the URL. This is the set that keeps such expressions encoded exactly as they were
+      // before macro names were escaped at all.
+      ['#', '$', '&', '+', ',', '/', ':', ';', '=', '?', '@'].forEach((char) => {
+        it(`does not read \${A${char}B} as a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=$%7BA${char}B%7D`);
         });
       });
 
       // Non-ASCII whitespace cannot break out of an attribute value, so it is not escaped inside a
-      // macro name. Escaping it with a per-code-unit escape would be worse than leaving it alone:
-      // U+2000 would become '%2000', which decodes to a space followed by a literal '00'.
+      // macro name. Escaping it per code unit rather than per UTF-8 byte would be worse than leaving
+      // it alone: U+2000 would become '%2000', which decodes to a space followed by a literal '00',
+      // and U+00A0 would become '%A0', which does not decode at all.
       const NON_ASCII_WHITESPACE = [
         ['a no-break space', 0x00a0],
         ['an en quad', 0x2000],
@@ -886,11 +902,6 @@ describe('Utils', function () {
         it(`passes ${label} through unchanged inside a macro`, () => {
           expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
             .to.eql(`https://www.example.com/?p=\${A${char}B}`);
-        });
-
-        it(`does not corrupt ${label} inside a macro`, () => {
-          const url = `https://www.example.com/?p=\${A${char}B}`;
-          expect(decodeURIComponent(encodeMacroURI(url))).to.eql(url);
         });
       });
 

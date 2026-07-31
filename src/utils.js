@@ -471,12 +471,13 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
 
 // The encodeMacroURI implementation below was written by a bot (Claude Code).
 
-// A macro name bypasses encodeURI, since its braces are emitted literally. These characters must
-// therefore be percent-encoded explicitly: each can terminate a double-quoted HTML attribute value,
-// or begin a new attribute or tag, when an encoded URL is embedded in markup - see
-// createTrackPixelHtml. The whitespace is spelled out rather than written `\s`, which also matches
-// non-ASCII whitespace: none of that can break out of an attribute value, and it is left alone so
-// that a macro name is passed through byte-for-byte wherever escaping is not required.
+// A macro name bypasses encodeURI, since its braces are emitted literally, so it is escaped against
+// this set instead. Of these, only the double quote can close the attribute value that
+// createTrackPixelHtml writes; the rest are escaped because an encoded URL is not guaranteed to end
+// up in a double-quoted attribute - in an unquoted one, whitespace and the backtick end the value
+// and `<` and `>` delimit the tag - and because none of them belong in a URI in the first place.
+// The whitespace is spelled out rather than written `\s`, which also matches non-ASCII whitespace:
+// that is left alone, so a macro name is passed through byte-for-byte where escaping is not needed.
 const HTML_UNSAFE_CHARS = /["<>`\t\n\v\f\r ]/g;
 
 // Characters encodeURI and encodeURIComponent encode differently. A macro name containing any of
@@ -489,7 +490,7 @@ const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
  * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
  *
  * A macro's braces are emitted literally so that downstream substitution can find them. The macro
- * name is otherwise passed through unchanged, except for characters that are unsafe in HTML markup.
+ * name is otherwise passed through unchanged, except for the characters in HTML_UNSAFE_CHARS.
  * @param url
  * @return {string}
  */
