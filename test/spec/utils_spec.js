@@ -854,6 +854,7 @@ describe('Utils', function () {
         ['a line feed', '\n'],
         ['a carriage return', '\r'],
         ['a form feed', '\f'],
+        ['a vertical tab', '\v'],
         ['a backtick', '`']
       ];
 
@@ -864,6 +865,32 @@ describe('Utils', function () {
 
         it(`escapes ${label} outside a macro`, () => {
           expect(encodeMacroURI(`https://www.example.com/?p=A${char}B`)).to.not.contain(char);
+        });
+      });
+
+      // Non-ASCII whitespace cannot break out of an attribute value, so it is not escaped inside a
+      // macro name. Escaping it with a per-code-unit escape would be worse than leaving it alone:
+      // U+2000 would become '%2000', which decodes to a space followed by a literal '00'.
+      const NON_ASCII_WHITESPACE = [
+        ['a no-break space', 0x00a0],
+        ['an en quad', 0x2000],
+        ['a line separator', 0x2028],
+        ['a narrow no-break space', 0x202f],
+        ['an ideographic space', 0x3000],
+        ['a zero width no-break space', 0xfeff]
+      ];
+
+      NON_ASCII_WHITESPACE.forEach(([label, codePoint]) => {
+        const char = String.fromCharCode(codePoint);
+
+        it(`passes ${label} through unchanged inside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=\${A${char}B}`);
+        });
+
+        it(`does not corrupt ${label} inside a macro`, () => {
+          const url = `https://www.example.com/?p=\${A${char}B}`;
+          expect(decodeURIComponent(encodeMacroURI(url))).to.eql(url);
         });
       });
     });
