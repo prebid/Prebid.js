@@ -39,7 +39,7 @@ on:
         required: false
         default: ubuntu-latest
         type: string
-      install-safari:
+      configure-safari:
         description: Configure Safari
         type: boolean
         required: false
@@ -118,10 +118,8 @@ jobs:
         with:
           name: ${{ inputs.built-key }}
 
-      # Codex bot: use the Safari bundled with the runner instead of Homebrew's
-      # frequently stale Safari Technology Preview cask.
       - name: Configure Safari
-        if: ${{ inputs.install-safari }}
+        if: ${{ inputs.configure-safari }}
         run: |
           defaults write com.apple.Safari IncludeDevelopMenu YES
           defaults write com.apple.Safari AllowRemoteAutomation 1
