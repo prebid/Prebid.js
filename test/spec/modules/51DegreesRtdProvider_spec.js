@@ -915,54 +915,34 @@ describe('51DegreesRtdProvider', function() {
 
     before(function() {
       initialHeadInnerHTML = document.head.innerHTML;
-
-      const mockScript = document.createElement('script');
-      mockScript.innerHTML = `
-      window.fod = {complete: (_callback) => _callback(${JSON.stringify(fiftyOneDegreesData)})};
-      `;
-      document.head.appendChild(mockScript);
     });
-
-    let savedFod;
 
     beforeEach(function() {
       resetReqBidsConfigObj();
-      savedFod = window.fod;
+      delete window.fod;
+      // Loading the module's own script creates window.fod, so mirror that
+      // in the stub to make the script path behave like a real load.
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        window.fod = { complete: (cb) => cb(fiftyOneDegreesData) };
+        if (typeof callback === 'function') {
+          callback();
+        }
+        return document.createElement('script');
+      });
     });
 
     afterEach(function() {
-      if (savedFod === undefined) {
-        delete window.fod;
-      } else {
-        window.fod = savedFod;
-      }
+      delete window.fod;
     });
 
     after(function() {
       document.head.innerHTML = initialHeadInnerHTML;
     });
 
-    // The stubbed loader fires its callback after the client hints promise,
-    // so the suite fod mock must already be back by then: restore right
-    // after the synchronous part instead of waiting for afterEach.
-    const callWithoutPageFod = (fn) => {
-      const saved = window.fod;
-      delete window.fod;
-      try {
-        return fn();
-      } finally {
-        if (saved === undefined) {
-          delete window.fod;
-        } else {
-          window.fod = saved;
-        }
-      }
-    };
-
     it('calls the callback even if submodule fails (wrong config)', function() {
       const callback = sinon.spy();
       const moduleConfig = { params: {} };
-      callWithoutPageFod(() => getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}));
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(callback.calledOnce).to.be.true;
     });
 
@@ -970,7 +950,7 @@ describe('51DegreesRtdProvider', function() {
       const callback = sinon.spy();
       const moduleConfig = { params: { onPremiseJSUrl: 'http://localhost:12345/test/51Degrees.core.js' } };
 
-      callWithoutPageFod(() => getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}));
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
     });
@@ -979,7 +959,7 @@ describe('51DegreesRtdProvider', function() {
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
 
-      callWithoutPageFod(() => getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}));
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
     });
@@ -988,7 +968,7 @@ describe('51DegreesRtdProvider', function() {
       inject51DegreesMeta();
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
-      callWithoutPageFod(() => getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}));
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
     });
@@ -1047,7 +1027,6 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('forwards tcstring and gppstring from userConsent to the script URL', async function() {
-      loadExternalScriptStub.resetHistory();
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
       const userConsent = {
@@ -1055,7 +1034,7 @@ describe('51DegreesRtdProvider', function() {
         gpp: { gppString: 'GPPSTRINGVAL' },
       };
 
-      callWithoutPageFod(() => getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent));
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
       await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(loadExternalScriptStub.called).to.be.true;
@@ -1086,11 +1065,10 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('loads its own script when no integration is on the page', async function() {
-      loadExternalScriptStub.resetHistory();
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
 
-      callWithoutPageFod(() => getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}));
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(loadExternalScriptStub.called).to.be.true;
@@ -1098,15 +1076,6 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('reloads its own script when consent changes instead of consuming its own fod', async function() {
-      const ownScriptFod = { complete: (cb) => cb(fiftyOneDegreesData) };
-      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
-        window.fod = ownScriptFod;
-        if (typeof callback === 'function') {
-          callback();
-        }
-        return document.createElement('script');
-      });
-      delete window.fod;
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
 
