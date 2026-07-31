@@ -481,6 +481,8 @@ const HTML_UNSAFE_CHARS = /["<>`\t\n\v\f\r ]/g;
 
 // Characters encodeURI and encodeURIComponent encode differently. A macro name containing any of
 // them is not recognised as a macro, so its braces stay percent-encoded like the rest of the URL.
+// Matched with matchAll, which works on a copy; exec would advance lastIndex on this shared object
+// and carry the offset over into the next call.
 const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
 
 /**
@@ -492,11 +494,9 @@ const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
  * @return {string}
  */
 export function encodeMacroURI(url) {
-  const macro = new RegExp(MACRO);
   let encoded = '';
   let from = 0;
-  let match;
-  while ((match = macro.exec(url)) !== null) {
+  for (const match of url.matchAll(MACRO)) {
     encoded += encodeURI(url.slice(from, match.index)) +
       '${' + match[1].replace(HTML_UNSAFE_CHARS, encodeURIComponent) + '}';
     from = match.index + match[0].length;

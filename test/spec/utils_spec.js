@@ -893,6 +893,16 @@ describe('Utils', function () {
           expect(decodeURIComponent(encodeMacroURI(url))).to.eql(url);
         });
       });
+
+      // The macro pattern is shared between calls, so matching it in a way that advances its
+      // lastIndex would leave the offset behind when a call cannot finish - encodeURI throws on the
+      // lone surrogate below - and the next call would then start scanning mid-URL and miss its
+      // macro. The surrogate is placed before the macro so that the throw happens after the match.
+      it('does not leak match state between calls when a call throws', () => {
+        expect(() => encodeMacroURI('https://www.example.com/\uD800?p=${A}')).to.throw();
+        expect(encodeMacroURI('https://www.example.com/?p=${AUCTION_PRICE}'))
+          .to.eql('https://www.example.com/?p=${AUCTION_PRICE}');
+      });
     });
 
     describe('createTrackPixelHtml', () => {
