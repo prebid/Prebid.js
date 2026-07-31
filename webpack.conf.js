@@ -44,6 +44,9 @@ module.exports = {
   mode: 'production',
   devtool: 'source-map',
   target: isES5Mode ? ['web', 'es5'] : 'web',
+  experiments: {
+    typescript: false
+  },
   cache: {
     type: 'filesystem',
     cacheDirectory: path.resolve(__dirname, '.cache/webpack')

@@ -126,6 +126,11 @@ export const spec = {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
+    // `regs.coppa` is set to 1 by the core enrichment when the publisher sets the `coppa` config.
+    if (bidderRequest?.ortb2?.regs?.coppa) {
+      payload.coppa = 1;
+    }
+
     const userAgentClientHints = firstBidRequest?.ortb2?.device?.sua;
     if (userAgentClientHints) {
       payload.userAgentClientHints = userAgentClientHints;
