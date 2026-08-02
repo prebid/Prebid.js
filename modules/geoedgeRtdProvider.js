@@ -40,19 +40,19 @@ const FILE_NAME_CLIENT = 'grumi.js';
 const FILE_NAME_INPAGE = 'grumi-ip.js';
 export const getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_CLIENT}`;
 export const getInPageUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_INPAGE}`;
-const OUTSTREAM_API = 'grumiOutstreamApi'; // exposed by the client inside the preloaded frame
+const OUTSTREAM_API = 'grumiOutstreamApi'; // exposed by the client inside the client frame
 const OUTSTREAM_GATED = '__geOutstreamGated'; // stamped on a renderer we wrapped; the client reads it
 export const OUTSTREAM_GATE_TIMEOUT = 1500; // give up waiting for the client and render unprotected
 const VAST_HEAD_CHARS = 300; // how far into bid.ad to look for the <VAST> marker
 
 export let wrapper;
 let wrapperReady;
-let hasClientLoaded = false;
-let hasClientTimedOut = false;
+let clientLoaded = false;
+let clientTimedOut = false;
 let clientTimeoutId;
-/** @type {HTMLIFrameElement} the preloaded client frame; the video gate delegates into it */
+/** @type {HTMLIFrameElement} the client frame; the video gate delegates into it */
 let clientFrame;
-/** @type {Array} renders parked until the client script has executed; flushed by onClientLoad */
+/** @type {Array} renders parked until the client script has executed; flushed by markClientAsLoaded */
 let videoWaiters = [];
 
 /** @type {object} */
@@ -73,7 +73,7 @@ export function fetchWrapper(success) {
 }
 
 /**
- * sets the wrapper and calls preload client
+ * sets the wrapper response
  * @param {string} responseText
  */
 export function setWrapper(responseText) {
@@ -82,7 +82,7 @@ export function setWrapper(responseText) {
 }
 
 /**
- * builds the params object handed to the client inside the preloaded frame
+ * builds the params object handed to the client inside the frame
  * @param {string} key
  * @param {?boolean} outstream publisher opt-in to outstream video monitoring
  * @return {Object}
@@ -108,10 +108,10 @@ export function getInitialParams(key, outstream) {
 /**
  * the client script's onload. Releases any render parked waiting for it.
  */
-export function onClientLoad() {
-  hasClientLoaded = true;
+export function markClientAsLoaded() {
+  clientLoaded = true;
 
-  if (hasClientTimedOut) {
+  if (clientTimedOut) {
     return;
   }
 
@@ -120,7 +120,7 @@ export function onClientLoad() {
 }
 
 function onClientTimeout() {
-  hasClientTimedOut = true;
+  clientTimedOut = true;
 
   flushOutstreamPendingBids();
 }
@@ -156,11 +156,11 @@ function stopClientLoadTimer() {
 }
 
 /**
- * preloads the client
+ * loads the monitoring client in an invisible iframe
  * @param {string} key
  * @param {?boolean} outstream publisher opt-in to outstream video monitoring
  */
-export function preloadClient(key, outstream) {
+export function loadClientInIframe(key, outstream) {
   const iframe = createInvisibleIframe();
   const url = getClientUrl(key);
 
@@ -169,7 +169,7 @@ export function preloadClient(key, outstream) {
   iframe.contentWindow.grumi = getInitialParams(key, outstream);
   clientFrame = iframe;
 
-  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, onClientLoad, iframe.contentDocument);
+  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markClientAsLoaded, iframe.contentDocument);
   startClientLoadTimer();
 }
 
@@ -255,10 +255,10 @@ function isSupportedBidder(bidder, paramsBidders) {
 
 function shouldWrap(bid, params) {
   const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
-  const donePreload = params.wap ? hasClientLoaded : true;
+  const clientReady = params.wap ? clientLoaded : true;
   const isGPT = params.gpt;
 
-  return wrapperReady && supportedBidder && donePreload && !isGPT;
+  return wrapperReady && supportedBidder && clientReady && !isGPT;
 }
 
 function conditionallyWrap(bidResponse, config, userConsent) {
@@ -274,7 +274,7 @@ function conditionallyWrap(bidResponse, config, userConsent) {
 //
 // Video creatives are VAST, not HTML, so there is no markup to wrap. The bid's own renderer is
 // wrapped instead: on render, the client is asked whether the creative may run. If the client does
-// not load in time the creative renders anyway — a publisher's ad is never lost because monitoring
+// not load in time the creative renders anyway. A publisher's ad is never lost because monitoring
 // was unavailable.
 // ---------------------------------------------------------------------------
 
@@ -288,7 +288,7 @@ function getOutstreamAPI() {
 
 // Deliberately broad, because mediaType alone is not reliable: an adapter that omits it leaves a
 // video bid labeled 'banner', and instream/outstream context lives on the adUnit, not the response.
-// The bid.ad leg covers outstream, the one video context prebid does not require a VAST field for —
+// The bid.ad leg covers outstream, the one video context prebid does not require a VAST field for:
 // checkVideoBidSetup accepts it on hasRenderer alone, so the VAST may arrive in `ad`.
 // No vastUrl leg: handleVideoBidCaching backfills a bare vastUrl into vastXml before BID_RESPONSE,
 // so a correctly labeled video bid always has vastXml by the time this runs.
@@ -302,7 +302,7 @@ export function isVastBid(bid) {
 }
 
 function hasVastXmlInBidAd(bid) {
-  // head only — display bids reach this leg too, and their `ad` is a full creative
+  // head only, since display bids reach this leg too, and their `ad` is a full creative
   return typeof bid.ad === 'string' && /<vast/i.test(bid.ad.slice(0, VAST_HEAD_CHARS));
 }
 
@@ -356,7 +356,7 @@ function gateOutstreamRender(bid) {
     const self = this;
     const args = arguments;
 
-    if (hasClientLoaded) {
+    if (clientLoaded) {
       if (shouldRenderOutstream(bid)) {
         originalRender.apply(self, args);
       }
@@ -364,7 +364,7 @@ function gateOutstreamRender(bid) {
       return;
     }
 
-    if (hasClientTimedOut) {
+    if (clientTimedOut) {
       originalRender.apply(self, args);
 
       return;
@@ -385,8 +385,8 @@ function gateOutstreamRender(bid) {
  * flags latch true on the first init(). clientFrame and the load timer are left intact.
  */
 export function resetOutstreamGateStateForTesting() {
-  hasClientLoaded = false;
-  hasClientTimedOut = false;
+  clientLoaded = false;
+  clientTimedOut = false;
   videoWaiters = [];
 }
 
@@ -441,7 +441,7 @@ function init(config, userConsent) {
     setupInPage(params);
   } else {
     fetchWrapper(setWrapper);
-    preloadClient(params.key, params.outstream);
+    loadClientInIframe(params.key, params.outstream);
   }
   fireBillableEventsForApplicableBids(params);
 

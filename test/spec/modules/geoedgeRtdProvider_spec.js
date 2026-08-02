@@ -14,15 +14,15 @@ const {
   setWrapper,
   getMacros,
   WRAPPER_URL,
-  preloadClient,
+  loadClientInIframe,
   isVastBid,
-  onClientLoad,
+  markClientAsLoaded,
   resetOutstreamGateStateForTesting,
   OUTSTREAM_GATE_TIMEOUT
 } = geoedgeRtdModule;
 
 const key = '123123123';
-// The client publishes its gate on the preloaded frame's window under this name.
+// The client publishes its gate on the client frame's window under this name.
 const OUTSTREAM_API = 'grumiOutstreamApi';
 
 function makeConfig(gpt) {
@@ -76,10 +76,10 @@ describe('Geoedge RTD module', function () {
     });
     describe('init', function () {
       before(function () {
-        sinon.spy(geoedgeRtdModule, 'preloadClient');
+        sinon.spy(geoedgeRtdModule, 'loadClientInIframe');
       });
       after(function () {
-        geoedgeRtdModule.preloadClient.restore();
+        geoedgeRtdModule.loadClientInIframe.restore();
       });
       it('should return false when missing params or key', function () {
         const missingParams = geoedgeSubmodule.init({});
@@ -95,8 +95,8 @@ describe('Geoedge RTD module', function () {
         const isWrapperRequest = request && request.url && request.url && request.url === WRAPPER_URL;
         expect(isWrapperRequest).to.equal(true);
       });
-      it('should call preloadClient', function () {
-        expect(preloadClient.called);
+      it('should call loadClientInIframe', function () {
+        expect(loadClientInIframe.called);
       });
       it('should emit billable events with applicable winning bids', function (done) {
         let counter = 0;
@@ -119,9 +119,9 @@ describe('Geoedge RTD module', function () {
         expect(hasGrumiObj && window.grumi.key === key && window.grumi.fromPrebid).to.equal(true);
       });
     });
-    describe('preloadClient', function () {
+    describe('loadClientInIframe', function () {
       let iframe;
-      preloadClient(key);
+      loadClientInIframe(key);
       const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
       it('should create an invisible iframe and insert it to the DOM', function () {
         iframe = document.getElementById('grumiFrame');
@@ -131,18 +131,18 @@ describe('Geoedge RTD module', function () {
         const grumi = iframe.contentWindow.grumi;
         expect(grumi.key).to.equal(key);
       });
-      it('should preload the client into the iframe', function () {
+      it('should load the client into the iframe', function () {
         const isClientUrl = arg => arg === getClientUrl(key);
         expect(loadExternalScriptCall.calledWithMatch(isClientUrl)).to.equal(true);
       });
       it('should carry the publisher outstream opt-in into the frame', function () {
-        preloadClient(key, true);
+        loadClientInIframe(key, true);
         // insertElement prepends into <head>, so the newest frame is the FIRST match, not the last
         const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
         expect(grumi.outstream).to.equal(true);
       });
       it('should hand the frame a reference to this prebid instance', function () {
-        preloadClient(key);
+        loadClientInIframe(key);
         const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
         expect(grumi.pbjs).to.equal(getGlobal());
       });
@@ -204,7 +204,7 @@ describe('Geoedge RTD module', function () {
         expect(isVastBid({ ad: '<vast version="3.0"></vast>' })).to.equal(true);
         expect(isVastBid({ ad: '<?xml version="1.0"?><VAST></VAST>' })).to.equal(true);
       });
-      it('should reject a vastUrl-only bid — a correctly labeled video bid always arrives with vastXml backfilled', function () {
+      it('should reject a vastUrl-only bid, since a correctly labeled video bid always arrives with vastXml backfilled', function () {
         expect(isVastBid({ vastUrl: 'https://example.com/vast.xml' })).to.equal(false);
       });
       it('should not scan past the head of bid.ad for a VAST marker', function () {
@@ -259,7 +259,7 @@ describe('Geoedge RTD module', function () {
       beforeEach(function () {
         document.querySelectorAll('#grumiFrame').forEach(el => el.remove());
         // establishes clientFrame; the adloader stub fires the load callback synchronously
-        preloadClient(key, true);
+        loadClientInIframe(key, true);
         frame = document.querySelector('#grumiFrame');
         delete frame.contentWindow[OUTSTREAM_API];
         resetOutstreamGateStateForTesting();
@@ -284,7 +284,7 @@ describe('Geoedge RTD module', function () {
           gate(bid);
           expect(isWrapped(bid, originalRender)).to.equal(false);
         });
-        it('should not wrap a bid carrying a safeRenderer — prebid never calls bid.renderer for those', function () {
+        it('should not wrap a bid carrying a safeRenderer, since prebid never calls bid.renderer for those', function () {
           const bid = mockVideoBid({ safeRenderer: true });
           originalRender = bid.renderer.render;
           gate(bid);
@@ -325,7 +325,7 @@ describe('Geoedge RTD module', function () {
           const bid = mockVideoBid();
           originalRender = bid.renderer.render;
           gate(bid);
-          onClientLoad();
+          markClientAsLoaded();
           publishGate(true);
           bid.renderer.render();
           expect(originalRender.calledOnce).to.equal(true);
@@ -334,7 +334,7 @@ describe('Geoedge RTD module', function () {
           const bid = mockVideoBid();
           originalRender = bid.renderer.render;
           gate(bid);
-          onClientLoad();
+          markClientAsLoaded();
           publishGate(false);
           bid.renderer.render();
           expect(originalRender.called).to.equal(false);
@@ -343,7 +343,7 @@ describe('Geoedge RTD module', function () {
           const bid = mockVideoBid();
           originalRender = bid.renderer.render;
           gate(bid);
-          onClientLoad();
+          markClientAsLoaded();
           bid.renderer.render();
           expect(originalRender.calledOnce).to.equal(true);
         });
@@ -351,7 +351,7 @@ describe('Geoedge RTD module', function () {
           const bid = mockVideoBid();
           originalRender = bid.renderer.render;
           gate(bid);
-          onClientLoad();
+          markClientAsLoaded();
           publishGate(true);
           bid.renderer.render('a', 'b');
           expect(originalRender.calledOn(bid.renderer)).to.equal(true);
@@ -373,7 +373,7 @@ describe('Geoedge RTD module', function () {
           gate(bid);
           bid.renderer.render();
           publishGate(true);
-          onClientLoad();
+          markClientAsLoaded();
           expect(originalRender.calledOnce).to.equal(true);
         });
         it('should drop a parked render when the loaded client blocks it', function () {
@@ -382,7 +382,7 @@ describe('Geoedge RTD module', function () {
           gate(bid);
           bid.renderer.render();
           publishGate(false);
-          onClientLoad();
+          markClientAsLoaded();
           expect(originalRender.called).to.equal(false);
         });
         it('should release each parked render exactly once', function () {
@@ -395,8 +395,8 @@ describe('Geoedge RTD module', function () {
           first.renderer.render();
           second.renderer.render();
           publishGate(true);
-          onClientLoad();
-          onClientLoad();
+          markClientAsLoaded();
+          markClientAsLoaded();
           expect(firstRender.calledOnce).to.equal(true);
           expect(secondRender.calledOnce).to.equal(true);
         });
@@ -408,7 +408,7 @@ describe('Geoedge RTD module', function () {
         beforeEach(function () {
           clock = sinon.useFakeTimers();
           // re-arm the deadline against the fake clock
-          preloadClient(key, true);
+          loadClientInIframe(key, true);
           frame = document.querySelector('#grumiFrame');
           delete frame.contentWindow[OUTSTREAM_API];
           resetOutstreamGateStateForTesting();
