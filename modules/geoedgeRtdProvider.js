@@ -97,10 +97,12 @@ export function getInitialParams(key, outstream) {
     pimp: PV_ID,
     fsRan: true,
     frameApi: true,
-    outstream, // the publisher's outstream opt-in, carried into the frame as session.outstream
-    // a direct handle on this instance, so the client need not resolve the global by name
-    pbjs: getGlobal()
+    outstream
   };
+
+  if (outstream) {
+    params.pbjs = getGlobal();
+  }
 
   return params;
 }

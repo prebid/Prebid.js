@@ -141,10 +141,15 @@ describe('Geoedge RTD module', function () {
         const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
         expect(grumi.outstream).to.equal(true);
       });
-      it('should hand the frame a reference to this prebid instance', function () {
-        loadClientInIframe(key);
+      it('should hand the frame a reference to this prebid instance when outstream is on', function () {
+        loadClientInIframe(key, true);
         const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
         expect(grumi.pbjs).to.equal(getGlobal());
+      });
+      it('should not put the prebid instance in the frame without the outstream opt-in', function () {
+        loadClientInIframe(key);
+        const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
+        expect(grumi.pbjs).to.equal(undefined);
       });
     });
     describe('setWrapper', function () {
