@@ -122,13 +122,15 @@ describe('cross-domain creative', () => {
     });
   });
 
-  it('generates request message with adId and clickUrl', () => {
-    renderAd({ adId: '123', clickUrl: 'https://click-url.com', pubUrl: ORIGIN });
+  it('passes any extra arguments as options', () => {
+    renderAd({ adId: '123', clickUrl: 'https://click-url.com', viewUrl: 'https://view-url.com', pubUrl: ORIGIN, extra: 'arg' });
     expect(messages[0].payload).to.eql({
       message: MESSAGE_REQUEST,
       adId: '123',
       options: {
-        clickUrl: 'https://click-url.com'
+        clickUrl: 'https://click-url.com',
+        viewUrl: 'https://view-url.com',
+        extra: 'arg'
       }
     });
   });

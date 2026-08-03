@@ -356,12 +356,17 @@ export const intentIqIdSubmodule = {
     const cmpData = getCmpData();
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
-    actualABGroup = defineABTestingGroup(configParams, partnerData?.terminationCause);
-    if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
     const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
     let newUser = false;
+
+    if (!isBlacklisted) {
+      actualABGroup = defineABTestingGroup(configParams, partnerData?.terminationCause);
+      if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);
+    } else {
+      actualABGroup = undefined;
+    }
 
     setGamReporting(gamObjectReference, gamParameterName, actualABGroup, isBlacklisted);
 
