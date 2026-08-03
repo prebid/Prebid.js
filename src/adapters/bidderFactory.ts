@@ -41,7 +41,7 @@ import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
 import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
 import type { AddBidResponse } from "../auction.ts";
 import type { MediaType } from "../mediaTypes.ts";
-import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentDataForKey } from "../consentHandler.ts";
+import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, coppaDataHandler, type ConsentDataForKey } from "../consentHandler.ts";
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -155,7 +155,8 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
     responses: ServerResponse[],
     gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
     uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
-    gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>
+    gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>,
+    coppa: boolean
   ) => ({ type: SyncType, url: string })[];
   alwaysHasCapacity?: boolean;
 }
@@ -587,7 +588,7 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
     let syncs = spec.getUserSyncs({
       iframeEnabled: userSync.canBidderRegisterSync('iframe', spec.code),
       pixelEnabled: userSync.canBidderRegisterSync('image', spec.code),
-    }, responses, gdprConsent, uspConsent, gppConsent);
+    }, responses, gdprConsent, uspConsent, gppConsent, coppaDataHandler.getCoppa());
     if (syncs) {
       if (!Array.isArray(syncs)) {
         syncs = [syncs];
