@@ -454,7 +454,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     // If the adapter code fails, no bids should be added. After all the bids have been added,
     // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
     const onSuccess = wrapCallback(function(response, responseObj) {
-      networkDone();
+      networkDone?.();
       try {
         response = JSON.parse(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -502,14 +502,14 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     });
 
     const onFailure = wrapCallback(function (errorMessage, error) {
-      networkDone();
+      networkDone?.();
       onError(errorMessage, error);
       requestDone();
     });
 
     onRequest(request);
 
-    const networkDone = requestMetrics.startTiming('net');
+    let networkDone;
 
     const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
 
@@ -517,14 +517,24 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       return Object.assign(defaults, request.options);
     }
 
+    // start network timer here so we do not include the compression time in `net` metric
+    const doAjax = (url: string, payload: string | undefined, options: AjaxOptions) => {
+      networkDone = requestMetrics.startTiming('net');
+      ajax(
+        url,
+        {
+          success: onSuccess,
+          error: onFailure
+        },
+        payload,
+        options
+      );
+    };
+
     switch (request.method) {
       case 'GET':
-        ajax(
+        doAjax(
           `${request.url}${formatGetParameters(request.data)}`,
-          {
-            success: onSuccess,
-            error: onFailure
-          },
           undefined,
           getOptions({
             method: 'GET',
@@ -535,12 +545,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       case 'POST':
         const enableGZipCompression = request.options?.endpointCompression;
         const callAjax = ({ url, payload }) => {
-          ajax(
+          doAjax(
             url,
-            {
-              success: onSuccess,
-              error: onFailure
-            },
             payload,
             getOptions({
               method: 'POST',
