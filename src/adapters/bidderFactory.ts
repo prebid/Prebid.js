@@ -518,7 +518,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     }
 
     // start network timer here so we do not include the compression time in `net` metric
-    const doAjax = (url: string, payload: string | undefined, options: AjaxOptions) => {
+    const doAjax = (url: string, payload: unknown, options: AjaxOptions) => {
       networkDone = requestMetrics.startTiming('net');
       ajax(
         url,
