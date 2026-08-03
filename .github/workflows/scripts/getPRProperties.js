@@ -37,7 +37,7 @@ const getLibraryRefs = (() => {
       const libraryOwner = libraryName.replace(/Utils$/, '');
       Object.entries(deps)
         .filter(([name, deps]) => deps.includes(`${libraryName}.js`))
-        // This bot-maintained rule groups adapters belonging to the library owner.
+        // This should reduce but not eliminate false positive core labels by relying on an unenforced naming convention
         .forEach(([name]) => {
           const vendor = extractVendor(name);
           refs[libraryName].add(libraryOwner && vendor.startsWith(libraryOwner) ? libraryOwner : vendor);
