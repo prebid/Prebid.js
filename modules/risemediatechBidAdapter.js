@@ -4,7 +4,7 @@ import {
   createConverter,
   createBuildRequests,
   interpretResponse as interpretResponseUtil,
-} from '../libraries/adsmartxUtils/bidderUtils.js';
+} from '../libraries/agenticxUtils/bidderUtils.js';
 import { logWarn } from '../src/utils.js';
 
 const BIDDER_CODE = 'risemediatech';
