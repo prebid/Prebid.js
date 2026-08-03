@@ -1,5 +1,3 @@
-import type { Size } from '../src/types/common.d.ts';
-
 export interface RubiconVideoParams {
   playerWidth?: number;
   playerHeight?: number;
@@ -21,7 +19,8 @@ export interface RubiconBidderParams {
   visitor?: Record<string, unknown>;
   inventory?: Record<string, unknown>;
   video?: RubiconVideoParams;
-  sizes?: Size[];
+  /** Rubicon size IDs, such as 15 for 300x250 or 57 for 970x250. */
+  sizes?: number[];
   playerWidth?: number;
   playerHeight?: number;
   bidonmultiformat?: boolean;
