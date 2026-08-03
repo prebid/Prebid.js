@@ -514,14 +514,8 @@ describe('PStudioAdapter', function () {
       sandbox.stub(storage, 'getDataFromLocalStorage').returns(undefined);
       const result = spec.getUserSyncs(syncOptions, {}, {}, {});
 
-      expect(result[0]).deep.equal({
-        type: 'image',
-        url: `https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=undefined&dsp=ttd`,
-      });
-      expect(result[1]).deep.equal({
-        type: 'image',
-        url: `https://dsp.myads.telkomsel.com/api/v1/pixel?uid=undefined`,
-      });
+      expect(result[0]).deep.equal(undefined);
+      expect(result[1]).deep.equal(undefined);
     });
 
     it('should not return syncs if syncOptions is not passed', function () {

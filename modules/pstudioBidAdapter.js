@@ -162,6 +162,8 @@ export const spec = {
     if (!syncOptions) return syncs;
 
     const userId = tmaGetIdCached();
+
+    if (!userId) return syncs;
     USER_SYNCS.forEach((userSync) => {
       if (userSync.type === 'img') {
         syncs.push({
