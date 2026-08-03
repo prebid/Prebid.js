@@ -13,7 +13,7 @@ export interface RubiconBidderParams {
   zoneId: number | string;
   floor?: number | string;
   userId?: string;
-  latLong?: [number, number];
+  latLong?: [number | string, number | string];
   position?: 'atf' | 'btf';
   keywords?: string | string[];
   visitor?: Record<string, unknown>;

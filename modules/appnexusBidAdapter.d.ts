@@ -62,5 +62,17 @@ export interface AppnexusBidderParams {
 declare module '../src/adUnits' {
   interface BidderParams {
     appnexus: AppnexusBidderParams;
+    appnexusAst: AppnexusBidderParams;
+    pagescience: AppnexusBidderParams;
+    gourmetads: AppnexusBidderParams;
+    newdream: AppnexusBidderParams;
+    matomy: AppnexusBidderParams;
+    featureforward: AppnexusBidderParams;
+    adasta: AppnexusBidderParams;
+    beintoo: AppnexusBidderParams;
+    projectagora: AppnexusBidderParams;
+    stailamedia: AppnexusBidderParams;
+    uol: AppnexusBidderParams;
+    adzymic: AppnexusBidderParams;
   }
 }
