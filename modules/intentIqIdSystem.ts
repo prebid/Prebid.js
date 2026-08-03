@@ -8,41 +8,166 @@
 import { isNumber, isPlainObject, isStr, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js';
-import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
-import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js';
-import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.js';
-import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.js';
+import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.ts';
+import { appendSPData } from '../libraries/intentIqUtils/urlUtils.ts';
+import { isCHSupported } from '../libraries/intentIqUtils/chUtils.ts';
+import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.ts';
+import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.ts';
 import {
+  AllowedStorageType,
   defineStorageType,
   readData,
   removeDataByKey,
   storeData,
   tryParse
-} from '../libraries/intentIqUtils/storageUtils.js';
+} from '../libraries/intentIqUtils/storageUtils.ts';
 import {
   CLIENT_HINTS_KEY,
   FIRST_PARTY_KEY,
   GVLID,
   VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
   HOURS_72, CH_KEYS, DEFAULT_PERCENTAGE, WITH_IIQ
-} from '../libraries/intentIqConstants/intentIqConstants.js';
-import { SYNC_KEY } from '../libraries/intentIqUtils/getSyncKey.js';
-import { getIiqServerAddress, iiqPixelServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
-import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
-import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
-import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
+} from '../libraries/intentIqConstants/intentIqConstants.ts';
+import { SYNC_KEY } from '../libraries/intentIqUtils/getSyncKey.ts';
+import { getIiqServerAddress, iiqPixelServerAddress } from '../libraries/intentIqUtils/intentIqConfig.ts';
+import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.ts';
+import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.ts';
+import { defineABTestingGroup, IntentIqABConfigSource } from '../libraries/intentIqUtils/defineABTestingGroupUtils.ts';
 import { setKeyValueOn } from '../libraries/gptUtils/gptUtils.js';
 
-/**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
- */
+export type IntentIqIdSystemModuleName = 'intentIqId';
 
-const MODULE_NAME = 'intentIqId';
+export interface IntentIqIdSystemParams {
+  /**
+   * Partner ID assigned by IntentIQ. Required.
+   */
+  partner: number;
 
-const encoderCH = {
+  /**
+   * Invoked when the identity lookup completes or times out.
+   * Receives the resolved EID payload or an empty string when the browser is
+   * blacklisted or the user is opted out.
+   */
+  callback?: (data: { eids: unknown[] } | string) => void;
+
+  /**
+   * Milliseconds to wait for the server response before firing `callback`
+   * with whatever data is currently available. Defaults to 500 ms.
+   */
+  timeoutInMillis?: number;
+
+  /**
+   * Comma-separated list of browser names (lowercase) that should be
+   * excluded from identity resolution, e.g. `'chrome,safari'`.
+   */
+  browserBlackList?: string;
+
+  /**
+   * Publisher domain name, used to build the referrer URL parameter.
+   */
+  domainName?: string;
+
+  /**
+   * When `true`, first-party data is stored under a partner-specific key so
+   * multiple IntentIQ configurations on the same page do not collide.
+   */
+  siloEnabled?: boolean;
+
+  /**
+   * Called whenever the resolved A/B group changes.
+   * Receives the new group (`'A'` | `'B'`) and the server termination-cause
+   * code when available.
+   */
+  groupChanged?: (group: 'A' | 'B', terminationCause?: number) => void;
+
+  /**
+   * Reference to the GAM `googletag.pubads()` object for automatic targeting
+   * key injection.
+   */
+  gamObjectReference?: Record<string, unknown>;
+
+  /**
+   * GAM targeting key used to pass the A/B group. Defaults to
+   * `'intent_iq_group'`.
+   */
+  gamParameterName?: string;
+
+  /**
+   * Percentage of users placed in the WITH_IIQ (group A) cohort.
+   * Accepts 0–100; values outside that range are clamped. Defaults to 95.
+   * Only used when `ABTestingConfigurationSource` is `'percentage'` or
+   * `'IIQServer'` (no prior server termination cause).
+   */
+  abPercentage?: number;
+
+  /**
+   * Determines how the A/B test group is assigned. Defaults to `'IIQServer'`.
+   */
+  ABTestingConfigurationSource?: IntentIqABConfigSource;
+
+  /**
+   * Explicit A/B group override. Only used when
+   * `ABTestingConfigurationSource` is `'group'`.
+   */
+  group?: 'A' | 'B';
+
+  /**
+   * Human-readable metadata tag describing the integration source
+   * (e.g. `'prebid'`, `'amp'`). Translated to a numeric code internally.
+   */
+  sourceMetaData?: string;
+
+  /**
+   * Numeric metadata code for the integration source when a specific
+   * override is required.
+   */
+  sourceMetaDataExternal?: number;
+
+  /**
+   * Freeform key-value pairs appended to every pixel request.
+   */
+  additionalParams?: Record<string, string | number | boolean>;
+
+  /**
+   * Timeout in milliseconds for fetching Client Hints before falling back
+   * to an empty string. Defaults to 10 ms.
+   */
+  chTimeout?: number;
+
+  /**
+   * Partner-supplied first-party client identifier.
+   */
+  partnerClientId?: string;
+
+  /**
+   * Type code for `partnerClientId`. Must be a positive integer recognised
+   * by the IntentIQ server.
+   */
+  partnerClientIdType?: number;
+
+  /**
+   * Partner-supplied Advertiser ID
+   */
+  pai?: string;
+}
+
+declare module './userId/spec' {
+  interface UserId {
+    intentIqId: string;
+  }
+
+  interface ProvidersToId {
+    intentIqId: 'intentIqId';
+  }
+
+  interface ProviderParams {
+    intentIqId: IntentIqIdSystemParams;
+  }
+}
+
+const MODULE_NAME = 'intentIqId' as const;
+
+const encoderCH: Record<string, number> = {
   brands: 0,
   mobile: 1,
   platform: 2,
@@ -53,22 +178,22 @@ const encoderCH = {
   wow64: 7,
   fullVersionList: 8
 };
-let sourceMetaData;
-let sourceMetaDataExternal;
+let sourceMetaData: number | string | undefined;
+let sourceMetaDataExternal: number | undefined;
 let globalName = '';
 
 let FIRST_PARTY_KEY_FINAL = FIRST_PARTY_KEY;
-let PARTNER_DATA_KEY;
+let PARTNER_DATA_KEY: string = '';
 let callCount = 0;
 let failCount = 0;
 let noDataCount = 0;
 
-export let firstPartyData;
-let partnerData;
-let clientHints;
-let actualABGroup;
+export let firstPartyData: any;
+let partnerData: any;
+let clientHints: string | null | undefined;
+let actualABGroup: IntentIqIdSystemParams['group'] | undefined;
 
-function getEffectiveAbPercentage(abPercentage) {
+function getEffectiveAbPercentage(abPercentage: unknown): number {
   const n = Number(abPercentage);
   if (!Number.isFinite(n)) return DEFAULT_PERCENTAGE;
   return Math.max(0, Math.min(100, n));
@@ -78,9 +203,9 @@ function getEffectiveAbPercentage(abPercentage) {
  * Generate standard UUID string
  * @return {string}
  */
-function generateGUID() {
+function generateGUID(): string {
   let d = new Date().getTime();
-  const guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+  const guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c: string) {
     const r = (d + Math.random() * 16) % 16 | 0;
     d = Math.floor(d / 16);
     return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
@@ -88,24 +213,24 @@ function generateGUID() {
   return guid;
 }
 
-function addUniquenessToUrl(url) {
+function addUniquenessToUrl(url: string): string {
   url += '&tsrnd=' + Math.floor(Math.random() * 1000) + '_' + new Date().getTime();
   return url;
 }
 
-function appendFirstPartyData(url, firstPartyData, partnerData) {
+function appendFirstPartyData(url: string, firstPartyData: any, partnerData: any): string {
   url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
   url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
   url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
   return url;
 }
 
-function verifyIdType(value) {
+function verifyIdType(value: number): number {
   if (value === 0 || value === 1 || value === 3 || value === 4) return value;
   return -1;
 }
 
-function appendPartnersFirstParty(url, configParams) {
+function appendPartnersFirstParty(url: string, configParams: any): string {
   const partnerClientId = typeof configParams.partnerClientId === 'string' ? encodeURIComponent(configParams.partnerClientId) : '';
   const partnerClientIdType = typeof configParams.partnerClientIdType === 'number' ? verifyIdType(configParams.partnerClientIdType) : -1;
 
@@ -117,7 +242,7 @@ function appendPartnersFirstParty(url, configParams) {
   return url;
 }
 
-function appendCMPData(url, cmpData) {
+function appendCMPData(url: string, cmpData: any): string {
   url += isValidValue(cmpData.uspString) ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
   url += isValidValue(cmpData.gppString) ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
   if (cmpData.gdprApplies) {
@@ -130,7 +255,7 @@ function appendCMPData(url, cmpData) {
   return url;
 }
 
-function appendCounters(url) {
+function appendCounters(url: string): string {
   url += '&jaesc=' + encodeURIComponent(callCount);
   url += '&jafc=' + encodeURIComponent(failCount);
   url += '&jaensc=' + encodeURIComponent(noDataCount);
@@ -140,7 +265,7 @@ function appendCounters(url) {
 /**
  * Translate and validate sourceMetaData
  */
-export function translateMetadata(data) {
+export function translateMetadata(data: string): number {
   try {
     const d = data.split('.');
     return (
@@ -155,23 +280,23 @@ export function translateMetadata(data) {
 /**
  * Add sourceMetaData to URL if valid
  */
-function addMetaData(url, data) {
+function addMetaData(url: string, data: unknown): string {
   if (typeof data !== 'number' || isNaN(data)) {
     return url;
   }
   return url + '&fbp=' + data;
 }
 
-export function initializeGlobalIIQ(partnerId) {
-  if (!globalName || !window[globalName]) {
+export function initializeGlobalIIQ(partnerId: number): boolean {
+  if (!globalName || !(window as any)[globalName]) {
     globalName = `iiq_identity_${partnerId}`;
-    window[globalName] = {};
+    (window as any)[globalName] = {};
     return true;
   }
   return false;
 }
 
-export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
+export function createPixelUrl(firstPartyData: any, clientHints: string, configParams: any, partnerData: any, cmpData: any): string {
   const browser = detectBrowser();
 
   let url = iiqPixelServerAddress(configParams);
@@ -197,8 +322,8 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   return url;
 }
 
-function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) {
-  const lastSyncDate = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
+function sendSyncRequest(allowedStorage: any, url: string, partner: number, firstPartyData: any, newUser: boolean): void {
+  const lastSyncDate: any = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
   const lastSyncElapsedTime = Date.now() - lastSyncDate;
 
   if (firstPartyData.isOptedOut) {
@@ -225,7 +350,7 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) 
  * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
  * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
  */
-export function setGamReporting(gamObjectReference, gamParameterName, userGroup, isBlacklisted = false) {
+export function setGamReporting(gamObjectReference: any, gamParameterName: string, userGroup: any, isBlacklisted = false): void {
   if (isBlacklisted) return;
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
     setKeyValueOn(gamParameterName, userGroup, gamObjectReference);
@@ -237,13 +362,13 @@ export function setGamReporting(gamObjectReference, gamParameterName, userGroup,
  * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
  */
-export function handleClientHints(clientHints) {
-  const chParams = {};
+export function handleClientHints(clientHints: any): string {
+  const chParams: Record<string, string> = {};
   for (const key in clientHints) {
     if (clientHints.hasOwnProperty(key) && clientHints[key] !== '') {
       if (['brands', 'fullVersionList'].includes(key)) {
         let handledParam = '';
-        clientHints[key].forEach((element, index) => {
+        clientHints[key].forEach((element: any, index: number) => {
           const isNotLast = index < clientHints[key].length - 1;
           handledParam += `"${element.brand}";v="${element.version}"${isNotLast ? ', ' : ''}`;
         });
@@ -258,13 +383,13 @@ export function handleClientHints(clientHints) {
   return Object.keys(chParams).length ? JSON.stringify(chParams) : '';
 }
 
-export function isCMPStringTheSame(fpData, cmpData) {
-  return ['gdprString', 'gppString', 'uspString'].every(field =>
+export function isCMPStringTheSame(fpData: any, cmpData: any): boolean {
+  return ['gdprString', 'gppString', 'uspString'].every((field: string) =>
     areCmpValuesEqual(fpData[field], cmpData[field])
   );
 }
 
-function updateCountersAndStore(runtimeEids, allowedStorage, partnerData) {
+function updateCountersAndStore(runtimeEids: any, allowedStorage: any, partnerData: any): void {
   if (!runtimeEids?.eids?.length) {
     noDataCount++;
   } else {
@@ -273,21 +398,20 @@ function updateCountersAndStore(runtimeEids, allowedStorage, partnerData) {
   storeCounters(allowedStorage, partnerData);
 }
 
-function clearCountersAndStore(allowedStorage, partnerData) {
+function clearCountersAndStore(allowedStorage: any, partnerData: any): void {
   callCount = 0;
   failCount = 0;
   noDataCount = 0;
   storeCounters(allowedStorage, partnerData);
 }
 
-function storeCounters(allowedStorage, partnerData) {
+function storeCounters(allowedStorage: any, partnerData: any): void {
   partnerData.callCount = callCount;
   partnerData.failCount = failCount;
   partnerData.noDataCounter = noDataCount;
   storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
 }
 
-/** @type {Submodule} */
 export const intentIqIdSubmodule = {
   /**
    * used to link submodule with config
@@ -301,20 +425,14 @@ export const intentIqIdSubmodule = {
    * @param {{string}} value
    * @returns {{intentIqId: {string}}|undefined}
    */
-  decode(value) {
+  decode(value: string) {
     return value && INVALID_ID !== value ? { 'intentIqId': value } : undefined;
   },
 
-  /**
-   * performs action to obtain id and return a value in the callback's response argument
-   * @function
-   * @param {SubmoduleConfig} [config]
-   * @returns {IdResponse|undefined}
-   */
   getId(config) {
-    const configParams = (config?.params) || {};
+    const configParams: IntentIqIdSystemParams = (config?.params ?? {}) as unknown as IntentIqIdSystemParams;
 
-    const firePartnerCallback = () => {
+    const firePartnerCallback = (): void => {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
@@ -333,33 +451,32 @@ export const intentIqIdSubmodule = {
 
     initializeGlobalIIQ(configParams.partner);
 
-    let decryptedData, callbackTimeoutID;
+    let decryptedData: any, callbackTimeoutID: ReturnType<typeof setTimeout> | undefined;
     let callbackFired = false;
-    let runtimeEids = { eids: [] };
+    let runtimeEids: any = { eids: [] };
 
     const gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
     const gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
     const groupChanged = typeof configParams.groupChanged === 'function' ? configParams.groupChanged : undefined;
     const siloEnabled = typeof configParams.siloEnabled === 'boolean' ? configParams.siloEnabled : false;
-    sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData) : '';
+    sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData as string) : '';
     sourceMetaDataExternal = isNumber(configParams.sourceMetaDataExternal) ? configParams.sourceMetaDataExternal : undefined;
     const additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
     const chTimeout = Number(configParams?.chTimeout) >= 0 ? Number(configParams.chTimeout) : 10;
     PARTNER_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
-    const allowedStorage = defineStorageType(config.enabledStorageTypes);
-    partnerData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage)) || {};
+    const allowedStorage: AllowedStorageType[] = defineStorageType((config as any).enabledStorageTypes);
+    partnerData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage) as string) || {};
 
     let rrttStrtTime = 0;
     let shouldCallServer = false;
     FIRST_PARTY_KEY_FINAL = `${FIRST_PARTY_KEY}${siloEnabled ? '_p_' + configParams.partner : ''}`;
     const cmpData = getCmpData();
     const gdprDetected = cmpData.gdprString;
-    firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
+    firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage) as string);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
     const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
-    let newUser = false;
 
     if (!isBlacklisted) {
       actualABGroup = defineABTestingGroup(configParams, partnerData?.terminationCause);
@@ -367,6 +484,7 @@ export const intentIqIdSubmodule = {
     } else {
       actualABGroup = undefined;
     }
+    let newUser = false;
 
     setGamReporting(gamObjectReference, gamParameterName, actualABGroup, isBlacklisted);
 
@@ -400,11 +518,11 @@ export const intentIqIdSubmodule = {
     // Read client hints from storage
     clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
     const chSupported = isCHSupported();
-    let chPromise = null;
+    let chPromise: Promise<string> | null = null;
 
-    function fetchAndHandleCH() {
-      return navigator.userAgentData.getHighEntropyValues(CH_KEYS)
-        .then(raw => {
+    function fetchAndHandleCH(): Promise<string> {
+      return (navigator as any).userAgentData.getHighEntropyValues(CH_KEYS)
+        .then((raw: any) => {
           const nextCH = handleClientHints(raw) || '';
           const prevCH = clientHints || '';
           if (nextCH !== prevCH) {
@@ -413,7 +531,7 @@ export const intentIqIdSubmodule = {
           }
           return nextCH;
         })
-        .catch(err => {
+        .catch((err: any) => {
           logError('CH fetch failed', err);
           if (clientHints !== '') {
             clientHints = '';
@@ -425,7 +543,7 @@ export const intentIqIdSubmodule = {
 
     if (chSupported) {
       chPromise = fetchAndHandleCH();
-      chPromise.catch(err => {
+      chPromise.catch((err: any) => {
         logError('fetchAndHandleCH failed', err);
       });
     } else {
@@ -433,8 +551,8 @@ export const intentIqIdSubmodule = {
       removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
     }
 
-    function waitOnCH(timeoutMs) {
-      const timeout = new Promise(resolve => setTimeout(() => resolve(''), timeoutMs));
+    function waitOnCH(timeoutMs: number): Promise<any> {
+      const timeout = new Promise<string>(resolve => setTimeout(() => resolve(''), timeoutMs));
       return Promise.race([chPromise, timeout]);
     }
 
@@ -453,14 +571,14 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    function updateGlobalObj() {
+    function updateGlobalObj(): void {
       if (globalName) {
-        window[globalName].partnerData = partnerData;
-        window[globalName].firstPartyData = firstPartyData;
-        window[globalName].clientHints = clientHints;
-        window[globalName].actualABGroup = actualABGroup;
-        window[globalName].abPercentage = getEffectiveAbPercentage(configParams.abPercentage);
-        window[globalName].userProvidedAbPercentage = configParams.abPercentage;
+        (window as any)[globalName].partnerData = partnerData;
+        (window as any)[globalName].firstPartyData = firstPartyData;
+        (window as any)[globalName].clientHints = clientHints;
+        (window as any)[globalName].actualABGroup = actualABGroup;
+        (window as any)[globalName].abPercentage = getEffectiveAbPercentage(configParams.abPercentage);
+        (window as any)[globalName].userProvidedAbPercentage = configParams.abPercentage;
       }
     }
 
@@ -492,7 +610,7 @@ export const intentIqIdSubmodule = {
       firePartnerCallback();
     }
 
-    function buildAndSendPixel(ch) {
+    function buildAndSendPixel(ch: string): void {
       const url = createPixelUrl(firstPartyData, ch, configParams, partnerData, cmpData);
       sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
     }
@@ -507,7 +625,7 @@ export const intentIqIdSubmodule = {
           buildAndSendPixel(clientHints);
         } else {
           waitOnCH(chTimeout)
-            .then(ch => buildAndSendPixel(ch || ''));
+            .then((ch: any) => buildAndSendPixel(ch || ''));
         }
       } else {
         buildAndSendPixel('');
@@ -524,7 +642,7 @@ export const intentIqIdSubmodule = {
     updateGlobalObj(); // update global object before server request, to make sure analytical adapter will have it even if the server is "not in time"
 
     // use protocol relative urls for http or https
-    let url = `${getIiqServerAddress(configParams)}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    let url = `${getIiqServerAddress(configParams as any)}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
     url = appendFirstPartyData(url, firstPartyData, partnerData);
     url = appendPartnersFirstParty(url, configParams);
@@ -543,29 +661,29 @@ export const intentIqIdSubmodule = {
     url = appendSPData(url, partnerData);
     url += '&source=' + PREBID;
     url += '&ABTestingConfigurationSource=' + configParams.ABTestingConfigurationSource;
-    url += '&abtg=' + encodeURIComponent(actualABGroup);
+    url += '&abtg=' + encodeURIComponent(actualABGroup as string);
 
     // Add vrref and fui to the URL
     url = appendVrrefAndFui(url, configParams.domainName);
 
-    const storeFirstPartyData = () => {
+    const storeFirstPartyData = (): void => {
       partnerData.eidl = runtimeEids?.eids?.length || -1;
       storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
     };
 
-    const resp = function (callback) {
+    const resp = function (callback: (value: any) => void) {
       const callbacks = {
-        success: response => {
+        success: (response: any) => {
           if (rrttStrtTime && rrttStrtTime > 0) {
             partnerData.rrtt = Date.now() - rrttStrtTime;
           }
-          const respJson = tryParse(response);
+          const respJson = tryParse(response) as any;
           // If response is a valid json and should save is true
           if (respJson) {
             partnerData.date = Date.now();
             firstPartyData.sCal = Date.now();
-            const defineEmptyDataAndFireCallback = () => {
+            const defineEmptyDataAndFireCallback = (): void => {
               respJson.data = partnerData.data = runtimeEids = { eids: [] };
               storeFirstPartyData();
               firePartnerCallback();
@@ -667,7 +785,7 @@ export const intentIqIdSubmodule = {
             firePartnerCallback();
           }
         },
-        error: error => {
+        error: (error: any) => {
           logError(MODULE_NAME + ': ID fetch encountered an error', error);
           failCount++;
           updateCountersAndStore(runtimeEids, allowedStorage, partnerData);
@@ -681,7 +799,7 @@ export const intentIqIdSubmodule = {
 
       rrttStrtTime = Date.now();
 
-      const sendAjax = uh => {
+      const sendAjax = (uh: string) => {
         if (uh) url += '&uh=' + encodeURIComponent(uh);
         ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
       };
@@ -692,7 +810,7 @@ export const intentIqIdSubmodule = {
           sendAjax(clientHints);
         } else {
           // No CH in LS: wait up to chTimeout, then send
-          waitOnCH(chTimeout).then(ch => {
+          waitOnCH(chTimeout).then((ch: any) => {
             // Send with received CH or without it
             sendAjax(ch || '');
           });
@@ -702,25 +820,25 @@ export const intentIqIdSubmodule = {
         sendAjax('');
       }
     };
-    const respObj = { callback: resp };
+    const respObj: any = { callback: resp };
 
     if (runtimeEids?.eids?.length) respObj.id = runtimeEids.eids;
     return respObj;
   },
   eids: {
-    'intentIqId': {
+    [MODULE_NAME]: {
       source: 'intentiq.com',
-      atype: 1,
-      getSource: function (data) {
+      atype: 1 as any,
+      getSource: function (data: any) {
         return data.source;
       },
-      getValue: function (data) {
+      getValue: function (data: any) {
         if (data?.uids?.length) {
           return data.uids[0].id;
         }
         return null;
       },
-      getUidExt: function (data) {
+      getUidExt: function (data: any) {
         if (data?.uids?.length) {
           return data.uids[0].ext;
         }
