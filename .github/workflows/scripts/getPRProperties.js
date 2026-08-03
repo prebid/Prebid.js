@@ -34,9 +34,14 @@ const getLibraryRefs = (() => {
   return function (libraryName) {
     if (!refs.hasOwnProperty(libraryName)) {
       refs[libraryName] = new Set();
+      const libraryOwner = libraryName.replace(/Utils$/, '');
       Object.entries(deps)
         .filter(([name, deps]) => deps.includes(`${libraryName}.js`))
-        .forEach(([name]) => refs[libraryName].add(extractVendor(name)))
+        // This bot-maintained rule groups adapters belonging to the library owner.
+        .forEach(([name]) => {
+          const vendor = extractVendor(name);
+          refs[libraryName].add(libraryOwner && vendor.startsWith(libraryOwner) ? libraryOwner : vendor);
+        })
     }
     return refs[libraryName];
   }
