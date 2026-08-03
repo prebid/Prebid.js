@@ -1,4 +1,5 @@
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { attributeValue, cdata } from '../../../src/utils/xml.js';
 
 export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
   let wrapperBody = getAdSystemNode('Prebid org', getGlobal().version);
@@ -49,7 +50,7 @@ export function getErrorNode(pingUrl) {
 // Helpers
 
 function getUrlNode(labelName, url, attributes) {
-  const body = `<![CDATA[${url}]]>`;
+  const body = cdata(url);
   return getNode(labelName, body, attributes);
 }
 
@@ -59,7 +60,9 @@ function getNode(labelName, body, attributes) {
 }
 
 /*
-attributes is a KVP Object.
+attributes is a KVP Object. Keys become attribute names verbatim, so they must be literals: a
+name taken from untrusted input would need validating against the XML Name grammar, which escaping
+cannot do. Only the values are escaped.
  */
 function getOpeningLabel(name, attributes) {
   if (!attributes) {
@@ -72,6 +75,6 @@ function getOpeningLabel(name, attributes) {
       return label;
     }
 
-    return label + ` ${key}="${value}"`;
+    return label + ` ${key}="${attributeValue(value)}"`;
   }, name);
 }
