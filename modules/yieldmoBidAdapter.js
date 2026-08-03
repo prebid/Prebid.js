@@ -18,6 +18,7 @@ import {
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import { config } from '../src/config.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
 /**
@@ -69,6 +70,11 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // COPPA: Yieldmo does not serve child-directed inventory. When COPPA is set,
+    // discard the request at the adapter — send nothing so we never bid on it.
+    if (config.getConfig('coppa') === true) {
+      return [];
+    }
     const stage = isStage(bidderRequest);
     const bannerUrl = getAdserverUrl(BANNER_PATH, stage);
     const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
@@ -216,6 +222,11 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+    // COPPA: Yieldmo does not serve or track child-directed inventory —
+    // suppress cookie-sync pixels on COPPA traffic, mirroring the bid discard.
+    if (config.getConfig('coppa') === true) {
+      return [];
+    }
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
