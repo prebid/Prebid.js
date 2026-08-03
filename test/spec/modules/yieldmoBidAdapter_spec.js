@@ -485,6 +485,16 @@ describe('YieldmoAdapter', function () {
         }
       });
 
+      it('should discard the request when coppa is set to the numeric flag (coppa: 1)', function () {
+        config.setConfig({ coppa: 1 });
+        try {
+          expect(build([mockBannerBid()])).to.deep.equal([]);
+          expect(build([mockVideoBid()], mockBidderRequest({}, [mockVideoBid()]))).to.deep.equal([]);
+        } finally {
+          config.resetConfig();
+        }
+      });
+
       it('should add eids to the banner bid request', function () {
         const params = {
           userIdAsEids: [{
@@ -1084,6 +1094,15 @@ describe('YieldmoAdapter', function () {
     });
     it('should register no syncs on COPPA (child-directed) traffic', function () {
       config.setConfig({ coppa: true });
+      try {
+        expect(spec.getUserSyncs({ iframeEnabled: true })).to.deep.equal([]);
+        expect(spec.getUserSyncs({ pixelEnabled: true })).to.deep.equal([]);
+      } finally {
+        config.resetConfig();
+      }
+    });
+    it('should register no syncs when coppa is set to the numeric flag (coppa: 1)', function () {
+      config.setConfig({ coppa: 1 });
       try {
         expect(spec.getUserSyncs({ iframeEnabled: true })).to.deep.equal([]);
         expect(spec.getUserSyncs({ pixelEnabled: true })).to.deep.equal([]);
