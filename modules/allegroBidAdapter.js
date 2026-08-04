@@ -140,6 +140,12 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
+    const publisherId = bidderRequest.bids.find(bid => bid.params?.publisherId)?.params.publisherId;
+    if (publisherId) {
+      request.site = request.site || {};
+      request.site['[com.allegro.dsp.site.ext]'] = { inventory: { id: publisherId } };
+    }
+
     if (request?.device?.dnt !== undefined) {
       request.device.dnt = request.device.dnt === 1;
     }
@@ -245,13 +251,6 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     const url = config.getConfig('allegro.bidderUrl') || BIDDER_URL;
     const data = converter.toORTB({ bidderRequest, bidRequests });
-
-    const gwpPb = bidRequests.find(br => br.params?.publisherId)?.params?.publisherId;
-    if (gwpPb) {
-      if (!data.site) data.site = {};
-      if (!data.site.publisher) data.site.publisher = {};
-      data.site.publisher.id = gwpPb;
-    }
 
     return {
       method: 'POST',
