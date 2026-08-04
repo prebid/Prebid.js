@@ -1,11 +1,11 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {config} from '../src/config.js';
-import {triggerPixel, logInfo, logError} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { config } from '../src/config.js';
+import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'allegro';
 const BIDDER_URL = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid';
@@ -91,7 +91,7 @@ function moveExt(obj, newKey) {
   if (!obj || !obj.ext) {
     return;
   }
-  const extCopy = {...obj.ext};
+  const extCopy = { ...obj.ext };
   delete obj.ext;
   obj[newKey] = extCopy;
 }
