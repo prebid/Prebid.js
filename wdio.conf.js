@@ -1,8 +1,15 @@
 const shared = require('./wdio.shared.conf.js');
 const process = require('process');
 
-const browsers = Object.fromEntries(
-  Object.entries(require('./browsers.json'))
+// BROWSERS_JSON lets CI point the e2e suite at an explicit browser set - e.g. the
+// older browsers that the --ES5 build targets. Use `||` rather than `??`: an unset
+// workflow input reaches us as the empty string, not as undefined.
+const browsersFile = process.env.BROWSERS_JSON || 'browsers.json';
+const allBrowsers = require(`./${browsersFile}`);
+
+// An explicitly requested set is used as-is; the default matrix gets filtered.
+const browsers = process.env.BROWSERS_JSON ? allBrowsers : Object.fromEntries(
+  Object.entries(allBrowsers)
     .filter(([k, v]) => {
       // run only on latest; exclude Safari
       // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
@@ -41,14 +48,6 @@ exports.config = {
   ...shared.config,
   services: [
     ['browserstack', {
-      testReporting: true,
-      testReportingOptions: {
-        projectName: process.env.BROWSERSTACK_PROJECT_NAME,
-        buildName: process.env.BROWSERSTACK_BUILD_NAME
-      },
-      opts: {
-        localIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER
-      },
       browserstackLocal: true
     }]
   ],
