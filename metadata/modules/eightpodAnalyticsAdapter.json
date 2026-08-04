@@ -4,11 +4,9 @@
   "purposes": {},
   "components": [
     {
-      "componentType": "bidder",
-      "componentName": "eightPod",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
+      "componentType": "analytics",
+      "componentName": "eightpod",
+      "gvlid": null
     }
   ]
 }

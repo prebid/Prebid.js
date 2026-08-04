@@ -39,6 +39,9 @@ if (argv.analyze) {
 module.exports = addCommonConfig({
   mode: 'production',
   devtool: 'source-map',
+  experiments: {
+    typescript: false
+  },
   cache: {
     type: 'filesystem',
     cacheDirectory: path.resolve(__dirname, '.cache/webpack')

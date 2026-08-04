@@ -6,6 +6,9 @@ module.exports = addCommonConfig({
   mode: 'production',
   context: helpers.getPrecompiledPath(),
   devtool: false,
+  experiments: {
+    typescript: false
+  },
   resolve: {
     modules: [
       helpers.getPrecompiledPath(),

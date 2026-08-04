@@ -435,6 +435,11 @@ describe('tpmnAdapterTests', function () {
       expect(syncs[0].type).to.equal('iframe');
     });
 
+    it('passes COPPA to the iframe sync', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null, true);
+      expect(syncs[0].url).to.include('&coppa=1');
+    });
+
     it('case 2 -> allow pixel with static sync', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
       expect(syncs.length).to.be.equal(4);
