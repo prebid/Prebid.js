@@ -72,6 +72,7 @@ export const spec = {
     let payloadRegs;
     let payloadContent;
     let payloadUser;
+    let payloadAuctionId;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -119,7 +120,7 @@ export const spec = {
       }
 
       const { ortb2 } = bidderRequest;
-      const { device, site, regs, content } = ortb2;
+      const { device, site, regs, content, source } = ortb2;
       const userOrtb2 = ortb2.user;
       let user;
       let userReq;
@@ -153,6 +154,9 @@ export const spec = {
       if (userReq) {
         payloadUser = userReq;
       }
+      if (source?.tid) {
+        payloadAuctionId = source.tid;
+      }
     }
 
     const tmax = timeout;
@@ -161,7 +165,8 @@ export const spec = {
         wrapperType: 'Prebid_js',
         wrapperVersion: '$prebid.version$',
         ...(payloadSchain && { schain: payloadSchain })
-      }
+      },
+      ...(payloadAuctionId && { tid: payloadAuctionId })
     };
 
     if (payloadRegs === undefined) {
@@ -314,6 +319,10 @@ function buildImpObject(bid) {
 
   if (bid.ortb2Imp?.ext?.gpid) {
     impObject.ext.gpid = bid.ortb2Imp.ext.gpid;
+  }
+
+  if (bid.ortb2Imp?.ext?.tid) {
+    impObject.ext.tid = bid.ortb2Imp.ext.tid;
   }
 
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
