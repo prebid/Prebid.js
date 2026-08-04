@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'allegro';
-const BIDDER_URL = 'https://prebid.rtb.allegro.com/v1/rtb/prebid/bid';
+const BIDDER_URL = 'https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid';
 const GVLID = 1493;
 
 /**
@@ -244,7 +244,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const url = config.getConfig('allegro.bidderUrl') || BIDDER_URL;
-    const data = converter.toORTB({bidderRequest, bidRequests});
+    const data = converter.toORTB({ bidderRequest, bidRequests });
 
     const gwpPb = bidRequests.find(br => br.params?.publisherId)?.params?.publisherId;
     if (gwpPb) {
@@ -291,6 +291,6 @@ export const spec = {
     }
   }
 
-}
+};
 
 registerBidder(spec);
