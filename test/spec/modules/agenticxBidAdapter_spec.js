@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adsmartxBidAdapter.js';
+import { spec } from 'modules/agenticxBidAdapter.js';
 
-describe('AdSmartX adapter', () => {
+describe('AgenticX adapter', () => {
   const validBidRequest = {
-    bidder: 'adsmartx',
+    bidder: 'agenticx',
     params: {
       publisherId: '12345',
       adSlot: '/1234567/adunit',
@@ -172,7 +172,7 @@ describe('AdSmartX adapter', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       expect(request).to.be.an('object');
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://ads.adsmartx.com/ads/rtb/prebid/js');
+      expect(request.url).to.equal('https://ads.theagenticx.ai/ads/rtb/prebid/js');
       expect(request.data).to.be.an('object');
     });
 
@@ -499,7 +499,7 @@ describe('AdSmartX adapter', () => {
       expect(syncs).to.be.an('array').with.lengthOf(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
       expect(syncs[0]).to.have.property('url');
-      expect(syncs[0].url).to.include('https://sync.adsmartx.com/sync');
+      expect(syncs[0].url).to.include('https://sync.theagenticx.ai/sync');
     });
 
     it('should return image sync when only pixelEnabled is true', () => {
@@ -658,7 +658,7 @@ describe('AdSmartX adapter', () => {
 
       expect(syncs).to.be.an('array').with.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.include('https://sync.adsmartx.com/sync');
+      expect(syncs[0].url).to.include('https://sync.theagenticx.ai/sync');
       expect(syncs[0].url).to.include('ssp_id=630141');
       expect(syncs[0].url).to.include('iframe_enabled=true');
     });
@@ -1084,6 +1084,111 @@ describe('AdSmartX adapter', () => {
       };
 
       expect(spec.isBidRequestValid(videoBid)).to.equal(false);
+    });
+
+    it('should return true for a valid audio bid request', () => {
+      const validAudioBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          audio: {
+            mimes: ['audio/mp4']
+          }
+        }
+      };
+
+      expect(spec.isBidRequestValid(validAudioBid)).to.equal(true);
+    });
+
+    it('should return false for audio bid request with missing mimes', () => {
+      const invalidAudioBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          audio: {}
+        }
+      };
+
+      expect(spec.isBidRequestValid(invalidAudioBid)).to.equal(false);
+    });
+
+    it('should return false for audio bid request with mimes not an array', () => {
+      const invalidAudioBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          audio: {
+            mimes: 'audio/mp4'
+          }
+        }
+      };
+
+      expect(spec.isBidRequestValid(invalidAudioBid)).to.equal(false);
+    });
+
+    it('should return false for audio bid request with empty mimes array', () => {
+      const invalidAudioBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          audio: {
+            mimes: []
+          }
+        }
+      };
+
+      expect(spec.isBidRequestValid(invalidAudioBid)).to.equal(false);
+    });
+  });
+
+  describe('buildRequests - audio media type', () => {
+    it('should build an audio impression if only audio mediaType is present', () => {
+      const audioBidRequest = {
+        ...validBidRequest,
+        mediaTypes: {
+          audio: {
+            mimes: ['audio/mp4'],
+            minduration: 5,
+            maxduration: 30
+          }
+        }
+      };
+
+      const request = spec.buildRequests([audioBidRequest], bidderRequest);
+      const { imp } = request.data;
+      expect(imp[0]).to.have.property('audio');
+      expect(imp[0]).to.not.have.property('banner');
+      expect(imp[0]).to.not.have.property('video');
+      expect(imp[0].audio.mimes).to.include('audio/mp4');
+      expect(imp[0].audio).to.include({ minduration: 5, maxduration: 30 });
+    });
+  });
+
+  describe('interpretResponse - audio media type', () => {
+    it('should set mediaType to audio and include vastXml when mtype is 3', () => {
+      const audioResponse = {
+        body: {
+          id: '2def',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1abc',
+                  impid: '1abc',
+                  price: 1.75,
+                  adm: '<VAST version="3.0">audio</VAST>',
+                  crid: 'audio-creative-123',
+                  adomain: ['audio-example.com'],
+                  mtype: 3
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(audioResponse, request);
+
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      expect(bids[0]).to.have.property('mediaType', 'audio');
+      expect(bids[0]).to.have.property('vastXml', '<VAST version="3.0">audio</VAST>');
     });
   });
 });

@@ -1,14 +1,14 @@
 # Overview
 
-Module Name : AdSmartX Bidder Adapter
+Module Name : AgenticX Bidder Adapter
 Module Type : Bid Adapter
 Maintainer : prebid@aidigital.com
 
 # Description
-Connects to AdSmartX Exchange for bids
-AdSmartX supports Display & Video(Instream) currently.
+Connects to AgenticX Exchange for bids
+AgenticX supports Display, Video(Instream) & Audio currently.
 
-This adapter is maintained by Smart Exchange, the legal entity behind this implementation. Our official domain is [AI Digital](https://www.aidigital.com/).
+This adapter is maintained by Smart Exchange, the legal entity behind this implementation. Our official domain is [The AgenticX](https://theagenticx.ai/).
 # Sample Ad Unit : Banner
 ```
     var adUnits = [
@@ -23,7 +23,7 @@ This adapter is maintained by Smart Exchange, the legal entity behind this imple
             },
             bids:[
                 {
-                    bidder: 'adsmartx',
+                    bidder: 'agenticx',
                     params: {
                         bidfloor: 0.001,        
                         testMode: 1,
@@ -41,7 +41,7 @@ This adapter is maintained by Smart Exchange, the legal entity behind this imple
 ``` 
     var videoAdUnit = [
         {
-            code: 'adsmartx',
+            code: 'agenticx',
             mediaTypes: {
                 video: {
                     playerSize: [640, 480],           // required
@@ -57,7 +57,7 @@ This adapter is maintained by Smart Exchange, the legal entity behind this imple
             },
             bids:[
                 {   
-                    bidder: 'adsmartx',
+                    bidder: 'agenticx',
                     params: {
                         bidfloor: 0.001,
                         testMode: 1,
