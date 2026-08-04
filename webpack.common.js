@@ -3,8 +3,16 @@ const { argv } = require('yargs');
 const TerserPlugin = require('terser-webpack-plugin');
 const isES5Mode = argv.ES5;
 
+// Browsers the ES5 bundle aims to support. This list drives *polyfill* selection
+// only; syntax is forced down to ES5 unconditionally (see forceAllTransforms
+// below), because every browser listed here already supports ES2015.
+//
+// IE is deliberately absent. No IE version ever shipped Proxy - it is not in
+// caniuse for any release, and it cannot be polyfilled (core-js has no module
+// for it) - while prebid uses `new Proxy` in adapter and consent-guard code
+// paths, including src/adapters/bidderFactory.ts. So IE support was never
+// achievable here; listing it only inflated the polyfill set.
 const browsers = [
-  'ie >= 11',
   'chrome >= 50',
   'firefox >= 50',
   'safari >= 10'
@@ -31,7 +39,11 @@ module.exports = function (config) {
               ['@babel/preset-env', {
                 useBuiltIns: false,
                 modules: 'commonjs',
-                targets: { browsers }
+                // Emit ES5 regardless of the support list. Deriving syntax from
+                // `browsers` would stop producing ES5 the moment the oldest target
+                // supports ES2015 - and without any targets at all, package.json's
+                // `browserslist` ("> 0.25%") would apply instead.
+                forceAllTransforms: true
               }]
             ],
             plugins: [
