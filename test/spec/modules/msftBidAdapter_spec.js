@@ -12,10 +12,22 @@ import {
 import {
   deepClone
 } from '../../../src/utils.js';
+import {
+  appnexusAliases
+} from '../../../libraries/appnexusUtils/anUtils.js';
 
 const ENDPOINT_URL_NORMAL = 'https://ib.adnxs.com/openrtb2/prebidjs';
 
 describe('msftBidAdapter', function () {
+  describe('aliases', function () {
+    it('should register Project Agora with Microsoft only', function () {
+      const projectAgoraAlias = { code: 'projectagora', gvlid: 1032 };
+
+      expect(spec.aliases).to.deep.include(projectAgoraAlias);
+      expect(appnexusAliases).to.not.deep.include(projectAgoraAlias);
+    });
+  });
+
   const baseBidRequests = {
     bidder: 'msft',
     adUnitCode: 'adunit-code',
