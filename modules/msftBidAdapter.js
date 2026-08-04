@@ -319,7 +319,7 @@ export const spec = {
     { code: 'oftmedia', gvlid: 32 },
     { code: 'msftstaila', gvlid: 32 },
     { code: 'projectagora', gvlid: 1032 }
-  ], // TODO fill in after full transition or as seperately requested
+  ], // TODO fill in after full transition or as separately requested
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: (bid) => {
