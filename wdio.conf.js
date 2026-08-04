@@ -48,6 +48,21 @@ exports.config = {
   ...shared.config,
   services: [
     ['browserstack', {
+      // `testReporting`/`testReportingOptions` are accepted aliases for
+      // `testObservability`/`testObservabilityOptions`; the service maps them itself.
+      // These names carry the values run-tests.yml exports via the browserstack
+      // setup-env action, which would otherwise go unused - observability is on by
+      // default, so without them sessions just show up unnamed.
+      testReporting: true,
+      testReportingOptions: {
+        projectName: process.env.BROWSERSTACK_PROJECT_NAME,
+        buildName: process.env.BROWSERSTACK_BUILD_NAME
+      },
+      opts: {
+        // reuse the tunnel that setup-local already started in CI rather than
+        // opening a second one with an unrelated identifier
+        localIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER
+      },
       browserstackLocal: true
     }]
   ],
