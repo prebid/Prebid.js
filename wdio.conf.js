@@ -36,7 +36,16 @@ function getCapabilities() {
         osVersion: browser.os_version,
         networkLogs: true,
         consoleLogs: 'verbose',
-        buildName: process.env.BROWSERSTACK_BUILD_NAME
+        buildName: process.env.BROWSERSTACK_BUILD_NAME,
+        projectName: process.env.BROWSERSTACK_PROJECT_NAME,
+        // Bind each session to *our* tunnel explicitly. Leaving this to the service to
+        // inject is not reliable: its SDK bootstrap fails on CI runners, and a session
+        // with no binding is free to pick any tunnel open on the account. That is not
+        // theoretical - in run 30960151279 chrome and firefox loaded the page while the
+        // safari session logged no messages at all, i.e. it never reached the local
+        // server, and it can equally well attach to an unrelated concurrent run.
+        local: true,
+        localIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER
       },
       acceptInsecureCerts: true,
     });
@@ -63,7 +72,11 @@ exports.config = {
         // opening a second one with an unrelated identifier
         localIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER
       },
-      browserstackLocal: true
+      // CI's run-tests.yml already starts BrowserStackLocal (setup-local, which exports
+      // BROWSERSTACK_LOCAL_IDENTIFIER); starting a second binary against the same
+      // identifier is at best redundant. Manage the tunnel ourselves only when nobody
+      // else has.
+      browserstackLocal: !process.env.BROWSERSTACK_LOCAL_IDENTIFIER
     }]
   ],
   user: process.env.BROWSERSTACK_USERNAME,
