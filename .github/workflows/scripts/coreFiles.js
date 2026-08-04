@@ -8,6 +8,8 @@
  *
  * This file doubles as a CLI - see `usage` at the bottom - so that the classification can be run over
  * an arbitrary list of files.
+ *
+ * This file was written by a bot (Claude Code).
  */
 
 const fs = require('fs');
@@ -51,6 +53,24 @@ const MIN_VENDOR_NAME_LENGTH = 3;
 // Giving them metadata is the way to take them off this list.
 const VENDOR_MODULES = [
   'seenthisBrandStories'
+];
+
+// Libraries that belong to a vendor - typically a white label serving several brands - but whose name
+// does not begin with any registered component name, either because the vendor's own brand is not a
+// component (`teqblaze`, `vizionik`) or because its components are registered under a longer name
+// (`intentIqId`, `advangelists`). Everything else under libraries/ is taken to be shared code.
+const VENDOR_LIBRARIES = [
+  'advangUtils',
+  'agenticxUtils',
+  'audUtils',
+  'dxUtils',
+  'intentIqConstants',
+  'intentIqUtils',
+  'pageInfosUtils',
+  'teqblazeUtils',
+  'utiqUtils',
+  'vizionikUtils',
+  'xeUtils'
 ];
 
 /**
@@ -139,7 +159,10 @@ function vendorNamePrefix({components} = {}) {
 /**
  * Core is what is not owned by an outside component: a module is core if it declares no component
  * (or has no metadata at all), or if every component it declares is a `prebid` one; a library is core
- * if it's pulled in by a core module - which includes prebid-core itself.
+ * if a core module pulls it in - prebid-core included - or, failing that, if it does not belong to a
+ * vendor. Libraries default to core because most of them are shared code that happens to be used only
+ * by vendor modules, and because a library extracted tomorrow should be reviewed until someone says
+ * otherwise; the vendor ones are recognizable by name.
  *
  * @param {object} [options]
  * @param {object} [options.dependencies] dependency graph, as loaded from dependencies.json.
@@ -147,8 +170,7 @@ function vendorNamePrefix({components} = {}) {
  * @param {Array<object>} [options.components] the component registry, as found in metadata/modules.json.
  * @param {Array<string>} [options.vendorModules] modules known to belong to a vendor, for the ones no
  * naming convention can pick out.
- * @param {boolean} [options.unknownLibrariesAreCore] how to classify a library that no entry point
- * pulls in - it has no known owner, so by default it's assumed to be core.
+ * @param {Array<string>} [options.vendorLibraries] libraries known to belong to a vendor, likewise.
  * @param {string} [options.missingMetadata] how to classify a module that has no metadata file at all.
  * Metadata is generated separately from the module it describes, so a newly added module does not have
  * any yet; `by-name` (the default) falls back to the naming conventions - a module named `<vendor>BidAdapter`
@@ -161,7 +183,7 @@ function coreFileMatcher({
   metadataDir,
   components,
   vendorModules = VENDOR_MODULES,
-  unknownLibrariesAreCore = true,
+  vendorLibraries = VENDOR_LIBRARIES,
   missingMetadata = 'by-name'
 } = {}) {
   const componentsOf = moduleComponents({metadataDir});
@@ -194,6 +216,15 @@ function coreFileMatcher({
     return libraryUsers[library];
   }
 
+  function isCoreLibrary(library) {
+    // a library a core module depends on is core whatever its name suggests - `timeoutQueue` reads as
+    // an extension of the `timeout` rtd component, but core modules use it
+    if (usersOf(library).some(isCoreModule)) {
+      return true;
+    }
+    return !vendorLibraries.includes(library) && !belongsToVendor(library);
+  }
+
   return function isCoreFile(path) {
     if (EXCLUDE_PATTERNS.find(pat => pat.test(path))) {
       return false;
@@ -204,8 +235,7 @@ function coreFileMatcher({
     }
     const lib = LIBRARY_PATTERN.exec(path);
     if (lib != null) {
-      const users = usersOf(lib[1]);
-      return users.length === 0 ? unknownLibrariesAreCore : users.some(isCoreModule);
+      return isCoreLibrary(lib[1]);
     }
     return true;
   };
@@ -217,6 +247,7 @@ module.exports = {
   EXCLUDE_PATTERNS,
   LIBRARY_PATTERN,
   VENDOR_MODULES,
+  VENDOR_LIBRARIES,
   loadDependencies,
   moduleName,
   entryModule,
