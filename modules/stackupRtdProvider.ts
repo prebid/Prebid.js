@@ -395,8 +395,11 @@ function isValidEnrichment(data: any): data is RawEnrichmentResponse {
   // Validate every block's shape regardless of segtax — any taxonomy the
   // backend emits is accepted here (see StackupSegtax); only the CT3.0
   // mirror into content.cat/site.pagecat is gated to a specific segtax.
+  // segtax must be a positive integer — the registry is 1-based, so 0,
+  // negatives, NaN and non-integers are never valid taxonomy ids.
   for (const block of data.site.content.data) {
-    if (!isNumber(block?.ext?.segtax)) return false;
+    const segtax = block?.ext?.segtax;
+    if (!isNumber(segtax) || segtax <= 0 || segtax % 1 !== 0) return false;
     if (!isStr(block.name)) return false;
     if (!isArray(block.segment)) return false;
     for (const seg of block.segment) {
@@ -720,13 +723,16 @@ function mergeSitePagecat(
   const ct3Ids = collectSegtaxIds(ours.data, CT3_SEGTAX);
   if (!ct3Ids.length) return;
   global.site = global.site ?? {};
-  if (
-    !allowCategoryOverwrite &&
-    isArray(global.site.pagecat) &&
-    global.site.pagecat.length
-  ) {
-    return;
-  }
+
+  // site.cattax applies to cat[], sectioncat[], and pagecat[] together
+  // (defaulting to 1, IAB Content Category Taxonomy 1.0, when omitted), so
+  // a publisher-set site.cat/site.sectioncat with no explicit cattax must
+  // block this mirror too, or setting cattax here would silently reinterpret
+  // those untouched fields' ids as CT3.0.
+  const hasPublisherCategories = ["cat", "sectioncat", "pagecat"].some(
+    (field) => isArray(global.site[field]) && global.site[field].length
+  );
+  if (!allowCategoryOverwrite && hasPublisherCategories) return;
   if (
     !allowCategoryOverwrite &&
     global.site.cattax &&

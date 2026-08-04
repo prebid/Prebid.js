@@ -675,6 +675,27 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site).to.be.undefined;
     });
 
+    it("should reject a content segment with segtax 0", async function () {
+      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      bad.site.content.data[0].ext.segtax = 0;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
+    it("should reject a content segment with a negative segtax", async function () {
+      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      bad.site.content.data[0].ext.segtax = -1;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
+    it("should reject a content segment with a non-integer segtax", async function () {
+      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      bad.site.content.data[0].ext.segtax = 502.5;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
     it("should accept publisher-FPD blocks (segtax 600)", async function () {
       const resp = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
       resp.site.content.data.push({
@@ -1000,6 +1021,47 @@ describe("StackUp RTD Provider", function () {
       const site = req.ortb2Fragments.global.site;
       expect(content.cat).to.deep.equal(["483", "533"]);
       expect(site.pagecat).to.deep.equal(["483", "533"]);
+    });
+
+    it("should not set site.cattax/pagecat when the publisher already set site.cat with no explicit cattax", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { cat: ["1"] } },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.be.undefined;
+      expect(site.pagecat).to.be.undefined;
+      expect(site.cat).to.deep.equal(["1"]);
+    });
+
+    it("should not set site.cattax/pagecat when the publisher already set site.sectioncat with no explicit cattax", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { sectioncat: ["2"] } },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.be.undefined;
+      expect(site.pagecat).to.be.undefined;
+    });
+
+    it("should mirror into site.pagecat/cattax despite a pre-existing site.cat when overwritePublisherCategories is true", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { cat: ["1"] } },
+        },
+      };
+      subModuleObj.getBidRequestData(
+        req,
+        sinon.spy(),
+        OVERWRITE_CATEGORIES_CONFIG
+      );
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.equal(7);
+      expect(site.pagecat).to.have.members(["483", "533"]);
     });
 
     it("should not mirror a segtax:502 block into content.cat or site.pagecat", async function () {
