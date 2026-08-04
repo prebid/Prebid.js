@@ -217,10 +217,17 @@ function coreFileMatcher({
   }
 
   function isCoreLibrary(library) {
+    const users = usersOf(library);
     // a library a core module depends on is core whatever its name suggests - `timeoutQueue` reads as
     // an extension of the `timeout` rtd component, but core modules use it
-    if (usersOf(library).some(isCoreModule)) {
+    if (users.some(isCoreModule)) {
       return true;
+    }
+    // a single consumer owns the library outright; this is how a vendor library added together with
+    // its adapter is recognized, before any component of that vendor is registered. It becomes core
+    // as soon as a second module picks it up.
+    if (users.length === 1) {
+      return false;
     }
     return !vendorLibraries.includes(library) && !belongsToVendor(library);
   }
