@@ -1,6 +1,7 @@
 const path = require('path');
 const { argv } = require('yargs');
 const TerserPlugin = require('terser-webpack-plugin');
+const helpers = require('./gulpHelpers.js');
 const isES5Mode = argv.ES5;
 
 // Browsers the ES5 bundle aims to support. This list drives *polyfill* selection
@@ -58,6 +59,16 @@ module.exports = function (config) {
                 method: 'usage-pure',
                 version: require('core-js-pure/package.json').version,
                 targets: { browsers }
+              }],
+              // Same idea as above, for the fetch family - which core-js does not
+              // cover at all, so `polyfill-corejs3` cannot supply it. Also
+              // `usage-pure`, so `window.fetch` is left alone, and also target
+              // driven, so it vanishes once the targets all support AbortController.
+              [path.resolve(__dirname, './plugins/polyfillFetch.js'), {
+                method: 'usage-pure',
+                targets: { browsers },
+                // this pass runs over precompiled sources, so import from there
+                ponyfill: helpers.getPrecompiledPath('libraries/fetchPonyfill/index.js')
               }],
               ['@babel/plugin-transform-runtime', {
                 absoluteRuntime: true
