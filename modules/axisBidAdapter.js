@@ -1,7 +1,6 @@
 import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import {
   isBidRequestValid,
   buildRequestsBase,
@@ -49,7 +48,7 @@ export const spec = {
   buildRequests,
   interpretResponse,
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
     const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
@@ -68,8 +67,7 @@ export const spec = {
       syncUrl += '&gpp_sid=' + gppConsent.applicableSections.join(',');
     }
 
-    const coppa = config.getConfig('coppa') ? 1 : 0;
-    syncUrl += `&coppa=${coppa}`;
+    syncUrl += `&coppa=${coppa ? 1 : 0}`;
 
     return [{
       type: syncType,
