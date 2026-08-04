@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'allegro';
-const BIDDER_URL = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid';
+const BIDDER_URL = 'https://prebid.rtb.allegro.com/v1/rtb/prebid/bid';
 const GVLID = 1493;
 
 /**
@@ -50,7 +50,7 @@ function convertExtensionFields(request) {
   if (request.user?.data) {
     request.user.data.forEach(data => {
       if (data.ext) {
-        moveExt(data, '[com.google.doubleclick.data]')
+        moveExt(data, '[com.google.doubleclick.data]');
       }
     });
   }
@@ -260,7 +260,7 @@ export const spec = {
       options: {
         contentType: 'text/plain'
       },
-    }
+    };
   },
 
   /**
@@ -271,7 +271,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     if (!response.body) return;
-    return converter.fromORTB({response: response.body, request: request.data}).bids;
+    return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
 
   /**
