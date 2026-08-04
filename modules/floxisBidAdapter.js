@@ -102,7 +102,6 @@ function isValidFloxisId(id) {
 // Never returns an id that didn't persist (no store, or storageControl denying the key while the
 // keyless enablement checks pass) — an unpersisted id would rotate every auction, worse than none.
 function getOrCreateFloxisId() {
-  if (typeof window === 'undefined') return null;
   try {
     const localOk = storage.localStorageIsEnabled();
     const cookieOk = storage.cookiesAreEnabled();
@@ -134,6 +133,19 @@ function getOrCreateFloxisId() {
   } catch (e) {
     return null;
   }
+}
+
+// request() runs once per seat|region|partner group; memoize to one storage round-trip per auction.
+function createFloxisIdResolver() {
+  let resolved = false;
+  let id = null;
+  return () => {
+    if (!resolved) {
+      resolved = true;
+      id = getOrCreateFloxisId();
+    }
+    return id;
+  };
 }
 
 // Parse the server-echoed sync header (`seat=<seat>&region=<label>`) into a sync target. Returns null
@@ -200,7 +212,7 @@ const CONVERTER = ortbConverter({
       }
     });
     if (!req.user?.ext?.floxisId) {
-      const floxisId = getOrCreateFloxisId();
+      const floxisId = context.resolveFloxisId?.();
       if (floxisId) {
         mergeDeep(req, { user: { ext: { floxisId } } });
       }
@@ -252,6 +264,7 @@ export const spec = {
     }, {});
 
     const groups = Object.values(bidRequestsByParams);
+    const resolveFloxisId = createFloxisIdResolver();
 
     return groups.map((groupedBidRequests) => {
       const { seat, region, partner } = groupedBidRequests[0].params;
@@ -260,7 +273,7 @@ export const spec = {
       return {
         method: 'POST',
         url,
-        data: CONVERTER.toORTB({ bidRequests: groupedBidRequests, bidderRequest }),
+        data: CONVERTER.toORTB({ bidRequests: groupedBidRequests, bidderRequest, context: { resolveFloxisId } }),
         options: {
           withCredentials: true,
           contentType: 'text/plain'

@@ -558,6 +558,29 @@ describe('floxisBidAdapter', function () {
         expect(data.user.ext.floxisId).to.equal(STORED_UUID);
         expect(generateUUIDStub.called).to.be.false;
       });
+
+      it('resolves the id once per auction, not once per seat group', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const secondGroupBid = {
+          ...validBannerBid,
+          bidId: 'bid-3',
+          params: { seat: 'Seat2', region: 'eu-w', partner: 'mypartner' }
+        };
+        const requests = spec.buildRequests([validBannerBid, secondGroupBid], floxisIdBidderRequest);
+
+        expect(requests).to.have.lengthOf(2);
+        requests.forEach(function (request) {
+          expect(request.data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        });
+        // One storage round-trip for the whole auction — the per-group call site read and rewrote once per group.
+        expect(localStorageIsEnabledStub.calledOnce).to.be.true;
+        expect(setDataInLocalStorageStub.calledOnce).to.be.true;
+        expect(setCookieStub.calledOnce).to.be.true;
+      });
     });
   });
 
