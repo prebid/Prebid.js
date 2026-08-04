@@ -11,34 +11,34 @@ const utils = {
     await element.waitForExist({ timeout: time });
   },
   /**
-   * Index of the iframe matched by `selector` within the current context's
-   * `window.frames`, or -1. Frame indexes are the one frame locator that every
-   * WebDriver dialect understands.
+   * Return the driver to the top-level document. Nothing else does this, so a test
+   * that switched into an iframe leaves the context there - and because
+   * `setupTest` sets `this.retries(..)` while `before` only runs once, every retry
+   * would then look for a top-level element from inside the frame and fail with
+   * "still not existing", regardless of why the first attempt failed.
    */
-  frameIndex: function(selector) {
-    return browser.execute(function (selector) {
-      var target = document.querySelector(selector);
-      if (!target) return -1;
-      for (var i = 0; i < window.frames.length; i++) {
-        // identity comparison works cross-origin; reading into the frame would not
-        if (window.frames[i] === target.contentWindow) return i;
-      }
-      return -1;
-    }, selector);
+  topFrame: function() {
+    // Deliberately a no-op on W3C sessions: webdriverio's bidi implementation tracks
+    // the active context itself, and switching to the top level mid-test makes it
+    // report "execution contexts cleared" and lose the frame. Legacy drivers have no
+    // such bookkeeping and do need the explicit reset.
+    return browser.isW3C === false ? browser.switchToFrame(null) : Promise.resolve();
   },
   switchFrame: async function(frameRef) {
     const iframe = await $(frameRef);
     await iframe.waitForExist({ timeout: DEFAULT_TIMEOUT });
-    // Legacy JSONWire drivers (e.g. the chromedriver 2.x that ships with older
-    // BrowserStack images) reject a serialized element as a frame locator with
-    // "Unsupported frame locator: java.util.HashMap", because webdriverio posts
-    // the whole element object. They do accept a numeric frame index, so prefer
-    // that when we know we are not talking W3C.
-    if (browser.isW3C === false && typeof frameRef === 'string') {
-      const index = await utils.frameIndex(frameRef);
-      if (index >= 0) {
-        return browser.switchToFrame(index);
-      }
+    // Legacy JSONWire drivers (the chromedriver 2.x that ships with older BrowserStack
+    // images) reject webdriverio's frame locator: it posts the entire element object,
+    // which deserializes to a HashMap rather than a WebElement, giving
+    // "Unsupported frame locator: java.util.HashMap". They do accept the legacy
+    // `{ELEMENT: id}` reference.
+    //
+    // Do not be tempted to pass a frame *index* instead. It is accepted by every
+    // dialect, but this driver does not order frames the way `window.frames` does,
+    // so a correctly computed index silently selects a different document - which
+    // looks exactly like the creative having failed to render.
+    if (browser.isW3C === false) {
+      return browser.switchToFrame({ ELEMENT: iframe.elementId });
     }
     await browser.switchFrame(iframe);
   },
@@ -63,6 +63,8 @@ const utils = {
       if (expectGAMCreative) {
         expectGAMCreative = expectGAMCreative === true ? waitFor : expectGAMCreative;
         it(`should render GAM creative`, async () => {
+          // a previous attempt may have left us inside the creative's iframe
+          await utils.topFrame();
           await utils.switchFrame(expectGAMCreative);
           if (nestedIframe) {
             await utils.switchFrame('iframe[srcdoc]');
