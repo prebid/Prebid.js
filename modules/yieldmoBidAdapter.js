@@ -18,6 +18,7 @@ import {
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
 /**
@@ -69,6 +70,12 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // COPPA: Yieldmo does not serve child-directed inventory. When COPPA is
+    // enabled, discard the request at the adapter — send nothing so we never bid
+    // on it. Use coppaDataHandler so the numeric core flag (coppa: 1) counts too.
+    if (coppaDataHandler.getCoppa()) {
+      return [];
+    }
     const stage = isStage(bidderRequest);
     const bannerUrl = getAdserverUrl(BANNER_PATH, stage);
     const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
@@ -192,7 +199,10 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bids = [];
-    const data = serverResponse.body;
+    const data = serverResponse && serverResponse.body;
+    if (!data) {
+      return bids;
+    }
     if (data.length > 0) {
       data.forEach(response => {
         if (response.cpm > 0) {
@@ -202,12 +212,23 @@ export const spec = {
     }
     if (data.seatbid) {
       const seatbids = data.seatbid.reduce((acc, seatBid) => acc.concat(seatBid.bid), []);
-      seatbids.forEach(bid => bids.push(createNewVideoBid(bid, bidRequest)));
+      seatbids.forEach(bid => {
+        const videoBid = createNewVideoBid(bid, bidRequest);
+        if (videoBid) {
+          bids.push(videoBid);
+        }
+      });
     }
     return bids;
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+    // COPPA: Yieldmo does not serve or track child-directed inventory —
+    // suppress cookie-sync pixels on COPPA traffic, mirroring the bid discard.
+    // Use coppaDataHandler so the numeric core flag (coppa: 1) counts too.
+    if (coppaDataHandler.getCoppa()) {
+      return [];
+    }
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
@@ -323,6 +344,14 @@ function createNewBannerBid(response) {
  */
 function createNewVideoBid(response, bidRequest) {
   const imp = (deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
+
+  // A response bid whose impid doesn't match a requested imp can't be built
+  // (imp.id / imp.video.* would throw). Skip it so one malformed bid doesn't
+  // abort interpretResponse and drop every other bid in the response; the
+  // caller filters out this null.
+  if (!imp) {
+    return null;
+  }
 
   const result = {
     dealId: response.dealid,
@@ -527,7 +556,13 @@ function getBidFloor(bidRequest, mediaType) {
   let floorInfo = {};
 
   if (typeof bidRequest.getFloor === 'function') {
-    floorInfo = bidRequest.getFloor({ currency: CURRENCY, mediaType, size: '*' });
+    // getFloor can throw or return undefined/null (e.g. no matching floor rule);
+    // guard both so a floors misconfig can't drop the bid.
+    try {
+      floorInfo = bidRequest.getFloor({ currency: CURRENCY, mediaType, size: '*' }) || {};
+    } catch (e) {
+      logError('yieldmo: getFloor threw; falling back to params bidfloor', e);
+    }
   }
 
   return floorInfo.floor || bidRequest.params.bidfloor || bidRequest.params.bidFloor || 0;

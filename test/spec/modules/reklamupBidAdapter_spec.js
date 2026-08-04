@@ -104,6 +104,12 @@ describe('ReklamupBidAdapter', function () {
     timeout: 500
   };
 
+  describe('spec', function () {
+    it('should have the correct gvlid', function () {
+      expect(spec.gvlid).to.equal(1619);
+    });
+  });
+
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and key parameters present', function () {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
