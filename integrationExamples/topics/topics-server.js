@@ -2,12 +2,14 @@
 // Note: This test endpoint requires the following to run: node.js, npm, express, cors
 
 const cors = require('cors');
+const csrf = require('csurf');
 const express = require('express');
 
 const port = process.env.PORT || 3000;
 
 const app = express();
 app.use(cors());
+app.use(csrf({ cookie: true }));
 app.use(
   express.urlencoded({
     extended: true,
