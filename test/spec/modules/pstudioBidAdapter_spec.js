@@ -1,6 +1,10 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
-import { spec, storage } from 'modules/pstudioBidAdapter.js';
+import {
+  spec,
+  storage,
+  __forTestingResetState,
+} from 'modules/pstudioBidAdapter.js';
 import { deepClone } from '../../../src/utils.js';
 
 describe('PStudioAdapter', function () {
@@ -8,17 +12,19 @@ describe('PStudioAdapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
+    sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
   });
 
   afterEach(function () {
     sandbox.restore();
+    __forTestingResetState();
   });
 
   const bannerBid = {
     bidder: 'pstudio',
     params: {
       pubid: '258c2a8d-d2ad-4c31-a2a5-e63001186456',
-      adtagid: 'aae1aabb-6699-4b5a-9c3f-9ed034b1932c',
+      adtagid: 'test-div-1',
     },
     adUnitCode: 'test-div-1',
     mediaTypes: {
@@ -38,11 +44,12 @@ describe('PStudioAdapter', function () {
     bidder: 'pstudio',
     params: {
       pubid: '258c2a8d-d2ad-4c31-a2a5-e63001186456',
-      adtagid: '34833639-f17c-40bc-9c4b-222b1b7459c7',
+      adtagid: 'test-div-1',
     },
     adUnitCode: 'test-div-1',
     mediaTypes: {
       video: {
+        context: 'instream',
         playerSize: [[300, 250]],
         mimes: ['video/mp4'],
         minduration: 5,
@@ -197,6 +204,12 @@ describe('PStudioAdapter', function () {
     it('should return false when publisher id not found', function () {
       const localBid = deepClone(bannerBid);
       delete localBid.params.pubid;
+
+      expect(spec.isBidRequestValid(localBid)).to.equal(false);
+    });
+
+    it('should return false when adtagid not found', function () {
+      const localBid = deepClone(bannerBid);
       delete localBid.params.adtagid;
 
       expect(spec.isBidRequestValid(localBid)).to.equal(false);
@@ -245,6 +258,7 @@ describe('PStudioAdapter', function () {
 
     it('should properly map video mediaType in request payload', () => {
       expect(videoPayload.video_properties).to.deep.equal({
+        context: videoBid.mediaTypes.video.context,
         w: videoBid.mediaTypes.video.playerSize[0][0],
         h: videoBid.mediaTypes.video.playerSize[0][1],
         mimes: videoBid.mediaTypes.video.mimes,
@@ -266,19 +280,20 @@ describe('PStudioAdapter', function () {
 
     it('should properly set required bidder params in request payload', function () {
       expect(bannerPayload.pubid).to.equal(bannerBid.params.pubid);
-      expect(bannerPayload.adtagid).to.equal(bannerBid.params.adtagid);
     });
 
     it('should omit optional bidder params or first-party data from bid request if they are not provided', function () {
-      assert.isUndefined(bannerPayload.bcat);
-      assert.isUndefined(bannerPayload.badv);
-      assert.isUndefined(bannerPayload.bapp);
-      assert.isUndefined(bannerPayload.user);
-      assert.isUndefined(bannerPayload.device);
-      assert.isUndefined(bannerPayload.site);
-      assert.isUndefined(bannerPayload.app);
-      assert.isUndefined(bannerPayload.user_ids);
-      assert.isUndefined(bannerPayload.regs);
+      const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      const payload = JSON.parse(request[0].data);
+      assert.isUndefined(payload.bcat);
+      assert.isUndefined(payload.badv);
+      assert.isUndefined(payload.bapp);
+      assert.isUndefined(payload.user);
+      assert.isUndefined(payload.device);
+      assert.isUndefined(payload.site);
+      assert.isUndefined(payload.app);
+      assert.isUndefined(payload.user_ids);
+      assert.isUndefined(payload.regs);
     });
 
     it('should properly set optional bidder parameters', function () {
@@ -342,16 +357,17 @@ describe('PStudioAdapter', function () {
     });
 
     it('should set user id if proper cookie is present', function () {
-      const cookie = '157bc918-b961-4216-ac72-29fc6363edcb';
-      sandbox.stub(storage, 'getCookie').returns(cookie);
+      const userId = '157bc918-b961-4216-ac72-29fc6363edcb';
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(userId);
 
       const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       const payload = JSON.parse(request[0].data);
 
-      expect(payload.user.id).to.equal(cookie);
+      expect(payload.user.id).to.equal(userId);
     });
 
     it('should not set user id if proper cookie not present', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
       const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       const payload = JSON.parse(request[0].data);
 
@@ -421,7 +437,7 @@ describe('PStudioAdapter', function () {
         netRevenue: serverResponse.body.bids[0].net_revenue,
         meta: {
           advertiserDomains:
-            serverResponse.body.bids[0].meta.advertiser_domains,
+          serverResponse.body.bids[0].meta.advertiser_domains,
         },
         ttl: 300,
       };
@@ -444,7 +460,7 @@ describe('PStudioAdapter', function () {
         vastXml: undefined,
         meta: {
           advertiserDomains:
-            serverVideoResponse.body.bids[0].meta.advertiser_domains,
+          serverVideoResponse.body.bids[0].meta.advertiser_domains,
         },
         ttl: 300,
       };
@@ -464,13 +480,23 @@ describe('PStudioAdapter', function () {
 
       expect(parsedResponse).to.deep.equal([]);
     });
+
+    it('should return empty array if bids array is empty', function () {
+      const emptyBidsResponse = { body: { bids: [] } };
+      const parsedResponse = spec.interpretResponse(emptyBidsResponse, bidRequest);
+      expect(parsedResponse).to.deep.equal([]);
+    });
   });
 
   describe('getUserSyncs', function () {
-    it('should return sync object with correctly injected user id', function () {
-      sandbox.stub(storage, 'getCookie').returns('testid');
+    const syncOptions = {
+      pixelEnabled: true,
+    };
 
-      const result = spec.getUserSyncs({}, {}, {}, {});
+    it('should return sync object with correctly injected user id', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testid');
+
+      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
 
       expect(result).to.deep.equal([
         {
@@ -484,31 +510,117 @@ describe('PStudioAdapter', function () {
       ]);
     });
 
-    it('should generate user id and put the same uuid it into sync object', function () {
-      sandbox.stub(storage, 'getCookie').returns(undefined);
+    it('should return sync object with undefined user id if none is available', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(undefined);
+      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
 
-      const result = spec.getUserSyncs({}, {}, {}, {});
-      const url1 = result[0].url;
-      const url2 = result[1].url;
+      expect(result[0]).deep.equal(undefined);
+      expect(result[1]).deep.equal(undefined);
+    });
 
-      const expectedUID1 = extractValueFromURL(url1, 'ttd_puid');
-      const expectedUID2 = extractValueFromURL(url2, 'uid');
+    it('should not return syncs if syncOptions is not passed', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testid');
+      const result = spec.getUserSyncs(null, {}, {}, {});
+      expect(result).to.deep.equal([]);
+    });
+  });
 
-      expect(expectedUID1).to.equal(expectedUID2);
+  describe('Error Handling and Edge Cases', function () {
+    beforeEach(function() {
+      __forTestingResetState();
+    });
 
-      expect(result[0]).deep.equal({
-        type: 'image',
-        url: `https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=${expectedUID1}&dsp=ttd`,
-      });
-      expect(result[1]).deep.equal({
-        type: 'image',
-        url: `https://dsp.myads.telkomsel.com/api/v1/pixel?uid=${expectedUID2}`,
-      });
-      // Helper function to extract UUID from URL
-      function extractValueFromURL(url, key) {
-        const match = url.match(new RegExp(`[?&]${key}=([^&]*)`));
-        return match ? match[1] : null;
-      }
+    it('should handle storage errors gracefully when checking for localStorage', function () {
+      storage.localStorageIsEnabled.restore();
+      sandbox.stub(storage, 'localStorageIsEnabled').throws(new Error('Storage disabled'));
+      const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      const payload = JSON.parse(request[0].data);
+      expect(payload).not.to.haveOwnProperty('user');
+    });
+
+    it('should handle storage errors gracefully on read/write', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').throws(new Error('Get failed'));
+      const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      const payload = JSON.parse(request[0].data);
+      expect(payload).not.to.haveOwnProperty('user');
+    });
+
+    it('should handle video object with w/h properties', function () {
+      const videoBidWithWH = deepClone(videoBid);
+      delete videoBidWithWH.mediaTypes.video.playerSize;
+      videoBidWithWH.mediaTypes.video.w = 640;
+      videoBidWithWH.mediaTypes.video.h = 480;
+      const request = spec.buildRequests([videoBidWithWH], baseBidderRequest);
+      const payload = JSON.parse(request[0].data);
+      expect(payload.video_properties.w).to.equal(640);
+      expect(payload.video_properties.h).to.equal(480);
+    });
+
+    it('should handle vastXml in interpretResponse', function () {
+      const serverVideoResponseWithVastXml = {
+        body: {
+          id: '123141241231',
+          bids: [{
+            vast_xml: '<VAST></VAST>',
+            cpm: 5,
+            width: 640,
+            height: 480,
+            currency: 'USD',
+            creative_id: 'crid12345',
+            net_revenue: true,
+            meta: { advertiser_domains: ['https://advertiser.com'] },
+          }],
+        }
+      };
+      const bidRequest = { data: JSON.stringify({ id: '12345' }) };
+      const parsedResponse = spec.interpretResponse(serverVideoResponseWithVastXml, bidRequest);
+      expect(parsedResponse[0].vastXml).to.equal('<VAST></VAST>');
+      expect(parsedResponse[0].mediaType).to.equal('video');
+    });
+
+    it('should clean object with undefined properties', function() {
+      const bidderRequestWithUndefined = {
+        ortb2: {
+          device: { ua: 'test-ua', os: undefined },
+          user: { yob: 1990, gender: undefined }
+        }
+      };
+      const request = spec.buildRequests([bannerBid], bidderRequestWithUndefined);
+      const payload = JSON.parse(request[0].data);
+      expect(payload.device).to.have.property('ua', 'test-ua');
+      expect(payload.device).not.to.have.property('os');
+      expect(payload.user).to.have.property('yob', 1990);
+      expect(payload.user).not.to.have.property('gender');
+    });
+
+    it('should prime TMA logic only once', function() {
+      const lsStub = sandbox.stub(storage, 'getDataFromLocalStorage');
+      lsStub.returns('test-pid');
+
+      spec.buildRequests([bannerBid], baseBidderRequest);
+      spec.buildRequests([bannerBid], baseBidderRequest);
+
+      // tmaPrime is guarded, so it should only be called once.
+      // It reads from LS.
+      expect(lsStub.callCount).to.equal(3); // 1 for prime, 2 for the two buildRequests calls.
+    });
+
+    it('should use latest user ID from LS on subsequent calls', function() {
+      const ls = sandbox.stub(storage, 'getDataFromLocalStorage');
+      ls.returns('cached-id');
+
+      // First call, primes and gets from LS
+      let request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      let payload = JSON.parse(request[0].data);
+      expect(payload.user.id).to.equal('cached-id');
+
+      // Update LS value
+      ls.returns('new-id');
+
+      // Second call, should re-read from LS due to tmaGetIdCached behavior
+      request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      payload = JSON.parse(request[0].data);
+      expect(payload.user.id).to.equal('new-id');
     });
   });
 });

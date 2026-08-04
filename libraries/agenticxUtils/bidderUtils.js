@@ -1,4 +1,4 @@
-import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import { BANNER, VIDEO, AUDIO } from '../../src/mediaTypes.js';
 import { ortbConverter } from '../ortbConverter/converter.js';
 import { deepAccess, logInfo, logWarn } from '../../src/utils.js';
 
@@ -56,6 +56,9 @@ export function createConverter(config = {}) {
       } else if (mediaTypes[VIDEO]) {
         logInfo('Adding video media type to impression:', mediaTypes[VIDEO]);
         imp.video = { ...(imp.video || {}), ...mediaTypes[VIDEO] };
+      } else if (mediaTypes[AUDIO]) {
+        logInfo('Adding audio media type to impression:', mediaTypes[AUDIO]);
+        imp.audio = { ...(imp.audio || {}), ...mediaTypes[AUDIO] };
       }
       return imp;
     },
@@ -131,6 +134,14 @@ export function isBidRequestValid(bid) {
       return false;
     }
   }
+
+  if (mediaTypes?.[AUDIO]) {
+    const audio = mediaTypes[AUDIO];
+    if (!audio.mimes || !Array.isArray(audio.mimes) || audio.mimes.length === 0) {
+      logWarn('Invalid audio bid request: Missing or invalid mimes.');
+      return false;
+    }
+  }
   return true;
 }
 
@@ -202,6 +213,10 @@ export function interpretResponse(serverResponse, request, config = {}) {
         break;
       case 2:
         bidResponse.mediaType = VIDEO;
+        bidResponse.vastXml = bid.adm;
+        break;
+      case 3:
+        bidResponse.mediaType = AUDIO;
         bidResponse.vastXml = bid.adm;
         break;
       default:
