@@ -97,7 +97,6 @@ jobs:
       TEST_CHUNKS: ${{ inputs.chunks }}
       TEST_CHUNK: ${{ matrix.chunk-no }}
       BROWSER: ${{ inputs.browser }}
-      BROWSERS_JSON: ${{ inputs.browsers-json }}
       BROWSER_VERSION: ${{ inputs.browser-version }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}

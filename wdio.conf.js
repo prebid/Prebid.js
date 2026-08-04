@@ -1,7 +1,14 @@
 const shared = require('./wdio.shared.conf.js');
 const process = require('process');
 
-const browsers = require(`./${process.env.BROWSERS_JSON ?? 'browsers.json'}`);
+const browsers = Object.fromEntries(
+  Object.entries(require('./browsers.json'))
+    .filter(([k, v]) => {
+      // run only on latest; exclude Safari
+      // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
+      return v.browser_version === 'latest' && v.browser !== 'safari'
+    })
+);
 
 function getCapabilities() {
   function getPlatform(os) {
@@ -47,7 +54,7 @@ exports.config = {
   ],
   user: process.env.BROWSERSTACK_USERNAME,
   key: process.env.BROWSERSTACK_ACCESS_KEY,
-  maxInstances: 5,
+  maxInstances: 5, // Do not increase this, since we have only 5 parallel tests in browserstack account
   maxInstancesPerCapability: 1,
   capabilities: getCapabilities(),
 }
