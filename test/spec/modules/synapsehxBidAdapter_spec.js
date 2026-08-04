@@ -331,7 +331,7 @@ describe('Prebid Adapter: Synapse HX', function () {
     it('should return a valid bid array with a banner bid', () => {
       const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
       const { data } = requests[0];
-      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data });
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data }).bids;
 
       expect(bids).to.be.a('array').that.has.lengthOf(1);
       bids.forEach(value => {
@@ -346,7 +346,7 @@ describe('Prebid Adapter: Synapse HX', function () {
       const { data } = requests[0];
       const bidResponseNoCur = { ...SERVER_RESPONSE_BANNER };
       delete bidResponseNoCur.cur;
-      const bids = spec.interpretResponse({ body: bidResponseNoCur }, { data });
+      const bids = spec.interpretResponse({ body: bidResponseNoCur }, { data }).bids;
 
       expect(bids).to.be.a('array').that.has.lengthOf(1);
       bids.forEach(value => {
@@ -358,7 +358,7 @@ describe('Prebid Adapter: Synapse HX', function () {
     it('should not convert bid if media type does not match', () => {
       const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
       const { data } = requests[0];
-      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data });
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data }).bids;
 
       expect(bids).to.deep.equal([]);
     });
@@ -374,7 +374,7 @@ describe('Prebid Adapter: Synapse HX', function () {
     it('should set meta.adomain from the bid response adomain field', () => {
       const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
       const { data } = requests[0];
-      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data });
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data }).bids;
 
       expect(bids).to.have.lengthOf(1);
       const bid = bids[0];
@@ -387,7 +387,8 @@ describe('Prebid Adapter: Synapse HX', function () {
       it('should return a valid bid array with a video bid', () => {
         const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[VIDEO], VALID_BIDDER_REQUEST);
         const { data } = requests[0];
-        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data });
+        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data }).bids;
+
         expect(bids).to.be.a('array').that.has.lengthOf(1);
         bids.forEach(value => {
           expect(value).to.be.a('object').that.has.all.keys(

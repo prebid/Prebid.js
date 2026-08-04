@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { logError, formatQS, triggerPixel } from '../src/utils.js';
 import { getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
@@ -10,12 +10,29 @@ const BIDDER_CODE = 'synapsehx';
 const METHOD = 'POST';
 const ENDPOINT_URL = `https://rtb.hx.compasonline.com/pbjs`;
 
+type SynapsehxBidderParams = {
+  /**
+   * Synapse HX tenant identifier
+   */
+  tenantId: string;
+  /**
+   * Synapse HX ad unit identifier
+   */
+  adUnitId?: string;
+};
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: SynapsehxBidderParams;
+  }
+}
+
 function getMediaType(bid) {
   const mtypeToMediaType = { 1: BANNER, 2: VIDEO };
   return mtypeToMediaType[bid.mtype];
 }
 
-const converter = ortbConverter({
+const converter = ortbConverter<typeof BIDDER_CODE>({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
@@ -65,7 +82,7 @@ function makeUrl(bidRequests) {
   return `${ENDPOINT_URL}?${formatQS({ pid: bidRequests[0].params.tenantId })}`;
 }
 
-export const spec = {
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: (bid) => !!bid && isValidParams(bid) && isValidBidFloorCurrency(bid),
@@ -93,15 +110,15 @@ export const spec = {
     return converter.fromORTB({
       response: body,
       request: req.data
-    }).bids;
+    });
   },
 
   onTimeout: (data) => { },
 
-  onBidWon: (bid) => {
+  onBidWon: (bid: { nurl?: string, cpm: number }) => {
     if (bid.nurl) {
       const url = new URL(bid.nurl);
-      url.searchParams.set('cpm', bid.cpm);
+      url.searchParams.set('cpm', String(bid.cpm));
       triggerPixel(url.toString());
     }
   },
