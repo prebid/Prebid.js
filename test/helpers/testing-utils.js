@@ -43,6 +43,12 @@ const utils = {
     await browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 5000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
+    // A previous suite's "should render GAM creative" leaves the driver inside the
+    // creative's iframe. On legacy drivers `browser.url` then reloads *that frame*
+    // rather than the top window, so everything after it runs in the wrong document
+    // - on Safari 10 the next suite failed with "undefined is not an object
+    // (evaluating 'window.pbjs.getAdserverTargeting')".
+    await utils.topFrame();
     await browser.url(url);
     await browser.pause(pause);
     if (selector != null) {
