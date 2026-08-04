@@ -15,6 +15,11 @@ const isES5Mode = argv.ES5;
 // achievable here; listing it only inflated the polyfill set.
 const browsers = [
   'chrome >= 50',
+  // Note this is the *polyfill* floor, not what the e2e suite can exercise. GPT does
+  // not render a creative on Firefox before 65: on 50 it never reaches apiReady, and
+  // from 52 to 64 it reports ready and defines slots but no creative iframe ever
+  // appears. Prebid itself is fine there (the auction and targeting tests pass on 50),
+  // so the target stays at 50 while browsers-es5.json tests on 65.
   'firefox >= 50',
   'safari >= 10'
 ];

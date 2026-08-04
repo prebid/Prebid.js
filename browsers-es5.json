@@ -7,11 +7,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_50_windows_10": {
+  "bs_firefox_65_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "50.0",
+    "browser_version": "65.0",
     "device": null,
     "os": "Windows"
   },
