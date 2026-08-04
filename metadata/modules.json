@@ -766,13 +766,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adsmartx",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "adsmovil",
       "aliasOf": null,
       "gvlid": null,
@@ -942,6 +935,13 @@
     {
       "componentType": "bidder",
       "componentName": "afp",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "agenticx",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
