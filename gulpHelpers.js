@@ -1,12 +1,45 @@
 const fs = require('fs');
 const path = require('path');
-const argv = require('yargs').argv;
+const { parseArgs } = require('node:util');
 const MANIFEST = 'package.json';
 const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
+
+const { values: argv } = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  options: {
+    // boolean flags
+    nolint:       { type: 'boolean' },
+    nolintfix:    { type: 'boolean' },
+    lintWarnings: { type: 'boolean' },
+    sourceMaps:   { type: 'boolean' },
+    manualEnable: { type: 'boolean' },
+    coverage:     { type: 'boolean' },
+    https:        { type: 'boolean' },
+    local:        { type: 'boolean' },
+    fetch:        { type: 'boolean' },
+    watch:        { type: 'boolean' },
+    browserstack: { type: 'boolean' },
+    notest:       { type: 'boolean' },
+    analytics:    { type: 'boolean' },
+    ES5:          { type: 'boolean' },
+    analyze:      { type: 'boolean' },
+    // string options
+    host:        { type: 'string' },
+    file:        { type: 'string' },
+    modules:     { type: 'string' },
+    browsers:    { type: 'string' },
+    disable:     { type: 'string' },
+    enable:      { type: 'string' },
+    distUrlBase: { type: 'string' },
+    bundleName:  { type: 'string' },
+    tag:         { type: 'string' },
+  },
+});
 
 const PRECOMPILED_PATH = './dist/src'
 const MODULE_PATH = './modules';
@@ -230,5 +263,6 @@ module.exports = {
   },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
+  },
+  argv
 };
