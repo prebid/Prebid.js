@@ -4,9 +4,9 @@ import { getWindowTop, logError, getWindowLocation, getWindowSelf } from '../../
  * Determines if the script is running inside an iframe and retrieves the URL.
  * @return {string} The encoded vrref value representing the relevant URL.
  */
+export function getCurrentUrl(): string {
+  let url: string;
 
-export function getCurrentUrl() {
-  let url;
   try {
     if (getWindowSelf() === getWindowTop()) {
       // top page
@@ -18,7 +18,7 @@ export function getCurrentUrl() {
 
     if (url.length >= 50) {
       return new URL(url).origin;
-    };
+    }
 
     return url;
   } catch (error) {
@@ -36,13 +36,19 @@ export function getCurrentUrl() {
  * @param {string} domainName - The domain name used to determine the relevant referrer.
  * @return {string} The modified URL with appended `vrref` or `fui` parameters.
  */
-export function appendVrrefAndFui(url, domainName) {
+export function appendVrrefAndFui(url: string, domainName?: string): string {
   const fullUrl = getCurrentUrl();
+
   if (fullUrl) {
-    return (url + '&vrref=' + getRelevantRefferer(domainName, fullUrl));
+    return url + '&vrref=' + getRelevantRefferer(domainName, fullUrl);
   }
+
   url += '&fui=1'; // Full Url Issue
-  if (domainName) url += '&vrref=' + encodeURIComponent(domainName);
+
+  if (domainName) {
+    url += '&vrref=' + encodeURIComponent(domainName);
+  }
+
   return url;
 }
 
@@ -52,9 +58,11 @@ export function appendVrrefAndFui(url, domainName) {
  * @param {string} fullUrl The full URL to analyze
  * @return {string} The relevant referrer
  */
-export function getRelevantRefferer(domainName, fullUrl) {
+export function getRelevantRefferer(domainName: string | undefined, fullUrl: string): string {
   return encodeURIComponent(
-    domainName && isDomainIncluded(fullUrl, domainName) ? fullUrl : (domainName || fullUrl)
+    domainName && isDomainIncluded(fullUrl, domainName)
+      ? fullUrl
+      : (domainName || fullUrl)
   );
 }
 
@@ -64,7 +72,7 @@ export function getRelevantRefferer(domainName, fullUrl) {
  * @param {string} domainName - The domain name to search for within the URL.
  * @return {boolean} `True` if the domain name is found in the URL, `false` otherwise.
  */
-export function isDomainIncluded(fullUrl, domainName) {
+export function isDomainIncluded(fullUrl: string, domainName: string): boolean {
   try {
     return new URL(fullUrl).hostname === domainName;
   } catch (error) {

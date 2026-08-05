@@ -1,10 +1,22 @@
 import { logError, logInfo } from '../../src/utils.js';
-import { SUPPORTED_TYPES, FIRST_PARTY_KEY } from '../../libraries/intentIqConstants/intentIqConstants.js';
+import { SUPPORTED_TYPES, FIRST_PARTY_KEY } from '../intentIqConstants/intentIqConstants.js';
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
 
 const MODULE_NAME = 'intentIqId';
 const PCID_EXPIRY = 365;
+
+export type AllowedStorageType = 'html5' | 'cookie';
+
+interface FirstPartyData {
+  isOptedOut?: boolean;
+  pcid?: string;
+  pcidDate?: number;
+  pid?: string;
+  abTestUuid?: string;
+  terminationCause?: number;
+  [key: string]: unknown;
+}
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -13,7 +25,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
  * @param {string} key
  * @returns {boolean}
  */
-export function isPartnerDataKey(key) {
+export function isPartnerDataKey(key: string): boolean {
   if (typeof key !== 'string') return false;
   const parts = key.split('_fdata_');
   if (parts.length < 2) return false;
@@ -27,7 +39,10 @@ export function isPartnerDataKey(key) {
  * @param {Array} allowedStorage - Array of allowed storage types ('html5' or 'cookie').
  * @return {string|null} - The retrieved data or null if an error occurs.
  */
-export function readData(key, allowedStorage) {
+export function readData(
+  key: string,
+  allowedStorage: AllowedStorageType[]
+): string | null {
   try {
     if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
       return storage.getDataFromLocalStorage(key);
@@ -49,7 +64,12 @@ export function readData(key, allowedStorage) {
  * @param {Array} allowedStorage - An array of allowed storage types: 'html5' for Local Storage and/or 'cookie' for Cookies.
  * @param {Object} firstPartyData - Contains user consent data; when isOptedOut is true only a stripped subset is persisted to device.
  */
-export function storeData(key, value, allowedStorage, firstPartyData) {
+export function storeData(
+  key: string,
+  value: string,
+  allowedStorage: AllowedStorageType[],
+  firstPartyData?: FirstPartyData
+): void {
   try {
     if (firstPartyData?.isOptedOut) {
       // Limit what reaches device storage when the user is opted out.
@@ -57,7 +77,13 @@ export function storeData(key, value, allowedStorage, firstPartyData) {
       // - Partner data (_iiq_fdata_<partnerId>): persist only terminationCause.
       // - Anything else: do not persist.
       if (key === FIRST_PARTY_KEY) {
-        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? { ...value } : null);
+        const parsed =
+          typeof value === 'string'
+            ? tryParse<FirstPartyData>(value)
+            : (value && typeof value === 'object'
+                ? { ...(value as FirstPartyData) }
+                : null);
+
         if (parsed) {
           delete parsed.pcid;
           delete parsed.pcidDate;
@@ -66,19 +92,33 @@ export function storeData(key, value, allowedStorage, firstPartyData) {
           value = JSON.stringify(parsed);
         }
       } else if (isPartnerDataKey(key)) {
-        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? value : null);
-        value = JSON.stringify({ terminationCause: parsed ? parsed.terminationCause : undefined });
+        const parsed =
+          typeof value === 'string'
+            ? tryParse<FirstPartyData>(value)
+            : (value && typeof value === 'object'
+                ? (value as FirstPartyData)
+                : null);
+
+        value = JSON.stringify({
+          terminationCause: parsed ? parsed.terminationCause : undefined
+        });
       } else {
         return;
       }
     }
+
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
+
     if (value) {
       if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
         storage.setDataInLocalStorage(key, value);
       }
+
       if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-        const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
+        const expiresStr = new Date(
+          Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000))
+        ).toUTCString();
+
         storage.setCookie(key, value, expiresStr, 'LAX');
       }
     }
@@ -91,12 +131,15 @@ export function storeData(key, value, allowedStorage, firstPartyData) {
  * Remove Intent IQ data from cookie or local storage
  * @param key
  */
-
-export function removeDataByKey(key, allowedStorage) {
+export function removeDataByKey(
+  key: string,
+  allowedStorage: AllowedStorageType[]
+): void {
   try {
     if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
       storage.removeDataFromLocalStorage(key);
     }
+
     if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
       const expiredDate = new Date(0).toUTCString();
       storage.setCookie(key, '', expiredDate, 'LAX');
@@ -113,9 +156,15 @@ export function removeDataByKey(key, allowedStorage) {
  * @param {Array<string>} params - An array containing storage type preferences, e.g., ['html5', 'cookie'].
  * @return {Array<string>} - Returns an array with allowed storage types. Defaults to ['html5'] if no valid options are provided.
  */
-export function defineStorageType(params) {
+export function defineStorageType(
+  params?: string[]
+): AllowedStorageType[] {
   if (!params || !Array.isArray(params)) return ['html5']; // use locale storage be default
-  const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
+
+  const filteredArr = params.filter(
+    (item): item is AllowedStorageType => SUPPORTED_TYPES.includes(item)
+  );
+
   return filteredArr.length ? filteredArr : ['html5'];
 }
 
@@ -123,9 +172,9 @@ export function defineStorageType(params) {
  * Parse json if possible, else return null
  * @param data
  */
-export function tryParse(data) {
+export function tryParse<T = unknown>(data: string): T | null {
   try {
-    return JSON.parse(data);
+    return JSON.parse(data) as T;
   } catch (err) {
     logError(err);
     return null;
