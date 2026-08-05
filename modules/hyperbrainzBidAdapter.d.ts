@@ -14,38 +14,17 @@ export interface HyperbrainzBidderParams {
    */
   bidFloor?: number;
   /**
-   * User ID to send as `user.id`. Used as a fallback when no ID is found
-   * in local storage.
+   * User ID to send as `user.id`. Used instead of the local storage value.
    */
   userId?: string;
   /**
    * Custom bidder extension fields, passed through as `imp.ext`.
    */
   ext?: Ext;
-  /**
-   * Per-placement bid endpoint override. Bids with different endpoint
-   * values are sent as separate requests. Defaults to
-   * `config.hyperbrainz.endpoint`, then the production endpoint.
-   */
-  endpoint?: string;
-}
-
-export interface HyperbrainzConfig {
-  /**
-   * Overrides the bid endpoint URL for all hyperbrainz bids, e.g. to target a QA or
-   * staging environment. Individual bids can override this with `params.endpoint`.
-   */
-  endpoint?: string;
 }
 
 declare module "../src/adUnits" {
   interface BidderParams {
     hyperbrainz: HyperbrainzBidderParams;
-  }
-}
-
-declare module "../src/config" {
-  interface Config {
-    hyperbrainz?: HyperbrainzConfig;
   }
 }
