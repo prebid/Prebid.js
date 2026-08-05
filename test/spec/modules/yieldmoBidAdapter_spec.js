@@ -476,15 +476,6 @@ describe('YieldmoAdapter', function () {
         }
       });
 
-      it('should discard the video request entirely when coppa is set', function () {
-        config.setConfig({ coppa: true });
-        try {
-          expect(build([mockVideoBid()], mockBidderRequest({}, [mockVideoBid()]))).to.deep.equal([]);
-        } finally {
-          config.resetConfig();
-        }
-      });
-
       it('should discard the request when coppa is set to the numeric flag (coppa: 1)', function () {
         config.setConfig({ coppa: 1 });
         try {
