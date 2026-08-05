@@ -75,7 +75,7 @@ export const spec = {
         }
       };
 
-      const coppa = bidderRequest?.ortb2?.regs?.coppa ?? (coppaDataHandler.getCoppa() ? 1 : 0);
+      const coppa = bidderRequest?.ortb2?.regs?.coppa ?? (coppaDataHandler.getCoppa() ? 1 : undefined);
       if (isSet(coppa)) {
         requestData.regs.coppa = coppa;
       }

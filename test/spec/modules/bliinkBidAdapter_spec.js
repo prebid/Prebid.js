@@ -1111,7 +1111,6 @@ describe('BLIINK Adapter keywords & coppa true', function () {
     sinon.stub(utils, 'getDomLoadingDuration').returns(0);
     domLoadingDuration = '0';
     configStub = sinon.stub(config, 'getConfig');
-    configStub.withArgs('coppa').returns(true);
     querySelectorStub = sinon.stub(document, 'querySelector').returns(metaElement);
     originalTitle = document.title;
     document.title = '';
@@ -1129,6 +1128,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
       spec.buildRequests(
         [],
         Object.assign(getConfigBuildRequest('banner'), {
+          ortb2: { regs: { coppa: 1 } },
           gdprConsent: {
             gdprApplies: true,
             consentString: 'XXXX',

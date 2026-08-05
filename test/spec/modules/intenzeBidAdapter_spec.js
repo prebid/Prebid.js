@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/intenzeBidAdapter';
-import { config } from 'src/config.js';
 
 const NATIVE_BID_REQUEST = {
   code: 'native_example',
@@ -193,17 +192,8 @@ const NATIVE_BID_RESPONSE = {
 
 describe('IntenzeAdapter', function () {
   describe('with COPPA', function () {
-    beforeEach(function () {
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-    });
-    afterEach(function () {
-      config.getConfig.restore();
-    });
-
     it('should send the Coppa "required" flag set to "1" in the request', function () {
-      const serverRequest = spec.buildRequests([BANNER_BID_REQUEST]);
+      const serverRequest = spec.buildRequests([BANNER_BID_REQUEST], { ortb2: { regs: { coppa: 1 } } });
       expect(serverRequest.data[0].regs.coppa).to.equal(1);
     });
   });
