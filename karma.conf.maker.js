@@ -31,6 +31,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     options: {
       cacheDirectory: cacheDir, cacheCompression: false,
       presets: [['@babel/preset-env', {modules: 'commonjs'}]],
+      // The coverage instrumentation options below were written by a bot (Claude Code).
       // Keep the specs out of coverage: they run start to finish by definition, so counting them
       // swamps the totals for the code they exercise. `exclude` is anchored to `cwd`, which has to be
       // the precompiled tree because that's where the files being instrumented live. Both options are
