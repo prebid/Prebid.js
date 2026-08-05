@@ -328,30 +328,34 @@ describe('Bid Espresso bid adapter', () => {
       expect(request.data.regs.coppa).to.equal(1);
     });
 
-    it('builds a video imp for a video-only ad unit', () => {
-      bid.mediaTypes = {
-        video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'], protocols: [2, 3] },
-      };
-      const [request] = spec.buildRequests([bid], bidderRequest);
-      expect(request.data.imp).to.have.lengthOf(1);
-      expect(request.data.imp[0].video).to.exist;
-      expect(request.data.imp[0].video.w).to.equal(640);
-      expect(request.data.imp[0].video.h).to.equal(480);
-      expect(request.data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
-      expect(request.data.imp[0].banner).to.not.exist;
-    });
+    if (FEATURES.VIDEO) {
+      it('builds a video imp for a video-only ad unit', () => {
+        bid.mediaTypes = {
+          video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'], protocols: [2, 3] },
+        };
+        const [request] = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.imp).to.have.lengthOf(1);
+        expect(request.data.imp[0].video).to.exist;
+        expect(request.data.imp[0].video.w).to.equal(640);
+        expect(request.data.imp[0].video.h).to.equal(480);
+        expect(request.data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
+        expect(request.data.imp[0].banner).to.not.exist;
+      });
+    }
 
-    it('sends both media objects for a mixed banner+video ad unit', () => {
-      bid.mediaTypes = {
-        banner: { sizes: [[300, 250]] },
-        video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] },
-      };
-      const [request] = spec.buildRequests([bid], bidderRequest);
-      expect(request.data.imp).to.have.lengthOf(1);
-      expect(request.data.imp[0].banner).to.exist;
-      expect(request.data.imp[0].video).to.exist;
-      expect(request.data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
-    });
+    if (FEATURES.VIDEO) {
+      it('sends both media objects for a mixed banner+video ad unit', () => {
+        bid.mediaTypes = {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] },
+        };
+        const [request] = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.imp).to.have.lengthOf(1);
+        expect(request.data.imp[0].banner).to.exist;
+        expect(request.data.imp[0].video).to.exist;
+        expect(request.data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
+      });
+    }
 
     it('drops only a malformed video half from a mixed ad unit', () => {
       bid.mediaTypes = {
@@ -520,50 +524,52 @@ describe('Bid Espresso bid adapter', () => {
     });
   });
 
-  describe('interpretResponse for a mixed banner+video response', () => {
-    // Two ad units (one banner, one video) answered in ONE response. Pins the
-    // converter's per-imp context isolation: the video bid's mediaType/ttl
-    // treatment must never leak onto the banner bid.
-    it('types and ttls each bid by its own imp', () => {
-      const bannerBid = deepClone(bidRequestBase);
-      const videoBid = deepClone(bidRequestBase);
-      videoBid.bidId = 'video-bid-1';
-      videoBid.adUnitCode = 'video-ad-unit-code';
-      videoBid.mediaTypes = { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } };
-      const bidderRequest = {
-        bidderCode: 'bidespresso',
-        auctionId: bannerBid.auctionId,
-        bidderRequestId: bannerBid.bidderRequestId,
-        bids: [bannerBid, videoBid],
-        ortb2: {},
-      };
-      const [request] = spec.buildRequests([bannerBid, videoBid], bidderRequest);
-      const response = {
-        body: {
-          id: request.data.id,
-          seatbid: [
-            {
-              seat: '2307',
-              bid: [
-                { id: 'v', impid: 'video-bid-1', price: 0.35, adm: '<VAST version="3.0"></VAST>', crid: 'vid' },
-                { id: 'b', impid: 'bid-id-1', price: 0.09, adm: '<div>ad</div>', w: 300, h: 250, crid: 'ban' },
-              ],
-            },
-          ],
-        },
-      };
-      const result = spec.interpretResponse(response, request);
-      const bids = result.bids;
-      expect(bids).to.have.lengthOf(2);
-      const video = bids.find((b) => b.requestId === 'video-bid-1');
-      const banner = bids.find((b) => b.requestId === 'bid-id-1');
-      expect(video.mediaType).to.equal('video');
-      expect(video.ttl).to.equal(900);
-      expect(banner.mediaType).to.equal('banner');
-      expect(banner.ttl).to.equal(300);
-      expect(banner.ad).to.equal('<div>ad</div>');
+  if (FEATURES.VIDEO) {
+    describe('interpretResponse for a mixed banner+video response', () => {
+      // Two ad units (one banner, one video) answered in ONE response. Pins the
+      // converter's per-imp context isolation: the video bid's mediaType/ttl
+      // treatment must never leak onto the banner bid.
+      it('types and ttls each bid by its own imp', () => {
+        const bannerBid = deepClone(bidRequestBase);
+        const videoBid = deepClone(bidRequestBase);
+        videoBid.bidId = 'video-bid-1';
+        videoBid.adUnitCode = 'video-ad-unit-code';
+        videoBid.mediaTypes = { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } };
+        const bidderRequest = {
+          bidderCode: 'bidespresso',
+          auctionId: bannerBid.auctionId,
+          bidderRequestId: bannerBid.bidderRequestId,
+          bids: [bannerBid, videoBid],
+          ortb2: {},
+        };
+        const [request] = spec.buildRequests([bannerBid, videoBid], bidderRequest);
+        const response = {
+          body: {
+            id: request.data.id,
+            seatbid: [
+              {
+                seat: '2307',
+                bid: [
+                  { id: 'v', impid: 'video-bid-1', price: 0.35, adm: '<VAST version="3.0"></VAST>', crid: 'vid' },
+                  { id: 'b', impid: 'bid-id-1', price: 0.09, adm: '<div>ad</div>', w: 300, h: 250, crid: 'ban' },
+                ],
+              },
+            ],
+          },
+        };
+        const result = spec.interpretResponse(response, request);
+        const bids = result.bids;
+        expect(bids).to.have.lengthOf(2);
+        const video = bids.find((b) => b.requestId === 'video-bid-1');
+        const banner = bids.find((b) => b.requestId === 'bid-id-1');
+        expect(video.mediaType).to.equal('video');
+        expect(video.ttl).to.equal(900);
+        expect(banner.mediaType).to.equal('banner');
+        expect(banner.ttl).to.equal(300);
+        expect(banner.ad).to.equal('<div>ad</div>');
+      });
     });
-  });
+  }
 
   describe('interpretResponse with gateway-stamped mtype (dual-media imps)', () => {
     // The gateway stamps `mtype` on every bid; on a dual-media imp it is the
@@ -615,13 +621,15 @@ describe('Bid Espresso bid adapter', () => {
       expect(result.bids[0].ttl).to.equal(300);
     });
 
-    it('classifies an mtype 2 bid on a dual-media imp as video with the video ttl', () => {
-      const result = spec.interpretResponse(dualResponse({ adm: vast, mtype: 2 }), request);
-      expect(result.bids).to.have.lengthOf(1);
-      expect(result.bids[0].mediaType).to.equal('video');
-      expect(result.bids[0].vastXml).to.equal(vast);
-      expect(result.bids[0].ttl).to.equal(900);
-    });
+    if (FEATURES.VIDEO) {
+      it('classifies an mtype 2 bid on a dual-media imp as video with the video ttl', () => {
+        const result = spec.interpretResponse(dualResponse({ adm: vast, mtype: 2 }), request);
+        expect(result.bids).to.have.lengthOf(1);
+        expect(result.bids[0].mediaType).to.equal('video');
+        expect(result.bids[0].vastXml).to.equal(vast);
+        expect(result.bids[0].ttl).to.equal(900);
+      });
+    }
 
     it('defaults a no-mtype bid on a dual-media imp to banner', () => {
       const result = spec.interpretResponse(
@@ -632,63 +640,65 @@ describe('Bid Espresso bid adapter', () => {
     });
   });
 
-  describe('interpretResponse for video', () => {
-    // Gateway bids carry no mtype; the adapter must infer VIDEO from the imp
-    // the bid answers, and video bids get the longer video ttl.
-    const videoBid = {
-      adUnitCode: 'video-ad-unit-code',
-      auctionId: 'auction-id',
-      bidId: 'video-bid-1',
-      bidder: 'bidespresso',
-      bidderRequestId: 'bidder-request-id',
-      mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } },
-      params: { publisherId: 'k8xw2r4p', inventoryId: 'n7c3tkqe' },
-    };
-
-    const vast = '<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>';
-
-    it('maps a no-mtype video bid to a Prebid video bid with vastXml and the video ttl', () => {
-      const bid = deepClone(videoBid);
-      const bidderRequest = {
-        bidderCode: 'bidespresso',
-        auctionId: bid.auctionId,
-        bidderRequestId: bid.bidderRequestId,
-        bids: [bid],
-        ortb2: {},
+  if (FEATURES.VIDEO) {
+    describe('interpretResponse for video', () => {
+      // Gateway bids carry no mtype; the adapter must infer VIDEO from the imp
+      // the bid answers, and video bids get the longer video ttl.
+      const videoBid = {
+        adUnitCode: 'video-ad-unit-code',
+        auctionId: 'auction-id',
+        bidId: 'video-bid-1',
+        bidder: 'bidespresso',
+        bidderRequestId: 'bidder-request-id',
+        mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } },
+        params: { publisherId: 'k8xw2r4p', inventoryId: 'n7c3tkqe' },
       };
-      const [request] = spec.buildRequests([bid], bidderRequest);
-      const videoServerResponse = {
-        body: {
-          id: request.data.id,
-          seatbid: [
-            {
-              seat: '2307',
-              bid: [
-                {
-                  id: '1',
-                  impid: 'video-bid-1',
-                  price: 0.35,
-                  adm: vast,
-                  adomain: ['advertiser.example'],
-                  crid: '2307:vid123',
-                },
-              ],
-            },
-          ],
-        },
-      };
-      const result = spec.interpretResponse(videoServerResponse, request);
-      const bids = result.bids;
-      expect(bids).to.have.lengthOf(1);
-      expect(bids[0].requestId).to.equal('video-bid-1');
-      expect(bids[0].mediaType).to.equal('video');
-      expect(bids[0].cpm).to.equal(0.35);
-      expect(bids[0].vastXml).to.equal(vast);
-      expect(bids[0].currency).to.equal('USD');
-      expect(bids[0].netRevenue).to.equal(true);
-      expect(bids[0].ttl).to.equal(900);
+
+      const vast = '<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>';
+
+      it('maps a no-mtype video bid to a Prebid video bid with vastXml and the video ttl', () => {
+        const bid = deepClone(videoBid);
+        const bidderRequest = {
+          bidderCode: 'bidespresso',
+          auctionId: bid.auctionId,
+          bidderRequestId: bid.bidderRequestId,
+          bids: [bid],
+          ortb2: {},
+        };
+        const [request] = spec.buildRequests([bid], bidderRequest);
+        const videoServerResponse = {
+          body: {
+            id: request.data.id,
+            seatbid: [
+              {
+                seat: '2307',
+                bid: [
+                  {
+                    id: '1',
+                    impid: 'video-bid-1',
+                    price: 0.35,
+                    adm: vast,
+                    adomain: ['advertiser.example'],
+                    crid: '2307:vid123',
+                  },
+                ],
+              },
+            ],
+          },
+        };
+        const result = spec.interpretResponse(videoServerResponse, request);
+        const bids = result.bids;
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].requestId).to.equal('video-bid-1');
+        expect(bids[0].mediaType).to.equal('video');
+        expect(bids[0].cpm).to.equal(0.35);
+        expect(bids[0].vastXml).to.equal(vast);
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].netRevenue).to.equal(true);
+        expect(bids[0].ttl).to.equal(900);
+      });
     });
-  });
+  }
 
   describe('getUserSyncs', () => {
     it('registers nothing in pixel-only mode: the sync chain must run as a document', () => {
