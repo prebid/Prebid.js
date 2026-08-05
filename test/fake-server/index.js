@@ -12,6 +12,8 @@ const PORT = argv.port || '4444';
 // Initialize express app
 const app = express();
 
+app.use('/static', express.static(path.join(__dirname, 'static')));
+
 // Middlewares
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
