@@ -514,7 +514,7 @@ describe('YieldmoAdapter', function () {
             }]
           }]
         };
-        expect(buildAndGetData([mockBannerBid({ ...params })]).eids).equal(JSON.stringify(params.fakeUserIdAsEids));
+        expect(buildAndGetData([mockBannerBid({ ...params })]).eids).equal(JSON.stringify(params.userIdAsEids));
       });
     });
 
