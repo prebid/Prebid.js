@@ -10,6 +10,8 @@ import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -101,9 +103,7 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
 
 export function readFpidFromLocalStrage() {
   try {
-    // TODO: use storageManager
-    // eslint-disable-next-line no-restricted-properties
-    const fpid = window.localStorage.getItem('ope_fpid');
+    const fpid = storageManager.getDataFromLocalStorage('ope_fpid');
     if (fpid) {
       return fpid;
     }
@@ -145,6 +145,8 @@ export const dgkeywordSubmodule = {
   getBidRequestData: getDgKeywordsAndSet,
   init: init,
 };
+
+const storageManager = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: dgkeywordSubmodule.name });
 
 function init(moduleConfig) {
   return true;

@@ -4,6 +4,9 @@ module.exports = {
   mode: 'production',
   devtool: 'source-map',
   context: helpers.getPrecompiledPath(),
+  experiments: {
+    typescript: false
+  },
   resolve: {
     modules: [
       helpers.getPrecompiledPath(),

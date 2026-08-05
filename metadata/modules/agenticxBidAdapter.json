@@ -4,9 +4,11 @@
   "purposes": {},
   "components": [
     {
-      "componentType": "analytics",
-      "componentName": "eightPod",
-      "gvlid": null
+      "componentType": "bidder",
+      "componentName": "agenticx",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }
