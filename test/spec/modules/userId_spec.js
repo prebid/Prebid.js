@@ -1071,7 +1071,7 @@ describe('User ID', function () {
         // ppid should NOT have been set
         expect(window.googletag._ppid).to.equal(undefined);
         // a warning should have been emmited
-        expect(utils.logWarn.args[0][0]).to.exist.and.to.contain('User ID - Googletag Publisher Provided ID for pubcid.org is not between 32 and 150 characters - pubcommonIdValue');
+        expect(utils.logWarn.args[0][0]).to.exist.and.to.contain("User ID - Googletag Publisher Provided ID for pubcid.org doesn't match the PPID requirements - pubcommonIdValue");
       });
     });
 

@@ -97,6 +97,10 @@ module.exports = [
       'import/resolver': {
         [path.resolve('./plugins/eslint/resolver')]: true,
         node: true,
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       }
     },
     languageOptions: {
@@ -128,6 +132,14 @@ module.exports = [
       'import/no-named-as-default': 'warn',
       'import/no-named-as-default-member': 'warn',
       'import/no-duplicates': 'warn',
+      'import/no-extraneous-dependencies': ['error', {
+        // flag imports that are not runtime or peer dependencies;
+        // except for tests, which are allowed devDependencies
+        devDependencies: sourcePattern('test'),
+        peerDependencies: true,
+        optionalDependencies: false,
+        includeTypes: true,
+      }],
       'prebid/no-implicit-operand-conversion': 'error',
       'no-restricted-syntax': [
         'error',

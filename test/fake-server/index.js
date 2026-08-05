@@ -2,6 +2,7 @@
 
 const express = require('express');
 const morgan = require('morgan');
+const path = require('path');
 const argv = require('yargs').argv;
 const appnexusHandler = require('./responders/appnexus.js');
 const tripleliftHandler = require('./responders/triplelift.js');
