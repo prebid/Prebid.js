@@ -14,7 +14,6 @@ function makeResponder(fixtureGroup, matchRequests = (actualRequest, mockRequest
    * @returns {object} responseBody
    */
   const matchResponse = function (requestBody) {
-
     const match = requestResponsePairs.filter(
       reqRes => reqRes.request.httpRequest &&
         matchRequests(_.cloneDeep(requestBody), _.cloneDeep(reqRes.request.httpRequest.body))
