@@ -1,5 +1,3 @@
-/* global document, window */
-
 (function () {
   var script = document.currentScript || document.querySelector('script[data-auction-response-id]');
 
@@ -21,7 +19,7 @@
   iframe.style.border = '0';
   iframe.style.width = response.ad.display.w + 'px';
   iframe.style.height = response.ad.display.h + 'px';
-  document.body.appendChild(iframe);
+  script.parentElement.appendChild(iframe);
 
   var doc = iframe.contentWindow.document;
   doc.open();
