@@ -6,7 +6,7 @@ const dev = argv.dev || false;
 
 const REPLACE = {
   'https://ib.adnxs.com/ut/v3/prebid': `http://${host}:${port}/appnexus`,
-  'https://tlx.3lift.com/header/auction': `http://${host}:${port}/triplelift`,
+  'https://tlx.3lift.com/header/auction': `http://localhost:8076/header/auction`,
 };
 
 const replaceStrings = (() => {

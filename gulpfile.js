@@ -351,19 +351,25 @@ function e2eTestTaskMaker() {
   return function test(done) {
     const integ = startIntegServer();
     startLocalServer();
-    runWebdriver({})
-      .then(() => {
-        // kill fake server
-        integ.kill('SIGINT');
-        done();
-        process.exit(0);
-      })
-      .catch(err => {
-        // kill fake server
-        integ.kill('SIGINT');
-        done(new Error(`Tests failed with error: ${err}`));
-        process.exit(1);
-      });
+    
+    // Give TLX time to start
+    setTimeout(() => {
+      runWebdriver({})
+        .then(() => {
+          // kill fake server and TLX
+          integ.kill('SIGINT');
+          tlx.kill('SIGINT');
+          done();
+          process.exit(0);
+        })
+        .catch(err => {
+          // kill fake server and TLX
+          integ.kill('SIGINT');
+          tlx.kill('SIGINT');
+          done(new Error(`Tests failed with error: ${err}`));
+          process.exit(1);
+        });
+    }, 5000);
   }
 }
 
@@ -445,7 +451,10 @@ function startIntegServer(dev = false) {
   if (dev) {
     args.push('--dev=true')
   }
-  const srv = spawn('node', args);
+  const env = Object.assign({}, process.env, {
+    USE_LOCAL_TLX: 'true'
+  });
+  const srv = spawn('node', args, { env });
   srv.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
   });
@@ -453,6 +462,29 @@ function startIntegServer(dev = false) {
     console.log(`stderr: ${data}`);
   });
   return srv;
+}
+
+function startTLXServer() {
+  const TLX_REPO_PATH = process.env.TLX_REPO_PATH || '/Users/carlos_cobaleda/development/eclipse-2025.12-workspace/shared';
+  const TLX_PORT = 8076;
+  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+  
+  const args = [
+    `exchange-service:bootRun`,
+    `--args=--server.port=${TLX_PORT}`
+  ];
+  
+  const tlxSrv = spawn(gradlew, args, {
+    cwd: TLX_REPO_PATH,
+    stdio: 'inherit',
+    shell: true
+  });
+  
+  tlxSrv.on('error', (err) => {
+    console.error(`Failed to start TLX server: ${err}`);
+  });
+  
+  return tlxSrv;
 }
 
 function startLocalServer(options = {}) {
