@@ -83,6 +83,7 @@ export const spec = {
   interpretResponse,
   getUserSyncs,
   onBidWon,
+  disclosureURL: "https://privacy.copper6.com/deviceStorage.json",
 };
 
 registerBidder(spec);

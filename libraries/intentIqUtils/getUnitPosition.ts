@@ -1,4 +1,14 @@
-export function getUnitPosition(pbjs, adUnitCode) {
+interface Pbjs {
+  adUnits?: Array<{
+    code?: string;
+    mediaTypes?: Record<string, { pos?: number }>;
+  }>;
+}
+
+export function getUnitPosition(
+  pbjs: Pbjs | undefined,
+  adUnitCode: string
+): number | undefined {
   const adUnits = pbjs?.adUnits;
   if (!Array.isArray(adUnits) || !adUnitCode) return;
 
@@ -6,7 +16,7 @@ export function getUnitPosition(pbjs, adUnitCode) {
     const adUnit = adUnits[i];
     if (adUnit?.code !== adUnitCode) continue;
 
-    const mediaTypes = adUnit?.mediaTypes;
+    const mediaTypes = adUnit.mediaTypes;
     if (!mediaTypes || typeof mediaTypes !== 'object') return;
 
     const firstKey = Object.keys(mediaTypes)[0];
