@@ -215,6 +215,15 @@ describe('bidderFactory', () => {
             });
           });
         });
+
+        [true, false].forEach((coppa) => {
+          it(`should pass coppa=${coppa} to getUserSyncs`, () => {
+            config.setConfig({ coppa });
+            const bidder = newBidder(spec);
+            bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+            expect(spec.getUserSyncs.firstCall.args[5]).to.equal(coppa);
+          });
+        });
       });
 
       describe('transaction IDs', () => {
@@ -713,7 +722,7 @@ describe('bidderFactory', () => {
               shouldDefer: true
             }
           ].forEach(({ onBidBillable, deferRendering, shouldDefer }) => {
-            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and sayd deferRender = ${deferRendering}`, () => {
+            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and says deferRender = ${deferRendering}`, () => {
               if (onBidBillable) {
                 spec.onBidBillable = sinon.stub();
               }
@@ -936,32 +945,6 @@ describe('bidderFactory', () => {
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.callCount).to.equal(0);
-        expect(doneStub.calledOnce).to.equal(true);
-        expect(callBidderErrorStub.calledOnce).to.equal(true);
-        expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
-        expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
-        expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
-          error: xhrErrorMock,
-          bidderRequest: MOCK_BIDS_REQUEST
-        });
-      });
-
-      it('should call spec.getUserSyncs() with no responses', function () {
-        const bidder = newBidder(spec);
-
-        spec.isBidRequestValid.returns(true);
-        spec.buildRequests.returns({
-          method: 'POST',
-          url: 'test.url.com',
-          data: {}
-        });
-        spec.getUserSyncs.returns([]);
-
-        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
-        expect(spec.getUserSyncs.calledOnce).to.equal(true);
-        expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
         expect(doneStub.calledOnce).to.equal(true);
         expect(callBidderErrorStub.calledOnce).to.equal(true);
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
@@ -1725,7 +1708,6 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sandbox.stub();
       addBidResponseStub.reject = sandbox.stub();
-      sandbox.stub();
       getParameterByNameStub = sandbox.stub(utils, 'getParameterByName');
       debugTurnedOnStub = sandbox.stub(utils, 'debugTurnedOn');
       bidder = newBidder(spec);

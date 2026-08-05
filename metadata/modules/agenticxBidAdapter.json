@@ -5,7 +5,7 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "adsmartx",
+      "componentName": "agenticx",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
