@@ -189,7 +189,11 @@ jobs:
   coverage:
     name: Coverage
     needs: [checkout, test, base-coverage-combine]
-    if: always() && needs.test.result == 'success' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
+    # Gate on the coverage artifact rather than on the result of the whole browser-tests call, which
+    # also covers e2e, browserstack and the browsers that run without instrumentation. The output is
+    # only set by a matrix leg that both succeeded and produced coverage, so a non-empty value is
+    # exactly the condition under which there is something to report.
+    if: always() && needs.test.outputs.coverage && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
