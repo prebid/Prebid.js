@@ -462,15 +462,6 @@ function startIntegServer(dev = false, useLocalTlx = false) {
   return srv;
 }
 
-function buildBundleDevWithDirectTLX(done) {
-  // Set environment variable to use direct TLX endpoint
-  process.env.USE_DIRECT_TLX = 'true';
-  
-  // Create a task that builds with the environment variable set
-  return gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp')(done);
-}
-buildBundleDevWithDirectTLX.displayName = 'build-bundle-dev-with-direct-tlx';
-
 function startDockerizedTLX() {
   const TLX_REPO_PATH = process.env.TLX_REPO_PATH || '/Users/carlos_cobaleda/development/eclipse-2025.12-workspace/shared';
   const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
@@ -579,7 +570,7 @@ gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', st
 gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
-gulp.task('serve-e2e-tlx-offline', gulp.series(clean, buildBundleDevWithDirectTLX, gulp.parallel(() => startDockerizedTLX(), startLocalServer)));
+gulp.task('serve-e2e-tlx-offline', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startDockerizedTLX(), () => startIntegServer(true, true), startLocalServer)));
 
 gulp.task('default', gulp.series('build'));
 
