@@ -4,14 +4,16 @@ const express = require('express');
 const morgan = require('morgan');
 const path = require('path');
 const argv = require('yargs').argv;
-const fakeResponder = require('./fake-responder.js');
-const tripleLiftFakeResponder = require('./triplelift-fake-responder.js');
+const appnexusHandler = require('./responders/appnexus.js');
+const tripleliftHandler = require('./responders/triplelift.js');
 const bundleMaker = require('./bundle.js');
 
 const PORT = argv.port || '4444';
 
 // Initialize express app
 const app = express();
+
+app.use('/static', express.static(path.join(__dirname, 'static')));
 
 // Middlewares
 app.use(express.urlencoded({ extended: false }));
@@ -30,16 +32,11 @@ app.get('/bundle', bundleMaker, (req, res) => {
   res.send();
 });
 
-app.get('/ttj', (req, res) => {
-  res.type('application/javascript');
-  res.sendFile(path.join(__dirname, 'triplelift-ttj.js'));
-});
-
-app.post('/appnexus', fakeResponder, (req, res) => {
+app.post('/appnexus', appnexusHandler, (req, res) => {
   res.send();
 });
 
-app.post('/triplelift', tripleLiftFakeResponder, (req, res) => {
+app.post('/triplelift', tripleliftHandler, (req, res) => {
   res.send();
 });
 
