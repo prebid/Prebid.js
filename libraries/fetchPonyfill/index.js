@@ -21,7 +21,31 @@
  * `abort()` - real cancellation, which native fetch simply could not do on
  * these browsers.
  */
-export { fetch, Headers, Request, Response } from 'whatwg-fetch';
+import { fetch, Headers, Request as WhatwgRequest, Response } from 'whatwg-fetch';
+
+export { fetch, Headers, Response };
+
+/**
+ * whatwg-fetch keeps whatever url it was handed and does not implement `keepalive` at
+ * all. Native `Request` normalizes the url per the URL spec - `https://x.com` becomes
+ * `https://x.com/`, and relative urls resolve against the document - and always exposes
+ * a boolean `keepalive`. src/ajax.ts reads both back off the request, so match native
+ * instead of leaving the ES5 build subtly different from every other build.
+ *
+ * XHR cannot actually honour keepalive (no browser this ponyfill targets supports it
+ * even natively), but the value still has to round-trip for the callers that check it.
+ */
+export function Request(input, init) {
+  const request = new WhatwgRequest(input, init);
+  try {
+    request.url = new URL(request.url, typeof document !== 'undefined' ? document.baseURI : undefined).href;
+  } catch (e) {
+    // not parseable - leave it as given rather than losing it
+  }
+  request.keepalive = !!((init && init.keepalive) ||
+    (input && typeof input === 'object' && input.keepalive));
+  return request;
+}
 
 /**
  * whatwg-fetch consumes a signal by duck typing - it calls
