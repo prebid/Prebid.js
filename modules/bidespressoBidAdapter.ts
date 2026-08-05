@@ -252,6 +252,10 @@ const getUserSyncs: BidderSpec<typeof BIDDER_CODE>['getUserSyncs'] = (syncOption
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
+  // Device-storage disclosure for the server-set match cookie (the adapter
+  // itself uses no storage APIs; the cookie attaches via the credentialed
+  // request and is set during the iframe sync).
+  disclosureURL: 'https://auction.bidespresso.com/device-storage-disclosure.json',
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
