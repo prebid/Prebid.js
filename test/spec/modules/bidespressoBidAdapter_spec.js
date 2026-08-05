@@ -294,6 +294,34 @@ describe('Bid Espresso bid adapter', () => {
       expect(request.data.imp[0].bidfloorcur).to.be.undefined;
     });
 
+    it('attaches per-size granular floors when they resolve in USD', () => {
+      bid.mediaTypes = { banner: { sizes: [[300, 250], [728, 90]] } };
+      bid.getFloor = ({ currency, size }) => ({
+        currency,
+        floor: Array.isArray(size) && size[0] === 728 ? 2.5 : 1.25,
+      });
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      const formats = request.data.imp[0].banner.format;
+      const leaderboard = formats.find((f) => f.w === 728);
+      expect(leaderboard.ext.bidfloor).to.equal(2.5);
+      expect(leaderboard.ext.bidfloorcur).to.equal('USD');
+    });
+
+    it('withholds granular floors that cannot resolve in USD', () => {
+      bid.mediaTypes = { banner: { sizes: [[300, 250], [728, 90]] } };
+      bid.getFloor = ({ size }) => ({
+        currency: 'EUR',
+        floor: Array.isArray(size) && size[0] === 728 ? 2.5 : 0.8,
+      });
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.imp[0].bidfloor).to.be.undefined;
+      const banner = request.data.imp[0].banner;
+      expect(banner.ext?.bidfloor).to.be.undefined;
+      (banner.format ?? []).forEach((f) => {
+        expect(f.ext?.bidfloor, `format ${f.w}x${f.h}`).to.be.undefined;
+      });
+    });
+
     it('forwards the COPPA flag from config', () => {
       bidderRequest.ortb2.regs = { coppa: 1 };
       const [request] = spec.buildRequests([bid], bidderRequest);

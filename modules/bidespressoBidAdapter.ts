@@ -130,6 +130,23 @@ export const converter = ortbConverter<typeof BIDDER_CODE>({
           Object.assign(imp, floor);
         }
       },
+      extBidfloor(setGranularBidfloors, imp, bidRequest, context) {
+        // Same USD rule for the granular floors the module writes under
+        // banner/video `ext` and `banner.format[].ext`: run the default
+        // processor, then withhold any floor it wrote that did not resolve
+        // in USD.
+        setGranularBidfloors(imp, bidRequest, { ...context, currency: DEFAULT_CURRENCY });
+        const scrub = (obj: unknown) => {
+          const ext = (obj as { ext?: Record<string, unknown> } | undefined)?.ext;
+          if (ext && 'bidfloor' in ext && ext.bidfloorcur !== DEFAULT_CURRENCY) {
+            delete ext.bidfloor;
+            delete ext.bidfloorcur;
+          }
+        };
+        scrub(imp.banner);
+        scrub(imp.video);
+        ((imp.banner as { format?: unknown[] } | undefined)?.format ?? []).forEach(scrub);
+      },
     },
   },
 });
