@@ -170,6 +170,14 @@ export interface IntentIqAnalyticsAdapterOptions {
   gamObjectReference?: Record<string, unknown>;
 }
 
+declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
+  interface AnalyticsProviderConfig {
+    iiqAnalytics: {
+      options: IntentIqAnalyticsAdapterOptions
+    }
+  }
+}
+
 const MODULE_NAME = 'iiqAnalytics' as const;
 const analyticsType = 'endpoint' as const;
 const prebidVersion = '$prebid.version$';

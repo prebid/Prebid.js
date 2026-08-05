@@ -84,6 +84,16 @@ export type AnalyticsConfig<P extends AnalyticsProvider> = (
         : Record<string, unknown>
     };
 
+/**
+ * Configuration for any one provider - the type it declared, or the open-ended shape for providers
+ * that declared none. Mapping over the declared providers keeps each one's options to itself;
+ * naming them as a type argument (`AnalyticsConfig<keyof AnalyticsProviderConfig>`) instantiates
+ * with a union, and intersects every provider's options with every other provider's.
+ */
+export type SomeAnalyticsConfig =
+  { [P in keyof AnalyticsProviderConfig]: AnalyticsConfig<P> }[keyof AnalyticsProviderConfig]
+  | AnalyticsConfig<AnalyticsProvider>;
+
 type AnalyticsAdapterOptions = {
   analyticsType?: AnalyticsType;
   url?: string;

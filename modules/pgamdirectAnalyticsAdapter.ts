@@ -61,8 +61,22 @@ const FORWARDED_EVENTS: readonly string[] = [
 ];
 
 interface PgamAnalyticsOptions {
+  /**
+   * PGAM organisation ID. Required; without it the adapter forwards nothing.
+   */
   orgId?: string;
+  /**
+   * Override for the event collection endpoint.
+   */
   endpoint?: string;
+}
+
+declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
+  interface AnalyticsProviderConfig {
+    pgamdirect: {
+      options: PgamAnalyticsOptions
+    }
+  }
 }
 
 let orgId: string | null = null;
