@@ -1734,7 +1734,6 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sandbox.stub();
       addBidResponseStub.reject = sandbox.stub();
-      sandbox.stub();
       getParameterByNameStub = sandbox.stub(utils, 'getParameterByName');
       debugTurnedOnStub = sandbox.stub(utils, 'debugTurnedOn');
       bidder = newBidder(spec);
