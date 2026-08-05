@@ -350,23 +350,20 @@ const test = testTaskMaker();
 function e2eTestTaskMaker() {
   return function test(done) {
     const integ = startIntegServer();
-    const tlx = startTLXServer();
     startLocalServer();
     
     // Give TLX time to start
     setTimeout(() => {
       runWebdriver({})
         .then(() => {
-          // kill fake server and TLX
+          // kill fake server
           integ.kill('SIGINT');
-          tlx.kill('SIGINT');
           done();
           process.exit(0);
         })
         .catch(err => {
-          // kill fake server and TLX
+          // kill fake server
           integ.kill('SIGINT');
-          tlx.kill('SIGINT');
           done(new Error(`Tests failed with error: ${err}`));
           process.exit(1);
         });
@@ -465,28 +462,14 @@ function startIntegServer(dev = false, useLocalTlx = false) {
   return srv;
 }
 
-function startTLXServer() {
-  const TLX_REPO_PATH = process.env.TLX_REPO_PATH || '/Users/carlos_cobaleda/development/eclipse-2025.12-workspace/shared';
-  const TLX_PORT = 8076;
-  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+function buildBundleDevWithDirectTLX(done) {
+  // Set environment variable to use direct TLX endpoint
+  process.env.USE_DIRECT_TLX = 'true';
   
-  const args = [
-    `exchange-service:bootRun`,
-    `--args=--server.port=${TLX_PORT}`
-  ];
-  
-  const tlxSrv = spawn(gradlew, args, {
-    cwd: TLX_REPO_PATH,
-    stdio: 'inherit',
-    shell: true
-  });
-  
-  tlxSrv.on('error', (err) => {
-    console.error(`Failed to start TLX server: ${err}`);
-  });
-  
-  return tlxSrv;
+  // Create a task that builds with the environment variable set
+  return gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp')(done);
 }
+buildBundleDevWithDirectTLX.displayName = 'build-bundle-dev-with-direct-tlx';
 
 function startDockerizedTLX() {
   const TLX_REPO_PATH = process.env.TLX_REPO_PATH || '/Users/carlos_cobaleda/development/eclipse-2025.12-workspace/shared';
@@ -596,7 +579,7 @@ gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', st
 gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
-gulp.task('serve-e2e-tlx-offline', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true, true), startLocalServer)));
+gulp.task('serve-e2e-tlx-offline', gulp.series(clean, buildBundleDevWithDirectTLX, gulp.parallel(() => startDockerizedTLX(), startLocalServer)));
 
 gulp.task('default', gulp.series('build'));
 
