@@ -5,7 +5,7 @@
  * @param {number} [key=42] The XOR key (0–255) to use for encryption.
  * @returns {string} The encrypted text as a dot-separated string.
  */
-export function encryptData(plainText, key = 42) {
+export function encryptData(plainText: string, key: number = 42): string {
   let out = '';
   for (let i = 0; i < plainText.length; i++) {
     out += (plainText.charCodeAt(i) ^ key) + '.';
@@ -21,11 +21,11 @@ export function encryptData(plainText, key = 42) {
  * @param {number} [key=42] The XOR key (0–255) used for encryption.
  * @returns {string} The decrypted plaintext.
  */
-export function decryptData(encryptedText, key = 42) {
+export function decryptData(encryptedText: string, key: number = 42): string {
   const parts = encryptedText.split('.');
   let out = '';
   for (let i = 0; i < parts.length; i++) {
-    out += String.fromCharCode(parts[i] ^ key);
+    out += String.fromCharCode(Number(parts[i]) ^ key);
   }
   return out;
 }

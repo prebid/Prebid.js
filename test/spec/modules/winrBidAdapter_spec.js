@@ -503,18 +503,13 @@ describe('WinrAdapter', function () {
       });
     });
 
-    it('should populate coppa if set in config', function () {
+    it('should populate coppa if set in ortb2 regs', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], { ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(request.data);
 
       expect(payload.user.coppa).to.equal(true);
-
-      config.getConfig.restore();
     });
 
     it('should set the X-Is-Test customHeader if test flag is enabled', function () {

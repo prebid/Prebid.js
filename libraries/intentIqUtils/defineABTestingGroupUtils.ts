@@ -3,7 +3,24 @@ import {
   WITHOUT_IIQ,
   DEFAULT_PERCENTAGE,
   AB_CONFIG_SOURCE,
-} from "../intentIqConstants/intentIqConstants.js";
+} from '../intentIqConstants/intentIqConstants.js';
+
+/**
+ * A/B testing configuration source — controls how the test group is assigned.
+ * - `'percentage'`  — random assignment based on `abPercentage`
+ * - `'group'`       — fixed group supplied via the `group` param
+ * - `'IIQServer'`   — server-driven assignment (default)
+ * - `'disabled'`    — A/B testing disabled; always use IIQ
+ */
+export type IntentIqABConfigSource = 'percentage' | 'group' | 'IIQServer' | 'disabled';
+
+type ABGroup = typeof WITH_IIQ | typeof WITHOUT_IIQ;
+
+interface ABTestingConfig {
+  ABTestingConfigurationSource?: string;
+  abPercentage?: number;
+  group?: string;
+}
 
 /**
  * Fix percentage if provided some incorrect data
@@ -11,7 +28,7 @@ import {
  * clampPct(-5) => 0
  * clampPct('abc') => DEFAULT_PERCENTAGE
  */
-function clampPct(val) {
+function clampPct(val: unknown): number {
   const n = Number(val);
   if (!Number.isFinite(n)) return DEFAULT_PERCENTAGE; // fallback = 95
   return Math.max(0, Math.min(100, n));
@@ -24,16 +41,18 @@ function clampPct(val) {
  * @param {number} pct The percentage threshold (0–100).
  * @returns {string} Returns WITH_IIQ for Group A or WITHOUT_IIQ for Group B.
  */
-function pickABByPercentage(pct) {
+function pickABByPercentage(pct?: number): ABGroup {
   const percentageToUse =
-  typeof pct === "number" ? pct : DEFAULT_PERCENTAGE;
+    typeof pct === 'number' ? pct : DEFAULT_PERCENTAGE;
   const percentage = clampPct(percentageToUse);
   const roll = Math.floor(Math.random() * 100) + 1;
   return roll <= percentage ? WITH_IIQ : WITHOUT_IIQ; // A : B
 }
 
-function configurationSourceGroupInitialization(group) {
-  return typeof group === 'string' && group.toUpperCase() === WITHOUT_IIQ ? WITHOUT_IIQ : WITH_IIQ;
+function configurationSourceGroupInitialization(group?: string): ABGroup {
+  return typeof group === 'string' && group.toUpperCase() === WITHOUT_IIQ
+    ? WITHOUT_IIQ
+    : WITH_IIQ;
 }
 
 /**
@@ -47,23 +66,27 @@ function configurationSourceGroupInitialization(group) {
  * @param {number} [abPercentage] A/B percentage provided by partner.
  * @returns {string} The determined group: WITH_IIQ (A) or WITHOUT_IIQ (B).
  */
-
-function IIQServerConfigurationSource(tc, abPercentage) {
-  if (typeof tc === "number" && Number.isFinite(tc)) {
+function IIQServerConfigurationSource(tc?: number, abPercentage?: number): ABGroup {
+  if (typeof tc === 'number' && Number.isFinite(tc)) {
     return tc === 41 ? WITHOUT_IIQ : WITH_IIQ;
   }
 
   return pickABByPercentage(abPercentage);
 }
 
-export function defineABTestingGroup(configObject, tc) {
+export function defineABTestingGroup(
+  configObject: ABTestingConfig,
+  tc?: number
+): ABGroup {
   switch (configObject.ABTestingConfigurationSource) {
     case AB_CONFIG_SOURCE.GROUP:
       return configurationSourceGroupInitialization(
         configObject.group
       );
+
     case AB_CONFIG_SOURCE.PERCENTAGE:
       return pickABByPercentage(configObject.abPercentage);
+
     default: {
       if (!configObject.ABTestingConfigurationSource) {
         configObject.ABTestingConfigurationSource = AB_CONFIG_SOURCE.IIQ_SERVER;

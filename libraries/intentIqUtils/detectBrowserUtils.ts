@@ -1,15 +1,24 @@
 import { logError } from '../../src/utils.js';
 
+type BrowserName =
+  | 'chrome'
+  | 'edge'
+  | 'firefox'
+  | 'ie'
+  | 'opera'
+  | 'safari'
+  | 'unknown';
+
 /**
  * Detects the browser using either userAgent or userAgentData
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-export function detectBrowser() {
+export function detectBrowser(): BrowserName {
   try {
-    if (navigator.userAgent) {
+    if (navigator?.userAgent) {
       return detectBrowserFromUserAgent(navigator.userAgent);
-    } else if (navigator.userAgentData) {
-      return detectBrowserFromUserAgentData(navigator.userAgentData);
+    } else if ((navigator as any)?.userAgentData) {
+      return detectBrowserFromUserAgentData((navigator as any)?.userAgentData);
     }
   } catch (error) {
     logError('Error detecting browser:', error);
@@ -22,8 +31,8 @@ export function detectBrowser() {
  * @param {string} userAgent - The user agent string from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-export function detectBrowserFromUserAgent(userAgent) {
-  const browserRegexPatterns = {
+export function detectBrowserFromUserAgent(userAgent: string): BrowserName {
+  const browserRegexPatterns: Record<string, RegExp> = {
     opera: /Opera|OPR/,
     edge: /Edg/,
     chrome: /Chrome|CriOS/,
@@ -48,14 +57,17 @@ export function detectBrowserFromUserAgent(userAgent) {
   }
 
   // Now we can safely check for Safari
-  if (browserRegexPatterns.safari.test(userAgent) && !browserRegexPatterns.chrome.test(userAgent)) {
+  if (
+    browserRegexPatterns.safari.test(userAgent) &&
+    !browserRegexPatterns.chrome.test(userAgent)
+  ) {
     return 'safari';
   }
 
   // Check other browsers
   for (const browser in browserRegexPatterns) {
     if (browserRegexPatterns[browser].test(userAgent)) {
-      return browser;
+      return browser as BrowserName;
     }
   }
 
@@ -67,14 +79,18 @@ export function detectBrowserFromUserAgent(userAgent) {
  * @param {Object} userAgentData - The user agent data object from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-export function detectBrowserFromUserAgentData(userAgentData) {
+export function detectBrowserFromUserAgentData(
+  userAgentData
+): BrowserName {
   const brandNames = userAgentData.brands.map(brand => brand.brand);
 
   if (brandNames.includes('Microsoft Edge')) {
     return 'edge';
   } else if (brandNames.includes('Opera')) {
     return 'opera';
-  } else if (brandNames.some(brand => brand === 'Chromium' || brand === 'Google Chrome')) {
+  } else if (
+    brandNames.some(brand => brand === 'Chromium' || brand === 'Google Chrome')
+  ) {
     return 'chrome';
   }
 
