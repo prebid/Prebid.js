@@ -1,10 +1,7 @@
 import {
-  isArray,
-  getWindowTop,
   deepSetValue,
   logError,
   logWarn,
-  createTrackPixelHtml,
   getBidIdParameter,
   getUniqueIdentifierStr,
   formatQS,
@@ -13,11 +10,9 @@ import {
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { noCredsAjax as ajax } from '../src/ajax.js';
-import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
-import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
-import { getBidFloor, isIframe } from '../libraries/omsUtils/index.js';
-import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getAdMarkup, getBidFloor, getProcessedSizes, getDeviceType } from '../libraries/omsUtils/index.js';
+import { getRoundedViewability } from "../libraries/omsUtils/viewability.js";
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -40,15 +35,9 @@ export const spec = {
 function buildRequests(bidReqs, bidderRequest) {
   try {
     const impressions = bidReqs.map(bid => {
-      let bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
-      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
-      bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
-
-      const element = getAdUnitElement(bid);
-      const minSize = getMinSize(processedSizes);
-      const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), minSize) : 'na';
-      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+      const bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
+      const processedSizes = getProcessedSizes(bidSizes);
+      const viewabilityAmountRounded = getRoundedViewability(bid.adUnitCode, processedSizes);
       const gpidData = _extractGpidData(bid);
 
       const imp = {
@@ -115,7 +104,7 @@ function buildRequests(bidReqs, bidderRequest) {
         }
       },
       device: {
-        devicetype: _getDeviceType(navigator.userAgent, bidderRequest?.ortb2?.device?.sua),
+        devicetype: getDeviceType(navigator.userAgent, bidderRequest?.ortb2?.device?.sua),
         w: screen.width,
         h: screen.height,
         language: bidderRequest?.ortb2?.device?.language ?? navigator.language?.split('-')[0]
@@ -227,7 +216,7 @@ function interpretResponse(serverResponse) {
           bidResponse.vastXml = bid.adm;
         } else {
           bidResponse.mediaType = BANNER;
-          bidResponse.ad = _getAdMarkup(bid);
+          bidResponse.ad = getAdMarkup(bid);
         }
 
         return bidResponse;
@@ -285,18 +274,6 @@ function _trackEvent(endpoint, data) {
   });
 }
 
-function _getDeviceType(ua, sua) {
-  if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
-    return 1;
-  }
-
-  if ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(ua)) {
-    return 3;
-  }
-
-  return 2;
-}
-
 function _getGpp(bidderRequest) {
   if (bidderRequest?.gppConsent != null) {
     return bidderRequest.gppConsent;
@@ -305,22 +282,6 @@ function _getGpp(bidderRequest) {
   return (
     bidderRequest?.ortb2?.regs?.gpp ?? { gppString: '', applicableSections: '' }
   );
-}
-
-function _getAdMarkup(bid) {
-  let adm = bid.adm;
-  if ('nurl' in bid) {
-    adm += createTrackPixelHtml(bid.nurl);
-  }
-  return adm;
-}
-
-function _isViewabilityMeasurable(element) {
-  return !isIframe() && element !== null;
-}
-
-function _getViewability(element, topWin, { w, h } = {}) {
-  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
 }
 
 function _extractGpidData(bid) {
