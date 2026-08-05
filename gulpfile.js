@@ -476,6 +476,29 @@ function startDockerizedTLX() {
   tlxDocker.on('error', (err) => {
     console.error(`Failed to start dockerized TLX: ${err}`);
   });
+
+  // Handle termination and cleanup
+  const cleanup = () => {
+    console.log('\nCleaning up dockerized TLX environment...');
+    const tlxDown = spawn(gradlew, [':dockerized:down'], {
+      cwd: TLX_REPO_PATH,
+      stdio: 'inherit',
+      shell: true
+    });
+    
+    tlxDown.on('close', () => {
+      console.log('Dockerized TLX environment shut down.');
+      process.exit(0);
+    });
+    
+    tlxDown.on('error', (err) => {
+      console.error(`Failed to clean up dockerized TLX: ${err}`);
+      process.exit(1);
+    });
+  };
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
   
   return tlxDocker;
 }
