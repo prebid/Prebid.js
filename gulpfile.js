@@ -350,6 +350,7 @@ const test = testTaskMaker();
 function e2eTestTaskMaker() {
   return function test(done) {
     const integ = startIntegServer();
+    const tlx = startTLXServer();
     startLocalServer();
     
     // Give TLX time to start
@@ -446,13 +447,13 @@ function buildPostbid() {
     .pipe(gulp.dest('build/postbid/'));
 }
 
-function startIntegServer(dev = false) {
+function startIntegServer(dev = false, useLocalTlx = false) {
   const args = ['./test/fake-server/index.js', `--port=${INTEG_SERVER_PORT}`, `--host=${INTEG_SERVER_HOST}`];
   if (dev) {
     args.push('--dev=true')
   }
   const env = Object.assign({}, process.env, {
-    USE_LOCAL_TLX: 'true'
+    USE_LOCAL_TLX: !!useLocalTlx
   });
   const srv = spawn('node', args, { env });
   srv.stdout.on('data', (data) => {
@@ -485,6 +486,24 @@ function startTLXServer() {
   });
   
   return tlxSrv;
+}
+
+function startDockerizedTLX() {
+  const TLX_REPO_PATH = process.env.TLX_REPO_PATH || '/Users/carlos_cobaleda/development/eclipse-2025.12-workspace/shared';
+  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+  
+  console.log('Starting dockerized TLX environment...');
+  const tlxDocker = spawn(gradlew, [':dockerized:up'], {
+    cwd: TLX_REPO_PATH,
+    stdio: 'inherit',
+    shell: true
+  });
+  
+  tlxDocker.on('error', (err) => {
+    console.error(`Failed to start dockerized TLX: ${err}`);
+  });
+  
+  return tlxDocker;
 }
 
 function startLocalServer(options = {}) {
@@ -577,6 +596,7 @@ gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', st
 gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
+gulp.task('serve-e2e-tlx-offline', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true, true), startLocalServer)));
 
 gulp.task('default', gulp.series('build'));
 

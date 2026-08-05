@@ -4,9 +4,14 @@ const host = argv.host || 'localhost';
 const port = argv.port || 4444;
 const dev = argv.dev || false;
 
+// Use direct TLX endpoint if USE_DIRECT_TLX is set, otherwise use fake-server
+const tlxEndpoint = process.env.USE_DIRECT_TLX === 'true'
+  ? 'http://localhost:8076/header/auction'
+  : `http://${host}:${port}/triplelift`;
+
 const REPLACE = {
   'https://ib.adnxs.com/ut/v3/prebid': `http://${host}:${port}/appnexus`,
-  'https://tlx.3lift.com/header/auction': `http://localhost:8076/header/auction`,
+  'https://tlx.3lift.com/header/auction': tlxEndpoint,
 };
 
 const replaceStrings = (() => {
