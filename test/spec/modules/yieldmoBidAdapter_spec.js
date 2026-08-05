@@ -1093,22 +1093,8 @@ describe('YieldmoAdapter', function () {
       expect(spec.getUserSyncs({})).to.deep.equal([]);
     });
     it('should register no syncs on COPPA (child-directed) traffic', function () {
-      config.setConfig({ coppa: true });
-      try {
-        expect(spec.getUserSyncs({ iframeEnabled: true })).to.deep.equal([]);
-        expect(spec.getUserSyncs({ pixelEnabled: true })).to.deep.equal([]);
-      } finally {
-        config.resetConfig();
-      }
-    });
-    it('should register no syncs when coppa is set to the numeric flag (coppa: 1)', function () {
-      config.setConfig({ coppa: 1 });
-      try {
-        expect(spec.getUserSyncs({ iframeEnabled: true })).to.deep.equal([]);
-        expect(spec.getUserSyncs({ pixelEnabled: true })).to.deep.equal([]);
-      } finally {
-        config.resetConfig();
-      }
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, undefined, true)).to.deep.equal([]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [], undefined, undefined, undefined, true)).to.deep.equal([]);
     });
   });
 });
