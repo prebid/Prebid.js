@@ -3,7 +3,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
 /**
@@ -202,7 +201,7 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
   const syncArr = [];
   if (syncOptions.iframeEnabled) {
     let policyParam = '';
@@ -216,8 +215,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (uspConsent && uspConsent.consentString) {
       policyParam += `&ccpa_consent=${uspConsent.consentString}`;
     }
-    const coppa = config.getConfig('coppa') ? 1 : 0;
-    policyParam += `&coppa=${coppa}`;
+    policyParam += `&coppa=${coppa ? 1 : 0}`;
     syncArr.push({
       type: 'iframe',
       url: IFRAMESYNC + '?' + policyParam

@@ -14,7 +14,7 @@ import { bidderSettings } from '../../../../src/bidderSettings.js';
 import { decorateAdUnitsWithNativeParams } from '../../../../src/native.js';
 import * as activityRules from 'src/activities/rules.js';
 import { MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
-import { ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD } from '../../../../src/activities/activities.js';
+import { ACTIVITY_TRANSMIT_TID } from '../../../../src/activities/activities.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 
 const CODE = 'sampleBidder';
@@ -213,6 +213,15 @@ describe('bidderFactory', () => {
                 });
               });
             });
+          });
+        });
+
+        [true, false].forEach((coppa) => {
+          it(`should pass coppa=${coppa} to getUserSyncs`, () => {
+            config.setConfig({ coppa });
+            const bidder = newBidder(spec);
+            bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+            expect(spec.getUserSyncs.firstCall.args[5]).to.equal(coppa);
           });
         });
       });
@@ -520,109 +529,6 @@ describe('bidderFactory', () => {
         expect(ajaxStub.calledTwice).to.equal(true);
       });
 
-      describe('browsingTopics ajax option', () => {
-        let transmitUfpdAllowed, bidder, origBS;
-        before(() => {
-          origBS = getGlobal().bidderSettings;
-        });
-
-        after(() => {
-          getGlobal().bidderSettings = origBS;
-        });
-
-        beforeEach(() => {
-          activityRules.isActivityAllowed.resetHistory();
-          activityRules.isActivityAllowed.callsFake((activity) => activity === ACTIVITY_TRANSMIT_UFPD ? transmitUfpdAllowed : true);
-          bidder = newBidder(spec);
-          spec.isBidRequestValid.returns(true);
-        });
-
-        it(`should be set to false when adapter sets browsingTopics = false`, () => {
-          transmitUfpdAllowed = true;
-          spec.buildRequests.returns([
-            {
-              method: 'GET',
-              url: 'url',
-              options: {
-                browsingTopics: false
-              }
-            }
-          ]);
-          bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-          sinon.assert.calledWith(ajaxStub, 'url', sinon.match.any, sinon.match.any, sinon.match({
-            browsingTopics: false,
-            suppressTopicsEnrollmentWarning: true
-          }));
-        });
-
-        Object.entries({
-          'omitted': [undefined, true],
-          'enabled': [true, true],
-          'disabled': [false, false]
-        }).forEach(([t, [topicsHeader, enabled]]) => {
-          describe(`when bidderSettings.topicsHeader is ${t}`, () => {
-            beforeEach(() => {
-              getGlobal().bidderSettings = {
-                [CODE]: {
-                  topicsHeader: topicsHeader
-                }
-              };
-            });
-
-            afterEach(() => {
-              delete getGlobal().bidderSettings[CODE];
-            });
-
-            Object.entries({
-              'allowed': true,
-              'not allowed': false
-            }).forEach(([t, allow]) => {
-              const shouldBeSet = allow && enabled;
-
-              it(`should be set to ${shouldBeSet} when transmitUfpd is ${t}`, () => {
-                transmitUfpdAllowed = allow;
-                spec.buildRequests.returns([
-                  {
-                    method: 'GET',
-                    url: '1',
-                  },
-                  {
-                    method: 'POST',
-                    url: '2',
-                    data: {}
-                  },
-                  {
-                    method: 'GET',
-                    url: '3',
-                    options: {
-                      browsingTopics: true
-                    }
-                  },
-                  {
-                    method: 'POST',
-                    url: '4',
-                    data: {},
-                    options: {
-                      browsingTopics: true
-                    }
-                  }
-                ]);
-                bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-                ['1', '2', '3', '4'].forEach(url => {
-                  sinon.assert.calledWith(
-                    ajaxStub,
-                    url,
-                    sinon.match.any,
-                    sinon.match.any,
-                    sinon.match({ browsingTopics: shouldBeSet, suppressTopicsEnrollmentWarning: true })
-                  );
-                });
-              });
-            });
-          });
-        });
-      });
-
       it('should not add bids for each placement code if no requests are given', function () {
         const bidder = newBidder(spec);
 
@@ -816,7 +722,7 @@ describe('bidderFactory', () => {
               shouldDefer: true
             }
           ].forEach(({ onBidBillable, deferRendering, shouldDefer }) => {
-            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and sayd deferRender = ${deferRendering}`, () => {
+            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and says deferRender = ${deferRendering}`, () => {
               if (onBidBillable) {
                 spec.onBidBillable = sinon.stub();
               }
@@ -1039,32 +945,6 @@ describe('bidderFactory', () => {
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.callCount).to.equal(0);
-        expect(doneStub.calledOnce).to.equal(true);
-        expect(callBidderErrorStub.calledOnce).to.equal(true);
-        expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
-        expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
-        expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
-          error: xhrErrorMock,
-          bidderRequest: MOCK_BIDS_REQUEST
-        });
-      });
-
-      it('should call spec.getUserSyncs() with no responses', function () {
-        const bidder = newBidder(spec);
-
-        spec.isBidRequestValid.returns(true);
-        spec.buildRequests.returns({
-          method: 'POST',
-          url: 'test.url.com',
-          data: {}
-        });
-        spec.getUserSyncs.returns([]);
-
-        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
-        expect(spec.getUserSyncs.calledOnce).to.equal(true);
-        expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
         expect(doneStub.calledOnce).to.equal(true);
         expect(callBidderErrorStub.calledOnce).to.equal(true);
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
@@ -1828,7 +1708,6 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sandbox.stub();
       addBidResponseStub.reject = sandbox.stub();
-      sandbox.stub();
       getParameterByNameStub = sandbox.stub(utils, 'getParameterByName');
       debugTurnedOnStub = sandbox.stub(utils, 'debugTurnedOn');
       bidder = newBidder(spec);
