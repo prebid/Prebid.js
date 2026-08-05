@@ -18,6 +18,7 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
@@ -205,14 +206,6 @@ const REQUEST = {
   }
 };
 
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
 
 describe('IlluminBidAdapter', function () {
   before(() => config.resetConfig());

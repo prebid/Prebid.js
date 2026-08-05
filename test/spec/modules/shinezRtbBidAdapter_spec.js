@@ -13,8 +13,9 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import { parseUrl, deepClone, getWinDimensions } from 'src/utils.js';
+import { deepClone, getWinDimensions } from 'src/utils.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
@@ -207,14 +208,6 @@ const REQUEST = {
   }
 };
 
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
 
 describe('ShinezRtbBidAdapter', function () {
   before(() => config.resetConfig());

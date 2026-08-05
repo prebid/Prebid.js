@@ -17,7 +17,8 @@ import {
   getStorageItem,
   setStorageItem,
   tryParseJSON,
-  getUniqueDealId
+  getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
@@ -239,15 +240,6 @@ const REQUEST = {
     bidId: '2d52001cabd527'
   }
 };
-
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
 
 describe('TwistDigitalBidAdapter', function () {
   before(() => config.resetConfig());

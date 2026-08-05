@@ -376,6 +376,18 @@ describe('Vidazoo Bidder Utils Tests', function () {
         done();
       }, 200);
     });
+
+    it('should return 0 when an error is thrown', function () {
+      const key = 'myDealKey';
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub(),
+        getDataFromLocalStorage: sinon.stub().returns(JSON.stringify({ value: 1, created: 1 }))
+      };
+      const dateNowStub = sinon.stub(Date, 'now').throws(new Error('storage error'));
+      const dealId = utilities.getNextDealId(storageMock, key);
+      expect(dealId).to.be.equal(0);
+      dateNowStub.restore();
+    });
   });
   describe('hashCode', function () {
     it('should result with _ as a prefix and 8 digits', function () {
@@ -1394,6 +1406,76 @@ describe('Vidazoo Bidder Utils Tests', function () {
       };
       const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-noburl' } });
       expect(bids[0].burl).to.be.undefined;
+    });
+
+    it('should include viewableUrl in response when provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-viewable',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            viewableUrl: 'https://viewable.example.com/view'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-viewable' } });
+      expect(bids[0].viewableUrl).to.equal('https://viewable.example.com/view');
+    });
+
+    it('should not include viewableUrl when not provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-noviewable',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-noviewable' } });
+      expect(bids[0].viewableUrl).to.be.undefined;
+    });
+
+    it('should include renderSuccessUrl in response when provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-rendersuccess',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            renderSuccessUrl: 'https://render.example.com/success'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-rendersuccess' } });
+      expect(bids[0].renderSuccessUrl).to.equal('https://render.example.com/success');
+    });
+
+    it('should not include renderSuccessUrl when not provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-norendersuccess',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-norendersuccess' } });
+      expect(bids[0].renderSuccessUrl).to.be.undefined;
     });
 
     it('should use metaData directly when provided', function () {
