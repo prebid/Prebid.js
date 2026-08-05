@@ -24,6 +24,11 @@ const utils = {
     // such bookkeeping and do need the explicit reset.
     return browser.isW3C === false ? browser.switchToFrame(null) : Promise.resolve();
   },
+  switchFrames: async function(...frameRefs) {
+    for (const frameRef of frameRefs) {
+      await utils.switchFrame(frameRef);
+    }
+  },
   switchFrame: async function(frameRef) {
     const iframe = await $(frameRef);
     await iframe.waitForExist({ timeout: DEFAULT_TIMEOUT });

@@ -186,6 +186,14 @@ describe('ucfunnel Adapter', function () {
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 
+    it('should attach COPPA from the bidder request', function () {
+      const requests = spec.buildRequests([validBannerBidReq], {
+        ...bidderRequest,
+        ortb2: { ...bidderRequest.ortb2, regs: { coppa: 1 } }
+      });
+      expect(requests[0].data.coppa).to.equal(true);
+    });
+
     it('should support multiple size', function () {
       const sizes = [[300, 250], [336, 280]];
       const format = '300,250;336,280';

@@ -17,6 +17,9 @@ module.exports = addCommonConfig({
   entry: {
     'debugging-standalone': {
       import: './modules/debugging/standalone.js',
+    },
+    'devtoolsMcp-standalone': {
+      import: './modules/devtoolsMcp/standalone.js',
     }
   },
 });
