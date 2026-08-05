@@ -87,7 +87,7 @@ export function setWrapper(responseText) {
  * @param {?boolean} outstream publisher opt-in to outstream video monitoring
  * @return {Object}
  */
-export function getInitialParams(key, outstream) {
+export function getInitialParams(key, outstream, bidders) {
   const params = {
     wver: '1.1.2',
     wtype: 'pbjs-module',
@@ -102,6 +102,7 @@ export function getInitialParams(key, outstream) {
 
   if (outstream) {
     params.pbjs = getGlobal();
+    params.bidders = bidders;
   }
 
   return params;
@@ -162,13 +163,13 @@ function stopClientLoadTimer() {
  * @param {string} key
  * @param {?boolean} outstream publisher opt-in to outstream video monitoring
  */
-export function loadClientInIframe(key, outstream) {
+export function loadClientInIframe(key, outstream, bidders) {
   const iframe = createInvisibleIframe();
   const url = getClientUrl(key);
 
   iframe.id = 'grumiFrame';
   insertElement(iframe);
-  iframe.contentWindow.grumi = getInitialParams(key, outstream);
+  iframe.contentWindow.grumi = getInitialParams(key, outstream, bidders);
   clientFrame = iframe;
 
   loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markClientAsLoaded, iframe.contentDocument);
@@ -309,8 +310,13 @@ function hasVastXmlInBidAd(bid) {
 }
 
 /**
- * whether this bid's renderer should be wrapped. safeRenderer bids are skipped: prebid loads that
- * renderer's own script and never calls bid.renderer.
+ * whether this VAST bid is one we gate: the publisher opted in, the bidder is monitored, and prebid
+ * will render it through the bid's own renderer. Callers establish isVastBid first, so this does not
+ * re-check it. safeRenderer bids are skipped, since prebid loads that renderer's own script and
+ * never calls bid.renderer.
+ *
+ * Says nothing about whether the renderer is already wrapped: that is renderer state, not bid
+ * identity, and one renderer can serve many bids.
  * @param {Object} bid
  * @param {ModuleParams} params
  * @return {boolean}
@@ -319,11 +325,12 @@ function shouldGateOutstreamRender(bid, params) {
   const { renderer } = bid;
   const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
 
-  if (!params.outstream || !supportedBidder || !isVastBid(bid) || bid.safeRenderer || !clientFrame) {
+  if (!params.outstream || !supportedBidder || bid.safeRenderer || !clientFrame) {
     return false;
   }
 
-  return Boolean(isRendererRequired(renderer) && renderer.render && !isRendererAlreadyGated(renderer));
+  // isRendererRequired null-guards, so short-circuiting protects the renderer.render read
+  return Boolean(isRendererRequired(renderer) && renderer.render);
 }
 
 function isRendererAlreadyGated(renderer) {
@@ -346,17 +353,23 @@ function shouldRenderOutstream(bid) {
 }
 
 /**
- * replaces the bid's render() with one that consults the client first. If the client is still
+ * replaces the renderer's render() with one that consults the client first. If the client is still
  * loading the invocation is parked and replayed once it resolves, either way.
- * @param {Object} bid
+ *
+ * Takes the renderer and reads the bid from the render arguments, never from this scope. An adapter
+ * may install one Renderer for every outstream bid it makes (ozone caches a single instance at
+ * module scope), and the renderer is wrapped only once, so a bid captured here would be the wrong
+ * one for every later render through the same object. prebid's executeRenderer has passed the bid
+ * first since v8.
+ * @param {Object} renderer
  */
-function gateOutstreamRender(bid) {
-  const { renderer } = bid;
+function gateOutstreamRender(renderer) {
   const originalRender = renderer.render;
 
   renderer.render = function () {
     const self = this;
     const args = arguments;
+    const [bid] = args;
 
     if (clientLoaded) {
       if (shouldRenderOutstream(bid)) {
@@ -393,8 +406,10 @@ export function resetOutstreamGateStateForTesting() {
 }
 
 function onBidResponse(bidResponse, config, userConsent) {
-  if (shouldGateOutstreamRender(bidResponse, config.params)) {
-    gateOutstreamRender(bidResponse);
+  if (isVastBid(bidResponse)) {
+    if (shouldGateOutstreamRender(bidResponse, config.params) && !isRendererAlreadyGated(bidResponse.renderer)) {
+      gateOutstreamRender(bidResponse.renderer);
+    }
 
     return;
   }
@@ -443,7 +458,7 @@ function init(config, userConsent) {
     setupInPage(params);
   } else {
     fetchWrapper(setWrapper);
-    loadClientInIframe(params.key, params.outstream);
+    loadClientInIframe(params.key, params.outstream, params.bidders);
   }
   fireBillableEventsForApplicableBids(params);
 

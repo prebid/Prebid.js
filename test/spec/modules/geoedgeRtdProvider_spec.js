@@ -407,6 +407,81 @@ describe('Geoedge RTD module', function () {
         });
       });
 
+      // Adapters may install one Renderer for every outstream bid they make: ozone caches a single
+      // module-level instance (modules/ozoneBidAdapter.js, newRenderer). The renderer is wrapped once,
+      // so the wrapper has to judge whichever bid prebid passes to render() rather than any bid it saw
+      // at wrap time.
+      describe('a renderer shared across bids', function () {
+        let sharedRenderer;
+        let originalSharedRender;
+        let first;
+        let second;
+
+        // per-adId verdicts, so one shared renderer's bids can be judged differently
+        function publishGatePerBid(verdictsByAdId) {
+          frame.contentWindow[OUTSTREAM_API] = {
+            shouldRender: sinon.spy((bid) => verdictsByAdId[bid && bid.adId] === true)
+          };
+        }
+
+        beforeEach(function () {
+          sharedRenderer = mockRenderer();
+          originalSharedRender = sharedRenderer.render;
+          first = mockVideoBid({ adId: 'first', renderer: sharedRenderer });
+          second = mockVideoBid({ adId: 'second', renderer: sharedRenderer });
+          gate(first);
+          gate(second);
+        });
+
+        it('should wrap the shared renderer exactly once', function () {
+          const wrappedOnce = sharedRenderer.render;
+          expect(wrappedOnce).to.not.equal(originalSharedRender);
+          gate(mockVideoBid({ adId: 'third', renderer: sharedRenderer }));
+          expect(sharedRenderer.render).to.equal(wrappedOnce);
+        });
+
+        it('should ask the client about the bid being rendered, not the first bid on the renderer', function () {
+          markClientAsLoaded();
+          publishGatePerBid({ first: true, second: true });
+          sharedRenderer.render(second);
+          expect(frame.contentWindow[OUTSTREAM_API].shouldRender.calledWith(second)).to.equal(true);
+          expect(frame.contentWindow[OUTSTREAM_API].shouldRender.calledWith(first)).to.equal(false);
+        });
+
+        it('should render a later bid the client allows even when the first bid is blocked', function () {
+          markClientAsLoaded();
+          publishGatePerBid({ first: false, second: true });
+          sharedRenderer.render(second);
+          expect(originalSharedRender.calledOnce).to.equal(true);
+        });
+
+        it('should block a later bid the client blocks even when the first bid is allowed', function () {
+          markClientAsLoaded();
+          publishGatePerBid({ first: true, second: false });
+          sharedRenderer.render(second);
+          expect(originalSharedRender.called).to.equal(false);
+        });
+
+        it('should judge a parked later bid on its own verdict', function () {
+          sharedRenderer.render(second); // parked: the client has neither loaded nor timed out
+          publishGatePerBid({ first: false, second: true });
+          markClientAsLoaded();
+          expect(originalSharedRender.calledOnce).to.equal(true);
+          expect(originalSharedRender.calledWithExactly(second)).to.equal(true);
+        });
+
+        it('should drop a parked later bid the client blocks, whatever the first bid got', function () {
+          sharedRenderer.render(second);
+          publishGatePerBid({ first: true, second: false });
+          markClientAsLoaded();
+          expect(originalSharedRender.called).to.equal(false);
+        });
+
+        it('should not html-wrap a later bid whose renderer was already gated', function () {
+          expect(second.ad.indexOf('<wrapper>')).to.equal(-1);
+        });
+      });
+
       describe('failing open on the client load deadline', function () {
         let clock;
 
