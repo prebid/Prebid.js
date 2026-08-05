@@ -932,13 +932,8 @@ const adapterManager = {
     config: AnalyticsConfig<keyof AnalyticsProviderConfig>
             | AnalyticsConfig<AnalyticsProvider>
             | AnalyticsConfig<AnalyticsProvider>[]
-            | any
   ) {
-    if (!isArray(config)) {
-      config = [config];
-    }
-
-    config.forEach(adapterConfig => {
+    (Array.isArray(config) ? config : [config]).forEach(adapterConfig => {
       const entry = _analyticsRegistry[adapterConfig.provider];
       if (entry && entry.adapter) {
         entry.config = adapterConfig;
