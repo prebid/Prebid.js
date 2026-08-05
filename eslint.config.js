@@ -72,6 +72,7 @@ module.exports = [
       'customize/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
+      'web-bundler'
     ],
   },
   jsdoc.configs['flat/recommended'],

@@ -1,5 +1,6 @@
-import path from 'path'
-import { validate } from 'schema-utils'
+import path from 'path';
+import { validate } from 'schema-utils';
+import { applyOptions } from './applyOptions.mjs';
 
 const boModule = path.resolve(import.meta.dirname, '../dist/src/buildOptions.mjs')
 
@@ -37,22 +38,7 @@ const schema = {
 export function getBuildOptions (options = {}) {
   validate(schema, options, {
     name: 'Prebid build options',
-  })
-  const overrides = {}
-  if (options.globalVarName != null) {
-    overrides.pbGlobal = options.globalVarName
-  }
-  ['defineGlobal', 'distUrlBase'].forEach((option) => {
-    if (options[option] != null) {
-      overrides[option] = options[option]
-    }
-  })
+  });
   return import(getBuildOptionsModule())
-    .then(({ default: defaultOptions }) => {
-      return Object.assign(
-        {},
-        defaultOptions,
-        overrides
-      )
-    })
+    .then(({ default: defaultOptions }) => applyOptions(defaultOptions, options))
 }

@@ -63,7 +63,7 @@ process.on('message', function (options) {
     } else {
       const chunkNum = process.env['TEST_CHUNKS'] ?? 1;
       const pat = process.env['TEST_PAT'] ?? '*_spec.js';
-      const tests = glob.sync('test/**/' + pat).sort();
+      const tests = glob.sync('test/spec/**/' + pat).sort();
       const chunkLen = chunkNum === 'MAX' ? 0 : Math.floor(tests.length / Number(chunkNum));
       chunks.push([]);
       tests.forEach((fn) => {
