@@ -152,7 +152,7 @@ export const spec = {
       }
 
       // Add COPPA flag if configured
-      const coppa = config.getConfig('coppa');
+      const coppa = bidderRequest.ortb2?.regs?.coppa;
       if (coppa) {
         oneRequest.coppa = coppa;
       }

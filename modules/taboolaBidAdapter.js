@@ -2,7 +2,6 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import {
   deepSetValue,
   getWinDimensions,
@@ -399,7 +398,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     deepSetValue(data, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
   }
 
-  if (config.getConfig('coppa')) {
+  if (bidderRequest.ortb2?.regs?.coppa) {
     deepSetValue(data, 'regs.coppa', 1);
   }
 

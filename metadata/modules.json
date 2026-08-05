@@ -5836,7 +5836,7 @@
       "componentType": "userId",
       "componentName": "adplusId",
       "gvlid": null,
-      "disclosureURL": "local://modules/adplusIdSystemDisclosure.json",
+      "disclosureURL": null,
       "aliasOf": null
     },
     {
