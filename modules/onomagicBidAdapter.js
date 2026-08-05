@@ -9,6 +9,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getAdMarkup, getBidFloor, getProcessedSizes } from '../libraries/omsUtils/index.js';
 import { getRoundedViewability } from "../libraries/omsUtils/viewability.js";
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -33,7 +34,8 @@ function buildRequests(bidReqs, bidderRequest) {
     _each(bidReqs, function (bid) {
       const bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
       const processedSizes = getProcessedSizes(bidSizes);
-      const viewabilityAmountRounded = getRoundedViewability(bid.adUnitCode, processedSizes);
+      const element = getAdUnitElement(bid);
+      const viewabilityAmountRounded = getRoundedViewability(element, processedSizes);
       const imp = {
         id: bid.bidId,
         banner: {

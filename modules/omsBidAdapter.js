@@ -13,6 +13,7 @@ import { noCredsAjax as ajax } from '../src/ajax.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 import { getAdMarkup, getBidFloor, getProcessedSizes, getDeviceType } from '../libraries/omsUtils/index.js';
 import { getRoundedViewability } from "../libraries/omsUtils/viewability.js";
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -37,7 +38,8 @@ function buildRequests(bidReqs, bidderRequest) {
     const impressions = bidReqs.map(bid => {
       const bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
       const processedSizes = getProcessedSizes(bidSizes);
-      const viewabilityAmountRounded = getRoundedViewability(bid.adUnitCode, processedSizes);
+      const element = getAdUnitElement(bid);
+      const viewabilityAmountRounded = getRoundedViewability(element, processedSizes);
       const gpidData = _extractGpidData(bid);
 
       const imp = {
