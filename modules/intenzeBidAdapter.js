@@ -4,6 +4,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getTimeZone } from '../libraries/timezone/timezone.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -127,7 +128,7 @@ export const spec = {
           tid: bidderRequest?.ortb2?.source?.tid,
         },
         regs: {
-          coppa: config.getConfig('coppa') === true ? 1 : 0,
+          coppa: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
           ext: {}
         },
         tmax: bidRequest.timeout,

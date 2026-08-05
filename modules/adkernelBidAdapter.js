@@ -20,6 +20,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -465,7 +466,7 @@ function makeRegulations(bidderRequest) {
   if (uspConsent) {
     deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);
   }
-  if (config.getConfig('coppa')) {
+  if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
     deepSetValue(regs, 'regs.coppa', 1);
   }
   if (!isEmpty(regs)) {

@@ -3,6 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb';
@@ -268,11 +269,7 @@ function buildDevice(bidRequest) {
 function _getCoppa(bidderRequest) {
   const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
 
-  // If coppa is defined in the request, use it
-  if (coppa !== undefined) {
-    return coppa;
-  }
-  return config.getConfig('coppa') === true ? 1 : 0;
+  return coppa === 1 || coppaDataHandler.getCoppa() ? 1 : 0;
 }
 
 function _getGppConsent(bidderRequest) {

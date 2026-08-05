@@ -5,6 +5,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
@@ -110,7 +111,7 @@ function getRegs(bidderRequest) {
   const regs = {};
   const euConsentManagement = bidderRequest.gdprConsent;
   const usConsentManagement = bidderRequest.uspConsent;
-  const coppa = config.getConfig('coppa');
+  const coppa = bidderRequest?.ortb2?.regs?.coppa ?? coppaDataHandler.getCoppa();
   if (euConsentManagement && euConsentManagement.consentString) {
     deepSetValue(regs, 'gdpr_applies', !!euConsentManagement.consentString);
   } else {
