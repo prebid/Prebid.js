@@ -453,7 +453,7 @@ function startIntegServer(dev = false, useLocalTlx = false) {
     args.push('--dev=true')
   }
   const env = Object.assign({}, process.env, {
-    USE_LOCAL_TLX: !!useLocalTlx
+    USE_DIRECT_TLX: !!useLocalTlx
   });
   const srv = spawn('node', args, { env });
   srv.stdout.on('data', (data) => {
