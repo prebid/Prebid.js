@@ -123,8 +123,8 @@ function getRegs(bidderRequest) {
   } else {
     deepSetValue(regs, 'usp_applies', false);
   }
-  if (isBoolean(coppa)) {
-    deepSetValue(regs, 'coppa_applies', !!coppa);
+  if (isBoolean(coppa) || coppa === 1) {
+    deepSetValue(regs, 'coppa_applies', coppa === true || coppa === 1);
   } else {
     deepSetValue(regs, 'coppa_applies', false);
   }
