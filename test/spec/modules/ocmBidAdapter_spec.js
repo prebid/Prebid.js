@@ -1049,22 +1049,45 @@ describe('ocmBidAdapter', function () {
         });
       });
 
-      // The point of the fix: the publisher's own per-bidder object reaches PBS, so the downstream
-      // syncs obey it too — not just a coarse "iframe,image" type list.
-      it('forwards the publisher per-bidder list for the enabled type', function () {
+      // An include list enumerates the client-side adapters allowed to sync — it is not a list of
+      // seats in OCM's stored request. Forwarding the leftovers as a server-side allowlist would cut
+      // every PBS bidder the publisher never named, even though they only meant "ocm and bidderA may
+      // both register syncs".
+      it('does not turn a client-side include list into a server-side allowlist', function () {
         setFilterSettings({ iframe: { bidders: ['ocm', 'bidderA', 'bidderB'], filter: 'include' } });
         const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
         expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
-          bidders: ['bidderA', 'bidderB'],
+          bidders: '*',
           filter: 'include'
         });
       });
 
+      // The exclude direction does survive the translation: PBS bidder names and Prebid bidder codes
+      // are the same names by convention, and an exclude can only ever drop a sync.
       it('preserves an exclude filter', function () {
         setFilterSettings({ image: { bidders: ['bidderB'], filter: 'exclude' } });
         const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
         expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
           bidders: ['bidderB'],
+          filter: 'exclude'
+        });
+      });
+
+      it('drops ocm itself from a forwarded exclude list', function () {
+        setFilterSettings({ image: { bidders: ['ocm', 'bidderB'], filter: 'exclude' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
+          bidders: ['bidderB'],
+          filter: 'exclude'
+        });
+      });
+
+      // Fails closed rather than open: an exclude-everyone rule must not be widened to allow-all.
+      it('forwards an exclude-all filter as a block', function () {
+        setFilterSettings({ image: { bidders: '*', filter: 'exclude' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
+          bidders: '*',
           filter: 'exclude'
         });
       });
@@ -1081,11 +1104,26 @@ describe('ocmBidAdapter', function () {
       });
 
       it('applies filterSettings.all to both sync types', function () {
-        setFilterSettings({ all: { bidders: ['bidderA'], filter: 'include' } });
+        setFilterSettings({ all: { bidders: ['bidderA'], filter: 'exclude' } });
         const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, syncResponses);
         expect(forwardedFilterSettings(syncs[0].url)).to.deep.equal({
-          iframe: { bidders: ['bidderA'], filter: 'include' },
-          image: { bidders: ['bidderA'], filter: 'include' }
+          iframe: { bidders: ['bidderA'], filter: 'exclude' },
+          image: { bidders: ['bidderA'], filter: 'exclude' }
+        });
+      });
+
+      // Core rejects a type configured through both "all" and its own key (they are mutually
+      // exclusive) and ignores filterSettings for it; forwarding either half would apply a rule core
+      // itself refused to honour.
+      it('ignores filterSettings for a type configured through both "all" and its own key', function () {
+        setFilterSettings({
+          all: { bidders: ['bidderA'], filter: 'exclude' },
+          image: { bidders: ['bidderB'], filter: 'exclude' }
+        });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
         });
       });
 
@@ -1098,12 +1136,33 @@ describe('ocmBidAdapter', function () {
         });
       });
 
-      // An entry that omits `bidders` names nobody, which says nothing about who may sync — so every
-      // PBS-side bidder stays authorised rather than the type being silently narrowed to none.
+      // Core rejects an entry with no `bidders` list as malformed and ignores it, so it names nobody
+      // here either — every PBS-side bidder stays authorised rather than the type being narrowed.
       it('allows all bidders when the publisher entry has no bidders list', function () {
         setFilterSettings({ iframe: { filter: 'exclude' } });
         const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
         expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+
+      // Core outlaws '*' as a member of a bidders array (and any non-string): it warns and ignores the
+      // entry, leaving syncing permitted. Forwarding the list anyway would enforce against PBS an
+      // exclusion core itself discarded.
+      it('ignores an exclude list core rejects as malformed', function () {
+        setFilterSettings({ image: { bidders: ['bidderA', '*'], filter: 'exclude' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+
+      it('ignores an entry whose filter value core rejects', function () {
+        setFilterSettings({ image: { bidders: ['bidderA'], filter: 'blocklist' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
           bidders: '*',
           filter: 'include'
         });

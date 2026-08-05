@@ -531,41 +531,75 @@ function collectSyncBidders(serverResponses) {
 }
 
 /**
+ * Picks the `userSync.filterSettings` entry that applies to one sync type, mirroring core's own
+ * validation (`isFilterConfigValid` in src/userSync): `all` and the per-type key are mutually
+ * exclusive, `filter` must be include/exclude, and `bidders` must be `'*'` or a non-empty array of
+ * names, none of them `'*'`. Core warns about an entry that fails any of these and then ignores it
+ * for that type — a rule core refused to apply on the page is not one to enforce against PBS either.
+ * @param {Object} publisherSettings - The publisher's `userSync.filterSettings` config
+ * @param {string} type - SYNC_TYPE_IFRAME or SYNC_TYPE_IMAGE
+ * @returns {Object|undefined} The entry core would honour for this type, or undefined if there is none
+ */
+function resolveFilterEntry(publisherSettings, type) {
+  if (publisherSettings.all && publisherSettings[type]) {
+    return undefined;
+  }
+  const entry = publisherSettings.all || publisherSettings[type];
+  if (!isPlainObject(entry)) {
+    return undefined;
+  }
+
+  const { filter, bidders } = entry;
+  if (filter && filter !== 'include' && filter !== 'exclude') {
+    return undefined;
+  }
+  const biddersValid = bidders === '*' || (
+    Array.isArray(bidders) && bidders.length > 0 &&
+    bidders.every((bidder) => isStr(bidder) && bidder !== '*')
+  );
+  return biddersValid ? entry : undefined;
+}
+
+/**
  * Translates one sync type's entry from the publisher's `userSync.filterSettings` into the
  * per-type filter PBS `/cookie_sync` accepts (`{bidders: '*' | string[], filter: 'include'|'exclude'}`).
  *
- * The publisher's `bidders` list names *client-side* Prebid bidder codes. `ocm` appearing in it is
- * what authorises this adapter's sync at all, and core has already applied that when it computed
- * `syncOptions` — so our own code is dropped from the list here; any other name in it is meaningful
- * to PBS as a server-side bidder name and is forwarded verbatim. If nothing is left, the publisher
- * only spoke about `ocm` itself (the shape the adapter's own docs recommend), which authorises every
- * PBS-side bidder for that type rather than none.
+ * The publisher's `bidders` list names *client-side* Prebid bidder codes, while PBS reads the
+ * forwarded list as server-side bidder names — the seats inside OCM's stored request. Those are not
+ * the same set, so only one direction of the publisher's rule survives the translation:
+ *
+ * - `include` authorises client-side adapters to register a sync. The only name in it that concerns
+ *   this adapter is `ocm`, and core has already applied it when it computed `syncOptions`; every
+ *   other name authorises *that adapter's own* syncs and says nothing about OCM's seats. Reusing the
+ *   remainder as a server-side allowlist would silently drop every seat the publisher never named
+ *   (`bidders: ['ocm', 'rubicon']` would sync the rubicon seat and nothing else), so an authorised
+ *   type is forwarded as allow-all and PBS decides.
+ * - `exclude` names bidders the publisher wants kept from syncing. PBS bidder names and Prebid bidder
+ *   codes are the same names by convention, so this one is forwarded: at worst it is a no-op for a
+ *   name that is not a seat, and it can only ever drop a sync — never authorise one core did not.
  * @param {Object} [publisherSettings] - The publisher's `userSync.filterSettings` config
  * @param {string} type - SYNC_TYPE_IFRAME or SYNC_TYPE_IMAGE
  * @returns {{bidders: string|Array<string>, filter: string}} A PBS cookie_sync per-type filter
  */
 function toPbsSyncFilter(publisherSettings, type) {
   const allowAll = { bidders: '*', filter: 'include' };
-
-  // `filterSettings.all` takes precedence over the per-type key, matching core's own resolution
-  // (see shouldBidderBeBlocked in src/userSync).
-  const entry = isPlainObject(publisherSettings)
-    ? (publisherSettings.all || publisherSettings[type])
-    : undefined;
-  if (!isPlainObject(entry)) {
+  if (!isPlainObject(publisherSettings)) {
     return allowAll;
   }
 
-  const filter = entry.filter === 'exclude' ? 'exclude' : 'include';
+  // No entry core would honour, or an entry that is not an exclude rule, leaves every PBS-side
+  // bidder authorised; see above.
+  const entry = resolveFilterEntry(publisherSettings, type);
+  if (!entry || entry.filter !== 'exclude') {
+    return allowAll;
+  }
+
+  // `bidders` is `'*'` or a non-empty array of names by now, so only our own code has to be dropped.
   if (entry.bidders === '*') {
-    return { bidders: '*', filter };
+    return { bidders: '*', filter: 'exclude' };
   }
-  if (!Array.isArray(entry.bidders)) {
-    return allowAll;
-  }
-
-  const bidders = entry.bidders.filter((bidder) => isStr(bidder) && bidder !== BIDDER_CODE);
-  return bidders.length > 0 ? { bidders, filter } : allowAll;
+  const bidders = entry.bidders.filter((bidder) => bidder !== BIDDER_CODE);
+  return bidders.length > 0 ? { bidders, filter: 'exclude' } : allowAll;
 }
 
 /**

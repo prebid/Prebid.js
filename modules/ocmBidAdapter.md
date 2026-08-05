@@ -284,10 +284,26 @@ a device identifier.
 The publisher's own `userSync.filterSettings` is forwarded to `cookie_sync` as its `filterSettings`
 object, so the per-bidder rules apply to the downstream syncs too instead of only to the `ocm` sync
 itself. A sync type Prebid did not authorise for `ocm` is explicitly blocked (`{bidders: '*', filter:
-'exclude'}`), because PBS treats an absent per-type filter as "allowed for everyone". `ocm` itself is
-dropped from a `bidders` list before forwarding: it names the client-side adapter (which is what
-authorises the sync in the first place), while the remaining names are PBS-side bidders. So the
-recommended config below authorises all of OCM's server-side bidders for iframe syncing:
+'exclude'}`), because PBS treats an absent per-type filter as "allowed for everyone".
+
+The two `bidders` lists name different things — Prebid's names client-side adapter codes, PBS's names
+the server-side bidders in OCM's stored request — so only the `exclude` direction is carried across:
+
+- **`filter: 'include'`** authorises client-side adapters. The only name in it that concerns this
+  adapter is `ocm`, and Prebid has already applied it before calling `getUserSyncs`; the rest
+  authorise *those* adapters' own syncs. An authorised sync type is therefore forwarded as
+  `{bidders: '*', filter: 'include'}` and PBS decides which of its bidders to sync. Listing other
+  adapters alongside `ocm` (`['ocm', 'rubicon']`) does **not** narrow OCM's server-side syncs to those
+  names — it just means both adapters may sync, which is what Prebid means by it.
+- **`filter: 'exclude'`** names bidders that should not sync at all, and is forwarded as-is. PBS
+  bidder names and Prebid bidder codes are the same names by convention, so a bidder excluded on the
+  page stays unsynced server-side too. This can only ever drop syncs, never add one.
+
+An entry Prebid itself rejects as malformed — `all` mixed with a per-type key, an unrecognised
+`filter`, or a `bidders` array that is empty or contains `'*'` or a non-string — is ignored here too,
+exactly as core ignores it, rather than being enforced against `cookie_sync`.
+
+The recommended config authorises all of OCM's server-side bidders for iframe syncing:
 
 ```javascript
 pbjs.setConfig({
@@ -302,17 +318,35 @@ pbjs.setConfig({
 });
 ```
 
-To restrict which PBS-side bidders may sync, name them instead:
+To keep a specific bidder from syncing — on the page and inside OCM's `cookie_sync` alike — exclude it
+for every sync type. A single `all` entry is the shortest way to say that:
 
 ```javascript
 pbjs.setConfig({
     userSync: {
         filterSettings: {
-            iframe: { bidders: ['ocm', 'bidderA', 'bidderB'], filter: 'include' }
+            all: { bidders: ['bidderA'], filter: 'exclude' }
         }
     }
 });
 ```
+
+Two things to keep in mind when writing that rule:
+
+- The exclusion has to be attached to the sync type it should apply to. Pairing
+  `iframe: {bidders: ['ocm'], filter: 'include'}` with an `image` exclude does **not** stop `bidderA`
+  syncing: enabling iframe makes the adapter use the loader (which drops iframe *and* redirect syncs),
+  and the iframe entry, being an `include`, is forwarded as `{bidders: '*', filter: 'include'}`.
+- `all` cannot be combined with an `iframe` or `image` key — Prebid rejects that combination outright —
+  and an `exclude` rule authorises every adapter it does not name, so the config above also lets other
+  client-side adapters register iframe syncs. Both are core `filterSettings` behaviours rather than
+  choices this adapter makes.
+
+A consequence of the two together: restricting iframe syncing to `ocm` alone (an `include` rule) and
+excluding a specific PBS-side bidder from iframe syncs cannot be expressed at the same time, because
+the `include` rule is what widens the forwarded iframe filter to allow-all. If you need both, raise it
+with OCM — it needs a bidder-specific setting for server-side seats, separate from the page-level
+adapter list.
 
 ## Notes
 
