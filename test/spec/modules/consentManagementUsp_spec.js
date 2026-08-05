@@ -8,7 +8,7 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
+import adapterManager, { uspDataHandler } from 'src/adapterManager.js';
 import { requestBids } from '../../../src/prebid.js';
 import { defer } from '../../../src/utils/promise.js';
 
@@ -311,7 +311,6 @@ describe('consentManagement', function () {
 
     describe('USPAPI workflow for iframed page', function () {
       let ifr = null;
-      let stringifyResponse = false;
       let mockApi, replySent;
 
       beforeEach(function () {
@@ -355,14 +354,11 @@ describe('consentManagement', function () {
         }
       }
 
-      // Run tests with JSON response and String response
-      // from CMP window postMessage listener.
-      testIFramedPage('with/JSON response', false);
-      // testIFramedPage('with/String response', true);
+      // Run tests with JSON response from CMP window postMessage listener.
+      testIFramedPage('with/JSON response');
 
-      function testIFramedPage(testName, messageFormatString) {
+      function testIFramedPage(testName) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
-          stringifyResponse = messageFormatString;
           mockApi.callsFake((cmd) => {
             if (cmd === 'getUSPData') {
               return { uspString: '1YY' };

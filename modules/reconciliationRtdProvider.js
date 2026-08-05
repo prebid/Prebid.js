@@ -45,7 +45,7 @@ let _moduleParams = {};
  * @param {Event} e
  */
 function handleAdMessage(e) {
-  let data = {};
+  let data;
   let adUnitId = '';
   let adDeliveryId = '';
 

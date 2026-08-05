@@ -14,6 +14,7 @@ const DEFAULT_REGION = 'us_east';
 
 const SYNC_URLS = {
   '1': 'https://us.shb-sync.com',
+  '2': 'https://us2.shb-sync.com',
   '4': 'https://us4.shb-sync.com',
   '13': 'https://wls-stckp.shb-sync.com'
 };
@@ -32,7 +33,8 @@ const ALIASES = {
   'amcom': { area: '1', pid: '397' },
   'adastra': { area: '1', pid: '33' },
   'radiantfusion': { area: '1', pid: '455' },
-  'stackup': { area: '13', pid: '469' }
+  'stackup': { area: '13', pid: '469' },
+  'adnex': { area: '2', pid: '359' }
 };
 
 const BASE_URL_TEMPLATES = {
@@ -82,6 +84,9 @@ const PARTNER_ENDPOINTS = {
   },
   stackup: {
     us_east: 'https://stackup-prebid.attekmi.co/pbjs',
+  },
+  adnex: {
+    us_east: 'https://adnex-prebid.attekmi.co/pbjs'
   }
 };
 

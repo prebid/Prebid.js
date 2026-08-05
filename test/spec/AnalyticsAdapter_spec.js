@@ -5,7 +5,6 @@ import { server } from 'test/mocks/xhr.js';
 import { disableAjaxForAnalytics, enableAjaxForAnalytics } from '../mocks/analyticsStub.js';
 import { clearEvents } from 'src/events.js';
 import {
-  DEFAULT_EXCLUDE_EVENTS,
   DEFAULT_INCLUDE_EVENTS,
   setDebounceDelay
 } from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';

@@ -4,8 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('conceptxBidAdapter', function () {
   const ENDPOINT_URL = 'https://cxba-s2s.cncpt.dk/openrtb2/auction';
-  const ENDPOINT_URL_CONSENT =
-    ENDPOINT_URL + '?gdpr_applies=1&gdpr_consent=ihaveconsented';
+
   const adapter = newBidder(spec);
 
   const bidderRequests = [

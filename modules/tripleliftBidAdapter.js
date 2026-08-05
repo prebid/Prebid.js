@@ -163,10 +163,8 @@ function _buildPostBody(bidRequests, bidderRequest) {
     return imp;
   });
 
-  let eids = [];
-
   if (bidRequests[0].userIdAsEids) {
-    eids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
+    const eids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
     data.user = {
       ext: { eids }
     };

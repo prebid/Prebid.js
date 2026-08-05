@@ -56,7 +56,7 @@ export const getOrtb2Data = (options = {}) => {
 
 export const getTiming = () => {
   // Timing API V2
-  let ttfb = 0;
+  let ttfb;
   try {
     const entry = performance.getEntriesByType('navigation')[0];
     ttfb = Math.round(entry.responseStart - entry.startTime);

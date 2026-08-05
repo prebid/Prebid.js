@@ -134,7 +134,7 @@ export function detectViewability(bid) {
   const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
 
   let element = null;
-  let bidParamSizes = null;
+  let bidParamSizes;
   let minSize = [];
 
   if (isStr(viewabilityContainerIdentifier)) {

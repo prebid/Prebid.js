@@ -180,7 +180,7 @@ function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConse
 function parseSizes(bid) {
   const params = bid.params;
   if (bid.mediaType === VIDEO) {
-    let size = [];
+    let size;
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
@@ -289,7 +289,7 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (storage.cookiesAreEnabled()) {
-    let ucfUid = '';
+    let ucfUid;
     if (storage.getCookie(COOKIE_NAME) !== null) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;

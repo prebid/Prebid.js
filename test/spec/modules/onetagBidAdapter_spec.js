@@ -1,4 +1,4 @@
-import { spec, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
+import { spec, dep, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
@@ -784,7 +784,7 @@ describe('onetag', function () {
   describe('interpretResponse', function () {
     const request = getBannerVideoRequest();
     const response = getBannerVideoNativeResponse();
-    const fledgeResponse = getFledgeBannerResponse();
+
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
@@ -1019,6 +1019,60 @@ describe('onetag', function () {
       expect(isSchainValid(validSchain)).to.be.true;
     });
   });
+  describe('onTimeout', function () {
+    const TIMEOUT_ENDPOINT = 'https://onetag-sys.com/ptimeout';
+    let ajaxStub;
+    beforeEach(function () {
+      ajaxStub = sinon.stub(dep, 'ajax');
+    });
+    afterEach(function () {
+      ajaxStub.restore();
+    });
+    function createTimeoutData(bidder = 'onetag') {
+      return {
+        bidder,
+        params: [{ pubId: '386276e072' }],
+        adUnitCode: 'banner-0',
+        auctionId: 'f8c64531-ee71-46c1-b2dc-8b4a124be6e8',
+        bidId: 'c860a979-6665-4bbd-80bb-78de34fafd11',
+        timeout: 1
+      };
+    }
+    it('Should expose an onTimeout function', function () {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('Should POST the timed-out onetag bids to the ptimeout endpoint', function () {
+      const timeoutData = [createTimeoutData('onetag')];
+      spec.onTimeout(timeoutData);
+      expect(ajaxStub.calledOnce).to.be.true;
+      const [url, callback, data, options] = ajaxStub.firstCall.args;
+      expect(url).to.equal(TIMEOUT_ENDPOINT);
+      expect(callback).to.equal(null);
+      expect(JSON.parse(data)).to.deep.equal(timeoutData);
+      expect(options.method).to.equal('POST');
+      expect(options.contentType).to.equal('text/plain');
+      expect(options.keepalive).to.be.true;
+      expect(options.withCredentials).to.be.false;
+    });
+    it('Should only forward bids belonging to onetag', function () {
+      const onetagBid = createTimeoutData('onetag');
+      spec.onTimeout([createTimeoutData('otherBidder'), onetagBid]);
+      expect(ajaxStub.calledOnce).to.be.true;
+      const sent = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(sent).to.have.lengthOf(1);
+      expect(sent[0].bidder).to.equal('onetag');
+    });
+    it('Should not call ajax when no onetag bid timed out', function () {
+      spec.onTimeout([createTimeoutData('otherBidder')]);
+      expect(ajaxStub.notCalled).to.be.true;
+    });
+    it('Should not call ajax when timeoutData is empty or not an array', function () {
+      spec.onTimeout([]);
+      spec.onTimeout(undefined);
+      spec.onTimeout(null);
+      expect(ajaxStub.notCalled).to.be.true;
+    });
+  });
 });
 
 function getBannerVideoNativeResponse() {
@@ -1106,24 +1160,6 @@ function getBannerVideoNativeResponse() {
       ]
     }
   };
-}
-
-function getFledgeBannerResponse() {
-  const bannerVideoResponse = getBannerVideoNativeResponse();
-  bannerVideoResponse.body.fledgeAuctionConfigs = [
-    {
-      bidId: 'fledge',
-      config: {
-        seller: 'https://onetag-sys.com',
-        decisionLogicUrl:
-          'https://onetag-sys.com/paapi/decision_logic.js',
-        interestGroupBuyers: [
-          'https://onetag-sys.com'
-        ],
-      }
-    }
-  ];
-  return bannerVideoResponse;
 }
 
 function getBannerVideoRequest() {

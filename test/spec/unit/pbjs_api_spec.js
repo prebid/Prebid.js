@@ -17,7 +17,7 @@ import * as auctionModule from 'src/auction.js';
 import { resetAuctionState } from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import * as pbjsModule from 'src/prebid.js';
-import pbjs, { resetQueSetup, startAuction } from 'src/prebid.js';
+import pbjs, { resetQueSetup } from 'src/prebid.js';
 import { hook } from '../../../src/hook.js';
 import { reset as resetDebugging } from '../../../src/debugging.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
@@ -536,7 +536,7 @@ describe('Unit: Prebid Module', function () {
       ]
     };
     let currentPriceBucket;
-    let bid;
+
     let auction;
     let ajaxStub;
     let indexStub;
@@ -1424,6 +1424,18 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
+    it('stores the GAM view URL on the winning bid', function () {
+      const viewUrl = 'http://www.example.com/view';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>'
+      });
+
+      return renderAd(doc, bidId, { viewUrl }).then(() => {
+        const winningBid = pbjs.getAllWinningBids().find(el => el.adId === adResponse.adId);
+        expect(winningBid.viewUrl).to.equal(viewUrl);
+      });
+    });
+
     it('should call addWinningBid', function () {
       pushBidResponseToAuction({
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
@@ -1530,7 +1542,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     let logMessageSpy;
-    let makeRequestsStub, createAuctionStub;
+    let makeRequestsStub;
     let adUnits;
     let clock;
     before(function () {
@@ -2175,9 +2187,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     var adUnitsBackup;
-    var auctionManagerStub;
     let logMessageSpy;
-    let logInfoSpy;
     let logErrorSpy;
 
     const spec = {
@@ -2195,14 +2205,14 @@ describe('Unit: Prebid Module', function () {
       beforeEach(function () {
         adUnitsBackup = auction.getAdUnits;
         auctionStarted = new Promise(resolve => {
-          auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
+          sinon.stub(auctionManager, 'createAuction').callsFake(function() {
             auctionArgs = arguments[0];
             resolve();
             return auction;
           });
         });
         logMessageSpy = sinon.spy(utils, 'logMessage');
-        logInfoSpy = sinon.spy(utils, 'logInfo');
+        sinon.spy(utils, 'logInfo');
         logErrorSpy = sinon.spy(utils, 'logError');
       });
 
@@ -2944,7 +2954,6 @@ describe('Unit: Prebid Module', function () {
             { bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }
           ]
         }];
-        adUnitCodes = ['adUnit-code'];
         configObj.setConfig({ maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999 });
         auctionStarted = new Promise(resolve => {
           sinon.stub(adapterManager, 'callBids').callsFake(function() {
@@ -3001,10 +3010,9 @@ describe('Unit: Prebid Module', function () {
         return;
       }
       let spyCallBids;
-      let adUnits, adUnitCodes;
+      let adUnits;
 
       beforeEach(function () {
-        adUnitCodes = ['adUnit-code'];
         spyCallBids = sinon.spy(adapterManager, 'callBids');
       });
 
@@ -3587,7 +3595,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should set customPriceBucket with custom config buckets', function () {
-      const customPriceBucket = configObj.getConfig('customPriceBucket');
       const goodConfig = {
         'buckets': [{
           'max': 3,
@@ -3605,9 +3612,8 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('emit event', function () {
-    let auctionManagerStub;
     beforeEach(function () {
-      auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
+      sinon.stub(auctionManager, 'createAuction').callsFake(function() {
         return auction;
       });
     });

@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const makeBundle = require('../../gulpfile.js');
 const { parseArgs } = require('node:util');
 

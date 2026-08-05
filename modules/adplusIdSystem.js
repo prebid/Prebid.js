@@ -80,7 +80,7 @@ function setAdplusIdToCookie(value) {
       return;
     }
 
-    let expiresIn = 0;
+    let expiresIn;
 
     if (value.expiresIn == null || value.expiresIn === -2) {
       expiresIn = (ROTATION_INTERVAL * 3) - 1000;

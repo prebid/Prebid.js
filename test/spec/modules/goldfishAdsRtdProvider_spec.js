@@ -6,7 +6,6 @@ import {
 import { getStorageManager } from '../../../src/storageManager.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import { config as _config } from 'src/config.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 

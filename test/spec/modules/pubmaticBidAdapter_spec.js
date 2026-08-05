@@ -8,7 +8,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
   const PUBMATIC_ALIAS_BIDDER = 'pubmaticAlias';
-  const request = {};
+
   firstBid = {
     adUnitCode: 'Div1',
     bidder: 'pubmatic',
@@ -637,7 +637,11 @@ describe('PubMatic adapter', () => {
           it('should log a warning if playerSize is missing', () => {
             delete videoBidderRequest.bids[0].mediaTypes.video.playerSize;
             const request = spec.buildRequests(validBidRequests, videoBidderRequest);
+            const { imp } = request?.data;
+
+            expect(imp).to.be.an('array');
             sinon.assert.called(utils.logWarn);
+            expect(imp[0].video).to.be.undefined;
           });
 
           it('should log a warning if plcmt is missing', () => {
@@ -1893,7 +1897,7 @@ describe('addViewabilityToImp', () => {
   });
 
   it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
-    const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
+    sandbox.stub(utils, 'inIframe').returns(true);
     addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
     expect(imp.ext.viewability.amount).to.equal('na');

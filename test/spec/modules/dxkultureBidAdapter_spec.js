@@ -194,22 +194,6 @@ const getBidderResponse = () => {
 describe('dxkultureBidAdapter', function() {
   let videoBidRequest;
 
-  const VIDEO_REQUEST = {
-    'bidderCode': 'dxkulture',
-    'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
-    'bidderRequestId': '34feaad34lkj2',
-    'bids': videoBidRequest,
-    'auctionStart': 1520001292880,
-    'timeout': 3000,
-    'start': 1520001292884,
-    'doneCbCallCount': 0,
-    'refererInfo': {
-      'numIframes': 1,
-      'reachedTop': true,
-      'referer': 'test.com'
-    }
-  };
-
   beforeEach(function () {
     videoBidRequest = {
       mediaTypes: {
@@ -286,12 +270,6 @@ describe('dxkultureBidAdapter', function() {
   });
 
   context('banner validation', function () {
-    let bidderRequest;
-
-    beforeEach(function() {
-      bidderRequest = getBannerRequest();
-    });
-
     it('returns true when banner sizes are defined', function () {
       const bid = {
         bidder: 'dxkulture',
@@ -306,7 +284,7 @@ describe('dxkultureBidAdapter', function() {
         }
       };
 
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true;
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('returns false when banner sizes are invalid', function () {
@@ -498,7 +476,6 @@ describe('dxkultureBidAdapter', function() {
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           const data = requests.data;
           const [width, height] = videoBidRequest.sizes;
-          const VERSION = '1.0.0';
 
           expect(data.imp[1].video.w).to.equal(width);
           expect(data.imp[1].video.h).to.equal(height);
@@ -610,10 +587,10 @@ describe('dxkultureBidAdapter', function() {
   });
 
   describe('getUserSyncs', function () {
-    let bidRequest, bidderResponse;
+    let bidderResponse;
     beforeEach(function() {
       const bidderRequest = getVideoRequest();
-      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      spec.buildRequests(bidderRequest.bids, bidderRequest);
       bidderResponse = getBidderResponse();
     });
 

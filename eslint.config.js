@@ -97,6 +97,10 @@ module.exports = [
       'import/resolver': {
         [path.resolve('./plugins/eslint/resolver')]: true,
         node: true,
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       }
     },
     languageOptions: {
@@ -115,6 +119,7 @@ module.exports = [
       '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
       'no-constant-binary-expression': 'error',
+      'no-useless-assignment': 'error',
       'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
       'prebid/no-extra-function-args': 'error',
@@ -127,6 +132,15 @@ module.exports = [
       'import/no-named-as-default': 'warn',
       'import/no-named-as-default-member': 'warn',
       'import/no-duplicates': 'warn',
+      'import/no-extraneous-dependencies': ['error', {
+        // flag imports that are not runtime or peer dependencies;
+        // except for tests, which are allowed devDependencies
+        devDependencies: sourcePattern('test'),
+        peerDependencies: true,
+        optionalDependencies: false,
+        includeTypes: true,
+      }],
+      'prebid/no-implicit-operand-conversion': 'error',
       'no-restricted-syntax': [
         'error',
         {
@@ -284,10 +298,8 @@ module.exports = [
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
-      'prebid/no-extra-function-args': 'off',
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
-      'no-unused-vars': 'off',
       'no-useless-escape': 'off',
       'no-return-assign': 'off',
       'camelcase': 'off'

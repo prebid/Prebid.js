@@ -216,7 +216,7 @@ function _checkParamDataType(key, value, datatype) {
 function _parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
-    var adm = '';
+    var adm;
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
@@ -347,7 +347,7 @@ function _createVideoRequest(bid) {
 }
 
 function _checkMediaType(adm, newBid) {
-  var admStr = '';
+  var admStr;
   var videoRegex = new RegExp(/VAST\s+version/);
   newBid.mediaType = BANNER;
   if (videoRegex.test(adm)) {
@@ -365,7 +365,7 @@ function _checkMediaType(adm, newBid) {
 }
 
 function _createImpressionObject(bid, conf) {
-  var impObj = {};
+  var impObj;
   var bannerObj;
   var videoObj;
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];

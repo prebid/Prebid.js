@@ -278,7 +278,7 @@ function getLoggerJsonFromRequest(requestBody) {
 describe('pubmatic analytics adapter', function () {
   let sandbox;
   let requests;
-  let oldScreen;
+
   let clock;
 
   beforeEach(function () {

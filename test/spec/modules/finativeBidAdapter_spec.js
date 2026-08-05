@@ -1,11 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { spec } from 'modules/finativeBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
-import { config } from 'src/config.js';
 
 describe('Finative adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
   const bid = {
     'bidder': 'finative',
     'params': {
@@ -144,8 +141,8 @@ describe('Finative adapter', function () {
 
       delete badResponse.body;
 
-      const result1 = spec.interpretResponse(badResponse, bidRequest);
-      assert.equal(result.length, 0);
+      const resultWithoutBody = spec.interpretResponse(badResponse, bidRequest);
+      assert.equal(resultWithoutBody.length, 0);
     });
 
     it('should return the correct params', function () {

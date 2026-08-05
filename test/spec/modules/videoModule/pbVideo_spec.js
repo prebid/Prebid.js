@@ -16,7 +16,6 @@ let gamSubmoduleFactoryMock;
 let videoImpressionVerifierFactoryMock;
 let videoImpressionVerifierMock;
 let adQueueCoordinatorMock;
-let adQueueCoordinatorFactoryMock;
 
 function resetTestVars() {
   ortbVideoMock = {};
@@ -63,8 +62,6 @@ function resetTestVars() {
     registerProvider: sinon.spy(),
     queueAd: sinon.spy()
   };
-
-  adQueueCoordinatorFactoryMock = () => adQueueCoordinatorMock;
 }
 
 const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator) => {

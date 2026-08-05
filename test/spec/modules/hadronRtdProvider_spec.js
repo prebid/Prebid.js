@@ -545,7 +545,7 @@ describe('hadronRtdProvider', function () {
 
       config.resetConfig();
 
-      let pbConfig = config.getConfig();
+      config.getConfig();
       addRealTimeData(bidConfig, rtd, rtdConfig);
       expect(config.getConfig().ortb2.user.data).to.deep.include.members([rtdUserObj1]);
 
@@ -570,7 +570,7 @@ describe('hadronRtdProvider', function () {
 
       config.resetConfig();
 
-      pbConfig = config.getConfig();
+      config.getConfig();
       addRealTimeData(bidConfig, rtd, rtdConfig);
       expect(config.getConfig().ortb2).to.deep.equal({});
     });

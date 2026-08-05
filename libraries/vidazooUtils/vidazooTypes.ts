@@ -12,12 +12,14 @@ export interface VidazooBaseBidderParams {
   /**
    * The minimum bid value desired. Adapter will not respond with bids lower than this value
    */
-  bidFloor: number;
+  bidFloor?: number;
   /**
    * Placement id on platform.
    */
-
   placementId?: number;
+  /**
+   * Custom parameters for the request
+   */
   ext?: Ext;
   /**
    * Subdomain define subdomain in the bid request URL

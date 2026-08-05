@@ -408,7 +408,7 @@ function _checkMediaType(bid, newBid) {
 function _parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
-    var adm = '';
+    var adm;
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
@@ -526,13 +526,12 @@ function _createOrtbTemplate(conf) {
 }
 
 function _createImpressionObject(bid, conf) {
-  var impObj = {};
   var bannerObj;
   var videoObj;
   var nativeObj = {};
   var mediaTypes = '';
 
-  impObj = {
+  const impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('bidFloor', bid.params.bidFloor), // capitalization dicated by 3.2.4 spec

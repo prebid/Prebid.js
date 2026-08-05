@@ -323,7 +323,7 @@ describe('BeOp Bid Adapter tests', () => {
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
-      const url = request.url;
+
       expect(payload.kwds).to.exist;
       expect(payload.kwds).to.include('a');
       expect(payload.kwds).to.include('b');
@@ -338,7 +338,7 @@ describe('BeOp Bid Adapter tests', () => {
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
-      const url = request.url;
+
       expect(payload.kwds).to.exist;
       expect(payload.kwds).to.include('list of keywords');
     });
@@ -352,7 +352,7 @@ describe('BeOp Bid Adapter tests', () => {
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
-      const url = request.url;
+
       expect(payload.kwds).to.exist;
       expect(payload.kwds).to.include('list');
       expect(payload.kwds).to.include('of');
@@ -379,7 +379,6 @@ describe('BeOp Bid Adapter tests', () => {
   });
 
   describe('Ensure first party cookie is well managed', function () {
-    const bidRequests = [];
     let sandbox;
 
     beforeEach(function () {

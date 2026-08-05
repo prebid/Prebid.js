@@ -16,7 +16,6 @@ import { clearAllCookies } from '../../helpers/cookies.js';
 import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, PREBID, WITH_IIQ, WITHOUT_IIQ } from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import { decryptData } from '../../../libraries/intentIqUtils/cryptionUtils.js';
-import { isCHSupported } from '../../../libraries/intentIqUtils/chUtils.js';
 
 const partner = 10;
 const pai = '11';
@@ -841,7 +840,7 @@ describe('IntentIQ tests', function () {
       // Simulates page reload: FPD has a GDPR string from the previous session,
       // but getCmpData() returns null because the TCF CMP has not responded yet.
       // Without the cmpHasData guard this mismatch would incorrectly trigger a server call.
-      const allowedStorage = ['html5'];
+
       const freshSCal = Date.now();
       const freshDate = Date.now();
       const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
@@ -874,7 +873,7 @@ describe('IntentIQ tests', function () {
     it('should NOT call the server for opted-out user when partner data has no cttl (e.g. only terminationCause stored)', async function () {
       // After our OptOut storage change, partner data only stores { terminationCause }.
       // Without the !isOptedOut guard, missing cttl would incorrectly trigger a server call.
-      const allowedStorage = ['html5'];
+
       const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
 
       const FPD = {
@@ -891,7 +890,7 @@ describe('IntentIQ tests', function () {
       localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(FPD));
       localStorage.setItem(partnerDataKey, JSON.stringify(strippedPartnerData));
 
-      const returnedObj = intentIqIdSubmodule.getId(defaultConfigParams);
+      intentIqIdSubmodule.getId(defaultConfigParams);
       await waitForClientHints();
 
       expect(server.requests.length).to.equal(0);
@@ -900,7 +899,7 @@ describe('IntentIQ tests', function () {
     it('should call the server when CMP strings actually change (user updated consent)', async function () {
       // When CMP has loaded and the consent string differs from the stored one,
       // a server call MUST happen so the server receives the new consent.
-      const allowedStorage = ['html5'];
+
       const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
 
       const FPD = {
@@ -1135,7 +1134,6 @@ describe('IntentIQ tests', function () {
     });
 
     it('should make request to correct address with iiqPixelServerAddress parameter', async function() {
-      let wasCallbackCalled = false;
       const callbackConfigParams = {
         params: {
           partner: partner,
@@ -1144,9 +1142,7 @@ describe('IntentIQ tests', function () {
           partnerClientId,
           browserBlackList: 'Chrome',
           iiqPixelServerAddress: syncTestAPILink,
-          callback: () => {
-            wasCallbackCalled = true;
-          }
+          callback: () => {}
         }
       };
 
@@ -2031,6 +2027,42 @@ describe('IntentIQ tests', function () {
     expect(request.url).to.contain(`testGroup=${usedGroup}`);
     expect(callBackSpy.calledOnce).to.be.true;
     expect(groupChangedSpy.calledWith(usedGroup)).to.be.true;
+  });
+
+  it('should NOT call groupChanged when the current browser is blacklisted', async function () {
+    const groupChangedSpy = sinon.spy();
+    const blk = detectBrowser();
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        browserBlackList: blk,
+        groupChanged: groupChangedSpy
+      }
+    };
+
+    intentIqIdSubmodule.getId(configParams);
+    await waitForClientHints();
+
+    expect(groupChangedSpy.called).to.be.false;
+  });
+
+  it('should not mark a test group on the sync pixel when the current browser is blacklisted', async function () {
+    const blk = detectBrowser();
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        browserBlackList: blk
+      }
+    };
+
+    intentIqIdSubmodule.getId(configParams);
+    await waitForClientHints();
+
+    const pixelRequest = server.requests[0];
+    expect(pixelRequest).to.exist;
+    expect(pixelRequest.url).to.include('at=20');
+    expect(pixelRequest.url).to.not.include('testGroup=');
+    expect(pixelRequest.url).to.include('isInTestGroup=false');
   });
 
   it('should include testPercentage with configured abPercentage in AT=39 URL', async function () {

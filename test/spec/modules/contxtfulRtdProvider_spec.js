@@ -64,7 +64,6 @@ function fakeGetElementById(width, height, x, y) {
 describe('contxtfulRtdProvider', function () {
   const sandbox = sinon.createSandbox();
   let loadExternalScriptTag;
-  let eventsEmitSpy;
 
   const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -97,11 +96,10 @@ describe('contxtfulRtdProvider', function () {
     RX_CONNECTOR_MOCK.rxApiBuilder.resetHistory();
     RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK)));
 
-    eventsEmitSpy = sandbox.spy(events, ['emit']);
+    sandbox.spy(events, ['emit']);
 
     sandbox.stub(utils, 'generateUUID').returns(SM);
 
-    const tagId = CUSTOMER;
     sessionStorage.clear();
   });
 
@@ -316,14 +314,14 @@ describe('contxtfulRtdProvider', function () {
     ];
 
     theories.forEach(([adUnits, expected, description]) => {
-      it('honours "adServerTargeting" and the RX API is not called', function (done) {
+      it('honours adServerTargeting and the RX API is not called', function (done) {
         const config = buildInitConfig(VERSION, CUSTOMER);
         config.params.adServerTargeting = false;
         contxtfulSubmodule.init(config);
         window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
-          const _ = contxtfulSubmodule.getTargetingData(adUnits, config);
+          contxtfulSubmodule.getTargetingData(adUnits, config);
           expect(RX_API_MOCK.receptivity.callCount).to.be.equal(0);
           done();
         }, TIMEOUT);
@@ -797,15 +795,6 @@ describe('contxtfulRtdProvider', function () {
       }
 
       if (withIframe) {
-        const ws = {
-          frameElement: {
-            getBoundingClientRect: () => fakeElem.getBoundingClientRect()
-          },
-          document: {
-            getElementById: (id) => fakeElem,
-
-          }
-        };
         sandbox.stub(utils, 'getWindowSelf').returns(window.top);
         sandbox.stub(utils, 'inIframe').returns(true);
         sandbox.stub(fakeElem, 'checkVisibility').returns(isVisible);

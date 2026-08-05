@@ -182,7 +182,7 @@ function isDefined(val) {
 
 function getIsHidden(elem) {
   let lastElem = elem;
-  let elemHidden = false;
+  let elemHidden;
   let m;
   m = 0;
 

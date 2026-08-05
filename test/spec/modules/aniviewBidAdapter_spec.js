@@ -87,7 +87,7 @@ const MOCK = {
           currency: CURRENCY,
           floor: FLOOR_PRICE,
         },
-        getFloor: _ => ({
+        getFloor: () => ({
           currency: CURRENCY,
           floor: FLOOR_PRICE,
         }),
@@ -385,12 +385,12 @@ describe('Aniview Bid Adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    let bidRequest, bidderResponse;
+    let bidderResponse;
 
     beforeEach(function() {
       const videoBidRequest = MOCK.bidRequest();
 
-      bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      spec.buildRequests(videoBidRequest.bids, videoBidRequest);
       bidderResponse = MOCK.bidderResponse();
     });
 

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/craftBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
+
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('craftAdapter', function () {
