@@ -206,7 +206,6 @@ const REQUEST = {
   }
 };
 
-
 describe('IlluminBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());

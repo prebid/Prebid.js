@@ -208,7 +208,6 @@ const REQUEST = {
   }
 };
 
-
 describe('ShinezRtbBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());

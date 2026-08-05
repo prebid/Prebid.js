@@ -203,7 +203,6 @@ const REQUEST = {
   }
 };
 
-
 describe('OmnidexBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());

@@ -208,7 +208,6 @@ const REQUEST = {
   }
 };
 
-
 describe('programmaticXBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());

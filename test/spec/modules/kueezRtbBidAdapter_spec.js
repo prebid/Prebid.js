@@ -205,7 +205,6 @@ const REQUEST = {
   }
 };
 
-
 describe('KueezRtbBidAdapter', function () {
   describe('validtae spec', function () {
     it('exists and is a function', function () {
