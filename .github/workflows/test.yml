@@ -215,7 +215,12 @@ jobs:
           github-token: ${{ github.token }}
           lcov-file: "coverage.info"
           base-lcov-file: "base-coverage.info"
-          minimum-ratio: 0
+          # Barecheck rounds each total to two decimals before subtracting them, so a reported diff of
+          # -0.01 can come entirely from the two totals falling on opposite sides of a rounding
+          # boundary. That artifact is bounded at one step, so tolerating -0.01 absorbs it while
+          # anything at -0.02 or beyond still implies a real drop. Note a negative value here would
+          # disable the check altogether rather than widen the tolerance.
+          minimum-ratio: 0.01
           send-summary-comment: false
           show-annotations: "warning"
 
