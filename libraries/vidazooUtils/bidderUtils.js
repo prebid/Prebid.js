@@ -370,7 +370,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     url: encodeURIComponent(topWindowUrl),
     uqs: getTopWindowQueryParams(),
     cb: Date.now(),
-    bidFloor: bidFloor,
     bidId: bidId,
     referrer: bidderRequest.refererInfo.ref,
     adUnitCode: adUnitCode,
@@ -399,6 +398,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     device,
     ...uniqueRequestData
   };
+  if (bidFloor) {
+    data.bidFloor = bidFloor;
+  }
 
   // backward compatible userId generators
   if (bid.userIdAsEids?.length > 0) {
