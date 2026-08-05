@@ -306,7 +306,7 @@ describe('screencore bid adapter', function () {
 
     it('should include coppa parameter', function () {
       config.setConfig({ coppa: 1 });
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE], null, null, null, true);
       expect(result[0].url).to.include('coppa=1');
     });
 
