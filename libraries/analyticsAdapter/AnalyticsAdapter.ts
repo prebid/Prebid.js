@@ -74,13 +74,13 @@ export type AnalyticsConfig<P extends AnalyticsProvider> = (
        */
       excludeEvents?: (keyof events.Events)[];
       /**
-       * Adapter specific options.
+       * Adapter specific options, on top of the ones every adapter takes.
        *
        * Providers that declare `options` in AnalyticsProviderConfig use the type they declared
        * there; anything else takes an open bag.
        */
       options?: P extends keyof AnalyticsProviderConfig
-        ? (AnalyticsProviderConfig[P] extends { options: infer O } ? O : Record<string, unknown>)
+        ? (AnalyticsProviderConfig[P] extends { options: infer O } ? O & DefaultOptions : Record<string, unknown>)
         : Record<string, unknown>
     };
 

@@ -34,6 +34,21 @@ export const handlerOptions: AnalyticsConfig<'generic'> = {
   options: { handler: () => {} }
 };
 
+/**
+ * Guards the expectation below. It is stated against tercept rather than generic because generic
+ * declares `DefaultOptions` in its own entry, so generic would hold either way.
+ */
+export type TerceptIsTyped = Assert<'tercept' extends keyof AnalyticsProviderConfig ? true : false>;
+
+/**
+ * `sampling` is read by the base adapter for every provider, so it belongs to the options of a
+ * provider that declares its own just as much as to one that declares none.
+ */
+export const sharedOptions: AnalyticsConfig<'tercept'> = {
+  provider: 'tercept',
+  options: { pubId: 1, pubKey: 2, sampling: 0.5 }
+};
+
 export const eventFilters: AnalyticsConfig<'generic'> = {
   provider: 'generic',
   options: { url: 'https://example.com' },
