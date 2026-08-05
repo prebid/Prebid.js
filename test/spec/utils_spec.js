@@ -841,6 +841,148 @@ describe('Utils', function () {
           expect(encodeMacroURI(input)).to.eql(expected);
         });
       });
+
+      // Characters that may not survive unescaped anywhere in the URL, since createTrackPixelHtml
+      // emits it into `<img src="...">`. The escape is asserted exactly rather than by absence of
+      // the character: dropping the character, or emitting a truncated escape, would also make it
+      // absent. A tab escaped as '%9' rather than '%09' reads the character that follows it as part
+      // of the escape, so `${A<tab>B}` would become the single byte 0x9B.
+      const HTML_UNSAFE = [
+        ['a double quote', '"', '%22'],
+        ['a less-than sign', '<', '%3C'],
+        ['a greater-than sign', '>', '%3E'],
+        ['a space', ' ', '%20'],
+        ['a tab', '\t', '%09'],
+        ['a line feed', '\n', '%0A'],
+        ['a carriage return', '\r', '%0D'],
+        ['a form feed', '\f', '%0C'],
+        ['a vertical tab', '\v', '%0B'],
+        ['a backtick', '`', '%60']
+      ];
+
+      HTML_UNSAFE.forEach(([label, char, escape]) => {
+        it(`escapes ${label} inside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=\${A${escape}B}`);
+        });
+
+        it(`escapes ${label} outside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=A${char}B`))
+            .to.eql(`https://www.example.com/?p=A${escape}B`);
+        });
+      });
+
+      // A brace expression whose name holds one of the characters encodeURI and encodeURIComponent
+      // escape differently is not recognised as a macro, so its braces stay encoded along with the
+      // rest of the URL. This is the set that keeps such expressions encoded exactly as they were
+      // before macro names were escaped at all.
+      ['#', '$', '&', '+', ',', '/', ':', ';', '=', '?', '@'].forEach((char) => {
+        it(`does not read \${A${char}B} as a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=$%7BA${char}B%7D`);
+        });
+      });
+
+      // Non-ASCII whitespace cannot break out of an attribute value, so it is not escaped inside a
+      // macro name. Escaping it per code unit rather than per UTF-8 byte would be worse than leaving
+      // it alone: U+2000 would become '%2000', which decodes to a space followed by a literal '00',
+      // and U+00A0 would become '%A0', which does not decode at all.
+      const NON_ASCII_WHITESPACE = [
+        ['a no-break space', 0x00a0],
+        ['an en quad', 0x2000],
+        ['a line separator', 0x2028],
+        ['a narrow no-break space', 0x202f],
+        ['an ideographic space', 0x3000],
+        ['a zero width no-break space', 0xfeff]
+      ];
+
+      NON_ASCII_WHITESPACE.forEach(([label, codePoint]) => {
+        const char = String.fromCharCode(codePoint);
+
+        it(`passes ${label} through unchanged inside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=\${A${char}B}`);
+        });
+      });
+
+      // The macro pattern is shared between calls, so matching it in a way that advances its
+      // lastIndex would leave the offset behind when a call cannot finish - encodeURI throws on the
+      // lone surrogate below - and the next call would then start scanning mid-URL and miss its
+      // macro. The surrogate is placed before the macro so that the throw happens after the match.
+      it('does not leak match state between calls when a call throws', () => {
+        expect(() => encodeMacroURI('https://www.example.com/\uD800?p=${A}')).to.throw();
+        expect(encodeMacroURI('https://www.example.com/?p=${AUCTION_PRICE}'))
+          .to.eql('https://www.example.com/?p=${AUCTION_PRICE}');
+      });
+    });
+
+    describe('createTrackPixelHtml', () => {
+      it('keeps an encoded quote inside the src attribute', () => {
+        const url = 'https://www.example.com/?x=&quot;onerror=alert(1)//';
+        const container = document.createElement('div');
+
+        // This browser-level assertion, added by a bot, documents that character references do not create attributes.
+        container.innerHTML = utils.createTrackPixelHtml(url);
+        const pixel = container.querySelector('img');
+        expect(pixel.getAttribute('src')).to.equal('https://www.example.com/?x="onerror=alert(1)//');
+        expect(pixel.hasAttribute('onerror')).to.be.false;
+      });
+
+      it('escapes encoded quotes in the url', () => {
+        const url = 'https://www.example.com/?x="test"';
+
+        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=%22test%22"');
+      });
+
+      it('lets the browser decode character references in tracker URLs', () => {
+        const cases = [
+          ['&', '&'],
+          ['&amp;', '&'],
+          ['&#38;', '&'],
+          ['&#038;', '&'],
+          ['&#x26;', '&'],
+          ['&#x026;', '&'],
+          ['&quot;', '"'],
+          ['&#34;', '"']
+        ];
+
+        cases.forEach(([entity, expected]) => {
+          const container = document.createElement('div');
+          container.innerHTML = utils.createTrackPixelHtml(`https://www.example.com/?x=${entity}`);
+          expect(container.querySelector('img').getAttribute('src')).to.equal(`https://www.example.com/?x=${expected}`);
+        });
+      });
+
+      // encodeMacroURI is the encoder used for ORTB banner responses, where the pixel markup
+      // is prepended to the creative (libraries/ortbConverter/processors/banner.js).
+      describe('when called with encodeMacroURI', () => {
+        function render(url) {
+          const container = document.createElement('div');
+          container.innerHTML = utils.createTrackPixelHtml(url, encodeMacroURI);
+          return container;
+        }
+
+        it('emits only the wrapper and the pixel when a macro contains a tag', () => {
+          const container = render('https://www.example.com/px?p=${x"><script>0<!--}');
+          expect(Array.from(container.querySelectorAll('*')).map((el) => el.tagName)).to.eql(['DIV', 'IMG']);
+        });
+
+        it('does not let a macro add attributes to the pixel', () => {
+          const container = render('https://www.example.com/px?p=${x" hidden}');
+          expect(container.querySelector('img').getAttributeNames()).to.eql(['src']);
+        });
+
+        it('keeps the entire url inside the src attribute', () => {
+          const url = 'https://www.example.com/px?p=${x"><b>}';
+          const src = render(url).querySelector('img').getAttribute('src');
+          expect(decodeURIComponent(src)).to.equal(url);
+        });
+
+        it('leaves a standard macro substitutable in the emitted markup', () => {
+          const markup = utils.createTrackPixelHtml('https://www.example.com/px?p=${AUCTION_PRICE}', encodeMacroURI);
+          expect(markup).to.contain('src="https://www.example.com/px?p=${AUCTION_PRICE}"');
+        });
+      });
     });
   });
 
