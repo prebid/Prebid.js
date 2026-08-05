@@ -384,7 +384,7 @@ describe('YieldmoAdapter', function () {
 
       it('should not write 0 bidfloor value by default', function() {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
-        expect(placementsData[0].bidfloor).to.be.undefined;
+        expect(placementsData[0].bidFloor).to.be.undefined;
       });
 
       it('should not exceed max url length', () => {
