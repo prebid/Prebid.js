@@ -112,9 +112,11 @@ jobs:
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request.
-      # test-cmd is in the key for the same reason: with every browserstack job in a run
-      # sharing one group, anything past the single queue slot is *cancelled* rather than
-      # queued - adding the ES5 unit chunks to the group silently killed the ES5 e2e job.
+      # test-cmd is in the key for the same reason. Every browserstack suite in a run
+      # would otherwise share one group, and anything past the single queue slot is
+      # *cancelled* rather than queued: one chunk runs, one waits, the rest die. That
+      # holds a second suite (the ES5 e2e job) hostage to the 8 chunks of the first,
+      # and adding a third suite starts killing jobs outright.
       # Keying by command gives each suite its own queue; the account's parallel session
       # limit is enforced separately by the wait-for-browserstack step below.
       group: ${{ inputs.browserstack && format('browserstack-{0}-{1}', inputs.test-cmd, github.run_id) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
