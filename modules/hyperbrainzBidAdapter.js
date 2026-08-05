@@ -20,6 +20,15 @@ import { BANNER, VIDEO, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
 import { getStorageManager } from "../src/storageManager.js";
 
+/**
+ * @typedef {import('../src/adapterManager.js').BidRequest} BidRequest
+ * @typedef {import('../src/bidfactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('./hyperbrainzBidAdapter.d.ts').HyperbrainzBidderParams} HyperbrainzBidderParams
+ * @typedef {BidRequest & { params: HyperbrainzBidderParams }} HyperbrainzBidRequest
+ */
+
 // Bidder constants
 const BIDDER_CODE = "hyperbrainz";
 const ADAPTER_VERSION = "1.0.0";
@@ -31,6 +40,10 @@ const DEFAULT_TIMEOUT = 1200; // milliseconds
 
 // Storage manager for user IDs
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+/**
+ * @param {HyperbrainzBidRequest} bidRequest
+ * @returns {boolean}
+ */
 function isBidRequestValid(bidRequest) {
   if (!bidRequest || !bidRequest.params) {
     logError("HyperBrainz: Bid request is not valid");
@@ -73,6 +86,11 @@ function isBidRequestValid(bidRequest) {
   return true;
 }
 
+/**
+ * @param {HyperbrainzBidRequest[]} validBidRequests
+ * @param {*} bidderRequest
+ * @returns {Object[]}
+ */
 function buildRequests(validBidRequests, bidderRequest) {
   if (!validBidRequests || validBidRequests.length === 0) {
     return [];
@@ -169,6 +187,11 @@ function buildOpenRtbRequest(bids, bidderRequest, endpoint) {
   return ortb;
 }
 
+/**
+ * @param {ServerResponse} serverResponse
+ * @param {*} request
+ * @returns {Bid[]}
+ */
 function interpretResponse(serverResponse, request) {
   try {
     const response = serverResponse?.body;
@@ -651,6 +674,7 @@ function onSetTargeting(bid) {
   logInfo("HyperBrainz: Targeting set", bid.adUnitCode);
 }
 
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
