@@ -323,8 +323,10 @@ export function createPixelUrl(firstPartyData: any, clientHints: string, configP
 }
 
 function sendSyncRequest(allowedStorage: any, url: string, partner: number, firstPartyData: any, newUser: boolean): void {
-  const lastSyncDate: any = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
-  const lastSyncElapsedTime = Date.now() - lastSyncDate;
+  const rawLastSyncDate = readData(SYNC_KEY(partner), allowedStorage);
+  const parsedLastSyncDate = Number(rawLastSyncDate);
+  const lastSyncDate: number | null = Number.isFinite(parsedLastSyncDate) ? parsedLastSyncDate : null;
+  const lastSyncElapsedTime = lastSyncDate === null ? null : Date.now() - lastSyncDate;
 
   if (firstPartyData.isOptedOut) {
     const needToDoSync = (Date.now() - (firstPartyData?.date || firstPartyData?.sCal || Date.now())) > SYNC_REFRESH_MILL;
@@ -336,7 +338,7 @@ function sendSyncRequest(allowedStorage: any, url: string, partner: number, firs
         storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
       }
     }
-  } else if (!lastSyncDate || lastSyncElapsedTime > SYNC_REFRESH_MILL) {
+  } else if (lastSyncDate === null || (lastSyncElapsedTime !== null && lastSyncElapsedTime > SYNC_REFRESH_MILL)) {
     storeData(SYNC_KEY(partner), Date.now() + '', allowedStorage);
     ajax(url, () => {
     }, undefined, { method: 'GET', withCredentials: true });
