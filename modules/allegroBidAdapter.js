@@ -87,7 +87,7 @@ function convertExtensionFields(request) {
  * @param obj The object potentially containing `ext`.
  * @param {string} newKey The destination key name (e.g. '[com.google.doubleclick.site]').
  */
-function moveExt(obj, newKey) {
+export function moveExt(obj, newKey) {
   if (!obj || !obj.ext) {
     return;
   }

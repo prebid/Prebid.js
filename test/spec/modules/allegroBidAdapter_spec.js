@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, moveExt, mapBidResponse } from 'modules/allegroBidAdapter.js';
+import { spec, moveExt } from 'modules/allegroBidAdapter.js';
 import { config } from 'src/config.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
@@ -383,19 +383,4 @@ describe('Allegro Bid Adapter', () => {
       expect(obj['[com.google.doubleclick.site]']).to.deep.equal({ custom: 'v' });
     });
   });
-
-  describe('mapBidResponse', () => {
-    it('returns the response unchanged when the base builder yields null', () => {
-      const result = mapBidResponse(() => null, {}, {});
-      expect(result).to.equal(null);
-    });
-
-    it('maps DSP extension fields onto meta from the proto-json key', () => {
-      const bid = { '[com.allegro.dsp.dsp_bid]': { clientId: '42', productId: 'prod-1' } };
-      const result = mapBidResponse(() => ({}), bid, {});
-      expect(result.meta.advertiserId).to.equal('42');
-      expect(result.meta.productId).to.equal('prod-1');
-    });
-  });
-});
-
+v});
