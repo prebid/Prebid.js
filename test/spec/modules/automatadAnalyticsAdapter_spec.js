@@ -807,6 +807,48 @@ describe('Automatad Analytics Adapter', () => {
     });
   });
 
+  describe('Behaviour of the adapter when video events fire before enableAnalytics', () => {
+    let videoObj;
+    before(() => {
+      events.addEvents(VIDEO_EVENTS.map(([eventType]) => eventType));
+    });
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'logMessage');
+      sandbox.stub(utils, 'logError');
+      videoObj = {};
+      VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = sandbox.spy(); });
+      global.window.atmtdAnalytics = videoObj;
+      exports.qBeingUsed = false;
+      exports.__atmtdAnalyticsQueue.length = 0;
+    });
+    afterEach(() => {
+      global.window.atmtdAnalytics = undefined;
+      spec.disableAnalytics();
+      sandbox.restore();
+      exports.qBeingUsed = false;
+    });
+
+    it('Should replay matching video event history when adding video handlers', () => {
+      const pastEvents = VIDEO_EVENTS.map(([eventType], index) => ({
+        eventType,
+        args: { type: eventType, id: index },
+        sequence: index
+      }));
+      sandbox.stub(events, 'getEvents').returns([
+        { eventType: AUCTION_INIT, args: { type: AUCTION_INIT }, sequence: 0 },
+        ...pastEvents
+      ]);
+
+      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+
+      VIDEO_EVENTS.forEach(([eventType, handler]) => {
+        expect(global.window.atmtdAnalytics[handler].calledOnce).to.equal(true);
+        expect(global.window.atmtdAnalytics[handler].firstCall.args[0].type).to.equal(eventType);
+      });
+    });
+  });
+
   describe('Prettylog fn tests', () => {
     beforeEach(() => {
       sandbox = sinon.createSandbox();

@@ -288,6 +288,17 @@ const removeVideoHandlers = () => {
 
 const addVideoHandlers = () => {
   self.removeVideoHandlers();
+  const videoEventSet = new Set(VIDEO_EVENTS);
+
+  // Replay video events that fired before these listeners were attached.
+  // Base AnalyticsAdapter only replays core EVENTS, so dynamically registered
+  // video names would otherwise be silently dropped on late enableAnalytics.
+  events.getEvents().forEach((event) => {
+    if (event && videoEventSet.has(event.eventType)) {
+      atmtdAdapter.track({ eventType: event.eventType, args: event.args });
+    }
+  });
+
   VIDEO_EVENTS.forEach((eventType) => {
     if (events.has(eventType)) {
       const handler = (args) => atmtdAdapter.track({ eventType, args });
