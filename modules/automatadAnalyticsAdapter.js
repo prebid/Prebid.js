@@ -286,20 +286,23 @@ const removeVideoHandlers = () => {
   registeredVideoHandlers = [];
 };
 
-const addVideoHandlers = () => {
+const addVideoHandlers = (configuration = {}) => {
   self.removeVideoHandlers();
-  const videoEventSet = new Set(VIDEO_EVENTS);
+  const { includeEvents, excludeEvents = [] } = configuration;
+  // if includeEvents is set, only those that appear in the whitelist.
+  const trackedVideoEvents = VIDEO_EVENTS
+    .filter((ev) => includeEvents == null || includeEvents.includes(ev))
+    .filter((ev) => !excludeEvents.includes(ev));
+  const videoEventSet = new Set(trackedVideoEvents);
 
   // Replay video events that fired before these listeners were attached.
-  // Base AnalyticsAdapter only replays core EVENTS, so dynamically registered
-  // video names would otherwise be silently dropped on late enableAnalytics.
   events.getEvents().forEach((event) => {
     if (event && videoEventSet.has(event.eventType)) {
       atmtdAdapter.track({ eventType: event.eventType, args: event.args });
     }
   });
 
-  VIDEO_EVENTS.forEach((eventType) => {
+  trackedVideoEvents.forEach((eventType) => {
     if (events.has(eventType)) {
       const handler = (args) => atmtdAdapter.track({ eventType, args });
       events.on(eventType, handler);
@@ -527,7 +530,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
 
   self.initializeQueue();
   self.addGPTHandlers();
-  self.addVideoHandlers();
+  self.addVideoHandlers(configuration);
 
   window.__atmtdSDKConfig = {
     publisherID: conf.publisherID,

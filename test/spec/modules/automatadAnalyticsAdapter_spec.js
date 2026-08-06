@@ -64,6 +64,14 @@ const CONFIG_WITH_DEBUG = {
   includeEvents: [AUCTION_DEBUG, AUCTION_INIT, BIDDER_DONE, BID_RESPONSE, BID_TIMEOUT, NO_BID, BID_WON, BID_REQUESTED, BID_REJECTED]
 };
 
+const CONFIG_WITH_VIDEO = {
+  ...CONFIG_WITH_DEBUG,
+  includeEvents: [
+    ...CONFIG_WITH_DEBUG.includeEvents,
+    ...VIDEO_EVENTS.map(([eventType]) => eventType)
+  ]
+};
+
 describe('Automatad Analytics Adapter', () => {
   var sandbox, clock;
 
@@ -775,7 +783,7 @@ describe('Automatad Analytics Adapter', () => {
       videoObj = {};
       VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = (args) => {}; });
 
-      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
       global.window.atmtdAnalytics = videoObj;
       exports.qBeingUsed = false;
       exports.qTraversalComplete = undefined;
@@ -803,7 +811,7 @@ describe('Automatad Analytics Adapter', () => {
       spec.disableAnalytics();
       events.emit('videoAdStarted', { type: 'videoAdStarted' });
       expect(global.window.atmtdAnalytics.videoAdStartedHandler.called).to.equal(false);
-      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
     });
   });
 
@@ -840,12 +848,106 @@ describe('Automatad Analytics Adapter', () => {
         ...pastEvents
       ]);
 
-      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
 
       VIDEO_EVENTS.forEach(([eventType, handler]) => {
         expect(global.window.atmtdAnalytics[handler].calledOnce).to.equal(true);
         expect(global.window.atmtdAnalytics[handler].firstCall.args[0].type).to.equal(eventType);
       });
+    });
+  });
+
+  describe('Behaviour of the adapter when includeEvents or excludeEvents filter video events', () => {
+    let videoObj;
+    before(() => {
+      events.addEvents(VIDEO_EVENTS.map(([eventType]) => eventType));
+    });
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox.stub(utils, 'logMessage');
+      sandbox.stub(utils, 'logError');
+      videoObj = {};
+      VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = sandbox.spy(); });
+      global.window.atmtdAnalytics = videoObj;
+      exports.qBeingUsed = false;
+    });
+    afterEach(() => {
+      global.window.atmtdAnalytics = undefined;
+      spec.disableAnalytics();
+      sandbox.restore();
+      exports.qBeingUsed = false;
+    });
+
+    it('Should not register excluded video events', () => {
+      spec.enableAnalytics({
+        ...CONFIG_WITH_VIDEO,
+        excludeEvents: ['videoAdError']
+      });
+
+      events.emit('videoAdError', { type: 'videoAdError' });
+      events.emit('videoAdStarted', { type: 'videoAdStarted' });
+
+      expect(global.window.atmtdAnalytics.videoAdErrorHandler.called).to.equal(false);
+      expect(global.window.atmtdAnalytics.videoAdStartedHandler.calledOnce).to.equal(true);
+    });
+
+    it('Should only register video events present in includeEvents', () => {
+      spec.enableAnalytics({
+        provider: 'atmtdAnalyticsAdapter',
+        options: {
+          publisherID: '230',
+          siteID: '421'
+        },
+        includeEvents: ['videoAdImpression', AUCTION_INIT]
+      });
+
+      events.emit('videoAdImpression', { type: 'videoAdImpression' });
+      events.emit('videoAdError', { type: 'videoAdError' });
+      events.emit('videoAdStarted', { type: 'videoAdStarted' });
+
+      expect(global.window.atmtdAnalytics.videoAdImpressionHandler.calledOnce).to.equal(true);
+      expect(global.window.atmtdAnalytics.videoAdErrorHandler.called).to.equal(false);
+      expect(global.window.atmtdAnalytics.videoAdStartedHandler.called).to.equal(false);
+    });
+
+    it('Should register all video events when includeEvents is omitted', () => {
+      spec.enableAnalytics({
+        provider: 'atmtdAnalyticsAdapter',
+        options: {
+          publisherID: '230',
+          siteID: '421'
+        }
+      });
+
+      events.emit('videoAdError', { type: 'videoAdError' });
+      events.emit('videoAdStarted', { type: 'videoAdStarted' });
+
+      expect(global.window.atmtdAnalytics.videoAdErrorHandler.calledOnce).to.equal(true);
+      expect(global.window.atmtdAnalytics.videoAdStartedHandler.calledOnce).to.equal(true);
+    });
+
+    it('Should not replay excluded video events from event history', () => {
+      sandbox.restore();
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'logMessage');
+      sandbox.stub(utils, 'logError');
+      sandbox.stub(events, 'getEvents').returns([
+        { eventType: 'videoAdError', args: { type: 'videoAdError' }, sequence: 1 },
+        { eventType: 'videoAdStarted', args: { type: 'videoAdStarted' }, sequence: 2 }
+      ]);
+      videoObj = {};
+      VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = sandbox.spy(); });
+      global.window.atmtdAnalytics = videoObj;
+      exports.qBeingUsed = false;
+
+      spec.enableAnalytics({
+        ...CONFIG_WITH_VIDEO,
+        excludeEvents: ['videoAdError']
+      });
+
+      expect(global.window.atmtdAnalytics.videoAdErrorHandler.called).to.equal(false);
+      expect(global.window.atmtdAnalytics.videoAdStartedHandler.calledOnce).to.equal(true);
     });
   });
 
