@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/synapsehxBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { deepClone } from 'src/utils.js';
-import * as utils from 'src/utils.js';
 
 const VALID_PARAMS = {
   tenantId: 'tenant_id',
@@ -512,26 +511,6 @@ describe('Prebid Adapter: Synapse HX', function () {
           });
         });
       });
-    });
-  });
-
-  describe('onBidWon', function() {
-    let triggerPixelStub;
-
-    beforeEach(function() {
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel').resolves({ ok: true });
-    });
-    afterEach(function() {
-      sinon.restore();
-    });
-
-    it('Should trigger pixel', function() {
-      spec.onBidWon({ nurl: 'http://example.com/win', 'cpm': 2.13 });
-
-      expect(triggerPixelStub.callCount).to.equal(1);
-
-      const [url] = triggerPixelStub.firstCall.args;
-      expect(url).to.equal('http://example.com/win?cpm=2.13');
     });
   });
 });

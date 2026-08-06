@@ -1,6 +1,6 @@
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { logError, formatQS, triggerPixel } from '../src/utils.js';
+import { logError, formatQS } from '../src/utils.js';
 import { getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { toOrtb26 } from '../libraries/ortb2.5Translator/translator.js';
@@ -112,18 +112,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       request: req.data
     });
   },
-
-  onTimeout: (data) => { },
-
-  onBidWon: (bid: { nurl?: string, cpm: number }) => {
-    if (bid.nurl) {
-      const url = new URL(bid.nurl);
-      url.searchParams.set('cpm', String(bid.cpm));
-      triggerPixel(url.toString());
-    }
-  },
-
-  onSetTargeting: (bid) => { },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
