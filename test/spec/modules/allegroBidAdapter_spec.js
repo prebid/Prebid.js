@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/allegroBidAdapter.js';
+import { spec, moveExt, mapBidResponse } from 'modules/allegroBidAdapter.js';
 import { config } from 'src/config.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
@@ -351,5 +351,51 @@ describe('Allegro Bid Adapter', () => {
       const calledWith = pixelSpy.getCall(0).args[0];
       expect(calledWith).to.equal(bid.burl);
     });
+
+    it('logs the winning bid when debug is enabled', () => {
+      const infoStub = sinon.stub(utils, 'logInfo');
+      sinon.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'debug') return true;
+        return undefined;
+      });
+      const bid = { adId: 'ad-1', cpm: 1.5 };
+      spec.onBidWon(bid);
+      expect(infoStub.calledWith('bid won', bid)).to.equal(true);
+    });
+  });
+
+  describe('moveExt', () => {
+    it('does nothing when the object is missing', () => {
+      expect(() => moveExt(undefined, '[com.google.doubleclick.site]')).to.not.throw();
+    });
+
+    it('does nothing when the object has no ext', () => {
+      const obj = { foo: 'bar' };
+      moveExt(obj, '[com.google.doubleclick.site]');
+      expect(obj).to.deep.equal({ foo: 'bar' });
+      expect(obj['[com.google.doubleclick.site]']).to.equal(undefined);
+    });
+
+    it('moves ext into the bracketed key', () => {
+      const obj = { ext: { custom: 'v' } };
+      moveExt(obj, '[com.google.doubleclick.site]');
+      expect(obj.ext).to.equal(undefined);
+      expect(obj['[com.google.doubleclick.site]']).to.deep.equal({ custom: 'v' });
+    });
+  });
+
+  describe('mapBidResponse', () => {
+    it('returns the response unchanged when the base builder yields null', () => {
+      const result = mapBidResponse(() => null, {}, {});
+      expect(result).to.equal(null);
+    });
+
+    it('maps DSP extension fields onto meta from the proto-json key', () => {
+      const bid = { '[com.allegro.dsp.dsp_bid]': { clientId: '42', productId: 'prod-1' } };
+      const result = mapBidResponse(() => ({}), bid, {});
+      expect(result.meta.advertiserId).to.equal('42');
+      expect(result.meta.productId).to.equal('prod-1');
+    });
   });
 });
+
