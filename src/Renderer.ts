@@ -62,8 +62,14 @@ export class Renderer {
   push: (func: () => void) => void;
   callback: () => void;
   render: RenderFn;
-  documentContext: Document;
-  _render: RenderFn;
+  /**
+   * Set by `executeRenderer`; not available before rendering is requested.
+   */
+  documentContext: Document | undefined;
+  /**
+   * Set by `setRender`; renderers that were installed without a render function do not have one.
+   */
+  _render: RenderFn | undefined;
 
   constructor(options: RendererOptions) {
     const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
@@ -120,7 +126,7 @@ export class Renderer {
     return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow });
   }
 
-  getConfig() {
+  getConfig(): RendererConfig | undefined {
     return this.config;
   }
 

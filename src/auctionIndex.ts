@@ -1,9 +1,11 @@
 import type { newAuction } from './auction.js';
-import type { Identifier } from './types/common.d.ts';
+import type { Identifier, ORTBFragments } from './types/common.d.ts';
+import type { MediaTypes } from './mediaTypes.ts';
 
 type Auction = ReturnType<typeof newAuction>;
 type AuctionAdUnit = ReturnType<Auction['getAdUnits']>[number];
 type AuctionBidderRequest = ReturnType<Auction['getBidRequests']>[number];
+type AuctionBidRequest = AuctionBidderRequest['bids'][number];
 
 type IndexQuery = {
   auctionId?: Identifier;
@@ -26,7 +28,7 @@ export class AuctionIndex {
   /**
    * Returns auction instance for `auctionId`
    */
-  getAuction({ auctionId }: Pick<IndexQuery, 'auctionId'>) {
+  getAuction({ auctionId }: Pick<IndexQuery, 'auctionId'>): Auction | undefined {
     if (auctionId != null) {
       return this.#getAuctions()
         .find(auction => auction.getAuctionId() === auctionId);
@@ -50,7 +52,7 @@ export class AuctionIndex {
    * The bidRequest is given precedence because its mediaTypes can differ from the adUnit's (if bidder-specific labels
    * are in use). Bids that have no associated request do not have labels either, and use the adUnit's mediaTypes.
    */
-  getMediaTypes({ adUnitId, requestId }: Pick<IndexQuery, 'adUnitId' | 'requestId'>) {
+  getMediaTypes({ adUnitId, requestId }: Pick<IndexQuery, 'adUnitId' | 'requestId'>): MediaTypes | undefined {
     if (requestId != null) {
       const req = this.getBidRequest({ requestId });
       if (req != null && (adUnitId == null || req.adUnitId === adUnitId)) {
@@ -86,7 +88,7 @@ export class AuctionIndex {
    * Returns bidRequest object for requestId.
    * Bid responses are not guaranteed to have a corresponding request.
    */
-  getBidRequest({ requestId }: Pick<IndexQuery, 'requestId'>) {
+  getBidRequest({ requestId }: Pick<IndexQuery, 'requestId'>): AuctionBidRequest | undefined {
     if (requestId != null) {
       return this.#getAuctions()
         .flatMap(a => a.getBidRequests())
@@ -98,7 +100,7 @@ export class AuctionIndex {
   /**
    * Returns ortb2 object for bid
    */
-  getOrtb2(bid: Pick<IndexQuery, 'requestId' | 'bidderRequestId' | 'auctionId'>) {
+  getOrtb2(bid: Pick<IndexQuery, 'requestId' | 'bidderRequestId' | 'auctionId'>): ORTBFragments['global'] | undefined {
     return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global;
   }
 }
