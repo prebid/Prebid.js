@@ -219,11 +219,10 @@ function RhythmOneBidAdapter() {
   this.interpretResponse = function (serverResponse) {
     let responses = serverResponse.body || [];
     const bids = [];
-    let i = 0;
 
     if (responses.seatbid) {
       const temp = [];
-      for (i = 0; i < responses.seatbid.length; i++) {
+      for (let i = 0; i < responses.seatbid.length; i++) {
         for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
           temp.push(responses.seatbid[i].bid[j]);
         }
@@ -231,7 +230,7 @@ function RhythmOneBidAdapter() {
       responses = temp;
     }
 
-    for (i = 0; i < responses.length; i++) {
+    for (let i = 0; i < responses.length; i++) {
       const bid = responses[i];
       const bidRequest = slotsToBids[bid.impid];
       const bidResponse = {

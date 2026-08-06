@@ -1432,7 +1432,7 @@ describe('ID5 ID System', function () {
   });
 
   describe('Decode should also expose targeting via id5tags if configured', function () {
-    let origId5tags, storedObject;
+    let storedObject;
     const exposeTargetingConfig = getId5FetchConfig();
     exposeTargetingConfig.params.gamTargetingPrefix = 'id5';
     exposeTargetingConfig.params.exposeTargeting = true;

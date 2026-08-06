@@ -3,7 +3,6 @@ import { spec } from 'modules/adponeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
-const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
   const bid = {
     bidder: 'adpone',

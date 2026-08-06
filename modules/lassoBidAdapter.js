@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
 import { getWinDimensions } from '../src/utils.js';
 
 const BIDDER_CODE = 'lasso';
@@ -75,7 +74,7 @@ export const spec = {
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
         version: 4,
-        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        coppa: bidderRequest?.ortb2?.regs?.coppa === 1 ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined,
         test,
         testDk,

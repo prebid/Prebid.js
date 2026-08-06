@@ -2,7 +2,6 @@ import { generateUUID, _each, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
@@ -180,7 +179,7 @@ function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConse
 function parseSizes(bid) {
   const params = bid.params;
   if (bid.mediaType === VIDEO) {
-    let size = [];
+    let size;
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
@@ -289,7 +288,7 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (storage.cookiesAreEnabled()) {
-    let ucfUid = '';
+    let ucfUid;
     if (storage.getCookie(COOKIE_NAME) !== null) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;
@@ -331,7 +330,7 @@ function getRequestData(bid, bidderRequest) {
     });
   }
 
-  if (config.getConfig('coppa')) {
+  if (bidderRequest?.ortb2?.regs?.coppa) {
     bidData.coppa = true;
   }
 

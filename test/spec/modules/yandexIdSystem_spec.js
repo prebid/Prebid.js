@@ -72,7 +72,6 @@ describe('YandexId module', () => {
   /** @type {SinonStub} */
   let randomStub;
   /** @type {SinonStub} */
-  let getCookieStub;
   /** @type {SinonStub} */
   let cookiesAreEnabledStub;
   /** @type {SinonSpy} */
@@ -80,7 +79,7 @@ describe('YandexId module', () => {
 
   beforeEach(() => {
     sandbox = createSandbox();
-    getCookieStub = sandbox.stub(PREBID_STORAGE, 'getCookie').returns(YANDEX_EXT_COOKIE_VALUE);
+    sandbox.stub(PREBID_STORAGE, 'getCookie').returns(YANDEX_EXT_COOKIE_VALUE);
     cookiesAreEnabledStub = sandbox.stub(PREBID_STORAGE, 'cookiesAreEnabled');
     logErrorSpy = sandbox.spy(utils, 'logError');
 

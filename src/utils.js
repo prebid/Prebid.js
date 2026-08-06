@@ -22,7 +22,6 @@ export const debugTurnedOn = debug.debugTurnedOn;
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
-  createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
   canAccessWindowTop,
@@ -60,7 +59,7 @@ var getIncrementalInteger = (function () {
 
 // generate a random string (to be used as a dynamic JSONP callback)
 export function getUniqueIdentifierStr() {
-  return getIncrementalInteger() + Math.random().toString(16).substr(2);
+  return getIncrementalInteger() + Math.random().toString(16).substring(2);
 }
 
 /**
@@ -438,10 +437,15 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
 export function insertUserSyncIframe(url, done, timeout) {
-  const iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
-  const div = document.createElement('div');
-  div.innerHTML = iframeHtml;
-  const iframe = div.firstChild;
+  if (!url) return;
+  const iframe = createIframe(document, {
+    sandbox: 'allow-scripts allow-same-origin',
+    src: url,
+  }, {
+    width: '0px',
+    height: '0px',
+    display: 'none'
+  });
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
@@ -465,45 +469,40 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
   return img;
 };
 
+// The encodeMacroURI implementation below was written by a bot (Claude Code).
+
+// A macro name bypasses encodeURI, since its braces are emitted literally, so it is escaped against
+// this set instead. Of these, only the double quote can close the attribute value that
+// createTrackPixelHtml writes; the rest are escaped because an encoded URL is not guaranteed to end
+// up in a double-quoted attribute - in an unquoted one, whitespace and the backtick end the value
+// and `<` and `>` delimit the tag - and because none of them belong in a URI in the first place.
+// The whitespace is spelled out rather than written `\s`, which also matches non-ASCII whitespace:
+// that is left alone, so a macro name is passed through byte-for-byte where escaping is not needed.
+const HTML_UNSAFE_CHARS = /["<>`\t\n\v\f\r ]/g;
+
+// Characters encodeURI and encodeURIComponent encode differently. A macro name containing any of
+// them is not recognised as a macro, so its braces stay percent-encoded like the rest of the URL.
+// Matched with matchAll, which works on a copy; exec would advance lastIndex on this shared object
+// and carry the offset over into the next call.
+const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
+
 /**
  * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ *
+ * A macro's braces are emitted literally so that downstream substitution can find them. The macro
+ * name is otherwise passed through unchanged, except for the characters in HTML_UNSAFE_CHARS.
  * @param url
  * @return {string}
  */
 export function encodeMacroURI(url) {
-  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
-  return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro);
-  }, encodeURI(url));
-}
-
-/**
- * Creates a snippet of Iframe HTML that retrieves the specified `url`
- * @param  {string} url plain URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
- * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
- * @return {string}     HTML snippet that contains the iframe src = set to `url`
- */
-export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') {
-  if (!url) {
-    return '';
+  let encoded = '';
+  let from = 0;
+  for (const match of url.matchAll(MACRO)) {
+    encoded += encodeURI(url.slice(from, match.index)) +
+      '${' + match[1].replace(HTML_UNSAFE_CHARS, encodeURIComponent) + '}';
+    from = match.index + match[0].length;
   }
-  if (encodeUri) {
-    url = encodeURI(url);
-  }
-  if (sandbox) {
-    sandbox = `sandbox="${sandbox}"`;
-  }
-
-  return `<iframe ${sandbox} id="${getUniqueIdentifierStr()}"
-      frameborder="0"
-      allowtransparency="true"
-      marginheight="0" marginwidth="0"
-      width="0" hspace="0" vspace="0" height="0"
-      style="height:0px;width:0px;display:none;"
-      scrolling="no"
-      src="${url}">
-    </iframe>`;
+  return encoded + encodeURI(url.slice(from));
 }
 
 export function uniques(value, index, arry) {
@@ -650,7 +649,7 @@ export function getPerformanceNow() {
 }
 
 /**
- * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * Returns the difference between `timing.domLoading` and `timing.navigationStart`.
  * This function uses the deprecated `Performance.timing` API and should be removed in future.
  * It has not been updated yet because it is still used in some modules.
  * @deprecated
@@ -1019,7 +1018,7 @@ export function cyrb53Hash(str, seed = 0) {
     } else {
       opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
       // floating points give us 53 bits of precision to work with plus 1 sign bit
-      // automatically handled for our convienence:
+      // automatically handled for our convenience:
       // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
       //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
       var result = (opA & 0x003fffff) * opB;
@@ -1094,8 +1093,10 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
   if (acceptableUnits.indexOf(timeUnit) < 0) {
     return Date.now();
   }
-  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
-  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
+  const millisecondsOffset = timeUnit === 'm'
+    ? timeValue * 60 * 1000
+    : timeValue * 24 * 60 * 60 * 1000;
+  return Date.now() + (timeValue && timeValue > 0 ? millisecondsOffset : 0);
 }
 
 /**
@@ -1168,7 +1169,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
       value instanceof Map ||
       value instanceof Set ||
       value instanceof Date ||
-      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+      (value !== null && type === 'object' && Object.prototype.hasOwnProperty.call(value, 'toJSON'))
     ) {
       return true;
     }

@@ -1,9 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/smarticoBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('smarticoBidAdapter', function () {
-  const adapter = newBidder(spec);
   const bid = {
     adUnitCode: 'adunit-code',
     auctionId: '5kaj89l8-3456-2s56-c455-4g6h78jsdfgf',

@@ -54,6 +54,60 @@ describe('uniquest_widgetBidAdapter', function () {
       expect(requests[0].method).to.equal('GET');
       expect(requests[0].data).to.equal('bid=359d7a594535852&wid=wid_0001&widths=1&heights=1&timeout=1500&');
     });
+
+    it('includes im_uid in query string when imuid EID is present via userIdAsEids', function () {
+      const bidsWithEid = [{
+        ...bids[0],
+        userIdAsEids: [{
+          source: 'intimatemerger.com',
+          uids: [{ id: 'test_imuid_123' }],
+        }],
+      }];
+      const requests = spec.buildRequests(bidsWithEid, bidderRequest);
+      expect(requests[0].data).to.include('im_uid=test_imuid_123');
+    });
+
+    it('includes im_uid in query string when imuid EID is present via ortb2 fallback', function () {
+      const bidsWithEid = [{
+        ...bids[0],
+        ortb2: {
+          user: {
+            ext: {
+              eids: [{
+                source: 'intimatemerger.com',
+                uids: [{ id: 'test_imuid_123' }],
+              }],
+            },
+          },
+        },
+      }];
+      const requests = spec.buildRequests(bidsWithEid, bidderRequest);
+      expect(requests[0].data).to.include('im_uid=test_imuid_123');
+    });
+
+    it('includes im_uid from ortb2 when userIdAsEids is an empty array', function () {
+      const bidsWithEid = [{
+        ...bids[0],
+        userIdAsEids: [],
+        ortb2: {
+          user: {
+            ext: {
+              eids: [{
+                source: 'intimatemerger.com',
+                uids: [{ id: 'test_imuid_123' }],
+              }],
+            },
+          },
+        },
+      }];
+      const requests = spec.buildRequests(bidsWithEid, bidderRequest);
+      expect(requests[0].data).to.include('im_uid=test_imuid_123');
+    });
+
+    it('does not include im_uid in query string when imuid EID is absent', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      expect(requests[0].data).to.not.include('im_uid');
+    });
   });
 
   describe('interpretResponse', function() {

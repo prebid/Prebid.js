@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/resetdigitalBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const br = {
   body: {
@@ -37,8 +36,6 @@ const vr = {
 };
 
 describe('resetdigitalBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   const bannerRequest = {
     bidId: '123',
     transactionId: '456',

@@ -25,3 +25,11 @@ export interface TerceptAnalyticsAdapterOptions {
    */
   analyticsBatchTimeout?: number;
 }
+
+declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
+  interface AnalyticsProviderConfig {
+    tercept: {
+      options: TerceptAnalyticsAdapterOptions
+    }
+  }
+}

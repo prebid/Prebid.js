@@ -65,7 +65,8 @@ import type { DeepPartial } from "./types/objects.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import type {
   AnalyticsConfig,
-  AnalyticsProvider, AnalyticsProviderConfig,
+  AnalyticsProvider,
+  SomeAnalyticsConfig,
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { getGlobal } from "./prebidGlobal.ts";
 
@@ -84,7 +85,7 @@ export const dep = {
 
 const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
-const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number, enabled?: boolean, config?: AnalyticsConfig<P> } } = {};
+const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
 
 let _s2sConfigs : any[] | any = [];
 config.getConfig('s2sConfig', config => {
@@ -928,23 +929,16 @@ const adapterManager = {
       logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
     }
   },
-  enableAnalytics(
-    config: AnalyticsConfig<keyof AnalyticsProviderConfig>
-            | AnalyticsConfig<AnalyticsProvider>
-            | AnalyticsConfig<AnalyticsProvider>[]
-            | any
-  ) {
-    if (!isArray(config)) {
-      config = [config];
-    }
-
-    config.forEach(adapterConfig => {
+  enableAnalytics(config: SomeAnalyticsConfig | SomeAnalyticsConfig[]) {
+    (Array.isArray(config) ? config : [config]).forEach(adapterConfig => {
       const entry = _analyticsRegistry[adapterConfig.provider];
       if (entry && entry.adapter) {
         entry.config = adapterConfig;
         if (isAnalyticsAllowed(adapterConfig)) {
           try {
-            entry.adapter.enableAnalytics(adapterConfig);
+            // the registry is keyed by provider name, which loses the tie between an adapter and
+            // the configuration type it declared; the two do match, having been registered together
+            entry.adapter.enableAnalytics(adapterConfig as AnalyticsConfig<AnalyticsProvider>);
             entry.enabled = true;
           } catch (e) {
             logError(`Could not enable '${adapterConfig.provider}' analytics`, e);

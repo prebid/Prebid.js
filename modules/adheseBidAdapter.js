@@ -202,7 +202,7 @@ function getPrice(ad) {
 }
 
 function getAdDetails(ad) {
-  let creativeId = '';
+  let creativeId;
   let dealId = '';
   let originData = {};
   let origin = '';

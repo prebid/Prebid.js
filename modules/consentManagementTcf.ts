@@ -14,11 +14,14 @@ import { configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
 import { CONSENT_GDPR } from "../src/consentHandler.ts";
 import type { CMConfig } from "../libraries/consentManagement/cmUtils.ts";
+import { TCF_CMP_VERSION, type TCFConsentData } from '../libraries/consentManagement/consentUtils.js';
+
+export type { TCFConsentData } from '../libraries/consentManagement/consentUtils.js';
 
 export let consentConfig: any = {};
 export let gdprScope;
 let dsaPlatform;
-const CMP_VERSION = 2;
+const CMP_VERSION = TCF_CMP_VERSION;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -27,31 +30,6 @@ const cmpCallMap = {
 
 // CMP event manager instance for TCF
 export let tcfCmpEventManager: CmpEventManager | null = null;
-
-/**
- * @see https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework
- * @see https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore
- */
-export type TCFConsentData = {
-  apiVersion: typeof CMP_VERSION;
-  /**
-   * The consent string.
-   */
-  consentString: string;
-  /**
-   * True if GDPR is in scope.
-   */
-  gdprApplies: boolean;
-  /**
-   * The response from the CMP.
-   */
-  vendorData: Record<string, any>;
-  /**
-   * Additional consent string, if provided by the CMP.
-   * @see https://support.google.com/admanager/answer/9681920?hl=en
-   */
-  addtlConsent?: `${number}~${string}~${string}`;
-};
 
 export interface TCFConfig {
   /**

@@ -1,12 +1,11 @@
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
-const path = require('path');
 const {buildOptions} = require('./buildOptions.js');
 const FEATURES_GLOBAL = 'FEATURES';
 const {getModuleName, relPath, getFreeName} = require('./utils.js');
 
 module.exports = function(api, options) {
-  const {features, distUrlBase, skipCalls} = buildOptions(options);
+  const {features, skipCalls} = buildOptions(options);
 
   let replace = {
     '$prebid.version$': prebid.version,
@@ -21,7 +20,7 @@ module.exports = function(api, options) {
     '$$REPO_AND_VERSION$$'
   ];
 
-  function translateToJs(path, state) {
+  function translateToJs(path) {
     const source = path.node.source?.value;
     if (source) {
       if (source.endsWith('.d.ts')) {
@@ -52,7 +51,7 @@ module.exports = function(api, options) {
       },
       ImportDeclaration: translateToJs,
       ExportDeclaration: translateToJs,
-      StringLiteral(path, state) {
+      StringLiteral(path) {
         Object.keys(replace).forEach(name => {
           if (path.node.value.includes(name)) {
             checkMacroAllowed(name);
@@ -63,7 +62,7 @@ module.exports = function(api, options) {
           }
         });
       },
-      TemplateLiteral(path, state) {
+      TemplateLiteral(path) {
         path.traverse({
           TemplateElement(path) {
             Object.keys(replace).forEach(name => {
@@ -80,7 +79,7 @@ module.exports = function(api, options) {
           }
         });
       },
-      Identifier(path, state) {
+      Identifier(path) {
         Object.keys(replace).forEach(name => {
           if (path.node.name === name) {
             checkMacroAllowed(name);

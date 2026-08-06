@@ -171,6 +171,129 @@ describe('imAnalyticsAdapter', function() {
         expect(payload.consent.gpp).to.equal('7');
         expect(payload.consent.gppStr).to.equal('gpp-string');
       });
+
+      it('should cancel existing timer when same auctionId receives duplicate AUCTION_INIT', function() {
+        const clock = sandbox.useFakeTimers();
+
+        // first AUCTION_INIT
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-dup', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-dup', requestId: 'req-1' }
+        });
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_END,
+          args: { auctionId: 'auc-dup' }
+        });
+        requests = [];
+
+        // duplicate AUCTION_INIT for the same auctionId arrives before timer fires
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-dup', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // old timer should be cancelled, so no won request is sent
+        clock.tick(BID_WON_TIMEOUT + 10);
+        expect(requests.length).to.equal(0);
+      });
+
+      it('should remove stale auction entries that exceed TTL on AUCTION_INIT', function() {
+        const clock = sandbox.useFakeTimers();
+
+        // start the first auction
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-stale', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // advance past the default TTL (30 seconds)
+        clock.tick(30 * 1000 + 1);
+
+        // start a second auction, which should trigger removal of auc-stale
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-new', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+
+        // BID_WON for the removed stale entry should be ignored
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-stale', requestId: 'req-stale' }
+        });
+
+        expect(requests.length).to.equal(1); // only the pv for auc-new
+      });
+
+      it('should keep entries within TTL on AUCTION_INIT', function() {
+        const clock = sandbox.useFakeTimers();
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-active', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // advance less than the TTL
+        clock.tick(10 * 1000);
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-new2', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+
+        // auc-active is still alive, so BID_WON should be processed
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_END,
+          args: { auctionId: 'auc-active' }
+        });
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-active', requestId: 'req-active' }
+        });
+
+        clock.tick(BID_WON_TIMEOUT + 10);
+        const wonRequests = requests.filter(r => r.url.includes('/won'));
+        expect(wonRequests.length).to.equal(1);
+      });
+
+      it('should use cacheTtl from options when provided', function() {
+        // set cacheTtl to 5 seconds
+        imAnalyticsAdapter.disableAnalytics();
+        imAnalyticsAdapter.enableAnalytics({
+          provider: 'imAnalytics',
+          options: { cid: 5126, cacheTtl: 5 * 1000 }
+        });
+
+        const clock = sandbox.useFakeTimers();
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-custom-ttl', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // advance past 5 seconds (still within the default 30s TTL)
+        clock.tick(5 * 1000 + 1);
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-after', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+
+        // auc-custom-ttl should have been removed
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-custom-ttl', requestId: 'req-custom' }
+        });
+
+        expect(requests.length).to.equal(1); // only the pv for auc-after
+      });
     });
 
     describe('BID_WON', function() {
@@ -203,7 +326,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests[0].url).to.include('/won');
       });
 
-      it('should drop BID_WON for an auction whose cache entry has been cleaned up', function() {
+      it('should send subsequent BID_WON immediately after initial batch', function() {
         const clock = sandbox.useFakeTimers();
 
         imAnalyticsAdapter.track({
@@ -222,17 +345,16 @@ describe('imAnalyticsAdapter', function() {
           args: { auctionId: 'auc-1' }
         });
 
-        // initial batch sends and deletes cache entry
         clock.tick(BID_WON_TIMEOUT + 10);
         expect(requests.length).to.equal(1);
 
-        // BID_WON after cache cleanup is dropped
+        // subsequent BID_WON sent immediately via lightweight cache state
         imAnalyticsAdapter.track({
           eventType: EVENTS.BID_WON,
           args: { ...bidWonArgs, requestId: 'req-2' }
         });
 
-        expect(requests.length).to.equal(1);
+        expect(requests.length).to.equal(2);
       });
 
       it('should deduplicate won bids with same requestId', function() {
@@ -347,7 +469,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests.length).to.equal(0);
       });
 
-      it('should drop BID_WON that arrives after timer fired with no bids', function() {
+      it('should send BID_WON immediately when it arrives after timer fired with no bids', function() {
         const clock = sandbox.useFakeTimers();
 
         imAnalyticsAdapter.track({
@@ -361,17 +483,18 @@ describe('imAnalyticsAdapter', function() {
           args: { auctionId: 'auc-1' }
         });
 
-        // timer fires with no bids, cache entry is deleted
+        // timer fires with no bids, lightweight cache state is kept
         clock.tick(BID_WON_TIMEOUT + 10);
         expect(requests.length).to.equal(0);
 
-        // late BID_WON is dropped after cache cleanup
+        // late BID_WON sent immediately via lightweight cache state
         imAnalyticsAdapter.track({
           eventType: EVENTS.BID_WON,
           args: { ...bidWonArgs, requestId: 'req-1' }
         });
 
-        expect(requests.length).to.equal(0);
+        expect(requests.length).to.equal(1);
+        expect(requests[0].url).to.include('/won');
       });
     });
   });

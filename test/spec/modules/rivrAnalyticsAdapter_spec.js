@@ -9,13 +9,10 @@ import { EVENTS } from 'src/constants.js';
 const events = require('../../../src/events.js');
 
 describe('RIVR Analytics adapter', () => {
-  const EXPIRING_QUEUE_TIMEOUT = 4000;
-  const EXPIRING_QUEUE_TIMEOUT_MOCK = 100;
   const RVR_CLIENT_ID_MOCK = 'aCliendId';
   const SITE_CATEGORIES_MOCK = ['cat1', 'cat2'];
   const EMITTED_AUCTION_ID = 1;
-  const TRACKER_BASE_URL_MOCK = 'tracker.rivr.simplaex.com';
-  const UUID_REG_EXP = new RegExp('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', 'i');
+
   const MOCK_RIVRADDON_CONTEXT = {};
   let sandbox;
   let ajaxStub;
@@ -38,7 +35,7 @@ describe('RIVR Analytics adapter', () => {
   beforeEach(() => {
     timer = sandbox.useFakeTimers(0);
     ajaxStub = sandbox.stub(ajax, 'ajax');
-    sinon.stub(events, 'getEvents').returns([]);
+    sandbox.stub(events, 'getEvents').returns([]);
 
     adapterManager.registerAnalyticsAdapter({
       code: 'rivr',
@@ -78,7 +75,7 @@ describe('RIVR Analytics adapter', () => {
   });
 
   it('Firing an event when rivraddon context is not defined it should do nothing', () => {
-    const rivraddonsGetContextStub = sandbox.stub(window.rivraddon.analytics, 'getContext');
+    const rivraddonsGetContextStub = sandbox.stub(window.rivraddon.analytics, 'getContext').returns(undefined);
     rivraddonsTrackPbjsEventStub = sandbox.stub(window.rivraddon.analytics, 'trackPbjsEvent');
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
@@ -87,8 +84,8 @@ describe('RIVR Analytics adapter', () => {
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
-    window.rivraddon.analytics.getContext.restore();
-    window.rivraddon.analytics.trackPbjsEvent.restore();
+    rivraddonsGetContextStub.restore();
+    rivraddonsTrackPbjsEventStub.restore();
   });
 
   it('Firing AUCTION_INIT should call rivraddon trackPbjsEvent passing the parameters', () => {
@@ -104,7 +101,7 @@ describe('RIVR Analytics adapter', () => {
     expect(firstArgument.eventType).to.be.equal(EVENTS.AUCTION_INIT);
     expect(firstArgument.args.auctionId).to.be.equal(EMITTED_AUCTION_ID);
 
-    window.rivraddon.analytics.trackPbjsEvent.restore();
+    rivraddonsTrackPbjsEventStub.restore();
   });
 
   const BANNER_AD_UNITS_MOCK = [

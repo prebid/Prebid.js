@@ -9,8 +9,6 @@ import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 const utils = require('src/utils');
 
 describe('Adxcg adapter', function () {
-  const bids = [];
-
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://usersync-url.com';
     beforeEach(() => {
@@ -192,37 +190,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       },
       extra_key4: [1, 2, 3]
     }
-  }];
-
-  const schainParamsSlotConfig = [{
-    placementCode: '/DfpAccount1/slot1',
-    mediaTypes: {
-      banner: {
-        sizes: [[1, 1]]
-      }
-    },
-    bidId: 'bid12345',
-    params: {
-      adzoneid: '77',
-      bcat: ['IAB-1', 'IAB-20'],
-      battr: [1, 2, 3],
-      bidfloor: 1.5,
-      badv: ['cocacola.com', 'lays.com']
-    },
-    schain: {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [
-        {
-          'asi': 'exchange1.com',
-          'sid': '1234',
-          'hp': 1,
-          'rid': 'bid-request-1',
-          'name': 'publisher',
-          'domain': 'publisher.com'
-        }
-      ]
-    },
   }];
 
   let bidderRequest;

@@ -357,9 +357,6 @@ describe('contxtful bid adapter', function () {
         testObj.textNode = document.createTextNode('test'); // Text -> Node
       }
 
-      // Add objects that should be caught by duck typing (constructor name patterns)
-      const mockObjects = [];
-
       // Mock HTMLCanvasElement (constructor name contains 'HTML' and 'Canvas')
       function HTMLCanvasElement() {}
       const mockCanvas = Object.create(HTMLCanvasElement.prototype);
@@ -860,6 +857,20 @@ describe('contxtful bid adapter', function () {
       expect(userSyncs).to.deep.equal([
         {
           'url': 'mysyncurl.com/image?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
+          'type': 'image'
+        }
+      ]);
+    });
+
+    it('will preserve COPPA in wrapped user sync urls', () => {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [{ body: bidResponse }], undefined, undefined, undefined, true);
+      expect(userSyncs).to.deep.equal([
+        {
+          'url': 'mysyncurl.com/image?pbjs=1&coppa=1&qparam1=qparamv1&qparam2=qparamv2',
           'type': 'image'
         }
       ]);

@@ -15,7 +15,7 @@ const { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync.js'
 describe('user sync', function () {
   let triggerPixelStub;
   let logWarnStub;
-  let timeoutStub;
+
   let shuffleStub;
   let getUniqueIdentifierStrStub;
   let insertUserSyncIframeStub;

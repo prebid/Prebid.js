@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/ucfunnelBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { deepClone } from '../../../src/utils.js';
-const URL = 'https://hb.aralego.com/header';
+
 const BIDDER_CODE = 'ucfunnel';
 
 const bidderRequest = {
@@ -184,6 +184,14 @@ describe('ucfunnel Adapter', function () {
       expect(data.h).to.equal(height);
       expect(data.eids).to.equal('uid2,eb33b0cb-8d35-4722-b9c0-1a31d4064888!verizonMediaId,4567');
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
+    });
+
+    it('should attach COPPA from the bidder request', function () {
+      const requests = spec.buildRequests([validBannerBidReq], {
+        ...bidderRequest,
+        ortb2: { ...bidderRequest.ortb2, regs: { coppa: 1 } }
+      });
+      expect(requests[0].data.coppa).to.equal(true);
     });
 
     it('should support multiple size', function () {

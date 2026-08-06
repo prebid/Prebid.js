@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import { server } from '../../mocks/xhr.js';
 
-import { getCoreStorageManager, getStorageManager } from '../../../src/storageManager.js';
+import { getCoreStorageManager } from '../../../src/storageManager.js';
 
 import { EVENTS } from 'src/constants.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';

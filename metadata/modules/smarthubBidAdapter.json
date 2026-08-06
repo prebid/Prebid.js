@@ -107,6 +107,13 @@
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adnex",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

@@ -216,7 +216,7 @@ function _checkParamDataType(key, value, datatype) {
 function _parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
-    var adm = '';
+    var adm;
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
@@ -347,7 +347,7 @@ function _createVideoRequest(bid) {
 }
 
 function _checkMediaType(adm, newBid) {
-  var admStr = '';
+  var admStr;
   var videoRegex = new RegExp(/VAST\s+version/);
   newBid.mediaType = BANNER;
   if (videoRegex.test(adm)) {
@@ -365,7 +365,7 @@ function _checkMediaType(adm, newBid) {
 }
 
 function _createImpressionObject(bid, conf) {
-  var impObj = {};
+  var impObj;
   var bannerObj;
   var videoObj;
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
@@ -530,7 +530,7 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
@@ -610,7 +610,7 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) {
     if (!responses || responses.length === 0 || (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled)) {
       return [];
     }
@@ -626,7 +626,7 @@ export const spec = {
               '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
               '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
               '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
-              '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
+              '&coppa=' + (coppa === true ? 1 : 0)
           };
         });
         return accum.concat(cookieSyncObjects);

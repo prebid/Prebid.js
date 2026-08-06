@@ -404,7 +404,7 @@ describe('jixie Adapter', function () {
 
     it('it should populate the floor info when available', function () {
       const oneSpecialBidReq = deepClone(bidRequests_[0]);
-      let request; let payload = null;
+      let request; let payload;
       // 1 floor is not set
       request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       payload = JSON.parse(request.data);

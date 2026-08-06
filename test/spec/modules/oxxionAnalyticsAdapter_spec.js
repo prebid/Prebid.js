@@ -7,10 +7,6 @@ import { EVENTS } from 'src/constants.js';
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
 describe('Oxxion Analytics', function () {
-  const timestamp = new Date() - 256;
-  const auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
-  const timeout = 1500;
-
   const bidTimeout = [
     {
       'bidId': '5fe418f2d70364',

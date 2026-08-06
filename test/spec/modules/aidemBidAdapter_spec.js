@@ -328,22 +328,6 @@ const WIN_NOTICE = {
   burl: 'burl'
 };
 
-const ERROR_NOTICE = {
-  'message': 'Prebid.js: Server call for aidem failed.',
-  'url': 'http%3A%2F%2Flocalhost%3A9999%2FintegrationExamples%2Fgpt%2Fhello_world.html%3Fpbjs_debug%3Dtrue',
-  'auctionId': 'b57faab7-23f7-4b63-90db-67b259d20db7',
-  'bidderRequestId': '1c53857d1ce616',
-  'timeout': 1000,
-  'bidderCode': 'aidem',
-  metrics: {
-    getMetrics() {
-      return {
-
-      };
-    }
-  }
-};
-
 describe('Aidem adapter', () => {
   describe('isBidRequestValid', () => {
     it('should return true for each valid bid requests', function () {

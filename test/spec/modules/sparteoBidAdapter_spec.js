@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { deepClone, mergeDeep } from 'src/utils';
+import { deepClone } from 'src/utils';
 import { spec as adapter } from 'modules/sparteoBidAdapter';
 
 const CURRENCY = 'EUR';

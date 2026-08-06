@@ -6,7 +6,7 @@
 
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { loadExternalScript } from '../src/adloader.js';
+import { loadExternalScript, preloadExternalScript } from '../src/adloader.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { AUCTION_COMPLETED } from '../src/auction.js';
 import { EVENTS } from '../src/constants.js';
@@ -14,7 +14,6 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import {
   deepAccess,
   getUniqueIdentifierStr,
-  insertElement,
   isFn,
   isNumber,
   isPlainObject,
@@ -30,6 +29,7 @@ import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
+const MODULE_CODE = 'adloox';
 
 const URL_JS = 'https://j.adlooxtracking.com/ads/js/tfav_adl_%%clientid%%.js';
 
@@ -232,14 +232,7 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   if (preloaded[href]) return;
 
   logMessage(MODULE, 'preloading verification JS');
-
-  const link = document.createElement('link');
-  link.setAttribute('href', href);
-  link.setAttribute('rel', 'preload');
-  link.setAttribute('as', 'script');
-  // TODO fix rules violation
-  insertElement(link);
-
+  preloadExternalScript(href, MODULE_TYPE_ANALYTICS, MODULE_CODE);
   preloaded[href] = true;
 };
 
@@ -269,12 +262,12 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
     ['creatype', '%%creatype%%']
   ]);
 
-  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
+  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, MODULE_CODE);
 };
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'adloox',
+  code: MODULE_CODE,
   gvlid: ADLOOX_VENDOR_ID
 });
 
