@@ -1,13 +1,11 @@
 import { expect } from 'chai';
 import { spec } from 'modules/engerioBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { server } from 'test/mocks/xhr.js';
 
 const ENDPOINT_URL = 'https://api.engerio.sk/api/v1/adserver/prebid/auction/';
 
 describe('engerioBidAdapter', () => {
-  const adapter = newBidder(spec);
-
   // ── Fixtures ────────────────────────────────────────────────────────────────
 
   const validBid = {

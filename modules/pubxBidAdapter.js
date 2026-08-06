@@ -60,7 +60,7 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const kwTag = document.getElementsByName('keywords');
-    let kwString = '';
+    let kwString;
     let kwEnc = '';
     let titleContent = !!document.title && document.title;
     let titleEnc = '';

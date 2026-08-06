@@ -188,7 +188,7 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
 };
 
 const createOrtbImpVideoObj = (bid, videoObj) => {
-  let obj = {};
+  let obj;
   const params = bid.params;
   if (!isEmpty(bid.params.video)) {
     obj = {

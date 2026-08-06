@@ -1,5 +1,4 @@
 import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
@@ -47,7 +46,7 @@ function getRegs(bidderRequest) {
   if (bidderRequest.uspConsent) {
     utils.deepSetValue(regs, 'ext.us_privacy', bidderRequest.uspConsent);
   }
-  if (config.getConfig('coppa') === true) {
+  if (bidderRequest.ortb2?.regs?.coppa === 1) {
     regs.coppa = 1;
   }
   if (bidderRequest.ortb2?.regs) {

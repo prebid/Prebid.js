@@ -433,11 +433,10 @@ describe('AdPlayerProProvider utils', function () {
 });
 
 describe('AdPlayerProProvider callbackStorageFactory', function () {
-  let player;
   let callbackStorage;
 
   beforeEach(() => {
-    player = getPlayerMock();
+    getPlayerMock();
     callbackStorage = callbackStorageFactory();
   });
 

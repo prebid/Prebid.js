@@ -812,11 +812,6 @@ describe('PubWiseAdapter', function () {
         }
       };
 
-      const outstreamBidRequest =
-      [
-        validOutstreamRequest
-      ];
-
       const validInstreamRequest = {
         code: 'video1',
         mediaTypes: {
@@ -841,11 +836,6 @@ describe('PubWiseAdapter', function () {
           }
         }
       };
-
-      const instreamBidRequest =
-      [
-        validInstreamRequest
-      ];
 
       const outstreamRequest = spec.isBidRequestValid(validOutstreamRequest);
       expect(outstreamRequest).to.equal(false);

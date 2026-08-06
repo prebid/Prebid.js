@@ -138,7 +138,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           performStandardAuction();
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          const [url, jsonString] = navigator.sendBeacon.firstCall.args;
+          const [, jsonString] = navigator.sendBeacon.firstCall.args;
           const { auctions } = JSON.parse(jsonString);
 
           assert.lengthOf(mapToBids(auctions).filter(bid => bid.hasWon), 3);
@@ -395,7 +395,7 @@ describe('33acrossAnalyticsAdapter:', function () {
         };
 
         // Reject first bid
-        const bidToReject = auction.BID_REQUESTED[0].bids[0];
+
         events.emit(EVENTS.BID_REJECTED, auction.BID_REJECTED[0]);
 
         // Accept remaining bids

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
+import 'sinon';
 import { spec } from 'modules/hubvisorBidAdapter.js';
 import { config } from 'src/config.js';
 

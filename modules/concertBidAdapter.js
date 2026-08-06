@@ -117,9 +117,7 @@ export const spec = {
       return [];
     }
 
-    let bidResponses = [];
-
-    bidResponses = serverBody.bids.map((bid) => {
+    const bidResponses = serverBody.bids.map((bid) => {
       return {
         requestId: bid.bidId,
         cpm: bid.cpm,

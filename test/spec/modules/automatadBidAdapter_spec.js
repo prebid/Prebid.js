@@ -1,10 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/automatadBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('automatadBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   const bidRequestRequiredParams = {
     bidder: 'automatad',
     params: { siteId: '123ad' },

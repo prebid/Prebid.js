@@ -1,4 +1,4 @@
-import sinon from 'sinon';
+import 'sinon';
 import { expect } from 'chai';
 import { spec, ADAPTER_VERSION } from 'modules/apsBidAdapter';
 import { config } from 'src/config.js';

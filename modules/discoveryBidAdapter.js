@@ -168,8 +168,7 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
  * @return {Object}
  */
 function getItems(validBidRequests, bidderRequest) {
-  let items = [];
-  items = validBidRequests.map((req, i) => {
+  return validBidRequests.map((req, i) => {
     let ret = {};
 
     const mediaTypes = getKv(req, 'mediaTypes');
@@ -221,7 +220,6 @@ function getItems(validBidRequests, bidderRequest) {
     };
     return ret;
   });
-  return items;
 }
 
 export const buildUTMTagData = (url) => {

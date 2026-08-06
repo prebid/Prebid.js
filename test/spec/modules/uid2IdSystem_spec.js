@@ -15,7 +15,7 @@ import { createEidsArray } from '../../../modules/userId/eids.js';
 const expect = require('chai').expect;
 
 const clearTimersAfterEachTest = true;
-const debugOutput = () => {};
+const debugTimerOutput = false;
 
 const moduleCookieName = '__uid2_advertising_token';
 const publisherCookieName = '__UID2_SERVER_COOKIE';
@@ -32,7 +32,8 @@ const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
 const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' };
 
 const makeUid2IdentityContainer = (token) => ({ uid2: { id: token } });
-const makeUid2OptoutContainer = (token) => ({ uid2: { optout: true } });
+const makeUid2OptoutContainer = () => ({ uid2: { optout: true } });
+
 let useLocalStorage = false;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
   userSync: { auctionDelay: extraSettings.auctionDelay ?? auctionDelayMs, ...(extraSettings.syncDelay !== undefined && { syncDelay: extraSettings.syncDelay }), userIds: [{ name: 'uid2', params: { storage: useLocalStorage ? 'localStorage' : 'cookie', ...params } }] }, debug
@@ -103,6 +104,13 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 
 describe(`UID2 module`, function () {
   let suiteSandbox; let testSandbox; let timerSpy; let fullTestTitle; let restoreSubtleToUndefined = false;
+  const getFullTestTitle = (test) => `${test.parent.title ? getFullTestTitle(test.parent) + ' | ' : ''}${test.title}`;
+  const debugOutput = (message) => {
+    if (debugTimerOutput) {
+      utils.logMessage(`${fullTestTitle}: ${message}`);
+    }
+  };
+
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
@@ -150,8 +158,6 @@ describe(`UID2 module`, function () {
       await act(false);
     });
   };
-
-  const getFullTestTitle = (test) => `${test.parent.title ? getFullTestTitle(test.parent) + ' | ' : ''}${test.title}`;
 
   beforeEach(function () {
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
@@ -683,6 +689,11 @@ describe(`UID2 module`, function () {
           }
         }]
       });
+    });
+
+    it('does not create an eid for optout values', function() {
+      const newEids = createEidsArray(makeUid2OptoutContainer());
+      expect(newEids.length).to.equal(0);
     });
   });
 });

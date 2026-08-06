@@ -114,6 +114,7 @@ describe('Reconciliation Real time data submodule', function () {
         const iframe2Win = mockFrameWin(topWin, iframe1Win);
 
         expect(getTopIFrameWin(iframe1Win, topWin)).to.be.null;
+        expect(getTopIFrameWin(iframe2Win, topWin)).to.be.null;
       });
 
       it('should get the topmost iframe', function () {
@@ -146,8 +147,7 @@ describe('Reconciliation Real time data submodule', function () {
         adSlotElement.id = 'reconciliationAd';
         document.body.appendChild(adSlotElement);
         document.body.appendChild(adSlotIframe); // iframe is not in ad slot
-
-        const adSlot = makeSlot({ code: '/reconciliationAdunit', divId: adSlotElement.id });
+        makeSlot({ code: '/reconciliationAdunit', divId: adSlotElement.id });
 
         expect(getSlotByWin(adSlotIframe.contentWindow)).to.be.null;
       });

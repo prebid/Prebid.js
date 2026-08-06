@@ -5,7 +5,6 @@ import { server } from '../../mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
 const events = require('src/events');
-const adapterManager = require('src/adapterManager').default;
 
 describe('PubWise Prebid Analytics', function () {
   let requests;

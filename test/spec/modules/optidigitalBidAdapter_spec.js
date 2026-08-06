@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, resetSync } from 'modules/optidigitalBidAdapter.js';
-import * as utils from 'src/utils.js';
+import 'src/utils.js';
 
 const ENDPOINT = 'https://pbs.optidigital.com/bidder';
 

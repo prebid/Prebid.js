@@ -133,7 +133,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const schainObject = {
       ver: '1.0',
       nodes: [
@@ -789,6 +789,17 @@ describe('VisxAdapter', function () {
       expect(postData).to.be.an('object');
       expect(postData.imp[0].ext.gpid).to.equal('adunit-gpid-1');
     });
+
+    it('if tid is present payload must have tid param', function () {
+      const firstBid = Object.assign({}, bidRequests[0]);
+      firstBid.ortb2Imp = { ext: { tid: '35bcbc0f7e79c' } };
+      const bids = [firstBid];
+      const request = spec.buildRequests(bids, bidderRequest);
+      const postData = request.data;
+
+      expect(postData).to.be.an('object');
+      expect(postData.imp[0].ext.tid).to.equal('35bcbc0f7e79c');
+    });
   });
 
   describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
@@ -844,7 +855,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -1003,7 +1014,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -1029,7 +1040,6 @@ describe('VisxAdapter', function () {
       }
     ];
     let sandbox;
-    let documentStub;
 
     before(function() {
       sandbox = sinon.createSandbox();
@@ -2142,6 +2152,9 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         },
+        'source': {
+          'tid': '35bcbc0f7e79c'
+        },
         'user': {
           'keywords': 'x,y',
           'data': [
@@ -2206,6 +2219,11 @@ describe('VisxAdapter', function () {
     it('should pass site if ortb2 has site', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.site).not.to.be.undefined;
+    });
+
+    it('should pass source.tid if ortb2 has auctionId', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.source.tid).not.to.be.undefined;
     });
 
     it('should merge if user object exists', function () {

@@ -196,7 +196,7 @@ describe('Adloox Analytics Adapter', function () {
 
         events.emit(EVENTS.BID_WON, bid);
 
-        const [urlInserted, _, moduleCode] = loadExternalScriptStub.getCall(0).args;
+        const [urlInserted, , moduleCode] = loadExternalScriptStub.getCall(0).args;
 
         expect(urlInserted.substr(0, url.length)).to.equal(url);
         expect(moduleCode).to.equal(analyticsAdapterName);

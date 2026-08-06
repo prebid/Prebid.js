@@ -1,5 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { config } from 'src/config.js';
 import { spec } from 'modules/apstreamBidAdapter.js';
 import * as utils from 'src/utils.js';

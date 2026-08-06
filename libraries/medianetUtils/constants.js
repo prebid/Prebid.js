@@ -7,6 +7,7 @@ export const mnetGlobals = {
   errorQueue: [], // Queue for storing errors,
   eventQueue: null,
   refererInfo: null,
+  initialized: false,
 };
 
 export const LOGGING_DELAY = 500;

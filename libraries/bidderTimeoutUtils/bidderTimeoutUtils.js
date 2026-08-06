@@ -75,7 +75,7 @@ function calculateTimeoutModifier(adUnits, rules) {
 
   logInfo('Timeout rules', rules);
   let timeoutModifier = 0;
-  let toAdd = 0;
+  let toAdd;
 
   if (rules.includesVideo) {
     const hasVideo = bidderTimeoutFunctions.checkVideo(adUnits);

@@ -5,7 +5,6 @@ import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/
 const DEFAULT_PRICE = 1;
 const DEFAULT_BANNER_WIDTH = 300;
 const DEFAULT_BANNER_HEIGHT = 250;
-const BIDDER_CODE = 'test';
 
 describe('bidNativeUtils', function () {
   describe('interpretNativeBid', function () {

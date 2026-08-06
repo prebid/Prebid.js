@@ -36,8 +36,7 @@ function isBidRequestValid(bid) {
   }
 
   if (
-    !bid.mediaTypes ||
-    !bid.mediaTypes[BANNER] ||
+    !bid.mediaTypes?.[BANNER] ||
     !isArray(bid.mediaTypes[BANNER].sizes) ||
     bid.mediaTypes[BANNER].sizes.length <= 0 ||
     !isArrayOfNums(bid.mediaTypes[BANNER].sizes[0])
@@ -70,16 +69,23 @@ function createBidRequest(bid, bidderRequest) {
     sdkVersion,
   } = bid.params;
 
+  const refererInfo = bidderRequest?.refererInfo;
+
+  const pageUrl = refererInfo?.page || window.location.href || '';
+  const domain = refererInfo?.domain || window.location.hostname || '';
+  const referrer = refererInfo?.ref || window.document.referrer || '';
+
   return {
     method: 'POST',
     url: ADPLUS_ENDPOINT,
     data: cleanObj({
       bidId: bid.bidId,
-      inventoryId: parseInt(inventoryId),
-      adUnitId: parseInt(adUnitId),
+      inventoryId: Number.parseInt(inventoryId, 10),
+      adUnitId: Number.parseInt(adUnitId, 10),
       adUnitWidth: bid.mediaTypes[BANNER].sizes[0][0],
       adUnitHeight: bid.mediaTypes[BANNER].sizes[0][1],
       pbAdUnitCode: bid.adUnitCode,
+      pbAdUnitId: getStringValue(bid.adUnitId),
       pbAuctionId: bidderRequest?.auctionId || bid.auctionId,
       extraData,
       yearOfBirth,
@@ -89,15 +95,16 @@ function createBidRequest(bid, bidderRequest) {
       longitude,
       sdkVersion: sdkVersion || '1',
       interstitial: 0,
-      secure: window.location.protocol === 'https:' ? 1 : 0,
+      secure: pageUrl?.startsWith('https:') ? 1 : 0,
       screenWidth: screen.width,
       screenHeight: screen.height,
       language: window.navigator.language || 'en-US',
-      pageUrl: window.location.href,
-      domain: window.location.hostname,
-      referrer: window.location.referrer,
+      pageUrl,
+      domain,
+      referrer,
       adplusUid: bid?.userId?.adplusId,
       eids: bid?.userIdAsEids,
+      transactionId: getStringValue(bid?.transactionId),
     }),
   };
 }
@@ -116,13 +123,13 @@ function buildRequests(validBidRequests, bidderRequest) {
  */
 function createAdResponse(responseData, bidParams) {
   return {
-    requestId: responseData.requestID,
+    requestId: getStringValue(responseData.requestID),
     cpm: responseData.cpm,
     currency: responseData.currency,
     width: responseData.width,
     height: responseData.height,
-    creativeId: responseData.creativeID,
-    dealId: responseData.dealID,
+    creativeId: getStringValue(responseData.creativeID),
+    dealId: getStringValue(responseData.dealID),
     netRevenue: responseData.netRevenue,
     ttl: responseData.ttl,
     ad: responseData.ad,
@@ -147,6 +154,10 @@ function interpretResponse(response, request) {
   }
   const bids = response.body.map((bid) => createAdResponse(bid));
   return bids;
+}
+
+function getStringValue(value) {
+  return value == null ? undefined : String(value);
 }
 // #endregion
 

@@ -366,12 +366,10 @@ describe('jwplayerRtdProvider', function() {
         id: contentIdForSuccess
       }
     };
-    let bidRequestSpy;
+
     let clock;
 
     beforeEach(function () {
-      bidRequestSpy = sinon.spy();
-
       clock = sinon.useFakeTimers();
     });
 
@@ -1792,7 +1790,6 @@ describe('jwplayerRtdProvider', function() {
       });
 
       it('excludes segments when absent', function () {
-        const adUnitCode = 'test_ad_unit';
         const bid = {};
         const adUnit = {
           ortb2Imp: {

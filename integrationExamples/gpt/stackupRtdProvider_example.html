@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>StackUP RTD Provider — Integration Example</title>
+    <!--
+      Rebuild: gulp build --modules=rtdModule,stackupRtdProvider,appnexusBidAdapter
+      Serve  : gulp serve
+      Open   : http://localhost:9999/integrationExamples/gpt/stackupRtdProvider_example.html
+      Test mode: pubId "00000000-0000-0000-0000-000000000000" returns a hardcoded
+      OpenRTB fixture from the API without requiring a real account or claimed domain.
+      Switch to your real pubId (a UUID from your StackUP account) before going live.    -->
+    <script
+      async
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    ></script>
+    <script async src="../../build/dist/prebid.js"></script>
+    <script>
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+
+      var PREBID_TIMEOUT = 1500;
+      var FAILSAFE_TIMEOUT = 2000;
+
+      var adUnits = [
+        {
+          code: "/19968336/header-bid-tag-0",
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [728, 90],
+              ],
+            },
+          },
+          bids: [{ bidder: "appnexus", params: { placementId: 13144370 } }],
+        },
+      ];
+
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          debug: true,
+          realTimeData: {
+            auctionDelay: PREBID_TIMEOUT,
+            dataProviders: [
+              {
+                name: "stackupRtd",
+                waitForIt: true,
+                params: {
+                  // Test pubId — returns a hardcoded OpenRTB fixture, no account needed.
+                  // Replace with your real pubId before going live.
+                  pubId: "00000000-0000-0000-0000-000000000000",
+                  // timeout: max ms to wait for Stack Up API before releasing the auction.
+                  // Respects the auctionDelay budget — whichever is smaller wins.
+                  // If omitted, defaults to 300ms.
+                  timeout: 1500, //Actual API calls should be much faster.
+                  debug: true,
+                },
+              },
+            ],
+          },
+        });
+
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: sendAdserverRequest,
+          timeout: PREBID_TIMEOUT,
+        });
+      });
+
+      function sendAdserverRequest() {
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function () {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+
+      setTimeout(sendAdserverRequest, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot(
+            "/19968336/header-bid-tag-0",
+            [
+              [300, 250],
+              [728, 90],
+            ],
+            "div-1"
+          )
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+    </script>
+  </head>
+
+  <body>
+    <h2>StackUP RTD Provider — Integration Example</h2>
+    <div id="div-1">
+      <script>
+        googletag.cmd.push(function () {
+          googletag.display("div-1");
+        });
+      </script>
+    </div>
+  </body>
+</html>

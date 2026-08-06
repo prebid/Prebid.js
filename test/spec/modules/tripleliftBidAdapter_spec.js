@@ -1,13 +1,11 @@
 import { expect } from 'chai';
 import { tripleliftAdapterSpec, storage } from 'modules/tripleliftBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
+
 import prebid from 'package.json';
 import * as utils from 'src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
 const GPP_CONSENT_STR = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
 
@@ -892,17 +890,16 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
-    it('should return coppa param when COPPA config is set to true', function() {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      config.getConfig.restore();
+    it('should return coppa param when COPPA is set in the bidder request', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {
+        ...bidderRequest,
+        ortb2: { regs: { coppa: 1 } }
+      });
       const url = request.url;
       expect(url).to.match(/(\?|&)coppa=true/);
     });
-    it('should not return coppa param when COPPA config is set to false', function() {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(false);
+    it('should not return coppa param when COPPA is absent from the bidder request', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      config.getConfig.restore();
       const url = request.url;
       expect(url).not.to.match(/(\?|&)coppa=/);
     });

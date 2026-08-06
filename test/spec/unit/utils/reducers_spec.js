@@ -9,7 +9,7 @@ import {
   getOldestHighestCpmBid, getLatestHighestCpmBid, reverseCompare
 } from '../../../../src/utils/reducers.js';
 
-import assert from 'assert';
+import 'assert';
 
 describe('reducers', () => {
   describe('simpleCompare', () => {
