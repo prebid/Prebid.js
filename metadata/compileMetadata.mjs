@@ -45,10 +45,10 @@ function previousDisclosure(moduleName, {componentType, componentName, disclosur
             const disclosureAgeDays = ((new Date()).getTime() - new Date(disclosure.timestamp).getTime()) /
               (1000 * 60  * 60 * 24);
             if (disclosureAgeDays <= MAX_DISCLOSURE_AGE_DAYS) {
-              console.info(`Using previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}, disclosure is ${Math.floor(disclosureAgeDays)} days old)`);
+              console.info(`Using previously fetched disclosure for "${componentType}.${componentName}" (url: ${disclosureURL}, disclosure is ${Math.floor(disclosureAgeDays)} days old)`);
               resolve(disclosure)
             } else {
-              console.warn(`Previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${Math.floor(disclosureAgeDays)} days) and won't be reused`);
+              console.warn(`Previously fetched disclosure for "${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${Math.floor(disclosureAgeDays)} days) and won't be reused`);
               resolve(null);
             }
           }

@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec, internal, BANNER_ENDPOINT_URL, NATIVE_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility } from 'modules/taboolaBidAdapter.js';
-import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
 import { server } from '../../mocks/xhr.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -601,12 +600,12 @@ describe('Taboola Adapter', function () {
       });
 
       it('should pass coppa consent', function () {
-        config.setConfig({ coppa: true });
-
-        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: { regs: { coppa: 1 } }
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.regs.coppa).to.equal(1);
-
-        config.resetConfig();
       });
     });
 
