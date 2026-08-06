@@ -381,7 +381,7 @@ describe('ocmBidAdapter', function () {
       it('sends no tmax when the auction timeout is unknown', function () {
         const request = spec.buildRequests([bannerBid], bannerBidderRequest);
         expect(request.data.tmax).to.equal(undefined);
-        expect(request.data.ext.tmaxmax).to.equal(undefined);
+        expect(request.data.ext?.tmaxmax).to.equal(undefined);
       });
     });
   });
