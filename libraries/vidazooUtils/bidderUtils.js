@@ -5,10 +5,10 @@ import {
   isFn,
   parseSizesInput,
   parseUrl,
-  triggerPixel,
   uniques,
   getWinDimensions, deepClone
 } from '../../src/utils.js';
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 import { chunk } from '../chunk/chunk.js';
 import {
   CURRENCY,
@@ -21,6 +21,10 @@ import {
 import { bidderSettings } from '../../src/bidderSettings.js';
 import { config } from '../../src/config.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+
+function sendTrackingPing(url) {
+  ajax(url, null, undefined, { method: 'GET', keepalive: true });
+}
 
 export function createSessionId() {
   return 'wsid_' + parseInt(Date.now() * Math.random());
@@ -161,7 +165,7 @@ export function onBidWon(bid) {
   };
   const qs = formatQS(wonBid);
   const url = bid.nurl + (bid.nurl.indexOf('?') === -1 ? '?' : '&') + qs;
-  triggerPixel(url);
+  sendTrackingPing(url);
 }
 
 export function onBidBillable(bid) {
@@ -185,7 +189,7 @@ export function onBidBillable(bid) {
   };
   const qs = formatQS(billBid);
   const url = bid.burl + (bid.burl.indexOf('?') === -1 ? '?' : '&') + qs;
-  triggerPixel(url);
+  sendTrackingPing(url);
 }
 
 export function onBidViewable(bid) {
@@ -209,7 +213,7 @@ export function onBidViewable(bid) {
   };
   const qs = formatQS(viewablePayload);
   const url = bid.viewableUrl + (bid.viewableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
-  triggerPixel(url);
+  sendTrackingPing(url);
 }
 
 export function onAdRenderSucceeded(bid) {
@@ -233,7 +237,7 @@ export function onAdRenderSucceeded(bid) {
   };
   const qs = formatQS(renderSuccessPayload);
   const url = bid.renderSuccessUrl + (bid.renderSuccessUrl.indexOf('?') === -1 ? '?' : '&') + qs;
-  triggerPixel(url);
+  sendTrackingPing(url);
 }
 
 /**

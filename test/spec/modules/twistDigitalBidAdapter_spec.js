@@ -5,6 +5,7 @@ import {
   storage
 } from 'modules/twistDigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
@@ -904,14 +905,7 @@ describe('TwistDigitalBidAdapter', function () {
   });
 
   describe('validate onBidWon', function () {
-    beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
-    });
-    afterEach(function () {
-      utils.triggerPixel.restore();
-    });
-
-    it('should call triggerPixel if nurl exists', function () {
+    it('should send keepalive ajax GET if nurl exists', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -932,15 +926,16 @@ describe('TwistDigitalBidAdapter', function () {
         ttl: 30,
         width: 300
       };
+      const expectedUrl = 'https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered';
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.true;
-
-      const url = utils.triggerPixel.args[0];
-
-      expect(url[0]).to.be.equal('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+      const matching = server.requests.filter((req) => req.url === expectedUrl);
+      expect(matching.length).to.equal(1);
+      expect(matching[0].method).to.equal('GET');
+      expect(matching[0].fetch.request.keepalive).to.be.true;
     });
 
-    it('should not call triggerPixel if nurl does not exist', function () {
+    it('should not send ping if nurl does not exist', function () {
+      const beforeCount = server.requests.length;
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -961,7 +956,7 @@ describe('TwistDigitalBidAdapter', function () {
         width: 300
       };
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.false;
+      expect(server.requests.length).to.equal(beforeCount);
     });
   });
 });
