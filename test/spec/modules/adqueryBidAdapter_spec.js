@@ -262,7 +262,7 @@ describe('adqueryBidAdapter', function () {
         }
       )).to.equal(false);
     });
-    it('should return false when sizes for video are specified', () => {
+    it('should return true when sizes for video are specified', () => {
       expect(spec.isBidRequestValid(
         {
           "bidder": "adquery",
@@ -317,7 +317,7 @@ describe('adqueryBidAdapter', function () {
         }
       )).to.equal(true);
     });
-    it('should return false when context for video is correct', () => {
+    it('should return true when context for video is correct', () => {
       expect(spec.isBidRequestValid(
         {
           "bidder": "adquery",
@@ -447,6 +447,30 @@ describe('adqueryBidAdapter', function () {
           "src": "client",
         }
       )).to.equal(true);
+    });
+
+    it('should return true for a banner bid when video mediaType has no instream/outstream context', () => {
+      const bid = utils.deepClone(bidRequest);
+      bid.mediaTypes.video = {
+        playerSize: [[640, 360]],
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false (not throw) for a video-only bid with no instream/outstream context and no banner', () => {
+      const bid = {
+        bidder: 'adquery',
+        params: {
+          placementId: '6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897',
+        },
+        mediaTypes: {
+          video: {
+            playerSize: [[640, 360]],
+          },
+        },
+      };
+      expect(() => spec.isBidRequestValid(bid)).to.not.throw();
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
@@ -1164,17 +1188,21 @@ describe('adqueryBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
+    const gdprConsentWithPurpose1 = {
+      consentString: 'ALL',
+      gdprApplies: true,
+      vendorData: { purpose: { consents: { 1: true } } }
+    };
+    const serverResponsesWithQid = [{ body: { data: { qid: 'test-qid-value' } } }];
+
     it('should return iframe sync', function () {
       const sync = spec.getUserSyncs(
         {
           iframeEnabled: true,
           pixelEnabled: true,
         },
-        {},
-        {
-          consentString: 'ALL',
-          gdprApplies: true,
-        },
+        serverResponsesWithQid,
+        gdprConsentWithPurpose1,
         {}
       );
       expect(sync.length).to.equal(1);
@@ -1187,11 +1215,8 @@ describe('adqueryBidAdapter', function () {
           iframeEnabled: false,
           pixelEnabled: true,
         },
-        {},
-        {
-          consentString: 'ALL',
-          gdprApplies: true,
-        },
+        serverResponsesWithQid,
+        gdprConsentWithPurpose1,
         {}
       );
       expect(sync.length).to.equal(1);
@@ -1200,25 +1225,44 @@ describe('adqueryBidAdapter', function () {
     });
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
-        consentString: 'ALL',
-        gdprApplies: true,
-      }, {});
+      const syncData = spec.getUserSyncs({}, serverResponsesWithQid, gdprConsentWithPurpose1, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object');
       expect(syncData[0].type).to.be.a('string');
       expect(syncData[0].type).to.equal('image');
     });
 
-    it('should not include qid in sync URL even when window.qid is set', function () {
-      const originalQid = window.qid;
-      window.qid = 'test-qid-value';
-      try {
-        const sync = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {});
-        expect(sync[0].url).to.not.include('qid');
-      } finally {
-        window.qid = originalQid;
-      }
+    it('should return empty array when Purpose 1 consent is missing', function () {
+      const gdprConsent = { gdprApplies: true, vendorData: { purpose: { consents: { 1: false } } } };
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, gdprConsent, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when GDPR does not apply', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, { gdprApplies: false }, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when qid is not present in serverResponses', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, [{ body: { data: {} } }], gdprConsentWithPurpose1, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should include ccpa_consent in sync URL when uspConsent provided', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, gdprConsentWithPurpose1, '1YNN');
+      expect(sync[0].url).to.include('ccpa_consent=1YNN');
+    });
+
+    it('should include qid in sync URL when present in serverResponses', function () {
+      const serverResponses = [{ body: { data: { qid: 'test-qid-value' } } }];
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, gdprConsentWithPurpose1, {});
+      expect(sync[0].url).to.include('qid=test-qid-value');
+    });
+
+    it('should find qid from any response, not just the first', function () {
+      const serverResponses = [{ body: '' }, { body: '' }, { body: { data: { qid: 'test-qid-value' } } }];
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, gdprConsentWithPurpose1, {});
+      expect(sync[0].url).to.include('qid=test-qid-value');
     });
   });
 

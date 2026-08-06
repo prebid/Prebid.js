@@ -46,7 +46,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
 
@@ -189,7 +189,11 @@ jobs:
   coverage:
     name: Coverage
     needs: [checkout, test, base-coverage-combine]
-    if: always() && needs.test.result == 'success' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
+    # Gate on the coverage artifact rather than on the result of the whole browser-tests call, which
+    # also covers e2e, browserstack and the browsers that run without instrumentation. The output is
+    # only set by a matrix leg that both succeeded and produced coverage, so a non-empty value is
+    # exactly the condition under which there is something to report.
+    if: always() && needs.test.outputs.coverage && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -211,7 +215,12 @@ jobs:
           github-token: ${{ github.token }}
           lcov-file: "coverage.info"
           base-lcov-file: "base-coverage.info"
-          minimum-ratio: 0
+          # Barecheck rounds each total to two decimals before subtracting them, so a reported diff of
+          # -0.01 can come entirely from the two totals falling on opposite sides of a rounding
+          # boundary. That artifact is bounded at one step, so tolerating -0.01 absorbs it while
+          # anything at -0.02 or beyond still implies a real drop. Note a negative value here would
+          # disable the check altogether rather than widen the tolerance.
+          minimum-ratio: 0.01
           send-summary-comment: false
           show-annotations: "warning"
 
