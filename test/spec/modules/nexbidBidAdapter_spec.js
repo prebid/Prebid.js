@@ -209,6 +209,30 @@ describe('nexbidBidAdapter', function () {
 
       expect(request.bids[0].floor).to.equal(null);
     });
+
+    it('should request a wildcard floor for a multi-size banner', function () {
+      let floorRequest;
+      const request = JSON.parse(spec.buildRequests([{
+        ...bid,
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [728, 90]]
+          }
+        },
+        getFloor: (options) => {
+          floorRequest = options;
+          return { currency: 'USD', floor: 0.2 };
+        }
+      }], bidderRequest).data);
+
+      expect(floorRequest).to.deep.equal({
+        currency: 'USD',
+        mediaType: BANNER,
+        size: '*'
+      });
+      expect(request.bids[0].sizes).to.deep.equal([[300, 250], [728, 90]]);
+      expect(request.bids[0].floor).to.deep.equal({ currency: 'USD', value: 0.2 });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -272,4 +296,3 @@ describe('nexbidBidAdapter', function () {
     });
   });
 });
-

@@ -139,7 +139,7 @@ function floorForBid(bid, sizes) {
     const result = bid.getFloor({
       currency: 'USD',
       mediaType: BANNER,
-      size: sizes[0] || '*'
+      size: sizes.length === 1 ? sizes[0] : '*'
     });
     const floor = numberValue(result && result.floor);
     return floor >= 0 && isNonEmptyString(result && result.currency)
@@ -167,4 +167,3 @@ function isNonEmptyString(value) {
 }
 
 registerBidder(spec);
-
