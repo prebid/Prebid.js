@@ -48,11 +48,13 @@ export const spec = {
         eids: deepAccess(bid, 'userIdAsEids') ? bid.userIdAsEids : [],
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
+        device: { ext: { visibility: { hidden: raiIsPageHidden() } } },
         kws: bid.params.keywords,
         schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
-        userData: deepAccess(bid, 'ortb2.user.data')
+        userData: deepAccess(bid, 'ortb2.user.data'),
+        ext: { prebid: { channel: { name: 'pbjs', version: '$prebid.version$' } } }
       };
 
       payload.gdpr_consent = '';
@@ -237,10 +239,14 @@ function raiGetSizes(bid) {
 function raiGetVideoInfo(bid) {
   let videoData;
   if (bid.mediaTypes?.video) {
+    const video = bid.mediaTypes.video;
+
     videoData = {
-      format: bid.mediaTypes.video.context,
-      playerSize: bid.mediaTypes.video.playerSize,
-      mimes: bid.mediaTypes.video.mimes
+      format: video.context,
+      playerSize: video.playerSize,
+      mimes: video.mimes,
+      plcmt: video.plcmt,
+      playbackmethod: video.playbackmethod
     };
   } else {
     videoData = {
@@ -271,6 +277,10 @@ function raiGetResolution() {
     resolution = window.screen.width + 'x' + window.screen.height;
   }
   return resolution;
+}
+
+function raiIsPageHidden() {
+  return typeof document !== 'undefined' && document.hidden === true;
 }
 
 function raiSetPbAdSlot(bid) {

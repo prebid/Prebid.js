@@ -475,6 +475,96 @@ describe('Richaudience adapter tests', function () {
     expect(request[0].adUnitCode).to.equal('test-div');
   });
 
+  describe('video ORTB fields', function () {
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    };
+
+    function bidFor(mediaTypes) {
+      return [{
+        adUnitCode: 'test-div',
+        bidId: '2c7c8e9c900244',
+        mediaTypes: mediaTypes,
+        bidder: 'richaudience',
+        params: { pid: 'ADb1f40rmi', supplyType: 'site' },
+        auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563'
+      }];
+    }
+
+    function videoDataFor(video) {
+      const request = spec.buildRequests(bidFor({
+        video: Object.assign({ playerSize: [640, 480], mimes: ['video/mp4'] }, video)
+      }), bidderRequest);
+      return JSON.parse(request[0].data).videoData;
+    }
+
+    it('forwards the plcmt and playbackmethod declared on the ad unit', function () {
+      const videoData = videoDataFor({ context: 'instream', plcmt: 2, playbackmethod: [2, 6] });
+      expect(videoData).to.have.property('plcmt').and.to.equal(2);
+      expect(videoData).to.have.property('playbackmethod').and.to.deep.equal([2, 6]);
+    });
+
+    it('forwards the plcmt the core derives for outstream ad units', function () {
+      expect(videoDataFor({ context: 'outstream', plcmt: 4 })).to.have.property('plcmt').and.to.equal(4);
+    });
+
+    it('omits plcmt and playbackmethod when the ad unit declares neither', function () {
+      const videoData = videoDataFor({ context: 'instream' });
+      expect(videoData).to.not.have.property('plcmt');
+      expect(videoData).to.not.have.property('playbackmethod');
+    });
+
+    it('does not send video fields on banner requests', function () {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, bidderRequest);
+      expect(JSON.parse(request[0].data).videoData).to.deep.equal({ format: 'banner' });
+    });
+
+    it('marks a banner-only ad unit as banner', function () {
+      const request = spec.buildRequests(bidFor({ banner: { sizes: [[300, 250]] } }), bidderRequest);
+      expect(JSON.parse(request[0].data).videoData).to.deep.equal({ format: 'banner' });
+    });
+
+    it('sends both the banner sizes and the video data on multiformat ad units', function () {
+      const request = spec.buildRequests(bidFor({
+        banner: { sizes: [[300, 250]] },
+        video: { context: 'outstream', playerSize: [640, 480], mimes: ['video/mp4'], plcmt: 4 }
+      }), bidderRequest);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.sizes).to.deep.equal([{ w: 300, h: 250 }]);
+      expect(requestContent.videoData.format).to.equal('outstream');
+      expect(requestContent.videoData.plcmt).to.equal(4);
+    });
+  });
+
+  it('announces the prebid channel and version', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const channel = JSON.parse(request[0].data).ext.prebid.channel;
+    expect(channel).to.have.property('name').and.to.equal('pbjs');
+    expect(channel.version).to.be.a('string').and.to.match(/^\d+\.\d+\.\d+/);
+  });
+
+  it('announces the prebid channel on video requests too', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent.ext.prebid.channel.name).to.equal('pbjs');
+    expect(requestContent.device.ext.visibility).to.have.property('hidden').and.to.be.a('boolean');
+  });
+
   describe('floors', function () {
     const bidderRequestEUR = {
       gdprConsent: {
@@ -679,6 +769,36 @@ describe('Richaudience adapter tests', function () {
       });
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
+    });
+  });
+
+  describe('page visibility test', function () {
+    function setPageHidden(hidden) {
+      Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
+    }
+
+    afterEach(function () {
+      delete document.hidden;
+    });
+
+    function buildAndParse() {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        refererInfo: {
+          page: 'https://domain.com',
+          numIframes: 0
+        }
+      });
+      return JSON.parse(request[0].data);
+    }
+
+    it('reports the page as not hidden when the tab is active', function () {
+      setPageHidden(false);
+      expect(buildAndParse().device.ext.visibility.hidden).to.equal(false);
+    });
+
+    it('reports the page as hidden when the tab is in the background', function () {
+      setPageHidden(true);
+      expect(buildAndParse().device.ext.visibility.hidden).to.equal(true);
     });
   });
 
