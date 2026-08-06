@@ -383,4 +383,4 @@ describe('Allegro Bid Adapter', () => {
       expect(obj['[com.google.doubleclick.site]']).to.deep.equal({ custom: 'v' });
     });
   });
-v});
+});
