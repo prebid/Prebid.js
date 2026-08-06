@@ -10,6 +10,11 @@ const utils = {
     const element = $(elementRef);
     await element.waitForExist({ timeout: time });
   },
+  switchFrames: async function(...frameRefs) {
+    for (const frameRef of frameRefs) {
+      await utils.switchFrame(frameRef);
+    }
+  },
   switchFrame: async function(frameRef) {
     const iframe = await $(frameRef);
     await browser.switchFrame(iframe);

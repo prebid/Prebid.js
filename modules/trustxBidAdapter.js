@@ -10,7 +10,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -142,7 +141,7 @@ const ortbAdapterConverter = ortbConverter({
     }
 
     // COPPA
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest.ortb2?.regs?.coppa === 1) {
       deepSetValue(requestObj, 'regs.coppa', 1);
     }
 

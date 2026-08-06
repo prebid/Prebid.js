@@ -40,7 +40,7 @@ export interface BidderSettings<B extends BidderCode> {
    */
   allowedAlternateBidderCodes?: ['*'] | BidderCode[];
   /**
-   * @deprecated Prebid no longer supports browsing topics and this option has no effect.
+   * @deprecated - see
    */
   topicsHeader?: boolean;
 }
