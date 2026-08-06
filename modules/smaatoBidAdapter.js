@@ -263,7 +263,7 @@ const converter = ortbConverter({
       }
     } else {
       request.regs = {
-        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        coppa: bidderRequest.ortb2?.regs?.coppa === 1 ? 1 : 0,
         ext: {
           gdpr: isGdprApplicable() ? bidderRequest.gdprConsent.gdprApplies ? 1 : 0 : null,
           us_privacy: bidderRequest.uspConsent
