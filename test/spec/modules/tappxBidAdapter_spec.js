@@ -202,6 +202,14 @@ describe('Tappx bid adapter', function () {
       expect(payload.regs.ext.us_privacy).to.exist;
     });
 
+    it('should add COPPA from the bidder request', function () {
+      const request = spec.buildRequests(validBidRequests, {
+        ...bidderRequest,
+        ortb2: { ...bidderRequest.ortb2, regs: { coppa: 1 } }
+      });
+      expect(JSON.parse(request[0].data).regs.coppa).to.equal(1);
+    });
+
     it('should properly build a banner request', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);

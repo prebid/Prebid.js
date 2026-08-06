@@ -1882,7 +1882,7 @@
       "componentName": "copper6ssp",
       "aliasOf": null,
       "gvlid": 1356,
-      "disclosureURL": null
+      "disclosureURL": "https://privacy.copper6.com/deviceStorage.json"
     },
     {
       "componentType": "bidder",
