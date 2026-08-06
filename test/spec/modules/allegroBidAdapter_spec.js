@@ -4,13 +4,14 @@ import { config } from 'src/config.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
 
-function buildBidRequest({ bidId = 'bid1', adUnitCode = 'div-1', sizes = [[300, 250]], params = {}, mediaTypes } = {}) {
+function buildBidRequest({ bidId = 'bid1', adUnitCode = 'div-1', sizes = [[300, 250]], params = {}, mediaTypes, ortb2Imp } = {}) {
   return {
     bidId,
     adUnitCode,
     bidder: 'allegro',
     params,
     mediaTypes: mediaTypes || { banner: { sizes } },
+    ...(ortb2Imp ? { ortb2Imp } : {}),
   };
 }
 
@@ -145,6 +146,72 @@ describe('Allegro Bid Adapter', () => {
       }
       expect(imp.secure).to.equal(true);
       expect(req.data.test).to.equal(true);
+    });
+
+    it('converts imp and imp.banner extension fields', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({
+        ortb2Imp: {
+          ext: { impCustom: 'imp' },
+          banner: { ext: { bannerCustom: 'ban' } }
+        }
+      })];
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests));
+      const imp = req.data.imp[0];
+      expect(imp.ext).to.equal(undefined);
+      expect(imp['[com.google.doubleclick.imp]'].impCustom).to.equal('imp');
+      expect(imp.banner.ext).to.equal(undefined);
+      expect(imp.banner['[com.google.doubleclick.banner_ext]'].bannerCustom).to.equal('ban');
+    });
+
+    it('converts app and device.geo extension fields', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({})];
+      const ortb2 = {
+        app: { ext: { appCustom: 'app' } },
+        device: { geo: { ext: { geoCustom: 'geo' } } }
+      };
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests, ortb2));
+      const data = req.data;
+      expect(data.app.ext).to.equal(undefined);
+      expect(data.app['[com.google.doubleclick.app]'].appCustom).to.equal('app');
+      expect(data.device.geo.ext).to.equal(undefined);
+      expect(data.device.geo['[com.google.doubleclick.geo]'].geoCustom).to.equal('geo');
+    });
+
+    it('keeps a valid supply chain on the request', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({})];
+      const ortb2 = { source: { schain: { ver: '1.0', nodes: [{ asi: 'a.com', sid: '1', hp: 1 }] } } };
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests, ortb2));
+      expect(req.data.source.schain).to.exist;
+      expect(req.data.source.schain.nodes).to.have.lengthOf(1);
+    });
+
+    it('drops a supply chain whose nodes miss required fields', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({})];
+      const ortb2 = { source: { schain: { nodes: [{ asi: 'a.com' }] } } };
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests, ortb2));
+      expect(req.data.source.schain).to.equal(undefined);
+    });
+
+    it('drops a supply chain that has no nodes array', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({})];
+      const ortb2 = { source: { schain: { ver: '1.0' } } };
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests, ortb2));
+      expect(req.data.source.schain).to.equal(undefined);
+    });
+
+    it('drops a supply chain when node validation throws', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const errorStub = sinon.stub(utils, 'logError');
+      const bidRequests = [buildBidRequest({})];
+      const ortb2 = { source: { schain: { nodes: [null] } } };
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests, ortb2));
+      expect(req.data.source.schain).to.equal(undefined);
+      expect(errorStub.called).to.equal(true);
     });
   });
 
