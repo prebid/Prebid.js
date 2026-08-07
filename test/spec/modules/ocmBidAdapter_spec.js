@@ -381,7 +381,7 @@ describe('ocmBidAdapter', function () {
       it('sends no tmax when the auction timeout is unknown', function () {
         const request = spec.buildRequests([bannerBid], bannerBidderRequest);
         expect(request.data.tmax).to.equal(undefined);
-        expect(request.data.ext.tmaxmax).to.equal(undefined);
+        expect(request.data.ext?.tmaxmax).to.equal(undefined);
       });
     });
   });
@@ -588,15 +588,22 @@ describe('ocmBidAdapter', function () {
       };
     }
 
+    function trackersForEvent(bid, event) {
+      return (bid.eventtrackers || []).filter((t) => t.event === event);
+    }
+
     function trackersFor(bid, event) {
-      return (bid.eventtrackers || []).filter((t) => t.event === event && t.method === TRACKER_METHOD_IMG);
+      return trackersForEvent(bid, event).filter((t) => t.method === TRACKER_METHOD_IMG);
     }
 
     it('registers the impression event URL as an image impression tracker so core fires it on billing', function () {
       const request = spec.buildRequests([bannerBid], bannerBidderRequest);
       const bid = spec.interpretResponse(responseWithEvents({ imp: IMP_URL }), request)[0];
+      const allImpTrackers = trackersForEvent(bid, EVENT_TYPE_IMPRESSION);
       const impTrackers = trackersFor(bid, EVENT_TYPE_IMPRESSION);
+      expect(allImpTrackers).to.have.lengthOf(1);
       expect(impTrackers).to.have.lengthOf(1);
+      expect(impTrackers[0].method).to.equal(TRACKER_METHOD_IMG);
       expect(impTrackers[0].url).to.equal(IMP_URL);
     });
 
@@ -606,8 +613,11 @@ describe('ocmBidAdapter', function () {
     it('registers the win event URL as an image win tracker so core fires it when the bid wins', function () {
       const request = spec.buildRequests([bannerBid], bannerBidderRequest);
       const bid = spec.interpretResponse(responseWithEvents({ win: WIN_URL }), request)[0];
+      const allWinTrackers = trackersForEvent(bid, EVENT_TYPE_WIN);
       const winTrackers = trackersFor(bid, EVENT_TYPE_WIN);
+      expect(allWinTrackers).to.have.lengthOf(1);
       expect(winTrackers).to.have.lengthOf(1);
+      expect(winTrackers[0].method).to.equal(TRACKER_METHOD_IMG);
       expect(winTrackers[0].url).to.equal(WIN_URL);
     });
 

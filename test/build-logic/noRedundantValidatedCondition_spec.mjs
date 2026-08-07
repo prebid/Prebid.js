@@ -1,5 +1,5 @@
-const {RuleTester} = require('eslint');
-const rule = require('../noRedundantValidatedCondition.js');
+import { RuleTester } from 'eslint';
+import rule from '../../plugins/eslint/noRedundantValidatedCondition.js';
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -54,7 +54,7 @@ ruleTester.run('no-redundant-validated-condition', rule, {
           if (foo && bar) bar();
         }
       `,
-      errors: [{message: "Redundant conditional: 'foo' is already known to be truthy."}]
+      errors: [{ message: "Redundant conditional: 'foo' is already known to be truthy." }]
     }
   ]
 });
