@@ -4,14 +4,13 @@ import { config } from 'src/config.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
 
-function buildBidRequest({ bidId = 'bid1', adUnitCode = 'div-1', sizes = [[300, 250]], params = {}, mediaTypes, ortb2Imp } = {}) {
+function buildBidRequest({ bidId = 'bid1', adUnitCode = 'div-1', sizes = [[300, 250]], params = {}, mediaTypes } = {}) {
   return {
     bidId,
     adUnitCode,
     bidder: 'allegro',
     params,
     mediaTypes: mediaTypes || { banner: { sizes } },
-    ...(ortb2Imp ? { ortb2Imp } : {}),
   };
 }
 
@@ -148,7 +147,6 @@ describe('Allegro Bid Adapter', () => {
       expect(req.data.test).to.equal(true);
     });
   });
-
 
   describe('interpretResponse', () => {
     it('returns undefined for empty body', () => {
