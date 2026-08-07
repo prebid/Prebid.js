@@ -26,7 +26,8 @@ const obj = {
   videoAdImpressionHandler: (args) => {},
   videoAdSkippedHandler: (args) => {},
   videoAdErrorHandler: (args) => {},
-  videoAdCompleteHandler: (args) => {}
+  videoAdCompleteHandler: (args) => {},
+  videoAdQuartileHandler: (args) => {}
 };
 
 const VIDEO_EVENTS = [
@@ -68,7 +69,9 @@ const CONFIG_WITH_VIDEO = {
   ...CONFIG_WITH_DEBUG,
   includeEvents: [
     ...CONFIG_WITH_DEBUG.includeEvents,
-    ...VIDEO_EVENTS.map(([eventType]) => eventType)
+    ...VIDEO_EVENTS.map(([eventType]) => eventType),
+    'videoAdQuartile',
+    'videoAdTime'
   ]
 };
 
@@ -672,7 +675,8 @@ describe('Automatad Analytics Adapter', () => {
         videoAdImpressionHandler: (args) => {},
         videoAdSkippedHandler: (args) => {},
         videoAdErrorHandler: (args) => {},
-        videoAdCompleteHandler: (args) => {}
+        videoAdCompleteHandler: (args) => {},
+        videoAdQuartileHandler: (args) => {}
       };
 
       global.window.atmtdAnalytics = obj;
@@ -860,7 +864,7 @@ describe('Automatad Analytics Adapter', () => {
   describe('Behaviour of the adapter when includeEvents or excludeEvents filter video events', () => {
     let videoObj;
     before(() => {
-      events.addEvents(VIDEO_EVENTS.map(([eventType]) => eventType));
+      events.addEvents([...VIDEO_EVENTS.map(([eventType]) => eventType), 'videoAdTime']);
     });
     beforeEach(() => {
       sandbox = sinon.createSandbox();
@@ -869,6 +873,7 @@ describe('Automatad Analytics Adapter', () => {
       sandbox.stub(utils, 'logError');
       videoObj = {};
       VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = sandbox.spy(); });
+      videoObj.videoAdQuartileHandler = sandbox.spy();
       global.window.atmtdAnalytics = videoObj;
       exports.qBeingUsed = false;
     });
@@ -938,6 +943,7 @@ describe('Automatad Analytics Adapter', () => {
       ]);
       videoObj = {};
       VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = sandbox.spy(); });
+      videoObj.videoAdQuartileHandler = sandbox.spy();
       global.window.atmtdAnalytics = videoObj;
       exports.qBeingUsed = false;
 
@@ -948,6 +954,146 @@ describe('Automatad Analytics Adapter', () => {
 
       expect(global.window.atmtdAnalytics.videoAdErrorHandler.called).to.equal(false);
       expect(global.window.atmtdAnalytics.videoAdStartedHandler.calledOnce).to.equal(true);
+    });
+  });
+
+  describe('Behaviour of adTime quartile sampling', () => {
+    let videoObj;
+    before(() => {
+      events.addEvents([...VIDEO_EVENTS.map(([eventType]) => eventType), 'videoAdTime']);
+    });
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox.stub(utils, 'logMessage');
+      sandbox.stub(utils, 'logError');
+      videoObj = {};
+      VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = sandbox.spy(); });
+      videoObj.videoAdQuartileHandler = sandbox.spy();
+      global.window.atmtdAnalytics = videoObj;
+      exports.qBeingUsed = false;
+      exports.queuePointer = 0;
+      exports.retryCount = 0;
+      exports.resetQuartileState();
+    });
+    afterEach(() => {
+      global.window.atmtdAnalytics = undefined;
+      spec.disableAnalytics();
+      sandbox.restore();
+      exports.qBeingUsed = false;
+      exports.queuePointer = 0;
+      exports.retryCount = 0;
+      exports.resetQuartileState();
+    });
+
+    it('Should sample adTime into first/mid/third quartile events and drop other ticks', () => {
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
+      const ad = { adId: 'ad-1', duration: 40 };
+
+      events.emit('videoAdTime', { ...ad, time: 5 });
+      events.emit('videoAdTime', { ...ad, time: 10 });
+      events.emit('videoAdTime', { ...ad, time: 10.5 });
+      events.emit('videoAdTime', { ...ad, time: 20 });
+      events.emit('videoAdTime', { ...ad, time: 21 });
+      events.emit('videoAdTime', { ...ad, time: 30 });
+      events.emit('videoAdTime', { ...ad, time: 35 });
+
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.callCount).to.equal(3);
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.getCall(0).args[0].quartile).to.equal('firstQuartile');
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.getCall(1).args[0].quartile).to.equal('midpoint');
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.getCall(2).args[0].quartile).to.equal('thirdQuartile');
+      expect(exports.__atmtdAnalyticsQueue).to.have.lengthOf(0);
+    });
+
+    it('Should not re-fire the same quartile for the same ad', () => {
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
+      const ad = { adId: 'ad-2', duration: 20, time: 5 };
+
+      events.emit('videoAdTime', ad);
+      events.emit('videoAdTime', ad);
+      events.emit('videoAdTime', ad);
+
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.calledOnce).to.equal(true);
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.firstCall.args[0].quartile).to.equal('firstQuartile');
+    });
+
+    it('Should reset quartile state on videoAdStarted so the next ad can fire quartiles', () => {
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
+      const ad = { adId: 'ad-3', duration: 20 };
+
+      events.emit('videoAdTime', { ...ad, time: 5 });
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.calledOnce).to.equal(true);
+
+      events.emit('videoAdStarted', ad);
+      events.emit('videoAdTime', { ...ad, time: 5 });
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.callCount).to.equal(2);
+    });
+
+    it('Should not listen for adTime when videoAdQuartile is excluded', () => {
+      spec.enableAnalytics({
+        ...CONFIG_WITH_VIDEO,
+        excludeEvents: ['videoAdQuartile']
+      });
+
+      events.emit('videoAdTime', { adId: 'ad-4', time: 10, duration: 20 });
+      expect(global.window.atmtdAnalytics.videoAdQuartileHandler.called).to.equal(false);
+    });
+
+    it('Should drop videoAdQuartile without queueing when its handler is not implemented', () => {
+      delete global.window.atmtdAnalytics.videoAdQuartileHandler;
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
+      exports.__atmtdAnalyticsQueue.length = 0;
+      sandbox.stub(exports.__atmtdAnalyticsQueue, 'push').callsFake((args) => {
+        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args]);
+      });
+
+      events.emit('videoAdTime', { adId: 'ad-5', time: 10, duration: 20 });
+
+      expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(false);
+      expect(exports.__atmtdAnalyticsQueue).to.have.lengthOf(0);
+    });
+
+    it('Should queue videoAdQuartile when aggregator is not loaded', () => {
+      global.window.atmtdAnalytics = undefined;
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
+      exports.__atmtdAnalyticsQueue.length = 0;
+      sandbox.stub(exports.__atmtdAnalyticsQueue, 'push').callsFake((args) => {
+        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args]);
+      });
+
+      events.emit('videoAdTime', { adId: 'ad-6', time: 10, duration: 20 });
+
+      expect(exports.__atmtdAnalyticsQueue.push.calledOnce).to.equal(true);
+      expect(exports.__atmtdAnalyticsQueue.push.firstCall.args[0][0]).to.equal('videoAdQuartile');
+      expect(exports.__atmtdAnalyticsQueue.push.firstCall.args[0][1].quartile).to.equal('firstQuartile');
+    });
+
+    it('Should not re-queue the same quartile while processEvents retries videoAdStarted', () => {
+      clock = sandbox.useFakeTimers({ shouldClearNativeTimers: true });
+      global.window.atmtdAnalytics = undefined;
+      spec.enableAnalytics(CONFIG_WITH_VIDEO);
+      exports.queuePointer = 0;
+      exports.retryCount = 0;
+      exports.__atmtdAnalyticsQueue.length = 0;
+      exports.resetQuartileState();
+      sandbox.stub(exports.__atmtdAnalyticsQueue, 'push').callsFake((args) => {
+        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args]);
+      });
+
+      const ad = { adId: 'ad-retry', duration: 20 };
+      const quartileEntries = () => exports.__atmtdAnalyticsQueue.filter((entry) => entry[0] === 'videoAdQuartile');
+
+      events.emit('videoAdStarted', ad);
+      events.emit('videoAdTime', { ...ad, time: 5 });
+      expect(quartileEntries()).to.have.lengthOf(1);
+
+      // Retry path: aggregator still missing, videoAdStarted stays at queue head.
+      exports.processEvents();
+      events.emit('videoAdTime', { ...ad, time: 5 });
+      events.emit('videoAdTime', { ...ad, time: 6 });
+
+      expect(quartileEntries()).to.have.lengthOf(1);
+      expect(exports.__atmtdAnalyticsQueue.some((entry) => entry[0] === 'videoAdTime')).to.equal(false);
     });
   });
 

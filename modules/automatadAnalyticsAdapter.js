@@ -16,6 +16,7 @@ import {
   AD_LOADED,
   AD_STARTED,
   AD_IMPRESSION,
+  AD_TIME,
   AD_SKIPPED,
   AD_ERROR,
   AD_COMPLETE,
@@ -205,6 +206,13 @@ const processEvents = () => {
             shouldTryAgain = true;
           }
           break;
+        case AD_QUARTILE_EVENT:
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdQuartileHandler) {
+            window.atmtdAnalytics.videoAdQuartileHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
         case 'slotRenderEnded':
           if (window.atmtdAnalytics && window.atmtdAnalytics.slotRenderEndedGPTHandler) {
             window.atmtdAnalytics.slotRenderEndedGPTHandler(args);
@@ -279,11 +287,72 @@ const VIDEO_EVENTS = [
   AD_COMPLETE
 ].map(getExternalVideoEventName);
 
+const AD_TIME_EVENT = getExternalVideoEventName(AD_TIME);
+const AD_QUARTILE_EVENT = 'videoAdQuartile';
+const QUARTILES = [
+  { name: 'firstQuartile', threshold: 0.25 },
+  { name: 'midpoint', threshold: 0.5 },
+  { name: 'thirdQuartile', threshold: 0.75 }
+];
 var registeredVideoHandlers = [];
+var quartileStateByAd = new Map();
+
+const getAdKey = (args) => {
+  return (args && (args.adId || args.vastAdId || args.adTagUrl)) || 'default';
+};
+
+const resetQuartileState = (args) => {
+  if (args) {
+    quartileStateByAd.delete(getAdKey(args));
+  } else {
+    quartileStateByAd.clear();
+  }
+};
+
+// Sample high-frequency adTime ticks into quartile events (25/50/75).
+// Most ticks return null and are dropped, at most one emit per quartile per ad.
+const sampleAdTimeToQuartile = (args) => {
+  const time = args && args.time;
+  const duration = args && args.duration;
+  if (!(duration > 0) || !(time >= 0)) {
+    return null;
+  }
+
+  const progress = time / duration;
+  const adKey = getAdKey(args);
+  let fired = quartileStateByAd.get(adKey);
+  if (!fired) {
+    fired = new Set();
+    quartileStateByAd.set(adKey, fired);
+  }
+
+  for (let i = 0; i < QUARTILES.length; i++) {
+    const { name, threshold } = QUARTILES[i];
+    if (progress >= threshold && !fired.has(name)) {
+      fired.add(name);
+      return Object.assign({}, args, {
+        quartile: name,
+        progress,
+        type: AD_QUARTILE_EVENT
+      });
+    }
+  }
+  return null;
+};
+
+const shouldTrackQuartiles = (includeEvents, excludeEvents = []) => {
+  if (excludeEvents.includes(AD_QUARTILE_EVENT) || excludeEvents.includes(AD_TIME_EVENT)) {
+    return false;
+  }
+  return includeEvents == null ||
+    includeEvents.includes(AD_QUARTILE_EVENT) ||
+    includeEvents.includes(AD_TIME_EVENT);
+};
 
 const removeVideoHandlers = () => {
   registeredVideoHandlers.forEach(([eventType, handler]) => events.off(eventType, handler));
   registeredVideoHandlers = [];
+  resetQuartileState();
 };
 
 const addVideoHandlers = (configuration = {}) => {
@@ -311,6 +380,22 @@ const addVideoHandlers = (configuration = {}) => {
       self.prettyLog('warn', `Video event ${eventType} is not registered, skipping listener. Is the video module included?`);
     }
   });
+
+  // Listen to adTime only to derive quartiles
+  if (shouldTrackQuartiles(includeEvents, excludeEvents)) {
+    if (events.has(AD_TIME_EVENT)) {
+      const adTimeHandler = (args) => {
+        const quartileArgs = sampleAdTimeToQuartile(args);
+        if (quartileArgs) {
+          atmtdAdapter.track({ eventType: AD_QUARTILE_EVENT, args: quartileArgs });
+        }
+      };
+      events.on(AD_TIME_EVENT, adTimeHandler);
+      registeredVideoHandlers.push([AD_TIME_EVENT, adTimeHandler]);
+    } else {
+      self.prettyLog('warn', `Video event ${AD_TIME_EVENT} is not registered, skipping quartile sampling. Is the video module included?`);
+    }
+  }
 };
 
 const initializeQueue = () => {
@@ -470,6 +555,7 @@ const atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case 'videoAdStarted':
+        resetQuartileState(args);
         if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdStartedHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.videoAdStartedHandler(args);
         } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdStartedHandler) {
@@ -492,6 +578,7 @@ const atmtdAdapter = Object.assign({}, baseAdapter, {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
           self.__atmtdAnalyticsQueue.push([eventType, args]);
         }
+        resetQuartileState(args);
         break;
       case 'videoAdError':
         if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdErrorHandler && shouldNotPushToQueue) {
@@ -500,11 +587,21 @@ const atmtdAdapter = Object.assign({}, baseAdapter, {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
           self.__atmtdAnalyticsQueue.push([eventType, args]);
         }
+        resetQuartileState(args);
         break;
       case 'videoAdComplete':
         if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdCompleteHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.videoAdCompleteHandler(args);
         } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdCompleteHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        resetQuartileState(args);
+        break;
+      case AD_QUARTILE_EVENT:
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdQuartileHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdQuartileHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdQuartileHandler) {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
           self.__atmtdAnalyticsQueue.push([eventType, args]);
         }
@@ -558,6 +655,8 @@ export var self = {
   addVideoHandlers,
   removeVideoHandlers,
   prettyLog,
+  sampleAdTimeToQuartile,
+  resetQuartileState,
   queuePointer,
   retryCount,
   isLoggingEnabled,
