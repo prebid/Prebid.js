@@ -342,6 +342,6 @@ function getDeviceHeight() {
 }
 
 function getCoppa(bidderRequest) {
-  return (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa());
+  return bidderRequest?.ortb2?.regs?.coppa === 1 || (coppaDataHandler.getCoppa() ? true : undefined);
 }
 registerBidder(spec);

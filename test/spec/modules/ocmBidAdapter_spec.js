@@ -1180,10 +1180,9 @@ describe('ocmBidAdapter', function () {
 
     describe('privacy gates', function () {
       it('registers no syncs when COPPA is enabled', function () {
-        config.setConfig({ coppa: true });
         const warn = sinon.stub(utils, 'logWarn');
         try {
-          expect(spec.getUserSyncs({ iframeEnabled: true }, syncResponses)).to.deep.equal([]);
+          expect(spec.getUserSyncs({ iframeEnabled: true }, syncResponses, undefined, undefined, undefined, true)).to.deep.equal([]);
           expect(warn.called).to.equal(true);
         } finally {
           warn.restore();
