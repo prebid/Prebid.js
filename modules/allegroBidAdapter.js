@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'allegro';
-const BIDDER_URL = 'https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid';
+const BIDDER_URL = 'http://localhost:9180/v1/rtb/prebid/bid';
 const GVLID = 1493;
 
 /**
@@ -87,7 +87,7 @@ function convertExtensionFields(request) {
  * @param obj The object potentially containing `ext`.
  * @param {string} newKey The destination key name (e.g. '[com.google.doubleclick.site]').
  */
-export function moveExt(obj, newKey) {
+function moveExt(obj, newKey) {
   if (!obj || !obj.ext) {
     return;
   }

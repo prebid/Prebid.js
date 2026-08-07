@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, moveExt } from 'modules/allegroBidAdapter.js';
+import { spec } from 'modules/allegroBidAdapter.js';
 import { config } from 'src/config.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
@@ -364,23 +364,4 @@ describe('Allegro Bid Adapter', () => {
     });
   });
 
-  describe('moveExt', () => {
-    it('does nothing when the object is missing', () => {
-      expect(() => moveExt(undefined, '[com.google.doubleclick.site]')).to.not.throw();
-    });
-
-    it('does nothing when the object has no ext', () => {
-      const obj = { foo: 'bar' };
-      moveExt(obj, '[com.google.doubleclick.site]');
-      expect(obj).to.deep.equal({ foo: 'bar' });
-      expect(obj['[com.google.doubleclick.site]']).to.equal(undefined);
-    });
-
-    it('moves ext into the bracketed key', () => {
-      const obj = { ext: { custom: 'v' } };
-      moveExt(obj, '[com.google.doubleclick.site]');
-      expect(obj.ext).to.equal(undefined);
-      expect(obj['[com.google.doubleclick.site]']).to.deep.equal({ custom: 'v' });
-    });
-  });
 });
