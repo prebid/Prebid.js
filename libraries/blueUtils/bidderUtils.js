@@ -21,7 +21,9 @@ export function getBidFloor(bid, mediaType, defaultCurrency) {
 export function buildOrtbRequest(bidRequests, bidderRequest, context, gvlid, ortbConverterInstance) {
   const ortbRequest = ortbConverterInstance.toORTB({ bidRequests, bidderRequest, context });
   ortbRequest.ext = ortbRequest.ext || {};
-  deepSetValue(ortbRequest, 'ext.gvlid', gvlid);
+  if (gvlid != null) {
+    deepSetValue(ortbRequest, 'ext.gvlid', gvlid);
+  }
   return ortbRequest;
 }
 

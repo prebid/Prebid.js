@@ -604,7 +604,7 @@ export const spec = {
 
     applyFPD(bidRequest, BANNER, data);
 
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest.ortb2?.regs?.coppa === 1) {
       data['coppa'] = 1;
     }
 
