@@ -2,7 +2,6 @@ import nexx360AnalyticsAdapter from 'modules/nexx360AnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
-import * as nexx360Utils from '../../../libraries/nexx360Utils/index.js';
 import sinon from 'sinon';
 
 const events = require('src/events');
@@ -144,7 +143,7 @@ describe('Nexx360 Analytics Adapter', function () {
     expect(posts[1][0].reason).to.equal('no creative');
   });
 
-  it('synthesizes a serverAuction event when a nexx360 bidResponse arrives', function () {
+  it('synthesizes a serverAuction event when a nexx360 bidResponse carries server-auction data', function () {
     const fixture = {
       auctionId: 'srv-1',
       timestamp: 1700000000000,
@@ -169,44 +168,73 @@ describe('Nexx360 Analytics Adapter', function () {
         ],
       }],
     };
-    const getStub = sinon.stub(nexx360Utils, 'getLastServerAuctionData').returns(fixture);
-    const clearStub = sinon.stub(nexx360Utils, 'clearLastServerAuctionData');
+    enable();
+    const auctionId = 'auction-server';
+    events.emit(EVENTS.AUCTION_INIT, { auctionId, timeout: 1000, adUnits: [] });
+    events.emit(EVENTS.BID_RESPONSE, {
+      auctionId,
+      bidderCode: 'nexx360',
+      meta: { demandSource: 'rubicon' },
+      adUnitCode: 'div-1',
+      cpm: 1.5,
+      currency: 'USD',
+      timeToRespond: 90,
+      requestId: 'req-3',
+      statusMessage: 'Bid available',
+      serverAuctionData: fixture,
+    });
+    events.emit(EVENTS.AUCTION_END, { auctionId });
 
-    try {
-      enable();
-      const auctionId = 'auction-server';
-      events.emit(EVENTS.AUCTION_INIT, { auctionId, timeout: 1000, adUnits: [] });
+    const posts = eventPosts();
+    expect(posts.length).to.equal(1);
+    const serverEvent = posts[0].find((e) => e.eventType === 'serverAuction');
+    expect(serverEvent, 'serverAuction event present').to.exist;
+    expect(serverEvent.serverAuctionId).to.equal('srv-1');
+    expect(serverEvent.totalImpressions).to.equal(1);
+    // The server-auction payload itself must not leak into the bidResponse event.
+    posts[0].forEach((e) => expect(e).to.not.have.property('serverAuctionData'));
+
+    // The wrapper keeps its client-facing name while full_ssp is the underlying SSP.
+    const response = posts[0].find((e) => e.eventType === 'bidResponse');
+    expect(response.clientSsp).to.equal('nexx360');
+    expect(response.fullSsp).to.equal('rubicon');
+    // nexx360-wrapped demand (and its synthesized serverAuction) is a server-side connection.
+    expect(response.connectionType).to.equal('nexx360');
+    expect(serverEvent.connectionType).to.equal('nexx360');
+  });
+
+  it('synthesizes the serverAuction event only once per auction', function () {
+    const fixture = {
+      auctionId: 'srv-once',
+      timestamp: 1700000000000,
+      impressions: [],
+      totalImpressions: 1,
+      totalSspsCalled: 1,
+      totalBidsReceived: 1,
+      totalTimeouts: 0,
+      totalErrors: 0,
+      auctionTimeMs: 50,
+    };
+    enable();
+    const auctionId = 'auction-server-once';
+    events.emit(EVENTS.AUCTION_INIT, { auctionId, timeout: 1000, adUnits: [] });
+    [1, 2].forEach((i) => {
       events.emit(EVENTS.BID_RESPONSE, {
         auctionId,
         bidderCode: 'nexx360',
-        meta: { demandSource: 'rubicon' },
-        adUnitCode: 'div-1',
-        cpm: 1.5,
+        adUnitCode: `div-${i}`,
+        cpm: 1,
         currency: 'USD',
         timeToRespond: 90,
-        requestId: 'req-3',
+        requestId: `req-${i}`,
         statusMessage: 'Bid available',
+        serverAuctionData: fixture,
       });
-      events.emit(EVENTS.AUCTION_END, { auctionId });
+    });
+    events.emit(EVENTS.AUCTION_END, { auctionId });
 
-      const posts = eventPosts();
-      expect(posts.length).to.equal(1);
-      const serverEvent = posts[0].find((e) => e.eventType === 'serverAuction');
-      expect(serverEvent, 'serverAuction event present').to.exist;
-      expect(serverEvent.serverAuctionId).to.equal('srv-1');
-      expect(serverEvent.totalImpressions).to.equal(1);
-
-      // The wrapper keeps its client-facing name while full_ssp is the underlying SSP.
-      const response = posts[0].find((e) => e.eventType === 'bidResponse');
-      expect(response.clientSsp).to.equal('nexx360');
-      expect(response.fullSsp).to.equal('rubicon');
-      // nexx360-wrapped demand (and its synthesized serverAuction) is a server-side connection.
-      expect(response.connectionType).to.equal('nexx360');
-      expect(serverEvent.connectionType).to.equal('nexx360');
-    } finally {
-      getStub.restore();
-      clearStub.restore();
-    }
+    const serverEvents = eventPosts().flat().filter((e) => e.eventType === 'serverAuction');
+    expect(serverEvents.length).to.equal(1);
   });
 
   it('does not drop auctions (every auction produces output)', function () {
@@ -415,20 +443,15 @@ describe('Nexx360 Analytics Adapter', function () {
     expect(rendered[1].clientSsp).to.equal('appnexus');
   });
 
-  it('does not add a serverAuction event when no server data is available', function () {
-    const getStub = sinon.stub(nexx360Utils, 'getLastServerAuctionData').returns(null);
-    try {
-      enable();
-      const auctionId = 'a-noserver';
-      events.emit(EVENTS.AUCTION_INIT, { auctionId, timeout: 1000, adUnits: [] });
-      events.emit(EVENTS.BID_RESPONSE, {
-        auctionId, bidderCode: 'nexx360', adUnitCode: 'd', cpm: 1, currency: 'USD', requestId: 'r',
-      });
-      events.emit(EVENTS.AUCTION_END, { auctionId });
-      expect(eventPosts().flat().find((e) => e.eventType === 'serverAuction')).to.equal(undefined);
-    } finally {
-      getStub.restore();
-    }
+  it('does not add a serverAuction event when the bidResponse carries no server data', function () {
+    enable();
+    const auctionId = 'a-noserver';
+    events.emit(EVENTS.AUCTION_INIT, { auctionId, timeout: 1000, adUnits: [] });
+    events.emit(EVENTS.BID_RESPONSE, {
+      auctionId, bidderCode: 'nexx360', adUnitCode: 'd', cpm: 1, currency: 'USD', requestId: 'r',
+    });
+    events.emit(EVENTS.AUCTION_END, { auctionId });
+    expect(eventPosts().flat().find((e) => e.eventType === 'serverAuction')).to.equal(undefined);
   });
 
   it('ignores unknown event types and swallows errors thrown while building events', function () {

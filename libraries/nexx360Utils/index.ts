@@ -216,21 +216,18 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
 // --- Server auction data extraction ---
 
-let lastServerAuctionData: Nexx360ServerAuction | null = null;
+/**
+ * Bid response carrying the server-side auction data from the response `ext`,
+ * for consumption by the Nexx360 analytics adapter on the `bidResponse` event.
+ */
+export type Nexx360BidResponse = BidResponse & { serverAuctionData?: Nexx360ServerAuction };
 
-function extractServerAuction(responseBody: any): void {
+function getServerAuction(responseBody: any): Nexx360ServerAuction | null {
   const serverAuction = deepAccess(responseBody, 'ext.serverAuction');
   if (serverAuction && typeof serverAuction === 'object' && serverAuction.auctionId) {
-    lastServerAuctionData = serverAuction as Nexx360ServerAuction;
+    return serverAuction as Nexx360ServerAuction;
   }
-}
-
-export function getLastServerAuctionData(): Nexx360ServerAuction | null {
-  return lastServerAuctionData;
-}
-
-export function clearLastServerAuctionData(): void {
-  lastServerAuctionData = null;
+  return null;
 }
 
 export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
@@ -238,21 +235,23 @@ export const interpretResponse = (serverResponse: ServerResponse): AdapterRespon
   const respBody = serverResponse.body as ORTBResponse;
 
   if (!respBody.seatbid || respBody.seatbid.length === 0) {
-    // No bid responses will be produced, so no analytics `bidResponse` will
-    // consume server-auction data. Clear it rather than let a stale value leak
-    // into a later, unrelated auction.
-    clearLastServerAuctionData();
     return [];
   }
 
-  extractServerAuction(respBody);
+  // Attach server-auction data to every bid response (rather than holding it in
+  // module state) so it reaches the analytics adapter with the bid that produced
+  // it, and cannot leak into an unrelated auction if a bid is rejected by core.
+  const serverAuctionData = getServerAuction(respBody);
 
-  const responses: BidResponse[] = [];
+  const responses: Nexx360BidResponse[] = [];
   for (let i = 0; i < respBody.seatbid.length; i++) {
     const seatbid = respBody.seatbid[i];
     for (let j = 0; j < seatbid.bid.length; j++) {
       const bid = seatbid.bid[j];
-      const response:BidResponse = createResponse(bid, respBody);
+      const response:Nexx360BidResponse = createResponse(bid, respBody);
+      if (serverAuctionData) {
+        response.serverAuctionData = serverAuctionData;
+      }
       responses.push(response);
     }
   }

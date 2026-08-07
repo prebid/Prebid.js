@@ -4,11 +4,7 @@ import { type AnalyticsConfig } from '../libraries/analyticsAdapter/AnalyticsAda
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { logInfo, logError } from '../src/utils.js';
-import {
-  getLastServerAuctionData,
-  clearLastServerAuctionData,
-} from '../libraries/nexx360Utils/index.js';
-import { Nexx360ImpressionAuction } from '../libraries/nexx360Utils/types.js';
+import { Nexx360ImpressionAuction, Nexx360ServerAuction } from '../libraries/nexx360Utils/types.js';
 
 const analyticsType = 'endpoint';
 const ANALYTICS_CODE = 'nexx360';
@@ -37,6 +33,25 @@ const EVENT_TYPE_MAP: Record<string, string> = {
 
 // --- Types ---
 
+/** Publisher-facing options for `pbjs.enableAnalytics({provider: 'nexx360'})` */
+export interface Nexx360AnalyticsOptions {
+  /** Nexx360 publisher (account) ID. Required. */
+  publisherId: string;
+  /** Collector base URL. Defaults to https://monitoring.nexx360.io */
+  endpoint?: string;
+  /** Optional label to segment A/B test traffic in reports */
+  abTestLabel?: string;
+}
+
+declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
+  interface AnalyticsProviderConfig {
+    nexx360: {
+      options: Nexx360AnalyticsOptions;
+    }
+  }
+}
+
+/** Options after defaults are applied */
 interface AnalyticsOptions {
   publisherId: string;
   endpoint: string;
@@ -125,6 +140,7 @@ interface BidResponseArgs {
   statusMessage: string;
   meta?: BidMeta;
   floorData?: BidFloorData;
+  serverAuctionData?: Nexx360ServerAuction;
 }
 
 interface BidWonArgs {
@@ -605,10 +621,7 @@ function buildAdRenderEvent(eventType: string, args: AdRenderArgs): AdRenderEven
   return event;
 }
 
-function buildServerAuctionEvent(auctionId: string): ServerAuctionEvent | null {
-  const data = getLastServerAuctionData();
-  if (!data) return null;
-  clearLastServerAuctionData();
+function buildServerAuctionEvent(auctionId: string, data: Nexx360ServerAuction): ServerAuctionEvent {
   return {
     ...createBaseEvent('serverAuction', auctionId, 'nexx360'),
     eventType: 'serverAuction',
@@ -646,6 +659,8 @@ function sendEvents(events: AnalyticsEvent[]): void {
   }, JSON.stringify(events), {
     contentType: 'text/plain',
     method: 'POST',
+    // Low-priority telemetry: let the request survive page navigation.
+    keepalive: true,
   });
 }
 
@@ -697,12 +712,9 @@ export const nexx360AnalyticsAdapter = Object.assign(adapter({ analyticsType }),
           const cache = getAuctionCache(respArgs.auctionId);
           cache.events.push(buildBidResponseEvent(respArgs));
           const bidderCode = respArgs.bidderCode || respArgs.bidder || '';
-          if (bidderCode === 'nexx360' && !cache.serverAuctionSent) {
-            const serverAuctionEvent = buildServerAuctionEvent(respArgs.auctionId);
-            if (serverAuctionEvent) {
-              cache.events.push(serverAuctionEvent);
-              cache.serverAuctionSent = true;
-            }
+          if (bidderCode === 'nexx360' && !cache.serverAuctionSent && respArgs.serverAuctionData) {
+            cache.events.push(buildServerAuctionEvent(respArgs.auctionId, respArgs.serverAuctionData));
+            cache.serverAuctionSent = true;
           }
           break;
         }
@@ -746,7 +758,9 @@ export const nexx360AnalyticsAdapter = Object.assign(adapter({ analyticsType }),
 
 const originEnableAnalytics = nexx360AnalyticsAdapter.enableAnalytics;
 
-nexx360AnalyticsAdapter.enableAnalytics = function(config: { options?: Partial<AnalyticsOptions> }) {
+// Partial, because this validates what the publisher actually passed rather
+// than what the configuration type asks for.
+nexx360AnalyticsAdapter.enableAnalytics = function(config: { options?: Partial<Nexx360AnalyticsOptions> }) {
   const options = config.options || {};
 
   if (!options.publisherId) {
@@ -762,7 +776,7 @@ nexx360AnalyticsAdapter.enableAnalytics = function(config: { options?: Partial<A
 
   logInfo(`Nexx360 Analytics: enabled with publisherId ${analyticsOptions.publisherId}`);
 
-  originEnableAnalytics.call(this, config as AnalyticsConfig<string>);
+  originEnableAnalytics.call(this, config as AnalyticsConfig<'nexx360'>);
 };
 
 adapterManager.registerAnalyticsAdapter({

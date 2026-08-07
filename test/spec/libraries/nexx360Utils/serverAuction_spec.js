@@ -1,9 +1,5 @@
 import { expect } from 'chai';
-import {
-  interpretResponse,
-  getLastServerAuctionData,
-  clearLastServerAuctionData,
-} from '../../../../libraries/nexx360Utils/index.js';
+import { interpretResponse } from '../../../../libraries/nexx360Utils/index.js';
 
 const SERVER_AUCTION = {
   auctionId: 'srv-real-1',
@@ -17,67 +13,56 @@ const SERVER_AUCTION = {
   auctionTimeMs: 42,
 };
 
-// A minimal valid ORTB banner response so interpretResponse produces a bid.
-function responseWith(serverAuction, { withBid = true } = {}) {
+// A minimal valid ORTB banner response so interpretResponse produces bids.
+function responseWith(serverAuction, { bidCount = 1 } = {}) {
+  const bid = {
+    impid: 'imp-1',
+    price: 1.5,
+    w: 300,
+    h: 250,
+    crid: 'c-1',
+    adm: '<div></div>',
+    adomain: ['nexx360.io'],
+    ext: { mediaType: 'banner', ssp: 'test' },
+  };
   const body = {
     cur: 'USD',
     ext: serverAuction ? { serverAuction } : {},
-    seatbid: withBid
-      ? [{
-          bid: [{
-            impid: 'imp-1',
-            price: 1.5,
-            w: 300,
-            h: 250,
-            crid: 'c-1',
-            adm: '<div></div>',
-            adomain: ['nexx360.io'],
-            ext: { mediaType: 'banner', ssp: 'test' },
-          }],
-        }]
+    seatbid: bidCount > 0
+      ? [{ bid: Array.from({ length: bidCount }, () => ({ ...bid })) }]
       : [],
   };
   return { body };
 }
 
 describe('nexx360Utils server auction extraction', () => {
-  beforeEach(() => {
-    clearLastServerAuctionData();
+  it('attaches ext.serverAuction to every produced bid response', () => {
+    const responses = interpretResponse(responseWith(SERVER_AUCTION, { bidCount: 2 }));
+    expect(responses).to.have.length(2);
+    responses.forEach((response) => {
+      expect(response.serverAuctionData).to.deep.equal(SERVER_AUCTION);
+    });
   });
 
-  afterEach(() => {
-    clearLastServerAuctionData();
-  });
-
-  it('stores ext.serverAuction when the response produces bids, then clears it', () => {
-    const responses = interpretResponse(responseWith(SERVER_AUCTION));
+  it('attaches nothing when ext.serverAuction is absent', () => {
+    const responses = interpretResponse(responseWith(null));
     expect(responses).to.have.length(1);
-    expect(getLastServerAuctionData()).to.deep.equal(SERVER_AUCTION);
-
-    clearLastServerAuctionData();
-    expect(getLastServerAuctionData()).to.equal(null);
+    expect(responses[0]).to.not.have.property('serverAuctionData');
   });
 
   it('ignores ext.serverAuction that has no auctionId', () => {
-    interpretResponse(responseWith({ timestamp: 1 }));
-    expect(getLastServerAuctionData()).to.equal(null);
+    const responses = interpretResponse(responseWith({ timestamp: 1 }));
+    expect(responses).to.have.length(1);
+    expect(responses[0]).to.not.have.property('serverAuctionData');
   });
 
-  it('clears any stored server-auction when a response produces no bids', () => {
-    // First, store data from a response that has bids.
-    interpretResponse(responseWith(SERVER_AUCTION));
-    expect(getLastServerAuctionData()).to.deep.equal(SERVER_AUCTION);
-
-    // A later Nexx360 response with server-auction data but no bids must not
-    // leave the previous value around to leak into an unrelated auction.
-    const responses = interpretResponse(responseWith(SERVER_AUCTION, { withBid: false }));
+  it('returns [] when the response has no seatbid', () => {
+    const responses = interpretResponse(responseWith(SERVER_AUCTION, { bidCount: 0 }));
     expect(responses).to.deep.equal([]);
-    expect(getLastServerAuctionData()).to.equal(null);
   });
 
-  it('returns [] and stores nothing when the response body is missing', () => {
+  it('returns [] when the response body is missing', () => {
     const responses = interpretResponse({});
     expect(responses).to.deep.equal([]);
-    expect(getLastServerAuctionData()).to.equal(null);
   });
 });
