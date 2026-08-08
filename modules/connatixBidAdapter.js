@@ -334,7 +334,7 @@ export const spec = {
    * Construct the sync URL by appending required query parameters such as gdpr, ccpa, and coppa consents.
    * Return an array containing an object with the sync type and the constructed URL.
    */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
@@ -366,7 +366,7 @@ export const spec = {
       params['gpp_sid'] = gppConsent.applicableSections.join(',');
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       params['coppa'] = 1;
     }
 

@@ -14,6 +14,7 @@ import {
   parseQueryStringParameters,
   pick,
 } from '../src/utils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_VERSION = '1.1.0';
 const BASE_URL = 'https://auction.adpearl.io';
@@ -76,7 +77,7 @@ export const spec = {
       deepSetValue(data, 'source.ext.schain', schain);
     }
 
-    if (config.getConfig('coppa')) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(data, 'regs.coppa', 1);
     }
 

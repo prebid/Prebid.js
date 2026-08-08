@@ -29,6 +29,7 @@ import {
 import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'mediafuse';
 const GVLID = 32;
@@ -358,7 +359,7 @@ const converter = ortbConverter({
       deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
     }
 
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(request, 'regs.coppa', 1);
     }
 
