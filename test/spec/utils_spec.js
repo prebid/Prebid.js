@@ -12,6 +12,7 @@ import {
   waitForElementToLoad
 } from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
+import { getGlobalVarName } from 'src/buildOptions.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
@@ -1723,5 +1724,68 @@ describe('polite sync helpers', () => {
 
     utils.politeInsertUserSyncIframe('http://example.com/iframe');
     expect(window.scheduler.postTask.calledOnce).to.equal(true);
+  });
+});
+
+describe('user sync iframes', () => {
+  const SELECTOR = `iframe[${utils.USERSYNC_ATTR}="${getGlobalVarName()}"]`;
+  const syncIframes = () => Array.from(document.querySelectorAll(SELECTOR));
+
+  // other specs may leave sync iframes behind
+  beforeEach(() => utils.removeUserSyncIframes());
+  afterEach(() => utils.removeUserSyncIframes());
+
+  it('marks the iframes it inserts with the name of this instance', () => {
+    utils.insertUserSyncIframe('about:blank');
+    expect(syncIframes().length).to.equal(1);
+    expect(syncIframes()[0].parentNode).to.equal(document.documentElement);
+    expect(syncIframes()[0].getAttribute(utils.USERSYNC_ATTR)).to.equal(getGlobalVarName());
+  });
+
+  it('removes every sync iframe of this instance and returns how many were removed', () => {
+    [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
+    const iframes = syncIframes();
+    expect(iframes.length).to.equal(3);
+    expect(utils.removeUserSyncIframes()).to.equal(3);
+    iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
+    expect(syncIframes().length).to.equal(0);
+  });
+
+  it('leaves other iframes alone', () => {
+    const other = document.createElement('iframe');
+    document.body.appendChild(other);
+    try {
+      utils.insertUserSyncIframe('about:blank');
+      expect(utils.removeUserSyncIframes()).to.equal(1);
+      expect(other.parentNode).to.equal(document.body);
+    } finally {
+      other.parentNode.removeChild(other);
+    }
+  });
+
+  it('leaves the sync iframes of other Prebid instances alone', () => {
+    const other = document.createElement('iframe');
+    other.setAttribute(utils.USERSYNC_ATTR, `${getGlobalVarName()}_other`);
+    document.body.appendChild(other);
+    try {
+      utils.insertUserSyncIframe('about:blank');
+      expect(utils.removeUserSyncIframes()).to.equal(1);
+      expect(other.parentNode).to.equal(document.body);
+      expect(syncIframes().length).to.equal(0);
+    } finally {
+      other.parentNode.removeChild(other);
+    }
+  });
+
+  it('does nothing when there is no sync iframe', () => {
+    expect(utils.removeUserSyncIframes()).to.equal(0);
+  });
+
+  it('does not stop later syncs from inserting new iframes', () => {
+    utils.insertUserSyncIframe('about:blank');
+    utils.removeUserSyncIframes();
+    utils.insertUserSyncIframe('about:blank');
+    expect(syncIframes().length).to.equal(1);
+    expect(syncIframes()[0].parentNode).to.equal(document.documentElement);
   });
 });
