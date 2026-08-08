@@ -2029,6 +2029,42 @@ describe('IntentIQ tests', function () {
     expect(groupChangedSpy.calledWith(usedGroup)).to.be.true;
   });
 
+  it('should NOT call groupChanged when the current browser is blacklisted', async function () {
+    const groupChangedSpy = sinon.spy();
+    const blk = detectBrowser();
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        browserBlackList: blk,
+        groupChanged: groupChangedSpy
+      }
+    };
+
+    intentIqIdSubmodule.getId(configParams);
+    await waitForClientHints();
+
+    expect(groupChangedSpy.called).to.be.false;
+  });
+
+  it('should not mark a test group on the sync pixel when the current browser is blacklisted', async function () {
+    const blk = detectBrowser();
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        browserBlackList: blk
+      }
+    };
+
+    intentIqIdSubmodule.getId(configParams);
+    await waitForClientHints();
+
+    const pixelRequest = server.requests[0];
+    expect(pixelRequest).to.exist;
+    expect(pixelRequest.url).to.include('at=20');
+    expect(pixelRequest.url).to.not.include('testGroup=');
+    expect(pixelRequest.url).to.include('isInTestGroup=false');
+  });
+
   it('should include testPercentage with configured abPercentage in AT=39 URL', async function () {
     const callBackSpy = sinon.spy();
     const configParams = {

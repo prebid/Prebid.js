@@ -107,6 +107,7 @@
       "intersectionRtdProvider",
       "jwplayerRtdProvider",
       "liveIntentRtdProvider",
+      "mantisRtdProvider",
       "mediafilterRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",

@@ -498,6 +498,12 @@ describe('Zeta Ssp Bid Adapter', function () {
       }]);
     });
 
+    it('COPPA', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined, undefined, true)).to.deep.equal([{
+        type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&coppa=1`
+      }]);
+    });
+
     describe('GPP', function() {
       it('should return userSync url without GPP consent if gppConsent is undefined', () => {
         const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, undefined);
