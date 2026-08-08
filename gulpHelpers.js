@@ -8,28 +8,31 @@ const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
 
+const BOOLEAN_OPTIONS = [
+  'nolint',
+  'nolintfix',
+  'lintWarnings',
+  'sourceMaps',
+  'manualEnable',
+  'coverage',
+  'https',
+  'local',
+  'fetch',
+  'watch',
+  'browserstack',
+  'notest',
+  'analytics',
+  'ES5',
+  'analyze',
+  'polyfills',
+];
+
 const {values: argv} = parseArgs({
   strict: false,
   allowPositionals: true,
   options: {
     // boolean flags
-    nolint: {type: 'boolean'},
-    nolintfix: {type: 'boolean'},
-    lintWarnings: {type: 'boolean'},
-    'no-lint-warnings': {type: 'boolean'},
-    sourceMaps: {type: 'boolean'},
-    manualEnable: {type: 'boolean'},
-    coverage: {type: 'boolean'},
-    https: {type: 'boolean'},
-    local: {type: 'boolean'},
-    fetch: {type: 'boolean'},
-    watch: {type: 'boolean'},
-    browserstack: {type: 'boolean'},
-    notest: {type: 'boolean'},
-    analytics: {type: 'boolean'},
-    ES5: {type: 'boolean'},
-    analyze: {type: 'boolean'},
-    polyfills: {type: 'boolean'},
+    ...Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, {type: 'boolean'}])),
     // string options
     host: {type: 'string'},
     file: {type: 'string'},
@@ -43,12 +46,18 @@ const {values: argv} = parseArgs({
   },
 });
 
-// The Codex bot keeps yargs' behavior for the documented --no-lint-warnings flag,
-// which parseArgs would otherwise retain under its literal key.
-if (Object.hasOwn(argv, 'no-lint-warnings')) {
-  argv.lintWarnings = !argv['no-lint-warnings'];
-  delete argv['no-lint-warnings'];
-}
+// The Codex bot keeps yargs' handling of negated boolean flags, which parseArgs
+// would otherwise retain under literal keys such as "no-coverage".
+Object.entries(argv).forEach(([arg, value]) => {
+  if (arg.startsWith('no-') && value === true) {
+    const option = BOOLEAN_OPTIONS.find((candidate) =>
+      candidate.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase() === arg.slice(3).toLowerCase());
+    if (option) {
+      argv[option] = false;
+      delete argv[arg];
+    }
+  }
+});
 
 const PRECOMPILED_PATH = './dist/src'
 const MODULE_PATH = './modules';
