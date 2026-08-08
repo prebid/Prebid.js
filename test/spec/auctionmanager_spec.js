@@ -846,6 +846,260 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
+    it('drops request-only data from retained bid request state after auction callbacks finish', async () => {
+      const identityData = {
+        ortb2: { user: { ext: { eids: [{ source: 'id5', uids: [{ id: 'uid', ext: { provider: 'id5' } }] }] } } },
+        userId: { id5id: { uid: 'uid' } },
+        userIdAsEids: [{ source: 'id5', uids: [{ id: 'uid' }] }]
+      };
+      const mediaTypes = { banner: { sizes: [[300, 250]] } };
+      const requestOnlyData = {
+        params: { placementId: 'placement-id' },
+        mediaTypes,
+        ortb2Imp: { ext: { gpid: 'gpid' } },
+        rtd: { provider: 'provider' },
+        floorData: { floorMin: 1 },
+        getFloor: () => ({ floor: 1 }),
+        labelAll: ['label']
+      };
+      const ortb2Fragments = {
+        global: {
+          user: {
+            ext: {
+              eids: [{ source: 'global-id', uids: [{ id: 'global-uid' }] }],
+              data: { eids: [{ source: 'global-data-id', uids: [{ id: 'global-data-uid' }] }] }
+            }
+          }
+        },
+        bidder: {
+          [BIDDER_CODE]: {
+            user: {
+              ext: {
+                eids: [{ source: 'bidder-id', uids: [{ id: 'bidder-uid' }] }],
+                data: { eids: [{ source: 'bidder-data-id', uids: [{ id: 'bidder-data-uid' }] }] }
+              }
+            }
+          }
+        }
+      };
+      const adUnitBid = adUnits[0].bids[0];
+      Object.assign(adUnitBid, requestOnlyData, identityData);
+      let sawIdentityOnAuctionEnd = false;
+
+      stubMakeBidRequests.callsFake((_adUnits, _auctionStart, auctionId) => [{
+        bidderCode: BIDDER_CODE,
+        bidderRequestId: 'bidder-request-id',
+        auctionId,
+        ...identityData,
+        bids: [{
+          bidder: BIDDER_CODE,
+          adUnitCode: ADUNIT_CODE,
+          transactionId: ADUNIT_CODE,
+          adUnitId: ADUNIT_CODE,
+          sizes: [[300, 250]],
+          bidId: 'bid-id',
+          bidderRequestId: 'bidder-request-id',
+          auctionId,
+          ...requestOnlyData,
+          ...identityData
+        }]
+      }]);
+
+      const onAuctionEnd = ({ bidderRequests, adUnits }) => {
+        sawIdentityOnAuctionEnd = !!bidderRequests[0].ortb2 &&
+          !!bidderRequests[0].bids[0].ortb2 &&
+          !!bidderRequests[0].bids[0].userId &&
+          !!bidderRequests[0].bids[0].userIdAsEids &&
+          !!adUnits[0].bids[0].ortb2 &&
+          !!adUnits[0].bids[0].userId &&
+          !!adUnits[0].bids[0].userIdAsEids &&
+          !!ortb2Fragments.global.user.ext.eids &&
+          !!ortb2Fragments.global.user.ext.data.eids &&
+          !!ortb2Fragments.bidder[BIDDER_CODE].user.ext.eids &&
+          !!ortb2Fragments.bidder[BIDDER_CODE].user.ext.data.eids;
+      };
+      events.on(EVENTS.AUCTION_END, onAuctionEnd);
+
+      const auction = auctionManager.createAuction({ adUnits, ortb2Fragments });
+      auction.callBids();
+      try {
+        await auction.end;
+      } finally {
+        events.off(EVENTS.AUCTION_END, onAuctionEnd);
+      }
+
+      const retainedBidderRequest = auction.getBidRequests()[0];
+      const retainedBidRequest = retainedBidderRequest.bids[0];
+      const noBid = auction.getNoBids()[0];
+
+      expect(sawIdentityOnAuctionEnd).to.equal(true);
+      expect(retainedBidderRequest.ortb2).to.equal(undefined);
+      expect(retainedBidRequest.ortb2).to.equal(undefined);
+      expect(retainedBidRequest.userId).to.equal(undefined);
+      expect(retainedBidRequest.userIdAsEids).to.equal(undefined);
+      expect(retainedBidRequest.params).to.equal(undefined);
+      expect(retainedBidRequest.mediaTypes).to.equal(undefined);
+      expect(retainedBidRequest.ortb2Imp).to.equal(undefined);
+      expect(retainedBidRequest.rtd).to.equal(undefined);
+      expect(retainedBidRequest.floorData).to.equal(undefined);
+      expect(retainedBidRequest.getFloor).to.equal(undefined);
+      expect(retainedBidRequest.labelAll).to.equal(undefined);
+      expect(noBid).to.equal(retainedBidRequest);
+      expect(retainedBidRequest.timeToRespond).to.be.a('number');
+      expect(adUnitBid.ortb2).to.equal(undefined);
+      expect(adUnitBid.userId).to.equal(undefined);
+      expect(adUnitBid.userIdAsEids).to.equal(undefined);
+      expect(adUnitBid.ortb2Imp).to.deep.equal(requestOnlyData.ortb2Imp);
+      expect(adUnitBid.params).to.deep.equal(requestOnlyData.params);
+      expect(adUnitBid.mediaTypes).to.equal(mediaTypes);
+      expect(ortb2Fragments.global.user.ext.eids).to.equal(undefined);
+      expect(ortb2Fragments.global.user.ext.data.eids).to.equal(undefined);
+      expect(ortb2Fragments.bidder[BIDDER_CODE].user.ext.eids).to.equal(undefined);
+      expect(ortb2Fragments.bidder[BIDDER_CODE].user.ext.data.eids).to.equal(undefined);
+    });
+
+    it('drops request-only data from retained bid responses after auction callbacks finish but keeps bidWon analytics fields', async () => {
+      const mediaTypes = { banner: { sizes: [[300, 250]] } };
+      const requestOnlyData = {
+        ortb2: { user: { ext: { eids: [{ source: 'id5', uids: [{ id: 'uid' }] }] } } },
+        userId: { id5id: { uid: 'uid' } },
+        userIdAsEids: [{ source: 'id5', uids: [{ id: 'uid' }] }],
+        ortb2Imp: { ext: { gpid: 'gpid' } },
+        params: { placementId: 'placement-id' },
+        mediaTypes,
+        rtd: { provider: 'provider' },
+        floorData: { floorMin: 1 },
+        getFloor: () => ({ floor: 1 }),
+        labelAll: ['label']
+      };
+      let sawRequestOnlyDataOnBidResponse = false;
+
+      stubMakeBidRequests.callsFake((_adUnits, _auctionStart, auctionId) => [{
+        bidderCode: BIDDER_CODE,
+        bidderRequestId: 'bidder-request-id',
+        auctionId,
+        bids: [{
+          bidder: BIDDER_CODE,
+          adUnitCode: ADUNIT_CODE,
+          transactionId: ADUNIT_CODE,
+          adUnitId: ADUNIT_CODE,
+          sizes: [[300, 250]],
+          bidId: 'bid-id',
+          bidderRequestId: 'bidder-request-id',
+          auctionId,
+          mediaTypes
+        }]
+      }]);
+      bids = [{
+        ...mockBid(),
+        requestId: 'bid-id',
+        ...requestOnlyData
+      }];
+
+      const onBidResponse = (bid) => {
+        sawRequestOnlyDataOnBidResponse = !!bid.ortb2 &&
+          !!bid.userId &&
+          !!bid.userIdAsEids &&
+          !!bid.params &&
+          !!bid.mediaTypes &&
+          !!bid.ortb2Imp;
+      };
+      events.on(EVENTS.BID_RESPONSE, onBidResponse);
+
+      const auction = auctionManager.createAuction({ adUnits });
+      indexAuctions.push(auction);
+      auction.callBids();
+      try {
+        await auction.end;
+      } finally {
+        events.off(EVENTS.BID_RESPONSE, onBidResponse);
+      }
+
+      const retainedBidResponse = auction.getBidsReceived()[0];
+
+      expect(sawRequestOnlyDataOnBidResponse).to.equal(true);
+      expect(retainedBidResponse.ortb2).to.equal(undefined);
+      expect(retainedBidResponse.userId).to.equal(undefined);
+      expect(retainedBidResponse.userIdAsEids).to.equal(undefined);
+      expect(retainedBidResponse.params).to.equal(undefined);
+      expect(retainedBidResponse.mediaTypes).to.equal(undefined);
+      expect(retainedBidResponse.ortb2Imp).to.equal(undefined);
+      expect(retainedBidResponse.rtd).to.equal(undefined);
+      expect(retainedBidResponse.floorData).to.deep.equal(requestOnlyData.floorData);
+      expect(retainedBidResponse.getFloor).to.equal(undefined);
+      expect(retainedBidResponse.labelAll).to.equal(undefined);
+      expect(retainedBidResponse.ad).to.equal('creative');
+      expect(retainedBidResponse.adserverTargeting).to.be.an('object');
+    });
+
+    it('keeps retained outstream renderer metadata for late video bids after auction callbacks finish', async () => {
+      const renderer = {
+        url: 'video-renderer.js',
+        render: sinon.spy()
+      };
+      let addLateBid;
+
+      stubMakeBidRequests.callsFake((_adUnits, _auctionStart, auctionId) => [{
+        bidderCode: BIDDER_CODE,
+        bidderRequestId: 'bidder-request-id',
+        auctionId,
+        bids: [{
+          bidder: BIDDER_CODE,
+          adUnitCode: ADUNIT_CODE,
+          transactionId: ADUNIT_CODE,
+          adUnitId: ADUNIT_CODE,
+          sizes: [[300, 250]],
+          bidId: 'late-video-bid-id',
+          bidderRequestId: 'bidder-request-id',
+          auctionId,
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] },
+            video: {
+              context: 'outstream',
+              renderer,
+              playerSize: [300, 250]
+            }
+          }
+        }]
+      }]);
+      stubCallAdapters.callsFake((au, reqs, addBid, done) => {
+        addLateBid = addBid;
+        reqs.forEach(r => done.apply(r));
+      });
+
+      const auction = auctionManager.createAuction({ adUnits });
+      indexAuctions.push(auction);
+      auction.callBids();
+      await auction.end;
+
+      const retainedBidRequest = auction.getBidRequests()[0].bids[0];
+      expect(retainedBidRequest.mediaTypes).to.deep.equal({
+        video: {
+          context: 'outstream',
+          renderer,
+          useCacheKey: undefined
+        }
+      });
+
+      const lateBid = {
+        ...mockBid(),
+        ...createBid({
+          bidder: retainedBidRequest.bidder,
+          bidId: retainedBidRequest.bidId,
+          transactionId: retainedBidRequest.transactionId,
+          adUnitId: retainedBidRequest.adUnitId,
+          auctionId: retainedBidRequest.auctionId
+        }),
+        mediaType: 'video',
+        vastUrl: 'https://example.com/vast.xml'
+      };
+
+      addLateBid(ADUNIT_CODE, lateBid);
+
+      const retainedBidResponse = auction.getBidsReceived().find((bid) => bid.requestId === 'late-video-bid-id');
+      expect(retainedBidResponse.renderer.url).to.equal(renderer.url);
+    });
+
     it('resolves .requestsDone', async () => {
       const auction = auctionManager.createAuction({ adUnits });
       stubCallAdapters.resetHistory();
@@ -1521,8 +1775,6 @@ describe('auctionmanager.js', function () {
           const timedOutBids = bidTimeoutCall.args[1];
           assert.equal(timedOutBids.length, 1);
           assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
-          // Check that additional properties are available
-          assert.equal(timedOutBids[0].params[0].placementId, 'id');
 
           const auctionEndCall = eventsEmitSpy.withArgs(EVENTS.AUCTION_END).getCalls()[0];
           const auctionProps = auctionEndCall.args[1];
