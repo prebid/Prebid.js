@@ -9,8 +9,9 @@ import {
 import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
 import { createBidReceived } from 'test/fixtures/fixtures.js';
-import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
+import { DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
 import { auctionManager } from 'src/auctionManager.js';
+import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
 import { createBid } from '../../../../src/bidfactory.js';
@@ -1687,6 +1688,48 @@ describe('targeting tests', function () {
         });
         targetingInstance.presetGPTTargeting();
         sinon.assert.notCalled(window.googletag.pubads);
+      });
+    });
+    describe('event hooks', () => {
+      let presetGPTTargetingStub;
+      let slot;
+
+      beforeEach(() => {
+        slot = {
+          getAdUnitPath: sinon.stub().returns('/slot/path'),
+          getSlotElementId: sinon.stub().returns('div-1')
+        };
+        slots = [slot];
+        presetGPTTargetingStub = sandbox.stub(targetingInstance, 'presetGPTTargeting');
+      });
+
+      it('calls presetGPTTargeting with adUnitCodes on AUCTION_INIT', () => {
+        const adUnitCodes = ['div-1', 'div-2'];
+        events.emit(EVENTS.AUCTION_INIT, { adUnitCodes });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, adUnitCodes);
+      });
+
+      it('calls presetGPTTargeting with single adUnitCode on BID_WON when slot is unlocked', () => {
+        const adUnitCode = 'div-1';
+        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-b' });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
+      });
+
+      it('ignores BID_WON when related GPT slot is locked', () => {
+        const adUnitCode = 'div-1';
+        events.emit(EVENTS.AUCTION_INIT, { adUnitCodes: [adUnitCode], auctionId: 'auction-b' });
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-a' });
+        sinon.assert.notCalled(presetGPTTargetingStub);
+      });
+
+      it('unlocks slots on AUCTION_END and allows BID_WON reset', () => {
+        const adUnitCode = 'div-1';
+        events.emit(EVENTS.AUCTION_INIT, { adUnitCodes: [adUnitCode], auctionId: 'auction-b' });
+        events.emit(EVENTS.AUCTION_END, { adUnitCodes: [adUnitCode], auctionId: 'auction-b' });
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-a' });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
       });
     });
   });
