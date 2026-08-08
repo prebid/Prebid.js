@@ -3,10 +3,18 @@
 const express = require('express');
 const morgan = require('morgan');
 const path = require('path');
-const argv = require('yargs').argv;
+const { parseArgs } = require('node:util');
 const appnexusHandler = require('./responders/appnexus.js');
 const tripleliftHandler = require('./responders/triplelift.js');
 const bundleMaker = require('./bundle.js');
+
+const { values: argv } = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  options: {
+    port: { type: 'string' },
+  },
+});
 
 const PORT = argv.port || '4444';
 
