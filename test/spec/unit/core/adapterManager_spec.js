@@ -721,6 +721,35 @@ describe('adapterManager tests', function () {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
 
+    it('removes raw userId from retained S2S ad unit bid copies', function () {
+      const adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder === 'appnexus');
+        adUnit.bids.forEach(bid => {
+          bid.userId = {
+            id5id: { uid: 'id5', ext: { provider: 'id5' } },
+            gpid: { uid: 'gpid', ext: { provider: 'gpid' } }
+          };
+        });
+        return adUnit;
+      });
+      const ortb2Fragments = {
+        global: {
+          user: {
+            ext: {
+              eids: [{ source: 'id5-sync.com', uids: [{ id: 'id5' }] }]
+            }
+          }
+        },
+        bidder: {}
+      };
+
+      const requests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000, [], ortb2Fragments);
+
+      expect(requests[0].adUnitsS2SCopy[0].bids[0].userId).to.equal(undefined);
+      expect(requests[0].bids[0].userId).to.equal(undefined);
+      expect(ortb2Fragments.global.user.ext.eids).to.have.length(1);
+    });
+
     // Enable this test when prebidServer adapter is made 1.0 compliant
     it('invokes callBids with only s2s bids', function () {
       const adUnits = getAdUnits();
