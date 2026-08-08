@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec } from 'modules/axonixBidAdapter.js';
+import { _internal, spec } from 'modules/axonixBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
@@ -53,6 +53,7 @@ describe('Axonix Bid Adapter', function () {
   let triggerPixelStub;
 
   beforeEach(function () {
+    _internal.resetDeletionEndpoints();
     sandbox = sinon.createSandbox();
     logWarnStub = sandbox.stub(utils, 'logWarn');
     triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
@@ -428,6 +429,19 @@ describe('Axonix Bid Adapter', function () {
     it('should not send data deletion request when supplyId is missing', function () {
       spec.onDataDeletionRequest([{ bids: [{ params: {} }] }]);
       expect(server.requests).to.be.empty;
+    });
+
+    it('should send data deletion request after retained bid params are cleaned up', function () {
+      const bid = buildBidRequest();
+      const bidderRequests = [{ bids: [bid] }];
+      spec.buildRequests([bid], buildBidderRequest());
+      delete bid.params;
+
+      spec.onDataDeletionRequest(bidderRequests);
+
+      expect(server.requests).to.have.lengthOf(1);
+      expect(server.requests[0].url).to.equal(DATA_DELETION_URL);
+      expect(server.requests[0].requestBody).to.equal(JSON.stringify({ bidderRequests }));
     });
   });
 });
