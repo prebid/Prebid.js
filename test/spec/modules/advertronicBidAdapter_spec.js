@@ -63,7 +63,9 @@ describe('advertronicBidAdapter', function () {
       expect(data.imp[0].tagid).to.equal('tok123abc456');
       expect(data.imp[0].banner.format[0]).to.deep.include({ w: 300, h: 250 });
       expect(data.imp[1].tagid).to.equal('tokvideo0001');
-      expect(data.imp[1].video).to.be.an('object');
+      if (FEATURES.VIDEO) {
+        expect(data.imp[1].video).to.be.an('object');
+      }
       expect(data.site.publisher.id).to.equal('7');
       expect(data.tmax).to.equal(1000);
     });
@@ -129,16 +131,18 @@ describe('advertronicBidAdapter', function () {
       expect(b.meta.advertiserDomains).to.deep.equal(['adv.ru']);
     });
 
-    it('maps a video bid: vastXml, VPAID flag, outstream renderer', function () {
-      const { request, body } = ortbResponse();
-      const bids = spec.interpretResponse({ body }, request);
-      const v = bids.find((x) => x.requestId === 'bid-2');
-      expect(v.mediaType).to.equal('video');
-      expect(v.vastXml).to.contain('<VAST');
-      expect(v.advtVpaid).to.equal(true);
-      expect(v.renderer).to.be.an('object');
-      expect(v.renderer.url).to.equal('https://ssp.advertronic.io/tag/prebid-renderer-v1.js');
-    });
+    if (FEATURES.VIDEO) {
+      it('maps a video bid: vastXml, VPAID flag, outstream renderer', function () {
+        const { request, body } = ortbResponse();
+        const bids = spec.interpretResponse({ body }, request);
+        const v = bids.find((x) => x.requestId === 'bid-2');
+        expect(v.mediaType).to.equal('video');
+        expect(v.vastXml).to.contain('<VAST');
+        expect(v.advtVpaid).to.equal(true);
+        expect(v.renderer).to.be.an('object');
+        expect(v.renderer.url).to.equal('https://ssp.advertronic.io/tag/prebid-renderer-v1.js');
+      });
+    }
 
     it('returns no bids on empty body (204)', function () {
       const reqs = spec.buildRequests([bannerBidRequest], bidderRequest);

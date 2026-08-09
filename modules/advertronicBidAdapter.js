@@ -4,6 +4,12 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { deepAccess, deepSetValue, logWarn } from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./advertronicBidAdapter.d.ts').AdvertronicBidderParams} AdvertronicBidderParams
+ * @typedef {BidRequest & { params: AdvertronicBidderParams }} AdvertronicBidRequest
+ */
+
 const BIDDER_CODE = 'advertronic';
 const ENDPOINT_URL = 'https://ssp.advertronic.io/prebid/v1/auction';
 const SYNC_URL = 'https://ssp.advertronic.io/prebid/v1/sync';
@@ -28,21 +34,23 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
-    // bid.api (OpenRTB 2.6) marks executable (VPAID) creatives; the renderer
-    // enables its VPAID runtime only when this flag is present.
-    if (bid.api === 1 || bid.api === 2) {
-      bidResponse.advtVpaid = true;
-    }
-    if (bidResponse.mediaType === VIDEO) {
-      const { bidRequest } = context;
-      // Attach our renderer for outstream unless the publisher supplied one.
-      if (
-        bidRequest &&
-        deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream' &&
-        !bidRequest.renderer &&
-        !deepAccess(bidRequest, 'mediaTypes.video.renderer')
-      ) {
-        bidResponse.renderer = createRenderer(bidResponse, bidRequest.adUnitCode);
+    if (FEATURES.VIDEO) {
+      // bid.api (OpenRTB 2.6) marks executable (VPAID) creatives; the renderer
+      // enables its VPAID runtime only when this flag is present.
+      if (bid.api === 1 || bid.api === 2) {
+        bidResponse.advtVpaid = true;
+      }
+      if (bidResponse.mediaType === VIDEO) {
+        const { bidRequest } = context;
+        // Attach our renderer for outstream unless the publisher supplied one.
+        if (
+          bidRequest &&
+          deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream' &&
+          !bidRequest.renderer &&
+          !deepAccess(bidRequest, 'mediaTypes.video.renderer')
+        ) {
+          bidResponse.renderer = createRenderer(bidResponse, bidRequest.adUnitCode);
+        }
       }
     }
     return bidResponse;
@@ -74,6 +82,10 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
+  /**
+   * @param {AdvertronicBidRequest} bid
+   * @returns {boolean}
+   */
   isBidRequestValid(bid) {
     return !!(
       bid &&
