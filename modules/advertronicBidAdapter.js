@@ -100,8 +100,10 @@ export const spec = {
         url: ENDPOINT_URL,
         data,
         // withCredentials carries the first-party user id cookie used for
-        // user matching; without it all requests are anonymous.
-        options: { withCredentials: true, contentType: 'application/json' },
+        // user matching; without it all requests are anonymous. Content type
+        // is left at the ajax default (text/plain) so the cross-origin POST
+        // stays a simple request and needs no CORS preflight.
+        options: { withCredentials: true },
       },
     ];
   },
