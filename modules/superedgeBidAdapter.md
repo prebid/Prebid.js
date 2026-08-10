@@ -26,7 +26,7 @@ This adapter supports `banner` and `native` media types. Please contact us to ob
             },
             bids: [
                 {
-                    bidder: 'superEdge',
+                    bidder: 'superedge',
                     params: {
                         sk: '',         // required, secret key provided by superEdge
                         publisher: '',  // optional, publisher identifier
@@ -51,7 +51,7 @@ This adapter supports `banner` and `native` media types. Please contact us to ob
             },
             bids: [
                 {
-                    bidder: 'superEdge',
+                    bidder: 'superedge',
                     params: {
                         sk: '',         // required
                         publisher: '',  // optional

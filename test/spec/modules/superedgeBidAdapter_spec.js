@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { spec } from 'modules/superEdgeBidAdapter.js';
+import { spec } from 'modules/superedgeBidAdapter.js';
 import * as utils from 'src/utils.js';
 
-describe('superEdge Bid Adapter', function () {
+describe('superedge Bid Adapter', function () {
   describe('isBidRequestValid', function () {
     it('should return true when sk is provided', function () {
       const valid = spec.isBidRequestValid({
-        bidder: 'superEdge',
+        bidder: 'superedge',
         params: { sk: 'test-sk' }
       });
       expect(valid).to.equal(true);
@@ -14,7 +14,7 @@ describe('superEdge Bid Adapter', function () {
 
     it('should return true when sk and publisher are provided', function () {
       const valid = spec.isBidRequestValid({
-        bidder: 'superEdge',
+        bidder: 'superedge',
         params: { sk: 'test-sk', publisher: 'pub-1' }
       });
       expect(valid).to.equal(true);
@@ -22,7 +22,7 @@ describe('superEdge Bid Adapter', function () {
 
     it('should return false when sk is missing', function () {
       const valid = spec.isBidRequestValid({
-        bidder: 'superEdge',
+        bidder: 'superedge',
         params: {}
       });
       expect(valid).to.equal(false);
@@ -30,7 +30,7 @@ describe('superEdge Bid Adapter', function () {
 
     it('should return false when sk is empty string', function () {
       const valid = spec.isBidRequestValid({
-        bidder: 'superEdge',
+        bidder: 'superedge',
         params: { sk: '' }
       });
       expect(valid).to.equal(false);
@@ -39,7 +39,7 @@ describe('superEdge Bid Adapter', function () {
 
   describe('buildRequests', function () {
     const validBidRequests = [{
-      bidder: 'superEdge',
+      bidder: 'superedge',
       params: { sk: 'test-sk', publisher: 'pub-1', test: 1 },
       mediaTypes: {
         banner: { sizes: [[300, 250], [320, 50]] }
@@ -81,37 +81,37 @@ describe('superEdge Bid Adapter', function () {
     };
 
     it('should build a POST request', function () {
-      spec.isBidRequestValid(validBidRequests[0]);
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://rtb-us.superedge.co.jp/bid?sk=test-sk');
-      expect(request.data).to.be.a('string');
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(requests).to.be.an('array').with.lengthOf(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal('https://rtb-us.superedge.co.jp/bid?sk=test-sk');
+      expect(requests[0].data).to.be.a('string');
     });
 
     it('should include banner imp in the payload', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp).to.be.an('array').with.lengthOf(1);
       expect(data.imp[0].banner).to.exist;
       expect(data.imp[0].banner.format).to.exist;
     });
 
     it('should include gdpr consent in imp ext', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp[0].ext.consent).to.equal('consent-str');
       expect(data.imp[0].ext.gdpr).to.equal(1);
     });
 
     it('should set gpid from ortb2Imp.ext.gpid', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp[0].ext.gpid).to.equal('/test/gpid');
     });
 
     it('should set test flag from params.test', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.test).to.equal(1);
     });
 
@@ -120,21 +120,21 @@ describe('superEdge Bid Adapter', function () {
         ...validBidRequests[0],
         params: { sk: 'test-sk' }
       }];
-      const request = spec.buildRequests(bids, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.test).to.equal(0);
     });
 
     it('should include eids in ext', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.ext.eids).to.be.an('array');
       expect(data.ext.bidsUserIdAsEids).to.be.an('array');
     });
 
     it('should include site info in the payload', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.site.name).to.equal('example.com');
       expect(data.site.domain).to.equal('example.com');
       expect(data.site.page).to.equal('https://example.com/page');
@@ -147,8 +147,8 @@ describe('superEdge Bid Adapter', function () {
         ...validBidRequests[0],
         crumbs: { pubcid: 'pubcid-123' }
       }];
-      const request = spec.buildRequests(bids, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.user.id).to.equal('pubcid-123');
     });
 
@@ -166,8 +166,8 @@ describe('superEdge Bid Adapter', function () {
           ]
         }
       }];
-      const request = spec.buildRequests(nativeBids, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(nativeBids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp).to.be.an('array').with.lengthOf(1);
       expect(data.imp[0].native).to.exist;
       expect(data.imp[0].native.ver).to.equal('1.2');
@@ -183,8 +183,8 @@ describe('superEdge Bid Adapter', function () {
         },
         nativeOrtbRequest: { ver: '1.2', assets: [] }
       }];
-      const request = spec.buildRequests(nativeBids, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(nativeBids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data).to.be.null;
     });
 
@@ -194,14 +194,14 @@ describe('superEdge Bid Adapter', function () {
         ortb2Imp: undefined,
         params: { sk: 'test-sk', placementId: 'fallback-pid' }
       }];
-      const request = spec.buildRequests(bids, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp[0].ext.gpid).to.equal('fallback-pid');
     });
 
     it('should include tmax from bidderRequest timeout', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.tmax).to.equal(1500);
     });
 
@@ -210,16 +210,16 @@ describe('superEdge Bid Adapter', function () {
         ...bidderRequest,
         refererInfo: {}
       };
-      const request = spec.buildRequests(validBidRequests, req);
-      expect(request).to.exist;
+      const requests = spec.buildRequests(validBidRequests, req);
+      expect(requests[0]).to.exist;
     });
 
     it('should build _mediaTypeMap and _impIdToBidId for banner imps', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(request._mediaTypeMap).to.exist;
-      expect(request._mediaTypeMap['bid-001-banner']).to.equal('banner');
-      expect(request._impIdToBidId).to.exist;
-      expect(request._impIdToBidId['bid-001-banner']).to.equal('bid-001');
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(requests[0]._mediaTypeMap).to.exist;
+      expect(requests[0]._mediaTypeMap['bid-001-banner']).to.equal('banner');
+      expect(requests[0]._impIdToBidId).to.exist;
+      expect(requests[0]._impIdToBidId['bid-001-banner']).to.equal('bid-001');
     });
 
     it('should build _mediaTypeMap for native imps', function () {
@@ -234,14 +234,14 @@ describe('superEdge Bid Adapter', function () {
         }
       }];
       spec.isBidRequestValid(nativeBids[0]);
-      const request = spec.buildRequests(nativeBids, bidderRequest);
-      expect(request._mediaTypeMap).to.exist;
-      expect(request._mediaTypeMap['bid-001-native']).to.equal('native');
+      const requests = spec.buildRequests(nativeBids, bidderRequest);
+      expect(requests[0]._mediaTypeMap).to.exist;
+      expect(requests[0]._mediaTypeMap['bid-001-native']).to.equal('native');
     });
 
     it('should strip _bidId from imp ext before sending', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp[0].ext._bidId).to.be.undefined;
     });
 
@@ -252,14 +252,14 @@ describe('superEdge Bid Adapter', function () {
           banner: { sizes: [[300, 250]], pos: 3 }
         }
       }];
-      const request = spec.buildRequests(bids, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp[0].banner.pos).to.equal(3);
     });
 
     it('should default banner pos to 1 when not set', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp[0].banner.pos).to.equal(1);
     });
 
@@ -276,16 +276,96 @@ describe('superEdge Bid Adapter', function () {
         }
       }];
       spec.isBidRequestValid(multiBids[0]);
-      const request = spec.buildRequests(multiBids, bidderRequest);
-      const data = JSON.parse(request.data);
+      const requests = spec.buildRequests(multiBids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp).to.be.an('array').with.lengthOf(2);
       const bannerImp = data.imp.find(i => i.banner);
       const nativeImp = data.imp.find(i => i.native);
       expect(bannerImp).to.exist;
       expect(nativeImp).to.exist;
       // Both should map back to the same bidId
-      expect(request._impIdToBidId[bannerImp.id]).to.equal('bid-001');
-      expect(request._impIdToBidId[nativeImp.id]).to.equal('bid-001');
+      expect(requests[0]._impIdToBidId[bannerImp.id]).to.equal('bid-001');
+      expect(requests[0]._impIdToBidId[nativeImp.id]).to.equal('bid-001');
+    });
+
+    it('should split requests by sk and region', function () {
+      const bids = [
+        {
+          ...validBidRequests[0],
+          bidId: 'bid-us',
+          params: { sk: 'sk-us', region: 'US' }
+        },
+        {
+          ...validBidRequests[0],
+          bidId: 'bid-eu',
+          params: { sk: 'sk-eu', region: 'EU' }
+        },
+        {
+          ...validBidRequests[0],
+          bidId: 'bid-us-2',
+          params: { sk: 'sk-us', region: 'US' }
+        }
+      ];
+      const requests = spec.buildRequests(bids, bidderRequest);
+      // Two unique (sk, region) pairs => two requests
+      expect(requests).to.be.an('array').with.lengthOf(2);
+
+      // US request should have sk-us and rtb-us host
+      const usReq = requests.find(r => r.url.includes('sk=sk-us'));
+      expect(usReq).to.exist;
+      expect(usReq.url).to.include('rtb-us.superedge.co.jp');
+      const usData = JSON.parse(usReq.data);
+      expect(usData.imp).to.have.lengthOf(2);  // 2 bids in US group, 1 banner imp each
+
+      // EU request should have sk-eu and rtb-eu host
+      const euReq = requests.find(r => r.url.includes('sk=sk-eu'));
+      expect(euReq).to.exist;
+      expect(euReq.url).to.include('rtb-eu.superedge.co.jp');
+    });
+
+    it('should route EU region to rtb-eu host', function () {
+      const bids = [{
+        ...validBidRequests[0],
+        params: { sk: 'sk-1', region: 'EU' }
+      }];
+      const requests = spec.buildRequests(bids, bidderRequest);
+      expect(requests[0].url).to.include('rtb-eu.superedge.co.jp');
+    });
+
+    it('should route APAC region to rtb-sg host', function () {
+      const bids = [{
+        ...validBidRequests[0],
+        params: { sk: 'sk-1', region: 'APAC' }
+      }];
+      const requests = spec.buildRequests(bids, bidderRequest);
+      expect(requests[0].url).to.include('rtb-sg.superedge.co.jp');
+    });
+
+    it('should set gdpr to 0 when gdprApplies is false', function () {
+      const req = {
+        ...bidderRequest,
+        gdprConsent: {
+          consentString: 'consent-str',
+          gdprApplies: false
+        }
+      };
+      const requests = spec.buildRequests(validBidRequests, req);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].ext.gdpr).to.equal(0);
+    });
+
+    it('should fall back to 0x0 when sizes array is empty', function () {
+      const bids = [{
+        ...validBidRequests[0],
+        sizes: [],
+        mediaTypes: {
+          banner: { sizes: [] }
+        }
+      }];
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].banner.h).to.equal(0);
+      expect(data.imp[0].banner.w).to.equal(0);
     });
   });
 

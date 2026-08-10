@@ -8,7 +8,7 @@
  * Supported media types: banner, native
  *
  * Quick start:
- *   gulp serve --modules=superEdgeBidAdapter --nolint --notest
+ *   gulp serve --modules=superedgeBidAdapter --nolint --notest
  */
 
 import * as utils from '../src/utils.js';
@@ -30,11 +30,6 @@ const BIDDER_CODE = 'superedge';
 /** Default time-to-live (seconds) for cached bid responses. */
 const TIME_TO_LIVE = 500;
 
-/** Key names for params and globals lookups. */
-const SK = 'sk';
-const PUBLISHER = 'publisher';
-const REGION = 'region';
-
 /**
  * Map a region code to the corresponding SuperEdge host subdomain.
  *
@@ -51,13 +46,6 @@ function getRegionHost(region) {
       return 'rtb-us';
   }
 }
-
-/**
- * Module-level globals populated by isBidRequestValid and consumed by buildRequests.
- * This is a standard Prebid.js pattern for passing publisher-supplied params between
- * lifecycle methods when they are needed outside individual bid requests.
- */
-const globals = {};
 
 /** Counter incremented per call to buildRequestData. Sent to the server to track repeated requests. */
 let reqTimes = 0;
@@ -297,67 +285,77 @@ export const spec = {
   /** Bidder code used in ad unit configs to route requests here. */
   code: BIDDER_CODE,
 
+  /** IAB Europe Global Vendor List ID for GDPR TCF compliance. */
+  gvlid: 1554,
+
   /** Media types this adapter can handle. */
   supportedMediaTypes: [BANNER, NATIVE],
 
   /**
-   * Validate a bid request and cache publisher-supplied params.
+   * Validate a bid request.
    *
    * Called by Prebid.js for every bid before buildRequests.
-   * Caches the secret key (sk) and publisher identifier in module-level
-   * globals so they are available when building the server request.
+   * A bid is valid if it provides a non-empty `sk` (secret key) param.
    *
    * @param {Object} bid - The bid to validate.
    * @returns {boolean} True if the bid contains a non-empty `sk` param.
    */
   isBidRequestValid: function (bid) {
-    if (bid.params.sk) {
-      globals[SK] = bid.params.sk;
-    }
-    if (bid.params.publisher) {
-      globals[PUBLISHER] = bid.params.publisher;
-    }
-    if (bid.params.region) {
-      globals[REGION] = bid.params.region;
-    }
     return !!bid.params.sk;
   },
 
   /**
-   * Build the HTTP request sent to the superEdge bidding server.
+   * Build the HTTP request(s) sent to the superEdge bidding server.
    *
-   * Constructs an OpenRTB 2.5 JSON payload and POSTs it to the endpoint.
+   * Bids are grouped by (sk, region) so that impressions belonging to
+   * different secret keys / regions are sent to the correct endpoint.
+   * Constructs an OpenRTB 2.5 JSON payload per group and POSTs it.
    * The secret key (sk) is appended directly to the URL as a query parameter.
    *
    * @param {Array}   validBidRequests - Array of validated bid request objects.
    * @param {Object}  bidderRequest    - The master bidder request object.
-   * @returns {Object} An object with `method`, `url`, and `data` properties.
+   * @returns {Object[]} Array of objects with `method`, `url`, and `data` properties.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const payload = buildRequestData(validBidRequests, bidderRequest);
+    // Group bids by (sk, region) so each group targets its own endpoint.
+    const groups = new Map();
+    validBidRequests.forEach(bid => {
+      const sk = bid.params.sk || '';
+      const region = bid.params.region || '';
+      const key = `${sk}|${region}`;
+      if (!groups.has(key)) {
+        groups.set(key, { sk, region, bids: [] });
+      }
+      groups.get(key).bids.push(bid);
+    });
 
-    const mediaTypeMap = {};
-    const impIdToBidId = {};
-    if (payload && payload.imp) {
-      payload.imp.forEach(imp => {
-        impIdToBidId[imp.id] = imp.ext._bidId;
-        delete imp.ext._bidId;
-        if (imp.native) {
-          mediaTypeMap[imp.id] = NATIVE;
-        } else {
-          mediaTypeMap[imp.id] = BANNER;
-        }
-      });
-    }
+    // Build one request per group.
+    return Array.from(groups.values()).map(group => {
+      const payload = buildRequestData(group.bids, bidderRequest);
 
-    const host = getRegionHost(globals[REGION]);
-    return {
-      method: 'POST',
-      url: `https://${host}.superedge.co.jp/bid?sk=${globals[SK]}`,
-      data: JSON.stringify(payload),
-      _mediaTypeMap: mediaTypeMap,
-      _impIdToBidId: impIdToBidId,
-    };
+      const mediaTypeMap = {};
+      const impIdToBidId = {};
+      if (payload && payload.imp) {
+        payload.imp.forEach(imp => {
+          impIdToBidId[imp.id] = imp.ext._bidId;
+          delete imp.ext._bidId;
+          if (imp.native) {
+            mediaTypeMap[imp.id] = NATIVE;
+          } else {
+            mediaTypeMap[imp.id] = BANNER;
+          }
+        });
+      }
+
+      const host = getRegionHost(group.region);
+      return {
+        method: 'POST',
+        url: `https://${host}.superedge.co.jp/bid?sk=${group.sk}`,
+        data: JSON.stringify(payload),
+        _mediaTypeMap: mediaTypeMap,
+        _impIdToBidId: impIdToBidId,
+      };
+    });
   },
 
   /**
