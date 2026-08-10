@@ -7,6 +7,10 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
+/**
+ * @typedef {import('./allegroBidAdapter.d.ts').AllegroBidRequestParams} AllegroBidRequestParams
+ */
+
 const BIDDER_CODE = 'allegro';
 const BIDDER_URL = 'https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid';
 const GVLID = 1493;
@@ -140,7 +144,7 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    const publisherId = bidderRequest.bids.find(bid => bid.params?.publisherId)?.params.publisherId;
+    const publisherId = bidderRequest.bids.find(bid => /** @type {AllegroBidRequestParams} */ (bid.params)?.publisherId)?.params.publisherId;
     if (publisherId) {
       request['[com.allegro.dsp.ext]'] = { inventory: { id: publisherId } };
     }
