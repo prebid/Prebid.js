@@ -91,7 +91,9 @@ export const spec = {
     { code: 'embimedia' },
     { code: 'pgamrtb' },
     { code: 'nuclion' },
-    { code: 'datafusion' }
+    { code: 'datafusion' },
+    { code : 'nasrev'},
+    { code : 'balancex'}
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
