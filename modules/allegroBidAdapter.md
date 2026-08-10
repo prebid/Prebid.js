@@ -56,7 +56,7 @@ var adUnits = [{
   bids: [{
     bidder: 'allegro',
     params: {
-      publisherId: 'gwp'   // publisher identifier; maps to site.[com.allegro.dsp.site.ext].inventory.id in the outgoing OpenRTB request
+      publisherId: 'gwp'   // publisher identifier; maps to [com.allegro.dsp.ext].inventory.id in the outgoing OpenRTB request
     }
   }]
 }];
