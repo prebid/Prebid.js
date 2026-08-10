@@ -2,7 +2,6 @@ import type { CreativeAttribute } from 'iab-adcom';
 import type { Device } from 'iab-openrtb/v25';
 
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
-import { config } from '../../src/config.js';
 import type {
   BaseBidderRequest,
   BidRequest
@@ -353,7 +352,8 @@ export const getUserSyncs = (syncUrl: string) => (
   _serverResponses: ServerResponse[],
   gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
   uspConsent: null | ConsentData[typeof CONSENT_USP],
-  gppConsent: null | ConsentData[typeof CONSENT_GPP]
+  gppConsent: null | ConsentData[typeof CONSENT_GPP],
+  coppa: boolean
 ): { type: SyncType; url: string }[] => {
   if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
     return [];
@@ -379,8 +379,7 @@ export const getUserSyncs = (syncUrl: string) => (
     url += '&gpp_sid=' + gppConsent.applicableSections.join(',');
   }
 
-  const coppa = config.getConfig('coppa') ? 1 : 0;
-  url += `&coppa=${coppa}`;
+  url += `&coppa=${coppa ? 1 : 0}`;
 
   return [{
     type,
