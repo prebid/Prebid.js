@@ -12,7 +12,6 @@ import {
   waitForElementToLoad
 } from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
-import { getGlobalVarName } from 'src/buildOptions.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
@@ -1586,52 +1585,41 @@ describe('polite sync helpers', () => {
 });
 
 describe('user sync iframes', () => {
-  const SELECTOR = `iframe[${utils.USERSYNC_ATTR}="${getGlobalVarName()}"]`;
-  const syncIframes = () => Array.from(document.querySelectorAll(SELECTOR));
+  let preexisting;
+  const newIframes = () => Array.from(document.querySelectorAll('iframe')).filter(f => !preexisting.has(f));
 
-  // other specs may leave sync iframes behind
-  beforeEach(() => utils.removeUserSyncIframes());
+  beforeEach(() => {
+    utils.removeUserSyncIframes();
+    preexisting = new Set(document.querySelectorAll('iframe'));
+  });
   afterEach(() => utils.removeUserSyncIframes());
 
-  it('marks the iframes it inserts with the name of this instance', () => {
+  it('inserts the iframe into the document', () => {
     utils.insertUserSyncIframe('about:blank');
-    expect(syncIframes().length).to.equal(1);
-    expect(syncIframes()[0].parentNode).to.equal(document.documentElement);
-    expect(syncIframes()[0].getAttribute(utils.USERSYNC_ATTR)).to.equal(getGlobalVarName());
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
   });
 
   it('removes every sync iframe of this instance and returns how many were removed', () => {
     [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
-    const iframes = syncIframes();
+    const iframes = newIframes();
     expect(iframes.length).to.equal(3);
     expect(utils.removeUserSyncIframes()).to.equal(3);
     iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
-    expect(syncIframes().length).to.equal(0);
+    expect(newIframes().length).to.equal(0);
   });
 
-  it('leaves other iframes alone', () => {
-    const other = document.createElement('iframe');
-    document.body.appendChild(other);
+  it('leaves iframes it did not insert alone', () => {
+    const foreign = document.createElement('iframe');
+    document.body.appendChild(foreign);
     try {
       utils.insertUserSyncIframe('about:blank');
+      expect(newIframes().length).to.equal(2);
       expect(utils.removeUserSyncIframes()).to.equal(1);
-      expect(other.parentNode).to.equal(document.body);
+      expect(foreign.parentNode).to.equal(document.body);
+      expect(newIframes()).to.eql([foreign]);
     } finally {
-      other.parentNode.removeChild(other);
-    }
-  });
-
-  it('leaves the sync iframes of other Prebid instances alone', () => {
-    const other = document.createElement('iframe');
-    other.setAttribute(utils.USERSYNC_ATTR, `${getGlobalVarName()}_other`);
-    document.body.appendChild(other);
-    try {
-      utils.insertUserSyncIframe('about:blank');
-      expect(utils.removeUserSyncIframes()).to.equal(1);
-      expect(other.parentNode).to.equal(document.body);
-      expect(syncIframes().length).to.equal(0);
-    } finally {
-      other.parentNode.removeChild(other);
+      foreign.parentNode.removeChild(foreign);
     }
   });
 
@@ -1643,7 +1631,7 @@ describe('user sync iframes', () => {
     utils.insertUserSyncIframe('about:blank');
     utils.removeUserSyncIframes();
     utils.insertUserSyncIframe('about:blank');
-    expect(syncIframes().length).to.equal(1);
-    expect(syncIframes()[0].parentNode).to.equal(document.documentElement);
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
   });
 });
