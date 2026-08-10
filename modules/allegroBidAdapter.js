@@ -8,7 +8,8 @@ import { config } from '../src/config.js';
 import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'allegro';
-const BIDDER_URL = 'https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid';
+// const BIDDER_URL = 'https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid';
+const BIDDER_URL = 'http://localhost:9180/v1/rtb/prebid/bid';
 const GVLID = 1493;
 
 /**
@@ -142,8 +143,7 @@ const converter = ortbConverter({
 
     const publisherId = bidderRequest.bids.find(bid => bid.params?.publisherId)?.params.publisherId;
     if (publisherId) {
-      request.site = request.site || {};
-      request.site['[com.allegro.dsp.site.ext]'] = { inventory: { id: publisherId } };
+      request['[com.allegro.dsp.ext]'] = { inventory: { id: publisherId } };
     }
 
     if (request?.device?.dnt !== undefined) {

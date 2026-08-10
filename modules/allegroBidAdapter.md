@@ -66,7 +66,7 @@ var adUnits = [{
 
 | Name     | Scope    | Type   | Description                                                                                                             |
 |----------|----------|--------|-------------------------------------------------------------------------------------------------------------------------|
-| `publisherId` | optional | String | Publisher identifier. When present, the value is written to the `[com.allegro.dsp.site.ext]` proto-JSON extension key on `site` as `inventory.id` in the outgoing OpenRTB bid request, enabling publisher-scoped bid entity filtering on the server side. |
+| `publisherId` | optional | String | Publisher identifier. When present, the value is written to the `[com.allegro.dsp.ext]` proto-JSON extension key on the request as `inventory.id` in the outgoing OpenRTB bid request, enabling publisher-scoped bid entity filtering on the server side. |
 
 
 # Features
