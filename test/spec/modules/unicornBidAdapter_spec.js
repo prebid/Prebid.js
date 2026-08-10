@@ -3,6 +3,9 @@ import * as utils from 'src/utils.js';
 import { spec } from 'modules/unicornBidAdapter.js';
 import 'lodash';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import * as percentInViewLib from 'libraries/percentInView/percentInView.js';
+import * as winDimensionsLib from 'src/utils/winDimensions.js';
+import { clearSlotInfoCache } from 'libraries/gptUtils/gptUtils.js';
 
 const bidRequests = [
   {
@@ -565,6 +568,179 @@ describe('unicornBidAdapterTest', () => {
     it('interpretResponseEmptyArray', () => {
       const bids = spec.interpretResponse([], request);
       assert.deepStrictEqual(bids, []);
+    });
+  });
+
+  describe('adslot measurement', () => {
+    const VH = 800;
+    const createdEls = [];
+    let sandbox;
+    let origGoogletag;
+    let winDimensionsStub;
+
+    function makeSlotEl(id, rect, { position, parent } = {}) {
+      const el = document.createElement('div');
+      el.id = id;
+      if (position) el.style.position = position;
+      (parent || document.body).appendChild(el);
+      el.getBoundingClientRect = () => ({
+        top: rect.top,
+        left: rect.left,
+        right: rect.left + rect.width,
+        bottom: rect.top + rect.height,
+        width: rect.width,
+        height: rect.height
+      });
+      createdEls.push(el);
+      return el;
+    }
+
+    function bidReq(adUnitCode, overrides = {}) {
+      return Object.assign({
+        bidder: 'unicorn',
+        params: { accountId: 12345 },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        adUnitCode,
+        sizes: [[300, 250]],
+        bidId: 'bid-adslot',
+        bidderRequestId: 'bidder-req-adslot',
+        transactionId: 'tx-adslot',
+        auctionId: 'auction-adslot',
+        src: 'client'
+      }, overrides);
+    }
+
+    const bReq = {
+      bidderCode: 'unicorn',
+      auctionId: 'auction-adslot',
+      bidderRequestId: 'bidder-req-adslot',
+      refererInfo: {
+        ref: 'https://uni-corn.net/',
+        reachedTop: true,
+        numIframes: 0,
+        stack: ['https://uni-corn.net/']
+      }
+    };
+
+    function buildImp(br) {
+      const req = spec.buildRequests([br], bReq);
+      return JSON.parse(req.data).imp[0];
+    }
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(percentInViewLib, 'getViewportOffset').returns({ x: 0, y: 0 });
+      winDimensionsStub = sandbox.stub(winDimensionsLib, 'getWinDimensions').returns({
+        document: {
+          documentElement: { scrollLeft: 0, scrollTop: 0, clientHeight: VH },
+          body: { scrollLeft: 0, scrollTop: 0 }
+        }
+      });
+      origGoogletag = window.googletag;
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+      window.googletag = origGoogletag;
+      clearSlotInfoCache();
+      createdEls.splice(0).forEach(el => el.remove());
+    });
+
+    it('adds imp.ext.unicorn and imp.banner.pos for a resolvable, above-the-fold slot', () => {
+      sandbox.stub(percentInViewLib, 'getViewability').returns(75);
+      makeSlotEl('adslot-1', { top: 100, left: 10, width: 300, height: 250 });
+      const imp = buildImp(bidReq('adslot-1'));
+
+      expect(imp.ext.unicorn).to.deep.equal({
+        ver: 1, ratio: 0.75, fixed: false, sticky: false, w: 300, h: 250, x: 10, y: 100
+      });
+      expect(imp.banner.pos).to.equal(1);
+    });
+
+    it('uses document-relative y, not viewport-relative rect.top, for the fold check', () => {
+      sandbox.stub(percentInViewLib, 'getViewability').returns(0);
+      // rect.top alone looks "above the fold", but a large scroll offset
+      // means the slot's real page position is well past one viewport height.
+      winDimensionsStub.returns({
+        document: {
+          documentElement: { scrollLeft: 0, scrollTop: 5000, clientHeight: VH },
+          body: { scrollLeft: 0, scrollTop: 0 }
+        }
+      });
+      makeSlotEl('adslot-2', { top: 50, left: 0, width: 300, height: 250 });
+      const imp = buildImp(bidReq('adslot-2'));
+
+      expect(imp.ext.unicorn.y).to.equal(5050);
+      expect(imp.banner.pos).to.equal(3);
+    });
+
+    it('applies the ad unit size override when the slot measures 0x0 (unrendered GPT slot)', () => {
+      sandbox.stub(percentInViewLib, 'getViewability').returns(40);
+      makeSlotEl('adslot-3', { top: 0, left: 0, width: 0, height: 0 });
+      const imp = buildImp(bidReq('adslot-3'));
+
+      expect(imp.ext.unicorn.w).to.equal(300);
+      expect(imp.ext.unicorn.h).to.equal(250);
+      expect(imp.ext.unicorn.ratio).to.equal(0.4);
+    });
+
+    it('detects a fixed ancestor wrapper, not only the slot element itself', () => {
+      sandbox.stub(percentInViewLib, 'getViewability').returns(100);
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'fixed';
+      document.body.appendChild(wrapper);
+      createdEls.push(wrapper);
+      makeSlotEl('adslot-4', { top: 0, left: 0, width: 300, height: 250 }, { parent: wrapper });
+      const imp = buildImp(bidReq('adslot-4'));
+
+      expect(imp.ext.unicorn.fixed).to.equal(true);
+      expect(imp.ext.unicorn.sticky).to.equal(false);
+    });
+
+    it('keeps fixed and sticky as distinct flags', () => {
+      sandbox.stub(percentInViewLib, 'getViewability').returns(100);
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'sticky';
+      document.body.appendChild(wrapper);
+      createdEls.push(wrapper);
+      makeSlotEl('adslot-5', { top: 0, left: 0, width: 300, height: 250 }, { parent: wrapper });
+      const imp = buildImp(bidReq('adslot-5'));
+
+      expect(imp.ext.unicorn.sticky).to.equal(true);
+      expect(imp.ext.unicorn.fixed).to.equal(false);
+    });
+
+    it('prefers a publisher-declared ortb2Imp.banner.pos over the measured value', () => {
+      sandbox.stub(percentInViewLib, 'getViewability').returns(0);
+      makeSlotEl('adslot-6', { top: 5000, left: 0, width: 300, height: 250 });
+      const br = bidReq('adslot-6', { ortb2Imp: { banner: { pos: 7 } } });
+      const imp = buildImp(br);
+
+      expect(imp.banner.pos).to.equal(7);
+    });
+
+    it('resolves the slot element via GPT slot mapping when adUnitCode differs from the div id', () => {
+      sandbox.stub(percentInViewLib, 'getViewability').returns(50);
+      makeSlotEl('gpt-mapped-div', { top: 0, left: 0, width: 300, height: 250 });
+      window.googletag = {
+        pubads: () => ({
+          getSlots: () => [{
+            getAdUnitPath: () => '/1234/gpt-ad-unit-code',
+            getSlotElementId: () => 'gpt-mapped-div'
+          }]
+        })
+      };
+      const imp = buildImp(bidReq('/1234/gpt-ad-unit-code'));
+
+      expect(imp.ext.unicorn).to.not.equal(undefined);
+      expect(imp.ext.unicorn.w).to.equal(300);
+    });
+
+    it('omits ext.unicorn and banner.pos when the slot element cannot be resolved', () => {
+      const imp = buildImp(bidReq('adslot-does-not-exist'));
+
+      expect(imp.ext).to.equal(undefined);
+      expect(imp.banner.pos).to.equal(undefined);
     });
   });
 });

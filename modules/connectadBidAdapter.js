@@ -2,7 +2,6 @@ import { logWarn, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, VIDEO, NATIVE, AUDIO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
@@ -248,7 +247,7 @@ export const spec = {
     return converter.fromORTB({ response, request }).bids || [];
   },
 
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) => {
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncEndpoint;
 
@@ -275,7 +274,7 @@ export const spec = {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp_sid', gppConsent?.applicableSections?.join(','));
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'coppa', 1);
     }
 

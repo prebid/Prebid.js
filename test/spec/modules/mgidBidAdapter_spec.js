@@ -1,8 +1,26 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/mgidBidAdapter.js';
-import * as utils from '../../../src/utils.js';
-import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync.js';
+import * as connectionUtils from '../../../libraries/connectionInfo/connectionUtils.js';
 import { config } from '../../../src/config.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync.js';
+import * as utils from '../../../src/utils.js';
+
+const ORIGINAL_USER_AGENT_DATA = window.navigator.userAgentData;
+const ORIGINAL_USER_AGENT = window.navigator.userAgent;
+const ORIGINAL_CONNECTION = Object.getOwnPropertyDescriptor(window.navigator, 'connection');
+const setUserAgentData = (value) => window.navigator.__defineGetter__('userAgentData', () => value);
+const setUserAgent = (ua) => window.navigator.__defineGetter__('userAgent', () => ua);
+const setConnection = (conn) => Object.defineProperty(window.navigator, 'connection', { configurable: true, value: conn });
+const restoreNavigator = () => {
+  setUserAgentData(ORIGINAL_USER_AGENT_DATA);
+  setUserAgent(ORIGINAL_USER_AGENT);
+  if (ORIGINAL_CONNECTION) {
+    Object.defineProperty(window.navigator, 'connection', ORIGINAL_CONNECTION);
+  } else {
+    delete window.navigator.connection;
+  }
+};
 
 describe('Mgid bid adapter', function () {
   let sandbox;
@@ -20,7 +38,7 @@ describe('Mgid bid adapter', function () {
   });
   const screenHeight = screen.height;
   const screenWidth = screen.width;
-  const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+  const dnt = 0;
   const language = navigator.language ? 'language' : 'userLanguage';
   let lang = navigator[language].split('-')[0];
   if (lang.length !== 2 && lang.length !== 3) {
@@ -901,7 +919,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.content).deep.equal(bidderRequest.ortb2.site.content);
       expect(data.regs).deep.equal(bidderRequest.ortb2.regs);
       expect(data.user.data).deep.equal(bidderRequest.ortb2.user.data);
-      expect(data.user.ext).deep.equal(bidderRequest.ortb2.user.ext);
+      expect(data.user.ext.consent).to.equal(bidderRequest.ortb2.user.ext.consent);
     });
     it('should use params.bcat/badv/wlang when ortb2 does not provide them', function () {
       const bid = Object.assign({}, abid, {
@@ -931,35 +949,405 @@ describe('Mgid bid adapter', function () {
       expect(data.wlang).deep.equal(['de']);
     });
     it('should derive device fields from navigator', function () {
-      const bid = Object.assign({}, abid);
-      bid.mediaTypes = { banner: { sizes: [[300, 250]] } };
-
-      const originalUA = Object.getOwnPropertyDescriptor(Navigator.prototype, 'userAgent');
-      const originalUAD = navigator.userAgentData;
-      const setUA = (ua) => Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
+      const bid = Object.assign({}, abid, { mediaTypes: { banner: { sizes: [[300, 250]] } } });
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      sandbox.stub(storage, 'getDataFromSessionStorage').returns(null);
       try {
-        setUA('Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605');
+        setUserAgent('Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605');
         expect(JSON.parse(spec.buildRequests([bid], {}).data).device.devicetype).to.equal(5);
 
-        setUA('Mozilla/5.0 (Linux; Android 12; SM-T870) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36');
+        setUserAgent('Mozilla/5.0 (Linux; Android 12; SM-T870 tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36');
         expect(JSON.parse(spec.buildRequests([bid], {}).data).device.devicetype).to.equal(5);
 
-        setUA('Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 Mobile');
+        setUserAgent('Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 Mobile');
         expect(JSON.parse(spec.buildRequests([bid], {}).data).device.devicetype).to.equal(4);
-
-        Object.defineProperty(navigator, 'userAgentData', { configurable: true, value: undefined });
-        expect(JSON.parse(spec.buildRequests([bid], {}).data).device.sua).to.be.undefined;
       } finally {
-        if (originalUA) {
-          Object.defineProperty(Navigator.prototype, 'userAgent', originalUA);
-          delete navigator.userAgent;
-        }
-        Object.defineProperty(navigator, 'userAgentData', { configurable: true, value: originalUAD });
+        restoreNavigator();
       }
+    });
+
+    describe('device sua / os / osv / model', function () {
+      const bid = Object.assign({}, abid, { mediaTypes: { banner: { sizes: [[300, 250]] } } });
+
+      beforeEach(function () {
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'getDataFromSessionStorage').returns(null);
+      });
+
+      it('should pass through publisher-provided device.sua unchanged', function () {
+        const bidderRequest = { ortb2: { device: { sua: { source: 2, platform: { brand: 'macOS' }, model: 'Pixel 9' } } } };
+
+        const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+        expect(data.device.sua.source).to.equal(2);
+        expect(data.device.sua.platform.brand).to.equal('macOS');
+        expect(data.device.sua.model).to.equal('Pixel 9');
+      });
+
+      it('should set device.os from sua.platform.brand', function () {
+        const bidderRequest = { ortb2: { device: { sua: { source: 2, platform: { brand: 'macOS' } } } } };
+
+        const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+        expect(data.device.os).to.equal('macOS');
+      });
+
+      it('should set device.osv from sua.platform.version', function () {
+        const bidderRequest = { ortb2: { device: { sua: { source: 2, platform: { brand: 'macOS', version: ['15', '0', '0'] } } } } };
+
+        const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+        expect(data.device.osv).to.equal('15.0.0');
+      });
+
+      it('should set device.model from sua.model', function () {
+        const bidderRequest = { ortb2: { device: { sua: { source: 2, model: 'Pixel 9' } } } };
+
+        const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+        expect(data.device.model).to.equal('Pixel 9');
+      });
+    });
+
+    describe('populateMgidData', function () {
+      const bid = Object.assign({}, abid, { mediaTypes: { banner: { sizes: [[300, 250]] } } });
+      let ls;
+
+      beforeEach(function () {
+        delete window._mgPvid;
+        delete window._mgPbSessionPages;
+        delete window._mgPvidList;
+        ls = {};
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => (key in ls ? ls[key] : null));
+        sandbox.stub(storage, 'getDataFromSessionStorage').returns(null);
+        sandbox.stub(storage, 'setDataInLocalStorage');
+        sandbox.stub(storage, 'setDataInSessionStorage');
+        getGlobal().bidderSettings = { mgid: { enhancedBidData: true } };
+      });
+
+      afterEach(function () {
+        getGlobal().bidderSettings = {};
+        restoreNavigator();
+      });
+
+      it('should forward sid and sessionPage from storage', function () {
+        ls._mgPbSessionId = 'sid-xyz';
+        ls._mgPbSessionPagesNumber = '3';
+        ls._mgPbSessionsTimeList = JSON.stringify([Date.now()]);
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.user.ext.mgid.sid).to.equal('sid-xyz');
+        expect(data.user.ext.mgid.sessionPage).to.equal(3);
+      });
+
+      it('should set sessionNum and sessions1w from sessions list within 7 days', function () {
+        const now = Date.now();
+        ls._mgPbSessionsTimeList = JSON.stringify([now, now - 86400000]);
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.user.ext.mgid.sessionNum).to.equal(2);
+        expect(data.user.ext.mgid.sessions1w).to.equal(2);
+      });
+
+      it('should omit sessions1w when all sessions are older than 7 days', function () {
+        ls._mgPbSessionsTimeList = JSON.stringify([Date.now() - 8 * 24 * 60 * 60 * 1000]);
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.user.ext.mgid.sessionNum).to.equal(1);
+        expect(data.user.ext.mgid).to.not.have.property('sessions1w');
+      });
+
+      it('should set timeBetweenSessions in minutes when at least 2 sessions exist', function () {
+        const now = Date.now();
+        ls._mgPbSessionsTimeList = JSON.stringify([now - 45 * 60 * 1000, now]);
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.user.ext.mgid.timeBetweenSessions).to.equal(45);
+      });
+
+      it('should omit timeBetweenSessions when only one session exists', function () {
+        ls._mgPbSessionsTimeList = JSON.stringify([Date.now()]);
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.user.ext.mgid).to.not.have.property('timeBetweenSessions');
+      });
+
+      it('should not populate the removed user.ext.mgid.widgets map', function () {
+        const now = Date.now();
+        ls._mgPbViewrate = JSON.stringify({ '/1111/gpid': [{ id: 'vr-1', st: now, v: 3, r: 5 }] });
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.user.ext.mgid).to.not.have.property('widgets');
+      });
+
+      it('should set only pvid and enhanced on user.ext.mgid when no session storage exists', function () {
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.user.ext.mgid).to.have.all.keys('pvid', 'enhanced');
+      });
+
+      it('should set device.connectiontype from getConnectionType', function () {
+        sandbox.stub(connectionUtils, 'getConnectionType').returns(6);
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.device.connectiontype).to.equal(6);
+      });
+
+      it('should not set device.connectiontype when getConnectionType returns 0', function () {
+        sandbox.stub(connectionUtils, 'getConnectionType').returns(0);
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.device.connectiontype).to.be.undefined;
+      });
+
+      it('should set site.ext.mgid.niet and nisd from navigator.connection', function () {
+        sandbox.stub(connectionUtils, 'getConnectionType').returns(0);
+        setConnection({ effectiveType: '4g', saveData: false });
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.site.ext.mgid.niet).to.equal('4g');
+        expect(data.site.ext.mgid.nisd).to.equal(0);
+      });
+
+      it('should set nisd to 1 when saveData is true', function () {
+        sandbox.stub(connectionUtils, 'getConnectionType').returns(0);
+        setConnection({ effectiveType: '2g', saveData: true });
+
+        const data = JSON.parse(spec.buildRequests([bid], {}).data);
+        expect(data.site.ext.mgid.niet).to.equal('2g');
+        expect(data.site.ext.mgid.nisd).to.equal(1);
+      });
+
+      describe('enhancedBidData enablement', function () {
+        describe('when bidderSettings does not enable it (default)', function () {
+          beforeEach(function () {
+            getGlobal().bidderSettings = {};
+          });
+
+          it('should not populate user.ext.mgid beyond the enhanced flag', function () {
+            ls._mgPbSessionId = 'sid-xyz';
+            ls._mgPbSessionsTimeList = JSON.stringify([Date.now()]);
+
+            const data = JSON.parse(spec.buildRequests([bid], {}).data);
+            expect(data.user.ext.mgid).to.deep.equal({ enhanced: 0 });
+          });
+
+          it('should not write session data to storage', function () {
+            spec.buildRequests([bid], {});
+            expect(storage.setDataInLocalStorage.called).to.be.false;
+            expect(storage.setDataInSessionStorage.called).to.be.false;
+          });
+
+          it('should still set site.ext.mgid.niet and nisd (no storage involved)', function () {
+            sandbox.stub(connectionUtils, 'getConnectionType').returns(0);
+            setConnection({ effectiveType: '4g', saveData: true });
+
+            const data = JSON.parse(spec.buildRequests([bid], {}).data);
+            expect(data.site.ext.mgid.niet).to.equal('4g');
+            expect(data.site.ext.mgid.nisd).to.equal(1);
+          });
+
+          it('should set user.ext.mgid.enhanced to 0', function () {
+            const data = JSON.parse(spec.buildRequests([bid], {}).data);
+            expect(data.user.ext.mgid.enhanced).to.equal(0);
+          });
+        });
+
+        describe('when enabled via bidderSettings.mgid', function () {
+          it('should populate user.ext.mgid', function () {
+            const data = JSON.parse(spec.buildRequests([bid], {}).data);
+            expect(data.user.ext.mgid.pvid).to.be.a('string');
+          });
+
+          it('should write session data to storage', function () {
+            spec.buildRequests([bid], {});
+            expect(storage.setDataInLocalStorage.called).to.be.true;
+          });
+
+          it('should set user.ext.mgid.enhanced to 1', function () {
+            const data = JSON.parse(spec.buildRequests([bid], {}).data);
+            expect(data.user.ext.mgid.enhanced).to.equal(1);
+          });
+        });
+
+        describe('when enabled via bidderSettings.standard', function () {
+          beforeEach(function () {
+            getGlobal().bidderSettings = { standard: { enhancedBidData: true } };
+          });
+
+          it('should populate user.ext.mgid and set user.ext.mgid.enhanced to 1', function () {
+            const data = JSON.parse(spec.buildRequests([bid], {}).data);
+            expect(data.user.ext.mgid.pvid).to.be.a('string');
+            expect(data.user.ext.mgid.enhanced).to.equal(1);
+          });
+        });
+
+        describe('when bidderSettings sets a truthy non-boolean value', function () {
+          beforeEach(function () {
+            getGlobal().bidderSettings = { mgid: { enhancedBidData: 1 } };
+          });
+
+          it('should treat it as disabled and set user.ext.mgid.enhanced to 0', function () {
+            const data = JSON.parse(spec.buildRequests([bid], {}).data);
+            expect(data.user.ext.mgid).to.deep.equal({ enhanced: 0 });
+          });
+        });
+      });
+
+      describe('viewrate', function () {
+        it('should not set imp.ext.data.viewrate1w or viewrateIdType, even with stored data', function () {
+          ls._mgPbViewrate = JSON.stringify({ '/1111/gpid': [{ id: 'vr-1', st: Date.now(), v: 3, r: 4 }] });
+
+          const data = JSON.parse(spec.buildRequests([bid], {}).data);
+          expect(data.imp[0].ext.data && data.imp[0].ext.data.viewrate1w).to.be.undefined;
+          expect(data.imp[0].ext.data && data.imp[0].ext.data.viewrateIdType).to.be.undefined;
+        });
+
+        it('should not record renders', function () {
+          storage.setDataInLocalStorage.callsFake((k, v) => { ls[k] = v; });
+
+          spec.buildRequests([bid], {});
+          spec.onAdRenderSucceeded({ adUnitCode: 'div', mgVRID: '/1111/gpid' });
+
+          expect(ls._mgPbViewrate).to.be.undefined;
+        });
+
+        it('should not set viewrate1w when a viewability module is enabled in config but not in the build', function () {
+          config.setConfig({ bidViewability: { enabled: true } });
+          ls._mgPbViewrate = JSON.stringify({ '/1111/gpid': [{ id: 'vr-1', st: Date.now(), v: 3, r: 4 }] });
+
+          const data = JSON.parse(spec.buildRequests([bid], {}).data);
+          expect(data.imp[0].ext.data && data.imp[0].ext.data.viewrate1w).to.be.undefined;
+
+          config.setConfig({ bidViewability: { enabled: false } });
+        });
+
+        [
+          { module: 'bidViewability', cfg: { bidViewability: { enabled: true } } },
+          { module: 'bidViewabilityIO', cfg: { bidViewabilityIO: { enabled: true } } },
+        ].forEach(function ({ module, cfg }) {
+          describe(`with ${module} enabled`, function () {
+            beforeEach(function () {
+              getGlobal().installedModules.push(module);
+              config.setConfig(cfg);
+            });
+
+            afterEach(function () {
+              const modules = getGlobal().installedModules;
+              modules.splice(modules.indexOf(module), 1);
+              config.setConfig({ [module]: { enabled: false } });
+            });
+
+            it('should set imp.ext.data.viewrate1w keyed by gpid, with viewrateIdType "gpid"', function () {
+              ls._mgPbViewrate = JSON.stringify({ '/1111/gpid': [{ id: 'vr-1', st: Date.now(), v: 3, r: 4 }] });
+
+              const data = JSON.parse(spec.buildRequests([bid], {}).data);
+              expect(data.imp[0].ext.data.viewrate1w).to.equal('3,4');
+              expect(data.imp[0].ext.data.viewrateIdType).to.equal('gpid');
+            });
+
+            it('should sum viewrate rows and drop entries older than 7 days', function () {
+              const now = Date.now();
+              ls._mgPbViewrate = JSON.stringify({
+                '/1111/gpid': [
+                  { id: 'vr-old', st: now - 8 * 24 * 60 * 60 * 1000, v: 100, r: 100 },
+                  { id: 'vr-recent', st: now, v: 2, r: 3 },
+                ],
+              });
+
+              const data = JSON.parse(spec.buildRequests([bid], {}).data);
+              expect(data.imp[0].ext.data.viewrate1w).to.equal('2,3');
+            });
+
+            it('should emit viewrate1w even when v or r is 0', function () {
+              ls._mgPbViewrate = JSON.stringify({ '/1111/gpid': [{ id: 'vr-1', st: Date.now(), v: 0, r: 5 }] });
+
+              const data = JSON.parse(spec.buildRequests([bid], {}).data);
+              expect(data.imp[0].ext.data.viewrate1w).to.equal('0,5');
+            });
+
+            it('should key viewrate storage by the legacy pbadslot when gpid is absent', function () {
+              const legacyBid = Object.assign({}, bid, {
+                ortb2Imp: { ext: { data: { pbadslot: '/legacy/slot' } } },
+              });
+              ls._mgPbViewrate = JSON.stringify({ '/legacy/slot': [{ id: 'vr-1', st: Date.now(), v: 1, r: 2 }] });
+
+              const data = JSON.parse(spec.buildRequests([legacyBid], {}).data);
+              expect(data.imp[0].ext.data.viewrate1w).to.equal('1,2');
+              expect(data.imp[0].ext.data.viewrateIdType).to.equal('pbadslot');
+            });
+
+            it('should fall back to the tagId (adUnitCode) when no gpid or legacy slot exists', function () {
+              const plainBid = Object.assign({}, bid, { ortb2Imp: undefined });
+              ls._mgPbViewrate = JSON.stringify({ 'div': [{ id: 'vr-1', st: Date.now(), v: 4, r: 6 }] });
+
+              const data = JSON.parse(spec.buildRequests([plainBid], {}).data);
+              expect(data.imp[0].ext.data.viewrate1w).to.equal('4,6');
+              expect(data.imp[0].ext.data.viewrateIdType).to.equal('tagId');
+            });
+
+            it('should not set viewrate1w or viewrateIdType when no viewrate storage exists', function () {
+              const data = JSON.parse(spec.buildRequests([bid], {}).data);
+              expect(data.imp[0].ext.data && data.imp[0].ext.data.viewrate1w).to.be.undefined;
+              expect(data.imp[0].ext.data && data.imp[0].ext.data.viewrateIdType).to.be.undefined;
+            });
+
+            it('should report viewrate1w after an ad is rendered and viewed, keyed by gpid', function () {
+              storage.setDataInLocalStorage.callsFake((k, v) => { ls[k] = v; });
+
+              spec.buildRequests([bid], {});
+              spec.onAdRenderSucceeded({ adUnitCode: 'div', mgVRID: '/1111/gpid' });
+              spec.onBidViewable({ adUnitCode: 'div', mgVRID: '/1111/gpid' });
+
+              const stored = JSON.parse(ls._mgPbViewrate)['/1111/gpid'];
+              expect(stored[0].r).to.equal(1);
+              expect(stored[0].v).to.equal(1);
+
+              const data = JSON.parse(spec.buildRequests([bid], {}).data);
+              expect(data.imp[0].ext.data.viewrate1w).to.equal('1,1');
+            });
+
+            it('should emit "0,1" viewrate after a render with no view yet', function () {
+              storage.setDataInLocalStorage.callsFake((k, v) => { ls[k] = v; });
+
+              spec.buildRequests([bid], {});
+              spec.onAdRenderSucceeded({ adUnitCode: 'div', mgVRID: '/1111/gpid' });
+
+              const data = JSON.parse(spec.buildRequests([bid], {}).data);
+              expect(data.imp[0].ext.data.viewrate1w).to.equal('0,1');
+            });
+
+            describe('when enhancedBidData is not enabled (default)', function () {
+              beforeEach(function () {
+                getGlobal().bidderSettings = {};
+              });
+
+              it('should not set viewrate1w even with stored data', function () {
+                ls._mgPbViewrate = JSON.stringify({ '/1111/gpid': [{ id: 'vr-1', st: Date.now(), v: 3, r: 4 }] });
+
+                const data = JSON.parse(spec.buildRequests([bid], {}).data);
+                expect(data.imp[0].ext.data && data.imp[0].ext.data.viewrate1w).to.be.undefined;
+              });
+
+              it('should not record renders or views when the bid has no mgVRID', function () {
+                storage.setDataInLocalStorage.callsFake((k, v) => { ls[k] = v; });
+
+                spec.onAdRenderSucceeded({ adUnitCode: 'div' });
+                spec.onBidViewable({ adUnitCode: 'div' });
+
+                expect(ls._mgPbViewrate).to.be.undefined;
+              });
+            });
+          });
+        });
+      });
     });
   });
 
   describe('interpretResponse', function () {
+    beforeEach(function () {
+      getGlobal().bidderSettings = { mgid: { enhancedBidData: true } };
+    });
+
+    afterEach(function () {
+      getGlobal().bidderSettings = {};
+    });
+
     function buildMockRequest() {
       const bid = {
         adUnitCode: 'div',
@@ -970,6 +1358,22 @@ describe('Mgid bid adapter', function () {
       };
       return spec.buildRequests([bid], {});
     }
+
+    describe('when enhancedBidData is not enabled (default)', function () {
+      beforeEach(function () {
+        getGlobal().bidderSettings = {};
+      });
+
+      it('should omit mgVRID from bid responses', function () {
+        const resp = {
+          body: { id: 'resp1', cur: 'USD', seatbid: [{ bid: [{ id: '1', impid: '61e40632c53fc2', price: 1.5, adm: '<div>ad</div>', w: 300, h: 250 }], seat: '44' }] },
+        };
+        const bids = spec.interpretResponse(resp, buildMockRequest());
+
+        expect(bids).to.have.length(1);
+        expect(bids[0].mgVRID).to.be.undefined;
+      });
+    });
     if (FEATURES.NATIVE) {
       it('should not push proper native bid response if adm is missing', function () {
         const resp = {
@@ -1021,6 +1425,7 @@ describe('Mgid bid adapter', function () {
           },
           'nurl': 'https nurl',
           'isBurl': true,
+          'mgVRID': 'div',
         }]);
       });
       it('should push proper native bid response, assets2', function () {
@@ -1056,6 +1461,7 @@ describe('Mgid bid adapter', function () {
           },
           'nurl': 'https nurl',
           'isBurl': true,
+          'mgVRID': 'div',
         }]);
       });
       it('should unwrap {"native":{...}} envelope in adm', function () {
@@ -1098,6 +1504,7 @@ describe('Mgid bid adapter', function () {
         'meta': { 'advertiserDomains': ['test.com'], 'primaryCatId': 'IAB7', 'secondaryCatIds': ['IAB14', 'IAB18-3', 'IAB1-2'], 'seat': '44082' },
         'nurl': 'https nurl',
         'isBurl': true,
+        'mgVRID': 'div',
       }]);
     });
     it('should override ttl from bid.exp then bid.ttl', function () {
