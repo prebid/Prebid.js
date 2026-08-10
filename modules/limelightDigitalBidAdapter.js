@@ -92,8 +92,8 @@ export const spec = {
     { code: 'pgamrtb' },
     { code: 'nuclion' },
     { code: 'datafusion' },
-    { code : 'nasrev'},
-    { code : 'balancex'}
+    { code : 'nasrev' },
+    { code : 'balancex' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
