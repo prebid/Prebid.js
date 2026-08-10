@@ -140,6 +140,12 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
+    const publisherId = bidderRequest.bids.find(bid => bid.params?.publisherId)?.params.publisherId;
+    if (publisherId) {
+      request.site = request.site || {};
+      request.site['[com.allegro.dsp.site.ext]'] = { inventory: { id: publisherId } };
+    }
+
     if (request?.device?.dnt !== undefined) {
       request.device.dnt = request.device.dnt === 1;
     }
@@ -164,7 +170,6 @@ const converter = ortbConverter({
 
     return request;
   },
-
   /**
    * Post-processes each Prebid bid response, mapping Allegro DSP extension
    * fields onto the standard `meta` object so publishers can consume them.
