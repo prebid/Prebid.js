@@ -354,7 +354,6 @@ function e2eTestTaskMaker() {
   return function test(done) {
     const integ = startIntegServer();
     startLocalServer();
-    
     runWebdriver({})
       .then(() => {
         // kill fake server
