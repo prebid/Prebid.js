@@ -355,22 +355,19 @@ function e2eTestTaskMaker() {
     const integ = startIntegServer();
     startLocalServer();
     
-    // Give TLX time to start
-    setTimeout(() => {
-      runWebdriver({})
-        .then(() => {
-          // kill fake server
-          integ.kill('SIGINT');
-          done();
-          process.exit(0);
-        })
-        .catch(err => {
-          // kill fake server
-          integ.kill('SIGINT');
-          done(new Error(`Tests failed with error: ${err}`));
-          process.exit(1);
-        });
-    }, 5000);
+    runWebdriver({})
+      .then(() => {
+        // kill fake server
+        integ.kill('SIGINT');
+        done();
+        process.exit(0);
+      })
+      .catch(err => {
+        // kill fake server
+        integ.kill('SIGINT');
+        done(new Error(`Tests failed with error: ${err}`));
+        process.exit(1);
+      });
   }
 }
 
@@ -466,51 +463,64 @@ function startIntegServer(dev = false, useLocalTlx = false) {
 }
 
 function startDockerizedTLX() {
-  console.log('Starting dockerized TLX environment...');
-  const tlxDocker = spawn(gradlew, [':dockerized:up'], {
+  console.log('Bringing down any existing dockerized TLX environment...');
+  const tlxDown = spawn(gradlew, [':dockerized:down'], {
     cwd: SHARED_REPO_PATH,
     stdio: 'inherit',
     shell: true
   });
-  
-  tlxDocker.on('error', (err) => {
-    console.error(`Failed to start dockerized TLX: ${err}`);
+
+  tlxDown.on('error', (err) => {
+    console.error(`Failed to bring down dockerized TLX: ${err}`);
   });
 
-  tlxDocker.on('close', (code) => {
-    if (code !== 0) {
-      console.error(`Dockerized TLX exited with code ${code}, skipping GenerateCreative.`);
-      return;
-    }
-    runGenerateCreative((err) => {
-      if (err) console.error(`GenerateCreative failed: ${err}`);
-    });
-  });
-
-  // Handle termination and cleanup
-  const cleanup = () => {
-    console.log('\nCleaning up dockerized TLX environment...');
-    const tlxDown = spawn(gradlew, [':dockerized:down'], {
+  tlxDown.on('close', () => {
+    console.log('Starting dockerized TLX environment...');
+    const tlxDocker = spawn(gradlew, [':dockerized:up'], {
       cwd: SHARED_REPO_PATH,
       stdio: 'inherit',
       shell: true
     });
-    
-    tlxDown.on('close', () => {
-      console.log('Dockerized TLX environment shut down.');
-      process.exit(0);
-    });
-    
-    tlxDown.on('error', (err) => {
-      console.error(`Failed to clean up dockerized TLX: ${err}`);
-      process.exit(1);
-    });
-  };
 
-  process.on('SIGINT', cleanup);
-  process.on('SIGTERM', cleanup);
-  
-  return tlxDocker;
+    tlxDocker.on('error', (err) => {
+      console.error(`Failed to start dockerized TLX: ${err}`);
+    });
+
+    tlxDocker.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`Dockerized TLX exited with code ${code}, skipping GenerateCreative.`);
+        return;
+      }
+      runGenerateCreative((err) => {
+        if (err) console.error(`GenerateCreative failed: ${err}`);
+      });
+    });
+
+    // Handle termination and cleanup
+    const cleanup = () => {
+      console.log('\nCleaning up dockerized TLX environment...');
+      const tlxCleanup = spawn(gradlew, [':dockerized:down'], {
+        cwd: SHARED_REPO_PATH,
+        stdio: 'inherit',
+        shell: true
+      });
+
+      tlxCleanup.on('close', () => {
+        console.log('Dockerized TLX environment shut down.');
+        process.exit(0);
+      });
+
+      tlxCleanup.on('error', (err) => {
+        console.error(`Failed to clean up dockerized TLX: ${err}`);
+        process.exit(1);
+      });
+    };
+
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+
+    return tlxDocker;
+  });
 }
 
 function runGenerateCreative(done) {
