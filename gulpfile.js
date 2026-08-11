@@ -463,12 +463,12 @@ function startIntegServer(dev = false, useLocalTlx = false) {
 }
 
 function startDockerizedTLX() {
-  const TLX_REPO_PATH = process.env.TLX_REPO_PATH || '/Users/carlos_cobaleda/development/eclipse-2025.12-workspace/shared';
-  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+  const SHARED_REPO_PATH = process.env.SHARED_REPO_PATH;
+  const gradlew = './gradlew';
   
   console.log('Starting dockerized TLX environment...');
   const tlxDocker = spawn(gradlew, [':dockerized:up'], {
-    cwd: TLX_REPO_PATH,
+    cwd: SHARED_REPO_PATH,
     stdio: 'inherit',
     shell: true
   });
@@ -481,7 +481,7 @@ function startDockerizedTLX() {
   const cleanup = () => {
     console.log('\nCleaning up dockerized TLX environment...');
     const tlxDown = spawn(gradlew, [':dockerized:down'], {
-      cwd: TLX_REPO_PATH,
+      cwd: SHARED_REPO_PATH,
       stdio: 'inherit',
       shell: true
     });
