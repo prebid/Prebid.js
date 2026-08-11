@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { triggerPixel, politeTriggerPixel, mergeDeep, deepSetValue, replaceAuctionPrice, generateUUID } from '../src/utils.js';
+import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'floxis';
@@ -211,7 +211,8 @@ const CONVERTER = ortbConverter({
     if (!req.user?.ext?.floxisId) {
       const floxisId = context.resolveFloxisId();
       if (floxisId) {
-        deepSetValue(req, 'user.ext.floxisId', floxisId);
+        // mergeDeep, not deepSetValue: it repairs a non-object user/user.ext, which publisher ortb2 can supply
+        mergeDeep(req, { user: { ext: { floxisId } } });
       }
     }
     return req;

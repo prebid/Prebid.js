@@ -557,6 +557,37 @@ describe('floxisBidAdapter', function () {
         expect(generateUUIDStub.called).to.be.false;
       });
 
+      it('still sets the id when publisher ortb2 supplies a non-object user', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        [null, [], 'nope'].forEach(function (badUser) {
+          const bidderRequestWithBadUser = {
+            ...floxisIdBidderRequest,
+            ortb2: { ...floxisIdBidderRequest.ortb2, user: badUser }
+          };
+          const data = spec.buildRequests([validBannerBid], bidderRequestWithBadUser)[0].data;
+          expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        });
+      });
+
+      it('still sets the id when publisher ortb2 supplies a non-object user.ext', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const bidderRequestWithBadUserExt = {
+          ...floxisIdBidderRequest,
+          ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: null } }
+        };
+        const data = spec.buildRequests([validBannerBid], bidderRequestWithBadUserExt)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+      });
+
       it('resolves the id once per auction, not once per seat group', function () {
         localStorageIsEnabledStub.returns(true);
         cookiesAreEnabledStub.returns(true);
