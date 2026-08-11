@@ -350,6 +350,28 @@ function testTaskMaker(options = {}) {
 
 const test = testTaskMaker();
 
+function e2eTestTlxOfflineTaskMaker() {
+  return function test(done) {
+    startDockerizedTLX();
+    const integ = startIntegServer(true, true);
+    startLocalServer();
+    setTimeout(() => {
+      console.log('Running e2e tests for TLX offline exchange...');
+      runWebdriver({ file: 'test/spec/e2e/triplelift_offline_exchange/offline_exchange.spec.js', timeout: 60000 })
+        .then(() => {
+          integ.kill('SIGINT');
+          done();
+          process.exit(0);
+        })
+        .catch(err => {
+          integ.kill('SIGINT');
+          done(new Error(`Tests failed with error: ${err}`));
+          process.exit(1);
+        });
+    }, 60000);
+  }
+}
+
 function e2eTestTaskMaker() {
   return function test(done) {
     const integ = startIntegServer();
@@ -642,6 +664,7 @@ gulp.task('default', gulp.series('build'));
 gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
 gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
 gulp.task('e2e-test-nobuild', gulp.series(requireNodeVersion(16), e2eTestTaskMaker()));
+gulp.task('e2e-test-tlx-offline', gulp.series(requireNodeVersion(16), clean, 'build-bundle-dev', e2eTestTlxOfflineTaskMaker()));
 
 // other tasks
 gulp.task(bundleToStdout);
