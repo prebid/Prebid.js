@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID } from '../src/utils.js';
+import { triggerPixel, politeTriggerPixel, mergeDeep, deepSetValue, replaceAuctionPrice, generateUUID } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'floxis';
@@ -99,9 +99,7 @@ function isValidFloxisId(id) {
   return typeof id === 'string' && id.length === UUID_LENGTH;
 }
 
-// Never returns an id that didn't persist (no store, or storageControl denying the key while the
-// keyless enablement checks pass) — an unpersisted id would rotate every auction, worse than none.
-function getOrCreateFloxisId() {
+function getOrCreatePersistedFloxisId() {
   try {
     const localOk = storage.localStorageIsEnabled();
     const cookieOk = storage.cookiesAreEnabled();
@@ -135,14 +133,13 @@ function getOrCreateFloxisId() {
   }
 }
 
-// request() runs once per seat|region|partner group; memoize to one storage round-trip per auction.
 function createFloxisIdResolver() {
   let resolved = false;
   let id = null;
   return () => {
     if (!resolved) {
       resolved = true;
-      id = getOrCreateFloxisId();
+      id = getOrCreatePersistedFloxisId();
     }
     return id;
   };
@@ -212,9 +209,9 @@ const CONVERTER = ortbConverter({
       }
     });
     if (!req.user?.ext?.floxisId) {
-      const floxisId = context.resolveFloxisId?.();
+      const floxisId = context.resolveFloxisId();
       if (floxisId) {
-        mergeDeep(req, { user: { ext: { floxisId } } });
+        deepSetValue(req, 'user.ext.floxisId', floxisId);
       }
     }
     return req;
@@ -244,10 +241,7 @@ export const spec = {
 
   buildRequests(validBidRequests = [], bidderRequest = {}) {
     if (!validBidRequests.length) return [];
-    const filteredBidRequests = validBidRequests.filter((bidRequest) => spec.isBidRequestValid(bidRequest));
-    if (!filteredBidRequests.length) return [];
-
-    const bidRequestsByParams = filteredBidRequests.reduce((groups, bidRequest) => {
+    const bidRequestsByParams = validBidRequests.reduce((groups, bidRequest) => {
       const { seat, region, partner } = normalizeBidParams(bidRequest.params);
       const key = `${seat}|${region}|${partner}`;
       groups[key] = groups[key] || [];

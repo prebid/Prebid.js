@@ -323,7 +323,6 @@ describe('floxisBidAdapter', function () {
       });
 
       it('should set bidfloor from getFloor and default bidfloorcur when currency is absent', function () {
-        // no currency field: priceFloors' tryGetFloor skips it, so the adapter fallback fires
         const bidNoCurrencyFloor = {
           ...validBannerBid,
           getFloor: function () {
@@ -405,7 +404,7 @@ describe('floxisBidAdapter', function () {
     describe('First-party fallback id (user.ext.floxisId)', function () {
       const STUBBED_UUID = '11111111-1111-4111-8111-111111111111';
       const STORED_UUID = '22222222-2222-4222-8222-222222222222';
-      // ortb2.id avoids the core request processor's own generateUUID() call for req.id, so the stub's call count reflects only the floxisId logic.
+      // fixed ortb2.id keeps core's own generateUUID out of the stub's call count
       const floxisIdBidderRequest = { ...bidderRequest, ortb2: { id: 'fixed-request-id' } };
       let localStorageIsEnabledStub, cookiesAreEnabledStub;
       let getDataFromLocalStorageStub, getCookieStub;
@@ -417,8 +416,7 @@ describe('floxisBidAdapter', function () {
         cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
         getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
         getCookieStub = sinon.stub(storage, 'getCookie');
-        // Writes persist to the paired get stub (withArgs overrides blanket returns) so the
-        // adapter's read-back sees them, like a real store; strict-mode tests override these.
+        // writes feed the paired get stub so the adapter's read-back behaves like a real store
         setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (key, value) {
           getDataFromLocalStorageStub.withArgs(key).returns(value);
         });
@@ -576,7 +574,6 @@ describe('floxisBidAdapter', function () {
         requests.forEach(function (request) {
           expect(request.data.user.ext.floxisId).to.equal(STUBBED_UUID);
         });
-        // One storage round-trip for the whole auction — the per-group call site read and rewrote once per group.
         expect(localStorageIsEnabledStub.calledOnce).to.be.true;
         expect(setDataInLocalStorageStub.calledOnce).to.be.true;
         expect(setCookieStub.calledOnce).to.be.true;
