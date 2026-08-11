@@ -1,3 +1,6 @@
+import type { AuctionProperties } from '../../src/auction.ts';
+import type { AdUnitCode } from '../../src/types/common.d.ts';
+
 const TOOL_GROUP_NAME = 'Prebid.js DevTools';
 
 type JSONSchema7 = {
@@ -30,12 +33,24 @@ type DevtoolsToolDiscoveryEvent = Event & {
 };
 
 /**
+ * What this module reads from `src/auctionManager`. Spelled out rather than taken from the module
+ * itself, which has no type declarations: naming it here would leave `DevToolsDeps` untypable for
+ * anyone outside this repository.
+ */
+type AuctionManagerView = {
+  getAuctions(): { getProperties(): AuctionProperties }[];
+  getAdUnitCodes(): AdUnitCode[];
+  getAllWinningBids(): unknown[];
+  getNoBids(): unknown[];
+};
+
+/**
  * Every runtime dependency this module needs is injected through this interface
  * so that the core logic performs no direct imports of Prebid internals. The
  * `./index.ts` entry point resolves these from `src` and calls `install`.
  */
 export interface DevToolsDeps {
-  auctionManager: typeof import('../../src/auctionManager.js').auctionManager;
+  auctionManager: AuctionManagerView;
   getGlobal: typeof import('../../src/prebidGlobal.js').getGlobal;
   getBufferedTTL: typeof import('../../src/bidTTL.js').getBufferedTTL;
   getEffectiveMinBidCacheTTL: typeof import('../../src/bidTTL.js').getEffectiveMinBidCacheTTL;

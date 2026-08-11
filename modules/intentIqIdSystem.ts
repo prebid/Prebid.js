@@ -34,10 +34,13 @@ import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditio
 import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.ts';
 import { defineABTestingGroup, IntentIqABConfigSource } from '../libraries/intentIqUtils/defineABTestingGroupUtils.ts';
 import { setKeyValueOn } from '../libraries/gptUtils/gptUtils.js';
+// the augmentation below only applies where the spec is part of the program; naming a type from it
+// in this module's public interface puts it there for anyone who imports this module
+import type { UserIdConfig } from './userId/spec.ts';
 
 export type IntentIqIdSystemModuleName = 'intentIqId';
 
-export interface IntentIqIdSystemParams {
+export type IntentIqIdSystemParams = {
   /**
    * Partner ID assigned by IntentIQ. Required.
    */
@@ -149,7 +152,7 @@ export interface IntentIqIdSystemParams {
    * Partner-supplied Advertiser ID
    */
   pai?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -323,8 +326,10 @@ export function createPixelUrl(firstPartyData: any, clientHints: string, configP
 }
 
 function sendSyncRequest(allowedStorage: any, url: string, partner: number, firstPartyData: any, newUser: boolean): void {
-  const lastSyncDate: any = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
-  const lastSyncElapsedTime = Date.now() - lastSyncDate;
+  const rawLastSyncDate = readData(SYNC_KEY(partner), allowedStorage);
+  const parsedLastSyncDate = Number(rawLastSyncDate);
+  const lastSyncDate: number | null = Number.isFinite(parsedLastSyncDate) ? parsedLastSyncDate : null;
+  const lastSyncElapsedTime = lastSyncDate === null ? null : Date.now() - lastSyncDate;
 
   if (firstPartyData.isOptedOut) {
     const needToDoSync = (Date.now() - (firstPartyData?.date || firstPartyData?.sCal || Date.now())) > SYNC_REFRESH_MILL;
@@ -336,7 +341,7 @@ function sendSyncRequest(allowedStorage: any, url: string, partner: number, firs
         storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
       }
     }
-  } else if (!lastSyncDate || lastSyncElapsedTime > SYNC_REFRESH_MILL) {
+  } else if (lastSyncDate === null || (lastSyncElapsedTime !== null && lastSyncElapsedTime > SYNC_REFRESH_MILL)) {
     storeData(SYNC_KEY(partner), Date.now() + '', allowedStorage);
     ajax(url, () => {
     }, undefined, { method: 'GET', withCredentials: true });
@@ -429,8 +434,8 @@ export const intentIqIdSubmodule = {
     return value && INVALID_ID !== value ? { 'intentIqId': value } : undefined;
   },
 
-  getId(config) {
-    const configParams: IntentIqIdSystemParams = (config?.params ?? {}) as unknown as IntentIqIdSystemParams;
+  getId(config: UserIdConfig<IntentIqIdSystemModuleName>) {
+    const configParams: Partial<IntentIqIdSystemParams> = config?.params ?? {};
 
     const firePartnerCallback = (): void => {
       if (configParams.callback && !callbackFired) {

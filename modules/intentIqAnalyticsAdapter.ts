@@ -154,9 +154,24 @@ export interface IntentIqAnalyticsAdapterOptions {
   domainName?: string;
 
   /**
-   * Freeform key-value pairs appended to every report URL.
+   * Custom parameters appended to report URLs, each routed to the requests named by its
+   * `destination`.
    */
-  additionalParams?: Record<string, string | number | boolean>;
+  additionalParams?: {
+    /**
+     * Name of the parameter, sent prefixed with `agp_`.
+     */
+    parameterName: string;
+    /**
+     * Value to assign to the parameter.
+     */
+    parameterValue: string | number;
+    /**
+     * Whether to send the parameter with, in order, the sync request, the VR request and the win
+     * report. Each entry is 1 to send and 0 to omit.
+     */
+    destination: (0 | 1)[];
+  }[];
 
   /**
    * When `true`, first-party data is stored under a partner-specific key.
@@ -168,6 +183,14 @@ export interface IntentIqAnalyticsAdapterOptions {
    * reporting.
    */
   gamObjectReference?: Record<string, unknown>;
+}
+
+declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
+  interface AnalyticsProviderConfig {
+    iiqAnalytics: {
+      options: IntentIqAnalyticsAdapterOptions
+    }
+  }
 }
 
 const MODULE_NAME = 'iiqAnalytics' as const;
