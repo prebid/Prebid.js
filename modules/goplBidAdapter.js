@@ -22,7 +22,7 @@ const adSizesCalled = {};
 const bidderRequestsMap = {};
 const pageView = {};
 
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const isVideoAd = ({ adm }) => /^<\?xml|<VAST/i.test(adm || '');
 
