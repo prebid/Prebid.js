@@ -38,6 +38,9 @@ const {precompile} = require('./gulp.precompilation.js');
 
 const TEST_CHUNKS = 8;
 
+const SHARED_REPO_PATH = process.env.SHARED_REPO_PATH;
+const gradlew = './gradlew';
+
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
   'pre1api'
@@ -463,9 +466,6 @@ function startIntegServer(dev = false, useLocalTlx = false) {
 }
 
 function startDockerizedTLX() {
-  const SHARED_REPO_PATH = process.env.SHARED_REPO_PATH;
-  const gradlew = './gradlew';
-  
   console.log('Starting dockerized TLX environment...');
   const tlxDocker = spawn(gradlew, [':dockerized:up'], {
     cwd: SHARED_REPO_PATH,
@@ -475,6 +475,16 @@ function startDockerizedTLX() {
   
   tlxDocker.on('error', (err) => {
     console.error(`Failed to start dockerized TLX: ${err}`);
+  });
+
+  tlxDocker.on('close', (code) => {
+    if (code !== 0) {
+      console.error(`Dockerized TLX exited with code ${code}, skipping GenerateCreative.`);
+      return;
+    }
+    runGenerateCreative((err) => {
+      if (err) console.error(`GenerateCreative failed: ${err}`);
+    });
   });
 
   // Handle termination and cleanup
@@ -501,6 +511,29 @@ function startDockerizedTLX() {
   process.on('SIGTERM', cleanup);
   
   return tlxDocker;
+}
+
+function runGenerateCreative(done) {
+  console.log('Running GenerateCreative...');
+  const generateCreative = spawn(gradlew, [':dockerized:run'], {
+    cwd: SHARED_REPO_PATH,
+    stdio: 'inherit',
+    shell: true
+  });
+
+  generateCreative.on('error', (err) => {
+    console.error(`Failed to run GenerateCreative: ${err}`);
+    done(err);
+  });
+
+  generateCreative.on('close', (code) => {
+    if (code !== 0) {
+      done(new Error(`GenerateCreative exited with code ${code}`));
+    } else {
+      console.log('GenerateCreative completed successfully.');
+      done();
+    }
+  });
 }
 
 function startLocalServer(options = {}) {
@@ -593,7 +626,7 @@ gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', st
 gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
-gulp.task('serve-e2e-tlx-offline', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startDockerizedTLX(), () => startIntegServer(true, true), startLocalServer)));
+gulp.task('serve-e2e-tlx-offline', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startDockerizedTLX(), () => startIntegServer(true, true), () => runGenerateCreative, startLocalServer)));
 
 gulp.task('default', gulp.series('build'));
 
