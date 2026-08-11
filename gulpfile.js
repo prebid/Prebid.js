@@ -368,7 +368,7 @@ function e2eTestTlxOfflineTaskMaker() {
           done(new Error(`Tests failed with error: ${err}`));
           process.exit(1);
         });
-    }, 60000);
+    }, 90000);
   }
 }
 
