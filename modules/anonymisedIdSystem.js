@@ -29,10 +29,17 @@ export const MAX_ID_LENGTH = 100;
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
+ * Characters that cannot occur in a raw identifier, and whose presence means the value was
+ * serialised rather than written as-is - a JSON object, array, or quoted scalar. Passing such a
+ * value on would send bidders an ID that matches nothing.
+ */
+const ENCODED_VALUE_CHARS = /[\s{}[\]"']/;
+
+/**
  * The Marketing Tag writes the CUID as a plain string. Validation is deliberately loose - it
- * rejects the values that would be harmful to pass on (empty, a JSON blob left by another writer,
- * or an implausibly long one) without pinning the identifier's format, which is owned by the tag
- * and can change on a much faster release cycle than this module.
+ * rejects the values that would be harmful to pass on (empty, serialised, or implausibly long)
+ * without pinning the identifier's format, which is owned by the tag and can change on a much
+ * faster release cycle than this module.
  * @param {*} value
  * @returns {boolean}
  */
@@ -40,7 +47,7 @@ export function isValidId(value) {
   return typeof value === 'string' &&
     value.length > 0 &&
     value.length <= MAX_ID_LENGTH &&
-    !/[\s{]/.test(value);
+    !ENCODED_VALUE_CHARS.test(value);
 }
 
 export const anonymisedIdSubmodule = {
@@ -61,14 +68,21 @@ export const anonymisedIdSubmodule = {
    * read with no network call: when the tag has not written an ID yet - because it is not installed,
    * or the user is not signed in - there is simply no ID for this page view.
    * @function
+   * @param {Object} [config] this submodule's publisher configuration
    * @returns {{id: string} | undefined}
    */
-  getId() {
+  getId(config) {
+    if (config?.storage) {
+      logWarn(`${LOG_PREFIX}this module must be configured without "storage". The Anonymised Marketing Tag owns this ID and removes it on sign-out; a copy kept by Prebid.js would outlive that removal and keep sending the ID of a signed-out user.`);
+    }
+
     const stored = storage.getDataFromLocalStorage(STORAGE_KEY);
     const cuid = typeof stored === 'string' ? stored.trim() : null;
 
     if (!cuid) {
-      logWarn(`${LOG_PREFIX}no ID in localStorage["${STORAGE_KEY}"] - the Anonymised Marketing Tag must be installed on this page and the user signed in`);
+      // No ID is the expected state for a signed-out user, so this is not a warning: it is also
+      // what a reader sees when device access is denied, and it is most of the traffic.
+      logInfo(`${LOG_PREFIX}no ID in localStorage["${STORAGE_KEY}"] - the user is signed out, the Anonymised Marketing Tag is not installed on this page, or device access is not permitted`);
       return undefined;
     }
 

@@ -1,5 +1,6 @@
 import { anonymisedIdSubmodule, storage, STORAGE_KEY, MAX_ID_LENGTH } from 'modules/anonymisedIdSystem.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import * as utils from 'src/utils.js';
 
 const CUID = '01f6a483-86fa-406b-a7c2-45f6d4a89469';
 
@@ -48,6 +49,16 @@ describe('anonymisedId submodule', function () {
       expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
     });
 
+    it('rejects a JSON-stringified CUID rather than passing on its quotes', function () {
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(JSON.stringify(CUID));
+      expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
+    });
+
+    it('rejects a JSON array', function () {
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(`["${CUID}"]`);
+      expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
+    });
+
     it('rejects a value containing whitespace', function () {
       getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns('not an id');
       expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
@@ -67,6 +78,55 @@ describe('anonymisedId submodule', function () {
     it('does not pin the identifier to a UUID format', function () {
       getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns('AbC_123.456');
       expect(anonymisedIdSubmodule.getId()).to.deep.equal({ id: 'AbC_123.456' });
+    });
+
+    it('warns when the publisher configured storage, which this module must not use', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(CUID);
+
+      try {
+        const id = anonymisedIdSubmodule.getId({ storage: { type: 'html5', name: 'anonymisedId', expires: 30 } });
+        expect(id).to.deep.equal({ id: CUID });
+        expect(logWarnStub.calledWithMatch(/must be configured without "storage"/)).to.equal(true);
+      } finally {
+        logWarnStub.restore();
+      }
+    });
+
+    it('does not warn about storage when none is configured', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(CUID);
+
+      try {
+        anonymisedIdSubmodule.getId({});
+        expect(logWarnStub.called).to.equal(false);
+      } finally {
+        logWarnStub.restore();
+      }
+    });
+
+    it('does not warn when the user is simply signed out', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(null);
+
+      try {
+        expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
+        expect(logWarnStub.called).to.equal(false);
+      } finally {
+        logWarnStub.restore();
+      }
+    });
+
+    it('warns when the stored value is malformed', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns('{"cuid":"x"}');
+
+      try {
+        expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
+        expect(logWarnStub.calledWithMatch(/malformed/)).to.equal(true);
+      } finally {
+        logWarnStub.restore();
+      }
     });
   });
 
