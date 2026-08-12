@@ -33,7 +33,7 @@ type Nexx360BidParams = RequireAtLeastOne<{
   allBids?: boolean;
   customId?: string;
   bidders?: Record<string, unknown>;
-  disabledSsps?: string[]
+  disabledSsps?: string[];
 }, "tagId" | "placement">;
 
 declare module '../src/adUnits' {
