@@ -1094,6 +1094,22 @@ describe('51DegreesRtdProvider', function() {
       expect(eids[1].mm).to.equal(3);
     });
 
+    it('prefers the on-page integration over a configured resourceKey', async function() {
+      const data51 = { device: fiftyOneDegreesDevice };
+      window.fod = { complete: (cb) => cb(data51) };
+      loadExternalScriptStub.resetHistory();
+
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.false;
+      expect(reqBidsConfigObj.ortb2Fragments.global.device.make).to.equal('Apple');
+    });
+
     it('loads its own script when no integration is on the page', async function() {
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };

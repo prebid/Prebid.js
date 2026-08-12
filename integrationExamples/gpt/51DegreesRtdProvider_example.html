@@ -27,12 +27,8 @@
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script async src="../../build/dev/prebid.js"></script>
     <meta charset="utf-8">
-    <style>
-        body {
-            color: #555;
-            font-family: sans-serif;
-        }
-    </style>
+    <link rel="stylesheet" href="51DegreesRtdProvider_assets/examples-main.min.css">
+    <script src="51DegreesRtdProvider_assets/examples.min.js"></script>
     <script>
         var PREBID_TIMEOUT = 1000;
         var FAILSAFE_TIMEOUT = 3000;
@@ -159,6 +155,10 @@
                       document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
                       document.getElementById('enriched-51-eids').textContent = JSON.stringify(data.ortb2.user?.eids || [], null, 2);
                     });
+                    if (window.fodExamples && !window.fodTableBound) {
+                      window.fodTableBound = true;
+                      fodExamples.bindDeviceCallback({ targetId: 'content' });
+                    }
                   } catch (e) {
                     console.error('Error while trying to display enriched data', e);
                   }
@@ -263,11 +263,13 @@
             <li>Observe the enriched ORTB shown below: <code>device</code>, <code>device.geo</code>, and <code>user.eids</code>. Also check the console for <code>[51Degrees RTD Submodule]: reqBidsConfigObj:</code></li>
         </ol>
     </div>
+    <h3>Detected device</h3>
+    <div id="content"></div>
     <div id="enriched-51" style="display: none">
         <h3>Enriched ORTB2 device data</h3>
-        <pre id="enriched-51-data"></pre>
+        <pre id="enriched-51-data" class="b-text--code"></pre>
         <h3>user.eids</h3>
-        <pre id="enriched-51-eids"></pre>
+        <pre id="enriched-51-eids" class="b-text--code"></pre>
     </div>
 </body>
 </html>

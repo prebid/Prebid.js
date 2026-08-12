@@ -99,12 +99,8 @@
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script async src="../../build/dev/prebid.js"></script>
     <meta charset="utf-8">
-    <style>
-        body {
-            color: #555;
-            font-family: sans-serif;
-        }
-    </style>
+    <link rel="stylesheet" href="51DegreesRtdProvider_assets/examples-main.min.css">
+    <script src="51DegreesRtdProvider_assets/examples.min.js"></script>
     <script>
         var PREBID_TIMEOUT = 1000;
         var FAILSAFE_TIMEOUT = 3000;
@@ -196,6 +192,10 @@
                         document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
                         document.getElementById('enriched-51-eids').textContent = JSON.stringify(data.ortb2.user?.eids || [], null, 2);
                     });
+                    if (window.fodExamples && !window.fodTableBound) {
+                        window.fodTableBound = true;
+                        fodExamples.bindDeviceCallback({ targetId: 'content' });
+                    }
                 } catch (e) {
                     console.error('Error while trying to display enriched data', e);
                 }
@@ -235,21 +235,21 @@
 
     <form id="rk-form" style="margin-bottom: 1em; padding: 0.5em; background: #f5f5f5; border: 1px solid #ddd;">
         <label><strong>resourceKey:</strong>
-            <input type="text" id="rk-input" size="40" placeholder="paste your 51Degrees resource key">
+            <input type="text" id="rk-input" size="40" class="b-input" placeholder="paste your 51Degrees resource key">
         </label>
-        <button type="submit">Apply &amp; reload</button>
+        <button type="submit" class="b-btn">Apply &amp; reload</button>
         <small> &mdash; or pass <code>?resourceKey=...</code> in the URL.</small>
         <div style="margin-top: 0.5em;">
             <strong>PMP preference:</strong>
             <code id="pmp-pref">(none)</code>
             &mdash; <code>id.usage</code> sent on the script URL:
             <code id="pmp-id-usage">(omitted)</code>
-            <button type="button" onclick="localStorage.removeItem('__51d_pmp_pref'); location.reload();">Clear PMP preference &amp; reload</button>
+            <button type="button" class="b-btn b-btn--secondary" onclick="localStorage.removeItem('__51d_pmp_pref'); location.reload();">Clear PMP preference &amp; reload</button>
         </div>
         <div style="margin-top: 0.5em;">
             <strong>Session cache:</strong>
             <code id="session-cache-state">(empty)</code>
-            <button type="button" onclick="sessionStorage.clear(); location.reload();">Clear session cache &amp; reload</button>
+            <button type="button" class="b-btn b-btn--secondary" onclick="sessionStorage.clear(); location.reload();">Clear session cache &amp; reload</button>
             <small> &mdash; forces a fresh JSON POST to the cloud instead of replaying the cached one, so changes to <code>fodEvidence</code> take effect.</small>
         </div>
     </form>
@@ -312,11 +312,13 @@
             <li>Reload the page: the auction is enriched from the on-page integration again</li>
         </ol>
     </div>
+    <h3>Detected device</h3>
+    <div id="content"></div>
     <div id="enriched-51" style="display: none">
         <h3>Enriched ORTB2 device data</h3>
-        <pre id="enriched-51-data"></pre>
+        <pre id="enriched-51-data" class="b-text--code"></pre>
         <h3>user.eids</h3>
-        <pre id="enriched-51-eids"></pre>
+        <pre id="enriched-51-eids" class="b-text--code"></pre>
     </div>
 </body>
 </html>
