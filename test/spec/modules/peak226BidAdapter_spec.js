@@ -71,6 +71,27 @@ function nativeBid(params = { publisherId: 'pub-test', placementId: 'plc-test' }
   };
 }
 
+// A single ad unit declaring all three formats at once. Reuses the mediaTypes shapes
+// from the single-format fixtures above so the multiformat cases can't drift from them.
+function multiFormatBid(params = { publisherId: 'pub-test', placementId: 'plc-test' }) {
+  return {
+    bidder: 'peak226',
+    bidId: 'bid-multi-1',
+    adUnitCode: 'div-multi',
+    transactionId: 'tx-4',
+    auctionId: 'auc-1',
+    params,
+    mediaTypes: {
+      banner: bannerBid().mediaTypes.banner,
+      video: videoBid('outstream').mediaTypes.video,
+      native: nativeBid().mediaTypes.native,
+    },
+    // normally populated by core from mediaTypes.native ahead of buildRequests
+    nativeOrtbRequest: nativeBid().nativeOrtbRequest,
+    ortb2Imp: { ext: { gpid: '/1234/home#div-multi' } },
+  };
+}
+
 function bidderRequest(bids) {
   return {
     bidderCode: 'peak226',
@@ -111,6 +132,16 @@ describe('peak226BidAdapter', function () {
     });
     it('accepts a valid native bid', function () {
       expect(spec.isBidRequestValid(nativeBid())).to.equal(true);
+    });
+    it('accepts a multiformat (banner + video + native) bid', function () {
+      expect(spec.isBidRequestValid(multiFormatBid())).to.equal(true);
+    });
+    it('rejects a whole multiformat bid when its video block is malformed', function () {
+      // Validation is additive, not per-format: a video block missing mimes drops the
+      // entire bid, banner and native opportunities included. Asserted so the trade-off
+      // is a documented choice rather than a surprise.
+      const b = multiFormatBid(); b.mediaTypes.video.mimes = [];
+      expect(spec.isBidRequestValid(b)).to.equal(false);
     });
   });
 
@@ -176,6 +207,24 @@ describe('peak226BidAdapter', function () {
         expect(data.imp[0].native).to.exist;
       });
     }
+
+    it('sends every declared format on a single imp for a multiformat ad unit', function () {
+      // peak226 bids on any supported format: banner, video and native coexist on one
+      // imp. No preferred-format selection, no format dropped.
+      const bids = [multiFormatBid({ publisherId: 'pub-test', placementId: 'multi-atf' })];
+      const { data } = spec.buildRequests(bids, bidderRequest(bids));
+      expect(data.imp).to.have.lengthOf(1);
+      expect(data.imp[0].banner).to.exist;
+      expect(data.imp[0].tagid).to.equal('multi-atf');
+      expect(data.imp[0].ext.gpid).to.equal('/1234/home#div-multi');
+      if (FEATURES.VIDEO) {
+        expect(data.imp[0].video).to.exist;
+        expect(data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
+      }
+      if (FEATURES.NATIVE) {
+        expect(data.imp[0].native).to.exist;
+      }
+    });
 
     it('forwards user eids', function () {
       const bid = bannerBid();
@@ -275,6 +324,56 @@ describe('peak226BidAdapter', function () {
         expect(out[0].vastXml).to.equal('<VAST version="4.2"></VAST>');
       }
     });
+
+    if (FEATURES.VIDEO) {
+      it('parses banner and video bids returned against the same multiformat imp', function () {
+        // The response side of "bid on any supported format": two bids share one impid
+        // and are disambiguated purely by mtype.
+        const bids = [multiFormatBid()];
+        const request = build(bids);
+        const response = {
+          body: {
+            id: 'breq-1',
+            cur: 'USD',
+            seatbid: [{
+              seat: 'peak226',
+              bid: [
+                {
+                  impid: 'bid-multi-1',
+                  price: 2.5,
+                  crid: 'cr-b',
+                  adomain: ['acme.com'],
+                  w: 300,
+                  h: 250,
+                  adm: '<div>ad</div>',
+                  mtype: 1,
+                },
+                {
+                  impid: 'bid-multi-1',
+                  price: 8.5,
+                  crid: 'cr-v',
+                  adomain: ['brand.com'],
+                  w: 640,
+                  h: 480,
+                  adm: '<VAST version="4.2"></VAST>',
+                  mtype: 2,
+                },
+              ],
+            }],
+          },
+        };
+        const out = spec.interpretResponse(response, request);
+        expect(out).to.have.lengthOf(2);
+        expect(out.map((b) => b.mediaType)).to.have.members([BANNER, VIDEO]);
+        const banner = out.find((b) => b.mediaType === BANNER);
+        const video = out.find((b) => b.mediaType === VIDEO);
+        expect(banner.cpm).to.equal(2.5);
+        expect(banner.creativeId).to.equal('cr-b');
+        expect(video.cpm).to.equal(8.5);
+        expect(video.creativeId).to.equal('cr-v');
+        expect(video.vastXml).to.equal('<VAST version="4.2"></VAST>');
+      });
+    }
 
     if (FEATURES.NATIVE) {
       it('parses a native bid', function () {

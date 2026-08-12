@@ -12,7 +12,7 @@ floors_supported: true
 media_types: banner, video, native
 gvl_id: 1202
 pbjs: true
-pbs: false
+pbs: true
 ---
 
 ### Overview
@@ -110,6 +110,10 @@ var adUnits = [{
 - **First-party data, floors, eids, schain and consent** are handled by
   `ortbConverter` automatically from the ad unit and `ortb2` — no extra
   params required.
+- **Multiformat ad units** are fully supported: banner, video and native may be declared
+  on the same ad unit, all declared formats are sent on a single impression, and peak226
+  may bid on any of them. Note that a multiformat unit including `video` must still supply
+  `mimes` and a player size, or the whole bid — banner and native included — is dropped.
 - **User sync** is not yet implemented; it will be added once sync support
   (pixel/iframe) and the sync URL(s) are confirmed.
 - Bid responses are net revenue; default TTL is 300s.
