@@ -749,6 +749,7 @@ const init = (config, userConsent) => {
 // 51Degrees RTD submodule object to be registered
 export const fiftyOneDegreesSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/51DegreesRtdProvider.json',
   init,
   getBidRequestData,
 };
