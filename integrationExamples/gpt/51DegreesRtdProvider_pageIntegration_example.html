@@ -69,6 +69,19 @@
             document.write('<script src="' + scriptURL + '"><\/script>');
         }
 
+        // A reload alone answers to the new preference only if the script is
+        // made to ask the cloud again: on a cache hit it skips the POST and
+        // replays the response the previous preference produced. This mirrors
+        // dropCachedResponseOnConsentChange() in the module - dropping the one
+        // gating entry is enough, the per-property flags are inert without it.
+        function clearFodSessionCache() {
+            try {
+                sessionStorage.removeItem('fod');
+            } catch (e) {
+                // Storage unavailable; a stale cache is better than a failure.
+            }
+        }
+
         // The script URL above is fixed at parse time, so a preference chosen
         // after that point cannot reach the cloud on this pageview - only a
         // reload can. PMP invokes data-action-url on every load, not just when
@@ -77,6 +90,7 @@
         // with and reload only when it actually changed.
         function onPmpAction() {
             if (resolveIdUsage() !== ID_USAGE) {
+                clearFodSessionCache();
                 location.reload();
             }
         }
@@ -277,7 +291,7 @@
             <code id="pmp-pref">(none)</code>
             &mdash; <code>id.usage</code> sent on the script URL:
             <code id="pmp-id-usage">(omitted)</code>
-            <button type="button" class="b-btn b-btn--secondary" onclick="localStorage.removeItem('__51d_pmp_pref'); location.reload();">Clear PMP preference &amp; reload</button>
+            <button type="button" class="b-btn b-btn--secondary" onclick="localStorage.removeItem('__51d_pmp_pref'); clearFodSessionCache(); location.reload();">Clear PMP preference &amp; reload</button>
         </div>
         <div style="margin-top: 0.5em;">
             <strong>Session cache:</strong>
