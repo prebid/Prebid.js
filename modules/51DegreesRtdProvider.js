@@ -541,6 +541,22 @@ export const getPageFod = () => {
   return (fod && typeof fod.complete === 'function') ? fod : null;
 };
 
+/**
+ * Returns errors reported by an on-page 51Degrees script, if any.
+ *
+ * A failed script request still assigns window.fod, but with only an `errors`
+ * array and no complete() method, so getPageFod() correctly reports no usable
+ * integration. Surfacing these errors keeps that failure attributable: without
+ * them the caller falls through to the configuration check and reports a
+ * missing resourceKey, which is not the actual problem.
+ *
+ * @returns {string[]|null}
+ */
+export const getPageFodErrors = () => {
+  const errors = window.fod && window.fod.errors;
+  return (Array.isArray(errors) && errors.length) ? errors : null;
+};
+
 // The fod object created by this module's own script load.
 let ownFod = null;
 
@@ -605,6 +621,11 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       logMessage('Using on-page 51Degrees integration (window.fod)');
       pageFod.complete(onData);
       return;
+    }
+
+    const pageFodErrors = getPageFodErrors();
+    if (pageFodErrors) {
+      logError('On-page 51Degrees script reported errors: ' + pageFodErrors.join('; '));
     }
 
     const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj);

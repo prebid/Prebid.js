@@ -11,6 +11,7 @@ import {
   resolveTcString,
   resolveGpp,
   getBidRequestData,
+  getPageFodErrors,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
 import { mergeDeep } from '../../../src/utils.js';
@@ -930,6 +931,34 @@ describe('51DegreesRtdProvider', function() {
     });
   });
 
+  describe('getPageFodErrors', function() {
+    afterEach(function() {
+      delete window.fod;
+    });
+
+    it('returns null when window.fod is absent', function() {
+      delete window.fod;
+      expect(getPageFodErrors()).to.be.null;
+    });
+
+    it('returns null for a working on-page integration', function() {
+      window.fod = { complete: () => {} };
+      expect(getPageFodErrors()).to.be.null;
+    });
+
+    it('returns null for an empty errors array', function() {
+      window.fod = { errors: [] };
+      expect(getPageFodErrors()).to.be.null;
+    });
+
+    it('returns the errors reported by a failed script load', function() {
+      // What the cloud actually serves on a 403: an errors-only fod object
+      // with no complete() method.
+      window.fod = { errors: ["The resource key 'BAD_KEY' could not be found."] };
+      expect(getPageFodErrors()).to.deep.equal(["The resource key 'BAD_KEY' could not be found."]);
+    });
+  });
+
   describe('getBidRequestData', function() {
     let initialHeadInnerHTML;
     let reqBidsConfigObj = {};
@@ -973,6 +1002,13 @@ describe('51DegreesRtdProvider', function() {
       const callback = sinon.spy();
       const moduleConfig = { params: {} };
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when the on-page script failed and left only errors', function() {
+      window.fod = { errors: ['The resource key could not be found.'] };
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       expect(callback.calledOnce).to.be.true;
     });
 

@@ -54,6 +54,12 @@
         window.fodEvidence = window.fodEvidence || {};
         window.fodEvidence['id.email'] = 'test@example.com';
 
+        // Publisher-supplied salt (URL-safe base64) mixed into the Hashed Email
+        // 51Did, so the same address yields a different id per publisher.
+        // Optional: without it the cloud falls back to its own server-side salt. 
+        // Changing it changes every Hashed Email 51Did derived from it.
+        window.fodEvidence['id.salt'] = 'YWI=';
+
         if (RESOURCE_KEY) {
             var ID_USAGE = resolveIdUsage();
             var scriptURL = CLOUD_ORIGIN + '/api/v4/' + RESOURCE_KEY + '.js';
@@ -232,6 +238,38 @@
 </head>
 <body>
     <h2>51Degrees RTD submodule - on-page integration example</h2>
+
+    <div id="fod-error" style="display: none; margin-bottom: 1em; padding: 0.5em; background: #fdd; border: 1px solid #c00; color: #900;"></div>
+    <script>
+        // A failed script request (unknown resource key, expired licence) still
+        // defines window.fod, but with only an `errors` array and no complete()
+        // method. Left unreported that looks identical to "no on-page
+        // integration", and the RTD module then fails downstream complaining
+        // about a missing resourceKey - two steps away from the real cause.
+        (function () {
+            var box = document.getElementById('fod-error');
+            var errors = window.fod && window.fod.errors;
+            if (Array.isArray(errors) && errors.length) {
+                box.innerHTML = '<strong>51Degrees script reported errors:</strong>';
+                var list = document.createElement('ul');
+                errors.forEach(function (e) {
+                    var li = document.createElement('li');
+                    li.textContent = e;
+                    list.appendChild(li);
+                });
+                box.appendChild(list);
+                box.style.display = 'block';
+            } else if (RESOURCE_KEY && !(window.fod && typeof window.fod.complete === 'function')) {
+                box.textContent = 'The 51Degrees script did not load: window.fod is missing or has no complete() method. ' +
+                    'Check the Network tab for the request to ' + CLOUD_ORIGIN + '.';
+                box.style.display = 'block';
+            } else if (!RESOURCE_KEY) {
+                box.textContent = 'No resource key set - pass ?resourceKey=... or use the form below. ' +
+                    'Without it the page includes no 51Degrees script, and the RTD module has nothing to consume.';
+                box.style.display = 'block';
+            }
+        })();
+    </script>
 
     <form id="rk-form" style="margin-bottom: 1em; padding: 0.5em; background: #f5f5f5; border: 1px solid #ddd;">
         <label><strong>resourceKey:</strong>
