@@ -11,6 +11,7 @@ import {
   resolveTcString,
   resolveGpp,
   getBidRequestData,
+  getHighEntropyValues,
   getPageFodErrors,
   storageManager,
   fiftyOneDegreesSubmodule,
@@ -354,6 +355,27 @@ describe('51DegreesRtdProvider', function() {
       expect(url).to.include('id.usage=standard');
       expect(url).to.include('tcstring=CONSENTX');
       expect(url).to.include('gppstring=GPPX');
+    });
+  });
+
+  describe('getHighEntropyValues', function() {
+    it('resolves to undefined when the browser supplies no high entropy values', async function() {
+      // The accessor caches its promise per hints key for the life of the
+      // module, so a key no other test uses is the only way to reach the
+      // request. A browser without userAgentData takes the same path already.
+      const uaData = window.navigator.userAgentData;
+      // Stub the prototype: the module captured its own reference to
+      // navigator.userAgentData when it loaded, so stubbing the instance the
+      // test can see does not necessarily reach the one the module holds.
+      const stub = uaData && sinon.stub(Object.getPrototypeOf(uaData), 'getHighEntropyValues').resolves({});
+
+      try {
+        expect(await getHighEntropyValues(['noSuchHint'])).to.be.undefined;
+      } finally {
+        if (stub) {
+          stub.restore();
+        }
+      }
     });
   });
 
@@ -1205,6 +1227,63 @@ describe('51DegreesRtdProvider', function() {
         getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'SECOND' } });
         await new Promise(resolve => setTimeout(resolve, 100));
         expect(removeStub.calledOnceWith('fod'), 'changed consent must drop the cached response').to.be.true;
+      } finally {
+        removeStub.restore();
+      }
+    });
+
+    it('calls the callback when its own script leaves an fod with neither complete() nor errors', async function() {
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        window.fod = {};
+        callback.success();
+        return document.createElement('script');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when injecting the script throws', async function() {
+      loadExternalScriptStub.callsFake(() => {
+        throw new Error('injection blew up');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when the conversion throws', async function() {
+      const callback = sinon.spy();
+      // No ortb2Fragments, so the merge throws once the data arrives. The
+      // auction has to proceed unenriched rather than stall.
+      getBidRequestData({}, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when dropping the cached response throws', async function() {
+      const moduleConfig = { params: { resourceKey: 'KEY' } };
+      const removeStub = sinon.stub(storageManager, 'removeDataFromSessionStorage')
+        .throws(new Error('session storage unavailable'));
+
+      try {
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'BEFORE' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        resetReqBidsConfigObj();
+        const callback = sinon.spy();
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, { gdpr: { consentString: 'AFTER' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        expect(removeStub.called).to.be.true;
+        expect(callback.calledOnce).to.be.true;
       } finally {
         removeStub.restore();
       }
