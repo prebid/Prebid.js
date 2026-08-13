@@ -24,6 +24,8 @@ When 51DiD is available, the module appends one `user.eids` entry per identifier
 
 The module forwards the publisher's consent strings to the cloud as evidence when present. The TCF consent string (from Prebid's GDPR consent) is sent as `tcstring` and the GPP string (from Prebid's GPP consent) is sent as `gppstring`; the cloud can infer the marketing usage preference from either when PMP is not present, so 51DiD works for publishers running any TCF or GPP CMP. These come from Prebid's consent data, not module params.
 
+When the consent evidence changes mid-session, the module reloads its own script so the new strings reach the cloud, and removes the `fod` entry the 51Degrees script keeps in session storage. That entry is the script's cached cloud response, and it is keyed on nothing but the script's object name, so without removing it the reloaded script would replay the response the previous consent produced and take its values in preference to the fresh ones. The module writes nothing to session storage and removes only that one key, and only on a consent change; where session storage is not permitted the removal is skipped and the cached response stands. This does not apply to the on-page integration mode below, where the module does not own the script.
+
 ### On-page integration
 
 When the page already runs its own 51Degrees integration, the module detects it automatically (the integration's `window.fod` object) and consumes its result instead of loading a second copy of the script. No module params are needed in this mode:
@@ -51,8 +53,8 @@ Two limitations follow from consuming the page integration directly:
 
 Publisher requirements:
 
-- Load the 51Degrees script synchronously, before Prebid runs the auction.
-- Keep the default object name (`fod`); a renamed object is not detected.
+- Load the 51Degrees script **synchronously**, before Prebid runs the auction. Do not use `async` or `defer` on the script tag, and do not inject it from a later-running script. Detection is a point-in-time check for `window.fod` at auction time: if the integration has not executed by then, the module does not see it and falls back to its configured behaviour. With `resourceKey` set that means loading a second copy of the script, which is both an extra billable request and a second integration racing the page's own for `window.fod`; with no `resourceKey` set the auction is simply not enriched and the module logs a missing-parameter error that does not point at the real cause.
+- Keep the default object name (`fod`); the module reads `window.fod`, so an integration configured to publish under a different object name is not detected.
 - Identifiers that require additional evidence are configured on the 51Degrees integration itself; see the [51Degrees documentation](https://51degrees.com/documentation/index.html).
 
 The module supports on-premise and cloud device detection services, with free options for both.

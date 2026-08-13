@@ -479,7 +479,7 @@ const PMP_SCHEMA_VERSION = 1;
 
 // Storage manager scoped to this RTD module. Required by Prebid's storage
 // activity rules and the no-restricted-globals lint.
-const storageManager = getStorageManager({
+export const storageManager = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
 });
@@ -560,6 +560,46 @@ export const getPageFodErrors = () => {
 // The fod object created by this module's own script load.
 let ownFod = null;
 
+// The 51Degrees script caches its cloud response in session storage under its
+// object name, and that key carries nothing from the evidence that produced the
+// response. On a cache hit the script skips the request altogether and its
+// cached values take precedence over the ones rendered into the script that was
+// just loaded, so a consent change reaches the cloud in the script URL only to
+// be overwritten by what the previous consent produced. Every cached read is
+// gated on this one entry, so dropping it is enough to force a fresh request;
+// the per-property flags left behind are inert without it. The proper fix is to
+// tie the cache to its evidence in the script itself: 51Degrees/javascript-templates#21.
+const FOD_SESSION_CACHE_KEY = 'fod';
+
+// Consent evidence this module's last own script load was made under.
+let lastConsentEvidence = null;
+
+/**
+ * Drops the 51Degrees script's cached response when the consent evidence has
+ * changed since this module last loaded its own script, so that the reload
+ * answers to the new consent rather than replaying the old one.
+ *
+ * Does nothing on the first load or when the evidence is unchanged, and is a
+ * no-op when session storage is not permitted: a stale cache is a better
+ * outcome than a failed auction.
+ *
+ * @param {Object} evidence Consent evidence for the load about to happen
+ */
+const dropCachedResponseOnConsentChange = (evidence) => {
+  const current = JSON.stringify(evidence);
+  const previous = lastConsentEvidence;
+  lastConsentEvidence = current;
+  if (previous === null || previous === current) {
+    return;
+  }
+  try {
+    storageManager.removeDataFromSessionStorage(FOD_SESSION_CACHE_KEY);
+    logMessage('Consent evidence changed; dropped the cached 51Degrees response');
+  } catch (e) {
+    logError(e);
+  }
+};
+
 /**
  * Converts 51Degrees data and merges it into the ORTB2 fragments.
  *
@@ -627,6 +667,10 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     if (pageFodErrors) {
       logError('On-page 51Degrees script reported errors: ' + pageFodErrors.join('; '));
     }
+
+    // Only the module's own load reaches here, and only it can be re-made under
+    // the new consent, so the cache is dropped on this path alone.
+    dropCachedResponseOnConsentChange({ idUsage, tcString, gpp });
 
     const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj);
     logMessage('Resource key: ', resourceKey);

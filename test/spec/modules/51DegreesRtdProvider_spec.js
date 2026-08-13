@@ -12,6 +12,7 @@ import {
   resolveGpp,
   getBidRequestData,
   getPageFodErrors,
+  storageManager,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
 import { mergeDeep } from '../../../src/utils.js';
@@ -1181,6 +1182,32 @@ describe('51DegreesRtdProvider', function() {
       expect(callback2.calledOnce).to.be.true;
       // The reload is only useful if the new consent actually reaches the cloud.
       expect(loadExternalScriptStub.secondCall.args[0]).to.include('tcstring=NEWTC');
+    });
+
+    it('drops the cached 51Degrees response only when consent changes', async function() {
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+      const removeStub = sinon.stub(storageManager, 'removeDataFromSessionStorage');
+
+      try {
+        // The first call establishes the baseline. Which consent it carries does
+        // not matter, and asserting on it would depend on state left by earlier
+        // tests, so the assertions start from the calls after it.
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'FIRST' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        removeStub.resetHistory();
+
+        resetReqBidsConfigObj();
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'FIRST' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(removeStub.called, 'unchanged consent must leave the cache alone').to.be.false;
+
+        resetReqBidsConfigObj();
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'SECOND' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(removeStub.calledOnceWith('fod'), 'changed consent must drop the cached response').to.be.true;
+      } finally {
+        removeStub.restore();
+      }
     });
 
     it('calls the callback when its own script leaves an fod without complete()', async function() {
