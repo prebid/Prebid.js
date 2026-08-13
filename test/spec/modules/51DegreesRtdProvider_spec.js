@@ -983,8 +983,12 @@ describe('51DegreesRtdProvider', function() {
       // in the stub to make the script path behave like a real load.
       loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
         window.fod = { complete: (cb) => cb(fiftyOneDegreesData) };
+        // Mirror adloader's runCallback: a bare function is the success
+        // callback, the object form gets success() or error().
         if (typeof callback === 'function') {
           callback();
+        } else {
+          callback?.success?.();
         }
         return document.createElement('script');
       });
@@ -1175,6 +1179,48 @@ describe('51DegreesRtdProvider', function() {
 
       expect(loadExternalScriptStub.calledTwice).to.be.true;
       expect(callback2.calledOnce).to.be.true;
+      // The reload is only useful if the new consent actually reaches the cloud.
+      expect(loadExternalScriptStub.secondCall.args[0]).to.include('tcstring=NEWTC');
+    });
+
+    it('calls the callback when its own script leaves an fod without complete()', async function() {
+      // What the cloud serves for a rejected resource key: a script body that
+      // defines fod.errors and nothing else.
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        window.fod = { errors: ["The resource key 'BAD' could not be found."] };
+        callback.success();
+        return document.createElement('script');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'BAD' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when its own script fails to load', async function() {
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        callback.error(new Error('network'));
+        return document.createElement('script');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when activity controls deny the script load', async function() {
+      // A denied load returns undefined and invokes neither callback.
+      loadExternalScriptStub.callsFake(() => undefined);
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
     });
   });
 
