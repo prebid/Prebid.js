@@ -254,6 +254,11 @@ export const convert51DegreesDataToOrtb2 = (data51, options = {}) => {
   return ortb2Data;
 };
 
+// The payload can come from an on-page integration the module does not
+// control, so only values of the expected primitive type are merged.
+const asString = (value) => (typeof value === 'string' && value.length > 0) ? value : undefined;
+const asNumber = (value) => (typeof value === 'number' && isFinite(value)) ? value : undefined;
+
 /**
  * Converts 51Degrees device data to ORTB2 format
  *
@@ -285,32 +290,32 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   }
 
   const deviceModel =
-    device.hardwarenameprefix ||
-    device.hardwaremodel || (
-      device.hardwarename && device.hardwarename.length
+    asString(device.hardwarenameprefix) ||
+    asString(device.hardwaremodel) || (
+      Array.isArray(device.hardwarename) && device.hardwarename.length
         ? device.hardwarename.join(',')
         : null
     );
 
-  const devicePhysicalPPI = device.screenpixelsphysicalheight && device.screeninchesheight
+  const devicePhysicalPPI = asNumber(device.screenpixelsphysicalheight) && asNumber(device.screeninchesheight)
     ? Math.round(device.screenpixelsphysicalheight / device.screeninchesheight)
     : null;
 
-  const devicePPI = device.screenpixelsheight && device.screeninchesheight
+  const devicePPI = asNumber(device.screenpixelsheight) && asNumber(device.screeninchesheight)
     ? Math.round(device.screenpixelsheight / device.screeninchesheight)
     : null;
 
   deepSetNotEmptyValue(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype));
-  deepSetNotEmptyValue(ortb2Device, 'make', device.hardwarevendor);
+  deepSetNotEmptyValue(ortb2Device, 'make', asString(device.hardwarevendor));
   deepSetNotEmptyValue(ortb2Device, 'model', deviceModel);
-  deepSetNotEmptyValue(ortb2Device, 'hwv', device.hardwarenameversion);
-  deepSetNotEmptyValue(ortb2Device, 'os', device.platformname);
-  deepSetNotEmptyValue(ortb2Device, 'osv', device.platformversion);
-  deepSetNotEmptyValue(ortb2Device, 'h', device.screenpixelsphysicalheight || device.screenpixelsheight);
-  deepSetNotEmptyValue(ortb2Device, 'w', device.screenpixelsphysicalwidth || device.screenpixelswidth);
-  deepSetNotEmptyValue(ortb2Device, 'pxratio', device.pixelratio);
+  deepSetNotEmptyValue(ortb2Device, 'hwv', asString(device.hardwarenameversion));
+  deepSetNotEmptyValue(ortb2Device, 'os', asString(device.platformname));
+  deepSetNotEmptyValue(ortb2Device, 'osv', asString(device.platformversion));
+  deepSetNotEmptyValue(ortb2Device, 'h', asNumber(device.screenpixelsphysicalheight) || asNumber(device.screenpixelsheight));
+  deepSetNotEmptyValue(ortb2Device, 'w', asNumber(device.screenpixelsphysicalwidth) || asNumber(device.screenpixelswidth));
+  deepSetNotEmptyValue(ortb2Device, 'pxratio', asNumber(device.pixelratio));
   deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI);
-  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', device.deviceid);
+  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', asString(device.deviceid));
   if (['True', 'False'].includes(device.thirdpartycookiesenabled)) {
     deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0);
   }
@@ -343,8 +348,8 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
   }
 
   // device.ip / device.ipv6 are not gated on confidence.
-  deepSetNotEmptyValue(ortb2, 'device.ip', ip.ip);
-  deepSetNotEmptyValue(ortb2, 'device.ipv6', ip.ipv6);
+  deepSetNotEmptyValue(ortb2, 'device.ip', asString(ip.ip));
+  deepSetNotEmptyValue(ortb2, 'device.ipv6', asString(ip.ipv6));
 
   const confidence = typeof ip.locationconfidence === 'string'
     ? ip.locationconfidence.toLowerCase()
@@ -366,17 +371,16 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
     }
   };
 
-  setIfDefined('device.geo.lat', ip.latitude);
-  setIfDefined('device.geo.lon', ip.longitude);
-  deepSetNotEmptyValue(ortb2, 'device.geo.country', ip.countrycode3);
-  deepSetNotEmptyValue(ortb2, 'device.geo.region', ip.iso31662lvl4);
-  deepSetNotEmptyValue(ortb2, 'device.geo.zip', ip.zipcode);
-  setIfDefined('device.geo.utcoffset', ip.timezoneoffset);
+  setIfDefined('device.geo.lat', asNumber(ip.latitude));
+  setIfDefined('device.geo.lon', asNumber(ip.longitude));
+  deepSetNotEmptyValue(ortb2, 'device.geo.country', asString(ip.countrycode3));
+  deepSetNotEmptyValue(ortb2, 'device.geo.region', asString(ip.iso31662lvl4));
+  deepSetNotEmptyValue(ortb2, 'device.geo.zip', asString(ip.zipcode));
+  setIfDefined('device.geo.utcoffset', asNumber(ip.timezoneoffset));
+  const accuracyKm = asNumber(ip.accuracyradiusmin);
   setIfDefined(
     'device.geo.accuracy',
-    ip.accuracyradiusmin === null || ip.accuracyradiusmin === undefined
-      ? undefined
-      : ip.accuracyradiusmin * 1000,
+    accuracyKm === undefined ? undefined : accuracyKm * 1000,
   );
 
   // Only stamp type+ipservice if at least one geo.* field actually landed.
@@ -437,7 +441,7 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
   const byMm = new Map();
   Object.keys(FODID_EID).forEach((prop) => {
     const value = fodid[prop];
-    if (!value) {
+    if (!value || typeof value !== 'string') {
       return;
     }
     const { mm, atype } = FODID_EID[prop];
@@ -528,25 +532,105 @@ export const resolveGpp = (userConsent) => {
 };
 
 /**
+ * Returns the on-page 51Degrees integration object, if present.
+ *
+ * @returns {Object|null}
+ */
+export const getPageFod = () => {
+  const fod = window.fod;
+  return (fod && typeof fod.complete === 'function') ? fod : null;
+};
+
+/**
+ * Returns errors reported by an on-page 51Degrees script, if any.
+ *
+ * A failed script request still assigns window.fod, but with only an `errors`
+ * array and no complete() method, so getPageFod() correctly reports no usable
+ * integration. Surfacing these errors keeps that failure attributable: without
+ * them the caller falls through to the configuration check and reports a
+ * missing resourceKey, which is not the actual problem.
+ *
+ * @returns {string[]|null}
+ */
+export const getPageFodErrors = () => {
+  const errors = window.fod && window.fod.errors;
+  return (Array.isArray(errors) && errors.length) ? errors : null;
+};
+
+// The fod object created by this module's own script load.
+let ownFod = null;
+
+/**
+ * Converts 51Degrees data and merges it into the ORTB2 fragments.
+ *
+ * @param {Object} data Raw 51Degrees response payload
+ * @param {Object} reqBidsConfigObj Bid request configuration object
+ * @param {string} [tdlUrl] TDL URL passed from module config
+ * @param {Function} callback Called on completion
+ */
+const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
+  try {
+    logMessage('51Degrees raw data: ', data);
+    const global = reqBidsConfigObj.ortb2Fragments.global;
+    const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
+    // Don't clobber a publisher-observed device.ip / device.ipv6 with
+    // our IP-derived value. Publisher signal wins.
+    if (enrichment.device) {
+      if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
+      if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+    }
+    mergeDeep(global, enrichment);
+    logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
+  } catch (e) {
+    logError(e);
+  }
+  callback();
+};
+
+/**
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} callback Called on completion
  * @param {Object} moduleConfig Configuration for 1plusX RTD module
  * @param {Object} userConsent
  */
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
+  let callbackCalled = false;
+  const callbackOnce = () => {
+    if (!callbackCalled) {
+      callbackCalled = true;
+      callback();
+    }
+  };
   try {
-    // Get the required config
+    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
+    const idUsage = resolveIdUsage(moduleConfig);
+    const tcString = resolveTcString(userConsent);
+    const gpp = resolveGpp(userConsent);
+    logMessage('Resolved id.usage: ', idUsage);
+    logMessage('TCF consent string present: ', !!tcString);
+    logMessage('GPP string present: ', !!gpp);
+
+    const onData = (data) => {
+      if (!callbackCalled) {
+        enrichFromData(data, reqBidsConfigObj, tdlUrl, callbackOnce);
+      }
+    };
+
+    const pageFod = getPageFod();
+    if (pageFod && pageFod !== ownFod) {
+      logMessage('Using on-page 51Degrees integration (window.fod)');
+      pageFod.complete(onData);
+      return;
+    }
+
+    const pageFodErrors = getPageFodErrors();
+    if (pageFodErrors) {
+      logError('On-page 51Degrees script reported errors: ' + pageFodErrors.join('; '));
+    }
+
     const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj);
     logMessage('Resource key: ', resourceKey);
     logMessage('On-premise JS URL: ', onPremiseJSUrl);
-
-    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
-    const idUsage = resolveIdUsage(moduleConfig);
-    logMessage('Resolved id.usage: ', idUsage);
-    const tcString = resolveTcString(userConsent);
-    const gpp = resolveGpp(userConsent);
-    logMessage('TCF consent string present: ', !!tcString);
-    logMessage('GPP string present: ', !!gpp);
 
     // Check if 51Degrees meta is present (cloud only)
     if (resourceKey) {
@@ -561,31 +645,50 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       const scriptURL = get51DegreesJSURL({ resourceKey, onPremiseJSUrl, hev, idUsage, tcString, gpp });
       logMessage('URL of the script to be injected: ', scriptURL);
 
-      // Inject 51Degrees script, get device data and merge it into the ORTB2 object
-      loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, () => {
-        logMessage('Successfully injected 51Degrees script');
-        const fod = /** @type {Object} */ (window.fod);
-        // Convert and merge device data in the callback
-        fod.complete((data) => {
-          logMessage('51Degrees raw data: ', data);
-          const global = reqBidsConfigObj.ortb2Fragments.global;
-          const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
-          // Don't clobber a publisher-observed device.ip / device.ipv6 with
-          // our IP-derived value. Publisher signal wins.
-          if (enrichment.device) {
-            if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
-            if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+      // Inject 51Degrees script, get device data and merge it into the ORTB2 object.
+      // Every branch below has to reach callbackOnce: a callback the module never
+      // invokes stalls the auction for the whole auctionDelay, with nothing in the
+      // log to attribute it to this module.
+      const tag = loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, {
+        success: () => {
+          logMessage('Successfully injected 51Degrees script');
+          const fod = /** @type {Object} */ (window.fod);
+          // A rejected request (unknown resource key, expired licence) still
+          // serves a script body, but one that defines only fod.errors. Calling
+          // complete() on it throws inside the loader, which swallows the error.
+          if (!fod || typeof fod.complete !== 'function') {
+            const errors = getPageFodErrors();
+            logError('Injected 51Degrees script did not provide a usable fod object' +
+              (errors ? ': ' + errors.join('; ') : ''));
+            callbackOnce();
+            return;
           }
-          mergeDeep(global, enrichment);
-          logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
-          callback();
-        });
+          ownFod = fod;
+          // Convert and merge device data in the callback
+          fod.complete(onData);
+        },
+        // Blocked, offline, or a non-200 response. Only the object form of the
+        // callback gets told about this; a bare function is called on success only.
+        error: (e) => {
+          logError('Failed to load the 51Degrees script: ', e);
+          callbackOnce();
+        },
       }, document, { crossOrigin: 'anonymous' });
+
+      // loadExternalScript returns nothing when activity controls deny the load,
+      // and in that case neither callback ever runs.
+      if (!tag) {
+        logError('Loading the 51Degrees script was not allowed');
+        callbackOnce();
+      }
+    }).catch((error) => {
+      logError(error);
+      callbackOnce();
     });
   } catch (error) {
     // In case of an error, log it and continue
     logError(error);
-    callback();
+    callbackOnce();
   }
 };
 

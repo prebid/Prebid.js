@@ -20,9 +20,40 @@ When 51Degrees IPI is available in the cloud response, the module sets `device.i
 
 [51DiD](https://51degrees.com/documentation/4.5/_identifiers_51_did.html) is a 51Degrees privacy-safe identifier derived from device signals. Its production requires a marketing usage preference (`id.usage`). The recommended way to collect and store that preference is the [51Degrees Preference Management Platform (PMP)](https://51degrees.com/documentation/4.5/_identifiers__p_m_p.html) — a lightweight consent widget that writes the user's choice to `localStorage`. When PMP is present on the page the module picks up that preference automatically. When PMP is absent the module falls back to inferring the preference from the publisher's existing TCF or GPP consent string (see below).
 
-When 51DiD is available, the module appends one `user.eids` entry per identifier type returned by the cloud, each with `source = "51d.es"` and `inserter = "51degrees.com"`. The match method (`mm`) is an eid-level field set per type: Probabilistic is `mm = 5` (inference), Random is `mm = 0` (unknown), and Hashed Email is `mm = 3` (authenticated). A type's license and global values share its entry as `uids` (license value first), carrying `atype = 1` for the device or browser-tied Probabilistic and Random values and `atype = 3` for the person-based Hashed Email. The `ext.tdl` URL comes from the `params.tdlUrl` module config and is added to every entry. Random and Hashed Email appear only when the resource key includes those properties, and Hashed Email additionally requires an email and salt as evidence.
+When 51DiD is available, the module appends one `user.eids` entry per identifier type returned by the cloud, each with `source = "51d.es"` and `inserter = "51degrees.com"`. The match method (`mm`) is an eid-level field set per type: Probabilistic is `mm = 5` (inference), Random is `mm = 0` (unknown), and Hashed Email is `mm = 3` (authenticated). A type's license and global values share its entry as `uids` (license value first), carrying `atype = 1` for the device or browser-tied Probabilistic and Random values and `atype = 3` for the person-based Hashed Email. The `ext.tdl` URL comes from the `params.tdlUrl` module config and is added to every entry. Random and Hashed Email appear only when the resource key includes those properties, and Hashed Email additionally requires evidence that is supplied to the 51Degrees integration itself (see the On-page integration section).
 
 The module forwards the publisher's consent strings to the cloud as evidence when present. The TCF consent string (from Prebid's GDPR consent) is sent as `tcstring` and the GPP string (from Prebid's GPP consent) is sent as `gppstring`; the cloud can infer the marketing usage preference from either when PMP is not present, so 51DiD works for publishers running any TCF or GPP CMP. These come from Prebid's consent data, not module params.
+
+### On-page integration
+
+When the page already runs its own 51Degrees integration, the module detects it automatically (the integration's `window.fod` object) and consumes its result instead of loading a second copy of the script. No module params are needed in this mode:
+
+```javascript
+pbjs.setConfig({
+    realTimeData: {
+        auctionDelay: 250,
+        dataProviders: [
+            {
+                name: '51Degrees',
+                waitForIt: true,
+            },
+        ],
+    },
+});
+```
+
+In this mode the module converts the integration's payload and enriches the ORTB2 request; `tdlUrl` is still honoured. The module sends nothing to the cloud itself, so the integration's script URL must carry the same parameters the module would send: `id.usage` (or the `tcstring` / `gppstring` consent strings) and any client-hint parameters. When an integration is present on the page, the module uses it even if `resourceKey` is configured.
+
+Two limitations follow from consuming the page integration directly:
+
+- A consent change during the session does not re-run the page integration. Its payload reflects the consent state it was loaded under; the new preference takes effect from the next page load.
+- If the integration never completes, the module never calls back and the auction proceeds only after the configured `auctionDelay`. The module does not fall back to loading its own script while `window.fod` is present, because two integrations on one page would conflict.
+
+Publisher requirements:
+
+- Load the 51Degrees script synchronously, before Prebid runs the auction.
+- Keep the default object name (`fod`); a renamed object is not detected.
+- Identifiers that require additional evidence are configured on the 51Degrees integration itself; see the [51Degrees documentation](https://51degrees.com/documentation/index.html).
 
 The module supports on-premise and cloud device detection services, with free options for both.
 
@@ -142,7 +173,7 @@ pbjs.setConfig({
 | params                | Object  |                                                                                                                                            |                    |
 | params.resourceKey    | String  | Your 51Degrees Cloud Resource Key                                                                                                          |                    |
 | params.onPremiseJSUrl | String  | Direct URL to your self-hosted on-premise JS file (e.g. https://localhost/51Degrees.core.js)                                              |                    |
-| params.tdlUrl         | String  | URL of your Terms Document Locator (TDL) — a machine-readable document declaring the data usage terms under which the identifier is shared, per the [data-labels proposal](https://github.com/jwrosewell/data-labels/tree/main) and its [OpenRTB extension](https://github.com/jwrosewell/data-labels/blob/main/OpenRTB.md). The URL is placed in the `ext.tdl` array of the `51d.es` eids entry. Omit if you do not publish a TDL; the module will log a warning and emit the eids entry without `ext.tdl`. |                    |
+| params.tdlUrl         | String  | URL of your Terms Document Locator (TDL): a machine-readable document declaring the data usage terms under which the identifier is shared, per the [data-labels proposal](https://github.com/jwrosewell/data-labels/tree/main) and its [OpenRTB extension](https://github.com/jwrosewell/data-labels/blob/main/OpenRTB.md). The URL is placed in the `ext.tdl` array of the `51d.es` eids entry. Omit if you do not publish a TDL; the module will log a warning and emit the eids entry without `ext.tdl`. |                    |
 
 > Note: if you use a third-party Prebid.js wrapper, there might be a chance that the UI will force you to input both `resourceKey` and `onPremiseJSUrl`. In this case, you can set a redundant parameter to a string equal to "0", which will be ignored by the module.
 
@@ -160,6 +191,9 @@ run the following command:
 and then open the following URL in your browser:
 
 `http://localhost:9999/integrationExamples/gpt/51DegreesRtdProvider_example.html`
+
+A second example shows the on-page integration mode:\
+`http://localhost:9999/integrationExamples/gpt/51DegreesRtdProvider_pageIntegration_example.html`
 
 Open the browser console to see the logs.
 
