@@ -191,6 +191,24 @@ describe('msftBidAdapter', function () {
       expect(data.imp[0].id).to.equal('ext_imp_id_456');
     });
 
+    it('should add a numeric member ID to the endpoint query string', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        params: {
+          member: 123,
+          inv_code: 'inv_code_123'
+        }
+      }];
+      const bidderRequest = {
+        ...deepClone(baseBidderRequest),
+        bids: bidRequests
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+
+      expect(request.url).to.equal(`${ENDPOINT_URL_NORMAL}?member_id=123`);
+    });
+
     it('should build a banner request without eids but request.user.ext exists', function () {
       let testBidRequest = deepClone(baseBidRequests);
       // testBidRequest.user.ext = {};

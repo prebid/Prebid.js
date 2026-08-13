@@ -451,9 +451,9 @@ function formatRequest(payload, bidderRequest) {
   }
 
   // check if member is defined in the bid params
-  const matchingBid = ((bidderRequest?.bids) || []).find(bid => bid.params && bid.params.member && isNumber(bid.params.member));
-  if (matchingBid) {
-    endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') + 'member_id=' + matchingBid.params.member;
+  const memberId = (bidderRequest?.bids || []).find(bid => isNumber(bid.params?.member))?.params.member;
+  if (isNumber(memberId)) {
+    endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') + 'member_id=' + memberId;
   }
 
   if (getParameterByName("apn_test").toUpperCase() === "TRUE") {
