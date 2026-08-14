@@ -80,14 +80,29 @@ describe('anonymisedId submodule', function () {
       expect(anonymisedIdSubmodule.getId()).to.deep.equal({ id: 'AbC_123.456' });
     });
 
-    it('warns when the publisher configured storage, which this module must not use', function () {
+    // Prebid.js caches whatever `getId` returns when `storage` is configured, and that copy would
+    // outlive the Marketing Tag's removal of the key. Refusing to return an ID is what keeps a
+    // signed-out user's CUID out of the bid stream; a warning alone would not.
+    it('provides no ID at all when the publisher configured storage', function () {
       const logWarnStub = sinon.stub(utils, 'logWarn');
       getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(CUID);
 
       try {
         const id = anonymisedIdSubmodule.getId({ storage: { type: 'html5', name: 'anonymisedId', expires: 30 } });
-        expect(id).to.deep.equal({ id: CUID });
+        expect(id).to.equal(undefined);
         expect(logWarnStub.calledWithMatch(/must be configured without "storage"/)).to.equal(true);
+      } finally {
+        logWarnStub.restore();
+      }
+    });
+
+    it('does not read storage at all when the publisher configured storage', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(CUID);
+
+      try {
+        anonymisedIdSubmodule.getId({ storage: { type: 'html5', name: 'anonymisedId' } });
+        expect(getDataFromLocalStorageStub.called).to.equal(false);
       } finally {
         logWarnStub.restore();
       }
@@ -139,6 +154,24 @@ describe('anonymisedId submodule', function () {
       it(`returns undefined for ${JSON.stringify(value)}`, function () {
         expect(anonymisedIdSubmodule.decode(value)).to.equal(undefined);
       });
+    });
+
+    // The User ID module skips getId entirely while a cached value is still fresh, and decodes
+    // that copy instead - so refusing in getId alone would still let a stale cached ID through.
+    it('refuses a value cached by Prebid.js when storage is configured', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+
+      try {
+        const decoded = anonymisedIdSubmodule.decode(CUID, { storage: { type: 'html5', name: 'anonymisedId', expires: 30 } });
+        expect(decoded).to.equal(undefined);
+        expect(logWarnStub.calledWithMatch(/must be configured without "storage"/)).to.equal(true);
+      } finally {
+        logWarnStub.restore();
+      }
+    });
+
+    it('decodes normally when no storage is configured', function () {
+      expect(anonymisedIdSubmodule.decode(CUID, {})).to.deep.equal({ anonymisedId: CUID });
     });
   });
 

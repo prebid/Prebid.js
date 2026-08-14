@@ -28,6 +28,26 @@ export const MAX_ID_LENGTH = 100;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
+const STORAGE_CONFIG_WARNING = `${LOG_PREFIX}no ID will be provided: this module must be configured without "storage". ` +
+  'The Anonymised Marketing Tag owns this ID and removes it on sign-out and on consent withdrawal; ' +
+  'a copy cached by Prebid.js would outlive that removal and keep sending the ID of a signed-out user.';
+
+/**
+ * A publisher who configures `storage` gets no ID at all, rather than one that Prebid.js may cache
+ * past the point where the Marketing Tag has removed it. Both entry points have to refuse:
+ * `getId` so nothing is ever written to the publisher's store, and `decode` because the User ID
+ * module skips `getId` entirely while a cached value is still fresh, decoding that copy instead.
+ * @param {Object} [config] this submodule's publisher configuration
+ * @returns {boolean}
+ */
+function usesUnsupportedStorage(config) {
+  if (!config?.storage) {
+    return false;
+  }
+  logWarn(STORAGE_CONFIG_WARNING);
+  return true;
+}
+
 /**
  * Characters that cannot occur in a raw identifier, and whose presence means the value was
  * serialised rather than written as-is - a JSON object, array, or quoted scalar. Passing such a
@@ -72,8 +92,8 @@ export const anonymisedIdSubmodule = {
    * @returns {{id: string} | undefined}
    */
   getId(config) {
-    if (config?.storage) {
-      logWarn(`${LOG_PREFIX}this module must be configured without "storage". The Anonymised Marketing Tag owns this ID and removes it on sign-out; a copy kept by Prebid.js would outlive that removal and keep sending the ID of a signed-out user.`);
+    if (usesUnsupportedStorage(config)) {
+      return undefined;
     }
 
     const stored = storage.getDataFromLocalStorage(STORAGE_KEY);
@@ -99,9 +119,14 @@ export const anonymisedIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
+   * @param {Object} [config] this submodule's publisher configuration
    * @returns {{anonymisedId: string} | undefined}
    */
-  decode(value) {
+  decode(value, config) {
+    if (usesUnsupportedStorage(config)) {
+      return undefined;
+    }
+
     return isValidId(value) ? { [MODULE_NAME]: value } : undefined;
   },
 

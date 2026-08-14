@@ -58,6 +58,9 @@ copy would outlive the removal and the submodule would keep sending a stale iden
 until Prebid's own expiry elapsed. Reading the value fresh on every initialization makes removal take
 effect immediately.
 
+If a `storage` object is configured, the submodule logs a warning and provides **no** ID at all,
+rather than one Prebid.js may cache beyond the Marketing Tag's removal of it.
+
 ### Do not set `userSync.ppid` to `anonymised.io`
 
 The Marketing Tag sets the Google Ad Manager Publisher Provided ID itself, as part of its SignalLift
