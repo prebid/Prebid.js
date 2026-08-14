@@ -59,6 +59,11 @@ describe('anonymisedId submodule', function () {
       expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
     });
 
+    it('rejects either bracket on its own, not just a well-formed array', function () {
+      getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns(`${CUID}]`);
+      expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
+    });
+
     it('rejects a value containing whitespace', function () {
       getDataFromLocalStorageStub.withArgs(STORAGE_KEY).returns('not an id');
       expect(anonymisedIdSubmodule.getId()).to.equal(undefined);
