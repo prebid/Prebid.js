@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, generateUUID, getParameterByName, logInfo } from '../../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getParameterByName, logInfo, sizesToSizeTuples } from '../../src/utils.js';
 import { Renderer } from '../../src/Renderer.js';
 import { config } from '../../src/config.js';
 import { getCurrencyFromBidderRequest } from '../ortb2Utils/currency.js';
@@ -129,10 +129,15 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
   const divId = bidRequest.params.divId || bidRequest.adUnitCode;
   deepSetValue(imp, 'ext.divId', divId);
   if (imp.video) {
-    const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    const declaredSizes: number[][] = sizesToSizeTuples(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+    const resolvedSize: number[] | undefined =
+      (imp.video.w != null && imp.video.h != null) ? [imp.video.w, imp.video.h] : undefined;
+    const playerSize: number[][] = resolvedSize
+      ? [resolvedSize, ...declaredSizes.filter(([w, h]) => w !== resolvedSize[0] || h !== resolvedSize[1])]
+      : declaredSizes;
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-    deepSetValue(imp, 'video.ext.playerSize', playerSize);
-    deepSetValue(imp, 'video.ext.context', videoContext);
+    if (playerSize.length > 0) deepSetValue(imp, 'video.ext.playerSize', playerSize);
+    if (videoContext != null) deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
 };
