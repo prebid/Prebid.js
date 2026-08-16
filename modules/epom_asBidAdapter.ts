@@ -23,8 +23,11 @@ const BID_PATH = '/hb/bid';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
 
-/** Hostnames only — no scheme, no path, no port, no credentials. */
-const HOST_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
+/**
+ * Hostname with an optional port — no scheme, no path, no query, no credentials, so a page
+ * configuration cannot redirect the payload. Matches the Prebid Server params schema exactly.
+ */
+const HOST_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(:\d{1,5})?$/i;
 
 export type EpomAsBidParams = {
   /** Serving host of the publisher's Epom deployment, e.g. `ads.example.com`. */

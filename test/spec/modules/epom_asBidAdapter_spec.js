@@ -77,11 +77,14 @@ describe('Epom Ad Server adapter', function () {
     // The host is the only publisher-controlled part of the URL, so it must be a
     // bare hostname — anything that could carry a scheme, path, port, credentials
     // or a query string would let a page config redirect the payload elsewhere.
+    it('accepts a host with a port, as the Prebid Server schema does', function () {
+      expect(spec.isBidRequestValid(bannerBid({ params: { host: 'ads.example.com:8443', placementKey: PLACEMENT } }))).to.equal(true);
+    });
+
     it('rejects a host that is not a bare hostname', function () {
       const bad = [
         'https://ads.example.com',
         'ads.example.com/collect',
-        'ads.example.com:8080',
         'user@ads.example.com',
         'ads.example.com?x=1',
         'ads.example.com#f',
