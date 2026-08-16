@@ -131,10 +131,6 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
   deepSetValue(imp, 'ext.divId', divId);
   if (imp.video) {
     let playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-    // imp.video.w/h is the size the converter resolved, honoring any ortb2Imp / FPD override.
-    // If it differs from the declared primary size, an override happened — reflect it so
-    // video.ext.playerSize can never diverge from imp.video.w/h. Otherwise forward the declared
-    // value untouched, preserving its established wire shape (flat pair or array of sizes).
     if (imp.video.w != null && imp.video.h != null) {
       const declaredPrimary = sizesToSizeTuples(playerSize)[0];
       if (!declaredPrimary || declaredPrimary[0] !== imp.video.w || declaredPrimary[1] !== imp.video.h) {
