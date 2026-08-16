@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { getTimeoutUrl, spec, BIDFLOOR_CURRENCY } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
-import { config } from '../../../src/config.js';
 import * as adUnits from 'src/utils/adUnits';
 
 const PUBLISHER_ID = '0000-0000-01';
@@ -427,23 +426,22 @@ describe('Seedtag Adapter', function () {
     });
 
     describe('COPPA param', function () {
-      it('should add COPPA param to payload when prebid config has parameter COPPA equal to true', function () {
-        config.setConfig({ coppa: true });
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
+      it('should add COPPA param to payload when present in the bidder request', function () {
+        const request = spec.buildRequests(validBidRequests, {
+          ...bidderRequest,
+          ortb2: { regs: { coppa: 1 } }
+        });
         const data = JSON.parse(request.data);
-        expect(data.coppa).to.equal(true);
+        expect(data.coppa).to.equal(1);
       });
 
-      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
-        config.setConfig({ coppa: false });
-
+      it('should not add COPPA param to payload when the bidder request has no COPPA flag', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.coppa).to.be.undefined;
       });
 
-      it('should not add COPPA param to payload when prebid config has not parameter COPPA', function () {
+      it('should not add COPPA param to payload when the bidder request has no ORTB2 data', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.coppa).to.be.undefined;

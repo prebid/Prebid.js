@@ -61,8 +61,22 @@ const FORWARDED_EVENTS: readonly string[] = [
 ];
 
 interface PgamAnalyticsOptions {
-  orgId?: string;
+  /**
+   * PGAM organisation ID. The adapter forwards nothing without it.
+   */
+  orgId: string;
+  /**
+   * Override for the event collection endpoint.
+   */
   endpoint?: string;
+}
+
+declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
+  interface AnalyticsProviderConfig {
+    pgamdirect: {
+      options: PgamAnalyticsOptions
+    }
+  }
 }
 
 let orgId: string | null = null;
@@ -330,8 +344,10 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
 // modules/AsteriobidPbmAnalyticsAdapter.js and other TS adapters.
 (pgamdirectAnalytics as unknown as Record<string, unknown>)
   .originEnableAnalytics = pgamdirectAnalytics.enableAnalytics;
+// Partial, because this validates what the publisher actually passed rather than what the
+// configuration type asks for.
 pgamdirectAnalytics.enableAnalytics = function (config: {
-  options?: PgamAnalyticsOptions;
+  options?: Partial<PgamAnalyticsOptions>;
 }) {
   const opts = config?.options ?? {};
   if (!opts.orgId || typeof opts.orgId !== 'string') {
