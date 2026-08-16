@@ -100,4 +100,4 @@ pbjs.addAdUnits([
 
 The adapter registers IAB TCF Global Vendor List ID **849** and relies on Prebid.js's standard consent plumbing via `ortbConverter`: GDPR (`regs.ext.gdpr`, `user.ext.consent`), US Privacy (`regs.ext.us_privacy`), GPP (`regs.gpp`, `regs.gpp_sid`) and COPPA (`regs.coppa`) are forwarded without bidder-specific configuration.
 
-The adapter sets `withCredentials: false`, so no cookies are sent to the ad server and no user syncs are performed.
+The adapter sets `withCredentials: true`, so an existing Epom identity on the ad-server domain reaches the auction. The ad server answers with the request origin rather than a wildcard.

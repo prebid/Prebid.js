@@ -186,10 +186,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       method: 'POST',
       url: `https://${host}${BID_PATH}`,
       data: converter.toORTB({ bidRequests: group, bidderRequest }),
-      // `text/plain` keeps this a simple cross-origin request, so the
-      // browser skips the CORS preflight — one round-trip inside the
-      // auction timeout instead of two. The body is still JSON.
-      options: { contentType: 'text/plain', withCredentials: false },
+      // `text/plain` keeps this a simple cross-origin request, so the browser
+      // skips the CORS preflight — one round-trip inside the auction timeout
+      // instead of two. The body is still JSON. Credentials are sent because
+      // the ad server answers with the request's own Origin, which is what
+      // lets an existing Epom identity reach the auction.
+      options: { contentType: 'text/plain', withCredentials: true },
     }));
   },
 

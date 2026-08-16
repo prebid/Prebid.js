@@ -112,9 +112,9 @@ describe('Epom Ad Server adapter', function () {
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(ENDPOINT);
       // text/plain keeps the POST a simple request, so the browser skips the
-      // CORS preflight; withCredentials false means no cookies leave the page.
+      // CORS preflight; credentials carry an existing Epom identity.
       expect(requests[0].options.contentType).to.equal('text/plain');
-      expect(requests[0].options.withCredentials).to.equal(false);
+      expect(requests[0].options.withCredentials).to.equal(true);
     });
 
     it('packs every ad unit of one host into a single request, one imp each', async function () {
