@@ -116,31 +116,25 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       return [];
     }
 
-    const byHost = new Map<string, typeof validBidRequests>();
+    const byHost = new Map<string, (typeof validBidRequests)[number][]>();
     validBidRequests.forEach((bid) => {
-      const host = bid.params.host;
-      let group = byHost.get(host);
-      if (!group) {
-        group = [] as unknown as typeof validBidRequests;
-        byHost.set(host, group);
+      const group = byHost.get(bid.params.host);
+      if (group) {
+        group.push(bid);
+      } else {
+        byHost.set(bid.params.host, [bid]);
       }
-      group.push(bid);
     });
 
-    const requests = [];
-    byHost.forEach((group, host) => {
-      requests.push({
-        method: 'POST',
-        url: `https://${host}${BID_PATH}`,
-        data: converter.toORTB({ bidRequests: group, bidderRequest }),
-        // `text/plain` keeps this a simple cross-origin request, so the
-        // browser skips the CORS preflight — one round-trip inside the
-        // auction timeout instead of two. The body is still JSON.
-        options: { contentType: 'text/plain', withCredentials: false },
-      });
-    });
-
-    return requests;
+    return Array.from(byHost, ([host, group]) => ({
+      method: 'POST',
+      url: `https://${host}${BID_PATH}`,
+      data: converter.toORTB({ bidRequests: group, bidderRequest }),
+      // `text/plain` keeps this a simple cross-origin request, so the
+      // browser skips the CORS preflight — one round-trip inside the
+      // auction timeout instead of two. The body is still JSON.
+      options: { contentType: 'text/plain', withCredentials: false },
+    }));
   },
 
   interpretResponse(serverResponse, request) {
