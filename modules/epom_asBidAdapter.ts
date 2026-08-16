@@ -2,7 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { type Bid } from '../src/bidfactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { logWarn } from '../src/utils.js';
+import { deepSetValue, logWarn } from '../src/utils.js';
 
 /**
  * Prebid.js adapter for the Epom Ad Server — the supply side of the Epom
@@ -31,16 +31,56 @@ export type EpomAsBidParams = {
   host: string;
   /** Opaque placement identifier from the Epom invocation-code tab. */
   placementKey: string;
+  /** Epom channel — a traffic-slice label used for targeting and reporting. */
+  channel?: string;
+  /** Epom custom parameters, for custom targeting and creative macros. */
+  customParams?: Record<string, string | number | boolean>;
   /** Optional CPM floor, used only when the Price Floors module supplies none. */
   bidFloor?: number;
   /** Currency of `bidFloor`. Defaults to USD. */
   bidFloorCur?: string;
 };
 
+/** Mirrors the server-side ingest cap; oversized input is dropped rather than truncated. */
+const CUSTOM_PARAMS_MAX_KEYS = 32;
+const CUSTOM_PARAMS_MAX_KEY_LENGTH = 128;
+const CUSTOM_PARAMS_MAX_VALUE_LENGTH = 512;
+
 declare module '../src/adUnits' {
   interface BidderParams {
     [BIDDER_CODE]: EpomAsBidParams;
   }
+}
+
+/**
+ * Keep only scalar entries within the limits the ad server enforces on ingest, so a
+ * publisher sees the same set of parameters accepted here and applied there.
+ */
+function sanitiseCustomParams(
+  raw: EpomAsBidParams['customParams']
+): Record<string, string> | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const out: Record<string, string> = {};
+  let kept = 0;
+  Object.keys(raw).forEach((key) => {
+    if (kept >= CUSTOM_PARAMS_MAX_KEYS || key.length > CUSTOM_PARAMS_MAX_KEY_LENGTH) {
+      return;
+    }
+    const value = raw[key];
+    const type = typeof value;
+    if (type !== 'string' && type !== 'number' && type !== 'boolean') {
+      return;
+    }
+    const asString = String(value);
+    if (asString.length > CUSTOM_PARAMS_MAX_VALUE_LENGTH) {
+      return;
+    }
+    out[key] = asString;
+    kept++;
+  });
+  return kept > 0 ? out : null;
 }
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
@@ -65,6 +105,19 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     if (imp.bidfloor == null && params.bidFloor != null) {
       imp.bidfloor = Number(params.bidFloor);
       imp.bidfloorcur = params.bidFloorCur || DEFAULT_CURRENCY;
+    }
+
+    if (params.channel) {
+      deepSetValue(imp, `ext.${BIDDER_CODE}.channel`, String(params.channel));
+    }
+
+    // Custom parameters go to imp.ext.data, the standard first-party-data home, so
+    // that RTD modules and gptPreAuction contribute to the same object rather than
+    // to a private one the ad server would have to read twice.
+    const custom = sanitiseCustomParams(params.customParams);
+    if (custom) {
+      imp.ext = imp.ext || {};
+      imp.ext.data = { ...custom, ...(imp.ext.data as object) };
     }
 
     return imp;

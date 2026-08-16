@@ -24,6 +24,8 @@ Supported media types: `banner`.
 |----------------|----------|-------------------------------------------------------------------------------------------------------------------------------|------------------------|----------|
 | `host`         | required | Serving host of the publisher's Epom deployment, as a bare hostname. The adapter POSTs to `https://{host}/hb/bid`.             | `"ads.example.com"`    | `string` |
 | `placementKey` | required | Placement identifier, copied from the placement's invocation-code tab in the Epom UI. Sent as `imp.tagid`.                     | `"a4f21c9e7b"`         | `string` |
+| `channel`      | optional | Epom channel — a publisher traffic-slice label used for channel targeting and reporting. Sent as `imp.ext.epom_as.channel`. | `"sports-uk"`        | `string` |
+| `customParams` | optional | Epom custom parameters, for custom targeting and creative macros. Merged into `imp.ext.data`. Scalar values only; at most 32 keys, keys up to 128 and values up to 512 characters. | `{section: 'sport'}` | `object` |
 | `bidFloor`     | optional | CPM floor for this impression. Applied only when the Price Floors module has not already resolved `imp.bidfloor`.              | `0.50`                 | `number` |
 | `bidFloorCur`  | optional | Currency of `bidFloor`. Defaults to `USD`.                                                                                    | `"EUR"`                | `string` |
 

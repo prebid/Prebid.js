@@ -194,6 +194,66 @@ describe('Epom Ad Server adapter', function () {
       });
     });
 
+    describe('channel and custom params', function () {
+      it('sends the channel under our own namespace', async function () {
+        const bids = [bannerBid({ params: { host: HOST, placementKey: PLACEMENT, channel: 'sports-uk' } })];
+        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+
+        expect(requests[0].data.imp[0].ext.epom_as.channel).to.equal('sports-uk');
+      });
+
+      // Custom params share imp.ext.data with first-party data and RTD modules, so the
+      // ad server has one place to read targetable key-values from.
+      it('merges custom params into imp.ext.data as strings', async function () {
+        const bids = [bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: { section: 'sport', tier: 2, premium: true } },
+        })];
+        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+
+        expect(requests[0].data.imp[0].ext.data).to.deep.equal({
+          section: 'sport', tier: '2', premium: 'true',
+        });
+      });
+
+      it('drops non-scalar values and oversized entries', async function () {
+        const bids = [bannerBid({
+          params: {
+            host: HOST,
+            placementKey: PLACEMENT,
+            customParams: {
+              ok: 'yes',
+              nested: { a: 1 },
+              list: [1, 2],
+              ['k'.repeat(129)]: 'long-key',
+              tooLong: 'v'.repeat(513),
+            },
+          },
+        })];
+        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+
+        expect(requests[0].data.imp[0].ext.data).to.deep.equal({ ok: 'yes' });
+      });
+
+      it('caps the number of custom params', async function () {
+        const many = {};
+        for (let i = 0; i < 50; i++) {
+          many['k' + i] = 'v';
+        }
+        const bids = [bannerBid({ params: { host: HOST, placementKey: PLACEMENT, customParams: many } })];
+        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+
+        expect(Object.keys(requests[0].data.imp[0].ext.data)).to.have.lengthOf(32);
+      });
+
+      it('adds nothing when neither is configured', async function () {
+        const bids = [bannerBid()];
+        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+
+        expect(requests[0].data.imp[0].ext?.epom_as).to.equal(undefined);
+        expect(requests[0].data.imp[0].ext?.data).to.equal(undefined);
+      });
+    });
+
     describe('consent', function () {
       it('forwards TCF consent and the GDPR flag', async function () {
         const bids = [bannerBid()];
