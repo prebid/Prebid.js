@@ -130,14 +130,19 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
   const divId = bidRequest.params.divId || bidRequest.adUnitCode;
   deepSetValue(imp, 'ext.divId', divId);
   if (imp.video) {
-    const declaredSizes: number[][] = sizesToSizeTuples(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
-    const resolvedSize: number[] | undefined =
-      (imp.video.w != null && imp.video.h != null) ? [imp.video.w, imp.video.h] : undefined;
-    const playerSize: number[][] = resolvedSize
-      ? [resolvedSize, ...declaredSizes.filter(([w, h]) => w !== resolvedSize[0] || h !== resolvedSize[1])]
-      : declaredSizes;
+    let playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    // imp.video.w/h is the size the converter resolved, honoring any ortb2Imp / FPD override.
+    // If it differs from the declared primary size, an override happened — reflect it so
+    // video.ext.playerSize can never diverge from imp.video.w/h. Otherwise forward the declared
+    // value untouched, preserving its established wire shape (flat pair or array of sizes).
+    if (imp.video.w != null && imp.video.h != null) {
+      const declaredPrimary = sizesToSizeTuples(playerSize)[0];
+      if (!declaredPrimary || declaredPrimary[0] !== imp.video.w || declaredPrimary[1] !== imp.video.h) {
+        playerSize = [imp.video.w, imp.video.h];
+      }
+    }
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (playerSize.length > 0) deepSetValue(imp, 'video.ext.playerSize', playerSize);
+    if (playerSize != null) deepSetValue(imp, 'video.ext.playerSize', playerSize);
     if (videoContext != null) deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
