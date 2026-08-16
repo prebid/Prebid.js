@@ -106,7 +106,14 @@ export const spec = {
       method: 'POST',
       url: endpointFor(validBidRequests),
       data: request,
-      options: { contentType: 'application/json' },
+      // No explicit `options.contentType: 'application/json'` here: this is a cross-origin
+      // request (see packages/auction-service's CORS_HEADERS / app.js CORS middleware), and
+      // `application/json` is not a CORS-safelisted content type, so setting it forces a
+      // preflight OPTIONS round trip before every single auction POST. bidderFactory's default
+      // ajax path already JSON.stringifies an object `data` while sending it as `text/plain`
+      // (safelisted, no preflight) -- auction-service's `express.json()` / `request.json()`
+      // parse the body the same way regardless of the declared content-type, so nothing on the
+      // server side needs to change for this.
     };
   },
 
