@@ -104,3 +104,51 @@ describe('getErrorNode', function () {
     expect(errorNode).to.be.equal('<Error><![CDATA[http://wwww.testUrl.com/adError.jpg]]></Error>');
   });
 });
+
+// Nodes are built by string concatenation, so values placed in them must not be able to close the
+// element or attribute they sit in.
+describe('values containing XML syntax', function () {
+  function parse(xml) {
+    const doc = new DOMParser().parseFromString(`<Root>${xml}</Root>`, 'application/xml');
+    expect(doc.getElementsByTagName('parsererror')).to.have.lengthOf(0);
+    return doc;
+  }
+
+  // ']]>' closes a CDATA section; the text after it would otherwise be parsed as markup.
+  const BREAKOUT = 'http://wwww.testUrl.com/i]]></Impression><Impression><![CDATA[http://evil.example/pwn';
+
+  it('keeps a url containing ]]> in a single element', function () {
+    const impressions = parse(getImpressionNode(BREAKOUT)).getElementsByTagName('Impression');
+    expect(impressions).to.have.lengthOf(1);
+    expect(impressions[0].textContent).to.equal(BREAKOUT);
+  });
+
+  it('keeps an error url containing ]]> in a single element', function () {
+    const errors = parse(getErrorNode(BREAKOUT)).getElementsByTagName('Error');
+    expect(errors).to.have.lengthOf(1);
+    expect(errors[0].textContent).to.equal(BREAKOUT);
+  });
+
+  it('does not let an id attribute add attributes to the node', function () {
+    const id = 'a" foo="bar';
+    const impression = parse(getImpressionNode('http://wwww.testUrl.com/i.jpg', id)).getElementsByTagName('Impression')[0];
+    expect(impression.getAttributeNames()).to.eql(['id']);
+    expect(impression.getAttribute('id')).to.equal(id);
+  });
+
+  it('does not let an ad id add attributes to the Ad node', function () {
+    const adId = 'a" foo="bar';
+    const ad = parse(buildVastWrapper(adId, 'http://wwww.testUrl.com/redirectUrl.xml')).getElementsByTagName('Ad')[0];
+    expect(ad.getAttributeNames()).to.eql(['id']);
+    expect(ad.getAttribute('id')).to.equal(adId);
+  });
+
+  it('keeps the ad tag uri in a single VASTAdTagURI element', function () {
+    const uri = 'http://wwww.testUrl.com/r.xml]]></VASTAdTagURI><Impression><![CDATA[http://evil.example/x';
+    const doc = parse(buildVastWrapper('adId123', uri));
+    const uris = doc.getElementsByTagName('VASTAdTagURI');
+    expect(uris).to.have.lengthOf(1);
+    expect(uris[0].textContent).to.equal(uri);
+    expect(doc.getElementsByTagName('Impression')).to.have.lengthOf(0);
+  });
+});

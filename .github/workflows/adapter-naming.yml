@@ -18,12 +18,40 @@ jobs:
       - name: Update metadata
         id: update
         continue-on-error: true
+        env:
+          METADATA_ERROR_REPORT: ${{ runner.temp }}/metadata-errors.md
         run: |
           npx gulp update-metadata --no-fetch
       - name: Adapter code does not match file name
         if: ${{ steps.update.outcome != 'success' }}
-        run: |
-          echo '{"issue_number": ${{ github.event.pull_request.number }}, "body": "This PR includes an adapter whose code does not match its file name. Bid adapter modules should be named `<bidderCode>BidAdapter`, userId `<userIdCode>IdSystem`, RTD `<rtdCode>RtdProvider`, and analytics `<analyticsCode>AnalyticsAdapter`."}' > ${{ runner.temp }}/comment.json
+        uses: actions/github-script@v9
+        id: naming
+        env:
+          METADATA_ERROR_REPORT: ${{ runner.temp }}/metadata-errors.md
+        with:
+          result-encoding: string
+          script: |
+            const fs = require('fs');
+            // the report exists only when metadata compilation failed on module <-> component mapping;
+            // any other failure (build, GVL IDs, purpose declarations) is not a naming problem
+            let details;
+            try {
+              details = fs.readFileSync(process.env.METADATA_ERROR_REPORT).toString().trim();
+            } catch (e) {
+              details = null;
+            }
+            if (!details) {
+              return 'false';
+            }
+            fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
+              issue_number: ${{ github.event.pull_request.number }},
+              body: [
+                'This PR includes an adapter whose code does not match its file name. Bid adapter modules should be named `<bidderCode>BidAdapter`, userId `<userIdCode>IdSystem`, RTD `<rtdCode>RtdProvider`, and analytics `<analyticsCode>AnalyticsAdapter`.',
+                '',
+                details
+              ].join('\n')
+            }));
+            return 'true';
       - name: Calculate diff
         if: ${{ steps.update.outcome == 'success' }}
         run: |
@@ -53,7 +81,7 @@ jobs:
             return 'false';
 
       - name: Upload comment data
-        if: ${{ steps.update.outcome != 'success' || steps.check.outputs.result == 'true' }}
+        if: ${{ steps.naming.outputs.result == 'true' || steps.check.outputs.result == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: comment

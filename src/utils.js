@@ -488,16 +488,40 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
   return img;
 };
 
+// The encodeMacroURI implementation below was written by a bot (Claude Code).
+
+// A macro name bypasses encodeURI, since its braces are emitted literally, so it is escaped against
+// this set instead. Of these, only the double quote can close the attribute value that
+// createTrackPixelHtml writes; the rest are escaped because an encoded URL is not guaranteed to end
+// up in a double-quoted attribute - in an unquoted one, whitespace and the backtick end the value
+// and `<` and `>` delimit the tag - and because none of them belong in a URI in the first place.
+// The whitespace is spelled out rather than written `\s`, which also matches non-ASCII whitespace:
+// that is left alone, so a macro name is passed through byte-for-byte where escaping is not needed.
+const HTML_UNSAFE_CHARS = /["<>`\t\n\v\f\r ]/g;
+
+// Characters encodeURI and encodeURIComponent encode differently. A macro name containing any of
+// them is not recognised as a macro, so its braces stay percent-encoded like the rest of the URL.
+// Matched with matchAll, which works on a copy; exec would advance lastIndex on this shared object
+// and carry the offset over into the next call.
+const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
+
 /**
  * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ *
+ * A macro's braces are emitted literally so that downstream substitution can find them. The macro
+ * name is otherwise passed through unchanged, except for the characters in HTML_UNSAFE_CHARS.
  * @param url
  * @return {string}
  */
 export function encodeMacroURI(url) {
-  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
-  return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro);
-  }, encodeURI(url));
+  let encoded = '';
+  let from = 0;
+  for (const match of url.matchAll(MACRO)) {
+    encoded += encodeURI(url.slice(from, match.index)) +
+      '${' + match[1].replace(HTML_UNSAFE_CHARS, encodeURIComponent) + '}';
+    from = match.index + match[0].length;
+  }
+  return encoded + encodeURI(url.slice(from));
 }
 
 export function uniques(value, index, arry) {
