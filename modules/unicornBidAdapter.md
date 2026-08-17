@@ -16,10 +16,12 @@ written back to shared First Party Data:
 - `imp.banner.pos` — OpenRTB AdPosition (1 = above the fold, 3 = below the
   fold). A publisher-declared `ortb2Imp.banner.pos`, if present, is used
   instead of the measured value.
-- `imp.ext.unicorn` — `{ ver, ratio, fixed, sticky, w, h, x, y }`, where
+- `imp.ext.adslot` — `{ ver, ratio, fixed, sticky, w, h, x, y }`, where
   `ratio` is the visible-area ratio (0–1), `fixed`/`sticky` report a
   fixed/sticky ancestor, and `x`/`y`/`w`/`h` are the slot's document-relative
   position and rendered size in CSS pixels.
+- `imp.ext.gpid` — the Global Placement ID, forwarded from
+  `ortb2Imp.ext.gpid` (set by the `gpid` / `gptPreAuction` module) when present.
 
 Slot element resolution order: `ortb2Imp.ext.data.divId` → GPT
 `getSlotElementId()` → the ad unit code.

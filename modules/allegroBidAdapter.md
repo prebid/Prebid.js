@@ -54,10 +54,20 @@ var adUnits = [{
     }
   },
   bids: [{
-    bidder: 'allegro'
+    bidder: 'allegro',
+    params: {
+      publisherId: 'gwp'   // publisher identifier; maps to [com.allegro.dsp.ext].inventory.id in the outgoing OpenRTB request
+    }
   }]
 }];
 ```
+
+## Bid Request Parameters
+
+| Name     | Scope    | Type   | Description                                                                                                             |
+|----------|----------|--------|-------------------------------------------------------------------------------------------------------------------------|
+| `publisherId` | optional | String | Publisher identifier. When present, the value is written to the `[com.allegro.dsp.ext]` proto-JSON extension key on the request as `inventory.id` in the outgoing OpenRTB bid request, enabling publisher-scoped bid entity filtering on the server side. |
+
 
 # Features
 ## Impression Tracking
@@ -103,4 +113,3 @@ Example server bid response:
 - **TTL**: 360 seconds
 - **Net Revenue**: true
 - **Content Type**: text/plain
-
