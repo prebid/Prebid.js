@@ -1,6 +1,7 @@
 import {
   deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
-  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeInsertUserSyncIframe, politeTriggerPixel
+  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeInsertUserSyncIframe, politeTriggerPixel,
+  removeUserSyncIframes
 } from './utils.js';
 import { config } from './config.js';
 
@@ -384,6 +385,8 @@ export function newUserSync(deps) {
       publicApi.syncUsers();
     }
   };
+
+  publicApi.removeUserSyncs = () => removeUserSyncIframes();
 
   publicApi.canBidderRegisterSync = (type, bidder) => {
     if (usConfig.filterSettings) {
