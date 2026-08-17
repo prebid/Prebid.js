@@ -21,7 +21,12 @@ const BIDDER_CODE = 'epom_as';
 const GVLID = 849;
 const BID_PATH = '/hb/bid';
 const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_TTL = 300;
+/**
+ * The ad server's impression beacon is only accepted within 30 s of the bid, so a bid cached
+ * longer than that renders without being counted. Five seconds are left for the beacon itself.
+ * A server that widens its window says so per bid in `bid.exp`, which overrides this.
+ */
+const DEFAULT_TTL = 25;
 
 /**
  * Hostname with an optional port — no scheme, no path, no query, no credentials, so a page

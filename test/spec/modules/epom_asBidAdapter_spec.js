@@ -104,7 +104,7 @@ describe('Epom Ad Server adapter', function () {
       expect(spec.buildRequests([], bidderRequestFor([]))).to.deep.equal([]);
     });
 
-    it('POSTs to https://{host}/hb/bid as text/plain without credentials', async function () {
+    it('POSTs to https://{host}/hb/bid as text/plain with credentials', async function () {
       const bids = [bannerBid()];
       const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
 
@@ -339,7 +339,7 @@ describe('Epom Ad Server adapter', function () {
       expect(bids[0].creativeId).to.equal('creative-99');
       expect(bids[0].mediaType).to.equal('banner');
       expect(bids[0].netRevenue).to.equal(true);
-      expect(bids[0].ttl).to.equal(300);
+      expect(bids[0].ttl).to.equal(25);
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiser.example.com']);
     });
 
