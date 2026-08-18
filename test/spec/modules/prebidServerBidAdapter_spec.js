@@ -3861,6 +3861,8 @@ describe('S2S Adapter', function () {
   describe('bid won events', function () {
     let uniqueIdCount = 0;
     let triggerPixelStub;
+    let originalScheduler;
+    let originalRequestIdleCallback;
     const staticUniqueIds = ['1000', '1001', '1002', '1003'];
 
     before(function () {
@@ -3875,6 +3877,14 @@ describe('S2S Adapter', function () {
         return staticUniqueIds[uniqueIdCount - 1];
       });
       triggerPixelStub.resetHistory();
+      originalScheduler = window.scheduler;
+      originalRequestIdleCallback = window.requestIdleCallback;
+      window.scheduler = {
+        postTask(task) {
+          setTimeout(task, 0);
+          return Promise.resolve();
+        }
+      };
 
       config.setConfig({
         s2sConfig: Object.assign({}, CONFIG, {
@@ -3886,6 +3896,8 @@ describe('S2S Adapter', function () {
     });
 
     afterEach(function () {
+      window.scheduler = originalScheduler;
+      window.requestIdleCallback = originalRequestIdleCallback;
       utils.triggerPixel.resetHistory();
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
@@ -3918,7 +3930,7 @@ describe('S2S Adapter', function () {
       ]);
     });
 
-    it('should call triggerPixel if wurl is defined', function () {
+    it('should call triggerPixel if wurl is defined', function (doneCb) {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
         win: 'https://wurl.org'
@@ -3930,8 +3942,11 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(addBidResponse);
       markWinningBid(addBidResponse.getCall(0).args[1]);
 
-      expect(utils.triggerPixel.called).to.be.true;
-      expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
+      setTimeout(() => {
+        expect(utils.triggerPixel.called).to.be.true;
+        expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
+        doneCb();
+      }, 0);
     });
 
     it('should not call triggerPixel if wurl is undefined', function () {

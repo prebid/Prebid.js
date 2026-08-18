@@ -450,16 +450,32 @@ describe('adapterManager tests', function () {
     });
 
     describe('triggerBilling', () => {
+      let originalScheduler, originalRequestIdleCallback;
       beforeEach(() => {
         criteoSpec.onBidBillable = sinon.spy();
         sandbox.stub(utils.internal, 'triggerPixel');
+        originalScheduler = window.scheduler;
+        originalRequestIdleCallback = window.requestIdleCallback;
+        window.scheduler = {
+          postTask(task) {
+            setTimeout(task, 0);
+            return Promise.resolve();
+          }
+        };
       });
-      it('should fire impression pixels from eventtrackers', () => {
+      afterEach(() => {
+        window.scheduler = originalScheduler;
+        window.requestIdleCallback = originalRequestIdleCallback;
+      });
+      it('should fire impression pixels from eventtrackers', (done) => {
         bids[0].eventtrackers = [
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'tracker' },
         ];
         adapterManager.triggerBilling(bids[0]);
-        sinon.assert.calledWith(utils.internal.triggerPixel, 'tracker');
+        setTimeout(() => {
+          sinon.assert.calledWith(utils.internal.triggerPixel, 'tracker');
+          done();
+        }, 0);
       });
 
       it('should NOT fire non-impression or non-pixel trackers', () => {

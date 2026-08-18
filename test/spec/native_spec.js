@@ -186,25 +186,40 @@ describe('native.js', function () {
   let sandbox;
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
+  let originalScheduler;
+  let originalRequestIdleCallback;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
     insertHtmlIntoIframeStub = sandbox.stub(utils, 'insertHtmlIntoIframe');
+    originalScheduler = window.scheduler;
+    originalRequestIdleCallback = window.requestIdleCallback;
+    window.scheduler = {
+      postTask(task) {
+        setTimeout(task, 0);
+        return Promise.resolve();
+      }
+    };
   });
 
   afterEach(function () {
+    window.scheduler = originalScheduler;
+    window.requestIdleCallback = originalRequestIdleCallback;
     sandbox.restore();
   });
 
-  it('fires impression trackers', function () {
+  it('fires impression trackers', function (done) {
     fireNativeTrackers({}, bid);
-    sinon.assert.calledOnce(triggerPixelStub);
-    sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
-    sinon.assert.calledWith(
-      insertHtmlIntoIframeStub,
-      bid.native.javascriptTrackers
-    );
+    setTimeout(() => {
+      sinon.assert.calledOnce(triggerPixelStub);
+      sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
+      sinon.assert.calledWith(
+        insertHtmlIntoIframeStub,
+        bid.native.javascriptTrackers
+      );
+      done();
+    }, 0);
   });
 
   it('fires click trackers', function () {

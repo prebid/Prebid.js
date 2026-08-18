@@ -6,6 +6,7 @@ import {
   logError,
   logWarn,
   replaceMacros,
+  runBackgroundTask,
   triggerPixel
 } from './utils.js';
 import * as events from './events.js';
@@ -59,7 +60,7 @@ declare module './events' {
 
 export const markWinningBid = hook('sync', function (bid) {
   (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_WIN]?.[TRACKER_METHOD_IMG] || [])
-    .forEach(url => triggerPixel(url));
+    .forEach(url => runBackgroundTask(() => triggerPixel(url)));
   events.emit(BID_WON, bid);
   auctionManager.addWinningBid(bid);
 });
