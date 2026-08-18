@@ -47,13 +47,19 @@ function lsGet(key) {
   }
 }
 
-function tmaGetIdCached() {
+function tmaGetIdCached(retries = 10) {
   const v = lsGet(LOCAL_STORAGE_KEY);
+
   if (v) {
     _cachedUserId = v;
-  } else {
-    _cachedUserId = undefined;
+    return _cachedUserId;
   }
+
+  if (retries > 0) {
+    return tmaGetIdCached(retries - 1);
+  }
+
+  _cachedUserId = undefined;
   return _cachedUserId;
 }
 
