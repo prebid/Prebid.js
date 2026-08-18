@@ -11,6 +11,9 @@ import {
   resolveTcString,
   resolveGpp,
   getBidRequestData,
+  getHighEntropyValues,
+  getPageFodErrors,
+  storageManager,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
 import { mergeDeep } from '../../../src/utils.js';
@@ -355,6 +358,27 @@ describe('51DegreesRtdProvider', function() {
     });
   });
 
+  describe('getHighEntropyValues', function() {
+    it('resolves to undefined when the browser supplies no high entropy values', async function() {
+      // The accessor caches its promise per hints key for the life of the
+      // module, so a key no other test uses is the only way to reach the
+      // request. A browser without userAgentData takes the same path already.
+      const uaData = window.navigator.userAgentData;
+      // Stub the prototype: the module captured its own reference to
+      // navigator.userAgentData when it loaded, so stubbing the instance the
+      // test can see does not necessarily reach the one the module holds.
+      const stub = uaData && sinon.stub(Object.getPrototypeOf(uaData), 'getHighEntropyValues').resolves({});
+
+      try {
+        expect(await getHighEntropyValues(['noSuchHint'])).to.be.undefined;
+      } finally {
+        if (stub) {
+          stub.restore();
+        }
+      }
+    });
+  });
+
   describe('is51DegreesMetaPresent', function() {
     let initialHeadInnerHTML;
 
@@ -482,6 +506,18 @@ describe('51DegreesRtdProvider', function() {
       expect(convert51DegreesDeviceToOrtb2()).to.deep.equal({});
     });
 
+    it('drops values of unexpected types', function() {
+      const device = {
+        hardwarevendor: { nested: 'object' },
+        platformname: 42,
+        pixelratio: 'not-a-number',
+        screenpixelsheight: '800',
+        hardwarename: 'not-an-array',
+      };
+      const result = convert51DegreesDeviceToOrtb2(device).device;
+      expect(result).to.not.have.any.keys('make', 'os', 'pxratio', 'h', 'model');
+    });
+
     it('does not set the deviceid if it is not provided', function() {
       const device = { ...fiftyOneDegreesDevice };
       delete device.deviceid;
@@ -604,6 +640,17 @@ describe('51DegreesRtdProvider', function() {
       });
     });
 
+    it('drops values of unexpected types', function() {
+      const result = convert51DegreesIpToOrtb2({
+        ip: 1234,
+        latitude: 'not-a-number',
+        countrycode3: 7,
+        locationconfidence: 'high',
+      });
+      expect(result.device || {}).to.not.have.any.keys('ip');
+      expect((result.device || {}).geo || {}).to.not.have.any.keys('lat', 'country');
+    });
+
     it('maps full ip data with locationconfidence=high → ipservice=511', function() {
       const result = convert51DegreesIpToOrtb2(fullIp);
       expect(result).to.deep.equal({
@@ -719,6 +766,13 @@ describe('51DegreesRtdProvider', function() {
       expect(convert51DegreesFoDiDToOrtb2({}, TDL_URL)).to.deep.equal({});
     });
 
+    it('drops non-string id values', function() {
+      const result = convert51DegreesFoDiDToOrtb2(
+        { idproblic: 123, idprobglobal: 'global-uid-base64' }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(1);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'global-uid-base64', atype: 1 }]);
+    });
+
     it('emits a full eids entry with tdlUrl', function() {
       const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL);
       expect(result).to.deep.equal({
@@ -760,6 +814,41 @@ describe('51DegreesRtdProvider', function() {
     it('omits matcher field', function() {
       const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL);
       expect(result.user.eids[0]).to.not.have.property('matcher');
+    });
+
+    it('emits a Random entry with mm 0 and atype 1', function() {
+      const result = convert51DegreesFoDiDToOrtb2(
+        { idrandlic: 'rand-lic', idrandglobal: 'rand-global' }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(1);
+      expect(result.user.eids[0].mm).to.equal(0);
+      expect(result.user.eids[0].uids).to.deep.equal(
+        [{ id: 'rand-lic', atype: 1 }, { id: 'rand-global', atype: 1 }]);
+    });
+
+    it('emits a Hashed Email entry with mm 3 and atype 3', function() {
+      const result = convert51DegreesFoDiDToOrtb2(
+        { idhemlic: 'hem-lic', idhemglobal: 'hem-global' }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(1);
+      expect(result.user.eids[0].mm).to.equal(3);
+      expect(result.user.eids[0].uids).to.deep.equal(
+        [{ id: 'hem-lic', atype: 3 }, { id: 'hem-global', atype: 3 }]);
+    });
+
+    it('emits one entry per type in probabilistic, random, hashed-email order', function() {
+      const result = convert51DegreesFoDiDToOrtb2({
+        idproblic: 'p-lic',
+        idprobglobal: 'p-global',
+        idrandlic: 'r-lic',
+        idrandglobal: 'r-global',
+        idhemlic: 'h-lic',
+        idhemglobal: 'h-global',
+      }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(3);
+      expect(result.user.eids.map((e) => e.mm)).to.deep.equal([5, 0, 3]);
+      expect(result.user.eids.every((e) => e.source === '51d.es')).to.equal(true);
+      expect(result.user.eids.every((e) => e.ext.tdl[0] === TDL_URL)).to.equal(true);
+      expect(result.user.eids[2].uids).to.deep.equal(
+        [{ id: 'h-lic', atype: 3 }, { id: 'h-global', atype: 3 }]);
     });
   });
 
@@ -865,6 +954,34 @@ describe('51DegreesRtdProvider', function() {
     });
   });
 
+  describe('getPageFodErrors', function() {
+    afterEach(function() {
+      delete window.fod;
+    });
+
+    it('returns null when window.fod is absent', function() {
+      delete window.fod;
+      expect(getPageFodErrors()).to.be.null;
+    });
+
+    it('returns null for a working on-page integration', function() {
+      window.fod = { complete: () => {} };
+      expect(getPageFodErrors()).to.be.null;
+    });
+
+    it('returns null for an empty errors array', function() {
+      window.fod = { errors: [] };
+      expect(getPageFodErrors()).to.be.null;
+    });
+
+    it('returns the errors reported by a failed script load', function() {
+      // What the cloud actually serves on a 403: an errors-only fod object
+      // with no complete() method.
+      window.fod = { errors: ["The resource key 'BAD_KEY' could not be found."] };
+      expect(getPageFodErrors()).to.deep.equal(["The resource key 'BAD_KEY' could not be found."]);
+    });
+  });
+
   describe('getBidRequestData', function() {
     let initialHeadInnerHTML;
     let reqBidsConfigObj = {};
@@ -880,16 +997,28 @@ describe('51DegreesRtdProvider', function() {
 
     before(function() {
       initialHeadInnerHTML = document.head.innerHTML;
-
-      const mockScript = document.createElement('script');
-      mockScript.innerHTML = `
-      window.fod = {complete: (_callback) => _callback(${JSON.stringify(fiftyOneDegreesData)})};
-      `;
-      document.head.appendChild(mockScript);
     });
 
     beforeEach(function() {
       resetReqBidsConfigObj();
+      delete window.fod;
+      // Loading the module's own script creates window.fod, so mirror that
+      // in the stub to make the script path behave like a real load.
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        window.fod = { complete: (cb) => cb(fiftyOneDegreesData) };
+        // Mirror adloader's runCallback: a bare function is the success
+        // callback, the object form gets success() or error().
+        if (typeof callback === 'function') {
+          callback();
+        } else {
+          callback?.success?.();
+        }
+        return document.createElement('script');
+      });
+    });
+
+    afterEach(function() {
+      delete window.fod;
     });
 
     after(function() {
@@ -900,6 +1029,13 @@ describe('51DegreesRtdProvider', function() {
       const callback = sinon.spy();
       const moduleConfig = { params: {} };
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when the on-page script failed and left only errors', function() {
+      window.fod = { errors: ['The resource key could not be found.'] };
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       expect(callback.calledOnce).to.be.true;
     });
 
@@ -940,8 +1076,6 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('enriches ortb2 with ip and user.eids when data51 contains them', async function() {
-      // Override the global window.fod for this case only; restore after.
-      const originalFod = window.fod;
       const data51 = {
         device: fiftyOneDegreesDevice,
         ip: { ip: '5.6.7.8', locationconfidence: 'high', countrycode3: 'USA' },
@@ -958,25 +1092,20 @@ describe('51DegreesRtdProvider', function() {
         },
       };
 
-      try {
-        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
-        await new Promise(resolve => setTimeout(resolve, 100));
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-        expect(callback.calledOnce).to.be.true;
-        expect(reqBidsConfigObj.ortb2Fragments.global.device.ip).to.equal('5.6.7.8');
-        expect(reqBidsConfigObj.ortb2Fragments.global.device.geo.country).to.equal('USA');
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.eids).to.have.lengthOf(1);
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].uids)
-          .to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].ext.tdl)
-          .to.deep.equal(['https://tdl.example/x']);
-      } finally {
-        window.fod = originalFod;
-      }
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.device.ip).to.equal('5.6.7.8');
+      expect(reqBidsConfigObj.ortb2Fragments.global.device.geo.country).to.equal('USA');
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.eids).to.have.lengthOf(1);
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].uids)
+        .to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].ext.tdl)
+        .to.deep.equal(['https://tdl.example/x']);
     });
 
     it('does not overwrite a publisher-set device.ip / device.ipv6', async function() {
-      const originalFod = window.fod;
       window.fod = {
         complete: (cb) => cb({ ip: { ip: '5.6.7.8', ipv6: 'fe80::51d', locationconfidence: 'high' } }),
       };
@@ -984,14 +1113,10 @@ describe('51DegreesRtdProvider', function() {
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
 
-      try {
-        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
-        await new Promise(resolve => setTimeout(resolve, 100));
-        expect(reqBidsConfigObj.ortb2Fragments.global.device.ip).to.equal('10.0.0.1');
-        expect(reqBidsConfigObj.ortb2Fragments.global.device.ipv6).to.equal('fe80::pub');
-      } finally {
-        window.fod = originalFod;
-      }
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+      expect(reqBidsConfigObj.ortb2Fragments.global.device.ip).to.equal('10.0.0.1');
+      expect(reqBidsConfigObj.ortb2Fragments.global.device.ipv6).to.equal('fe80::pub');
     });
 
     it('forwards tcstring and gppstring from userConsent to the script URL', async function() {
@@ -1009,6 +1134,199 @@ describe('51DegreesRtdProvider', function() {
       const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
       expect(scriptUrl).to.include('tcstring=TCSTRINGVAL');
       expect(scriptUrl).to.include('gppstring=GPPSTRINGVAL');
+    });
+
+    it('consumes an on-page integration automatically', async function() {
+      const data51 = {
+        device: fiftyOneDegreesDevice,
+        fodid: { idproblic: 'lic-uid', idhemlic: 'hem-lic-uid', idhemglobal: 'hem-global-uid' },
+      };
+      window.fod = { complete: (cb) => cb(data51) };
+      loadExternalScriptStub.resetHistory();
+
+      const callback = sinon.spy();
+      const moduleConfig = { params: { tdlUrl: 'https://tdl.example/x' } };
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.false;
+      const eids = reqBidsConfigObj.ortb2Fragments.global.user.eids;
+      expect(eids).to.have.lengthOf(2);
+      expect(eids[1].mm).to.equal(3);
+    });
+
+    it('prefers the on-page integration over a configured resourceKey', async function() {
+      const data51 = { device: fiftyOneDegreesDevice };
+      window.fod = { complete: (cb) => cb(data51) };
+      loadExternalScriptStub.resetHistory();
+
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.false;
+      expect(reqBidsConfigObj.ortb2Fragments.global.device.make).to.equal('Apple');
+    });
+
+    it('loads its own script when no integration is on the page', async function() {
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(loadExternalScriptStub.called).to.be.true;
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('reloads its own script when consent changes instead of consuming its own fod', async function() {
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+      expect(loadExternalScriptStub.calledOnce).to.be.true;
+      expect(callback.calledOnce).to.be.true;
+
+      // window.fod is now the object the module's own load created, so the
+      // next auction must not consume it as a page integration.
+      resetReqBidsConfigObj();
+      const callback2 = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback2, moduleConfig, { gdpr: { consentString: 'NEWTC' } });
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(loadExternalScriptStub.calledTwice).to.be.true;
+      expect(callback2.calledOnce).to.be.true;
+      // The reload is only useful if the new consent actually reaches the cloud.
+      expect(loadExternalScriptStub.secondCall.args[0]).to.include('tcstring=NEWTC');
+    });
+
+    it('drops the cached 51Degrees response only when consent changes', async function() {
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+      const removeStub = sinon.stub(storageManager, 'removeDataFromSessionStorage');
+
+      try {
+        // The first call establishes the baseline. Which consent it carries does
+        // not matter, and asserting on it would depend on state left by earlier
+        // tests, so the assertions start from the calls after it.
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'FIRST' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        removeStub.resetHistory();
+
+        resetReqBidsConfigObj();
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'FIRST' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(removeStub.called, 'unchanged consent must leave the cache alone').to.be.false;
+
+        resetReqBidsConfigObj();
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'SECOND' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(removeStub.calledOnceWith('fod'), 'changed consent must drop the cached response').to.be.true;
+      } finally {
+        removeStub.restore();
+      }
+    });
+
+    it('calls the callback when its own script leaves an fod with neither complete() nor errors', async function() {
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        window.fod = {};
+        callback.success();
+        return document.createElement('script');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when injecting the script throws', async function() {
+      loadExternalScriptStub.callsFake(() => {
+        throw new Error('injection blew up');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when the conversion throws', async function() {
+      const callback = sinon.spy();
+      // No ortb2Fragments, so the merge throws once the data arrives. The
+      // auction has to proceed unenriched rather than stall.
+      getBidRequestData({}, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when dropping the cached response throws', async function() {
+      const moduleConfig = { params: { resourceKey: 'KEY' } };
+      const removeStub = sinon.stub(storageManager, 'removeDataFromSessionStorage')
+        .throws(new Error('session storage unavailable'));
+
+      try {
+        getBidRequestData(reqBidsConfigObj, sinon.spy(), moduleConfig, { gdpr: { consentString: 'BEFORE' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        resetReqBidsConfigObj();
+        const callback = sinon.spy();
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, { gdpr: { consentString: 'AFTER' } });
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        expect(removeStub.called).to.be.true;
+        expect(callback.calledOnce).to.be.true;
+      } finally {
+        removeStub.restore();
+      }
+    });
+
+    it('calls the callback when its own script leaves an fod without complete()', async function() {
+      // What the cloud serves for a rejected resource key: a script body that
+      // defines fod.errors and nothing else.
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        window.fod = { errors: ["The resource key 'BAD' could not be found."] };
+        callback.success();
+        return document.createElement('script');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'BAD' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when its own script fails to load', async function() {
+      loadExternalScriptStub.callsFake((url, moduleType, moduleName, callback) => {
+        callback.error(new Error('network'));
+        return document.createElement('script');
+      });
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('calls the callback when activity controls deny the script load', async function() {
+      // A denied load returns undefined and invokes neither callback.
+      loadExternalScriptStub.callsFake(() => undefined);
+
+      const callback = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback, { params: { resourceKey: 'KEY' } }, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(callback.calledOnce).to.be.true;
     });
   });
 

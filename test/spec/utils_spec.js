@@ -1725,3 +1725,55 @@ describe('polite sync helpers', () => {
     expect(window.scheduler.postTask.calledOnce).to.equal(true);
   });
 });
+
+describe('user sync iframes', () => {
+  let preexisting;
+  const newIframes = () => Array.from(document.querySelectorAll('iframe')).filter(f => !preexisting.has(f));
+
+  beforeEach(() => {
+    utils.removeUserSyncIframes();
+    preexisting = new Set(document.querySelectorAll('iframe'));
+  });
+  afterEach(() => utils.removeUserSyncIframes());
+
+  it('inserts the iframe into the document', () => {
+    utils.insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+
+  it('removes every sync iframe of this instance and returns how many were removed', () => {
+    [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
+    const iframes = newIframes();
+    expect(iframes.length).to.equal(3);
+    expect(utils.removeUserSyncIframes()).to.equal(3);
+    iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
+    expect(newIframes().length).to.equal(0);
+  });
+
+  it('leaves iframes it did not insert alone', () => {
+    const foreign = document.createElement('iframe');
+    document.body.appendChild(foreign);
+    try {
+      utils.insertUserSyncIframe('about:blank');
+      expect(newIframes().length).to.equal(2);
+      expect(utils.removeUserSyncIframes()).to.equal(1);
+      expect(foreign.parentNode).to.equal(document.body);
+      expect(newIframes()).to.eql([foreign]);
+    } finally {
+      foreign.parentNode.removeChild(foreign);
+    }
+  });
+
+  it('does nothing when there is no sync iframe', () => {
+    expect(utils.removeUserSyncIframes()).to.equal(0);
+  });
+
+  it('does not stop later syncs from inserting new iframes', () => {
+    utils.insertUserSyncIframe('about:blank');
+    utils.removeUserSyncIframes();
+    utils.insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+});

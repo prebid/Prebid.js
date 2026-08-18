@@ -132,7 +132,7 @@ function fetchAdplusId(isRotate, uid, callback) {
       if (response) {
         try {
           const data = JSON.parse(response);
-          if (data == null || !data.uid) {
+          if (!data?.uid) {
             logWarn(LOG_PREFIX + 'AdPlus ID is null');
             return callback();
           }
@@ -163,6 +163,8 @@ export const adplusIdSystemSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+
+  disclosureURL: 'local://modules/adplusIdSystemDisclosure.json',
 
   /**
    * decode the stored id value for passing to bid requests

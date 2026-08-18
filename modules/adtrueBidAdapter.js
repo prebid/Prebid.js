@@ -530,7 +530,7 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
@@ -610,7 +610,7 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) {
     if (!responses || responses.length === 0 || (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled)) {
       return [];
     }
@@ -626,7 +626,7 @@ export const spec = {
               '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
               '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
               '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
-              '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
+              '&coppa=' + (coppa === true ? 1 : 0)
           };
         });
         return accum.concat(cookieSyncObjects);

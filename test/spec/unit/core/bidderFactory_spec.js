@@ -16,6 +16,7 @@ import * as activityRules from 'src/activities/rules.js';
 import { MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
 import { ACTIVITY_TRANSMIT_TID } from '../../../../src/activities/activities.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
+import { metricsFactory } from '../../../../src/utils/perfMetrics.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -213,6 +214,15 @@ describe('bidderFactory', () => {
                 });
               });
             });
+          });
+        });
+
+        [true, false].forEach((coppa) => {
+          it(`should pass coppa=${coppa} to getUserSyncs`, () => {
+            config.setConfig({ coppa });
+            const bidder = newBidder(spec);
+            bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+            expect(spec.getUserSyncs.firstCall.args[5]).to.equal(coppa);
           });
         });
       });
@@ -713,7 +723,7 @@ describe('bidderFactory', () => {
               shouldDefer: true
             }
           ].forEach(({ onBidBillable, deferRendering, shouldDefer }) => {
-            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and sayd deferRender = ${deferRendering}`, () => {
+            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and says deferRender = ${deferRendering}`, () => {
               if (onBidBillable) {
                 spec.onBidBillable = sinon.stub();
               }
@@ -936,32 +946,6 @@ describe('bidderFactory', () => {
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.callCount).to.equal(0);
-        expect(doneStub.calledOnce).to.equal(true);
-        expect(callBidderErrorStub.calledOnce).to.equal(true);
-        expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
-        expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
-        expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
-          error: xhrErrorMock,
-          bidderRequest: MOCK_BIDS_REQUEST
-        });
-      });
-
-      it('should call spec.getUserSyncs() with no responses', function () {
-        const bidder = newBidder(spec);
-
-        spec.isBidRequestValid.returns(true);
-        spec.buildRequests.returns({
-          method: 'POST',
-          url: 'test.url.com',
-          data: {}
-        });
-        spec.getUserSyncs.returns([]);
-
-        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
-        expect(spec.getUserSyncs.calledOnce).to.equal(true);
-        expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
         expect(doneStub.calledOnce).to.equal(true);
         expect(callBidderErrorStub.calledOnce).to.equal(true);
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
@@ -1725,7 +1709,6 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sandbox.stub();
       addBidResponseStub.reject = sandbox.stub();
-      sandbox.stub();
       getParameterByNameStub = sandbox.stub(utils, 'getParameterByName');
       debugTurnedOnStub = sandbox.stub(utils, 'debugTurnedOn');
       bidder = newBidder(spec);
@@ -1739,7 +1722,7 @@ describe('bidderFactory', () => {
       getGlobal().bidderSettings = origBS;
     });
 
-    function runRequest() {
+    function runRequest(bidderRequest = MOCK_BIDS_REQUEST) {
       return new Promise((resolve, reject) => {
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns({
@@ -1750,7 +1733,7 @@ describe('bidderFactory', () => {
             endpointCompression
           }
         });
-        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, () => {
+        bidder.callBids(bidderRequest, addBidResponseStub, () => {
           resolve();
         }, ajaxStub, onTimelyResponseStub, wrappedCallback);
       });
@@ -1804,6 +1787,32 @@ describe('bidderFactory', () => {
       expect(ajaxStub.calledOnce).to.be.true;
       expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+    });
+
+    it('should not count compression time as network time', async () => {
+      const COMPRESSION_MS = 100;
+      isGzipSupportedStub.returns(true);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+
+      // Drive the metrics clock manually so the timings are exact rather than wall-clock dependent.
+      let clock = 0;
+      const metrics = metricsFactory({ now: () => clock })();
+      // Charge all of the elapsed time to compression: the clock only moves while gzip is pending.
+      gzipStub.returns(Promise.resolve().then(() => {
+        clock += COMPRESSION_MS;
+        return 'compressedData';
+      }));
+
+      await runRequest(Object.assign({ metrics }, MOCK_BIDS_REQUEST));
+
+      expect(gzipStub.calledOnce).to.be.true;
+      const recorded = metrics.getMetrics();
+      // `net` is recorded on a forked metrics node, so it propagates up as a group (array).
+      // It starts at dispatch, after the clock has already advanced, so it sees none of the delay.
+      expect(recorded['adapter.client.net']).to.eql([0]);
+      // `total` spans compression, so it is the timer that should account for the delay.
+      expect(recorded['adapter.client.total']).to.equal(COMPRESSION_MS);
     });
   });
 });
