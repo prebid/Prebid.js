@@ -3,7 +3,7 @@
 ```text
 Module Name: Ezoic Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid-adapter@ezoic.com
+Maintainer: prebid@ezoic.com
 ```
 
 ## Description
