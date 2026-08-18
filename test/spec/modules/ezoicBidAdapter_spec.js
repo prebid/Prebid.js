@@ -248,7 +248,7 @@ describe('Ezoic adapter', function () {
 
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT);
-      expect(request.options.contentType).to.equal('application/json');
+      expect(request.options.contentType).to.equal('text/plain');
       expect(request.options.withCredentials).to.equal(true);
 
       const payload = JSON.parse(request.data);
@@ -343,6 +343,28 @@ describe('Ezoic adapter', function () {
         size: [300, 250]
       });
       expect(payload.imps[0].floor).to.equal(0.75);
+    });
+
+    it('queries the wildcard floor for multiformat ad units', function () {
+      const getFloor = sinon.stub().returns({ currency: 'USD', floor: 0.6 });
+      const bid = getBidRequest({
+        getFloor,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'outstream', playerSize: [[640, 360]] }
+        }
+      });
+
+      const request = spec.buildRequests([bid], getBidderRequest());
+      const payload = JSON.parse(request.data);
+
+      expect(getFloor.calledOnce).to.equal(true);
+      expect(getFloor.firstCall.args[0]).to.deep.equal({
+        currency: 'USD',
+        mediaType: '*',
+        size: '*'
+      });
+      expect(payload.imps[0].floor).to.equal(0.6);
     });
 
     it('posts video media type details and asks Prebid floors for video size', function () {

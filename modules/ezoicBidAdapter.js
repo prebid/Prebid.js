@@ -194,16 +194,8 @@ function getPrimaryVideoSize(bid) {
   return '*';
 }
 
-function isVideoOnlyBid(bid) {
-  return !!bid.mediaTypes?.video && !bid.mediaTypes?.banner;
-}
-
 function isVideoBidRequest(bid) {
   return !!bid?.mediaTypes?.video;
-}
-
-function isNativeOnlyBid(bid) {
-  return !!bid?.mediaTypes?.native && !bid.mediaTypes.banner && !bid.mediaTypes.video;
 }
 
 function isNativeBidRequest(bid) {
@@ -215,13 +207,21 @@ function getBidFloor(bid) {
     return undefined;
   }
 
-  const videoOnly = isVideoOnlyBid(bid);
-  const nativeOnly = isNativeOnlyBid(bid);
+  // Multiformat impressions carry a single floor, so query the wildcard rule
+  // rather than letting one format's floor suppress the others' demand.
+  const formats = [BANNER, VIDEO, NATIVE].filter((mediaType) => bid?.mediaTypes?.[mediaType]);
+  const single = formats.length === 1 ? formats[0] : undefined;
+  let size = '*';
+  if (single === BANNER) {
+    size = getPrimaryBannerSize(bid);
+  } else if (single === VIDEO) {
+    size = getPrimaryVideoSize(bid);
+  }
   try {
     const floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
-      mediaType: nativeOnly ? NATIVE : (videoOnly ? VIDEO : BANNER),
-      size: nativeOnly ? '*' : (videoOnly ? getPrimaryVideoSize(bid) : getPrimaryBannerSize(bid)),
+      mediaType: single || '*',
+      size,
     });
     return floor?.floor;
   } catch (e) {
@@ -391,7 +391,10 @@ export const spec = {
         bids: validBidRequests,
       },
       options: {
-        contentType: 'application/json',
+        // text/plain keeps the JSON POST a CORS "simple request": no OPTIONS
+        // preflight burning bidder-timeout budget. The endpoint parses the
+        // body as JSON regardless of Content-Type.
+        contentType: 'text/plain',
         withCredentials: true,
       },
     };
