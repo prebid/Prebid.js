@@ -161,17 +161,28 @@ describe('biddigiAdapter', function () {
       expect(built.url).to.equal('https://biddigi-auction-service.biddigi25.workers.dev/openrtb2/auction');
     });
 
-    it('builds a well-formed oRTB video imp', async function () {
-      const built = spec.buildRequests([VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
-      expect(built.data.imp[0].video).to.exist;
-      expect(built.data.imp[0].video.mimes).to.include('video/mp4');
-    });
+    // FEATURES.VIDEO / FEATURES.NATIVE are webpack-injected globals (no import needed) --
+    // Prebid.js's CI also runs an "all features disabled" build/test job specifically to catch
+    // modules that assume optional features are always present. libraries/ortbConverter's video
+    // and native imp processors are conditionally compiled out under that build, so imp.video /
+    // imp.native legitimately don't exist there -- every other adapter's spec in this repo guards
+    // these same assertions the same way (e.g. test/spec/modules/pubmaticBidAdapter_spec.js,
+    // limelightDigitalBidAdapter_spec.js).
+    if (FEATURES.VIDEO) {
+      it('builds a well-formed oRTB video imp', async function () {
+        const built = spec.buildRequests([VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        expect(built.data.imp[0].video).to.exist;
+        expect(built.data.imp[0].video.mimes).to.include('video/mp4');
+      });
+    }
 
-    it('builds a well-formed oRTB native imp', async function () {
-      const built = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
-      expect(built.data.imp[0].native).to.exist;
-      expect(built.data.imp[0].native.request).to.be.a('string');
-    });
+    if (FEATURES.NATIVE) {
+      it('builds a well-formed oRTB native imp', async function () {
+        const built = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        expect(built.data.imp[0].native).to.exist;
+        expect(built.data.imp[0].native.request).to.be.a('string');
+      });
+    }
 
     it('passes through an explicit bidfloor when provided', async function () {
       const bid = JSON.parse(JSON.stringify(BANNER_BID_REQUEST));
