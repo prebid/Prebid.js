@@ -47,19 +47,12 @@ function lsGet(key) {
   }
 }
 
-function tmaGetIdCached(retries = 10) {
-  const v = lsGet(LOCAL_STORAGE_KEY);
-
-  if (v) {
-    _cachedUserId = v;
+function tmaGetIdCached() {
+  if (_cachedUserId) {
     return _cachedUserId;
   }
 
-  if (retries > 0) {
-    return tmaGetIdCached(retries - 1);
-  }
-
-  _cachedUserId = undefined;
+  _cachedUserId = lsGet(LOCAL_STORAGE_KEY);
   return _cachedUserId;
 }
 
@@ -67,11 +60,16 @@ function tmaGetIdCached(retries = 10) {
 // invoked from a Prebid lifecycle method (i.e. after fun-hooks is ready).
 function tmaPrime() {
   if (_tmaPrimed) return;
+
   _tmaPrimed = true;
 
-  if (!_cachedUserId) {
+  const start = Date.now();
+  while (Date.now() - start < 100) {
     const v = lsGet(LOCAL_STORAGE_KEY);
-    if (v) _cachedUserId = v;
+    if (v) {
+      _cachedUserId = v;
+      break;
+    }
   }
 }
 

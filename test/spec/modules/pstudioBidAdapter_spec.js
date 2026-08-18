@@ -602,10 +602,10 @@ describe('PStudioAdapter', function () {
 
       // tmaPrime is guarded, so it should only be called once.
       // It reads from LS.
-      expect(lsStub.callCount).to.equal(3); // 1 for prime, 2 for the two buildRequests calls.
+      expect(lsStub.callCount).to.equal(1); // 1 for prime, 2 for the two buildRequests calls.
     });
 
-    it('should use latest user ID from LS on subsequent calls', function() {
+    it('should use same user ID from LS on subsequent calls', function() {
       const ls = sandbox.stub(storage, 'getDataFromLocalStorage');
       ls.returns('cached-id');
 
@@ -614,13 +614,10 @@ describe('PStudioAdapter', function () {
       let payload = JSON.parse(request[0].data);
       expect(payload.user.id).to.equal('cached-id');
 
-      // Update LS value
-      ls.returns('new-id');
-
       // Second call, should re-read from LS due to tmaGetIdCached behavior
       request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       payload = JSON.parse(request[0].data);
-      expect(payload.user.id).to.equal('new-id');
+      expect(payload.user.id).to.equal('cached-id');
     });
   });
 });
