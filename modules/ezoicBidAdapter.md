@@ -36,9 +36,12 @@ to the endpoint; omit them and the adapter still participates in the auction.
 
 ## Outstream Video
 
-Outstream video is supported only when the publisher supplies a renderer on the ad
-unit, bid request, or `mediaTypes.video` (Prebid core requires a renderer for
-outstream playback). Instream video is unaffected.
+The adapter returns outstream video bids as VAST (`vastUrl`/`vastXml`) and does not
+bundle a renderer. Use a standard Prebid outstream setup: supply a renderer on the ad
+unit or `mediaTypes.video`, or use a cache-based configuration
+(`mediaTypes.video.useCacheKey` with a Prebid Cache URL) where your player fetches the
+cached VAST. Prebid core validates the setup and rejects outstream bids that have
+neither. Instream video is unaffected.
 
 ## Test Parameters
 

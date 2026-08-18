@@ -102,10 +102,6 @@ function randomPageviewId() {
   return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
 }
 
-function hasRenderer(subject) {
-  return !!(subject?.renderer || subject?.safeRenderer);
-}
-
 // Every pageview gets one stable id. Prebid core's pageViewId (SPA refreshes)
 // takes precedence; otherwise generate once and cache in the adapter namespace
 // so repeat auctions on the same pageview report the same id.
@@ -313,13 +309,6 @@ function getFallbackSize(sourceBid, isVideo) {
   return sourceBid.sizes?.[0] || sourceBid.mediaTypes?.banner?.sizes?.[0] || [];
 }
 
-// Only publisher-supplied renderers count: this adapter never returns a
-// renderer on its bids, so a server-side renderer field could not satisfy
-// core's outstream setup check anyway.
-function hasOutstreamRenderer(sourceBid) {
-  return hasRenderer(sourceBid) || hasRenderer(sourceBid?.mediaTypes?.video);
-}
-
 function normalizeBid(rawBid, sourceBid) {
   if (!rawBid || !sourceBid || !rawBid.requestId || !rawBid.creativeId) {
     return;
@@ -340,10 +329,10 @@ function normalizeBid(rawBid, sourceBid) {
   const isVideo = rawBid.mediaType === VIDEO && isVideoBidRequest(sourceBid);
   const isNative = rawBid.mediaType === NATIVE && isNativeBidRequest(sourceBid);
 
-  if (isVideo && sourceBid.mediaTypes?.video?.context === 'outstream' && !hasOutstreamRenderer(sourceBid)) {
-    return;
-  }
-
+  // Outstream setup (publisher renderer vs cache/useCacheKey) is validated by
+  // core's checkVideoBidSetup hook, which drops invalid bids with a clear
+  // error; the adapter does not pre-empt that (it would silently break valid
+  // cache-based configurations and hooked overrides).
   const firstSize = getFallbackSize(sourceBid, isVideo);
   const width = rawBid.width || firstSize[0];
   const height = rawBid.height || firstSize[1];

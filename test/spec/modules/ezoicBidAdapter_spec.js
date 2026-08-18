@@ -618,7 +618,10 @@ describe('Ezoic adapter', function () {
       expect(result).to.deep.equal([]);
     });
 
-    it('normalizes outstream VAST URL responses when a publisher renderer is present', function () {
+    it('normalizes outstream VAST URL responses (setup validation is left to core)', function () {
+      // No renderer here on purpose: core's checkVideoBidSetup owns
+      // outstream setup validation (renderer vs useCacheKey/cache config),
+      // so the adapter returns the bid regardless.
       const result = spec.interpretResponse({
         body: {
           bids: [getOutstreamVastResponse({
@@ -628,12 +631,7 @@ describe('Ezoic adapter', function () {
         }
       }, {
         bidderRequest: {
-          bids: [getOutstreamBidRequest({
-            renderer: {
-              url: 'https://example.com/outstream.js',
-              render: () => {},
-            }
-          })]
+          bids: [getOutstreamBidRequest()]
         }
       });
 
@@ -649,53 +647,6 @@ describe('Ezoic adapter', function () {
         vastUrl: 'https://vastproxy.ezoic.net/vastadapter/signed-video-token'
       });
       expect(result[0].ad).to.equal(undefined);
-    });
-
-    it('drops outstream video bids when no publisher renderer is present', function () {
-      const result = spec.interpretResponse({
-        body: {
-          bids: [getOutstreamVastResponse({
-            width: 640,
-            height: 360,
-          })]
-        }
-      }, {
-        bidderRequest: {
-          bids: [getOutstreamBidRequest()]
-        }
-      });
-
-      expect(result).to.deep.equal([]);
-    });
-
-    it('keeps outstream video bids when mediaTypes.video defines a renderer', function () {
-      const result = spec.interpretResponse({
-        body: {
-          bids: [getOutstreamVastResponse({
-            width: 640,
-            height: 360,
-          })]
-        }
-      }, {
-        bidderRequest: {
-          bids: [getOutstreamBidRequest({
-            mediaTypes: {
-              video: {
-                context: 'outstream',
-                playerSize: [[640, 360]],
-                plcmt: 3,
-                renderer: {
-                  url: 'https://example.com/outstream.js',
-                  render: () => {},
-                }
-              }
-            }
-          })]
-        }
-      });
-
-      expect(result).to.have.lengthOf(1);
-      expect(result[0].mediaType).to.equal('video');
     });
 
     it('drops bids with non-numeric or negative cpm values', function () {
