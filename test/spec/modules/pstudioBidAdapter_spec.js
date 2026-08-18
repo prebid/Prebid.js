@@ -602,7 +602,7 @@ describe('PStudioAdapter', function () {
 
       // tmaPrime is guarded, so it should only be called once.
       // It reads from LS.
-      expect(lsStub.callCount).to.equal(1); // 1 for prime, 2 for the two buildRequests calls.
+      expect(lsStub.callCount).to.equal(1);
     });
 
     it('should use same user ID from LS on subsequent calls', function() {
@@ -618,6 +618,38 @@ describe('PStudioAdapter', function () {
       request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       payload = JSON.parse(request[0].data);
       expect(payload.user.id).to.equal('cached-id');
+    });
+  });
+  describe('TMA User Profile ID', function () {
+    const userId = 'user-profile-id-123';
+
+    it('should create user object with id if firstPartyData.user is not defined', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(userId);
+      const bidderRequest = { ortb2: {} };
+      const request = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.user).to.deep.equal({ id: userId });
+    });
+
+    it('should add user id to existing user object in firstPartyData', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(userId);
+      const bidderRequest = {
+        ortb2: {
+          user: {
+            yob: 1985,
+            gender: 'F'
+          }
+        }
+      };
+      const request = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.user).to.deep.equal({
+        yob: 1985,
+        gender: 'F',
+        id: userId
+      });
     });
   });
 });
