@@ -111,6 +111,56 @@ function getNativeBidRequest(overrides = {}) {
   });
 }
 
+function getMultiformatBidRequest(overrides = {}) {
+  return getBidRequest({
+    sizes: [[300, 250]],
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      },
+      video: {
+        context: 'instream',
+        playerSize: [[640, 360]],
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+      }
+    },
+    ...overrides
+  });
+}
+
+function getOutstreamBidRequest(overrides = {}) {
+  return getVideoBidRequest({
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [[640, 360]],
+        plcmt: 3
+      }
+    },
+    ortb2Imp: {
+      video: {
+        plcmt: 3,
+        w: 640,
+        h: 360
+      }
+    },
+    ...overrides
+  });
+}
+
+function getOutstreamVastResponse(overrides = {}) {
+  return {
+    requestId: BID_ID,
+    cpm: 3.21,
+    currency: 'USD',
+    creativeId: 'creative-video',
+    mediaType: 'video',
+    vastUrl: 'https://vastproxy.ezoic.net/vastadapter/signed-video-token',
+    ...overrides
+  };
+}
+
 function getBidderRequest(overrides = {}) {
   return {
     auctionId: 'auction-1',
@@ -261,6 +311,48 @@ describe('Ezoic adapter', function () {
       expect(firstPayload.ezoic.pageviewIdSource).to.equal('adapter_generated');
       expect(firstPayload.ezoic.pageviewEpoch).to.equal(1714752000);
       expect(secondPayload.ezoic.pageviewEpoch).to.equal(1714752000);
+    });
+
+    it('prefers core pageViewId and refreshes epoch when it changes', function () {
+      sinon.stub(Date, 'now').returns(1714752000000);
+
+      const firstRequest = spec.buildRequests([getBidRequest()], getBidderRequest({
+        pageViewId: 'core-pageview-1'
+      }));
+      const secondRequest = spec.buildRequests([getBidRequest({ bidId: 'ezoic-bid-2' })], getBidderRequest({
+        pageViewId: 'core-pageview-1'
+      }));
+      const firstPayload = JSON.parse(firstRequest.data);
+      const secondPayload = JSON.parse(secondRequest.data);
+
+      expect(firstPayload.ezoic.pageviewId).to.equal('core-pageview-1');
+      expect(firstPayload.ezoic.pageviewIdSource).to.equal('prebid_core');
+      expect(firstPayload.ezoic.pageviewEpoch).to.equal(1714752000);
+      expect(secondPayload.ezoic.pageviewId).to.equal('core-pageview-1');
+      expect(secondPayload.ezoic.pageviewEpoch).to.equal(1714752000);
+
+      sinon.restore();
+      sinon.stub(Date, 'now').returns(1714752600000);
+
+      const thirdRequest = spec.buildRequests([getBidRequest({ bidId: 'ezoic-bid-3' })], getBidderRequest({
+        pageViewId: 'core-pageview-2'
+      }));
+      const thirdPayload = JSON.parse(thirdRequest.data);
+
+      expect(thirdPayload.ezoic.pageviewId).to.equal('core-pageview-2');
+      expect(thirdPayload.ezoic.pageviewIdSource).to.equal('prebid_core');
+      expect(thirdPayload.ezoic.pageviewEpoch).to.equal(1714752600);
+    });
+
+    it('falls back to adapter-generated pageview metadata when core omits pageViewId', function () {
+      sinon.stub(Date, 'now').returns(1714752000000);
+
+      const request = spec.buildRequests([getBidRequest()], getBidderRequest());
+      const payload = JSON.parse(request.data);
+
+      expect(payload.ezoic.pageviewId).to.match(UUID_V4_REGEX);
+      expect(payload.ezoic.pageviewIdSource).to.equal('adapter_generated');
+      expect(payload.ezoic.pageviewEpoch).to.equal(1714752000);
     });
 
     it('passes a single banner size to getFloor', function () {
@@ -526,36 +618,20 @@ describe('Ezoic adapter', function () {
       expect(result).to.deep.equal([]);
     });
 
-    it('normalizes outstream VAST URL responses into Prebid video bids', function () {
+    it('normalizes outstream VAST URL responses when a publisher renderer is present', function () {
       const result = spec.interpretResponse({
         body: {
-          bids: [{
-            requestId: BID_ID,
-            cpm: 3.21,
-            currency: 'USD',
+          bids: [getOutstreamVastResponse({
             width: 640,
             height: 360,
-            creativeId: 'creative-video',
-            mediaType: 'video',
-            vastUrl: 'https://vastproxy.ezoic.net/vastadapter/signed-video-token'
-          }]
+          })]
         }
       }, {
         bidderRequest: {
-          bids: [getVideoBidRequest({
-            mediaTypes: {
-              video: {
-                context: 'outstream',
-                playerSize: [[640, 360]],
-                plcmt: 3
-              }
-            },
-            ortb2Imp: {
-              video: {
-                plcmt: 3,
-                w: 640,
-                h: 360
-              }
+          bids: [getOutstreamBidRequest({
+            renderer: {
+              url: 'https://example.com/outstream.js',
+              render: () => {},
             }
           })]
         }
@@ -573,6 +649,127 @@ describe('Ezoic adapter', function () {
         vastUrl: 'https://vastproxy.ezoic.net/vastadapter/signed-video-token'
       });
       expect(result[0].ad).to.equal(undefined);
+    });
+
+    it('drops outstream video bids when no publisher renderer is present', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [getOutstreamVastResponse({
+            width: 640,
+            height: 360,
+          })]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getOutstreamBidRequest()]
+        }
+      });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('keeps outstream video bids when mediaTypes.video defines a renderer', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [getOutstreamVastResponse({
+            width: 640,
+            height: 360,
+          })]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getOutstreamBidRequest({
+            mediaTypes: {
+              video: {
+                context: 'outstream',
+                playerSize: [[640, 360]],
+                plcmt: 3,
+                renderer: {
+                  url: 'https://example.com/outstream.js',
+                  render: () => {},
+                }
+              }
+            }
+          })]
+        }
+      });
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].mediaType).to.equal('video');
+    });
+
+    it('drops bids with non-numeric or negative cpm values', function () {
+      const request = {
+        bidderRequest: {
+          bids: [getBidRequest()]
+        }
+      };
+      const baseBid = {
+        requestId: BID_ID,
+        currency: 'USD',
+        width: 300,
+        height: 250,
+        creativeId: 'creative-1',
+        ad: '<div>ad</div>',
+      };
+
+      expect(spec.interpretResponse({
+        body: { bids: [{ ...baseBid, cpm: 'not-a-number' }] }
+      }, request)).to.deep.equal([]);
+
+      expect(spec.interpretResponse({
+        body: { bids: [{ ...baseBid, cpm: -0.01 }] }
+      }, request)).to.deep.equal([]);
+
+      expect(spec.interpretResponse({
+        body: { bids: [{ ...baseBid, cpm: 0 }] }
+      }, request)).to.have.lengthOf(1);
+    });
+
+    it('uses video playerSize for multiformat video bids missing width and height', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 2.5,
+            currency: 'USD',
+            creativeId: 'creative-video',
+            mediaType: 'video',
+            vastUrl: 'https://vastproxy.ezoic.net/vastadapter/signed-video-token'
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getMultiformatBidRequest()]
+        }
+      });
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].width).to.equal(640);
+      expect(result[0].height).to.equal(360);
+    });
+
+    it('uses banner size for multiformat banner bids missing width and height', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 1.5,
+            currency: 'USD',
+            creativeId: 'creative-banner',
+            ad: '<div>ad</div>'
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getMultiformatBidRequest()]
+        }
+      });
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].width).to.equal(300);
+      expect(result[0].height).to.equal(250);
+      expect(result[0].mediaType).to.equal('banner');
     });
 
     it('normalizes native ORTB responses into Prebid native bids', function () {

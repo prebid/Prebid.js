@@ -25,6 +25,20 @@ to the endpoint; omit them and the adapter still participates in the auction.
 | `bidfloor` | optional | `number` | Explicit CPM floor (USD unless `bidfloorcur` is set); takes precedence over the Prebid floors module | `0.50` |
 | `bidfloorcur` | optional | `string` | Currency of `bidfloor` | `'USD'` |
 | `publisherProvidedId` | optional | `string` | Publisher-supplied identifier echoed back on the impression | `'ppid-123'` |
+| `adPositionType` | optional | `number` | Ezoic ad position type; optional placement context for Ezoic-managed integrations | `5` |
+| `adPositionId` | optional | `number` | Ezoic ad position identifier | `1100` |
+| `subAdPositionId` | optional | `number` | Ezoic sub-ad-position identifier | `42` |
+| `impressionId` | optional | `string` | Client impression identifier echoed on the request | `'client-impression-1'` |
+| `tap` | optional | `string` | Tap / slot targeting string for placement reporting | `'content-slot-1'` |
+| `googlePageTargeting` | optional | `object` | GPT page-level targeting key/value map forwarded as placement context | `{ AU_SEG: ['test'] }` |
+| `floor` | optional | `number` | Alias of `bidfloor` | `0.50` |
+| Aliases | optional | various | `placement_type` / `pt` alias `placementType`; `impression_id` aliases `impressionId` | `pt: 'display'` |
+
+## Outstream Video
+
+Outstream video is supported only when the publisher supplies a renderer on the ad
+unit, bid request, or `mediaTypes.video` (Prebid core requires a renderer for
+outstream playback). Instream video is unaffected.
 
 ## Test Parameters
 

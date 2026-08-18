@@ -10,6 +10,7 @@ const ADAPTER_ENDPOINT = 'https://g.ezoic.net/ezoic/prebid/adapter';
 const USER_SYNC_ENDPOINT = 'https://g.ezoic.net/ezoic/prebid/adapter/usersync-frame';
 const ADAPTER_NAMESPACE = '__ezoicPrebidAdapter';
 const PAGEVIEW_SOURCE_ADAPTER_GENERATED = 'adapter_generated';
+const PAGEVIEW_SOURCE_PREBID_CORE = 'prebid_core';
 const FORM_FACTOR_DESKTOP = 1;
 const FORM_FACTOR_PHONE = 2;
 const FORM_FACTOR_TABLET = 3;
@@ -101,11 +102,32 @@ function randomPageviewId() {
   return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
 }
 
-// Every pageview gets one stable id, generated once and cached in the
-// adapter's own state namespace so repeat auctions on the same pageview
-// (multiple ad units, refreshes) report the same id.
-function getPageviewMetadata() {
+function hasRenderer(subject) {
+  return !!(subject?.renderer || subject?.safeRenderer);
+}
+
+// Every pageview gets one stable id. Prebid core's pageViewId (SPA refreshes)
+// takes precedence; otherwise generate once and cache in the adapter namespace
+// so repeat auctions on the same pageview report the same id.
+function getPageviewMetadata(bidderRequest) {
   const state = getAdapterState();
+  const corePageViewId = bidderRequest?.pageViewId;
+
+  if (corePageViewId) {
+    if (state.corePageViewId !== corePageViewId) {
+      state.corePageViewId = corePageViewId;
+      state.pageviewEpoch = currentPageviewEpoch();
+    } else if (state.pageviewEpoch == null) {
+      state.pageviewEpoch = currentPageviewEpoch();
+    }
+
+    return {
+      pageviewId: corePageViewId,
+      pageviewIdSource: PAGEVIEW_SOURCE_PREBID_CORE,
+      pageviewEpoch: state.pageviewEpoch,
+    };
+  }
+
   if (!state.pageviewId) {
     state.pageviewId = randomPageviewId();
     state.pageviewEpoch = currentPageviewEpoch();
@@ -160,9 +182,9 @@ function getORTB2Metadata(bidderRequest, validBidRequests) {
   return ortb2;
 }
 
-function getEzoicMetadata(ortb2) {
+function getEzoicMetadata(bidderRequest, ortb2) {
   return {
-    ...getPageviewMetadata(),
+    ...getPageviewMetadata(bidderRequest),
     formFactorId: inferFormFactorId(),
     country: getCountry(ortb2),
   };
@@ -279,8 +301,32 @@ function originalBidByRequestId(request) {
   }, {});
 }
 
+function getFallbackSize(sourceBid, isVideo) {
+  if (isVideo) {
+    const videoSize = getPrimaryVideoSize(sourceBid);
+    if (videoSize !== '*') {
+      return videoSize;
+    }
+    return sourceBid.sizes?.[0] || sourceBid.mediaTypes?.banner?.sizes?.[0] || [];
+  }
+
+  return sourceBid.sizes?.[0] || sourceBid.mediaTypes?.banner?.sizes?.[0] || [];
+}
+
+// Only publisher-supplied renderers count: this adapter never returns a
+// renderer on its bids, so a server-side renderer field could not satisfy
+// core's outstream setup check anyway.
+function hasOutstreamRenderer(sourceBid) {
+  return hasRenderer(sourceBid) || hasRenderer(sourceBid?.mediaTypes?.video);
+}
+
 function normalizeBid(rawBid, sourceBid) {
-  if (!rawBid || !sourceBid || !rawBid.requestId || rawBid.cpm == null || !rawBid.creativeId) {
+  if (!rawBid || !sourceBid || !rawBid.requestId || !rawBid.creativeId) {
+    return;
+  }
+
+  const cpm = Number(rawBid.cpm);
+  if (!Number.isFinite(cpm) || cpm < 0) {
     return;
   }
 
@@ -293,7 +339,12 @@ function normalizeBid(rawBid, sourceBid) {
 
   const isVideo = rawBid.mediaType === VIDEO && isVideoBidRequest(sourceBid);
   const isNative = rawBid.mediaType === NATIVE && isNativeBidRequest(sourceBid);
-  const firstSize = sourceBid.sizes?.[0] || sourceBid.mediaTypes?.banner?.sizes?.[0] || (isVideo ? getPrimaryVideoSize(sourceBid) : []) || [];
+
+  if (isVideo && sourceBid.mediaTypes?.video?.context === 'outstream' && !hasOutstreamRenderer(sourceBid)) {
+    return;
+  }
+
+  const firstSize = getFallbackSize(sourceBid, isVideo);
   const width = rawBid.width || firstSize[0];
   const height = rawBid.height || firstSize[1];
 
@@ -307,7 +358,7 @@ function normalizeBid(rawBid, sourceBid) {
 
   const bidResponse = {
     requestId: rawBid.requestId,
-    cpm: Number(rawBid.cpm),
+    cpm,
     currency: rawBid.currency || DEFAULT_CURRENCY,
     creativeId: String(rawBid.creativeId),
     netRevenue: rawBid.netRevenue !== false,
@@ -365,7 +416,7 @@ export const spec = {
       timeout: bidderRequest?.timeout,
       page: getPageMetadata(bidderRequest),
       ortb2,
-      ezoic: getEzoicMetadata(ortb2),
+      ezoic: getEzoicMetadata(bidderRequest, ortb2),
       gdprConsent: bidderRequest?.gdprConsent,
       uspConsent: bidderRequest?.uspConsent,
       gppConsent: bidderRequest?.gppConsent,
