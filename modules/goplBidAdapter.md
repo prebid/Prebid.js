@@ -1,12 +1,12 @@
 # Overview
 
-Module Name: sspBC Bidder Adapter
+Module Name: gopl Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: wojciech.bialy@grupawp.pl
+Maintainer: pawel.grudzien@grupawp.pl
 
 # Description
 
-Module that connects to Wirtualna Polska Media header bidding endpoint to fetch bids.
+Module that connects to WPartner/Gopl header bidding endpoint to fetch bids.
 Supports Banner, Video (instream) and Native formats 
 Supported currencies: USD, EUR, PLN
 
@@ -16,12 +16,6 @@ Required parameters:
 Optional parameters:
 - site id 
 - adslot id
-- publisher id
-- domain
-- page
-- tmax
-- test
-- video
 
 # Test Parameters
 ```
@@ -35,11 +29,10 @@ var adUnits = [
         }
       },
       bids: [{
-         bidder: 'sspBC',
+         bidder: 'gopl',
          params: {
-            id: "006",
-            siteId: "235911",
-            test: 1
+            id: "003",
+            siteId: "237503",
          }
        }]
    }
