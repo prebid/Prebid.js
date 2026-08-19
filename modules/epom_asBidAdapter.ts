@@ -22,9 +22,9 @@ const GVLID = 849;
 const BID_PATH = '/hb/bid';
 const DEFAULT_CURRENCY = 'USD';
 /**
- * The ad server's impression beacon is only accepted within 30 s of the bid, so a bid cached
- * longer than that renders without being counted. Five seconds are left for the beacon itself.
- * A server that widens its window says so per bid in `bid.exp`, which overrides this.
+ * A bid cached longer than the ad server accepts its impression beacon renders without being
+ * counted, so this is deliberately short. It is only the floor: a deployment configured with a
+ * wider window says so per bid in `bid.exp`, which overrides this.
  */
 const DEFAULT_TTL = 25;
 
