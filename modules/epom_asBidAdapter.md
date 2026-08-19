@@ -31,27 +31,12 @@ Supported media types: `banner`.
 
 # Test Parameters
 
+A live placement that always fills, for verifying the adapter end to end:
+
 ```js
 const adUnits = [
   {
-    code: "leaderboard",
-    mediaTypes: {
-      banner: {
-        sizes: [[728, 90], [970, 250]]
-      }
-    },
-    bids: [
-      {
-        bidder: "epom_as",
-        params: {
-          host: "ads.example.com",
-          placementKey: "a4f21c9e7b"
-        }
-      }
-    ]
-  },
-  {
-    code: "sidebar",
+    code: "test-div",
     mediaTypes: {
       banner: {
         sizes: [[300, 250]]
@@ -61,12 +46,46 @@ const adUnits = [
       {
         bidder: "epom_as",
         params: {
-          host: "ads.example.com",
-          placementKey: "6d0e83b415",
-          bidFloor: 0.50
+          host: "aj2494.online",
+          placementKey: "63bad7a99f270394e7b4b370952cbff2"
         }
       }
     ]
+  }
+];
+```
+
+The optional parameters, on a deployment of your own. `host` is a bare hostname —
+the adapter posts to `https://{host}/hb/bid` — and every ad unit naming the same
+host travels in one request:
+
+```js
+const adUnits = [
+  {
+    code: "leaderboard",
+    mediaTypes: { banner: { sizes: [[728, 90], [970, 250]] } },
+    bids: [{
+      bidder: "epom_as",
+      params: {
+        host: "ads.example.com",
+        placementKey: "a4f21c9e7b",
+        channel: "sports-uk",
+        customParams: { section: "sport" }
+      }
+    }]
+  },
+  {
+    code: "sidebar",
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+    bids: [{
+      bidder: "epom_as",
+      params: {
+        host: "ads.example.com",
+        placementKey: "6d0e83b415",
+        bidFloor: 0.50,
+        bidFloorCur: "EUR"
+      }
+    }]
   }
 ];
 ```
