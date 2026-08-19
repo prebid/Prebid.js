@@ -104,6 +104,15 @@ describe('lassoBidAdapter', function () {
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(GET_IUD_URL + ENDPOINT_URL + '/request');
     });
+
+    it('uses coppa from bidderRequest ortb2 regs', () => {
+      const [request] = spec.buildRequests([bid], {
+        ...bidderRequest,
+        ortb2: { regs: { coppa: 1 } }
+      });
+
+      expect(request.data.coppa).to.equal(1);
+    });
   });
 
   describe('buildRequests with dgid', function () {

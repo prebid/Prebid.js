@@ -1,6 +1,5 @@
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
@@ -327,7 +326,7 @@ export const spec = {
       payload.schain = schain;
     }
 
-    const coppa = config.getConfig('coppa');
+    const coppa = bidderRequest.ortb2?.regs?.coppa;
     if (coppa) {
       payload.coppa = coppa;
     }

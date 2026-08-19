@@ -431,6 +431,12 @@ export function insertHtmlIntoIframe(htmlCode) {
 }
 
 /**
+ * The sync iframes inserted by this instance, tracked by element reference so that several Prebid
+ * instances running on the same page do not remove each other's.
+ */
+const OWN_SYNC_IFRAMES = new WeakSet();
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
@@ -446,10 +452,23 @@ export function insertUserSyncIframe(url, done, timeout) {
     height: '0px',
     display: 'none'
   });
+  OWN_SYNC_IFRAMES.add(iframe);
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
+}
+
+/**
+ * Removes the user sync iframes that were inserted by this Prebid instance; iframes belonging to
+ * other instances running on the same page are left alone.
+ * @return {Number} the number of iframes that were removed
+ */
+export function removeUserSyncIframes() {
+  const iframes = Array.from(document.querySelectorAll('iframe'))
+    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe));
+  iframes.forEach(iframe => iframe.parentNode?.removeChild(iframe));
+  return iframes.length;
 }
 
 /**

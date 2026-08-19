@@ -1,32 +1,8 @@
+import type { TCFApiVersion, TCFConsentData } from '../../src/types/consent/tcf.d.ts';
 import { deepAccess, logWarn } from '../../src/utils.js';
 import { GVL_PURPOSES, VENDORLESS_GVLID } from '../../src/consentHandler.js';
 
-export const TCF_CMP_VERSION = 2 as const;
-
-/**
- * @see https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework
- * @see https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore
- */
-export type TCFConsentData = {
-  apiVersion: typeof TCF_CMP_VERSION;
-  /**
-   * The consent string.
-   */
-  consentString: string;
-  /**
-   * True if GDPR is in scope.
-   */
-  gdprApplies: boolean;
-  /**
-   * The response from the CMP.
-   */
-  vendorData: Record<string, any>;
-  /**
-   * Additional consent string, if provided by the CMP.
-   * @see https://support.google.com/admanager/answer/9681920?hl=en
-   */
-  addtlConsent?: `${number}~${string}~${string}`;
-};
+export const TCF_CMP_VERSION: TCFApiVersion = 2;
 
 export type PurposeDeclarations = {
   specialFeatures?: number[];
