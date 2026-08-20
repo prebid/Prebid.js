@@ -10,7 +10,7 @@ import {
   isStr,
   isPlainObject
 } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -26,7 +26,7 @@ import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
-const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s'
+const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s';
 
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
@@ -376,7 +376,7 @@ export const spec = {
       const site = deepAccess(bidderRequest, 'ortb2.site');
       if (site) {
         const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
-          return category && typeof category === 'string'
+          return category && typeof category === 'string';
         });
         if (pageCategory.length) {
           request.site.cat = pageCategory;
@@ -623,7 +623,7 @@ function createBannerRequest(bid, mediaType) {
   const result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
-    result.format = format
+    result.format = format;
   }
   return result;
 }

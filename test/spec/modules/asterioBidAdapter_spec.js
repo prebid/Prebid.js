@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as ajaxModule from 'src/ajax.js';
-import { ENDPOINT, spec } from 'modules/asterioBidAdapter.js';
+import { dep, ENDPOINT, spec } from 'modules/asterioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const REQUEST = {
@@ -62,6 +61,59 @@ const BIDDER_VIDEO_RESPONSE = {
     format: 'video',
     mediaType: 'video',
     adomain: ['video.example.com']
+  }]
+};
+
+const BIDDER_NATIVE_RESPONSE = {
+  bids: [{
+    ad: JSON.stringify({
+      native: {
+        assets: [{
+          title: {
+            text: 'Native title'
+          }
+        }, {
+          img: {
+            type: 3,
+            url: 'https://cdn.example.com/image.jpg',
+            w: 300,
+            h: 250
+          }
+        }, {
+          img: {
+            type: 1,
+            url: 'https://cdn.example.com/icon.jpg',
+            w: 64,
+            h: 64
+          }
+        }, {
+          data: {
+            type: 2,
+            value: 'Native body'
+          }
+        }],
+        link: {
+          url: 'https://advertiser.example.com',
+          clicktrackers: ['https://tracker.example.com/click']
+        },
+        eventtrackers: [{
+          event: 1,
+          method: 1,
+          url: 'https://tracker.example.com/impression'
+        }]
+      }
+    }),
+    requestId: 'request-3',
+    cpm: 3.45,
+    currency: 'USD',
+    width: 1,
+    height: 1,
+    ttl: 300,
+    creativeId: 'creative-3',
+    netRevenue: true,
+    format: 'native',
+    mediaType: 'native',
+    adomain: ['native.example.com']
   }]
 };
 
@@ -219,6 +271,30 @@ describe('asterioBidAdapter', function () {
       expect(result[0].meta.advertiserDomains).to.deep.equal(['video.example.com']);
     });
 
+    it('should map native bids from direct response', function () {
+      const result = spec.interpretResponse({ body: BIDDER_NATIVE_RESPONSE }, {});
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].mediaType).to.equal('native');
+      expect(result[0].ad).to.equal(undefined);
+      expect(result[0].native.title).to.equal('Native title');
+      expect(result[0].native.body).to.equal('Native body');
+      expect(result[0].native.clickUrl).to.equal('https://advertiser.example.com');
+      expect(result[0].native.image).to.deep.equal({
+        url: 'https://cdn.example.com/image.jpg',
+        width: 300,
+        height: 250
+      });
+      expect(result[0].native.icon).to.deep.equal({
+        url: 'https://cdn.example.com/icon.jpg',
+        width: 64,
+        height: 64
+      });
+      expect(result[0].native.clickTrackers).to.deep.equal(['https://tracker.example.com/click']);
+      expect(result[0].native.impressionTrackers).to.deep.equal(['https://tracker.example.com/impression']);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['native.example.com']);
+    });
+
     it('should return empty array for invalid response body', function () {
       expect(spec.interpretResponse({ body: undefined }, {})).to.deep.equal([]);
       expect(spec.interpretResponse({ body: '' }, {})).to.deep.equal([]);
@@ -230,7 +306,7 @@ describe('asterioBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajaxModule, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {

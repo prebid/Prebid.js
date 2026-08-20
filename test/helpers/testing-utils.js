@@ -4,11 +4,16 @@ const utils = {
   host: (process.env.TEST_SERVER_HOST) ? process.env.TEST_SERVER_HOST : 'localhost',
   protocol: (process.env.TEST_SERVER_PROTOCOL) ? 'https' : 'http',
   testPageURL: function(name) {
-    return `${utils.protocol}://${utils.host}:9999/test/pages/${name}`
+    return `${utils.protocol}://${utils.host}:9999/test/pages/${name}`;
   },
   waitForElement: async function(elementRef, time = DEFAULT_TIMEOUT) {
     const element = $(elementRef);
     await element.waitForExist({ timeout: time });
+  },
+  switchFrames: async function(...frameRefs) {
+    for (const frameRef of frameRefs) {
+      await utils.switchFrame(frameRef);
+    }
   },
   switchFrame: async function(frameRef) {
     const iframe = await $(frameRef);
@@ -49,6 +54,6 @@ const utils = {
       }
     });
   }
-}
+};
 
 module.exports = utils;

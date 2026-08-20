@@ -347,7 +347,7 @@ describe('adrinoBidAdapter', function () {
       };
 
       spec.onBidWon(response);
-      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.callCount).to.equal(1);
     });
   });
 });

@@ -140,7 +140,7 @@ describe('Renderer', function () {
           url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
           render: sinon.spy()
         }
-      }]
+      }];
 
       const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
@@ -148,9 +148,9 @@ describe('Renderer', function () {
         id: 1,
         adUnitCode: 'video1'
       });
-      testRenderer.setRender(() => {})
+      testRenderer.setRender(() => {});
 
-      testRenderer.render()
+      testRenderer.render();
       expect(utilsSpy.callCount).to.equal(1);
     });
 
@@ -162,7 +162,7 @@ describe('Renderer', function () {
           backupOnly: true,
           render: sinon.spy()
         }
-      }]
+      }];
 
       const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
@@ -171,9 +171,9 @@ describe('Renderer', function () {
         adUnitCode: 'video1'
 
       });
-      testRenderer.setRender(() => {})
+      testRenderer.setRender(() => {});
 
-      testRenderer.render()
+      testRenderer.render();
       expect(loadExternalScriptStub.called).to.be.true;
     });
 
@@ -192,7 +192,7 @@ describe('Renderer', function () {
             },
           }
         }
-      }]
+      }];
 
       const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
@@ -201,9 +201,9 @@ describe('Renderer', function () {
         adUnitCode: 'video1'
 
       });
-      testRenderer.setRender(() => {})
+      testRenderer.setRender(() => {});
 
-      testRenderer.render()
+      testRenderer.render();
       expect(loadExternalScriptStub.called).to.be.true;
     });
 
@@ -223,7 +223,7 @@ describe('Renderer', function () {
       });
       expect(loadExternalScriptStub.called).to.be.false;
 
-      testRenderer.render()
+      testRenderer.render();
       expect(loadExternalScriptStub.called).to.be.true;
     });
 

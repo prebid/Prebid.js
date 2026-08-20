@@ -10,7 +10,7 @@ import {
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -45,7 +45,7 @@ const converter = ortbConverter({
         prebidver: '$prebid.version$',
         adapterver: '1.0.0',
       }
-    })
+    });
 
     // Attaching GDPR Consent Params
     if (bidderRequest.gdprConsent) {
@@ -121,12 +121,12 @@ export const spec = {
 
     if (validBidRequests[0].params.e2etest) {
       logMessage('dxkulture: E2E test mode enabled');
-      publisherId = 'e2etest'
+      publisherId = 'e2etest';
     }
     let baseEndpoint = spec.ENDPOINT + '?pid=' + publisherId;
 
     if (placementId) {
-      baseEndpoint += '&placementId=' + placementId
+      baseEndpoint += '&placementId=' + placementId;
     }
 
     return {
@@ -171,7 +171,7 @@ export const spec = {
             if (uspConsent) {
               queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
             }
-            syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
+            syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`;
           }
 
           syncs.push({
@@ -203,7 +203,7 @@ function outstreamRenderer(bid) {
     autoPlay: true,
     preload: true,
     mute: false
-  }
+  };
 
   const renderer = Renderer.install({
     id: bid.adId,

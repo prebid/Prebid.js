@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adrelevantisBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
 
@@ -442,7 +441,7 @@ describe('AdrelevantisAdapter', function () {
     });
 
     it('should add referer info to payload', function () {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
           topmostLocation: 'http://example.com/page.html',
@@ -454,7 +453,7 @@ describe('AdrelevantisAdapter', function () {
             'http://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -480,7 +479,7 @@ describe('AdrelevantisAdapter', function () {
 
       config.getConfig.restore();
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -555,7 +554,7 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
@@ -603,7 +602,7 @@ describe('AdrelevantisAdapter', function () {
             }
           }
         }]
-      }
+      };
 
       const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastXml');
@@ -639,7 +638,7 @@ describe('AdrelevantisAdapter', function () {
             }
           }
         }]
-      }
+      };
 
       const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastUrl');
@@ -689,7 +688,7 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
 
       const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
       expect(result[0].native.title).to.equal('Native Creative');
@@ -735,7 +734,7 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseWithDeal }, { bidderRequest });
       expect(Object.keys(result[0].adrelevantis)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
@@ -749,9 +748,9 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
-    })
+    });
   });
 });

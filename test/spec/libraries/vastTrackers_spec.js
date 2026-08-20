@@ -51,11 +51,11 @@ describe('vast trackers', () => {
       cpm: 1.0,
       auctionId: 'aid',
       mediaType: 'video',
-    }
+    };
     bidRequest = {
       auctionId: 'aid',
       bidId: 'bid',
-    }
+    };
     auction = {
       getAuctionId() {
         return 'aid';
@@ -64,7 +64,7 @@ describe('vast trackers', () => {
         return { auction: 'props' };
       },
       getBidRequests() {
-        return [{ bids: [bidRequest] }]
+        return [{ bids: [bidRequest] }];
       }
     };
     sandbox = sinon.createSandbox();
@@ -77,7 +77,7 @@ describe('vast trackers', () => {
       };
     });
     registerVastTrackers(MODULE_TYPE_ANALYTICS, 'test', tracker);
-  })
+  });
   afterEach(() => {
     reset();
     sandbox.restore();
@@ -102,8 +102,8 @@ describe('vast trackers', () => {
   it('should pass request and auction properties to trackerFn', () => {
     const bid = { requestId: 'bid', auctionId: 'aid' };
     getVastTrackers(bid, { index });
-    sinon.assert.calledWith(tracker, bid, sinon.match({ auction: auction.getProperties(), bidRequest }))
-  })
+    sinon.assert.calledWith(tracker, bid, sinon.match({ auction: auction.getProperties(), bidRequest }));
+  });
 
   if (FEATURES.VIDEO) {
     it('should add trackers to bid response', () => {
@@ -393,4 +393,64 @@ describe('vast trackers', () => {
       expect(trackers.trackingEvents).to.be.an('array').that.is.empty;
     });
   });
-})
+
+  // insertVastTrackers builds nodes with DOM APIs rather than by string concatenation, which is
+  // what stops a tracker value from altering the structure of the document it is placed in. These
+  // assert the resulting structure, so they hold for any implementation that keeps that property.
+  describe('tracker values containing XML syntax', () => {
+    const WRAPPER = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
+    // ']]>' ends a CDATA section; the text after it would otherwise be parsed as markup.
+    const BREAKOUT = 'https://tracking.mydomain.com/a]]></Impression><Impression><![CDATA[https://evil.example/pwn';
+
+    function insert(trackers, vastXml = WRAPPER) {
+      const doc = new DOMParser().parseFromString(
+        insertVastTrackers({ impression: [], error: [], trackingEvents: [], ...trackers }, vastXml),
+        'text/xml'
+      );
+      expect(doc.getElementsByTagName('parsererror')).to.have.lengthOf(0);
+      return doc;
+    }
+
+    // A value that cannot be represented is allowed to be left out, but must never appear as
+    // extra structure - hence `at.most` rather than an exact count.
+    function expectNoExtra(doc, tagName, value) {
+      const elements = Array.from(doc.getElementsByTagName(tagName));
+      expect(elements).to.have.lengthOf.at.most(1);
+      elements.forEach(el => expect(el.textContent).to.equal(value));
+    }
+
+    it('does not let an impression url add an Impression element', () => {
+      expectNoExtra(insert({ impression: [BREAKOUT] }), 'Impression', BREAKOUT);
+    });
+
+    it('does not let an error url add an Error element', () => {
+      expectNoExtra(insert({ error: [BREAKOUT] }), 'Error', BREAKOUT);
+    });
+
+    it('does not let a tracking event url add a Tracking element', () => {
+      const doc = insert({ trackingEvents: [{ event: 'start', url: BREAKOUT }] });
+      expectNoExtra(doc, 'Tracking', BREAKOUT);
+    });
+
+    it('does not let a tracking event name add attributes to Tracking', () => {
+      const event = 'complete" onload="x';
+      const doc = insert({ trackingEvents: [{ event, url: 'https://tracking.mydomain.com/c' }] });
+      const tracking = doc.getElementsByTagName('Tracking');
+      expect(tracking).to.have.lengthOf(1);
+      expect(tracking[0].getAttributeNames()).to.eql(['event']);
+      expect(tracking[0].getAttribute('event')).to.equal(event);
+    });
+
+    it('returns the vastXml unchanged when it has no Wrapper or InLine element', () => {
+      const noWrapper = '<VAST><Ad></Ad></VAST>';
+      const trackers = { impression: ['https://tracking.mydomain.com/i'], error: [], trackingEvents: [] };
+      expect(insertVastTrackers(trackers, noWrapper)).to.equal(noWrapper);
+    });
+
+    it('returns the vastXml unchanged when it cannot be parsed', () => {
+      const malformed = 'not xml at all <<<';
+      const trackers = { impression: ['https://tracking.mydomain.com/i'], error: [], trackingEvents: [] };
+      expect(insertVastTrackers(trackers, malformed)).to.equal(malformed);
+    });
+  });
+});

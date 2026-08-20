@@ -15,7 +15,7 @@ export function metadataRepository() {
           }
           components[component.componentType][component.componentName] = component;
           componentsByModule[moduleName].push([component.componentType, component.componentName]);
-        })
+        });
       }
       if (data.disclosures) {
         Object.assign(disclosures, data.disclosures);
@@ -35,13 +35,13 @@ export function metadataRepository() {
         components
           .filter(({ disclosureURL }) => disclosureURL != null)
           .map(({ disclosureURL }) => [disclosureURL, repo.getStorageDisclosure(disclosureURL)])
-      )
+      );
       return {
         disclosures,
         components
-      }
+      };
     },
-  }
+  };
   return repo;
 }
 

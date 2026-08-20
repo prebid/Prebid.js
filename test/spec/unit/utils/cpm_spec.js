@@ -9,16 +9,16 @@ describe('adjustCpm', () => {
     bs = {
       get: sinon.stub(),
       getOwn: sinon.stub()
-    }
+    };
     index = {
       getBidRequest: sinon.stub()
-    }
+    };
     adjustmentFn = sinon.stub().callsFake((cpm) => cpm * 2);
-  })
+  });
 
   it('throws when neither bidRequest nor bidResponse are provided', () => {
     expect(() => adjustCpm(1)).to.throw();
-  })
+  });
 
   it('always provides an object as bidResponse for the adjustment fn', () => {
     bs.get.callsFake(() => adjustmentFn);
@@ -34,7 +34,7 @@ describe('adjustCpm', () => {
       describe(`and it is ${t} in the index`, () => {
         beforeEach(() => {
           bs.get.callsFake(() => adjustmentFn);
-          index.getBidRequest.callsFake(() => req)
+          index.getBidRequest.callsFake(() => req);
         });
 
         it('provides it to the adjustment fn', () => {
@@ -42,9 +42,9 @@ describe('adjustCpm', () => {
           adjustCpm(1, bidResponse, undefined, { index, bs });
           sinon.assert.calledWith(index.getBidRequest, bidResponse);
           sinon.assert.calledWith(adjustmentFn, 1, bidResponse, req);
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   Object.entries({
@@ -53,7 +53,7 @@ describe('adjustCpm', () => {
   }).forEach(([t, [bidResp, bidReq]]) => {
     describe(`when passed ${t}`, () => {
       beforeEach(() => {
-        bs.get.callsFake((bidder) => { if (bidder === bidderCode) return adjustmentFn });
+        bs.get.callsFake((bidder) => { if (bidder === bidderCode) return adjustmentFn; });
       });
       it('retrieves the correct bidder code', () => {
         expect(adjustCpm(1, bidResp, bidReq, { bs, index })).to.eql(2);
@@ -63,7 +63,7 @@ describe('adjustCpm', () => {
         sinon.assert.calledWith(adjustmentFn, 1, bidResp == null ? sinon.match.any : bidResp, bidReq);
       });
     });
-  })
+  });
 });
 
 describe('adjustAlternateBids', () => {
@@ -93,10 +93,10 @@ describe('adjustAlternateBids', () => {
     bs = {
       adapter: {
         bidCpmAdjustment(cpm) {
-          return cpm * 2
+          return cpm * 2;
         }
       }
-    }
+    };
     expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(1);
   });
 
@@ -105,15 +105,15 @@ describe('adjustAlternateBids', () => {
       adapter: {
         adjustAlternateBids: true,
         bidCpmAdjustment(cpm) {
-          return cpm * 2
+          return cpm * 2;
         }
       },
       bidder: {
         bidCpmAdjustment(cpm) {
-          return cpm * 3
+          return cpm * 3;
         }
       }
-    }
+    };
     expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(3);
   });
 });

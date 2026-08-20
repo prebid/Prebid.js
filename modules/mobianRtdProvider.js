@@ -43,8 +43,13 @@ export const EMOTIONS = 'emotions';
 export const GENRES = 'genres';
 export const RISK = 'risk';
 export const SENTIMENT = 'sentiment';
+export const TQ = 'tq';
+export const TG = 'tg';
 export const THEMES = 'themes';
 export const TONES = 'tones';
+export const dep = {
+  ajaxBuilder
+};
 
 export const CONTEXT_KEYS = [
   AP_VALUES,
@@ -53,6 +58,8 @@ export const CONTEXT_KEYS = [
   GENRES,
   RISK,
   SENTIMENT,
+  TQ,
+  TG,
   THEMES,
   TONES
 ];
@@ -101,7 +108,7 @@ export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
       });
     cache.set(pageUrl, pending);
     return pending;
-  }
+  };
 }
 
 export const getContextData = makeMemoizedFetch();
@@ -116,18 +123,19 @@ export function makeContextDataToKeyValuesReducer(config) {
         if (!value?.[apKey]?.length) return;
         keyValues.push([`${prefix}_ap_${apKey}`, value[apKey].map((v) => String(v))]);
       });
-    }
-    if (value?.length) {
+    } else if ((key === TQ || key === TG) && value != null) {
+      keyValues.push([`${prefix}_${key}`, value]);
+    } else if (value?.length) {
       keyValues.push([`${prefix}_${key}`, value]);
     }
     return keyValues;
-  }
+  };
 }
 
 export async function fetchContextData() {
   const pageUrl = encodeURIComponent(window.location.href);
   const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
-  const request = ajaxBuilder();
+  const request = dep.ajaxBuilder();
 
   return new Promise((resolve, reject) => {
     request(requestUrl, { success: resolve, error: reject });
@@ -159,7 +167,7 @@ export function setTargeting(config, contextData) {
   logMessage('context', contextData);
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.publisherTargeting.includes(key))
-    .reduce(makeContextDataToKeyValuesReducer(config), [])
+    .reduce(makeContextDataToKeyValuesReducer(config), []);
 
   keyValues.forEach(([key, value]) => setKeyValue(key, value));
 }
@@ -181,6 +189,8 @@ export function makeDataFromResponse(contextData) {
     [GENRES]: results.mobianGenres,
     [RISK]: results.mobianRisk || 'unknown',
     [SENTIMENT]: results.mobianSentiment || 'unknown',
+    [TQ]: results.mobian_tq,
+    [TG]: results.mobian_tg,
     [THEMES]: results.mobianThemes,
     [TONES]: results.mobianTones,
   };

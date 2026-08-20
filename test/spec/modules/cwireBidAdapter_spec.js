@@ -32,7 +32,7 @@ describe("C-WIRE bid adapter", () => {
   ];
   const bidderRequest = {
     pageViewId: "326dca71-9ca0-4e8f-9e4d-6106161ac1ad"
-  }
+  };
   const response = {
     body: {
       cwid: "2ef90743-7936-4a82-8acf-e73382a64e94",

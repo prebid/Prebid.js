@@ -205,7 +205,7 @@ describe('Adloox RTD Provider', function () {
       const auction = { adUnits: [adUnitWithSegments] };
       const getAuctionStub = sinon.stub(auctionManager.index, 'getAuction').returns({
         adUnits: [adUnitWithSegments],
-        getFPD: () => { return { global: { site: { ext: { data: { adloox_rtd: { ok: true } } } } } } }
+        getFPD: () => { return { global: { site: { ext: { data: { adloox_rtd: { ok: true } } } } } }; }
       });
 
       const targetingData = rtdProvider.getTargetingData([adUnitWithSegments.code], CONFIG, null, auction);

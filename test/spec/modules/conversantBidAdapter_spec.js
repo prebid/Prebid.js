@@ -3,13 +3,13 @@ import { spec } from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { deepAccess } from 'src/utils';
 // load modules that register ORTB processors
-import 'src/prebid.js'
+import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import { hook } from '../../../src/hook.js'
+import { hook } from '../../../src/hook.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
 describe('Conversant adapter tests', function() {
@@ -444,7 +444,7 @@ describe('Conversant adapter tests', function() {
     const request = spec.buildRequests(bidRequests, bidderRequest);
     const payload = request.data;
     expect(payload.cur).deep.equal(['USD']);
-  })
+  });
 
   it('Verify supply chain data', () => {
     const bidderRequest = { refererInfo: { page: 'http://test.com?a=b&c=123' } };
@@ -601,7 +601,7 @@ describe('Conversant adapter tests', function() {
         expect(result.cpm).to.equal(nativeBidResponse.body.seatbid[0].bid[0].price);
       });
     }
-  })
+  });
 
   describe('Extended ID', function() {
     it('Verify unifiedid and liveramp', function() {

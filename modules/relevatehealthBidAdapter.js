@@ -29,6 +29,6 @@ export const spec = {
     const Response = getBannerResponse(bidResp, BANNER);
     return Response;
   }
-}
+};
 
 registerBidder(spec);

@@ -126,21 +126,21 @@ describe('RTBHouseAdapter', () => {
     it('should build channel param into request.site', () => {
       const builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
       expect(JSON.parse(builtTestRequest).site.channel).to.equal('Partner_Site - news');
-    })
+    });
 
     it('should not build channel param into request.site if no value is passed', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].params.channel = undefined;
       const builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
-      expect(JSON.parse(builtTestRequest).site.channel).to.be.undefined
-    })
+      expect(JSON.parse(builtTestRequest).site.channel).to.be.undefined;
+    });
 
     it('should cap the request.site.channel length to 50', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].params.channel = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent scelerisque ipsum eu purus lobortis iaculis.';
       const builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
-      expect(JSON.parse(builtTestRequest).site.channel.length).to.equal(50)
-    })
+      expect(JSON.parse(builtTestRequest).site.channel.length).to.equal(50);
+    });
 
     it('should build valid OpenRTB banner object', () => {
       const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
@@ -155,7 +155,7 @@ describe('RTBHouseAdapter', () => {
           w: 300,
           h: 600
         }]
-      })
+      });
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -349,7 +349,7 @@ describe('RTBHouseAdapter', () => {
       bidRequest[0].getFloor = () => ({ floor: 1.22, currency: 'USD' });
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.imp[0].bidfloor).to.equal(1.22)
+      expect(data.imp[0].bidfloor).to.equal(1.22);
     });
 
     it('should use bidfloor from floor module if both floor module and bid floor available', () => {
@@ -358,7 +358,7 @@ describe('RTBHouseAdapter', () => {
       bidRequest[0].params.bidfloor = 0.01;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.imp[0].bidfloor).to.equal(1.22)
+      expect(data.imp[0].bidfloor).to.equal(1.22);
     });
 
     it('should include bidfloor in request if available', () => {
@@ -366,7 +366,7 @@ describe('RTBHouseAdapter', () => {
       bidRequest[0].params.bidfloor = 0.01;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.imp[0].bidfloor).to.equal(0.01)
+      expect(data.imp[0].bidfloor).to.equal(0.01);
     });
 
     it('should include schain in request', () => {
@@ -634,7 +634,7 @@ describe('RTBHouseAdapter', () => {
           title: {
             len: 100
           }
-        })
+        });
       });
 
       it('should extract native params when many mediaTypes', () => {
@@ -653,7 +653,7 @@ describe('RTBHouseAdapter', () => {
           title: {
             len: 100
           }
-        })
+        });
       });
 
       it('should not contain banner in imp', () => {
@@ -688,7 +688,7 @@ describe('RTBHouseAdapter', () => {
               h: 250,
               type: OPENRTB.NATIVE.IMAGE_TYPE.MAIN,
             }
-          })
+          });
         });
 
         it('should parse multiple image sizes', () => {
@@ -709,8 +709,8 @@ describe('RTBHouseAdapter', () => {
               h: 250,
               type: OPENRTB.NATIVE.IMAGE_TYPE.MAIN,
             }
-          })
-        })
+          });
+        });
       });
 
       it('should parse aspect ratios with min_width', () => {
@@ -735,7 +735,7 @@ describe('RTBHouseAdapter', () => {
             wmin: 300,
             hmin: 450,
           }
-        })
+        });
       });
 
       it('should parse aspect ratios without min_width', () => {
@@ -759,7 +759,7 @@ describe('RTBHouseAdapter', () => {
             wmin: 100,
             hmin: 150,
           }
-        })
+        });
       });
 
       it('should handle all native assets', () => {
@@ -777,8 +777,8 @@ describe('RTBHouseAdapter', () => {
         }));
         expect(imp.native.request.assets.length).to.equal(6);
         imp.native.request.assets.forEach(asset => {
-          expect(asset.id).to.be.at.least(1)
-        })
+          expect(asset.id).to.be.at.least(1);
+        });
       });
     });
   });

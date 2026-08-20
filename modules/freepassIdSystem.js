@@ -34,7 +34,7 @@ export const freepassIdSubmodule = {
   getId: function (config, _, storedId) {
     logMessage('Getting FreePass ID using config: ' + JSON.stringify(config));
 
-    const freepassData = config.params !== undefined ? (config.params.freepassData || {}) : {}
+    const freepassData = config.params !== undefined ? (config.params.freepassData || {}) : {};
     const idObject = {};
 
     // Use stored userId or generate new one

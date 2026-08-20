@@ -350,7 +350,7 @@ function createRenderer(bid, videoPlayerUrl) {
 
   try {
     renderer.setRender(function (bidResponse) {
-      const adUnit = getAdUnitElement(bidResponse) ?? document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId)
+      const adUnit = getAdUnitElement(bidResponse) ?? document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId);
 
       if (!window.createOutstreamPlayer) {
         logWarn('Renderer error: outstream player is not available');

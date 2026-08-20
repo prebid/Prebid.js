@@ -169,11 +169,11 @@ describe('RedtramBidAdapter', function () {
         gdprApplies: true
       }, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://prebid.redtram.com/sync/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://prebid.redtram.com/sync/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0');
     });
   });
 

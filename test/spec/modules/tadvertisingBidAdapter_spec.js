@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import {
-  spec,
-  buildSuccessNotification,
   buildErrorNotification,
+  buildSuccessNotification,
   buildTimeoutNotification,
+  dep,
+  getBidFloor,
   sendNotification,
-  getBidFloor
+  spec
 } from 'modules/tadvertisingBidAdapter';
 import * as utils from '../../../src/utils.js';
-import * as ajax from '../../../src/ajax.js';
 import sinon from 'sinon';
 
 describe('tadvertisingBidAdapter', () => {
@@ -58,7 +58,7 @@ describe('tadvertisingBidAdapter', () => {
           "auctionId": "1d1a030790a475"
         }
       ]
-    }
+    };
   }
 
   describe('isBidRequestValid', function () {
@@ -258,18 +258,18 @@ describe('tadvertisingBidAdapter', () => {
         ],
         "id": "test_id",
         "test": 0
-      }
+      };
     }
 
     it('should return a valid bid request', function () {
       const request = spec.buildRequests(getBid(), getBidderRequest());
       const data = request.data;
-      const expected = getConvertedBidRequest()
+      const expected = getConvertedBidRequest();
 
       expect(request.method).to.equal('POST');
       expect(data.imp.id).to.equal(expected.imp.id);
       expect(data.imp.banner).to.equal(expected.imp.banner);
-    })
+    });
 
     it('should set imp.0.bidfloor and imp.0.bidfloorcur when bidFloor is present', function () {
       let bidderRequest = getBidderRequest();
@@ -279,7 +279,7 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(data.imp[0].bidfloor).to.equal(1.5);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
-    })
+    });
 
     it('should set imp.0.bidfloor and imp.0.bidfloorcur when getFloor returns valid floor', function () {
       let bidderRequest = getBidderRequest();
@@ -294,30 +294,30 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(data.imp[0].bidfloor).to.equal(2.5);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
-    })
+    });
 
     it('should set placementId on every impression on bids', function() {
       let bidderRequest = getBidderRequest();
-      let bid1 = getBid()
-      bid1.bidId = '123'
-      bid1.params.placementId = '111'
+      let bid1 = getBid();
+      bid1.bidId = '123';
+      bid1.params.placementId = '111';
 
-      let bid2 = getBid()
-      bid2.bidId = '456'
-      bid2.params.placementId = '222'
+      let bid2 = getBid();
+      bid2.bidId = '456';
+      bid2.params.placementId = '222';
 
-      bidderRequest.bids = [bid1, bid2]
+      bidderRequest.bids = [bid1, bid2];
 
       const request = spec.buildRequests([bid1, bid2], bidderRequest);
       const data = request.data;
 
       expect(data.imp[0].ext.gpid).to.equal(bidderRequest.bids[0].params.placementId);
       expect(data.imp[1].ext.gpid).to.equal(bidderRequest.bids[1].params.placementId);
-    })
+    });
 
     it('should add unified ID info to user.ext.eids in the request', function () {
       let bidderRequest = getBidderRequest();
-      let bid1 = bidderRequest.bids[0]
+      let bid1 = bidderRequest.bids[0];
       bid1.userIdAsEids = [
         {
           source: 'adserver.org',
@@ -333,13 +333,13 @@ describe('tadvertisingBidAdapter', () => {
         }
       ];
 
-      const expectedEids = bid1.userIdAsEids
+      const expectedEids = bid1.userIdAsEids;
 
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const data = request.data;
 
-      expect(data.user.ext.eids).to.deep.equal(expectedEids)
-    })
+      expect(data.user.ext.eids).to.deep.equal(expectedEids);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -375,7 +375,7 @@ describe('tadvertisingBidAdapter', () => {
             }
           ]
         }
-      }
+      };
     }
 
     it('should return an empty array when there is no body', function () {
@@ -385,7 +385,7 @@ describe('tadvertisingBidAdapter', () => {
       const emptyArray = spec.interpretResponse({ body: {} }, bidRequest);
 
       expect(emptyArray).to.deep.equal([]);
-    })
+    });
 
     it('should return successful bid', function () {
       const bidderRequest = getBidderRequest();
@@ -399,7 +399,7 @@ describe('tadvertisingBidAdapter', () => {
       expect(bid.netRevenue).to.equal(true);
       expect(bid.currency).to.deep.equal("USD");
       expect(bid.dealId).to.equal(null);
-    })
+    });
 
     it('should set currency to usd when response.body.curr is null', function () {
       const bidderRequest = getBidderRequest();
@@ -410,7 +410,7 @@ describe('tadvertisingBidAdapter', () => {
       const bid = interpretedBids[0];
 
       expect(bid.currency).to.deep.equal("USD");
-    })
+    });
 
     it('should set mediaType to video ', function () {
       const bidderRequest = getBidderRequest();
@@ -424,7 +424,7 @@ describe('tadvertisingBidAdapter', () => {
       const bid = interpretedBids[0];
 
       expect(bid.mediaType).to.deep.equal("video");
-    })
+    });
 
     it('should return empty array when response has no body', function () {
       const bidderRequest = getBidderRequest();
@@ -434,7 +434,7 @@ describe('tadvertisingBidAdapter', () => {
       const interpretedBids = spec.interpretResponse(bidderResponse, bidRequest);
 
       expect(interpretedBids).to.deep.equal([]);
-    })
+    });
 
     it('should return empty array when response has only id and ext.uss', function () {
       const bidderRequest = getBidderRequest();
@@ -444,7 +444,7 @@ describe('tadvertisingBidAdapter', () => {
       const interpretedBids = spec.interpretResponse(bidderResponse, bidRequest);
 
       expect(interpretedBids).to.deep.equal([]);
-    })
+    });
   });
 
   describe('getUserSyncs', function() {
@@ -477,35 +477,35 @@ describe('tadvertisingBidAdapter', () => {
         },
         "gdprApplies": true,
         "apiVersion": 2
-      }
+      };
     }
 
     it('should return an empty array when sync is enabled but there are no bidResponses', function () {
-      let result = spec.getUserSyncs({ pixelEnabled: true }, [], getGdprConsent())
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [], getGdprConsent());
 
       expect(result).to.have.length(0);
     });
 
     it('should return an empty array with when sync is not enabled', function () {
       let serverResponse = { body: { ext: { uss: 0 } } };
-      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent())
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent());
 
       expect(result).to.have.length(0);
     });
 
     it('should return an empty array with when purpose one is not consented', function () {
       let serverResponse = { body: { ext: { uss: 1 } } };
-      let consent = getGdprConsent()
+      let consent = getGdprConsent();
       consent.vendorData.purpose.consents[1] = false;
 
-      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], consent)
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], consent);
 
       expect(result).to.have.length(0);
     });
 
     it('should return an array with sync if purpose and venders are consented', function () {
       let serverResponse = { body: { ext: { uss: 1 } } };
-      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent())
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent());
 
       expect(result).to.have.length(1);
     });
@@ -515,18 +515,18 @@ describe('tadvertisingBidAdapter', () => {
       let gdprConsent = getGdprConsent();
       gdprConsent.gdprApplies = null;
 
-      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent)
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent);
 
       expect(result).to.have.length(1);
-      expect(result[0].url).is.equal(spec.sync_url + '&gdpr_consent=CQTJuAAQTJuAAB7FlCENBvFsAP_gAEPgAAAALSNT_G__bWlr-T73aftkeYxP9_h77sQxBgbJE-4FzLvW_JwXx2E5NAzatqIKmRIAu3TBIQNlHJDURVCgaogVryDMaEyUoTNKJ6BkiBMRI2NYCFxvm4tjeQCY5vr991c1mB-t7dr83dzyy4hHn3a5_2S1WJCdAYetDfv8ZBKT-9IMd_x8v4v4_F7pE2-eS1n_pGvp6D9-YnM_9B299_bbffzPn__ql_-_X_vf_n37v943n77v___BaAAEw0KiCMsiAEIlAwggQAKCsICKBAEAACQNEBACYMCnIGAC6wkQAgBQADBACAAEGAAIAABIAEIgAoAKBAABAIFAAGABAMBAAwMAAYALAQCAAEB0DFMCCAQLABIzIoNMCUABIICWyoQSAIEFcIQizwCCBETBQAAAgAFAQAAPBYDEkgJWJBAFxBNAAAQAABRAgQIpGzAEFAZstBeDJ9GRpgGD5gmaUwDIAiCMjJNiE37TDxyFEKAA')
-    })
+      expect(result[0].url).is.equal(spec.sync_url + '&gdpr_consent=CQTJuAAQTJuAAB7FlCENBvFsAP_gAEPgAAAALSNT_G__bWlr-T73aftkeYxP9_h77sQxBgbJE-4FzLvW_JwXx2E5NAzatqIKmRIAu3TBIQNlHJDURVCgaogVryDMaEyUoTNKJ6BkiBMRI2NYCFxvm4tjeQCY5vr991c1mB-t7dr83dzyy4hHn3a5_2S1WJCdAYetDfv8ZBKT-9IMd_x8v4v4_F7pE2-eS1n_pGvp6D9-YnM_9B299_bbffzPn__ql_-_X_vf_n37v943n77v___BaAAEw0KiCMsiAEIlAwggQAKCsICKBAEAACQNEBACYMCnIGAC6wkQAgBQADBACAAEGAAIAABIAEIgAoAKBAABAIFAAGABAMBAAwMAAYALAQCAAEB0DFMCCAQLABIzIoNMCUABIICWyoQSAIEFcIQizwCCBETBQAAAgAFAQAAPBYDEkgJWJBAFxBNAAAQAABRAgQIpGzAEFAZstBeDJ9GRpgGD5gmaUwDIAiCMjJNiE37TDxyFEKAA');
+    });
 
     it('should return empty sync array when pixel is not enabled', function () {
       let serverResponse = { body: { ext: { uss: 1 } } };
       let gdprConsent = getGdprConsent();
       gdprConsent.gdprApplies = false;
 
-      let result = spec.getUserSyncs({ pixelEnabled: false }, [serverResponse], gdprConsent)
+      let result = spec.getUserSyncs({ pixelEnabled: false }, [serverResponse], gdprConsent);
 
       expect(result).is.empty;
     });
@@ -553,8 +553,8 @@ describe('tadvertisingBidAdapter', () => {
         "mediaType": "banner",
         "status": "rendered",
         "timeToRespond": 250
-      }
-      let result = buildSuccessNotification(bidderRequest)
+      };
+      let result = buildSuccessNotification(bidderRequest);
 
       expect(result).to.deep.equal({
         "adId": "ad789",
@@ -593,14 +593,14 @@ describe('tadvertisingBidAdapter', () => {
           "page": "https://example.com/page"
         },
         "timeout": 3000
-      }
+      };
 
       let error = {
         "timedOut": false,
         "status": 404,
         "responseText": "Resource not found"
-      }
-      let result = buildErrorNotification(bidderRequest, error)
+      };
+      let result = buildErrorNotification(bidderRequest, error);
 
       expect(result).to.deep.equal({
         "publisherId": "publisher123",
@@ -633,14 +633,14 @@ describe('tadvertisingBidAdapter', () => {
           "page": "https://example.com/page"
         },
         "timeout": 3000
-      }
+      };
 
       let error = {
         "timedOut": false,
         "status": 404,
         "responseText": "Resource not found"
-      }
-      let result = buildErrorNotification(bidderRequest, error)
+      };
+      let result = buildErrorNotification(bidderRequest, error);
 
       expect(result).to.deep.equal({
         "publisherId": "publisher123",
@@ -673,9 +673,9 @@ describe('tadvertisingBidAdapter', () => {
           "page": "https://example.com/page"
         },
         "timeout": 3000
-      }
+      };
 
-      let result = buildErrorNotification(bidderRequest)
+      let result = buildErrorNotification(bidderRequest);
 
       expect(result).to.deep.equal({
         "publisherId": "publisher123",
@@ -686,7 +686,7 @@ describe('tadvertisingBidAdapter', () => {
         "page": "https://example.com/page",
         "timeout": 3000,
       });
-    })
+    });
   });
 
   describe('buildTimeoutNotification', function() {
@@ -707,8 +707,8 @@ describe('tadvertisingBidAdapter', () => {
           }
         },
         "timeout": 3000
-      }
-      let result = buildTimeoutNotification(bid)
+      };
+      let result = buildTimeoutNotification(bid);
 
       expect(result).to.deep.equal({
         "publisherId": "publisher123",
@@ -729,8 +729,8 @@ describe('tadvertisingBidAdapter', () => {
 
     beforeEach(function() {
       spec.notify_url = 'https://test.com/notify';
-      sendBeaconStub = sinon.stub(ajax, 'sendBeacon');
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      sendBeaconStub = sinon.stub(dep, 'sendBeacon');
+      ajaxStub = sinon.stub(dep, 'ajax');
       logErrorStub = sinon.stub(utils, 'logError');
     });
 
@@ -984,4 +984,4 @@ describe('tadvertisingBidAdapter', () => {
       expect(result).to.be.null;
     });
   });
-})
+});

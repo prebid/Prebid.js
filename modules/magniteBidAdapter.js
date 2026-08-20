@@ -319,7 +319,7 @@ function createRequest(bidRequests, bidderRequest, acctSite, mediaType) {
     method: 'POST',
     url: `${(mgniConf.bidEndpoint || REQUEST_URL)}?as=${acctSite}&m=${mediaType}&s=${bidRequests.length}`,
     data: converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
-  }
+  };
 }
 
 function interpretResponse(resp, req) {

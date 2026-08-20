@@ -24,7 +24,7 @@ import {
 } from './utils.js';
 import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
 import { newBidder } from './adapters/bidderFactory.js';
-import { ajaxBuilder } from './ajax.js';
+import { qualifiedAjaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
 import {
@@ -41,7 +41,7 @@ import {
   incrementRequestsCounter
 } from './adUnits.js';
 import { getRefererInfo, type RefererInfo } from './refererDetection.js';
-import { GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
+import { allConsent, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
 import { EVENTS, S2S } from './constants.js';
 import { type Metrics, useMetrics } from './utils/perfMetrics.js';
@@ -65,7 +65,8 @@ import type { DeepPartial } from "./types/objects.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import type {
   AnalyticsConfig,
-  AnalyticsProvider, AnalyticsProviderConfig,
+  AnalyticsProvider,
+  SomeAnalyticsConfig,
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { getGlobal } from "./prebidGlobal.ts";
 
@@ -75,16 +76,16 @@ export const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
   CLIENT: 'client',
   SERVER: 'server'
-}
+};
 
 export const dep = {
   isAllowed: isActivityAllowed,
   redact: redactor
-}
+};
 
 const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
-const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number } } = {};
+const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
 
 let _s2sConfigs : any[] | any = [];
 config.getConfig('s2sConfig', config => {
@@ -225,7 +226,7 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
   src: SRC;
   metrics: Metrics,
   getTid: ReturnType<typeof tidFactory>;
-}
+};
 
 export type AliasBidderOptions = {
   /**
@@ -240,13 +241,14 @@ export type AliasBidderOptions = {
    * If true, the alias will not be communicated to Prebid Server.
    */
   skipPbsAliasing?: boolean
-}
+};
 
 export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & {
   code?: P;
   enableAnalytics(config: AnalyticsConfig<P>): void;
+  disableAnalytics?: () => void;
   gvlid?: number | ((config: AnalyticsConfig<P>) => number);
-}
+};
 
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, getTid }: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
@@ -268,7 +270,7 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
           getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES),
         );
 
-        const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
+        const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes;
 
         if (isValidMediaTypes(mediaTypes)) {
           bid = Object.assign({}, bid, {
@@ -325,7 +327,7 @@ export const filterBidsForAdUnit = hook('sync', function(bids, s2sConfig, { getS
       const configName = getConfigName(s2sConfig);
       const allowedS2SConfigs = Array.isArray(bid.s2sConfigName) ? bid.s2sConfigName : [bid.s2sConfigName];
       return allowedS2SConfigs.includes(configName);
-    })
+    });
   }
 }, 'filterBidsForAdUnit');
 
@@ -394,7 +396,7 @@ function getAdUnitCopyForClientAdapters(adUnits: AdUnit[]) {
  */
 export const setupAdUnitMediaTypes = hook('sync', (adUnits, labels) => {
   return adUnits;
-}, 'setupAdUnitMediaTypes')
+}, 'setupAdUnitMediaTypes');
 
 /**
  * @param {{}|Array<{}>} s2sConfigs
@@ -424,7 +426,7 @@ export function _partitionBidders (adUnits, s2sConfigs, { getS2SBidders = getS2S
     const partition = serverBidders.has(bidder) ? PARTITIONS.SERVER : PARTITIONS.CLIENT;
     memo[partition].push(bidder);
     return memo;
-  }, { [PARTITIONS.CLIENT]: [], [PARTITIONS.SERVER]: [] })
+  }, { [PARTITIONS.CLIENT]: [], [PARTITIONS.SERVER]: [] });
 }
 
 export const partitionBidders = hook('sync', _partitionBidders, 'partitionBidders');
@@ -453,7 +455,7 @@ function tidFactory() {
   let tidSource, getTid;
   if (consistent) {
     tidSource = 'pbjsStable';
-    getTid = (saneTid) => saneTid
+    getTid = (saneTid) => saneTid;
   } else {
     tidSource = 'pbjs';
     getTid = (() => {
@@ -466,15 +468,19 @@ function tidFactory() {
           tids[bidderCode][saneTid] = `u${generateUUID()}`;
         }
         return tids[bidderCode][saneTid];
-      }
+      };
     })();
   }
   return function (bidderCode, saneTid, fpdTid) {
     return [
       fpdTid ?? getTid(saneTid, bidderCode),
       fpdTid != null ? 'pub' : tidSource
-    ]
-  }
+    ];
+  };
+}
+
+function isAnalyticsAllowed(analyticsConfig) {
+  return dep.isAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_ANALYTICS, analyticsConfig.provider, { [ACTIVITY_PARAM_ANL_CONFIG]: analyticsConfig }));
 }
 
 const adapterManager = {
@@ -543,7 +549,7 @@ const adapterManager = {
         )));
         fpdCache[cacheKey] = fpd;
         return [fpd, redact];
-      }
+      };
     })();
 
     let { [PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders } = partitionBidders(adUnits, _s2sConfigs);
@@ -593,7 +599,7 @@ const adapterManager = {
       bidderRequest.bids = bidderRequest.bids.map((bid) => {
         bid.ortb2 = fpd;
         return redact.bidRequest(bid);
-      })
+      });
       return bidderRequest as T;
     }
 
@@ -742,7 +748,7 @@ const adapterManager = {
     _s2sConfigs.forEach((s2sConfig) => {
       if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
         // s2s should get the same client side timeout as other client side requests.
-        const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+        const s2sAjax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, requestBidsTimeout, requestCallbacks ? {
           request: requestCallbacks.request.bind(null, 's2s'),
           done: requestCallbacks.done
         } : undefined);
@@ -763,7 +769,7 @@ const adapterManager = {
                   onTimelyResponse(bidRequest.bidderRequestId);
                 }
                 doneCb.apply(bidRequest, [timedOut, ...args]);
-              }
+              };
             });
 
             const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
@@ -799,7 +805,7 @@ const adapterManager = {
         logMessage(`CALLING BIDDER`);
         events.emit(EVENTS.BID_REQUESTED, bidderRequest);
       });
-      const ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+      const ajax = qualifiedAjaxBuilder(MODULE_TYPE_BIDDER, bidderRequest.bidderCode, requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
         done: requestCallbacks.done
       } : undefined);
@@ -821,7 +827,7 @@ const adapterManager = {
         logError(`${bidderRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: bidderRequest });
         adapterDone();
       }
-    })
+    });
   },
   videoAdapters: [],
   registerBidAdapter(bidAdapter, bidderCode, { supportedMediaTypes = [] } = {}) {
@@ -878,7 +884,7 @@ const adapterManager = {
             const spec = bidAdapter.getSpec();
             const gvlid = useBaseGvlid ? spec.gvlid : options?.gvlid;
             if (gvlid == null && spec.gvlid != null) {
-              logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`)
+              logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`);
             }
 
             const skipPbsAliasing = options && options.skipPbsAliasing;
@@ -923,24 +929,48 @@ const adapterManager = {
       logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
     }
   },
-  enableAnalytics(
-    config: AnalyticsConfig<keyof AnalyticsProviderConfig>
-            | AnalyticsConfig<AnalyticsProvider>
-            | AnalyticsConfig<AnalyticsProvider>[]
-            | any
-  ) {
-    if (!isArray(config)) {
-      config = [config];
-    }
-
-    config.forEach(adapterConfig => {
+  enableAnalytics(config: SomeAnalyticsConfig | SomeAnalyticsConfig[]) {
+    (Array.isArray(config) ? config : [config]).forEach(adapterConfig => {
       const entry = _analyticsRegistry[adapterConfig.provider];
       if (entry && entry.adapter) {
-        if (dep.isAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_ANALYTICS, adapterConfig.provider, { [ACTIVITY_PARAM_ANL_CONFIG]: adapterConfig }))) {
-          entry.adapter.enableAnalytics(adapterConfig);
+        entry.config = adapterConfig;
+        if (isAnalyticsAllowed(adapterConfig)) {
+          try {
+            // the registry is keyed by provider name, which loses the tie between an adapter and
+            // the configuration type it declared; the two do match, having been registered together
+            entry.adapter.enableAnalytics(adapterConfig as AnalyticsConfig<AnalyticsProvider>);
+            entry.enabled = true;
+          } catch (e) {
+            logError(`Could not enable '${adapterConfig.provider}' analytics`, e);
+          }
         }
       } else {
         logError(`Prebid Error: no analytics adapter found in registry for '${adapterConfig.provider}'.`);
+      }
+    });
+  },
+  disableAnalytics(adapterCode: AnalyticsProvider) {
+    const entry = _analyticsRegistry[adapterCode];
+    if (entry && entry.enabled) {
+      if (typeof entry.adapter.disableAnalytics === 'function') {
+        try {
+          entry.adapter.disableAnalytics();
+          entry.enabled = false;
+        } catch (e) {
+          logError(`Could not disable '${adapterCode}' analytics`, e);
+        }
+      } else {
+        logWarn(`Could not disable '${adapterCode}' analytics: adapter does not provide a 'disableAnalytics' method`);
+      }
+    }
+  },
+  refreshAnalytics() {
+    Object.entries(_analyticsRegistry).forEach(([code, entry]) => {
+      const { enabled, config } = entry;
+      if (enabled && !isAnalyticsAllowed(config)) {
+        adapterManager.disableAnalytics(code);
+      } else if (!enabled && config != null) {
+        adapterManager.enableAnalytics(config);
       }
     });
   },
@@ -978,7 +1008,7 @@ const adapterManager = {
           .forEach((url) => internal.triggerPixel(url));
         tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
       }
-    }
+    };
   })(),
   callSetTargetingBidder(bidder, bid) {
     tryCallBidderMethod(bidder, 'onSetTargeting', bid);
@@ -994,7 +1024,7 @@ const adapterManager = {
     tryCallBidderMethod(bidder, 'onAdRenderSucceeded', bid);
   },
   callOnInterventionBidder(bidder, bid, intervention) {
-    const param = { bid, intervention }
+    const param = { bid, intervention };
     tryCallBidderMethod(bidder, 'onIntervention', param);
   },
   /**
@@ -1026,7 +1056,7 @@ const adapterManager = {
     });
   })
 
-}
+};
 
 function getSupportedMediaTypes(bidderCode) {
   const supportedMediaTypes = [];
@@ -1039,7 +1069,7 @@ function getBidderMethod(bidder, method): [string, string] {
   const adapter = _bidderRegistry[bidder];
   const spec = adapter?.getSpec && adapter.getSpec();
   if (spec && spec[method] && typeof spec[method] === 'function') {
-    return [spec, spec[method]]
+    return [spec, spec[method]];
   }
 }
 
@@ -1070,4 +1100,5 @@ function resolveAlias(alias) {
   return alias;
 }
 
+allConsent.onChange(adapterManager.refreshAnalytics);
 export default adapterManager;

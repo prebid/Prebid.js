@@ -27,5 +27,5 @@ export function getAllOrtbKeywords(ortb2, ...extraCommaSeparatedKeywords) {
   return mergeKeywords(
     ...ORTB_KEYWORDS_PATHS.map(path => deepAccess(ortb2, path)),
     ...extraCommaSeparatedKeywords
-  )
+  );
 }

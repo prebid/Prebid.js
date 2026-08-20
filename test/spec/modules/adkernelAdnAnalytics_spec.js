@@ -199,7 +199,7 @@ describe('', function () {
 
     beforeEach(function () {
       sandbox.stub(events, 'getEvents').callsFake(() => {
-        return []
+        return [];
       });
     });
 

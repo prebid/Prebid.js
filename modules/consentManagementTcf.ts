@@ -14,11 +14,15 @@ import { configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
 import { CONSENT_GDPR } from "../src/consentHandler.ts";
 import type { CMConfig } from "../libraries/consentManagement/cmUtils.ts";
+import { TCF_CMP_VERSION } from '../libraries/consentManagement/consentUtils.js';
+import type { TCFConsentData } from '../src/types/consent/tcf.d.ts';
+
+export type { TCFConsentData } from '../src/types/consent/tcf.d.ts';
 
 export let consentConfig: any = {};
 export let gdprScope;
 let dsaPlatform;
-const CMP_VERSION = 2;
+const CMP_VERSION = TCF_CMP_VERSION;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -27,31 +31,6 @@ const cmpCallMap = {
 
 // CMP event manager instance for TCF
 export let tcfCmpEventManager: CmpEventManager | null = null;
-
-/**
- * @see https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework
- * @see https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore
- */
-export type TCFConsentData = {
-  apiVersion: typeof CMP_VERSION;
-  /**
-   * The consent string.
-   */
-  consentString: string;
-  /**
-   * True if GDPR is in scope.
-   */
-  gdprApplies: boolean;
-  /**
-   * The response from the CMP.
-   */
-  vendorData: Record<string, any>;
-  /**
-   * Additional consent string, if provided by the CMP.
-   * @see https://support.google.com/admanager/answer/9681920?hl=en
-   */
-  addtlConsent?: `${number}~${string}~${string}`;
-}
 
 export interface TCFConfig {
   /**
@@ -68,9 +47,6 @@ export interface TCFConfig {
 type TCFCMConfig = TCFConfig & CMConfig<TCFConsentData>;
 
 declare module '../src/consentHandler' {
-  interface ConsentData {
-    [CONSENT_GDPR]: TCFConsentData;
-  }
   interface ConsentManagementConfig {
     [CONSENT_GDPR]?: TCFCMConfig;
   }
@@ -101,7 +77,7 @@ function lookupIabConsent(setProvisionalConsent) {
           }
         }
       } else {
-        reject(Error('CMP unable to register callback function.  Please check CMP setup.'))
+        reject(Error('CMP unable to register callback function.  Please check CMP setup.'));
       }
     }
 
@@ -112,7 +88,7 @@ function lookupIabConsent(setProvisionalConsent) {
     });
 
     if (!cmp) {
-      reject(new Error('TCF2 CMP not found.'))
+      reject(new Error('TCF2 CMP not found.'));
     }
     if ((cmp as any).isDirect) {
       logInfo('Detected CMP API is directly accessible, calling it now...');
@@ -129,8 +105,8 @@ function lookupIabConsent(setProvisionalConsent) {
     cmp({
       command: 'addEventListener',
       callback: cmpResponseCallback
-    })
-  })
+    });
+  });
 }
 
 function parseConsentData(consentObject): TCFConsentData {
@@ -145,7 +121,7 @@ function parseConsentData(consentObject): TCFConsentData {
   }
 
   if (checkData()) {
-    throw Object.assign(new Error(`CMP returned unexpected value during lookup process.`), { args: [consentObject] })
+    throw Object.assign(new Error(`CMP returned unexpected value during lookup process.`), { args: [consentObject] });
   } else {
     return toConsentData(consentObject);
   }
@@ -189,7 +165,7 @@ const parseConfig = configParser({
   parseConsentData,
   getNullConsent: () => toConsentData(null),
   cmpEventCleanup: removeCmpListener
-} as any)
+} as any);
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
@@ -234,4 +210,4 @@ export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
   }
 }
 
-registerOrtbProcessor({ type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent })
+registerOrtbProcessor({ type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent });

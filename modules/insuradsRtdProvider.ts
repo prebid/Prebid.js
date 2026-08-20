@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logInfo } from '../src/utils.js'
+import { logInfo } from '../src/utils.js';
 import { fetch } from '../src/ajax.js';
 import type { RtdProviderSpec } from './rtdModule/spec.ts';
 
@@ -16,6 +16,10 @@ const GVLID = 596;
 // Internal state to store keyValues
 let keyValues = {};
 let apiCallPromise = Promise.resolve();
+
+export const dep = {
+  fetch
+};
 
 declare module './rtdModule/spec.ts' {
   interface ProviderConfig {
@@ -87,7 +91,7 @@ async function makeApiCall(publicId: string) {
   const currentUrl = encodeURIComponent(location.href);
 
   try {
-    const response = await fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
+    const response = await dep.fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

@@ -1,10 +1,11 @@
 'use strict';
 
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
@@ -14,20 +15,18 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.6';
+const ADAPTER_VERSION = '2.1.1';
 
 export const ortbConverterProps = {
   context: {
     netRevenue: true,
-    ttl: 60,
-    mediaType: 'banner'
+    ttl: 60
   },
 
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
     deepSetValue(req, 'device.pxratio', getDevicePixelRatio(getWindowContext()));
-    deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
       adapterversion: ADAPTER_VERSION,
@@ -42,7 +41,7 @@ export const ortbConverterProps = {
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const timeSpentOnPage = document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0
+    const timeSpentOnPage = document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0;
     const gpid = bidRequest.adUnitCode;
     imp.tagid = bidRequest.adUnitCode;
     imp.ext = mergeDeep({}, bidRequest.params, { timeSpentOnPage, gpid }, imp.ext);
@@ -68,14 +67,18 @@ export const ortbConverterProps = {
 
     return bidResponse;
   }
-}
+};
 
 export const converter = ortbConverter(ortbConverterProps);
 
 function isBidRequestValid(bid) {
-  const adUnitSizes = getAdUnitSizes(bid);
+  const bannerSizes = getAdUnitSizes(bid);
+  const videoPlayerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
 
-  const isValidSize = (Boolean(adUnitSizes) && adUnitSizes.length > 0);
+  const hasBannerSize = Array.isArray(bannerSizes) && bannerSizes.length > 0;
+  const hasVideoSize = Array.isArray(videoPlayerSize) && videoPlayerSize.length > 0;
+  const isValidSize = hasBannerSize || hasVideoSize;
+
   const hasAssetKeyAndAdUnitId = !!deepAccess(bid, 'params.adUnitId') && !!deepAccess(bid, 'params.assetKey');
   const hasPublisherIdAndAdUnitCode = !!deepAccess(bid, 'ortb2.site.publisher.id') && !!bid.adUnitCode;
 
@@ -128,33 +131,52 @@ function getFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
-  const floorResult = bid.getFloor({
-    currency: 'USD',
-    mediaType: 'banner',
-    size: '*'
-  });
 
-  return (isPlainObject(floorResult) && floorResult.currency === 'USD') ? floorResult.floor : 0;
+  // Detect banner from mediaTypes.banner rather than via getAdUnitSizes — Prebid
+  // populates bid.sizes from mediaTypes.video.playerSize for video-only adUnits,
+  // which would otherwise make hasBanner falsely true and route the floor query
+  // to the banner mediaType for an imp that has no banner.
+  const hasBanner = Boolean(deepAccess(bid, 'mediaTypes.banner'));
+  const videoPlayerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  const hasVideo = Array.isArray(videoPlayerSize) && videoPlayerSize.length > 0;
+
+  // Video-only bid: query the video floor.
+  // Banner-only and mixed banner+video bids: query the banner floor with the
+  // historical `size: '*'` wildcard. This preserves the exact pre-video-support
+  // behaviour for every banner imp (no regression on banner revenue) and treats
+  // mixed imps conservatively as banner.
+  const mediaType = (hasVideo && !hasBanner) ? VIDEO : BANNER;
+  const result = bid.getFloor({ currency: 'USD', mediaType, size: '*' });
+
+  return (isPlainObject(result) && result.currency === 'USD') ? result.floor : 0;
 }
 
 function getWindowContext() {
   try {
-    return getWindowTop()
+    return getWindowTop();
   } catch (e) {
-    return getWindowSelf()
+    return getWindowSelf();
   }
 }
 
 function onBidWon(bid) {
-  const w = getWindowContext()
-  w.OG_PREBID_BID_OBJECT = {
-    ...(bid && { ...bid }),
-  }
   if (bid && bid.nurl) ajax(bid.nurl, null);
+  try {
+    const w = getWindowContext();
+    w.OG_PREBID_BID_OBJECT = {
+      ...(bid && { ...bid }),
+    };
+  } catch (e) {
+    // top window is not writable from a cross-origin frame; the win ping already fired above
+  }
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: window.location.href }), {
+  // report the same page as the bid request: site.page comes from the bid's ortb2, which the
+  // core already enriched with refererInfo and let the publisher override. Fall back to
+  // refererInfo when a timeout event carries no ortb2 (bids dropped before FPD is attached).
+  const page = deepAccess(timeoutData[0], 'ortb2.site.page') || getRefererInfo().page || window.location.href;
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: page }), {
     method: 'POST',
     contentType: 'application/json'
   });
@@ -163,7 +185,7 @@ function onTimeout(timeoutData) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   getUserSyncs,
   buildRequests,
@@ -172,6 +194,6 @@ export const spec = {
   onBidWon,
   getWindowContext,
   onTimeout
-}
+};
 
 registerBidder(spec);

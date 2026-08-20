@@ -11,17 +11,21 @@ import { getStorageManager } from '../src/storageManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getHighEntropySUA, getLowEntropySUA } from '../src/fpd/sua.js';
 
+export const dep = {
+  fetch, sendBeacon
+};
+
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.9.0';
+const MODULE_VERSION = '2.10.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
 // WURFL_JS_ENDPOINT_PATH is the path for the WURFL.js endpoint used to load WURFL data
 const WURFL_JS_ENDPOINT_PATH = '/wurfl.js';
 // STATS_HOST is the host for the WURFL stats endpoint
-const STATS_HOST = 'https://stats.prebid.wurflcloud.com'
+const STATS_HOST = 'https://stats.prebid.wurflcloud.com';
 // STATS_ENDPOINT_PATH is the path for the stats endpoint used to send analytics data
 const STATS_ENDPOINT_PATH = '/v2/prebid/stats';
 
@@ -94,8 +98,14 @@ let bidderEnrichment;
 // enrichmentType tracks the overall enrichment type used in the current auction
 let enrichmentType;
 
-// wurflId stores the WURFL ID from device data
+// wurflId stores the WURFL ID from device data. Reported top-level in the beacon (legacy format)
+// only when wurfl_caps is absent, for backward compatibility.
 let wurflId;
+
+// wurflCaps stores the capabilities to report in the analytics beacon (read from window.WURFL
+// via the cache). The set is declared in wurfl_pbjs.beacon.cap_indices and carries wurfl_id (new
+// format); null when no WURFL data is available (e.g. LCE path).
+let wurflCaps;
 
 // samplingRate tracks the beacon sampling rate (0-100)
 let samplingRate;
@@ -629,6 +639,14 @@ const WurflJSDevice = {
     return this._filterCaps(bidderCaps);
   },
 
+  // Private method - gets the capabilities to report in the analytics beacon.
+  // The set is declared in wurfl_pbjs.beacon.cap_indices and is independent of
+  // quota/enrichment; values are read from window.WURFL like any other cap.
+  _getBeaconCaps() {
+    const beaconCaps = this._pbjsData.beacon?.cap_indices || [];
+    return this._filterCaps(beaconCaps);
+  },
+
   // Private method - checks if bidder is authorized
   _isAuthorized(bidderCode) {
     return !!(this._pbjsData.bidders && bidderCode in this._pbjsData.bidders);
@@ -1083,7 +1101,7 @@ const ABTestManager = {
     if (!this.isEnabled()) {
       return false;
     }
-    return (this._variant === AB_TEST.CONTROL_GROUP)
+    return (this._variant === AB_TEST.CONTROL_GROUP);
   },
 
   /**
@@ -1119,6 +1137,7 @@ const init = (config, userConsent) => {
   bidderEnrichment = new Map();
   enrichmentType = ENRICHMENT_TYPE.UNKNOWN;
   wurflId = '';
+  wurflCaps = null;
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
   overQuota = DEFAULT_OVER_QUOTA;
@@ -1131,7 +1150,7 @@ const init = (config, userConsent) => {
   ABTestManager.init(config?.params);
 
   return true;
-}
+};
 
 /**
  * getBidRequestData enriches the OpenRTB 2.0 device data with WURFL data
@@ -1143,6 +1162,12 @@ const init = (config, userConsent) => {
 const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   // Start module execution timing
   WurflDebugger.moduleExecutionStart();
+
+  // Reset per-auction beacon state so a later cache-less (LCE) auction on the same page
+  // cannot report the WURFL id/caps captured by an earlier cached auction. Each branch below
+  // repopulates these only when it actually has WURFL data, matching what bidders received.
+  wurflId = '';
+  wurflCaps = null;
 
   // Extract bidders from request configuration and set default enrichment
   const bidders = new Set();
@@ -1178,6 +1203,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     // Read cache metadata for beacon reporting (without enriching bid request)
     if (cachedWurflData) {
       wurflId = cachedWurflData.WURFL?.wurfl_id || '';
+      wurflCaps = WurflJSDevice.fromCache(cachedWurflData)._getBeaconCaps();
       samplingRate = cachedWurflData.wurfl_pbjs?.sampling_rate ?? DEFAULT_SAMPLING_RATE;
       tier = cachedWurflData.wurfl_pbjs?.tier ?? '';
       overQuota = cachedWurflData.wurfl_pbjs?.over_quota ?? DEFAULT_OVER_QUOTA;
@@ -1205,8 +1231,9 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     }
     enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice);
 
-    // Store WURFL ID for analytics
+    // Store WURFL ID and beacon capabilities for analytics
     wurflId = cachedWurflData.WURFL?.wurfl_id || '';
+    wurflCaps = wjsDevice._getBeaconCaps();
 
     // Store sampling rate for beacon
     samplingRate = cachedWurflData.wurfl_pbjs?.sampling_rate ?? DEFAULT_SAMPLING_RATE;
@@ -1277,7 +1304,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
 
   WurflDebugger.moduleExecutionStop();
   callback();
-}
+};
 
 /**
  * onAuctionEndEvent is called when the auction ends
@@ -1394,13 +1421,24 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     path: typeof window !== 'undefined' ? window.location.pathname : '',
     sampling_rate: samplingRate,
     enrichment: enrichmentType,
-    wurfl_id: wurflId,
     tier: tier,
     over_quota: overQuota,
     consent_class: consentClass,
     ad_units: adUnits,
     sua: resolvedSUA
   };
+
+  // Report the configured WURFL capabilities in the new wurfl_caps object (it carries wurfl_id);
+  // otherwise fall back to the legacy top-level wurfl_id so the field is always present.
+  if (wurflCaps && Object.keys(wurflCaps).length) {
+    // Guarantee the WURFL identifier is present even if beacon.cap_indices omits it.
+    if (!('wurfl_id' in wurflCaps) && wurflId) {
+      wurflCaps.wurfl_id = wurflId;
+    }
+    payloadData.wurfl_caps = wurflCaps;
+  } else {
+    payloadData.wurfl_id = wurflId;
+  }
 
   // Add A/B test fields if enabled
   const abPayload = ABTestManager.getBeaconPayload();
@@ -1413,13 +1451,13 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 
   // Both sendBeacon and fetch send as text/plain to avoid CORS preflight requests.
   // Server must parse body as JSON regardless of Content-Type header.
-  const sentBeacon = sendBeacon(url.toString(), payload);
+  const sentBeacon = dep.sendBeacon(url.toString(), payload);
   if (sentBeacon) {
     WurflDebugger.setBeaconPayload(payloadData);
     return;
   }
 
-  fetch(url.toString(), {
+  dep.fetch(url.toString(), {
     method: 'POST',
     body: payload,
     mode: 'no-cors',
@@ -1440,7 +1478,7 @@ export const wurflSubmodule = {
   init,
   getBidRequestData,
   onAuctionEndEvent,
-}
+};
 
 // Exported for testing only
 export const __testing__ = {

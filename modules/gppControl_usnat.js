@@ -8,4 +8,4 @@ config.getConfig('consentManagement', (cfg) => {
     if (unregister != null) unregister();
     unregister = setupRules('usnat', [7], getRules(cfg.consentManagement.gpp.mspa?.restrictActivities));
   }
-})
+});

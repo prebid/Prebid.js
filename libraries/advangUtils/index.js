@@ -127,7 +127,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   const topLocation = getTopWindowLocation(bidderRequest);
   const topReferrer = getTopWindowReferrer(bidderRequest);
   const paramSize = getBidParam(bid, 'size');
-  let sizes = [];
+  let sizes;
   const coppa = config.getConfig('coppa');
 
   if (typeof paramSize !== 'undefined' && paramSize !== '') {

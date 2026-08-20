@@ -381,11 +381,11 @@ describe('pangle multi-format ads', function () {
     const interpretedResponse = spec.interpretResponse(bannerResponse, request);
     const bid = interpretedResponse[0];
     expect(bid.mediaType).to.equal('banner');
-  })
+  });
   it('should set mediaType to video', function() {
     const request = spec.buildRequests(multiRequest, bidderRequest)[0];
     const interpretedResponse = spec.interpretResponse(videoResponse, request);
     const bid = interpretedResponse[0];
     expect(bid.mediaType).to.equal('video');
-  })
+  });
 });

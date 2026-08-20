@@ -65,7 +65,7 @@ function getAdUnitsData(args) {
       pbd,
       dpc: rtm ? Object.keys(rtm).length : 0,
       ...(shouldSampleRtm && rtm ? { rtm } : {})
-    }
+    };
   });
 }
 
@@ -83,7 +83,7 @@ function handleAuctionEnd(args) {
     url: URL,
     aucid: args.auctionId,
     ad_units: getAdUnitsData(args)
-  }
+  };
   sendEvent(event, 'rtd_demand');
 }
 
@@ -103,7 +103,7 @@ function handleModuleInit(args) {
     pbv: VERSION,
     url: URL,
     ...(args.rsn ? { rsn: args.rsn } : {}),
-  }
+  };
   sendEvent(event, 'rtd_supply');
 }
 
@@ -115,7 +115,7 @@ function sendEvent(event, topic) {
       contentType: 'application/json',
       method: 'POST'
     });
-  } catch (err) { logMessage('Browsi Analytics error') }
+  } catch (err) { logMessage('Browsi Analytics error'); }
 }
 
 const browsiAnalytics = Object.assign(adapter({ url: EVENT_SERVER_URL, analyticsType }), {

@@ -6,7 +6,17 @@ import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 import { expect } from 'chai/index.mjs';
 
-const pastDateString = new Date(0).toString()
+const pastDateString = new Date(0).toString();
+
+function wrapCriteoId(value, depth) {
+  let wrappedValue = value;
+
+  for (let i = 0; i < depth; i++) {
+    wrappedValue = JSON.stringify({ criteoId: wrappedValue });
+  }
+
+  return wrappedValue;
+}
 
 describe('CriteoId module', function () {
   const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
@@ -32,7 +42,7 @@ describe('CriteoId module', function () {
     setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
-    parseUrlStub = sinon.stub(utils, 'parseUrl').returns({ protocol: 'https', hostname: 'testdev.com' })
+    parseUrlStub = sinon.stub(utils, 'parseUrl').returns({ protocol: 'https', hostname: 'testdev.com' });
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     gdprConsentDataStub = sinon.stub(gdprDataHandler, 'getConsentData');
     uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
@@ -63,26 +73,45 @@ describe('CriteoId module', function () {
     { submoduleConfig: { storage: { type: 'cookie' } }, cookie: undefined, localStorage: 'bidId2', expected: undefined },
     { submoduleConfig: { storage: { type: 'html5' } }, cookie: 'bidId', localStorage: 'bidId2', expected: 'bidId2' },
     { submoduleConfig: { storage: { type: 'html5' } }, cookie: 'bidId', localStorage: undefined, expected: undefined },
-  ]
+    { submoduleConfig: undefined, cookie: '{"criteoId":"bidId"}', localStorage: undefined, expected: 'bidId' },
+    { submoduleConfig: undefined, cookie: '{"criteoId":"{\\"criteoId\\":\\"bidId\\"}"}', localStorage: undefined, expected: 'bidId' },
+    { submoduleConfig: undefined, cookie: wrapCriteoId('bidId', 11), localStorage: undefined, expected: 'bidId' },
+    { submoduleConfig: { storage: { type: 'html5' } }, cookie: 'bidId', localStorage: { criteoId: 'bidId2' }, expected: 'bidId2' },
+  ];
 
   storageTestCases.forEach(testCase => it('getId() should return the user id depending on the storage type enabled and the data available', function () {
     getCookieStub.withArgs('cto_bidid').returns(testCase.cookie);
     getLocalStorageStub.withArgs('cto_bidid').returns(testCase.localStorage);
 
     const result = criteoIdSubmodule.getId(testCase.submoduleConfig);
-    expect(result.id).to.be.deep.equal(testCase.expected ? { criteoId: testCase.expected } : undefined);
+    expect(result.id).to.equal(testCase.expected);
     expect(result.callback).to.be.a('function');
-  }))
+  }));
 
   it('decode() should return the bidId when it exists in local storages', function () {
     const id = criteoIdSubmodule.decode('testDecode');
-    expect(id).to.equal('testDecode')
+    expect(id).to.deep.equal({ criteoId: 'testDecode' });
+  });
+
+  it('decode() should unwrap serialized bidId values', function () {
+    const id = criteoIdSubmodule.decode('{"criteoId":"rawBidId"}');
+    expect(id).to.deep.equal({ criteoId: 'rawBidId' });
+  });
+
+  it('decode() should unwrap deeply nested serialized bidId values', function () {
+    const id = criteoIdSubmodule.decode(wrapCriteoId('rawBidId', 11));
+    expect(id).to.deep.equal({ criteoId: 'rawBidId' });
+  });
+
+  it('decode() should not throw on invalid serialized bidId values', function () {
+    const id = criteoIdSubmodule.decode('{"criteoId":');
+    expect(id).to.deep.equal({ criteoId: '{"criteoId":' });
   });
 
   it('should call user sync url with the right params', function () {
     getCookieStub.withArgs('cto_bundle').returns('bundle');
     getCookieStub.withArgs('cto_dna_bundle').returns('info');
-    window.criteo_pubtag = {}
+    window.criteo_pubtag = {};
 
     const callBackSpy = sinon.spy();
     const result = criteoIdSubmodule.getId();
@@ -113,7 +142,7 @@ describe('CriteoId module', function () {
     { submoduleConfig: undefined, shouldWriteCookie: true, shouldWriteLocalStorage: true, bundle: undefined, bidId: undefined, acwsUrl: undefined },
     { submoduleConfig: { storage: { type: 'cookie' } }, shouldWriteCookie: true, shouldWriteLocalStorage: false, bundle: 'bundle', bidId: 'bidId', acwsUrl: undefined },
     { submoduleConfig: { storage: { type: 'html5' } }, shouldWriteCookie: false, shouldWriteLocalStorage: true, bundle: 'bundle', bidId: 'bidId', acwsUrl: undefined },
-  ]
+  ];
 
   responses.forEach(response => describe('test user sync response behavior', function () {
     const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
@@ -121,7 +150,7 @@ describe('CriteoId module', function () {
     it('should save bidId if it exists', function () {
       const result = criteoIdSubmodule.getId(response.submoduleConfig);
       result.callback((id) => {
-        expect(id).to.be.deep.equal(response.bidId ? { criteoId: response.bidId } : undefined);
+        expect(id).to.equal(response.bidId);
       });
 
       const request = server.requests[0];
@@ -376,5 +405,5 @@ describe('CriteoId module', function () {
         uids: [{ id: 'some-random-id-value', atype: 1 }]
       });
     });
-  })
+  });
 });

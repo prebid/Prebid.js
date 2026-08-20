@@ -171,7 +171,7 @@ describe('H12 Media Adapter', function () {
   after(function() {
     sandbox.resetHistory();
     sandbox.resetBehavior();
-  })
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -390,13 +390,13 @@ describe('H12 Media Adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    let syncOptions
+    let syncOptions;
     beforeEach(function () {
       syncOptions = {
         enabledBidders: ['h12media'],
         pixelEnabled: true,
         iframeEnabled: true
-      }
+      };
     });
 
     it('should success with usersync pixel url', function () {

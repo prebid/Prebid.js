@@ -1,5 +1,4 @@
-import { insuradsRtdProvider } from 'modules/insuradsRtdProvider.js';
-import * as ajax from 'src/ajax.js';
+import { dep, insuradsRtdProvider } from 'modules/insuradsRtdProvider.js';
 import { config } from 'src/config.js';
 
 const sampleConfig = {
@@ -21,7 +20,7 @@ describe('insuradsRtdProvider', function () {
 
   beforeEach(function () {
     config.resetConfig();
-    fetchStub = sinon.stub(ajax, 'fetch');
+    fetchStub = sinon.stub(dep, 'fetch');
   });
 
   afterEach(function () {

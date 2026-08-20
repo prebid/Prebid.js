@@ -56,6 +56,6 @@ const handleSetConfig = (config) => {
     window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
     window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
   });
-}
+};
 
 config.getConfig(MODULE_NAME, config => handleSetConfig(config[MODULE_NAME]));

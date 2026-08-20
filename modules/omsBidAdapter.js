@@ -1,10 +1,7 @@
 import {
-  isArray,
-  getWindowTop,
   deepSetValue,
   logError,
   logWarn,
-  createTrackPixelHtml,
   getBidIdParameter,
   getUniqueIdentifierStr,
   formatQS,
@@ -12,11 +9,10 @@ import {
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
-import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
-import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
-import { getBidFloor, isIframe } from '../libraries/omsUtils/index.js';
+import { getAdMarkup, getBidFloor, getProcessedSizes, getDeviceType } from '../libraries/omsUtils/index.js';
+import { getRoundedViewability } from "../libraries/omsUtils/viewability.js";
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'oms';
@@ -40,15 +36,10 @@ export const spec = {
 function buildRequests(bidReqs, bidderRequest) {
   try {
     const impressions = bidReqs.map(bid => {
-      let bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
-      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
-      bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
-
+      const bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
+      const processedSizes = getProcessedSizes(bidSizes);
       const element = getAdUnitElement(bid);
-      const minSize = getMinSize(processedSizes);
-      const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), minSize) : 'na';
-      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+      const viewabilityAmountRounded = getRoundedViewability(element, processedSizes);
       const gpidData = _extractGpidData(bid);
 
       const imp = {
@@ -61,18 +52,31 @@ function buildRequests(bidReqs, bidderRequest) {
       };
 
       if (bid?.mediaTypes?.banner) {
+        const banner = bid.mediaTypes.banner;
+        const ortb2ImpBanner = bid.ortb2Imp?.banner;
         imp.banner = {
           format: processedSizes,
           ext: {
             viewability: viewabilityAmountRounded,
-          }
+          },
+          pos: ortb2ImpBanner?.pos ?? banner.pos,
+        };
+
+        const api = ortb2ImpBanner?.api ?? banner.api;
+        if (api) {
+          imp.banner.api = api;
+        }
+
+        const battr = ortb2ImpBanner?.battr ?? banner.battr;
+        if (battr) {
+          imp.banner.battr = battr;
         }
       }
 
       if (bid?.mediaTypes?.video) {
         imp.video = {
           ...bid.mediaTypes.video,
-        }
+        };
       }
 
       if (deepAccess(bid, 'ortb2Imp.instl') === 1) {
@@ -86,7 +90,7 @@ function buildRequests(bidReqs, bidderRequest) {
       }
 
       return imp;
-    })
+    });
 
     const referrer = bidderRequest?.refererInfo?.page || '';
     const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
@@ -102,12 +106,25 @@ function buildRequests(bidReqs, bidderRequest) {
         }
       },
       device: {
-        devicetype: _getDeviceType(navigator.userAgent, bidderRequest?.ortb2?.device?.sua),
+        devicetype: getDeviceType(navigator.userAgent, bidderRequest?.ortb2?.device?.sua),
         w: screen.width,
-        h: screen.height
+        h: screen.height,
+        language: bidderRequest?.ortb2?.device?.language ?? navigator.language?.split('-')[0]
       },
       tmax: bidderRequest?.timeout
     };
+
+    if (bidderRequest?.ortb2?.badv) {
+      deepSetValue(payload, 'badv', bidderRequest.ortb2.badv);
+    }
+
+    if (bidderRequest?.ortb2?.bcat) {
+      deepSetValue(payload, 'bcat', bidderRequest.ortb2.bcat);
+    }
+
+    if (deepAccess(bidderRequest, 'ortb2.device.dnt', null) !== null) {
+      deepSetValue(payload, 'device.dnt', bidderRequest.ortb2.device.dnt);
+    }
 
     if (bidderRequest?.gdprConsent) {
       deepSetValue(payload, 'regs.gdpr', +bidderRequest.gdprConsent.gdprApplies);
@@ -118,7 +135,7 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'regs.us_privacy', bidderRequest.uspConsent);
     }
 
-    const gpp = _getGpp(bidderRequest)
+    const gpp = _getGpp(bidderRequest);
     if (gpp) {
       deepSetValue(payload, 'regs.ext.gpp', gpp);
     }
@@ -129,19 +146,27 @@ function buildRequests(bidReqs, bidderRequest) {
 
     const schain = bidReqs?.[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
-      deepSetValue(payload, 'source.ext.schain', schain)
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     if (bidderRequest?.ortb2?.user) {
-      deepSetValue(payload, 'user', bidderRequest.ortb2.user)
+      deepSetValue(payload, 'user', bidderRequest.ortb2.user);
     }
 
     if (bidReqs?.[0]?.userIdAsEids) {
-      deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
+      deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || []);
     }
 
     if (bidderRequest?.ortb2?.site?.content) {
-      deepSetValue(payload, 'site.content', bidderRequest.ortb2.site.content)
+      deepSetValue(payload, 'site.content', bidderRequest.ortb2.site.content);
+    }
+
+    if (bidderRequest?.ortb2?.site?.cat) {
+      deepSetValue(payload, 'site.cat', bidderRequest.ortb2.site.cat);
+    }
+
+    if (bidderRequest?.ortb2?.site?.pagecat) {
+      deepSetValue(payload, 'site.pagecat', bidderRequest.ortb2.site.pagecat);
     }
 
     return {
@@ -193,7 +218,7 @@ function interpretResponse(serverResponse) {
           bidResponse.vastXml = bid.adm;
         } else {
           bidResponse.mediaType = BANNER;
-          bidResponse.ad = _getAdMarkup(bid);
+          bidResponse.ad = getAdMarkup(bid);
         }
 
         return bidResponse;
@@ -227,7 +252,13 @@ function onBidderError(errorData) {
     return;
   }
 
-  _trackEvent('error', errorData.bidderRequest)
+  _trackEvent('error', {
+    bidderRequest: errorData.bidderRequest,
+    error: {
+      status: errorData.error?.status,
+      timedOut: errorData.error?.timedOut,
+    },
+  });
 }
 
 function onBidWon(bid) {
@@ -235,7 +266,7 @@ function onBidWon(bid) {
     return;
   }
 
-  _trackEvent('bidwon', bid)
+  _trackEvent('bidwon', bid);
 }
 
 function _trackEvent(endpoint, data) {
@@ -243,18 +274,6 @@ function _trackEvent(endpoint, data) {
     method: 'POST',
     withCredentials: false
   });
-}
-
-function _getDeviceType(ua, sua) {
-  if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
-    return 1
-  }
-
-  if ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(ua)) {
-    return 3
-  }
-
-  return 2
 }
 
 function _getGpp(bidderRequest) {
@@ -267,29 +286,13 @@ function _getGpp(bidderRequest) {
   );
 }
 
-function _getAdMarkup(bid) {
-  let adm = bid.adm;
-  if ('nurl' in bid) {
-    adm += createTrackPixelHtml(bid.nurl);
-  }
-  return adm;
-}
-
-function _isViewabilityMeasurable(element) {
-  return !isIframe() && element !== null;
-}
-
-function _getViewability(element, topWin, { w, h } = {}) {
-  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
-}
-
 function _extractGpidData(bid) {
   return {
     gpid: bid?.ortb2Imp?.ext?.gpid,
     adserverName: bid?.ortb2Imp?.ext?.data?.adserver?.name,
     adslot: bid?.ortb2Imp?.ext?.data?.adserver?.adslot,
     pbadslot: bid?.ortb2Imp?.ext?.data?.pbadslot,
-  }
+  };
 }
 
 registerBidder(spec);

@@ -2,7 +2,6 @@ import concertAnalytics from 'modules/concertAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
-import { server } from 'test/mocks/xhr.js';
 
 import sinon from 'sinon';
 const adapterManager = require('src/adapterManager').default;
@@ -56,7 +55,7 @@ describe('ConcertAnalyticsAdapter', function() {
 
       for (let i = 0; i < eventsToReport.length; i++) {
         expect(concertAnalytics.eventsStorage.some(function(event) {
-          return event.event === eventsToReport[i]
+          return event.event === eventsToReport[i];
         })).to.equal(true);
       }
     });
@@ -119,7 +118,7 @@ describe('ConcertAnalyticsAdapter', function() {
         'partnerId': 'cst'
       }
     ]
-  }
+  };
 
   const bidWon = {
     'adId': '642f13fe18ab7dc',
@@ -137,7 +136,7 @@ describe('ConcertAnalyticsAdapter', function() {
     'adUnitCode': 'desktop_leaderboard_variable',
     'sizes': [[1030, 590]],
     'size': [1030, 590]
-  }
+  };
 
   function fireBidEvents(events) {
     events.emit(EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits });

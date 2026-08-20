@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepSetValue, replaceMacros } from '../src/utils.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
@@ -82,7 +82,7 @@ export const spec = {
         bidRequests,
         bidderRequest
       })
-    }
+    };
   },
 
   interpretResponse(serverResponse, bidRequest) {

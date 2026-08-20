@@ -1,4 +1,4 @@
-import { ajax } from '../../src/ajax.js'
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 import { cyrb53Hash, logError } from '../../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
@@ -73,7 +73,7 @@ export class Uid2ApiClient {
             this._logInfo('Decrypting refresh API response');
             const encodeResp = this.createArrayBuffer(atob(responseText));
             window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
-              this._logInfo('Imported decryption key')
+              this._logInfo('Imported decryption key');
               // returns the symmetric key
               window.crypto.subtle.decrypt({
                 name: 'AES-GCM',
@@ -170,7 +170,7 @@ export class Uid2StorageManager {
     if (!storedValue) {
       const fallbackValue = fallbackStorageGet();
       if (fallbackValue) {
-        this._logInfo(`${preferredStorageLabel} was empty, but found a fallback value.`)
+        this._logInfo(`${preferredStorageLabel} was empty, but found a fallback value.`);
         if (typeof fallbackValue === 'object') {
           this._logInfo(`Copying the fallback value to ${preferredStorageLabel}.`);
           preferredStorageSet(fallbackValue);

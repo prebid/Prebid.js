@@ -89,8 +89,8 @@ export const spec = {
       if (this.syncStore.extendMode && serverResponses) {
         serverResponses.forEach(response => {
           if (!response?.body?.ext?.responsetimemillis) return;
-          Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b))
-        })
+          Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b));
+        });
       }
       syncs.push({
         type: 'iframe',
@@ -212,12 +212,12 @@ export const CONVERTER = ortbConverter({
     Object.assign(bidResponse, {
       dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
       netRevenue: idExt.is_net || false,
-    })
+    });
     if (bidResponse.mediaType === VIDEO && ID_REQUEST.isOutstreamVideo(bidRequest)) {
       Object.assign(bidResponse, {
         adResponse: { content: bidResponse.vastXml },
         renderer: ID_OUTSTREAM.createRenderer(bidRequest)
-      })
+      });
     }
     return bidResponse;
   },
@@ -228,7 +228,7 @@ export const CONVERTER = ortbConverter({
         if (!bidRequest.mediaTypes[BANNER]) return;
         if (config.getConfig('improvedigital.usePrebidSizes') === false) {
           const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], { sizes: null });
-          bidRequest = { ...bidRequest, mediaTypes: { [BANNER]: banner } }
+          bidRequest = { ...bidRequest, mediaTypes: { [BANNER]: banner } };
         }
         fillImpBanner(imp, bidRequest, context);
       },
@@ -239,7 +239,7 @@ export const CONVERTER = ortbConverter({
           { mimes: VIDEO_PARAMS.DEFAULT_MIMES },
           bidRequest.mediaTypes[VIDEO],
           bidRequest.params?.video
-        )
+        );
         fillImpVideo(
           imp,
           { ...bidRequest, mediaTypes: { [VIDEO]: video } },
@@ -249,7 +249,7 @@ export const CONVERTER = ortbConverter({
       }
     }
   }
-})
+});
 
 const ID_REQUEST = {
   buildServerRequests(bidRequests, bidderRequest) {
@@ -265,11 +265,11 @@ const ID_REQUEST = {
         return EXTEND_URL;
       }
       const urlSegments = [];
-      urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL)
+      urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL);
       if (publisherId) {
-        urlSegments.push(publisherId)
+        urlSegments.push(publisherId);
       }
-      urlSegments.push(PB_ENDPOINT)
+      urlSegments.push(PB_ENDPOINT);
       return urlSegments.join('/');
     }
 
@@ -284,7 +284,7 @@ const ID_REQUEST = {
         options: {
           endpointCompression: true,
         },
-      }
+      };
     }
 
     let publisherId = null;

@@ -5,7 +5,6 @@ import { server } from 'test/mocks/xhr.js';
 import { disableAjaxForAnalytics, enableAjaxForAnalytics } from '../mocks/analyticsStub.js';
 import { clearEvents } from 'src/events.js';
 import {
-  DEFAULT_EXCLUDE_EVENTS,
   DEFAULT_INCLUDE_EVENTS,
   setDebounceDelay
 } from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
@@ -53,7 +52,7 @@ FEATURE: Analytics Adapters API
     adapter.track({ eventType, args });
 
     const result = JSON.parse(server.requests[0].requestBody);
-    sinon.assert.match(result, { args: { some: 'data' }, eventType })
+    sinon.assert.match(result, { args: { some: 'data' }, eventType });
   });
 
   it(`SHOULD queue the event first and then track it WHEN an event occurs before tracking library is available`, function () {
@@ -66,7 +65,17 @@ FEATURE: Analytics Adapters API
     // As now AUCTION_DEBUG is triggered for WARNINGS too, the BID_RESPONSE goes last in the array
     const index = server.requests.length - 1;
     const result = JSON.parse(server.requests[index].requestBody);
-    sinon.assert.match(result, { eventType, args: { wat: 'wot' } })
+    sinon.assert.match(result, { eventType, args: { wat: 'wot' } });
+  });
+
+  it('should not fire twice for the same event', () => {
+    events.emit(BID_WON, { n: 1 });
+    adapter.enableAnalytics();
+    adapter.disableAnalytics();
+    events.emit(BID_WON, { n: 2 });
+    adapter.enableAnalytics();
+    const sent = server.requests.map(req => JSON.parse(req.requestBody)).filter(({ eventType }) => eventType === BID_WON).map(({ args }) => args.n);
+    expect(sent).to.eql([1, 2]);
   });
 
   describe('analyticsLabels', () => {
@@ -75,30 +84,30 @@ FEATURE: Analytics Adapters API
       analyticsLabels = {
         experiment_1: 'group_a',
         experiment_2: 'group_b'
-      }
+      };
       config.setConfig({
         analyticsLabels
-      })
-    })
+      });
+    });
 
     it('should be attached to payloads (type: endpoint)', () => {
       events.emit(BID_WON, { foo: 'bar' });
       adapter.enableAnalytics();
       server.requests
         .map(req => JSON.parse(req.requestBody))
-        .forEach(payload => sinon.assert.match(payload, { labels: analyticsLabels, args: sinon.match({ analyticsLabels }) }))
+        .forEach(payload => sinon.assert.match(payload, { labels: analyticsLabels, args: sinon.match({ analyticsLabels }) }));
     });
 
     it('should be attached payloads (type: bundle)', () => {
       adapter = new AnalyticsAdapter({
         analyticsType: 'bundle',
         global: 'analytics'
-      })
+      });
       window.analytics = sinon.stub();
       try {
-        events.emit(BID_WON, { foo: 'bar' })
+        events.emit(BID_WON, { foo: 'bar' });
         adapter.enableAnalytics();
-        sinon.assert.calledWith(window.analytics, sinon.match.any, BID_WON, sinon.match({ analyticsLabels }))
+        sinon.assert.calledWith(window.analytics, sinon.match.any, BID_WON, sinon.match({ analyticsLabels }));
       } finally {
         delete window.analytics;
       }
@@ -114,8 +123,8 @@ FEATURE: Analytics Adapters API
         eventType: BID_WON,
         args: sinon.match({ analyticsLabels }),
         labels: analyticsLabels
-      }))
-    })
+      }));
+    });
 
     it('should not override the "analyticsLabels" property an event payload may have', () => {
       adapter.track = sinon.stub();
@@ -135,9 +144,9 @@ FEATURE: Analytics Adapters API
         labels: {},
         args: { foo: 'bar' },
         eventType: BID_WON
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('event filters', () => {
     function fireEvents() {
@@ -147,7 +156,7 @@ FEATURE: Analytics Adapters API
     function getEvents(ev) {
       return server.requests
         .map(r => JSON.parse(r.requestBody))
-        .filter(r => r.eventType === ev)
+        .filter(r => r.eventType === ev);
     }
 
     Object.entries({
@@ -170,9 +179,9 @@ FEATURE: Analytics Adapters API
         fireEvents();
         expect(getEvents(BID_WON).length).to.eql(2);
         expect(getEvents(NO_BID).length).to.eql(0);
-      })
-    })
-  })
+      });
+    });
+  });
 
   it('should prevent infinite loops when track triggers other events', () => {
     let i = 0;
@@ -180,13 +189,13 @@ FEATURE: Analytics Adapters API
       return function (event) {
         i++;
         orig.call(this, event);
-        events.emit(BID_WON, {})
-      }
+        events.emit(BID_WON, {});
+      };
     })(adapter.track);
     adapter.enableAnalytics(adapterConfig);
     events.emit(BID_WON, {});
     expect(i >= 100).to.eql(false);
-  })
+  });
 
   describe(`WHEN an event occurs after enable analytics\n`, function () {
     beforeEach(function () {
@@ -247,7 +256,7 @@ FEATURE: Analytics Adapters API
 
         expect(server.requests.length).to.equal(1);
         const result = JSON.parse(server.requests[0].requestBody);
-        sinon.assert.match(result, { args: { more: 'info' }, eventType: 'bidWon' })
+        sinon.assert.match(result, { args: { more: 'info' }, eventType: 'bidWon' });
       });
 
       it(`THEN should disable analytics when random number is outside sample range`, function () {
@@ -283,7 +292,7 @@ describe('Analytics asynchronous event tracking', () => {
 
   afterEach(() => {
     clock.restore();
-  })
+  });
 
   it('does not call track as long as events are coming', () => {
     events.emit(BID_WON, { i: 0 });
@@ -298,4 +307,4 @@ describe('Analytics asynchronous event tracking', () => {
     sinon.assert.calledWith(adapter.track.firstCall, sinon.match({ eventType: BID_WON, args: { i: 0 } }));
     sinon.assert.calledWith(adapter.track.secondCall, sinon.match({ eventType: BID_WON, args: { i: 1 } }));
   });
-})
+});

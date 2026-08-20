@@ -55,7 +55,7 @@ describe('bridgeuppBidAdapter_spec', function () {
   describe('buildRequests', function () {
     before(() => {
       hook.ready();
-    })
+    });
     afterEach(function () {
       config.resetConfig();
     });
@@ -102,7 +102,7 @@ describe('bridgeuppBidAdapter_spec', function () {
     it('request should build with correct imp', async function () {
       const expectedMetric = {
         url: 'https://sonarads.com'
-      }
+      };
       const bidRequests = [{
         bidId: 'bidId',
         bidder: 'sonarads',
@@ -182,7 +182,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.site.sectioncat).to.deep.equal(['IAB4']);
       expect(ortbRequest.site.ref).to.equal('google.com');
       expect(ortbRequest.site.privacypolicy).to.equal(1);
-      expect(ortbRequest.site.content.url).to.equal(SITE_PAGE + '/games1')
+      expect(ortbRequest.site.content.url).to.equal(SITE_PAGE + '/games1');
     });
 
     it('request should build with proper device data', async function () {
@@ -307,7 +307,7 @@ describe('bridgeuppBidAdapter_spec', function () {
             }
           }
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(br));
       const ortbRequest = request.data;
       expect(ortbRequest.user.yob).to.deep.equal(2012);
@@ -650,7 +650,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         },
         apiVersion: 1,
       },
-    }
+    };
 
     function mockResponse(bidId, mediaType) {
       return {
@@ -692,7 +692,7 @@ describe('bridgeuppBidAdapter_spec', function () {
             ]
           }
         }
-      }
+      };
     }
 
     it('should returns an empty array when bid response is empty', async function () {
@@ -701,7 +701,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       const serverResponse = {
         headers: {
           get: function () {
-            return undefined
+            return undefined;
           }
         },
         body: {}
@@ -718,7 +718,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       const serverResponse = {
         headers: {
           get: function () {
-            return undefined
+            return undefined;
           }
         },
         body: { seatbid: [] }
@@ -746,7 +746,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       const serverResponse = {
         headers: {
           get: function () {
-            return undefined
+            return undefined;
           }
         },
         body: mockResponse('bidId', 1)

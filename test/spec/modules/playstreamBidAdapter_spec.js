@@ -349,22 +349,22 @@ describe('playstreamBidAdapter', function () {
       refererInfo: {
         page: 'testPage'
       }
-    }
-    const serverRequests = spec.buildRequests([BID_PERFECT, BID_WORKS, BID_SAME_HOST], bidderRequest)
+    };
+    const serverRequests = spec.buildRequests([BID_PERFECT, BID_WORKS, BID_SAME_HOST], bidderRequest);
 
     it('Creates two ServerRequests', function () {
-      expect(serverRequests).to.exist
-      expect(serverRequests).to.have.lengthOf(2)
-    })
+      expect(serverRequests).to.exist;
+      expect(serverRequests).to.have.lengthOf(2);
+    });
 
     serverRequests.forEach(serverRequest => {
       it('Creates a ServerRequest object with method, URL and OpenRTB data', function () {
-        expect(serverRequest).to.exist
+        expect(serverRequest).to.exist;
         expect(serverRequest.method).to.equal('POST');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.an('object');
         expect(serverRequest.options).to.be.an('object');
-      })
+      });
 
       it('OpenRTB request has core top-level fields', function () {
         const ortb = serverRequest.data;
@@ -383,7 +383,7 @@ describe('playstreamBidAdapter', function () {
         expect(ortb.device).to.have.property('sua');
         expect(ortb.device.sua).to.deep.equal(bidderRequest.ortb2.device.sua);
       });
-    })
+    });
 
     it('Returns valid URLs', function () {
       const urls = serverRequests.map(r => r.url);

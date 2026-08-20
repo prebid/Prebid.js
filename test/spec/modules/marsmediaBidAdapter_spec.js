@@ -678,7 +678,7 @@ describe('marsmedia adapter tests', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });
@@ -695,7 +695,7 @@ describe('marsmedia adapter tests', function () {
     });
     it('should return nothing', function () {
       var response = spec.onTimeout({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });
@@ -712,7 +712,7 @@ describe('marsmedia adapter tests', function () {
     });
     it('should return nothing', function () {
       var response = spec.onSetTargeting({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });

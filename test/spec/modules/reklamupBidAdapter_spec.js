@@ -82,7 +82,7 @@ describe('ReklamupBidAdapter', function () {
     params: {
 
     }
-  }
+  };
 
   const bidderRequest = {
     uspConsent: '1---',
@@ -103,6 +103,12 @@ describe('ReklamupBidAdapter', function () {
     },
     timeout: 500
   };
+
+  describe('spec', function () {
+    it('should have the correct gvlid', function () {
+      expect(spec.gvlid).to.equal(1619);
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and key parameters present', function () {
@@ -279,7 +285,7 @@ describe('ReklamupBidAdapter', function () {
       expect(data).to.have.property('gpp_sid');
 
       delete bidderRequest.gppConsent;
-    })
+    });
 
     it('bidderRequest.ortb2.regs.gpp', () => {
       bidderRequest.ortb2 = bidderRequest.ortb2 || {};
@@ -292,7 +298,7 @@ describe('ReklamupBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -392,7 +398,7 @@ describe('ReklamupBidAdapter', function () {
 
       const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.native.clickUrl).to.equal('test.com');
@@ -483,20 +489,20 @@ describe('ReklamupBidAdapter', function () {
         gdprApplies: true,
       }, undefined);
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0');
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1---');
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&ccpa_consent=1---&coppa=0');
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
       const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, {
@@ -504,11 +510,11 @@ describe('ReklamupBidAdapter', function () {
         applicableSections: [8]
       });
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0');
     });
   });
 });

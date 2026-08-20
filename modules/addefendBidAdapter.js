@@ -79,6 +79,6 @@ export const spec = {
     }
     return validBidResponses;
   }
-}
+};
 
 registerBidder(spec);

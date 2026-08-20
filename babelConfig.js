@@ -33,8 +33,16 @@ module.exports = function (options = {}) {
     'plugins': (() => {
       const plugins = [
         [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
+        [path.resolve(__dirname, './plugins/callerContext.js'), options],
+        [path.resolve(__dirname, './plugins/gvlPurposes.js'), options],
         [useLocal('@babel/plugin-transform-runtime')],
       ];
+      if (options.polyfills) {
+        plugins.push([path.resolve(__dirname, './plugins/polyfills.js'), {
+          ...options,
+          output: path.resolve(__dirname, './build/dist/polyfills.json'),
+        }])
+      }
       return plugins;
     })(),
   }

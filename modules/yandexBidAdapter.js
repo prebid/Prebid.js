@@ -9,6 +9,10 @@ import { config as pbjsConfig } from '../src/config.js';
 import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
+export const dep = {
+  ajax
+};
+
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -21,7 +25,7 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
  * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
  * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
- * @typedef {import('./yandexBidAdapterTypes.d.ts').YandexBidRequestParams} YandexBidRequestParams
+ * @typedef {import('./yandexBidAdapter.d.ts').YandexBidRequestParams} YandexBidRequestParams
  */
 
 /**
@@ -106,9 +110,9 @@ export const NATIVE_ASSETS = {
   cta: [8, DATA_ASSET_TYPES.CTA_TEXT],
   rating: [9, DATA_ASSET_TYPES.RATING],
   likes: [10, DATA_ASSET_TYPES.LIKES],
-}
+};
 const NATIVE_ASSETS_IDS = {};
-_each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key });
+_each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key; });
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -295,7 +299,7 @@ export const spec = {
   onAdRenderSucceeded: function (bid) {
     eventLog('PREBID_AD_RENDER_SUCCEEDED_EVENT', bid);
   },
-}
+};
 
 /**
  * @param {YandexBidRequestParams} bidRequestParams
@@ -347,7 +351,7 @@ function getBidfloor(bidRequest) {
           currency: DEFAULT_CURRENCY,
           mediaType: type,
           size: bidRequest.sizes || '*'
-        })
+        });
         floors.push(floorInfo);
       }
     });
@@ -372,7 +376,7 @@ function mapBanner(bidRequest) {
       format,
       w,
       h,
-    }
+    };
   }
 }
 
@@ -633,7 +637,7 @@ function eventLog(name, resp) {
 
     const domain = getBidderDomain();
 
-    ajax(`https://${domain}${EVENT_TRACKER_URL}`, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
+    dep.ajax(`https://${domain}${EVENT_TRACKER_URL}`, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
   }
 }
 

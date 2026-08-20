@@ -88,11 +88,11 @@ const converter = ortbConverter({
     mergeDeep(prebidBid, { meta: { advertiserDomains: bid.adomain || [] } });
 
     if (bid.ext?.aniview) {
-      prebidBid.meta.aniview = bid.ext.aniview
+      prebidBid.meta.aniview = bid.ext.aniview;
 
       if (prebidBid.meta.aniview.tag) {
         try {
-          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag)
+          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag);
         } catch {
           // Ignore the error
         }
@@ -182,7 +182,7 @@ export const spec = {
               prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
             } else {
               // We do not want to use the vastUrl if we have the vastXml
-              delete prebidBid.vastUrl
+              delete prebidBid.vastUrl;
             }
           }
         } else {

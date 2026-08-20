@@ -1,6 +1,7 @@
 import {
   deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
-  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser
+  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeInsertUserSyncIframe, politeTriggerPixel,
+  removeUserSyncIframes
 } from './utils.js';
 import { config } from './config.js';
 
@@ -20,7 +21,7 @@ export type SyncType = 'image' | 'iframe';
 type SyncConfig = {
   bidders: '*' | BidderCode[];
   filter: 'include' | 'exclude'
-}
+};
 type FilterSettings = { [K in SyncType | 'all']?: SyncConfig };
 
 export interface UserSyncConfig {
@@ -54,6 +55,11 @@ export interface UserSyncConfig {
    * Enable/disable registered syncs for aliased adapters. Default: false.
    */
   aliasSyncEnabled?: boolean;
+  /**
+   * Use background-friendly user sync transport methods for both image and iframe syncs.
+   * Can be toggled via `setConfig({userSync: {usePoliteSync: ...}})`. Default: false.
+   */
+  usePoliteSync?: boolean;
 }
 
 export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
@@ -66,7 +72,8 @@ export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
   },
   syncsPerBidder: 5,
   syncDelay: 3000,
-  auctionDelay: 500
+  auctionDelay: 500,
+  usePoliteSync: false
 };
 
 // Set userSync default values
@@ -75,6 +82,10 @@ config.setDefaults({
 });
 
 const storage = getCoreStorageManager('usersync');
+
+export function browserSupportsUserSyncCookies() {
+  return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
+}
 
 /**
  * Factory function which creates a new UserSyncPool.
@@ -122,13 +133,13 @@ export function newUserSync(deps) {
 
   deps.regRule(ACTIVITY_SYNC_USER, 'userSync config', (params) => {
     if (!usConfig.syncEnabled) {
-      return { allow: false, reason: 'syncs are disabled' }
+      return { allow: false, reason: 'syncs are disabled' };
     }
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_BIDDER) {
       const syncType = params[ACTIVITY_PARAM_SYNC_TYPE];
       const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME];
       if (!publicApi.canBidderRegisterSync(syncType, bidder)) {
-        return { allow: false, reason: `${syncType} syncs are not enabled for ${bidder}` }
+        return { allow: false, reason: `${syncType} syncs are not enabled for ${bidder}` };
       }
     }
   });
@@ -187,8 +198,11 @@ export function newUserSync(deps) {
     forEachFire(queue.image, (sync) => {
       const [bidderName, trackingPixelUrl] = sync;
       logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
-      // Create image object and add the src url
-      triggerPixel(trackingPixelUrl);
+      if (usConfig.usePoliteSync) {
+        politeTriggerPixel(trackingPixelUrl);
+      } else {
+        triggerPixel(trackingPixelUrl);
+      }
     });
   }
 
@@ -205,8 +219,11 @@ export function newUserSync(deps) {
     forEachFire(queue.iframe, (sync) => {
       const [bidderName, iframeUrl] = sync;
       logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
-      // Insert iframe into DOM
-      insertUserSyncIframe(iframeUrl);
+      if (usConfig.usePoliteSync) {
+        politeInsertUserSyncIframe(iframeUrl);
+      } else {
+        insertUserSyncIframe(iframeUrl);
+      }
       // for a bidder, if iframe sync is present then remove image pixel
       removeImagePixelsForBidder(queue, bidderName);
     });
@@ -215,7 +232,7 @@ export function newUserSync(deps) {
   function removeImagePixelsForBidder(queue, iframeSyncBidderName) {
     queue.image = queue.image.filter(imageSync => {
       const imageSyncBidderName = imageSync[0];
-      return imageSyncBidderName !== iframeSyncBidderName
+      return imageSyncBidderName !== iframeSyncBidderName;
     });
   }
 
@@ -300,7 +317,7 @@ export function newUserSync(deps) {
       const checkForFiltering = {
         'include': (bidders, bidder) => !bidders.includes(bidder),
         'exclude': (bidders, bidder) => bidders.includes(bidder)
-      }
+      };
       return checkForFiltering[filterType](biddersToFilter, bidder);
     }
     return !permittedPixels[type];
@@ -369,6 +386,8 @@ export function newUserSync(deps) {
     }
   };
 
+  publicApi.removeUserSyncs = () => removeUserSyncIframes();
+
   publicApi.canBidderRegisterSync = (type, bidder) => {
     if (usConfig.filterSettings) {
       if (shouldBidderBeBlocked(type, bidder)) {
@@ -388,7 +407,7 @@ export const userSync = newUserSync(Object.defineProperties({
   browserSupportsCookies: {
     get: function() {
       // call storage lazily to give time for consent data to be available
-      return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
+      return browserSupportsUserSyncCookies();
     }
   }
 }));

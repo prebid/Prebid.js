@@ -4,11 +4,13 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   createBuildRequestsFn,
-  createInterpretResponseFn, createUserSyncGetter, onBidWon, onBidBillable
+  createInterpretResponseFn, createUserSyncGetter, onBidWon, onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./shinezRtbBidAdapterTypes.d.ts').ShinezRtbBidRequestParams} ShinezRtbBidRequestParams
+ * @typedef {import('./shinezRtbBidAdapter.d.ts').ShinezRtbBidRequestParams} ShinezRtbBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -39,6 +41,8 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

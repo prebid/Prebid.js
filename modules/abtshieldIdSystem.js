@@ -6,8 +6,8 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { logError, logInfo, logWarn, deepClone } from '../src/utils.js';
-import { ajaxBuilder, processRequestOptions } from '../src/ajax.js';
+import { deepClone, logError, logInfo, logWarn } from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'abtshieldId';
@@ -76,7 +76,7 @@ export const abtshieldIdSubmodule = {
       logError(`${MODULE_NAME}: storage.refreshInSeconds must be >= ${MIN_REFRESH_SECONDS} seconds.`);
       return undefined;
     }
-    const params = (config && config.params) || {};
+    const params = config.params || {};
     const sid = typeof params.sid === 'string' ? params.sid.trim() : '';
     if (!sid) {
       logError(`${MODULE_NAME}: params.sid is required. Obtain a service ID at abtshield.com and set params: { sid: '<your-sid>' }.`);
@@ -105,7 +105,7 @@ export const abtshieldIdSubmodule = {
             }
           },
           undefined,
-          processRequestOptions({ ...AJAX_OPTIONS }, MODULE_TYPE_UID, MODULE_NAME)
+          { ...AJAX_OPTIONS }
         );
       }
     };

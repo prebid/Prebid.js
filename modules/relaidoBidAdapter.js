@@ -1,14 +1,14 @@
 import {
   deepAccess,
+  generateUUID,
+  getBidIdParameter,
+  isArray,
+  isGptPubadsDefined,
+  isNumber,
   logWarn,
   parseQueryStringParameters,
-  triggerPixel,
-  generateUUID,
-  isArray,
-  isNumber,
   parseSizesInput,
-  getBidIdParameter,
-  isGptPubadsDefined
+  triggerPixel
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -16,6 +16,7 @@ import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import sha1 from 'crypto-js/sha1';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getPageTargetingMap, getSlotTargetingMap } from '../src/utils/gptTargeting.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
@@ -290,7 +291,7 @@ function isVideoValid(bid) {
 }
 
 function getUuid() {
-  const id = storage.getCookie(UUID_KEY)
+  const id = storage.getCookie(UUID_KEY);
   if (id) return id;
   const newId = generateUUID();
   storage.setCookie(UUID_KEY, newId);
@@ -369,19 +370,11 @@ function getTargeting(bidRequest) {
   const targetings = {};
   const pubads = getPubads();
   if (pubads) {
-    const keys = pubads.getTargetingKeys();
-    for (const key of keys) {
-      const values = pubads.getTargeting(key);
-      targetings[key] = values;
-    }
+    Object.assign(targetings, getPageTargetingMap());
   }
   const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
   if (adUnitSlot) {
-    const keys = adUnitSlot.getTargetingKeys();
-    for (const key of keys) {
-      const values = adUnitSlot.getTargeting(key);
-      targetings[key] = values;
-    }
+    Object.assign(targetings, getSlotTargetingMap(adUnitSlot));
   }
   return targetings;
 }
@@ -412,6 +405,6 @@ export const spec = {
   getUserSyncs: getUserSyncs,
   onBidWon,
   onTimeout
-}
+};
 
 registerBidder(spec);

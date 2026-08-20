@@ -87,6 +87,6 @@ export const spec = {
     if (!serverResponse.body) return;
     return converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
   },
-}
+};
 
 registerBidder(spec);

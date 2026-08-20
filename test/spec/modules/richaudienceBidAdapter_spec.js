@@ -162,7 +162,7 @@ describe('Richaudience adapter tests', function () {
     bidderRequestId: '1858b7382993ca',
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
     user: {}
-  }]
+  }];
 
   var DEFAULT_PARAMS_VIDEO_IN = [{
     adUnitCode: 'test-div',
@@ -290,7 +290,7 @@ describe('Richaudience adapter tests', function () {
         600
       ]
     ],
-  }]
+  }];
 
   var id5 = {
     'source': 'id5-sync.com',
@@ -305,7 +305,7 @@ describe('Richaudience adapter tests', function () {
         }
       }
     ]
-  }
+  };
 
   var first_id = {
     'source': 'first-id.fr',
@@ -318,7 +318,7 @@ describe('Richaudience adapter tests', function () {
         }
       }
     ]
-  }
+  };
 
   var three_party_provided = {
     'source': '3rdpartyprovided.com',
@@ -331,7 +331,7 @@ describe('Richaudience adapter tests', function () {
         }
       }
     ]
-  }
+  };
 
   var BID_RESPONSE = {
     body: {
@@ -374,12 +374,12 @@ describe('Richaudience adapter tests', function () {
       page: 'http://domain.com',
       numIframes: 0
     }
-  }
+  };
 
   it('Referer undefined', function () {
     config.setConfig({
       'currency': { 'adServerCurrency': 'USD' }
-    })
+    });
 
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
@@ -387,11 +387,11 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {}
-    })
+    });
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('referer').and.to.equal(null);
     expect(requestContent).to.have.property('referer').and.to.equal(null);
-  })
+  });
 
   it('Verify build request to prebid 3.0 display test', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
@@ -409,12 +409,12 @@ describe('Richaudience adapter tests', function () {
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('bidfloor').and.to.equal(0.5);
     expect(requestContent).to.have.property('pid').and.to.equal('ADb1f40rmi');
-    expect(requestContent).to.have.property('supplyType').and.to.equal('site');
+    expect(requestContent).to.not.have.property('supplyType');
     expect(requestContent).to.have.property('auctionId').and.to.equal('0cb3144c-d084-4686-b0d6-f5dbe917c563');
-    expect(requestContent).to.have.property('bidId').and.to.equal('2c7c8e9c900244');
-    expect(requestContent).to.have.property('BidRequestsCount').and.to.equal(1);
-    expect(requestContent).to.have.property('bidder').and.to.equal('richaudience');
-    expect(requestContent).to.have.property('bidderRequestId').and.to.equal('1858b7382993ca');
+    expect(requestContent).to.not.have.property('bidId');
+    expect(requestContent).to.not.have.property('BidRequestsCount');
+    expect(requestContent).to.not.have.property('bidder');
+    expect(requestContent).to.not.have.property('bidderRequestId');
     expect(requestContent).to.have.property('tagId').and.to.equal('test-div');
     expect(requestContent).to.have.property('referer').and.to.equal('https%3A%2F%2Fdomain.com');
     expect(requestContent).to.have.property('sizes');
@@ -428,11 +428,11 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.sizes[3]).to.have.property('h').and.to.equal(250);
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
     expect(requestContent).to.have.property('timeout').and.to.equal(600);
-    expect(requestContent).to.have.property('numIframes').and.to.equal(0);
-    expect(typeof requestContent.scr_rsl === 'string')
-    expect(typeof requestContent.gpid === 'string')
+    expect(requestContent).to.not.have.property('numIframes');
+    expect(typeof requestContent.scr_rsl === 'string');
+    expect(typeof requestContent.gpid === 'string');
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
-  })
+  });
 
   it('Verify build request to prebid video inestream', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_IN, {
@@ -449,9 +449,9 @@ describe('Richaudience adapter tests', function () {
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
 
-    expect(requestContent).to.have.property('demand').and.to.equal('video');
+    expect(requestContent).to.not.have.property('demand');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('instream');
-  })
+  });
 
   it('Verify build request to prebid video outstream', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
@@ -468,9 +468,11 @@ describe('Richaudience adapter tests', function () {
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
 
-    expect(requestContent).to.have.property('demand').and.to.equal('video');
+    expect(requestContent).to.not.have.property('demand');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
-  })
+    expect(request[0].videoData).to.have.property('format').and.to.equal('outstream');
+    expect(request[0].adUnitCode).to.equal('test-div');
+  });
 
   describe('gdpr test', function () {
     it('Verify build request with GDPR', function () {
@@ -499,7 +501,7 @@ describe('Richaudience adapter tests', function () {
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
     });
 
-    it('Verify adding ifa when supplyType equal to app', function () {
+    it('Verify adding ifa param', function () {
       const request = spec.buildRequests(DEFAULT_PARAMS_APP, {
         gdprConsent: {
           consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -510,6 +512,8 @@ describe('Richaudience adapter tests', function () {
           numIframes: 0
         }
       });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('ifa').and.to.equal('AAAAAAAAA-BBBB-CCCC-1111-222222220000');
     });
 
     it('Verify build request with GDPR without gdprApplies', function () {
@@ -568,49 +572,49 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.eids).to.deep.equal([]);
-    })
+    });
 
     it('Verify build return all users', function () {
-      BID_PARAMS_EIDS[0].userIdAsEids = [id5, three_party_provided, first_id]
+      BID_PARAMS_EIDS[0].userIdAsEids = [id5, three_party_provided, first_id];
       var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([id5, three_party_provided, first_id]);
-    })
+    });
 
     it('Verify build return first-id.fr users', function () {
-      BID_PARAMS_EIDS[0].userIdAsEids = [first_id]
+      BID_PARAMS_EIDS[0].userIdAsEids = [first_id];
       var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([first_id]);
-    })
+    });
 
     it('Verify build return first-id.fr users', function () {
-      BID_PARAMS_EIDS[0].userIdAsEids = [first_id]
+      BID_PARAMS_EIDS[0].userIdAsEids = [first_id];
       var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([first_id]);
-    })
+    });
 
     it('Verify build return users []', function () {
-      BID_PARAMS_EIDS[0].userIdAsEids = []
+      BID_PARAMS_EIDS[0].userIdAsEids = [];
       var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([]);
-    })
+    });
 
     it('Verify build return users null', function () {
-      BID_PARAMS_EIDS[0].userIdAsEids = null
+      BID_PARAMS_EIDS[0].userIdAsEids = null;
       var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([]);
-    })
+    });
 
     it('Verify build return users {}', function () {
-      BID_PARAMS_EIDS[0].userIdAsEids = null
+      BID_PARAMS_EIDS[0].userIdAsEids = null;
       var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([]);
-    })
+    });
   });
 
   it('Verify interprete response', function () {
@@ -628,6 +632,7 @@ describe('Richaudience adapter tests', function () {
     const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
+    expect(bid.requestId).to.equal('2c7c8e9c900244');
     expect(bid.cpm).to.equal(1.50);
     expect(bid.ad).to.equal('<!-- script -->');
     expect(bid.mediaType).to.equal('js');
@@ -639,6 +644,26 @@ describe('Richaudience adapter tests', function () {
     expect(bid.ttl).to.equal(300);
     expect(bid.dealId).to.equal('dealId');
     expect(bid.meta.advertiserDomains[0]).to.equal('richaudience.com');
+  });
+
+  it('response without adomain does not throw and returns empty advertiserDomains', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const response = { body: { ...BID_RESPONSE.body } };
+    delete response.body.adomain;
+
+    const bids = spec.interpretResponse(response, request[0]);
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].meta.advertiserDomains).to.deep.equal([]);
   });
 
   it('no banner media response inestream', function () {
@@ -689,6 +714,7 @@ describe('Richaudience adapter tests', function () {
     expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal('<VAST></VAST>');
     expect(bid.renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
+    expect(bid.renderer.adUnitCode).to.equal('test-div');
     expect(bid.cpm).to.equal(1.50);
     expect(bid.width).to.equal(1);
     expect(bid.height).to.equal(1);
@@ -697,6 +723,22 @@ describe('Richaudience adapter tests', function () {
     expect(bid.currency).to.equal('USD');
     expect(bid.ttl).to.equal(300);
     expect(bid.dealId).to.equal('dealId');
+  });
+
+  it('interpretResponse reads the render context from the request without parsing its data', function () {
+    const request = {
+      bidId: '2c7c8e9c900244',
+      tagId: 'test-div',
+      videoData: { format: 'outstream' },
+      data: 'not-json'
+    };
+
+    let bids;
+    expect(() => { bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request); }).to.not.throw();
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].mediaType).to.equal('video');
+    expect(bids[0].vastXml).to.equal('<VAST></VAST>');
+    expect(bids[0].renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
   });
 
   it('banner media and response VAST', function () {
@@ -748,7 +790,7 @@ describe('Richaudience adapter tests', function () {
       params: {
         pid: 'ADb1f40rmi'
       }
-    })).to.equal(false);
+    })).to.equal(true);
     expect(spec.isBidRequestValid({
       params: {
         supplyType: 'site'
@@ -803,7 +845,7 @@ describe('Richaudience adapter tests', function () {
         pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
         bidfloor: 0.50,
       }
-    })).to.equal(false);
+    })).to.equal(true);
     expect(spec.isBidRequestValid({
       params: {
         pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
@@ -841,7 +883,7 @@ describe('Richaudience adapter tests', function () {
         'sid': '00002',
         'hp': 1
       }]
-    }
+    };
 
     DEFAULT_PARAMS_NEW_SIZES[0].ortb2 = {
       source: {
@@ -861,7 +903,7 @@ describe('Richaudience adapter tests', function () {
           }
         }
       }
-    }
+    };
 
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
@@ -869,10 +911,10 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {}
-    })
+    });
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('schain').to.deep.equal(schain);
-  })
+  });
 
   it('should pass DSA', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_DSA, {
@@ -881,13 +923,13 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {}
-    })
+    });
     const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.have.property('dsa').property('dsarequired').and.to.equal(2)
+    expect(requestContent).to.have.property('dsa').property('dsarequired').and.to.equal(2);
     expect(requestContent).to.have.property('dsa').property('pubrender').and.to.equal(1);
     expect(requestContent).to.have.property('dsa').property('datatopub').and.to.equal(1);
     expect(requestContent.dsa.transparency[0]).to.have.property('domain').and.to.equal('richaudience.com');
-  })
+  });
 
   it('should pass gpid with gpid', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES_GPID, {
@@ -896,10 +938,10 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {}
-    })
+    });
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('gpid').and.to.equal('/19968336/header-bid-tag-1#example-2');
-  })
+  });
   it('should pass gpid with pbadslot', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES_PBADSLOT, {
       gdprConsent: {
@@ -907,10 +949,10 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {}
-    })
+    });
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('gpid').and.to.equal('/19968336/header-bid-tag-1#example-2');
-  })
+  });
 
   describe('onTimeout', function () {
     beforeEach(function () {
@@ -941,7 +983,7 @@ describe('Richaudience adapter tests', function () {
     it('Verifies user syncs iframe include', function () {
       config.setConfig({
         'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'include' } } }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true
@@ -982,7 +1024,7 @@ describe('Richaudience adapter tests', function () {
     it('Verifies user syncs iframe exclude', function () {
       config.setConfig({
         'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'exclude' } } }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true
@@ -1023,7 +1065,7 @@ describe('Richaudience adapter tests', function () {
     it('Verifies user syncs image include', function () {
       config.setConfig({
         'userSync': { filterSettings: { image: { bidders: '*', filter: 'include' } } }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: false,
@@ -1032,7 +1074,7 @@ describe('Richaudience adapter tests', function () {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         referer: 'http://domain.com',
         gdprApplies: true
-      })
+      });
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
 
@@ -1043,7 +1085,7 @@ describe('Richaudience adapter tests', function () {
         consentString: '',
         referer: 'http://domain.com',
         gdprApplies: true
-      })
+      });
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
 
@@ -1054,7 +1096,7 @@ describe('Richaudience adapter tests', function () {
         consentString: null,
         referer: 'http://domain.com',
         gdprApplies: false
-      })
+      });
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
     });
@@ -1062,7 +1104,7 @@ describe('Richaudience adapter tests', function () {
     it('Verifies user syncs image exclude', function () {
       config.setConfig({
         'userSync': { filterSettings: { image: { bidders: '*', filter: 'exclude' } } }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: false,
@@ -1071,7 +1113,7 @@ describe('Richaudience adapter tests', function () {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         referer: 'http://domain.com',
         gdprApplies: true
-      })
+      });
       expect(syncs).to.have.lengthOf(0);
 
       syncs = spec.getUserSyncs({
@@ -1081,7 +1123,7 @@ describe('Richaudience adapter tests', function () {
         consentString: '',
         referer: 'http://domain.com',
         gdprApplies: true
-      })
+      });
       expect(syncs).to.have.lengthOf(0);
 
       syncs = spec.getUserSyncs({
@@ -1091,7 +1133,7 @@ describe('Richaudience adapter tests', function () {
         consentString: null,
         referer: 'http://domain.com',
         gdprApplies: false
-      })
+      });
       expect(syncs).to.have.lengthOf(0);
     });
 
@@ -1103,7 +1145,7 @@ describe('Richaudience adapter tests', function () {
             image: { bidders: '*', filter: 'include' }
           }
         }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true,
@@ -1155,7 +1197,7 @@ describe('Richaudience adapter tests', function () {
             image: { bidders: '*', filter: 'exclude' }
           }
         }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true,
@@ -1206,7 +1248,7 @@ describe('Richaudience adapter tests', function () {
             image: { bidders: '*', filter: 'include' }
           }
         }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true,
@@ -1258,7 +1300,7 @@ describe('Richaudience adapter tests', function () {
             image: { bidders: '*', filter: 'exclude' }
           }
         }
-      })
+      });
 
       var syncs = spec.getUserSyncs({
         iframeEnabled: true,
@@ -1305,7 +1347,7 @@ describe('Richaudience adapter tests', function () {
     it('Verifies user syncs iframe/image include with GPP', function () {
       config.setConfig({
         'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'include' } } }
-      })
+      });
 
       let syncs = spec.getUserSyncs({ iframeEnabled: true }, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
@@ -1317,7 +1359,7 @@ describe('Richaudience adapter tests', function () {
 
       config.setConfig({
         'userSync': { filterSettings: { image: { bidders: '*', filter: 'include' } } }
-      })
+      });
 
       syncs = spec.getUserSyncs({ pixelEnabled: true }, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
@@ -1339,5 +1381,5 @@ describe('Richaudience adapter tests', function () {
         url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
       }]);
     });
-  })
+  });
 });

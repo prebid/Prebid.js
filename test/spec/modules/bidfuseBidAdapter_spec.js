@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/bidfuseBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
-import { config } from "../../../src/config.ts";
 
 const bidder = 'bidfuse';
 
@@ -85,7 +84,7 @@ describe('BidfuseBidAdapter', function () {
     params: {
 
     }
-  }
+  };
 
   const bidderRequest = {
     uspConsent: '1---',
@@ -310,10 +309,7 @@ describe('BidfuseBidAdapter', function () {
     });
 
     it('should have valid user sync with coppa 1 on response', function () {
-      config.setConfig({
-        coppa: 1
-      });
-      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse], undefined, undefined, undefined, true);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=1'
@@ -329,9 +325,9 @@ describe('BidfuseBidAdapter', function () {
       const gppConsent = {
         gppString: 'gpp_string',
         applicableSections: [7]
-      }
+      };
 
-      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent, uspConsent, gppConsent);
+      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent, uspConsent, gppConsent, true);
 
       expect(result).to.deep.equal([{
         'url': 'https://syncbf.bidfuse.com/image?pbjs=1&gdpr=1&gdpr_consent=consent_string&ccpa_consent=usp_string&gpp=gpp_string&gpp_sid=7&coppa=1',
@@ -354,7 +350,7 @@ describe('BidfuseBidAdapter', function () {
       expect(data).to.have.property('gpp_sid');
 
       delete bidderRequest.gppConsent;
-    })
+    });
 
     it('bidderRequest.ortb2.regs.gpp', () => {
       bidderRequest.ortb2 = bidderRequest.ortb2 || {};
@@ -367,7 +363,7 @@ describe('BidfuseBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -467,7 +463,7 @@ describe('BidfuseBidAdapter', function () {
 
       const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.native.clickUrl).to.equal('test.com');

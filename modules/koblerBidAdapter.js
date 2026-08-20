@@ -55,7 +55,7 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 
 export const interpretResponse = function (serverResponse, request) {
   const res = serverResponse.body;
-  const bids = []
+  const bids = [];
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
@@ -75,10 +75,10 @@ export const interpretResponse = function (serverResponse, request) {
           meta: {
             advertiserDomains: b.adomain
           }
-        }
+        };
         setAdditionalData(bid, 'adServerCurrency', getCurrencyFromBidderRequest(request.bidderRequest));
         bids.push(bid);
-      })
+      });
     });
   }
 
@@ -154,7 +154,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   let purpose2Given;
   let purpose3Given;
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.vendorData) {
-    const vendorData = bidderRequest.gdprConsent.vendorData
+    const vendorData = bidderRequest.gdprConsent.vendorData;
     const purposeData = vendorData.purpose;
     const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
     const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;

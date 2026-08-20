@@ -246,7 +246,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies bid won', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
-    BID_RESPONSE.body.responses[0].match = true
+    BID_RESPONSE.body.responses[0].match = true;
     BID_RESPONSE.body.responses[0].hasConsent = true;
     const response = spec.interpretResponse(BID_RESPONSE, request);
     const won = spec.onBidWon(response[0]);

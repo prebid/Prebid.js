@@ -32,6 +32,7 @@ import { isBidUsable } from './targeting/filters.js';
 import { targeting } from './targeting.js';
 import { hook, wrapHook } from './hook.js';
 import { loadSession } from './debugging.js';
+import { initDevtoolsMcp } from './devtoolsMcp.js';
 import { storageCallbacks } from './storageManager.js';
 import adapterManager, { type AliasBidderOptions, type BidRequest, getS2SBidderSet } from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
@@ -69,13 +70,16 @@ import { getGlobalVarName } from "./buildOptions.ts";
 import { yieldAll } from "./utils/yield.ts";
 
 const pbjsInstance = getGlobal();
-const { triggerUserSyncs } = userSync;
+const { triggerUserSyncs, removeUserSyncs } = userSync;
 
 /* private variables */
 const { REQUEST_BIDS, SET_TARGETING } = EVENTS;
 
 // initialize existing debugging sessions if present
 loadSession();
+
+// load the DevTools MCP module on demand when debugging is turned on
+initDevtoolsMcp();
 
 declare module './prebidGlobal' {
   interface PrebidJS {
@@ -201,10 +205,10 @@ function validateBannerMediaType(adUnit: AdUnit) {
     validatedAdUnit.sizes = sizes;
   } else {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
-    delete validatedAdUnit.mediaTypes.banner
+    delete validatedAdUnit.mediaTypes.banner;
   }
   validateOrtbFields(validatedAdUnit, 'banner');
-  syncOrtb2(validatedAdUnit, 'banner')
+  syncOrtb2(validatedAdUnit, 'banner');
   return validatedAdUnit;
 }
 
@@ -264,7 +268,7 @@ export function validateOrtbFields(adUnit, type, onInvalidParam?) {
     Object.entries(params)
       .forEach(([key, value]: any) => {
         if (!ORTB_PARAMS.has(key)) {
-          return
+          return;
         }
         const isValid = ORTB_PARAMS.get(key)(value);
         if (!isValid) {
@@ -338,7 +342,7 @@ function validateAdUnitPos(adUnit, mediaType) {
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
-  return adUnit
+  return adUnit;
 }
 
 function validateAdUnit(adUnitDef: AdUnitDefinition): AdUnit {
@@ -423,10 +427,10 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
 
 function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
   if (FEATURES.VIDEO) {
-    adUnits.forEach(au => fillVideoDefaults(au))
+    adUnits.forEach(au => fillVideoDefaults(au));
   }
   if (FEATURES.AUDIO) {
-    adUnits.forEach(au => fillAudioDefaults(au))
+    adUnits.forEach(au => fillAudioDefaults(au));
   }
 }
 
@@ -434,7 +438,7 @@ function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
   return function (...args) {
     logInfo(`Invoking ${getGlobalVarName()}.${name}`, args);
     return fn.apply(this, args);
-  }
+  };
 }
 
 export function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS[N], log = true) {
@@ -453,6 +457,7 @@ declare module './prebidGlobal' {
      * Re-trigger user syncs. Requires the `userSync.enableOverride` config to be set.
      */
     triggerUserSyncs: typeof triggerUserSyncs;
+    removeUserSyncs: () => number;
     getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
     getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
     getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
@@ -497,6 +502,9 @@ declare module './prebidGlobal' {
 // Allow publishers who enable user sync override to trigger their sync
 addApiMethod('triggerUserSyncs', triggerUserSyncs);
 
+// Allow publishers to clean up sync iframes, e.g. on navigation in a single page application
+addApiMethod('removeUserSyncs', removeUserSyncs);
+
 /**
  * Return a query string with all available targeting parameters for the given ad unit.
  *
@@ -519,9 +527,9 @@ addApiMethod('getAdserverTargetingForAdUnitCodeStr', getAdserverTargetingForAdUn
 function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: AdUnitCode): Bid {
   if (adUnitCode) {
     const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
-      .filter(isBidUsable)
+      .filter(isBidUsable);
 
-    return bid.length ? bid.reduce(getHighestCpm) : null
+    return bid.length ? bid.reduce(getHighestCpm) : null;
   } else {
     logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
   }
@@ -547,13 +555,13 @@ function getAdserverTargeting(adUnitCode?: AdUnitCode | AdUnitCode[]) {
 addApiMethod('getAdserverTargeting', getAdserverTargeting);
 
 function getConsentMetadata() {
-  return allConsent.getConsentMeta()
+  return allConsent.getConsentMeta();
 }
 addApiMethod('getConsentMetadata', getConsentMetadata);
 
 function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
   const responses = auctionManager[type]()
-    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
+    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode));
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();
@@ -640,7 +648,11 @@ type RenderAdOptions = {
    * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
    */
   clickThrough?: string;
-}
+  /**
+   * GAM view URL to store on the rendered bid for later firing.
+   */
+  viewUrl?: string;
+};
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -718,7 +730,7 @@ export type RequestBidsOptions = {
    * Additional first-party data to use for this auction only
    */
   ortb2?: DeepPartial<ORTBRequest>;
-}
+};
 
 type RequestBidsResult = {
   /**
@@ -733,7 +745,7 @@ type RequestBidsResult = {
    * The auction's ID
    */
   auctionId?: Identifier;
-}
+};
 
 export type PrivRequestBidsOptions = RequestBidsOptions & {
   defer: Defer<RequestBidsResult>;
@@ -743,11 +755,11 @@ export type PrivRequestBidsOptions = RequestBidsOptions & {
    * the global array).
    */
   adUnits: AdUnitDefinition[];
-}
+};
 
 export type StartAuctionOptions = Omit<PrivRequestBidsOptions, 'ortb2'> & {
   ortb2Fragments: ORTBFragments
-}
+};
 
 declare module './hook' {
   interface NamedHooks {
@@ -779,7 +791,7 @@ export const requestBids = (function() {
         included: adUnits,
         excluded: [],
         adUnitCodes: adUnits.map(au => au.code).filter(uniques)
-      }
+      };
     } else {
       adUnitCodes = adUnitCodes.filter(uniques);
       return Object.assign({
@@ -787,7 +799,7 @@ export const requestBids = (function() {
       }, adUnits.reduce(({ included, excluded }, adUnit) => {
         (adUnitCodes.includes(adUnit.code) ? included : excluded).push(adUnit);
         return { included, excluded };
-      }, { included: [], excluded: [] }))
+      }, { included: [], excluded: [] }));
     }
   }
 
@@ -798,13 +810,13 @@ export const requestBids = (function() {
     let ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries<any>(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
-    }
+    };
     ortb2Fragments = normalizeFPD(ortb2Fragments);
 
     enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
       return startAuction({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer });
-    })
+    });
   }, 'requestBids');
 
   return wrapHook(delegate, logInvocation('requestBids', delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
@@ -858,7 +870,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
         logError('Error executing bidsBackHandler', null, e);
       }
     }
-    defer.resolve({ bids, timedOut, auctionId })
+    defer.resolve({ bids, timedOut, auctionId });
   }
 
   const tids = {};
@@ -881,7 +893,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const tid = adUnit.ortb2Imp?.ext?.tid;
     if (tid) {
       if (tids.hasOwnProperty(adUnit.code)) {
-        logWarn(`Multiple distinct ortb2Imp.ext.tid were provided for twin ad units '${adUnit.code}'`)
+        logWarn(`Multiple distinct ortb2Imp.ext.tid were provided for twin ad units '${adUnit.code}'`);
       } else {
         tids[adUnit.code] = tid;
       }
@@ -957,7 +969,7 @@ requestBids.before(executeCallbacks, 49);
  * @param adUnits
  */
 function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
-  pbjsInstance.adUnits.push(...(Array.isArray(adUnits) ? adUnits : [adUnits]))
+  pbjsInstance.adUnits.push(...(Array.isArray(adUnits) ? adUnits : [adUnits]));
 }
 
 addApiMethod('addAdUnits', addAdUnits);
@@ -1092,7 +1104,7 @@ function getAllWinningBids(): Bid[] {
   return auctionManager.getAllWinningBids();
 }
 
-addApiMethod('getAllWinningBids', getAllWinningBids)
+addApiMethod('getAllWinningBids', getAllWinningBids);
 
 /**
  * @return Bids that have won their respective auctions but have not been rendered yet.
@@ -1145,7 +1157,7 @@ type MarkWinningBidAsUsedOptions = ({
    * @deprecated - alias of `events`
    */
   analytics?: boolean
-}
+};
 
 function findBidByAdId(adId) {
   if (!adId) {
@@ -1175,7 +1187,7 @@ type GetBidResponseByAdIdOptions = {
    * If true, mark the bid as used - firing any win trackers and removing it from the bid pool for future auctions.
    */
   markAsUsed?: boolean;
-}
+};
 
 /**
  * @return the bid response matching the given adId, or null if no such bid exists.
@@ -1259,7 +1271,7 @@ function quePush(command) {
     } else {
       logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
     }
-  })
+  });
 }
 
 function runCommand(cmd) {
@@ -1293,7 +1305,7 @@ const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, a
       queSetupComplete.resolve();
     });
   });
-})
+});
 addApiMethod('processQueue', processQueue, false);
 
 /**

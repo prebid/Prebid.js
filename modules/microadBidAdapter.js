@@ -91,7 +91,7 @@ export const spec = {
         params['appid'] = bidParams.appid.replace(EXT_APPID_STRING, '');
       }
 
-      const aidsParams = []
+      const aidsParams = [];
       const userIdAsEids = bid.userIdAsEids;
       AUDIENCE_IDS.forEach((audienceId) => {
         const bidAudienceId = deepAccess(bid, audienceId.bidKey);
@@ -108,9 +108,9 @@ export const spec = {
           // Set Ramp ID
           if (audienceId.type === 13) params['idl_env'] = bidAudienceId;
         }
-      })
+      });
       if (aidsParams.length > 0) {
-        params['aids'] = JSON.stringify(aidsParams)
+        params['aids'] = JSON.stringify(aidsParams);
       }
 
       const pbadslot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');

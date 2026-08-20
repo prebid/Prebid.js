@@ -7,9 +7,13 @@ import { isNumber, isPlainObject, isStr, logError, logWarn } from '../src/utils.
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
 
+export const dep = {
+  ajax
+};
+
 const ADAPTER_VERSION = '1.1.0';
 const ADAPTER_CODE = 'r2b2';
-const MODULE_NAME = 'R2B2 Analytics'
+const MODULE_NAME = 'R2B2 Analytics';
 const GVLID = 1235;
 const analyticsType = 'endpoint';
 
@@ -119,12 +123,12 @@ function processEvent (event) {
   // console.log('process event:', event);
   // console.log(JSON.stringify(event));
   if (!event) {
-    return
+    return;
   }
   eventBuffer.push(event);
   if (flushTimer) {
     clearTimeout(flushTimer);
-    flushTimer = null
+    flushTimer = null;
   }
   if (eventBuffer.length >= BATCH_SIZE) {
     flushEvents();
@@ -139,7 +143,7 @@ function processErrorParams(params) {
       return JSON.stringify(params);
     } catch (e) { /* do nothing */ }
   }
-  return null
+  return null;
 }
 function reportError (message, params) {
   errors++;
@@ -155,7 +159,7 @@ function reportError (message, params) {
     (CONFIG_ID ? `&conf=${encodeURIComponent(CONFIG_ID)}` : '') +
     (CONFIG_VERSION ? `&conf_ver=${encodeURIComponent(CONFIG_VERSION)}` : '') +
     `&u=${encodeURIComponent(REPORTED_URL)}`;
-  ajax(url, null, null, {});
+  dep.ajax(url, null, null, {});
 }
 function reportEvents (events) {
   try {
@@ -168,9 +172,9 @@ function reportEvents (events) {
       `&u=${encodeURIComponent(REPORTED_URL)}`;
     const headers = {
       contentType: 'application/x-www-form-urlencoded'
-    }
+    };
     data = data.replace(/&/g, '%26');
-    ajax(url, null, data, headers);
+    dep.ajax(url, null, data, headers);
   } catch (e) {
     const msg = `Error sending events - ${e.message}`;
     logError(`${MODULE_NAME}: ${msg}`);
@@ -185,7 +189,7 @@ function getStandardTargeting (obj) {
       sz: obj.hb_size || '',
       pb: obj.hb_pb || '',
       fmt: obj.hb_format || ''
-    }
+    };
   }
 }
 function getEventTimestamps (eventName, auctionId) {
@@ -193,7 +197,7 @@ function getEventTimestamps (eventName, auctionId) {
     t: Date.now() - START_TIME
   };
   if (!auctionId || !auctionsData[auctionId]) {
-    return timestamps
+    return timestamps;
   }
   const auctionData = auctionsData[auctionId];
 
@@ -205,7 +209,7 @@ function getEventTimestamps (eventName, auctionId) {
   if (eventName === EVENT_MAP[EVENTS.AUCTION_INIT] && auctionCount > 1) {
     timestamps.tprev = auctionsData[previousAuction].start - START_TIME;
   }
-  return timestamps
+  return timestamps;
 }
 
 function createEvent (name, data, auctionId) {
@@ -214,10 +218,10 @@ function createEvent (name, data, auctionId) {
       event: name,
       auctionId: !!auctionId
     });
-    return null
+    return null;
   }
   if (auctionsData[auctionId] && auctionsData[auctionId].empty) {
-    return null
+    return null;
   }
 
   data = data || {};
@@ -227,7 +231,7 @@ function createEvent (name, data, auctionId) {
     e: name,
     d: data,
     t: getEventTimestamps(name, auctionId)
-  }
+  };
 }
 
 function createAuctionData (auction, empty) {
@@ -253,11 +257,11 @@ function handleAuctionInit (args) {
     u: bidderRequests.reduce((result, bidderRequest) => {
       bidderRequest.bids.forEach((bid) => {
         if (!result[bid.adUnitCode]) {
-          result[bid.adUnitCode] = []
+          result[bid.adUnitCode] = [];
         }
-        result[bid.adUnitCode].push(bid.bidder)
+        result[bid.adUnitCode].push(bid.bidder);
       });
-      return result
+      return result;
     }, {})
   };
   const event = createEvent(EVENT_MAP[EVENTS.AUCTION_INIT], data, auctionId);
@@ -269,11 +273,11 @@ function handleBidRequested (args) {
     b: args.bidderCode,
     u: args.bids.reduce((result, bid) => {
       if (!result[bid.adUnitCode]) {
-        result[bid.adUnitCode] = 1
+        result[bid.adUnitCode] = 1;
       } else {
-        result[bid.adUnitCode]++
+        result[bid.adUnitCode]++;
       }
-      return result
+      return result;
     }, {})
   };
   const event = createEvent(EVENT_MAP[EVENTS.BID_REQUESTED], data, args.auctionId);
@@ -285,20 +289,20 @@ function handleBidTimeout (args) {
   if (auctionId) {
     const bidders = args.reduce((result, bid) => {
       if (!result[bid.bidder]) {
-        result[bid.bidder] = {}
+        result[bid.bidder] = {};
       }
       const bidderData = result[bid.bidder];
       if (!bidderData[bid.adUnitCode]) {
-        bidderData[bid.adUnitCode] = 1
+        bidderData[bid.adUnitCode] = 1;
       } else {
-        bidderData[bid.adUnitCode]++
+        bidderData[bid.adUnitCode]++;
       }
-      return result
+      return result;
     }, {});
 
     const data = {
       b: bidders,
-    }
+    };
     const event = createEvent(EVENT_MAP[EVENTS.BID_TIMEOUT], data, auctionId);
     processEvent(event);
   }
@@ -363,16 +367,16 @@ function getAuctionUnitsData (auctionObject) {
     data[adUnitCode] = data[adUnitCode] || {};
     data[adUnitCode][key] = data[adUnitCode][key] || {};
     data[adUnitCode][key][bidder] = (data[adUnitCode][key][bidder] || 0) + 1;
-    return data
+    return data;
   };
   unitsData = bidsReceived.reduce((data, bid) => {
     if (!bid.cpm) return data;
-    return _unitsDataBidReducer(data, bid, 'b')
+    return _unitsDataBidReducer(data, bid, 'b');
   }, unitsData);
   unitsData = bidsRejected.reduce((data, bid) => {
-    return _unitsDataBidReducer(data, bid, 'rj')
+    return _unitsDataBidReducer(data, bid, 'rj');
   }, unitsData);
-  return unitsData
+  return unitsData;
 }
 function handleEmptyAuction(auction) {
   const auctionId = auction.auctionId;
@@ -384,7 +388,7 @@ function handleAuctionEnd (args) {
   // console.log('auction end:', arguments);
   if (!args.bidderRequests.length) {
     handleEmptyAuction(args);
-    return
+    return;
   }
   auctionsData[args.auctionId].end = args.auctionEnd;
   let winningBids = getGlobal().getHighestCpmBids() || [];
@@ -401,7 +405,7 @@ function handleAuctionEnd (args) {
         c: bid.currency,
         sz: bid.size,
         bi: bid.requestId,
-      })
+      });
     }
   });
   const data = {
@@ -413,7 +417,7 @@ function handleAuctionEnd (args) {
     rjc: args.bidsRejected.length,
     brc: args.bidderRequests.reduce((count, bidderRequest) => {
       const c = bidderRequest.bids.length || 0;
-      return count + c
+      return count + c;
     }, 0)
   };
   const event = createEvent(EVENT_MAP[EVENTS.AUCTION_END], data, args.auctionId);
@@ -444,7 +448,7 @@ function handleSetTargeting (args) {
   Object.keys(args).forEach((unit) => {
     if (Object.keys(args[unit]).length) {
       if (!adId) {
-        adId = args[unit].hb_adid
+        adId = args[unit].hb_adid;
       }
       filteredTargetings[unit] = getStandardTargeting(args[unit]);
     }
@@ -453,7 +457,7 @@ function handleSetTargeting (args) {
     const auctionId = bidsData[adId].auctionId;
     const data = {
       u: filteredTargetings
-    }
+    };
     const event = createEvent(EVENT_MAP[EVENTS.SET_TARGETING], data, auctionId);
     processEvent(event);
   }
@@ -516,36 +520,36 @@ function handleBidViewable (args) {
 const baseAdapter = adapter({ analyticsType });
 const r2b2Analytics = Object.assign({}, baseAdapter, {
   getUrl() {
-    return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_EVENT_PATH}`
+    return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_EVENT_PATH}`;
   },
   getErrorUrl() {
-    return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_ERROR_PATH}`
+    return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_ERROR_PATH}`;
   },
   enableAnalytics(conf = {}) {
     if (isPlainObject(conf.options)) {
       const { domain, configId, configVer, server } = conf.options;
       if (!domain || !isStr(domain)) {
         logWarn(`${MODULE_NAME}: Mandatory parameter 'domain' not configured, analytics disabled`);
-        return
+        return;
       }
-      WEBSITE = domain
+      WEBSITE = domain;
       if (server) {
         if (isStr(server)) {
-          LOG_SERVER = server
+          LOG_SERVER = server;
         } else {
           logWarn(`options.server must be a string`);
         }
       }
       if (configId) {
         if (isNumber(configId)) {
-          CONFIG_ID = configId
+          CONFIG_ID = configId;
         } else {
           logWarn(`options.configId must be a number`);
         }
       }
       if (configVer) {
         if (isNumber(configVer)) {
-          CONFIG_VERSION = configVer
+          CONFIG_VERSION = configVer;
         } else {
           logWarn(`options.configVer must be a number`);
         }
@@ -562,50 +566,50 @@ const r2b2Analytics = Object.assign({}, baseAdapter, {
       }
       switch (eventType) {
         case EVENTS.NO_BID:
-          handleNoBid(args)
+          handleNoBid(args);
           break;
         case EVENTS.AUCTION_INIT:
-          handleAuctionInit(args)
+          handleAuctionInit(args);
           break;
         case EVENTS.BID_REQUESTED:
-          handleBidRequested(args)
+          handleBidRequested(args);
           break;
         case EVENTS.BID_TIMEOUT:
-          handleBidTimeout(args)
+          handleBidTimeout(args);
           break;
         case EVENTS.BID_RESPONSE:
-          handleBidResponse(args)
+          handleBidResponse(args);
           break;
         case EVENTS.BID_REJECTED:
-          handleBidRejected(args)
+          handleBidRejected(args);
           break;
         case EVENTS.BIDDER_DONE:
-          handleBidderDone(args)
+          handleBidderDone(args);
           break;
         case EVENTS.AUCTION_END:
-          handleAuctionEnd(args)
+          handleAuctionEnd(args);
           break;
         case EVENTS.BID_WON:
-          handleBidWon(args)
+          handleBidWon(args);
           break;
         case EVENTS.SET_TARGETING:
-          handleSetTargeting(args)
+          handleSetTargeting(args);
           break;
         case EVENTS.STALE_RENDER:
-          handleStaleRender(args)
+          handleStaleRender(args);
           break;
         case EVENTS.AD_RENDER_SUCCEEDED:
-          handleRenderSuccess(args)
+          handleRenderSuccess(args);
           break;
         case EVENTS.AD_RENDER_FAILED:
-          handleRenderFailed(args)
+          handleRenderFailed(args);
           break;
         case EVENTS.BID_VIEWABLE:
-          handleBidViewable(args)
+          handleBidViewable(args);
           break;
       }
     } catch (e) {
-      reportError(`${eventType} - ${e.message}`)
+      reportError(`${eventType} - ${e.message}`);
     }
   }
 });

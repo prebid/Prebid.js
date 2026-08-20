@@ -124,7 +124,7 @@ export const spec = {
     };
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj
+      payload.device = appDeviceObj;
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
@@ -145,7 +145,7 @@ export const spec = {
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
-      }
+      };
       payload.referrer_detection = refererinfo;
     }
 
@@ -154,7 +154,7 @@ export const spec = {
       payload.fpd = {
         keywords: ortb2Site.keywords || '',
         category: deepAccess(ortb2Site, 'ext.data.category') || ''
-      }
+      };
     }
 
     const request = formatRequest(payload, bidderRequest);
@@ -449,7 +449,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
   if (bid.params.category) {
     tag.category = bid.params.category;
   }

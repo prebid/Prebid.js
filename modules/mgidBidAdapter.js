@@ -1,11 +1,17 @@
+import { getConnectionInfo, getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { createMgidSessionStorage } from '../libraries/mgidUtils/mgidSessionStorage.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { parseUserAgentDetailed } from '../libraries/userAgentUtils/detailed.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { bidderSettings } from '../src/bidderSettings.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { config } from '../src/config.js';
+import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { toOrtbNativeRequest } from '../src/native.js';
-import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess,
@@ -30,7 +36,7 @@ import {
  * @typedef {import('../src/bidfactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('./mgidBidAdapterTypes.d.ts').MgidBidderParams} MgidBidderParams
+ * @typedef {import('./mgidBidAdapter.d.ts').MgidBidderParams} MgidBidderParams
  * @typedef {BidRequest & { params: MgidBidderParams }} MgidBidRequest
  */
 
@@ -38,6 +44,8 @@ const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const mgidSession = createMgidSessionStorage(storage);
+
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
@@ -45,6 +53,8 @@ const DEFAULT_IMAGE_WIDTH = 492;
 const DEFAULT_IMAGE_HEIGHT = 328;
 const DEFAULT_ICON_WIDTH = 50;
 const DEFAULT_ICON_HEIGHT = 50;
+
+const LS_KEY_MUID = 'mgMuidn';
 
 // Supported native asset keys for isBidRequestValid
 const SUPPORTED_NATIVE_KEYS = new Set([
@@ -87,6 +97,15 @@ const converter = ortbConverter({
       }
     }
 
+    const { id: storageId, type: storageIdType } = resolveStorageId(bidRequest);
+    if (storageId && context.enhancedBidData && isViewabilityEnabled()) {
+      const viewrate = mgidSession.getViewrate(storageId);
+      if (isStr(viewrate) && viewrate.length > 0) {
+        deepSetValue(imp, 'ext.data.viewrate1w', viewrate);
+        deepSetValue(imp, 'ext.data.viewrateIdType', storageIdType);
+      }
+    }
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -124,6 +143,13 @@ const converter = ortbConverter({
     bidResponse.burl = bid.burl || '';
     bidResponse.isBurl = isStr(bid.burl) && bid.burl.length > 0;
 
+    if (context.enhancedBidData) {
+      const { id: viewrateId } = resolveStorageId(context.bidRequest);
+      if (viewrateId) {
+        bidResponse.mgVRID = viewrateId;
+      }
+    }
+
     if (bid.exp) {
       bidResponse.ttl = bid.exp;
     } else if (bid.ttl) {
@@ -144,7 +170,7 @@ const converter = ortbConverter({
   response(buildResponse, bidResponses, ortbResponse, context) {
     const muidn = deepAccess(ortbResponse, 'ext.muidn');
     if (isStr(muidn) && muidn.length > 0) {
-      setLocalStorageSafely('mgMuidn', muidn);
+      setLocalStorageSafely(LS_KEY_MUID, muidn);
     }
     return buildResponse(bidResponses, ortbResponse, context);
   },
@@ -216,7 +242,7 @@ export const spec = {
     }
 
     const accountId = setOnAny(validBidRequests, 'params.accountId');
-    const muid = getLocalStorageSafely('mgMuidn');
+    const muid = getLocalStorageSafely(LS_KEY_MUID);
     let url = (setOnAny(validBidRequests, 'params.bidUrl') || ENDPOINT_URL) + accountId;
     if (isStr(muid) && muid.length > 0) {
       url += (url.indexOf('?') > -1 ? '&' : '?') + 'muid=' + encodeURIComponent(muid);
@@ -226,7 +252,11 @@ export const spec = {
       setOnAny(validBidRequests, 'params.cur') ||
       deepAccess(bidderRequest, 'ortb2.ext.prebid.adServerCurrency') ||
       DEFAULT_CUR;
-    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: { currency } });
+    const data = converter.toORTB({
+      bidRequests: validBidRequests,
+      bidderRequest,
+      context: { currency, enhancedBidData: isEnhancedBidDataEnabled() },
+    });
     if (!data) {
       return;
     }
@@ -272,6 +302,22 @@ export const spec = {
     logInfo(LOG_INFO_PREFIX + `onBidWon`);
   },
 
+  onAdRenderSucceeded: (bid) => {
+    const trackId = bid && bid.mgVRID;
+    if (isStr(trackId) && trackId.length > 0 && isViewabilityEnabled()) {
+      mgidSession.trackRender(trackId);
+      logInfo(LOG_INFO_PREFIX + `onAdRenderSucceeded`);
+    }
+  },
+
+  onBidViewable: (bid) => {
+    const trackId = bid && bid.mgVRID;
+    if (isStr(trackId) && trackId.length > 0) {
+      mgidSession.trackView(trackId);
+      logInfo(LOG_INFO_PREFIX + `onBidViewable`);
+    }
+  },
+
   getUserSyncs: getUserSyncs,
 };
 
@@ -308,7 +354,10 @@ function populateNativeImp(imp, nativeReq) {
   nativeReq.plcmtcnt = nativeReq.plcmtcnt || 1;
   nativeReq.privacy = nativeReq.privacy || 1;
   if (!nativeReq.eventtrackers) {
-    nativeReq.eventtrackers = [{ event: 1, methods: [1, 2] }];
+    nativeReq.eventtrackers = [
+      { event: 1, methods: [1, 2] },
+      { event: 2, methods: [1] },
+    ];
   }
   let hasTitle = false;
   let hasImage = false;
@@ -370,13 +419,10 @@ function populateRequest(request, context) {
     try { topWindow = window.top; } catch (e) { topWindow = window; }
     deepSetValue(request, 'device.pxratio', getDevicePixelRatio(topWindow));
   }
-  if (!isInteger(deepAccess(request.device, 'devicetype'))) {
-    deepSetValue(request, 'device.devicetype', getDeviceType());
-  }
-  if (!isPlainObject(deepAccess(request.device, 'sua'))) {
-    const sua = getSUA();
-    if (sua) {
-      deepSetValue(request, 'device.sua', sua);
+  if (!isInteger(deepAccess(request.device, 'connectiontype'))) {
+    const connType = getConnectionType();
+    if (connType > 0) {
+      deepSetValue(request, 'device.connectiontype', connType);
     }
   }
   if (!isInteger(deepAccess(request.device, 'geo.utcoffset'))) {
@@ -388,6 +434,44 @@ function populateRequest(request, context) {
   if (!isStr(deepAccess(request, 'site.publisher.id'))) {
     deepSetValue(request, 'site.publisher.id', String(accountId));
   }
+
+  if (context.enhancedBidData) {
+    mgidSession.calculatePageSession();
+  }
+
+  const uaInfo = parseUserAgentDetailed();
+  if (!isInteger(deepAccess(request, 'device.devicetype'))) {
+    deepSetValue(request, 'device.devicetype', uaInfo.devicetype);
+  }
+  if (!isStr(deepAccess(request, 'device.os'))) {
+    const suaBrand = deepAccess(request, 'device.sua.platform.brand');
+    if (isStr(suaBrand)) {
+      deepSetValue(request, 'device.os', suaBrand);
+    } else if (uaInfo.os !== 'unknown') {
+      deepSetValue(request, 'device.os', uaInfo.os);
+      if (!isStr(deepAccess(request, 'device.osv')) && uaInfo.osv !== 'other') {
+        deepSetValue(request, 'device.osv', uaInfo.osv);
+      }
+    }
+  }
+  if (!isStr(deepAccess(request, 'device.osv'))) {
+    const suaVersion = deepAccess(request, 'device.sua.platform.version');
+    if (isArray(suaVersion) && suaVersion.length > 0) {
+      deepSetValue(request, 'device.osv', suaVersion.join('.'));
+    }
+  }
+  if (!isStr(deepAccess(request, 'device.model'))) {
+    const model = deepAccess(request, 'device.sua.model');
+    if (isStr(model)) {
+      deepSetValue(request, 'device.model', model);
+    }
+  }
+
+  deepSetValue(request, 'user.ext.mgid.enhanced', context.enhancedBidData ? 1 : 0);
+  if (context.enhancedBidData) {
+    populateMgidData(request);
+  }
+  populateConnectionInfo(request);
 
   // backward compat: params.bcat/badv/wlang used to be supported directly; ortb2 takes priority
   if (!isArray(request.bcat) || request.bcat.length === 0) {
@@ -410,30 +494,78 @@ function populateRequest(request, context) {
   }
 }
 
-function getDeviceType() {
-  const ua = navigator.userAgent;
-  if (/tablet|ipad|playbook|silk/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) {
-    return 5;
+function populateMgidData(request) {
+  const pvid = mgidSession.getOrCreatePvid();
+  if (isStr(pvid) && pvid.length > 0) {
+    deepSetValue(request, 'user.ext.mgid.pvid', pvid);
   }
-  if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-    return 4;
+
+  const sessionInfo = mgidSession.getSessionInfo();
+  if (isStr(sessionInfo.sid) && sessionInfo.sid.length > 0) {
+    deepSetValue(request, 'user.ext.mgid.sid', sessionInfo.sid);
   }
-  return 2;
+  if (isNumber(sessionInfo.sessionPage) && sessionInfo.sessionPage > 0) {
+    deepSetValue(request, 'user.ext.mgid.sessionPage', sessionInfo.sessionPage);
+  }
+  if (sessionInfo.sessionNum > 0) {
+    deepSetValue(request, 'user.ext.mgid.sessionNum', sessionInfo.sessionNum);
+    if (sessionInfo.sessionsWeek > 0) {
+      deepSetValue(request, 'user.ext.mgid.sessions1w', sessionInfo.sessionsWeek);
+    }
+    if (isNumber(sessionInfo.timeBetweenSessions)) {
+      deepSetValue(request, 'user.ext.mgid.timeBetweenSessions', sessionInfo.timeBetweenSessions);
+    }
+  }
 }
 
-function getSUA() {
-  if (!navigator.userAgentData) {
-    return null;
+function populateConnectionInfo(request) {
+  const conn = getConnectionInfo();
+  if (conn) {
+    if (isStr(conn.effectiveType)) {
+      deepSetValue(request, 'site.ext.mgid.niet', conn.effectiveType);
+    }
+    if (typeof conn.saveData === 'boolean') {
+      deepSetValue(request, 'site.ext.mgid.nisd', conn.saveData ? 1 : 0);
+    }
   }
-  const uad = navigator.userAgentData;
-  const sua = { mobile: uad.mobile ? 1 : 0 };
-  if (isArray(uad.brands) && uad.brands.length > 0) {
-    sua.browsers = uad.brands.map(b => ({ brand: b.brand, version: [b.version] }));
+}
+
+/**
+ * Publisher opt-in for MGID usage data: `pbjs.bidderSettings.mgid = {enhancedBidData: true}`.
+ * Disabled by default.
+ * @returns {boolean}
+ */
+function isEnhancedBidDataEnabled() {
+  return bidderSettings.get(BIDDER_CODE, 'enhancedBidData') === true;
+}
+
+/**
+ * @returns {boolean}
+ */
+function isViewabilityEnabled() {
+  const installedModules = getGlobal().installedModules;
+  return (installedModules.includes('bidViewability') && config.getConfig('bidViewability')?.enabled === true) ||
+    (installedModules.includes('bidViewabilityIO') && config.getConfig('bidViewabilityIO')?.enabled === true);
+}
+
+/**
+ * @param {MgidBidRequest} bidRequest
+ * @returns {{ id: string, type: string }}
+ */
+function resolveStorageId(bidRequest) {
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  if (isStr(gpid) && gpid.length > 0) {
+    return { id: gpid, type: 'gpid' };
   }
-  if (isStr(uad.platform)) {
-    sua.platform = { brand: uad.platform };
+  const pbadslot = deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  if (isStr(pbadslot) && pbadslot.length > 0) {
+    return { id: pbadslot, type: 'pbadslot' };
   }
-  return sua;
+  const tagId = bidRequest && bidRequest.adUnitCode;
+  if (isStr(tagId) && tagId.length > 0) {
+    return { id: tagId, type: 'tagId' };
+  }
+  return { id: '', type: '' };
 }
 
 function getLocalStorageSafely(key) {

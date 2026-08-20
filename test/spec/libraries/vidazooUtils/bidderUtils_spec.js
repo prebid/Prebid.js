@@ -1,19 +1,36 @@
-import * as utilities from 'libraries/vidazooUtils/bidderUtils.js'
+import * as utilities from 'libraries/vidazooUtils/bidderUtils.js';
 import { expect } from "chai";
 import sinon from "sinon";
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
+import { config } from '../../../../src/config.js';
 import {
   IFRAME_SYNC_DEFAULT_URL,
   IMAGE_SYNC_DEFAULT_URL,
   SESSION_ID_KEY
 } from "../../../../libraries/vidazooUtils/constants.js";
-import { bidderSettings } from 'src/bidderSettings.js';
+import { bidderSettings } from '../../../../src/bidderSettings.js';
+
+// ajax is rewritten by the callerContext babel plugin and cannot be stubbed on the
+// module namespace; assert against the global fetch mock's recorded requests.
+function expectTrackingPing(expectedUrl) {
+  const matching = server.requests.filter((req) => req.url === expectedUrl);
+  expect(matching.length).to.equal(1);
+  expect(matching[0].method).to.equal('GET');
+  expect(matching[0].fetch.request.keepalive).to.be.true;
+}
+
+function expectTrackingPingMatching(urlPattern) {
+  const matching = server.requests.filter((req) => urlPattern.test(req.url));
+  expect(matching.length).to.equal(1);
+  expect(matching[0].method).to.equal('GET');
+  expect(matching[0].fetch.request.keepalive).to.be.true;
+}
 
 describe('Vidazoo Bidder Utils Tests', function () {
   describe('createSessionId', function () {
     it('Should return string with wsid_', function () {
-      const result = utilities.createSessionId()
+      const result = utilities.createSessionId();
       expect(result).to.exist.and.to.include('wsid_');
     });
   });
@@ -293,7 +310,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       clock.restore();
     });
     it('should get value that was previously set', function () {
-      const value = "something"
+      const value = "something";
       const localStore = { newKey: value };
       const storageMock = {
         setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
@@ -345,7 +362,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         const current = utilities.getUniqueDealId(storageMock, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
@@ -376,16 +393,28 @@ describe('Vidazoo Bidder Utils Tests', function () {
         done();
       }, 200);
     });
+
+    it('should return 0 when an error is thrown', function () {
+      const key = 'myDealKey';
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub(),
+        getDataFromLocalStorage: sinon.stub().returns(JSON.stringify({ value: 1, created: 1 }))
+      };
+      const dateNowStub = sinon.stub(Date, 'now').throws(new Error('storage error'));
+      const dealId = utilities.getNextDealId(storageMock, key);
+      expect(dealId).to.be.equal(0);
+      dateNowStub.restore();
+    });
   });
   describe('hashCode', function () {
     it('should result with _ as a prefix and 8 digits', function () {
-      const result = utilities.hashCode("code")
+      const result = utilities.hashCode("code");
       expect(result).to.be.equal("_3059181");
-    })
+    });
     it('should result with ^ as a prefix and 10 digits', function () {
-      const result = utilities.hashCode("1234567890", "^")
+      const result = utilities.hashCode("1234567890", "^");
       expect(result).to.be.equal("^-2054162789");
-    })
+    });
     it('should return prefix with 0 for empty string', function () {
       const result = utilities.hashCode('');
       expect(result).to.equal('_0');
@@ -393,14 +422,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
   });
 
   describe('onBidWon', function () {
-    beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
-    });
-    afterEach(function () {
-      utils.triggerPixel.restore();
-    });
-
-    it('should call triggerPixel with nurl', function () {
+    it('should send keepalive ajax GET with nurl', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -422,11 +444,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         width: 300
       };
       utilities.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.true;
-
-      const url = utils.triggerPixel.args[0];
-
-      expect(url[0]).to.be.equal('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+      expectTrackingPing('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
     });
 
     it('should append ? when nurl has no existing query string', function () {
@@ -451,12 +469,11 @@ describe('Vidazoo Bidder Utils Tests', function () {
         width: 300
       };
       utilities.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.true;
-      const url = utils.triggerPixel.args[0][0];
-      expect(url).to.match(/^https:\/\/test\.com\/win-notice\?adId=/);
+      expectTrackingPingMatching(/^https:\/\/test\.com\/win-notice\?adId=/);
     });
 
-    it('should not call triggerPixel when nurl not passed in bid', function () {
+    it('should not send ping when nurl not passed in bid', function () {
+      const beforeCount = server.requests.length;
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -477,19 +494,12 @@ describe('Vidazoo Bidder Utils Tests', function () {
         width: 300
       };
       utilities.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.false;
+      expect(server.requests.length).to.equal(beforeCount);
     });
   });
 
   describe('onBidBillable', function () {
-    beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
-    });
-    afterEach(function () {
-      utils.triggerPixel.restore();
-    });
-
-    it('should call triggerPixel with burl', function () {
+    it('should send keepalive ajax GET with burl', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -511,11 +521,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         width: 300
       };
       utilities.onBidBillable(bid);
-      expect(utils.triggerPixel.called).to.be.true;
-
-      const url = utils.triggerPixel.args[0];
-
-      expect(url[0]).to.be.equal('https://test.com/billing-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+      expectTrackingPing('https://test.com/billing-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
     });
 
     it('should append ? when burl has no existing query string', function () {
@@ -540,12 +546,11 @@ describe('Vidazoo Bidder Utils Tests', function () {
         width: 300
       };
       utilities.onBidBillable(bid);
-      expect(utils.triggerPixel.called).to.be.true;
-      const url = utils.triggerPixel.args[0][0];
-      expect(url).to.match(/^https:\/\/test\.com\/billing-notice\?adId=/);
+      expectTrackingPingMatching(/^https:\/\/test\.com\/billing-notice\?adId=/);
     });
 
-    it('should not call triggerPixel when burl not passed in bid', function () {
+    it('should not send ping when burl not passed in bid', function () {
+      const beforeCount = server.requests.length;
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -566,7 +571,111 @@ describe('Vidazoo Bidder Utils Tests', function () {
         width: 300
       };
       utilities.onBidBillable(bid);
-      expect(utils.triggerPixel.called).to.be.false;
+      expect(server.requests.length).to.equal(beforeCount);
+    });
+  });
+
+  describe('onBidViewable', function () {
+    it('should append ? when viewableUrl has no existing query string', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        viewableUrl: 'https://test.com/onBidViewable',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onBidViewable(bid);
+      expectTrackingPingMatching(/^https:\/\/test\.com\/onBidViewable\?adId=/);
+    });
+
+    it('should not send ping when viewableUrl not passed in bid', function () {
+      const beforeCount = server.requests.length;
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onBidViewable(bid);
+      expect(server.requests.length).to.equal(beforeCount);
+    });
+  });
+
+  describe('onAdRenderSucceeded', function () {
+    it('should append ? when renderSuccessUrl has no existing query string', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        renderSuccessUrl: 'https://test.com/renderSuccessUrl',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onAdRenderSucceeded(bid);
+      expectTrackingPingMatching(/^https:\/\/test\.com\/renderSuccessUrl\?adId=/);
+    });
+
+    it('should not send ping when renderSuccessUrl not passed in bid', function () {
+      const beforeCount = server.requests.length;
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onAdRenderSucceeded(bid);
+      expect(server.requests.length).to.equal(beforeCount);
     });
   });
 
@@ -696,57 +805,6 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const syncs = getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, noCidResponses, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].url).to.include('cid=');
-    });
-  });
-
-  describe('appendUserIdsToRequestPayload', function () {
-    it('should extract lipbid from lipb provider', function () {
-      const payload = {};
-      const userIds = {
-        lipb: { lipbid: 'lipb-id-123' }
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.lipb']).to.be.equal('lipb-id-123');
-    });
-
-    it('should extract uid from id5id provider', function () {
-      const payload = {};
-      const userIds = {
-        id5id: { uid: 'id5-uid-456' }
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.id5id']).to.be.equal('id5-uid-456');
-    });
-
-    it('should use raw value for other providers', function () {
-      const payload = {};
-      const userIds = {
-        tdid: 'tdid-value-789',
-        criteoId: 'criteo-value-000'
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.tdid']).to.be.equal('tdid-value-789');
-      expect(payload['uid.criteoId']).to.be.equal('criteo-value-000');
-    });
-
-    it('should handle all provider types together', function () {
-      const payload = {};
-      const userIds = {
-        lipb: { lipbid: 'lipb-id' },
-        id5id: { uid: 'id5-uid' },
-        tdid: 'tdid-value'
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.lipb']).to.be.equal('lipb-id');
-      expect(payload['uid.id5id']).to.be.equal('id5-uid');
-      expect(payload['uid.tdid']).to.be.equal('tdid-value');
-    });
-
-    it('should not modify payload when userIds is empty', function () {
-      const payload = { existing: 'value' };
-      utilities.appendUserIdsToRequestPayload(payload, {});
-      expect(Object.keys(payload)).to.have.lengthOf(1);
-      expect(payload.existing).to.be.equal('value');
     });
   });
 
@@ -969,6 +1027,21 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(data.dsa).to.deep.equal({ required: 1 });
     });
 
+    it('should not include device.deviceType if original is not a number', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          ...baseBidderRequest.ortb2,
+          regs: { coppa: 0, ext: { dsa: { required: 1 } } }
+        }
+      };
+      bidderRequest.ortb2.device.devicetype = '';
+      const data = utilities.buildRequestData(
+        baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data?.device?.devicetype).not.exist;
+    });
+
     it('should include placementId when set in params', function () {
       const bid = {
         ...baseBid,
@@ -1011,18 +1084,6 @@ describe('Vidazoo Bidder Utils Tests', function () {
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
       );
       expect(data['uid.adserver.org']).to.equal('eid-123');
-    });
-
-    it('should append userId to request data', function () {
-      const bid = {
-        ...baseBid,
-        userId: { tdid: 'tdid-val', lipb: { lipbid: 'lipb-val' } }
-      };
-      const data = utilities.buildRequestData(
-        bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
-      );
-      expect(data['uid.tdid']).to.equal('tdid-val');
-      expect(data['uid.lipb']).to.equal('lipb-val');
     });
 
     it('should include ortb2 and ortb2Imp in data', function () {
@@ -1324,6 +1385,76 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(bids[0].burl).to.be.undefined;
     });
 
+    it('should include viewableUrl in response when provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-viewable',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            viewableUrl: 'https://viewable.example.com/view'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-viewable' } });
+      expect(bids[0].viewableUrl).to.equal('https://viewable.example.com/view');
+    });
+
+    it('should not include viewableUrl when not provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-noviewable',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-noviewable' } });
+      expect(bids[0].viewableUrl).to.be.undefined;
+    });
+
+    it('should include renderSuccessUrl in response when provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-rendersuccess',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            renderSuccessUrl: 'https://render.example.com/success'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-rendersuccess' } });
+      expect(bids[0].renderSuccessUrl).to.equal('https://render.example.com/success');
+    });
+
+    it('should not include renderSuccessUrl when not provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-norendersuccess',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-norendersuccess' } });
+      expect(bids[0].renderSuccessUrl).to.be.undefined;
+    });
+
     it('should use metaData directly when provided', function () {
       const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
       const metaData = { advertiserDomains: ['test.com'], networkId: 123 };
@@ -1445,7 +1576,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
         site: { cat: [], pagecat: [], content: { data: [], language: 'en' } },
         user: { data: [] },
         device: {},
-        regs: { coppa: 0 }
+        regs: { coppa: 0 },
+        source: { ext: { schain: null } }
       }
     };
 
@@ -1670,4 +1802,4 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(requests[0].url).to.include('twist.win');
     });
   });
-})
+});

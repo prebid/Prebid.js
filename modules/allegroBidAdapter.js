@@ -7,8 +7,12 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
+/**
+ * @typedef {import('./allegroBidAdapter.d.ts').AllegroBidRequestParams} AllegroBidRequestParams
+ */
+
 const BIDDER_CODE = 'allegro';
-const BIDDER_URL = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid';
+const BIDDER_URL = 'https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid';
 const GVLID = 1493;
 
 /**
@@ -23,44 +27,44 @@ function convertExtensionFields(request) {
   if (request.imp) {
     request.imp.forEach(imp => {
       if (imp.banner?.ext) {
-        moveExt(imp.banner, '[com.google.doubleclick.banner_ext]')
+        moveExt(imp.banner, '[com.google.doubleclick.banner_ext]');
       }
       if (imp.ext) {
-        moveExt(imp, '[com.google.doubleclick.imp]')
+        moveExt(imp, '[com.google.doubleclick.imp]');
       }
     });
   }
 
   if (request.app?.ext) {
-    moveExt(request.app, '[com.google.doubleclick.app]')
+    moveExt(request.app, '[com.google.doubleclick.app]');
   }
 
   if (request.site?.ext) {
-    moveExt(request.site, '[com.google.doubleclick.site]')
+    moveExt(request.site, '[com.google.doubleclick.site]');
   }
 
   if (request.site?.publisher?.ext) {
-    moveExt(request.site.publisher, '[com.google.doubleclick.publisher]')
+    moveExt(request.site.publisher, '[com.google.doubleclick.publisher]');
   }
 
   if (request.user?.ext) {
-    moveExt(request.user, '[com.google.doubleclick.user]')
+    moveExt(request.user, '[com.google.doubleclick.user]');
   }
 
   if (request.user?.data) {
     request.user.data.forEach(data => {
       if (data.ext) {
-        moveExt(data, '[com.google.doubleclick.data]')
+        moveExt(data, '[com.google.doubleclick.data]');
       }
     });
   }
 
   if (request.device?.ext) {
-    moveExt(request.device, '[com.google.doubleclick.device]')
+    moveExt(request.device, '[com.google.doubleclick.device]');
   }
 
   if (request.device?.geo?.ext) {
-    moveExt(request.device.geo, '[com.google.doubleclick.geo]')
+    moveExt(request.device.geo, '[com.google.doubleclick.geo]');
   }
 
   if (request.regs?.ext) {
@@ -68,15 +72,15 @@ function convertExtensionFields(request) {
       request.regs.ext.gdpr = request.regs.ext.gdpr === 1;
     }
 
-    moveExt(request.regs, '[com.google.doubleclick.regs]')
+    moveExt(request.regs, '[com.google.doubleclick.regs]');
   }
 
   if (request.source?.ext) {
-    moveExt(request.source, '[com.google.doubleclick.source]')
+    moveExt(request.source, '[com.google.doubleclick.source]');
   }
 
   if (request.ext) {
-    moveExt(request, '[com.google.doubleclick.bid_request]')
+    moveExt(request, '[com.google.doubleclick.bid_request]');
   }
 }
 
@@ -140,6 +144,11 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
+    const publisherId = bidderRequest.bids.find(bid => /** @type {AllegroBidRequestParams} */ (bid.params)?.publisherId)?.params.publisherId;
+    if (publisherId) {
+      request['[com.allegro.dsp.ext]'] = { inventory: { id: publisherId } };
+    }
+
     if (request?.device?.dnt !== undefined) {
       request.device.dnt = request.device.dnt === 1;
     }
@@ -163,8 +172,38 @@ const converter = ortbConverter({
     }
 
     return request;
+  },
+  /**
+   * Post-processes each Prebid bid response, mapping Allegro DSP extension
+   * fields onto the standard `meta` object so publishers can consume them.
+   * The DSP extension is delivered as a proto-JSON bracketed key
+   * (`[com.allegro.dsp.dsp_bid]`). `adomain` is mapped to
+   * `meta.advertiserDomains` by the default ORTB processor.
+   *
+   * @param {Function} buildBidResponse Base builder provided by ortbConverter.
+   * @param bid Single ORTB bid object from the server response.
+   * @param context Shared converter context.
+   * @returns {Object} Prebid bid response object.
+   */
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    if (bidResponse == null) {
+      return bidResponse;
+    }
+    bidResponse.meta = bidResponse.meta || {};
+
+    // Support both ORTB ext nesting and proto-json top-level extension key.
+    const dspBidExt = bid.ext?.['[com.allegro.dsp.dsp_bid]'] ?? bid['[com.allegro.dsp.dsp_bid]'];
+    if (dspBidExt?.clientId !== undefined) {
+      bidResponse.meta.advertiserId = dspBidExt.clientId;
+    }
+    if (dspBidExt?.productId !== undefined) {
+      bidResponse.meta.productId = dspBidExt.productId;
+    }
+
+    return bidResponse;
   }
-})
+});
 
 /**
  * Validates supply chain object structure
@@ -221,7 +260,7 @@ export const spec = {
       options: {
         contentType: 'text/plain'
       },
-    }
+    };
   },
 
   /**
@@ -252,6 +291,6 @@ export const spec = {
     }
   }
 
-}
+};
 
 registerBidder(spec);

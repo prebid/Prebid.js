@@ -265,7 +265,7 @@ describe('msftBidAdapter', function () {
         testBidRequest.params = {
           member: 123,
           inv_code: 'inv_code_123'
-        }
+        };
         const nativeRequest = {
           assets: [{
             id: 1,
@@ -1004,7 +1004,7 @@ describe('msftBidAdapter', function () {
         "source": {}
       },
       "start": 1759325217463
-    }
+    };
 
     const videoOutstreamBidResponse = {
       "body": {
@@ -1060,7 +1060,7 @@ describe('msftBidAdapter', function () {
         }
       },
       "headers": {}
-    }
+    };
 
     const nativeBidderRequest = {
       "bidderCode": "msft",

@@ -2,7 +2,7 @@
 import { deepAccess, deepSetValue, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
 
@@ -212,7 +212,7 @@ const helpers = {
     return STORAGE.localStorageIsEnabled(false) ? STORAGE.getDataFromLocalStorage(STORAGE_KEY, false) : '';
   }
 
-}
+};
 
 /**
  * Create an OpenRTB formated object from prebid payload
@@ -301,13 +301,13 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     if (bannerObj) {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, bannerObj)
-      }
+      };
     }
 
     if (videoObj) {
       imp.video = {
         ...helpers.createOrtbImpVideoObj(bid)
-      }
+      };
     }
 
     if (typeof bid.getFloor === 'function') {
@@ -358,7 +358,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
     const request = createOpenRtbRequest(validBidRequests, bidderRequest);
-    const options = {}
+    const options = {};
 
     return {
       method: 'POST',

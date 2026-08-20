@@ -7,7 +7,6 @@ import {
   BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME,
   getEffectiveConnectionType,
   getUserIds,
-  GVL_ID,
 } from 'modules/bliinkBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -580,7 +579,7 @@ const testsBuildBid = [
   {
     title: 'input data respect the output model for video',
     args: {
-      fn: buildBid(getConfigVideoBid('video'), getConfigCreativeVideo()),
+      fn: buildBid(getConfigVideoBid(), getConfigCreativeVideo()),
     },
     want: {
       requestId: getConfigBid('video').bidId,
@@ -603,7 +602,7 @@ const testsBuildBid = [
     args: {
       fn: buildBid(
         {
-          ...getConfigVideoBid('video'),
+          ...getConfigVideoBid(),
           creative: {
             video: {
               content: '<VAST></VAST>',
@@ -1193,8 +1192,4 @@ describe('getEffectiveConnectionType', () => {
       expect(result).to.equal('unsupported');
     });
   }
-});
-
-it('should expose gvlid', function () {
-  expect(spec.gvlid).to.equal(GVL_ID);
 });

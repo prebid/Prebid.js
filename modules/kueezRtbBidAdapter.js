@@ -6,11 +6,13 @@ import {
   createInterpretResponseFn,
   createUserSyncGetter,
   isBidRequestValid, onBidBillable, onBidWon,
-  tryParseJSON
+  tryParseJSON,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./kueezRtbBidAdapterTypes.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
+ * @typedef {import('./kueezRtbBidAdapter.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
  */
 
 const GVLID = 1165;
@@ -34,6 +36,8 @@ export const spec = {
   createFirstPartyData,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {

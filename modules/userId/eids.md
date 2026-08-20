@@ -20,6 +20,20 @@ userIdAsEids = [
         }]
     },
     {
+        source: 'acxiom.id',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'anonymised.io',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'utiq.com',
         uids: [{
             id: 'some-random-id-value',

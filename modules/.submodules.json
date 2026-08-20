@@ -3,12 +3,14 @@
     "userId": [
       "33acrossIdSystem",
       "abtshieldIdSystem",
+      "acxiomRealIdSystem",
       "admixerIdSystem",
       "adqueryIdSystem",
       "adplusIdSystem",
       "adriverIdSystem",
       "adtelligentIdSystem",
       "amxIdSystem",
+      "anonymisedIdSystem",
       "ceeIdSystem",
       "connectIdSystem",
       "criteoIdSystem",
@@ -106,6 +108,7 @@
       "intersectionRtdProvider",
       "jwplayerRtdProvider",
       "liveIntentRtdProvider",
+      "mantisRtdProvider",
       "mediafilterRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
@@ -135,7 +138,8 @@
       "timeoutRtdProvider",
       "weboramaRtdProvider",
       "wurflRtdProvider",
-      "encypherRtdProvider"
+      "encypherRtdProvider",
+      "stackupRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",

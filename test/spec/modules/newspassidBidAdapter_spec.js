@@ -1,7 +1,6 @@
-import { spec } from 'modules/newspassidBidAdapter.js';
+import { spec, resolveNewpassidPublisherId } from 'modules/newspassidBidAdapter.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
-import { resolveNewpassidPublisherId } from '../../../modules/newspassidBidAdapter.js';
 
 describe('newspassidBidAdapter', function () {
   const TEST_PUBLISHER_ID = '123456';
@@ -302,8 +301,7 @@ describe('newspassidBidAdapter', function () {
     });
 
     it('should have zero user syncs if coppa is true', function() {
-      config.setConfig({ coppa: true });
-      const syncs = spec.getUserSyncs({ iframeEnabled: true });
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null, true);
       expect(syncs).to.be.empty;
     });
 

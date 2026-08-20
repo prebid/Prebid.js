@@ -25,6 +25,9 @@ declare module './userId/spec' {
   interface ProvidersToId {
     gemiusId: 'gemiusId';
   }
+  interface ProviderParams {
+    gemiusId: never
+  }
 }
 
 function getTopAccessibleWindow(): Window {
@@ -49,7 +52,7 @@ function retrieveId(primaryScriptWindow: PrimaryScriptWindow, callback: (id: Ser
       timeoutId = null;
     }
     callback(id);
-  }
+  };
 
   timeoutId = setTimeout(() => {
     logError(LOG_PREFIX + 'failed to get id, timeout');

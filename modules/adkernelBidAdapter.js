@@ -19,7 +19,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
-import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js'
+import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -69,35 +69,24 @@ export const spec = {
     { code: 'oftmediahb' },
     { code: 'audiencemedia' },
     { code: 'waardex_ak' },
-    { code: 'roqoon' },
     { code: 'adbite' },
-    { code: 'houseofpubs' },
-    { code: 'torchad' },
-    { code: 'stringads' },
     { code: 'bcm' },
     { code: 'engageadx' },
     { code: 'converge', gvlid: 248 },
-    { code: 'adomega' },
     { code: 'denakop' },
-    { code: 'rtbanalytica' },
     { code: 'unibots' },
     { code: 'ergadx' },
     { code: 'turktelekom' },
     { code: 'motionspots' },
-    { code: 'sonic_twist' },
     { code: 'displayioads' },
     { code: 'rtbdemand_com' },
-    { code: 'bidbuddy' },
     { code: 'didnadisplay' },
     { code: 'qortex' },
     { code: 'adpluto' },
     { code: 'headbidder' },
     { code: 'digiad' },
-    { code: 'monetix' },
-    { code: 'hyperbrainz' },
     { code: 'voisetech' },
     { code: 'global_sun' },
-    { code: 'rxnetwork' },
     { code: 'revbid' },
     { code: 'spinx', gvlid: 1308 },
     { code: 'oppamedia' },
@@ -108,7 +97,8 @@ export const spec = {
     { code: 'qohere' },
     { code: 'blutonic' },
     { code: 'appmonsta', gvlid: 1283 },
-    { code: 'intlscoop' }
+    { code: 'intlscoop' },
+    { code: 'reload' }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -428,7 +418,7 @@ function makeSiteOrApp(bidderRequest, fpd) {
   const { refererInfo } = bidderRequest;
   const appConfig = config.getConfig('app');
   if (isEmpty(appConfig)) {
-    return { site: createSite(refererInfo, fpd) }
+    return { site: createSite(refererInfo, fpd) };
   } else {
     return { app: appConfig };
   }

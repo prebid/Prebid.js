@@ -13,13 +13,13 @@ export const HIGH_ENTROPY_HINTS = [
   'model',
   'platformVersion',
   'fullVersionList'
-]
+];
 
 export const LOW_ENTROPY_HINTS = [
   'brands',
   'mobile',
   'platform'
-]
+];
 
 /**
  * Returns low entropy UA client hints encoded as an ortb2.6 device.sua object; or null if no UA client hints are available.
@@ -41,7 +41,7 @@ export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) 
   const sua = (uaData && LOW_ENTROPY_HINTS.some(h => typeof uaData[h] !== 'undefined')) ? Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData)) : null;
   return function () {
     return sua;
-  }
+  };
 }
 
 export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
@@ -57,14 +57,14 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
     if (!cache.hasOwnProperty(key)) {
       try {
         cache[key] = uaData.getHighEntropyValues(hints).then(result => {
-          return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result))
+          return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result));
         }).catch(() => null);
       } catch (e) {
         cache[key] = PbPromise.resolve(null);
       }
     }
     return cache[key];
-  }
+  };
 }
 
 /**
@@ -99,6 +99,6 @@ export function uaDataToSUA(source, uaData) {
     if (isStr(value)) {
       sua[prop] = value;
     }
-  })
+  });
   return sua;
 }

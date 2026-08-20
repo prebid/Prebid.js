@@ -1,5 +1,5 @@
-import { AD_BREAK_END, AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, SETUP_COMPLETE } from '../../libraries/video/constants/events.js'
-import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
+import { AD_BREAK_END, AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, SETUP_COMPLETE } from '../../libraries/video/constants/events.js';
+import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js';
 
 export function AdQueueCoordinator(videoCore, pbEvents) {
   const storage = {};

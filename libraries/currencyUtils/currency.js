@@ -23,9 +23,9 @@ export function currencyNormalizer(toCurrency = null, bestEffort = true, convert
   return function (amount, currency) {
     if (toCurrency == null) toCurrency = currency;
     return convert(amount, currency, toCurrency, bestEffort);
-  }
+  };
 }
 
 export function currencyCompare(get = (obj) => [obj.cpm, obj.currency], normalize = currencyNormalizer()) {
-  return keyCompare(obj => normalize.apply(null, get(obj)))
+  return keyCompare(obj => normalize.apply(null, get(obj)));
 }

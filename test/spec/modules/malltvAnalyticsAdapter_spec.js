@@ -1,32 +1,32 @@
 import {
   malltvAnalyticsAdapter, parseBidderCode, parseAdUnitCode,
   ANALYTICS_VERSION, BIDDER_STATUS, DEFAULT_SERVER
-} from 'modules/malltvAnalyticsAdapter.js'
-import { expect } from 'chai'
-import { getCpmInEur } from '../../../modules/malltvAnalyticsAdapter.js'
-import * as events from 'src/events'
-import { EVENTS } from 'src/constants.js'
+  , getCpmInEur
+} from 'modules/malltvAnalyticsAdapter.js';
+import { expect } from 'chai';
+import * as events from 'src/events';
+import { EVENTS } from 'src/constants.js';
 
-const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e'
-const propertyId = '123456'
-const server = 'https://analytics.server.url/v1'
+const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
+const propertyId = '123456';
+const server = 'https://analytics.server.url/v1';
 
 describe('Malltv Prebid AnalyticsAdapter Testing', function () {
   describe('event tracking and message cache manager', function () {
     beforeEach(function () {
-      const configOptions = { propertyId }
+      const configOptions = { propertyId };
 
-      sinon.stub(events, 'getEvents').returns([])
+      sinon.stub(events, 'getEvents').returns([]);
       malltvAnalyticsAdapter.enableAnalytics({
         provider: 'malltvAnalytics',
         options: configOptions
-      })
-    })
+      });
+    });
 
     afterEach(function () {
-      malltvAnalyticsAdapter.disableAnalytics()
-      events.getEvents.restore()
-    })
+      malltvAnalyticsAdapter.disableAnalytics();
+      events.getEvents.restore();
+    });
 
     describe('#getCpmInEur()', function() {
       it('should get bid cpm as currency is EUR', function() {
@@ -44,11 +44,11 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCurrency: 'EUR',
             ad: '<html>fake ad1</html>'
           },
-        ]
-        const result = getCpmInEur(receivedBids[0])
-        expect(result).to.equal(0.1)
-      })
-    })
+        ];
+        const result = getCpmInEur(receivedBids[0]);
+        expect(result).to.equal(0.1);
+      });
+    });
 
     describe('#parseBidderCode()', function() {
       it('should get lower case bidder code from bidderCode field value', function() {
@@ -66,10 +66,10 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCurrency: 'EUR',
             ad: '<html>fake ad1</html>'
           },
-        ]
-        const result = parseBidderCode(receivedBids[0])
-        expect(result).to.equal('malltv')
-      })
+        ];
+        const result = parseBidderCode(receivedBids[0]);
+        expect(result).to.equal('malltv');
+      });
 
       it('should get lower case bidder code from bidder field value as bidderCode field is missing', function() {
         const receivedBids = [
@@ -86,11 +86,11 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCurrency: 'EUR',
             ad: '<html>fake ad1</html>'
           },
-        ]
-        const result = parseBidderCode(receivedBids[0])
-        expect(result).to.equal('malltv')
-      })
-    })
+        ];
+        const result = parseBidderCode(receivedBids[0]);
+        expect(result).to.equal('malltv');
+      });
+    });
 
     describe('#parseAdUnitCode()', function() {
       it('should get lower case adUnit code from adUnitCode field value', function() {
@@ -108,30 +108,30 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCurrency: 'EUR',
             ad: '<html>fake ad1</html>'
           },
-        ]
-        const result = parseAdUnitCode(receivedBids[0])
-        expect(result).to.equal('adunit')
-      })
-    })
+        ];
+        const result = parseAdUnitCode(receivedBids[0]);
+        expect(result).to.equal('adunit');
+      });
+    });
 
     describe('#getCachedAuction()', function() {
-      const existing = { timeoutBids: [{}] }
-      malltvAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing
+      const existing = { timeoutBids: [{}] };
+      malltvAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
 
       it('should get the existing cached object if it exists', function() {
-        const result = malltvAnalyticsAdapter.getCachedAuction('test_auction_id')
+        const result = malltvAnalyticsAdapter.getCachedAuction('test_auction_id');
 
-        expect(result).to.equal(existing)
-      })
+        expect(result).to.equal(existing);
+      });
 
       it('should create a new object and store it in the cache on cache miss', function() {
-        const result = malltvAnalyticsAdapter.getCachedAuction('no_such_id')
+        const result = malltvAnalyticsAdapter.getCachedAuction('no_such_id');
 
         expect(result).to.deep.include({
           timeoutBids: [],
-        })
-      })
-    })
+        });
+      });
+    });
 
     describe('when formatting JSON payload sent to backend', function() {
       const receivedBids = [
@@ -177,7 +177,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           ad: '<html>fake ad3</html>',
           vastUrl: null
         },
-      ]
+      ];
       const highestCpmBids = [
         {
           auctionId: auctionId,
@@ -193,7 +193,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           ad: '<html>fake ad1</html>',
           vastUrl: null
         }
-      ]
+      ];
       const noBids = [
         {
           auctionId: auctionId,
@@ -202,7 +202,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           bidderCode: 'malltv',
           bidId: 'a1b2c3d4',
         }
-      ]
+      ];
       const timeoutBids = [
         {
           auctionId: auctionId,
@@ -211,7 +211,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           bidderCode: 'gjirafa',
           bidId: '00123d4c',
         }
-      ]
+      ];
       const withoutOriginalCpmBids = [
         {
           auctionId: auctionId,
@@ -226,7 +226,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           originalCurrency: 'EUR',
           ad: '<html>fake ad3</html>'
         },
-      ]
+      ];
       const withoutOriginalCurrencyBids = [
         {
           auctionId: auctionId,
@@ -241,7 +241,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           originalCurrency: '',
           ad: '<html>fake ad3</html>'
         },
-      ]
+      ];
 
       function assertHavingRequiredMessageFields(message) {
         expect(message).to.include({
@@ -249,20 +249,20 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           auctionId: auctionId,
           propertyId: propertyId,
           prebidVersion: '$prebid.version$',
-        })
+        });
       }
 
       describe('#createCommonMessage', function() {
         it('should correctly serialize some common fields', function() {
-          const message = malltvAnalyticsAdapter.createCommonMessage(auctionId)
+          const message = malltvAnalyticsAdapter.createCommonMessage(auctionId);
 
-          assertHavingRequiredMessageFields(message)
-        })
-      })
+          assertHavingRequiredMessageFields(message);
+        });
+      });
 
       describe('#serializeBidResponse', function() {
         it('should handle BID properly and serialize bid price related fields', function() {
-          const result = malltvAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID)
+          const result = malltvAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID);
 
           expect(result).to.include({
             prebidWon: false,
@@ -274,21 +274,21 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCpm: 0.1,
             originalCurrency: 'EUR',
             cpmEur: 0.1,
-          })
-        })
+          });
+        });
 
         it('should handle NO_BID properly and set status to noBid', function() {
-          const result = malltvAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID)
+          const result = malltvAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID);
 
           expect(result).to.include({
             prebidWon: false,
             isTimeout: false,
             status: BIDDER_STATUS.NO_BID,
-          })
-        })
+          });
+        });
 
         it('should handle BID_WON properly and serialize bid price related fields', function() {
-          const result = malltvAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID_WON)
+          const result = malltvAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID_WON);
 
           expect(result).to.include({
             prebidWon: true,
@@ -300,21 +300,21 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCpm: 0.1,
             originalCurrency: 'EUR',
             cpmEur: 0.1,
-          })
-        })
+          });
+        });
 
         it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function() {
-          const result = malltvAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT)
+          const result = malltvAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT);
 
           expect(result).to.include({
             prebidWon: false,
             isTimeout: true,
             status: BIDDER_STATUS.TIMEOUT,
-          })
-        })
+          });
+        });
 
         it('should handle BID_WON properly and fill originalCpm field with cpm in missing originalCpm case', function() {
-          const result = malltvAnalyticsAdapter.serializeBidResponse(withoutOriginalCpmBids[0], BIDDER_STATUS.BID_WON)
+          const result = malltvAnalyticsAdapter.serializeBidResponse(withoutOriginalCpmBids[0], BIDDER_STATUS.BID_WON);
 
           expect(result).to.include({
             prebidWon: true,
@@ -326,11 +326,11 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCpm: 0.29,
             originalCurrency: 'EUR',
             cpmEur: 0.29,
-          })
-        })
+          });
+        });
 
         it('should handle BID_WON properly and fill originalCurrency field with currency in missing originalCurrency case', function() {
-          const result = malltvAnalyticsAdapter.serializeBidResponse(withoutOriginalCurrencyBids[0], BIDDER_STATUS.BID_WON)
+          const result = malltvAnalyticsAdapter.serializeBidResponse(withoutOriginalCurrencyBids[0], BIDDER_STATUS.BID_WON);
           expect(result).to.include({
             prebidWon: true,
             isTimeout: false,
@@ -341,16 +341,16 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             originalCpm: 0.09,
             originalCurrency: 'EUR',
             cpmEur: 0.09,
-          })
-        })
-      })
+          });
+        });
+      });
 
       describe('#addBidResponseToMessage()', function() {
         it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
           const message = {
             adUnits: {}
-          }
-          malltvAnalyticsAdapter.addBidResponseToMessage(message, noBids[0], BIDDER_STATUS.NO_BID)
+          };
+          malltvAnalyticsAdapter.addBidResponseToMessage(message, noBids[0], BIDDER_STATUS.NO_BID);
 
           expect(message.adUnits).to.deep.include({
             'adunit_2': {
@@ -360,9 +360,9 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
                 status: BIDDER_STATUS.NO_BID,
               }
             }
-          })
-        })
-      })
+          });
+        });
+      });
 
       describe('#createBidMessage()', function() {
         it('should format auction message sent to the backend', function() {
@@ -374,11 +374,11 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             adUnitCodes: ['adunit_1', 'adunit_2'],
             bidsReceived: receivedBids,
             noBids: noBids
-          }
+          };
 
-          const result = malltvAnalyticsAdapter.createBidMessage(args, highestCpmBids, timeoutBids)
+          const result = malltvAnalyticsAdapter.createBidMessage(args, highestCpmBids, timeoutBids);
 
-          assertHavingRequiredMessageFields(result)
+          assertHavingRequiredMessageFields(result);
           expect(result).to.deep.include({
             auctionElapsed: 100,
             timeout: 3000,
@@ -430,13 +430,13 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
                 }
               }
             }
-          })
-        })
-      })
+          });
+        });
+      });
 
       describe('#handleBidTimeout()', function() {
         it('should cached the timeout bid as BID_TIMEOUT event was triggered', function() {
-          malltvAnalyticsAdapter.cachedAuctions['test_timeout_auction_id'] = { 'timeoutBids': [] }
+          malltvAnalyticsAdapter.cachedAuctions['test_timeout_auction_id'] = { 'timeoutBids': [] };
           const args = [{
             auctionId: 'test_timeout_auction_id',
             timestamp: 1234567890,
@@ -444,10 +444,10 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
             auctionEnd: 1234567990,
             bidsReceived: receivedBids,
             noBids: noBids
-          }]
+          }];
 
-          malltvAnalyticsAdapter.handleBidTimeout(args)
-          const result = malltvAnalyticsAdapter.getCachedAuction('test_timeout_auction_id')
+          malltvAnalyticsAdapter.handleBidTimeout(args);
+          const result = malltvAnalyticsAdapter.getCachedAuction('test_timeout_auction_id');
           expect(result).to.deep.include({
             timeoutBids: [{
               auctionId: 'test_timeout_auction_id',
@@ -457,84 +457,84 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
               bidsReceived: receivedBids,
               noBids: noBids
             }]
-          })
-        })
-      })
-    })
-  })
+          });
+        });
+      });
+    });
+  });
 
   describe('Malltv Analytics Adapter track handler ', function () {
-    const configOptions = { propertyId }
+    const configOptions = { propertyId };
 
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([])
+      sinon.stub(events, 'getEvents').returns([]);
       malltvAnalyticsAdapter.enableAnalytics({
         provider: 'malltvAnalytics',
         options: configOptions
-      })
-    })
+      });
+    });
 
     afterEach(function () {
-      malltvAnalyticsAdapter.disableAnalytics()
-      events.getEvents.restore()
-    })
+      malltvAnalyticsAdapter.disableAnalytics();
+      events.getEvents.restore();
+    });
 
     it('should call handleBidTimeout as BID_TIMEOUT trigger event', function() {
-      sinon.spy(malltvAnalyticsAdapter, 'handleBidTimeout')
-      events.emit(EVENTS.BID_TIMEOUT, {})
-      sinon.assert.callCount(malltvAnalyticsAdapter.handleBidTimeout, 1)
-      malltvAnalyticsAdapter.handleBidTimeout.restore()
-    })
+      sinon.spy(malltvAnalyticsAdapter, 'handleBidTimeout');
+      events.emit(EVENTS.BID_TIMEOUT, {});
+      sinon.assert.callCount(malltvAnalyticsAdapter.handleBidTimeout, 1);
+      malltvAnalyticsAdapter.handleBidTimeout.restore();
+    });
 
     it('should call handleAuctionEnd as AUCTION_END trigger event', function() {
-      sinon.spy(malltvAnalyticsAdapter, 'handleAuctionEnd')
-      events.emit(EVENTS.AUCTION_END, {})
-      sinon.assert.callCount(malltvAnalyticsAdapter.handleAuctionEnd, 1)
-      malltvAnalyticsAdapter.handleAuctionEnd.restore()
-    })
-  })
+      sinon.spy(malltvAnalyticsAdapter, 'handleAuctionEnd');
+      events.emit(EVENTS.AUCTION_END, {});
+      sinon.assert.callCount(malltvAnalyticsAdapter.handleAuctionEnd, 1);
+      malltvAnalyticsAdapter.handleAuctionEnd.restore();
+    });
+  });
 
   describe('enableAnalytics and config parser', function () {
-    const configOptions = { propertyId, server }
+    const configOptions = { propertyId, server };
 
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([])
+      sinon.stub(events, 'getEvents').returns([]);
       malltvAnalyticsAdapter.enableAnalytics({
         provider: 'malltvAnalytics',
         options: configOptions
-      })
-    })
+      });
+    });
 
     afterEach(function () {
-      malltvAnalyticsAdapter.disableAnalytics()
-      events.getEvents.restore()
-    })
+      malltvAnalyticsAdapter.disableAnalytics();
+      events.getEvents.restore();
+    });
 
     it('should parse config correctly with optional values', function () {
-      const { options, propertyId, server } = malltvAnalyticsAdapter.getAnalyticsOptions()
+      const { options, propertyId, server } = malltvAnalyticsAdapter.getAnalyticsOptions();
 
-      expect(options).to.deep.equal(configOptions)
-      expect(propertyId).to.equal(configOptions.propertyId)
-      expect(server).to.equal(configOptions.server)
-    })
+      expect(options).to.deep.equal(configOptions);
+      expect(propertyId).to.equal(configOptions.propertyId);
+      expect(server).to.equal(configOptions.server);
+    });
 
     it('should not enable Analytics when propertyId is missing', function() {
       const configOptions = {
         options: { }
-      }
+      };
 
-      const isConfigValid = malltvAnalyticsAdapter.initConfig(configOptions)
-      expect(isConfigValid).to.equal(false)
-    })
+      const isConfigValid = malltvAnalyticsAdapter.initConfig(configOptions);
+      expect(isConfigValid).to.equal(false);
+    });
 
     it('should use DEFAULT_SERVER when server is missing', function () {
       const configOptions = {
         options: {
           propertyId
         }
-      }
-      malltvAnalyticsAdapter.initConfig(configOptions)
-      expect(malltvAnalyticsAdapter.getAnalyticsOptions().server).to.equal(DEFAULT_SERVER)
-    })
-  })
-})
+      };
+      malltvAnalyticsAdapter.initConfig(configOptions);
+      expect(malltvAnalyticsAdapter.getAnalyticsOptions().server).to.equal(DEFAULT_SERVER);
+    });
+  });
+});

@@ -72,7 +72,7 @@ describe('Activity control rules', () => {
     expect(isAllowed(MOCK_ACTIVITY, {})).to.be.false;
     r();
     expect(isAllowed(MOCK_ACTIVITY, {})).to.be.true;
-  })
+  });
 
   it('logs INFO when explicit allow is found', () => {
     registerRule(MOCK_ACTIVITY, MOCK_RULE, () => ({ allow: true }));
@@ -130,6 +130,6 @@ describe('Activity control rules', () => {
       clock.tick(2000);
       isAllowed(MOCK_ACTIVITY, {});
       expect(logger.logWarn.callCount).to.equal(2);
-    })
-  })
+    });
+  });
 });

@@ -1,8 +1,6 @@
 import { expect } from 'chai';
-import { spec, siteIdTracker, publisherIdTracker } from 'modules/mileBidAdapter.js';
+import { dep, spec } from 'modules/mileBidAdapter.js';
 import { BANNER } from 'src/mediaTypes.js';
-import * as ajax from 'src/ajax.js';
-import * as utils from 'src/utils.js';
 
 describe('mileBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -567,7 +565,7 @@ describe('mileBidAdapter', function () {
         }
       };
 
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {
@@ -646,7 +644,7 @@ describe('mileBidAdapter', function () {
         }
       ];
 
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {

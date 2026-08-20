@@ -71,7 +71,7 @@ export const spec = {
   },
 
   interpretResponse: (response, request) => {
-    return bidResponseAvailable(request, response)
+    return bidResponseAvailable(request, response);
   },
 
   onBidWon: (bid) => {
@@ -114,15 +114,15 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       if (idToImpMap[id].native) {
         bid.native = nativeResponse(idToImpMap[id], idToBidMap[id]);
       } else if (idToImpMap[id].banner) {
-        bid.ad = idToBidMap[id].adm
-        bid.width = idToBidMap[id].w
-        bid.height = idToBidMap[id].h
-        bid.burl = idToBidMap[id].burl
+        bid.ad = idToBidMap[id].adm;
+        bid.width = idToBidMap[id].w;
+        bid.height = idToBidMap[id].h;
+        bid.burl = idToBidMap[id].burl;
       }
       if (idToBidMap[id].adomain) {
         bid.meta = {
           advertiserDomains: idToBidMap[id].adomain
-        }
+        };
       }
       bids.push(bid);
     }
@@ -131,7 +131,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 }
 
 function impression(slot) {
-  let bidFloorFromModule
+  let bidFloorFromModule;
   if (typeof slot.getFloor === 'function') {
     const floorInfo = slot.getFloor({
       currency: 'USD',
@@ -152,7 +152,7 @@ function impression(slot) {
   } else if (slot.mediaTypes.banner) {
     imp.banner = bannerImpression(slot);
   }
-  return imp
+  return imp;
 }
 
 function nativeImpression(slot) {
@@ -249,7 +249,7 @@ function bannerImpression(slot) {
     format: sizes.map((s) => ({ w: s[0], h: s[1] })),
     w: sizes[0][0],
     h: sizes[0][1],
-  }
+  };
 }
 
 function site(bidRequests, bidderRequest) {

@@ -227,7 +227,7 @@ describe('Yieldone Prebid Analytic', function () {
         page: { url: testReferrer },
         wrapper_version: '$prebid.version$',
         events: sinon.match(evs => {
-          return !expectedEvents.some((expectedEvent) => evs.find(ev => _.isEqual(ev, expectedEvent)) === -1)
+          return !expectedEvents.some((expectedEvent) => evs.find(ev => _.isEqual(ev, expectedEvent)) === -1);
         })
       };
 

@@ -5,11 +5,13 @@ import {
   createBuildRequestsFn,
   createInterpretResponseFn,
   createUserSyncGetter,
-  isBidRequestValid, onBidBillable, onBidWon
+  isBidRequestValid, onBidBillable, onBidWon,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./tagorasBidAdapterTypes.d.ts').TagorasBidRequestParams} TagorasBidRequestParams
+ * @typedef {import('./tagorasBidAdapter.d.ts').TagorasBidRequestParams} TagorasBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -40,6 +42,8 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

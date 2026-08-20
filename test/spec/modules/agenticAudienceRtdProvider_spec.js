@@ -21,8 +21,6 @@ describe('agenticAudienceRtdProvider', function () {
   let reqBidsConfigObj;
   let storageGetLocalStub;
   let storageGetCookieStub;
-  let storageLocalEnabledStub;
-  let storageCookiesEnabledStub;
 
   const validEntry = {
     ver: '1.0',
@@ -39,8 +37,8 @@ describe('agenticAudienceRtdProvider', function () {
     reqBidsConfigObj = { ortb2Fragments: { global: {} } };
     storageGetLocalStub = sandbox.stub(storage, 'getDataFromLocalStorage');
     storageGetCookieStub = sandbox.stub(storage, 'getCookie');
-    storageLocalEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-    storageCookiesEnabledStub = sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
   });
 
   afterEach(function () {

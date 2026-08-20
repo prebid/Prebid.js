@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logError, isPlainObject } from '../src/utils.js'
+import { logError, isPlainObject } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -36,7 +36,7 @@ export const adriverIdSubmodule = {
    * @returns {{adriverId:string}}
    */
   decode(value) {
-    return { adrcid: value }
+    return { adrcid: value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
