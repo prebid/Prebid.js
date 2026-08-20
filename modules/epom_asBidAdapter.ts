@@ -2,7 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { type Bid } from '../src/bidfactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepSetValue, logWarn } from '../src/utils.js';
+import { deepSetValue, isPlainObject } from '../src/utils.js';
 
 /**
  * Prebid.js adapter for the Epom Ad Server — the supply side of the Epom
@@ -29,10 +29,14 @@ const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 25;
 
 /**
- * Hostname with an optional port — no scheme, no path, no query, no credentials, so a page
- * configuration cannot redirect the payload. Matches the Prebid Server params schema exactly.
+ * Hostname with an optional port — no scheme, path, query, fragment or userinfo, so a page
+ * configuration cannot redirect the payload. Byte-identical to the expression Prebid Server
+ * validates the same parameter with (`util/urlutil/security.go`, and the `host` property of
+ * the epom_as params schema), so a bid this adapter accepts is one that server also accepts.
+ * Single-label hosts are deliberately allowed: an internal deployment reachable as `api-us`
+ * is a legitimate configuration on both transports.
  */
-const HOST_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(:\d{1,5})?$/i;
+const HOST_PATTERN = /^[a-zA-Z0-9.-]+(:[0-9]+)?$/;
 
 export type EpomAsBidParams = {
   /** Serving host of the publisher's Epom deployment, e.g. `ads.example.com`. */
@@ -49,11 +53,6 @@ export type EpomAsBidParams = {
   bidFloorCur?: string;
 };
 
-/** Mirrors the server-side ingest cap; oversized input is dropped rather than truncated. */
-const CUSTOM_PARAMS_MAX_KEYS = 32;
-const CUSTOM_PARAMS_MAX_KEY_LENGTH = 128;
-const CUSTOM_PARAMS_MAX_VALUE_LENGTH = 512;
-
 declare module '../src/adUnits' {
   interface BidderParams {
     [BIDDER_CODE]: EpomAsBidParams;
@@ -61,34 +60,38 @@ declare module '../src/adUnits' {
 }
 
 /**
- * Keep only scalar entries within the limits the ad server enforces on ingest, so a
- * publisher sees the same set of parameters accepted here and applied there.
+ * The values the ad server can key targeting on. A nested object or an array stringifies to
+ * something no campaign can ever match, so it is rejected as a misconfiguration in
+ * `isBidRequestValid` rather than quietly sent — which is also what the Prebid Server params
+ * schema does with the same input.
+ */
+function isTargetableScalar(value: unknown): boolean {
+  const type = typeof value;
+  return type === 'string' || type === 'number' || type === 'boolean';
+}
+
+/**
+ * Stringify every entry — the ad server compares custom parameters as strings, so sending
+ * `2` and `"2"` differently would make an otherwise identical campaign match one and not
+ * the other. Nothing is dropped: the caps the ad server applies on ingest are its own, and
+ * silently discarding keys here would leave a publisher with no signal that half their
+ * targeting never arrived.
  */
 function sanitiseCustomParams(
   raw: EpomAsBidParams['customParams']
 ): Record<string, string> | null {
-  if (!raw || typeof raw !== 'object') {
+  if (!isPlainObject(raw)) {
+    return null;
+  }
+  const keys = Object.keys(raw);
+  if (keys.length === 0) {
     return null;
   }
   const out: Record<string, string> = {};
-  let kept = 0;
-  Object.keys(raw).forEach((key) => {
-    if (kept >= CUSTOM_PARAMS_MAX_KEYS || key.length > CUSTOM_PARAMS_MAX_KEY_LENGTH) {
-      return;
-    }
-    const value = raw[key];
-    const type = typeof value;
-    if (type !== 'string' && type !== 'number' && type !== 'boolean') {
-      return;
-    }
-    const asString = String(value);
-    if (asString.length > CUSTOM_PARAMS_MAX_VALUE_LENGTH) {
-      return;
-    }
-    out[key] = asString;
-    kept++;
+  keys.forEach((key) => {
+    out[key] = String(raw[key]);
   });
-  return kept > 0 ? out : null;
+  return out;
 }
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
@@ -110,8 +113,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
 
     // Honour a manual floor only when the Price Floors module has not already
     // resolved one; the module's value is always the more informed of the two.
-    if (imp.bidfloor == null && params.bidFloor != null) {
-      imp.bidfloor = Number(params.bidFloor);
+    // A floor of 0 is "no floor" and is left off the wire entirely.
+    if (imp.bidfloor == null && typeof params.bidFloor === 'number' && params.bidFloor > 0) {
+      imp.bidfloor = params.bidFloor;
       imp.bidfloorcur = params.bidFloorCur || DEFAULT_CURRENCY;
     }
 
@@ -121,7 +125,8 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
 
     // Custom parameters go to imp.ext.data, the standard first-party-data home, so
     // that RTD modules and gptPreAuction contribute to the same object rather than
-    // to a private one the ad server would have to read twice.
+    // to a private one the ad server would have to read twice. Anything already on
+    // the impression wins — first-party data is the more authoritative source.
     const custom = sanitiseCustomParams(params.customParams);
     if (custom) {
       imp.ext = imp.ext || {};
@@ -143,16 +148,32 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
+  // Device-storage disclosure for the Epom identity cookie. The adapter itself
+  // uses no storage manager and writes nothing — the cookie is set by the ad
+  // server on its own domain and only reaches the auction because the POST is
+  // credentialed (see buildRequests).
+  disclosureURL: 'https://epom.com/deviceStorage.json',
   supportedMediaTypes: [BANNER],
 
+  /**
+   * Only the bidder's own parameters are checked, and each check is the client-side
+   * twin of the Prebid Server params schema — a bid rejected here is an imp that
+   * server would reject too. Core already logs the rejection, so nothing is logged.
+   */
   isBidRequestValid(bid) {
     const params = bid?.params;
-    if (!params?.host || typeof params.host !== 'string' || !HOST_PATTERN.test(params.host)) {
-      logWarn(`${BIDDER_CODE}: params.host must be a bare hostname, e.g. "ads.example.com".`);
+    if (typeof params?.host !== 'string' || !HOST_PATTERN.test(params.host)) {
       return false;
     }
-    if (!params?.placementKey || typeof params.placementKey !== 'string') {
-      logWarn(`${BIDDER_CODE}: params.placementKey is required.`);
+    if (typeof params.placementKey !== 'string' || params.placementKey.length === 0) {
+      return false;
+    }
+    if (params.customParams !== undefined &&
+      (!isPlainObject(params.customParams) || !Object.values(params.customParams).every(isTargetableScalar))) {
+      return false;
+    }
+    if (params.bidFloor !== undefined &&
+      (typeof params.bidFloor !== 'number' || !isFinite(params.bidFloor) || params.bidFloor < 0)) {
       return false;
     }
     return true;
@@ -188,14 +209,17 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     });
 
     return Array.from(byHost, ([host, group]) => ({
-      method: 'POST',
+      method: 'POST' as const,
       url: `https://${host}${BID_PATH}`,
       data: converter.toORTB({ bidRequests: group, bidderRequest }),
-      // `text/plain` keeps this a simple cross-origin request, so the browser
-      // skips the CORS preflight — one round-trip inside the auction timeout
-      // instead of two. The body is still JSON. Credentials are sent because
-      // the ad server answers with the request's own Origin, which is what
-      // lets an existing Epom identity reach the auction.
+      // Both options are already core's defaults for an adapter POST
+      // (src/adapters/bidderFactory), and are pinned here so a change to those
+      // defaults cannot break either one silently. `text/plain` keeps this a
+      // simple cross-origin request, so the browser skips the CORS preflight —
+      // one round-trip inside the auction timeout instead of two; the body is
+      // still JSON. Credentials are sent because the ad server answers with the
+      // request's own Origin, which is what lets an existing Epom identity
+      // reach the auction.
       options: { contentType: 'text/plain', withCredentials: true },
     }));
   },
@@ -209,6 +233,10 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       request: request.data,
     }) as { bids: Bid[] }).bids;
   },
+
+  // The ad server matches on its own first-party cookie and offers no
+  // cross-domain sync endpoint, so there is deliberately nothing to register.
+  getUserSyncs: () => [],
 };
 
 registerBidder(spec);

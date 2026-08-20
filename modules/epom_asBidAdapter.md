@@ -18,20 +18,40 @@ All ad units on the page are auctioned in a **single request** with one `imp` pe
 
 Supported media types: `banner`.
 
+The same parameters are accepted by the Prebid Server adapter, which posts to `https://{{.Host}}/hb/bid` on the host the PBS host company configures.
+
+## Bid TTL
+
+Bids default to a **25-second** TTL — short, because the ad server stops accepting a bid's impression beacon after that window, and a creative rendered from cache past it would serve without being counted. It is a default, not a ceiling: a deployment configured with a wider window says so per bid in `bid.exp`, which takes precedence.
+
+## Deals
+
+The ad server stamps `dealid` on the bids it returns for a deal-backed line item; the adapter surfaces it as `bid.dealId`, which Prebid exposes as the `hb_deal_epom_as` targeting key. A Google Ad Manager Sponsorship line item keyed on that value is the supported way to have an Epom direct bid outrank the rest of the stack rather than compete with it on price alone.
+
+## Advertiser domains
+
+Epom Ad Server does not currently populate `seatbid[].bid[].adomain`, so `bid.meta.advertiserDomains` is left unset rather than filled with a placeholder. Brand-safety line items and analytics that key on advertiser domain will not match Epom bids until the ad server starts sending it; the adapter forwards the field unchanged as soon as it does.
+
+## Device storage
+
+The adapter uses no storage manager and writes nothing to cookies or `localStorage`. It does send the request with credentials, so an Epom identity cookie previously set by the ad server on its own domain reaches the auction — the ad server answers with the request's own `Origin` rather than a wildcard. That cookie is disclosed in the device-storage disclosure published for IAB TCF Global Vendor List ID **849**, declared on the adapter as `disclosureURL`. There is no cross-domain user sync: `getUserSyncs` deliberately registers nothing.
+
 # Bid Parameters
 
 | Name           | Scope    | Description                                                                                                                   | Example                | Type     |
 |----------------|----------|-------------------------------------------------------------------------------------------------------------------------------|------------------------|----------|
-| `host`         | required | Serving host of the publisher's Epom deployment, as a bare hostname. The adapter POSTs to `https://{host}/hb/bid`.             | `"ads.example.com"`    | `string` |
-| `placementKey` | required | Placement identifier, copied from the placement's invocation-code tab in the Epom UI. Sent as `imp.tagid`.                     | `"a4f21c9e7b"`         | `string` |
-| `channel`      | optional | Epom channel — a publisher traffic-slice label used for channel targeting and reporting. Sent as `imp.ext.epom_as.channel`. | `"sports-uk"`        | `string` |
-| `customParams` | optional | Epom custom parameters, for custom targeting and creative macros. Merged into `imp.ext.data`. Scalar values only; at most 32 keys, keys up to 128 and values up to 512 characters. | `{section: 'sport'}` | `object` |
-| `bidFloor`     | optional | CPM floor for this impression. Applied only when the Price Floors module has not already resolved `imp.bidfloor`.              | `0.50`                 | `number` |
-| `bidFloorCur`  | optional | Currency of `bidFloor`. Defaults to `USD`.                                                                                    | `"EUR"`                | `string` |
+| `host`         | required | Serving host of the publisher's Epom Ad Server deployment, as a bare hostname with an optional port — no scheme, path or query. The adapter POSTs to `https://{host}/hb/bid`. | `'ads.example.com'`    | `string` |
+| `placementKey` | required | Placement identifier, copied from the placement's invocation-code tab in the Epom UI. Sent as `imp.tagid`.                     | `'a4f21c9e7b'`         | `string` |
+| `channel`      | optional | Epom channel — a publisher traffic-slice label used for channel targeting and reporting. Sent as `imp.ext.epom_as.channel`. An empty value is ignored. | `'sports-uk'`        | `string` |
+| `customParams` | optional | Epom custom parameters, for custom targeting and creative macros. Values must be strings, numbers or booleans; they are stringified and merged into `imp.ext.data`, where keys already on the impression win. The ad server applies its own ingest limits on top (at most 32 keys, keys to 128 and values to 512 characters) and ignores anything beyond them. | `{section: 'sport'}` | `object` |
+| `bidFloor`     | optional | CPM floor for this impression, applied only when no floor has already been resolved — a value from the Price Floors module always wins. `0` means no floor. | `0.50`                 | `number` |
+| `bidFloorCur`  | optional | Currency of `bidFloor`, as an ISO-4217 code. Defaults to `USD`.                                                                | `'EUR'`                | `string` |
+
+A bid whose parameters violate the table above is rejected by `isBidRequestValid` and never leaves the page — the same input the Prebid Server params schema rejects.
 
 # Test Parameters
 
-A live placement that always fills, for verifying the adapter end to end:
+A live placement on an Epom Ad Server demo deployment that always fills, for verifying the adapter end to end:
 
 ```js
 const adUnits = [
@@ -117,6 +137,6 @@ pbjs.addAdUnits([
 
 # Consent and Privacy
 
-The adapter registers IAB TCF Global Vendor List ID **849** and relies on Prebid.js's standard consent plumbing via `ortbConverter`: GDPR (`regs.ext.gdpr`, `user.ext.consent`), US Privacy (`regs.ext.us_privacy`), GPP (`regs.gpp`, `regs.gpp_sid`) and COPPA (`regs.coppa`) are forwarded without bidder-specific configuration.
+The adapter registers IAB TCF Global Vendor List ID **849** and relies on Prebid.js's standard consent plumbing via `ortbConverter`: GDPR (`regs.ext.gdpr`, `user.ext.consent`), US Privacy (`regs.ext.us_privacy`), GPP (`regs.gpp`, `regs.gpp_sid`) and COPPA (`regs.coppa`) are forwarded to the ad server unchanged, without bidder-specific configuration.
 
-The adapter sets `withCredentials: true`, so an existing Epom identity on the ad-server domain reaches the auction. The ad server answers with the request origin rather than a wildcard.
+First-party data set through `pbjs.setConfig({ortb2})`, `pbjs.setBidderConfig` and an ad unit's `ortb2Imp` is forwarded as-is, as are the EIDs written by the User ID modules (`user.ext.eids`).

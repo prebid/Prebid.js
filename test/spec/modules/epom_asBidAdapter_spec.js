@@ -1,9 +1,13 @@
 import { expect } from 'chai';
 import { spec } from 'modules/epom_asBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config.js';
+import { hook } from 'src/hook.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
-// Prebid core + the ORTB processors the converter relies on.
+// Prebid core plus the modules that register the ORTB processors the converter
+// relies on — without them the floors, currency and consent assertions below
+// would pass vacuously against processors that were never installed.
 import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/priceFloors.js';
@@ -40,7 +44,15 @@ function bidderRequestFor(bids) {
   };
 }
 
+async function buildOne(bids) {
+  return spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+}
+
 describe('Epom Ad Server adapter', function () {
+  before(function () {
+    hook.ready();
+  });
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(newBidder(spec).callBids).to.be.a('function');
@@ -52,6 +64,19 @@ describe('Epom Ad Server adapter', function () {
       expect(spec.code).to.equal('epom_as');
       expect(spec.gvlid).to.equal(849);
       expect(spec.supportedMediaTypes).to.deep.equal(['banner']);
+    });
+
+    // The POST is credentialed, so the ad server's identity cookie reaches the
+    // auction; the disclosure is what a TCF vendor-849 check resolves to.
+    it('discloses the device storage the credentialed request relies on', function () {
+      expect(spec.disclosureURL).to.be.a('string').that.is.not.empty;
+    });
+
+    it('exposes the whole bidder surface', function () {
+      expect(spec).to.have.property('isBidRequestValid').that.is.a('function');
+      expect(spec).to.have.property('buildRequests').that.is.a('function');
+      expect(spec).to.have.property('interpretResponse').that.is.a('function');
+      expect(spec).to.have.property('getUserSyncs').that.is.a('function');
     });
   });
 
@@ -67,20 +92,31 @@ describe('Epom Ad Server adapter', function () {
     it('rejects a missing or non-string host', function () {
       expect(spec.isBidRequestValid(bannerBid({ params: { placementKey: PLACEMENT } }))).to.equal(false);
       expect(spec.isBidRequestValid(bannerBid({ params: { host: 42, placementKey: PLACEMENT } }))).to.equal(false);
+      expect(spec.isBidRequestValid(bannerBid({ params: { host: null, placementKey: PLACEMENT } }))).to.equal(false);
     });
 
-    it('rejects a missing or non-string placementKey', function () {
+    it('rejects a missing, empty or non-string placementKey', function () {
       expect(spec.isBidRequestValid(bannerBid({ params: { host: HOST } }))).to.equal(false);
+      expect(spec.isBidRequestValid(bannerBid({ params: { host: HOST, placementKey: '' } }))).to.equal(false);
       expect(spec.isBidRequestValid(bannerBid({ params: { host: HOST, placementKey: 7 } }))).to.equal(false);
     });
 
-    // The host is the only publisher-controlled part of the URL, so it must be a
-    // bare hostname — anything that could carry a scheme, path, port, credentials
-    // or a query string would let a page config redirect the payload elsewhere.
     it('accepts a host with a port, as the Prebid Server schema does', function () {
       expect(spec.isBidRequestValid(bannerBid({ params: { host: 'ads.example.com:8443', placementKey: PLACEMENT } }))).to.equal(true);
     });
 
+    // The host pattern is byte-identical to the one Prebid Server validates the
+    // same parameter with, and that one accepts a single label — an internal
+    // deployment reachable as `api-us` is a legitimate configuration.
+    it('accepts a single-label host, as the Prebid Server schema does', function () {
+      ['localhost', 'api-us'].forEach((host) => {
+        expect(spec.isBidRequestValid(bannerBid({ params: { host, placementKey: PLACEMENT } })), host).to.equal(true);
+      });
+    });
+
+    // The host is the only publisher-controlled part of the URL, so anything
+    // that could carry a scheme, path, credentials or a query string would let
+    // a page config redirect the payload elsewhere.
     it('rejects a host that is not a bare hostname', function () {
       const bad = [
         'https://ads.example.com',
@@ -88,13 +124,98 @@ describe('Epom Ad Server adapter', function () {
         'user@ads.example.com',
         'ads.example.com?x=1',
         'ads.example.com#f',
-        'localhost',
         '',
         ' ads.example.com',
         'ads.example.com/../evil.com',
+        'ads.example.com:80x',
       ];
       bad.forEach((host) => {
         expect(spec.isBidRequestValid(bannerBid({ params: { host, placementKey: PLACEMENT } })), host).to.equal(false);
+      });
+    });
+
+    describe('customParams', function () {
+      it('accepts scalar values of every allowed type', function () {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: { section: 'sport', tier: 2, premium: true } },
+        }))).to.equal(true);
+      });
+
+      it('accepts an empty object and an absent value', function () {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: {} },
+        }))).to.equal(true);
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: undefined },
+        }))).to.equal(true);
+      });
+
+      // No cap lives in the adapter, so a large-but-well-formed set is valid
+      // here; the ad server applies its own ingest limits.
+      it('accepts far more keys than the ad server will ingest', function () {
+        const many = {};
+        for (let i = 0; i < 40; i++) {
+          many['k' + i] = 'v' + i;
+        }
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: many },
+        }))).to.equal(true);
+      });
+
+      it('rejects a customParams that is not an object', function () {
+        ['section=sport', 42, null, true].forEach((customParams) => {
+          expect(spec.isBidRequestValid(bannerBid({
+            params: { host: HOST, placementKey: PLACEMENT, customParams },
+          })), String(customParams)).to.equal(false);
+        });
+      });
+
+      it('rejects an array, which stringifies to something no campaign matches', function () {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: [['section', 'sport']] },
+        }))).to.equal(false);
+      });
+
+      it('rejects a non-scalar value', function () {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: { nested: { a: 1 } } },
+        }))).to.equal(false);
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: { list: [1, 2] } },
+        }))).to.equal(false);
+      });
+    });
+
+    describe('bidFloor', function () {
+      it('accepts a positive floor and an explicit zero', function () {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, bidFloor: 1.25 },
+        }))).to.equal(true);
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, bidFloor: 0 },
+        }))).to.equal(true);
+      });
+
+      it('rejects a negative floor, matching the schema minimum of 0', function () {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, bidFloor: -1 },
+        }))).to.equal(false);
+      });
+
+      it('rejects a floor that is not a number', function () {
+        ['1.25', null, NaN].forEach((bidFloor) => {
+          expect(spec.isBidRequestValid(bannerBid({
+            params: { host: HOST, placementKey: PLACEMENT, bidFloor },
+          })), String(bidFloor)).to.equal(false);
+        });
+      });
+
+      // The params schema declares no format for bidFloorCur, so the adapter
+      // must not invent one and reject a bid the server would have accepted.
+      it('does not police the shape of bidFloorCur', function () {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, bidFloor: 1, bidFloorCur: 'eur' },
+        }))).to.equal(true);
       });
     });
   });
@@ -105,8 +226,7 @@ describe('Epom Ad Server adapter', function () {
     });
 
     it('POSTs to https://{host}/hb/bid as text/plain with credentials', async function () {
-      const bids = [bannerBid()];
-      const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      const requests = await buildOne([bannerBid()]);
 
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('POST');
@@ -118,12 +238,11 @@ describe('Epom Ad Server adapter', function () {
     });
 
     it('packs every ad unit of one host into a single request, one imp each', async function () {
-      const bids = [
+      const requests = await buildOne([
         bannerBid(),
         bannerBid({ bidId: 'bid-2', adUnitCode: 'div-sidebar', params: { host: HOST, placementKey: '6d0e83b415' } }),
         bannerBid({ bidId: 'bid-3', adUnitCode: 'div-footer', params: { host: HOST, placementKey: 'ff0011aa22' } }),
-      ];
-      const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      ]);
 
       expect(requests).to.have.lengthOf(1);
       const { imp } = requests[0].data;
@@ -133,12 +252,11 @@ describe('Epom Ad Server adapter', function () {
     });
 
     it('splits by host so impressions never reach the wrong deployment', async function () {
-      const bids = [
+      const requests = await buildOne([
         bannerBid(),
         bannerBid({ bidId: 'bid-2', params: { host: OTHER_HOST, placementKey: '6d0e83b415' } }),
         bannerBid({ bidId: 'bid-3', params: { host: HOST, placementKey: 'ff0011aa22' } }),
-      ];
-      const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      ]);
 
       expect(requests).to.have.lengthOf(2);
       const byUrl = Object.fromEntries(requests.map((r) => [r.url, r.data.imp.map((i) => i.id)]));
@@ -147,8 +265,7 @@ describe('Epom Ad Server adapter', function () {
     });
 
     it('carries banner sizes through to imp.banner.format', async function () {
-      const bids = [bannerBid()];
-      const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      const requests = await buildOne([bannerBid()]);
 
       expect(requests[0].data.imp[0].banner.format).to.deep.equal([
         { w: 300, h: 250 },
@@ -156,101 +273,152 @@ describe('Epom Ad Server adapter', function () {
       ]);
     });
 
+    // The converter pins context.mediaType to banner; without it the default
+    // ORTB processors would populate imp.video for a mixed ad unit and the ad
+    // server would be asked for a format it does not sell.
+    it('sends only a banner imp for a mixed banner+video ad unit', async function () {
+      const requests = await buildOne([bannerBid({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'outstream', playerSize: [[640, 480]], mimes: ['video/mp4'] },
+        },
+      })]);
+
+      expect(requests[0].data.imp[0].banner).to.exist;
+      expect(requests[0].data.imp[0].video).to.not.exist;
+    });
+
     it('defaults the request currency to USD', async function () {
-      const bids = [bannerBid()];
-      const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      const requests = await buildOne([bannerBid()]);
 
       expect(requests[0].data.cur).to.deep.equal(['USD']);
     });
 
+    // USD is a default, not an override: once the currency module is active it
+    // owns request.cur, and the adapter must leave what it set alone.
+    it('leaves a request currency set by the currency module alone', async function () {
+      config.setConfig({ currency: { adServerCurrency: 'USD' } });
+      try {
+        const requests = await buildOne([bannerBid()]);
+
+        expect(requests[0].data.cur).to.deep.equal(['USD']);
+      } finally {
+        config.resetConfig();
+      }
+    });
+
     it('forwards the page URL from refererInfo', async function () {
-      const bids = [bannerBid()];
-      const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      const requests = await buildOne([bannerBid()]);
 
       expect(requests[0].data.site.page).to.equal('https://publisher.example.com/article');
     });
 
     describe('floors', function () {
       it('applies params.bidFloor when no floors module value is present', async function () {
-        const bids = [bannerBid({ params: { host: HOST, placementKey: PLACEMENT, bidFloor: 1.25 } })];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+        const requests = await buildOne([bannerBid({ params: { host: HOST, placementKey: PLACEMENT, bidFloor: 1.25 } })]);
 
         expect(requests[0].data.imp[0].bidfloor).to.equal(1.25);
         expect(requests[0].data.imp[0].bidfloorcur).to.equal('USD');
       });
 
       it('honours params.bidFloorCur', async function () {
-        const bids = [bannerBid({ params: { host: HOST, placementKey: PLACEMENT, bidFloor: 2, bidFloorCur: 'EUR' } })];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+        const requests = await buildOne([bannerBid({ params: { host: HOST, placementKey: PLACEMENT, bidFloor: 2, bidFloorCur: 'EUR' } })]);
 
         expect(requests[0].data.imp[0].bidfloorcur).to.equal('EUR');
       });
 
+      // 0 is the schema's way of saying "no floor", so nothing goes on the wire
+      // and the ad server is left to apply its own.
+      it('treats a bidFloor of 0 as no floor', async function () {
+        const requests = await buildOne([bannerBid({ params: { host: HOST, placementKey: PLACEMENT, bidFloor: 0 } })]);
+
+        expect(requests[0].data.imp[0].bidfloor).to.equal(undefined);
+        expect(requests[0].data.imp[0].bidfloorcur).to.equal(undefined);
+      });
+
       it('lets the Price Floors module win over params.bidFloor', async function () {
-        const bids = [bannerBid({
+        const requests = await buildOne([bannerBid({
           params: { host: HOST, placementKey: PLACEMENT, bidFloor: 1.25 },
           getFloor: () => ({ currency: 'USD', floor: 3.5 }),
-        })];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+        })]);
 
         expect(requests[0].data.imp[0].bidfloor).to.equal(3.5);
+      });
+
+      // The adapter pins only the request currency, never the floor's: a module
+      // floor quoted in another currency travels verbatim, with its own
+      // bidfloorcur, rather than being reinterpreted as USD.
+      it('passes a non-USD floors module value through with its own currency', async function () {
+        const requests = await buildOne([bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, bidFloor: 1.25, bidFloorCur: 'USD' },
+          getFloor: () => ({ currency: 'EUR', floor: 2.2 }),
+        })]);
+
+        expect(requests[0].data.imp[0].bidfloor).to.equal(2.2);
+        expect(requests[0].data.imp[0].bidfloorcur).to.equal('EUR');
       });
     });
 
     describe('channel and custom params', function () {
       it('sends the channel under our own namespace', async function () {
-        const bids = [bannerBid({ params: { host: HOST, placementKey: PLACEMENT, channel: 'sports-uk' } })];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+        const requests = await buildOne([bannerBid({ params: { host: HOST, placementKey: PLACEMENT, channel: 'sports-uk' } })]);
 
         expect(requests[0].data.imp[0].ext.epom_as.channel).to.equal('sports-uk');
+      });
+
+      it('omits an empty channel rather than sending a blank one', async function () {
+        const requests = await buildOne([bannerBid({ params: { host: HOST, placementKey: PLACEMENT, channel: '' } })]);
+
+        expect(requests[0].data.imp[0].ext?.epom_as).to.equal(undefined);
       });
 
       // Custom params share imp.ext.data with first-party data and RTD modules, so the
       // ad server has one place to read targetable key-values from.
       it('merges custom params into imp.ext.data as strings', async function () {
-        const bids = [bannerBid({
+        const requests = await buildOne([bannerBid({
           params: { host: HOST, placementKey: PLACEMENT, customParams: { section: 'sport', tier: 2, premium: true } },
-        })];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+        })]);
 
         expect(requests[0].data.imp[0].ext.data).to.deep.equal({
           section: 'sport', tier: '2', premium: 'true',
         });
       });
 
-      it('drops non-scalar values and oversized entries', async function () {
-        const bids = [bannerBid({
-          params: {
-            host: HOST,
-            placementKey: PLACEMENT,
-            customParams: {
-              ok: 'yes',
-              nested: { a: 1 },
-              list: [1, 2],
-              ['k'.repeat(129)]: 'long-key',
-              tooLong: 'v'.repeat(513),
-            },
-          },
-        })];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      // Nothing is capped or dropped in the adapter — a publisher who configures
+      // more keys than the ad server ingests sees them all leave the page, and
+      // which ones survive is the ad server's documented decision, not a
+      // nondeterministic one taken here.
+      it('keeps every scalar entry, well past the ad server ingest limit', async function () {
+        const many = {};
+        for (let i = 0; i < 40; i++) {
+          many['k' + i] = 'v' + i;
+        }
+        const requests = await buildOne([bannerBid({ params: { host: HOST, placementKey: PLACEMENT, customParams: many } })]);
 
-        expect(requests[0].data.imp[0].ext.data).to.deep.equal({ ok: 'yes' });
+        const sent = requests[0].data.imp[0].ext.data;
+        expect(Object.keys(sent)).to.have.lengthOf(40);
+        expect(sent.k0).to.equal('v0');
+        expect(sent.k39).to.equal('v39');
       });
 
-      it('caps the number of custom params', async function () {
-        const many = {};
-        for (let i = 0; i < 50; i++) {
-          many['k' + i] = 'v';
-        }
-        const bids = [bannerBid({ params: { host: HOST, placementKey: PLACEMENT, customParams: many } })];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+      it('lets first-party data on the impression win over a custom param of the same name', async function () {
+        const requests = await buildOne([bannerBid({
+          params: { host: HOST, placementKey: PLACEMENT, customParams: { section: 'sport', tier: '2' } },
+          ortb2Imp: { ext: { data: { section: 'news' } } },
+        })]);
 
-        expect(Object.keys(requests[0].data.imp[0].ext.data)).to.have.lengthOf(32);
+        expect(requests[0].data.imp[0].ext.data.section).to.equal('news');
+        expect(requests[0].data.imp[0].ext.data.tier).to.equal('2');
+      });
+
+      it('sends no imp.ext.data for an empty customParams object', async function () {
+        const requests = await buildOne([bannerBid({ params: { host: HOST, placementKey: PLACEMENT, customParams: {} } })]);
+
+        expect(requests[0].data.imp[0].ext?.data).to.equal(undefined);
       });
 
       it('adds nothing when neither is configured', async function () {
-        const bids = [bannerBid()];
-        const requests = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)));
+        const requests = await buildOne([bannerBid()]);
 
         expect(requests[0].data.imp[0].ext?.epom_as).to.equal(undefined);
         expect(requests[0].data.imp[0].ext?.data).to.equal(undefined);
@@ -293,17 +461,52 @@ describe('Epom Ad Server adapter', function () {
     let request;
 
     beforeEach(async function () {
-      const bids = [bannerBid()];
-      request = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)))[0];
+      request = (await buildOne([bannerBid()]))[0];
     });
 
     it('returns nothing for an empty response', function () {
       expect(spec.interpretResponse({}, request)).to.deep.equal([]);
       expect(spec.interpretResponse({ body: null }, request)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: '' }, request)).to.deep.equal([]);
+      expect(spec.interpretResponse(undefined, request)).to.deep.equal([]);
+    });
+
+    // A misconfigured host or a proxy in front of the ad server answers with
+    // something that is not OpenRTB at all. That must cost the auction one
+    // bidder, not throw out of the whole response handler.
+    it('returns nothing for a non-ORTB body', function () {
+      const htmlErrorPage = '<!doctype html><html><body><h1>502 Bad Gateway</h1></body></html>';
+      expect(spec.interpretResponse({ body: htmlErrorPage }, request)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: 'no bid' }, request)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: 42 }, request)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: [] }, request)).to.deep.equal([]);
+    });
+
+    it('returns nothing when the body carries no seatbid at all', function () {
+      expect(spec.interpretResponse({ body: { id: request.data.id } }, request)).to.deep.equal([]);
     });
 
     it('returns nothing when the ad server has no bid', function () {
       const response = { body: { id: request.data.id, seatbid: [], cur: 'USD' } };
+      expect(spec.interpretResponse(response, request)).to.deep.equal([]);
+    });
+
+    it('returns nothing for a seatbid entry with no bids', function () {
+      const response = { body: { id: request.data.id, seatbid: [{ seat: 'epom' }], cur: 'USD' } };
+      expect(spec.interpretResponse(response, request)).to.deep.equal([]);
+    });
+
+    // fromORTB matches bids to impressions by impid; a bid naming an impression
+    // that is not in this request belongs to some other auction.
+    it('drops a bid whose impid matches no impression in the request', function () {
+      const response = {
+        body: {
+          id: request.data.id,
+          cur: 'USD',
+          seatbid: [{ bid: [{ id: 's1', impid: 'not-our-imp', price: 3, adm: '<div>x</div>', crid: 'c1', w: 300, h: 250 }] }],
+        },
+      };
+
       expect(spec.interpretResponse(response, request)).to.deep.equal([]);
     });
 
@@ -340,7 +543,52 @@ describe('Epom Ad Server adapter', function () {
       expect(bids[0].mediaType).to.equal('banner');
       expect(bids[0].netRevenue).to.equal(true);
       expect(bids[0].ttl).to.equal(25);
+      // Derived from bid.adomain by the converter — Epom Ad Server does not
+      // populate it today, so this pins the wiring rather than the ad server.
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiser.example.com']);
+    });
+
+    // Today's ad server sends no adomain, so nothing is fabricated in its place —
+    // the field is simply absent, and a brand-safety line item keyed on it will
+    // not match an Epom bid until the ad server starts populating it.
+    it('leaves advertiserDomains unset when the ad server sends no adomain', function () {
+      const response = {
+        body: {
+          id: request.data.id,
+          cur: 'USD',
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250 }] }],
+        },
+      };
+
+      const bid = spec.interpretResponse(response, request)[0];
+      expect(bid.meta).to.be.an('object');
+      expect(bid.meta.advertiserDomains).to.equal(undefined);
+    });
+
+    // The 25s default is the impression beacon's window, not a ceiling: a
+    // deployment configured wider says so per bid.
+    it('honours a per-bid exp over the default ttl', function () {
+      const response = {
+        body: {
+          id: request.data.id,
+          cur: 'USD',
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250, exp: 120 }] }],
+        },
+      };
+
+      expect(spec.interpretResponse(response, request)[0].ttl).to.equal(120);
+    });
+
+    it('honours a response currency other than the requested one', function () {
+      const response = {
+        body: {
+          id: request.data.id,
+          cur: 'EUR',
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1.8, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250 }] }],
+        },
+      };
+
+      expect(spec.interpretResponse(response, request)[0].currency).to.equal('EUR');
     });
 
     // The whole Google Ad Manager integration hangs off hb_deal_epom_as: a
@@ -370,11 +618,10 @@ describe('Epom Ad Server adapter', function () {
     });
 
     it('maps one bid per impression back to its own ad unit', async function () {
-      const bids = [
+      const multiRequest = (await buildOne([
         bannerBid(),
         bannerBid({ bidId: 'bid-2', adUnitCode: 'div-sidebar', params: { host: HOST, placementKey: '6d0e83b415' } }),
-      ];
-      const multiRequest = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequestFor(bids)))[0];
+      ]))[0];
       const response = {
         body: {
           id: multiRequest.data.id,
@@ -391,6 +638,12 @@ describe('Epom Ad Server adapter', function () {
       const interpreted = spec.interpretResponse(response, multiRequest);
       expect(interpreted.map((b) => b.requestId)).to.deep.equal(['bid-1', 'bid-2']);
       expect(interpreted.map((b) => b.cpm)).to.deep.equal([1.5, 4.0]);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    it('registers no user syncs', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])).to.deep.equal([]);
     });
   });
 });
