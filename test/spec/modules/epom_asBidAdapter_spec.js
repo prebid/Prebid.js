@@ -95,6 +95,20 @@ describe('Epom Ad Server adapter', function () {
       expect(spec.isBidRequestValid(bannerBid({ params: { host: null, placementKey: PLACEMENT } }))).to.equal(false);
     });
 
+    it('rejects a port outside the range a URL can carry', function () {
+      // The shape alone would accept it, and `new URL()` then throws rather than returning
+      // something unusable — buildRequests is not called inside a try, so one mistyped port in a
+      // page's configuration would take the whole request down instead of costing a single bid.
+      ['ads.example.com:0', 'ads.example.com:65536', 'ads.example.com:99999'].forEach((host) => {
+        expect(spec.isBidRequestValid(bannerBid({
+          params: { host, placementKey: PLACEMENT },
+        })), host).to.equal(false);
+      });
+      expect(spec.isBidRequestValid(bannerBid({
+        params: { host: 'ads.example.com:65535', placementKey: PLACEMENT },
+      }))).to.equal(true);
+    });
+
     it('rejects a missing, empty or non-string placementKey', function () {
       expect(spec.isBidRequestValid(bannerBid({ params: { host: HOST } }))).to.equal(false);
       expect(spec.isBidRequestValid(bannerBid({ params: { host: HOST, placementKey: '' } }))).to.equal(false);

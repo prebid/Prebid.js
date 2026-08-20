@@ -30,13 +30,31 @@ const DEFAULT_TTL = 25;
 
 /**
  * Hostname with an optional port — no scheme, path, query, fragment or userinfo, so a page
- * configuration cannot redirect the payload. Byte-identical to the expression Prebid Server
- * validates the same parameter with (`util/urlutil/security.go`, and the `host` property of
- * the epom_as params schema), so a bid this adapter accepts is one that server also accepts.
- * Single-label hosts are deliberately allowed: an internal deployment reachable as `api-us`
- * is a legitimate configuration on both transports.
+ * configuration cannot redirect the payload. The shape is the expression Prebid Server validates
+ * the same parameter with (`util/urlutil/security.go`, and the `host` property of the epom_as
+ * params schema), so a bid this adapter accepts is one that server also accepts. Single-label
+ * hosts are deliberately allowed: an internal deployment reachable as `api-us` is a legitimate
+ * configuration on both transports.
  */
-const HOST_PATTERN = /^[a-zA-Z0-9.-]+(:[0-9]+)?$/;
+const HOST_PATTERN = /^[a-zA-Z0-9.-]+(?::(\d{1,5}))?$/;
+const MAX_PORT = 65535;
+
+/**
+ * The port is range-checked on top of the shape. Out of range, `new URL()` throws rather than
+ * returning something unusable, and buildRequests is not called inside a try — one mistyped port
+ * in a page's configuration would take the whole request down instead of costing one bid.
+ */
+function isUsableHost(host: unknown): boolean {
+  if (typeof host !== 'string') {
+    return false;
+  }
+  const match = HOST_PATTERN.exec(host);
+  if (match == null) {
+    return false;
+  }
+  const port = match[1];
+  return port === undefined || (Number(port) >= 1 && Number(port) <= MAX_PORT);
+}
 
 export type EpomAsBidParams = {
   /** Serving host of the publisher's Epom deployment, e.g. `ads.example.com`. */
@@ -162,7 +180,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    */
   isBidRequestValid(bid) {
     const params = bid?.params;
-    if (typeof params?.host !== 'string' || !HOST_PATTERN.test(params.host)) {
+    if (!isUsableHost(params?.host)) {
       return false;
     }
     if (typeof params.placementKey !== 'string' || params.placementKey.length === 0) {
