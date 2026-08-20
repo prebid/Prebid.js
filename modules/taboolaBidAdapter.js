@@ -351,7 +351,7 @@ function getSiteProperties({ publisherId }, refererInfo, ortb2) {
       id: publisherId
     },
     content: {
-      language: navigator.language
+      language: ortb2?.site?.content?.language || navigator.language
     }
   };
 }

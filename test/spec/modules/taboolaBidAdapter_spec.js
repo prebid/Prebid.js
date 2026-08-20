@@ -488,6 +488,27 @@ describe('Taboola Adapter', function () {
         expect(res.data.device.ext.visibility).to.exist;
       });
 
+      it('should prioritize site.content.language from ortb2 over navigator.language', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            ...commonBidderRequest.ortb2,
+            site: {
+              content: {
+                language: 'hi'
+              }
+            }
+          }
+        }
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.site.content.language).to.equal('hi');
+      });
+
+      it('should fall back to navigator.language when site.content.language is not set in ortb2', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.site.content.language).to.equal(navigator.language);
+      });
+
       it('should pass user entities', function () {
         const bidderRequest = {
           ...commonBidderRequest,
