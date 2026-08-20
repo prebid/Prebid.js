@@ -31,7 +31,9 @@ const MODULE_TYPE = "realTimeData";
 const DEFAULT_TIMEOUT = 300;
 const DEFAULT_API_URL = "https://api.stackup-ai.com/v1/enrich-ortb-rtd";
 const CACHE_KEY_PREFIX = "stackup:enrich:v1:";
-const CACHE_SCHEMA_VERSION = 1;
+const CACHE_SCHEMA_VERSION = 2;
+const CONTENT_SEGTAXES = new Set([6, 9, 502, 600]);
+const USER_SEGTAXES = new Set([4, 501]);
 // Maximum number of auction snapshots to keep in memory at once.
 // On long-lived SPA sessions many auctions can fire; without a cap the map
 // grows without bound. FIFO eviction keeps the last N entries — enough for
@@ -99,6 +101,23 @@ declare module "./rtdModule/spec.ts" {
 type BrandSafetyBlock = unknown; // TODO: define properly when we have real data
 type EmotionBlock = unknown; // TODO: define properly when we have real data
 
+interface Ortb2Segment {
+  id: string;
+  name?: string;
+  value?: string;
+  ext?: { confidence?: number };
+}
+
+interface Ortb2DataBlock<TSegtax extends number> {
+  id?: string;
+  name: string;
+  ext?: {
+    segtax?: TSegtax;
+    [key: string]: unknown;
+  };
+  segment: Ortb2Segment[];
+}
+
 // types/stackup.ts — shared between RTD and analytics modules
 
 export interface EnrichmentSnapshot {
@@ -106,11 +125,13 @@ export interface EnrichmentSnapshot {
   fetchedAt: number; // unix ms when enrichment landed
   source: "api" | "cache";
   site: {
+    cattax?: number;
+    pagecat?: string[];
     content: {
-      id: string;
+      id?: string;
       title?: string;
       data: Ortb2ContentSegment[];
-      ext?: {
+      ext?: Record<string, unknown> & {
         brand_safety?: BrandSafetyBlock;
         emotion?: EmotionBlock;
       };
@@ -121,46 +142,22 @@ export interface EnrichmentSnapshot {
   };
 }
 
-export interface Ortb2ContentSegment {
-  id?: string;
-  name: string; // provider domain: 'data.stackup-ai.com'
-  ext: {
-    segtax: 502; // StackUP Content Taxonomy 1.0
-    stackup?: { taxonomy_version: string; source_tier?: string };
-  };
-  segment: Array<{
-    id: string;
-    name?: string; // optional — some segments carry only id + value
-    value?: string;
-    ext?: { confidence?: number };
-  }>;
-}
+export type Ortb2ContentSegment = Ortb2DataBlock<6 | 9 | 502 | 600>;
 
-export interface Ortb2UserSegment {
-  id?: string;
-  name: string; // provider domain: 'data.stackup-ai.com'
-  ext: {
-    segtax: 501; // StackUP Audience Taxonomy 1.0 — one block per dimension
-    stackup?: { dimension: string; taxonomy_version: string };
-  };
-  segment: Array<{
-    id: string;
-    name?: string; // optional — profile dimension uses only id + value
-    value?: string;
-    ext?: { confidence?: number };
-  }>;
-}
+export type Ortb2UserSegment = Ortb2DataBlock<4 | 501>;
 
 // Raw JSON shape returned by the Stackup enrichment API.
 // Mirrors EnrichmentSnapshot.site/user but without the client-added fields
 // (articleId, fetchedAt, source) that are stamped on after a successful fetch.
 interface RawEnrichmentResponse {
   site: {
+    cattax?: number;
+    pagecat?: string[];
     content: {
       id?: string;
       title?: string;
       data: Ortb2ContentSegment[];
-      ext?: {
+      ext?: Record<string, unknown> & {
         brand_safety?: BrandSafetyBlock;
         emotion?: EmotionBlock;
       };
@@ -344,10 +341,13 @@ function fetchEnrichment(
         fetchedAt: Date.now(),
         source: "api",
         site: {
-          content: {
-            ...data.site.content,
-            id: data.site.content.id ?? articleId,
-          },
+          ...(data.site.cattax !== undefined
+            ? { cattax: data.site.cattax }
+            : {}),
+          ...(data.site.pagecat !== undefined
+            ? { pagecat: data.site.pagecat }
+            : {}),
+          content: { ...data.site.content },
         },
         user: { data: data.user?.data ?? [] },
       };
@@ -358,30 +358,55 @@ function fetchEnrichment(
 
 function isValidEnrichment(data: any): data is RawEnrichmentResponse {
   if (!isPlainObject(data)) return false;
-  if (!data.site?.content) return false;
+  if (!isPlainObject(data.site) || !isPlainObject(data.site.content)) {
+    return false;
+  }
   if (!isArray(data.site.content.data)) return false;
+  if (data.site.cattax !== undefined && !isNumber(data.site.cattax)) {
+    return false;
+  }
+  if (
+    data.site.pagecat !== undefined &&
+    (!isArray(data.site.pagecat) || !data.site.pagecat.every(isStr))
+  ) {
+    return false;
+  }
 
-  // Validate every segment in site.content.data.
-  // segtax 502 = StackUP Content Taxonomy 1.0 — the only value emitted by the
-  // StackUP worker and returned by the /v1/enrich-ortb-rtd endpoint.
   for (const block of data.site.content.data) {
-    if (!isStr(block.name)) return false;
-    if (block.ext?.segtax !== 502) return false;
-    if (!isArray(block.segment)) return false;
-    for (const seg of block.segment) {
-      if (!isStr(seg.id)) return false;
-      // name is optional — some dimensions (e.g. profile) carry only id + value
-      if (seg.name !== undefined && !isStr(seg.name)) return false;
-      if (seg.ext?.confidence !== undefined) {
-        if (!isNumber(seg.ext.confidence)) return false;
-        if (seg.ext.confidence < 0 || seg.ext.confidence > 1) return false;
-      }
-    }
+    if (!isValidDataBlock(block, CONTENT_SEGTAXES)) return false;
   }
 
   // user.data is optional — some articles have site-level enrichment only
-  if (data.user?.data && !isArray(data.user.data)) return false;
+  if (data.user !== undefined && !isPlainObject(data.user)) return false;
+  if (data.user?.data !== undefined && !isArray(data.user.data)) return false;
+  for (const block of data.user?.data ?? []) {
+    if (!isValidDataBlock(block, USER_SEGTAXES)) return false;
+  }
 
+  return true;
+}
+
+function isValidDataBlock(block: any, allowedSegtaxes: Set<number>): boolean {
+  if (!isPlainObject(block) || !isStr(block.name)) return false;
+  if (block.ext !== undefined && !isPlainObject(block.ext)) return false;
+  const segtax = block.ext?.segtax;
+  if (
+    segtax !== undefined &&
+    (!isNumber(segtax) || !allowedSegtaxes.has(segtax))
+  ) {
+    return false;
+  }
+  if (!isArray(block.segment)) return false;
+  for (const segment of block.segment) {
+    if (!isPlainObject(segment) || !isStr(segment.id)) return false;
+    if (segment.name !== undefined && !isStr(segment.name)) return false;
+    if (segment.value !== undefined && !isStr(segment.value)) return false;
+    if (segment.ext !== undefined && !isPlainObject(segment.ext)) return false;
+    if (segment.ext?.confidence !== undefined) {
+      if (!isNumber(segment.ext.confidence)) return false;
+      if (segment.ext.confidence < 0 || segment.ext.confidence > 1) return false;
+    }
+  }
   return true;
 }
 
@@ -610,60 +635,82 @@ function mergeIntoOrtb2(
   reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments ?? {};
   reqBidsConfigObj.ortb2Fragments.global = global;
 
-  mergeSiteContent(global, enrichment.site.content);
+  mergeSiteContent(global, enrichment.site);
   mergeUserData(global, enrichment.user.data);
 }
 
-function mergeSiteContent(global: any, ours: any): void {
+function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
   global.site = global.site ?? {};
+  if (global.site.cattax === undefined && ours.cattax !== undefined) {
+    global.site.cattax = ours.cattax;
+  }
+  if (global.site.pagecat === undefined && ours.pagecat !== undefined) {
+    global.site.pagecat = ours.pagecat;
+  }
   global.site.content = global.site.content ?? { data: [] };
   const target = global.site.content;
+  const ourContent = ours.content;
 
-  target.id = target.id ?? ours.id;
-  target.title = target.title ?? ours.title;
-
-  // Array merge by provider name
-  target.data = target.data ?? [];
-  for (const ourBlock of ours.data) {
-    const existingIdx = target.data.findIndex(
-      (b: any) => b.name === ourBlock.name
-    );
-    if (existingIdx >= 0) {
-      target.data[existingIdx] = dedupeSegments(ourBlock);
-    } else {
-      target.data.push(dedupeSegments(ourBlock));
-    }
+  if (target.id === undefined && ourContent.id !== undefined) {
+    target.id = ourContent.id;
+  }
+  if (target.title === undefined && ourContent.title !== undefined) {
+    target.title = ourContent.title;
   }
 
-  // Extension merge — publisher wins on conflict
-  target.ext = target.ext ?? {};
-  if (!target.ext.brand_safety && ours.ext?.brand_safety) {
-    target.ext.brand_safety = ours.ext.brand_safety;
-  }
-  if (!target.ext.emotion && ours.ext?.emotion) {
-    target.ext.emotion = ours.ext.emotion;
+  target.data = isArray(target.data) ? target.data : [];
+  mergeDataBlocks(target.data, ourContent.data);
+
+  if (ourContent.ext !== undefined) {
+    target.ext = mergeContentExtPublisherFirst(target.ext, ourContent.ext);
   }
 }
 
 function mergeUserData(global: any, ours: any[]): void {
   global.user = global.user ?? {};
-  global.user.data = global.user.data ?? [];
+  global.user.data = isArray(global.user.data) ? global.user.data : [];
 
+  mergeDataBlocks(global.user.data, ours);
+}
+
+function mergeDataBlocks(target: any[], ours: any[]): void {
   for (const ourBlock of ours) {
-    const existingIdx = global.user.data.findIndex(
-      (b: any) => b.name === ourBlock.name
+    const dedupedOurs = dedupeSegments(ourBlock);
+    const key = dataBlockKey(dedupedOurs);
+    const existingIdx = target.findIndex(
+      (block: any) => dataBlockKey(block) === key
     );
     if (existingIdx >= 0) {
-      global.user.data[existingIdx] = dedupeSegments(ourBlock);
+      target[existingIdx] = mergeDataBlock(target[existingIdx], dedupedOurs);
     } else {
-      global.user.data.push(dedupeSegments(ourBlock));
+      target.push(dedupedOurs);
     }
   }
 }
 
+function dataBlockKey(block: any): string {
+  const name = isStr(block?.name) ? block.name : "";
+  const segtax = isNumber(block?.ext?.segtax) ? block.ext.segtax : "";
+  return `${name}\u0000${segtax}`;
+}
+
+function mergeDataBlock(publisherBlock: any, stackupBlock: any): any {
+  const publisher = dedupeSegments(publisherBlock);
+  const stackup = dedupeSegments(stackupBlock);
+  const segments = [...publisher.segment];
+  const publisherIds = new Set(segments.map((segment: any) => segment.id));
+  for (const segment of stackup.segment) {
+    if (!publisherIds.has(segment.id)) {
+      publisherIds.add(segment.id);
+      segments.push(segment);
+    }
+  }
+  return { ...stackup, ...publisher, segment: segments };
+}
+
 function dedupeSegments(block: any): any {
   const byId = new Map<string, any>();
-  for (const seg of block.segment) {
+  for (const seg of isArray(block?.segment) ? block.segment : []) {
     const existing = byId.get(seg.id);
     if (!existing) {
       byId.set(seg.id, seg);
@@ -674,6 +721,17 @@ function dedupeSegments(block: any): any {
     if (ourConf > theirConf) byId.set(seg.id, seg);
   }
   return { ...block, segment: Array.from(byId.values()) };
+}
+
+function mergeContentExtPublisherFirst(publisher: any, stackup: any): any {
+  if (!isPlainObject(stackup)) return publisher;
+  if (!isPlainObject(publisher)) return stackup;
+
+  const merged = { ...stackup, ...publisher };
+  if (isPlainObject(stackup.stackup) && isPlainObject(publisher.stackup)) {
+    merged.stackup = { ...stackup.stackup, ...publisher.stackup };
+  }
+  return merged;
 }
 
 function registerSubmodule() {
