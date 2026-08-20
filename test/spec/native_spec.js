@@ -185,41 +185,28 @@ const bidWithUndefinedFields = {
 describe('native.js', function () {
   let sandbox;
   let triggerPixelStub;
+  let politeTriggerPixelStub;
   let insertHtmlIntoIframeStub;
-  let originalScheduler;
-  let originalRequestIdleCallback;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
+    politeTriggerPixelStub = sandbox.stub(utils, 'politeTriggerPixel');
     insertHtmlIntoIframeStub = sandbox.stub(utils, 'insertHtmlIntoIframe');
-    originalScheduler = window.scheduler;
-    originalRequestIdleCallback = window.requestIdleCallback;
-    window.scheduler = {
-      postTask(task) {
-        setTimeout(task, 0);
-        return Promise.resolve();
-      }
-    };
   });
 
   afterEach(function () {
-    window.scheduler = originalScheduler;
-    window.requestIdleCallback = originalRequestIdleCallback;
     sandbox.restore();
   });
 
-  it('fires impression trackers', function (done) {
+  it('fires impression trackers', function () {
     fireNativeTrackers({}, bid);
-    setTimeout(() => {
-      sinon.assert.calledOnce(triggerPixelStub);
-      sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
-      sinon.assert.calledWith(
-        insertHtmlIntoIframeStub,
-        bid.native.javascriptTrackers
-      );
-      done();
-    }, 0);
+    sinon.assert.calledOnce(politeTriggerPixelStub);
+    sinon.assert.calledWith(politeTriggerPixelStub, bid.native.impressionTrackers[0]);
+    sinon.assert.calledWith(
+      insertHtmlIntoIframeStub,
+      bid.native.javascriptTrackers
+    );
   });
 
   it('fires click trackers', function () {

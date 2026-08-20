@@ -205,34 +205,19 @@ describe('adRendering', () => {
     });
 
     describe('markWinningBid', () => {
-      let bid, originalScheduler, originalRequestIdleCallback;
+      let bid;
       beforeEach(() => {
         bid = { adId: '123' };
-        sandbox.stub(utils, 'triggerPixel');
-        originalScheduler = window.scheduler;
-        originalRequestIdleCallback = window.requestIdleCallback;
-        window.scheduler = {
-          postTask(task) {
-            setTimeout(task, 0);
-            return Promise.resolve();
-          }
-        };
-      });
-      afterEach(() => {
-        window.scheduler = originalScheduler;
-        window.requestIdleCallback = originalRequestIdleCallback;
+        sandbox.stub(utils, 'politeTriggerPixel');
       });
       it('should fire BID_WON', () => {
         markWinningBid(bid);
         sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bid);
       });
-      it('should fire win tracking pixels', (done) => {
+      it('should fire win tracking pixels', () => {
         bid.eventtrackers = [{ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker' }];
         markWinningBid(bid);
-        setTimeout(() => {
-          sinon.assert.calledWith(utils.triggerPixel, 'tracker');
-          done();
-        }, 0);
+        sinon.assert.calledWith(utils.politeTriggerPixel, 'tracker');
       });
       it('should NOT fire non-win or non-pixel trackers', () => {
         bid.eventtrackers = [
@@ -240,7 +225,7 @@ describe('adRendering', () => {
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'ignored' }
         ];
         markWinningBid(bid);
-        sinon.assert.notCalled(utils.triggerPixel);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
       });
     });
 

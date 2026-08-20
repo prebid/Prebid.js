@@ -450,32 +450,16 @@ describe('adapterManager tests', function () {
     });
 
     describe('triggerBilling', () => {
-      let originalScheduler, originalRequestIdleCallback;
       beforeEach(() => {
         criteoSpec.onBidBillable = sinon.spy();
-        sandbox.stub(utils.internal, 'triggerPixel');
-        originalScheduler = window.scheduler;
-        originalRequestIdleCallback = window.requestIdleCallback;
-        window.scheduler = {
-          postTask(task) {
-            setTimeout(task, 0);
-            return Promise.resolve();
-          }
-        };
+        sandbox.stub(utils, 'politeTriggerPixel');
       });
-      afterEach(() => {
-        window.scheduler = originalScheduler;
-        window.requestIdleCallback = originalRequestIdleCallback;
-      });
-      it('should fire impression pixels from eventtrackers', (done) => {
+      it('should fire impression pixels from eventtrackers', () => {
         bids[0].eventtrackers = [
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'tracker' },
         ];
         adapterManager.triggerBilling(bids[0]);
-        setTimeout(() => {
-          sinon.assert.calledWith(utils.internal.triggerPixel, 'tracker');
-          done();
-        }, 0);
+        sinon.assert.calledWith(utils.politeTriggerPixel, 'tracker');
       });
 
       it('should NOT fire non-impression or non-pixel trackers', () => {
@@ -484,7 +468,7 @@ describe('adapterManager tests', function () {
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'ignored' },
         ];
         adapterManager.triggerBilling(bids[0]);
-        sinon.assert.notCalled(utils.internal.triggerPixel);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
       });
       describe('on client bids', () => {
         it('should call bidder\'s onBidBillable', () => {

@@ -1228,7 +1228,7 @@ export function triggerNurlWithCpm(bid, cpm) {
       /\${AUCTION_PRICE}/,
       cpm
     );
-    runBackgroundTask(() => triggerPixel(bid.nurl));
+    politeTriggerPixel(bid.nurl);
   }
 }
 

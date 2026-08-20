@@ -9,7 +9,7 @@ import {
   isPlainObject,
   logError,
   pick,
-  runBackgroundTask,
+  politeTriggerPixel,
   triggerPixel
 } from './utils.js';
 
@@ -356,7 +356,7 @@ export function fireNativeTrackers(message, bidResponse) {
   return message.action;
 }
 
-export function fireImpressionTrackers(nativeResponse, bidResponse, { runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = (url) => runBackgroundTask(() => triggerPixel(url)) } = {}) {
+export function fireImpressionTrackers(nativeResponse, bidResponse, { runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = politeTriggerPixel } = {}) {
   const filteredEventTrackers = filterEventTrackers(nativeResponse, bidResponse);
   let { [TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = [] } = parseEventTrackers(
     filteredEventTrackers || []
