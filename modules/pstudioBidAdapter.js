@@ -16,11 +16,11 @@ const LOCAL_STORAGE_KEY = 'u_profile_id';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 let _tmaPrimed = false;
-let _cachedUserId;
+let _tmaId;
 
 export function __forTestingResetState() {
   _tmaPrimed = false;
-  _cachedUserId = undefined;
+  _tmaId = undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,26 +47,18 @@ function lsGet(key) {
   }
 }
 
-function tmaGetIdCached() {
-  const v = lsGet(LOCAL_STORAGE_KEY);
-  if (v) {
-    _cachedUserId = v;
-  } else {
-    _cachedUserId = undefined;
+function tmaGetId() {
+  if (typeof _tmaId === 'undefined' || _tmaId === null) {
+    _tmaId = lsGet(LOCAL_STORAGE_KEY);
   }
-  return _cachedUserId;
+  return _tmaId;
 }
 
-// Primes _cachedUserId from LS and triggers a background sync, but ONLY when
-// invoked from a Prebid lifecycle method (i.e. after fun-hooks is ready).
 function tmaPrime() {
   if (_tmaPrimed) return;
-  _tmaPrimed = true;
 
-  if (!_cachedUserId) {
-    const v = lsGet(LOCAL_STORAGE_KEY);
-    if (v) _cachedUserId = v;
-  }
+  tmaGetId();
+  _tmaPrimed = true;
 }
 
 // ---------------------------------------------------------------------------
@@ -161,7 +153,7 @@ export const spec = {
     const syncs = [];
     if (!syncOptions) return syncs;
 
-    const userId = tmaGetIdCached();
+    const userId = tmaGetId();
     if (!userId) return syncs;
 
     USER_SYNCS.forEach((userSync) => {
@@ -203,7 +195,7 @@ function buildBaseObject(bid, bidderRequest) {
     }
   }
 
-  const userProfileId = tmaGetIdCached();
+  const userProfileId = tmaGetId();
   if (userProfileId) {
     if (firstPartyData.user) {
       firstPartyData.user.id = userProfileId;
