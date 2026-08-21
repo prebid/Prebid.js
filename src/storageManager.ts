@@ -1,4 +1,4 @@
-import { checkCookieSupport, hasDeviceAccess, logError, memoize, timestamp } from './utils.js';
+import { checkCookieSupport, hasDeviceAccess, logError } from './utils.js';
 import { bidderSettings } from './bidderSettings.js';
 import { MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, type ModuleType } from './activities/modules.js';
 import { isActivityAllowed, registerActivityControl } from './activities/rules.js';
@@ -291,9 +291,11 @@ export function getCoreStorageManager(moduleName) {
 
 export const canSetCookie = (() => {
   const testStorageMgr = getCoreStorageManager('storage');
+  const cache = new Map();
+  const DEFAULT_DOMAIN = '__default__';
 
-  return memoize(function (domain?, storageMgr = testStorageMgr) {
-    const expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
+  function checkCanSetCookie(domain?, storageMgr = testStorageMgr) {
+    const expirationDate = new Date(Date.now() + 10 * 1000).toUTCString();
     const cookieName = `_rdc${Date.now()}`;
     const cookieValue = 'writeable';
 
@@ -318,7 +320,19 @@ export const canSetCookie = (() => {
     } else {
       return false;
     }
-  });
+  }
+
+  const canSet = function (domain?, storageMgr = testStorageMgr) {
+    const cacheKey = storageMgr === testStorageMgr ? domain ?? DEFAULT_DOMAIN : undefined;
+    if (cacheKey && cache.get(cacheKey) === true) return true;
+
+    const result = checkCanSetCookie(domain, storageMgr);
+    if (cacheKey && result === true) cache.set(cacheKey, true);
+    return result;
+  };
+
+  canSet.clear = cache.clear.bind(cache);
+  return canSet;
 })();
 
 /**
