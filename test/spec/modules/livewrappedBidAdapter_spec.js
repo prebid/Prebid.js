@@ -784,16 +784,10 @@ describe('Livewrapped adapter tests', function () {
     it('should pass coppa parameter', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-
-      const origGetConfig = config.getConfig;
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'coppa') {
-          return true;
-        }
-        return origGetConfig.apply(config, arguments);
+      const result = spec.buildRequests(bidderRequest.bids, {
+        ...bidderRequest,
+        ortb2: { regs: { coppa: 1 } }
       });
-
-      const result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const data = JSON.parse(result.data);
 
       expect(result.url).to.equal('https://lwadm.com/ad');
@@ -809,6 +803,7 @@ describe('Livewrapped adapter tests', function () {
         height: 100,
         cookieSupport: true,
         coppa: true,
+        rtbData: { regs: { coppa: 1 } },
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',

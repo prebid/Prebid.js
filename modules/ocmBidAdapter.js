@@ -637,8 +637,8 @@ function buildSyncFilterSettings(syncOptions) {
  * @param {Object} [gdprConsent] - GDPR consent data
  * @returns {boolean} True if syncing may proceed
  */
-function syncsAllowedByPrivacy(gdprConsent) {
-  if (config.getConfig('coppa') === true) {
+function syncsAllowedByPrivacy(gdprConsent, coppa) {
+  if (coppa) {
     logWarn(`${BIDDER_CODE}: user syncing skipped because COPPA is enabled`);
     return false;
   }
@@ -674,7 +674,7 @@ function syncsAllowedByPrivacy(gdprConsent) {
  * @returns {Array<{type: string, url: string}>} A single sync, or empty if syncing is disabled,
  *   disallowed by COPPA/GDPR, or the auction response named no bidders
  */
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
   const iframeEnabled = !!syncOptions?.iframeEnabled;
   const pixelEnabled = !!syncOptions?.pixelEnabled;
 
@@ -683,7 +683,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [];
   }
 
-  if (!syncsAllowedByPrivacy(gdprConsent)) {
+  if (!syncsAllowedByPrivacy(gdprConsent, coppa)) {
     return [];
   }
 
