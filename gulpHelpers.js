@@ -1,12 +1,63 @@
 const fs = require('fs');
 const path = require('path');
-const argv = require('yargs').argv;
+const {parseArgs} = require('node:util');
 const MANIFEST = 'package.json';
 const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
+
+const BOOLEAN_OPTIONS = [
+  'nolint',
+  'nolintfix',
+  'lintWarnings',
+  'sourceMaps',
+  'manualEnable',
+  'coverage',
+  'https',
+  'local',
+  'fetch',
+  'watch',
+  'browserstack',
+  'notest',
+  'analytics',
+  'ES5',
+  'analyze',
+  'polyfills',
+];
+
+const {values: argv} = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  options: {
+    // boolean flags
+    ...Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, {type: 'boolean'}])),
+    // string options
+    host: {type: 'string'},
+    file: {type: 'string'},
+    modules: {type: 'string'},
+    browsers: {type: 'string'},
+    disable: {type: 'string'},
+    enable: {type: 'string'},
+    distUrlBase: {type: 'string'},
+    bundleName: {type: 'string'},
+    tag: {type: 'string'},
+  },
+});
+
+// The Codex bot keeps yargs' handling of negated boolean flags, which parseArgs
+// would otherwise retain under literal keys such as "no-coverage".
+Object.entries(argv).forEach(([arg, value]) => {
+  if (arg.startsWith('no-') && value === true) {
+    const option = BOOLEAN_OPTIONS.find((candidate) =>
+      candidate.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase() === arg.slice(3).toLowerCase());
+    if (option) {
+      argv[option] = false;
+      delete argv[arg];
+    }
+  }
+});
 
 const PRECOMPILED_PATH = './dist/src'
 const MODULE_PATH = './modules';
@@ -230,5 +281,6 @@ module.exports = {
   },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
+  },
+  argv
 };
