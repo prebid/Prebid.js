@@ -48,7 +48,7 @@ function lsGet(key) {
 }
 
 function tmaGetId() {
-  if (typeof _tmaId === 'undefined') {
+  if (typeof _tmaId === 'undefined' || _tmaId === null) {
     _tmaId = lsGet(LOCAL_STORAGE_KEY);
   }
   return _tmaId;

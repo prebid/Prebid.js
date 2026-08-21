@@ -619,6 +619,22 @@ describe('PStudioAdapter', function () {
       payload = JSON.parse(request[0].data);
       expect(payload.user.id).to.equal('cached-id');
     });
+
+    it('should use a profile ID that becomes available after initialization', function () {
+      const ls = sandbox.stub(storage, 'getDataFromLocalStorage');
+      ls.onFirstCall().returns(null);
+      ls.onSecondCall().returns(null);
+      ls.onThirdCall().returns('late-profile-id');
+
+      let request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      let payload = JSON.parse(request[0].data);
+      expect(payload).not.to.haveOwnProperty('user');
+
+      request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      payload = JSON.parse(request[0].data);
+      expect(payload.user.id).to.equal('late-profile-id');
+      expect(ls.callCount).to.equal(3);
+    });
   });
   describe('TMA User Profile ID', function () {
     const userId = 'user-profile-id-123';
