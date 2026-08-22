@@ -16,7 +16,15 @@ Epom Ad Server is white-label: each network runs its own deployment on its own d
 
 All ad units on the page are auctioned in a **single request** with one `imp` per ad unit. The ad server resolves the page as a unit, so its roadblock and one-campaign-per-page rules require every slot to be decided together.
 
-Supported media types: `banner`.
+Supported media types: `banner`, `video`, `native`.
+
+The ad server names the format it filled on each bid's `mtype`, so a mixed ad unit is offered whole
+and answered with whichever the ad server had demand for. Video comes back as VAST in `adm`; native
+as an OpenRTB native response, with each asset carried under the id the page asked it under.
+
+Which slot a placement can fill is decided on the ad server, by the placement's own type — a Video
+Placement answers video impressions, a Native Placement native ones. A slot whose placement is of a
+different type than the ad unit declares is simply not filled.
 
 The same parameters are accepted by the Prebid Server adapter, which posts to `https://{{.Host}}/hb/bid` on the host the PBS host company configures.
 

@@ -1,7 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { type Bid } from '../src/bidfactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { deepSetValue, isPlainObject } from '../src/utils.js';
 
 /**
@@ -117,7 +117,10 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     netRevenue: true,
     ttl: DEFAULT_TTL,
     currency: DEFAULT_CURRENCY,
-    mediaType: BANNER,
+    // No mediaType here on purpose: pinning one makes the converter believe every
+    // response whatever the ad server sent. Left off, it reads `mtype` off the bid,
+    // which is the field the ad server sets per creative — and a bid that names no
+    // media type is discarded rather than rendered as the wrong one.
   },
 
   imp(buildImp, bidRequest, context) {
@@ -171,7 +174,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   // server on its own domain and only reaches the auction because the POST is
   // credentialed (see buildRequests).
   disclosureURL: 'https://epom.com/deviceStorage.json',
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
    * Only the bidder's own parameters are checked, and each check is the client-side

@@ -33,6 +33,31 @@ function bannerBid(overrides = {}) {
   };
 }
 
+function videoBid(overrides = {}) {
+  return bannerBid({
+    mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } },
+    sizes: [[640, 480]],
+    ...overrides,
+  });
+}
+
+function nativeBid(overrides = {}) {
+  return bannerBid({
+    mediaTypes: {
+      native: {
+        ortb: {
+          ver: '1.2',
+          assets: [
+            { id: 1, required: 1, title: { len: 90 } },
+            { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+          ],
+        },
+      },
+    },
+    ...overrides,
+  });
+}
+
 function bidderRequestFor(bids) {
   return {
     bidderCode: 'epom_as',
@@ -60,10 +85,12 @@ describe('Epom Ad Server adapter', function () {
   });
 
   describe('spec metadata', function () {
-    it('declares the bidder code, GVL ID and banner support', function () {
+    it('declares the bidder code, GVL ID and the media types the ad server serves', function () {
       expect(spec.code).to.equal('epom_as');
       expect(spec.gvlid).to.equal(849);
-      expect(spec.supportedMediaTypes).to.deep.equal(['banner']);
+      // Prebid will not offer a slot to a bidder that has not declared its media type, so
+      // this list is what decides which auctions ever reach us — not the ad server.
+      expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video', 'native']);
     });
 
     // The POST is credentialed, so the ad server's identity cookie reaches the
@@ -287,10 +314,10 @@ describe('Epom Ad Server adapter', function () {
       ]);
     });
 
-    // The converter pins context.mediaType to banner; without it the default
-    // ORTB processors would populate imp.video for a mixed ad unit and the ad
-    // server would be asked for a format it does not sell.
-    it('sends only a banner imp for a mixed banner+video ad unit', async function () {
+    // A mixed ad unit now offers both, and the ad server answers with whichever it
+    // filled — the bid's mtype says which. Stripping video here, as this adapter did
+    // while it sold banner only, would decide the auction on the page's behalf.
+    it('offers both formats for a mixed banner+video ad unit', async function () {
       const requests = await buildOne([bannerBid({
         mediaTypes: {
           banner: { sizes: [[300, 250]] },
@@ -299,7 +326,10 @@ describe('Epom Ad Server adapter', function () {
       })]);
 
       expect(requests[0].data.imp[0].banner).to.exist;
-      expect(requests[0].data.imp[0].video).to.not.exist;
+      if (FEATURES.VIDEO) {
+        expect(requests[0].data.imp[0].video).to.exist;
+        expect(requests[0].data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
+      }
     });
 
     it('defaults the request currency to USD', async function () {
@@ -505,6 +535,66 @@ describe('Epom Ad Server adapter', function () {
       expect(spec.interpretResponse(response, request)).to.deep.equal([]);
     });
 
+    // mtype is what tells the converter which kind of creative came back. The ad server
+    // stamps it per creative; without it a bid is discarded rather than guessed at, which
+    // is why every fixture here carries one.
+    it('reads a video bid back as video, with the VAST document as its markup', async function () {
+      const videoRequest = (await buildOne([videoBid()]))[0];
+      const vast = '<VAST version="4.0"><Ad><InLine/></Ad></VAST>';
+      const response = {
+        body: {
+          id: videoRequest.data.id,
+          cur: 'USD',
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 12, adm: vast, crid: 'c1', w: 640, h: 480, mtype: 2 }] }],
+        },
+      };
+      const bids = spec.interpretResponse(response, videoRequest);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('video');
+      // The VAST itself is only unpacked when the build carries video support; the media
+      // type is decided above it either way.
+      if (FEATURES.VIDEO) {
+        expect(bids[0].vastXml).to.equal(vast);
+      }
+    });
+
+    it('reads a native bid back as native, with the assets the page asked for', async function () {
+      const nativeRequest = (await buildOne([nativeBid()]))[0];
+      const adm = JSON.stringify({
+        assets: [
+          { id: 1, required: 1, title: { text: 'Northwind Autumn Sale' } },
+          { id: 2, required: 1, img: { url: 'https://cdn.test/main.jpg', w: 1200, h: 627 } },
+        ],
+        link: { url: 'https://ads.test/click' },
+        imptrackers: ['https://ads.test/imp'],
+      });
+      const response = {
+        body: {
+          id: nativeRequest.data.id,
+          cur: 'USD',
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 4, adm, crid: 'c1', mtype: 4 }] }],
+        },
+      };
+      const bids = spec.interpretResponse(response, nativeRequest);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('native');
+      if (FEATURES.NATIVE) {
+        // The renderer matches a response asset to a requested one by id alone.
+        expect(bids[0].native.ortb.assets.map((a) => a.id)).to.deep.equal([1, 2]);
+      }
+    });
+
+    it('discards a bid that names no media type rather than rendering it as the wrong one', function () {
+      const response = {
+        body: {
+          id: request.data.id,
+          cur: 'USD',
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250 }] }],
+        },
+      };
+      expect(spec.interpretResponse(response, request)).to.deep.equal([]);
+    });
+
     it('returns nothing for a seatbid entry with no bids', function () {
       const response = { body: { id: request.data.id, seatbid: [{ seat: 'epom' }], cur: 'USD' } };
       expect(spec.interpretResponse(response, request)).to.deep.equal([]);
@@ -517,7 +607,7 @@ describe('Epom Ad Server adapter', function () {
         body: {
           id: request.data.id,
           cur: 'USD',
-          seatbid: [{ bid: [{ id: 's1', impid: 'not-our-imp', price: 3, adm: '<div>x</div>', crid: 'c1', w: 300, h: 250 }] }],
+          seatbid: [{ bid: [{ id: 's1', impid: 'not-our-imp', price: 3, adm: '<div>x</div>', crid: 'c1', w: 300, h: 250, mtype: 1 }] }],
         },
       };
 
@@ -536,6 +626,7 @@ describe('Epom Ad Server adapter', function () {
               impid: 'bid-1',
               price: 2.75,
               adm: '<div>creative</div>',
+              mtype: 1,
               crid: 'creative-99',
               w: 300,
               h: 250,
@@ -570,7 +661,7 @@ describe('Epom Ad Server adapter', function () {
         body: {
           id: request.data.id,
           cur: 'USD',
-          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250 }] }],
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250, mtype: 1 }] }],
         },
       };
 
@@ -586,7 +677,7 @@ describe('Epom Ad Server adapter', function () {
         body: {
           id: request.data.id,
           cur: 'USD',
-          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250, exp: 120 }] }],
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250, mtype: 1, exp: 120 }] }],
         },
       };
 
@@ -598,7 +689,7 @@ describe('Epom Ad Server adapter', function () {
         body: {
           id: request.data.id,
           cur: 'EUR',
-          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1.8, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250 }] }],
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 1.8, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250, mtype: 1 }] }],
         },
       };
 
@@ -619,6 +710,7 @@ describe('Epom Ad Server adapter', function () {
               impid: 'bid-1',
               price: 2.75,
               adm: '<div>creative</div>',
+              mtype: 1,
               crid: 'creative-99',
               dealid: 'epom-direct',
               w: 300,
@@ -642,8 +734,8 @@ describe('Epom Ad Server adapter', function () {
           cur: 'USD',
           seatbid: [{
             bid: [
-              { id: 's1', impid: 'bid-1', price: 1.5, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250 },
-              { id: 's2', impid: 'bid-2', price: 4.0, adm: '<div>b</div>', crid: 'c2', w: 728, h: 90 },
+              { id: 's1', impid: 'bid-1', price: 1.5, adm: '<div>a</div>', crid: 'c1', w: 300, h: 250, mtype: 1 },
+              { id: 's2', impid: 'bid-2', price: 4.0, adm: '<div>b</div>', crid: 'c2', w: 728, h: 90, mtype: 1 },
             ],
           }],
         },
