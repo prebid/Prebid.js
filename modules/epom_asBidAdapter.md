@@ -26,6 +26,22 @@ Which slot a placement can fill is decided on the ad server, by the placement's 
 Placement answers video impressions, a Native Placement native ones. A slot whose placement is of a
 different type than the ad unit declares is simply not filled.
 
+## Instream video needs a cache setting
+
+Prebid refuses an instream bid that carries only `vastXml` with no `cache` configured, and it does
+so before the bid reaches `bidsBackHandler` — so the ad server answers correctly and the slot still
+reports no bid, with the reason only in the console. Set one of:
+
+```js
+pbjs.setConfig({ cache: { allowVastXmlOnly: true } });  // player takes VAST as a string
+pbjs.setConfig({ cache: { useLocal: true } });          // player wants a URL, cached in the browser
+pbjs.setConfig({ cache: { url: '…' } });                // Prebid Cache — required for Google Ad Manager
+```
+
+`allowVastXmlOnly` is enough for a player that accepts a VAST document directly, which IMA and JW
+both do. A hosted Prebid Cache is only required when the ad server is rendered through Google Ad
+Manager, which builds its VAST tag around `hb_uuid`.
+
 The same parameters are accepted by the Prebid Server adapter, which posts to `https://{{.Host}}/hb/bid` on the host the PBS host company configures.
 
 ## Bid TTL
