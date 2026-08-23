@@ -134,8 +134,17 @@ export function getPageVisibility() {
   }
 }
 
+export function getUserInteractionSignals() {
+  try {
+    return window.TRC?.getCtx?.();
+  } catch (e) {
+    return undefined;
+  }
+}
+
 export function getDeviceExtSignals(existingExt = {}) {
   const viewport = getViewportCoordinates();
+  const bs = getUserInteractionSignals();
   return {
     ...existingExt,
     bot: detectBot(),
@@ -143,7 +152,8 @@ export function getDeviceExtSignals(existingExt = {}) {
     scroll: {
       top: Math.round(viewport.top),
       left: Math.round(viewport.left)
-    }
+    },
+    ...(bs && { bs })
   };
 }
 
