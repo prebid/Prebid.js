@@ -12,7 +12,6 @@ const BIDDER_CODE = 'revnew';
 const REQUEST_URL = 'https://fast.nexx360.io/revnew';
 const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '1.0';
-const GVLID = 1468;
 const REVNEW_KEY = 'revnew_storage';
 
 type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
@@ -89,7 +88,6 @@ const buildRequests = (
 
 export const spec:BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,
