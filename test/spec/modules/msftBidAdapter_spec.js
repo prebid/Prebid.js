@@ -1418,7 +1418,7 @@ describe('msftBidAdapter', function () {
         expect(bid.native.ortb.assets[2].data.value).to.equal('AST');
         expect(bid.native.ortb.eventtrackers[0].event).to.equal(1);
         expect(bid.native.ortb.eventtrackers[0].method).to.equal(1);
-        expect(bid.native.ortb.eventtrackers[0].url).to.contains(['https://nym2-ib.adnxs.com/it']);
+        expect(bid.native.ortb.eventtrackers[0].url).to.include('https://nym2-ib.adnxs.com/it');
       });
     }
   });
