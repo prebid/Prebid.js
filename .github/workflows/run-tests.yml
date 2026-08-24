@@ -52,6 +52,11 @@ on:
         description: URL to deb to install before tests
         type: string
         required: false
+      browsers-json:
+        description: JSON file listing the browsers to test on (BROWSERS_JSON env variable)
+        type: string
+        required: false
+        default: 'browsers.json'
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -98,14 +103,23 @@ jobs:
       TEST_CHUNK: ${{ matrix.chunk-no }}
       BROWSER: ${{ inputs.browser }}
       BROWSER_VERSION: ${{ inputs.browser-version }}
+      BROWSERS_JSON: ${{ inputs.browsers-json }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
     concurrency:
-      # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
+      # The following generates 'browserstack-<test-cmd>-<run_id>' when inputs.browserstack is
+      # true, and a hopefully unique ID otherwise
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
-      # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.browserstack && format('browserstack-{0}', github.run_id) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
+      # so we add the run_id to serialize only within one push / pull request.
+      # test-cmd is in the key for the same reason. Every browserstack suite in a run
+      # would otherwise share one group, and anything past the single queue slot is
+      # *cancelled* rather than queued: one chunk runs, one waits, the rest die. That
+      # holds a second suite (the ES5 e2e job) hostage to the 8 chunks of the first,
+      # and adding a third suite starts killing jobs outright.
+      # Keying by command gives each suite its own queue; the account's parallel session
+      # limit is enforced separately by the wait-for-browserstack step below.
+      group: ${{ inputs.browserstack && format('browserstack-{0}-{1}', inputs.test-cmd, github.run_id) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
       cancel-in-progress: false
 
     runs-on: ${{ inputs.runs-on }}
