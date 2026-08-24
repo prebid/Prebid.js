@@ -66,3 +66,5 @@ require('test/mocks/percentInView.js');
 require('test/mocks/storageManager.js');
 require('modules/rtdModule/index.js');
 require('modules/fpdModule/index.js');
+// include devtoolsMcp to avoid tests accidentally auto-loading it (and getting confused by the extra network call)
+require('modules/devtoolsMcp/index.js');

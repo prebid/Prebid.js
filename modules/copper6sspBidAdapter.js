@@ -7,7 +7,9 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn
+  createInterpretResponseFn,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
@@ -84,6 +86,8 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   disclosureURL: "https://privacy.copper6.com/deviceStorage.json",
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);
