@@ -180,11 +180,17 @@ function getBidderRequest(overrides = {}) {
 }
 
 describe('Ezoic adapter', function () {
+  let sandbox;
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+  });
+
   afterEach(function () {
     // The adapter caches a generated pageview id/epoch on window for the
     // life of the page; reset it between tests so each test starts fresh.
     delete window.__ezoicPrebidAdapter;
-    sinon.restore();
+    sandbox.restore();
     resetWinDimensions();
   });
 
@@ -217,7 +223,7 @@ describe('Ezoic adapter', function () {
       // Karma runs specs inside an iframe, so `window.top` (what
       // getWinDimensions actually reads via canAccessWindowTop) is the outer
       // browser window, not the local `window` binding.
-      sinon.stub(window.top, 'innerWidth').value(1280);
+      sandbox.stub(window.top, 'innerWidth').value(1280);
       resetWinDimensions();
       const bidderRequest = getBidderRequest({
         ortb2: {
@@ -274,7 +280,7 @@ describe('Ezoic adapter', function () {
     });
 
     it('generates and reuses adapter pageview metadata across auctions', function () {
-      sinon.stub(Date, 'now').returns(1714752000000);
+      sandbox.stub(Date, 'now').returns(1714752000000);
 
       const firstRequest = spec.buildRequests([getBidRequest()], getBidderRequest());
       const secondRequest = spec.buildRequests([getBidRequest({ bidId: 'ezoic-bid-2' })], getBidderRequest());
@@ -290,7 +296,7 @@ describe('Ezoic adapter', function () {
     });
 
     it('prefers core pageViewId and refreshes epoch when it changes', function () {
-      sinon.stub(Date, 'now').returns(1714752000000);
+      const nowStub = sandbox.stub(Date, 'now').returns(1714752000000);
 
       const firstRequest = spec.buildRequests([getBidRequest()], getBidderRequest({
         pageViewId: 'core-pageview-1'
@@ -307,8 +313,7 @@ describe('Ezoic adapter', function () {
       expect(secondPayload.ezoic.pageviewId).to.equal('core-pageview-1');
       expect(secondPayload.ezoic.pageviewEpoch).to.equal(1714752000);
 
-      sinon.restore();
-      sinon.stub(Date, 'now').returns(1714752600000);
+      nowStub.returns(1714752600000);
 
       const thirdRequest = spec.buildRequests([getBidRequest({ bidId: 'ezoic-bid-3' })], getBidderRequest({
         pageViewId: 'core-pageview-2'
@@ -321,7 +326,7 @@ describe('Ezoic adapter', function () {
     });
 
     it('falls back to adapter-generated pageview metadata when core omits pageViewId', function () {
-      sinon.stub(Date, 'now').returns(1714752000000);
+      sandbox.stub(Date, 'now').returns(1714752000000);
 
       const request = spec.buildRequests([getBidRequest()], getBidderRequest());
       const payload = JSON.parse(request.data);
