@@ -23,13 +23,13 @@ export interface AppnexusUserParams {
 
 /** Parameters accepted by the AppNexus bidder adapter. */
 export interface AppnexusBidderParams {
-  placementId?: number | string;
-  /** @deprecated Use `placementId`. */
   placement_id?: number | string;
+  /** @deprecated Use `placement_id`. */
+  placementId?: number | string;
   member?: number | string;
-  invCode?: string;
-  /** @deprecated Use `invCode`. */
   inv_code?: string;
+  /** @deprecated Use `inv_code`. */
+  invCode?: string;
   allowSmallerSizes?: boolean;
   allow_smaller_sizes?: boolean;
   usePaymentRule?: boolean;
