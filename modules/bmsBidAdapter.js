@@ -38,7 +38,7 @@ export const spec = {
     const context = {
       publisherId: getPublisherIdFromBids(validBidRequests),
     };
-    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
+    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, null, converter);
 
     const bmsDataProcessor = (data) => JSON.stringify(data);
     const bmsOptions = { contentType: 'text/plain', withCredentials: true };
@@ -60,7 +60,7 @@ export const spec = {
           burl: bid.burl || null,
           meta: {
             advertiserDomains: bid.adomain || [],
-            networkId: bid.ext?.networkId || GVLID,
+            networkId: bid.ext?.networkId,
             networkName: bid.ext?.networkName || 'BMS',
           }
         };
