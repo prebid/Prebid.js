@@ -19,7 +19,6 @@ export const appnexusAliases = [
   { code: 'featureforward', gvlid: 32 },
   { code: 'adasta', gvlid: 32 },
   { code: 'beintoo', gvlid: 618 },
-  { code: 'projectagora', gvlid: 1032 },
   { code: 'stailamedia', gvlid: 32 },
   { code: 'uol', gvlid: 32 },
   { code: 'adzymic', gvlid: 723 },
