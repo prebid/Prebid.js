@@ -205,7 +205,6 @@ describe('msftBidAdapter', function () {
 
     it('should build a banner request without eids but request.user.ext exists', function () {
       let testBidRequest = deepClone(baseBidRequests);
-      // testBidRequest.user.ext = {};
       const bidRequests = [{
         ...testBidRequest,
         mediaTypes: {
