@@ -149,7 +149,9 @@ describe('msftBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false, 'inv_code is number, should be string');
     });
+  });
 
+  describe('buildRequests', function () {
     it('should build a basic banner request', function () {
       let testBidRequest = deepClone(baseBidRequests);
       testBidRequest.params = Object.assign({}, testBidRequest.params, {
