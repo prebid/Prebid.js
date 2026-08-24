@@ -19,7 +19,6 @@ import {
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
   'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';
-const GVLID = 1105;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_BID_TTL = 1200;
 
@@ -29,7 +28,6 @@ const converter = createOrtbConverter(ortbConverter, BANNER, DEFAULT_CURRENCY, o
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   // Validate bid request
