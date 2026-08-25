@@ -145,16 +145,21 @@ export function getUserInteractionSignals() {
 export function getDeviceExtSignals(existingExt = {}) {
   const viewport = getViewportCoordinates();
   const bs = getUserInteractionSignals();
-  return {
+  const ext = {
     ...existingExt,
     bot: detectBot(),
     visibility: getPageVisibility(),
     scroll: {
       top: Math.round(viewport.top),
       left: Math.round(viewport.left)
-    },
-    ...(bs && { bs })
+    }
   };
+  if (bs) {
+    ext.bs = bs;
+  } else {
+    delete ext.bs;
+  }
+  return ext;
 }
 
 export function getElementSignals(bidRequest) {
