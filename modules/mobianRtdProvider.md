@@ -35,13 +35,13 @@ pbjs.setConfig({
         advertiserTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // advertiserTargeting: ['genres', 'emotions', 'themes'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tq', 'tg', 'themes', 'tones'
 
         // Enable targeting keys for publisher data
         publisherTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // publisherTargeting: ['tones', 'risk'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tq', 'tg', 'themes', 'tones'
       }
     }]
   }
@@ -50,7 +50,9 @@ pbjs.setConfig({
 
 ## Functionality
 
-At a high level, the Mobian RTD Module is designed to call the Mobian Contextal API on page load, requesting the Mobian classifications and results for the URL. The classifications and results are designed to be picked up by any SSP or DSP in the Prebid.js ecosystem. The module also supports placing the Mobian classifications on each ad slot on the page, thus allowing for targeting within GAM.
+At a high level, the Mobian RTD Module calls Mobian services on page load, requesting the configured classifications and results for the URL. Contextual classifications are requested from the Contextual API assessment endpoint. When the `tq` traffic-quality key is configured, its request-specific result is requested separately from `quality.outcomes.net`. Configurations that request both types of data make the two requests independently so either result can still be used if the other request fails. The classifications and results are designed to be picked up by any SSP or DSP in the Prebid.js ecosystem. The module also supports placing the Mobian classifications on each ad slot on the page, thus allowing for targeting within GAM.
+
+`quality.outcomes.net` is intended as the service boundary for independently optional runtime-quality signals. IVT keeps the signal-specific `/api/prebid/v1/ivt` contract used here. Predicted viewability is planned as a separate `/api/prebid/v1/viewability` contract because it will require placement- and ad-unit-specific inputs; this module does not request or expose viewability yet.
 
 ## Available Classifications
 
@@ -159,6 +161,30 @@ p0 = Advertisers (via Campaign IDs) should AVOID targeting these personas
 p1 = Advertisers (via Campaign IDs) should target these personas
 
 *AP Values is in the early stages of testing and is subject to change.
+
+------------------
+
+Traffic Quality (`tq`)
+
+quality.outcomes.net endpoint key: mobian_tq
+
+Targetable Key: mobian_tq
+
+Possible values: 1 when the request matches an invalid-traffic signal; omitted otherwise
+
+Description: Traffic Quality is a request-specific signal obtained from Mobian's standalone IVT endpoint. Unlike contextual classifications, it is evaluated for the current browser request and is not served from the assessment response cache.
+
+------------------
+
+Traffic Group (`tg`)
+
+Prebid.outcomes.net endpoint key: mobian_tg
+
+Targetable Key: mobian_tg
+
+Possible values: Integer values defined by the Mobian response
+
+Description: Traffic Group is returned with the contextual assessment results and remains independent from the request-specific `tq` signal.
 
 ------------------
 
