@@ -382,8 +382,8 @@ export function politeTriggerPixel(url, credentials = 'include') {
   runBackgroundTask(triggerSync);
 }
 
-export function politeInsertUserSyncIframe(url) {
-  runBackgroundTask(() => insertUserSyncIframe(url));
+export function politeInsertUserSyncIframe(url, done, timeout, onCleanup) {
+  runBackgroundTask(() => insertUserSyncIframe(url, done, timeout, onCleanup));
 }
 
 export function triggerPixel(url, done, timeout) {
@@ -432,17 +432,19 @@ export function insertHtmlIntoIframe(htmlCode) {
 
 /**
  * The sync iframes inserted by this instance, tracked by element reference so that several Prebid
- * instances running on the same page do not remove each other's.
+ * instances running on the same page do not remove each other's. Each iframe may have an associated
+ * callback that releases work owned by its consumer before the iframe is removed.
  */
-const OWN_SYNC_IFRAMES = new WeakSet();
+const OWN_SYNC_IFRAMES = new WeakMap();
 
 /**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
+ * @param  {function} [onCleanup] called when the iframe is removed by `removeUserSyncIframes`
  */
-export function insertUserSyncIframe(url, done, timeout) {
+export function insertUserSyncIframe(url, done, timeout, onCleanup) {
   if (!url) return;
   const iframe = createIframe(document, {
     sandbox: 'allow-scripts allow-same-origin',
@@ -452,7 +454,7 @@ export function insertUserSyncIframe(url, done, timeout) {
     height: '0px',
     display: 'none'
   });
-  OWN_SYNC_IFRAMES.add(iframe);
+  OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
@@ -467,7 +469,16 @@ export function insertUserSyncIframe(url, done, timeout) {
 export function removeUserSyncIframes() {
   const iframes = Array.from(document.querySelectorAll('iframe'))
     .filter(iframe => OWN_SYNC_IFRAMES.has(iframe));
-  iframes.forEach(iframe => iframe.parentNode?.removeChild(iframe));
+  iframes.forEach(iframe => {
+    const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
+    OWN_SYNC_IFRAMES.delete(iframe);
+    try {
+      onCleanup?.();
+    } catch (error) {
+      logError('Error cleaning up user sync iframe', error);
+    }
+    iframe.parentNode?.removeChild(iframe);
+  });
   return iframes.length;
 }
 
