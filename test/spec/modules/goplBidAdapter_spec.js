@@ -470,6 +470,7 @@ describe('gopl adapter functionality', function () {
     const serverResponse = {
       'body': {
         'id': bidderRequestId,
+        'bidid': 'resp-bidid-shared',
         'seatbid': [{
           'bid': [{
             'id': '3347324c-6889-46d2-a800-ae78a5214c06',
@@ -510,6 +511,7 @@ describe('gopl adapter functionality', function () {
     const serverResponseSingle = {
       'body': {
         'id': bidderRequestId,
+        'bidid': 'resp-bidid-single',
         'seatbid': [{
           'bid': [{
             'id': '3347324c-6889-46d2-a800-ae78a5214c06',
@@ -1009,6 +1011,20 @@ describe('gopl adapter functionality', function () {
       expect(bids.length).to.equal(1);
       expect(fledgeAuctionConfigs.length).to.equal(1);
     });
+
+    it('should propagate the response-level bidid into bid.meta.bidid', function () {
+      let resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
+
+      expect(resultSingle[0].meta).to.have.property('bidid').that.equals(serverResponseSingle.body.bidid);
+    });
+
+    it('response-level bidid is shared identically across all bids from the same response, even for different bid requests/ad units', function () {
+      let result = spec.interpretResponse(serverResponse, request);
+
+      expect(result.length).to.equal(2);
+      expect(result[0].meta.bidid).to.equal(serverResponse.body.bidid);
+      expect(result[1].meta.bidid).to.equal(serverResponse.body.bidid);
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -1052,6 +1068,14 @@ describe('gopl adapter functionality', function () {
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
       expect(notificationPayload).to.have.property('siteId').that.is.an('array');
       expect(notificationPayload).to.have.property('slotId').that.is.an('array');
+    });
+
+    it('should prefer meta.bidid over bidderRequestId as requestId, when bidid is present', function () {
+      const { bids } = prepareTestData();
+      let bid = { ...bids[0], meta: { bidid: 'resp-bidid-xyz' } };
+
+      let notificationPayload = spec.onBidWon(bid);
+      expect(notificationPayload).to.have.property('requestId').that.equals('resp-bidid-xyz');
     });
   });
 
