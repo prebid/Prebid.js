@@ -154,7 +154,8 @@ const converter = ortbConverter({
     return response;
   },
   bidResponse(buildBidResponse, bidResponse, context) {
-    const { bidRequest, seatbid } = context;
+    const { bidRequest, seatbid, ortbResponse = {} } = context;
+    const { bidid } = ortbResponse;
     const { seat } = seatbid;
     const { adm, admNative, ext = {}, burl } = bidResponse;
     const { cache, pricepl, platform, publisherid = '', vurls = [], siteid, slotid } = ext;
@@ -182,10 +183,13 @@ const converter = ortbConverter({
     }
 
     const bid = buildBidResponse(bidResponse, context);
+    bid.meta = Object.assign(bid.meta, {
+      networkName: seat,
+      pricepl,
+      platform,
+      bidid,
+    });
 
-    bid.meta.networkName = seat;
-    bid.meta.pricepl = pricepl;
-    bid.meta.platform = platform;
     if (burl) {
       bid.burl = burl;
     }
@@ -253,12 +257,12 @@ const getNotificationPayload = bidData => {
       };
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
-        const { platform = 'wpartner' } = meta;
+        const { platform = 'wpartner', bidid } = meta;
         const params = unpackParams(bidParams);
 
         // basic notification data
         const bidBasicData = {
-          requestId: bidderRequestId || bidderRequestsMap[requestId],
+          requestId: bidid || bidderRequestId || bidderRequestsMap[requestId],
           timeout: timeout || result.timeout,
           pvid: pageView.id,
           platform
