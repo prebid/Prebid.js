@@ -15,7 +15,7 @@ To use this module, you'll need to work with [Geoedge](https://www.geoedge.com/p
 gulp build --modules=geoedgeRtdProvider,...
 ```
 
-2) Use `setConfig` to instruct Prebid.js to initilize the geoedge module, as specified below.
+2) Use `setConfig` to instruct Prebid.js to initialize the geoedge module, as specified below.
 
 ## Configuration
 
