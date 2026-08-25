@@ -554,7 +554,10 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeV
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
-gulp.task('test-build-logic', execaTask('npx mocha \"./test/build-logic/**/*\"'));
+// match spec files only: a bare directory arg makes mocha filter by --extension and stay
+// non-recursive, but a glob is taken "as is without extensions" (see mocha's lookup-files),
+// so `**/*` would load test/build-logic/fixtures/**.ts as if they were specs.
+gulp.task('test-build-logic', execaTask('npx mocha \"./test/build-logic/**/*_spec.@(js|mjs)\"'));
 gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})));
 gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
