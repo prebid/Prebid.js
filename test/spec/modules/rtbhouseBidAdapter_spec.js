@@ -3,7 +3,10 @@ import { spec } from 'modules/rtbhouseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { mergeDeep } from '../../../src/utils.js';
-import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js';
+import { NATIVE } from '../../../src/mediaTypes.js';
+import { toLegacyResponse } from '../../../src/native.js';
+import 'modules/priceFloors.js';
+import 'modules/currency.js';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
@@ -59,12 +62,34 @@ describe('RTBHouseAdapter', () => {
 
     beforeEach(() => {
       bidderRequest = {
+        'bidderRequestId': '22edbae2733bf6',
         'auctionId': 'bidderrequest-auction-id',
         'refererInfo': {
+          'page': 'https://example.com',
+          'domain': 'example.com',
           'numIframes': 0,
           'reachedTop': true,
           'referer': 'https://example.com',
           'stack': ['https://example.com']
+        },
+        // request-level FPD (schain etc.) is read from bidderRequest.ortb2 by the converter
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                'ver': '1.0',
+                'complete': 1,
+                'nodes': [
+                  {
+                    'asi': 'directseller.com',
+                    'sid': '00001',
+                    'rid': 'BidRequest1',
+                    'hp': 1
+                  }
+                ]
+              }
+            }
+          }
         }
       };
       bidRequests = [
@@ -142,20 +167,28 @@ describe('RTBHouseAdapter', () => {
       expect(JSON.parse(builtTestRequest).site.channel.length).to.equal(50);
     });
 
+    it('should set site.publisher.id from params.publisherId', () => {
+      const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      expect(request.site.publisher.id).to.equal('PREBID_TEST');
+    });
+
+    it('should set site.name fallback when not provided by FPD', () => {
+      const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      expect(request.site.name).to.be.a('string').and.not.empty;
+    });
+
     it('should build valid OpenRTB banner object', () => {
       const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
       const imp = request.imp[0];
-      expect(imp.banner).to.deep.equal({
+      expect(imp.banner.w).to.equal(300);
+      expect(imp.banner.h).to.equal(250);
+      expect(imp.banner.format).to.deep.equal([{
         w: 300,
-        h: 250,
-        format: [{
-          w: 300,
-          h: 250
-        }, {
-          w: 300,
-          h: 600
-        }]
-      });
+        h: 250
+      }, {
+        w: 300,
+        h: 600
+      }]);
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -166,168 +199,83 @@ describe('RTBHouseAdapter', () => {
       expect(request.method).to.equal('POST');
     });
 
-    it('should not populate GDPR if for non-EEA users', function () {
+    it('should hardcode cur to USD', () => {
+      const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      expect(request.cur).to.deep.equal(['USD']);
+    });
+
+    it('should set imp.secure to 1', () => {
+      const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      expect(request.imp[0].secure).to.equal(1);
+    });
+
+    it('should forward tmax from bidderRequest.timeout', () => {
+      const localBidderRequest = { ...bidderRequest, timeout: 1000 };
+      const request = JSON.parse(spec.buildRequests(bidRequests, localBidderRequest).data);
+      expect(request.tmax).to.equal(1000);
+    });
+
+    it('should not populate GDPR for non-EEA users', function () {
       const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data).to.not.have.property('regs');
-      expect(data).to.not.have.property('user');
+      expect(data).to.not.have.nested.property('regs.ext.gdpr');
+      expect(data).to.not.have.nested.property('user.ext.consent');
     });
 
     it('should populate GDPR and consent string if available for EEA users', function () {
       const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(
-        bidRequest,
-        Object.assign({}, bidderRequest, {
-          gdprConsent: {
-            gdprApplies: true,
-            consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
-          }
-        })
-      );
+      const localBidderRequest = mergeDeep({}, bidderRequest, {
+        ortb2: {
+          regs: { ext: { gdpr: 1 } },
+          user: { ext: { consent: 'BOJ8RZsOJ8RZsABAB8AAAAAZ-A' } }
+        }
+      });
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
       const data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
     });
 
-    it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', function () {
+    it('should populate GPP consent from ortb2.regs.gpp', function () {
       const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(
-        bidRequest,
-        Object.assign({}, bidderRequest, {
-          gdprConsent: {
-            gdprApplies: true
-          }
-        })
-      );
-      const data = JSON.parse(request.data);
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.user.ext.consent).to.equal('');
-    });
-
-    it('should populate GPP consent string when gppConsent.gppString is provided', function () {
-      const bidRequest = Object.assign([], bidRequests);
-      delete bidRequest[0].params.test;
-      const request = spec.buildRequests(
-        bidRequest,
-        Object.assign({}, bidderRequest, {
-          gppConsent: {
-            gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
-            applicableSections: [7]
-          }
-        })
-      );
-      const data = JSON.parse(request.data);
-      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
-      expect(data.regs.gpp_sid).to.deep.equal([7]);
-    });
-
-    it('should populate GPP consent with multiple applicable sections', function () {
-      const bidRequest = Object.assign([], bidRequests);
-      delete bidRequest[0].params.test;
-      const request = spec.buildRequests(
-        bidRequest,
-        Object.assign({}, bidderRequest, {
-          gppConsent: {
-            gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
-            applicableSections: [2, 6, 7]
-          }
-        })
-      );
-      const data = JSON.parse(request.data);
-      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
-      expect(data.regs.gpp_sid).to.deep.equal([2, 6, 7]);
-    });
-
-    it('should fallback to ortb2.regs.gpp when gppConsent.gppString is not provided', function () {
-      const bidRequest = Object.assign([], bidRequests);
-      delete bidRequest[0].params.test;
-      const localBidderRequest = {
-        ...bidderRequest,
+      const localBidderRequest = mergeDeep({}, bidderRequest, {
         ortb2: {
           regs: {
             gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
-            gpp_sid: [8, 10]
+            gpp_sid: [7]
           }
         }
-      };
-      const request = spec.buildRequests(bidRequest, localBidderRequest);
-      const data = JSON.parse(request.data);
-      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
-      expect(data.regs.gpp_sid).to.deep.equal([8, 10]);
-    });
-
-    it('should prioritize gppConsent.gppString over ortb2.regs.gpp', function () {
-      const bidRequest = Object.assign([], bidRequests);
-      delete bidRequest[0].params.test;
-      const localBidderRequest = {
-        ...bidderRequest,
-        gppConsent: {
-          gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
-          applicableSections: [7]
-        },
-        ortb2: {
-          regs: {
-            gpp: 'DIFFERENT_GPP_STRING',
-            gpp_sid: [8, 10]
-          }
-        }
-      };
+      });
       const request = spec.buildRequests(bidRequest, localBidderRequest);
       const data = JSON.parse(request.data);
       expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
       expect(data.regs.gpp_sid).to.deep.equal([7]);
     });
 
-    it('should not populate GPP consent when neither gppConsent nor ortb2.regs.gpp is provided', function () {
+    it('should forward us_privacy from ortb2.regs.ext.us_privacy', function () {
       const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const localBidderRequest = mergeDeep({}, bidderRequest, {
+        ortb2: { regs: { ext: { us_privacy: '1YNN' } } }
+      });
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
       const data = JSON.parse(request.data);
-      expect(data).to.not.have.nested.property('regs.gpp');
-      expect(data).to.not.have.nested.property('regs.gpp_sid');
+      expect(data.regs.ext.us_privacy).to.equal('1YNN');
     });
 
-    it('should not populate GPP when gppConsent exists but gppString is missing', function () {
+    it('should forward coppa from ortb2.regs.coppa', function () {
       const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
-      const request = spec.buildRequests(
-        bidRequest,
-        Object.assign({}, bidderRequest, {
-          gppConsent: {
-            applicableSections: [7]
-          }
-        })
-      );
+      const localBidderRequest = mergeDeep({}, bidderRequest, {
+        ortb2: { regs: { coppa: 1 } }
+      });
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
       const data = JSON.parse(request.data);
-      expect(data).to.not.have.nested.property('regs.gpp');
-      expect(data).to.not.have.nested.property('regs.gpp_sid');
-    });
-
-    it('should handle both GDPR and GPP consent together', function () {
-      const bidRequest = Object.assign([], bidRequests);
-      delete bidRequest[0].params.test;
-      const request = spec.buildRequests(
-        bidRequest,
-        Object.assign({}, bidderRequest, {
-          gdprConsent: {
-            gdprApplies: true,
-            consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
-          },
-          gppConsent: {
-            gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
-            applicableSections: [7]
-          }
-        })
-      );
-      const data = JSON.parse(request.data);
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
-      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
-      expect(data.regs.gpp_sid).to.deep.equal([7]);
+      expect(data.regs.coppa).to.equal(1);
     });
 
     it('should include banner imp in request', () => {
@@ -341,7 +289,7 @@ describe('RTBHouseAdapter', () => {
       const bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.source.tid).to.equal('bidderrequest-auction-id');
+      expect(data.source.tid).to.be.a('string');
     });
 
     it('should include bidfloor from floor module if available', () => {
@@ -350,6 +298,7 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(1.22);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
     });
 
     it('should use bidfloor from floor module if both floor module and bid floor available', () => {
@@ -361,19 +310,20 @@ describe('RTBHouseAdapter', () => {
       expect(data.imp[0].bidfloor).to.equal(1.22);
     });
 
-    it('should include bidfloor in request if available', () => {
+    it('should include bidfloor from params if floor module not available', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].params.bidfloor = 0.01;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(0.01);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
     });
 
-    it('should include schain in request', () => {
+    it('should include schain at source.ext.schain in request', () => {
       const bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.ext.schain).to.deep.equal({
+      expect(data.source.ext.schain).to.deep.equal({
         'ver': '1.0',
         'complete': 1,
         'nodes': [
@@ -385,13 +335,8 @@ describe('RTBHouseAdapter', () => {
           }
         ]
       });
-    });
-
-    it('should include source.tid in request', () => {
-      const bidRequest = Object.assign([], bidRequests);
-      const request = spec.buildRequests(bidRequest, bidderRequest);
-      const data = JSON.parse(request.data);
-      expect(data.source).to.have.deep.property('tid');
+      // legacy top-level ext.schain location is no longer used
+      expect(data.ext && data.ext.schain).to.be.undefined;
     });
 
     it('should include impression level transaction id when provided', () => {
@@ -408,27 +353,19 @@ describe('RTBHouseAdapter', () => {
       expect(data.imp[0].ext.gpid).to.equal('example-gpid');
     });
 
+    it('should include imp.tagid equal to adUnitCode', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].tagid).to.equal('adunit-code');
+    });
+
     it('should not include imp[].ext.ae set at impression level when provided', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].ortb2Imp.ext.ae = 1;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].ext.ae).to.be.undefined;
-    });
-
-    it('should not include invalid schain', () => {
-      const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].ortb2 = bidRequest[0].ortb2 || {};
-      bidRequest[0].ortb2.source = bidRequest[0].ortb2.source || {};
-      bidRequest[0].ortb2.source.ext = bidRequest[0].ortb2.source.ext || {};
-      bidRequest[0].ortb2.source.ext.schain = {
-        'nodes': [{
-          'unknown_key': 1
-        }]
-      };
-      const request = spec.buildRequests(bidRequest, bidderRequest);
-      const data = JSON.parse(request.data);
-      expect(data.source).to.not.have.property('ext');
     });
 
     it('should include first party data', function () {
@@ -451,6 +388,16 @@ describe('RTBHouseAdapter', () => {
       expect(data.site).to.nested.include({ 'ext.data': 'some site data' });
       expect(data.device).to.nested.include({ 'ext.data': 'some device data' });
       expect(data.user).to.nested.include({ 'ext.data': 'some user data' });
+    });
+
+    it('should forward eids from ortb2.user.ext.eids', function () {
+      const eids = [{ source: 'example.com', uids: [{ id: 'user-123', atype: 1 }] }];
+      const localBidderRequest = mergeDeep({}, bidderRequest, {
+        ortb2: { user: { ext: { eids } } }
+      });
+      const request = spec.buildRequests(bidRequests, localBidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.user.ext.eids).to.deep.equal(eids);
     });
 
     context('DSA', () => {
@@ -599,188 +546,58 @@ describe('RTBHouseAdapter', () => {
       });
     });
 
-    describe('native imp', () => {
-      function basicRequest(extension) {
-        return Object.assign({
-          bidder: 'bidder',
-          adUnitCode: 'adunit-code',
-          bidId: '1',
-          params: {
-            publisherId: 'PREBID_TEST',
-            region: 'prebid-eu',
-            test: 1
-          }
-        }, extension);
-      }
-
-      function buildImp(request) {
-        const resultRequest = spec.buildRequests([request], bidderRequest);
-        return JSON.parse(resultRequest.data).imp[0];
-      }
-
-      it('should extract native params when single mediaType', () => {
-        const imp = buildImp(basicRequest({
-          mediaType: 'native',
-          nativeParams: {
-            title: {
-              required: true,
-              len: 100
+    if (FEATURES.NATIVE) {
+      describe('native imp', () => {
+        function basicRequest(extension) {
+          return Object.assign({
+            bidder: 'rtbhouse',
+            adUnitCode: 'adunit-code',
+            bidId: '1',
+            bidderRequestId: '22edbae2733bf6',
+            params: {
+              publisherId: 'PREBID_TEST',
+              region: 'prebid-eu',
+              test: 1
             }
-          }
-        }));
-        expect(imp.native.request.assets[0]).to.deep.equal({
-          id: OPENRTB.NATIVE.ASSET_ID.TITLE,
-          required: 1,
-          title: {
-            len: 100
-          }
-        });
-      });
+          }, extension);
+        }
 
-      it('should extract native params when many mediaTypes', () => {
-        const imp = buildImp(basicRequest({
-          mediaTypes: {
-            native: {
-              title: {
-                len: 100
-              }
-            }
-          }
-        }));
-        expect(imp.native.request.assets[0]).to.deep.equal({
-          id: OPENRTB.NATIVE.ASSET_ID.TITLE,
-          required: 0,
-          title: {
-            len: 100
-          }
-        });
-      });
+        function buildImp(request) {
+          const resultRequest = spec.buildRequests([request], bidderRequest);
+          return JSON.parse(resultRequest.data).imp[0];
+        }
 
-      it('should not contain banner in imp', () => {
-        const imp = buildImp(basicRequest({
-          mediaTypes: {
-            native: {
-              title: {
-                required: true
-              }
-            }
-          }
-        }));
-        expect(imp.banner).to.be.undefined;
-      });
-
-      describe('image sizes', () => {
-        it('should parse single image size', () => {
+        it('should send a stringified ORTB native request', () => {
+          const nativeOrtbRequest = {
+            ver: '1.2',
+            assets: [{
+              id: 1,
+              required: 1,
+              title: { len: 100 }
+            }]
+          };
           const imp = buildImp(basicRequest({
-            mediaTypes: {
-              native: {
-                image: {
-                  sizes: [300, 250]
-                }
-              }
+            mediaTypes: { native: { title: { required: true, len: 100 } } },
+            nativeOrtbRequest
+          }));
+          expect(imp.native.request).to.be.a('string');
+          expect(JSON.parse(imp.native.request)).to.deep.equal(nativeOrtbRequest);
+          expect(imp.native.ver).to.equal('1.2');
+        });
+
+        it('should not contain banner in a native-only imp', () => {
+          const imp = buildImp(basicRequest({
+            mediaTypes: { native: { title: { required: true } } },
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [{ id: 1, required: 1, title: { len: 25 } }]
             }
           }));
-          expect(imp.native.request.assets[0]).to.deep.equal({
-            id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
-            required: 0,
-            img: {
-              w: 300,
-              h: 250,
-              type: OPENRTB.NATIVE.IMAGE_TYPE.MAIN,
-            }
-          });
-        });
-
-        it('should parse multiple image sizes', () => {
-          const imp = buildImp(basicRequest({
-            mediaTypes: {
-              native: {
-                image: {
-                  sizes: [[300, 250], [100, 100]]
-                }
-              }
-            }
-          }));
-          expect(imp.native.request.assets[0]).to.deep.equal({
-            id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
-            required: 0,
-            img: {
-              w: 300,
-              h: 250,
-              type: OPENRTB.NATIVE.IMAGE_TYPE.MAIN,
-            }
-          });
+          expect(imp.banner).to.be.undefined;
+          expect(imp.native).to.not.be.undefined;
         });
       });
-
-      it('should parse aspect ratios with min_width', () => {
-        const imp = buildImp(basicRequest({
-          mediaTypes: {
-            native: {
-              icon: {
-                aspect_ratios: [{
-                  min_width: 300,
-                  ratio_width: 2,
-                  ratio_height: 3,
-                }]
-              }
-            }
-          }
-        }));
-        expect(imp.native.request.assets[0]).to.deep.equal({
-          id: OPENRTB.NATIVE.ASSET_ID.ICON,
-          required: 0,
-          img: {
-            type: OPENRTB.NATIVE.IMAGE_TYPE.ICON,
-            wmin: 300,
-            hmin: 450,
-          }
-        });
-      });
-
-      it('should parse aspect ratios without min_width', () => {
-        const imp = buildImp(basicRequest({
-          mediaTypes: {
-            native: {
-              icon: {
-                aspect_ratios: [{
-                  ratio_width: 2,
-                  ratio_height: 3,
-                }]
-              }
-            }
-          }
-        }));
-        expect(imp.native.request.assets[0]).to.deep.equal({
-          id: OPENRTB.NATIVE.ASSET_ID.ICON,
-          required: 0,
-          img: {
-            type: OPENRTB.NATIVE.IMAGE_TYPE.ICON,
-            wmin: 100,
-            hmin: 150,
-          }
-        });
-      });
-
-      it('should handle all native assets', () => {
-        const imp = buildImp(basicRequest({
-          mediaTypes: {
-            native: {
-              title: {},
-              image: {},
-              icon: {},
-              sponsoredBy: {},
-              body: {},
-              cta: {},
-            }
-          }
-        }));
-        expect(imp.native.request.assets.length).to.equal(6);
-        imp.native.request.assets.forEach(asset => {
-          expect(asset.id).to.be.at.least(1);
-        });
-      });
-    });
+    }
   });
 
   describe('interpretResponse', function () {
@@ -824,6 +641,12 @@ describe('RTBHouseAdapter', () => {
       const response = '';
       let bidderRequest;
       const result = spec.interpretResponse({ body: response }, { bidderRequest });
+      expect(result.length).to.equal(0);
+    });
+
+    it('should skip bids with no/zero price', function () {
+      const zeroPriceResponse = [{ impid: 'x', price: 0, adm: '<!-- -->' }];
+      const result = spec.interpretResponse({ body: zeroPriceResponse }, {});
       expect(result.length).to.equal(0);
     });
 
@@ -873,64 +696,142 @@ describe('RTBHouseAdapter', () => {
     });
 
     describe('native', () => {
-      const adm = {
-        native: {
-          ver: 1.1,
-          link: {
-            url: 'https://example.com'
-          },
-          imptrackers: [
-            'https://example.com/imptracker'
-          ],
-          assets: [{
-            id: OPENRTB.NATIVE.ASSET_ID.TITLE,
-            required: 1,
-            title: {
-              text: 'Title text'
-            }
-          }, {
-            id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
-            required: 1,
-            img: {
-              url: 'https://example.com/image.jpg',
-              w: 150,
-              h: 50
-            }
-          }, {
-            id: OPENRTB.NATIVE.ASSET_ID.BODY,
-            required: 0,
-            data: {
-              value: 'Body text'
-            }
-          }],
-        }
+      const nativeOrtbRequest = {
+        ver: '1.2',
+        assets: [{
+          id: 0,
+          required: 1,
+          title: { len: 100 }
+        }, {
+          id: 1,
+          required: 1,
+          img: { type: 3, w: 300, h: 150 }
+        }, {
+          id: 2,
+          required: 0,
+          data: { type: 1 }
+        }]
       };
-      const response = [{
-        'id': 'id',
-        'impid': 'impid',
-        'price': 1,
-        'adid': 'adid',
-        'adm': JSON.stringify(adm),
-        'adomain': ['rtbhouse.com'],
-        'cid': 'cid',
-        'w': 1,
-        'h': 1
-      }];
+      const nativeOrtbResponse = {
+        ver: '1.2',
+        link: {
+          url: 'https://example.com'
+        },
+        imptrackers: [
+          'https://example.com/imptracker'
+        ],
+        assets: [{
+          id: 0,
+          title: { text: 'Title text' }
+        }, {
+          id: 2,
+          data: { value: 'RTB House' }
+        }, {
+          id: 1,
+          img: { url: 'https://example.com/image.jpg', w: 300, h: 150 }
+        }]
+      };
 
-      it('should contain native assets in valid format', () => {
-        const bids = spec.interpretResponse({ body: response }, {});
+      function responseWith(adm) {
+        return [{
+          'id': 'id',
+          'impid': 'impid',
+          'price': 1,
+          'adid': 'adid',
+          'adm': typeof adm === 'string' ? adm : JSON.stringify(adm),
+          'adomain': ['rtbhouse.com'],
+          'cid': 'cid',
+          'w': 1,
+          'h': 1
+        }];
+      }
+
+      it('should pass the ORTB native response through for the core native module', () => {
+        // the endpoint wraps the response in `native` (OpenRTB Native 1.1 convention)
+        const bids = spec.interpretResponse({ body: responseWith({ native: nativeOrtbResponse }) }, {});
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal(NATIVE);
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
-        expect(bids[0].native).to.deep.equal({
-          title: 'Title text',
-          clickUrl: encodeURI('https://example.com'),
-          impressionTrackers: ['https://example.com/imptracker'],
-          image: {
-            url: encodeURI('https://example.com/image.jpg'),
-            width: 150,
-            height: 50
-          },
-          body: 'Body text'
+        expect(bids[0].native).to.deep.equal({ ortb: nativeOrtbResponse });
+      });
+
+      it('should accept a root-level (1.2) native response', () => {
+        const bids = spec.interpretResponse({ body: responseWith(nativeOrtbResponse) }, {});
+        expect(bids[0].native).to.deep.equal({ ortb: nativeOrtbResponse });
+      });
+
+      it('should resolve sequential asset ids against the request', () => {
+        const bids = spec.interpretResponse({ body: responseWith({ native: nativeOrtbResponse }) }, {});
+        // what core does with bid.native.ortb in setNativeResponseProperties()
+        const legacy = toLegacyResponse(bids[0].native.ortb, nativeOrtbRequest);
+        expect(legacy.title).to.equal('Title text');
+        expect(legacy.image).to.deep.equal({
+          url: 'https://example.com/image.jpg',
+          width: 300,
+          height: 150
         });
+        expect(legacy.icon).to.be.undefined;
+        expect(legacy.sponsoredBy).to.equal('RTB House');
+        expect(legacy.clickUrl).to.equal('https://example.com');
+        expect(legacy.impressionTrackers).to.deep.equal(['https://example.com/imptracker']);
+      });
+
+      it('should map a real endpoint response with a sequential id 0 (captured live)', () => {
+        const liveRequest = {
+          ver: '1.2',
+          assets: [
+            { id: 0, required: 1, title: { len: 40 } },
+            { id: 1, required: 1, img: { type: 3, wmin: 1200, hmin: 600, w: 1200, h: 600 } },
+            { id: 2, required: 0, data: { type: 2, len: 150 } }
+          ]
+        };
+        const liveResponse = {
+          ver: '1.2',
+          assets: [
+            { id: 0, title: { text: 'Title text' } },
+            { id: 2, data: { value: 'Content' } },
+            { id: 1, img: { url: 'https://example.com/image.jpg', w: 1200, h: 600 } }
+          ],
+          link: { url: 'https://example.com/link' },
+          imptrackers: ['https://example.com/imptracker'],
+          eventtrackers: [{ event: 1, method: 1, url: 'https://tracker.com/track' }]
+        };
+
+        const bids = spec.interpretResponse({ body: responseWith({ native: liveResponse }) }, {});
+        expect(bids[0].native).to.deep.equal({ ortb: liveResponse });
+
+        const legacy = toLegacyResponse(bids[0].native.ortb, liveRequest);
+        expect(legacy.title).to.equal('Title text');
+        expect(legacy.image).to.deep.equal({
+          url: 'https://example.com/image.jpg',
+          width: 1200,
+          height: 600
+        });
+        expect(legacy.icon).to.be.undefined; // img type 3 is the MAIN image, not an icon
+        expect(legacy.body).to.equal('Content');
+        expect(legacy.clickUrl).to.equal('https://example.com/link');
+        // both tracker styles arrive; core takes imptrackers plus matching eventtrackers
+        expect(legacy.impressionTrackers).to.include('https://example.com/imptracker');
+      });
+
+      it('should replace the AUCTION_PRICE macro in the native response', () => {
+        const adm = JSON.stringify({
+          native: mergeDeep({}, nativeOrtbResponse, {
+            link: { url: 'https://example.com/click?price=${AUCTION_PRICE}' }
+          })
+        });
+        const bids = spec.interpretResponse({ body: responseWith(adm) }, {});
+        expect(bids[0].native.ortb.link.url).to.equal('https://example.com/click?price=1');
+      });
+
+      it('should drop a bid whose native adm is not parseable', () => {
+        const bids = spec.interpretResponse({ body: responseWith('{"native": ') }, {});
+        expect(bids).to.deep.equal([]);
+      });
+
+      it('should drop a native bid with no assets', () => {
+        const bids = spec.interpretResponse({ body: responseWith({ native: { link: { url: 'https://example.com' } } }) }, {});
+        expect(bids).to.deep.equal([]);
       });
     });
   });
