@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "11.31.0-pre",
+  "version": "11.31.0",
   "description": "Header Bidding Management Library",
   "main": "dist/src/src/prebid.public.js",
   "types": "dist/src/src/prebid.public.d.ts",
