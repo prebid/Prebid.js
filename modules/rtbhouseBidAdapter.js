@@ -3,6 +3,7 @@ import { getOrigin } from '../libraries/getOrigin/index.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { CLIENT_SECTIONS, hasSection } from '../src/fpd/oneClient.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -72,6 +73,14 @@ const converter = ortbConverter({
     if (!request.site.page && bidderRequest.refererInfo?.page) {
       request.site.page = bidderRequest.refererInfo.page;
     }
+
+    // 'site' is the only client section the endpoint understands, and it must stay the only one
+    CLIENT_SECTIONS.filter(section => section !== 'site').forEach(section => {
+      if (hasSection(request, section)) {
+        logWarn(`${BIDDER_CODE}: dropping '${section}'; only 'site' is supported`);
+        delete request[section];
+      }
+    });
 
     if (!deepAccess(request, 'source.tid')) {
       deepSetValue(request, 'source.tid', bidderRequest.auctionId || '');

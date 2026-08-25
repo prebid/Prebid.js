@@ -177,6 +177,24 @@ describe('RTBHouseAdapter', () => {
       expect(request.site.name).to.be.a('string').and.not.empty;
     });
 
+    it('should keep site as the only client section when FPD provides app', () => {
+      const localBidderRequest = mergeDeep({}, bidderRequest, {
+        ortb2: { app: { bundle: 'com.example.app' } }
+      });
+      const request = JSON.parse(spec.buildRequests(bidRequests, localBidderRequest).data);
+      expect(request.app).to.be.undefined;
+      expect(request.site.publisher.id).to.equal('PREBID_TEST');
+    });
+
+    it('should keep site as the only client section when FPD provides dooh', () => {
+      const localBidderRequest = mergeDeep({}, bidderRequest, {
+        ortb2: { dooh: { id: 'dooh-id' } }
+      });
+      const request = JSON.parse(spec.buildRequests(bidRequests, localBidderRequest).data);
+      expect(request.dooh).to.be.undefined;
+      expect(request.site.publisher.id).to.equal('PREBID_TEST');
+    });
+
     it('should build valid OpenRTB banner object', () => {
       const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
       const imp = request.imp[0];
