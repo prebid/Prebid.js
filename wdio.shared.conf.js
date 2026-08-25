@@ -1,12 +1,3 @@
-const path = require('path');
-const fs = require('fs');
-
-if (!process.env.BABEL_CACHE_PATH) {
-  const cacheFile = path.resolve(__dirname, '.cache', 'babel-register.json');
-  fs.mkdirSync(path.dirname(cacheFile), {recursive: true});
-  process.env.BABEL_CACHE_PATH = cacheFile;
-}
-
 // Collected per worker and printed by `after` below. The run log is long - a failing
 // browserstack run is easily ten thousand lines, of which fewer than a hundred say
 // anything about the tests - and webdriverio reports each spec as its worker finishes,
@@ -27,7 +18,6 @@ exports.config = {
   mochaOpts: {
     ui: 'bdd',
     timeout: 60000,
-    compilers: ['js:@babel/register'],
   },
   // if you see error, update this to spec reporter and logLevel above to get detailed report.
   reporters: ['spec'],

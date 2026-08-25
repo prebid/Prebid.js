@@ -37,7 +37,8 @@
   ],
   "browserslist": [
     "> 0.25%",
-    "not ios_saf 11"
+    "not ios_saf 11",
+    "not dead"
   ],
   "keywords": [
     "advertising",
@@ -58,7 +59,6 @@
     "@babel/plugin-transform-runtime": "^7.29.7",
     "@babel/preset-env": "^7.29.7",
     "@babel/preset-typescript": "^7.29.7",
-    "@babel/register": "^7.29.7",
     "@babel/runtime-corejs3": "^7.29.7",
     "@chiragrupani/karma-chromium-edge-launcher": "^2.4.1",
     "@eslint/compat": "^1.4.1",
