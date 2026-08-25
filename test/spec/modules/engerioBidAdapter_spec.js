@@ -224,6 +224,37 @@ describe('engerioBidAdapter', () => {
       expect(body.site).to.be.undefined;
       expect(body.device).to.be.undefined;
     });
+
+    it('forwards the supply chain from ortb2.source.ext.schain', () => {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'api.engerio.sk', sid: '1000', hp: 1 }],
+      };
+      const request = spec.buildRequests([validBid], {
+        ...bidderRequest,
+        ortb2: { ...bidderRequest.ortb2, source: { ext: { schain } } },
+      });
+      const body = JSON.parse(request.data);
+      expect(body.source.ext.schain).to.deep.equal(schain);
+    });
+
+    it('forwards the supply chain from the legacy per-bid schain field', () => {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'api.engerio.sk', sid: '1001', hp: 1 }],
+      };
+      const request = spec.buildRequests([{ ...validBid, schain }], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.source.ext.schain).to.deep.equal(schain);
+    });
+
+    it('omits source when no supply chain is configured', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.source).to.be.undefined;
+    });
   });
 
   // ── interpretResponse ────────────────────────────────────────────────────────
