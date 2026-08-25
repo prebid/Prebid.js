@@ -2,6 +2,9 @@ import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp } from './utils.js';
 import { defer, PbPromise } from './utils/promise.js';
 import { config } from './config.js';
 import type { ModuleType } from "./activities/modules.ts";
+import type { TCFConsentData } from "./types/consent/tcf.d.ts";
+import type { GPPConsentData } from "./types/consent/gpp.d.ts";
+import type { USPConsentData } from "./types/consent/usp.d.ts";
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
@@ -16,16 +19,21 @@ export const CONSENT_USP = 'usp';
 export const CONSENT_COPPA = 'coppa';
 export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA;
 
+/**
+ * Consent data by framework. Every member type is declared in core, so it is known whether or not
+ * the module that populates it is part of the build; the data itself is only ever collected by that
+ * module.
+ */
 export interface ConsentData {
-  // with just core, only coppa is defined - everything else will be null.
-  // importing consent modules also imports the type definitions.
+  [CONSENT_GDPR]: TCFConsentData;
+  [CONSENT_GPP]: GPPConsentData;
+  [CONSENT_USP]: USPConsentData;
   [CONSENT_COPPA]: boolean;
 }
 
-/** Resolves to ConsentData[K] when module has augmented that key, else unknown (core-only build). */
-export type ConsentDataForKey<K extends ConsentType> = K extends keyof ConsentData ? ConsentData[K] : unknown;
+export type ConsentDataForKey<K extends ConsentType> = ConsentData[K];
 
-type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
+type ConsentDataFor<T extends ConsentType> = ConsentData[T];
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ConsentManagementConfig {

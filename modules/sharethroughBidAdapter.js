@@ -83,7 +83,7 @@ export const sharethroughAdapterSpec = {
         ext: {},
       },
       regs: {
-        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        coppa: bidderRequest.ortb2?.regs?.coppa === 1 ? 1 : 0,
         ext: {},
       },
       source: {

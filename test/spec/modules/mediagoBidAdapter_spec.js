@@ -878,6 +878,294 @@ describe('mediago: buildRequests with non-standard size', function() {
   });
 });
 
+describe('mediago: getDeviceOs branch coverage', function() {
+  let sandbox;
+  let originalUAD;
+
+  const makeBidRequest = () => [{
+    bidder: 'mediago',
+    params: { token: 'test-token' },
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+    sizes: [[300, 250]],
+    bidId: 'bid-os-test',
+    adUnitCode: 'ad-os-test',
+    userIdAsEids: [],
+  }];
+
+  const baseBidderRequest = {
+    bidderCode: 'mediago',
+    bidderRequestId: 'req-os-1',
+    refererInfo: { domain: 'example.com', page: 'https://example.com' },
+    timeout: 2000,
+    ortb2: {},
+  };
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(storage, 'getCookie').returns(null);
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    originalUAD = navigator.userAgentData;
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    Object.defineProperty(navigator, 'userAgentData', { configurable: true, value: originalUAD });
+    try { delete navigator.platform; } catch (e) {}
+  });
+
+  it('should use navigator.platform when userAgentData is unavailable', function() {
+    Object.defineProperty(navigator, 'userAgentData', { configurable: true, value: undefined });
+    const bidRequests = makeBidRequest();
+    spec.isBidRequestValid(bidRequests[0]);
+    const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+    expect(payload.device.os).to.be.a('string');
+    expect(payload.device.os.length).to.be.above(0);
+  });
+
+  it('should fallback to getOsInfo when both userAgentData and platform are falsy', function() {
+    Object.defineProperty(navigator, 'userAgentData', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'platform', { configurable: true, value: '' });
+    const bidRequests = makeBidRequest();
+    spec.isBidRequestValid(bidRequests[0]);
+    const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+    expect(payload.device.os).to.be.a('string');
+  });
+});
+
+describe('mediago: Native Ad Support', function() {
+  const nativeOrtbRequest = {
+    ver: '1.2',
+    assets: [
+      { id: 1, required: 1, img: { type: 3, wmin: 275, hmin: 144 } },
+      { id: 2, required: 1, title: { len: 100 } },
+      { id: 3, required: 1, data: { type: 1 } }
+    ],
+    eventtrackers: [{ event: 1, methods: [1, 2] }],
+    plcmttype: 1,
+    privacy: 1
+  };
+
+  const nativeBidRequests = [{
+    bidder: 'mediago',
+    params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
+    mediaTypes: { native: {} },
+    nativeOrtbRequest: nativeOrtbRequest,
+    adUnitCode: 'native-ad-1',
+    transactionId: 'native-txn-001',
+    bidId: 'native-bid-1',
+    bidderRequestId: 'native-req-1',
+    auctionId: 'native-auction-1',
+    userIdAsEids: [],
+  }];
+
+  const bidderRequest = {
+    bidderCode: 'mediago',
+    bidderRequestId: 'native-req-1',
+    refererInfo: { domain: 'example.com', page: 'https://example.com/article' },
+    timeout: 2000,
+    ortb2: {},
+  };
+
+  describe('buildRequests with native mediaType', function() {
+    beforeEach(() => { spec.isBidRequestValid(nativeBidRequests[0]); });
+
+    it('should build native imp with correct structure', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const imp = payload.imp[0];
+
+      expect(imp.banner).to.be.undefined;
+      expect(imp.native).to.exist;
+      expect(imp.native.ver).to.equal('1.2');
+      expect(imp.id).to.equal('native-bid-1');
+    });
+
+    it('should serialize nativeOrtbRequest correctly in native.request', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const parsed = JSON.parse(payload.imp[0].native.request);
+
+      expect(parsed.ver).to.equal('1.2');
+      expect(parsed.assets).to.have.lengthOf(3);
+    });
+
+    it('should set _mediaTypeMap correctly for native', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      expect(request._mediaTypeMap['native-bid-1']).to.equal('native');
+    });
+
+    it('should return empty imp when nativeOrtbRequest is missing', function() {
+      const reqsNoOrtb = [{ ...nativeBidRequests[0], nativeOrtbRequest: undefined }];
+      spec.isBidRequestValid(reqsNoOrtb[0]);
+      const payload = JSON.parse(spec.buildRequests(reqsNoOrtb, bidderRequest).data);
+      expect(payload.imp[0]).to.deep.equal({});
+    });
+
+    it('should handle mixed banner and native ad units', function() {
+      const mixedBidRequests = [
+        {
+          bidder: 'mediago',
+          params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          sizes: [[300, 250]],
+          adUnitCode: 'banner-ad-1',
+          bidId: 'banner-bid-1',
+          bidderRequestId: 'mixed-req-1',
+          auctionId: 'mixed-auction-1',
+          userIdAsEids: [],
+        },
+        nativeBidRequests[0]
+      ];
+
+      const request = spec.buildRequests(mixedBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp).to.have.lengthOf(2);
+      expect(payload.imp[0].banner).to.exist;
+      expect(payload.imp[0].native).to.be.undefined;
+      expect(payload.imp[1].native).to.exist;
+      expect(payload.imp[1].banner).to.be.undefined;
+      expect(request._mediaTypeMap['banner-bid-1']).to.equal('banner');
+      expect(request._mediaTypeMap['native-bid-1']).to.equal('native');
+    });
+
+    it('should default mediaTypeMap to banner when mediaTypes is absent', function() {
+      const noMediaTypeReqs = [{
+        bidder: 'mediago',
+        params: { token: '85a6b01e41ac36d49744fad726e3655d' },
+        sizes: [[300, 250]],
+        adUnitCode: 'ad-1',
+        bidId: 'bid-no-mt',
+        bidderRequestId: 'req-1',
+        auctionId: 'auc-1',
+        userIdAsEids: [],
+      }];
+      spec.isBidRequestValid(noMediaTypeReqs[0]);
+      const request = spec.buildRequests(noMediaTypeReqs, bidderRequest);
+      expect(request._mediaTypeMap['bid-no-mt']).to.equal('banner');
+    });
+  });
+
+  describe('interpretResponse with native bids', function() {
+    const nativeAdm = JSON.stringify({
+      assets: [
+        { id: 1, img: { type: 3, url: 'https://images.example.com/img/300x157.png', w: 300, h: 157 } },
+        { id: 2, title: { text: 'Test Native Ad Title', len: 20 } },
+        { id: 3, data: { type: 1, value: 'TestSponsor' } }
+      ],
+      link: { url: 'https://example.com/click' },
+      eventtrackers: [{ event: 1, method: 1, url: 'https://example.com/imp' }],
+    });
+
+    const nativeServerResponse = {
+      body: {
+        id: 'mgprebidjs_native-req-1',
+        seatbid: [{
+          bid: [{
+            id: 'bid-response-1',
+            impid: 'native-bid-1',
+            price: 0.15,
+            adm: nativeAdm,
+            adomain: ['advertiser.com'],
+            crid: 'creative-native-001',
+            nurl: 'https://example.com/win'
+          }]
+        }],
+        cur: 'USD'
+      }
+    };
+
+    const bidRequest = { _mediaTypeMap: { 'native-bid-1': 'native' } };
+
+    it('should return correct native bid response', function() {
+      const bids = spec.interpretResponse(nativeServerResponse, bidRequest);
+      expect(bids).to.have.lengthOf(1);
+
+      const bid = bids[0];
+      expect(bid.mediaType).to.equal('native');
+      expect(bid.width).to.equal(1);
+      expect(bid.height).to.equal(1);
+      expect(bid.cpm).to.equal(0.15);
+      expect(bid.creativeId).to.equal('creative-native-001');
+      expect(bid.native.ortb.assets).to.have.lengthOf(3);
+      expect(bid.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+    });
+
+    it('should handle adm wrapped with native key', function() {
+      const wrappedAdm = JSON.stringify({
+        native: {
+          assets: [{ id: 1, img: { type: 3, url: 'https://example.com/wrapped.png', w: 300, h: 157 } }],
+          link: { url: 'https://example.com/click-wrapped' }
+        }
+      });
+      const wrappedResponse = {
+        body: { id: 'mgprebidjs_wrapped', seatbid: [{ bid: [{ id: 'bid-w', impid: 'native-bid-1', price: 0.2, adm: wrappedAdm, crid: 'crid-w' }] }], cur: 'USD' }
+      };
+      const bids = spec.interpretResponse(wrappedResponse, bidRequest);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].native.ortb.assets[0].img.url).to.equal('https://example.com/wrapped.png');
+    });
+
+    it('should skip bid when adm is invalid JSON for native', function() {
+      const invalidResponse = {
+        body: { id: 'mgprebidjs_invalid', seatbid: [{ bid: [{ id: 'bid-inv', impid: 'native-bid-1', price: 0.1, adm: 'not-valid-json{{{', crid: 'crid-inv' }] }], cur: 'USD' }
+      };
+      expect(spec.interpretResponse(invalidResponse, bidRequest)).to.have.lengthOf(0);
+    });
+
+    it('should default to banner when _mediaTypeMap is not provided', function() {
+      const bids = spec.interpretResponse(nativeServerResponse, {});
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('banner');
+    });
+  });
+});
+
+describe('mediago: buildRequests endpoint routing', function() {
+  it('should use mgtechnology endpoint when bidderCode is mgtechnology', function() {
+    const bidRequests = [{
+      bidder: 'mgtechnology',
+      params: { token: 'test-token-mgt' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      sizes: [[300, 250]],
+      bidId: 'bid-mgt',
+      adUnitCode: 'ad-mgt',
+      userIdAsEids: [],
+    }];
+    spec.isBidRequestValid(bidRequests[0]);
+    const request = spec.buildRequests(bidRequests, {
+      bidderCode: 'mgtechnology',
+      bidderRequestId: 'req-mgt',
+      refererInfo: { domain: 'example.com', page: 'https://example.com' },
+      timeout: 2000,
+      ortb2: {},
+    });
+    expect(request.url).to.include('gbid.mediagotechnology.com');
+  });
+
+  it('should use mediago endpoint when bidderCode is mediago', function() {
+    const bidRequests = [{
+      bidder: 'mediago',
+      params: { token: 'test-token-mg' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      sizes: [[300, 250]],
+      bidId: 'bid-mg',
+      adUnitCode: 'ad-mg',
+      userIdAsEids: [],
+    }];
+    spec.isBidRequestValid(bidRequests[0]);
+    const request = spec.buildRequests(bidRequests, {
+      bidderCode: 'mediago',
+      bidderRequestId: 'req-mg',
+      refererInfo: { domain: 'example.com', page: 'https://example.com' },
+      timeout: 2000,
+      ortb2: {},
+    });
+    expect(request.url).to.include('gbid.mediago.io');
+  });
+});
+
 describe('mediago: onBidWon', function() {
   let sandbox;
   beforeEach(() => { sandbox = sinon.createSandbox(); sandbox.stub(utils, 'triggerPixel'); });

@@ -1265,7 +1265,7 @@ describe('Unit: Prebid Module', function () {
 
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
-      triggerPixelStub = sinon.stub(utils.internal, 'triggerPixel');
+      triggerPixelStub = sinon.stub(utils, 'politeTriggerPixel');
     });
 
     afterEach(function () {
@@ -1421,6 +1421,18 @@ describe('Unit: Prebid Module', function () {
       return renderAd(doc, bidId).then(() => {
         sinon.assert.calledOnce(triggerPixelStub);
         sinon.assert.calledWith(triggerPixelStub, url);
+      });
+    });
+
+    it('stores the GAM view URL on the winning bid', function () {
+      const viewUrl = 'http://www.example.com/view';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>'
+      });
+
+      return renderAd(doc, bidId, { viewUrl }).then(() => {
+        const winningBid = pbjs.getAllWinningBids().find(el => el.adId === adResponse.adId);
+        expect(winningBid.viewUrl).to.equal(viewUrl);
       });
     });
 

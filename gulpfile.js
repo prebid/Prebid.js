@@ -12,7 +12,7 @@ var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
 var webpackConfig = require('./webpack.conf.js');
-const standaloneDebuggingConfig = require('./webpack.debugging.js');
+const standaloneConfig = require('./webpack.standalone.js');
 const {bundler: makeBundlerConfig, manifest: makeManifestConfig} = require('./web-bundler/webpack.bundler.js');
 var helpers = require('./gulpHelpers.js');
 const execaTask = helpers.execaTask;
@@ -545,12 +545,12 @@ gulp.task(escapePostbidConfig);
 
 gulp.task('build-web-bundler-prod', gulp.series(buildManifest(false), makeWebpackPkg(makeManifestConfig(false)), gulp.parallel(buildManifestChecksums(false), buildOptionsInjector(false)), makeWebpackPkg(makeBundlerConfig(false))));
 gulp.task('build-web-bundler-dev', gulp.series(buildManifest(true), makeDevpackPkg(makeManifestConfig(true)), gulp.parallel(buildManifestChecksums(true), buildOptionsInjector(true)), makeDevpackPkg(makeBundlerConfig(true))));
-gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulp.parallel('build-web-bundler-dev', gulpBundle.bind(null, true))));
+gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneConfig), makeDevpackPkg(), gulp.parallel('build-web-bundler-dev', gulpBundle.bind(null, true))));
 gulp.task('build-bundle-dev', gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp'));
-gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulp.parallel('build-web-bundler-prod', gulpBundle.bind(null, false))));
+gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneConfig), makeWebpackPkg(), gulp.parallel('build-web-bundler-prod', gulpBundle.bind(null, false))));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
-gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeVerbose(standaloneConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
@@ -572,7 +572,7 @@ gulp.task('update-codeql', function (done) {
 });
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
-gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$/\\/dist\\/src\\/test/g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
 gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist'));

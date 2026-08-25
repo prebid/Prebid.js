@@ -1,9 +1,10 @@
 const helpers = require('../gulpHelpers.js');
+const addCommonConfig = require('../webpack.common.js');
 
 const MANIFEST_FILES = ['manifest.json', 'checksums.json', 'manifest.json.checksum', 'manifest.js.checksum'];
 
 function makeConfig(dev, cfg) {
-  return {
+  return addCommonConfig({
     mode: 'production',
     devtool: 'source-map',
     resolve: {
@@ -22,7 +23,7 @@ function makeConfig(dev, cfg) {
       ]
     },
     ...cfg
-  };
+  });
 }
 
 module.exports = {
