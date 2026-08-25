@@ -5,8 +5,8 @@ import {
   insertElement,
   logError,
   logWarn,
+  politeTriggerPixel,
   replaceMacros,
-  triggerPixel
 } from './utils.js';
 import * as events from './events.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR } from './constants.js';
@@ -59,7 +59,7 @@ declare module './events' {
 
 export const markWinningBid = hook('sync', function (bid) {
   (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_WIN]?.[TRACKER_METHOD_IMG] || [])
-    .forEach(url => triggerPixel(url));
+    .forEach(url => politeTriggerPixel(url));
   events.emit(BID_WON, bid);
   auctionManager.addWinningBid(bid);
 });

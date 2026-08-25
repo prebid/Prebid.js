@@ -30,17 +30,16 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     loader: 'babel-loader',
     options: {
       cacheDirectory: cacheDir, cacheCompression: false,
-      presets: [['@babel/preset-env', {modules: 'commonjs'}]],
-      // The coverage instrumentation options below were written by a bot (Claude Code).
-      // Keep the specs out of coverage: they run start to finish by definition, so counting them
-      // swamps the totals for the code they exercise. `exclude` is anchored to `cwd`, which has to be
-      // the precompiled tree because that's where the files being instrumented live. Both options are
-      // needed - `cwd` on its own is overridden by the nyc config lookup, which walks up to the
-      // nearest package.json and resets `cwd` to the repo root.
-      plugins: codeCoverage ? [['babel-plugin-istanbul', {
+      plugins: ['@babel/plugin-transform-modules-commonjs'].concat(codeCoverage ? [['babel-plugin-istanbul', {
+        // The coverage instrumentation options below were written by a bot (Claude Code).
+        // Keep the specs out of coverage: they run start to finish by definition, so counting them
+        // swamps the totals for the code they exercise. `exclude` is anchored to `cwd`, which has to be
+        // the precompiled tree because that's where the files being instrumented live. Both options are
+        // needed - `cwd` on its own is overridden by the nyc config lookup, which walks up to the
+        // nearest package.json and resets `cwd` to the repo root.
         cwd: helpers.getPrecompiledPath(),
         exclude: ['test/**']
-      }]] : []
+      }]] : [])
     }
   })
   return webpackConfig;

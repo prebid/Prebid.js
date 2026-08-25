@@ -871,6 +871,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "advertronic",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adverxo",
       "aliasOf": null,
       "gvlid": null,
@@ -1242,13 +1249,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "projectagora",
-      "aliasOf": "appnexus",
-      "gvlid": 1032,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "stailamedia",
       "aliasOf": "appnexus",
       "gvlid": 32,
@@ -1459,6 +1459,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "bidespresso",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": "https://auction.bidespresso.com/device-storage-disclosure.json"
+    },
+    {
+      "componentType": "bidder",
       "componentName": "bidfuse",
       "aliasOf": null,
       "gvlid": 1466,
@@ -1566,7 +1573,7 @@
       "componentType": "bidder",
       "componentName": "bms",
       "aliasOf": null,
-      "gvlid": 1105,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3218,7 +3225,7 @@
       "componentType": "bidder",
       "componentName": "mediafuse",
       "aliasOf": null,
-      "gvlid": 32,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3387,6 +3394,13 @@
       "componentName": "msftstaila",
       "aliasOf": "msft",
       "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "projectagora",
+      "aliasOf": "msft",
+      "gvlid": 1032,
       "disclosureURL": null
     },
     {
@@ -4212,7 +4226,7 @@
       "componentType": "bidder",
       "componentName": "revantage",
       "aliasOf": null,
-      "gvlid": 1588,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4240,7 +4254,7 @@
       "componentType": "bidder",
       "componentName": "revnew",
       "aliasOf": null,
-      "gvlid": 1468,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4794,6 +4808,13 @@
       "componentName": "suim",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "superedge",
+      "aliasOf": null,
+      "gvlid": 1554,
       "disclosureURL": null
     },
     {
@@ -5415,7 +5436,7 @@
       "componentType": "rtd",
       "componentName": "51Degrees",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/51DegreesRtdProvider.json"
     },
     {
       "componentType": "rtd",
@@ -5885,6 +5906,13 @@
       "componentType": "userId",
       "componentName": "amxId",
       "gvlid": 737,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "anonymisedId",
+      "gvlid": 1116,
       "disclosureURL": null,
       "aliasOf": null
     },
