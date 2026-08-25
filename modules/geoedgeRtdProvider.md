@@ -49,7 +49,7 @@ Parameters details:
 |params.key | String | Customer key |Required, contact Geoedge to get your key |
 |params.bidders | Object | Bidders to monitor |Optional, list of bidder to include / exclude from monitoring. Omitting this will monitor bids from all bidders. |
 |params.wap |Boolean |Wrap after client load |Optional, defaults to `false`. Set to `true` if you want to monitor only after the module has loaded the monitoring client. |
-|params.gpt |Boolean |Wrap all GPT ad slots |Optional, defaults to `false`. Set to `true` if you want to monitor all Google Publisher Tag ad slots, regaedless if the winning bid comes from Prebid or Google Ad Manager (Direct, Adx, Adesnse, Open Bidding, etc). |
+|params.gpt |Boolean |Wrap all GPT ad slots |Optional, defaults to `false`. Set to `true` if you want to monitor all Google Publisher Tag ad slots, regardless if the winning bid comes from Prebid or Google Ad Manager (Direct, Adx, AdSense, Open Bidding, etc). |
 |params.outstream |Boolean |Monitor outstream video |Optional, defaults to `false`. Set to `true` to extend monitoring to outstream video bids. See "Outstream video" below. |
 
 ## Outstream video
