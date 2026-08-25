@@ -15,7 +15,7 @@ To use this module, you'll need to work with [Geoedge](https://www.geoedge.com/p
 gulp build --modules=geoedgeRtdProvider,...
 ```
 
-2) Use `setConfig` to instruct Prebid.js to initilize the geoedge module, as specified below.
+2) Use `setConfig` to instruct Prebid.js to initialize the geoedge module, as specified below.
 
 ## Configuration
 
@@ -29,8 +29,8 @@ pbjs.setConfig({
             params: {
                 key: '123123', 
                 bidders: {
-                    'bidderA': true, // monitor bids form this bidder
-                    'bidderB': false // do not monitor bids form this bidder.
+                    'bidderA': true, // monitor bids from this bidder
+                    'bidderB': false // do not monitor bids from this bidder.
                 },
                 wap: true
             }
@@ -49,7 +49,7 @@ Parameters details:
 |params.key | String | Customer key |Required, contact Geoedge to get your key |
 |params.bidders | Object | Bidders to monitor |Optional, list of bidder to include / exclude from monitoring. Omitting this will monitor bids from all bidders. |
 |params.wap |Boolean |Wrap after client load |Optional, defaults to `false`. Set to `true` if you want to monitor only after the module has loaded the monitoring client. |
-|params.gpt |Boolean |Wrap all GPT ad slots |Optional, defaults to `false`. Set to `true` if you want to monitor all Google Publisher Tag ad slots, regaedless if the winning bid comes from Prebid or Google Ad Manager (Direct, Adx, Adesnse, Open Bidding, etc). |
+|params.gpt |Boolean |Wrap all GPT ad slots |Optional, defaults to `false`. Set to `true` if you want to monitor all Google Publisher Tag ad slots, regardless if the winning bid comes from Prebid or Google Ad Manager (Direct, Adx, AdSense, Open Bidding, etc). |
 |params.outstream |Boolean |Monitor outstream video |Optional, defaults to `false`. Set to `true` to extend monitoring to outstream video bids. See "Outstream video" below. |
 
 ## Outstream video
