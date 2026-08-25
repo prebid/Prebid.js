@@ -29,8 +29,8 @@ pbjs.setConfig({
             params: {
                 key: '123123', 
                 bidders: {
-                    'bidderA': true, // monitor bids form this bidder
-                    'bidderB': false // do not monitor bids form this bidder.
+                    'bidderA': true, // monitor bids from this bidder
+                    'bidderB': false // do not monitor bids from this bidder.
                 },
                 wap: true
             }
