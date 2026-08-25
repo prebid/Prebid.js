@@ -37,7 +37,8 @@
   ],
   "browserslist": [
     "> 0.25%",
-    "not ios_saf 11"
+    "not ios_saf 11",
+    "not dead"
   ],
   "keywords": [
     "advertising",
