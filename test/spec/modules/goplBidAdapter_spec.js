@@ -1,5 +1,6 @@
 import { assert, expect } from 'chai';
-import { spec } from 'modules/goplBidAdapter.js';
+import sinon from 'sinon';
+import { spec, storage } from 'modules/goplBidAdapter.js';
 import * as utils from 'src/utils.js';
 // import 'modules/schain.js';
 
@@ -7,6 +8,7 @@ const BIDDER_CODE = 'gopl';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
 const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
+const USER_SYNC_URL = 'https://ssp.wp.pl';
 
 describe('gopl adapter functionality', function () {
   function prepareTestData() {
@@ -682,6 +684,63 @@ describe('gopl adapter functionality', function () {
         'id': bidderRequestId,
       }
     };
+    const serverResponseNativeAdmNative = {
+      'body': {
+        'id': bidderRequestId,
+        'seatbid': [{
+          'bid': [{
+            'id': '3347324c-6889-46d2-a800-ae78a5214c06',
+            'impid': '080',
+            'price': 0.5,
+            'adid': 'lxHWkB7OnZeso3QiN1N4',
+            'nurl': '',
+            'admNative': JSON.stringify({
+              'assets': [
+                { 'id': 0, 'title': { 'text': 'Title' } },
+                { 'id': 1, 'img': { 'type': 3, 'url': 'https://img' } },
+              ],
+            }),
+            'adomain': ['adomain.pl'],
+            'cid': 'BZ4gAg21T5nNtxlUCDSW',
+            'crid': 'lxHWkB7OnZeso3QiN1N4',
+            'ext': {
+              'siteid': '8816',
+              'slotid': '80',
+            },
+          }],
+          'seat': 'dsp1',
+          'group': 0
+        }],
+        'cur': 'PLN'
+      }
+    };
+    const serverResponseWithBurl = {
+      'body': {
+        'id': bidderRequestId,
+        'seatbid': [{
+          'bid': [{
+            'id': '3347324c-6889-46d2-a800-ae78a5214c06',
+            'impid': '003',
+            'siteid': '8816',
+            'slotid': '003',
+            'price': 1,
+            'adid': 'lxHWkB7OnZeso3QiN1N4',
+            'nurl': '',
+            'burl': 'https://ssp.wp.pl/burl',
+            'adm': '<html>AD_CODE</html>',
+            'adomain': ['adomain.pl'],
+            'cid': 'BZ4gAg21T5nNtxlUCDSW',
+            'crid': 'lxHWkB7OnZeso3QiN1N4',
+            'w': 728,
+            'h': 90,
+            'ext': {}
+          }],
+          'seat': 'dsp1',
+          'group': 0
+        }],
+        'cur': 'PLN'
+      }
+    };
     return {
       bid_OneCode,
       bids,
@@ -703,6 +762,8 @@ describe('gopl adapter functionality', function () {
       serverResponsePaapi,
       serverResponseVideo,
       serverResponseNative,
+      serverResponseNativeAdmNative,
+      serverResponseWithBurl,
       emptyResponse
     };
   };
@@ -898,6 +959,64 @@ describe('gopl adapter functionality', function () {
 
       expect(payloadWithSupplyChain.source.ext).to.have.property('schain').that.has.keys('ver', 'complete', 'nodes');
     });
+
+    it('should return false when there are no valid bid requests', function () {
+      expect(spec.buildRequests([], bidRequestSingle)).to.equal(false);
+    });
+  });
+
+  describe('buildRequests local storage stac handling', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should send stored stac value when present in local storage', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('abc123');
+      const { bids, bidRequestSingle } = prepareTestData();
+
+      const request = spec.buildRequests([bids[0]], bidRequestSingle);
+
+      expect(request.data.user.stac).to.equal('abc123');
+    });
+
+    it('should send 0 as stac value when not present in local storage', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      const { bids, bidRequestSingle } = prepareTestData();
+
+      const request = spec.buildRequests([bids[0]], bidRequestSingle);
+
+      expect(request.data.user.stac).to.equal(0);
+    });
+  });
+
+  describe('buildRequests and getUserSyncs top-level window access errors', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'getWindowTop').throws(new Error('cross-origin access denied'));
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should not throw when the top-level document language cannot be read', function () {
+      const { bids, bidRequestSingle } = prepareTestData();
+
+      expect(() => spec.buildRequests([bids[0]], bidRequestSingle)).to.not.throw();
+    });
+
+    it('should not throw when the top-level host cannot be read for pixel sync', function () {
+      expect(() => spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], {})).to.not.throw();
+    });
   });
 
   describe('interpretResponse', function () {
@@ -1012,6 +1131,22 @@ describe('gopl adapter functionality', function () {
       expect(fledgeAuctionConfigs.length).to.equal(1);
     });
 
+    it('should support native ads sent via the admNative field instead of adm', function () {
+      const { serverResponseNativeAdmNative } = prepareTestData();
+      let resultNative = spec.interpretResponse(serverResponseNativeAdmNative, requestNative);
+
+      expect(resultNative.length).to.equal(1);
+      expect(resultNative[0].mediaType).to.equal('native');
+    });
+
+    it('should copy burl from the response bid onto the interpreted bid', function () {
+      const { serverResponseWithBurl } = prepareTestData();
+      let result = spec.interpretResponse(serverResponseWithBurl, requestSingle);
+
+      expect(result.length).to.equal(1);
+      expect(result[0].burl).to.equal(serverResponseWithBurl.body.seatbid[0].bid[0].burl);
+    });
+
     it('should propagate the response-level bidid into bid.meta.bidid', function () {
       let resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
 
@@ -1024,6 +1159,32 @@ describe('gopl adapter functionality', function () {
       expect(result.length).to.equal(2);
       expect(result[0].meta.bidid).to.equal(serverResponse.body.bidid);
       expect(result[1].meta.bidid).to.equal(serverResponse.body.bidid);
+    });
+  });
+
+  describe('notification payload for OneCode bids with non-empty bid data', function () {
+    it('should fill in siteId/slotId from stored OneCode detection and include cpm-derived fields', function () {
+      const { bid_OneCode, bidRequestOneCode, serverResponseOneCode } = prepareTestData();
+      const requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode);
+      const [interpretedBid] = spec.interpretResponse(serverResponseOneCode, requestOneCode);
+
+      // simulate the enrichment prebid.js core performs before invoking event callbacks
+      const wonBid = {
+        ...interpretedBid,
+        adUnitCode: bid_OneCode.adUnitCode,
+        bidderRequestId: bid_OneCode.bidderRequestId,
+        requestId: bid_OneCode.bidId,
+        params: {},
+      };
+
+      const notificationPayload = spec.onBidWon(wonBid);
+
+      expect(notificationPayload).to.have.property('siteId').that.deep.equals(['8816']);
+      expect(notificationPayload).to.have.property('slotId').that.deep.equals(['003']);
+      expect(notificationPayload).to.have.property('cpm', interpretedBid.cpm);
+      expect(notificationPayload).to.have.property('cpmpl', interpretedBid.meta.pricepl);
+      expect(notificationPayload).to.have.property('creativeId', interpretedBid.creativeId);
+      expect(notificationPayload).to.have.property('networkName', interpretedBid.meta.networkName);
     });
   });
 
@@ -1049,6 +1210,37 @@ describe('gopl adapter functionality', function () {
     it('should send no syncs, if no sync is allowed', function () {
       expect(syncResultNone).to.have.length(0);
       expect(syncResultNone).to.have.length(0);
+    });
+  });
+
+  describe('user sync iframe message handling', function () {
+    it('should respond to STac requests from the sync iframe and store the returned value', function () {
+      const postMessageSpy = sinon.spy(window, 'postMessage');
+      const setDataStub = sinon.stub(storage, 'setDataInLocalStorage');
+
+      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false });
+
+      window.dispatchEvent(new MessageEvent('message', {
+        origin: USER_SYNC_URL,
+        data: { action: 'getSTac', id: 'req-1', stac: 'stac-value' },
+        source: window,
+      }));
+
+      expect(postMessageSpy.calledWith({ action: 'STacResponse', id: 'req-1' }, USER_SYNC_URL)).to.be.true;
+      expect(setDataStub.calledWith('bc_stac', 'stac-value')).to.be.true;
+
+      postMessageSpy.restore();
+      setDataStub.restore();
+    });
+
+    it('should ignore messages from other origins or actions', function () {
+      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false });
+
+      expect(() => window.dispatchEvent(new MessageEvent('message', {
+        origin: 'https://not-gopl.example.com',
+        data: { action: 'getSTac', id: 'req-2', stac: 'stac-value' },
+        source: window,
+      }))).to.not.throw();
     });
   });
 
@@ -1095,6 +1287,86 @@ describe('gopl adapter functionality', function () {
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
       expect(notificationPayload).to.have.property('siteId').that.is.an('array');
       expect(notificationPayload).to.have.property('slotId').that.is.an('array');
+    });
+
+    it('should trigger a pixel for burl when present on the bid', function () {
+      const { bids } = prepareTestData();
+      const bid = { ...bids[0], burl: 'https://ssp.wp.pl/burl' };
+      const triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+
+      spec.onBidBillable(bid);
+
+      expect(triggerPixelStub.calledWith('https://ssp.wp.pl/burl')).to.be.true;
+
+      triggerPixelStub.restore();
+    });
+  });
+
+  describe('onBidderError', function () {
+    it('should generate no notification if error data is undefined', function () {
+      let notificationPayload = spec.onBidderError();
+      expect(notificationPayload).to.be.undefined;
+    });
+
+    it('should generate notification with event name and request/adUnit data, if correct bid is provided.', function () {
+      const { bids } = prepareTestData();
+      let bid = bids[0];
+
+      let notificationPayload = spec.onBidderError(bid);
+      expect(notificationPayload).to.have.property('event').that.equals('parseError');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
+    });
+  });
+
+  describe('onBidViewable', function () {
+    it('should generate no notification if bid is undefined', function () {
+      let notificationPayload = spec.onBidViewable();
+      expect(notificationPayload).to.be.undefined;
+    });
+
+    it('should generate notification with event name and request/adUnit data, if correct bid is provided.', function () {
+      const { bids } = prepareTestData();
+      let bid = bids[0];
+
+      let notificationPayload = spec.onBidViewable(bid);
+      expect(notificationPayload).to.have.property('event').that.equals('bidViewable');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
+    });
+  });
+
+  describe('onAdRenderSucceeded', function () {
+    it('should generate no notification if bid is undefined', function () {
+      let notificationPayload = spec.onAdRenderSucceeded();
+      expect(notificationPayload).to.be.undefined;
+    });
+
+    it('should generate notification with event name and request/adUnit data, if correct bid is provided.', function () {
+      const { bids } = prepareTestData();
+      let bid = bids[0];
+
+      let notificationPayload = spec.onAdRenderSucceeded(bid);
+      expect(notificationPayload).to.have.property('event').that.equals('adRenderSucceeded');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
+    });
+  });
+
+  describe('onSetTargeting', function () {
+    it('should generate no notification if bid is undefined', function () {
+      let notificationPayload = spec.onSetTargeting();
+      expect(notificationPayload).to.be.undefined;
+    });
+
+    it('should generate notification with event name and request/adUnit data, if correct bid is provided.', function () {
+      const { bids } = prepareTestData();
+      let bid = bids[0];
+
+      let notificationPayload = spec.onSetTargeting(bid);
+      expect(notificationPayload).to.have.property('event').that.equals('setTargeting');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
     });
   });
 

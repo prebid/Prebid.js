@@ -222,11 +222,10 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent, coppa) {
     // COPPA: Yieldmo does not serve or track child-directed inventory —
     // suppress cookie-sync pixels on COPPA traffic, mirroring the bid discard.
-    // Use coppaDataHandler so the numeric core flag (coppa: 1) counts too.
-    if (coppaDataHandler.getCoppa()) {
+    if (coppa) {
       return [];
     }
     const syncs = [];

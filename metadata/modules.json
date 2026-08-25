@@ -766,13 +766,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adsmartx",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "adsmovil",
       "aliasOf": null,
       "gvlid": null,
@@ -942,6 +935,13 @@
     {
       "componentType": "bidder",
       "componentName": "afp",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "agenticx",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -1882,7 +1882,7 @@
       "componentName": "copper6ssp",
       "aliasOf": null,
       "gvlid": 1356,
-      "disclosureURL": null
+      "disclosureURL": "https://privacy.copper6.com/deviceStorage.json"
     },
     {
       "componentType": "bidder",
@@ -2579,6 +2579,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "hyperbrainz",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "idx",
       "aliasOf": null,
       "gvlid": null,
@@ -3085,7 +3092,7 @@
       "componentType": "bidder",
       "componentName": "lunamediahb",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 998,
       "disclosureURL": null
     },
     {
@@ -4791,6 +4798,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "synapsehx",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "taboola",
       "aliasOf": null,
       "gvlid": 42,
@@ -5843,7 +5857,7 @@
       "componentType": "userId",
       "componentName": "adplusId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/adplusIdSystemDisclosure.json",
       "aliasOf": null
     },
     {
@@ -6003,7 +6017,7 @@
     {
       "componentType": "userId",
       "componentName": "intentIqId",
-      "gvlid": "1323",
+      "gvlid": 1323,
       "disclosureURL": null,
       "aliasOf": null
     },
@@ -6473,6 +6487,11 @@
     {
       "componentType": "analytics",
       "componentName": "mobkoi",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "nexx360",
       "gvlid": null
     },
     {
