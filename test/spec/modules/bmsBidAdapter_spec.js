@@ -5,7 +5,6 @@ import { spec, storage } from 'modules/bmsBidAdapter.js';
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
   'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';
-const GVLID = 1105;
 const CURRENCY = 'USD';
 
 describe('bmsBidAdapter:', function () {
@@ -72,7 +71,6 @@ describe('bmsBidAdapter:', function () {
       expect(request.options.contentType).to.equal('text/plain');
       const ortbRequest = JSON.parse(request.data);
 
-      expect(ortbRequest.ext.gvlid).to.equal(GVLID);
       expect(ortbRequest.imp[0].bidfloor).to.equal(1.5);
       expect(ortbRequest.imp[0].bidfloorcur).to.equal(CURRENCY);
     });

@@ -277,6 +277,79 @@ describe('omsBidAdapter', function () {
       expect(data.imp[0].instl).to.be.undefined;
     });
 
+    it('sends badv when ortb2.badv is provided', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { badv: ['domain.com'] } }).data);
+      expect(data.badv).to.deep.equal(['domain.com']);
+    });
+
+    it('sends bcat when ortb2.bcat is provided', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { bcat: ['CAT-1', 'CAT-2'] } }).data);
+      expect(data.bcat).to.deep.equal(['CAT-1', 'CAT-2']);
+    });
+
+    it('sends device.dnt when ortb2.device.dnt is 0', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { dnt: 0 } } }).data);
+      expect(data.device.dnt).to.equal(0);
+    });
+
+    it('sends device.dnt when ortb2.device.dnt is 1', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { dnt: 1 } } }).data);
+      expect(data.device.dnt).to.equal(1);
+    });
+
+    it('ignores device.dnt when ortb2.device.dnt is missing', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, {}).data);
+      expect(data.device.dnt).to.be.undefined;
+    });
+
+    it('sends device.language when ortb2.device.language is provided', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { device: { language: 'de' } } }).data);
+      expect(data.device.language).to.equal('de');
+    });
+
+    it('sends site.cat when ortb2.site.cat is provided', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { site: { cat: ['CAT-1', 'CAT-2'] } } }).data);
+      expect(data.site.cat).to.deep.equal(['CAT-1', 'CAT-2']);
+    });
+
+    it('sends site.pagecat when ortb2.site.pagecat is provided', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { site: { pagecat: ['CAT-1', 'CAT-2'] } } }).data);
+      expect(data.site.pagecat).to.deep.equal(['CAT-1', 'CAT-2']);
+    });
+
+    it('sends banner.api when ortb2Imp.banner.api is provided', function () {
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { api: [1, 2] } } }]).data);
+      expect(data.imp[0].banner.api).to.deep.equal([1, 2]);
+    });
+
+    it('sends banner.api from mediaTypes.banner.api when ortb2Imp.banner.api is missing', function () {
+      bidRequests[0].mediaTypes.banner.api = [1, 2];
+      const data = JSON.parse(spec.buildRequests(bidRequests, {}).data);
+      expect(data.imp[0].banner.api).to.deep.equal([1, 2]);
+    });
+
+    it('sends banner.battr when ortb2Imp.banner.battr is provided', function () {
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { battr: [1, 3] } } }]).data);
+      expect(data.imp[0].banner.battr).to.deep.equal([1, 3]);
+    });
+
+    it('sends banner.battr from mediaTypes.banner.battr when ortb2Imp.banner.battr is missing', function () {
+      bidRequests[0].mediaTypes.banner.battr = [1, 3];
+      const data = JSON.parse(spec.buildRequests(bidRequests, {}).data);
+      expect(data.imp[0].banner.battr).to.deep.equal([1, 3]);
+    });
+
+    it('sends banner.pos when ortb2Imp.banner.pos is provided', function () {
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { banner: { pos: 0 } } }]).data);
+      expect(data.imp[0].banner.pos).to.equal(0);
+    });
+
+    it('sends banner.pos from mediaTypes.banner.pos when ortb2Imp.banner.pos is missing', function () {
+      bidRequests[0].mediaTypes.banner.pos = 1;
+      const data = JSON.parse(spec.buildRequests(bidRequests, {}).data);
+      expect(data.imp[0].banner.pos).to.equal(1);
+    });
+
     it('sends schain', function () {
       const data = JSON.parse(spec.buildRequests(bidRequests).data);
       expect(data).to.not.be.undefined;

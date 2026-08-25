@@ -270,6 +270,41 @@ describe('HyperBrainz Bid Adapter', function () {
       const data = JSON.parse(spec.buildRequests(bids, bidderRequest)[0].data);
       expect(data.source.ext.schain).to.deep.equal(schain);
     });
+
+    it('omits source.tid when Prebid does not supply one', function () {
+      const bids = [bannerBid()];
+      const data = JSON.parse(
+        spec.buildRequests(bids, bidderRequestFor(bids))[0].data
+      );
+      expect(data.source).to.not.have.property('tid');
+    });
+
+    it('forwards source.tid when Prebid supplies one', function () {
+      const bids = [bannerBid()];
+      const bidderRequest = bidderRequestFor(bids, {
+        ortb2: { source: { tid: 'tid-1' } },
+      });
+      const data = JSON.parse(spec.buildRequests(bids, bidderRequest)[0].data);
+      expect(data.source.tid).to.equal('tid-1');
+    });
+
+    it('sends every bid in a single request', function () {
+      const bids = [bannerBid(), videoBid()];
+      const requests = spec.buildRequests(bids, bidderRequestFor(bids));
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].url).to.equal(ENDPOINT);
+      expect(JSON.parse(requests[0].data).imp).to.have.lengthOf(2);
+    });
+
+    it('uses params.userId as the user id', function () {
+      const bids = [
+        bannerBid({ params: { placementId: 'p', userId: 'user-1' } }),
+      ];
+      const data = JSON.parse(
+        spec.buildRequests(bids, bidderRequestFor(bids))[0].data
+      );
+      expect(data.user.id).to.equal('user-1');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -328,7 +363,7 @@ describe('HyperBrainz Bid Adapter', function () {
       ]);
     });
 
-    it('parses a video bid into vastXml/vastUrl', function () {
+    it('parses a video bid into vastXml', function () {
       const bids = [videoBid()];
       const response = {
         body: {
@@ -350,7 +385,7 @@ describe('HyperBrainz Bid Adapter', function () {
       expect(result).to.have.lengthOf(1);
       expect(result[0].mediaType).to.equal('video');
       expect(result[0].vastXml).to.equal('<VAST></VAST>');
-      expect(result[0].vastUrl).to.equal('https://hb.hyperbrainz.com/win');
+      expect(result[0].vastUrl).to.be.undefined;
     });
 
     it('parses a native bid into the ORTB native shape', function () {

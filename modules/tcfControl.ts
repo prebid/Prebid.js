@@ -390,6 +390,11 @@ declare module '../src/consentHandler' {
   }
 
 }
+/**
+ * These options live under the TCF consent module's configuration, so they only mean anything to a
+ * publisher who has included that module: the augmentation is meant to apply only then.
+ * @augmentationOptional
+ */
 declare module './consentManagementTcf' {
   interface TCFConfig {
     /**

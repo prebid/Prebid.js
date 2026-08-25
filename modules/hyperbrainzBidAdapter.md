@@ -25,20 +25,6 @@ data, EIDs, supply chain (schain), and all major privacy frameworks
 | `ext`         | `object` | No       | Custom bidder extension fields           |
 | `userId`      | `string` | No       | User ID for the bid request; overrides local storage value   |
 
-# Endpoint Override
-
-The default endpoint can be overridden via `setConfig` — useful for
-QA/staging environments without a code change, or as a migration path if the
-endpoint changes in the future:
-
-\`\`\`javascript
-pbjs.setConfig({
-  hyperbrainz: {
-    endpoint: 'https://staging.hyperbrainz.com/bid'
-  }
-});
-\`\`\`
-
 # Test Parameters
 
 ```javascript

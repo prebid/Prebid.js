@@ -2,7 +2,6 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import {
   deepSetValue,
   getWinDimensions,
@@ -263,20 +262,15 @@ export const spec = {
     return bids;
   },
   onBidWon: (bid) => {
-    if (bid.nurl && !bid.deferBilling) {
+    if (bid.nurl) {
       const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
-      ajax(resolvedNurl);
-      bid.taboolaBillingFired = true;
+      ajax(resolvedNurl, null, null, { keepalive: true });
     }
   },
   onBidBillable: (bid) => {
-    if (bid.taboolaBillingFired) {
-      return;
-    }
-    const billingUrl = bid.burl || bid.nurl;
-    if (billingUrl) {
-      const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm);
-      ajax(resolvedBillingUrl);
+    if (bid.burl) {
+      const resolvedBurl = replaceAuctionPrice(bid.burl, bid.originalCpm);
+      ajax(resolvedBurl, null, null, { keepalive: true });
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
@@ -352,7 +346,7 @@ function getSiteProperties({ publisherId }, refererInfo, ortb2) {
       id: publisherId
     },
     content: {
-      language: navigator.language
+      language: ortb2?.site?.content?.language || navigator.language
     }
   };
 }
@@ -399,7 +393,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     deepSetValue(data, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
   }
 
-  if (config.getConfig('coppa')) {
+  if (bidderRequest.ortb2?.regs?.coppa) {
     deepSetValue(data, 'regs.coppa', 1);
   }
 

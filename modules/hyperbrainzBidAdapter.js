@@ -20,6 +20,15 @@ import { BANNER, VIDEO, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
 import { getStorageManager } from "../src/storageManager.js";
 
+/**
+ * @typedef {import('../src/adapterManager.js').BidRequest} BidRequest
+ * @typedef {import('../src/bidfactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('./hyperbrainzBidAdapter.d.ts').HyperbrainzBidderParams} HyperbrainzBidderParams
+ * @typedef {BidRequest & { params: HyperbrainzBidderParams }} HyperbrainzBidRequest
+ */
+
 // Bidder constants
 const BIDDER_CODE = "hyperbrainz";
 const ADAPTER_VERSION = "1.0.0";
@@ -31,6 +40,10 @@ const DEFAULT_TIMEOUT = 1200; // milliseconds
 
 // Storage manager for user IDs
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+/**
+ * @param {HyperbrainzBidRequest} bidRequest
+ * @returns {boolean}
+ */
 function isBidRequestValid(bidRequest) {
   if (!bidRequest || !bidRequest.params) {
     logError("HyperBrainz: Bid request is not valid");
@@ -73,52 +86,34 @@ function isBidRequestValid(bidRequest) {
   return true;
 }
 
+/**
+ * @param {HyperbrainzBidRequest[]} validBidRequests
+ * @param {*} bidderRequest
+ * @returns {Object[]}
+ */
 function buildRequests(validBidRequests, bidderRequest) {
   if (!validBidRequests || validBidRequests.length === 0) {
     return [];
   }
 
-  const endpoint = config.getConfig("hyperbrainz.endpoint") || ENDPOINT;
+  const ortbRequest = buildOpenRtbRequest(validBidRequests, bidderRequest);
 
-  // Group bids by endpoint (allows custom endpoints per placement)
-  const grouped = groupBidsByEndpoint(validBidRequests, endpoint);
-
-  const requests = [];
-
-  Object.keys(grouped).forEach((endpointUrl) => {
-    const bids = grouped[endpointUrl];
-
-    const ortbRequest = buildOpenRtbRequest(bids, bidderRequest, endpointUrl);
-
-    requests.push({
+  return [
+    {
       method: "POST",
-      url: endpointUrl,
+      url: ENDPOINT,
       data: JSON.stringify(ortbRequest),
       options: {
         contentType: "text/plain",
         withCredentials: true,
       },
       bidderRequest,
-      bids,
-    });
-  });
-
-  return requests;
+      bids: validBidRequests,
+    },
+  ];
 }
 
-function groupBidsByEndpoint(validBids, defaultEndpoint) {
-  const map = {};
-
-  validBids.forEach((bid) => {
-    const ep = bid.params.endpoint || defaultEndpoint;
-    if (!map[ep]) map[ep] = [];
-    map[ep].push(bid);
-  });
-
-  return map;
-}
-
-function buildOpenRtbRequest(bids, bidderRequest, endpoint) {
+function buildOpenRtbRequest(bids, bidderRequest) {
   const timeout =
     bidderRequest?.timeout ||
     config.getConfig("bidderTimeout") ||
@@ -169,6 +164,11 @@ function buildOpenRtbRequest(bids, bidderRequest, endpoint) {
   return ortb;
 }
 
+/**
+ * @param {ServerResponse} serverResponse
+ * @param {*} request
+ * @returns {Bid[]}
+ */
 function interpretResponse(serverResponse, request) {
   try {
     const response = serverResponse?.body;
@@ -239,7 +239,6 @@ function buildBid(bid, response, request) {
 
   if (mediaType === VIDEO) {
     if (bid.adm) prebidBid.vastXml = bid.adm;
-    if (bid.nurl) prebidBid.vastUrl = bid.nurl;
   } else if (mediaType === NATIVE) {
     const ortbNative = parseNative(bid.adm);
     if (!ortbNative) return null;
@@ -384,12 +383,12 @@ function buildDevice(bidderRequest) {
 function buildUser(bidderRequest) {
   const user = {};
 
-  // User ID from storage or params
+  // Prefer params.userId, then local storage
   try {
-    const storedId = storage.getDataFromLocalStorage("hb_userId");
     const paramId = deepAccess(bidderRequest, "bids.0.params.userId");
-    if (storedId || paramId) {
-      user.id = storedId || paramId;
+    const storedId = storage.getDataFromLocalStorage("hb_userId");
+    if (paramId || storedId) {
+      user.id = paramId || storedId;
     }
   } catch (e) {
     logWarn("HyperBrainz: Error accessing storage", e);
@@ -531,10 +530,15 @@ function buildRegs(bidderRequest) {
 
 // Build source object
 function buildSource(bidderRequest) {
-  return {
-    fd: 1,
-    tid: bidderRequest?.ortb2?.source?.tid || generateUUID(),
-  };
+  const source = { fd: 1 };
+
+  // Only send a transaction ID that Prebid provided; never generate one.
+  const tid = bidderRequest?.ortb2?.source?.tid;
+  if (tid) {
+    source.tid = tid;
+  }
+
+  return source;
 }
 
 function getUserSyncs(
@@ -652,6 +656,7 @@ function onSetTargeting(bid) {
   logInfo("HyperBrainz: Targeting set", bid.adUnitCode);
 }
 
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],

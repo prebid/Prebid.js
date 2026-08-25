@@ -111,6 +111,47 @@ describe('user sync', function () {
     expect(politeInsertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
+  describe('removeUserSyncs', function () {
+    const iframeConfig = {
+      filterSettings: {
+        iframe: {
+          bidders: '*',
+          filter: 'include'
+        }
+      }
+    };
+
+    it('should remove the sync iframes and return how many were removed', function () {
+      const removeStub = sinon.stub(utils, 'removeUserSyncIframes').returns(2);
+      try {
+        const userSync = newTestUserSync(iframeConfig);
+        expect(userSync.removeUserSyncs()).to.equal(2);
+        expect(removeStub.calledOnce).to.equal(true);
+      } finally {
+        removeStub.restore();
+      }
+    });
+
+    it('should not prevent later syncs from inserting new iframes', function () {
+      const userSync = newTestUserSync(iframeConfig);
+      const removeStub = sinon.stub(utils, 'removeUserSyncIframes').returns(1);
+      try {
+        userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+        userSync.syncUsers();
+        expect(insertUserSyncIframeStub.calledOnce).to.equal(true);
+
+        userSync.removeUserSyncs();
+
+        userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe2');
+        userSync.syncUsers();
+        expect(insertUserSyncIframeStub.calledTwice).to.equal(true);
+        expect(insertUserSyncIframeStub.getCall(1).args[0]).to.equal('http://example.com/iframe2');
+      } finally {
+        removeStub.restore();
+      }
+    });
+  });
+
   it('should NOT fire a sync if a rule blocks syncUser', () => {
     const userSync = newTestUserSync();
     regRule(ACTIVITY_SYNC_USER, 'testRule', (params) => {
