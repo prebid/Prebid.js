@@ -106,6 +106,17 @@ function lint(done) {
   if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
     args.push('--quiet')
   }
+  // Lint a subset: `gulp lint --files src/utils.js,modules/xBidAdapter.js`. Comma separated, the
+  // same shape as `--modules`.
+  //
+  // Calling eslint directly is fine, but do it with `--cache --cache-strategy content` as this
+  // task does: eslint *deletes* .eslintcache when run without `--cache`, and rebuilding it costs a
+  // full pass over the repo. Going through here is the difference between a second and a minute.
+  // (CI deliberately runs bare `npx eslint` instead - it has no cache to lose, and it keeps this
+  // task from becoming the place lint configuration accumulates instead of eslint.config.js.)
+  // String() because a bare `--files` with no value arrives as `true`
+  const files = String(argv.files ?? '').split(',').map(f => f.trim()).filter(f => f && f !== 'true');
+  args.push(...files.map(f => JSON.stringify(f)));
   return execaTask(args.join(' '))().then(() => {
     done();
   }, (err) => {
