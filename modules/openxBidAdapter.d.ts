@@ -1,3 +1,5 @@
+import type { VideoMediaType } from '../src/video.ts';
+
 /** Parameters accepted by the OpenX bidder adapter. Added by a Codex bot. */
 export interface OpenxBidderParams {
   /** OpenX ad unit identifier. Required for video and native requests. */
@@ -8,11 +10,13 @@ export interface OpenxBidderParams {
   platform?: string;
   customParams?: Record<string, string | string[]>;
   customFloor?: number;
+  /** Prevent advertisers from using data for this user. */
+  doNotTrack?: boolean;
   coppa?: boolean;
   test?: boolean;
   response_template_name?: string;
   /** Overrides corresponding fields from `mediaTypes.video`. */
-  video?: Record<string, unknown>;
+  video?: Partial<VideoMediaType>;
 }
 
 declare module '../src/adUnits' {
