@@ -1,15 +1,23 @@
 /**
  * Precompilation: everything that turns the sources into `dist/src`.
  *
- * `dist/src` is built whole from empty on every cold run. Do not add steps that assume prior
- * contents. (Several steps here derive from other files in `dist/src` rather than from sources,
- * so there is no provenance rule that would let orphans be pruned instead; starting from empty
- * makes them impossible and asks nothing of any step.)
+ * `dist/src` is emptied once per process, before the first precompile, and built up from there.
+ * The wipe is for orphans - output whose source is gone - and only a tree left behind by an
+ * earlier run can hold any: within one process no source disappears. Several steps here derive
+ * from other files in `dist/src` rather than from sources, so there is no provenance rule that
+ * would let orphans be pruned individually instead.
+ *
+ * Later precompiles in the same process therefore build on what is already there, which is what
+ * one invocation precompiling two configurations needs - `gulp test` does exactly that. Wiping per
+ * configuration instead empties the tree after the steps carrying `since:` filters have already
+ * run, so they skip and never put their output back. See `cleanPrecompiled`.
  *
  * The expensive step - babel - is cached on disk, per file and per build configuration, so that
- * rebuilding from empty is cheap. Nothing needs to be done to keep the cache correct: it is keyed
- * on each file's contents and on `precompilationKey`, and the source glob, not the cache, decides
- * which files exist.
+ * rebuilding is cheap. Nothing needs to be done to keep the cache correct: it is keyed on each
+ * file's contents and on `precompilationKey`, and the source glob, not the cache, decides which
+ * files exist. The key also covers the files the babel plugins read without being handed -
+ * `package.json` and `metadata/modules/*.json` - so a version bump or a metadata edit invalidates
+ * what it should.
  *
  * What the cache does *not* notice is a change to the build system itself - `babelConfig.js`, the
  * plugins under `plugins/`, or a `@babel/*` version bump. None of those touch a source file or the
@@ -45,48 +53,69 @@ const {
 
 const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
-    const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
+    const options = getDefaults({distUrlBase, disableFeatures, dev});
+    const babelConfig = require('./babelConfig.js')(options);
     const key = precompilationKey({distUrlBase, disableFeatures, dev});
     return function () {
       const sourceRoot = path.resolve('.');
       const relativeSourceRoot = path.relative(helpers.getPrecompiledPath(), sourceRoot);
-      return cachedPipeline({
-        namespace: 'precompile',
-        key,
-        src: gulp.src(helpers.getSourcePatterns(), {
-          base: '.',
-          since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
-          sourcemaps: true
-        }),
-        // the source root is relative to the precompiled path, not to wherever the cache lives,
-        // so that it is the same whether a file was transpiled now or on a previous run
-        transform: () => [
-          babel(babelConfig),
-          tap(file => {
-            file.sourceMap.file = file.basename;
-            file.sourceMap.sourceRoot = path.join(relativeSourceRoot, path.relative(file.dirname, sourceRoot))
-          })
-        ],
-        dest: gulp.dest(helpers.getPrecompiledPath(), {
-          sourcemaps: '.'
-        })
+      const src = gulp.src(helpers.getSourcePatterns(), {
+        base: '.',
+        since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
+        sourcemaps: true
       });
+      // the source root is relative to the precompiled path, not to wherever the cache lives,
+      // so that it is the same whether a file was transpiled now or on a previous run
+      const transform = () => [
+        babel(babelConfig),
+        tap(file => {
+          file.sourceMap.file = file.basename;
+          file.sourceMap.sourceRoot = path.join(relativeSourceRoot, path.relative(file.dirname, sourceRoot))
+        })
+      ];
+      const dest = gulp.dest(helpers.getPrecompiledPath(), {
+        sourcemaps: '.'
+      });
+      if (options.polyfills) {
+        // No cache for a polyfill report. `plugins/polyfills.js` accumulates across every file it
+        // visits and writes a summary of the lot, so it is not the pure per-file transform
+        // `cachedPipeline` requires: only misses would reach babel, and the summary would come out
+        // covering just those - or missing entirely, when every file hits.
+        return transform().reduce((stream, stage) => stream.pipe(stage), src).pipe(dest);
+      }
+      return cachedPipeline({namespace: 'precompile', key, src, transform, dest});
     }
   },
   precompilationKey
 )
 
 /**
- * Empty `dist/src`, unless this process has already precompiled with these options - in which
- * case the `since:` filters are doing incremental work on top of what is there, as they do under
- * `watch` and `serve-*`, and it must be left alone.
+ * Empty `dist/src`, once per process and no more.
+ *
+ * The wipe exists to remove orphans - output whose source is gone - which is only possible in a
+ * tree left behind by an earlier run. Once this process has precompiled anything, the tree is its
+ * own and there is nothing to sweep.
+ *
+ * Wiping per *configuration* rather than per process breaks `gulp test`, which precompiles two
+ * feature variants back to back: the second wipe empties the tree while `copyVerbatim`,
+ * `generateMetadataModules`, `generatePublicModules` and `generateCreativeRenderers` are all
+ * holding `gulp.lastRun(...)` timestamps from the first, so they see unchanged inputs and skip,
+ * and the tree never gets its `.json` files, metadata modules or public modules back.
+ *
+ * A variant switch does not need a wipe. Everything that depends on the configuration is rebuilt
+ * regardless - `babelPrecomp` is memoized per configuration, so the new one has no `lastRun` and
+ * re-emits every file, and `generateBuildOptions` and `generateGlobalDef` have no `since` filter -
+ * while everything that does not depend on it is already correct on disk.
  */
+let wiped = false;
+
 function cleanPrecompiled(options = {}) {
   return function wipePrecompiled(done) {
-    if (gulp.lastRun(babelPrecomp(options)) != null) {
+    if (wiped || gulp.lastRun(babelPrecomp(options)) != null) {
       done();
       return;
     }
+    wiped = true;
     fs.rm(helpers.getPrecompiledPath(), {recursive: true, force: true}, done);
   }
 }

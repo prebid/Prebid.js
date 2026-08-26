@@ -65,6 +65,9 @@ function clean() {
  * It is for changes to the build system itself: the babel plugins under `plugins/`,
  * `babelConfig.js`, a `@babel/*` bump. Those change the output without changing anything the
  * caches can see. See the header of gulp.precompilation.js for what forgetting looks like.
+ *
+ * `build-release` and `prepare-release` run it first, so a published build never depends on the
+ * cache key being complete.
  */
 function cleanCache() {
   return gulp.src(['.cache'], {
@@ -565,9 +568,15 @@ gulp.task('update-codeql', function (done) {
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$/\\/dist\\/src\\/test/g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
-gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
+// `clean-cache` first, as belt and braces rather than to fix a known gap: the key covers file
+// contents, the build configuration, `package.json` and `metadata/modules/*.json`, but not the
+// build system itself - `babelConfig.js`, the plugins under `plugins/`, a `@babel/*` bump - and
+// not whatever a future change starts reading. A release is the build where a stale artifact is
+// least acceptable and where starting cold costs the least, so it does not rely on the key being
+// complete.
+gulp.task('build-release', gulp.series('clean-cache', 'update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
 // prepare NPM release - 'build' to generate files in dist/; 'setup-npmignore' to make sure 'dist' is published in NPM
-gulp.task('prepare-release', gulp.series('build', 'setup-npmignore'));
+gulp.task('prepare-release', gulp.series('clean-cache', 'build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));

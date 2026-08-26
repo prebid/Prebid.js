@@ -45,6 +45,42 @@ function contentHash(contents) {
   return createHash('sha256').update(contents).digest('hex');
 }
 
+/**
+ * Everything the babel plugins read that is not the file being transformed.
+ *
+ * `plugins/pbjsGlobals.js` substitutes `package.json`'s version into the output, and
+ * `plugins/callerContext.js` and `plugins/gvlPurposes.js` read `metadata/modules/*.json`. A change
+ * to either changes what is emitted while leaving every source file's own content hash untouched,
+ * so both belong in the key - without them a release build on a warm cache emits the previous
+ * version number.
+ *
+ * Digested whole, and deliberately bluntly. Keying on just the fields in use today would
+ * invalidate less often, but it would also quietly stop covering a plugin that starts reading
+ * something else, and that failure is silent. Most changes touch neither of these, so
+ * over-invalidating costs little and under-invalidating costs a wrong build.
+ */
+const EXTERNAL_INPUTS = {
+  manifest: path.resolve(__dirname, 'package.json'),
+  metadataDir: path.resolve(__dirname, 'metadata/modules')
+};
+
+function externalInputsDigest({manifest, metadataDir} = EXTERNAL_INPUTS) {
+  const digest = createHash('sha256');
+  digest.update(fs.readFileSync(manifest));
+  let names;
+  try {
+    names = fs.readdirSync(metadataDir).filter(name => name.endsWith('.json')).sort();
+  } catch {
+    names = [];
+  }
+  for (const name of names) {
+    // the name as well as the contents, so that a rename is a change
+    digest.update(name);
+    digest.update(fs.readFileSync(path.join(metadataDir, name)));
+  }
+  return digest.digest('hex').slice(0, 16);
+}
+
 function getDefaults({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
   if (dev && distUrlBase == null) {
     distUrlBase = argv.distUrlBase || '/build/dev/'
@@ -64,7 +100,9 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false} =
  * caches are versioned by, so that none of those can drift apart. It resolves the options first -
  * `disableFeatures`, `distUrlBase` and `polyfills` all default from `argv`, so unresolved options
  * tell you nothing about the output - and it takes whatever `getDefaults` returns rather than a
- * fixed list of fields, so that a field added there is picked up here.
+ * fixed list of fields, so that a field added there is picked up here. On top of the options it
+ * folds in what the babel plugins read without being handed it - the environment they consult, and
+ * `externalInputsDigest` for the files.
  *
  * Feature lists arrive from `argv` in whatever order they were typed; sort so that the key is
  * stable across orderings that mean the same thing.
@@ -73,7 +111,8 @@ function precompilationKey(options = {}) {
   const resolved = {
     ...getDefaults(options),
     // read by plugins/pbjsGlobals.js, and so part of the output
-    liveConnectMode: process.env.LiveConnectMode ?? null
+    liveConnectMode: process.env.LiveConnectMode ?? null,
+    externalInputs: externalInputsDigest()
   };
   resolved.disableFeatures = [...(resolved.disableFeatures ?? [])].sort();
   return JSON.stringify(Object.fromEntries(
@@ -273,7 +312,9 @@ function forwardErrors(out, streams) {
  *
  * The transform must be a pure function of each file's contents and path - those two are all
  * the cache keys on, together with `key`. No filesystem reads, no global state, one file out
- * for each file in. A transform that breaks this serves stale output silently.
+ * for each file in. A transform that breaks this serves stale output silently - which is why
+ * `babelPrecomp` does not use this helper for `--polyfills` builds, where the babel plugin
+ * aggregates across every file it sees.
  *
  * `key` identifies the configuration the transform was built with; output from different
  * configurations is stored separately and never mixes.
@@ -305,6 +346,7 @@ function cachedPipeline({namespace, src, key, transform, dest}) {
 
 module.exports = {
   cachedPipeline,
+  externalInputsDigest,
   getDefaults,
   precompilationKey,
   writePrecompilationKey,

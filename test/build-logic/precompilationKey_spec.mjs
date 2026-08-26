@@ -1,10 +1,12 @@
 import { describe, it, before, after } from 'mocha';
 import { expect } from 'chai';
 import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import cache from '../../gulp.cache.js';
 import helpers from '../../gulpHelpers.js';
 
-const { precompilationKey, writePrecompilationKey, readPrecompilationKey } = cache;
+const { precompilationKey, externalInputsDigest, writePrecompilationKey, readPrecompilationKey } = cache;
 
 /**
  * The key decides which cached output a build may reuse - the babel cache directory, and the
@@ -52,6 +54,61 @@ describe('precompilationKey', () => {
         process.env.LiveConnectMode = original;
       }
     }
+  });
+});
+
+/**
+ * `package.json` and `metadata/modules/*.json` are read by the babel plugins rather than by the
+ * file being transformed - `pbjsGlobals` substitutes the version, `callerContext` and
+ * `gvlPurposes` read the metadata - so a change to either leaves every source hash untouched.
+ * Without them in the key, a release build on a warm cache emits the previous version number.
+ *
+ * The paths are injected so that this exercises the real digest without touching tracked files.
+ */
+describe('externalInputsDigest', () => {
+  let root, inputs;
+
+  before(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'pbjs-extinputs-'));
+    inputs = { manifest: path.join(root, 'package.json'), metadataDir: path.join(root, 'modules') };
+    fs.mkdirSync(inputs.metadataDir);
+    fs.writeFileSync(inputs.manifest, '{"version":"1.0.0"}');
+    fs.writeFileSync(path.join(inputs.metadataDir, 'a.json'), '{"components":[]}');
+  });
+
+  after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  it('should be stable when nothing changes', () => {
+    expect(externalInputsDigest(inputs)).to.equal(externalInputsDigest(inputs));
+  });
+
+  it('should change when the manifest changes', () => {
+    const before = externalInputsDigest(inputs);
+    fs.writeFileSync(inputs.manifest, '{"version":"1.0.1"}');
+    expect(externalInputsDigest(inputs)).to.not.equal(before);
+  });
+
+  it('should change when a metadata file is added', () => {
+    const before = externalInputsDigest(inputs);
+    fs.writeFileSync(path.join(inputs.metadataDir, 'b.json'), '{"components":[]}');
+    expect(externalInputsDigest(inputs)).to.not.equal(before);
+  });
+
+  it('should change when a metadata file changes', () => {
+    const before = externalInputsDigest(inputs);
+    fs.writeFileSync(path.join(inputs.metadataDir, 'b.json'), '{"components":[{"gvlid":1}]}');
+    expect(externalInputsDigest(inputs)).to.not.equal(before);
+  });
+
+  it('should change when a metadata file is renamed but its contents are not', () => {
+    const before = externalInputsDigest(inputs);
+    fs.renameSync(path.join(inputs.metadataDir, 'b.json'), path.join(inputs.metadataDir, 'c.json'));
+    expect(externalInputsDigest(inputs)).to.not.equal(before);
+  });
+
+  it('should be carried in the precompilation key', () => {
+    // the wiring, checked without mutating anything: the real digest appears in the real key
+    expect(JSON.parse(precompilationKey()).externalInputs).to.equal(externalInputsDigest());
   });
 });
 
