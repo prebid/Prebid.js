@@ -7,18 +7,32 @@ var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 const path = require('path');
 const helpers = require('./gulpHelpers.js');
+const {readPrecompilationKey} = require('./gulp.cache.js');
 const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 
 function newWebpackConfig(codeCoverage, disableFeatures) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
+  // Keyed on what `dist/src` actually is, rather than on `argv` as the bundle builds are: the
+  // variant that matters here is not always visible from the command line. `gulp test` runs
+  // `test-all-features-disabled`, which passes its feature set in directly; `serve-and-test`
+  // precompiles with `dev`; and coverage changes the loader options below. Miss any of those and
+  // webpack serves modules compiled from the other variant - silently, since the paths and the
+  // mtimes are identical. The tree is on disk by the time this runs, so ask it.
+  //
+  // Note this replaces the `cache` that `webpack.common.js` set up for the bundle builds, version
+  // included, which is why it has to state its own.
+  const treeKey = readPrecompilationKey();
   Object.assign(webpackConfig, {
     mode: 'development',
     devtool: 'inline-source-map',
-    cache: {
+    // an untracked tree - never precompiled, or precompiled before the stamp existed - offers
+    // nothing safe to key on, so reuse nothing
+    cache: treeKey == null ? false : {
       type: 'filesystem',
-      cacheDirectory: path.resolve(__dirname, '.cache/webpack-test')
+      cacheDirectory: path.resolve(__dirname, '.cache/webpack-test'),
+      version: JSON.stringify({precompilation: treeKey, coverage: !!codeCoverage})
     },
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);

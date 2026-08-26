@@ -50,12 +50,30 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['.cache', 'build', 'dist'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
     .pipe(gulpClean());
 }
+
+/**
+ * Clear the build caches under `.cache`. Nothing in a normal workflow needs this - they are keyed
+ * on file contents and on build configuration, so ordinary edits invalidate them on their own,
+ * and `clean` deliberately leaves them alone.
+ *
+ * It is for changes to the build system itself: the babel plugins under `plugins/`,
+ * `babelConfig.js`, a `@babel/*` bump. Those change the output without changing anything the
+ * caches can see. See the header of gulp.precompilation.js for what forgetting looks like.
+ */
+function cleanCache() {
+  return gulp.src(['.cache'], {
+    read: false,
+    allowEmpty: true
+  })
+    .pipe(gulpClean());
+}
+cleanCache.displayName = 'clean-cache';
 
 function requireNodeVersion(version) {
   return (done) => {
@@ -500,6 +518,8 @@ gulp.task(lint);
 gulp.task(watch);
 
 gulp.task(clean);
+
+gulp.task(cleanCache);
 
 gulp.task(escapePostbidConfig);
 

@@ -18,13 +18,13 @@
  * expected, but code you did *not* touch behaves as it did before your build-system change - a
  * plugin's transform appears not to apply, or applies with its old semantics. It presents as a
  * bug in the plugin or in unrelated source, and no amount of reading either explains it. Run
- * `gulp clean` and build again before believing it. CI is never exposed to this: it builds fresh
- * and never reuses a cache.
+ * `gulp clean-cache` and build again before believing it - `gulp clean` will not help, it leaves
+ * the caches alone by design. CI is never exposed to this: it builds fresh and never reuses a
+ * cache.
  */
 const webpackStream = require('webpack-stream');
 const gulp = require('gulp');
 const helpers = require('./gulpHelpers.js');
-const {argv} = require('yargs');
 const babel = require('gulp-babel');
 const {glob} = require('glob');
 const path = require('path');
@@ -34,44 +34,13 @@ const fs = require('fs');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
-const {cachedPipeline} = require('./gulp.cache.js');
+const {
+  cachedPipeline,
+  getDefaults,
+  precompilationKey,
+  writePrecompilationKey
+} = require('./gulp.cache.js');
 
-
-function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) {
-  if (dev && distUrlBase == null) {
-    distUrlBase = argv.distUrlBase || '/build/dev/'
-  }
-  return {
-    disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
-    distUrlBase: distUrlBase ?? argv.distUrlBase,
-    dev,
-    polyfills: argv.polyfills
-  }
-}
-
-/**
- * Everything other than a source file's own contents that the precompiled output depends on.
- *
- * This is both what `babelPrecomp` memoizes on and what names its cache directory, so that the
- * two cannot drift apart. It resolves the options first - `disableFeatures`, `distUrlBase` and
- * `polyfills` all default from `argv`, so unresolved options tell you nothing about the output -
- * and it takes whatever `getDefaults` returns rather than a fixed list of fields, so that a field
- * added there is picked up here.
- *
- * Feature lists arrive from `argv` in whatever order they were typed; sort so that the key is
- * stable across orderings that mean the same thing.
- */
-function precompilationKey(options = {}) {
-  const resolved = {
-    ...getDefaults(options),
-    // read by plugins/pbjsGlobals.js, and so part of the output
-    liveConnectMode: process.env.LiveConnectMode ?? null
-  };
-  resolved.disableFeatures = [...(resolved.disableFeatures ?? [])].sort();
-  return JSON.stringify(Object.fromEntries(
-    Object.entries(resolved).sort(([a], [b]) => a < b ? -1 : 1)
-  ));
-}
 
 const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
@@ -118,6 +87,22 @@ function cleanPrecompiled(options = {}) {
       return;
     }
     fs.rm(helpers.getPrecompiledPath(), {recursive: true, force: true}, done);
+  }
+}
+
+/**
+ * Record in the tree which configuration produced it, for the webpack caches downstream - see
+ * `writePrecompilationKey`. Runs straight after the wipe, so that it is in place for every later
+ * step, and so that a tree left behind by a failed build still says what it is.
+ */
+function stampPrecompiled(options = {}) {
+  return function stampPrecompilationKey(done) {
+    try {
+      writePrecompilationKey(precompilationKey(options));
+      done();
+    } catch (e) {
+      done(e);
+    }
   }
 }
 
@@ -332,6 +317,7 @@ function generateCreativeRenderers() {
 function precompile(options = {}) {
   return gulp.series([
     cleanPrecompiled(options),
+    stampPrecompiled(options),
     gulp.parallel([options.dev ? 'ts-dev' : 'ts', generateMetadataModules, generateBuildOptions(options)]),
     gulp.parallel([copyVerbatim, babelPrecomp(options)]),
     gulp.parallel([

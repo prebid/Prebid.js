@@ -1,15 +1,23 @@
 /**
- * On-disk cache for gulp pipelines whose transform is a pure function of each file.
+ * How the build is keyed on disk, and the on-disk cache for gulp pipelines whose transform is a
+ * pure function of each file.
  *
  * The cache exists so that repeat builds are cheap; nothing else in the build - and nobody
  * running it - needs to know it is there. There are no flags, and no hygiene rules: see
  * `cachedPipeline` for the one precondition a wrapped transform has to meet.
+ *
+ * This module owns `precompilationKey`, the answer to "what, other than a source file's own
+ * contents, does the output depend on". Everything that caches anything derived from the sources
+ * keys on it - `cachedPipeline` here, and the webpack configurations, which cache on disk too.
+ * Define it once, here, rather than reconstructing it wherever a cache is configured.
  */
 const {createHash} = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const {Transform, PassThrough} = require('node:stream');
 const mergeStream = require('merge-stream');
+const {argv} = require('yargs');
+const helpers = require('./gulpHelpers.js');
 const PluginError = require('plugin-error');
 
 const PLUGIN = 'gulp.cache';
@@ -35,6 +43,70 @@ function cacheDir(namespace, key) {
 
 function contentHash(contents) {
   return createHash('sha256').update(contents).digest('hex');
+}
+
+function getDefaults({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
+  if (dev && distUrlBase == null) {
+    distUrlBase = argv.distUrlBase || '/build/dev/'
+  }
+  return {
+    disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
+    distUrlBase: distUrlBase ?? argv.distUrlBase,
+    dev,
+    polyfills: argv.polyfills
+  }
+}
+
+/**
+ * Everything other than a source file's own contents that the precompiled output depends on.
+ *
+ * This is what `babelPrecomp` memoizes on, what names its cache directory, and what the webpack
+ * caches are versioned by, so that none of those can drift apart. It resolves the options first -
+ * `disableFeatures`, `distUrlBase` and `polyfills` all default from `argv`, so unresolved options
+ * tell you nothing about the output - and it takes whatever `getDefaults` returns rather than a
+ * fixed list of fields, so that a field added there is picked up here.
+ *
+ * Feature lists arrive from `argv` in whatever order they were typed; sort so that the key is
+ * stable across orderings that mean the same thing.
+ */
+function precompilationKey(options = {}) {
+  const resolved = {
+    ...getDefaults(options),
+    // read by plugins/pbjsGlobals.js, and so part of the output
+    liveConnectMode: process.env.LiveConnectMode ?? null
+  };
+  resolved.disableFeatures = [...(resolved.disableFeatures ?? [])].sort();
+  return JSON.stringify(Object.fromEntries(
+    Object.entries(resolved).sort(([a], [b]) => a < b ? -1 : 1)
+  ));
+}
+
+const STAMP = '.precompilation-key';
+
+/**
+ * Record, in the precompiled tree, which configuration produced it.
+ *
+ * The webpack configurations that compile that tree cache on disk, and the tree itself gives them
+ * nothing to tell one configuration from another: the paths are the same, and `gulp.dest` carries
+ * each source file's mtime over, so the timestamps are the same too. Left unkeyed, webpack serves
+ * modules cached from a build of a different feature set.
+ *
+ * Asking the tree what it is beats reconstructing the key from `argv`, which does not see the
+ * options that `test-all-features-disabled` and `serve-and-test` pass directly.
+ */
+function writePrecompilationKey(key) {
+  const file = helpers.getPrecompiledPath(STAMP);
+  fs.mkdirSync(path.dirname(file), {recursive: true});
+  fs.writeFileSync(file, key);
+}
+
+/** What the precompiled tree was built with, or null if it is absent or predates the stamp. */
+function readPrecompilationKey() {
+  try {
+    return fs.readFileSync(helpers.getPrecompiledPath(STAMP), 'utf8');
+  } catch {
+    return null;
+  }
 }
 
 const created = new Set();
@@ -233,5 +305,9 @@ function cachedPipeline({namespace, src, key, transform, dest}) {
 
 module.exports = {
   cachedPipeline,
+  getDefaults,
+  precompilationKey,
+  writePrecompilationKey,
+  readPrecompilationKey,
   CACHE_ROOT
 };
