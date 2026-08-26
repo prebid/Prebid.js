@@ -185,11 +185,13 @@ const bidWithUndefinedFields = {
 describe('native.js', function () {
   let sandbox;
   let triggerPixelStub;
+  let politeTriggerPixelStub;
   let insertHtmlIntoIframeStub;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
+    politeTriggerPixelStub = sandbox.stub(utils, 'politeTriggerPixel');
     insertHtmlIntoIframeStub = sandbox.stub(utils, 'insertHtmlIntoIframe');
   });
 
@@ -199,8 +201,8 @@ describe('native.js', function () {
 
   it('fires impression trackers', function () {
     fireNativeTrackers({}, bid);
-    sinon.assert.calledOnce(triggerPixelStub);
-    sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
+    sinon.assert.calledOnce(politeTriggerPixelStub);
+    sinon.assert.calledWith(politeTriggerPixelStub, bid.native.impressionTrackers[0]);
     sinon.assert.calledWith(
       insertHtmlIntoIframeStub,
       bid.native.javascriptTrackers
