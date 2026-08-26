@@ -1,3 +1,26 @@
+/**
+ * Precompilation: everything that turns the sources into `dist/src`.
+ *
+ * `dist/src` is built whole from empty on every cold run. Do not add steps that assume prior
+ * contents. (Several steps here derive from other files in `dist/src` rather than from sources,
+ * so there is no provenance rule that would let orphans be pruned instead; starting from empty
+ * makes them impossible and asks nothing of any step.)
+ *
+ * The expensive step - babel - is cached on disk, per file and per build configuration, so that
+ * rebuilding from empty is cheap. Nothing needs to be done to keep the cache correct: it is keyed
+ * on each file's contents and on `precompilationKey`, and the source glob, not the cache, decides
+ * which files exist.
+ *
+ * What the cache does *not* notice is a change to the build system itself - `babelConfig.js`, the
+ * plugins under `plugins/`, or a `@babel/*` version bump. None of those touch a source file or the
+ * configuration key, so cached output survives them. This is deliberate; build work and feature
+ * work rarely land together. What forgetting it looks like: source you just edited behaves as
+ * expected, but code you did *not* touch behaves as it did before your build-system change - a
+ * plugin's transform appears not to apply, or applies with its old semantics. It presents as a
+ * bug in the plugin or in unrelated source, and no amount of reading either explains it. Run
+ * `gulp clean` and build again before believing it. CI is never exposed to this: it builds fresh
+ * and never reuses a cache.
+ */
 const webpackStream = require('webpack-stream');
 const gulp = require('gulp');
 const helpers = require('./gulpHelpers.js');
@@ -11,6 +34,7 @@ const fs = require('fs');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
+const {cachedPipeline} = require('./gulp.cache.js');
 
 
 function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) {
@@ -25,29 +49,77 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) 
   }
 }
 
+/**
+ * Everything other than a source file's own contents that the precompiled output depends on.
+ *
+ * This is both what `babelPrecomp` memoizes on and what names its cache directory, so that the
+ * two cannot drift apart. It resolves the options first - `disableFeatures`, `distUrlBase` and
+ * `polyfills` all default from `argv`, so unresolved options tell you nothing about the output -
+ * and it takes whatever `getDefaults` returns rather than a fixed list of fields, so that a field
+ * added there is picked up here.
+ *
+ * Feature lists arrive from `argv` in whatever order they were typed; sort so that the key is
+ * stable across orderings that mean the same thing.
+ */
+function precompilationKey(options = {}) {
+  const resolved = {
+    ...getDefaults(options),
+    // read by plugins/pbjsGlobals.js, and so part of the output
+    liveConnectMode: process.env.LiveConnectMode ?? null
+  };
+  resolved.disableFeatures = [...(resolved.disableFeatures ?? [])].sort();
+  return JSON.stringify(Object.fromEntries(
+    Object.entries(resolved).sort(([a], [b]) => a < b ? -1 : 1)
+  ));
+}
+
 const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
     const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
+    const key = precompilationKey({distUrlBase, disableFeatures, dev});
     return function () {
       const sourceRoot = path.resolve('.');
       const relativeSourceRoot = path.relative(helpers.getPrecompiledPath(), sourceRoot);
-      return gulp.src(helpers.getSourcePatterns(), {
-        base: '.',
-        since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
-        sourcemaps: true
-      })
-        .pipe(babel(babelConfig))
-        .pipe(tap(file => {
-          file.sourceMap.file = file.basename;
-          file.sourceMap.sourceRoot = path.join(relativeSourceRoot, path.relative(file.dirname, sourceRoot))
-        }))
-        .pipe(gulp.dest(helpers.getPrecompiledPath(), {
+      return cachedPipeline({
+        namespace: 'precompile',
+        key,
+        src: gulp.src(helpers.getSourcePatterns(), {
+          base: '.',
+          since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
+          sourcemaps: true
+        }),
+        // the source root is relative to the precompiled path, not to wherever the cache lives,
+        // so that it is the same whether a file was transpiled now or on a previous run
+        transform: () => [
+          babel(babelConfig),
+          tap(file => {
+            file.sourceMap.file = file.basename;
+            file.sourceMap.sourceRoot = path.join(relativeSourceRoot, path.relative(file.dirname, sourceRoot))
+          })
+        ],
+        dest: gulp.dest(helpers.getPrecompiledPath(), {
           sourcemaps: '.'
-        }));
+        })
+      });
     }
   },
-  ({dev, distUrlBase, disableFeatures} = {}) => `${dev}::${distUrlBase ?? ''}::${(disableFeatures ?? []).join(':')}`
+  precompilationKey
 )
+
+/**
+ * Empty `dist/src`, unless this process has already precompiled with these options - in which
+ * case the `since:` filters are doing incremental work on top of what is there, as they do under
+ * `watch` and `serve-*`, and it must be left alone.
+ */
+function cleanPrecompiled(options = {}) {
+  return function wipePrecompiled(done) {
+    if (gulp.lastRun(babelPrecomp(options)) != null) {
+      done();
+      return;
+    }
+    fs.rm(helpers.getPrecompiledPath(), {recursive: true, force: true}, done);
+  }
+}
 
 /**
  * Generate a "metadata module" for each json file in metadata/modules
@@ -147,7 +219,9 @@ function generateTypeSummary(folder, dest, ignore = dest) {
   const destDir = path.parse(dest).dir;
   return function (done) {
     glob([`${folder}/**/*.d.ts`], {ignore}).then(files => {
-      files = files.map(file => path.relative(destDir, file))
+      // glob returns directory order, which varies between builds; sort so that the same sources
+      // always produce the same summary
+      files = files.map(file => path.relative(destDir, file)).sort()
       if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, {recursive: true});
       }
@@ -257,6 +331,7 @@ function generateCreativeRenderers() {
 
 function precompile(options = {}) {
   return gulp.series([
+    cleanPrecompiled(options),
     gulp.parallel([options.dev ? 'ts-dev' : 'ts', generateMetadataModules, generateBuildOptions(options)]),
     gulp.parallel([copyVerbatim, babelPrecomp(options)]),
     gulp.parallel([

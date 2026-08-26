@@ -12,6 +12,9 @@
     "isolatedModules": true,
     "rootDir": "./",
     "outDir": "./dist/src/",
+    // `gulp ts-dev` compiles incrementally; keep the buildinfo out of `outDir`, which is emptied
+    // on every cold precompile - TypeScript would silently fall back to a full compile
+    "tsBuildInfoFile": "./.cache/ts/tsconfig.tsbuildinfo",
     // the sources are not strict yet; the declarations they emit are checked as a consumer sees them
     // by `gulp ts-strict`
     "strict": false,
