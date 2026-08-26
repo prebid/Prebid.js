@@ -161,7 +161,7 @@ describe('Adbix Bidder Adapter', function () {
 
     expect(syncs).to.deep.equal([{
       type: 'image',
-      url: 'https://adbix.net/sync'
+      url: 'https://adbix.net/sync/index.php'
     }]);
   });
 
