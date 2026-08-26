@@ -27,6 +27,7 @@ const gulp = require('gulp');
 const helpers = require('./gulpHelpers.js');
 const babel = require('gulp-babel');
 const {glob} = require('glob');
+const log = require('gulplog');
 const path = require('path');
 const tap = require('gulp-tap');
 const _ = require('lodash');
@@ -134,6 +135,49 @@ function generateMetadataModules() {
       file.path = path.join(dir, `${name}.js`);
     }))
     .pipe(gulp.dest(helpers.getPrecompiledPath('metadata/modules')));
+}
+
+const TS_OUT = path.resolve('.cache/ts/out');
+
+/**
+ * Copy the declarations tsc emitted into the precompiled tree.
+ *
+ * Driven by the sources rather than by what is in `TS_OUT`: tsc never deletes an output whose input
+ * is gone - there is no `--build --clean` here - so a removed or renamed `.ts` leaves its `.d.ts`
+ * behind indefinitely. Copying wholesale would put those orphans back into `dist/src`, where
+ * `check-declarations` type-checks every declaration it finds and `generateTypeSummary` emits an
+ * import for each, so a deleted module would keep appearing in the published type surface. Skipping
+ * them here leaves them inert: they cost disk and nothing else.
+ *
+ * The test is "does `<name>.ts` exist on disk right now", which assumes every input is a checked-in
+ * file. A `.ts` generated during the build would fail it and lose its declaration - so what is
+ * skipped is logged rather than dropped quietly. Anything in that list you did not just delete or
+ * rename is a bug, not housekeeping.
+ */
+function copyDeclarations() {
+  const skipped = [];
+  return glob(`${TS_OUT}/**/*.d.ts`).then(files => {
+    files.forEach(file => {
+      const relative = path.relative(TS_OUT, file);
+      if (!fs.existsSync(path.resolve(relative.replace(/\.d\.ts$/, '.ts')))) {
+        skipped.push(relative);
+        return;
+      }
+      const dest = helpers.getPrecompiledPath(relative);
+      fs.mkdirSync(path.dirname(dest), {recursive: true});
+      fs.copyFileSync(file, dest);
+    });
+    if (skipped.length > 0) {
+      const shown = skipped.slice(0, 10);
+      log.info(
+        `${skipped.length} cached declaration(s) had no source and were left out of ` +
+        `'${path.relative('.', helpers.getPrecompiledPath())}': ${shown.join(', ')}` +
+        `${skipped.length > shown.length ? `, +${skipped.length - shown.length} more` : ''}. ` +
+        `Expected after deleting or renaming a .ts - tsc keeps its old output. ` +
+        `'gulp clean-cache' clears them. Anything else listed here is missing from the build.`
+      );
+    }
+  });
 }
 
 /**
@@ -318,8 +362,8 @@ function precompile(options = {}) {
   return gulp.series([
     cleanPrecompiled(options),
     stampPrecompiled(options),
-    gulp.parallel([options.dev ? 'ts-dev' : 'ts', generateMetadataModules, generateBuildOptions(options)]),
-    gulp.parallel([copyVerbatim, babelPrecomp(options)]),
+    gulp.parallel(['ts', generateMetadataModules, generateBuildOptions(options)]),
+    gulp.parallel([copyVerbatim, copyDeclarations, babelPrecomp(options)]),
     gulp.parallel([
       gulp.series([buildCreative(options), generateCreativeRenderers]),
       publicModules,
@@ -333,8 +377,11 @@ function precompile(options = {}) {
 }
 
 
-gulp.task('ts', helpers.execaTask('tsc'));
-gulp.task('ts-dev', helpers.execaTask('tsc --incremental'));
+// Always incremental: tsc emits into `.cache/ts/out` and keeps its buildinfo beside it, so the two
+// agree across runs and there is nothing for a non-incremental variant to protect against. CI sees
+// no benefit - it starts from a fresh checkout with no cache - but a local build that has run
+// before does.
+gulp.task('ts', helpers.execaTask('tsc --incremental'));
 gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
 gulp.task('check-declarations', checkDeclarations);
 gulp.task('transpile', babelPrecomp());
