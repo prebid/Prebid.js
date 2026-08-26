@@ -9,7 +9,7 @@ export interface UndertoneVideoParams {
 
 /** Parameters accepted by the Undertone bidder adapter; typed by the codex bot. */
 export interface UndertoneBidderParams {
-  placementId: number | string;
+  placementId?: number | string;
   publisherId: number | string;
   video?: UndertoneVideoParams;
 }
