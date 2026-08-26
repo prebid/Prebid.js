@@ -1,12 +1,3 @@
-/*
- * Adbix Prebid.js Bidder Adapter
- *
- * This file is for the Prebid.js GitHub repository:
- *   Prebid.js/modules/adbixBidAdapter.ts
- *
- * It is NOT a file to upload to adbix.net public_html root.
- */
-
 import {
   registerBidder,
   type AdapterRequest,
@@ -16,16 +7,13 @@ import {
 import type {
   BidRequest,
   ClientBidderRequest
-} from '../src/adapters/adapterManager.js';
+} from '../src/adapterManager.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adbix';
 const ENDPOINT = 'https://adbix.net/api/prebid-auction.php';
-
-// Confirmed Adbix image user-sync endpoint.
 const SYNC_URL = 'https://adbix.net/sync/index.php';
-
-const SUPPORTED_MEDIA_TYPES = [BANNER];
+const SUPPORTED_MEDIA_TYPES = [BANNER] as const;
 
 interface AdbixParams {
   publisherId: string;
@@ -33,113 +21,127 @@ interface AdbixParams {
   test?: boolean;
 }
 
-function getAdbixParams(bid: BidRequest): AdbixParams {
-  return bid.params as AdbixParams;
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: AdbixParams;
+  }
 }
 
-export const spec: BidderSpec = {
-  code: BIDDER_CODE,
+type AdbixBidRequest = BidRequest<typeof BIDDER_CODE>;
+type AdbixBidderRequest = ClientBidderRequest<typeof BIDDER_CODE>;
+type FloorResult = { floor?: number; currency?: string };
+type FloorGetter = (options: {
+  currency: string;
+  mediaType: typeof BANNER;
+  size: string;
+}) => FloorResult;
 
+function getAdbixParams(bid: AdbixBidRequest): Partial<AdbixParams> {
+  return bid.params || {};
+}
+
+function getBannerSizes(bid: AdbixBidRequest): Array<[number, number]> {
+  const sizes = bid.mediaTypes?.banner?.sizes;
+  if (!Array.isArray(sizes)) {
+    return [];
+  }
+
+  const candidates: unknown[] = typeof sizes[0] === 'number'
+    ? [sizes]
+    : sizes;
+
+  return candidates.filter((size): size is [number, number] =>
+    Array.isArray(size) &&
+    size.length === 2 &&
+    typeof size[0] === 'number' &&
+    typeof size[1] === 'number' &&
+    Number.isFinite(size[0]) &&
+    Number.isFinite(size[1]) &&
+    size[0] > 0 &&
+    size[1] > 0
+  );
+}
+
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
+  code: BIDDER_CODE,
+  disclosureURL: 'https://adbix.net/privacy-policy.php',
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: function (bid: BidRequest): boolean {
+  isBidRequestValid: function (bid: AdbixBidRequest): boolean {
     const params = getAdbixParams(bid);
 
-    return !!(
-      params.publisherId &&
-      params.placementId &&
-      bid.mediaTypes &&
-      bid.mediaTypes.banner &&
-      Array.isArray(bid.mediaTypes.banner.sizes)
-    );
+    return typeof params.publisherId === 'string' &&
+      params.publisherId.length > 0 &&
+      typeof params.placementId === 'string' &&
+      params.placementId.length > 0 &&
+      getBannerSizes(bid).length > 0;
   },
 
   buildRequests: function (
-    validBidRequests: BidRequest[],
-    bidderRequest: ClientBidderRequest
+    validBidRequests: AdbixBidRequest[],
+    bidderRequest: AdbixBidderRequest
   ): AdapterRequest {
-    const referer = bidderRequest.refererInfo || {};
-    const ortb2 = bidderRequest.ortb2 || {};
-    const schain = ortb2?.source?.ext?.schain;
+    const referer = bidderRequest.refererInfo;
+    const ortb2: any = bidderRequest.ortb2 || {};
+    const schain = ortb2.source?.ext?.schain;
 
     const request = {
-      id: bidderRequest.bidderRequestId || `adbix-${Date.now()}`,
-
+      id: bidderRequest.bidderRequestId,
       test: validBidRequests.some((bid) => getAdbixParams(bid).test) ? 1 : 0,
-
       tmax: bidderRequest.timeout || 800,
 
       site: {
+        ...ortb2.site,
         domain: referer.domain || ortb2.site?.domain || '',
-        page: referer.page || referer.referer || ortb2.site?.page || '',
-        ref: referer.ref || ''
+        page: referer.page || referer.legacy?.referer || ortb2.site?.page || '',
+        ref: referer.ref || ortb2.site?.ref || ''
       },
 
       imp: validBidRequests.map((bid) => {
         const params = getAdbixParams(bid);
-
-        const sizes = bid.mediaTypes.banner.sizes.map((size: number[]) => ({
-          w: Number(size[0]),
-          h: Number(size[1])
-        }));
-
-        const floorResult = bid.getFloor
-          ? bid.getFloor({
+        const sizes = getBannerSizes(bid).map(([w, h]) => ({ w, h }));
+        const getFloor = (bid as AdbixBidRequest & {
+          getFloor?: FloorGetter
+        }).getFloor;
+        const floorResult = getFloor
+          ? getFloor({
             currency: 'USD',
             mediaType: BANNER,
             size: '*'
           })
           : null;
-
-        const bidfloor = floorResult?.floor
-          ? Number(floorResult.floor)
-          : 0;
-
+        const floor = Number(floorResult?.floor);
+        const bidfloor = Number.isFinite(floor) && floor > 0 ? floor : 0;
         const ortb2Imp = bid.ortb2Imp || {};
-        const publisherExt = ortb2Imp.ext || {};
-        const publisherPrebid = publisherExt.prebid || {};
+        const publisherExt: any = ortb2Imp.ext || {};
+        const publisherPrebid: any = publisherExt.prebid || {};
 
-        const adbixBidderParams = {
-          publisherId: String(params.publisherId),
-          placementId: String(params.placementId),
-          test: !!params.test
-        };
-
-        /*
-         * Preserve publisher-provided ortb2Imp fields, including ext.prebid
-         * values such as storedrequest and passthrough.
-         *
-         * Adbix bidder params are applied last so publisherId and placementId
-         * cannot be overwritten or removed.
-         */
-        const imp = {
+        return {
+          ...ortb2Imp,
           id: bid.bidId,
           banner: {
+            ...ortb2Imp.banner,
             format: sizes
           },
           bidfloor,
-
-          ...ortb2Imp,
+          bidfloorcur: 'USD',
 
           ext: {
             ...publisherExt,
-
             prebid: {
               ...publisherPrebid,
-
               bidder: {
                 ...publisherPrebid.bidder,
-
                 adbix: {
                   ...publisherPrebid.bidder?.adbix,
-                  ...adbixBidderParams
+                  publisherId: String(params.publisherId),
+                  placementId: String(params.placementId),
+                  test: !!params.test
                 }
               }
             }
           }
         };
-
-        return imp;
       }),
 
       regs: ortb2.regs || {},
@@ -147,20 +149,26 @@ export const spec: BidderSpec = {
       bcat: ortb2.bcat,
       badv: ortb2.badv,
       battr: ortb2.battr,
+      bapp: ortb2.bapp,
 
       source: schain
         ? {
-          ext: {
-            schain
+            ...ortb2.source,
+            ext: {
+              ...ortb2.source?.ext,
+              schain
+            }
           }
-        }
-        : undefined
+        : ortb2.source
     };
 
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: JSON.stringify(request)
+      data: JSON.stringify(request),
+      options: {
+        withCredentials: false
+      }
     };
   },
 
@@ -171,24 +179,43 @@ export const spec: BidderSpec = {
     const body = serverResponse.body || {};
     const currency = body.cur || 'USD';
     const bids: any[] = [];
+    const seatbids = Array.isArray(body.seatbid) ? body.seatbid : [];
 
-    (body.seatbid || []).forEach((seatbid: any) => {
-      (seatbid.bid || []).forEach((bid: any) => {
-        if (!bid.impid || !bid.price || !bid.adm) {
+    seatbids.forEach((seatbid: any) => {
+      const serverBids = Array.isArray(seatbid.bid) ? seatbid.bid : [];
+
+      serverBids.forEach((bid: any) => {
+        const price = Number(bid.price);
+        const width = Number(bid.w);
+        const height = Number(bid.h);
+        const ttl = Number(bid.ttl || 300);
+        const creativeId = bid.crid || bid.id;
+
+        if (
+          !bid.impid ||
+          !bid.adm ||
+          !creativeId ||
+          !Number.isFinite(price) ||
+          price <= 0 ||
+          !Number.isFinite(width) ||
+          width <= 0 ||
+          !Number.isFinite(height) ||
+          height <= 0
+        ) {
           return;
         }
 
         bids.push({
           requestId: bid.impid,
-          cpm: Number(bid.price),
+          cpm: price,
           currency,
-          width: Number(bid.w),
-          height: Number(bid.h),
-          creativeId: String(bid.crid || bid.id),
-          ttl: Number(bid.ttl || 300),
+          width,
+          height,
+          creativeId: String(creativeId),
+          ttl: Number.isFinite(ttl) && ttl > 0 ? ttl : 300,
           netRevenue: true,
           ad: bid.adm,
-
+          dealId: bid.dealid,
           meta: {
             advertiserDomains: Array.isArray(bid.adomain)
               ? bid.adomain
@@ -202,10 +229,6 @@ export const spec: BidderSpec = {
   },
 
   getUserSyncs: function (syncOptions) {
-    /*
-     * This adapter returns an image sync, therefore pixelEnabled must be true.
-     * iframeEnabled alone must not permit an image/pixel sync.
-     */
     if (!syncOptions.pixelEnabled) {
       return [];
     }
