@@ -75,7 +75,9 @@ A bid whose parameters violate the table above is rejected by `isBidRequestValid
 
 # Test Parameters
 
-A live placement on an Epom Ad Server demo deployment that always fills, for verifying the adapter end to end:
+Live placements on an Epom Ad Server demo deployment that always fill, one per media type, for
+verifying the adapter end to end. Each key is a placement of that type on the same host, since the ad
+server decides what a placement may answer from its own type.
 
 ```js
 const adUnits = [
@@ -95,9 +97,56 @@ const adUnits = [
         }
       }
     ]
+  },
+  {
+    code: "test-video",
+    mediaTypes: {
+      video: {
+        context: "instream",
+        playerSize: [[640, 480]],
+        mimes: ["video/mp4"],
+        protocols: [2, 3, 5, 6]
+      }
+    },
+    bids: [
+      {
+        bidder: "epom_as",
+        params: {
+          host: "aj2494.online",
+          placementKey: "7659fd47e17263ba6ae1de3c9e137c74"
+        }
+      }
+    ]
+  },
+  {
+    code: "test-native",
+    mediaTypes: {
+      native: {
+        ortb: {
+          assets: [
+            { id: 1, required: 1, title: { len: 90 } },
+            { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+            { id: 3, required: 0, img: { type: 1, w: 128, h: 128 } },
+            { id: 4, required: 0, data: { type: 1, len: 50 } }
+          ]
+        }
+      }
+    },
+    bids: [
+      {
+        bidder: "epom_as",
+        params: {
+          host: "aj2494.online",
+          placementKey: "f4dd0f413d5c4f8d8c515f8a999e038f"
+        }
+      }
+    ]
   }
 ];
 ```
+
+The video unit needs one of the cache settings above, or Prebid discards the bid before it reaches
+`bidsBackHandler`.
 
 The optional parameters, on a deployment of your own. `host` is a bare hostname —
 the adapter posts to `https://{host}/hb/bid` — and every ad unit naming the same
