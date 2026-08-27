@@ -54,12 +54,33 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['.cache', 'build', 'dist'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
     .pipe(gulpClean());
 }
+
+/**
+ * Clear the build caches under `.cache`. Nothing in a normal workflow needs this - they are keyed
+ * on file contents and on build configuration, so ordinary edits invalidate them on their own,
+ * and `clean` deliberately leaves them alone.
+ *
+ * It is for changes to the build system itself: the babel plugins under `plugins/`,
+ * `babelConfig.js`, a `@babel/*` bump. Those change the output without changing anything the
+ * caches can see. See the header of gulp.precompilation.js for what forgetting looks like.
+ *
+ * `build-release` and `prepare-release` run it first, so a published build never depends on the
+ * cache key being complete.
+ */
+function cleanCache() {
+  return gulp.src(['.cache'], {
+    read: false,
+    allowEmpty: true
+  })
+    .pipe(gulpClean());
+}
+cleanCache.displayName = 'clean-cache';
 
 function requireNodeVersion(version) {
   return (done) => {
@@ -92,6 +113,17 @@ function lint(done) {
   if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
     args.push('--quiet')
   }
+  // Lint a subset: `gulp lint --files src/utils.js,modules/xBidAdapter.js`. Comma separated, the
+  // same shape as `--modules`.
+  //
+  // Calling eslint directly is fine, but do it with `--cache --cache-strategy content` as this
+  // task does: eslint *deletes* .eslintcache when run without `--cache`, and rebuilding it costs a
+  // full pass over the repo. Going through here is the difference between a second and a minute.
+  // (CI deliberately runs bare `npx eslint` instead - it has no cache to lose, and it keeps this
+  // task from becoming the place lint configuration accumulates instead of eslint.config.js.)
+  // String() because a bare `--files` with no value arrives as `true`
+  const files = String(argv.files ?? '').split(',').map(f => f.trim()).filter(f => f && f !== 'true');
+  args.push(...files.map(f => JSON.stringify(f)));
   return execaTask(args.join(' '))().then(() => {
     done();
   }, (err) => {
@@ -540,6 +572,8 @@ gulp.task(watch);
 
 gulp.task(clean);
 
+gulp.task(cleanCache);
+
 gulp.task(escapePostbidConfig);
 
 
@@ -578,9 +612,15 @@ gulp.task('update-codeql', function (done) {
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$/\\/dist\\/src\\/test/g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
-gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
+// `clean-cache` first, as belt and braces rather than to fix a known gap: the key covers file
+// contents, the build configuration, `package.json` and `metadata/modules/*.json`, but not the
+// build system itself - `babelConfig.js`, the plugins under `plugins/`, a `@babel/*` bump - and
+// not whatever a future change starts reading. A release is the build where a stale artifact is
+// least acceptable and where starting cold costs the least, so it does not rely on the key being
+// complete.
+gulp.task('build-release', gulp.series('clean-cache', 'update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
 // prepare NPM release - 'build' to generate files in dist/; 'setup-npmignore' to make sure 'dist' is published in NPM
-gulp.task('prepare-release', gulp.series('build', 'setup-npmignore'));
+gulp.task('prepare-release', gulp.series('clean-cache', 'build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
