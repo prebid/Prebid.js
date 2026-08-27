@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { isNumber, isPlainObject, isStr, logError } from '../src/utils.js';
+import { isNumber, isStr, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.ts';
@@ -33,7 +33,6 @@ import { getIiqServerAddress, iiqPixelServerAddress } from '../libraries/intentI
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.ts';
 import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.ts';
 import { defineABTestingGroup, IntentIqABConfigSource } from '../libraries/intentIqUtils/defineABTestingGroupUtils.ts';
-import { setKeyValueOn } from '../libraries/gptUtils/gptUtils.js';
 // the augmentation below only applies where the spec is part of the program; naming a type from it
 // in this module's public interface puts it there for anyone who imports this module
 import type { UserIdConfig } from './userId/spec.ts';
@@ -82,18 +81,6 @@ export type IntentIqIdSystemParams = {
    * code when available.
    */
   groupChanged?: (group: 'A' | 'B', terminationCause?: number) => void;
-
-  /**
-   * Reference to the GAM `googletag.pubads()` object for automatic targeting
-   * key injection.
-   */
-  gamObjectReference?: Record<string, unknown>;
-
-  /**
-   * GAM targeting key used to pass the A/B group. Defaults to
-   * `'intent_iq_group'`.
-   */
-  gamParameterName?: string;
 
   /**
    * Percentage of users placed in the WITH_IIQ (group A) cohort.
@@ -349,20 +336,6 @@ function sendSyncRequest(allowedStorage: any, url: string, partner: number, firs
 }
 
 /**
- * Configures and updates A/B testing group in Google Ad Manager (GAM).
- *
- * @param {object} gamObjectReference - Reference to the GAM object, expected to have a `cmd` queue and `pubads()` API.
- * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
- * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
- */
-export function setGamReporting(gamObjectReference: any, gamParameterName: string, userGroup: any, isBlacklisted = false): void {
-  if (isBlacklisted) return;
-  if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
-    setKeyValueOn(gamParameterName, userGroup, gamObjectReference);
-  }
-}
-
-/**
  * Processes raw client hints data into a structured format.
  * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
@@ -460,8 +433,6 @@ export const intentIqIdSubmodule = {
     let callbackFired = false;
     let runtimeEids: any = { eids: [] };
 
-    const gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
-    const gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
     const groupChanged = typeof configParams.groupChanged === 'function' ? configParams.groupChanged : undefined;
     const siloEnabled = typeof configParams.siloEnabled === 'boolean' ? configParams.siloEnabled : false;
     sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData as string) : '';
@@ -490,8 +461,6 @@ export const intentIqIdSubmodule = {
       actualABGroup = undefined;
     }
     let newUser = false;
-
-    setGamReporting(gamObjectReference, gamParameterName, actualABGroup, isBlacklisted);
 
     callbackTimeoutID = setTimeout(() => {
       firePartnerCallback();
@@ -703,7 +672,6 @@ export const intentIqIdSubmodule = {
               partnerData.terminationCause = respJson.tc;
               actualABGroup = defineABTestingGroup(configParams, respJson.tc,);
 
-              if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, actualABGroup);
               if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);
             }
             if ('isOptedOut' in respJson) {
@@ -764,13 +732,6 @@ export const intentIqIdSubmodule = {
               if ('ls' in respJson && respJson.ls === true) {
                 partnerData.abTestUuid = respJson.abTestUuid;
               }
-            }
-
-            if ('gpr' in respJson) {
-              // GAM prediction reporting
-              partnerData.gpr = respJson.gpr;
-            } else {
-              delete partnerData.gpr; // remove prediction flag in case server doesn't provide it
             }
 
             if (respJson.data?.eids) {

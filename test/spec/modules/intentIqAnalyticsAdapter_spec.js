@@ -2,7 +2,6 @@ import { expect } from "chai";
 import iiqAnalyticsAnalyticsAdapter, {
   REPORTER_ID,
   preparePayload,
-  restoreReportList,
 } from "modules/intentIqAnalyticsAdapter.js";
 import * as utils from "src/utils.js";
 import { server } from "test/mocks/xhr.js";
@@ -12,7 +11,6 @@ import * as events from "src/events.js";
 import { getGlobal } from "../../../src/prebidGlobal.js";
 import sinon from "sinon";
 import {
-  FIRST_PARTY_KEY,
   PREBID,
   VERSION,
   WITHOUT_IIQ,
@@ -224,7 +222,6 @@ describe("IntentIQ tests all", function () {
     events.emit(EVENTS.BID_WON, wonRequest);
 
     const request = server.requests[0];
-    restoreReportList();
 
     const expectedData = preparePayload(wonRequest);
     const expectedPayload = `["${btoa(JSON.stringify(expectedData))}"]`;
@@ -246,7 +243,6 @@ describe("IntentIQ tests all", function () {
     const payloadEncoded = url.searchParams.get("payload");
     const decoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
 
-    restoreReportList();
     const expected = preparePayload(wonRequest);
 
     expect(decoded.partnerId).to.equal(expected.partnerId);
@@ -399,7 +395,6 @@ describe("IntentIQ tests all", function () {
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
-    restoreReportList();
     const dataToSend = preparePayload(wonRequest);
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = encodeURIComponent(JSON.stringify([base64String]));
@@ -670,8 +665,6 @@ describe("IntentIQ tests all", function () {
 
     expect(payloadDecoded).to.have.property("vrref");
     expect(decodeURIComponent(payloadDecoded.vrref)).to.equal(domainName);
-
-    restoreReportList();
   });
 
   it("should not send additionalParams in report if value is too large", function () {
@@ -727,109 +720,6 @@ describe("IntentIQ tests all", function () {
 
     expect(server.requests.length).to.be.above(0);
     expect(request.url).to.include(`&spd=${expectedSpdEncoded}`);
-  });
-
-  describe("GAM prediction reporting", function () {
-    function createMockGAM() {
-      const listeners = {};
-      return {
-        cmd: [],
-        pubads: () => ({
-          addEventListener: (name, cb) => {
-            listeners[name] = cb;
-          },
-        }),
-        _listeners: listeners,
-      };
-    }
-
-    it("should subscribe to GAM and send report on slotRenderEnded without prior bidWon", function () {
-      const gam = createMockGAM();
-
-      enableAnalyticWithSpecialOptions({
-        gamObjectReference: gam
-      });
-
-      // enable subscription by LS flag
-      window[`iiq_identity_${partner}`].partnerData.gpr = true;
-
-      // provide recent auctionEnd with matching bid to enrich payload
-      events.getEvents.restore();
-      sinon.stub(events, "getEvents").returns([
-        {
-          eventType: "auctionEnd",
-          args: {
-            auctionId: "auc-1",
-            adUnitCodes: ["ad-unit-1"],
-            bidsReceived: [
-              {
-                bidder: "pubmatic",
-                adUnitCode: "ad-unit-1",
-                cpm: 1,
-                currency: "USD",
-                originalCpm: 1,
-                originalCurrency: "USD",
-                status: "rendered",
-              },
-            ],
-          },
-        },
-      ]);
-
-      // trigger adapter to subscribe
-      events.emit(EVENTS.BID_REQUESTED);
-
-      // execute GAM cmd to register listener
-      gam.cmd.forEach((fn) => fn());
-
-      // simulate slotRenderEnded
-      const slot = {
-        getSlotElementId: () => "ad-unit-1",
-        getAdUnitPath: () => "/123/foo",
-        getTargetingKeys: () => ["hb_bidder", "hb_adid"],
-        getTargeting: (k) =>
-          k === "hb_bidder" ? ["pubmatic"] : k === "hb_adid" ? ["ad123"] : [],
-      };
-      if (gam._listeners["slotRenderEnded"]) {
-        gam._listeners["slotRenderEnded"]({ isEmpty: false, slot });
-      }
-
-      expect(server.requests.length).to.be.above(0);
-    });
-
-    it("should NOT send report if a matching bidWon already exists", function () {
-      const gam = createMockGAM();
-
-      localStorage.setItem(
-        FIRST_PARTY_KEY + "_" + partner,
-        JSON.stringify({ gpr: true })
-      );
-
-      // provide prior bidWon matching placementId and hb_adid
-      events.getEvents.restore();
-      sinon
-        .stub(events, "getEvents")
-        .returns([
-          { eventType: "bidWon", args: { adId: "ad123" }, id: "ad-unit-1" },
-        ]);
-
-      events.emit(EVENTS.BID_REQUESTED);
-      gam.cmd.forEach((fn) => fn());
-
-      const slot = {
-        getSlotElementId: () => "ad-unit-1",
-        getAdUnitPath: () => "/123/foo",
-        getTargetingKeys: () => ["hb_bidder", "hb_adid"],
-        getTargeting: (k) =>
-          k === "hb_bidder" ? ["pubmatic"] : k === "hb_adid" ? ["ad123"] : [],
-      };
-
-      const initialRequests = server.requests.length;
-      if (gam._listeners["slotRenderEnded"]) {
-        gam._listeners["slotRenderEnded"]({ isEmpty: false, slot });
-      }
-      expect(server.requests.length).to.equal(initialRequests);
-    });
   });
 
   const testCasesVrref = [

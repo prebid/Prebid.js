@@ -1,4 +1,4 @@
-import { isPlainObject, logError, logInfo } from '../src/utils.js';
+import { logError, logInfo } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
@@ -15,7 +15,6 @@ import {
 } from '../libraries/intentIqConstants/intentIqConstants.ts';
 import { reportingServerAddress } from '../libraries/intentIqUtils/intentIqConfig.ts';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.ts';
-import { gamPredictionReport } from '../libraries/intentIqUtils/gamPredictionReport.ts';
 import { defineABTestingGroup, IntentIqABConfigSource } from '../libraries/intentIqUtils/defineABTestingGroupUtils.ts';
 import { getGlobal } from '../src/prebidGlobal.js';
 
@@ -98,11 +97,6 @@ export interface IntentIqAnalyticsAdapterOptions {
   manualWinReportEnabled?: boolean;
 
   /**
-   * Enable GAM predict-score reporting. Defaults to `false`.
-   */
-  gamPredictReporting?: boolean;
-
-  /**
    * HTTP method used to send reports. Defaults to `'GET'`.
    */
   reportMethod?: 'GET' | 'POST';
@@ -178,11 +172,6 @@ export interface IntentIqAnalyticsAdapterOptions {
    */
   siloEnabled?: boolean;
 
-  /**
-   * Reference to the GAM `googletag.pubads()` object for predict-score
-   * reporting.
-   */
-  gamObjectReference?: Record<string, unknown>;
 }
 
 declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
@@ -200,9 +189,6 @@ const pbjs: any = getGlobal();
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 let globalName: string | undefined;
 let identityGlobalName: string | undefined;
-let alreadySubscribedOnGAM = false;
-let reportList: Record<string, Record<string, number>> = {};
-let cleanReportsID: ReturnType<typeof setTimeout> | undefined;
 let iiqConfig: any;
 
 const PARAMS_NAMES: Record<string, string> = {
@@ -282,10 +268,6 @@ const iiqAnalyticsAnalyticsAdapter: any = Object.assign(adapter({ url: DEFAULT_U
         bidWon(args);
         break;
       case BID_REQUESTED: {
-        if (!alreadySubscribedOnGAM && shouldSubscribeOnGAM()) {
-          alreadySubscribedOnGAM = true;
-          gamPredictionReport(iiqConfig?.gamObjectReference, bidWon);
-        }
         const fpdFromGlobalObject = (window as any)[identityGlobalName as string]?.firstPartyData;
         if (fpdFromGlobalObject) {
           const currentCmpData = getCmpData();
@@ -312,11 +294,10 @@ function initAdapterConfig(config: any): void {
 
   const options = config?.options || {};
   iiqConfig = options;
-  const { manualWinReportEnabled, gamPredictReporting, reportMethod, reportingServerAddress, region, adUnitConfig, partner, ABTestingConfigurationSource, browserBlackList, domainName, additionalParams } = options;
+  const { manualWinReportEnabled, reportMethod, reportingServerAddress, region, adUnitConfig, partner, ABTestingConfigurationSource, browserBlackList, domainName, additionalParams } = options;
   iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =
             manualWinReportEnabled || false;
   iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = parseReportingMethod(reportMethod);
-  iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting = typeof gamPredictReporting === 'boolean' ? gamPredictReporting : false;
   iiqAnalyticsAnalyticsAdapter.initOptions.reportingServerAddress = typeof reportingServerAddress === 'string' ? reportingServerAddress : '';
   iiqAnalyticsAnalyticsAdapter.initOptions.region = typeof region === 'string' ? region : '';
   iiqAnalyticsAnalyticsAdapter.initOptions.adUnitConfig = typeof adUnitConfig === 'number' ? adUnitConfig : 1;
@@ -375,27 +356,11 @@ function receivePartnerData(): boolean | void {
   }
 }
 
-function shouldSubscribeOnGAM(): boolean {
-  if (!iiqConfig?.gamObjectReference || !isPlainObject(iiqConfig.gamObjectReference)) return false;
-  const partnerData = (window as any)[identityGlobalName as string]?.partnerData;
-
-  if (partnerData) {
-    return partnerData.gpr || (!('gpr' in partnerData) && iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting);
-  }
-  return false;
-}
-
 function shouldSendReport(isReportExternal?: boolean): boolean {
   return (
-    (isReportExternal &&
-            iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled &&
-            !shouldSubscribeOnGAM()) ||
+    (isReportExternal && iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled) ||
         (!isReportExternal && !iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled)
   );
-}
-
-export function restoreReportList() {
-  reportList = {};
 }
 
 function bidWon(args: any, isReportExternal?: boolean): boolean | void {
@@ -498,21 +463,6 @@ export function preparePayload(data: any): Record<string, any> | void {
     result[PARAMS_NAMES.userPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage;
   }
   prepareData(data, result);
-
-  if (shouldSubscribeOnGAM()) {
-    if (!reportList[result.placementId] || !reportList[result.placementId][result.prebidAuctionId]) {
-      reportList[result.placementId] = reportList[result.placementId]
-        ? { ...reportList[result.placementId], [result.prebidAuctionId]: 1 }
-        : { [result.prebidAuctionId]: 1 };
-      cleanReportsID = setTimeout(() => {
-        if (cleanReportsID) clearTimeout(cleanReportsID);
-        restoreReportList();
-      }, 1500); // clear object in 1.5 second after defining reporting list
-    } else {
-      logError('Duplication detected, report will be not sent');
-      return;
-    }
-  }
 
   fillEidsData(result);
 
@@ -684,9 +634,6 @@ iiqAnalyticsAnalyticsAdapter.originDisableAnalytics = iiqAnalyticsAnalyticsAdapt
 iiqAnalyticsAnalyticsAdapter.disableAnalytics = function(): void {
   globalName = undefined;
   identityGlobalName = undefined;
-  alreadySubscribedOnGAM = false;
-  reportList = {};
-  cleanReportsID = undefined;
   iiqConfig = undefined;
   iiqAnalyticsAnalyticsAdapter.initOptions = getDefaultInitOptions();
   iiqAnalyticsAnalyticsAdapter.originDisableAnalytics();

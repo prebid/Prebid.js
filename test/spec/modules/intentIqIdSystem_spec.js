@@ -7,8 +7,7 @@ import {
   handleClientHints,
   firstPartyData as moduleFPD,
   isCMPStringTheSame, createPixelUrl, translateMetadata,
-  initializeGlobalIIQ,
-  setGamReporting
+  initializeGlobalIIQ
 } from '../../../modules/intentIqIdSystem.js';
 import { storage, readData, storeData } from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
@@ -105,24 +104,6 @@ async function waitForClientHints() {
 
 const testAPILink = 'https://new-test-api.intentiq.com';
 const syncTestAPILink = 'https://new-test-sync.intentiq.com';
-const mockGAM = () => {
-  const targetingObject = {};
-  return {
-    cmd: [],
-    pubads: () => ({
-      setTargeting: (key, value) => {
-        targetingObject[key] = value;
-      },
-      getTargeting: (key) => {
-        return [targetingObject[key]];
-      },
-      getTargetingKeys: () => {
-        return Object.keys(targetingObject);
-      }
-    })
-  };
-};
-
 const regionCases = [
   { name: 'no region (default)', region: undefined, expected: 'https://api.intentiq.com' },
   { name: 'apac', region: 'apac', expected: 'https://api-apac.intentiq.com' },
@@ -218,46 +199,6 @@ describe('IntentIQ tests', function () {
     const submodule = intentIqIdSubmodule.getId({ params: { partner: '10' } });
     expect(logErrorStub.calledOnce).to.be.true;
     expect(submodule).to.be.undefined;
-  });
-
-  it('should use setConfig when available in setGamReporting', function () {
-    const setConfigSpy = sinon.spy();
-    const pubadsSetTargetingSpy = sinon.spy();
-    const mockGAM = {
-      cmd: [],
-      getConfig: sinon.stub(),
-      setConfig: setConfigSpy,
-      pubads: () => ({
-        setTargeting: pubadsSetTargetingSpy
-      })
-    };
-
-    setGamReporting(mockGAM, 'intent_iq_group', 'A');
-    mockGAM.cmd.forEach((fn) => fn());
-
-    expect(setConfigSpy.calledOnce).to.equal(true);
-    expect(setConfigSpy.firstCall.args[0]).to.deep.equal({
-      targeting: {
-        intent_iq_group: 'A'
-      }
-    });
-    expect(pubadsSetTargetingSpy.called).to.equal(false);
-  });
-
-  it('should fall back to pubads.setTargeting when setConfig is missing', function () {
-    const pubadsSetTargetingSpy = sinon.spy();
-    const mockGAM = {
-      cmd: [],
-      pubads: () => ({
-        setTargeting: pubadsSetTargetingSpy
-      })
-    };
-
-    setGamReporting(mockGAM, 'intent_iq_group', 'B');
-    mockGAM.cmd.forEach((fn) => fn());
-
-    expect(pubadsSetTargetingSpy.calledOnce).to.equal(true);
-    expect(pubadsSetTargetingSpy.firstCall.args).to.deep.equal(['intent_iq_group', 'B']);
   });
 
   it('should not save data in cookie if relevant type not set', async function () {
@@ -393,145 +334,6 @@ describe('IntentIQ tests', function () {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-  });
-
-  it('should set GAM targeting to B initially and update to A after server response', async function () {
-    const callBackSpy = sinon.spy();
-    const mockGamObject = mockGAM();
-    const expectedGamParameterName = 'intent_iq_group';
-    defaultConfigParams.params.abPercentage = 0; // "B" provided percentage by user
-
-    const originalPubads = mockGamObject.pubads;
-    const setTargetingSpy = sinon.spy();
-    mockGamObject.pubads = function () {
-      const obj = { ...originalPubads.apply(this, arguments) };
-      const originalSetTargeting = obj.setTargeting;
-      obj.setTargeting = function (...args) {
-        setTargetingSpy(...args);
-        return originalSetTargeting.apply(this, args);
-      };
-      return obj;
-    };
-
-    defaultConfigParams.params.gamObjectReference = mockGamObject;
-
-    const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    await waitForClientHints();
-    const request = server.requests[0];
-
-    mockGamObject.cmd.forEach(cb => cb());
-    mockGamObject.cmd = [];
-
-    const groupBeforeResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
-
-    request.respond(200, responseHeader, JSON.stringify({ tc: 20 }));
-
-    mockGamObject.cmd.forEach(cb => cb());
-    mockGamObject.cmd = [];
-
-    const groupAfterResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
-
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39');
-    expect(groupBeforeResponse).to.deep.equal([WITHOUT_IIQ]);
-    expect(groupAfterResponse).to.deep.equal([WITH_IIQ]);
-    expect(setTargetingSpy.calledTwice).to.be.true;
-  });
-
-  it('should set GAM targeting to B when server tc=41', async () => {
-    window.localStorage.clear();
-    const mockGam = mockGAM();
-    defaultConfigParams.params.gamObjectReference = mockGam;
-    defaultConfigParams.params.abPercentage = 100;
-
-    const cb = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-    cb(() => {});
-    await waitForClientHints();
-
-    const req = server.requests[0];
-    mockGam.cmd.forEach(fn => fn());
-    const before = mockGam.pubads().getTargeting('intent_iq_group');
-
-    req.respond(200, responseHeader, JSON.stringify({ tc: 41 }));
-    mockGam.cmd.forEach(fn => fn());
-    const after = mockGam.pubads().getTargeting('intent_iq_group');
-
-    expect(before).to.deep.equal([WITH_IIQ]);
-    expect(after).to.deep.equal([WITHOUT_IIQ]);
-  });
-
-  it('should read tc from LS and set relevant GAM group', async () => {
-    window.localStorage.clear();
-    const storageKey = `${FIRST_PARTY_KEY}_${defaultConfigParams.params.partner}`;
-    localStorage.setItem(storageKey, JSON.stringify({ terminationCause: 41 }));
-
-    const mockGam = mockGAM();
-    defaultConfigParams.params.gamObjectReference = mockGam;
-    defaultConfigParams.params.abPercentage = 100;
-
-    const cb = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-    cb(() => {});
-    await waitForClientHints();
-
-    mockGam.cmd.forEach(fn => fn());
-    const group = mockGam.pubads().getTargeting('intent_iq_group');
-
-    expect(group).to.deep.equal([WITHOUT_IIQ]);
-  });
-
-  it('should use the provided gamParameterName from configParams', function () {
-    const callBackSpy = sinon.spy();
-    const mockGamObject = mockGAM();
-    const customParamName = 'custom_gam_param';
-
-    defaultConfigParams.params.gamObjectReference = mockGamObject;
-    defaultConfigParams.params.gamParameterName = customParamName;
-
-    const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    mockGamObject.cmd.forEach(cb => cb());
-    const targetingKeys = mockGamObject.pubads().getTargetingKeys();
-
-    expect(targetingKeys).to.include(customParamName);
-  });
-
-  it('should NOT call GAM setTargeting when current browser is in browserBlackList', function () {
-    const usedBrowser = 'chrome';
-    const gam = mockGAM();
-    const pa = gam.pubads();
-    sinon.stub(gam, 'pubads').returns(pa);
-
-    const originalSetTargeting = pa.setTargeting;
-    let setTargetingCalls = 0;
-    pa.setTargeting = function (...args) {
-      setTargetingCalls++;
-      return originalSetTargeting.apply(this, args);
-    };
-
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({
-      pcid: 'pcid-1',
-      pcidDate: Date.now(),
-      isOptedOut: false,
-      date: Date.now(),
-      sCal: Date.now()
-    }));
-
-    const cfg = {
-      params: {
-        partner,
-        gamObjectReference: gam,
-        gamParameterName: 'custom_gam_param',
-        browserBlackList: usedBrowser
-      }
-    };
-
-    intentIqIdSubmodule.getId(cfg);
-    gam.cmd.forEach(fn => fn());
-    const currentBrowserLowerCase = detectBrowser();
-    if (currentBrowserLowerCase === usedBrowser) {
-      expect(setTargetingCalls).to.equal(0);
-      expect(pa.getTargetingKeys()).to.not.include('custom_gam_param');
-    }
   });
 
   it('should not throw Uncaught TypeError when IntentIQ endpoint returns empty response', async function () {
