@@ -3,6 +3,8 @@ import { ajax } from '../src/ajax.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { deepSetValue, getWinDimensions, getWindowTop, isArray, triggerPixel, logWarn, safeJSONParse } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -26,11 +28,6 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const isVideoAd = ({ adm }) => /^<\?xml|<VAST/i.test(adm || '');
 
-/**
- * Extract native assets from a native `adm` payload, whether it's shaped as the
- * root-level `{ assets: [...] }` this backend sends, or as the IAB-spec-wrapped
- * `{ native: { assets: [...] } }` some older/other native responses use.
- */
 const parseNativeAssets = adm => {
   const parsed = safeJSONParse(adm);
   if (Array.isArray(parsed?.assets)) {
@@ -48,7 +45,8 @@ const isHTML = ({ adm }) => /^<html|<iframe/i.test(adm || '');
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
-  const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
+  const connection = getConnectionInfo() || {};
+  const sua = ortbRequest.device?.sua || {};
   const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
@@ -56,11 +54,11 @@ const applyClientHints = ortbRequest => {
     'CH-Rtt': connection.rtt,
     'CH-SaveData': connection.saveData,
     'CH-Downlink': connection.downlink,
-    'CH-DeviceMemory': deviceMemory,
-    'CH-Dpr': W.devicePixelRatio,
+    'CH-DeviceMemory': null,
+    'CH-Dpr': getDevicePixelRatio(W),
     'CH-ViewportWidth': viewport.width,
-    'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
-    'CH-isMobile': userAgentData.mobile,
+    'CH-BrowserBrands': JSON.stringify(sua.browsers),
+    'CH-isMobile': Boolean(sua.mobile),
   };
 
   /**
@@ -184,9 +182,7 @@ const converter = ortbConverter({
       oneCodeDetection[bidRequest.bidId] = [siteid, slotid];
     }
 
-    // for native ads, copy bid.admNative to bid.adm; normalize a wrapped
-    // `{ native: { assets: [...] } }` adm to the root-level shape the shared
-    // ortbConverter native processor expects.
+    // for native ads, copy bid.admNative to bid.adm
     if (admNative && !adm) {
       bidResponse.adm = admNative;
     } else if (context.mediaType === NATIVE && adm) {

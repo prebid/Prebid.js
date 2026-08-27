@@ -689,9 +689,6 @@ describe('gopl adapter functionality', function () {
             'price': 0.5,
             'adid': 'lxHWkB7OnZeso3QiN1N4',
             'nurl': '',
-            // per the IAB Native Ads response spec, `adm` may be wrapped as
-            // `{"native": {...}}` instead of the root-level shape this backend
-            // normally sends.
             'adm': JSON.stringify({
               'native': {
                 'assets': [
@@ -735,6 +732,36 @@ describe('gopl adapter functionality', function () {
                 { 'id': 1, 'img': { 'type': 3, 'url': 'https://img' } },
               ],
             }),
+            'adomain': ['adomain.pl'],
+            'cid': 'BZ4gAg21T5nNtxlUCDSW',
+            'crid': 'lxHWkB7OnZeso3QiN1N4',
+            'ext': {
+              'siteid': '8816',
+              'slotid': '80',
+            },
+          }],
+          'seat': 'dsp1',
+          'group': 0
+        }],
+        'cur': 'PLN'
+      }
+    };
+    const serverResponseNativeMalformedAdm = {
+      'body': {
+        'id': bidderRequestId,
+        'seatbid': [{
+          'bid': [{
+            'id': '3347324c-6889-46d2-a800-ae78a5214c06',
+            'impid': '080',
+            'price': 0.5,
+            'adid': 'lxHWkB7OnZeso3QiN1N4',
+            'nurl': '',
+            'admNative': JSON.stringify({
+              'assets': [
+                { 'id': 0, 'title': { 'text': 'Title' } },
+              ],
+            }),
+            'adm': 'not-a-valid-native-payload',
             'adomain': ['adomain.pl'],
             'cid': 'BZ4gAg21T5nNtxlUCDSW',
             'crid': 'lxHWkB7OnZeso3QiN1N4',
@@ -799,6 +826,7 @@ describe('gopl adapter functionality', function () {
       serverResponseNative,
       serverResponseNativeAdmNative,
       serverResponseNativeWrapped,
+      serverResponseNativeMalformedAdm,
       serverResponseWithBurl,
       emptyResponse
     };
@@ -1202,6 +1230,16 @@ describe('gopl adapter functionality', function () {
       expect(resultNative.length).to.equal(1);
       expect(resultNative[0].mediaType).to.equal('native');
       expect(resultNative[0].cpm).to.equal(0.5);
+    });
+
+    it('should warn and skip adm normalization when adm cannot be parsed as native, despite admNative being present', function () {
+      const { serverResponseNativeMalformedAdm } = prepareTestData();
+      const warnSpy = sinon.spy(utils, 'logWarn');
+
+      spec.interpretResponse(serverResponseNativeMalformedAdm, requestNative);
+
+      expect(warnSpy.calledWith('Could not parse native data', 'not-a-valid-native-payload')).to.be.true;
+      warnSpy.restore();
     });
 
     it('should copy burl from the response bid onto the interpreted bid', function () {
