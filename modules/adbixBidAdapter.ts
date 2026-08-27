@@ -15,7 +15,7 @@ const ENDPOINT = 'https://adbix.net/api/prebid-auction.php';
 const SYNC_URL = 'https://adbix.net/sync/index.php';
 const SUPPORTED_MEDIA_TYPES = [BANNER] as const;
 
-interface AdbixParams {
+export interface AdbixParams {
   publisherId: string;
   placementId: string;
   test?: boolean;
@@ -84,22 +84,33 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     const referer = bidderRequest.refererInfo;
     const ortb2: any = bidderRequest.ortb2 || {};
     const schain = ortb2.source?.ext?.schain;
+    const site = {
+      ...ortb2.site,
+      domain: ortb2.site?.domain ?? referer.domain ?? '',
+      page: ortb2.site?.page ?? referer.page ?? referer.legacy?.referer ?? '',
+      ref: ortb2.site?.ref ?? referer.ref ?? ''
+    };
+    const clientContext = ortb2.dooh
+      ? { site: undefined, app: undefined, dooh: ortb2.dooh }
+      : ortb2.app
+        ? { site: undefined, app: ortb2.app, dooh: undefined }
+        : { site, app: undefined, dooh: undefined };
+    const isTestRequest = validBidRequests.length > 0 &&
+      validBidRequests.every((bid) => !!getAdbixParams(bid).test);
 
     const request = {
+      ...ortb2,
       id: bidderRequest.bidderRequestId,
-      test: validBidRequests.some((bid) => getAdbixParams(bid).test) ? 1 : 0,
+      // OpenRTB's request-level test flag applies to the whole batch. Only
+      // mark the batch as test traffic when every impression is a test bid.
+      test: isTestRequest ? 1 : 0,
       tmax: bidderRequest.timeout || 800,
-
-      site: {
-        ...ortb2.site,
-        domain: referer.domain || ortb2.site?.domain || '',
-        page: referer.page || referer.legacy?.referer || ortb2.site?.page || '',
-        ref: referer.ref || ortb2.site?.ref || ''
-      },
+      ...clientContext,
 
       imp: validBidRequests.map((bid) => {
         const params = getAdbixParams(bid);
         const sizes = getBannerSizes(bid).map(([w, h]) => ({ w, h }));
+        const ortb2Imp = bid.ortb2Imp || {};
         const getFloor = (bid as AdbixBidRequest & {
           getFloor?: FloorGetter
         }).getFloor;
@@ -111,8 +122,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           })
           : null;
         const floor = Number(floorResult?.floor);
-        const bidfloor = Number.isFinite(floor) && floor > 0 ? floor : 0;
-        const ortb2Imp = bid.ortb2Imp || {};
+        const floorCurrency = floorResult?.currency;
+        const useFloor = Number.isFinite(floor) &&
+          floor > 0 &&
+          typeof floorCurrency === 'string' &&
+          floorCurrency.length > 0;
         const publisherExt: any = ortb2Imp.ext || {};
         const publisherPrebid: any = publisherExt.prebid || {};
 
@@ -123,8 +137,10 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
             ...ortb2Imp.banner,
             format: sizes
           },
-          bidfloor,
-          bidfloorcur: 'USD',
+          bidfloor: useFloor ? floor : (ortb2Imp.bidfloor ?? 0),
+          bidfloorcur: useFloor
+            ? floorCurrency
+            : (ortb2Imp.bidfloorcur ?? 'USD'),
 
           ext: {
             ...publisherExt,
@@ -142,25 +158,18 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
             }
           }
         };
-      }),
-
-      regs: ortb2.regs || {},
-      user: ortb2.user || {},
-      bcat: ortb2.bcat,
-      badv: ortb2.badv,
-      battr: ortb2.battr,
-      bapp: ortb2.bapp,
-
-      source: schain
-        ? {
-            ...ortb2.source,
-            ext: {
-              ...ortb2.source?.ext,
-              schain
-            }
-          }
-        : ortb2.source
+      })
     };
+
+    if (schain) {
+      request.source = {
+        ...ortb2.source,
+        ext: {
+          ...ortb2.source?.ext,
+          schain
+        }
+      };
+    }
 
     return {
       method: 'POST',
