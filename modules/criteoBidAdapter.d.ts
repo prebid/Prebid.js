@@ -1,4 +1,5 @@
 import type { Size } from '../src/types/common.d.ts';
+import type { RequireAtLeastOne } from '../src/types/objects.d.ts';
 
 export interface CriteoVideoParams {
   mimes?: string[];
@@ -15,10 +16,8 @@ export interface CriteoVideoParams {
 }
 
 /** Parameters accepted by the Criteo bidder adapter. */
-export interface CriteoBidderParams {
-  /** Required unless `networkId` is provided. */
+export type CriteoBidderParams = RequireAtLeastOne<{
   zoneId?: number | string;
-  /** Required unless `zoneId` is provided. */
   networkId?: number | string;
   publisherSubId?: number | string;
   uid?: number | string;
@@ -28,7 +27,7 @@ export interface CriteoBidderParams {
   bidFloorCur?: string;
   video?: CriteoVideoParams;
   ext?: Record<string, unknown>;
-}
+}, 'zoneId' | 'networkId'>;
 
 declare module '../src/adUnits' {
   interface BidderParams {
