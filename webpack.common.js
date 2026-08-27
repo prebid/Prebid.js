@@ -2,6 +2,7 @@ const path = require('path');
 const { argv } = require('yargs');
 const TerserPlugin = require('terser-webpack-plugin');
 const helpers = require('./gulpHelpers.js');
+const {precompilationKey} = require('./gulp.cache.js');
 const isES5Mode = argv.ES5;
 
 // Browsers the ES5 bundle aims to support. This list drives *polyfill* selection
@@ -85,6 +86,22 @@ module.exports = function (config) {
     });
 
   }
+  // `dist/src` holds one precompilation variant at a time, at the same paths - and `gulp.dest`
+  // carries each source file's mtime over, so the timestamps are the same too. Two variants are
+  // therefore indistinguishable to a filesystem cache, which will happily serve modules compiled
+  // from a build of a different feature set. Make the configuration part of the cache key.
+  //
+  // `version` rather than `name`: webpack defaults the name to `${name}-${mode}`, and that is what
+  // keeps the development and production caches apart - `mode` is overridden after this runs, so a
+  // name computed here would collide the two. `--ES5` belongs in the key as well, since it decides
+  // the loader rules added above.
+  if (config.cache && config.cache.type === 'filesystem') {
+    config.cache.version = JSON.stringify({
+      precompilation: precompilationKey(),
+      ES5: !!isES5Mode
+    });
+  }
+
   config.optimization = config.optimization || {};
   config.optimization.minimizer = [
     new TerserPlugin({

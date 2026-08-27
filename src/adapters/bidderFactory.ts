@@ -6,7 +6,7 @@ import adapterManager, {
 } from '../adapterManager.js';
 import { config } from '../config.js';
 import { BannerBid, Bid, BidResponse, createBid } from '../bidfactory.js';
-import { type SyncType, userSync } from '../userSync.js';
+import { type UserSync, userSync } from '../userSync.js';
 import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
@@ -91,6 +91,7 @@ import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, coppaDataHandler, type ConsentD
  *
  * @property {('image'|'iframe')} type The type of user sync to be done.
  * @property {string} url The URL which makes the sync happen.
+ * @property {function} [onCleanup] Releases work associated with an iframe when it is removed.
  */
 
 // common params for all mediaTypes
@@ -157,7 +158,7 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
     uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
     gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>,
     coppa: boolean
-  ) => ({ type: SyncType, url: string })[];
+  ) => UserSync[];
   alwaysHasCapacity?: boolean;
 }
 
@@ -600,7 +601,7 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
         syncs = [syncs];
       }
       syncs.forEach((sync) => {
-        userSync.registerSync(sync.type, spec.code, sync.url);
+        userSync.registerSync(sync.type, spec.code, sync.url, sync.onCleanup);
       });
       userSync.bidderDone(spec.code);
     }

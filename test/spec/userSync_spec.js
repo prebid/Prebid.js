@@ -59,8 +59,8 @@ describe('user sync', function () {
     politeTriggerPixelStub = sinon.stub(utils, 'politeTriggerPixel').callsFake((url) => {
       utils.triggerPixel(url);
     });
-    politeInsertUserSyncIframeStub = sinon.stub(utils, 'politeInsertUserSyncIframe').callsFake((url) => {
-      utils.insertUserSyncIframe(url);
+    politeInsertUserSyncIframeStub = sinon.stub(utils, 'politeInsertUserSyncIframe').callsFake((...args) => {
+      utils.insertUserSyncIframe(...args);
     });
   });
 
@@ -104,11 +104,13 @@ describe('user sync', function () {
       }
     });
 
-    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    const onCleanup = sinon.spy();
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe', onCleanup);
     userSync.syncUsers();
 
     expect(politeInsertUserSyncIframeStub.calledOnce).to.equal(true);
     expect(politeInsertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+    expect(politeInsertUserSyncIframeStub.getCall(0).args[3]).to.equal(onCleanup);
   });
 
   describe('removeUserSyncs', function () {
@@ -218,9 +220,11 @@ describe('user sync', function () {
         }
       }
     });
-    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    const onCleanup = sinon.spy();
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe', onCleanup);
     userSync.syncUsers();
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+    expect(insertUserSyncIframeStub.getCall(0).args[3]).to.equal(onCleanup);
   });
 
   it('should stop triggering user syncs after bidderDone', function () {

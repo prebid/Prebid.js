@@ -7,18 +7,50 @@ var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 const path = require('path');
 const helpers = require('./gulpHelpers.js');
+const {readPrecompilationKey} = require('./gulp.cache.js');
 const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 
-function newWebpackConfig(codeCoverage, disableFeatures) {
+function newWebpackConfig(codeCoverage, disableFeatures, watchMode, singleSpec) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
+  // Keyed on what `dist/src` actually is, rather than on `argv` as the bundle builds are: the
+  // variant that matters here is not always visible from the command line. `gulp test` runs
+  // `test-all-features-disabled`, which passes its feature set in directly; `serve-and-test`
+  // precompiles with `dev`; and coverage changes the loader options below. Miss any of those and
+  // webpack serves modules compiled from the other variant - silently, since the paths and the
+  // mtimes are identical. The tree is on disk by the time this runs, so ask it.
+  //
+  // Note this replaces the `cache` that `webpack.common.js` set up for the bundle builds, version
+  // included, which is why it has to state its own.
+  const treeKey = readPrecompilationKey();
   Object.assign(webpackConfig, {
     mode: 'development',
     devtool: 'inline-source-map',
-    cache: {
+    // an untracked tree - never precompiled, or precompiled before the stamp existed - offers
+    // nothing safe to key on, so reuse nothing
+    cache: (treeKey == null || !singleSpec) ? false : {
       type: 'filesystem',
-      cacheDirectory: path.resolve(__dirname, '.cache/webpack-test')
+      cacheDirectory: path.resolve(__dirname, '.cache/webpack-test'),
+      version: JSON.stringify({precompilation: treeKey, coverage: !!codeCoverage}),
+      // Only for a single-spec run, and only then. A store rewrites the cache for the
+      // compilation that just ran, so a `--file` run and a full run evict each other's entries -
+      // and the full suite is eight compilations, which between them grow this to ~800MB while
+      // saving under 10%. A single spec keeps it around 33MB and compiles in a fifth of the time.
+      //
+      // Store as soon as the build goes idle, rather than after webpack's default 5s.
+      //
+      // Nothing closes the compiler in a single run: karma-webpack registers `compiler.close()`
+      // - which is what flushes the cache - only on its watch branch, and that branch needs
+      // `watch: true` in the webpack options, which its own defaults set to false. So the only
+      // way anything is written is webpack's idle timer, and a `--file` run finishes in a
+      // couple of seconds and then exits through `karmaRunner`'s `process.exit()`. Left at the
+      // default, this cache is populated only by long multi-chunk runs - the ones that need it
+      // least - and never by the fast single-spec loop it would actually help.
+      //
+      // Watch mode keeps the defaults: that process lives long enough for them to fire on their
+      // own, and storing after every rebuild would put tens of megabytes of I/O in the save loop.
+      ...(watchMode ? {} : {idleTimeoutForInitialStore: 0})
     },
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
@@ -121,8 +153,8 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures, chunkNo) {
-  var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
+module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures, chunkNo, singleSpec) {
+  var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures, watchMode, singleSpec);
   var plugins = newPluginsArray(browserstack);
   if (file) {
     file = Array.isArray(file) ? ['test/pipeline_setup.js', ...file] : [file]
