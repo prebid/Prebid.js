@@ -1,6 +1,7 @@
 import { _each, deepAccess, deepSetValue, isEmpty, isFn, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,7 +11,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid/';
-const VERSION = '1.7';
+const VERSION = '1.8';
 const NET_REVENUE = true;
 const TTL = 300;
 const DEFAULT_CURRENCY = 'JPY';
@@ -113,20 +114,17 @@ export const spec = {
     const serverRequests = [];
     const page = bidderRequest.refererInfo.page;
     const wrapperName = config.getConfig('fluct')?.wrapperName;
-    const customHeaders = {
-      'x-fluct-app': 'prebid/fluctBidAdapter',
-      'x-fluct-version': VERSION,
-      'x-openrtb-version': 2.5,
-    };
-    if (wrapperName) {
-      customHeaders['x-fluct-prebid-wrapper'] = wrapperName;
-    }
+    // The device autoplay capability is constant for this auction, so detect it
+    // once and reuse it for every bid request.
+    const autoplay = isAutoplayEnabled() ? 1 : 0;
 
     _each(validBidRequests, (request) => {
       const impExt = request.ortb2Imp?.ext;
       const data = {};
 
       data.page = page;
+      data.adapterVersion = VERSION;
+      if (wrapperName) data.wrapperName = wrapperName;
 
       const ortb2Site = bidderRequest.ortb2?.site;
       if (ortb2Site) {
@@ -242,6 +240,10 @@ export const spec = {
       const pos = deepAccess(request, 'mediaTypes.banner.pos') ?? deepAccess(request, 'ortb2Imp.ext.data.pos');
       if (pos != null) data.pos = pos;
 
+      // Forward the device autoplay capability as a raw signal so the bidder can
+      // avoid autoplay-dependent (e.g. video) inventory when autoplay is blocked.
+      data.autoplay = autoplay;
+
       const ortb2Device = bidderRequest.ortb2?.device;
       if (ortb2Device) {
         data.device = {};
@@ -277,9 +279,7 @@ export const spec = {
         method: 'POST',
         url: END_POINT + '?' + searchParams.toString(),
         options: {
-          contentType: 'application/json',
           withCredentials: true,
-          customHeaders,
         },
         data: data
       });

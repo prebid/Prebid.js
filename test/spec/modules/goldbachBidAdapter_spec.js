@@ -7,7 +7,7 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { OUTSTREAM } from 'src/video.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
-const BIDDER_NAME = 'goldbach'
+const BIDDER_NAME = 'goldbach';
 const ENDPOINT = 'https://goldlayer-api.prod.gbads.net/openrtb/2.5/auction';
 
 /* Eids */
@@ -337,7 +337,7 @@ describe('GoldbachBidAdapter', function () {
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.url).to.equal(ENDPOINT);
-    })
+    });
 
     it('should parse all bids to a valid openRTB request', function () {
       const bidRequests = deepClone(validBidRequests);
@@ -430,8 +430,8 @@ describe('GoldbachBidAdapter', function () {
 
       expect(response).to.exist;
       expect(response.length).to.equal(3);
-      expect(response.filter(bid => bid.requestId === validBidRequests[0].bidId).length).to.equal(1)
-      expect(response.filter(bid => bid.requestId === validBidRequests[1].bidId).length).to.equal(1)
+      expect(response.filter(bid => bid.requestId === validBidRequests[0].bidId).length).to.equal(1);
+      expect(response.filter(bid => bid.requestId === validBidRequests[1].bidId).length).to.equal(1);
     });
 
     if (FEATURES.VIDEO) {

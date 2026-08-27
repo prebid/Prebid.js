@@ -6,7 +6,6 @@ import { EVENTS, STATUS } from 'src/constants.js';
 const events = require('src/events');
 
 describe('Invisibly Analytics Adapter test suite', function () {
-  let xhr;
   let requests = [];
   const BID1 = {
     width: 980,

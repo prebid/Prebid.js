@@ -28,7 +28,7 @@ describe('PBS event trackers', () => {
     }
   }).forEach(([t, { type, bid }]) => {
     function getTracker() {
-      return bidResponse.eventtrackers?.find(({ event, method, url }) => url === 'tracker' && method === TRACKER_METHOD_IMG && event === type)
+      return bidResponse.eventtrackers?.find(({ event, method, url }) => url === 'tracker' && method === TRACKER_METHOD_IMG && event === type);
     }
 
     it(`should add ${t}`, () => {
@@ -46,6 +46,6 @@ describe('PBS event trackers', () => {
       addEventTrackers(bidResponse, bid);
       expect(getTracker()).to.exist;
       expect(bidResponse.eventtrackers.length).to.eql(1);
-    })
-  })
-})
+    });
+  });
+});

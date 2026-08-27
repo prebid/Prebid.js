@@ -131,7 +131,7 @@ export const spec = {
         placementId: bid.placementId,
       };
       if (bid.dealId) {
-        bidResponse.dealId = bid.dealId
+        bidResponse.dealId = bid.dealId;
       }
       if (bid?.ext?.dsa) {
         bidResponse.meta.dsa = bid.ext.dsa;
@@ -169,7 +169,7 @@ function hydratePayloadWithGppConsentData(payload, gppData) {
   const isValidConsentString = typeof gppData.gppString === 'string';
   const validateApplicableSections =
       Array.isArray(gppData.applicableSections) &&
-      gppData.applicableSections.every((section) => typeof (section) === 'number')
+      gppData.applicableSections.every((section) => typeof (section) === 'number');
   payload.gpp = {
     consentString: isValidConsentString ? gppData.gppString : '',
     applicableSectionIds: validateApplicableSections ? gppData.applicableSections : [],

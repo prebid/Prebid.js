@@ -6,7 +6,7 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js'
+import { getStorageManager } from '../src/storageManager.js';
 import { logInfo } from '../src/utils.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
@@ -52,7 +52,7 @@ export const pairIdSubmodule = {
    * @returns {{pairId:string} | undefined }
    */
   decode(value) {
-    return value && Array.isArray(value) ? { 'pairId': value } : undefined
+    return value && Array.isArray(value) ? { 'pairId': value } : undefined;
   },
   /**
    * Performs action to obtain ID and return a value in the callback's response argument.
@@ -62,13 +62,13 @@ export const pairIdSubmodule = {
    * @returns {{id: string[] | undefined}} The obtained IDs or undefined if no IDs are found.
    */
   getId(config) {
-    const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY)
-    let ids = []
+    const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY);
+    let ids = [];
     if (pairIdsString && typeof pairIdsString === 'string') {
       try {
-        ids = ids.concat(JSON.parse(atob(pairIdsString)))
+        ids = ids.concat(JSON.parse(atob(pairIdsString)));
       } catch (error) {
-        logInfo(error)
+        logInfo(error);
       }
     }
 
@@ -100,7 +100,7 @@ export const pairIdSubmodule = {
     }
 
     if (ids.length === 0) {
-      logInfo('PairId not found.')
+      logInfo('PairId not found.');
       return undefined;
     }
     return { 'id': ids };

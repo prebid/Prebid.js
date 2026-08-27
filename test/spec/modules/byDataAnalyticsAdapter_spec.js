@@ -40,7 +40,7 @@ const noBidArgs = {
   sizes: [[300, 250], [250, 250]],
   src: 'client',
   transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
-}
+};
 const bidWonArgs = {
   auctionId,
   adUnitCode: 'div-gpt-ad-mrec1',
@@ -51,7 +51,7 @@ const bidWonArgs = {
   currency: 'USD',
   mediaType: 'display',
   cpm: 0.50
-}
+};
 
 const auctionEndArgs = {
   adUnitCodes: ['div-gpt-ad-mrec1'],
@@ -86,7 +86,7 @@ const auctionEndArgs = {
       }
     ]
   }]
-}
+};
 const expectedDataArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
@@ -114,7 +114,7 @@ const expectedDataArgs = {
     iwb: 0,
     mt: 'display',
   }]
-}
+};
 const expectedBidWonArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
@@ -137,7 +137,7 @@ const expectedBidWonArgs = {
     iwb: 1,
     mt: 'display',
   }]
-}
+};
 
 describe('byData Analytics Adapter ', () => {
   beforeEach(() => {
@@ -156,7 +156,7 @@ describe('byData Analytics Adapter ', () => {
       ascAdapter.track.restore();
     });
     it('should init with correct options', function () {
-      ascAdapter.enableAnalytics(initOptions)
+      ascAdapter.enableAnalytics(initOptions);
       // Step 1: Initialize adapter
       adapterManager.enableAnalytics({
         provider: 'bydata',
@@ -169,7 +169,7 @@ describe('byData Analytics Adapter ', () => {
 
   describe('track-events', function () {
     before(() => {
-      ascAdapter.enableAnalytics(initOptions)
+      ascAdapter.enableAnalytics(initOptions);
       // Step 1: Initialize adapter
       adapterManager.enableAnalytics({
         provider: 'bydata',
@@ -179,7 +179,7 @@ describe('byData Analytics Adapter ', () => {
     it('sends and formatted auction data ', function () {
       events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(EVENTS.NO_BID, noBidArgs);
-      events.emit(EVENTS.BID_WON, bidWonArgs)
+      events.emit(EVENTS.BID_WON, bidWonArgs);
       var userToken = ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
       var newBwData = ascAdapter.getBidWonData(bidWonArgs);

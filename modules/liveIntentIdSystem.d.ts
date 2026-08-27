@@ -1,3 +1,6 @@
+// the augmentation in this file only applies where the spec is part of the program
+import type {} from './userId/spec.js';
+
 export type LiveIntentIdSystemModuleName = 'liveIntentId';
 
 export interface LiveIntentCollectConfig {
@@ -59,7 +62,7 @@ export type LiveIntentFpid = {
    * Either from the cookie jar, `cookie`, or from the local storage, `html5`.
    */
   strategy?: 'cookie' | 'html5';
-}
+};
 
 export type LiveIntentIdSystemParams = {
   /**
@@ -118,7 +121,7 @@ export type LiveIntentIdSystemParams = {
    * Delay expressed in milliseconds
    */
   fireEventDelay?: number;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -139,4 +142,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

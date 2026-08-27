@@ -35,7 +35,7 @@ export const makeBaseSpec = (baseUrl, modes) => {
         method: 'POST',
         url: getEndpoint(testMode, rtbDomain, modes),
         data: combinedRequestsObject
-      }
+      };
     },
     interpretResponse: function ({ body }) {
       const bidResponses = [];
@@ -63,7 +63,7 @@ export const makeBaseSpec = (baseUrl, modes) => {
             return {
               type: 'image',
               url: pixel
-            }
+            };
           });
           syncs.push(...pixels);
         }
@@ -80,8 +80,8 @@ export const makeBaseSpec = (baseUrl, modes) => {
         triggerPixel(bid.nurl);
       }
     }
-  }
-}
+  };
+};
 
 export function getBidRequestMediaTypes(bidRequest) {
   const mediaTypes = deepAccess(bidRequest, 'mediaTypes');
@@ -112,7 +112,7 @@ export function getFloor(bid) {
     return 0;
   }
 
-  const mediaTypes = getBidRequestMediaTypes(bid)
+  const mediaTypes = getBidRequestMediaTypes(bid);
   const firstMediaType = mediaTypes[0];
 
   const floorResult = bid.getFloor({
@@ -339,9 +339,7 @@ export function buildBidResponse(adUnit) {
     netRevenue: adUnit.netRevenue || true,
     nurl: adUnit.nurl,
     mediaType: adUnit.mediaType,
-    meta: {
-      mediaType: adUnit.mediaType
-    }
+    meta: buildBidMeta(adUnit)
   };
 
   if (adUnit.mediaType === VIDEO) {
@@ -352,11 +350,20 @@ export function buildBidResponse(adUnit) {
     bidResponse.native = { ortb: adUnit.native };
   }
 
-  if (adUnit.adomain && adUnit.adomain.length) {
-    bidResponse.meta.advertiserDomains = adUnit.adomain;
+  return bidResponse;
+}
+
+export function buildBidMeta(adUnit) {
+  const meta = {
+    mediaType: adUnit.mediaType,
+    ...(adUnit.meta || {})
+  };
+
+  if (!meta.advertiserDomains && adUnit.adomain && adUnit.adomain.length) {
+    meta.advertiserDomains = adUnit.adomain;
   }
 
-  return bidResponse;
+  return meta;
 }
 
 export function generateGeneralParams(generalObject, bidderRequest, adapterVersion) {
@@ -401,7 +408,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     generalParams.device = ortb2Metadata.device;
   }
 
-  const previousAuctionInfo = deepAccess(bidderRequest, 'ortb2.ext.prebid.previousauctioninfo')
+  const previousAuctionInfo = deepAccess(bidderRequest, 'ortb2.ext.prebid.previousauctioninfo');
   if (previousAuctionInfo) {
     generalParams.prev_auction_info = JSON.stringify(previousAuctionInfo);
   }

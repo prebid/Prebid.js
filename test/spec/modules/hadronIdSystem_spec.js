@@ -59,5 +59,5 @@ describe('HadronIdSystem', function () {
         }]
       });
     });
-  })
+  });
 });

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as ajax from 'src/ajax.js';
+import 'src/ajax.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import {
   CONTEXT_KEYS,
@@ -60,7 +60,7 @@ describe('Mobian RTD Submodule', function () {
     [TG]: 3,
     [THEMES]: [],
     [TONES]: [],
-  }
+  };
 
   const mockKeyValues = {
     'mobian_ap_a1': ['2313', '12'],
@@ -71,13 +71,13 @@ describe('Mobian RTD Submodule', function () {
     'mobian_sentiment': 'positive',
     'mobian_tq': 1,
     'mobian_tg': 3,
-  }
+  };
 
   const mockConfig = {
     prefix: 'mobian',
     publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, TQ, TG, THEMES, TONES, GENRES],
     advertiserTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, TQ, TG, THEMES, TONES, GENRES],
-  }
+  };
 
   beforeEach(function () {
     bidReqConfig = {

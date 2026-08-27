@@ -11,6 +11,7 @@ import {
 import {
   isPlainObject,
   logError,
+  logWarn,
   sizesToSizeTuples,
 } from "../../src/utils.js";
 import type {
@@ -57,6 +58,14 @@ type FerioAdapterRequest = AdapterRequest & {
   };
 };
 
+export type FerioAliasOptions = {
+  code: BidderCode;
+  endpoint?: string;
+  gvlid?: number;
+  paramBidderCode?: BidderCode;
+  skipPbsAliasing?: boolean;
+};
+
 export type FerioBidderSpecOptions<
   Code extends BidderCode = typeof DEFAULT_PARAM_BIDDER_CODE
 > = {
@@ -64,6 +73,7 @@ export type FerioBidderSpecOptions<
   endpoint: string;
   paramBidderCode?: BidderCode;
   requiredParams?: readonly RequiredParam[];
+  aliases?: readonly FerioAliasOptions[];
 };
 
 type GdprConsent = null | undefined | ConsentDataForKey<typeof CONSENT_GDPR>;
@@ -159,7 +169,9 @@ function isBidRequestValid<B extends BidderCode>(
   return true;
 }
 
-function isSupportedMediaType(value: unknown): value is SupportedFerioMediaType {
+function isSupportedMediaType(
+  value: unknown
+): value is SupportedFerioMediaType {
   return supportedMediaTypes.includes(value as SupportedFerioMediaType);
 }
 
@@ -167,7 +179,9 @@ function isFerioResponseMType(value: unknown): value is FerioResponseMType {
   return ORTB_RESPONSE_MEDIA_TYPES.includes(value as FerioResponseMType);
 }
 
-function getBidPrebidMediaType(bid: ORTBBid): SupportedFerioMediaType | undefined {
+function getBidPrebidMediaType(
+  bid: ORTBBid
+): SupportedFerioMediaType | undefined {
   const prebidExt = bid.ext?.prebid;
   if (!isRecord(prebidExt)) {
     return;
@@ -213,7 +227,11 @@ function parseAdm(adm: unknown): unknown {
 }
 
 function isNativeAdmWrapper(value: unknown): value is NativeAdmWrapper {
-  if (!isRecord(value) || Array.isArray(value.assets) || !isRecord(value.native)) {
+  if (
+    !isRecord(value) ||
+    Array.isArray(value.assets) ||
+    !isRecord(value.native)
+  ) {
     return false;
   }
 
@@ -262,7 +280,10 @@ function getContextAdapterCode(context: {
 }
 
 function createFerioConverter<B extends BidderCode>(
-  paramBidderCode: BidderCode
+  getParamBidderCode: (
+    bidRequest: BidRequest<B>,
+    context: { bidderRequest?: unknown }
+  ) => BidderCode
 ) {
   return ortbConverter<B>({
     context: {
@@ -272,6 +293,7 @@ function createFerioConverter<B extends BidderCode>(
     },
     processors: pbsExtensions,
     imp(buildImp, bidRequest, context) {
+      const paramBidderCode = getParamBidderCode(bidRequest, context);
       return buildImp(
         { ...bidRequest, bidder: paramBidderCode } as BidRequest<B>,
         context
@@ -313,6 +335,10 @@ function normalizeEndpoint(endpoint?: string): string | undefined {
   }
 
   const normalizedEndpoint = endpoint.trim().replace(/\/+$/, "");
+  if (!isHttpsUrl(normalizedEndpoint)) {
+    return;
+  }
+
   return /\/bid$/.test(normalizedEndpoint)
     ? normalizedEndpoint
     : `${normalizedEndpoint}/bid`;
@@ -320,6 +346,16 @@ function normalizeEndpoint(endpoint?: string): string | undefined {
 
 function getEndpointBase(endpoint?: string): string | undefined {
   return endpoint?.replace(/\/bid$/, "");
+}
+
+function getMappedCodeValue<T>(
+  valuesByCode: Record<BidderCode, T | undefined>,
+  bidderCode: BidderCode,
+  fallback: T | undefined
+): T | undefined {
+  return Object.prototype.hasOwnProperty.call(valuesByCode, bidderCode)
+    ? valuesByCode[bidderCode]
+    : fallback;
 }
 
 function appendQueryParams(url: string, params: ConsentParam[]): string {
@@ -417,9 +453,7 @@ function getUserSyncs(
 
 export function createFerioBidderSpec<
   Code extends BidderCode = typeof DEFAULT_PARAM_BIDDER_CODE
->(
-  options: FerioBidderSpecOptions<Code>
-): BidderSpec<Code> {
+>(options: FerioBidderSpecOptions<Code>): BidderSpec<Code> {
   const code = getNonEmptyString(
     options.code,
     DEFAULT_PARAM_BIDDER_CODE
@@ -429,12 +463,65 @@ export function createFerioBidderSpec<
     : [];
   const endpoint = normalizeEndpoint(options.endpoint);
   const syncBase = getEndpointBase(endpoint);
-  const converter = createFerioConverter<Code>(
-    getNonEmptyString(options.paramBidderCode, code)
+  const aliases: FerioAliasOptions[] = [];
+  (options.aliases ?? []).forEach((alias) => {
+    if (!isRecord(alias) || !isNonEmptyString(alias.code)) {
+      return;
+    }
+    if (
+      alias.code === code ||
+      aliases.some((seen) => seen.code === alias.code)
+    ) {
+      logError(
+        `ferioUtils: ignoring alias with duplicate code "${alias.code}"`
+      );
+      return;
+    }
+    aliases.push(alias);
+  });
+  const endpointByCode: Record<BidderCode, string | undefined> = {
+    [code]: endpoint,
+  };
+  const syncBaseByCode: Record<BidderCode, string | undefined> = {
+    [code]: syncBase,
+  };
+  const paramBidderCodeByCode: Record<BidderCode, BidderCode> = {
+    [code]: getNonEmptyString(options.paramBidderCode, code),
+  };
+  aliases.forEach((alias) => {
+    const hasAliasEndpoint = isNonEmptyString(alias.endpoint);
+    const normalizedAliasEndpoint = normalizeEndpoint(alias.endpoint);
+    if (!normalizedAliasEndpoint && hasAliasEndpoint) {
+      logWarn(
+        `ferioUtils: invalid alias endpoint for "${alias.code}", skipping alias requests`
+      );
+    }
+    const aliasEndpoint = hasAliasEndpoint ? normalizedAliasEndpoint : endpoint;
+    endpointByCode[alias.code] = aliasEndpoint;
+    syncBaseByCode[alias.code] = getEndpointBase(aliasEndpoint);
+    paramBidderCodeByCode[alias.code] = getNonEmptyString(
+      alias.paramBidderCode,
+      alias.code
+    );
+  });
+  const specAliases = aliases.map(
+    ({ code: aliasCode, gvlid, skipPbsAliasing }) => ({
+      code: aliasCode,
+      gvlid,
+      skipPbsAliasing,
+    })
   );
+  const converter = createFerioConverter<Code>((bidRequest, context) => {
+    const requestCode = getNonEmptyString(
+      bidRequest.bidder,
+      getContextAdapterCode(context) ?? code
+    );
+    return paramBidderCodeByCode[requestCode] ?? paramBidderCodeByCode[code];
+  });
 
   return {
     code,
+    ...(specAliases.length ? { aliases: specAliases } : {}),
     supportedMediaTypes,
     isBidRequestValid(bid) {
       return isBidRequestValid(bid, requiredParams);
@@ -448,7 +535,13 @@ export function createFerioBidderSpec<
       if (!validBidRequests.length) {
         return [];
       }
-      if (!endpoint) {
+      const requestCode = getNonEmptyString(bidderRequest.bidderCode, code);
+      const requestEndpoint = getMappedCodeValue(
+        endpointByCode,
+        requestCode,
+        endpoint
+      );
+      if (!requestEndpoint) {
         logError("ferioUtils: missing endpoint option");
         return [];
       }
@@ -456,8 +549,11 @@ export function createFerioBidderSpec<
       return [
         {
           method: "POST",
-          url: endpoint,
-          data: converter.toORTB({ bidRequests: validBidRequests, bidderRequest }),
+          url: requestEndpoint,
+          data: converter.toORTB({
+            bidRequests: validBidRequests,
+            bidderRequest,
+          }),
           options: {
             contentType: "text/plain",
             withCredentials: true,
@@ -485,9 +581,18 @@ export function createFerioBidderSpec<
         return [];
       }
     },
-    getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    getUserSyncs(
+      syncOptions,
+      serverResponses,
+      gdprConsent,
+      uspConsent,
+      gppConsent
+    ) {
+      const syncCode = isRecord(this)
+        ? getNonEmptyString(this.code, code)
+        : code;
       return getUserSyncs(
-        syncBase,
+        getMappedCodeValue(syncBaseByCode, syncCode, syncBase),
         syncOptions,
         gdprConsent,
         uspConsent,

@@ -106,7 +106,7 @@ describe('Yahoo ConnectID Submodule', () => {
           expected: { connectId: 'foo' }
         },
         {
-          detail: 'local storage data if only it local storage data exists',
+          detail: 'local storage data if only local storage data exists',
           cookie: undefined,
           localStorage: JSON.stringify({ connectId: 'bar' }),
           expected: { connectId: 'bar' }
@@ -117,7 +117,7 @@ describe('Yahoo ConnectID Submodule', () => {
           localStorage: undefined,
           expected: undefined
         }
-      ]
+      ];
 
       storageTestCases.forEach(testCase => it(`getId() should return ${testCase.detail}`, function () {
         getCookieStub.withArgs(STORAGE_KEY).returns(testCase.cookie);
@@ -130,7 +130,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
         expect(result.id).to.be.deep.equal(testCase.expected ? testCase.expected : undefined);
       }));
-    })
+    });
 
     describe('with invalid module configuration', () => {
       it('returns undefined if he, pixelId and puid params are not passed', () => {
@@ -183,7 +183,7 @@ describe('Yahoo ConnectID Submodule', () => {
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(20);
-          const newCookieData = Object.assign({}, cookieData, { lastUsed: 20 })
+          const newCookieData = Object.assign({}, cookieData, { lastUsed: 20 });
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
@@ -553,7 +553,7 @@ describe('Yahoo ConnectID Submodule', () => {
         function mockOptout(value) {
           getLocalStorageStub.callsFake((key) => {
             if (key === 'connectIdOptOut') return value;
-          })
+          });
         }
 
         it('returns an undefined if the Yahoo specific opt-out key is present in local storage', () => {
@@ -885,7 +885,7 @@ describe('Yahoo ConnectID Submodule', () => {
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(20);
-          const newCookieData = Object.assign({}, cookieData, { lastUsed: 20 })
+          const newCookieData = Object.assign({}, cookieData, { lastUsed: 20 });
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
@@ -938,7 +938,7 @@ describe('Yahoo ConnectID Submodule', () => {
         expect(connectIdSubmodule.userHasOptedOut).to.be.a('function');
       });
 
-      it('should return false when local storage key has not been set function', () => {
+      it('should return false when local storage key has not been set', () => {
         expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
       });
 
@@ -962,7 +962,7 @@ describe('Yahoo ConnectID Submodule', () => {
     });
 
     afterEach(() => {
-      userHasOptedOutStub.restore()
+      userHasOptedOutStub.restore();
     });
 
     const VALID_API_RESPONSES = [{
@@ -980,7 +980,7 @@ describe('Yahoo ConnectID Submodule', () => {
       }
     }];
     VALID_API_RESPONSES.forEach(responseData => {
-      it('should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)', () => {
+      it(`should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)`, () => {
         expect(connectIdSubmodule.decode(responseData.payload)).to.deep.equal(
           { connectId: responseData.expected }
         );
@@ -996,7 +996,7 @@ describe('Yahoo ConnectID Submodule', () => {
     it('should return undefined if user has utilised the easy opt-out mechanism', () => {
       userHasOptedOutStub.returns(true);
       expect(connectIdSubmodule.decode(VALID_API_RESPONSES[0].payload)).to.be.undefined;
-    })
+    });
   });
 
   describe('getAjaxFn()', () => {

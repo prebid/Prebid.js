@@ -17,8 +17,14 @@ import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../librar
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./euidIdSystem.d.ts').EuidIdSystemModuleName} EuidIdSystemModuleName
+ * @typedef {import('./euidIdSystem.d.ts').EuidIdSystemParams} EuidIdSystemParams
  */
 
+/**
+ * @type {EuidIdSystemModuleName}
+ */
 const MODULE_NAME = 'euid';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
@@ -27,15 +33,13 @@ const GVLID_TTD = 21; // The Trade Desk
 const LOG_PRE_FIX = 'EUID: ';
 const ADVERTISING_COOKIE = '__euid_advertising_token';
 
-// eslint-disable-next-line no-unused-vars
-const EUID_TEST_URL = 'https://integ.euid.eu';
 const EUID_PROD_URL = 'https://prod.euid.eu';
 const EUID_BASE_URL = EUID_PROD_URL;
 
 function createLogger(logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
-  }
+  };
 }
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
 const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
@@ -44,19 +48,19 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 
 function hasWriteToDeviceConsent(consentData) {
   const gdprApplies = consentData?.gdprApplies === true;
-  const localStorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
-  const prebidVendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID_TTD.toString()}`)
+  const localStorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`);
+  const prebidVendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID_TTD.toString()}`);
   if (gdprApplies && (!localStorageConsent || !prebidVendorConsent)) {
     return false;
   }
   return true;
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<EuidIdSystemModuleName>} */
 export const euidIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {EuidIdSystemModuleName}
    */
   name: MODULE_NAME,
 
@@ -91,7 +95,7 @@ export const euidIdSubmodule = {
     }
     if (!hasWriteToDeviceConsent(consentData?.gdpr)) {
       // The module cannot operate without this permission.
-      _logWarn(`Unable to use EUID module due to insufficient consent. The EUID module requires storage permission.`)
+      _logWarn(`Unable to use EUID module due to insufficient consent. The EUID module requires storage permission.`);
       return;
     }
 
@@ -109,7 +113,7 @@ export const euidIdSubmodule = {
         serverPublicKey: config?.params?.serverPublicKey,
         subscriptionId: config?.params?.subscriptionId,
         ...extractIdentityFromParams(config?.params ?? {})
-      }
+      };
     }
     _logInfo(`EUID configuration loaded and mapped.`, mappedConfig);
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);

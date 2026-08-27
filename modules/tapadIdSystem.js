@@ -56,7 +56,7 @@ export const tapadIdSubmodule = {
           }
         );
       }
-    }
+    };
   },
   eids: {
     'tapadId': {
@@ -64,5 +64,5 @@ export const tapadIdSubmodule = {
       atype: 1
     },
   }
-}
+};
 submodule('userId', tapadIdSubmodule);

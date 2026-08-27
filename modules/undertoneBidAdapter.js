@@ -167,7 +167,7 @@ export const spec = {
             bid.vastXml = bidRes.ad;
             bid.mediaType = bidRes.mediaType;
           } else {
-            bid.ad = bidRes.ad
+            bid.ad = bidRes.ad;
           }
           bids.push(bid);
         }
@@ -189,9 +189,9 @@ export const spec = {
 
     if (usPrivacy) {
       if (iframePrivacyParams !== '') {
-        iframePrivacyParams += '&'
+        iframePrivacyParams += '&';
       } else {
-        iframePrivacyParams += '?'
+        iframePrivacyParams += '?';
       }
       iframePrivacyParams += `ccpa=${usPrivacy}`;
       pixelPrivacyParams += `&ccpa=${usPrivacy}`;

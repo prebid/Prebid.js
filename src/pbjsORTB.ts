@@ -11,7 +11,7 @@ export function processorRegistry() {
   return {
     registerOrtbProcessor({ type, name, fn, priority = 0, dialects = [DEFAULT] }) {
       if (!types.has(type)) {
-        throw new Error(`ORTB processor type must be one of: ${PROCESSOR_TYPES.join(', ')}`)
+        throw new Error(`ORTB processor type must be one of: ${PROCESSOR_TYPES.join(', ')}`);
       }
       dialects.forEach(dialect => {
         if (!processors.hasOwnProperty(dialect)) {
@@ -23,13 +23,13 @@ export function processorRegistry() {
         processors[dialect][type][name] = {
           priority,
           fn
-        }
-      })
+        };
+      });
     },
     getProcessors(dialect) {
       return processors[dialect] || {};
     }
-  }
+  };
 }
 
 export const { registerOrtbProcessor, getProcessors } = processorRegistry();

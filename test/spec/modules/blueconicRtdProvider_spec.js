@@ -125,7 +125,7 @@ describe('blueconicRtdProvider', function() {
         bidId: '1234'
       };
 
-      const cachedRtd = { ext: { segtax: 1 }, 'segment': [{ id: 'bf23d802-931d-4619-8266-ce9a6328aa2a' }], 'bidId': '1234' }
+      const cachedRtd = { ext: { segtax: 1 }, 'segment': [{ id: 'bf23d802-931d-4619-8266-ce9a6328aa2a' }], 'bidId': '1234' };
       getDataFromLocalStorageStub.withArgs(RTD_LOCAL_NAME).returns(JSON.stringify(cachedRtd));
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});

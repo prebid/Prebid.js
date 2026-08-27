@@ -181,6 +181,6 @@ export const spec = {
       native: bid.native || {}
     };
   }
-}
+};
 
 registerBidder(spec);

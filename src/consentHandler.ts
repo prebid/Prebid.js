@@ -2,6 +2,9 @@ import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp } from './utils.js';
 import { defer, PbPromise } from './utils/promise.js';
 import { config } from './config.js';
 import type { ModuleType } from "./activities/modules.ts";
+import type { TCFConsentData } from "./types/consent/tcf.d.ts";
+import type { GPPConsentData } from "./types/consent/gpp.d.ts";
+import type { USPConsentData } from "./types/consent/usp.d.ts";
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
@@ -16,16 +19,21 @@ export const CONSENT_USP = 'usp';
 export const CONSENT_COPPA = 'coppa';
 export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA;
 
+/**
+ * Consent data by framework. Every member type is declared in core, so it is known whether or not
+ * the module that populates it is part of the build; the data itself is only ever collected by that
+ * module.
+ */
 export interface ConsentData {
-  // with just core, only coppa is defined - everything else will be null.
-  // importing consent modules also imports the type definitions.
+  [CONSENT_GDPR]: TCFConsentData;
+  [CONSENT_GPP]: GPPConsentData;
+  [CONSENT_USP]: USPConsentData;
   [CONSENT_COPPA]: boolean;
 }
 
-/** Resolves to ConsentData[K] when module has augmented that key, else unknown (core-only build). */
-export type ConsentDataForKey<K extends ConsentType> = K extends keyof ConsentData ? ConsentData[K] : unknown;
+export type ConsentDataForKey<K extends ConsentType> = ConsentData[K];
 
-type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
+type ConsentDataFor<T extends ConsentType> = ConsentData[T];
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ConsentManagementConfig {
@@ -106,11 +114,11 @@ export function consentHandler<T, M>(
   }
 
   function getHashData(consentData) {
-    return consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData
+    return consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData;
   }
 
   function hasConsentChanged(newConsentData) {
-    return !deepEqual(getHashData(consentData), getHashData(newConsentData))
+    return !deepEqual(getHashData(consentData), getHashData(newConsentData));
   }
 
   function notifyListeners() {
@@ -179,7 +187,7 @@ export function consentHandler<T, M>(
       if (dirty) {
         hash = cyrb53Hash(
           JSON.stringify(getHashData(consentData))
-        )
+        );
         dirty = false;
       }
       return hash;
@@ -187,7 +195,7 @@ export function consentHandler<T, M>(
     onChange(listener) {
       listeners.push(listener);
     }
-  }
+  };
 }
 
 export const uspDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_USP>, DefaultConsentMeta>();
@@ -202,7 +210,7 @@ export const gdprDataHandler = consentHandler({
           : 0,
         generatedAt,
         apiVersion: consentData.apiVersion,
-      }
+      };
     }
   },
   hashFields: ['gdprApplies', 'consentString']
@@ -244,7 +252,7 @@ type GVLIDResult = {
    * The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
    */
   gvlid?: GVLID;
-}
+};
 
 export function gvlidRegistry() {
   const registry = {};
@@ -283,7 +291,7 @@ export function gvlidRegistry() {
       }
       return result;
     }
-  }
+  };
 }
 
 declare module './config' {
@@ -306,11 +314,11 @@ const ALL_HANDLERS = {
 
 export type AllConsentData = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
-}
+};
 
 export type AllConsentMeta = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>
-}
+};
 
 type MultiHandler = Pick<ConsentHandler<AllConsentData, AllConsentMeta>, 'promise' | 'hash' | 'getConsentData' | 'reset' | 'getConsentMeta' | 'onChange'>;
 
@@ -318,8 +326,8 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
   const entries = Object.entries(handlers);
   function collector(method): any {
     return function () {
-      return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]))
-    }
+      return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]));
+    };
   }
   const getConsentData = collector('getConsentData');
   const resetAll = collector('reset');
@@ -328,7 +336,7 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
     listeners = [];
     Object.values(handlers).forEach(handler => handler.onChange(() => {
       listeners.forEach((listener) => listener(getConsentData()));
-    }))
+    }));
   }
   reset();
 

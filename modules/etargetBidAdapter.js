@@ -17,7 +17,7 @@ const countryMap = {
   10: 'co',
   11: 'de',
   255: 'en'
-}
+};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
@@ -119,7 +119,7 @@ export const spec = {
     var bidRespones = [];
     var bids = bidRequest.bids;
     var responses = serverResponse.body;
-    var data = [];
+    var data;
     for (var i = 0; i < responses.length; i++) {
       data = responses[i];
       type = data.response === 'banner' ? BANNER : VIDEO;

@@ -231,34 +231,6 @@ describe('ajax', () => {
         });
       });
     });
-
-    describe('chrome options', () => {
-      ['browsingTopics'].forEach(option => {
-        Object.entries({
-          [`${option} = true`]: [{ [option]: true }, true],
-          [`${option} = false`]: [{ [option]: false }, false],
-          [`${option} undef`]: [{}, false]
-        }).forEach(([t, [opts, shouldBeSet]]) => {
-          describe(`when options has ${t}`, () => {
-            const sandbox = sinon.createSandbox();
-            afterEach(() => {
-              sandbox.restore();
-            });
-
-            it(`should ${!shouldBeSet ? 'not ' : ''}be set when in a secure context`, () => {
-              sandbox.stub(window, 'isSecureContext').get(() => true);
-              toFetchRequest(EXAMPLE_URL, null, opts);
-              sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, { [option]: shouldBeSet ? true : undefined });
-            });
-            it(`should not be set when not in a secure context`, () => {
-              sandbox.stub(window, 'isSecureContext').get(() => false);
-              toFetchRequest(EXAMPLE_URL, null, opts);
-              sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, { [option]: undefined });
-            });
-          });
-        });
-      });
-    });
   });
 
   describe('credentials', () => {
@@ -348,10 +320,10 @@ describe('ajax', () => {
     let sandbox, request;
     before(() => {
       server.restore();
-    })
+    });
     after(() => {
       server.enable();
-    })
+    });
     beforeEach(() => {
       request = defer();
       sandbox = sinon.createSandbox();
@@ -367,7 +339,7 @@ describe('ajax', () => {
     });
     afterEach(() => {
       sandbox.restore();
-    })
+    });
     Object.entries({
       'small payload': {
         body: 'x'.repeat(1024),
@@ -381,10 +353,10 @@ describe('ajax', () => {
       describe(`POST with ${t}`, () => {
         Object.entries({
           ajax() {
-            ajax(EXAMPLE_URL, () => {}, body, { method: 'POST', keepalive: true })
+            ajax(EXAMPLE_URL, () => {}, body, { method: 'POST', keepalive: true });
           },
           fetch() {
-            fetch(EXAMPLE_URL, { method: 'POST', body, keepalive: true })
+            fetch(EXAMPLE_URL, { method: 'POST', body, keepalive: true });
           }
         }).forEach(([name, fn]) => {
           describe(name, () => {
@@ -392,25 +364,25 @@ describe('ajax', () => {
               fn();
               return request.promise.then(req => {
                 expect(req.keepalive).to.eql(keepalive);
-              })
+              });
             });
             it('should not use the body', () => {
               fn();
               return request.promise.then(req => {
                 expect(req.bodyUsed).to.be.false;
-              })
-            })
-          })
-        })
-      })
+              });
+            });
+          });
+        });
+      });
     });
     it('should not try to get body size for requests that do not ask for keepalive', () => {
       fetch(EXAMPLE_URL, { body: 'test', method: 'POST' });
       return request.promise.then(req => {
         sinon.assert.notCalled(req.clone);
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('attachCallbacks', () => {
     const sampleHeaders = new Headers({

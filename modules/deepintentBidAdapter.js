@@ -1,32 +1,43 @@
-import { deepAccess, deepSetValue, isArray, logError, logWarn, mergeDeep } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
-import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import {
+  deepAccess,
+  deepSetValue,
+  isArray,
+  logError,
+  logWarn,
+  mergeDeep,
+} from "../src/utils.js";
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { BANNER, VIDEO } from "../src/mediaTypes.js";
+import { COMMON_ORTB_VIDEO_PARAMS } from "../libraries/deepintentUtils/index.js";
+import {
+  addDealCustomTargetings,
+  addPMPDeals,
+} from "../libraries/dealUtils/dealUtils.js";
+import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 
-const LOG_WARN_PREFIX = 'DeepIntent: ';
-const BIDDER_CODE = 'deepintent';
+const LOG_WARN_PREFIX = "DeepIntent: ";
+const BIDDER_CODE = "deepintent";
 const GVL_ID = 541;
-const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
-const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
-const DI_M_V = '2.0.0';
+const BIDDER_ENDPOINT = "https://prebid.deepintent.com/prebid";
+const USER_SYNC_URL = "https://cdn.deepintent.com/syncpixel.html";
+const DI_M_V = "2.0.0";
 
 // Extends the shared ORTB video param schema with deepintent-specific validators.
 // The converter's fillVideoImp only whitelists param names — it does not validate values.
 // This schema is used in the imp() override to validate and warn on malformed params.
 export const ORTB_VIDEO_PARAMS = {
   ...COMMON_ORTB_VIDEO_PARAMS,
-  'plcmt': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
-  'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
+  plcmt: (value) =>
+    Array.isArray(value) && value.every((v) => v >= 1 && v <= 5),
+  delivery: (value) => [1, 2, 3].indexOf(value) !== -1,
+  pos: (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
 };
 
 const converter = ortbConverter({
   context: {
     netRevenue: false,
     ttl: 300,
-    currency: 'USD',
+    currency: "USD",
   },
 
   imp(buildImp, bidRequest, context) {
@@ -34,8 +45,8 @@ const converter = ortbConverter({
 
     // Ensure ext is always an object; addDealCustomTargetings writes to imp.ext directly
     imp.ext = imp.ext || {};
-    imp.tagid = bidRequest.params.tagId || '';
-    imp.displaymanager = 'di_prebid';
+    imp.tagid = bidRequest.params.tagId || "";
+    imp.displaymanager = "di_prebid";
     imp.displaymanagerver = DI_M_V;
 
     // params.bidfloor fallback when the price floors module is not active
@@ -57,12 +68,14 @@ const converter = ortbConverter({
     // Video: fillVideoImp (FEATURES.VIDEO=on in production) owns the mediaTypes.video →
     // imp.video mapping including playerSize → w/h. We only post-process for the
     // params.video legacy path: warn the publisher and set a telemetry flag.
-    if (deepAccess(bidRequest, 'mediaTypes.video')) {
-      const videoBidderParams = deepAccess(bidRequest, 'params.video');
+    if (deepAccess(bidRequest, "mediaTypes.video")) {
+      const videoBidderParams = deepAccess(bidRequest, "params.video");
       if (videoBidderParams && Object.keys(videoBidderParams).length > 0) {
-        logWarn(`${LOG_WARN_PREFIX}params.video is deprecated. Move video parameters to mediaTypes.video instead.`);
+        logWarn(
+          `${LOG_WARN_PREFIX}params.video is deprecated. Move video parameters to mediaTypes.video instead.`
+        );
         imp.video = imp.video || {};
-        Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
+        Object.keys(ORTB_VIDEO_PARAMS).forEach((paramName) => {
           if (paramName in videoBidderParams) {
             imp.video[paramName] = videoBidderParams[paramName];
           }
@@ -71,12 +84,16 @@ const converter = ortbConverter({
       }
     }
 
-    if (deepAccess(bidRequest, 'params.deals')) {
-      addPMPDeals(imp, deepAccess(bidRequest, 'params.deals'), LOG_WARN_PREFIX);
+    if (deepAccess(bidRequest, "params.deals")) {
+      addPMPDeals(imp, deepAccess(bidRequest, "params.deals"), LOG_WARN_PREFIX);
     }
 
-    if (deepAccess(bidRequest, 'params.dctr')) {
-      addDealCustomTargetings(imp, deepAccess(bidRequest, 'params.dctr'), LOG_WARN_PREFIX);
+    if (deepAccess(bidRequest, "params.dctr")) {
+      addDealCustomTargetings(
+        imp,
+        deepAccess(bidRequest, "params.dctr"),
+        LOG_WARN_PREFIX
+      );
     }
 
     return imp;
@@ -106,9 +123,9 @@ const converter = ortbConverter({
 
     // user.eids arrives via FPD (ortb2.user.eids). Mirror to user.ext.eids for
     // legacy DSP compatibility until confirmed no longer needed.
-    const eids = deepAccess(request, 'user.eids');
+    const eids = deepAccess(request, "user.eids");
     if (isArray(eids) && eids.length > 0) {
-      deepSetValue(request, 'user.ext.eids', eids);
+      deepSetValue(request, "user.ext.eids", eids);
     }
 
     return request;
@@ -121,12 +138,18 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: [],
 
-  isBidRequestValid: bid => {
+  isBidRequestValid: (bid) => {
     let valid = false;
     if (bid && bid.params && bid.params.tagId) {
-      if (typeof bid.params.tagId === 'string' || bid.params.tagId instanceof String) {
-        if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-          if (bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
+      if (
+        typeof bid.params.tagId === "string" ||
+        bid.params.tagId instanceof String
+      ) {
+        if (
+          bid.hasOwnProperty("mediaTypes") &&
+          bid.mediaTypes.hasOwnProperty(VIDEO)
+        ) {
+          if (bid.mediaTypes[VIDEO].hasOwnProperty("context")) {
             valid = true;
           }
         } else {
@@ -138,14 +161,17 @@ export const spec = {
   },
 
   buildRequests(validBidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+    const data = converter.toORTB({
+      bidRequests: validBidRequests,
+      bidderRequest,
+    });
     return {
-      method: 'POST',
+      method: "POST",
       url: BIDDER_ENDPOINT,
       data,
       options: {
-        contentType: 'application/json'
-      }
+        contentType: "application/json",
+      },
     };
   },
 
@@ -155,7 +181,7 @@ export const spec = {
       try {
         const result = converter.fromORTB({
           request: bidRequest.data,
-          response: bidResponse.body
+          response: bidResponse.body,
         });
         responses.push(...(result.bids || []));
       } catch (err) {
@@ -165,14 +191,16 @@ export const spec = {
     return responses;
   },
 
-  getUserSyncs: syncOptions => {
+  getUserSyncs: (syncOptions) => {
     if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: USER_SYNC_URL
-      }];
+      return [
+        {
+          type: "iframe",
+          url: USER_SYNC_URL,
+        },
+      ];
     }
-  }
+  },
 };
 
 registerBidder(spec);

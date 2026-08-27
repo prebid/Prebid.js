@@ -21,6 +21,7 @@
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
  * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
  * @property {function(): void} clearAllAuctions - clear all auctions for testing
+ * @property {function(): Array} getAuctions - returns tracked auction instances
  * @property {function(*): *} onExpiry
  * @property {AuctionIndex} index
  */
@@ -106,19 +107,19 @@ export function newAuctionManager() {
       : (auction) => pre(auction) ? auction[name]() : [];
     const filter = post == null
       ? (items) => items
-      : (items) => items.filter(post)
+      : (items) => items.filter(post);
     auctionManager[mgrMethod] = () => {
       return filter(_auctions.toArray().flatMap(mapper));
-    }
-  })
+    };
+  });
 
   function allBidsReceived() {
-    return _auctions.toArray().flatMap(au => au.getBidsReceived())
+    return _auctions.toArray().flatMap(au => au.getBidsReceived());
   }
 
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
     return allBidsReceived()
-      .filter(bid => bid && bid.adUnitCode === adUnitCode)
+      .filter(bid => bid && bid.adUnitCode === adUnitCode);
   };
 
   auctionManager.createAuction = function(opts) {
@@ -147,16 +148,20 @@ export function newAuctionManager() {
         _auctions.refresh();
       }
     }
-  }
+  };
 
   auctionManager.getLastAuctionId = function() {
     const auctions = _auctions.toArray();
-    return auctions.length && auctions[auctions.length - 1].getAuctionId()
+    return auctions.length && auctions[auctions.length - 1].getAuctionId();
   };
 
   auctionManager.clearAllAuctions = function() {
     _auctions.clear();
-  }
+  };
+
+  auctionManager.getAuctions = function() {
+    return _auctions.toArray();
+  };
 
   function _addAuction(auction) {
     _auctions.add(auction);

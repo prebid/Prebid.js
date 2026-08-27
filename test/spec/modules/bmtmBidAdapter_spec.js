@@ -24,7 +24,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       return {
         currency: 'USD',
         floor: 0.5,
-      }
+      };
     },
     ortb2: {
       source: {
@@ -315,13 +315,13 @@ describe('brightMountainMediaBidAdapter_spec', function () {
   describe('getUserSyncs', function () {
     const syncoptionsIframe = {
       'iframeEnabled': 'true'
-    }
+    };
     it('should return iframe sync option', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)).to.be.an('array').with.lengthOf(1);
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.exist;
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync')
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe');
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync');
     });
   });
 });

@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { spec } from 'modules/getintentBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/getintentBidAdapter.js';
 import { deepClone } from 'src/utils';
 
 describe('GetIntent Adapter Tests:', function () {
@@ -120,8 +120,8 @@ describe('GetIntent Adapter Tests:', function () {
 
   it('Verify bid floor without price floors module', function() {
     const bidRequestWithFloor = deepClone(bidRequests[0]);
-    bidRequestWithFloor.params.floor = 10
-    bidRequestWithFloor.params.cur = 'USD'
+    bidRequestWithFloor.params.floor = 10;
+    bidRequestWithFloor.params.cur = 'USD';
 
     const serverRequests = spec.buildRequests([bidRequestWithFloor]);
     const serverRequest = serverRequests[0];
@@ -131,8 +131,8 @@ describe('GetIntent Adapter Tests:', function () {
 
   it('Verify bid floor with price floors module', function() {
     const bidRequestWithFloor = deepClone(bidRequests[0]);
-    bidRequestWithFloor.params.floor = 10
-    bidRequestWithFloor.params.cur = 'USD'
+    bidRequestWithFloor.params.floor = 10;
+    bidRequestWithFloor.params.cur = 'USD';
     const getFloorResponse = { floor: 5, currency: 'EUR' };
     bidRequestWithFloor.getFloor = () => getFloorResponse;
 

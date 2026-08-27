@@ -101,7 +101,7 @@ export const spec = {
         };
 
         repackedBids.push(repackedBid);
-      })
+      });
     });
 
     return repackedBids;

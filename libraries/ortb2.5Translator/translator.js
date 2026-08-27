@@ -18,7 +18,7 @@ export function splitPath(path) {
 }
 
 export function addExt(prefix, field) {
-  return `${prefix}.ext.${field}`
+  return `${prefix}.ext.${field}`;
 }
 
 function removeExt(prefix, field) {
@@ -84,9 +84,9 @@ export function ortb25Translator(deleteFields = true, rules = TO_25_DEFAULT_RULE
       } catch (e) {
         logError('Error translating request to ORTB 2.5', e);
       }
-    })
+    });
     return ortb2;
-  }
+  };
 }
 
 /**

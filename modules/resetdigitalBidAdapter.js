@@ -139,7 +139,7 @@ export const spec = {
         }
       }
 
-      let paramsKeywords = req.params.keywords;
+      let paramsKeywords;
       if (typeof req.params.keywords === 'string') {
         paramsKeywords = req.params.keywords.split(',');
       } else if (Array.isArray(req.params.keywords)) {
@@ -168,7 +168,7 @@ export const spec = {
         imp_id: req.bidId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
-        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        coppa: bidderRequest.ortb2?.regs?.coppa === 1 ? 1 : 0,
         media_types: deepAccess(req, 'mediaTypes'),
       });
     }

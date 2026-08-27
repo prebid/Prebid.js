@@ -5,6 +5,7 @@ import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetVa
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
@@ -14,7 +15,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.1.0';
+const ADAPTER_VERSION = '2.1.1';
 
 export const ortbConverterProps = {
   context: {
@@ -26,7 +27,6 @@ export const ortbConverterProps = {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
     deepSetValue(req, 'device.pxratio', getDevicePixelRatio(getWindowContext()));
-    deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
       adapterversion: ADAPTER_VERSION,
@@ -41,7 +41,7 @@ export const ortbConverterProps = {
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const timeSpentOnPage = document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0
+    const timeSpentOnPage = document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0;
     const gpid = bidRequest.adUnitCode;
     imp.tagid = bidRequest.adUnitCode;
     imp.ext = mergeDeep({}, bidRequest.params, { timeSpentOnPage, gpid }, imp.ext);
@@ -67,7 +67,7 @@ export const ortbConverterProps = {
 
     return bidResponse;
   }
-}
+};
 
 export const converter = ortbConverter(ortbConverterProps);
 
@@ -153,22 +153,30 @@ function getFloor(bid) {
 
 function getWindowContext() {
   try {
-    return getWindowTop()
+    return getWindowTop();
   } catch (e) {
-    return getWindowSelf()
+    return getWindowSelf();
   }
 }
 
 function onBidWon(bid) {
-  const w = getWindowContext()
-  w.OG_PREBID_BID_OBJECT = {
-    ...(bid && { ...bid }),
-  }
   if (bid && bid.nurl) ajax(bid.nurl, null);
+  try {
+    const w = getWindowContext();
+    w.OG_PREBID_BID_OBJECT = {
+      ...(bid && { ...bid }),
+    };
+  } catch (e) {
+    // top window is not writable from a cross-origin frame; the win ping already fired above
+  }
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: window.location.href }), {
+  // report the same page as the bid request: site.page comes from the bid's ortb2, which the
+  // core already enriched with refererInfo and let the publisher override. Fall back to
+  // refererInfo when a timeout event carries no ortb2 (bids dropped before FPD is attached).
+  const page = deepAccess(timeoutData[0], 'ortb2.site.page') || getRefererInfo().page || window.location.href;
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: page }), {
     method: 'POST',
     contentType: 'application/json'
   });
@@ -186,6 +194,6 @@ export const spec = {
   onBidWon,
   getWindowContext,
   onTimeout
-}
+};
 
 registerBidder(spec);

@@ -2,10 +2,10 @@ import { AuctionIndex } from '../../src/auctionIndex.js';
 
 export function stubAuctionIndex({ bidRequests, bidderRequests, adUnits, auctionId = 'mock-auction' }) {
   if (adUnits == null) {
-    adUnits = []
+    adUnits = [];
   }
   if (bidderRequests == null) {
-    bidderRequests = []
+    bidderRequests = [];
   }
   if (bidRequests != null) {
     bidderRequests.push({

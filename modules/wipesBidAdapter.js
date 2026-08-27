@@ -4,7 +4,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'wipes';
 const ALIAS_BIDDER_CODE = ['wi'];
-const SUPPORTED_MEDIA_TYPES = [BANNER]
+const SUPPORTED_MEDIA_TYPES = [BANNER];
 const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
 function isBidRequestValid(bid) {
@@ -20,7 +20,7 @@ function isBidRequestValid(bid) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   return validBidRequests.map(bidRequest => {
-    const bidId = bidRequest.bidId
+    const bidId = bidRequest.bidId;
     const params = bidRequest.params;
     const asid = params.asid;
     return {
@@ -30,7 +30,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         asid: asid,
         bid_id: bidId,
       }
-    }
+    };
   });
 }
 
@@ -69,5 +69,5 @@ export const spec = {
   buildRequests,
   interpretResponse,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES
-}
+};
 registerBidder(spec);

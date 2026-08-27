@@ -41,12 +41,12 @@ export function getLowestFloorPrice(bid) {
   let floorPrice: number;
 
   if (typeof bid.getFloor === 'function') {
-    let sizes = []
+    let sizes = [];
     // Get floor prices for each banner size in the bid request
     if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-      sizes = deepAccess(bid, 'mediaTypes.banner.sizes')
+      sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     } else if (bid.sizes) {
-      sizes = bid.sizes
+      sizes = bid.sizes;
     }
 
     sizes.forEach((size: string | number[]) => {
@@ -61,10 +61,10 @@ export function getLowestFloorPrice(bid) {
       }
     });
   } else {
-    floorPrice = 0
+    floorPrice = 0;
   }
 
-  return floorPrice
+  return floorPrice;
 }
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
@@ -396,7 +396,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       yetiPublisherID: deepAccess(bid, 'meta.publisherID') || '',
       page: deepAccess(bid, 'meta.page') || '',
       site: deepAccess(bid, 'meta.domain') || '',
-    }
+    };
 
     dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' });
 

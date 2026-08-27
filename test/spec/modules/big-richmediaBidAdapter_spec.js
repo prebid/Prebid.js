@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/big-richmediaBidAdapter.js';
 import { auctionManager } from 'src/auctionManager.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 
@@ -125,7 +125,7 @@ describe('bigRichMediaAdapterTests', function () {
           skippable: true,
           context: 4
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
     }
   });
@@ -247,7 +247,7 @@ describe('bigRichMediaAdapterTests', function () {
               }
             }
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).not.to.have.property('vastXml');

@@ -69,7 +69,7 @@ export const misc = {
   findHighestPrice: function(arr, bidType) {
     return arr.reduce((highest, cur) => {
       const currentBid = cur[bidType];
-      const highestBid = highest[bidType]
+      const highestBid = highest[bidType];
       return currentBid.currency === highestBid.currency && currentBid.amount > highestBid.amount ? cur : highest;
     }, arr[0]);
   }
@@ -128,7 +128,7 @@ const storageTool = (function () {
         return { exp: oneDayFromNow, auId: auId };
       }) || [];
       return notNewExistingAuIds.concat(apiIdsArray) || [];
-    }
+    };
 
     // use the metadata key separator to distinguish the same key for different networks.
     const metaAsObj = getMetaDataFromLocalStorage().reduce((a, entry) => ({ ...a, [entry.key + METADATA_KEY_SEPARATOR + (entry.network ? entry.network : '')]: { value: entry.value, exp: entry.exp, network: entry.network } }), {});
@@ -138,7 +138,7 @@ const storageTool = (function () {
           value: apiRespMetadata[key],
           exp: getUnixTimestampFromNow(100),
           network: network
-        }
+        };
       }
     }
     const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiRespMetadata.voidAuIds);
@@ -161,7 +161,7 @@ const storageTool = (function () {
         value: entrySet[1].value,
         exp: entrySet[1].exp,
         network: entrySet[1].network
-      }
+      };
     }).filter(entry => entry.key);
     storage.setDataInLocalStorage(METADATA_KEY, JSON.stringify(metaDataForSaving));
   };
@@ -234,7 +234,7 @@ const targetingTool = (function() {
         }
       });
     }
-    return segments
+    return segments;
   };
 
   const getKvsFromOrtb = function(bidderRequest, path) {
@@ -291,12 +291,12 @@ const targetingTool = (function() {
         bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(impKvs));
       }
     }
-  }
+  };
 })();
 
 const validateBidType = function (bidTypeOption) {
   return VALID_BID_TYPES.indexOf(bidTypeOption || '') > -1 ? bidTypeOption : 'bid';
-}
+};
 
 const AU_ID_REGEX = new RegExp('^[0-9A-Fa-f]{1,20}$');
 
@@ -313,13 +313,13 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const queryParamsAndValues = [];
-    queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset())
-    queryParamsAndValues.push('format=prebid')
+    queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset());
+    queryParamsAndValues.push('format=prebid');
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
     queryParamsAndValues.push('pbv=' + getGlobal().version);
     if (gdprApplies !== undefined) {
-      const flag = gdprApplies ? '1' : '0'
+      const flag = gdprApplies ? '1' : '0';
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
     }
@@ -415,7 +415,7 @@ export const spec = {
                 'methods': [1]
               }
             ];
-            adUnit.nativeRequest = { ortb: nativeOrtb }
+            adUnit.nativeRequest = { ortb: nativeOrtb };
           } else {
             adUnit.nativeRequest = { ortb: mediaTypeData.ortb };
           }
@@ -477,7 +477,7 @@ export const spec = {
       if (advertiserDomains.length === 0) {
         const destinationUrls = ad.destinationUrls || {};
         for (const value of Object.values(destinationUrls)) {
-          advertiserDomains.push(value.split('/')[2])
+          advertiserDomains.push(value.split('/')[2]);
         }
       }
       const adResponse = {
@@ -586,5 +586,5 @@ export const spec = {
 
     return [...dealAdResponses, ...bidAdResponses];
   }
-}
+};
 registerBidder(spec);

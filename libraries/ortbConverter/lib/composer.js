@@ -25,9 +25,9 @@ export function compose(components, overrides = {}) {
     sorted.sort((a, b) => {
       a = a[1].priority || 0;
       b = b[1].priority || 0;
-      return a === b ? 0 : a > b ? -1 : 1
+      return a === b ? 0 : a > b ? -1 : 1;
     });
-    SORTED.set(components, sorted.map(([name, cmp]) => [name, cmp.fn]))
+    SORTED.set(components, sorted.map(([name, cmp]) => [name, cmp.fn]));
   }
   const fns = SORTED.get(components)
     .filter(([name]) => !overrides.hasOwnProperty(name) || overrides[name])
@@ -38,6 +38,6 @@ export function compose(components, overrides = {}) {
     const args = Array.from(arguments);
     fns.forEach(fn => {
       fn.apply(this, args);
-    })
-  }
+    });
+  };
 }

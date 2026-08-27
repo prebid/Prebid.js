@@ -7,9 +7,9 @@ class DOMMethod extends string {
   
   DOMMethod() {
       
-      ( this = "getChannelData"  and weight = 961.14  and type = "AudioBuffer" )
+      ( this = "toDataURL"  and weight = 31.74  and type = "HTMLCanvasElement" )
        or 
-      ( this = "toDataURL"  and weight = 29.48  and type = "HTMLCanvasElement" )
+      ( this = "getChannelData"  and weight = 996.5  and type = "AudioBuffer" )
   }  
 
   float getWeight() {

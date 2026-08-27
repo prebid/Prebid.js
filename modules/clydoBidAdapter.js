@@ -9,8 +9,8 @@ const DEFAULT_CURRENCY = 'USD';
 const params = {
   region: "{{region}}",
   partnerId: "{{partnerId}}"
-}
-const BASE_ENDPOINT_URL = `https://${params.region}.clydo.io/${params.partnerId}`
+};
+const BASE_ENDPOINT_URL = `https://${params.region}.clydo.io/${params.partnerId}`;
 
 const converter = ortbConverter({
   context: {
@@ -19,7 +19,7 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     context.mediaType = deepAccess(bid, 'ext.mediaType');
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   }
 });
 
@@ -68,7 +68,7 @@ export const spec = {
       method: METHOD,
       url: ENDPOINT_URL,
       data
-    }]
+    }];
   },
   interpretResponse: function(serverResponse, request) {
     let bids = [];
@@ -97,5 +97,5 @@ export const spec = {
     }
     return bids;
   },
-}
+};
 registerBidder(spec);

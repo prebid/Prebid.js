@@ -78,7 +78,7 @@ function _createImpressionObject(bid) {
     // Use the first preferred size
     var keys = Object.keys(sizes);
     keys.sort(function(a, b) {
-      return sizes[a].idx - sizes[b].idx
+      return sizes[a].idx - sizes[b].idx;
     });
     var bannerObj = {
       pos: 0,

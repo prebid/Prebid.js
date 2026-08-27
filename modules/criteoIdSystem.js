@@ -68,7 +68,7 @@ function normalizeBidId(value) {
 }
 
 function extractProtocolHost(url, returnOnlyHost = false) {
-  const parsedUrl = parseUrl(url, { noDecodeWholeURL: true })
+  const parsedUrl = parseUrl(url, { noDecodeWholeURL: true });
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
@@ -129,7 +129,7 @@ function getCriteoDataFromStorage(submoduleConfig) {
     bundle: getFromStorage(submoduleConfig, bundleStorageKey),
     dnaBundle: getFromStorage(submoduleConfig, dnaBundleStorageKey),
     bidId: normalizeBidId(getFromStorage(submoduleConfig, bididStorageKey)),
-  }
+  };
 }
 
 function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
@@ -147,7 +147,7 @@ function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWri
     url = url + `&us_privacy=${encodeURIComponent(usPrivacyString)}`;
   }
 
-  const gdprConsent = gdprDataHandler.getConsentData()
+  const gdprConsent = gdprDataHandler.getConsentData();
   if (gdprConsent) {
     url = url + `${gdprConsent.consentString ? '&gdprString=' + encodeURIComponent(gdprConsent.consentString) : ''}`;
     url = url + `&gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`;
@@ -268,7 +268,7 @@ export const criteoIdSubmodule = {
     return {
       id: localData.bidId,
       callback: result
-    }
+    };
   },
   eids: {
     'criteoId': {

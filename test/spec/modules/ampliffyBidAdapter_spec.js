@@ -44,34 +44,34 @@ describe('Ampliffy bid adapter Test', function () {
     it('Should return true using a URL that is in domainMap', () => {
       const allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://testSports.com?id=131313&text=aaaaa&foo=foo');
       expect(allowedToBidUp).to.be.true;
-    })
+    });
 
     it('Should return false using an url that is not in domainMap', () => {
       const allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://test.com');
       expect(allowedToBidUp).to.be.false;
-    })
+    });
 
     it('Should return false using an url that is excluded.', () => {
       const allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://www.no-allowed.com/busqueda/sexo/sexo?test=1#item1');
       expect(allowedToBidUp).to.be.false;
-    })
-  })
+    });
+  });
 
   describe('Helper functions', function () {
     it('Should default params not to be null', () => {
       const defaultParams = getDefaultParams();
 
       expect(defaultParams).not.to.be.null;
-    })
+    });
     it('Should the merge two object params into a new object', () => {
       const params1 = {
         'hello': 'world',
         'ampTest': 'this will be replaced'
-      }
+      };
       const params2 = {
         'test': 1,
         'ampTest': 'This will be replace the param with the same name in other array'
-      }
+      };
       const allParams = mergeParams(params1, params2);
 
       const paramsComplete =
@@ -79,10 +79,10 @@ describe('Ampliffy bid adapter Test', function () {
           'hello': 'world',
           'ampTest': 'This will be replace the param with the same name in other array',
           'test': 1,
-        }
+        };
       expect(allParams).not.to.be.null;
       expect(JSON.stringify(allParams)).to.equal(JSON.stringify(paramsComplete));
-    })
+    });
     it('Params to QueryString', () => {
       const params = {
         'test': 1,
@@ -90,13 +90,13 @@ describe('Ampliffy bid adapter Test', function () {
         'empty': null,
         'quoteMark': '?',
         'test1': undefined
-      }
+      };
       const queryString = paramsToQueryString(params);
 
       expect(queryString).not.to.be.null;
       expect(queryString).to.equal('test=1&ampTest=ret&empty&quoteMark=%3F');
-    })
-  })
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('Should return true when required params found', function () {
@@ -112,9 +112,9 @@ describe('Ampliffy bid adapter Test', function () {
             sizes: [1, 1]
           }
         },
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.true;
-    })
+    });
     it('Should return false when param format is display but mediaTypes are for video', function () {
       const bidRequest = {
         bidder: 'ampliffy',
@@ -128,9 +128,9 @@ describe('Ampliffy bid adapter Test', function () {
             sizes: [1, 1]
           }
         },
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
-    })
+    });
     it('Should return false when param format is video but mediaTypes are for banner', function () {
       const bidRequest = {
         bidder: 'ampliffy',
@@ -144,9 +144,9 @@ describe('Ampliffy bid adapter Test', function () {
             sizes: [1, 1]
           }
         },
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
-    })
+    });
     it('Should return true when param format is video and mediaTypes are for video', function () {
       const bidRequest = {
         bidder: 'ampliffy',
@@ -160,9 +160,9 @@ describe('Ampliffy bid adapter Test', function () {
             sizes: [1, 1]
           }
         },
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.true;
-    })
+    });
     it('Should return true when param format is display and mediaTypes are for banner', function () {
       const bidRequest = {
         bidder: 'ampliffy',
@@ -176,9 +176,9 @@ describe('Ampliffy bid adapter Test', function () {
             sizes: [1, 1]
           }
         },
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.true;
-    })
+    });
     it('Should return true when param format is all and mediaTypes are for banner', function () {
       const bidRequest = {
         bidder: 'ampliffy',
@@ -192,9 +192,9 @@ describe('Ampliffy bid adapter Test', function () {
             sizes: [1, 1]
           }
         },
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.true;
-    })
+    });
     it('Should return true when param format is all and mediaTypes are for video', function () {
       const bidRequest = {
         bidder: 'ampliffy',
@@ -208,22 +208,22 @@ describe('Ampliffy bid adapter Test', function () {
             sizes: [1, 1]
           }
         },
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.true;
-    })
+    });
     it('Should return false without placementId param', function () {
       const bidRequest = {
         bidder: 'ampliffy',
         params: {}
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
-    })
+    });
     it('Should return false without param object', function () {
       const bidRequest = {
         bidder: 'ampliffy',
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
-    })
+    });
   });
 
   describe('Build request function', function () {
@@ -274,7 +274,7 @@ describe('Ampliffy bid adapter Test', function () {
         'canonicalUrl': null
       },
       'start': 1644029483708
-    }
+    };
     const validBidRequests = [
       {
         'bidder': 'ampliffy',
@@ -312,7 +312,7 @@ describe('Ampliffy bid adapter Test', function () {
     it('Should return one or more bid requests', function () {
       expect(spec.buildRequests(validBidRequests, bidderRequest).length).to.be.greaterThan(0);
     });
-  })
+  });
   describe('Interpret response', function () {
     const bidRequest = {
       bidRequest: {
@@ -386,10 +386,10 @@ describe('Ampliffy bid adapter Test', function () {
                       </VAST>`;
       const serverResponse = {
         'body': xmlStr1,
-      }
+      };
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).to.equal(0);
-    })
+    });
 
     it('It should return no ads when the creative url is not in the xml', () => {
       const xmlStr1 = `<?xml version="1.0" encoding="UTF-8"?>
@@ -417,24 +417,24 @@ describe('Ampliffy bid adapter Test', function () {
                         </VAST>`;
       const serverResponse = {
         'body': xmlStr1,
-      }
+      };
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).to.equal(0);
-    })
+    });
     it('It should return a banner ad.', () => {
       const serverResponse = {
         'body': xmlStr,
-      }
+      };
       setCurrentURL('https://www.sports.com');
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).greaterThan(0);
       expect(bidResponses[0].mediaType).to.be.equal(BANNER);
       expect(bidResponses[0].ad).not.to.be.null;
-    })
+    });
     it('It should return a video ad.', () => {
       const serverResponse = {
         'body': xmlStr,
-      }
+      };
       setCurrentURL('https://www.sports.com');
       bidRequest.bidRequest.mediaTypes = {
         video: {
@@ -443,11 +443,11 @@ describe('Ampliffy bid adapter Test', function () {
             [300, 600]
           ]
         }
-      }
+      };
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).greaterThan(0);
       expect(bidResponses[0].mediaType).to.be.equal(VIDEO);
       expect(bidResponses[0].vastUrl).not.to.be.null;
-    })
+    });
   });
 });

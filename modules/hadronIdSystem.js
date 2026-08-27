@@ -53,8 +53,8 @@ function paramOrDefault(param, defaultVal, arg) {
  * @returns {string}
  */
 const urlAddParams = (url, params) => {
-  return url + (url.indexOf('?') > -1 ? '&' : '?') + params
-}
+  return url + (url.indexOf('?') > -1 ? '&' : '?') + params;
+};
 
 const isDebug = config.getConfig('debug') || false;
 
@@ -75,7 +75,7 @@ export const hadronIdSubmodule = {
   decode(value) {
     return {
       hadronId: isStr(value) ? value : value.hasOwnProperty('id') ? value.id[MODULE_NAME] : value[MODULE_NAME]
-    }
+    };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -92,9 +92,9 @@ export const hadronIdSubmodule = {
     // at this point hadronId was not found by prebid, let check if it is in the webpage by other ways
     hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
     if (isStr(hadronId) && hadronId.length > 0) {
-      logInfo(LOG_PREFIX, `${LS_TAM_KEY} found in localStorage = ${hadronId}`)
+      logInfo(LOG_PREFIX, `${LS_TAM_KEY} found in localStorage = ${hadronId}`);
       // return {callback: function(cb) { cb(hadronId) }};
-      return { id: hadronId }
+      return { id: hadronId };
     }
     const partnerId = config.params.partnerId | 0;
     const resp = function (callback) {
@@ -128,9 +128,9 @@ export const hadronIdSubmodule = {
         `partner_id=${partnerId}&_it=prebid&t=1&src=id&domain=${document.location.hostname}` // src=id => the backend was called from getId
       );
       if (isDebug) {
-        url += '&debug=1'
+        url += '&debug=1';
       }
-      const gdprConsent = gdprDataHandler.getConsentData()
+      const gdprConsent = gdprDataHandler.getConsentData();
       if (gdprConsent) {
         url += `${gdprConsent.consentString ? '&gdprString=' + encodeURIComponent(gdprConsent.consentString) : ''}`;
         url += `&gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`;

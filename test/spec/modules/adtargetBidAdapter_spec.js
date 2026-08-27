@@ -153,8 +153,8 @@ describe('adtargetBidAdapter', () => {
 
         expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[0]]);
         expect(syncs.map(s => s.type)).to.deep.equal(['image']);
-      })
-    })
+      });
+    });
 
     describe('as iframe', () => {
       it('should be returned if iframe enabled', () => {
@@ -162,8 +162,8 @@ describe('adtargetBidAdapter', () => {
 
         expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]]);
         expect(syncs.map(s => s.type)).to.deep.equal(['iframe']);
-      })
-    })
+      });
+    });
 
     describe('user sync', () => {
       it('should not  be returned if passed syncs where already used', () => {
@@ -173,7 +173,7 @@ describe('adtargetBidAdapter', () => {
         }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
 
         expect(syncs).to.deep.equal([]);
-      })
+      });
 
       it('should not be returned if pixel not set', () => {
         const syncs = spec.getUserSyncs({}, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
@@ -219,10 +219,10 @@ describe('adtargetBidAdapter', () => {
       expect(videoRequest).to.be.a('array');
       expect(displayRequest).to.be.a('array');
       expect(videoAndDisplayRequests).to.be.a('array');
-    })
+    });
 
     it('sending as POST', () => {
-      const postActionMethod = 'POST'
+      const postActionMethod = 'POST';
       const comparator = br => br.method === postActionMethod;
       expect(videoRequest.every(comparator)).to.be.true;
       expect(displayRequest.every(comparator)).to.be.true;
@@ -266,7 +266,7 @@ describe('adtargetBidAdapter', () => {
         AdType: 'video',
         Aid: 12345,
         Sizes: '480x360,640x480'
-      }]
+      }];
 
       expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs);
     });
@@ -287,17 +287,17 @@ describe('adtargetBidAdapter', () => {
       });
       it('sets USP', () => {
         expect(bidRequestWithPubSettingsData.USP).to.be.equal(displayBidderRequestWithConsents.uspConsent);
-      })
+      });
       it('sets Coppa', () => {
         expect(bidRequestWithPubSettingsData.Coppa).to.be.equal(1);
-      })
+      });
       it('sets Schain', () => {
         expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(displayBidderRequestWithConsents.ortb2.source.ext.schain);
-      })
+      });
       it('sets UserId\'s', () => {
         expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);
-      })
-    })
+      });
+    });
   });
 
   describe('interpretResponse', () => {

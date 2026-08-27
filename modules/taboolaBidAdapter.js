@@ -2,7 +2,6 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import {
   deepSetValue,
   getWinDimensions,
@@ -83,7 +82,7 @@ export const userData = {
     if (!cookieData) {
       return undefined;
     }
-    const [, value = ''] = cookieData.split(`${key}=`)
+    const [, value = ''] = cookieData.split(`${key}=`);
     return value;
   },
   getFromLocalStorage() {
@@ -97,7 +96,7 @@ export const userData = {
   getFromTRC() {
     return window.TRC ? window.TRC.user_id : 0;
   }
-}
+};
 
 export const internal = {
   getPageUrl: (refererInfo = {}) => {
@@ -106,7 +105,7 @@ export const internal = {
   getReferrer: (refererInfo = {}) => {
     return refererInfo?.ref || getWindowSelf().document.referrer;
   }
-}
+};
 
 export function detectBot() {
   try {
@@ -209,7 +208,7 @@ const converter = ortbConverter({
     if (bid.ext && bid.ext.dchain) {
       deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
     }
-    return bidResponse
+    return bidResponse;
   }
 });
 
@@ -263,24 +262,19 @@ export const spec = {
     return bids;
   },
   onBidWon: (bid) => {
-    if (bid.nurl && !bid.deferBilling) {
+    if (bid.nurl) {
       const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
-      ajax(resolvedNurl);
-      bid.taboolaBillingFired = true;
+      ajax(resolvedNurl, null, null, { keepalive: true });
     }
   },
   onBidBillable: (bid) => {
-    if (bid.taboolaBillingFired) {
-      return;
-    }
-    const billingUrl = bid.burl || bid.nurl;
-    if (billingUrl) {
-      const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm);
-      ajax(resolvedBillingUrl);
+    if (bid.burl) {
+      const resolvedBurl = replaceAuctionPrice(bid.burl, bid.originalCpm);
+      ajax(resolvedBurl, null, null, { keepalive: true });
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-    const syncs = []
+    const syncs = [];
     const queryParams = [];
     if (gdprConsent) {
       queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
@@ -352,9 +346,9 @@ function getSiteProperties({ publisherId }, refererInfo, ortb2) {
       id: publisherId
     },
     content: {
-      language: navigator.language
+      language: ortb2?.site?.content?.language || navigator.language
     }
-  }
+  };
 }
 
 function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
@@ -375,7 +369,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     data.user = {
       buyeruid: 0,
       ext: {}
-    }
+    };
   }
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
@@ -383,7 +377,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
   if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
-    }
+    };
   }
   deepSetValue(data, 'regs.coppa', 0);
   if (gdprConsent.gdprApplies) {
@@ -399,7 +393,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     deepSetValue(data, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
   }
 
-  if (config.getConfig('coppa')) {
+  if (bidderRequest.ortb2?.regs?.coppa) {
     deepSetValue(data, 'regs.coppa', 1);
   }
 

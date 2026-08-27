@@ -113,7 +113,7 @@ describe('Performax adapter', function () {
           ]
         }]
     },
-  }
+  };
 
   describe('isBidRequestValid', function () {
     const bid = {};
@@ -128,7 +128,7 @@ describe('Performax adapter', function () {
       bid.params = { tagid: 'sample' };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-  })
+  });
 
   describe('buildRequests', function () {
     let sandbox;
@@ -376,7 +376,7 @@ describe('Performax adapter', function () {
 
       expect(ajaxStub.calledOnce).to.be.true;
 
-      const [url, callback, data, options] = ajaxStub.firstCall.args;
+      const [, , data, options] = ajaxStub.firstCall.args;
       const parsedData = JSON.parse(data);
 
       expect(parsedData.type).to.equal('timeout');
@@ -390,7 +390,7 @@ describe('Performax adapter', function () {
 
       expect(ajaxStub.calledOnce).to.be.true;
 
-      const [url, callback, data] = ajaxStub.firstCall.args;
+      const [, , data] = ajaxStub.firstCall.args;
       const parsedData = JSON.parse(data);
 
       expect(parsedData.type).to.equal('bidderError');
@@ -409,7 +409,7 @@ describe('Performax adapter', function () {
       spec.onIntervention({ bid: bidData });
 
       expect(ajaxStub.calledOnce).to.be.true;
-      const [url, callback, data] = ajaxStub.firstCall.args;
+      const [, , data] = ajaxStub.firstCall.args;
       const parsed = JSON.parse(data);
 
       expect(parsed.type).to.equal('intervention');

@@ -24,7 +24,7 @@ export const spec = {
       !!(bid.params.hash) &&
       (typeof bid.params.hash === 'string') &&
       !!(bid.mediaTypes) &&
-      (Object.keys(bid.mediaTypes).includes(NATIVE) || Object.keys(bid.mediaTypes).includes(BANNER))
+      (Object.keys(bid.mediaTypes).includes(NATIVE) || Object.keys(bid.mediaTypes).includes(BANNER));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -40,7 +40,7 @@ export const spec = {
         eids: validBidRequests[i].userIdAsEids,
         referer: bidderRequest.refererInfo.page,
         userAgent: navigator.userAgent,
-      }
+      };
 
       if (validBidRequests[i].sizes != null && validBidRequests[i].sizes.length > 0) {
         requestData.bannerParams = { sizes: validBidRequests[i].sizes };
@@ -54,7 +54,7 @@ export const spec = {
         requestData.gdprConsent = {
           consentString: bidderRequest.gdprConsent.consentString,
           consentRequired: bidderRequest.gdprConsent.gdprApplies
-        }
+        };
       }
 
       bids.push(requestData);

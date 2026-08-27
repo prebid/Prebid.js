@@ -155,12 +155,11 @@ export const spec = {
       }
     });
 
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs: function (syncOptions, serverResponses = []) {
-    let userSyncs = [];
-    userSyncs = serverResponses.reduce((allSyncPixels, response) => {
+    return serverResponses.reduce((allSyncPixels, response) => {
       if (response && response.body && response.body[0]) {
         (response.body[0].syncPixels || []).forEach((url) => {
           allSyncPixels.push({ type: 'image', url });
@@ -168,7 +167,6 @@ export const spec = {
       }
       return allSyncPixels;
     }, []);
-    return userSyncs;
   }
 };
 

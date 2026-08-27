@@ -88,7 +88,7 @@ export function createRtdProvider(moduleName) {
       const bidders = config.params.bidders;
 
       if (cohortStorageKey !== 'cohort_ids') {
-        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`)
+        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
         return;
       }
 
@@ -106,7 +106,7 @@ export function createRtdProvider(moduleName) {
             segtax: config.params.segtax
           },
           segment: segments.map(x => ({ id: x }))
-        }
+        };
 
         logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);
         const data = {

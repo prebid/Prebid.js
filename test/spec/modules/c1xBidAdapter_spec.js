@@ -62,7 +62,7 @@ describe('C1XAdapter', () => {
       const parsedData = '{"' + data.replace(/=|&/g, (foundChar) => {
         if (foundChar === '=') return '":"';
         else if (foundChar === '&') return '","';
-      }) + '"}'
+      }) + '"}';
       return parsedData;
     };
     it('sends bid request to ENDPOINT via GET', () => {
@@ -114,7 +114,7 @@ describe('C1XAdapter', () => {
 
       const bidderRequest = {
         'bidderCode': 'c1x'
-      }
+      };
       bidderRequest.bids = bidRequests;
       const request = c1xAdapter.buildRequests([bidRequest], bidderRequest)[0];
       const originalPayload = parseRequest(request.data);
@@ -130,7 +130,7 @@ describe('C1XAdapter', () => {
           'consentString': consentString,
           'gdprApplies': true
         }
-      }
+      };
       bidderRequest.bids = bidRequests;
 
       const request = c1xAdapter.buildRequests(bidRequests, bidderRequest)[0];

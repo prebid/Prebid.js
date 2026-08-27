@@ -110,7 +110,7 @@ function fetchAnalyticsConfig() {
     return `${CONFIG_URL}?${(formatQS({
       cid: mnetGlobals.configuration.cid,
       dn: mnetGlobals.refererInfo.domain
-    }))}`
+    }))}`;
   }
 
   // Debugging and default settings
@@ -135,6 +135,9 @@ function fetchAnalyticsConfig() {
 }
 
 function initConfiguration(eventType, configuration) {
+  if (mnetGlobals.initialized) {
+    return;
+  }
   mnetGlobals.refererInfo = getRefererInfo();
   // Holds configuration details
   mnetGlobals.configuration = {
@@ -149,6 +152,7 @@ function initConfiguration(eventType, configuration) {
     loggingDelay: LOGGING_DELAY,
     ...configuration.options,
   };
+  mnetGlobals.initialized = true;
   mnetGlobals.eventQueue.enqueueEvent(LoggingEvents.SETUP_LISTENERS, mnetGlobals.configuration);
   mnetGlobals.eventQueue.enqueueEvent(LoggingEvents.FETCH_CONFIG, mnetGlobals.configuration);
 }
@@ -279,7 +283,7 @@ function getDummyBids(auctionObj, adUnitCode, receivedResponse) {
 
   auctionObj.bidsRequested
     .forEach((bid) => {
-      if (bid.adUnitCode !== adUnitCode) return
+      if (bid.adUnitCode !== adUnitCode) return;
       const emptySizes = bid.sizes.filter(
         (size) => !deepAccess(receivedResponse, `${bid.bidId}.${size}`)
       );
@@ -360,7 +364,7 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
     if (fromSameAuction && !winningBidObj) {
       errorLogger(ERROR_IWB_BID_MISSING, pick(winner, ['adId', 'auctionId', 'bidder', 'requestId', 'cpm', 'adUnitCode'])).send();
     }
-  }
+  };
 
   Object.keys(auctionObj.adSlots).forEach((adUnitCode) => {
     const winner = getGlobal().getHighestCpmBids(adUnitCode)[0];
@@ -496,8 +500,8 @@ function getDfpCurrencyInfo(bidResponse) {
   // dfpBd
   let dfpbd = deepAccess(adserverTargeting, `${TARGETING_KEYS.PRICE_BUCKET}`);
   if (!dfpbd) {
-    const priceGranularityKey = getPriceByGranularity(bidResponse);
-    dfpbd = bidResponse[priceGranularityKey] || bidResponse.cpm;
+    const priceGetter = getPriceByGranularity();
+    dfpbd = priceGetter(bidResponse) || bidResponse.cpm;
   }
   if (currency !== 'USD' && dfpbd) {
     dfpbd = convertCurrency(dfpbd, currency, 'USD');
@@ -563,10 +567,10 @@ const eventQueue = () => {
     if (mnetGlobals.configuration.debug) {
       logInfo(eventType, args);
     }
-    processEventQueue(eventType, args);
+    process(eventType, args);
   }
 
-  function processEventQueue(eventType, args) {
+  function process(eventType, args) {
     try {
       const handler = eventListeners[eventType];
       if (!handler) {
@@ -578,9 +582,14 @@ const eventQueue = () => {
     }
   }
 
+  function clear() {
+    mnetGlobals.logsQueue = [];
+    mnetGlobals.errorQueue = [];
+  }
+
   return {
     enqueueEvent,
-    processEventQueue,
+    clear,
   };
 };
 
@@ -853,8 +862,7 @@ const medianetAnalytics = Object.assign(adapter({ analyticsType: 'endpoint' }), 
   },
 
   clearlogsQueue() {
-    mnetGlobals.logsQueue = [];
-    mnetGlobals.errorQueue = [];
+    eventQueue().clear();
     mnetGlobals.auctions = {};
   },
 
@@ -868,7 +876,15 @@ function setupListeners() {
   registerVastTrackers(MODULE_TYPE_ANALYTICS, ADAPTER_CODE, vastTrackerHandler);
 }
 
-medianetAnalytics.originEnableAnalytics = medianetAnalytics.enableAnalytics;
+medianetAnalytics.originalDisableAnalytics = medianetAnalytics.disableAnalytics;
+medianetAnalytics.disableAnalytics = function () {
+  getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
+  getGlobal().medianetGlobals.analyticsEnabled = false;
+  eventQueue().clear();
+  medianetAnalytics.originalDisableAnalytics();
+};
+
+medianetAnalytics.originalEnableAnalytics = medianetAnalytics.enableAnalytics;
 medianetAnalytics.enableAnalytics = function (configuration) {
   if (!configuration || !configuration.options || !configuration.options.cid) {
     logError('Media.net Analytics adapter: cid is required.');
@@ -880,7 +896,7 @@ medianetAnalytics.enableAnalytics = function (configuration) {
   mnetGlobals.eventQueue = eventQueue();
   mnetGlobals.eventQueue.enqueueEvent(LoggingEvents.CONFIG_INIT, configuration);
   configuration.options.sampling = 1;
-  medianetAnalytics.originEnableAnalytics(configuration);
+  medianetAnalytics.originalEnableAnalytics(configuration);
 };
 
 adapterManager.registerAnalyticsAdapter({

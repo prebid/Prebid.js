@@ -2,7 +2,7 @@ import { deepSetValue, generateUUID, logError } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 import { interpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
@@ -12,7 +12,6 @@ const BIDDER_CODE = 'revnew';
 const REQUEST_URL = 'https://fast.nexx360.io/revnew';
 const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '1.0';
-const GVLID = 1468;
 const REVNEW_KEY = 'revnew_storage';
 
 type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
@@ -75,7 +74,7 @@ const buildRequests = (
   bidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
-  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest })
+  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest });
   const adapterRequest:AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,
@@ -83,13 +82,12 @@ const buildRequests = (
     options: {
       endpointCompression: getGzipSetting(BIDDER_CODE, true),
     },
-  }
+  };
   return adapterRequest;
 };
 
 export const spec:BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,

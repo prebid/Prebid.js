@@ -42,7 +42,7 @@ export function targetingLock() {
       tearDownGpt();
     }
     locked.clear();
-  })
+  });
   const [setupGpt, tearDownGpt] = (() => {
     let enabled = false;
     function onGptRender({ slot }: SlotRenderEndedEvent) {
@@ -51,17 +51,17 @@ export function targetingLock() {
     return [
       () => {
         if (keys != null && !enabled && isGptPubadsDefined()) {
-          googletag.pubads().addEventListener?.('slotRenderEnded', onGptRender)
+          googletag.pubads().addEventListener?.('slotRenderEnded', onGptRender);
           enabled = true;
         }
       },
       () => {
         if (enabled && isGptPubadsDefined()) {
-          googletag.pubads().removeEventListener?.('slotRenderEnded', onGptRender)
+          googletag.pubads().removeEventListener?.('slotRenderEnded', onGptRender);
           enabled = false;
         }
       }
-    ]
+    ];
   })();
 
   return {
@@ -70,9 +70,9 @@ export function targetingLock() {
     },
     lock(targeting: TargetingMap<unknown>) {
       setupGpt();
-      keys?.forEach(key => targeting[key] != null && locked.add(targeting[key]))
+      keys?.forEach(key => targeting[key] != null && locked.add(targeting[key]));
     }
-  }
+  };
 }
 
 export const lock = targetingLock();

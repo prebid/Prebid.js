@@ -40,6 +40,8 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./appnexusBidAdapter.d.ts').AppnexusBidderParams} AppnexusBidderParams
+ * @typedef {BidRequest & {params: AppnexusBidderParams}} AppnexusBidRequest
  */
 
 const BIDDER_CODE = 'appnexus';
@@ -132,7 +134,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bid The bid to validate.
+   * @param {AppnexusBidRequest} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -278,7 +280,7 @@ export const spec = {
     const ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
 
     const anAuctionKeywords = deepClone(config.getConfig('appnexusAuctionKeywords')) || {};
-    const auctionKeywords = getANKeywordParam(ortb2, anAuctionKeywords)
+    const auctionKeywords = getANKeywordParam(ortb2, anAuctionKeywords);
     if (auctionKeywords.length > 0) {
       payload.keywords = auctionKeywords;
     }
@@ -323,12 +325,12 @@ export const spec = {
       payload.privacy = {
         gpp: bidderRequest.gppConsent.gppString,
         gpp_sid: bidderRequest.gppConsent.applicableSections
-      }
+      };
     } else if (bidderRequest?.ortb2?.regs?.gpp) {
       payload.privacy = {
         gpp: bidderRequest.ortb2.regs.gpp,
         gpp_sid: bidderRequest.ortb2.regs.gpp_sid
-      }
+      };
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
@@ -429,8 +431,8 @@ export const spec = {
     }
 
     if (serverResponse.debug && serverResponse.debug.debug_info) {
-      const debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
-      let debugText = debugHeader + serverResponse.debug.debug_info
+      const debugHeader = 'AppNexus Debug Auction for Prebid\n\n';
+      let debugText = debugHeader + serverResponse.debug.debug_info;
       debugText = debugText
         .replace(/(<td>|<th>)/gm, '\t') // Tables
         .replace(/(<\/td>|<\/th>)/gm, '\n') // Tables
@@ -1111,19 +1113,19 @@ function hasMemberId(bid) {
 
 function hasAppDeviceInfo(bid) {
   if (bid.params) {
-    return !!bid.params.app
+    return !!bid.params.app;
   }
 }
 
 function hasAppId(bid) {
   if (bid.params && bid.params.app) {
-    return !!bid.params.app.id
+    return !!bid.params.app.id;
   }
-  return !!bid.params.app
+  return !!bid.params.app;
 }
 
 function hasDebug(bid) {
-  return !!bid.debug
+  return !!bid.debug;
 }
 
 function hasOmidSupport(bid) {

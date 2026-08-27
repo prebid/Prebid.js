@@ -8,13 +8,13 @@ describe('the first party data module', function () {
   });
   after(() => {
     reset();
-  })
+  });
 
   describe('startAuctionHook', () => {
     const mockFpd = {
       global: { key: 'value' },
       bidder: { A: { bkey: 'bvalue' } }
-    }
+    };
     beforeEach(() => {
       reset();
     });
@@ -30,7 +30,7 @@ describe('the first party data module', function () {
       return new Promise((resolve) => startAuctionHook(resolve, req))
         .then(() => {
           expect(req.ortb2Fragments).to.eql(mockFpd);
-        })
+        });
     });
 
     it('should work with fpd submodules that return promises', () => {

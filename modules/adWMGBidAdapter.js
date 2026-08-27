@@ -36,7 +36,7 @@ export const spec = {
         if (isNaN(parseFloat(value))) {
           return 0;
         } else return parseFloat(value);
-      }
+      };
 
       const adUnit = {
         code: bidRequest.adUnitCode,
@@ -97,7 +97,7 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT,
         data: JSON.stringify(request)
-      }
+      };
     });
   },
   interpretResponse: (serverResponse) => {

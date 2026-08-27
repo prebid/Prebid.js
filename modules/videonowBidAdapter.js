@@ -9,10 +9,10 @@ import { _each, getBidIdParameter, getValue, logError, logInfo } from '../src/ut
  */
 
 const BIDDER_CODE = 'videonow';
-const RTB_URL = 'https://adx.videonow.ru/yhb'
-const DEFAULT_CURRENCY = 'RUB'
-const DEFAULT_CODE_TYPE = 'combo'
-const TTL_SECONDS = 60 * 5
+const RTB_URL = 'https://adx.videonow.ru/yhb';
+const DEFAULT_CURRENCY = 'RUB';
+const DEFAULT_CODE_TYPE = 'combo';
+const TTL_SECONDS = 60 * 5;
 
 export const spec = {
 
@@ -33,10 +33,10 @@ export const spec = {
 
     if (!bidRequest.params.pId) {
       logError('failed validation: pId not declared');
-      return false
+      return false;
     }
 
-    return true
+    return true;
   },
 
   /**
@@ -52,12 +52,12 @@ export const spec = {
     const bidRequests = [];
 
     _each(validBidRequests, (bid) => {
-      const bidId = getBidIdParameter('bidId', bid)
-      const placementId = getValue(bid.params, 'pId')
-      const currency = getValue(bid.params, 'currency') || DEFAULT_CURRENCY
-      const url = getValue(bid.params, 'url') || RTB_URL
-      const codeType = getValue(bid.params, 'codeType') || DEFAULT_CODE_TYPE
-      const sizes = getValue(bid, 'sizes')
+      const bidId = getBidIdParameter('bidId', bid);
+      const placementId = getValue(bid.params, 'pId');
+      const currency = getValue(bid.params, 'currency') || DEFAULT_CURRENCY;
+      const url = getValue(bid.params, 'url') || RTB_URL;
+      const codeType = getValue(bid.params, 'codeType') || DEFAULT_CODE_TYPE;
+      const sizes = getValue(bid, 'sizes');
 
       bidRequests.push({
         method: 'POST',
@@ -75,8 +75,8 @@ export const spec = {
             currency,
           }
         },
-      })
-    })
+      });
+    });
 
     return bidRequests;
   },
@@ -114,15 +114,15 @@ export const spec = {
               advertiserDomains: bid.adDomain ? [bid.adDomain] : []
             }
           };
-          bidResponses.push(bidResponse)
+          bidResponses.push(bidResponse);
         }
-      })
+      });
     } catch (error) {
       logError(error);
     }
 
-    return bidResponses
+    return bidResponses;
   },
-}
+};
 
 registerBidder(spec);

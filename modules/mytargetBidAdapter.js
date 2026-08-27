@@ -93,7 +93,7 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain && bid.adomain.length > 0 ? bid.adomain : [],
           }
-        }
+        };
 
         if (bid.adm) {
           bidResponse.ad = bid.adm;
@@ -107,6 +107,6 @@ export const spec = {
 
     return [];
   }
-}
+};
 
 registerBidder(spec);

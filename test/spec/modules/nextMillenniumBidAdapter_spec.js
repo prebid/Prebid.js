@@ -902,7 +902,7 @@ describe('nextMillenniumBidAdapterTests', () => {
   }
 
   describe('check parameters group_id or placement_id', function() {
-    let numberTest = 0
+    let numberTest = 0;
     for (const test of bidRequestDataGI) {
       it(`test - ${++numberTest}`, () => {
         const request = spec.buildRequests([test]);
@@ -958,7 +958,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           const nextMilImp = bidRequest.ext.next_mil_imps[i];
           expect(nextMilImp.impId).to.deep.equal(expectedNextMilImps[i].impId);
           expect(nextMilImp.nextMillennium.refresh_count).to.deep.equal(expectedNextMilImps[i].nextMillennium.refresh_count + j);
-        })
+        });
       };
     };
   });
@@ -1336,7 +1336,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           it(expected[i].title, () => {
             expect(bids).to.have.lengthOf(expected.length);
 
-            const bid = bids[i]
+            const bid = bids[i];
             expect(bid.creativeId).to.equal(expected[i].creativeId);
             expect(bid.requestId).to.equal(expected[i].requestId);
             expect(bid.ad).to.equal(expected[i].ad);

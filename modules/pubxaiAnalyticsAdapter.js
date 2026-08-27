@@ -5,7 +5,7 @@ import {
 import { getDeviceType, getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
-import { sendBeacon } from '../src/ajax.js'
+import { sendBeacon } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -23,7 +23,7 @@ const pubxaiAnalyticsVersion = 'v2.1.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
-const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode });
 
 /**
  * The sendCache is a global cache object which tracks the pending sends

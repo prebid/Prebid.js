@@ -5,8 +5,8 @@ import {
   insertElement,
   logError,
   logWarn,
+  politeTriggerPixel,
   replaceMacros,
-  triggerPixel
 } from './utils.js';
 import * as events from './events.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR } from './constants.js';
@@ -59,10 +59,10 @@ declare module './events' {
 
 export const markWinningBid = hook('sync', function (bid) {
   (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_WIN]?.[TRACKER_METHOD_IMG] || [])
-    .forEach(url => triggerPixel(url));
+    .forEach(url => politeTriggerPixel(url));
   events.emit(BID_WON, bid);
   auctionManager.addWinningBid(bid);
-})
+});
 
 type AdRenderFailedData = {
   /**
@@ -81,7 +81,7 @@ type AdRenderFailedData = {
    * Ad ID of the bid that failed to render.
    */
   adId?: string;
-}
+};
 
 /**
  * Emit the AD_RENDER_FAILED event.
@@ -112,7 +112,7 @@ type AdRenderSucceededData = {
    * Ad ID of the bid that was rendered.
    */
   adId: string;
-}
+};
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
  * (Note: Invocation of this function indicates that the render function did not generate an error, it does not guarantee that tracking for this event has occurred yet.)
@@ -132,7 +132,7 @@ type BrowserInterventionData = {
   bid: Bid;
   adId: string;
   intervention: any;
-}
+};
 /**
  * Emit the BROWSER_INTERVENTION event.
  * This event is fired when the browser blocks an ad from rendering, typically due to ad blocking software or browser security features.
@@ -184,7 +184,7 @@ export function handleNativeMessage(data, bidResponse, { resizeFn, fireTrackers 
 
 const HANDLERS: any = {
   [MESSAGES.EVENT]: handleCreativeEvent
-}
+};
 
 if (FEATURES.NATIVE) {
   HANDLERS[MESSAGES.NATIVE] = handleNativeMessage;
@@ -195,12 +195,13 @@ function creativeMessageHandler(deps) {
     if (HANDLERS.hasOwnProperty(type)) {
       HANDLERS[type](data, bidResponse, deps);
     }
-  }
+  };
 }
 
 type RenderOptions = {
   clickUrl?: string;
-}
+  viewUrl?: string;
+};
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
   const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
@@ -211,14 +212,14 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
     height,
     instl,
   };
-})
+});
 
 function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
-  const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse
+  const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse;
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
-  }
+  };
 
   const result = {
     ...bidResponse,
@@ -230,7 +231,7 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
     result.safeRenderer = {
       ...safeRenderer,
       config: typeof safeRenderer?.getConfig === 'function' ? safeRenderer.getConfig(bidResponse) : safeRenderer?.config,
-    }
+    };
   }
 
   return result;
@@ -270,7 +271,7 @@ function prepareRenderingData(
 
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
   const safeRenderer = getSafeRenderer(bidResponse);
-  const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
+  const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO);
   if ((isMainDocument || videoBid) && !safeRenderer?.url) {
     emitAdRenderFail({
       reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
@@ -293,14 +294,17 @@ doRender.before(function (next, args) {
   const { bidResponse, doc } = args;
   if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
-    emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId })
+    emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId });
     next.bail();
   } else {
     next(args);
   }
-}, 100)
+}, 100);
 
 export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
+  if (bidResponse != null && options?.viewUrl != null) {
+    bidResponse.viewUrl = options.viewUrl;
+  }
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
       emitAdRenderFail({
@@ -335,7 +339,7 @@ export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, d
         bid: bidResponse
       });
     }
-  })
+  });
 }
 
 export function markBidAsRendered(bidResponse) {
@@ -381,7 +385,7 @@ export function renderIfDeferred(bidResponse) {
 
 let legacyRender = false;
 config.getConfig('auctionOptions', (opts) => {
-  legacyRender = opts.auctionOptions?.legacyRender ?? false
+  legacyRender = opts.auctionOptions?.legacyRender ?? false;
 });
 
 export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDirect(doc, adId, options) {
@@ -411,7 +415,7 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
       } else {
         resolve();
       }
-    })
+    });
   }
 
   function renderFn(adData) {
@@ -430,7 +434,7 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
         .then(
           () => emitAdRenderSucceeded({ doc, bid, id: bid.adId }),
           (e) => {
-            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
+            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message);
             e?.stack && logError(e);
           }
         );
@@ -443,8 +447,8 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      bid = auctionManager.findBidByAdId(adId)
-      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough }, bidResponse: bid, doc });
+      bid = auctionManager.findBidByAdId(adId);
+      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
     }
   } catch (e) {
     fail(EXCEPTION, e.message);

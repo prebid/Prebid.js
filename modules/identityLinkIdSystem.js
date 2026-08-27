@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -45,7 +45,7 @@ export const identityLinkSubmodule = {
    * @returns {{idl_env:string}}
    */
   decode(value) {
-    return { 'idl_env': value }
+    return { 'idl_env': value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -134,7 +134,7 @@ function getEnvelope(url, callback, configParams) {
     setEnvelopeSource(false);
     ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
   } else {
-    callback()
+    callback();
   }
 }
 

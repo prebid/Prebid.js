@@ -110,9 +110,9 @@ export const NATIVE_ASSETS = {
   cta: [8, DATA_ASSET_TYPES.CTA_TEXT],
   rating: [9, DATA_ASSET_TYPES.RATING],
   likes: [10, DATA_ASSET_TYPES.LIKES],
-}
+};
 const NATIVE_ASSETS_IDS = {};
-_each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key });
+_each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key; });
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -299,7 +299,7 @@ export const spec = {
   onAdRenderSucceeded: function (bid) {
     eventLog('PREBID_AD_RENDER_SUCCEEDED_EVENT', bid);
   },
-}
+};
 
 /**
  * @param {YandexBidRequestParams} bidRequestParams
@@ -351,7 +351,7 @@ function getBidfloor(bidRequest) {
           currency: DEFAULT_CURRENCY,
           mediaType: type,
           size: bidRequest.sizes || '*'
-        })
+        });
         floors.push(floorInfo);
       }
     });
@@ -376,7 +376,7 @@ function mapBanner(bidRequest) {
       format,
       w,
       h,
-    }
+    };
   }
 }
 

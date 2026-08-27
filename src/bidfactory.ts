@@ -100,6 +100,10 @@ export interface BaseBidResponse {
    * Billing tracker URL.
    */
   burl?: string;
+  /**
+   * View tracker URL supplied by the GAM creative.
+   */
+  viewUrl?: string;
 
   desirability: number;
 }
@@ -215,7 +219,7 @@ function Bid({ src = 'client', bidder = '', bidId, transactionId, adUnitId, auct
     auctionId,
     mediaType: 'banner',
     source: _bidSrc
-  })
+  });
 
   // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {

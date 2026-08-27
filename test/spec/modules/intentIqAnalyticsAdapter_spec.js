@@ -16,7 +16,6 @@ import {
   PREBID,
   VERSION,
   WITHOUT_IIQ,
-  WITH_IIQ,
   AB_CONFIG_SOURCE,
 } from "../../../libraries/intentIqConstants/intentIqConstants.js";
 import * as detectBrowserUtils from "../../../libraries/intentIqUtils/detectBrowserUtils.js";
@@ -33,7 +32,7 @@ import {
 let getConfigStub;
 let userIdConfigForTest;
 const partner = 10;
-const identityName = `iiq_identity_${partner}`
+const identityName = `iiq_identity_${partner}`;
 const defaultIdentityObject = {
   firstPartyData: {
     pcid: "f961ffb1-a0e1-4696-a9d2-a21d815bd344",
@@ -88,10 +87,10 @@ const regionCases = [
     region: 'gdpr',
     expectedEndpoint: 'https://reports-gdpr.intentiq.com/report'
   }
-]
+];
 const version = VERSION;
 const REPORT_ENDPOINT = "https://reports.intentiq.com/report";
-const REPORT_ENDPOINT_GDPR = "https://reports-gdpr.intentiq.com/report";
+
 const REPORT_SERVER_ADDRESS = "https://test-reports.intentiq.com/report";
 
 const randomVal = () => Math.floor(Math.random() * 100000) + 1;
@@ -100,8 +99,8 @@ const getDefaultConfig = () => {
   return {
     partner,
     manualWinReportEnabled: false,
-  }
-}
+  };
+};
 
 const getUserConfigWithReportingServerAddress = () => [
   {
@@ -213,7 +212,7 @@ describe("IntentIQ tests all", function () {
     }
     localStorage.clear();
     server.reset();
-    delete window[`iiq_identity_${partner}`]
+    delete window[`iiq_identity_${partner}`];
   });
 
   it("should send POST request with payload in request body if reportMethod is POST", function () {
@@ -568,7 +567,7 @@ describe("IntentIQ tests all", function () {
   it("should not send request if the browser is in blacklist (chrome)", function () {
     enableAnalyticWithSpecialOptions({
       browserBlackList: "ChrOmE"
-    })
+    });
     detectBrowserStub = sinon
       .stub(detectBrowserUtils, "detectBrowser")
       .returns("chrome");
@@ -581,7 +580,7 @@ describe("IntentIQ tests all", function () {
   it("should send request if the browser is not in blacklist (safari)", function () {
     enableAnalyticWithSpecialOptions({
       browserBlackList: "chrome,firefox"
-    })
+    });
 
     detectBrowserStub = sinon
       .stub(detectBrowserUtils, "detectBrowser")
@@ -637,7 +636,7 @@ describe("IntentIQ tests all", function () {
           destination: [0, 0, 1],
         },
       ]
-    })
+    });
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
@@ -686,7 +685,7 @@ describe("IntentIQ tests all", function () {
           destination: [0, 0, 1],
         },
       ]
-    })
+    });
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
@@ -749,7 +748,7 @@ describe("IntentIQ tests all", function () {
 
       enableAnalyticWithSpecialOptions({
         gamObjectReference: gam
-      })
+      });
 
       // enable subscription by LS flag
       window[`iiq_identity_${partner}`].partnerData.gpr = true;

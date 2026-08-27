@@ -40,7 +40,7 @@ export interface BidderSettings<B extends BidderCode> {
    */
   allowedAlternateBidderCodes?: ['*'] | BidderCode[];
   /**
-   * If true (the default), allow the `Sec-Browsing-Topics` header in requests to their exchange.
+   * @deprecated - see
    */
   topicsHeader?: boolean;
 }
@@ -89,7 +89,7 @@ export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends
    */
   getOwn<P extends keyof SCOPED>(scope, path: P): SCOPED[P] {
     scope = this.#resolveScope(scope);
-    return deepAccess(this.getSettings(), `${scope}.${path as any}`)
+    return deepAccess(this.getSettings(), `${scope}.${path as any}`);
   }
 
   /**

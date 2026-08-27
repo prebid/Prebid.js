@@ -1,3 +1,6 @@
+// the augmentation in this file only applies where the spec is part of the program
+import type {} from './userId/spec.js';
+
 export type ThirtyThreeAcrossIdSystemModuleName = '33acrossId';
 
 export type ThirtyThreeAcrossIdSystemParams = {
@@ -19,7 +22,7 @@ export type ThirtyThreeAcrossIdSystemParams = {
    * Indicates whether a supplemental third-party ID may be stored to improve addressability
    */
   storeTpid?: boolean;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -37,4 +40,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

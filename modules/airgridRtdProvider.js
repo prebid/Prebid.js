@@ -83,13 +83,13 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
       name: 'airgrid',
       segment: audiences.map((id) => ({ id }))
     }
-  ]
+  ];
   deepSetValue(agOrtb2, 'user.data', agUserData);
 
   const bidderConfig = Object.fromEntries(
     bidders.map((bidder) => [bidder, agOrtb2])
-  )
-  mergeDeep(bidConfig?.ortb2Fragments?.bidder, bidderConfig)
+  );
+  mergeDeep(bidConfig?.ortb2Fragments?.bidder, bidderConfig);
 }
 
 /**
@@ -119,7 +119,7 @@ export function passAudiencesToBidders(
 ) {
   const audiences = getMatchedAudiencesFromStorage();
   if (audiences.length > 0) {
-    setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences)
+    setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences);
   }
   onDone();
 }

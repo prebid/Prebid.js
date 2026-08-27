@@ -9,7 +9,7 @@ const {
   AUCTION_END,
   TCF2_ENFORCEMENT,
   BID_WON
-} = EVENTS
+} = EVENTS;
 
 const GVLID = 131;
 const COMPRESSION_THRESHOLD = 2048;
@@ -20,7 +20,7 @@ const STANDARD_EVENTS_TO_TRACK = [
   BID_WON,
 ];
 
-const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
+const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics';
 const TZ = new Date().getTimezoneOffset();
 const PBJS_VERSION = 'v' + '$prebid.version$';
 const ID5_REDACTED = '__ID5_REDACTED__';
@@ -54,7 +54,7 @@ const id5Analytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), 
             'Content-Encoding': 'gzip'
           }
         });
-      })
+      });
     } else {
       // By giving some content this will be automatically a POST
       ajax(id5Analytics.options.ingestUrl, null, serializedEvent);

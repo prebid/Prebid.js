@@ -64,9 +64,9 @@ describe('gpt targeting shim', () => {
         it('returns the value from config otherwise', () => {
           targetingConfig = { key: ['value'] };
           expect(fn(mockGam)).to.eql({ key: ['value'] });
-        })
-      })
-    })
+        });
+      });
+    });
 
     Object.entries({
       setPageTargeting: (target, key, value) => setPageTargeting(key, value, target),
@@ -76,9 +76,9 @@ describe('gpt targeting shim', () => {
         it('calls setConfig', () => {
           fn(mockGam, 'key', 'value');
           sinon.assert.calledWith(mockGam.setConfig, { targeting: { 'key': 'value' } });
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   describe('when getConfig/setConfig is not defined', () => {
@@ -142,7 +142,7 @@ describe('gpt targeting shim', () => {
           });
         });
       });
-    })
+    });
 
     it('getSlotTargetingMap calls slot.getTargeting on each key from slot.getTargetingKeys', () => {
       mockSlot.getTargetingKeys = () => ['k1', 'k2'];
@@ -151,6 +151,6 @@ describe('gpt targeting shim', () => {
         k1: ['k1value'],
         k2: ['k2value']
       });
-    })
+    });
   });
 });
