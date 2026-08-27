@@ -46,7 +46,7 @@ describe('UnderdogMedia adapter', function () {
           },
         },
       },
-    }
+    };
   });
 
   describe('implementation', function () {
@@ -202,7 +202,7 @@ describe('UnderdogMedia adapter', function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(request).to.equal(undefined);
@@ -238,7 +238,7 @@ describe('UnderdogMedia adapter', function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(request.data.placements[0].sizes[0]).to.equal('300x250');
@@ -271,7 +271,7 @@ describe('UnderdogMedia adapter', function () {
         const bidderRequest = {
           timeout: 3000,
           gdprConsent: {}
-        }
+        };
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(request.data.placements[0].sizes[0]).to.equal('300x250');
@@ -280,8 +280,8 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have uspConsent if defined', function () {
-        const uspConsent = '1YYN'
-        bidderRequest.uspConsent = uspConsent
+        const uspConsent = '1YYN';
+        bidderRequest.uspConsent = uspConsent;
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.data.usp.uspConsent).to.equal(uspConsent);
       });
@@ -654,7 +654,7 @@ describe('UnderdogMedia adapter', function () {
           refererInfo: {
             page: 'www.example.com'
           }
-        }
+        };
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
@@ -673,7 +673,7 @@ describe('UnderdogMedia adapter', function () {
               },
             },
           }
-        }
+        };
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
@@ -681,18 +681,18 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have pbTimeout to be 3001 if bidder timeout does not exists', function () {
-        config.setConfig({ bidderTimeout: '' })
+        config.setConfig({ bidderTimeout: '' });
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
-        expect(request.data.pbTimeout).to.equal(3001)
-      })
+        expect(request.data.pbTimeout).to.equal(3001);
+      });
 
       it('should have pbTimeout to be a numerical value if bidder timeout is in a string', function () {
-        config.setConfig({ bidderTimeout: '1000' })
+        config.setConfig({ bidderTimeout: '1000' });
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
-        expect(request.data.pbTimeout).to.equal(1000)
-      })
+        expect(request.data.pbTimeout).to.equal(1000);
+      });
 
       it('should have pubcid if it exists', function () {
         const bidRequests = [{
@@ -844,7 +844,7 @@ describe('UnderdogMedia adapter', function () {
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
-        expect(request.data.placements[0].viewability).to.equal(-1)
+        expect(request.data.placements[0].viewability).to.equal(-1);
       });
     });
 
@@ -881,7 +881,7 @@ describe('UnderdogMedia adapter', function () {
 
         expect(bids).to.be.lengthOf(2);
 
-        expect(bids[0].meta.advertiserDomains).to.deep.equal(['domain1'])
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(['domain1']);
         expect(bids[0].cpm).to.equal(2.5);
         expect(bids[0].width).to.equal('160');
         expect(bids[0].height).to.equal('600');

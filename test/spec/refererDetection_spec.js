@@ -481,7 +481,7 @@ describe('parseDomain', () => {
   }).forEach(([input, expected]) => {
     it('should remove leading www if requested', () => {
       expect(parseDomain(input, { noLeadingWww: true })).to.equal(expected);
-    })
+    });
   });
   Object.entries({
     'example.com:443': 'example.com',
@@ -490,8 +490,8 @@ describe('parseDomain', () => {
   }).forEach(([input, expected]) => {
     it('should remove port if requested', () => {
       expect(parseDomain(input, { noPort: true })).to.equal(expected);
-    })
-  })
+    });
+  });
 });
 
 describe('cacheWithLocation', () => {
@@ -505,14 +505,14 @@ describe('cacheWithLocation', () => {
       document: {
         querySelector: sinon.stub()
       }
-    }
+    };
   });
 
   describe('when window is not on top', () => {
     beforeEach(() => {
       win.top = {};
       cached = cacheWithLocation(fn, win);
-    })
+    });
 
     it('should not cache', () => {
       win.top = {};
@@ -520,13 +520,13 @@ describe('cacheWithLocation', () => {
       expect(cached()).to.eql(RESULT);
       expect(fn.callCount).to.eql(2);
     });
-  })
+  });
 
   describe('when window is on top', () => {
     beforeEach(() => {
       win.top = win;
       cached = cacheWithLocation(fn, win);
-    })
+    });
 
     it('should not cache when canonical URL changes', () => {
       let canonical = 'foo';
@@ -545,6 +545,6 @@ describe('cacheWithLocation', () => {
       win.location.href = 'bar';
       expect(cached()).to.eql(RESULT);
       expect(fn.callCount).to.eql(2);
-    })
+    });
   });
-})
+});

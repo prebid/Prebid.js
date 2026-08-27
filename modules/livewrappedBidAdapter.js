@@ -1,4 +1,4 @@
-import { deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
+import { deepAccess, getWindowTop, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -96,7 +96,7 @@ export const spec = {
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
       coppa: getCoppa(),
       usPrivacy: bidderRequest.uspConsent,
-      cookieSupport: !isSafariBrowser() && storage.cookiesAreEnabled(),
+      cookieSupport: !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
       rtbData: ortb2,
@@ -185,7 +185,7 @@ export const spec = {
 
     return syncList;
   }
-}
+};
 
 function hasUserId(bid) {
   return !!bid.params.userId;
@@ -274,7 +274,7 @@ function sizeToFormat(size) {
   return {
     width: size[0],
     height: size[1]
-  }
+  };
 }
 
 function getBidFloor(bid, currency) {

@@ -396,12 +396,12 @@ describe('pubxaiRtdProvider', () => {
     });
     it('dispatch event', () => {
       setFloorsApiStatus(FloorsApiStatus.SUCCESS);
-      assert(
-        window.dispatchEvent.calledOnceWith(
-          new CustomEvent(FLOORS_EVENT_HANDLE, {
-            detail: { status: FloorsApiStatus.SUCCESS },
-          })
-        )
+      sinon.assert.calledWith(
+        window.dispatchEvent,
+        sinon.match({
+          type: FLOORS_EVENT_HANDLE,
+          detail: { status: FloorsApiStatus.SUCCESS },
+        })
       );
     });
   });

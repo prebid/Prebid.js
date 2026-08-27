@@ -1,5 +1,5 @@
-import { checkParamDataType, spec } from '../../../modules/zmaticooBidAdapter.js'
-import utils, { deepClone } from '../../../src/utils.js';
+import { checkParamDataType, spec } from '../../../modules/zmaticooBidAdapter.js';
+import { deepClone } from '../../../src/utils.js';
 import { expect } from 'chai';
 
 describe('zMaticoo Bidder Adapter', function () {
@@ -51,7 +51,7 @@ describe('zMaticoo Bidder Adapter', function () {
       return {
         currency: 'USD',
         floor: 0.5,
-      }
+      };
     },
   }];
   const videoRequest = [{
@@ -127,12 +127,12 @@ describe('zMaticoo Bidder Adapter', function () {
       expect(invalidBid).to.be.false;
     });
     it('missing required params.pubId', function () {
-      const request = deepClone(videoRequest[0])
-      delete request.params.pubId
+      const request = deepClone(videoRequest[0]);
+      delete request.params.pubId;
       const invalidBid = spec.isBidRequestValid(request);
       expect(invalidBid).to.be.false;
     });
-  })
+  });
   describe('buildRequests', function () {
     it('Test the banner request processing function', function () {
       const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
@@ -205,7 +205,7 @@ describe('zMaticoo Bidder Adapter', function () {
       expect(checkParamDataType('Wrong number', 'one', 'number')).to.be.undefined;
       expect(checkParamDataType('Wrong array', false, 'array')).to.be.undefined;
     });
-  })
+  });
   describe('interpretResponse', function () {
     const responseBody = {
       id: '12345',
@@ -258,9 +258,9 @@ describe('zMaticoo Bidder Adapter', function () {
       const bid = {
         nurl: 'http://test.com/win?auctionPrice=${AUCTION_PRICE}',
         cpm: 2.1,
-      }
-      const bidWonResult = spec.onBidWon(bid)
-      expect(bidWonResult).to.equal(true)
+      };
+      const bidWonResult = spec.onBidWon(bid);
+      expect(bidWonResult).to.equal(true);
     });
-  })
+  });
 });

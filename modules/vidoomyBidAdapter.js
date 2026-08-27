@@ -107,7 +107,7 @@ const isBidResponseValid = bid => {
     default:
       return false;
   }
-}
+};
 
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
@@ -150,6 +150,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       id: bid.params.id,
       adtype: adType,
       auc: bid.adUnitCode,
+      gpid: deepAccess(bid, 'ortb2Imp.ext.gpid') || '',
       w: widths,
       h: heights,
       pos: parseInt(bid.params.position) || 1,
@@ -198,9 +199,9 @@ const render = (bid) => {
     autoPlay: true,
     preload: true,
     mute: true,
-  }
+  };
   window.outstreamPlayer(bid, bid.adUnitCode, obj);
-}
+};
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {

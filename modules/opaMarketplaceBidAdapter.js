@@ -6,8 +6,15 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn
+  createInterpretResponseFn,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./opaMarketplaceBidAdapter.d.ts').OpaMarketplaceBidRequestParams} OpaMarketplaceBidRequestParams
+ */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'opamarketplace';
@@ -41,7 +48,10 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon
+  onBidWon,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

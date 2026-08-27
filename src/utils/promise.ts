@@ -14,7 +14,7 @@ declare module '../prebidGlobal' {
   }
 }
 
-export const pbSetTimeout: typeof setTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout)
+export const pbSetTimeout: typeof setTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout);
 export const PbPromise: typeof Promise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise) as any;
 
 export function delay(delayMs = 0): Promise<void> {
@@ -51,5 +51,5 @@ export function defer<T>({ promiseFactory = (resolver) => new PbPromise(resolver
     }),
     resolve: invoker(resolveFn),
     reject: invoker(rejectFn)
-  }
+  };
 }

@@ -47,8 +47,8 @@ export const spec = {
     };
     const gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
-      const isCmp = (typeof gdpr.gdprApplies === 'boolean')
-      const isConsentString = (typeof gdpr.consentString === 'string')
+      const isCmp = (typeof gdpr.gdprApplies === 'boolean');
+      const isConsentString = (typeof gdpr.consentString === 'string');
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: isCmp ? gdpr.gdprApplies : -1
@@ -104,7 +104,7 @@ export const spec = {
   onBidWon: function(bid) {
     ajax(bid.winUrl + bid.cpm, null);
   }
-}
+};
 function buildRequestObject(bid) {
   const reqObj = {};
   const placementId = getValue(bid.params, 'placementId');

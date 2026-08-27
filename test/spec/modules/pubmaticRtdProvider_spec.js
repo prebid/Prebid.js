@@ -2,8 +2,6 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import * as utils from '../../../src/utils.js';
 import * as pubmaticRtdProvider from '../../../modules/pubmaticRtdProvider.js';
-import { FloorProvider } from '../../../libraries/pubmaticUtils/plugins/floorProvider.js';
-import { UnifiedPricingRule } from '../../../libraries/pubmaticUtils/plugins/unifiedPricingRule.js';
 
 describe('Pubmatic RTD Provider', () => {
   let sandbox;

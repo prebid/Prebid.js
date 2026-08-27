@@ -16,7 +16,7 @@ describe('video.js', function () {
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     utilsMock = sandbox.mock(utils);
-  })
+  });
 
   afterEach(() => {
     utilsMock.restore();
@@ -36,7 +36,7 @@ describe('video.js', function () {
         expect(fillDefaults({ context: 'outstream' })).to.eql({
           context: 'outstream',
           plcmt: 4
-        })
+        });
       });
       [2, 3, 4].forEach(placement => {
         it(`placemement is "${placement}"`, () => {
@@ -44,7 +44,7 @@ describe('video.js', function () {
             placement,
             plcmt: 4
           });
-        })
+        });
       });
     });
     describe('should set plcmt = 2 when', () => {
@@ -89,8 +89,8 @@ describe('video.js', function () {
       }).forEach(([t, { expected, video }]) => {
         it(t, () => {
           expect(fillDefaults(video).plcmt).to.eql(expected);
-        })
-      })
+        });
+      });
     });
     describe('video.playerSize', () => {
       Object.entries({
@@ -105,7 +105,7 @@ describe('video.js', function () {
                 playerSize
               }
             }
-          }
+          };
           fillVideoDefaults(adUnit);
 
           sinon.assert.match(adUnit.mediaTypes.video, {
@@ -121,10 +121,10 @@ describe('video.js', function () {
                 w: 123
               }
             }
-          }
+          };
           fillVideoDefaults(adUnit);
           expect(adUnit.mediaTypes.video.w).to.eql(123);
-        })
+        });
       });
 
       it('should set playerSize from w/h (if they are not defined)', () => {
@@ -135,7 +135,7 @@ describe('video.js', function () {
               h: 2
             }
           }
-        }
+        };
         fillVideoDefaults(adUnit);
         expect(adUnit.mediaTypes.video.playerSize).to.eql([[1, 2]]);
       });
@@ -148,100 +148,102 @@ describe('video.js', function () {
               h: 4
             }
           }
-        }
+        };
         fillVideoDefaults(adUnit);
         expect(adUnit.mediaTypes.video.playerSize).to.eql([1, 2]);
-      })
+      });
     });
-  })
+  });
 
-  describe('validateOrtbVideoFields', () => {
-    it('remove incorrect ortb properties, and keep non ortb ones', () => {
-      sandbox.spy(utils, 'logWarn');
+  if (FEATURES.VIDEO) {
+    describe('validateOrtbVideoFields', () => {
+      it('remove incorrect ortb properties, and keep non ortb ones', () => {
+        sandbox.spy(utils, 'logWarn');
 
-      const mt = {
-        content: 'outstream',
+        const mt = {
+          content: 'outstream',
 
-        mimes: ['video/mp4'],
-        minduration: 5,
-        maxduration: 15,
-        startdelay: 0,
-        maxseq: 0,
-        poddur: 0,
-        protocols: [7],
-        w: 600,
-        h: 480,
-        podid: 'an-id',
-        podseq: 0,
-        rqddurs: [5],
-        placement: 1,
-        plcmt: 1,
-        linearity: 1,
-        skip: 0,
-        skipmin: 3,
-        skipafter: 3,
-        sequence: 0,
-        slotinpod: 0,
-        mincpmpersec: 2.5,
-        battr: [6, 7],
-        maxextended: 0,
-        minbitrate: 800,
-        maxbitrate: 1000,
-        boxingallowed: 1,
-        playbackmethod: [1],
-        playbackend: 1,
-        delivery: [2],
-        pos: 0,
-        api: 6, // -- INVALID
-        companiontype: [1, 2, 3],
-        poddedupe: [1],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 15,
+          startdelay: 0,
+          maxseq: 0,
+          poddur: 0,
+          protocols: [7],
+          w: 600,
+          h: 480,
+          podid: 'an-id',
+          podseq: 0,
+          rqddurs: [5],
+          placement: 1,
+          plcmt: 1,
+          linearity: 1,
+          skip: 0,
+          skipmin: 3,
+          skipafter: 3,
+          sequence: 0,
+          slotinpod: 0,
+          mincpmpersec: 2.5,
+          battr: [6, 7],
+          maxextended: 0,
+          minbitrate: 800,
+          maxbitrate: 1000,
+          boxingallowed: 1,
+          playbackmethod: [1],
+          playbackend: 1,
+          delivery: [2],
+          pos: 0,
+          api: 6, // -- INVALID
+          companiontype: [1, 2, 3],
+          poddedupe: [1],
 
-        otherOne: 'test',
-      };
+          otherOne: 'test',
+        };
 
-      const expected = { ...mt };
-      delete expected.api;
+        const expected = { ...mt };
+        delete expected.api;
 
-      const adUnit = {
-        code: 'adUnitCode',
-        mediaTypes: { video: mt }
-      };
-      validateOrtbFields(adUnit, 'video');
+        const adUnit = {
+          code: 'adUnitCode',
+          mediaTypes: { video: mt }
+        };
+        validateOrtbFields(adUnit, 'video');
 
-      expect(adUnit.mediaTypes.video).to.eql(expected);
-      sinon.assert.callCount(utils.logWarn, 1);
-    });
+        expect(adUnit.mediaTypes.video).to.eql(expected);
+        sinon.assert.callCount(utils.logWarn, 1);
+      });
 
-    it('Early return when 1st param is not a plain object', () => {
-      sandbox.spy(utils, 'logWarn');
+      it('Early return when 1st param is not a plain object', () => {
+        sandbox.spy(utils, 'logWarn');
 
-      validateOrtbFields(undefined, 'video');
-      validateOrtbFields([], 'video');
-      validateOrtbFields(null, 'video');
-      validateOrtbFields('hello', 'video');
-      validateOrtbFields(() => {}, 'video');
+        validateOrtbFields(undefined, 'video');
+        validateOrtbFields([], 'video');
+        validateOrtbFields(null, 'video');
+        validateOrtbFields('hello', 'video');
+        validateOrtbFields(() => {}, 'video');
 
-      sinon.assert.callCount(utils.logWarn, 5);
-    });
+        sinon.assert.callCount(utils.logWarn, 5);
+      });
 
-    it('Calls onInvalidParam when a property is invalid', () => {
-      const onInvalidParam = sandbox.spy();
-      const adUnit = {
-        code: 'adUnitCode',
-        mediaTypes: {
-          video: {
-            content: 'outstream',
-            mimes: ['video/mp4'],
-            api: 6
+      it('Calls onInvalidParam when a property is invalid', () => {
+        const onInvalidParam = sandbox.spy();
+        const adUnit = {
+          code: 'adUnitCode',
+          mediaTypes: {
+            video: {
+              content: 'outstream',
+              mimes: ['video/mp4'],
+              api: 6
+            }
           }
-        }
-      };
-      validateOrtbFields(adUnit, 'video', onInvalidParam);
+        };
+        validateOrtbFields(adUnit, 'video', onInvalidParam);
 
-      sinon.assert.calledOnce(onInvalidParam);
-      sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
+        sinon.assert.calledOnce(onInvalidParam);
+        sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
+      });
     });
-  })
+  }
 
   describe('isValidVideoBid', () => {
     it('validates valid instream bids', function () {
@@ -352,7 +354,7 @@ describe('video.js', function () {
       const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(false);
     });
-  })
+  });
 
   describe('syncOrtb2', () => {
     if (!FEATURES.VIDEO) {
@@ -553,7 +555,7 @@ describe('video.js', function () {
         }
       };
       syncOrtb2(adUnit2, 'video');
-      expect(adUnit2.ortb2Imp.video).to.be.undefined
+      expect(adUnit2.ortb2Imp.video).to.be.undefined;
     });
   });
 });

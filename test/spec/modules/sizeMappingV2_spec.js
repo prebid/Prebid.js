@@ -1,19 +1,18 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
-import { internal as utilInternal, deepClone } from '../../../src/utils.js';
+import { deepClone, internal as utilInternal } from '../../../src/utils.js';
 import {
-  isUsingNewSizeMapping,
   checkAdUnitSetupHook,
   checkBidderSizeConfigFormat,
-  isLabelActivated,
-  isSizeConfigActivated,
   getActiveSizeBucket,
-  getRelevantMediaTypesForBidder,
-  sizeMappingInternalStore,
   getAdUnitDetail,
   getFilteredMediaTypes,
-  getBids,
-  internal, setupAdUnitMediaTypes
+  getRelevantMediaTypesForBidder,
+  internal,
+  isLabelActivated,
+  isSizeConfigActivated,
+  isUsingNewSizeMapping,
+  setupAdUnitMediaTypes
 } from '../../../modules/sizeMappingV2.js';
 
 import { adUnitSetupChecks } from '../../../src/prebid.js';
@@ -419,7 +418,7 @@ describe('sizeMappingV2', function () {
           { minViewPort: [0, 0], sizes: [] },
           { minViewPort: [750, 0], sizes: { 'incorrect': 'format' } },
           { minViewPort: [1200, 0], sizes: [[300, 250], [300, 600]] }
-        ]
+        ];
         adUnits[0].mediaTypes.banner.sizeConfig = badSizeConfig;
 
         checkAdUnitSetupHook(adUnits);
@@ -821,7 +820,7 @@ describe('sizeMappingV2', function () {
       // relevantMediaTypes can only include one or more of these values: 'none', 'banner', 'video', 'native'
       const sizeConfig_5 = [
         { minViewPort: [0, 0], relevantMediaTypes: ['wrong'] }
-      ]
+      ];
       expect(checkBidderSizeConfigFormat(sizeConfig_1)).to.equal(false);
       expect(checkBidderSizeConfigFormat(sizeConfig_2)).to.equal(false);
       expect(checkBidderSizeConfigFormat(sizeConfig_3)).to.equal(false);
@@ -954,7 +953,7 @@ describe('sizeMappingV2', function () {
       // const activeLabels = ['mobile', 'tablet', 'desktop'];
 
       const activeAdUnit = isLabelActivated(adUnit, activeLabels, adUnitCode, adUnitInstance);
-      expect(activeAdUnit).to.equal(false)
+      expect(activeAdUnit).to.equal(false);
 
       // bidder level checks
       adUnit.bids[0].labelAll = labelAll;
@@ -973,7 +972,7 @@ describe('sizeMappingV2', function () {
       // const activeLabels = ['mobile', 'tablet', 'desktop'];
 
       const activeAdUnit = isLabelActivated(adUnit, activeLabels, adUnitCode, adUnitInstance);
-      expect(activeAdUnit).to.equal(true)
+      expect(activeAdUnit).to.equal(true);
 
       // bidder level checks
       adUnit.bids[0].labelAny = labelAny;
@@ -996,7 +995,7 @@ describe('sizeMappingV2', function () {
           params: 27,
           labelAll: ['tablet', 'desktop']
         }]
-      }
+      };
       const labels = undefined;
 
       // adUnit level check
@@ -1094,7 +1093,7 @@ describe('sizeMappingV2', function () {
       ];
       const activeViewport = [720, 600];
       const relevantMediaTypes = getRelevantMediaTypesForBidder(sizeConfig, activeViewport);
-      expect(relevantMediaTypes.size).to.equal(0)
+      expect(relevantMediaTypes.size).to.equal(0);
     });
 
     it('should call function checkBidderSizeConfigFormat() once', function () {
@@ -1137,7 +1136,7 @@ describe('sizeMappingV2', function () {
       sizeBucketToSizeMap: {},
       activeViewport: {},
       transformedMediaTypes: { banner: {}, video: {} }
-    }
+    };
     const labels = ['mobile'];
     beforeEach(function () {
       const getFilteredMediaTypesStub = sinon.stub(internal, 'getFilteredMediaTypes');

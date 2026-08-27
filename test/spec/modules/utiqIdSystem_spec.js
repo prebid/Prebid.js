@@ -13,7 +13,7 @@ describe('utiqIdSystem', () => {
       'connectId': {
         'idGraph': [idGraph],
       }
-    }
+    };
   };
 
   it('should have the correct module name declared', () => {
@@ -71,8 +71,8 @@ describe('utiqIdSystem', () => {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
           expect(result.utiq).to.be.equal('atidValue');
-          done()
-        })
+          done();
+        });
       }
     });
 
@@ -94,8 +94,8 @@ describe('utiqIdSystem', () => {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
           expect(result.utiq).to.be.equal('atidValue');
-          done()
-        })
+          done();
+        });
       }
     });
 
@@ -115,8 +115,8 @@ describe('utiqIdSystem', () => {
         }, 500);
         response.callback(function (result) {
           expect(result).to.be.null;
-          done()
-        })
+          done();
+        });
       }
     });
   });

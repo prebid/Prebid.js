@@ -4,7 +4,7 @@ import * as utils from '../../../src/utils.js';
 
 describe('mediaeyes adapter', function () {
   let request;
-  let bannerResponse, invalidResponse;
+  let bannerResponse;
   let videoRequest, videoResponse;
 
   beforeEach(function () {
@@ -47,11 +47,6 @@ describe('mediaeyes adapter', function () {
             ]
           }
         ]
-      }
-    };
-    invalidResponse = {
-      'body': {
-
       }
     };
     videoRequest = [
@@ -113,7 +108,9 @@ describe('mediaeyes adapter', function () {
   describe('Validate Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(request);
-      const bidRequest = spec.buildRequests(request);
+
+      spec.buildRequests(request);
+
       expect(request).to.deep.equal(_Request);
     });
   });
@@ -144,13 +141,13 @@ describe('mediaeyes adapter', function () {
             }
           ]
         }
-      }
+      };
       let bidderRequest;
 
       const result = spec.interpretResponse(response, { bidderRequest });
       expect(result.length).to.equal(0);
     });
-  })
+  });
 
   describe('setting imp.floor using floorModule', function () {
     let newRequest;

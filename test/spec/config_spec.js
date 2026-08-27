@@ -285,9 +285,9 @@ describe('config API', function () {
 
   it('does not force defaults for bidder config', () => {
     config.setConfig({ bidderSequence: 'fixed' });
-    config.setBidderConfig({ bidders: ['mockBidder'], config: { other: 'config' } })
+    config.setBidderConfig({ bidders: ['mockBidder'], config: { other: 'config' } });
     expect(config.runWithBidder('mockBidder', () => config.getConfig('bidderSequence'))).to.eql('fixed');
-  })
+  });
 
   it('sets deviceAccess', function () {
     // When the deviceAccess flag config option is not set, cookies may be read and set
@@ -332,7 +332,7 @@ describe('config API', function () {
   it('sets auctionOptions secondaryBidders', function () {
     const auctionOptionsConfig = {
       'secondaryBidders': ['rubicon', 'appnexus']
-    }
+    };
     setConfig({ auctionOptions: auctionOptionsConfig });
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
@@ -340,7 +340,7 @@ describe('config API', function () {
   it('sets auctionOptions suppressStaleRender', function () {
     const auctionOptionsConfig = {
       'suppressStaleRender': true
-    }
+    };
     setConfig({ auctionOptions: auctionOptionsConfig });
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
@@ -348,7 +348,7 @@ describe('config API', function () {
   it('sets auctionOptions suppressExpiredRender', function () {
     const auctionOptionsConfig = {
       'suppressExpiredRender': true
-    }
+    };
     setConfig({ auctionOptions: auctionOptionsConfig });
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
@@ -445,7 +445,7 @@ describe('config API', function () {
           }
         }
       }
-    }
+    };
     expect(getConfig('ortb2')).to.deep.equal(expected);
   });
 
@@ -461,7 +461,7 @@ describe('config API', function () {
           }
         }
       }
-    }
+    };
     setConfig({
       ortb2: {
         user: {
@@ -483,8 +483,63 @@ describe('config API', function () {
           }
         }
       }
-    }
+    };
     expect(getConfig('ortb2')).to.deep.equal(expected);
+  });
+
+  it('mergeConfig only notifies updated topics', function () {
+    const baseOrtb2 = {
+      user: {
+        ext: {
+          data: {
+            registered: false
+          }
+        }
+      }
+    };
+    const updateOrtb2 = {
+      site: {
+        name: 'example'
+      }
+    };
+
+    setConfig({
+      currency: { adServerCurrency: 'USD' },
+      ortb2: baseOrtb2
+    });
+
+    const ortb2Listener = sinon.spy();
+    const currencyListener = sinon.spy();
+    const allTopicsListener = sinon.spy();
+
+    getConfig('ortb2', ortb2Listener);
+    getConfig('currency', currencyListener);
+    getConfig(allTopicsListener);
+
+    const result = mergeConfig({ ortb2: updateOrtb2 });
+    const expected = {
+      user: {
+        ext: {
+          data: {
+            registered: false
+          }
+        }
+      },
+      site: {
+        name: 'example'
+      }
+    };
+
+    sinon.assert.calledOnce(ortb2Listener);
+    sinon.assert.calledWithExactly(ortb2Listener, { ortb2: expected });
+    sinon.assert.notCalled(currencyListener);
+    sinon.assert.calledOnce(allTopicsListener);
+    const allTopicsPayload = allTopicsListener.firstCall.args[0];
+    expect(Object.keys(allTopicsPayload)).to.deep.equal(['ortb2']);
+    expect(allTopicsPayload.ortb2).to.deep.equal(expected);
+
+    expect(result.ortb2).to.deep.equal(expected);
+    expect(result.currency).to.deep.equal({ adServerCurrency: 'USD' });
   });
 
   it('should log error for a non-object value passed in', function () {
@@ -575,7 +630,7 @@ describe('config API', function () {
           }
         }
       }
-    }
+    };
     expect(getBidderConfig()).to.deep.equal(expected);
   });
 
@@ -651,7 +706,7 @@ describe('config API', function () {
           id: '1955'
         }
       ]
-    }
+    };
 
     setConfig({
       bidderTimeout: 2000,
@@ -707,7 +762,7 @@ describe('config API', function () {
         }
       }
     });
-    config.runWithBidder('bidder', () => config.getConfig())
+    config.runWithBidder('bidder', () => config.getConfig());
     expect(config.getConfig('outer')).to.eql({
       inner: ['global']
     });

@@ -91,8 +91,8 @@ describe('Targeting lock', () => {
             eventHandlers[event] = listener;
           },
           removeEventListener: sinon.stub()
-        }
-      })
+        };
+      });
 
       it('should unlock on slotRenderEnded', () => {
         lock.lock(targeting);
@@ -107,8 +107,8 @@ describe('Targeting lock', () => {
       it('should unregister when disabled', () => {
         lock.lock(targeting);
         config.resetConfig();
-        sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded')
-      })
+        sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded');
+      });
     });
   });
 });

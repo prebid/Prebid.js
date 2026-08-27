@@ -1,4 +1,4 @@
-import { addBidResponseHook, setMetaDsa, reset } from '../../../modules/dsaControl.js';
+import { addBidResponseHook, reset } from '../../../modules/dsaControl.js';
 import { REJECTION_REASON } from 'src/constants.js';
 import { auctionManager } from '../../../src/auctionManager.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
@@ -22,11 +22,11 @@ describe('DSA transparency', () => {
       fpd = {};
       bid = {
         auctionId
-      }
+      };
       auction = {
         getAuctionId: () => auctionId,
         getFPD: () => ({ global: fpd })
-      }
+      };
       sandbox.stub(auctionManager, 'index').get(() => new AuctionIndex(() => [auction]));
     });
 
@@ -87,8 +87,8 @@ describe('DSA transparency', () => {
           it('should accept bids with adrender = 0 (advertiser will not render)', () => {
             bid.meta = { dsa: { adrender: 0 } };
             expectAcceptance();
-          })
-        })
+          });
+        });
       });
     });
     [undefined, 'garbage', 0, 1].forEach(required => {
@@ -97,7 +97,7 @@ describe('DSA transparency', () => {
           if (required != null) {
             fpd = {
               regs: { ext: { dsa: { dsarequired: required } } }
-            }
+            };
           }
         });
 
@@ -105,8 +105,8 @@ describe('DSA transparency', () => {
           addBidResponseHook(next, 'adUnit', bid, reject);
           sinon.assert.notCalled(reject);
           sinon.assert.calledWith(next, 'adUnit', bid, reject);
-        })
-      })
-    })
+        });
+      });
+    });
   });
 });

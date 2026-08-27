@@ -1,6 +1,6 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { replaceAuctionPrice, deepAccess, logInfo } from '../../src/utils.js';
-import { ajax } from '../../src/ajax.js';
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
@@ -47,11 +47,11 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     data: req,
 
   };
-}
+};
 
 export function interpretResponse(serverResponse) {
-  const bidsValue = []
-  const bidResponse = serverResponse.body
+  const bidsValue = [];
+  const bidResponse = serverResponse.body;
   bidResponse.seatbid.forEach(seat => {
     seat.bid.forEach(bid => {
       bidsValue.push({
@@ -67,10 +67,10 @@ export function interpretResponse(serverResponse) {
         meta: {
           advertiserDomains: bid.adomain || '',
         },
-      })
-    })
-  })
-  return bidsValue
+      });
+    });
+  });
+  return bidsValue;
 }
 
 export function onBidWon(bid) {
@@ -93,11 +93,11 @@ function mapImpression(slot, bidderRequest) {
   };
 
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
-    imp.native = mapNative(slot)
+    imp.native = mapNative(slot);
   } else {
-    imp.banner = mapBanner(slot)
+    imp.banner = mapBanner(slot);
   }
-  return imp
+  return imp;
 }
 
 function mapNative(slot) {
@@ -108,19 +108,19 @@ function mapNative(slot) {
     };
     return {
       request: JSON.stringify(request)
-    }
+    };
   }
 }
 
 function mapBanner(slot) {
   if (slot.mediaTypes.banner) {
     let format = (slot.mediaTypes.banner.sizes || slot.sizes).map(size => {
-      return { w: size[0], h: size[1] }
+      return { w: size[0], h: size[1] };
     });
 
     return {
       format
-    }
+    };
   }
 }
 
@@ -154,7 +154,7 @@ export function buildBidResponse(serverResponse) {
           },
         });
       }
-    })
+    });
   });
   return bids;
 }

@@ -5,8 +5,14 @@ import {
   createBuildRequestsFn,
   createInterpretResponseFn,
   createUserSyncGetter,
-  isBidRequestValid
+  isBidRequestValid, onBidBillable, onBidWon,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./programmaticXBidAdapter.d.ts').ProgrammaticXBidRequestParams} ProgrammaticXBidRequestParams
+ */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'programmaticX';
@@ -36,7 +42,11 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

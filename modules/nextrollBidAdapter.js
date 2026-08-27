@@ -95,12 +95,12 @@ export const spec = {
     if (!serverResponse.body) {
       return [];
     } else {
-      const response = serverResponse.body
+      const response = serverResponse.body;
       const bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
       return bids.map((bid) => _buildResponse(response, bid));
     }
   }
-}
+};
 
 function _getBanner(bidRequest) {
   const sizes = _getSizes(bidRequest);
@@ -300,7 +300,7 @@ function _getSizes(bidRequest) {
     return {
       w: size[0],
       h: size[1]
-    }
+    };
   });
 }
 

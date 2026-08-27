@@ -6,8 +6,10 @@ import {
   logMessage,
   parseSizesInput,
   triggerPixel,
-  deepSetValue
+  deepSetValue,
+  deepAccess
 } from '../src/utils.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -44,7 +46,7 @@ export const spec = {
       return !!(video.playerSize);
     }
 
-    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes);
   },
 
   /**
@@ -99,68 +101,58 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
 
-    if (response?.body?.seatbid) {
-      response.body.seatbid.forEach(seat => {
+    const seatbids = deepAccess(response, 'body.seatbid');
+    if (seatbids) {
+      seatbids.forEach(seat => {
         seat.bid.forEach(bid => {
           logMessage('bidObj', bid);
 
-          const bidResponse = {
+          bidResponses.push({
             requestId: bid.impid,
-            mediaType: 'video',
+            mediaType: VIDEO,
             cpm: bid.price,
-            currency: response.body.cur || 'USD',
-            ttl: 3600, // video żyje dłużej
+            currency: deepAccess(response, 'body.cur') || 'USD',
+            ttl: 3600,
             creativeId: bid.crid || bid.id,
             netRevenue: true,
-            dealId: bid.dealid || undefined,
-            nurl: bid.nurl || undefined,
-
-            // VAST – priority: inline XML > admurl > nurl as a wrapper
+            dealId: bid.dealid,
+            nurl: bid.nurl,
             vastXml: bid.adm || null,
             vastUrl: bid.admurl || null,
-
             width: bid.w || 640,
             height: bid.h || 360,
-
             meta: {
-              advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : [],
-              networkName: seat.seat || undefined,
-              mediaType: 'video'
-            }
-          };
-
-          bidResponses.push(bidResponse);
+              advertiserDomains: deepAccess(bid, 'adomain') || [],
+              networkName: seat.seat,
+              mediaType: VIDEO,
+            },
+          });
         });
       });
     }
 
-    const res = response && response.body && response.body.data;
+    const res = deepAccess(response, 'body.data');
+    if (!res) return bidResponses;
 
-    if (!res) {
-      return bidResponses;
-    }
-
-    const bidResponse = {
+    bidResponses.push({
       requestId: res.requestId,
       cpm: res.cpm,
-      width: res.mediaType.width,
-      height: res.mediaType.height,
+      width: deepAccess(res, 'mediaType.width'),
+      height: deepAccess(res, 'mediaType.height'),
       creativeId: res.creationId,
       dealId: res.dealid || '',
       currency: res.currency || ADQUERY_DEFAULT_CURRENCY,
       netRevenue: ADQUERY_NET_REVENUE,
       ttl: ADQUERY_TTL,
-      referrer: '',
-      ad: '<script src="' + res.adqLib + '"></script>' + res.tag,
-      mediaType: res.mediaType.name || 'banner',
+      ad: `<script src="${res.adqLib}"></script>${res.tag}`,
+      mediaType: deepAccess(res, 'mediaType.name') || BANNER,
       meta: {
-        advertiserDomains: res.adDomains && res.adDomains.length ? res.adDomains : [],
-        mediaType: res.mediaType.name || 'banner',
-      }
-    };
-    bidResponses.push(bidResponse);
-    logInfo('bidResponses', bidResponses);
+        advertiserDomains: deepAccess(res, 'adDomains') || [],
+        mediaType: deepAccess(res, 'mediaType.name') || BANNER,
+      },
+    });
 
+    logInfo('bidResponses', bidResponses);
     return bidResponses;
   },
 
@@ -195,12 +187,15 @@ export const spec = {
     logInfo('onBidWon', bid);
 
     if (bid.nurl) {
-      triggerPixel(bid.nurl)
-      return
+      triggerPixel(bid.nurl);
+      return;
     }
 
-    const copyOfBid = { ...bid }
-    delete copyOfBid.ad
+    const copyOfBid = { ...bid };
+
+    const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
+    copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
+    delete copyOfBid.ad;
     const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
 
@@ -252,15 +247,21 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
+    if (!gdprConsent?.gdprApplies || !hasPurpose1Consent(gdprConsent)) {
+      logMessage('no gdpr or purpose1 consent, no syncs');
+      return [];
+    }
+    const qid = Array.isArray(serverResponses) ? serverResponses.map(r => deepAccess(r, 'body.data.qid')).find(Boolean) : null;
+    if (!qid) {
+      logMessage('no qid found in server responses');
+      return [];
+    }
     const syncData = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
-      'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
+      'ccpa_consent': uspConsent || '',
+      'qid': qid,
     };
-
-    if (window.qid) { // only for new users (new qid)
-      syncData.qid = window.qid;
-    }
 
     const syncUrlObject = {
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
@@ -289,24 +290,22 @@ export const spec = {
 
 function buildRequest(bid, bidderRequest, isVideo = false) {
   let userId = null;
-  if (window.qid) {
-    userId = window.qid;
-  }
 
-  if (bid.userId && bid.userId.qid) {
-    userId = bid.userId.qid
+  const eids = bid.userIdAsEids;
+  if (Array.isArray(eids)) {
+    const adqueryEid = eids.find(eid => eid.source === 'adquery.io');
+    userId = adqueryEid?.uids?.[0]?.id;
+
+    if (!userId) {
+      userId = eids[0]?.uids?.[0]?.id;
+    }
   }
 
   if (!userId) {
-    userId = bid.ortb2?.user.ext.eids.find(eid => eid.source === "adquery.io")?.uids[0]?.id;
-  }
-
-  if (!userId) {
-    // onetime User ID
-    const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    userId = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
+    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    const randomPart = randomValues.map(val => val.toString(36)).join('').substring(0, 26);
+    userId = `qd_${randomPart}`;
     logMessage('generated onetime User ID: ', userId);
-    window.qid = userId;
   }
 
   let pageUrl = '';
@@ -315,20 +314,30 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
   }
 
   if (isVideo) {
-    let baseRequest = bid.ortb2
+    let baseRequest = bid.ortb2;
     let videoRequest = {
       ...baseRequest,
       imp: [{
         id: bid.bidId,
         video: bid.ortb2Imp?.video || {},
       }]
-    }
+    };
 
     deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
-    videoRequest.id = bid.bidId
+    videoRequest.id = bid.bidId;
+
+    if (bidderRequest?.gdprConsent?.gdprApplies != null) {
+      deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    }
+    if (bidderRequest?.gdprConsent?.consentString) {
+      deepSetValue(videoRequest, 'user.consent', bidderRequest.gdprConsent.consentString);
+    }
+    if (bidderRequest?.uspConsent) {
+      deepSetValue(videoRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
 
     let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
-    videoRequest.cur = [currency]
+    videoRequest.cur = [currency];
 
     let floorInfo;
     if (typeof bid.getFloor === 'function') {
@@ -342,11 +351,11 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     const bidfloorcur = floorInfo?.currency;
 
     if (bidfloor && bidfloorcur) {
-      videoRequest.imp[0].video.bidfloor = bidfloor
-      videoRequest.imp[0].video.bidfloorcur = bidfloorcur
+      videoRequest.imp[0].video.bidfloor = bidfloor;
+      videoRequest.imp[0].video.bidfloorcur = bidfloorcur;
     }
 
-    return videoRequest
+    return videoRequest;
   }
 
   return {
@@ -363,6 +372,9 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     bidRequestsCount: bid.bidRequestsCount,
     bidderRequestsCount: bid.bidderRequestsCount,
     sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
+    gdpr: bidderRequest?.gdprConsent?.gdprApplies ? 1 : 0,
+    gdpr_consent: bidderRequest?.gdprConsent?.consentString || '',
+    us_privacy: bidderRequest?.uspConsent || '',
   };
 }
 

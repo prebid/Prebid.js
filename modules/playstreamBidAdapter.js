@@ -1,4 +1,4 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
@@ -127,7 +127,7 @@ const converter = ortbConverter({
     let mt = prebidBid.mediaType || reqMediaType || inferMediaTypeFromAdm(bid?.adm);
 
     if (!mt) {
-      mt = reqMediaType
+      mt = reqMediaType;
     }
 
     prebidBid.mediaType = mt;
@@ -260,7 +260,7 @@ export const spec = {
   },
 
   getUserSyncs: () => []
-}
+};
 
 registerBidder(spec);
 

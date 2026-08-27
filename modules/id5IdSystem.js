@@ -26,10 +26,12 @@ import { PbPromise } from '../src/utils/promise.js';
 import { loadExternalScript } from '../src/adloader.js';
 
 /**
- * @typedef {import('../modules/userId/spec.ts').IdProviderSpec} Submodule
- * @typedef {import('../modules/userId/spec.ts').UserIdConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./id5IdSystem.d.ts').Id5IdSystemModuleName} Id5IdSystemModuleName
  * @typedef {import('../src/consentHandler').AllConsentData} ConsentData
- * @typedef {import('../modules/userId/spec.ts').ProviderResponse} ProviderResponse
+ * @typedef {import('../modules/userId/spec.js').ProviderResponse} ProviderResponse
  */
 
 const MODULE_NAME = 'id5Id';
@@ -170,7 +172,7 @@ const DEFAULT_EIDS = {
   }
 };
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<Id5IdSystemModuleName>} */
 export const id5IdSubmodule = {
   /**
    * used to link submodule with config
@@ -192,7 +194,7 @@ export const id5IdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    const partnerResponse = getPartnerResponse(value, config.params)
+    const partnerResponse = getPartnerResponse(value, config.params);
     // get generic/legacy response in case no partner specific
     // it may happen in case old cached value found
     // or overwritten by other integration (older version)
@@ -211,7 +213,7 @@ export const id5IdSubmodule = {
       const eids = {};
       Object.entries(value.ids).forEach(([key, value]) => {
         const eid = value.eid;
-        const uid = eid?.uids?.[0]
+        const uid = eid?.uids?.[0];
         responseObj[key] = {
           uid: uid?.id,
           ext: uid?.ext
@@ -590,10 +592,10 @@ function updateTargeting(fetchResponse, config) {
         setTimeout(() => tagsCallback(tags), 0);
       });
       window.id5tags.cmd.push = function (tagsCallback) {
-        tagsCallback(tags)
+        tagsCallback(tags);
         Array.prototype.push.call(window.id5tags.cmd, tagsCallback);
       };
-      window.id5tags.tags = tags
+      window.id5tags.tags = tags;
     }
   }
 }
@@ -630,7 +632,7 @@ function getPartnerResponse(response, config) {
  *  @returns {Id5PrebidResponse}
  */
 function createResponse(response, config, cacheIdObj) {
-  let responseObj = {}
+  let responseObj = {};
   if (isPlainObject(cacheIdObj) && (cacheIdObj.universal_uid !== undefined || isPlainObject(cacheIdObj.pbjs))) {
     Object.assign(responseObj, deepClone(cacheIdObj));
   }

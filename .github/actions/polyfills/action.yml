@@ -1,0 +1,45 @@
+name: polyfills
+description: Manage cached polyfills.json
+inputs:
+  sha:
+    description: commit SHA
+    required: true
+  output:
+    description: Output file name
+  input:
+    description: Input file name
+    default: ''
+  fail-on-cache-miss:
+    description: Fail on cache miss
+    default: 'false'
+outputs:
+  cache-hit:
+    description: true if polyfills.json was found in cache
+    value: ${{ steps.restore.outputs.cache-hit == 'true' }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore from cache
+      id: restore
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ runner.temp }}/polyfills.json
+        key: polyfills-${{ inputs.sha }}
+        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
+    - name: Rename file
+      if: ${{ inputs.input != '' && steps.restore.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        cp "${{ inputs.input }}" ${{ runner.temp }}/polyfills.json
+    - name: Save to cache
+      if: ${{ inputs.input != '' && steps.restore.outputs.cache-hit != 'true' }}
+      id: save
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ runner.temp }}/polyfills.json
+        key: polyfills-${{ inputs.sha }}
+    - name: Rename file
+      if: ${{ inputs.output != '' && (steps.restore.outputs.cache-hit == 'true' || inputs.input != '') }}
+      shell: bash
+      run: |
+        mv "${{ runner.temp }}/polyfills.json" "${{ inputs.output }}"

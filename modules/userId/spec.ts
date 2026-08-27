@@ -6,6 +6,8 @@ import type { ORTBRequest } from "../../src/types/ortb/request";
 
 export type UserIdProvider = string;
 
+export type EID = NonNullable<NonNullable<ORTBRequest['user']>['eids']>[number];
+
 export interface UserId {
   [idName: string]: unknown;
 }
@@ -69,7 +71,7 @@ export interface UserIdConfig<P extends UserIdProvider> {
    * Used only if the page has a separate mechanism for storing a User ID.
    * The value is an object containing the values to be sent to the adapters.
    */
-  value?: UserIdFor<P>;
+  value?: DecodedId<P>;
 }
 
 type SerializableId = string | Record<string, unknown>;
@@ -89,7 +91,7 @@ export type ProviderResponse = {
    * If provided, will be invoked at a later point.
    */
   callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
-}
+};
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
 
@@ -123,9 +125,9 @@ type EIDConfig<K extends keyof UserId> = {
    * Returns an object to use for eids.uid.ext
    */
   getUidExt?: (id: IdValue<K>) => Ext;
-}
+};
 
-type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => ORTBRequest['user']['eids'] | ORTBRequest['user']['eids'][number];
+type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[];
 
 export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   /**
@@ -177,7 +179,7 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   eids?: {
     [K in keyof UserId]?: K extends string ? EIDConfig<K> | EIDFn<K, P> : never;
   }
-}
+};
 
 declare module '../../src/hook' {
   interface Submodules {

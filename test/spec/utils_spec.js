@@ -2,9 +2,16 @@ import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import { TARGETING_KEYS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import { binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad } from 'src/utils.js';
+import {
+  binarySearch,
+  deepEqual,
+  encodeMacroURI,
+  getWinDimensions,
+  memoize,
+  sizesToSizeTuples,
+  waitForElementToLoad
+} from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
-import { getWinDimensions, internal } from '../../src/utils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
@@ -15,12 +22,6 @@ describe('Utils', function () {
   var obj_object = {};
   var obj_array = [];
   var obj_function = function () {};
-
-  var type_string = 'String';
-  var type_number = 'Number';
-  var type_object = 'Object';
-  var type_array = 'Array';
-  var type_function = 'Function';
 
   describe('canAccessWindowTop', function () {
     let sandbox;
@@ -53,7 +54,7 @@ describe('Utils', function () {
 
     afterEach(function() {
       delete window.$sf;
-    })
+    });
 
     it('should return true if window.$sf is accessible', function () {
       window.$sf = $sf;
@@ -201,9 +202,9 @@ describe('Utils', function () {
     }).forEach(([t, { in: input, out }]) => {
       it(`can parse ${t}`, () => {
         expect(sizesToSizeTuples(input)).to.eql(out);
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
@@ -331,57 +332,17 @@ describe('Utils', function () {
     });
   });
 
-  describe('isA', function () {
-    it('should return true with string object', function () {
-      var output = utils.isA(obj_string, type_string);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with object', function () {
-      var output = utils.isA(obj_object, type_string);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with object', function () {
-      var output = utils.isA(obj_object, type_object);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_object);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with array object', function () {
-      var output = utils.isA(obj_array, type_array);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_function);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with function', function () {
-      var output = utils.isA(obj_function, type_function);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with number', function () {
-      var output = utils.isA(obj_function, type_number);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with number', function () {
-      var output = utils.isA(obj_number, type_number);
-      assert.deepEqual(output, true);
-    });
-  });
-
   describe('isFn', function () {
-    it('should return true with input function', function () {
-      var output = utils.isFn(obj_function);
-      assert.deepEqual(output, true);
+    Object.entries({
+      'vanilla function': () => null,
+      'async function': async () => null,
+      'generator function': function * () {},
+      'async generator function': async function * () {}
+    }).forEach(([t, fn]) => {
+      it(`should return true with input ${t}`, function () {
+        var output = utils.isFn(fn);
+        assert.deepEqual(output, true);
+      });
     });
 
     it('should return false with input string', function () {
@@ -609,6 +570,7 @@ describe('Utils', function () {
       var arr = ['hello', 'world'];
       var count = 0;
       for (var key in arr) {
+        void key;
         count++;
       }
       assert.equal(arr.length, count, 'Polyfill test fails');
@@ -624,7 +586,7 @@ describe('Utils', function () {
       }
       assert(callback.notCalled);
       delayed(3);
-      assert(callback.called)
+      assert(callback.called);
       assert.equal(callback.firstCall.args[0], 3);
     });
   });
@@ -877,9 +839,151 @@ describe('Utils', function () {
       ].forEach(([input, expected]) => {
         it(`can encode ${input} -> ${expected}`, () => {
           expect(encodeMacroURI(input)).to.eql(expected);
-        })
-      })
-    })
+        });
+      });
+
+      // Characters that may not survive unescaped anywhere in the URL, since createTrackPixelHtml
+      // emits it into `<img src="...">`. The escape is asserted exactly rather than by absence of
+      // the character: dropping the character, or emitting a truncated escape, would also make it
+      // absent. A tab escaped as '%9' rather than '%09' reads the character that follows it as part
+      // of the escape, so `${A<tab>B}` would become the single byte 0x9B.
+      const HTML_UNSAFE = [
+        ['a double quote', '"', '%22'],
+        ['a less-than sign', '<', '%3C'],
+        ['a greater-than sign', '>', '%3E'],
+        ['a space', ' ', '%20'],
+        ['a tab', '\t', '%09'],
+        ['a line feed', '\n', '%0A'],
+        ['a carriage return', '\r', '%0D'],
+        ['a form feed', '\f', '%0C'],
+        ['a vertical tab', '\v', '%0B'],
+        ['a backtick', '`', '%60']
+      ];
+
+      HTML_UNSAFE.forEach(([label, char, escape]) => {
+        it(`escapes ${label} inside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=\${A${escape}B}`);
+        });
+
+        it(`escapes ${label} outside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=A${char}B`))
+            .to.eql(`https://www.example.com/?p=A${escape}B`);
+        });
+      });
+
+      // A brace expression whose name holds one of the characters encodeURI and encodeURIComponent
+      // escape differently is not recognised as a macro, so its braces stay encoded along with the
+      // rest of the URL. This is the set that keeps such expressions encoded exactly as they were
+      // before macro names were escaped at all.
+      ['#', '$', '&', '+', ',', '/', ':', ';', '=', '?', '@'].forEach((char) => {
+        it(`does not read \${A${char}B} as a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=$%7BA${char}B%7D`);
+        });
+      });
+
+      // Non-ASCII whitespace cannot break out of an attribute value, so it is not escaped inside a
+      // macro name. Escaping it per code unit rather than per UTF-8 byte would be worse than leaving
+      // it alone: U+2000 would become '%2000', which decodes to a space followed by a literal '00',
+      // and U+00A0 would become '%A0', which does not decode at all.
+      const NON_ASCII_WHITESPACE = [
+        ['a no-break space', 0x00a0],
+        ['an en quad', 0x2000],
+        ['a line separator', 0x2028],
+        ['a narrow no-break space', 0x202f],
+        ['an ideographic space', 0x3000],
+        ['a zero width no-break space', 0xfeff]
+      ];
+
+      NON_ASCII_WHITESPACE.forEach(([label, codePoint]) => {
+        const char = String.fromCharCode(codePoint);
+
+        it(`passes ${label} through unchanged inside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`))
+            .to.eql(`https://www.example.com/?p=\${A${char}B}`);
+        });
+      });
+
+      // The macro pattern is shared between calls, so matching it in a way that advances its
+      // lastIndex would leave the offset behind when a call cannot finish - encodeURI throws on the
+      // lone surrogate below - and the next call would then start scanning mid-URL and miss its
+      // macro. The surrogate is placed before the macro so that the throw happens after the match.
+      it('does not leak match state between calls when a call throws', () => {
+        expect(() => encodeMacroURI('https://www.example.com/\uD800?p=${A}')).to.throw();
+        expect(encodeMacroURI('https://www.example.com/?p=${AUCTION_PRICE}'))
+          .to.eql('https://www.example.com/?p=${AUCTION_PRICE}');
+      });
+    });
+
+    describe('createTrackPixelHtml', () => {
+      it('keeps an encoded quote inside the src attribute', () => {
+        const url = 'https://www.example.com/?x=&quot;onerror=alert(1)//';
+        const container = document.createElement('div');
+
+        // This browser-level assertion, added by a bot, documents that character references do not create attributes.
+        container.innerHTML = utils.createTrackPixelHtml(url);
+        const pixel = container.querySelector('img');
+        expect(pixel.getAttribute('src')).to.equal('https://www.example.com/?x="onerror=alert(1)//');
+        expect(pixel.hasAttribute('onerror')).to.be.false;
+      });
+
+      it('escapes encoded quotes in the url', () => {
+        const url = 'https://www.example.com/?x="test"';
+
+        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=%22test%22"');
+      });
+
+      it('lets the browser decode character references in tracker URLs', () => {
+        const cases = [
+          ['&', '&'],
+          ['&amp;', '&'],
+          ['&#38;', '&'],
+          ['&#038;', '&'],
+          ['&#x26;', '&'],
+          ['&#x026;', '&'],
+          ['&quot;', '"'],
+          ['&#34;', '"']
+        ];
+
+        cases.forEach(([entity, expected]) => {
+          const container = document.createElement('div');
+          container.innerHTML = utils.createTrackPixelHtml(`https://www.example.com/?x=${entity}`);
+          expect(container.querySelector('img').getAttribute('src')).to.equal(`https://www.example.com/?x=${expected}`);
+        });
+      });
+
+      // encodeMacroURI is the encoder used for ORTB banner responses, where the pixel markup
+      // is prepended to the creative (libraries/ortbConverter/processors/banner.js).
+      describe('when called with encodeMacroURI', () => {
+        function render(url) {
+          const container = document.createElement('div');
+          container.innerHTML = utils.createTrackPixelHtml(url, encodeMacroURI);
+          return container;
+        }
+
+        it('emits only the wrapper and the pixel when a macro contains a tag', () => {
+          const container = render('https://www.example.com/px?p=${x"><script>0<!--}');
+          expect(Array.from(container.querySelectorAll('*')).map((el) => el.tagName)).to.eql(['DIV', 'IMG']);
+        });
+
+        it('does not let a macro add attributes to the pixel', () => {
+          const container = render('https://www.example.com/px?p=${x" hidden}');
+          expect(container.querySelector('img').getAttributeNames()).to.eql(['src']);
+        });
+
+        it('keeps the entire url inside the src attribute', () => {
+          const url = 'https://www.example.com/px?p=${x"><b>}';
+          const src = render(url).querySelector('img').getAttribute('src');
+          expect(decodeURIComponent(src)).to.equal(url);
+        });
+
+        it('leaves a standard macro substitutable in the emitted markup', () => {
+          const markup = utils.createTrackPixelHtml('https://www.example.com/px?p=${AUCTION_PRICE}', encodeMacroURI);
+          expect(markup).to.contain('src="https://www.example.com/px?p=${AUCTION_PRICE}"');
+        });
+      });
+    });
   });
 
   describe('insertElement', function () {
@@ -933,6 +1037,10 @@ describe('Utils', function () {
       userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36';
       expect(utils.isSafariBrowser()).to.equal(false);
     });
+    it('does not flag Chromium', function () {
+      userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/124.0.0.0 Safari/537.36';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
     it('does not flag Chrome iOS', function () {
       userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
       expect(utils.isSafariBrowser()).to.equal(false);
@@ -944,6 +1052,66 @@ describe('Utils', function () {
     it('does not flag Windows Edge', function () {
       userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43';
       expect(utils.isSafariBrowser()).to.equal(false);
+    });
+  });
+
+  describe('isFirefoxBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Firefox on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('properly detects Firefox on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/125.0 Mobile/15E148 Safari/605.1.15';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('does not flag Safari', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25';
+      expect(utils.isFirefoxBrowser()).to.equal(false);
+    });
+  });
+
+  describe('isChromeIOSBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Chrome on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
+      expect(utils.isChromeIOSBrowser()).to.equal(true);
+    });
+
+    it('does not flag Chrome on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
+    });
+
+    it('does not flag Opera on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 OPR/130.0.0.0';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
     });
   });
 
@@ -1102,7 +1270,7 @@ describe('Utils', function () {
             { minViewPort: [1000, 0], sizes: [[1000, 300], [728, 90]] },
           ],
         },
-      }
+      };
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
     it('should check types if {matchTypes: true}', () => {
@@ -1153,7 +1321,7 @@ describe('Utils', function () {
     function delay(delay = 0) {
       return new Promise((resolve) => {
         window.setTimeout(resolve, delay);
-      })
+      });
     }
 
     beforeEach(() => {
@@ -1174,7 +1342,7 @@ describe('Utils', function () {
         element.dispatchEvent(new Event(event));
         return delay().then(() => {
           expect(callbacks).to.equal(1);
-        })
+        });
       });
     });
   });
@@ -1209,9 +1377,9 @@ describe('Utils', function () {
       const obj = { key: 1, anotherKey: 'fred', third: ['fred'], fourth: { sub: { obj: 'test' } } };
       const array = utils.convertObjectToArray(obj);
 
-      expect(JSON.stringify(array[0])).equal(JSON.stringify({ 'key': 1 }))
-      expect(JSON.stringify(array[1])).equal(JSON.stringify({ 'anotherKey': 'fred' }))
-      expect(JSON.stringify(array[2])).equal(JSON.stringify({ 'third': ['fred'] }))
+      expect(JSON.stringify(array[0])).equal(JSON.stringify({ 'key': 1 }));
+      expect(JSON.stringify(array[1])).equal(JSON.stringify({ 'anotherKey': 'fred' }));
+      expect(JSON.stringify(array[2])).equal(JSON.stringify({ 'third': ['fred'] }));
       expect(JSON.stringify(array[3])).equal(JSON.stringify({ 'fourth': { sub: { obj: 'test' } } }));
       expect(array.length).to.equal(4);
     });
@@ -1267,7 +1435,7 @@ describe('Utils', function () {
             if (typeof window.CompressionStream === 'undefined') {
               cachedResult = false;
             } else {
-              const newCompressionStream = new window.CompressionStream('gzip');
+              (() => new window.CompressionStream('gzip'))();
               cachedResult = true;
             }
           } catch (error) {
@@ -1387,7 +1555,7 @@ describe('memoize', () => {
   });
 
   it('allows setting cache keys', () => {
-    const mem = memoize(fn, (...args) => args.join(','))
+    const mem = memoize(fn, (...args) => args.join(','));
     mem('one', 'two');
     mem('one', 'three');
     expect(mem('one', 'three')).to.eql(['one', 'three']);
@@ -1430,9 +1598,9 @@ describe('memoize', () => {
           });
         });
       });
-    })
-  })
-})
+    });
+  });
+});
 
 describe('getWinDimensions', () => {
   let clock;
@@ -1458,5 +1626,170 @@ describe('getWinDimensions', () => {
     clock.tick(18);
     expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
+  });
+});
+
+describe('polite sync helpers', () => {
+  let originalScheduler;
+  let originalRequestIdleCallback;
+  let originalFetch;
+  let originalRequest;
+
+  beforeEach(() => {
+    originalScheduler = window.scheduler;
+    originalRequestIdleCallback = window.requestIdleCallback;
+    originalFetch = window.fetch;
+    originalRequest = window.Request;
+    window.scheduler = undefined;
+    window.requestIdleCallback = undefined;
+    window.fetch = sinon.stub().returns(Promise.resolve());
+    window.Request = function (url, opts) {
+      this.url = url;
+      this.opts = opts;
+    };
+  });
+
+  afterEach(() => {
+    window.scheduler = originalScheduler;
+    window.requestIdleCallback = originalRequestIdleCallback;
+    window.fetch = originalFetch;
+    window.Request = originalRequest;
+  });
+
+  it('uses keepalive fetch for politeTriggerPixel', () => {
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.calledOnce).to.equal(true);
+    expect(window.fetch.getCall(0).args[0].opts).to.include({
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'include',
+      keepalive: true
+    });
+  });
+
+  it('omits credentials when requested for politeTriggerPixel', () => {
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    expect(window.fetch.calledOnce).to.equal(true);
+    expect(window.fetch.getCall(0).args[0].opts).to.include({
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'omit',
+      keepalive: true
+    });
+  });
+
+  it('skips the image fallback for an omit beacon when the keepalive fetch fails', async () => {
+    window.fetch = sinon.stub().callsFake(() => Promise.reject(new Error('network')));
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(false); // no <img> => the cookieless guarantee holds even on fetch failure
+  });
+
+  it('falls back to an image pixel for the default include beacon when the keepalive fetch fails', async () => {
+    window.fetch = sinon.stub().callsFake(() => Promise.reject(new Error('network')));
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(true); // default behavior preserved byte-for-byte
+  });
+
+  it('skips the image fallback for an omit beacon when Request is unavailable', () => {
+    window.Request = undefined;
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(false);
+  });
+
+  it('does not attempt fetch when Request is unavailable', () => {
+    window.Request = undefined;
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.called).to.equal(false);
+  });
+
+  it('uses background scheduling for politeInsertUserSyncIframe', () => {
+    window.scheduler = {
+      postTask: sinon.stub().callsFake((task) => {
+        task();
+        return Promise.resolve();
+      })
+    };
+
+    utils.politeInsertUserSyncIframe('http://example.com/iframe');
+    expect(window.scheduler.postTask.calledOnce).to.equal(true);
+  });
+});
+
+describe('user sync iframes', () => {
+  let preexisting;
+  const newIframes = () => Array.from(document.querySelectorAll('iframe')).filter(f => !preexisting.has(f));
+
+  beforeEach(() => {
+    utils.removeUserSyncIframes();
+    preexisting = new Set(document.querySelectorAll('iframe'));
+  });
+  afterEach(() => utils.removeUserSyncIframes());
+
+  it('inserts the iframe into the document', () => {
+    utils.insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+
+  it('removes every sync iframe of this instance and returns how many were removed', () => {
+    [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
+    const iframes = newIframes();
+    expect(iframes.length).to.equal(3);
+    expect(utils.removeUserSyncIframes()).to.equal(3);
+    iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
+    expect(newIframes().length).to.equal(0);
+  });
+
+  it('notifies a sync iframe consumer before removing its iframe', () => {
+    let wasAttachedDuringCleanup;
+    let iframe;
+    const onCleanup = sinon.spy(() => {
+      wasAttachedDuringCleanup = iframe.parentNode != null;
+    });
+    utils.insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+    iframe = newIframes()[0];
+
+    expect(utils.removeUserSyncIframes()).to.equal(1);
+
+    expect(onCleanup.calledOnce).to.equal(true);
+    expect(wasAttachedDuringCleanup).to.equal(true);
+    expect(iframe.parentNode).to.equal(null);
+  });
+
+  it('leaves iframes it did not insert alone', () => {
+    const foreign = document.createElement('iframe');
+    document.body.appendChild(foreign);
+    try {
+      utils.insertUserSyncIframe('about:blank');
+      expect(newIframes().length).to.equal(2);
+      expect(utils.removeUserSyncIframes()).to.equal(1);
+      expect(foreign.parentNode).to.equal(document.body);
+      expect(newIframes()).to.eql([foreign]);
+    } finally {
+      foreign.parentNode.removeChild(foreign);
+    }
+  });
+
+  it('does nothing when there is no sync iframe', () => {
+    expect(utils.removeUserSyncIframes()).to.equal(0);
+  });
+
+  it('does not stop later syncs from inserting new iframes', () => {
+    utils.insertUserSyncIframe('about:blank');
+    utils.removeUserSyncIframes();
+    utils.insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
   });
 });

@@ -60,7 +60,7 @@ function mapBidEvent(eventType, args) {
     width,
     height,
     timeToRespond
-  }
+  };
 
   return payload;
 }
@@ -100,7 +100,7 @@ function sendEvents() {
       contentType: 'application/json',
       method: 'POST'
     });
-  } catch (err) { logMessage('Concert Analytics error') }
+  } catch (err) { logMessage('Concert Analytics error'); }
 }
 
 // save the base class function

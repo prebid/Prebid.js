@@ -68,7 +68,7 @@ function formatBidRequest(bid, bidderRequest = {}) {
 
   // ccpa support
   if (bidderRequest.uspConsent) {
-    url += `&__us_privacy=${bidderRequest.uspConsent}`
+    url += `&__us_privacy=${bidderRequest.uspConsent}`;
   }
 
   return {
@@ -96,7 +96,7 @@ export const spec = {
 
   buildRequests: (validBidRequests, bidderRequest) => {
     return validBidRequests.map(bid => {
-      return formatBidRequest(bid, bidderRequest)
+      return formatBidRequest(bid, bidderRequest);
     });
   },
 

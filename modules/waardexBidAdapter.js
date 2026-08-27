@@ -80,7 +80,7 @@ const getCommonBidsData = bidderRequest => {
     payload.gdpr_consent = {
       consent_string: bidderRequest.gdprConsent.consentString,
       consent_required: bidderRequest.gdprConsent.gdprApplies,
-    }
+    };
   }
 
   payload.coppa = !!config.getConfig('coppa');
@@ -130,7 +130,7 @@ const transformSizes = requestSizes => {
       return {
         width: parseInt(item[0], 10) || 0,
         height: parseInt(item[1], 10) || 0,
-      }
+      };
     });
   }
 
@@ -262,7 +262,7 @@ const mapOpenRtbVideoToHbBid = (openRtbBid, hbRequestBid) => {
       secondaryCatIds: null,
       mediaType: 'video',
     },
-  }
+  };
 };
 
 const getVastUrl = openRtbBid => {
@@ -271,7 +271,7 @@ const getVastUrl = openRtbBid => {
   if (adm.startsWith('http')) {
     return adm;
   } else {
-    return null
+    return null;
   }
 };
 

@@ -5,7 +5,7 @@ import * as utils from '../../../../src/utils.js';
 import { interpretResponse, isBidRequestValid, buildUserSyncs, buildBidRequests, bidWinReport } from '../../../../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'bidder';
-const TESTDOMAIN = 'test.org'
+const TESTDOMAIN = 'test.org';
 const AD_URL = `https://${TESTDOMAIN}/pbjs`;
 const SYNC_URL = `https://${TESTDOMAIN}/sync`;
 
@@ -180,11 +180,11 @@ describe('bidUtilsCommon', function () {
         gdprApplies: true
       }, {}, SYNC_URL);
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal(`https://${TESTDOMAIN}/sync/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`)
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal(`https://${TESTDOMAIN}/sync/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`);
     });
   });
 

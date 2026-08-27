@@ -11,14 +11,14 @@ import {
   BID_ERROR,
   BID_IMPRESSION,
   videoEvents
-} from '../../libraries/video/constants/events.js'
+} from '../../libraries/video/constants/events.js';
 import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
-import { videoKey } from '../../libraries/video/constants/constants.js'
+import { videoKey } from '../../libraries/video/constants/constants.js';
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 import { AdQueueCoordinator } from './adQueue.js';
-import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
+import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js';
 import { VIDEO } from '../../src/mediaTypes.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { doRender } from '../../src/adRendering.js';
@@ -147,7 +147,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     return videoCore.getOrtbVideo(divId);
   }
 
-  function getOrtbContent(divId: string): DeepPartial<ORTBRequest['site']['content']> {
+  function getOrtbContent(divId: string): DeepPartial<NonNullable<ORTBRequest['site']>['content']> {
     return videoCore.getOrtbContent(divId);
   }
 
@@ -244,7 +244,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
       auctionResult.adUnits
         .filter(au => au.video)
         .map(renderWinningBid)
-    )
+    );
   }
 
   function getAdServerConfig(adUnitVideoConfig) {

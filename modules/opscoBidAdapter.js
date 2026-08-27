@@ -1,7 +1,7 @@
 import { deepAccess, deepSetValue, isArray, logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 
 const ENDPOINT = 'https://exchange.ops.co/openrtb2/auction';

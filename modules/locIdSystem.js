@@ -30,7 +30,9 @@ const DEFAULT_IP_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const IP_CACHE_SUFFIX = '_ip';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
-
+export const dep = {
+  ajaxBuilder
+};
 /**
  * Normalizes privacy mode config to a boolean flag.
  * Supports both requirePrivacySignals (boolean) and privacyMode (string enum).
@@ -448,7 +450,7 @@ function fetchLocIdFromEndpoint(config, callback) {
   };
 
   try {
-    const ajax = ajaxBuilder(timeoutMs);
+    const ajax = dep.ajaxBuilder(timeoutMs);
     ajax(requestUrl, { success: onSuccess, error: onError }, null, requestOptions);
   } catch (e) {
     logError(LOG_PREFIX, 'Error initiating request:', e.message);
@@ -489,7 +491,7 @@ function fetchIpFromEndpoint(config, callback) {
   };
 
   try {
-    const ajax = ajaxBuilder(timeoutMs);
+    const ajax = dep.ajaxBuilder(timeoutMs);
     const requestOptions = {
       method: 'GET',
       withCredentials: params.withCredentials === true

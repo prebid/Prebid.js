@@ -23,6 +23,7 @@ export const EVENTS = {
   BID_TIMEOUT: 'bidTimeout',
   BID_REQUESTED: 'bidRequested',
   BID_RESPONSE: 'bidResponse',
+  BID_ACCEPTED: 'bidAccepted',
   BID_REJECTED: 'bidRejected',
   NO_BID: 'noBid',
   BID_WON: 'bidWon',

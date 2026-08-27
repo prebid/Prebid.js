@@ -236,7 +236,7 @@ describe('tpmnAdapterTests', function () {
       }
 
       if (FEATURES.VIDEO) {
-        it('should reutrn false if player size is not set', () => {
+        it('should return false if player size is not set', () => {
           const bid = utils.deepClone(VIDEO_BID);
           delete bid.mediaTypes.video.playerSize;
 
@@ -303,7 +303,7 @@ describe('tpmnAdapterTests', function () {
             startdelay: 0,
             skip: 1,
             plcmt: 4
-          }
+          };
 
           expect(spec.isBidRequestValid(NEW_VIDEO_BID)).to.equal(true);
           const requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);
@@ -433,6 +433,11 @@ describe('tpmnAdapterTests', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
+    });
+
+    it('passes COPPA to the iframe sync', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null, true);
+      expect(syncs[0].url).to.include('&coppa=1');
     });
 
     it('case 2 -> allow pixel with static sync', () => {

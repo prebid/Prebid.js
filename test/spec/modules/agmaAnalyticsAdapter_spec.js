@@ -79,7 +79,7 @@ describe('AGMA Analytics Adapter', () => {
 
   describe('getPayload', () => {
     it('should use non extended payload with no consent info', () => {
-      sandbox.stub(gdprDataHandler, 'getConsentData').callsFake(() => null)
+      sandbox.stub(gdprDataHandler, 'getConsentData').callsFake(() => null);
       const payload = getPayload([utils.generateUUID()], {
         code: 'test',
       });

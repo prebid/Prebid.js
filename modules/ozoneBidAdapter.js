@@ -412,7 +412,7 @@ export const spec = {
       banner: deepAccess(bidRequestRef, 'mediaTypes.banner.sizes', null),
       video: deepAccess(bidRequestRef, 'mediaTypes.video.playerSize', null),
       native: deepAccess(bidRequestRef, 'mediaTypes.native.image.sizes', null)
-    }
+    };
     logInfo('getFloorObjectForAuction mediaTypesSizes : ', mediaTypesSizes);
     const ret = {};
     if (mediaTypesSizes.banner) {
@@ -644,7 +644,7 @@ export const spec = {
   getVideoContextForBidId(bidId, arrBids) {
     const requestBid = this.getBidRequestForBidId(bidId, arrBids);
     if (requestBid != null) {
-      return deepAccess(requestBid, 'mediaTypes.video.context', 'unknown')
+      return deepAccess(requestBid, 'mediaTypes.video.context', 'unknown');
     }
     return null;
   },

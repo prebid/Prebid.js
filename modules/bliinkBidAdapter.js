@@ -1,19 +1,18 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { config } from '../src/config.js'
-import { _each, canAccessWindowTop, deepAccess, deepSetValue, getDomLoadingDuration, getWindowSelf, getWindowTop } from '../src/utils.js'
-export const BIDDER_CODE = 'bliink'
-export const GVL_ID = 658
-export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { _each, canAccessWindowTop, deepAccess, deepSetValue, getDomLoadingDuration, getWindowSelf, getWindowTop } from '../src/utils.js';
+export const BIDDER_CODE = 'bliink';
+export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid';
 
-export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://tag.bliink.io/usersync.html'
-export const META_KEYWORDS = 'keywords'
-export const META_DESCRIPTION = 'description'
+export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://tag.bliink.io/usersync.html';
+export const META_KEYWORDS = 'keywords';
+export const META_DESCRIPTION = 'description';
 
-const VIDEO = 'video'
-const BANNER = 'banner'
+const VIDEO = 'video';
+const BANNER = 'banner';
 window.bliinkBid = window.bliinkBid || {};
-const supportedMediaTypes = [BANNER, VIDEO]
-const aliasBidderCode = ['bk']
+const supportedMediaTypes = [BANNER, VIDEO];
+const aliasBidderCode = ['bk'];
 const CURRENCY = 'EUR';
 
 /**
@@ -54,7 +53,7 @@ export function getUserIds(validBidRequests) {
   }
 }
 export function getMetaList(name) {
-  if (!name || name.length === 0) return []
+  if (!name || name.length === 0) return [];
 
   return [
     {
@@ -81,37 +80,37 @@ export function getMetaList(name) {
       key: 'property',
       value: `'article:${name}'`,
     },
-  ]
+  ];
 }
 
 export function getOneMetaValue(query) {
-  const metaEl = document.querySelector(query)
+  const metaEl = document.querySelector(query);
 
   if (metaEl && metaEl.content) {
-    return metaEl.content
+    return metaEl.content;
   }
 
   return null;
 }
 
 export function getMetaValue(name) {
-  const metaList = getMetaList(name)
+  const metaList = getMetaList(name);
   for (let i = 0; i < metaList.length; i++) {
     const meta = metaList[i];
     const metaValue = getOneMetaValue(`meta[${meta.key}=${meta.value}]`);
     if (metaValue) {
-      return metaValue
+      return metaValue;
     }
   }
-  return ''
+  return '';
 }
 
 export function getKeywords() {
-  const metaKeywords = getMetaValue(META_KEYWORDS)
+  const metaKeywords = getMetaValue(META_KEYWORDS);
   if (metaKeywords) {
     const keywords = [
       ...metaKeywords.split(','),
-    ]
+    ];
 
     if (keywords && keywords.length > 0) {
       return keywords.filter((value) => value).map((value) => value.trim());
@@ -178,13 +177,13 @@ export const isBidRequestValid = (bid) => {
  * @returns {null|{method: string, data: {gdprConsent: string, keywords: string, pageTitle: string, pageDescription: (*|string), pageUrl, gdpr: boolean, tags: *}, url: string}}
  */
 export const buildRequests = (validBidRequests, bidderRequest) => {
-  if (!validBidRequests || !bidderRequest || !bidderRequest.bids) return null
+  if (!validBidRequests || !bidderRequest || !bidderRequest.bids) return null;
   const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
   const domLoadingDuration = getDomLoadingDuration(w).toString();
   const tags = bidderRequest.bids.map((bid) => {
     let bidFloor;
     const sizes = bid.sizes.map((size) => ({ w: size[0], h: size[1] }));
-    const mediaTypes = Object.keys(bid.mediaTypes)
+    const mediaTypes = Object.keys(bid.mediaTypes);
     if (typeof bid.getFloor === 'function') {
       bidFloor = bid.getFloor({
         currency: CURRENCY,
@@ -192,7 +191,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
         size: sizes[0]
       });
     }
-    const id = bid.params.tagId
+    const id = bid.params.tagId;
     const request = {
       sizes: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
       id,
@@ -202,9 +201,9 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
       imageUrl: deepAccess(bid, 'params.imageUrl', ''),
       videoUrl: deepAccess(bid, 'params.videoUrl', ''),
       refresh: (window.bliinkBid[id] = (window.bliinkBid[id] ?? -1) + 1) || undefined,
-    }
+    };
     if (bidFloor) {
-      request.bidFloor = bidFloor
+      request.bidFloor = bidFloor;
     }
     return request;
   });
@@ -218,28 +217,28 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     ect: getEffectiveConnectionType(),
   };
 
-  const schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain')
-  const eids = getUserIds(validBidRequests)
-  const device = bidderRequest.ortb2?.device
+  const schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain');
+  const eids = getUserIds(validBidRequests);
+  const device = bidderRequest.ortb2?.device;
   if (schain) {
-    request.schain = schain
+    request.schain = schain;
   }
   if (domLoadingDuration > -1) {
-    request.domLoadingDuration = domLoadingDuration
+    request.domLoadingDuration = domLoadingDuration;
   }
   if (device) {
-    request.device = device
+    request.device = device;
   }
   if (eids) {
-    request.eids = eids
+    request.eids = eids;
   }
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
-    request.gdpr = true
+    request.gdpr = true;
     deepSetValue(request, 'gdprConsent', gdprConsent.consentString);
   }
   if (config.getConfig('coppa')) {
-    request.coppa = 1
+    request.coppa = 1;
   }
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'uspConsent', bidderRequest.uspConsent);
@@ -258,13 +257,13 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @return
  */
 const interpretResponse = (serverResponse) => {
-  const bodyResponse = deepAccess(serverResponse, 'body.bids')
-  if (!serverResponse.body || !bodyResponse) return []
+  const bodyResponse = deepAccess(serverResponse, 'body.bids');
+  if (!serverResponse.body || !bodyResponse) return [];
   const bidResponses = [];
   _each(bodyResponse, function (response) {
     return bidResponses.push(buildBid(response));
   });
-  return bidResponses.filter(bid => !!bid)
+  return bidResponses.filter(bid => !!bid);
 };
 
 /**
@@ -277,15 +276,15 @@ const interpretResponse = (serverResponse) => {
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => {
   const syncs = [];
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-    let gdprParams = ''
-    let uspConsentStr = ''
-    let apiVersion
-    let gdpr = false
+    let gdprParams = '';
+    let uspConsentStr = '';
+    let apiVersion;
+    let gdpr = false;
     if (gdprConsent) {
       gdprParams = `&gdprConsent=${gdprConsent.consentString}`;
-      apiVersion = `&apiVersion=${gdprConsent.apiVersion}`
+      apiVersion = `&apiVersion=${gdprConsent.apiVersion}`;
       gdpr = Number(
-        gdprConsent.gdprApplies)
+        gdprConsent.gdprApplies);
     }
     if (uspConsent) {
       uspConsentStr = `&uspConsent=${uspConsent}`;
@@ -313,7 +312,6 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
  */
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   aliases: aliasBidderCode,
   supportedMediaTypes: supportedMediaTypes,
   isBidRequestValid,

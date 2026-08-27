@@ -1,11 +1,8 @@
 import { spec } from 'modules/ajaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 
 describe('AjaAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'aja',
@@ -100,7 +97,7 @@ describe('AjaAdapter', function () {
 
       }
     ];
-    const serializedSchain = encodeURIComponent('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com')
+    const serializedSchain = encodeURIComponent('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com');
 
     const bidderRequest = {
       refererInfo: {

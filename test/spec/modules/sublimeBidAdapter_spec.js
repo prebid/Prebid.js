@@ -170,7 +170,7 @@ describe('Sublime Adapter', function () {
       });
 
       uaStub.restore();
-    })
+    });
   });
 
   describe('sendEvent', function () {
@@ -204,7 +204,7 @@ describe('Sublime Adapter', function () {
     afterEach(function () {
       sandbox.restore();
     });
-  })
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -223,11 +223,11 @@ describe('Sublime Adapter', function () {
           endpoint: '',
         },
       };
-    })
+    });
 
     afterEach(function () {
       delete window.sublime;
-    })
+    });
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -610,5 +610,5 @@ describe('Sublime Adapter', function () {
     afterEach(function () {
       sandbox.restore();
     });
-  })
+  });
 });

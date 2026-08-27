@@ -1,9 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/prismaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { requestBidsHook } from 'modules/consentManagementTcf.js';
+
+import 'src/utils.js';
 
 describe('Prisma bid adapter tests', function () {
   const DISPLAY_BID_REQUEST = [{
@@ -101,7 +99,7 @@ describe('Prisma bid adapter tests', function () {
       'bidderRequestsCount': 1,
       'bidderWinsCount': 0
     }
-  ]
+  ];
 
   const VIDEO_BID_RESPONSE = {
     'body': {
@@ -212,7 +210,8 @@ describe('Prisma bid adapter tests', function () {
     const bid = response[0];
     expect(bid.cpm).to.equal(4.5421);
     expect(bid.vastUrl).to.equal('https://prisma.nexx360.io/cache?uuid=b8e7b2f0-c378-479f-aa4f-4f55d5d7d1d5');
-    expect(bid.vastImpUrl).to.equal('https://prisma.nexx360.io/track-imp?type=prebid&mediatype=video&ssp=appnexus&tag_id=yqsc1tfj&consent=1&price=4.5421');
+    expect(bid.vastTrackers).to.have.property('impression').that.is.an('array');
+    expect(bid.vastTrackers.impression[0]).to.equal('https://prisma.nexx360.io/track-imp?type=prebid&mediatype=video&ssp=appnexus&tag_id=yqsc1tfj&consent=1&price=4.5421');
     expect(bid.width).to.equal(1);
     expect(bid.height).to.equal(1);
     expect(bid.creativeId).to.equal('97517771');

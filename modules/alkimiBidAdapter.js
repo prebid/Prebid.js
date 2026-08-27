@@ -59,11 +59,11 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi');
     const fpa = ortb2?.source?.ext?.fpa;
     const source = fpa !== undefined ? { ext: { fpa } } : undefined;
-    const userWalletAddress = alkimiConfig && alkimiConfig.userWalletAddress
-    const userParams = alkimiConfig && alkimiConfig.userParams
-    const userWalletConnected = alkimiConfig && alkimiConfig.userWalletConnected
-    const userWalletProtocol = normalizeToArray(alkimiConfig && alkimiConfig.userWalletProtocol)
-    const userTokenType = normalizeToArray(alkimiConfig && alkimiConfig.userTokenType)
+    const userWalletAddress = alkimiConfig && alkimiConfig.userWalletAddress;
+    const userParams = alkimiConfig && alkimiConfig.userParams;
+    const userWalletConnected = alkimiConfig && alkimiConfig.userWalletConnected;
+    const userWalletProtocol = normalizeToArray(alkimiConfig && alkimiConfig.userWalletProtocol);
+    const userTokenType = normalizeToArray(alkimiConfig && alkimiConfig.userTokenType);
 
     const user = ((userWalletAddress !== null && userWalletAddress !== undefined) ||
               (userParams !== null && userParams !== undefined) ||
@@ -81,7 +81,7 @@ export const spec = {
             userTokenType
           }
         }
-      : undefined
+      : undefined;
 
     let payload = {
       requestId: generateUUID(),

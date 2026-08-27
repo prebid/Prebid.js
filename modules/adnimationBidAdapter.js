@@ -6,8 +6,14 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn
+  createInterpretResponseFn,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./adnimationBidAdapter.d.ts').AdnimationBidRequestParams} AdnimationBidRequestParams
+ */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'adnimation';
@@ -42,6 +48,8 @@ export const spec = {
   interpretResponse,
   getUserSyncs,
   onBidWon,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

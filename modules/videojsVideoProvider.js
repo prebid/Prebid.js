@@ -64,7 +64,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
   function init() {
     if (!vjs) {
-      triggerSetupFailure(-1, setupFailMessage + ': Videojs not present')
+      triggerSetupFailure(-1, setupFailMessage + ': Videojs not present');
       return;
     }
 
@@ -114,7 +114,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
       // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
       type => player.canPlayType(type) !== ''
-    )
+    );
 
     // IMA supports vpaid unless its expliclty turned off
     // TODO: needs a reference to the imaOptions used at setup to determine if vpaid can be used
@@ -192,7 +192,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
       }
     }
 
-    const contentUrl = utils.getValidMediaUrl(mediaItem && mediaItem.src, player.src)
+    const contentUrl = utils.getValidMediaUrl(mediaItem && mediaItem.src, player.src);
     if (contentUrl) {
       content.url = contentUrl;
     }
@@ -255,13 +255,13 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
       setupCompleteCallbacks.push(callback);
     } else if (externalEventName === SETUP_FAILED) {
       setupFailedCallbacks.push(callback);
-      registerSetupErrorListener()
+      registerSetupErrorListener();
     }
   }
 
   function registerSetupErrorListener() {
     if (!player) {
-      return
+      return;
     }
 
     const eventHandler = () => {
@@ -279,7 +279,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     };
 
     player.on(ERROR, eventHandler);
-    setupFailedEventHandlers.push(eventHandler)
+    setupFailedEventHandlers.push(eventHandler);
   }
 
   function registerListeners(externalEventName, callback, basePayload) {
@@ -312,7 +312,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
           adState.updateState({ adTagUrl });
           return { adTagUrl };
         };
-        break
+        break;
 
       case AD_LOADED:
         getEventPayload = (e) => {
@@ -321,18 +321,18 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
           timeState.clearState();
           return adState.getState();
         };
-        break
+        break;
 
       case AD_STARTED:
       case AD_PLAY:
       case AD_PAUSE:
         getEventPayload = () => adState.getState();
-        break
+        break;
 
       case AD_IMPRESSION:
       case AD_CLICK:
         getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
-        break
+        break;
 
       case AD_TIME:
         getEventPayload = (e) => {
@@ -340,7 +340,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
           timeState.updateForTimeEvent(adTimeEvent);
           return Object.assign({}, adState.getState(), timeState.getState());
         };
-        break
+        break;
 
       case AD_COMPLETE:
         getEventPayload = () => {
@@ -348,7 +348,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
           adState.clearState();
           return currentState;
         };
-        break
+        break;
 
       case AD_SKIPPED:
         getEventPayload = () => {
@@ -356,7 +356,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
           adState.clearState();
           return currentState;
         };
-        break
+        break;
 
       case AD_ERROR:
         getEventPayload = e => {
@@ -371,19 +371,19 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
           adState.clearState();
           return extraPayload;
         };
-        break
+        break;
 
       case PLAYLIST:
         getEventPayload = e => ({
           playlistItemCount: utils.getPlaylistCount(player),
           autostart: player.autoplay()
         });
-        break
+        break;
 
       case CONTENT_LOADED:
         getEventPayload = e => {
           const media = utils.getMedia(player);
-          const contentUrl = utils.getValidMediaUrl(media && media.src, player.src, e && e.target && e.target.currentSrc)
+          const contentUrl = utils.getValidMediaUrl(media && media.src, player.src, e && e.target && e.target.currentSrc);
           return {
             contentId: media && media.id,
             contentUrl,
@@ -417,7 +417,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
             destination: player.currentTime(),
             duration: player.duration()
           };
-        }
+        };
         break;
 
       case SEEK_END:
@@ -492,7 +492,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
   }
 
   function offEvent(event, callback) {
-    const videojsEvent = utils.getVideojsEventName(event)
+    const videojsEvent = utils.getVideojsEventName(event);
     if (!callback) {
       player.off(videojsEvent);
       return;
@@ -595,7 +595,7 @@ export const utils = {
     const videojsConfig = params.vendorConfig || {};
 
     if (videojsConfig.autostart === undefined && config.autostart !== undefined) {
-      videojsConfig.autostart = config.autostart
+      videojsConfig.autostart = config.autostart;
     }
 
     if (videojsConfig.muted === undefined && config.mute !== undefined) {
@@ -636,13 +636,13 @@ export const utils = {
       case AD_REQUEST:
         return 'ads-request';
       case AD_LOADED:
-        return 'loaded'
+        return 'loaded';
       case AD_STARTED:
         return 'start';
       case AD_IMPRESSION:
         return 'impression';
       case AD_PLAY:
-        return 'resume'
+        return 'resume';
       case AD_PAUSE:
         return PAUSE;
       case AD_TIME:
@@ -723,7 +723,7 @@ export const utils = {
       return this.parseSource(source[0]);
     }
 
-    return this.parseSource(source)
+    return this.parseSource(source);
   },
 
   parseSource: function (source) {
@@ -759,7 +759,7 @@ export const utils = {
 
     const currentIndex = this.getCurrentPlaylistIndex(player);
     if (!currentIndex) {
-      return
+      return;
     }
 
     const item = playlist()[currentIndex];
@@ -774,7 +774,7 @@ const videojsSubmoduleFactory = function (config) {
   // videojs factory is stored to window by default
   const vjs = window.videojs;
   return VideojsProvider(config, vjs, adState, timeState, callbackStorage, utils);
-}
+};
 
 videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
 submodule('video', videojsSubmoduleFactory);
@@ -822,28 +822,6 @@ export function adStateFactory() {
       // adTagUrl - for now, only has request ad tag
       // adPlacementType
     };
-
-    const adPodInfo = event.adPodInfo;
-    if (adPodInfo && adPodInfo.podIndex > -1) {
-      updates.adPodCount = adPodInfo.totalAds;
-      updates.adPodIndex = adPodInfo.adPosition - 1; // Per IMA docs, adPosition is 1 based.
-    }
-
-    if (adPodInfo && adPodInfo.timeOffset) {
-      switch (adPodInfo.timeOffset) {
-        case -1:
-          updates.offset = 'post';
-          break
-
-        case 0:
-          // TODO: Defaults to 0 if this ad is not part of a pod, or the pod is not part of an ad playlist. - need to check if loaded dynamically and pass last content time update
-          updates.offset = 'pre';
-          break
-
-        default:
-          updates.offset = '' + adPodInfo.timeOffset;
-      }
-    }
 
     if (skippable) {
       updates.skipafter = event.skipTimeOffset;

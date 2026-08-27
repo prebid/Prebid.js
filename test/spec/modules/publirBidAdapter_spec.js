@@ -81,7 +81,7 @@ describe('publirAdapter', function () {
 
     const bidderRequest = {
       bidderCode: 'publir',
-    }
+    };
 
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -237,8 +237,8 @@ describe('publirAdapter', function () {
         return {
           currency: 'USD',
           floor: 3.32
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 0.64;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -251,8 +251,8 @@ describe('publirAdapter', function () {
         return {
           currency: 'USD',
           floor: 0.8
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 1.5;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -283,7 +283,7 @@ describe('publirAdapter', function () {
         'model': '',
         'bitness': '64',
         'architecture': 'x86'
-      }
+      };
       const bid = utils.deepClone(bidRequests[0]);
       bid.ortb2 = {
         'device': {
@@ -312,7 +312,7 @@ describe('publirAdapter', function () {
             'architecture': 'x86'
           }
         }
-      }
+      };
       const requestWithSua = spec.buildRequests([bid], bidderRequest);
       const data = requestWithSua.data;
       expect(data.bids[0].sua).to.exist;
@@ -383,7 +383,7 @@ describe('publirAdapter', function () {
       const result = spec.interpretResponse({ body: response });
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedBannerResponse));
     });
-  })
+  });
 
   describe('getUserSyncs', function() {
     const imageSyncResponse = {
@@ -465,7 +465,7 @@ describe('publirAdapter', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
-  })
+  });
 
   describe('onBidWon', function() {
     beforeEach(function() {
@@ -487,7 +487,7 @@ describe('publirAdapter', function () {
       };
 
       spec.onBidWon(bid);
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
 });

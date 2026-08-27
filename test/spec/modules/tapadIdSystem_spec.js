@@ -80,5 +80,5 @@ describe('TapadIdSystem', function () {
         uids: [{ id: 'some-random-id-value', atype: 1 }]
       });
     });
-  })
-})
+  });
+});

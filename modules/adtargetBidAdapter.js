@@ -20,11 +20,11 @@ export const spec = {
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache);
   },
 
   buildRequests: function (bidRequests, adapterRequest) {
-    const adapterSettings = config.getConfig(adapterRequest.bidderCode)
+    const adapterSettings = config.getConfig(adapterRequest.bidderCode);
     const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
     const bidChunks = chunk(bids, chunkSize);
@@ -35,7 +35,7 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT
       };
-    })
+    });
   },
   interpretResponse: function (serverResponse, { adapterRequest }) {
     serverResponse = serverResponse.body;
@@ -111,7 +111,7 @@ function getMediaType(bidderRequest) {
 }
 
 function createBid(bidResponse, bidRequest) {
-  const mediaType = getMediaType(bidRequest)
+  const mediaType = getMediaType(bidRequest);
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,

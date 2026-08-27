@@ -9,7 +9,7 @@ export const cookieHelpers = {
   getFutureCookieExpiry: () => new Date(Date.now() + msIn12Hours).toUTCString(),
   setPublisherCookie: (cookieName, token) => coreStorage.setCookie(cookieName, JSON.stringify(token), cookieHelpers.getFutureCookieExpiry()),
   clearCookies: (...cookieNames) => cookieNames.forEach(cookieName => coreStorage.setCookie(cookieName, '', expireCookieDate)),
-}
+};
 
 export const runAuction = async () => {
   // FIXME: this should preferably not call into base userId logic
@@ -29,7 +29,7 @@ export const runAuction = async () => {
       resolve(bid);
     }, { adUnits, ortb2Fragments });
   });
-}
+};
 
 export const apiHelpers = {
   makeTokenResponse: (token, shouldRefresh = false, expired = false, refreshExpired = false) => ({
@@ -44,7 +44,7 @@ export const apiHelpers = {
     srv.respond();
     setTimeout(() => resolve());
   }, delay)),
-}
+};
 
 export const setGdprApplies = (consent = false) => {
   const consentDetails = consent ? {
@@ -70,7 +70,7 @@ export const setGdprApplies = (consent = false) => {
       gdprApplies: true,
       ...consentDetails
     }
-  }
+  };
   setConsentConfig(staticConfig);
   return staticConfig;
-}
+};

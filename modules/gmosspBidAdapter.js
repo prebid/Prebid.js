@@ -145,10 +145,10 @@ export const spec = {
           syncs.push({
             type: 'image',
             url: sync
-          })
-        })
+          });
+        });
       }
-    })
+    });
     return syncs;
   },
 

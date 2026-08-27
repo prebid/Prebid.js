@@ -1,11 +1,19 @@
 import { makebidInterceptor } from './bidInterceptor.js';
 import { makePbsInterceptor } from './pbsInterceptor.js';
 import { addHooks, removeHooks } from './legacy.js';
+import { configureFpdValidation, startAuctionFpdValidationHook } from './fpdValidation.js';
+
+/**
+ * @typedef {import('./debuggingModule.d.ts').DebugModuleConfiguration} DebugModuleConfiguration
+ */
 
 const interceptorHooks = [];
 let bidInterceptor;
 let enabled = false;
 
+/**
+ * @param {DebugModuleConfiguration} debugConfig Configuration of the debug module
+ */
 function enableDebugging(debugConfig, { fromSession = false, config, hook, logger }) {
   config.setConfig({ debug: true });
   bidInterceptor.updateConfig(debugConfig);
@@ -116,15 +124,17 @@ export function makeBidderBidInterceptor({ utils }) {
     } else {
       next(spec, bids, bidRequest, ajax, wrapCallback, { ...cbs, onCompletion: done });
     }
-  }
+  };
 }
 
-export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer }) {
+export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer, getPubcidOptout = () => false }) {
+  configureFpdValidation({ getOptout: getPubcidOptout, utils, logger });
   const BidInterceptor = makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer });
   bidInterceptor = new BidInterceptor({ logger });
   const pbsBidInterceptor = makePbsInterceptor({ createBid, utils });
   registerBidInterceptor(() => hook.get('processBidderRequests'), makeBidderBidInterceptor({ utils }));
   registerBidInterceptor(() => hook.get('processPBSRequest'), pbsBidInterceptor);
+  hook.get('startAuction').before(startAuctionFpdValidationHook);
   sessionLoader({ DEBUG_KEY, config, hook, logger });
   config.getConfig('debugging', ({ debugging }) => getConfig(debugging, { DEBUG_KEY, config, hook, logger, utils }), { init: true });
 }

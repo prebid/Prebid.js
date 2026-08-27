@@ -6,8 +6,14 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn
+  createInterpretResponseFn,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./apesterBidAdapter.d.ts').ApesterBidRequestParams} ApesterBidRequestParams
+ */
 
 const DEFAULT_SUB_DOMAIN = 'bidder';
 const BIDDER_CODE = 'apester';
@@ -44,6 +50,8 @@ export const spec = {
   interpretResponse,
   getUserSyncs,
   onBidWon,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

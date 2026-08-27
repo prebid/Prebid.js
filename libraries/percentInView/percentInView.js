@@ -107,7 +107,12 @@ const percentInViewStatic = (element, { w, h } = {}) => {
   // No overlap between element and the viewport; therefore, the element
   // lies completely out of view
   return 0;
-}
+};
+
+export const dep = {
+  // for stubbing in tests, see test/mocks/percentInView.js
+  getElement: (element) => element
+};
 
 /**
  * A wrapper around an IntersectionObserver that keeps track of the latest IntersectionEntry that was observed
@@ -121,11 +126,11 @@ export function intersections(mkObserver) {
   function observerCallback(entries) {
     entries.forEach(entry => {
       if ((intersections.get(entry.target)?.time ?? -1) < entry.time) {
-        intersections.set(entry.target, entry)
+        intersections.set(entry.target, entry);
         next.resolve();
         next = defer();
       }
-    })
+    });
   }
 
   let obs = null;
@@ -147,7 +152,8 @@ export function intersections(mkObserver) {
    * Observe the given element; returns a promise to the first available intersection observed for it.
    */
   async function observe(element) {
-    if (obs != null && !intersections.has(element)) {
+    element = dep.getElement(element);
+    if (element != null && obs != null && !intersections.has(element)) {
       obs.observe(element);
       intersections.set(element, null);
       return waitFor(element);
@@ -166,7 +172,7 @@ export function intersections(mkObserver) {
   return {
     observe,
     getIntersection,
-  }
+  };
 }
 
 export const viewportIntersections = intersections((callback) => new IntersectionObserver(callback, {
@@ -186,7 +192,7 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
       // just to be sure, cap the amount of time we wait for intersections
       delay(20)
     ]).then(() => next.call(this, request));
-  }
+  };
 }
 
 startAuction.before(mkIntersectionHook());

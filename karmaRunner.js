@@ -41,7 +41,9 @@ process.on('message', function (options) {
   process.on('SIGINT', () => quit());
 
   function runKarma(file, chunkNo) {
-    let cfg = karmaConfMaker(options.coverage, options.browserstack, options.watch, file, options.disableFeatures, chunkNo);
+    // `file` is a chunk of the whole suite unless --file was given; the config needs to tell
+    // those apart, and cannot, since both arrive as arrays
+    let cfg = karmaConfMaker(options.coverage, options.browserstack, options.watch, file, options.disableFeatures, chunkNo, options.file != null);
     if (options.browsers && options.browsers.length) {
       cfg.browsers = options.browsers;
     }
@@ -62,7 +64,7 @@ process.on('message', function (options) {
       chunks.push([options.file]);
     } else {
       const chunkNum = process.env['TEST_CHUNKS'] ?? 1;
-      const pat = process.env['TEST_PAT'] ?? '*_spec.js'
+      const pat = process.env['TEST_PAT'] ?? '*_spec.js';
       const tests = glob.sync('test/**/' + pat).sort();
       const chunkLen = chunkNum === 'MAX' ? 0 : Math.floor(tests.length / Number(chunkNum));
       chunks.push([]);

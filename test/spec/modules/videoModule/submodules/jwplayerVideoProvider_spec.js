@@ -7,16 +7,16 @@ import {
 } from 'modules/jwplayerVideoProvider';
 
 import {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE
 } from 'libraries/video/constants/ortb.js';
 
 import { JWPLAYER_VENDOR } from 'libraries/video/constants/vendorCodes.js';
 
 import {
-  SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
-  AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
-  AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
-  RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST, videoEvents
+  SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION,
+  AD_TIME, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
+  AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
+  RENDITION_UPDATE, ERROR, COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST, videoEvents
 } from 'libraries/video/constants/events.js';
 
 import { PLAYBACK_MODE } from 'libraries/video/constants/constants.js';
@@ -53,7 +53,7 @@ function getPlayerMock() {
 function makePlayerFactoryMock(playerMock_) {
   const playerFactory = function () {
     return playerMock_;
-  }
+  };
   playerFactory.version = '8.21.0';
   return playerFactory;
 }
@@ -1560,8 +1560,6 @@ describe('adStateFactory', function () {
     const clickThroughUrl = 'clickThroughUrl';
     const witem = 'witem';
     const wcount = 'wcount';
-    const podcount = 'podcount';
-    const sequence = 'sequence';
 
     adState.updateForEvent({
       tag,
@@ -1583,9 +1581,7 @@ describe('adStateFactory', function () {
       creativetype,
       clickThroughUrl,
       witem,
-      wcount,
-      podcount,
-      sequence
+      wcount
     });
 
     const state = adState.getState();
@@ -1610,8 +1606,6 @@ describe('adStateFactory', function () {
     expect(state.adPlacementType).to.be.undefined;
     expect(state.waterfallIndex).to.equal(witem);
     expect(state.waterfallCount).to.equal(wcount);
-    expect(state.adPodCount).to.equal(podcount);
-    expect(state.adPodIndex).to.equal(sequence);
   });
 
   it('should convert placement to oRTB value', function () {
@@ -2445,7 +2439,6 @@ describe('utils', function () {
 
     it('should filter supported media types', function () {
       const mockVideo = document.createElement('video');
-      const originalCanPlayType = mockVideo.canPlayType;
 
       // Mock canPlayType to simulate browser support
       mockVideo.canPlayType = function(type) {

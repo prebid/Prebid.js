@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { logMessage, logError, isEmpty, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
@@ -58,7 +57,7 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
 
@@ -163,10 +162,8 @@ function _buildPostBody(bidRequests, bidderRequest) {
     return imp;
   });
 
-  let eids = [];
-
   if (bidRequests[0].userIdAsEids) {
-    eids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
+    const eids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
     data.user = {
       ext: { eids }
     };
@@ -246,7 +243,7 @@ function _getFloor (bid) {
 
 function _getGlobalFpd(bidderRequest) {
   const fpd = {};
-  const context = {}
+  const context = {};
   const user = {};
   const ortbData = bidderRequest.ortb2 || {};
   const opeCloudStorage = _fetchOpeCloud();
@@ -255,12 +252,12 @@ function _getGlobalFpd(bidderRequest) {
   const fpdUser = Object.assign({}, ortbData.user);
 
   if (opeCloudStorage) {
-    fpdUser.data = fpdUser.data || []
+    fpdUser.data = fpdUser.data || [];
     try {
       fpdUser.data.push({
         name: 'www.1plusx.com',
         ext: opeCloudStorage
-      })
+      });
     } catch (err) {
       logError('Triplelift: error adding 1plusX segments: ', err);
     }
@@ -283,10 +280,10 @@ function _fetchOpeCloud() {
   if (!opeCloud) return null;
   try {
     const parsedJson = JSON.parse(opeCloud);
-    return parsedJson
+    return parsedJson;
   } catch (err) {
     logError('Triplelift: error parsing JSON: ', err);
-    return null
+    return null;
   }
 }
 
@@ -378,9 +375,9 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source === 'hdx') {
       if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
-        bidResponse.meta.mediaType = 'video'
+        bidResponse.meta.mediaType = 'video';
       } else {
-        bidResponse.meta.mediaType = 'banner'
+        bidResponse.meta.mediaType = 'banner';
       }
     }
 

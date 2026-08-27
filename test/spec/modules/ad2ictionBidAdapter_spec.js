@@ -150,7 +150,7 @@ describe('ad2ictionBidAdapter', function () {
     });
 
     it('should return a valid bid response', function () {
-      const MOCK_AD_DOM = "<div id='AD2M-BOX'>"
+      const MOCK_AD_DOM = "<div id='AD2M-BOX'>";
       const mockServerResponse = {
         body: [
           {
@@ -213,7 +213,7 @@ describe('ad2ictionBidAdapter', function () {
           },
           ttl: 360,
         },
-      ]
+      ];
 
       const bidResponses = spec.interpretResponse(mockServerResponse);
 

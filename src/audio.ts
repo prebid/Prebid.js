@@ -40,7 +40,7 @@ export const ORTB_AUDIO_PARAMS = new Map(ORTB_PARAMS);
 
 export type AudioContext = typeof INSTREAM;
 
-export interface AudioMediaType extends BaseMediaType, Pick<ORTBImp['audio'], (typeof ORTB_PARAMS)[number][0]> {
+export interface AudioMediaType extends BaseMediaType, Pick<NonNullable<ORTBImp['audio']>, (typeof ORTB_PARAMS)[number][0]> {
   context?: AudioContext;
 }
 

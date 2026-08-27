@@ -109,7 +109,7 @@ function getPublisherUrl() {
     }
   } catch (e) {
   }
-  return url
+  return url;
 }
 
 function buildTrionUrlParams(bid, bidderRequest) {

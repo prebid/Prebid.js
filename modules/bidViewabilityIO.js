@@ -11,7 +11,7 @@ const CONFIG_ENABLED = 'enabled';
 // IAB numbers from: https://support.google.com/admanager/answer/4524488?hl=en
 const IAB_VIEWABLE_DISPLAY_TIME = 1000;
 const IAB_VIEWABLE_DISPLAY_LARGE_PX = 242000;
-export const IAB_VIEWABLE_DISPLAY_THRESHOLD = 0.5
+export const IAB_VIEWABLE_DISPLAY_THRESHOLD = 0.5;
 export const IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD = 0.3;
 
 const CLIENT_SUPPORTS_IO = window.IntersectionObserver && window.IntersectionObserverEntry && window.IntersectionObserverEntry.prototype &&
@@ -23,11 +23,11 @@ const supportedMediaTypes = [
 
 export const isSupportedMediaType = (bid) => {
   return supportedMediaTypes.indexOf(bid.mediaType) > -1;
-}
+};
 
 const _logMessage = (message) => {
   return logMessage(`${MODULE_NAME}: ${message}`);
-}
+};
 
 // returns options for the iO that detects if the ad is viewable
 export const getViewableOptions = (bid) => {
@@ -36,9 +36,9 @@ export const getViewableOptions = (bid) => {
       root: null,
       rootMargin: '0px',
       threshold: bid.width * bid.height > IAB_VIEWABLE_DISPLAY_LARGE_PX ? IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD : IAB_VIEWABLE_DISPLAY_THRESHOLD
-    }
+    };
   }
-}
+};
 
 // markViewed returns a function what will be executed when an ad satisifes the viewable iO
 export const markViewed = (bid, entry, observer) => {
@@ -46,8 +46,8 @@ export const markViewed = (bid, entry, observer) => {
     observer.unobserve(entry.target);
     triggerBidViewable(bid);
     _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
-  }
-}
+  };
+};
 
 // viewCallbackFactory creates the callback used by the viewable IntersectionObserver.
 // When an ad comes into view, it sets a timeout for a function to be executed
@@ -88,6 +88,6 @@ export const init = () => {
       });
     }
   });
-}
+};
 
-init()
+init();

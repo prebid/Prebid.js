@@ -39,7 +39,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
   moduleConfig.params = moduleConfig.params || {};
   moduleConfig.params.partnerid = moduleConfig.params.partnerid ? moduleConfig.params.partnerid : 1;
 
-  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params] })]; });
+  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params]; })]; });
   serverData.page = moduleConfig.params.actualUrl || getRefererInfo().page || '';
   const url = (RELEVAD_API_DOMAIN + '/apis/rweb2/' +
                 '?url=' + encodeURIComponent(serverData.page) +
@@ -88,7 +88,7 @@ export function setGlobalOrtb2(ortb2, rtdData) {
     const addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(addOrtb2) && mergeDeep(ortb2, addOrtb2);
   } catch (e) {
-    logError(e)
+    logError(e);
   }
 }
 
@@ -142,7 +142,7 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
     bidderOrtbFragment[bidder] = bidderOrtbFragment[bidder] || {};
     mergeDeep(bidderOrtbFragment[bidder], addOrtb2);
   } catch (e) {
-    logError(e)
+    logError(e);
   }
 }
 
@@ -224,25 +224,14 @@ export function addRtdData(reqBids, data, moduleConfig) {
   // Add RTD data to the global ORTB fragments when no whitelists present
   noWhitelists && setGlobalOrtb2(reqBids.ortb2Fragments?.global, relevadData);
 
-  // Target GAM/GPT
+  // Add ad server targeting for Prebid targeting methods
   const setgpt = moduleConfig.params.setgpt || !moduleConfig.params.hasOwnProperty('setgpt');
-  if (moduleConfig.dryrun || (typeof window.googletag !== 'undefined' && setgpt)) {
-    try {
-      if (window.googletag && window.googletag.pubads && (typeof window.googletag.pubads === 'function')) {
-        window.googletag.pubads().getSlots().forEach(function (n) {
-          if (typeof n.setTargeting !== 'undefined' && relevadList && relevadList.length > 0) {
-            n.setTargeting('relevad_rtd', relevadList);
-          }
-        });
-      }
-    } catch (e) {
-      logError(e);
-    }
-  }
+  const shouldSetAdserverTargeting = setgpt && !isEmpty(relevadList);
 
   // Set per-bidder RTD
   const adUnits = reqBids.adUnits;
   adUnits.forEach(adUnit => {
+    shouldSetAdserverTargeting && deepSetValue(adUnit, 'adserverTargeting.relevad_rtd', relevadList);
     noWhitelists && deepSetValue(adUnit, 'ortb2Imp.ext.data.relevad_rtd', relevadList);
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
@@ -341,7 +330,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
     cid: encodeURIComponent(config.params?.partnerid || ''),
     gdpra: encodeURIComponent(userConsent?.gdpr?.gdprApplies || ''),
     gdprc: encodeURIComponent(userConsent?.gdpr?.consentString || ''),
-  }
+  };
   if (!config.dryrun) {
     data.page = serverData?.page || config?.params?.actualUrl || getRefererInfo().page || '';
   }

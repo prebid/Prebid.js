@@ -2,8 +2,19 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  isBidRequestValid, createUserSyncGetter, createInterpretResponseFn, createBuildRequestsFn
+  isBidRequestValid,
+  createUserSyncGetter,
+  createInterpretResponseFn,
+  createBuildRequestsFn,
+  onBidWon,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./illuminBidAdapter.d.ts').IlluminBidRequestParams} IlluminBidRequestParams
+ */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'illumin';
@@ -31,7 +42,11 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

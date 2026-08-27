@@ -30,7 +30,7 @@ const USER_SYNC_PARAMS = {
    * The name of the parameter that the publisher can use to specify the integration endpoint.
    */
   PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT: 'integrationEndpoint',
-}
+};
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -118,18 +118,27 @@ export const utils = {
     /**
      * Listen for messages from the iframe with automatic cleanup
      */
-    const messageHandler = function(event) {
+    let completed = false;
+    let messageHandler;
+    const complete = function(sasUid) {
+      if (completed) {
+        return;
+      }
+      completed = true;
+      window.removeEventListener('message', messageHandler);
+      onCompleteCallback(sasUid);
+    };
+
+    messageHandler = function(event) {
       switch (event.data.type) {
         case 'MOBKOI_PIXEL_SYNC_COMPLETE':
           const sasUid = event.data.syncData;
           logInfo('Parent window Sync completed. SAS ID:', sasUid);
-          window.removeEventListener('message', messageHandler);
-          onCompleteCallback(sasUid);
+          complete(sasUid);
           break;
         case 'MOBKOI_PIXEL_SYNC_ERROR':
           logError('Parent window Sync failed:', event.data.error);
-          window.removeEventListener('message', messageHandler);
-          onCompleteCallback(null);
+          complete(null);
           break;
       }
     };
@@ -138,7 +147,7 @@ export const utils = {
 
     insertUserSyncIframe(url, () => {
       logInfo('insertUserSyncIframe loaded');
-    });
+    }, undefined, () => complete(null));
 
     // Return the URL for testing purposes
     return url;

@@ -25,11 +25,6 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    if (!!(bidderRequest?.ortb2?.site) && !!(bidderRequest?.ortb2?.app)) {
-      request.site = bidderRequest.ortb2.site;
-      delete request.app;
-    }
-
     const hasSite = !!request.site;
     const hasApp = !!request.app;
     const root = hasSite ? 'site' : (hasApp ? 'app' : null);
@@ -51,7 +46,7 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
-    deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
+    deepSetValue(imp, 'ext.sparteo.params', { ...bidRequest.params });
     imp.ext.sparteo.params.adUnitCode = bidRequest.adUnitCode;
 
     return imp;
@@ -62,6 +57,11 @@ const converter = ortbConverter({
     const response = buildBidResponse(bid, context);
 
     if (context.mediaType === 'video') {
+      // nurl is a win-notification tracker (fired by onBidWon), not a VAST URL. ortbConverter's
+      // video processor defaults bidResponse.vastUrl to seatbid.nurl, so override that mapping:
+      // vastUrl holds the Prebid Cache URL when present, otherwise null. Left pointing at nurl,
+      // a VAST consumer (a GAM VAST-tag-URL line item, IMA SDK, ...) would fetch the tracker as
+      // if it were VAST — firing the win notification without a real render.
       response.nurl = bid.nurl;
       response.vastUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url') ?? null;
     }
@@ -80,7 +80,15 @@ function createRenderer(rendererConfig) {
   const renderer = Renderer.install({
     url: rendererConfig.url,
     loaded: false,
-    config: rendererConfig
+    config: {
+      ...rendererConfig,
+      // Prebid loads the renderer script (ANOutstreamVideo) into the document this callback
+      // returns, and the player can only resolve a targetId that exists in that same document.
+      // Prefer the render document (e.g. a GAM friendly iframe whose slot only lives inside it),
+      // and fall back to the source (parent) document when the slot is not in the render document.
+      documentResolver: (bid, sourceDocument, renderDocument) =>
+        (renderDocument?.getElementById(bid.adUnitCode) ? renderDocument : sourceDocument) || renderDocument
+    }
   });
   try {
     renderer.setRender(outstreamRender);
@@ -90,30 +98,43 @@ function createRenderer(rendererConfig) {
   return renderer;
 }
 
-function outstreamRender(bid) {
-  // TODO this should use getAdUnitElement
-  if (!document.getElementById(bid.adUnitCode)) {
-    logError(`Sparteo Bid Adapter: Video renderer did not started. bidResponse.adUnitCode is probably not a DOM element : ${bid.adUnitCode}`);
+function outstreamRender(bid, doc) {
+  // `doc` is the document Prebid loaded the renderer script into (see documentResolver above),
+  // so ANOutstreamVideo lives on its defaultView and can only resolve a slot that exists in it.
+  const renderDoc = doc || document;
+  const slot = renderDoc.getElementById(bid.adUnitCode);
+
+  if (!slot) {
+    logError(`Sparteo Bid Adapter: outstream renderer could not find the ad slot for adUnitCode '${bid.adUnitCode}'.`);
     return;
   }
 
   const config = bid.renderer.getConfig() ?? {};
+  const win = renderDoc.defaultView || window;
 
   bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
-      targetId: bid.adUnitCode, // target div id to render video
-      adResponse: {
-        ad: {
-          video: {
-            content: bid.vastXml,
-            player_width: bid.width,
-            player_height: bid.height
+    if (!win.ANOutstreamVideo || typeof win.ANOutstreamVideo.renderAd !== 'function') {
+      logError('Sparteo Bid Adapter: ANOutstreamVideo is not available on the render window.');
+      return;
+    }
+    try {
+      win.ANOutstreamVideo.renderAd({
+        targetId: slot.id || bid.adUnitCode, // target div id to render video
+        adResponse: {
+          ad: {
+            video: {
+              content: bid.vastXml,
+              player_width: bid.width,
+              player_height: bid.height
+            }
           }
-        }
-      },
-      sizes: [bid.width, bid.height],
-      rendererOptions: config.options ?? {}
-    });
+        },
+        sizes: [bid.width, bid.height],
+        rendererOptions: config.options ?? {}
+      });
+    } catch (err) {
+      logError('Sparteo Bid Adapter: ANOutstreamVideo.renderAd threw an error', err);
+    }
   });
 }
 
@@ -227,7 +248,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    const payload = converter.toORTB({ bidRequests, bidderRequest })
+    const payload = converter.toORTB({ bidRequests, bidderRequest });
 
     const endpoint = bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL;
     const url = replaceMacros(payload, endpoint);
@@ -245,7 +266,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     let syncurl = '';
 
     if (!isSynced && !window.sparteoCrossfire?.started) {
@@ -254,8 +275,12 @@ export const spec = {
         syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
         syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
       }
-      if (uspConsent && uspConsent.consentString) {
-        syncurl += `&usp_consent=${uspConsent.consentString}`;
+      if (uspConsent) {
+        syncurl += '&usp_consent=' + encodeURIComponent(uspConsent);
+      }
+      if (gppConsent) {
+        syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString || '');
+        syncurl += '&gpp_sid=' + encodeURIComponent((gppConsent.applicableSections || []).join(','));
       }
 
       if (syncOptions.iframeEnabled) {

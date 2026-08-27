@@ -1,5 +1,6 @@
-import { deepAccess, deepSetValue, generateUUID, logInfo } from '../../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getParameterByName, logInfo } from '../../src/utils.js';
 import { Renderer } from '../../src/Renderer.js';
+import { config } from '../../src/config.js';
 import { getCurrencyFromBidderRequest } from '../ortb2Utils/currency.js';
 import { INSTREAM, OUTSTREAM } from '../../src/video.js';
 import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
@@ -7,17 +8,18 @@ import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
 import { StorageManager } from '../../src/storageManager.js';
 import { BidRequest, ORTBImp, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
 import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { Nexx360ServerAuction } from './types.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 let sessionId:string | null = null;
 
 const getSessionId = ():string => {
-  if (!sessionId) {
-    sessionId = generateUUID();
-  }
-  return sessionId;
-}
+  if (sessionId) return sessionId;
+  const id:string = generateUUID();
+  sessionId = id;
+  return id;
+};
 
 let lastPageUrl:string = '';
 let requestCounter:number = 0;
@@ -28,7 +30,7 @@ const getRequestCount = ():number => {
   }
   lastPageUrl = window.location.pathname;
   return 0;
-}
+};
 
 export const getLocalStorageFunctionGenerator = <
   T extends Record<string, string>
@@ -101,7 +103,7 @@ export type CreateRenderPayload = {
   divId: string,
   width: number,
   height: number
-}
+};
 
 export const createRenderer = (
   { requestId, vastXml, divId, width, height }: CreateRenderPayload
@@ -134,7 +136,7 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
     deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
-}
+};
 
 export const enrichRequest = (
   request: ORTBRequest,
@@ -206,28 +208,55 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
   if (bid.ext.mediaType === NATIVE) {
     try {
-      response.native = { ortb: JSON.parse(bid.adm) }
+      response.native = { ortb: JSON.parse(bid.adm) };
     } catch (e) {}
   }
   return response as BidResponse;
 }
 
+// --- Server auction data extraction ---
+
+/**
+ * Bid response carrying the server-side auction data from the response `ext`,
+ * for consumption by the Nexx360 analytics adapter on the `bidResponse` event.
+ */
+export type Nexx360BidResponse = BidResponse & { serverAuctionData?: Nexx360ServerAuction };
+
+function getServerAuction(responseBody: any): Nexx360ServerAuction | null {
+  const serverAuction = deepAccess(responseBody, 'ext.serverAuction');
+  if (serverAuction && typeof serverAuction === 'object' && serverAuction.auctionId) {
+    return serverAuction as Nexx360ServerAuction;
+  }
+  return null;
+}
+
 export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
   if (!serverResponse.body) return [];
   const respBody = serverResponse.body as ORTBResponse;
-  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
 
-  const responses: BidResponse[] = [];
+  if (!respBody.seatbid || respBody.seatbid.length === 0) {
+    return [];
+  }
+
+  // Attach server-auction data to every bid response (rather than holding it in
+  // module state) so it reaches the analytics adapter with the bid that produced
+  // it, and cannot leak into an unrelated auction if a bid is rejected by core.
+  const serverAuctionData = getServerAuction(respBody);
+
+  const responses: Nexx360BidResponse[] = [];
   for (let i = 0; i < respBody.seatbid.length; i++) {
     const seatbid = respBody.seatbid[i];
     for (let j = 0; j < seatbid.bid.length; j++) {
       const bid = seatbid.bid[j];
-      const response:BidResponse = createResponse(bid, respBody);
+      const response:Nexx360BidResponse = createResponse(bid, respBody);
+      if (serverAuctionData) {
+        response.serverAuctionData = serverAuctionData;
+      }
       responses.push(response);
     }
   }
   return responses;
-}
+};
 
 /**
  * Get the AMX ID
@@ -243,4 +272,16 @@ export const getAmxId = (
   }
   const amxId = storage.getDataFromLocalStorage('__amuidpb');
   return amxId || null;
-}
+};
+
+export const getGzipSetting = (
+  bidderCode: string,
+  defaultEnabled: boolean = true,
+): boolean => {
+  if (getParameterByName('nexx360_debug') === '1') return false;
+  const bidderConfig = config.getBidderConfig();
+  const gzipEnabled = bidderConfig[bidderCode]?.gzipEnabled;
+  if (gzipEnabled === true || gzipEnabled === 'true') return true;
+  if (gzipEnabled === false || gzipEnabled === 'false') return false;
+  return defaultEnabled;
+};

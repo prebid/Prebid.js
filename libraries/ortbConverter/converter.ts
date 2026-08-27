@@ -41,14 +41,14 @@ type Context = {
    * the default value to use for `bidResponse.ttl` (if the ORTB response does not provide one in `seatbid[].bid[].exp`).
    */
   ttl?: number;
-}
+};
 
 type RequestContext = Context & {
   /**
    * Map from imp id to the context object used to generate that imp.
    */
   impContext: { [impId: string]: Context };
-}
+};
 
 type Params<B extends BidderCode> = {
   [IMP]: (
@@ -65,9 +65,9 @@ type Params<B extends BidderCode> = {
     }
   ) => ORTBRequest;
   [BID_RESPONSE]: (
-    bid: ORTBResponse['seatbid'][number]['bid'][number],
+    bid: NonNullable<ORTBResponse['seatbid']>[number]['bid'][number],
     context: Context & {
-      seatbid: ORTBResponse['seatbid'][number];
+      seatbid: NonNullable<ORTBResponse['seatbid']>[number];
       imp: ORTBImp;
       bidRequest: BidRequest<B>;
       ortbRequest: ORTBRequest;
@@ -83,29 +83,29 @@ type Params<B extends BidderCode> = {
       bidRequests: BidRequest<B>[];
     }
   ) => AdapterResponse
-}
+};
 
 type Processors<B extends BidderCode> = {
   [M in keyof Params<B>]?: {
     [name: string]: (...args: [Partial<ReturnType<Params<B>[M]>>, ...Parameters<Params<B>[M]>]) => void;
   }
-}
+};
 
 type Customizers<B extends BidderCode> = {
   [M in keyof Params<B>]?: (buildObject: Params<B>[M], ...args: Parameters<Params<B>[M]>) => ReturnType<Params<B>[M]>;
-}
+};
 
 type Overrides<B extends BidderCode> = {
   [M in keyof Params<B>]?: {
-    [name: string]: (orig: Processors<B>[M][string], ...args: Parameters<Processors<B>[M][string]>) => void;
+    [name: string]: (orig: NonNullable<Processors<B>[M]>[string], ...args: Parameters<NonNullable<Processors<B>[M]>[string]>) => void;
   }
-}
+};
 
 type ConverterConfig<B extends BidderCode> = Customizers<B> & {
   context?: Context;
   processors?: () => Processors<B>;
   overrides?: Overrides<B>;
-}
+};
 
 export function ortbConverter<B extends BidderCode>({
   context: defaultContext = {},
@@ -133,11 +133,11 @@ export function ortbConverter<B extends BidderCode>({
             } catch (e) {
               errorHandler.call(this, e, ...args);
             }
-          }
+          };
         })();
       }
       return build.apply(this, args);
-    }
+    };
   }
 
   const buildImp = builder(IMP, imp,
@@ -196,7 +196,7 @@ export function ortbConverter<B extends BidderCode>({
       const ctx = {
         req: Object.assign({ bidRequests }, defaultContext, context),
         imp: {}
-      }
+      };
       ctx.req.impContext = ctx.imp;
       const imps = bidRequests.map(bidRequest => {
         const impContext = Object.assign({ bidderRequest, reqContext: ctx.req }, defaultContext, context);
@@ -225,7 +225,7 @@ export function ortbConverter<B extends BidderCode>({
     }): AdapterResponse {
       const ctx = REQ_CTX.get(request);
       if (ctx == null) {
-        throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`')
+        throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`');
       }
       function augmentContext(ctx, extraParams = {}) {
         return Object.assign(ctx, { ortbRequest: request }, extraParams);
@@ -242,7 +242,7 @@ export function ortbConverter<B extends BidderCode>({
       ).filter(Boolean);
       return buildResponse(bidResponses, response, augmentContext(ctx.req));
     }
-  }
+  };
 }
 
 export const defaultProcessors = memoize(() => mergeProcessors(DEFAULT_PROCESSORS, getProcessors(DEFAULT)));

@@ -48,7 +48,7 @@ function loadScript(url, doc) {
 }
 
 function getRenderFrames(node) {
-  return Array.from(node.querySelectorAll('iframe[srcdoc*="render"]'))
+  return Array.from(node.querySelectorAll('iframe[srcdoc*="render"]'));
 }
 
 function getInnerHTML(node) {
@@ -91,7 +91,7 @@ export function render({ adId, native }, { sendMessage }, win, getMarkup = getAd
       height: body.offsetHeight || win.document.documentElement.scrollHeight,
       width: body.offsetWidth
     });
-  }
+  };
   function replaceMarkup(target, markup) {
     // do not remove the rendering logic if it's embedded in this window; things will break otherwise
     const renderFrames = getRenderFrames(target);
