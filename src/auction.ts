@@ -147,6 +147,10 @@ export interface AuctionOptionsConfig {
    * Since Prebid 10.12, `pbjs.renderAd` wraps creatives in an additional iframe. This can cause problems for some creatives
    * that try to reach the top window and do not expect to find the extra iframe. You may set `legacyRender: true` to revert
    * to pre-10.12 rendering logic.
+   *
+   * The `document.write` path does not apply to bids carrying a `safeRenderer`: a safe renderer's script is written
+   * against the `pbRenderInFrame` contract and expects to run inside a frame, so it is not one of the creatives this
+   * option exists for. Main thread yielding is still skipped for every bid when this is set.
    */
   legacyRender?: boolean;
 
