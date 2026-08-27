@@ -1,7 +1,7 @@
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { deepSetValue, getWinDimensions, getWindowTop, isArray, triggerPixel, logWarn } from '../src/utils.js';
+import { deepSetValue, getWinDimensions, getWindowTop, isArray, triggerPixel, logWarn, safeJSONParse } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -26,16 +26,23 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const isVideoAd = ({ adm }) => /^<\?xml|<VAST/i.test(adm || '');
 
-const isNativeAd = ({ adm, admNative }) => {
-  if (admNative) {
-    return true;
+/**
+ * Extract native assets from a native `adm` payload, whether it's shaped as the
+ * root-level `{ assets: [...] }` this backend sends, or as the IAB-spec-wrapped
+ * `{ native: { assets: [...] } }` some older/other native responses use.
+ */
+const parseNativeAssets = adm => {
+  const parsed = safeJSONParse(adm);
+  if (Array.isArray(parsed?.assets)) {
+    return parsed;
   }
-  try {
-    return Array.isArray(JSON.parse(adm).assets);
-  } catch (err) {
-    return false;
+  if (Array.isArray(parsed?.native?.assets)) {
+    return parsed.native;
   }
+  return null;
 };
+
+const isNativeAd = ({ adm, admNative }) => Boolean(admNative) || parseNativeAssets(adm) != null;
 
 const isHTML = ({ adm }) => /^<html|<iframe/i.test(adm || '');
 
@@ -91,8 +98,8 @@ const applyClientHints = ortbRequest => {
       ]
     }];
 
-  const ch = { data };
-  ortbRequest.user = { ...ortbRequest.user, ...ch };
+  const existingData = ortbRequest.user?.data || [];
+  ortbRequest.user = { ...ortbRequest.user, data: [...existingData, ...data] };
 };
 
 const converter = ortbConverter({
@@ -177,9 +184,18 @@ const converter = ortbConverter({
       oneCodeDetection[bidRequest.bidId] = [siteid, slotid];
     }
 
-    // for native ads, copy bid.admNative to bid.adm
+    // for native ads, copy bid.admNative to bid.adm; normalize a wrapped
+    // `{ native: { assets: [...] } }` adm to the root-level shape the shared
+    // ortbConverter native processor expects.
     if (admNative && !adm) {
       bidResponse.adm = admNative;
+    } else if (context.mediaType === NATIVE && adm) {
+      const nativeAssets = parseNativeAssets(adm);
+      if (nativeAssets) {
+        bidResponse.adm = JSON.stringify(nativeAssets);
+      } else {
+        logWarn('Could not parse native data', adm);
+      }
     }
 
     const bid = buildBidResponse(bidResponse, context);
@@ -471,7 +487,7 @@ const onSetTargeting = (bid) => {
 const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['sspBC'],
+  aliases: [{ code: 'sspBC', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   isBidRequestValid,
   buildRequests,

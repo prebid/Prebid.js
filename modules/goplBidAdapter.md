@@ -17,6 +17,14 @@ Optional parameters:
 - site id 
 - adslot id
 
+# Storage
+
+The adapter's user-sync iframe (`getUserSyncs`) relays a cross-domain sync id ("stac")
+back to the page via `postMessage`; when present, it is written to local storage under
+the key `bc_stac` (`BCID_STORAGE_NAME`) and reused on subsequent auctions as `user.stac`
+in the bid request. This is a first-party identifier scoped to the bidder's own storage
+manager (`getStorageManager({ bidderCode: 'gopl' })`).
+
 # Test Parameters
 ```
 var adUnits = [

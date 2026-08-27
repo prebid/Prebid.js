@@ -679,6 +679,41 @@ describe('gopl adapter functionality', function () {
         'cur': 'PLN'
       }
     };
+    const serverResponseNativeWrapped = {
+      'body': {
+        'id': bidderRequestId,
+        'seatbid': [{
+          'bid': [{
+            'id': '3347324c-6889-46d2-a800-ae78a5214c06',
+            'impid': '080',
+            'price': 0.5,
+            'adid': 'lxHWkB7OnZeso3QiN1N4',
+            'nurl': '',
+            // per the IAB Native Ads response spec, `adm` may be wrapped as
+            // `{"native": {...}}` instead of the root-level shape this backend
+            // normally sends.
+            'adm': JSON.stringify({
+              'native': {
+                'assets': [
+                  { 'id': 0, 'title': { 'text': 'Title' } },
+                  { 'id': 1, 'img': { 'type': 3, 'url': 'https://img' } },
+                ],
+              },
+            }),
+            'adomain': ['adomain.pl'],
+            'cid': 'BZ4gAg21T5nNtxlUCDSW',
+            'crid': 'lxHWkB7OnZeso3QiN1N4',
+            'ext': {
+              'siteid': '8816',
+              'slotid': '80',
+            },
+          }],
+          'seat': 'dsp1',
+          'group': 0
+        }],
+        'cur': 'PLN'
+      }
+    };
     const emptyResponse = {
       'body': {
         'id': bidderRequestId,
@@ -763,6 +798,7 @@ describe('gopl adapter functionality', function () {
       serverResponseVideo,
       serverResponseNative,
       serverResponseNativeAdmNative,
+      serverResponseNativeWrapped,
       serverResponseWithBurl,
       emptyResponse
     };
@@ -852,6 +888,26 @@ describe('gopl adapter functionality', function () {
       expect(pvid.name).to.equal('pvid');
       expect(pvid).to.have.property('segment').that.is.an('array');
       expect(pvid.segment[0]).to.have.property('value');
+    });
+
+    it('should append client hints to existing user.data instead of overwriting it (e.g. Topics FPD)', function () {
+      const topicsSegment = { id: '600', name: 'topics', ext: { segtax: 600 }, segment: [{ id: '42' }] };
+      const bidRequestWithTopics = {
+        ...bidRequest,
+        ortb2: {
+          ...bidRequest.ortb2,
+          user: {
+            ...bidRequest.ortb2.user,
+            data: [topicsSegment],
+          },
+        },
+      };
+      const requestWithTopics = spec.buildRequests(bids, bidRequestWithTopics);
+      const payloadWithTopics = requestWithTopics ? requestWithTopics.data : { user: false };
+
+      expect(payloadWithTopics.user.data).to.deep.include(topicsSegment);
+      expect(payloadWithTopics.user.data.some(({ name }) => name === 'NetInfo')).to.be.true;
+      expect(payloadWithTopics.user.data.some(({ name }) => name === 'pvid')).to.be.true;
     });
 
     it('should send user eids', function () {
@@ -1139,6 +1195,15 @@ describe('gopl adapter functionality', function () {
       expect(resultNative[0].mediaType).to.equal('native');
     });
 
+    it('should support native ads wrapped as `{ native: { assets: [...] } }` in adm', function () {
+      const { serverResponseNativeWrapped } = prepareTestData();
+      let resultNative = spec.interpretResponse(serverResponseNativeWrapped, requestNative);
+
+      expect(resultNative.length).to.equal(1);
+      expect(resultNative[0].mediaType).to.equal('native');
+      expect(resultNative[0].cpm).to.equal(0.5);
+    });
+
     it('should copy burl from the response bid onto the interpreted bid', function () {
       const { serverResponseWithBurl } = prepareTestData();
       let result = spec.interpretResponse(serverResponseWithBurl, requestSingle);
@@ -1390,7 +1455,7 @@ describe('gopl adapter functionality', function () {
 
   describe('aliases', function () {
     it('should declare sspBC as alias inheriting gvlid 690', function () {
-      expect(spec.aliases).to.include('sspBC');
+      expect(spec.aliases).to.deep.include({ code: 'sspBC', gvlid: 690 });
       expect(spec.gvlid).to.equal(690);
     });
   });
