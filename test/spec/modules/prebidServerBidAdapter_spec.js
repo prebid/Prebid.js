@@ -3864,7 +3864,7 @@ describe('S2S Adapter', function () {
     const staticUniqueIds = ['1000', '1001', '1002', '1003'];
 
     before(function () {
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+      triggerPixelStub = sinon.stub(utils, 'politeTriggerPixel');
     });
 
     beforeEach(function () {
@@ -3886,7 +3886,7 @@ describe('S2S Adapter', function () {
     });
 
     afterEach(function () {
-      utils.triggerPixel.resetHistory();
+      utils.politeTriggerPixel.resetHistory();
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
       utils.getUniqueIdentifierStr.restore();
@@ -3894,7 +3894,7 @@ describe('S2S Adapter', function () {
     });
 
     after(function () {
-      triggerPixelStub.restore();
+      utils.politeTriggerPixel.restore();
     });
 
     it('should translate wurl and burl into eventtrackers', () => {
@@ -3918,7 +3918,7 @@ describe('S2S Adapter', function () {
       ]);
     });
 
-    it('should call triggerPixel if wurl is defined', function () {
+    it('should call politeTriggerPixel if wurl is defined', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
         win: 'https://wurl.org'
@@ -3930,11 +3930,11 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(addBidResponse);
       markWinningBid(addBidResponse.getCall(0).args[1]);
 
-      expect(utils.triggerPixel.called).to.be.true;
-      expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
+      expect(utils.politeTriggerPixel.called).to.be.true;
+      expect(utils.politeTriggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
     });
 
-    it('should not call triggerPixel if wurl is undefined', function () {
+    it('should not call politeTriggerPixel if wurl is undefined', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.events = {};
 
@@ -3943,7 +3943,7 @@ describe('S2S Adapter', function () {
 
       sinon.assert.calledOnce(addBidResponse);
       markWinningBid(addBidResponse.getCall(0).args[1]);
-      expect(utils.triggerPixel.called).to.be.false;
+      expect(utils.politeTriggerPixel.called).to.be.false;
     });
   });
 
