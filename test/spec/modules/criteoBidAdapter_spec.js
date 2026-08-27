@@ -117,6 +117,7 @@ describe('The Criteo bidding adapter', function () {
       topUrl: 'www.abc.com',
       version: '$prebid.version$'.replace(/\./g, '_'),
     };
+    const syncsWithoutCleanup = syncs => syncs.map(({ type, url }) => ({ type, url }));
 
     let sandbox,
       randomStub,
@@ -204,7 +205,7 @@ describe('The Criteo bidding adapter', function () {
 
       const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
 
-      expect(userSyncs).to.eql([{
+      expect(syncsWithoutCleanup(userSyncs)).to.eql([{
         type: 'iframe',
         url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gpp=#${JSON.stringify(expectedHashWithCookieData, Object.keys(expectedHashWithCookieData).sort()).replace(/"/g, '%22')}`
       }]);
@@ -228,7 +229,7 @@ describe('The Criteo bidding adapter', function () {
 
       const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
 
-      expect(userSyncs).to.eql([{
+      expect(syncsWithoutCleanup(userSyncs)).to.eql([{
         type: 'iframe',
         url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gpp=#${JSON.stringify(expectedHashWithLocalStorageData, Object.keys(expectedHashWithLocalStorageData).sort()).replace(/"/g, '%22')}`
       }]);
@@ -248,7 +249,7 @@ describe('The Criteo bidding adapter', function () {
       };
       const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, gdprConsent, undefined);
 
-      expect(userSyncs).to.eql([{
+      expect(syncsWithoutCleanup(userSyncs)).to.eql([{
         type: 'iframe',
         url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gdpr=1&gdpr_consent=ABC&gpp=#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
       }]);
@@ -257,7 +258,7 @@ describe('The Criteo bidding adapter', function () {
     it('forwards usp data', function () {
       const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, 'ABC');
 
-      expect(userSyncs).to.eql([{
+      expect(syncsWithoutCleanup(userSyncs)).to.eql([{
         type: 'iframe',
         url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&us_privacy=ABC&gpp=#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
       }]);
@@ -325,6 +326,23 @@ describe('The Criteo bidding adapter', function () {
 
         done();
       }, 0);
+    });
+
+    it('should stop listening for iframe responses when the sync is cleaned up', function () {
+      randomStub.returns(654321);
+      const [sync] = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+      expect(sync.onCleanup).to.be.a('function');
+
+      sync.onCleanup();
+      window.dispatchEvent(new MessageEvent('message', {
+        data: {
+          requestId: '654321',
+          callbacks: ['https://example.com/pixel']
+        },
+        origin: 'https://gum.criteo.com'
+      }));
+
+      expect(triggerPixelStub.called).to.be.false;
     });
 
     it('should write cookie only on TLD+1 level', function(done) {
