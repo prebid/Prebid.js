@@ -1627,6 +1627,42 @@ describe('getWinDimensions', () => {
     expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
+
+  // https://github.com/prebid/Prebid.js/issues/15446 (problem 2): scroll offsets change
+  // continuously, unlike the rest of this object, so they must reflect the current position on
+  // every read rather than being memoized behind the same TTL as properties that only change on
+  // resize - otherwise a caller combining a scroll offset with a freshly-measured rect can get
+  // values sampled at two different instants.
+  it('should read scrollTop/scrollLeft live, even within the 20ms cache window', () => {
+    // winDimensions reads from window.top (canAccessWindowTop() ? getWindowTop() :
+    // getWindowSelf()), which under Karma is not the same document as the bare `document`
+    // reference in this spec file - Karma runs specs inside an iframe.
+    const topDocumentElement = window.top.document.documentElement;
+    let scrollTop = 100;
+    let scrollLeft = 50;
+    Object.defineProperty(topDocumentElement, 'scrollTop', { configurable: true, get: () => scrollTop });
+    Object.defineProperty(topDocumentElement, 'scrollLeft', { configurable: true, get: () => scrollLeft });
+
+    try {
+      const before = getWinDimensions();
+      expect(before.document.documentElement.scrollTop).to.equal(100);
+      expect(before.document.documentElement.scrollLeft).to.equal(50);
+      const cachedInnerHeightBefore = before.innerHeight;
+
+      // still inside the 20ms cache window: a cached property must not change...
+      clock.tick(1);
+      scrollTop = 900;
+      scrollLeft = 450;
+      const during = getWinDimensions();
+      expect(during.innerHeight).to.equal(cachedInnerHeightBefore);
+      // ...but the live scroll offsets must reflect the new position immediately.
+      expect(during.document.documentElement.scrollTop).to.equal(900);
+      expect(during.document.documentElement.scrollLeft).to.equal(450);
+    } finally {
+      delete topDocumentElement.scrollTop;
+      delete topDocumentElement.scrollLeft;
+    }
+  });
 });
 
 describe('polite sync helpers', () => {

@@ -344,7 +344,8 @@ export function getExtNextMilImp(impId, bid) {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
+      // A genuine scroll offset of 0 (page at top) is valid, not missing, so ?? rather than ||.
+      scrollTop: window.pageYOffset ?? getWinDimensions().document.documentElement.scrollTop,
     },
   };
 
