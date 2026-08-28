@@ -293,8 +293,10 @@ export function parseXML(xml, bid) {
     if (ct) {
       const companion = xml.getElementsByTagName('Companion')[0];
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-      const htmlContent = document.createElement('html');
-      htmlContent.innerHTML = htmlResource.textContent;
+      // Parse in an inert document: the response markup is bidder-controlled, and
+      // assigning it to an element owned by the live document compiles event-handler
+      // attributes and starts image loads. Only attributes are read back from it.
+      const htmlContent = new window.DOMParser().parseFromString(htmlResource.textContent, 'text/html');
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
       ret.currency = extractCurrency(htmlContent, ret.currency);

@@ -37,8 +37,7 @@ describe('Ampliffy bid adapter Test', function () {
   const xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
   const companion = xml.getElementsByTagName('Companion')[0];
   const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-  const htmlContent = document.createElement('html');
-  htmlContent.innerHTML = htmlResource.textContent;
+  const htmlContent = new window.DOMParser().parseFromString(htmlResource.textContent, 'text/html');
 
   describe('Is allowed to bid up', function () {
     it('Should return true using a URL that is in domainMap', () => {
@@ -354,6 +353,50 @@ describe('Ampliffy bid adapter Test', function () {
       expect(cpmData).to.not.be.a('null');
       expect(cpmData.cpm).to.equal('.23');
       expect(cpmData.currency).to.equal('USD');
+    });
+
+    it('Should not run event handlers declared in the response markup', (done) => {
+      // The markup below is parsed, not rendered. Parsed into a document with
+      // scripting enabled, the onerror content attribute becomes a live handler
+      // and runs when the deliberately undecodable image fails.
+      const marker = '__ampliffyInertParseProbe';
+      const undecodableImage = 'data:image/png;base64,not-a-png';
+      const cleanUp = () => { delete window[marker]; };
+      window[marker] = false;
+      try {
+        const xmlStrHandler = `<?xml version="1.0" encoding="UTF-8"?>
+                  <Ads type="video">
+                    <Companion id="138316138683">
+                      <HTMLResource><![CDATA[
+                              <img src="${undecodableImage}" onerror="window.${marker} = true">
+                              <ad cpmMap=\'{"ES":".77"}\' cpmCurrency=\'CHF\' />
+                              ]]>
+                      </HTMLResource>
+                    </Companion>
+                    <Extensions><Extension type="geo"><Country>ES</Country></Extension></Extensions>
+                  </Ads>`;
+        const xmlHandler = new window.DOMParser().parseFromString(xmlStrHandler, 'text/xml');
+        const cpmData = parseXML(xmlHandler);
+
+        // Guards against passing vacuously: the payload really was parsed and read.
+        expect(cpmData.cpm).to.equal('.77');
+        expect(cpmData.currency).to.equal('CHF');
+
+        // A handler compiled during that parse would fire from an error task
+        // queued before this image's, so once this one reports, it has had its
+        // turn. Waiting on it rather than on a timer keeps the test off the clock
+        // and turns a missing signal into a timeout instead of a silent pass.
+        const control = new Image();
+        control.onerror = () => {
+          const fired = window[marker];
+          cleanUp();
+          done(fired ? new Error('an onerror handler from the response markup ran during parsing') : undefined);
+        };
+        control.src = undecodableImage;
+      } catch (e) {
+        cleanUp();
+        throw e;
+      }
     });
 
     it('It should return no ads when the CPM is less than zero.', () => {
