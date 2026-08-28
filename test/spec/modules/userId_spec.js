@@ -1252,6 +1252,29 @@ describe('User ID', function () {
         });
       });
 
+      it('should not release the auction when a filtered refresh cancels a pending submodule', () => {
+        // A refresh filtered by `submoduleNames` cancels the in-flight init and replaces
+        // it with a chain scoped to the named submodules. Submodules it did not name may
+        // still be fetching, and the auction must keep waiting for them.
+        startInit();
+        let auctionStarted = false;
+        startAuctionHook(() => {
+          auctionStarted = true;
+        }, { adUnits: [getAdUnitMock()] }, { delay: delay() });
+        return clearStack().then(() => {
+          // init has passed consent by now, so `initialized` is set and the refresh
+          // takes the cancel path; mockId's callback is still outstanding.
+          getGlobal().refreshUserIds({ submoduleNames: ['someOtherModule'] });
+          return clearStack();
+        }).then(() => {
+          expect(auctionStarted).to.be.false;
+          mockIdCallback.callArg(0, { id: { MOCKID: '1111' } });
+          return clearStack();
+        }).then(() => {
+          expect(auctionStarted).to.be.true;
+        });
+      });
+
       it('should continue the auction when init fails', (done) => {
         startInit();
         startAuctionHook(() => {

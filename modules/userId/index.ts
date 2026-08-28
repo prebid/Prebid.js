@@ -491,6 +491,10 @@ export function addIdData({ ortb2Fragments }) {
 
 const INIT_CANCELED = {};
 
+// Set by idSystemInitializer. Returns a promise for every submodule callback
+// started so far, or null if none have started yet.
+let pendingSubmoduleCallbacks = () => null;
+
 function idSystemInitializer({ mkDelay = delay } = {}) {
   const startInit = defer<void>();
   const startCallbacks = defer<void>();
@@ -528,6 +532,29 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     return allConsent.promise.finally(initMetrics.startTiming('userId.init.consent'));
   }
 
+  // Submodule name -> promise for the callback batch it is currently part of.
+  // A refresh cancels `done`, but the submodules it did not name may still be
+  // fetching, and `getUserIdsAsync` is documented to resolve only once *all* of
+  // them have initialized. A refresh supersedes the entries for the modules it
+  // does name, so an unfiltered refresh clears the map entirely.
+  const pendingByModule = new Map();
+
+  pendingSubmoduleCallbacks = () => pendingByModule.size
+    ? PbPromise.all(Array.from(pendingByModule.values())).then(() => undefined)
+    : null;
+
+  function trackCallbacks(mods, promise) {
+    mods.forEach((sm) => pendingByModule.set(sm.submodule.name, promise));
+    promise.then(() => {
+      mods.forEach((sm) => {
+        if (pendingByModule.get(sm.submodule.name) === promise) {
+          pendingByModule.delete(sm.submodule.name);
+        }
+      });
+    }, () => {});
+    return promise;
+  }
+
   let done = cancelAndTry(
     PbPromise.all([hooksReady, startInit.promise])
       .then(timeConsent)
@@ -539,7 +566,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       .then(checkRefs(() => {
         const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
+          return trackCallbacks(modWithCb, new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules)));
         }
       }))
   );
@@ -577,7 +604,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
+              return trackCallbacks(cbModules, new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules)));
             }
           }))
       );
@@ -825,7 +852,14 @@ function refreshUserIds({ submoduleNames }: {
  */
 
 function getUserIdsAsync(): Promise<Partial<UserId>> {
-  return retryOnCancel();
+  return retryOnCancel().then((ids) => {
+    // A refresh filtered by `submoduleNames` cancels the init chain and replaces
+    // it with one scoped to the named submodules, so `retryOnCancel` can resolve
+    // while submodules it did not name are still fetching. Honour the documented
+    // contract by waiting for those too.
+    const pending = pendingSubmoduleCallbacks();
+    return pending == null ? ids : pending.then(() => getUserIds());
+  });
 }
 
 export function getConsentHash() {
