@@ -37,7 +37,8 @@ describe('Ampliffy bid adapter Test', function () {
   const xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
   const companion = xml.getElementsByTagName('Companion')[0];
   const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-  const htmlContent = new window.DOMParser().parseFromString(htmlResource.textContent, 'text/html');
+  const htmlContent = document.implementation.createHTMLDocument('');
+  htmlContent.documentElement.innerHTML = htmlResource.textContent;
 
   describe('Is allowed to bid up', function () {
     it('Should return true using a URL that is in domainMap', () => {
@@ -362,12 +363,11 @@ describe('Ampliffy bid adapter Test', function () {
     });
 
     it('Should extract from a payload wrapped in html/head/body', () => {
-      // HTMLResource payloads generally carry their own document wrapper, and the
-      // parse behind this is a full document parse where it was a fragment parse
-      // with <html> as context. Extraction is unaffected either way - this is a
-      // characterization test, and it passes against both - but nothing else
-      // covers the wrapped shape at all. The unclosed <div> is deliberate: legal
-      // HTML and a fatal XML error, so this also pins that the parse stays lenient.
+      // HTMLResource payloads generally carry their own document wrapper, so the
+      // parse has to handle one. This is a characterization test: extraction is
+      // unaffected by the wrapper and it passes against the pre-change module too.
+      // The unclosed <div> is deliberate - legal HTML and a fatal XML error - so
+      // this also pins that the parse stays lenient.
       const xmlStrWrapped = `<?xml version="1.0" encoding="UTF-8"?>
                   <Ads type="video">
                     <Companion id="138316138683">
@@ -389,6 +389,31 @@ describe('Ampliffy bid adapter Test', function () {
       expect(cpmData.cpm).to.equal('.42');
       expect(cpmData.currency).to.equal('GBP');
       expect(cpmData.creativeURL).to.equal('https://bidder.ampliffy.com/gampad/ads?adName=wrapped.xml');
+    });
+
+    it('Should read the first attribute in document order, not one the parse invented', () => {
+      // Every extractor takes querySelectorAll('[attr]')[0], so a parse that
+      // surfaces an earlier match changes which element is read. An attribute on
+      // the payload's own <html> tag is the case that separates the inert parsers:
+      // a full document parse exposes it and it wins, ahead of the real values.
+      const xmlStrDecoy = `<?xml version="1.0" encoding="UTF-8"?>
+                  <Ads type="video">
+                    <Companion id="138316138683">
+                      <HTMLResource><![CDATA[<!doctype html>
+                              <html cpmMap=\'{"ES":"9.99"}\' cpmCurrency=\'USD\'>
+                                <body>
+                                  <div cpmMap=\'{"ES":".42"}\' cpmCurrency=\'GBP\'></div>
+                                </body>
+                              </html>]]>
+                      </HTMLResource>
+                    </Companion>
+                    <Extensions><Extension type="geo"><Country>ES</Country></Extension></Extensions>
+                  </Ads>`;
+      const xmlDecoy = new window.DOMParser().parseFromString(xmlStrDecoy, 'text/xml');
+      const cpmData = parseXML(xmlDecoy, { width: 300, height: 250 });
+
+      expect(cpmData.cpm).to.equal('.42');
+      expect(cpmData.currency).to.equal('GBP');
     });
 
     it('Should not run event handlers declared in the response markup', (done) => {

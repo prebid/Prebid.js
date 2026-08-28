@@ -297,7 +297,14 @@ export function parseXML(xml, bid) {
       // and only ever read for attribute values, so it must not be activated:
       // parsing it into any node owned by the live document compiles its
       // event-handler attributes into live handlers and starts its image loads.
-      const htmlContent = new window.DOMParser().parseFromString(htmlResource.textContent, 'text/html');
+      //
+      // `createHTMLDocument` rather than `DOMParser` because this keeps the same
+      // parse algorithm - a fragment parse with `<html>` as context - and so keeps
+      // the same document order. The extractors below all take
+      // `querySelectorAll(...)[0]`, so a parse that surfaces earlier matches
+      // changes which element they read, not just whether they find one.
+      const htmlContent = document.implementation.createHTMLDocument('');
+      htmlContent.documentElement.innerHTML = htmlResource.textContent;
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
       ret.currency = extractCurrency(htmlContent, ret.currency);
@@ -332,16 +339,13 @@ export function isAllowedToBidUp(html, currentURL) {
     if (allowedToPush) {
       const excludedURL = html.querySelectorAll('[excludedURLs]')[0];
       if (excludedURL) {
-        // TODO: this reads the attribute off `domainsMap`, not off `excludedURL`,
-        // the element just selected for it. It gives the right answer only when the
-        // first `[domainMap]` element is also the first `[excludedURLs]` element.
-        // When it is not, either the read throws - `domainsMap` is undefined if
-        // nothing carries `domainMap`, and otherwise `getAttribute` returns null,
-        // which `JSON.parse` turns into null for the `forEach` below to reject - or,
-        // if `domainsMap` happens to carry its own `excludedURLs`, it silently
-        // consults that list instead of the selected one and does not throw at all.
-        // Every path ends with `allowedToPush` still true, so an excluded URL is bid
-        // on, and only the throwing ones leave anything in the log.
+        // TODO: this reads the attribute off `domainsMap`, not off `excludedURL` -
+        // the element `querySelectorAll` just selected for exactly this purpose.
+        // The two are the same element only when the first `[domainMap]` match is
+        // also the first `[excludedURLs]` match, and when they are not, the wrong
+        // exclusion list is applied or the read throws into the catch below. Bids
+        // are both wrongly allowed and wrongly dropped as a result, and the paths
+        // that do not throw leave nothing behind to notice them by.
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
           const excluded = JSON.parse(excludedURLsString);
