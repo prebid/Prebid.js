@@ -225,7 +225,7 @@ describe("Deepintent adapter", function () {
       expect(data.imp[0].id).to.equal(request[0].bidId);
       expect(data.imp[0].tagid).to.equal("100013");
       expect(data.imp[0].displaymanager).to.equal("di_prebid");
-      expect(data.imp[0].displaymanagerver).to.equal("1.0.0");
+      expect(data.imp[0].displaymanagerver).to.equal("2.0.0");
     });
 
     it("bid request check: banner sends full format array", function () {
@@ -275,7 +275,7 @@ describe("Deepintent adapter", function () {
     it("bid request check: displaymanager check", function () {
       const bRequest = spec.buildRequests(request, bidderRequest);
       expect(bRequest.data.imp[0].displaymanager).to.equal("di_prebid");
-      expect(bRequest.data.imp[0].displaymanagerver).to.equal("1.0.0");
+      expect(bRequest.data.imp[0].displaymanagerver).to.equal("2.0.0");
     });
 
     it("bid request check: bidfloor from params when no price floors module", function () {
