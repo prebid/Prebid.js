@@ -6,32 +6,9 @@ import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, isArray, isStr, logError, logWarn } from '../src/utils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests}
- * validBidRequests
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapterManager.js').BidRequest<'ex_geniee'>} BidRequest
+ * @typedef {import('../src/adapterManager.js').BidderRequest<'ex_geniee'>} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- */
-
-/**
- * Public bid params for the Geniee Exchange bid adapter.
- *
- * @typedef {Object} ExchangeGenieeBidParams
- * @property {number} partnerId - The single per-publisher ID issued by Geniee
- * during integration. Must be a number that is an integer >= 1 (string forms
- * are rejected). Sent as the `id` query parameter (`/exchange?id=YOUR_ID`) and
- * used by the Exchange to authorize the request. Required.
- * @property {string} [currency] - Optional ISO-4217 currency code (`JPY` or
- * `USD`). When omitted, the currency module's `adServerCurrency` is used (USD
- * if unset); if that adServerCurrency is neither JPY nor USD, no request is
- * sent to the Exchange.
- * @property {string} [placementId] - Optional reporting label for the ad unit,
- * defined by the supply partner (not issued by Geniee). Use a fixed value per
- * ad unit; if omitted, Geniee reports cannot be broken down by ad unit.
- * Alphanumeric, hyphen and underscore, max 40 characters, case-insensitive
- * (`Sidebar` = `sidebar`). Sent as the `placement` query parameter
- * (`/exchange?id=YOUR_ID&placement=YOUR_PLACEMENT`) and validated by the
- * Exchange, not by the adapter.
  */
 
 const BIDDER_CODE = 'ex_geniee';
@@ -236,7 +213,7 @@ export const spec = {
    * each bid (adUnit) is sent as its own HTTP request instead of being batched
    * into one payload.
    *
-   * @param {validBidRequests} validBidRequests - an array of bids
+   * @param {BidRequest[]} validBidRequests - an array of bids
    * @param {BidderRequest} bidderRequest - the master bidRequest object
    * @return {Object[]} Info describing the requests to the server, one per bid.
    */
