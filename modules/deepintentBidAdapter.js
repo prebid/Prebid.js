@@ -2,6 +2,7 @@ import {
   deepAccess,
   deepSetValue,
   isArray,
+  isPlainObject,
   logError,
   logWarn,
   mergeDeep,
@@ -62,7 +63,11 @@ const converter = ortbConverter({
     // Banner: add pos from params. fillBannerImp does not read bidder params.
     // ps: this is a fallback. pos should be set in the mediaType.banner
     if (imp.banner) {
-      imp.banner.pos = bidRequest.params.pos || 0;
+      if (bidRequest.params.pos != null) {
+        imp.banner.pos = bidRequest.params.pos;
+      } else if (imp.banner.pos == null) {
+        imp.banner.pos = 0;
+      }
     }
 
     // Video: fillVideoImp (FEATURES.VIDEO=on in production) owns the mediaTypes.video →
@@ -70,14 +75,20 @@ const converter = ortbConverter({
     // params.video legacy path: warn the publisher and set a telemetry flag.
     if (deepAccess(bidRequest, "mediaTypes.video")) {
       const videoBidderParams = deepAccess(bidRequest, "params.video");
-      if (videoBidderParams && Object.keys(videoBidderParams).length > 0) {
+      if (isPlainObject(videoBidderParams) && Object.keys(videoBidderParams).length > 0) {
         logWarn(
           `${LOG_WARN_PREFIX}params.video is deprecated. Move video parameters to mediaTypes.video instead.`
         );
         imp.video = imp.video || {};
         Object.keys(ORTB_VIDEO_PARAMS).forEach((paramName) => {
           if (paramName in videoBidderParams) {
-            imp.video[paramName] = videoBidderParams[paramName];
+            if (ORTB_VIDEO_PARAMS[paramName](videoBidderParams[paramName])) {
+              imp.video[paramName] = videoBidderParams[paramName];
+            } else {
+              logWarn(
+                `${LOG_WARN_PREFIX}The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`
+              );
+            }
           }
         });
         imp.ext.di_pvideo = 1;
@@ -121,11 +132,15 @@ const converter = ortbConverter({
       request.user = mergeDeep({}, request.user, bidRequest.params.user);
     }
 
-    // user.eids arrives via FPD (ortb2.user.eids). Mirror to user.ext.eids for
-    // legacy DSP compatibility until confirmed no longer needed.
-    const eids = deepAccess(request, "user.eids");
-    if (isArray(eids) && eids.length > 0) {
-      deepSetValue(request, "user.ext.eids", eids);
+    // user.eids arrives via FPD (ortb2.user.eids). Converter usually fills
+    // user.ext.eids. Mirror whichever is present onto the other for legacy DSP
+    // compatibility until confirmed no longer needed.
+    const userEids = deepAccess(request, "user.eids");
+    const extEids = deepAccess(request, "user.ext.eids");
+    if (isArray(extEids) && extEids.length > 0 && !userEids) {
+      deepSetValue(request, "user.eids", extEids);
+    } else if (isArray(userEids) && userEids.length > 0 && !extEids) {
+      deepSetValue(request, "user.ext.eids", userEids);
     }
 
     return request;

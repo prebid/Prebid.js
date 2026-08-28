@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import sinon from "sinon";
 import { spec } from "modules/deepintentBidAdapter.js";
 import * as utils from "src/utils.js";
 
@@ -272,6 +273,59 @@ describe("Deepintent adapter", function () {
       expect(bRequest.data.imp[0].banner.pos).to.equal(1);
     });
 
+    it("bid request check: banner pos from mediaTypes when params.pos is omitted", function () {
+      const bannerPosRequest = [
+        {
+          bidder: "deepintent",
+          bidId: "banner-pos-mt",
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]],
+              pos: 3,
+            },
+          },
+          params: { tagId: "100013" },
+        },
+      ];
+      const bRequest = spec.buildRequests(bannerPosRequest, bidderRequest);
+      expect(bRequest.data.imp[0].banner.pos).to.equal(3);
+    });
+
+    it("bid request check: params.pos wins when both banner pos and params.pos are set", function () {
+      const bannerPosRequest = [
+        {
+          bidder: "deepintent",
+          bidId: "banner-pos-override",
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]],
+              pos: 3,
+            },
+          },
+          params: { tagId: "100013", pos: 1 },
+        },
+      ];
+      const bRequest = spec.buildRequests(bannerPosRequest, bidderRequest);
+      expect(bRequest.data.imp[0].banner.pos).to.equal(1);
+    });
+
+    it("bid request check: banner pos defaults to 0 when neither is set", function () {
+      const bannerPosRequest = [
+        {
+          bidder: "deepintent",
+          bidId: "banner-pos-default",
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]],
+            },
+          },
+          params: { tagId: "100013" },
+        },
+      ];
+      const bRequest = spec.buildRequests(bannerPosRequest, bidderRequest);
+      expect(bRequest.data.imp[0].banner.pos).to.equal(0);
+    });
+
     it("bid request check: displaymanager check", function () {
       const bRequest = spec.buildRequests(request, bidderRequest);
       expect(bRequest.data.imp[0].displaymanager).to.equal("di_prebid");
@@ -301,6 +355,28 @@ describe("Deepintent adapter", function () {
       expect(data.user.buyeruid).to.equal("di_testbuyeruid");
       expect(data.user.yob).to.equal(2002);
       expect(data.user.gender).to.equal("F");
+    });
+
+    it("bid request check: ortb2 user.ext.eids appear on user.ext.eids and user.eids", function () {
+      const eids = [
+        {
+          source: "example.com",
+          uids: [{ id: "eid-123", atype: 1 }],
+        },
+      ];
+      const bidderReqWithEids = {
+        ortb2: {
+          user: {
+            ext: {
+              eids,
+            },
+          },
+        },
+      };
+      const bRequest = spec.buildRequests(request, bidderReqWithEids);
+      const data = bRequest.data;
+      expect(data.user.ext.eids).to.deep.equal(eids);
+      expect(data.user.eids).to.deep.equal(eids);
     });
 
     it("bid request check: CCPA comes from ortb2.regs", function () {
@@ -631,6 +707,78 @@ describe("Deepintent adapter", function () {
         "video/mp4",
         "video/x-flv",
       ]);
+    });
+
+    it("valid params.video fields copy onto imp.video with telemetry and deprecation warn", function () {
+      const bRequest = spec.buildRequests(videoBidRequests, bidderRequest);
+      const video = bRequest.data.imp[0].video;
+      expect(video.mimes).to.deep.equal(["video/mp4", "video/x-flv"]);
+      expect(video.minduration).to.equal(5);
+      expect(video.maxduration).to.equal(30);
+      expect(video.startdelay).to.equal(5);
+      expect(video.playbackmethod).to.deep.equal([1, 3]);
+      expect(video.api).to.deep.equal([1, 2]);
+      expect(video.protocols).to.deep.equal([2, 3]);
+      expect(video.battr).to.deep.equal([13, 14]);
+      expect(video.minbitrate).to.equal(10);
+      expect(video.maxbitrate).to.equal(10);
+      expect(bRequest.data.imp[0].ext.di_pvideo).to.equal(1);
+      expect(warnStub.calledWith(sinon.match(/deprecated/))).to.be.true;
+    });
+
+    it("invalid params.video values are omitted and logWarn is called", function () {
+      const invalidVideoRequest = [
+        {
+          bidder: "deepintent",
+          bidId: "video-invalid-params",
+          mediaTypes: {
+            video: { playerSize: [640, 480], context: "instream" },
+          },
+          params: {
+            tagId: "100013",
+            video: {
+              mimes: ["video/mp4"],
+              protocols: [99],
+              minduration: 5.5,
+              maxduration: "30",
+            },
+          },
+        },
+      ];
+      const bRequest = spec.buildRequests(invalidVideoRequest, bidderRequest);
+      const video = bRequest.data.imp[0].video;
+      expect(video.mimes).to.deep.equal(["video/mp4"]);
+      expect(video.protocols).to.equal(undefined);
+      expect(video.minduration).to.equal(undefined);
+      expect(video.maxduration).to.equal(undefined);
+      expect(bRequest.data.imp[0].ext.di_pvideo).to.equal(1);
+      expect(warnStub.calledWith(sinon.match(/deprecated/))).to.be.true;
+      expect(warnStub.calledWith(sinon.match(/misformating/))).to.be.true;
+    });
+
+    it("non-object params.video does not throw", function () {
+      const nonObjectVideoRequest = [
+        {
+          bidder: "deepintent",
+          bidId: "video-non-object-params",
+          mediaTypes: {
+            video: { playerSize: [640, 480], context: "instream" },
+          },
+          params: {
+            tagId: "100013",
+            video: "not-an-object",
+          },
+        },
+      ];
+      expect(function () {
+        spec.buildRequests(nonObjectVideoRequest, bidderRequest);
+      }).to.not.throw();
+      const bRequest = spec.buildRequests(
+        nonObjectVideoRequest,
+        bidderRequest
+      );
+      expect(bRequest.data.imp[0].ext.di_pvideo).to.be.undefined;
+      expect(warnStub.calledWith(sinon.match(/deprecated/))).to.be.false;
     });
   });
 
