@@ -344,8 +344,12 @@ export function getExtNextMilImp(impId, bid) {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      // A genuine scroll offset of 0 (page at top) is valid, not missing, so ?? rather than ||.
-      scrollTop: window.pageYOffset ?? getWinDimensions().document.documentElement.scrollTop,
+      // getWinDimensions().document.documentElement.scrollTop already resolves to window.top
+      // when accessible (falling back to window.self, safely, when it's cross-origin) and reads
+      // it live - see winDimensions.js. Reading window.pageYOffset directly here instead would
+      // measure the local window, which inside a same-origin (friendly) iframe is normally 0
+      // regardless of how far the actual page has scrolled.
+      scrollTop: getWinDimensions().document.documentElement.scrollTop,
     },
   };
 
