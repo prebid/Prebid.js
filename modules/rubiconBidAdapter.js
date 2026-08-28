@@ -1156,7 +1156,7 @@ export function getPriceGranularity(config) {
 // Function to validate the required video params
 export function hasValidVideoParams(bid) {
   let isValid = true;
-  // incase future javascript changes the string represenation of the array or number classes!
+  // in case future javascript changes the string representation of the array or number classes!
   const arrayType = Object.prototype.toString.call([]);
   const numberType = Object.prototype.toString.call(0);
   // required params and their associated object type
