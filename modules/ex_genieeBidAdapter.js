@@ -1,18 +1,16 @@
-import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, deepSetValue, isArray, isStr, logError, logWarn} from '../src/utils.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue, isArray, isStr, logError, logWarn } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests}
  * validBidRequests
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest}
- * BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse}
- * ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
 /**
@@ -105,8 +103,8 @@ function resolveEndpoint(validBidRequests) {
   const partnerId = deepAccess(validBidRequests, '0.params.partnerId');
   const placementId = deepAccess(validBidRequests, '0.params.placementId');
   const url = `${DEFAULT_ENDPOINT}?id=${encodeURIComponent(partnerId)}`;
-  return placementId ? `${url}&placement=${encodeURIComponent(placementId)}` :
-                       url;
+  return placementId ? `${url}&placement=${encodeURIComponent(placementId)}`
+    : url;
 }
 
 /**
@@ -271,7 +269,7 @@ export const spec = {
 
       // context.currency is the fallback for bid responses that omit `cur`.
       const data = converter.toORTB(
-          {bidRequests: [bid], bidderRequest, context: {currency}});
+        { bidRequests: [bid], bidderRequest, context: { currency } });
       deepSetValue(data, 'cur', [currency]);
       // Splitting one auction into one request per imp otherwise leaves the
       // payloads carrying unrelated random ids. Derive the id from the bidder
@@ -333,11 +331,11 @@ export const spec = {
     // server-side before responding. It also returns no nurl; the impression
     // beacon is embedded in adm, so it fires when the creative renders.
     return converter
-        .fromORTB({
-          response: body,
-          request: request.data,
-        })
-        .bids;
+      .fromORTB({
+        response: body,
+        request: request.data,
+      })
+      .bids;
   },
 
   /**
@@ -374,7 +372,7 @@ export const spec = {
       const iframeUrl = deepAccess(serverResponse, 'body.ext.usersync.iframe');
       if (isStr(iframeUrl) && iframeUrl && !seen.has(iframeUrl)) {
         seen.add(iframeUrl);
-        syncs.push({type: 'iframe', url: iframeUrl});
+        syncs.push({ type: 'iframe', url: iframeUrl });
       }
     });
     // The Exchange returns ext.usersync only on a winning response. Returning
