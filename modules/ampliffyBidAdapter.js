@@ -332,13 +332,12 @@ export function isAllowedToBidUp(html, currentURL) {
     if (allowedToPush) {
       const excludedURL = html.querySelectorAll('[excludedURLs]')[0];
       if (excludedURL) {
-        // TODO: pre-existing bug, not fixed here to keep this change to one concern.
-        // This reads the attribute off `domainsMap` rather than off `excludedURL`,
-        // the element just selected for it. It only works when both attributes sit
-        // on the same element, which is the only shape the tests cover. Otherwise
-        // the value is null, or `domainsMap` is undefined and this throws; either
-        // way the catch below swallows it and `allowedToPush` stays true, so the
-        // exclusion list is silently ignored and an excluded URL is bid on.
+        // TODO: this reads the attribute off `domainsMap`, not off `excludedURL`,
+        // the element just selected for it. It works only when `domainMap` and
+        // `excludedURLs` are on the same element. Otherwise `getAttribute` returns
+        // null, or `domainsMap` is undefined and this throws; either way the catch
+        // below leaves `allowedToPush` true, so the exclusion list is ignored and
+        // an excluded URL is bid on.
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
           const excluded = JSON.parse(excludedURLsString);
