@@ -286,7 +286,7 @@ export const spec = {
     }
     const hasBannerOrNativeMediaType = [BANNER, NATIVE].filter(mediaType => bidFormats.includes(mediaType)).length > 0;
     if (!hasBannerOrNativeMediaType) return valid;
-    return valid && hasBannerOrNativeMediaType;
+    return valid;
   },
   /**
    * @param {BidRequest[]} bidRequests
