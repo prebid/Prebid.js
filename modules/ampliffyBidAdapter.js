@@ -295,9 +295,8 @@ export function parseXML(xml, bid) {
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
       // Parse in an inert document. `htmlResource.textContent` is bidder-controlled
       // and only ever read for attribute values, so it must not be activated:
-      // parsing it into any node owned by the live document (as
-      // `createElement('html')` + `innerHTML` did) compiles event-handler
-      // attributes and starts image loads.
+      // parsing it into any node owned by the live document compiles its
+      // event-handler attributes into live handlers and starts its image loads.
       const htmlContent = new window.DOMParser().parseFromString(htmlResource.textContent, 'text/html');
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
@@ -334,12 +333,15 @@ export function isAllowedToBidUp(html, currentURL) {
       const excludedURL = html.querySelectorAll('[excludedURLs]')[0];
       if (excludedURL) {
         // TODO: this reads the attribute off `domainsMap`, not off `excludedURL`,
-        // the element just selected for it. It works only when `domainMap` and
-        // `excludedURLs` are on the same element. Otherwise it throws: `domainsMap`
-        // is undefined when the payload carries no `domainMap` at all, and
-        // otherwise `getAttribute` returns null, which `JSON.parse` turns into null
-        // and the `forEach` below rejects. The catch then leaves `allowedToPush`
-        // true, so the exclusion list is ignored and an excluded URL is bid on.
+        // the element just selected for it. It gives the right answer only when the
+        // first `[domainMap]` element is also the first `[excludedURLs]` element.
+        // When it is not, either the read throws - `domainsMap` is undefined if
+        // nothing carries `domainMap`, and otherwise `getAttribute` returns null,
+        // which `JSON.parse` turns into null for the `forEach` below to reject - or,
+        // if `domainsMap` happens to carry its own `excludedURLs`, it silently
+        // consults that list instead of the selected one and does not throw at all.
+        // Every path ends with `allowedToPush` still true, so an excluded URL is bid
+        // on, and only the throwing ones leave anything in the log.
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
           const excluded = JSON.parse(excludedURLsString);

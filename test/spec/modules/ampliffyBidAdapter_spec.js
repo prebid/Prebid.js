@@ -313,6 +313,12 @@ describe('Ampliffy bid adapter Test', function () {
     });
   });
   describe('Interpret response', function () {
+    // Set by markup under test, below, and read back from the global scope an
+    // inline handler would run in. Cleared here so it cannot outlive its test
+    // even on a path that never reaches the test's own cleanup.
+    const INERT_MARKER = '__ampliffyInertParseProbe';
+    afterEach(() => { delete window[INERT_MARKER]; });
+
     const bidRequest = {
       bidRequest: {
         adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -389,7 +395,7 @@ describe('Ampliffy bid adapter Test', function () {
       // The markup below is parsed, not rendered. Parsed into a document with
       // scripting enabled, the onerror content attribute becomes a live handler
       // and runs when the deliberately undecodable image fails.
-      const marker = '__ampliffyInertParseProbe';
+      const marker = INERT_MARKER;
       const undecodableImage = 'data:image/png;base64,not-a-png';
       const cleanUp = () => { delete window[marker]; };
       window[marker] = false;
@@ -420,21 +426,24 @@ describe('Ampliffy bid adapter Test', function () {
         // magnitude beyond that: fail the moment the marker flips, pass only once
         // the deadline has gone by without it flipping.
         //
+        // The deadline is elapsed time, not a tick count. Timer delivery is not
+        // guaranteed to keep to the interval - a browser throttles timers hard in
+        // a backgrounded page - and counting ticks would turn that into a mocha
+        // timeout on a correct module.
+        //
         // Waiting on a second image's error event instead does not work, however
         // much tidier it looks. The two error tasks are queued sub-millisecond
         // apart and nothing orders them, so that version passes against a module
         // that does run the handler about half the time.
         const deadlineMs = 500;
-        const intervalMs = 10;
-        let waitedMs = 0;
+        const startedAt = Date.now();
         const poll = setInterval(() => {
-          waitedMs += intervalMs;
           const fired = window[marker];
-          if (!fired && waitedMs < deadlineMs) return;
+          if (!fired && Date.now() - startedAt < deadlineMs) return;
           clearInterval(poll);
           cleanUp();
           done(fired ? new Error('an onerror handler from the response markup ran during parsing') : undefined);
-        }, intervalMs);
+        }, 10);
       } catch (e) {
         cleanUp();
         throw e;
