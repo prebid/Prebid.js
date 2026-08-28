@@ -370,7 +370,7 @@ export const spec = {
 
       // multiple requests are used if bids groups have more than 10 bids
       requests = filteredHttpRequest.concat(Object.keys(groupedBidRequests).reduce((aggregate, bidGroupKey) => {
-        // for each partioned bidGroup, append a bidRequest to requests list
+        // for each partitioned bidGroup, append a bidRequest to requests list
         partitionArray(groupedBidRequests[bidGroupKey], SRA_BID_LIMIT).forEach(bidsInGroup => {
           const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
             return spec.createSlotParams(bidRequest, bidderRequest);
