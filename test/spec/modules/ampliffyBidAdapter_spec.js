@@ -355,6 +355,35 @@ describe('Ampliffy bid adapter Test', function () {
       expect(cpmData.currency).to.equal('USD');
     });
 
+    it('Should extract from a payload wrapped in html/head/body', () => {
+      // The parse this adapter now uses is a full document parse, where it was a
+      // fragment parse with <html> as context. That distinction only shows up on
+      // payloads carrying their own <html>/<head>/<body>, which HTMLResource
+      // payloads generally do. The unclosed <div> is deliberate: it is legal HTML
+      // and a fatal XML error, so this also pins that the parse stays lenient.
+      const xmlStrWrapped = `<?xml version="1.0" encoding="UTF-8"?>
+                  <Ads type="video">
+                    <Companion id="138316138683">
+                      <HTMLResource><![CDATA[<!doctype html>
+                              <html><head></head>
+                                <body>
+                                  <div class="GoogleActiveViewInnerContainer"></div>
+                                  <div cpmMap=\'{"ES":".42"}\' cpmCurrency=\'GBP\'
+                                       creativeMap=\'{"https://bidder.ampliffy.com/gampad/ads?adName=wrapped.xml":["ES"]}\'>
+                                </body>
+                              </html>]]>
+                      </HTMLResource>
+                    </Companion>
+                    <Extensions><Extension type="geo"><Country>ES</Country></Extension></Extensions>
+                  </Ads>`;
+      const xmlWrapped = new window.DOMParser().parseFromString(xmlStrWrapped, 'text/xml');
+      const cpmData = parseXML(xmlWrapped, { width: 300, height: 250 });
+
+      expect(cpmData.cpm).to.equal('.42');
+      expect(cpmData.currency).to.equal('GBP');
+      expect(cpmData.creativeURL).to.equal('https://bidder.ampliffy.com/gampad/ads?adName=wrapped.xml');
+    });
+
     it('Should not run event handlers declared in the response markup', (done) => {
       // The markup below is parsed, not rendered. Parsed into a document with
       // scripting enabled, the onerror content attribute becomes a live handler
@@ -368,8 +397,8 @@ describe('Ampliffy bid adapter Test', function () {
                   <Ads type="video">
                     <Companion id="138316138683">
                       <HTMLResource><![CDATA[
-                              <img src="${undecodableImage}" onerror="window.${marker} = true">
-                              <ad cpmMap=\'{"ES":".77"}\' cpmCurrency=\'CHF\' />
+                              <img src="${undecodableImage}" onerror="window.${marker} = true"
+                                   cpmMap=\'{"ES":".77"}\' cpmCurrency=\'CHF\'>
                               ]]>
                       </HTMLResource>
                     </Companion>
@@ -378,7 +407,10 @@ describe('Ampliffy bid adapter Test', function () {
         const xmlHandler = new window.DOMParser().parseFromString(xmlStrHandler, 'text/xml');
         const cpmData = parseXML(xmlHandler);
 
-        // Guards against passing vacuously: the payload really was parsed and read.
+        // Guards against passing vacuously. These attributes sit on the same
+        // element as the handler, so reading them back proves that this element
+        // survived the parse - a strategy that dropped or stripped it could not
+        // reach here and then claim inertness.
         expect(cpmData.cpm).to.equal('.77');
         expect(cpmData.currency).to.equal('CHF');
 

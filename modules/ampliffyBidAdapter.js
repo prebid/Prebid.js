@@ -293,9 +293,10 @@ export function parseXML(xml, bid) {
     if (ct) {
       const companion = xml.getElementsByTagName('Companion')[0];
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-      // Parse in an inert document: the response markup is bidder-controlled, and
-      // assigning it to an element owned by the live document compiles event-handler
-      // attributes and starts image loads. Only attributes are read back from it.
+      // Parse in an inert document. The markup below is bidder-controlled and only
+      // ever read for attribute values, so it must not be activated: parsing it into
+      // any node owned by the live document (as `createElement('html')` + `innerHTML`
+      // did) compiles event-handler attributes and starts image loads.
       const htmlContent = new window.DOMParser().parseFromString(htmlResource.textContent, 'text/html');
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
