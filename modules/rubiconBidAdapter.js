@@ -899,7 +899,7 @@ function applyFPD(bidRequest, mediaType, data) {
       if (key !== 'adserver') {
         addBannerData(impExtData[key], 'site', key);
       } else if (impExtData[key].name === 'gam') {
-        addBannerData(impExtData[key].adslot, name, key);
+        addBannerData(impExtData[key].adslot, 'site', key);
       }
     });
 
