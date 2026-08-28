@@ -356,11 +356,12 @@ describe('Ampliffy bid adapter Test', function () {
     });
 
     it('Should extract from a payload wrapped in html/head/body', () => {
-      // The parse this adapter now uses is a full document parse, where it was a
-      // fragment parse with <html> as context. That distinction only shows up on
-      // payloads carrying their own <html>/<head>/<body>, which HTMLResource
-      // payloads generally do. The unclosed <div> is deliberate: it is legal HTML
-      // and a fatal XML error, so this also pins that the parse stays lenient.
+      // HTMLResource payloads generally carry their own document wrapper, and the
+      // parse behind this is a full document parse where it was a fragment parse
+      // with <html> as context. Extraction is unaffected either way - this is a
+      // characterization test, and it passes against both - but nothing else
+      // covers the wrapped shape at all. The unclosed <div> is deliberate: legal
+      // HTML and a fatal XML error, so this also pins that the parse stays lenient.
       const xmlStrWrapped = `<?xml version="1.0" encoding="UTF-8"?>
                   <Ads type="video">
                     <Companion id="138316138683">
@@ -414,17 +415,26 @@ describe('Ampliffy bid adapter Test', function () {
         expect(cpmData.cpm).to.equal('.77');
         expect(cpmData.currency).to.equal('CHF');
 
-        // A handler compiled during that parse would fire from an error task
-        // queued before this image's, so once this one reports, it has had its
-        // turn. Waiting on it rather than on a timer keeps the test off the clock
-        // and turns a missing signal into a timeout instead of a silent pass.
-        const control = new Image();
-        control.onerror = () => {
+        // A compiled handler fires from the image's error task, which lands well
+        // under a millisecond after the parse. Poll to a deadline orders of
+        // magnitude beyond that: fail the moment the marker flips, pass only once
+        // the deadline has gone by without it flipping.
+        //
+        // Waiting on a second image's error event instead does not work, however
+        // much tidier it looks. The two error tasks are queued sub-millisecond
+        // apart and nothing orders them, so that version passes against a module
+        // that does run the handler about half the time.
+        const deadlineMs = 500;
+        const intervalMs = 10;
+        let waitedMs = 0;
+        const poll = setInterval(() => {
+          waitedMs += intervalMs;
           const fired = window[marker];
+          if (!fired && waitedMs < deadlineMs) return;
+          clearInterval(poll);
           cleanUp();
           done(fired ? new Error('an onerror handler from the response markup ran during parsing') : undefined);
-        };
-        control.src = undecodableImage;
+        }, intervalMs);
       } catch (e) {
         cleanUp();
         throw e;

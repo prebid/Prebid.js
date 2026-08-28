@@ -293,10 +293,11 @@ export function parseXML(xml, bid) {
     if (ct) {
       const companion = xml.getElementsByTagName('Companion')[0];
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-      // Parse in an inert document. The markup below is bidder-controlled and only
-      // ever read for attribute values, so it must not be activated: parsing it into
-      // any node owned by the live document (as `createElement('html')` + `innerHTML`
-      // did) compiles event-handler attributes and starts image loads.
+      // Parse in an inert document. `htmlResource.textContent` is bidder-controlled
+      // and only ever read for attribute values, so it must not be activated:
+      // parsing it into any node owned by the live document (as
+      // `createElement('html')` + `innerHTML` did) compiles event-handler
+      // attributes and starts image loads.
       const htmlContent = new window.DOMParser().parseFromString(htmlResource.textContent, 'text/html');
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
@@ -334,10 +335,11 @@ export function isAllowedToBidUp(html, currentURL) {
       if (excludedURL) {
         // TODO: this reads the attribute off `domainsMap`, not off `excludedURL`,
         // the element just selected for it. It works only when `domainMap` and
-        // `excludedURLs` are on the same element. Otherwise `getAttribute` returns
-        // null, or `domainsMap` is undefined and this throws; either way the catch
-        // below leaves `allowedToPush` true, so the exclusion list is ignored and
-        // an excluded URL is bid on.
+        // `excludedURLs` are on the same element. Otherwise it throws: `domainsMap`
+        // is undefined when the payload carries no `domainMap` at all, and
+        // otherwise `getAttribute` returns null, which `JSON.parse` turns into null
+        // and the `forEach` below rejects. The catch then leaves `allowedToPush`
+        // true, so the exclusion list is ignored and an excluded URL is bid on.
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
           const excluded = JSON.parse(excludedURLsString);
