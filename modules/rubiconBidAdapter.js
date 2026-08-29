@@ -767,10 +767,10 @@ export const spec = {
       let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
-      return [{
+      return {
         type: 'iframe',
         url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
-      }];
+      };
     }
   }
 };
