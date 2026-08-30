@@ -10,8 +10,11 @@ Maintainers: anton@stackup-ai.com, chen@stackup-ai.com, nicolas@stackup-ai.com
 
 The Stack Up RTD module enriches Prebid.js bid requests with contextual and audience segments derived from the content of the current page. Before the auction fires, the module calls the Stack Up enrichment API (or reads from a `sessionStorage` cache on revisit) and merges the response into the global `ortb2` fragments:
 
-- **`site.content.data`** — Stack Up Content Taxonomy 1.0 segments (segtax 502), such as topics, brand-safety signals and emotion signals attached to the article.
-- **`user.data`** — Stack Up Audience Taxonomy 1.0 segments (segtax 501) inferred from contextual signals.
+- **`site.content.data`** — IAB Content Taxonomy 2.2 (`segtax: 6`) and 3.1 (`segtax: 9`) segments, untagged Stack Up proprietary segments, and optional publisher profile data (`segtax: 600`).
+- **`site.cattax` / `site.pagecat`** — the matching Content Taxonomy 2.2 page category when one is available.
+- **`user.data`** — IAB Audience Taxonomy segments (`segtax: 4`) and untagged Stack Up proprietary audience segments inferred from contextual signals.
+
+During migration the module also accepts the legacy Stack Up content and audience values (`segtax: 502` and `segtax: 501`) from cached or not-yet-rebuilt enrichment responses.
 
 Every bidder that participates in the auction receives these segments in its `ortb2` object. No cookies, fingerprints, or user identifiers are transmitted to the Stack Up API — only a URL path and publisher domain.
 
@@ -124,25 +127,37 @@ After a successful enrichment the following fields are merged into the global `o
 ```json
 {
   "site": {
+    "cattax": 2,
+    "pagecat": ["IAB19-6"],
     "content": {
-      "id": "<articleId>",
       "title": "<article title>",
       "data": [
         {
           "name": "data.stackup-ai.com",
-          "ext": { "segtax": 502 },
+          "ext": { "segtax": 6 },
+          "segment": [{ "id": "324" }, { "id": "328" }]
+        },
+        {
+          "name": "data.stackup-ai.com",
+          "ext": { "segtax": 9 },
+          "segment": [{ "id": "602" }, { "id": "607" }]
+        },
+        {
+          "name": "data.stackup-ai.com",
           "segment": [
-            {
-              "id": "IAB-123",
-              "name": "Technology",
-              "ext": { "confidence": 0.95 }
-            }
+            { "id": "stackup:content:smartwatches" }
           ]
         }
       ],
       "ext": {
-        "brand_safety": {},
-        "emotion": {}
+        "stackup": {
+          "content_suitability": {
+            "framework": "garm",
+            "floor_violation": 0,
+            "risk": "low"
+          },
+          "emotion": {}
+        }
       }
     }
   },
@@ -150,21 +165,19 @@ After a successful enrichment the following fields are merged into the global `o
     "data": [
       {
         "name": "data.stackup-ai.com",
-        "ext": { "segtax": 501 },
-        "segment": [
-          {
-            "id": "AUD-456",
-            "name": "Tech Enthusiasts",
-            "ext": { "confidence": 0.87 }
-          }
-        ]
+        "ext": { "segtax": 4 },
+        "segment": [{ "id": "AUD-456" }]
+      },
+      {
+        "name": "data.stackup-ai.com",
+        "segment": [{ "id": "stackup:interests:technology" }]
       }
     ]
   }
 }
 ```
 
-`site.content.ext.brand_safety` and `site.content.ext.emotion` are optional fields populated when the API returns them. Existing publisher values in `ext` are preserved — the module only fills fields that are absent.
+Data blocks are matched by `name` plus `ext.segtax`, so the 2.2 and 3.1 blocks remain separate. Matching blocks are unioned by `segment[].id`; publisher-provided segment fields win on an ID collision. Existing publisher `site.cattax`, `site.pagecat`, and content extension values are preserved. The resolved URL path is used for the API lookup and cache key, but is not synthesized into `site.content.id`.
 
 ## Integration Example
 
