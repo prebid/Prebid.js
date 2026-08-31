@@ -1275,6 +1275,24 @@ describe('User ID', function () {
         });
       });
 
+      it('should not keep waiting on a callback the refresh superseded without a new one', () => {
+        // mockId's first init leaves a callback outstanding that never fires. An
+        // unfiltered refresh whose getId returns an id and no callback supersedes
+        // that work, so `getUserIdsAsync` must stop waiting on the abandoned one:
+        // this is the escape from a stuck initialization that a forced refresh has
+        // always provided.
+        startInit();
+        let resolved = false;
+        return clearStack().then(() => {
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+          getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(resolved).to.be.true;
+          expect(getGlobal().getUserIds()).to.deep.equal({ mid: '2222' });
+        });
+      });
+
       it('should continue the auction when init fails', (done) => {
         startInit();
         startAuctionHook(() => {

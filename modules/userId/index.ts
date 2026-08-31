@@ -596,9 +596,17 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
           .catch(() => null)
           .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
           .then(checkRefs(() => {
+            const refreshed = allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name));
+            // Drop their previous entries first. The refresh supersedes whatever
+            // those modules had in flight even when the new init returns no
+            // callback or throws; leaving a stale entry behind would keep
+            // `getUserIdsAsync` waiting on work this refresh replaced, and would
+            // undo the escape from a stuck initialization that an unfiltered
+            // refresh is meant to provide.
+            refreshed.forEach((sm) => pendingByModule.delete(sm.submodule.name));
             const cbModules = initSubmodules(
               initModules,
-              allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
+              refreshed,
               true
             ).filter((sm) => {
               return sm.callback != null;
