@@ -137,6 +137,29 @@ function validatePartnerId(bid) {
 }
 
 /**
+ * Validates that params.placementId, when set, is a non-empty string. It is
+ * optional, but anything else would be silently dropped when mapping it to
+ * imp.tagid, so it is rejected here to keep isBidRequestValid consistent with
+ * what is actually sent. The Exchange-side format rules (charset, length) are
+ * not checked here; the Exchange owns those.
+ *
+ * @param {BidRequest} bid - the bid whose params to validate.
+ * @return {string|null} the reason to reject the bid, or null when it is
+ *     acceptable.
+ */
+function validatePlacementId(bid) {
+  const placementId = deepAccess(bid, 'params.placementId');
+  if (placementId === undefined || placementId === null) {
+    return null;
+  }
+  if (!isStr(placementId) || !placementId) {
+    return `params.placementId must be a non-empty string when set (got ${
+        JSON.stringify(placementId)})`;
+  }
+  return null;
+}
+
+/**
  * Validates that the bid declares the banner media type (mediaTypes.banner).
  *
  * @param {BidRequest} bid - the bid whose mediaTypes to validate.
@@ -168,6 +191,15 @@ export const spec = {
     const partnerIdError = validatePartnerId(bid);
     if (partnerIdError !== null) {
       logError(`[${BIDDER_CODE}] ${partnerIdError}.`);
+      return false;
+    }
+
+    // placementId is optional, but when present it must be the non-empty
+    // string that will become imp.tagid; accepting other types here would mean
+    // silently dropping them later.
+    const placementIdError = validatePlacementId(bid);
+    if (placementIdError !== null) {
+      logError(`[${BIDDER_CODE}] ${placementIdError}.`);
       return false;
     }
 

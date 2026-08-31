@@ -118,18 +118,29 @@ describe('Geniee Exchange bid adapter', () => {
       });
     });
 
-    // placementId is passed through to the Exchange, which owns its validation,
-    // so the adapter accepts whatever the publisher configured (including
-    // nothing at all).
-    it('does not validate placementId', () => {
-      [undefined, 'sidebar', 'Sidebar', 'top-banner_1', '', 'a'.repeat(41),
-        'side bar', 'サイドバー', 123]
+    // The adapter only checks that placementId, when set, is the non-empty
+    // string that will become imp.tagid; the Exchange owns the format rules
+    // (charset, length), so strings that violate them still pass here.
+    it('is valid when placementId is absent or a non-empty string', () => {
+      [undefined, null, 'sidebar', 'Sidebar', 'top-banner_1', 'a'.repeat(41),
+        'side bar', 'サイドバー']
         .forEach((placementId) => {
           expect(
             spec.isBidRequestValid(
               makeBid({ params: { partnerId: PARTNER_ID, placementId } })),
                 `placementId: ${JSON.stringify(placementId)}`)
             .to.equal(true);
+        });
+    });
+
+    it('is invalid when placementId is set but not a non-empty string', () => {
+      ['', 123, 0, true, {}, ['sidebar']]
+        .forEach((placementId) => {
+          expect(
+            spec.isBidRequestValid(
+              makeBid({ params: { partnerId: PARTNER_ID, placementId } })),
+                `placementId: ${JSON.stringify(placementId)}`)
+            .to.equal(false);
         });
     });
 
