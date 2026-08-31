@@ -148,23 +148,6 @@ function getFloorPrice(bid, currency) {
 }
 
 /**
- * Get Floor Price from Prebid Price Floors Module
- * @param {Object} bid - Object bid request
- * @param {string} currency - currency unit
- * @returns {number|null}
- */
-function getFloorPrice(bid, currency) {
-  if (typeof bid.getFloor === 'function') {
-    const floorSize = (bid.sizes && bid.sizes.length === 1) ? bid.sizes[0] : '*';
-    const floorInfo = bid.getFloor({ currency: currency, mediaType: BANNER, size: floorSize });
-    if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
-      return parseFloat(floorInfo.floor);
-    }
-  }
-  return null;
-}
-
-/**
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
