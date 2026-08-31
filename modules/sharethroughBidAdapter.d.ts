@@ -1,7 +1,7 @@
 /** Parameters accepted by the Sharethrough bidder adapter. */
 export interface SharethroughBidderParams {
   /** Sharethrough placement key. */
-  pkey: string;
+  pkey: string | number;
   /** Advertiser domains to block. */
   badv?: string[];
   /** IAB content categories to block. */
