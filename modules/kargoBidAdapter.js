@@ -5,7 +5,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapterManager.js').BidRequest} BidRequest
  * @typedef {import('./kargoBidAdapter.d.ts').KargoBidderParams} KargoBidderParams
  * @typedef {BidRequest & {params: KargoBidderParams}} KargoBidRequest
  */
