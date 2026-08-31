@@ -196,15 +196,28 @@ describe('Geniee Exchange bid adapter', () => {
       expect(request.data.user && request.data.user.eids).to.equal(undefined);
     });
 
-    it('keeps an auction type supplied by the publisher through ortb2', () => {
+    it('keeps at = 1 when the publisher sets it through ortb2', () => {
       const bids = [makeBid()];
       const bidderRequest = makeBidderRequest(bids, {
-        ortb2: { at: 2, site: { page: 'https://example.com/page' } },
+        ortb2: { at: 1, site: { page: 'https://example.com/page' } },
       });
       const [request] = spec.buildRequests(bids, bidderRequest);
 
-      expect(request.data.at).to.equal(2);
+      expect(request.data.at).to.equal(1);
     });
+
+    it('does not send a request when the publisher forces a non-1 auction type',
+      () => {
+        [2, 0, 3].forEach((at) => {
+          const bids = [makeBid()];
+          const bidderRequest = makeBidderRequest(bids, {
+            ortb2: { at, site: { page: 'https://example.com/page' } },
+          });
+
+          expect(spec.buildRequests(bids, bidderRequest),
+            `at: ${at}`).to.deep.equal([]);
+        });
+      });
 
     it('sends one request per bid so each payload has exactly one imp', () => {
       const bids = [

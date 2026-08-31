@@ -48,8 +48,8 @@ const converter = ortbConverter({
     // populates it), unlike Prebid Server, which fills in the same default (`at
     // == 0` -> 1) server side:
     // https://github.com/prebid/prebid-server/blob/0ba352315253f6692af6497d553cfb12909a1b8b/endpoints/openrtb2/auction.go#L1540-L1546
-    // An `at` supplied by the publisher through ortb2 FPD (merged in before
-    // this processor runs) is left alone.
+    // A non-1 `at` supplied by the publisher through ortb2 FPD (merged in
+    // before this processor runs) is rejected later in buildRequests.
     if (request.at == null) {
       deepSetValue(request, 'at', 1);
     }
@@ -254,6 +254,15 @@ export const spec = {
       // Exchange can tell which requests belong to the same auction and which
       // imp each carries.
       deepSetValue(data, 'id', `${bidderRequest.bidderRequestId}-${bid.bidId}`);
+
+      // The Exchange runs a first price auction only. `at` is 1 here unless
+      // the publisher forced another auction type through ortb2 FPD; in that
+      // case sending the request would misrepresent the auction, so skip it.
+      if (data.at !== 1) {
+        logWarn(`[${BIDDER_CODE}] at=${
+            data.at} is not supported (the Exchange is first price only); skipping request.`);
+        return requests;
+      }
 
       // The Exchange requires exactly one of site or app. The converter already
       // drops the extra client sections when several are set, so only the

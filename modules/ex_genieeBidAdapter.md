@@ -171,7 +171,8 @@ as `<bidderRequestId>-<imp[0].id>`. The values below are an illustrative capture
 - The Exchange requires `banner.w`/`banner.h`, which the adapter derives from the first size in
   `banner.format`.
 - Auction type: the Exchange runs a first price auction and Prebid.js does not populate `at`,
-  so the adapter defaults it to `1`. An `at` set by the publisher through `ortb2` is kept.
+  so the adapter defaults it to `1`. If the publisher forces any other value through `ortb2`,
+  no request is sent for that ad unit.
 - The request is sent with `withCredentials: true`, so browser cookies accompany it; the
   Exchange responds with credentialed CORS headers.
 - User IDs collected by Prebid userId modules (for example ID5), when configured on the page,
