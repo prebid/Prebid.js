@@ -278,9 +278,9 @@ export const spec = {
         url: resolveEndpoint([bid]),
         data,
         options: {
-          // Forward the browser's cookies for the Exchange domain (Geniee's
-          // own sync cookies and those of the ID solutions it syncs with).
-          // Requires the Exchange to answer with credentialed CORS headers.
+          // bidderFactory's POST defaults apply (credentialed `text/plain`).
+          // Prebid discourages `application/json`: it adds a CORS preflight
+          // (OPTIONS) round trip before the POST.
           withCredentials: true,
         },
       });
