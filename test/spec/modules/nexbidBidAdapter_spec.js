@@ -21,10 +21,16 @@ describe('nexbidBidAdapter', function () {
         sizes: [[300, 250]]
       }
     },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [{ asi: 'nexbid.uk', sid: '2606001', hp: 1 }]
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [{ asi: 'nexbid.uk', sid: '2606001', hp: 1 }]
+          }
+        }
+      }
     },
     ortb2Imp: {
       ext: { gpid: '/1039154/moneycontrol_300x250' }
@@ -76,11 +82,11 @@ describe('nexbidBidAdapter', function () {
       })).to.equal(true);
     });
 
-    it('should reject test mode for a production placement', function () {
+    it('should accept test flag for a production placement', function () {
       expect(spec.isBidRequestValid({
         ...bid,
         params: { ...bid.params, test: true }
-      })).to.equal(false);
+      })).to.equal(true);
     });
 
     ['publisherId', 'placementId'].forEach((field) => {
@@ -144,7 +150,7 @@ describe('nexbidBidAdapter', function () {
         test: false
       });
       expect(request.bids[0].sizes).to.deep.equal([[300, 250]]);
-      expect(request.bids[0].schain).to.deep.equal(bid.schain);
+      expect(request.bids[0].schain).to.deep.equal(bid.ortb2.source.ext.schain);
       expect(request.bids[0].ortb2Imp).to.deep.equal(bid.ortb2Imp);
       expect(request.bids[0].floor).to.deep.equal({ currency: 'USD', value: 0.25 });
     });
@@ -165,6 +171,18 @@ describe('nexbidBidAdapter', function () {
       expect(request.bids[0]).not.to.have.property('testCpm');
     });
 
+    it('should ignore test mode for a production placement and omit an unset configId', function () {
+      const params = {
+        publisherId: bid.params.publisherId,
+        placementId: bid.params.placementId,
+        test: true
+      };
+      const request = JSON.parse(spec.buildRequests([{ ...bid, params }], bidderRequest).data);
+
+      expect(request.bids[0].test).to.equal(false);
+      expect(request.bids[0]).not.to.have.property('configId');
+    });
+
     it('should read schain from normalized impression ORTB data', function () {
       const normalizedSchain = {
         ver: '1.0',
@@ -173,7 +191,6 @@ describe('nexbidBidAdapter', function () {
       };
       const request = JSON.parse(spec.buildRequests([{
         ...bid,
-        schain: undefined,
         ortb2: { source: { ext: { schain: normalizedSchain } } }
       }], bidderRequest).data);
 
@@ -188,7 +205,6 @@ describe('nexbidBidAdapter', function () {
       };
       const request = JSON.parse(spec.buildRequests([{
         ...bid,
-        schain: undefined,
         ortb2: undefined
       }], {
         ...bidderRequest,

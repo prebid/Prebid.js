@@ -17,8 +17,7 @@ export const spec = {
       isNonEmptyString(params.publisherId) &&
       isNonEmptyString(params.placementId) &&
       (params.configId === undefined || isNonEmptyString(params.configId)) &&
-      (params.test === undefined || typeof params.test === 'boolean') &&
-      (params.test !== true || isApprovedTestPlacement(params))
+      (params.test === undefined || typeof params.test === 'boolean')
     );
   },
 
@@ -62,7 +61,7 @@ function toNexBidRequest(bid, bidderRequest) {
     mediaTypes: bid.mediaTypes,
     publisherId: params.publisherId,
     placementId: params.placementId,
-    configId: params.configId || '',
+    ...(params.configId === undefined ? {} : { configId: params.configId }),
     test: params.test === true && isApprovedTestPlacement(params),
     schain: schainFrom(bid, bidderRequest),
     ortb2Imp: bid.ortb2Imp || null,
@@ -75,7 +74,7 @@ function isApprovedTestPlacement(params) {
 }
 
 function schainFrom(bid, bidderRequest) {
-  return bid.schain || schainFromOrtb(bid.ortb2) || schainFromOrtb(bidderRequest.ortb2) || null;
+  return schainFromOrtb(bid.ortb2) || schainFromOrtb(bidderRequest.ortb2) || null;
 }
 
 function schainFromOrtb(ortb2) {
