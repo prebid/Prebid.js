@@ -217,36 +217,20 @@ declare module './config' {
 
 export function newTargeting(auctionManager) {
   const latestAuctionForAdUnit = {};
-  const lockedGptSlotsByAuction = new Map<Identifier, Set<string>>();
+  // Auction whose targeting was last installed on GPT for each ad unit.
+  const installedTargetingAuctionId: Partial<Record<AdUnitCode, Identifier>> = {};
 
-  function lockGptSlotsForAuction(auctionId: Identifier, adUnitCodes: AdUnitCode[] = []) {
-    if (auctionId == null || !isGptPubadsDefined()) return;
-    const slotIds = new Set<string>();
-    Object.values(getGPTSlotsForAdUnits(adUnitCodes))
-      .flat()
-      .forEach(slot => {
-        const slotId = slot.getSlotElementId?.();
-        if (slotId != null) {
-          slotIds.add(slotId);
-        }
-      });
-    lockedGptSlotsByAuction.set(auctionId, slotIds);
-  }
+  function shouldResetGptTargetingOnBidWon(bid: Bid & { latestTargetedAuctionId?: Identifier }) {
+    const { adUnitCode, auctionId, latestTargetedAuctionId } = bid;
+    const installed = installedTargetingAuctionId[adUnitCode];
 
-  function unlockGptSlotsForAuction(auctionId: Identifier) {
-    lockedGptSlotsByAuction.delete(auctionId);
-  }
+    // No targeting installed yet — safe to clear.
+    if (installed == null) return true;
+    // Bid from the auction that currently owns GPT targeting.
+    if (auctionId === installed) return true;
+    // Cached bid from an older auction that was used in the installed auction's targeting.
+    if (latestTargetedAuctionId === installed) return true;
 
-  function isAnyGptSlotLocked(adUnitCode: AdUnitCode) {
-    if (!isGptPubadsDefined()) return false;
-    const slotIds = new Set(getGPTSlotsForAdUnits([adUnitCode])[adUnitCode]
-      .map(slot => slot.getSlotElementId?.())
-      .filter(slotId => slotId != null));
-    for (const lockedSlots of lockedGptSlotsByAuction.values()) {
-      for (const slotId of slotIds) {
-        if (lockedSlots.has(slotId)) return true;
-      }
-    }
     return false;
   }
 
@@ -359,6 +343,7 @@ export function newTargeting(auctionManager) {
       targeting.updateGPTTargeting(targetingSet, 'set', (targetingData) => lock.lock(targetingData));
 
       Object.keys(targetingSet).forEach((adUnitCode) => {
+        installedTargetingAuctionId[adUnitCode] = latestAuctionForAdUnit[adUnitCode];
         Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
           if (targetingKey === TARGETING_KEYS.AD_ID) {
             auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_STATUS.BID_TARGETING_SET);
@@ -438,18 +423,13 @@ export function newTargeting(auctionManager) {
     },
   };
 
-  events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes, auctionId }) => {
-    lockGptSlotsForAuction(auctionId, adUnitCodes);
+  events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
     targeting.presetGPTTargeting(adUnitCodes);
   });
 
-  events.on(EVENTS.BID_WON, ({ adUnitCode }) => {
-    if (isAnyGptSlotLocked(adUnitCode)) return;
-    targeting.presetGPTTargeting([adUnitCode]);
-  });
-
-  events.on(EVENTS.AUCTION_END, ({ auctionId }) => {
-    unlockGptSlotsForAuction(auctionId);
+  events.on(EVENTS.BID_WON, (bid) => {
+    if (!shouldResetGptTargetingOnBidWon(bid)) return;
+    targeting.presetGPTTargeting([bid.adUnitCode]);
   });
 
   function addBidToTargeting(bids, enableSendAllBids = false, deals = false): TargetingArray {
