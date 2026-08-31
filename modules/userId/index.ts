@@ -533,19 +533,31 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
   // be fetching, so its replacement chain waits for them rather than releasing the
   // auction early. Tracked from discovery rather than from the moment they start,
   // because with `auctionDelay` = 0 callbacks are held until after the auction ends.
-  const inFlight = new Set();
+  const inFlight = new Set<ReturnType<typeof defer<void>>>();
 
   function trackBatch() {
     const batch = defer<void>();
-    inFlight.add(batch.promise);
+    inFlight.add(batch);
     return () => {
-      inFlight.delete(batch.promise);
+      inFlight.delete(batch);
       batch.resolve();
     };
   }
 
   function pendingCallbacks() {
-    return inFlight.size ? PbPromise.all(Array.from(inFlight)).then(() => undefined) : null;
+    return inFlight.size
+      ? PbPromise.all(Array.from(inFlight, (batch) => batch.promise)).then(() => undefined)
+      : null;
+  }
+
+  // An unfiltered refresh replaces everything, including work that may never
+  // finish. Release the markers it supersedes, or a later filtered refresh would
+  // wait on a batch nothing is going to complete.
+  function supersedeAll() {
+    Array.from(inFlight).forEach((batch) => {
+      inFlight.delete(batch);
+      batch.resolve();
+    });
   }
 
   let settleInitial;
@@ -595,8 +607,15 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       // Captured before the refresh adds a batch of its own. An unfiltered refresh
       // supersedes everything, so it keeps escaping a stuck initialization; a
       // filtered one must not shorten the wait for what it left running.
-      const priorCallbacks = submoduleNames == null ? null : pendingCallbacks();
-      let settleRefresh;
+      let priorCallbacks = null;
+      if (submoduleNames == null) {
+        supersedeAll();
+      } else {
+        priorCallbacks = pendingCallbacks();
+      }
+      // Registered now, not when the chain gets there: a second refresh issued
+      // before this one has run must still see this batch as outstanding.
+      const settleRefresh = trackBatch();
       const chain = done
         .catch(() => null)
         .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
@@ -609,11 +628,10 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
             return sm.callback != null;
           });
           if (cbModules.length) {
-            settleRefresh = trackBatch();
             return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
           }
         }));
-      chain.then(() => settleRefresh?.(), () => settleRefresh?.());
+      chain.then(settleRefresh, settleRefresh);
       done = cancelAndTry(
         priorCallbacks == null ? chain : PbPromise.all([priorCallbacks, chain]).then(() => undefined)
       );

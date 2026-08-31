@@ -1309,6 +1309,81 @@ describe('User ID', function () {
         });
       });
 
+      describe('with a second submodule', () => {
+        let otherIdCallback;
+        let otherIdSystem;
+        let startBoth;
+
+        beforeEach(() => {
+          otherIdCallback = sinon.stub();
+          coreStorage.setCookie('OTHERID', '', EXPIRED_COOKIE_DATE);
+          otherIdSystem = {
+            name: 'otherId',
+            decode: (value) => ({ 'oid': value['OTHERID'] }),
+            getId: sinon.stub().callsFake(() => ({ callback: otherIdCallback }))
+          };
+          startBoth = () => {
+            init(config);
+            setSubmoduleRegistry([mockIdSystem, otherIdSystem]);
+            config.setConfig({
+              userSync: {
+                auctionDelay: 10,
+                userIds: [
+                  { name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' } },
+                  { name: 'otherId', storage: { name: 'OTHERID', type: 'cookie' } }
+                ]
+              }
+            });
+          };
+        });
+
+        it('should wait for a batch started by an earlier filtered refresh', () => {
+          // Two filtered refreshes back to back. The second must not resolve while the
+          // callback the first one started is still outstanding, so the batch has to be
+          // registered when the refresh is issued rather than when its chain runs.
+          startBoth();
+          const refreshedMockCallback = sinon.stub();
+          let resolved = false;
+          return clearStack().then(() => {
+            mockIdCallback.callArg(0, { MOCKID: 'first' });
+            otherIdCallback.callArg(0, { OTHERID: 'first' });
+            return clearStack();
+          }).then(() => {
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ callback: refreshedMockCallback }));
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            getGlobal().refreshUserIds({ submoduleNames: ['mockId'] });
+            getGlobal().refreshUserIds({ submoduleNames: ['otherId'] });
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.false; // mockId's refreshed callback is still pending
+            refreshedMockCallback.callArg(0, { MOCKID: '2222' });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+
+        it('should not inherit a stuck batch that an unfiltered refresh superseded', () => {
+          // mockId never calls back. An unfiltered refresh escapes it, and a filtered
+          // refresh afterwards must not pick the abandoned batch back up.
+          startBoth();
+          let resolved = false;
+          return clearStack().then(() => {
+            otherIdCallback.callArg(0, { OTHERID: 'first' });
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            return getGlobal().refreshUserIds().then(clearStack);
+          }).then(() => {
+            getGlobal().refreshUserIds({ submoduleNames: ['otherId'] });
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+      });
+
       it('should continue the auction when init fails', (done) => {
         startInit();
         startAuctionHook(() => {
