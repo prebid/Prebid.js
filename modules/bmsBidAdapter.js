@@ -19,7 +19,6 @@ import {
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
   'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';
-const GVLID = 1105;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_BID_TTL = 1200;
 
@@ -29,7 +28,6 @@ const converter = createOrtbConverter(ortbConverter, BANNER, DEFAULT_CURRENCY, o
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   // Validate bid request
@@ -40,7 +38,7 @@ export const spec = {
     const context = {
       publisherId: getPublisherIdFromBids(validBidRequests),
     };
-    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
+    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, null, converter);
 
     const bmsDataProcessor = (data) => JSON.stringify(data);
     const bmsOptions = { contentType: 'text/plain', withCredentials: true };
@@ -62,7 +60,7 @@ export const spec = {
           burl: bid.burl || null,
           meta: {
             advertiserDomains: bid.adomain || [],
-            networkId: bid.ext?.networkId || GVLID,
+            networkId: bid.ext?.networkId,
             networkName: bid.ext?.networkName || 'BMS',
           }
         };

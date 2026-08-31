@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        var RESOURCE_KEY = new URLSearchParams(location.search).get('resourceKey') || '';
+
+        // Cloud origin defaults to production; override with ?cloud=... to
+        // point the whole page (script, client-hint delegation and PMP) at a
+        // test deployment without editing this file.
+        var CLOUD_ORIGIN = (new URLSearchParams(location.search).get('cloud') || 'https://cloud.51degrees.com')
+            .trim().replace(/\/+$/, '');
+
+        // Delegate-CH must be written before the script tag below, so that the
+        // high-entropy client hints are delegated to whichever origin is in
+        // play. A static meta would pin this to one deployment.
+        document.write('<meta http-equiv="Delegate-CH" content="' +
+            ['sec-ch-ua-full-version-list', 'sec-ch-ua-model', 'sec-ch-ua-platform', 'sec-ch-ua-platform-version']
+                .map(function (h) { return h + ' ' + CLOUD_ORIGIN; }).join('; ') +
+            '">');
+
+        // PMP localStorage contract, mirroring resolveIdUsage() in
+        // modules/51DegreesRtdProvider.js. The page owns this read because in
+        // page-integration mode the module never builds a cloud URL of its own,
+        // so a preference the page does not forward is a preference the cloud
+        // never sees.
+        var PMP_STORAGE_KEY = '__51d_pmp_pref';
+        var PMP_SCHEMA_VERSION = 1;
+
+        function resolveIdUsage() {
+            try {
+                var stored = localStorage.getItem(PMP_STORAGE_KEY);
+                if (!stored) {
+                    return undefined;
+                }
+                var parsed = JSON.parse(stored);
+                if (parsed && parsed.v === PMP_SCHEMA_VERSION &&
+                    (parsed.p === 'standard' || parsed.p === 'personalized')) {
+                    return parsed.p;
+                }
+            } catch (e) {
+                // Storage unavailable or JSON malformed; fall through.
+            }
+            return undefined;
+        }
+
+        // The 51Degrees script is included synchronously, before Prebid. Until
+        // the user has made a choice in PMP, id.usage is omitted entirely
+        // rather than defaulted - the same signal the module sends upstream
+        // when resolveIdUsage() returns undefined.
+        // Extra evidence for the cloud, appended to the POST body by the
+        // 51Degrees script. Must be set before that script runs. The session
+        // cache short-circuits the POST, so changes here only take effect
+        // after sessionStorage is cleared.
+        window.fodEvidence = window.fodEvidence || {};
+        window.fodEvidence['id.email'] = 'test@example.com';
+
+        // Publisher-supplied salt (URL-safe base64) mixed into the Hashed Email
+        // 51Did, so the same address yields a different id per publisher.
+        // Optional: without it the cloud falls back to its own server-side salt. 
+        // Changing it changes every Hashed Email 51Did derived from it.
+        window.fodEvidence['id.salt'] = 'YWI=';
+
+        if (RESOURCE_KEY) {
+            var ID_USAGE = resolveIdUsage();
+            var scriptURL = CLOUD_ORIGIN + '/api/v4/' + RESOURCE_KEY + '.js';
+            if (ID_USAGE) {
+                scriptURL += '?id.usage=' + encodeURIComponent(ID_USAGE);
+            }
+            document.write('<script src="' + scriptURL + '"><\/script>');
+        }
+
+        // A reload alone answers to the new preference only if the script is
+        // made to ask the cloud again: on a cache hit it skips the POST and
+        // replays the response the previous preference produced. This mirrors
+        // dropCachedResponseOnConsentChange() in the module - dropping the one
+        // gating entry is enough, the per-property flags are inert without it.
+        function clearFodSessionCache() {
+            try {
+                sessionStorage.removeItem('fod');
+            } catch (e) {
+                // Storage unavailable; a stale cache is better than a failure.
+            }
+        }
+
+        // The script URL above is fixed at parse time, so a preference chosen
+        // after that point cannot reach the cloud on this pageview - only a
+        // reload can. PMP invokes data-action-url on every load, not just when
+        // the user picks something, so reloading unconditionally here would
+        // spin forever; compare against the value the script URL was built
+        // with and reload only when it actually changed.
+        function onPmpAction() {
+            if (resolveIdUsage() !== ID_USAGE) {
+                clearFodSessionCache();
+                location.reload();
+            }
+        }
+
+        function injectPmp() {
+            if (!RESOURCE_KEY) return;
+            var pmp = document.createElement('script');
+            pmp.src = CLOUD_ORIGIN + '/api/v4/pmp?resource=' + RESOURCE_KEY;
+            pmp.setAttribute('data-action-url', 'javascript:onPmpAction()');
+            pmp.setAttribute('data-brand-name', 'Demo Publisher');
+            pmp.setAttribute('data-brand-terms-url', 'https://example.com/privacy');
+            pmp.setAttribute('data-brand-logo', 'https://51degrees.com/129/24/logo-menu.webp');
+            // PMP always renders the alternative button, so leaving these out
+            // shows a button labelled "null" rather than hiding it.
+            pmp.setAttribute('data-alt-name', 'Remove ads');
+            pmp.setAttribute('data-alt-url', 'https://example.com/subscribe');
+            pmp.setAttribute('data-show-standard', 'true');
+            document.body.appendChild(pmp);
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectPmp);
+        } else {
+            injectPmp();
+        }
+    </script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="51DegreesRtdProvider_assets/examples-main.min.css">
+    <script>
+        var PREBID_TIMEOUT = 1000;
+        var FAILSAFE_TIMEOUT = 3000;
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+
+            googletag.cmd.push(function () {
+                if (pbjs.libLoaded) {
+                    pbjs.que.push(function () {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                } else {
+                    googletag.pubads().refresh();
+                }
+            });
+
+            pbjs.initAdserverSet = true;
+        }
+
+        pbjs.que.push(function () {
+            var adUnits = [{
+                code: 'div-banner-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [
+                            [300, 250]
+                        ]
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232392,
+                    }
+                }]
+            }];
+
+            pbjs.setConfig({
+                debug: true, // verbose logging
+                debugging: {
+                    enabled: true, // activates the debugging-module bid interceptor
+                    intercept: [{
+                        when: { bidder: 'appnexus' },
+                        then: {
+                            cpm: 1.50,
+                            currency: 'USD',
+                            ttl: 300,
+                            creativeId: 'mock-creative',
+                            netRevenue: true,
+                            mediaType: 'banner',
+                            width: 300,
+                            height: 250,
+                            ad: '<div style="background:#fc0;width:300px;height:250px;text-align:center;line-height:250px;font-family:sans-serif;">Mock bid $1.50</div>'
+                        }
+                    }]
+                },
+                realTimeData: {
+                    auctionDelay: 1000, // should be set lower in production use
+                    dataProviders: [
+                        {
+                            name: '51Degrees',
+                            waitForIt: true,
+                            params: {
+                                // No resourceKey: the module detects the
+                                // on-page integration automatically.
+                                // tdlUrl populates user.eids[].ext.tdl per data labels spec.
+                                // Replace with your real TDL endpoint.
+                                tdlUrl: 'https://tdl.example/replace-me',
+                            }
+                        }
+                    ]
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.onEvent('bidRequested', function (data) {
+                try {
+                    fod.complete(() => {
+                        document.getElementById('enriched-51').style.display = 'block';
+                        document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
+                        document.getElementById('enriched-51-eids').textContent = JSON.stringify(data.ortb2.user?.eids || [], null, 2);
+                    });
+                } catch (e) {
+                    console.error('Error while trying to display enriched data', e);
+                }
+            });
+
+            pbjs.requestBids({
+                timeout: PREBID_TIMEOUT,
+                bidsBackHandler: function (bidResponses) {
+                    initAdserver();
+                }
+            });
+        });
+        setTimeout(initAdserver, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag
+                .defineSlot(
+                    '/19968336/prebid_multiformat_test', [
+                        [300, 250],
+                        [360, 360]
+                    ],
+                    'div-banner-1'
+                )
+                .addService(googletag.pubads());
+
+            googletag.pubads().disableInitialLoad();
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <title>51Degrees RTD submodule on-page integration example - Prebid.js</title>
+</head>
+<body>
+    <h2>51Degrees RTD submodule - on-page integration example</h2>
+
+    <div id="fod-error" style="display: none; margin-bottom: 1em; padding: 0.5em; background: #fdd; border: 1px solid #c00; color: #900;"></div>
+    <script>
+        // A failed script request (unknown resource key, expired licence) still
+        // defines window.fod, but with only an `errors` array and no complete()
+        // method. Left unreported that looks identical to "no on-page
+        // integration", and the RTD module then fails downstream complaining
+        // about a missing resourceKey - two steps away from the real cause.
+        (function () {
+            var box = document.getElementById('fod-error');
+            var errors = window.fod && window.fod.errors;
+            if (Array.isArray(errors) && errors.length) {
+                box.innerHTML = '<strong>51Degrees script reported errors:</strong>';
+                var list = document.createElement('ul');
+                errors.forEach(function (e) {
+                    var li = document.createElement('li');
+                    li.textContent = e;
+                    list.appendChild(li);
+                });
+                box.appendChild(list);
+                box.style.display = 'block';
+            } else if (RESOURCE_KEY && !(window.fod && typeof window.fod.complete === 'function')) {
+                box.textContent = 'The 51Degrees script did not load: window.fod is missing or has no complete() method. ' +
+                    'Check the Network tab for the request to ' + CLOUD_ORIGIN + '.';
+                box.style.display = 'block';
+            } else if (!RESOURCE_KEY) {
+                box.textContent = 'No resource key set - pass ?resourceKey=... or use the form below. ' +
+                    'Without it the page includes no 51Degrees script, and the RTD module has nothing to consume.';
+                box.style.display = 'block';
+            }
+        })();
+    </script>
+
+    <form id="rk-form" style="margin-bottom: 1em; padding: 0.5em; background: #f5f5f5; border: 1px solid #ddd;">
+        <label><strong>resourceKey:</strong>
+            <input type="text" id="rk-input" size="40" class="b-input" placeholder="paste your 51Degrees resource key">
+        </label>
+        <button type="submit" class="b-btn">Apply &amp; reload</button>
+        <small> &mdash; or pass <code>?resourceKey=...</code> in the URL.</small>
+        <div style="margin-top: 0.5em;">
+            <strong>PMP preference:</strong>
+            <code id="pmp-pref">(none)</code>
+            &mdash; <code>id.usage</code> sent on the script URL:
+            <code id="pmp-id-usage">(omitted)</code>
+            <button type="button" class="b-btn b-btn--secondary" onclick="localStorage.removeItem('__51d_pmp_pref'); clearFodSessionCache(); location.reload();">Clear PMP preference &amp; reload</button>
+        </div>
+        <div style="margin-top: 0.5em;">
+            <strong>Session cache:</strong>
+            <code id="session-cache-state">(empty)</code>
+            <button type="button" class="b-btn b-btn--secondary" onclick="sessionStorage.clear(); location.reload();">Clear session cache &amp; reload</button>
+            <small> &mdash; forces a fresh JSON POST to the cloud instead of replaying the cached one, so changes to <code>fodEvidence</code> take effect.</small>
+        </div>
+    </form>
+    <script>
+        (function () {
+            // Only fod_property_* is the cached cloud response. fod_data_* is
+            // client-side evidence the script rewrites on every load, so
+            // counting it would report a cache hit when none exists.
+            var n = Object.keys(sessionStorage).filter(function (k) {
+                return k.indexOf('fod_property_') === 0;
+            }).length;
+            document.getElementById('session-cache-state').textContent =
+                n ? n + ' cached fod_* entries (POST will be skipped)' : '(empty - POST will be sent)';
+        })();
+    </script>
+    <script>
+        (function () {
+            var pref = resolveIdUsage();
+            document.getElementById('pmp-pref').textContent = pref || '(none)';
+            document.getElementById('pmp-id-usage').textContent = pref ? 'id.usage=' + pref : '(omitted)';
+        })();
+    </script>
+    <script>
+        (function () {
+            var input = document.getElementById('rk-input');
+            var current = new URLSearchParams(location.search).get('resourceKey');
+            if (current) input.value = current;
+            document.getElementById('rk-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var k = input.value.trim();
+                var url = new URL(location.href);
+                if (k) url.searchParams.set('resourceKey', k);
+                else url.searchParams.delete('resourceKey');
+                location.href = url.toString();
+            });
+        })();
+    </script>
+
+    <h3>div-banner-1</h3>
+    <div id='div-banner-1'>
+        <p>No response</p>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-banner-1');
+            });
+        </script>
+    </div>
+
+    <div id="debug">
+        <h3>Testing/Debugging Guidance</h3>
+        <ol>
+            <li>Pass your resource key with <code>?resourceKey=...</code>; the page then includes the 51Degrees script itself, before Prebid</li>
+            <li>The RTD module has no <code>resourceKey</code>: it detects the on-page integration automatically and consumes it instead of loading a second script</li>
+            <li>Requests go to <code>https://cloud.51degrees.com</code> by default; add <code>&amp;cloud=https://your-host</code> to point the script, client-hint delegation and PMP at another deployment</li>
+            <li>Open DevTools Network and confirm the 51Degrees script is requested exactly once</li>
+            <li>On a first visit no PMP preference exists, so the script URL carries no <code>id.usage</code> at all &mdash; it is omitted, not defaulted</li>
+            <li>Pick a preference in the PMP overlay; it writes <code>localStorage['__51d_pmp_pref']</code> and reloads, and the script URL then carries <code>id.usage=standard</code> or <code>id.usage=personalized</code></li>
+            <li>In page-integration mode the module never builds a cloud URL, so the page must forward the preference itself; the module's own <code>resolveIdUsage()</code> reads the same key for the fallback path</li>
+            <li>Observe the enriched ORTB shown below: <code>device</code> and <code>user.eids</code></li>
+            <li>Reload the page: the auction is enriched from the on-page integration again</li>
+        </ol>
+    </div>
+    <div id="enriched-51" style="display: none">
+        <h3>Enriched ORTB2 device data</h3>
+        <pre id="enriched-51-data" class="b-text--code"></pre>
+        <h3>user.eids</h3>
+        <pre id="enriched-51-eids" class="b-text--code"></pre>
+    </div>
+</body>
+</html>

@@ -26,6 +26,12 @@ import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./ixBidAdapter.d.ts').IxBidderParams} IxBidderParams
+ * @typedef {BidRequest & {params: IxBidderParams}} IxBidRequest
+ */
+
 const divIdCache = {};
 
 export function getDivIdFromAdUnit(adUnitCode, target) {
@@ -1576,7 +1582,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param  {object}  bid The bid to validate.
+   * @param  {IxBidRequest}  bid The bid to validate.
    * @return {boolean}     True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {

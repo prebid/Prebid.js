@@ -1,0 +1,27 @@
+{
+  "disclosures": [
+    {
+      "identifier": "__51d_pmp_pref",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": []
+    },
+    {
+      "identifier": "fod",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [
+        2,
+        3,
+        4,
+        7
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "The module reads __51d_pmp_pref from localStorage, where the 51Degrees preference UI records whether the user opted into personalized identifiers, and forwards it to the cloud. The 51Degrees script caches its cloud response in sessionStorage under fod; the module removes that entry when the consent it was fetched under has changed, so the reloaded response answers to the current consent."
+    }
+  ]
+}
