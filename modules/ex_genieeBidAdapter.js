@@ -118,6 +118,13 @@ function validateApp(app) {
   return null;
 }
 
+// Renders a rejected param value for an error log. Numbers use String()
+// (JSON.stringify turns NaN/Infinity into "null"); everything else keeps
+// JSON.stringify so the string '123' stays distinguishable from the number.
+function formatForLog(value) {
+  return typeof value === 'number' ? String(value) : JSON.stringify(value);
+}
+
 /**
  * Validates that the bid has a usable params.partnerId: a number that is an
  * integer >= 1. String forms (e.g. '123') are rejected.
@@ -131,7 +138,7 @@ function validatePartnerId(bid) {
   if (typeof partnerId !== 'number' || !Number.isInteger(partnerId) ||
       partnerId < 1) {
     return `params.partnerId is required and must be an integer >= 1 (got ${
-        JSON.stringify(partnerId)})`;
+        formatForLog(partnerId)})`;
   }
   return null;
 }
@@ -154,7 +161,7 @@ function validatePlacementId(bid) {
   }
   if (!isStr(placementId) || !placementId) {
     return `params.placementId must be a non-empty string when set (got ${
-        JSON.stringify(placementId)})`;
+        formatForLog(placementId)})`;
   }
   return null;
 }
