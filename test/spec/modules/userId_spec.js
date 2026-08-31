@@ -1293,6 +1293,74 @@ describe('User ID', function () {
         });
       });
 
+      describe('with a second submodule in the same batch', () => {
+        let otherIdCallback;
+        let otherIdSystem;
+        let startBoth;
+
+        beforeEach(() => {
+          otherIdCallback = sinon.stub();
+          coreStorage.setCookie('OTHERID', '', EXPIRED_COOKIE_DATE);
+          otherIdSystem = {
+            name: 'otherId',
+            decode: (value) => ({ 'oid': value['OTHERID'] }),
+            getId: sinon.stub().callsFake(() => ({ callback: otherIdCallback }))
+          };
+          startBoth = () => {
+            init(config);
+            setSubmoduleRegistry([mockIdSystem, otherIdSystem]);
+            config.setConfig({
+              userSync: {
+                auctionDelay: 10,
+                userIds: [
+                  { name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' } },
+                  { name: 'otherId', storage: { name: 'OTHERID', type: 'cookie' } }
+                ]
+              }
+            });
+          };
+        });
+
+        it('should not hold one submodule hostage to another in the same batch', () => {
+          // otherId finishes, mockId never does. A refresh that supersedes mockId
+          // must release the wait: otherId is done, and mockId's old callback was
+          // replaced. Tracking the shared batch promise instead of each module
+          // would keep otherId waiting on mockId forever.
+          startBoth();
+          let resolved = false;
+          return clearStack().then(() => {
+            otherIdCallback.callArg(0, { OTHERID: 'other' });
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return getGlobal().refreshUserIds({ submoduleNames: ['mockId'] }).then(clearStack);
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+
+        it('should release a caller that already captured a superseded callback', () => {
+          // A filtered refresh on otherId lets getUserIdsAsync past retryOnCancel
+          // while mockId is still pending, so the caller captures mockId's entry.
+          // A later unfiltered refresh supersedes it, and the captured wait has to
+          // observe that rather than hang on abandoned work.
+          startBoth();
+          let resolved = false;
+          return clearStack().then(() => {
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            return getGlobal().refreshUserIds({ submoduleNames: ['otherId'] }).then(clearStack);
+          }).then(() => {
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.false; // mockId is still outstanding
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+            return getGlobal().refreshUserIds().then(clearStack);
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+      });
+
       it('should continue the auction when init fails', (done) => {
         startInit();
         startAuctionHook(() => {

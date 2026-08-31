@@ -295,14 +295,23 @@ function getStoredValue(submodule, key = undefined) {
   return storedValue;
 }
 
-function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
+function processSubmoduleCallbacks(submodules, cb, priorityMaps, onSubmoduleDone?: (submodule) => void) {
   cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
     clearTimeout(timeoutID);
     cb();
   }, submodules.length);
   submodules.forEach(function (submodule) {
-    const moduleDone = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
+    const batchDone = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
+    // `done` only fires once every module in the batch has finished; callers that
+    // track pending work per module need to know when this one did.
+    const moduleDone = () => {
+      try {
+        onSubmoduleDone && onSubmoduleDone(submodule);
+      } finally {
+        batchDone();
+      }
+    };
     function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
@@ -532,26 +541,40 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     return allConsent.promise.finally(initMetrics.startTiming('userId.init.consent'));
   }
 
-  // Submodule name -> promise for the callback batch it is currently part of.
-  // A refresh cancels `done`, but the submodules it did not name may still be
-  // fetching, and `getUserIdsAsync` is documented to resolve only once *all* of
-  // them have initialized. A refresh supersedes the entries for the modules it
-  // does name, so an unfiltered refresh clears the map entirely.
+  // Submodule name -> deferred that settles when *that* submodule's callback is
+  // done, or when a refresh supersedes it. A refresh cancels `done`, but the
+  // submodules it did not name may still be fetching, and `getUserIdsAsync` is
+  // documented to resolve only once *all* of them have initialized.
+  //
+  // The entries are per module rather than per batch on purpose: a batch promise
+  // settles only once every module in it has called back, so superseding one
+  // module would not release anything still waiting on the others. And a
+  // superseded entry is resolved rather than dropped, so callers that already
+  // captured it are released too, instead of waiting on abandoned work.
   const pendingByModule = new Map();
 
   pendingSubmoduleCallbacks = () => pendingByModule.size
-    ? PbPromise.all(Array.from(pendingByModule.values())).then(() => undefined)
+    ? PbPromise.all(Array.from(pendingByModule.values(), (entry: any) => entry.promise)).then(() => undefined)
     : null;
 
+  function settlePending(name) {
+    const entry = pendingByModule.get(name);
+    if (entry != null) {
+      pendingByModule.delete(name);
+      entry.resolve();
+    }
+  }
+
   function trackCallbacks(mods, promise) {
-    mods.forEach((sm) => pendingByModule.set(sm.submodule.name, promise));
-    promise.then(() => {
-      mods.forEach((sm) => {
-        if (pendingByModule.get(sm.submodule.name) === promise) {
-          pendingByModule.delete(sm.submodule.name);
-        }
-      });
-    }, () => {});
+    mods.forEach((sm) => {
+      settlePending(sm.submodule.name);
+      pendingByModule.set(sm.submodule.name, defer<void>());
+    });
+    // guard against a batch that never calls back for some of its modules
+    promise.then(
+      () => mods.forEach((sm) => settlePending(sm.submodule.name)),
+      () => mods.forEach((sm) => settlePending(sm.submodule.name))
+    );
     return promise;
   }
 
@@ -566,7 +589,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       .then(checkRefs(() => {
         const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return trackCallbacks(modWithCb, new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules)));
+          return trackCallbacks(modWithCb, new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules, (sm) => settlePending(sm.submodule.name))));
         }
       }))
   );
@@ -603,7 +626,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
             // `getUserIdsAsync` waiting on work this refresh replaced, and would
             // undo the escape from a stuck initialization that an unfiltered
             // refresh is meant to provide.
-            refreshed.forEach((sm) => pendingByModule.delete(sm.submodule.name));
+            refreshed.forEach((sm) => settlePending(sm.submodule.name));
             const cbModules = initSubmodules(
               initModules,
               refreshed,
@@ -612,7 +635,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return trackCallbacks(cbModules, new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules)));
+              return trackCallbacks(cbModules, new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules, (sm) => settlePending(sm.submodule.name))));
             }
           }))
       );
@@ -860,14 +883,16 @@ function refreshUserIds({ submoduleNames }: {
  */
 
 function getUserIdsAsync(): Promise<Partial<UserId>> {
-  return retryOnCancel().then((ids) => {
-    // A refresh filtered by `submoduleNames` cancels the init chain and replaces
-    // it with one scoped to the named submodules, so `retryOnCancel` can resolve
-    // while submodules it did not name are still fetching. Honour the documented
-    // contract by waiting for those too.
+  // A refresh filtered by `submoduleNames` cancels the init chain and replaces it
+  // with one scoped to the named submodules, so `retryOnCancel` can resolve while
+  // submodules it did not name are still fetching. Honour the documented contract
+  // by waiting for those too, rechecking after each wait because a refresh may
+  // have replaced the set we were waiting on.
+  function waitForPending(ids) {
     const pending = pendingSubmoduleCallbacks();
-    return pending == null ? ids : pending.then(() => getUserIds());
-  });
+    return pending == null ? ids : pending.then(() => waitForPending(getUserIds()));
+  }
+  return retryOnCancel().then(waitForPending);
 }
 
 export function getConsentHash() {
