@@ -188,4 +188,48 @@ describe('growthCode analytics adapter', () => {
     bidWon({ meta: null });
     expect(lastBody().events[0].advertiser_domains).to.deep.equal([]);
   });
+
+  it('legacy batch sender emits snake_case fields and gc_session_id, not raw camelCase', () => {
+    growthCodeAnalyticsAdapter.disableAnalytics();
+    growthCodeAnalyticsAdapter.enableAnalytics({
+      provider: 'growthCodeAnalytics',
+      options: { pid: 'TEST01', trackEvents: ['bidWon'] }
+    });
+    storage.setCookie('gc_session_id', 'sess-xyz');
+
+    const auctionId = generateUUID();
+    const adId = generateUUID();
+    events.emit(EVENTS.BID_WON, {
+      auctionId,
+      bidderCode: 'rubicon',
+      cpm: 2.19,
+      currency: 'USD',
+      adUnitCode: 'div-gpt-ad-1234567890',
+      adId,
+      meta: { advertiserDomains: ['advertiser.example'] }
+    });
+
+    // the legacy batch call is the one without the ?gcid= query string
+    const reqs = ownRequests();
+    const legacyCall = reqs.find(r => r.url.indexOf('?gcid=') === -1);
+    expect(legacyCall, 'legacy batch call should exist').to.exist;
+    const body = JSON.parse(legacyCall.requestBody);
+
+    // top-level session under the canonical key, not "session"
+    expect(body.gc_session_id).to.equal('sess-xyz');
+    expect(body.session).to.equal(undefined);
+
+    const e = body.events[0];
+    expect(e.auction_id).to.equal(auctionId);
+    expect(e.ad_unit_code).to.equal('div-gpt-ad-1234567890');
+    expect(e.ad_id).to.equal(adId);
+    expect(e.bidder).to.equal('rubicon');
+    expect(e.advertiser_domains).to.deep.equal(['advertiser.example']);
+    expect(e.event).to.equal('bidWon');
+
+    // and crucially, none of the raw camelCase keys leak through
+    expect(e.auctionId).to.equal(undefined);
+    expect(e.adUnitCode).to.equal(undefined);
+    expect(e.bidderCode).to.equal(undefined);
+  });
 });

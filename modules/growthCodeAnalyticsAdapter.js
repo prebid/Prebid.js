@@ -147,19 +147,40 @@ growthCodeAnalyticsAdapter.enableAnalytics = function(conf = {}) {
   growthCodeAnalyticsAdapter.originEnableAnalytics(conf);
 };
 
+// normalizeBatchEvent maps a queued Prebid event to the snake_case wire shape
+// the /v4/analytics server expects. The batch queue holds Prebid's raw event
+// objects, whose keys are camelCase (auctionId, adUnitCode, bidderCode, ...);
+// the server reads snake_case (auction_id, ad_unit_code, bidder, ...), so
+// forwarding the raw object dropped these fields. Mirrors the field mapping the
+// enriched sender (logBidWonToServer) already uses, so both senders agree.
+function normalizeBatchEvent(e) {
+  return {
+    event: e.eventType || e.event || '',
+    timestamp: e.timestamp,
+    bidder: e.bidderCode || e.bidder || '',
+    currency: e.currency || '',
+    cpm: e.cpm || 0,
+    auction_id: e.auctionId || '',
+    ad_unit_code: e.adUnitCode || '',
+    ad_id: e.adId || '',
+    advertiser_domains: (e.meta && Array.isArray(e.meta.advertiserDomains)) ? e.meta.advertiserDomains : [],
+    elm_test_name: e.elmTestName || ''
+  };
+}
+
 function logToServer() {
   if (pid === DEFAULT_PID) return;
   if (eventQueue.length >= 1) {
     const gcid = storage.getDataFromLocalStorage('gcid');
 
     const data = {
-      session: getGCSessionId(),
+      gc_session_id: getGCSessionId(),
       pid: pid,
       gcid: gcid,
       timestamp: Date.now(),
       url: getRefererInfo().page,
       referer: document.referrer,
-      events: eventQueue
+      events: eventQueue.map(normalizeBatchEvent)
     };
 
     ajax(url, {
