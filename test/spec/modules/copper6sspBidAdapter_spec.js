@@ -28,7 +28,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
-const SUB_DOMAIN = 'exchange';
+const SUB_DOMAIN = 'bidder';
 
 const BID = {
   'bidId': '2d52001cabd527',
