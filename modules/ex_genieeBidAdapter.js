@@ -278,7 +278,6 @@ export const spec = {
         url: resolveEndpoint([bid]),
         data,
         options: {
-          contentType: 'application/json',
           // Forward the browser's cookies for the Exchange domain (Geniee's
           // own sync cookies and those of the ID solutions it syncs with).
           // Requires the Exchange to answer with credentialed CORS headers.

@@ -357,7 +357,6 @@ describe('Geniee Exchange bid adapter', () => {
       const [request] = spec.buildRequests(bids, makeBidderRequest(bids));
 
       expect(request.options.withCredentials).to.equal(true);
-      expect(request.options.contentType).to.equal('application/json');
     });
 
     it('does not send a request when the payload has neither site nor app',
