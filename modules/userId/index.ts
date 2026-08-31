@@ -565,18 +565,44 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     }
   }
 
-  function trackCallbacks(mods, promise) {
+  // Record that these modules have a callback outstanding. Called as soon as the
+  // callbacks are known, which with `auctionDelay` = 0 is well before they are
+  // allowed to run: a refresh in that window must still see them as pending.
+  // Returns this generation's own entries, so that a callback completing late
+  // settles the entry it was created for rather than one a later refresh made.
+  function registerPending(mods) {
+    const own = new Map();
     mods.forEach((sm) => {
-      settlePending(sm.submodule.name);
-      pendingByModule.set(sm.submodule.name, defer<void>());
+      const name = sm.submodule.name;
+      settlePending(name);
+      const entry = defer<void>();
+      own.set(name, entry);
+      pendingByModule.set(name, entry);
     });
+    return own;
+  }
+
+  function settleOwn(own, name) {
+    const entry = own.get(name);
+    if (entry == null) return;
+    own.delete(name);
+    if (pendingByModule.get(name) === entry) {
+      pendingByModule.delete(name);
+    }
+    entry.resolve();
+  }
+
+  function runCallbacks(mods, own) {
+    const promise = new PbPromise((resolve) => processSubmoduleCallbacks(
+      mods, resolve, initModules, (sm) => settleOwn(own, sm.submodule.name)
+    ));
     // guard against a batch that never calls back for some of its modules
-    promise.then(
-      () => mods.forEach((sm) => settlePending(sm.submodule.name)),
-      () => mods.forEach((sm) => settlePending(sm.submodule.name))
-    );
+    const settleAll = () => Array.from(own.keys()).forEach((name) => settleOwn(own, name));
+    promise.then(settleAll, settleAll);
     return promise;
   }
+
+  let initialPending = new Map();
 
   let done = cancelAndTry(
     PbPromise.all([hooksReady, startInit.promise])
@@ -584,13 +610,15 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       .then(checkRefs(() => {
         initialized = true;
         initSubmodules(initModules, allModules);
+        initialPending = registerPending(initModules.submodules.filter(item => isFn(item.callback)));
       }))
       .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
       .then(checkRefs(() => {
         const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return trackCallbacks(modWithCb, new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules, (sm) => settlePending(sm.submodule.name))));
+          return runCallbacks(modWithCb, initialPending);
         }
+        Array.from(initialPending.keys()).forEach((name) => settleOwn(initialPending, name));
       }))
   );
 
@@ -635,7 +663,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return trackCallbacks(cbModules, new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules, (sm) => settlePending(sm.submodule.name))));
+              return runCallbacks(cbModules, registerPending(cbModules));
             }
           }))
       );
@@ -839,8 +867,10 @@ function retryOnCancel(initParams?) {
       if (e === INIT_CANCELED) {
         // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
         // of canceling the previous init, before the refresh logic has had a chance to run.
-        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
-        return Promise.resolve().then(getUserIdsAsync);
+        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely).
+        // Retry the init chain itself: waiting for other submodules' pending callbacks is
+        // `getUserIdsAsync`'s contract, not something a cancelled refresh should inherit.
+        return Promise.resolve().then(() => retryOnCancel());
       } else {
         logError('Error initializing userId', e);
         return PbPromise.reject(e);

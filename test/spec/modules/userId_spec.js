@@ -1338,6 +1338,37 @@ describe('User ID', function () {
           });
         });
 
+        it('should not let a superseded callback settle the refresh that replaced it', () => {
+          // A filtered refresh on otherId lets getUserIdsAsync past retryOnCancel while
+          // mockId's first callback is still outstanding. A second refresh replaces that
+          // callback, and when the stale one finally fires it must settle its own
+          // generation, not the one that replaced it.
+          startBoth();
+          const secondCallback = sinon.stub();
+          let resolved = false;
+          return clearStack().then(() => {
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            return getGlobal().refreshUserIds({ submoduleNames: ['otherId'] }).then(clearStack);
+          }).then(() => {
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.false;
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ callback: secondCallback }));
+            getGlobal().refreshUserIds({ submoduleNames: ['mockId'] });
+            return clearStack();
+          }).then(() => {
+            mockIdCallback.callArg(0, { MOCKID: 'stale' }); // the superseded generation
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.false; // the refresh's own callback is still pending
+            secondCallback.callArg(0, { MOCKID: '2222' });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+
         it('should release a caller that already captured a superseded callback', () => {
           // A filtered refresh on otherId lets getUserIdsAsync past retryOnCancel
           // while mockId is still pending, so the caller captures mockId's entry.
