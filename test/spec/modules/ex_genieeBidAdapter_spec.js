@@ -162,6 +162,27 @@ describe('Geniee Exchange bid adapter', () => {
       expect(request.data.imp).to.be.an('array').with.lengthOf(1);
     });
 
+    it('accepts a multiformat (banner + video) ad unit and sends only the banner part',
+      () => {
+        const bid = makeBid({
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] },
+            video: { context: 'outstream', playerSize: [[640, 480]] },
+          },
+        });
+        // Multiformat units that include banner must not be rejected: the
+        // publisher's video demand keeps flowing to other bidders on the same
+        // unit.
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        const requests = spec.buildRequests([bid], makeBidderRequest([bid]));
+        expect(requests).to.be.an('array').with.lengthOf(1);
+        const imp = requests[0].data.imp[0];
+        expect(imp.banner).to.be.an('object');
+        expect(imp.video, 'imp.video').to.equal(undefined);
+        expect(imp.native, 'imp.native').to.equal(undefined);
+      });
+
     it('defaults the auction type to first price, which Prebid.js does not set on its own',
       () => {
         const bids = [makeBid()];
