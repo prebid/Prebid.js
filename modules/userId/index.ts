@@ -538,9 +538,12 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
   function trackBatch() {
     const batch = defer<void>();
     inFlight.add(batch);
-    return () => {
-      inFlight.delete(batch);
-      batch.resolve();
+    return {
+      batch,
+      settle: () => {
+        inFlight.delete(batch);
+        batch.resolve();
+      }
     };
   }
 
@@ -553,8 +556,9 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
   // An unfiltered refresh replaces everything, including work that may never
   // finish. Release the markers it supersedes, or a later filtered refresh would
   // wait on a batch nothing is going to complete.
-  function supersedeAll() {
+  function supersedeAll(except) {
     Array.from(inFlight).forEach((batch) => {
+      if (batch === except) return;
       inFlight.delete(batch);
       batch.resolve();
     });
@@ -568,7 +572,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
         initialized = true;
         initSubmodules(initModules, allModules);
         if (initModules.submodules.some(item => isFn(item.callback))) {
-          settleInitial = trackBatch();
+          settleInitial = trackBatch().settle;
         }
       }))
       .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
@@ -607,15 +611,13 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       // Captured before the refresh adds a batch of its own. An unfiltered refresh
       // supersedes everything, so it keeps escaping a stuck initialization; a
       // filtered one must not shorten the wait for what it left running.
-      let priorCallbacks = null;
-      if (submoduleNames == null) {
-        supersedeAll();
-      } else {
-        priorCallbacks = pendingCallbacks();
-      }
+      // A filtered refresh waits for what it leaves running; an unfiltered one
+      // supersedes it, but only once the replacement is installed below.
+      const priorCallbacks = submoduleNames == null ? null : pendingCallbacks();
       // Registered now, not when the chain gets there: a second refresh issued
       // before this one has run must still see this batch as outstanding.
-      const settleRefresh = trackBatch();
+      const refreshBatch = trackBatch();
+      const settleRefresh = refreshBatch.settle;
       const chain = done
         .catch(() => null)
         .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
@@ -635,6 +637,11 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       done = cancelAndTry(
         priorCallbacks == null ? chain : PbPromise.all([priorCallbacks, chain]).then(() => undefined)
       );
+      if (submoduleNames == null) {
+        // After the swap, never before: releasing these first can fulfil the chain
+        // this refresh just replaced, and a caller can take it for the current one.
+        supersedeAll(refreshBatch.batch);
+      }
     }
     return done;
   };
