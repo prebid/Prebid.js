@@ -766,12 +766,14 @@ describe('bidderFactory', () => {
 
       it('should register usersync pixels', function () {
         const bidder = newBidder(spec);
+        const onCleanup = sinon.spy();
 
         spec.isBidRequestValid.returns(false);
         spec.buildRequests.returns([]);
         spec.getUserSyncs.returns([{
           type: 'iframe',
-          url: 'usersync.com'
+          url: 'usersync.com',
+          onCleanup
         }]);
 
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
@@ -780,6 +782,7 @@ describe('bidderFactory', () => {
         expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
         expect(userSyncStub.firstCall.args[1]).to.equal(spec.code);
         expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
+        expect(userSyncStub.firstCall.args[3]).to.equal(onCleanup);
       });
 
       it('should logError and reject bid when required bid response params are missing', function () {
