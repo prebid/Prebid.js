@@ -11,7 +11,7 @@ Maintainer: aladdin-back@geniee.co.jp
 This is the [Geniee](https://geniee.co.jp) Exchange Bid Adapter (bidder code
 `ex_geniee`) for Prebid.js. It POSTs an OpenRTB bid request to the Geniee Exchange,
 where the publisher's `partnerId` is carried as the `id` query parameter and the optional
-`placementId` as `placement`.
+`placementId` as `imp.tagid`.
 
 Geniee maintains three separate bid adapters; this one is independent of the other two and can
 be used alongside them:
@@ -39,11 +39,11 @@ We will provide ads when the following conditions are satisfied:
 
 # Bid Parameters
 
-| Name          | Scope    | Type      | Description                                                                                                                                                                                                                                                                                              |
-|---------------|----------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `partnerId`   | required | `Integer` | The single per-publisher ID issued by Geniee. Must be an integer >= 1 (number only; string forms such as `'123'` are rejected). Sent as the `id` query parameter.                                                                                                                                         |
-| `currency`    | optional | `String`  | ISO-4217 currency code, `JPY` or `USD`. When omitted, the currency module's `adServerCurrency` is used, then `USD` (see [Currency](#currency)).                                                                                                                                                                                                                                               |
-| `placementId` | optional | `String`  | Reporting label for the ad unit, defined by the supply partner (not issued by Geniee). Use a fixed value per ad unit; if omitted, Geniee reports cannot be broken down by ad unit. Alphanumeric, hyphen and underscore, max 40 characters, case-insensitive (`Sidebar` = `sidebar`). Sent as the `placement` query parameter and validated by the Exchange, not by the adapter. |
+| Name          | Scope    | Type      | Description                                                                                                                                                                                                                                                                                                                                                 |
+|---------------|----------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `partnerId`   | required | `Integer` | The single per-publisher ID issued by Geniee. Must be an integer >= 1 (number only; string forms such as `'123'` are rejected). Sent as the `id` query parameter.                                                                                                                                                                                           |
+| `currency`    | optional | `String`  | ISO-4217 currency code, `JPY` or `USD`. When omitted, the currency module's `adServerCurrency` is used, then `USD` (see [Currency](#currency)).                                                                                                                                                                                                             |
+| `placementId` | optional | `String`  | Reporting label for the ad unit, defined by the supply partner (not issued by Geniee). Use a fixed value per ad unit; if omitted, Geniee reports cannot be broken down by ad unit. Alphanumeric, hyphen and underscore, max 40 characters, case-insensitive (`Sidebar` = `sidebar`). Sent as `imp.tagid` and validated by the Exchange, not by the adapter. |
 
 # Test Parameters
 
@@ -105,8 +105,8 @@ pbjs.setConfig({
 ## Example Bid Request
 
 For the ad unit above, the adapter POSTs the following OpenRTB bid request (JSON body) to
-`https://aladdin.genieesspv.jp/yie/ld/exchange?id=123&placement=top-banner_1`. Without
-`params.placementId` the URL is `.../exchange?id=123`; the payload is the same either way.
+`https://aladdin.genieesspv.jp/yie/ld/exchange?id=123`. `params.placementId` travels in the
+payload as `imp[].tagid` (absent when the param is omitted).
 
 `site` and `device` are filled automatically by Prebid.js first-party-data enrichment from the
 actual page and browser, `imp[].id` and `tmax` are generated per auction, and `id` is composed
@@ -123,6 +123,7 @@ as `<bidderRequestId>-<imp[0].id>`. The values below are an illustrative capture
     {
       "id": "2ab03f1234e1b6",
       "secure": 1,
+      "tagid": "top-banner_1",
       "banner": {
         "topframe": 0,
         "format": [

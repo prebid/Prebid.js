@@ -40,6 +40,13 @@ const converter = ortbConverter({
       imp.banner.w = format[0].w;
       imp.banner.h = format[0].h;
     }
+    // Send params.placementId as imp.tagid, the standard ORTB slot
+    // identifier. A tagid supplied through ortb2Imp is only overridden when
+    // the bidder param is set.
+    const placementId = deepAccess(bidRequest, 'params.placementId');
+    if (isStr(placementId) && placementId) {
+      imp.tagid = placementId;
+    }
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -71,17 +78,12 @@ const converter = ortbConverter({
 /**
  * Builds the Exchange URL. The partnerId is carried as the `id` query parameter
  * (`/exchange?id=YOUR_ID`), which is how the Exchange authorizes the request.
- * An optional placementId is appended as `placement`
- * (`/exchange?id=YOUR_ID&placement=YOUR_PLACEMENT`) so Geniee reports can be
- * broken down by ad unit; it is passed through as written (only percent-encoded
- * so it cannot break the query string) and validated by the Exchange.
+ * params.placementId is not part of the URL; it travels as `imp.tagid` in the
+ * payload.
  */
 function resolveEndpoint(validBidRequests) {
   const partnerId = deepAccess(validBidRequests, '0.params.partnerId');
-  const placementId = deepAccess(validBidRequests, '0.params.placementId');
-  const url = `${DEFAULT_ENDPOINT}?id=${encodeURIComponent(partnerId)}`;
-  return placementId ? `${url}&placement=${encodeURIComponent(placementId)}`
-    : url;
+  return `${DEFAULT_ENDPOINT}?id=${encodeURIComponent(partnerId)}`;
 }
 
 /**

@@ -293,36 +293,24 @@ describe('Geniee Exchange bid adapter', () => {
       expect(request.url).to.equal(`${DEFAULT_ENDPOINT}?id=456`);
     });
 
-    it('sends placementId as the placement query parameter when it is set',
-      () => {
-        const bids =
-             [makeBid({ params: { partnerId: 456, placementId: 'top-banner_1' } })];
-        const [request] = spec.buildRequests(bids, makeBidderRequest(bids));
+    it('sends placementId as imp.tagid, not as a query parameter', () => {
+      const bids =
+           [makeBid({ params: { partnerId: 456, placementId: 'top-banner_1' } })];
+      const [request] = spec.buildRequests(bids, makeBidderRequest(bids));
 
-        expect(request.url)
-          .to.equal(`${DEFAULT_ENDPOINT}?id=456&placement=top-banner_1`);
-      });
+      expect(request.url).to.equal(`${DEFAULT_ENDPOINT}?id=456`);
+      expect(request.data.imp[0].tagid).to.equal('top-banner_1');
+    });
 
-    it('omits the placement query parameter when placementId is absent', () => {
+    it('leaves imp.tagid unset when placementId is absent', () => {
       const bids = [makeBid()];
       const [request] = spec.buildRequests(bids, makeBidderRequest(bids));
 
       expect(request.url).to.equal(`${DEFAULT_ENDPOINT}?id=${PARTNER_ID}`);
+      expect(request.data.imp[0].tagid, 'imp.tagid').to.equal(undefined);
     });
 
-    it('percent-encodes placementId so it cannot break the query string',
-      () => {
-        const bids = [makeBid({
-          params: { partnerId: PARTNER_ID, placementId: 'top banner&id=9' }
-        })];
-        const [request] = spec.buildRequests(bids, makeBidderRequest(bids));
-
-        expect(request.url)
-          .to.equal(`${DEFAULT_ENDPOINT}?id=${
-                 PARTNER_ID}&placement=top%20banner%26id%3D9`);
-      });
-
-    it('resolves the placement query parameter per bid', () => {
+    it('resolves imp.tagid per bid', () => {
       const bids = [
         makeBid({ params: { partnerId: PARTNER_ID, placementId: 'sidebar' } }),
         makeBid({ bidId: 'bid-id-2', adUnitCode: 'ex-geniee-test-ad-2' }),
@@ -330,9 +318,10 @@ describe('Geniee Exchange bid adapter', () => {
       const requests = spec.buildRequests(bids, makeBidderRequest(bids));
 
       expect(requests).to.have.lengthOf(2);
-      expect(requests[0].url)
-        .to.equal(`${DEFAULT_ENDPOINT}?id=${PARTNER_ID}&placement=sidebar`);
+      expect(requests[0].url).to.equal(`${DEFAULT_ENDPOINT}?id=${PARTNER_ID}`);
+      expect(requests[0].data.imp[0].tagid).to.equal('sidebar');
       expect(requests[1].url).to.equal(`${DEFAULT_ENDPOINT}?id=${PARTNER_ID}`);
+      expect(requests[1].data.imp[0].tagid, 'imp.tagid').to.equal(undefined);
     });
 
     it('defaults the currency to USD', () => {

@@ -24,9 +24,9 @@ export interface ExGenieeBidderParams {
    * Reporting label for the ad unit, defined by the supply partner (not issued
    * by Geniee). Use a fixed value per ad unit; if omitted, Geniee reports
    * cannot be broken down by ad unit. Alphanumeric, hyphen and underscore, max
-   * 40 characters, case-insensitive (`Sidebar` = `sidebar`). Sent as the
-   * `placement` query parameter (`/exchange?id=YOUR_ID&placement=YOUR_PLACEMENT`)
-   * and validated by the Exchange, not by the adapter.
+   * 40 characters, case-insensitive (`Sidebar` = `sidebar`). Sent as
+   * `imp.tagid` in the bid request and validated by the Exchange, not by the
+   * adapter.
    */
   placementId?: string;
 }
