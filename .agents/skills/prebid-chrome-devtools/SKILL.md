@@ -11,14 +11,33 @@ instead of assuming that it is active.
 
 ## Install Chrome DevTools MCP
 
-First check whether the current agent already exposes Chrome DevTools MCP tools.
-If it does, do not reinstall the server.
+First check for the specific `list_3p_developer_tools` and
+`execute_3p_developer_tool` tools. Generic Chrome DevTools MCP tools are not
+enough: an existing server started with its default arguments omits these two
+third-party tools.
+
+- If both third-party tools are present, keep the existing server and continue
+  to [Prepare Prebid.js](#prepare-prebidjs).
+- If generic Chrome DevTools MCP tools are present but the third-party tools are
+  absent, reconfigure the existing server to append
+  `--categoryExperimentalThirdParty=true`, preserving any browser connection or
+  other custom arguments. Restart the MCP client because a running server's
+  startup arguments cannot be changed. Do not register a duplicate server.
+- If no Chrome DevTools MCP tools are present, install the server as described
+  below.
 
 When Codex CLI is available and the server is absent, run:
 
 ```bash
 codex mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --categoryExperimentalThirdParty=true
 ```
+
+For an existing Codex registration, inspect it with
+`codex mcp get chrome-devtools`. Update the corresponding MCP configuration so
+its `args` retain the existing values and include
+`--categoryExperimentalThirdParty=true`; then restart Codex. If the CLI or
+client cannot edit a registration in place, remove and re-add it only after
+recording and restoring all of its existing arguments and environment settings.
 
 For another MCP client, add the equivalent server configuration:
 
