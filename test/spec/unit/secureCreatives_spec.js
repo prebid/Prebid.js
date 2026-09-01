@@ -1,4 +1,5 @@
 import { getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
+import { clearGptSlotElementIdCache } from 'src/utils/gptSlotCache.js';
 import * as utils from 'src/utils.js';
 import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -547,6 +548,7 @@ describe('secureCreatives', () => {
     }
     let slots;
     beforeEach(() => {
+      clearGptSlotElementIdCache();
       slots = [
         mockSlot('div1', 'au1'),
         mockSlot('div2', 'au2'),
@@ -570,6 +572,27 @@ describe('secureCreatives', () => {
       [0, 2].forEach((i) => sinon.assert.notCalled(slots[i].getSlotElementId));
       sinon.assert.called(slots[1].getSlotElementId);
       sinon.assert.calledWith(document.getElementById, 'div2');
+    });
+
+    it('should use cached gpt slot element id after targeting is cleared', function () {
+      slots[1].setTargeting('hb_adid', ['adId']);
+      resizeRemoteCreative({
+        adId: 'adId',
+        width: 300,
+        height: 250,
+      });
+      slots[1].setTargeting('hb_adid', []);
+      document.getElementById.resetHistory();
+      slots.forEach((slot) => slot.getSlotElementId.resetHistory());
+
+      resizeRemoteCreative({
+        adId: 'adId',
+        width: 400,
+        height: 300,
+      });
+
+      sinon.assert.calledWith(document.getElementById, 'div2');
+      slots.forEach((slot) => sinon.assert.notCalled(slot.getSlotElementId));
     });
 
     it('should find correct apn tag based on adUnitCode', () => {
