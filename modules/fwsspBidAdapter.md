@@ -124,7 +124,9 @@ const adUnits = [{
                 _fw_player_height: '1080',
                 _fw_content_progrmmer_brand: 'NEEDS_TO_REPLACE_BY_BRAND_NAME',
                 _fw_content_programmer_brand_channel: 'NEEDS_TO_REPLACE_BY_CHANNEL_NAME',
-                _fw_content_genre: 'NEEDS_TO_REPLACE_BY_CONTENT_GENRE'
+                _fw_content_genre: 'NEEDS_TO_REPLACE_BY_CONTENT_GENRE',
+                _fw_programmatic_tid: 'custom-transaction-id-12345',  // optional: custom transaction ID
+                _fw_programmatic_tidt: 1  // optional: 1 = primary ad server, 2 = non-primary (default)
             },
             gdpr_consented_providers: 'test_providers'
         }
