@@ -122,8 +122,8 @@ export const spec = {
       ad: response.bid.ad,
       mediaType: response.bid.mediaType,
       meta: {
-        secondaryCatIds: response.bid.cat,
-        advertiserDomains: response.bid.advertiserDomains,
+        secondaryCatIds: response.meta.cat,
+        advertiserDomains: response.meta.advertiserDomains,
         advertiserName: response.meta.advertiserName,
         mediaType: response.bid.mediaType
       }

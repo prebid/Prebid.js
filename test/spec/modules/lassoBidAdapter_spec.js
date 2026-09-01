@@ -393,6 +393,10 @@ describe('lassoBidAdapter', function () {
       };
       const result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse));
+      // secondaryCatIds/advertiserDomains are carried on serverResponse.body.meta
+      // (a sibling of serverResponse.body.bid, not a property of it) -- assert the
+      // actual values, not just the response shape, so a wrong source path is caught.
+      expect(result[0]).to.deep.equal(expectedResponse);
     });
   });
 
