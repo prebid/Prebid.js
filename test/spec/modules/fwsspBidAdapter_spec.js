@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { getGlobal } = require('../../../src/prebidGlobal.js');
-const { spec, getSDKVersion, formatAdHTML, getBidFloor } = require('modules/fwsspBidAdapter');
+const { spec, getSDKVersion, formatAdHTML, getBidFloor, extractTransactionIds } = require('modules/fwsspBidAdapter');
 
 const pbjsVersion = getGlobal().version;
 
@@ -1360,6 +1360,257 @@ describe('fwsspBidAdapter', () => {
       // schain check
       const expectedEncodedSchainString = '1.0,1!test1.com,123%2CB,1,bidrequestid1,,test1.com';
       expect(request.data).to.include(expectedEncodedSchainString);
+    });
+  });
+
+  describe('extractTransactionIds', () => {
+    it('should extract TID from keyValues with highest priority', () => {
+      const bidRequest = {
+        ortb2Imp: {
+          ext: {
+            tid: 'ortb2imp-tid-should-not-use',
+            tidt: 2
+          }
+        },
+        transactionId: 'legacy-tid-should-not-use'
+      };
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'source-tid-should-not-use'
+          }
+        }
+      };
+      const keyValues = {
+        _fw_programmatic_tid: 'kv-tid-123',
+        _fw_programmatic_tidt: '1'
+      };
+
+      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      expect(result.tid).to.equal('kv-tid-123');
+      expect(result.tidt).to.equal('1');
+    });
+
+    it('should extract TID from ortb2.source.tid when ortb2Imp.ext.tid not present', () => {
+      const bidRequest = {};
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'source-tid-789'
+          }
+        }
+      };
+      const keyValues = {};
+
+      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      expect(result.tid).to.equal('source-tid-789');
+      expect(result.tidt).to.equal(2);
+    });
+
+    it('should prioritize ortb2Imp.ext.tid over ortb2.source.tid', () => {
+      const bidRequest = {
+        ortb2Imp: {
+          ext: {
+            tid: 'ortb2imp-tid-priority'
+          }
+        }
+      };
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'source-tid-lower-priority'
+          }
+        }
+      };
+      const keyValues = {};
+
+      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      expect(result.tid).to.equal('ortb2imp-tid-priority');
+    });
+
+    it('should return null TID when no TID found in any location', () => {
+      const bidRequest = {};
+      const bidderRequest = {};
+      const keyValues = {};
+
+      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      expect(result.tid).to.be.null;
+      expect(result.tidt).to.be.null; // No TIDT when no TID
+    });
+
+    it('should extract TIDT from ortb2Imp.ext.tidt', () => {
+      const bidRequest = {
+        ortb2Imp: {
+          ext: {
+            tid: 'test-tid',
+            tidt: 1
+          }
+        }
+      };
+      const bidderRequest = {};
+      const keyValues = {};
+
+      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      expect(result.tid).to.equal('test-tid');
+      expect(result.tidt).to.equal(1);
+    });
+
+    it('should generate default TIDT when not found (non-primary ad server)', () => {
+      const bidRequest = {
+        ortb2Imp: {
+          ext: {
+            tid: 'test-tid'
+          }
+        }
+      };
+      const bidderRequest = {};
+      const keyValues = {};
+
+      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      expect(result.tid).to.equal('test-tid');
+      expect(result.tidt).to.equal(2); // Non-primary ad server (FW SSP)
+    });
+
+    it('should handle all fields present with correct priority', () => {
+      const bidRequest = {
+        ortb2Imp: {
+          ext: {
+            tid: 'ortb2imp-tid',
+            tidt: 1
+          }
+        }
+      };
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'source-tid'
+          }
+        }
+      };
+      const keyValues = {
+        _fw_programmatic_tid: 'kv-tid',
+        _fw_programmatic_tidt: '2'
+      };
+
+      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      expect(result.tid).to.equal('kv-tid'); // KV has highest priority
+      expect(result.tidt).to.equal('2'); // KV has highest priority
+    });
+  });
+
+  describe('TID/TIDT integration in buildRequests', () => {
+    it('should include TID and TIDT in request when passed via keyValues', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:profile',
+          'siteSectionId': 'test-site-section',
+          'adRequestKeyValues': {
+            '_fw_programmatic_tid': 'test-tid-123',
+            '_fw_programmatic_tidt': '1'
+          }
+        }
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_programmatic_tid=test-tid-123');
+      expect(payload).to.include('_fw_programmatic_tidt=1');
+    });
+
+    it('should include TID and TIDT from ortb2Imp when not in keyValues', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'ortb2Imp': {
+          ext: {
+            tid: 'ortb2imp-tid-456',
+            tidt: 2
+          }
+        },
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:profile',
+          'siteSectionId': 'test-site-section'
+        }
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_programmatic_tid=ortb2imp-tid-456');
+      expect(payload).to.include('_fw_programmatic_tidt=2');
+    });
+
+    it('should include TID from ortb2.source.tid when ortb2Imp not available', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:profile',
+          'siteSectionId': 'test-site-section'
+        }
+      }];
+
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'source-tid-789'
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_programmatic_tid=source-tid-789');
+      expect(payload).to.include('_fw_programmatic_tidt=2'); // Default generated
+    });
+
+    it('should not include TID/TIDT when not provided anywhere', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:profile',
+          'siteSectionId': 'test-site-section'
+        }
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.not.include('_fw_programmatic_tid'); // No fallback generation
+      expect(payload).to.not.include('_fw_programmatic_tidt'); // No TIDT without TID
     });
   });
 });
