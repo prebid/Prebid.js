@@ -68,7 +68,10 @@
             if (ID_USAGE) {
                 scriptURL += '?id.usage=' + encodeURIComponent(ID_USAGE);
             }
-            document.write('<script src="' + scriptURL + '"><\/script>');
+            var externalScript = document.createElement('script');
+            externalScript.src = scriptURL;
+            externalScript.async = false;
+            (document.head || document.getElementsByTagName('head')[0]).appendChild(externalScript);
         }
 
         // A reload alone answers to the new preference only if the script is
