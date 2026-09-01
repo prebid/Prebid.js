@@ -42,6 +42,32 @@ server is usable until its browser tools appear. Mention that the server can
 inspect browser content and therefore must not be attached to a profile or page
 containing secrets or personal data.
 
+### Launch Chrome with the feature available
+
+The experimental switch belongs to the `chrome-devtools-mcp` process, not to
+the Chrome executable. Let the configured MCP server launch Chrome normally;
+because its arguments include `--categoryExperimentalThirdParty=true`, the
+Chrome session it controls exposes `list_3p_developer_tools` and
+`execute_3p_developer_tool` to the agent. To verify the setup outside an MCP
+client, launch the server directly with the same switch:
+
+```bash
+npx -y chrome-devtools-mcp@latest --categoryExperimentalThirdParty=true
+```
+
+Do not invent or add a similarly named `--chrome-arg`: there is no separate
+Chrome browser flag for this integration. When attaching the MCP server to an
+already-running debuggable Chrome with `--browser-url`, `--ws-endpoint`, or
+`--auto-connect`, keep `--categoryExperimentalThirdParty=true` on the MCP server
+command line.
+
+As of **2026-09-01** and `chrome-devtools-mcp` **1.8.0**, third-party developer
+tools are experimental, disabled by default, and subject to API changes. Before
+configuring a newer release, run `npx -y chrome-devtools-mcp@latest --help` and
+consult the upstream guide. If the feature has graduated or the option has been
+renamed or removed, follow the current upstream interface rather than forcing
+this historical experimental switch.
+
 ## Prepare Prebid.js
 
 1. Open or navigate to the target page with Chrome DevTools MCP.
