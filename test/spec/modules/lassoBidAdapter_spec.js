@@ -398,6 +398,37 @@ describe('lassoBidAdapter', function () {
       // actual values, not just the response shape, so a wrong source path is caught.
       expect(result[0]).to.deep.equal(expectedResponse);
     });
+
+    it('should fall back to response.bid.cat/advertiserDomains when response.meta does not carry them', function () {
+      // The server may (still, or again in the future) place cat/advertiserDomains
+      // directly on the bid object instead of on the sibling meta object. The
+      // mapping should be agnostic to which location the server uses.
+      const legacyServerResponse = {
+        body: {
+          bidid: '123456789',
+          id: '33302780340222111',
+          bid: {
+            price: 1,
+            w: 728,
+            h: 90,
+            crid: 123456,
+            ad: '<script>console.log("ad");</script>',
+            mediaType: 'banner',
+            cat: ['5', '6'],
+            advertiserDomains: ['legacy-lassomarketing.io']
+          },
+          meta: {
+            advertiserName: 'Lasso'
+          },
+          cur: 'USD',
+          netRevenue: false,
+          ttl: 300,
+        }
+      };
+      const result = spec.interpretResponse(legacyServerResponse);
+      expect(result[0].meta.secondaryCatIds).to.deep.equal(['5', '6']);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['legacy-lassomarketing.io']);
+    });
   });
 
   describe('onTimeout', () => {
