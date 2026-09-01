@@ -1037,7 +1037,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
     try {
       adjustedCpm = getGlobal().convertCurrency(bid.cpm, bidResponseCurrency.toUpperCase(), floorCurrency);
     } catch (err) {
-      logError(`${MODULE_NAME}: Unable do get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled? ${bid}`);
+      logError(`${MODULE_NAME}: Unable to get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled?`, bid);
       return fn.call(this, adUnitCode, bid, reject);
     }
   }
