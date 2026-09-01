@@ -226,7 +226,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   const matchingData: any = {
     floorMin: floorData.floorMin || 0,
     floorRuleValue: floorData.values[matchingRule],
-    matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
+    matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for analytics adapters
     matchingRule: matchingRule === floorData.meta?.defaultRule ? undefined : matchingRule
   };
   // use adUnit floorMin as priority!
