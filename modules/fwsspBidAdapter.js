@@ -106,6 +106,15 @@ export const spec = {
       keyValues._fw_bidfloor = floor;
       keyValues._fw_bidfloorcur = currency;
 
+      // Add transaction ID (TID) and transaction ID type (TIDT) with priority handling
+      const { tid, tidt } = extractTransactionIds(currentBidRequest, bidderRequest, keyValues);
+      if (tid) {
+        keyValues._fw_programmatic_tid = tid;
+      }
+      if (tidt) {
+        keyValues._fw_programmatic_tidt = tidt;
+      }
+
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
         keyValues._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -589,6 +598,81 @@ export function getBidFloor(bid, config) {
     }
   }
   return { floor, currency };
+}
+
+/**
+ * Extracts transaction ID (TID) and transaction ID type (TIDT) from bid request
+ * Priority order for TID:
+ * 1. _fw_programmatic_tid from keyValues
+ * 2. ortb2Imp.ext.tid from bidRequest
+ * 3. ortb2.source.tid from bidderRequest
+ * 4. Legacy transactionId from bidRequest
+ *
+ * Priority order for TIDT:
+ * 1. _fw_programmatic_tidt from keyValues
+ * 2. ortb2Imp.ext.tidt from bidRequest
+ *
+ * @param {object} bidRequest - The bid request object
+ * @param {object} bidderRequest - The bidder request object
+ * @param {object} keyValues - The key-values object to check for existing TID/TIDT
+ * @returns {object} Object containing tid and tidt values
+ */
+export function extractTransactionIds(bidRequest, bidderRequest, keyValues) {
+  let tid = null;
+  let tidt = null;
+
+  // Priority 1: Check if TID already exists in keyValues
+  if (keyValues._fw_programmatic_tid != null) {
+    tid = keyValues._fw_programmatic_tid;
+  }
+
+  // Priority 2: Check ortb2Imp.ext.tid
+  if (tid == null) {
+    const ortb2ImpTid = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
+    if (ortb2ImpTid != null) {
+      tid = ortb2ImpTid;
+    }
+  }
+
+  // Priority 3: Check ortb2.source.tid
+  if (tid == null && bidderRequest) {
+    const ortb2SourceTid = deepAccess(bidderRequest, 'ortb2.source.tid');
+    if (ortb2SourceTid != null) {
+      tid = ortb2SourceTid;
+    }
+  }
+
+  // Priority 4: Check legacy transactionId field
+  if (tid == null) {
+    const legacyTid = deepAccess(bidRequest, 'transactionId');
+    if (legacyTid != null) {
+      tid = legacyTid;
+    }
+  }
+
+  // TIDT extraction with priority (only if TID exists)
+  if (tid != null) {
+    // Priority 1: Check if TIDT already exists in keyValues
+    if (keyValues._fw_programmatic_tidt != null) {
+      tidt = keyValues._fw_programmatic_tidt;
+    }
+
+    // Priority 2: Check ortb2Imp.ext.tidt
+    if (tidt == null) {
+      const ortb2Tidt = deepAccess(bidRequest, 'ortb2Imp.ext.tidt');
+      if (ortb2Tidt != null) {
+        tidt = ortb2Tidt;
+      }
+    }
+
+    // Priority 3: Determine default TIDT based on role
+    if (tidt == null) {
+      tidt = 2; // Default to non-primary ad server
+    }
+  }
+
+  logInfo('PREBID - TID DEBUG: Final TID/TIDT values - TID:', tid, 'TIDT:', tidt);
+  return { tid, tidt };
 }
 
 function isValidUrl(str) {
