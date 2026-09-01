@@ -8,6 +8,7 @@ import { interpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting a
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
+import type { RequireAtLeastOne } from '../src/types/objects.d.ts';
 
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
@@ -15,12 +16,6 @@ const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '8.0';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
-
-type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
-  Omit<T, Keys> & {
-    [K in Keys]-?: Required<Pick<T, K>> &
-      Partial<Pick<T, Exclude<Keys, K>>>
-  }[Keys];
 
 type Nexx360BidParams = RequireAtLeastOne<{
   tagId?: string;
