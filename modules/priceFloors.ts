@@ -827,7 +827,7 @@ declare module '../src/adUnits' {
 export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> & {
   enabled?: boolean;
   /**
-   * The mimimum CPM floor used by the Price Floors Module.
+   * The minimum CPM floor used by the Price Floors Module.
    * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
    */
   floorMin?: number;
