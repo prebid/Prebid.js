@@ -662,7 +662,7 @@ export function parseFloorData(floorsData, location) {
  * @param {function} fn required; The next function in the chain, used by hook.ts
  */
 export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook(fn, reqBidsConfigObj) {
-  // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
+  // preserves all module related variables for the current auction instance (used primarily for concurrent auctions)
   const hookConfig = {
     reqBidsConfigObj,
     context: this,
