@@ -917,8 +917,10 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, forc
 
     let refreshNeeded = false;
     if (typeof submodule.config.storage.refreshInSeconds === 'number') {
-      const storedDate = new Date(getStoredValue(submodule, 'last'));
-      refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
+      const lastUpdated = new Date(getStoredValue(submodule, 'last')).getTime();
+      // if we have no record of when this ID was last refreshed (e.g. it predates `refreshInSeconds`
+      // being configured), treat it the same as an overdue refresh rather than silently skipping it forever
+      refreshNeeded = isNaN(lastUpdated) || (Date.now() - lastUpdated > submodule.config.storage.refreshInSeconds * 1000);
     }
 
     if (!storedId || refreshNeeded || forceRefresh || consentChanged(submodule)) {

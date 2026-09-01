@@ -1015,6 +1015,11 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   // get the matching rule
   const floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, { ...bid, size: [bid.width, bid.height] });
 
+  // a rule value of `null` means the publisher explicitly wants no floor for this match, same as getFloor() honors below
+  if (floorInfo.floorRuleValue === null) {
+    return fn.call(this, adUnitCode, bid, reject);
+  }
+
   if (!floorInfo.matchingFloor) {
     if (floorInfo.matchingFloor !== 0) logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
     return fn.call(this, adUnitCode, bid, reject);
