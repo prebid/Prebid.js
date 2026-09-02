@@ -348,6 +348,7 @@ describe('Ezoic adapter', function () {
         size: [300, 250]
       });
       expect(payload.imps[0].floor).to.equal(0.75);
+      expect(payload.imps[0].floorCur).to.equal('USD');
     });
 
     it('queries the wildcard floor for multiformat ad units', function () {
@@ -370,6 +371,33 @@ describe('Ezoic adapter', function () {
         size: '*'
       });
       expect(payload.imps[0].floor).to.equal(0.6);
+      expect(payload.imps[0].floorCur).to.equal('USD');
+    });
+
+    it('forwards getFloor currency as floorCur when it is not USD', function () {
+      const getFloor = sinon.stub().returns({ floor: 1.5, currency: 'EUR' });
+      const request = spec.buildRequests([getBidRequest({ getFloor })], getBidderRequest());
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imps[0].floor).to.equal(1.5);
+      expect(payload.imps[0].floorCur).to.equal('EUR');
+    });
+
+    it('defaults floorCur to USD when getFloor omits currency', function () {
+      const getFloor = sinon.stub().returns({ floor: 0.5 });
+      const request = spec.buildRequests([getBidRequest({ getFloor })], getBidderRequest());
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imps[0].floor).to.equal(0.5);
+      expect(payload.imps[0].floorCur).to.equal('USD');
+    });
+
+    it('omits floor and floorCur when getFloor is absent', function () {
+      const request = spec.buildRequests([getBidRequest()], getBidderRequest());
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imps[0]).to.not.have.property('floor');
+      expect(payload.imps[0]).to.not.have.property('floorCur');
     });
 
     it('posts video media type details and asks Prebid floors for video size', function () {
@@ -390,6 +418,7 @@ describe('Ezoic adapter', function () {
         video: bid.mediaTypes.video
       });
       expect(payload.imps[0].floor).to.equal(1.25);
+      expect(payload.imps[0].floorCur).to.equal('USD');
       expect(payload.imps[0].ortb2Imp.video.plcmt).to.equal(1);
     });
 
@@ -411,6 +440,7 @@ describe('Ezoic adapter', function () {
         native: bid.mediaTypes.native
       });
       expect(payload.imps[0].floor).to.equal(0.95);
+      expect(payload.imps[0].floorCur).to.equal('USD');
       expect(payload.imps[0].ortb2Imp.native.request).to.be.a('string');
     });
 
@@ -429,6 +459,7 @@ describe('Ezoic adapter', function () {
 
       expect(payload.imps[0].params).to.deep.equal({ placementId: 'placement-123' });
       expect(payload.imps[0].floor).to.equal(5.15);
+      expect(payload.imps[0].floorCur).to.equal('USD');
       expect(getFloor.calledOnce).to.equal(true);
     });
 

@@ -223,7 +223,14 @@ function getBidFloor(bid) {
       mediaType: single || '*',
       size,
     });
-    return floor?.floor;
+    const value = Number(floor?.floor);
+    if (!Number.isFinite(value) || value <= 0) {
+      return undefined;
+    }
+    return {
+      floor: value,
+      currency: floor.currency || DEFAULT_CURRENCY,
+    };
   } catch (e) {
     return undefined;
   }
@@ -248,15 +255,20 @@ function getImpressionMediaTypes(bid) {
 }
 
 function getImpression(bid) {
-  return {
+  const impression = {
     requestId: bid.bidId,
     adUnitCode: bid.adUnitCode,
     sizes: bid.sizes || bid.mediaTypes?.banner?.sizes || [],
     mediaTypes: getImpressionMediaTypes(bid),
     params: getImpressionParams(bid.params),
-    floor: getBidFloor(bid),
     ortb2Imp: bid.ortb2Imp,
   };
+  const floorInfo = getBidFloor(bid);
+  if (floorInfo) {
+    impression.floor = floorInfo.floor;
+    impression.floorCur = floorInfo.currency;
+  }
+  return impression;
 }
 
 function originalBidByRequestId(request) {
