@@ -566,22 +566,22 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
 
   let settleInitial;
 
-  const initChain =     PbPromise.all([hooksReady, startInit.promise])
-      .then(timeConsent)
-      .then(checkRefs(() => {
-        initialized = true;
-        initSubmodules(initModules, allModules);
-        if (initModules.submodules.some(item => isFn(item.callback))) {
-          settleInitial = trackBatch().settle;
-        }
-      }))
-      .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
-      .then(checkRefs(() => {
-        const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
-        if (modWithCb.length) {
-          return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
-        }
-      }));
+  const initChain = PbPromise.all([hooksReady, startInit.promise])
+    .then(timeConsent)
+    .then(checkRefs(() => {
+      initialized = true;
+      initSubmodules(initModules, allModules);
+      if (initModules.submodules.some(item => isFn(item.callback))) {
+        settleInitial = trackBatch().settle;
+      }
+    }))
+    .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
+    .then(checkRefs(() => {
+      const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
+      if (modWithCb.length) {
+        return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
+      }
+    }));
 
   // never let the marker outlive the chain that owns it
   initChain.then(() => settleInitial?.(), () => settleInitial?.());
