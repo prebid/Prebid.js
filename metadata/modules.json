@@ -530,7 +530,7 @@
       "componentType": "bidder",
       "componentName": "adrubi",
       "aliasOf": "admatic",
-      "gvlid": 779,
+      "gvlid": 1605,
       "disclosureURL": null
     },
     {
@@ -2455,7 +2455,7 @@
       "componentType": "bidder",
       "componentName": "sspBC",
       "aliasOf": "gopl",
-      "gvlid": null,
+      "gvlid": 690,
       "disclosureURL": null
     },
     {
@@ -3013,6 +3013,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "nasrev",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "balancex",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3554,7 +3568,7 @@
       "componentType": "bidder",
       "componentName": "prismassp",
       "aliasOf": "nexx360",
-      "gvlid": 965,
+      "gvlid": 1185,
       "disclosureURL": null
     },
     {
@@ -3575,7 +3589,7 @@
       "componentType": "bidder",
       "componentName": "scoremedia",
       "aliasOf": "nexx360",
-      "gvlid": 965,
+      "gvlid": 1090,
       "disclosureURL": null
     },
     {
@@ -5820,7 +5834,7 @@
       "componentType": "rtd",
       "componentName": "stackupRtd",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/stackupRtdProvider.json"
     },
     {
       "componentType": "rtd",
