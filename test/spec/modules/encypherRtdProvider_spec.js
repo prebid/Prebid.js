@@ -3,11 +3,12 @@ import {
   encypherSubmodule,
   getCanonicalUrl,
   MODULE_NAME,
-  resetBeaconState,
+  resetProviderState,
   sha256,
 } from '../../../modules/encypherRtdProvider.js';
 import * as ajaxModule from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
+import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
 
 const HEADERS = {
   'Content-Type': 'application/json',
@@ -15,6 +16,7 @@ const HEADERS = {
 };
 const API_ISSUER = 'https://api.encypher.com';
 const PINNED_JWKS_URL = API_ISSUER + '/api/v1/public/provenance/jwks.json';
+const SIGNAL_ORIGIN = 'https://signals.encypher.com';
 const TRUSTED_JWK = {
   kty: 'EC',
   crv: 'P-256',
@@ -45,13 +47,6 @@ const PAGE_SIGNAL = {
   ref: API_ISSUER + '/api/v1/public/provenance/attestations/epa_1',
   att: PAGE_ATT,
 };
-const CACHE_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImVuY3lwaGVyLWF0dGVzdGF0aW9uLXRlc3QiLCJ0eXAiOiJlcGF0K2p3cyJ9.eyJjb250ZW50X2hhc2giOiI3WEFDdERucHJJUmZJalY5Z2l1c0ZFUnpENzIyQVcwLXlVTWlsN25zbjNNIiwiZGVjbGFyYXRpb24iOnsibGFiZWwiOiJodW1hbl9kZWNsYXJlZCIsInNvdXJjZV9hc3NlcnRpb24iOiJjMnBhIn0sImV4cCI6MjAwMDAwMDAxMCwiaWF0IjoxOTk5OTk5OTAwLCJpc3MiOiJodHRwczovL2FwaS5lbmN5cGhlci5jb20iLCJtYW5pZmVzdF9kaWdlc3QiOiJCYk9yOGxlYVhyWmtBODE0dmxWXzJHQmpPaF9pRUR4MlFnTU43LU1zWlg4IiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjo3LCJzdWIiOiJlcGFfYyIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoidjEiLCJ1cmxfaGFzaCI6IjFxMWIxWHAxV3hybFYzZlhCbXNvOGlwQlppbTk0MDItRUxkWmdNbGtrMjAiLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOnsiY29kZXMiOlsidmFsaWQiXSwic3RhdHVzIjoidmFsaWQifX0.v76mQ53DJPz0xOKQoa10DURSl1K73rhQU-HcY77X_Vy4PphM7-ndLglRAqKQNIoC194iHCCtwhYhPjXSi0TFww';
-const CACHE_SIGNAL = {
-  v: 1,
-  id: 'epa_c',
-  ref: API_ISSUER + '/api/v1/public/provenance/attestations/epa_c',
-  att: CACHE_ATT,
-};
 const ATTACKER_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImF0dGFja2VyLWtleSIsInR5cCI6ImVwYXQrandzIn0.eyJjb250ZW50X2hhc2giOiI3WEFDdERucHJJUmZJalY5Z2l1c0ZFUnpENzIyQVcwLXlVTWlsN25zbjNNIiwiZGVjbGFyYXRpb24iOiJodW1hbl9kZWNsYXJlZCIsImV4cCI6NDEwMjQ0NDgwMCwiaWF0IjoxNzA0MDY3MjAwLCJpc3MiOiJodHRwczovL2F0dGFja2VyLmV4YW1wbGUiLCJtYW5pZmVzdF9kaWdlc3QiOiJCYk9yOGxlYVhyWmtBODE0dmxWXzJHQmpPaF9pRUR4MlFnTU43LU1zWlg4IiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjo3LCJzdWIiOiJlcGFfYXR0YWNrZXJfMSIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoxLCJ1cmxfaGFzaCI6IjFxMWIxWHAxV3hybFYzZlhCbXNvOGlwQlppbTk0MDItRUxkWmdNbGtrMjAiLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOlsiY2xhaW1TaWduYXR1cmUudmFsaWQiXX0.Zi0M0Q9zAx0MAWPck9fw-aWsYYjNtDNOn5HZssJpK1syfBRxbQn2trYl2Fi96R41IDhBjvBJ_EKqg-bnrSUHsw';
 const ATTACKER_SIGNAL = {
   v: 1,
@@ -69,6 +64,11 @@ const CANONICAL_URL_CASES = [
   ['percent-encoding', 'https://example.com/%7Epublisher', 'https://example.com/~publisher', 'sj4eX-u4keaeqaOHz7e5EuB37jdalazDyQmff7mH6EE'],
   ['query-order-and-duplicates', 'https://example.com/a?b=2&a=2&a=1', 'https://example.com/a?a=1&a=2&b=2', 'FLqz_5NsYqykQVhri1MpZv598OO4EX-NpvxiQebVz58'],
 ];
+const DIGEST_BYTES_BY_CANONICAL_URL = new Map([
+  ...CANONICAL_URL_CASES.map(([, , canonicalUrl, digest]) => [canonicalUrl, digest]),
+  [STORY_URL, STORY_HASH],
+  [PAGE_URL, PAGE_HASH],
+].map(([canonicalUrl, digest]) => [canonicalUrl, decodeBase64url(digest)]));
 const FORBIDDEN_TELEMETRY_FIELD = /url|hash|content|score|billing|price|deal|user|cookie|credential|attestation|jws/i;
 
 function ready(record, datasetVersion = 7) {
@@ -121,37 +121,20 @@ function addCanonical(url, cleanups) {
   return link;
 }
 
-function addBrowserBait(cleanups) {
-  const manifest = document.createElement('meta');
-  manifest.name = 'c2pa-manifest-url';
-  manifest.content = 'https://publisher.example/private/manifest';
-  document.head.appendChild(manifest);
-  cleanups.push(() => manifest.parentNode && manifest.parentNode.removeChild(manifest));
-
-  const jsonLd = document.createElement('script');
-  jsonLd.type = 'application/ld+json';
-  jsonLd.textContent = JSON.stringify({
-    '@type': 'NewsArticle',
-    articleBody: 'SECRET ARTICLE TEXT THAT MUST NEVER LEAVE THE BROWSER',
-  });
-  document.head.appendChild(jsonLd);
-  cleanups.push(() => jsonLd.parentNode && jsonLd.parentNode.removeChild(jsonLd));
-
-  const article = document.createElement('article');
-  article.textContent = 'SECRET ARTICLE TEXT THAT MUST NEVER LEAVE THE BROWSER';
-  document.body.appendChild(article);
-  cleanups.push(() => article.parentNode && article.parentNode.removeChild(article));
-}
-
 function base64url(bytes) {
   let binary = '';
   bytes.forEach(byte => { binary += String.fromCharCode(byte); });
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+function decodeBase64url(value) {
+  const encoded = value.replace(/-/g, '+').replace(/_/g, '/');
+  const binary = atob(encoded + '='.repeat((4 - encoded.length % 4) % 4));
+  return Uint8Array.from(binary, character => character.charCodeAt(0));
+}
+
 function decodeClaims(compact) {
-  const encoded = compact.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-  return JSON.parse(atob(encoded + '='.repeat((4 - encoded.length % 4) % 4)));
+  return JSON.parse(new TextDecoder().decode(decodeBase64url(compact.split('.')[1])));
 }
 
 function replaceClaims(compact, mutate) {
@@ -168,21 +151,28 @@ function pendingRequest(url) {
   ));
 }
 
-function pendingLookup(signalBase) {
-  const prefix = signalBase + '/v1/attestations/';
+function pendingLookup() {
+  const prefix = SIGNAL_ORIGIN + '/v1/attestations/';
   return server.requests.slice().reverse().find(request => (
     request.url.startsWith(prefix) && request.readyState !== XMLHttpRequest.DONE
   ));
 }
 
-function assertCanonicalLookup(lookup, signalBase, hash, canonicalUrl, publisherDomain = 'publisher.example', adoptionReporting = true) {
+function requestInit(url) {
+  const call = ajaxModule.dep.makeRequest.getCalls().find(candidate => (
+    candidate.args[0] === url && candidate.args[1]
+  ));
+  assert.ok(call, 'initial Request options must be captured for ' + url);
+  return call.args[1];
+}
+
+function assertCanonicalLookup(lookup, hash, canonicalUrl, publisherDomain = 'publisher.example', adoptionReporting = true) {
   assert.ok(lookup, 'edge attestation lookup must be requested');
-  const expectedPublisherDomain = publisherDomain.toLowerCase();
   const parsed = new URL(lookup.url);
-  assert.strictEqual(parsed.origin + parsed.pathname, signalBase + '/v1/attestations/' + hash);
+  assert.strictEqual(parsed.origin + parsed.pathname, SIGNAL_ORIGIN + '/v1/attestations/' + hash);
   const expectedParameters = [
     ['module_version', '1.1.0'],
-    ['publisher_domain', expectedPublisherDomain],
+    ['publisher_domain', publisherDomain.toLowerCase()],
   ];
   if (adoptionReporting === false) expectedParameters.push(['adoption_reporting', '0']);
   assert.deepStrictEqual(Array.from(parsed.searchParams).sort(), expectedParameters.sort());
@@ -192,53 +182,61 @@ function assertCanonicalLookup(lookup, signalBase, hash, canonicalUrl, publisher
   assert.strictEqual(lookup.requestBody, undefined);
   assert.strictEqual(lookup.withCredentials, false);
   assert.strictEqual(lookup.fetch.request.credentials, 'omit');
+  assert.strictEqual(lookup.fetch.request.cache, 'no-store');
   assert.strictEqual(lookup.fetch.request.redirect, 'error');
+  assert.strictEqual(requestInit(lookup.url).referrerPolicy, 'no-referrer');
   assert.deepStrictEqual(
     Array.from(lookup.fetch.request.headers.entries()),
     [['accept', 'application/json']],
-    'the browser Request must contain only the fixed CORS-safelisted Accept header',
   );
-  assert.strictEqual(lookup.fetch.request.headers.has('x-encypher-publisher-domain'), false);
-  assert.strictEqual(lookup.fetch.request.headers.has('authorization'), false);
-  assert.strictEqual(lookup.fetch.request.headers.has('x-api-key'), false);
-  assert.strictEqual(lookup.fetch.request.headers.has('cookie'), false);
 }
 
-function respondJwksIfRequested(jwks = JWKS) {
-  const request = pendingRequest(PINNED_JWKS_URL);
+async function findPending(url) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const request = pendingRequest(url);
+    if (request) return request;
+    await Promise.resolve();
+  }
+  return null;
+}
+
+async function respondJwksIfRequested(jwks = JWKS, headers = HEADERS) {
+  const request = await findPending(PINNED_JWKS_URL);
   if (!request) return false;
+  assert.strictEqual(request.fetch.request.cache, 'no-store');
   assert.strictEqual(request.fetch.request.credentials, 'omit');
-  assert.strictEqual(request.fetch.request.headers.has('authorization'), false);
-  assert.strictEqual(request.fetch.request.headers.has('cookie'), false);
-  request.respond(200, HEADERS, JSON.stringify(jwks));
+  assert.strictEqual(request.fetch.request.redirect, 'error');
+  assert.strictEqual(requestInit(request.url).referrerPolicy, 'no-referrer');
+  request.respond(200, headers, JSON.stringify(jwks));
   return true;
 }
 
-function respondReady(signalBase, hash, canonicalUrl, record, datasetVersion = 7, publisherDomain = 'publisher.example') {
-  const lookup = pendingLookup(signalBase);
-  assertCanonicalLookup(lookup, signalBase, hash, canonicalUrl, publisherDomain);
-  lookup.respond(200, HEADERS, JSON.stringify(ready(record, datasetVersion)));
-  respondJwksIfRequested();
+async function respondDecision(envelope, { jwks = JWKS, headers = HEADERS } = {}) {
+  const lookup = pendingLookup();
+  assert.ok(lookup, 'lookup must be pending');
+  lookup.respond(200, headers, JSON.stringify(envelope));
+  if (envelope.status === 'ready') await respondJwksIfRequested(jwks);
+}
+
+function beginAuction(params = {}, auction = makeAuction()) {
+  let callbackCount = 0;
+  const completion = new Promise(resolve => {
+    encypherSubmodule.getBidRequestData(auction, () => {
+      callbackCount += 1;
+      resolve();
+    }, { params: Object.assign({ timeout: 300 }, params) });
+  });
+  return {
+    auction,
+    completion,
+    callbackCount: () => callbackCount,
+  };
 }
 
 function assertNoInjection(auction) {
   auction.adUnits.forEach(adUnit => {
-    assert.strictEqual(adUnit.ortb2Imp.ext.c2pa, undefined);
+    assert.strictEqual(adUnit.ortb2Imp && adUnit.ortb2Imp.ext && adUnit.ortb2Imp.ext.c2pa, undefined);
   });
-}
-
-function assertAuctionFieldsPreserved(auction) {
-  assert.strictEqual(auction.adUnits[0].ortb2Imp.ext.gpid, '/1234/article/leaderboard');
-  assert.strictEqual(auction.adUnits[0].ortb2Imp.ext.caller_imp, 'keep-one');
-  assert.strictEqual(auction.adUnits[1].ortb2Imp.ext.gpid, '/1234/article/rectangle');
-  assert.strictEqual(auction.adUnits[1].ortb2Imp.ext.caller_imp, 'keep-two');
-  assert.strictEqual(auction.adUnits[1].caller_unit, 'keep-unit');
-  assert.deepStrictEqual(auction.ortb2Fragments.global.source.schain, {
-    ver: '1.0',
-    complete: 1,
-    nodes: [{ asi: 'ssp.example', sid: 'publisher-7', hp: 1 }],
-  });
-  assert.strictEqual(auction.ortb2Fragments.global.ext.caller_global, 'keep-global');
 }
 
 function assertDiagnostic(serializedBody, event, impressionCount, datasetVersion) {
@@ -264,1135 +262,914 @@ function assertDiagnostic(serializedBody, event, impressionCount, datasetVersion
   assert.strictEqual(Object.keys(body).some(key => FORBIDDEN_TELEMETRY_FIELD.test(key)), false);
 }
 
+function recordWithClaims(record, mutate) {
+  return Object.assign({}, record, { att: replaceClaims(record.att, mutate) });
+}
+
+function miss(status, datasetVersion) {
+  return { v: 1, status, dataset_version: datasetVersion, record: null };
+}
+
+function paddedJson(value, byteLength) {
+  const serialized = JSON.stringify(value);
+  const padding = byteLength - new TextEncoder().encode(serialized).byteLength;
+  assert.ok(padding >= 0, 'fixture must fit body limit');
+  return serialized + ' '.repeat(padding);
+}
+
+function installStreamResponse(sandbox, matchingBody, spec) {
+  const NativeResponse = window.Response;
+  const state = { cancelCount: 0, readCount: 0 };
+  sandbox.stub(window, 'Response').callsFake((body, init) => {
+    if (body !== matchingBody) return new NativeResponse(body, init);
+    const reader = {
+      read() {
+        state.readCount += 1;
+        if (spec.rejectRead) return GreedyPromise.reject(new Error('reader failed'));
+        if (spec.pendingRead) return new Promise(() => {});
+        const chunk = spec.chunks.shift();
+        return GreedyPromise.resolve(chunk
+          ? { done: false, value: chunk }
+          : { done: true, value: undefined });
+      },
+      cancel() {
+        state.cancelCount += 1;
+        return GreedyPromise.resolve();
+      },
+    };
+    return {
+      status: init.status,
+      statusText: init.statusText,
+      headers: new Headers(init.headers || {}),
+      body: spec.bodyNull ? null : { getReader: () => reader },
+    };
+  });
+  return state;
+}
+
+function utf8Chunks(text, chunkSizes = []) {
+  const bytes = new TextEncoder().encode(text);
+  if (chunkSizes.length === 0) return [bytes];
+  const chunks = [];
+  let offset = 0;
+  chunkSizes.forEach(size => {
+    chunks.push(bytes.slice(offset, offset + size));
+    offset += size;
+  });
+  if (offset < bytes.byteLength) chunks.push(bytes.slice(offset));
+  return chunks;
+}
+
 describe('encypherRtdProvider decision-network v1', () => {
   let sandbox;
   let cleanups;
-  let sendBeaconStub;
+  let digestStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     cleanups = [];
-    sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+    digestStub = sandbox.stub(window.crypto.subtle, 'digest').callsFake((_algorithm, encoded) => {
+      const value = new TextDecoder().decode(encoded);
+      const expected = DIGEST_BYTES_BY_CANONICAL_URL.get(value);
+      assert.ok(expected, 'test digest fixture missing for ' + value);
+      return GreedyPromise.resolve(expected.buffer);
+    });
   });
 
   afterEach(() => {
     sandbox.restore();
-    if (typeof resetBeaconState === 'function') resetBeaconState();
+    resetProviderState();
     cleanups.forEach(cleanup => cleanup());
   });
 
-  it('registers one Encypher provider identity', () => {
+  it('uses the exact signal origin with no configurable origin input', async () => {
+    addCanonical(STORY_URL, cleanups);
     assert.strictEqual(MODULE_NAME, 'encypher');
     assert.strictEqual(encypherSubmodule.name, 'encypher');
-    assert.strictEqual(encypherSubmodule.init({ params: { signalBase: 'https://signals.encypher.com' } }), true);
+    assert.strictEqual(encypherSubmodule.init({ params: {} }), true);
+
+    const run = beginAuction({ adoptionReporting: false });
+    const lookup = pendingLookup();
+    assertCanonicalLookup(lookup, STORY_HASH, STORY_URL, 'publisher.example', false);
+    assert.strictEqual(server.requests.every(request => new URL(request.url).origin === SIGNAL_ORIGIN), true);
+    await respondDecision(miss('miss', 1));
+    await run.completion;
+    assert.strictEqual(run.callbackCount(), 1);
+    assertNoInjection(run.auction);
   });
 
-  it('matches the generated canonical URL and unpadded SHA-256 vectors', () => {
+  it('matches the generated canonical URL and unpadded SHA-256 vectors', async () => {
+    digestStub.restore();
     const canonical = addCanonical(CANONICAL_URL_CASES[0][1], cleanups);
-
-    CANONICAL_URL_CASES.forEach(([id, inputUrl, expectedUrl, expectedDigest]) => {
+    for (const [id, inputUrl, expectedUrl, expectedDigest] of CANONICAL_URL_CASES) {
       canonical.href = inputUrl;
       const canonicalUrl = getCanonicalUrl();
-      const digest = base64url(sha256(canonicalUrl));
-
+      const digest = base64url(await sha256(canonicalUrl));
       assert.strictEqual(canonicalUrl, expectedUrl, id + ' canonical URL');
       assert.strictEqual(digest, expectedDigest, id + ' digest');
-      assert.match(digest, /^[A-Za-z0-9_-]{43}$/, id + ' unpadded base64url digest');
-    });
+      assert.match(digest, /^[A-Za-z0-9_-]{43}$/);
+    }
   });
 
-  it('performs a credentialless lookup, injects only the four-field carrier per impression, and leaves browser data untouched', (done) => {
-    const signalBase = 'https://signals.encypher.com';
-    addCanonical(STORY_URL, cleanups);
-    addBrowserBait(cleanups);
-    const storageGet = sandbox.spy(Storage.prototype, 'getItem');
-    const storageSet = sandbox.spy(Storage.prototype, 'setItem');
-    const auction = makeAuction();
-    let callbackCount = 0;
-
-    encypherSubmodule.getBidRequestData(auction, () => {
-      callbackCount += 1;
-      if (callbackCount > 1) {
-        done(new Error('auction callback invoked more than once'));
-        return;
-      }
-      try {
-        auction.adUnits.forEach(adUnit => {
-          assert.deepStrictEqual(adUnit.ortb2Imp.ext.c2pa, STORY_SIGNAL);
-          assert.deepStrictEqual(Object.keys(adUnit.ortb2Imp.ext.c2pa).sort(), ['att', 'id', 'ref', 'v']);
-        });
-        assertAuctionFieldsPreserved(auction);
-        assert.strictEqual(auction.ortb2Fragments.global.site, undefined);
-        assert.strictEqual(storageGet.callCount, 0);
-        assert.strictEqual(storageSet.callCount, 0);
-        assert.strictEqual(server.requests.length, 2, 'only the signal lookup and pinned JWKS reads are allowed');
-        assert.strictEqual(server.requests.some(request => /\/(?:sign|manifest)(?:\/|$)/i.test(new URL(request.url).pathname)), false);
-        assert.strictEqual(server.requests.some(request => String(request.requestBody).includes('SECRET ARTICLE TEXT')), false);
-        assert.strictEqual(server.requests.some(request => request.url.includes('/private/manifest')), false);
-        assert.strictEqual(sendBeaconStub.callCount, 0);
-        done();
-      } catch (error) {
-        done(error);
-      }
-    }, {
-      params: {
-        signalBase,
-        telemetry: false,
-        requestHeaders: {
-          Authorization: 'Bearer caller-controlled',
-          'X-Api-Key': 'caller-controlled',
-          'X-Encypher-Publisher-Domain': 'attacker.example',
-        },
-      },
-    });
-
-    assert.strictEqual(callbackCount, 0, 'verification must complete before callback');
-    respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 17);
-  });
-
-  [
-    {
-      name: 'reporting enabled without a separate reporting request',
-      params: {},
-      adoptionReporting: true,
-    },
-    {
-      name: 'the publisher opt-out on the lookup request',
-      params: { adoptionReporting: false },
-      adoptionReporting: false,
-    },
-  ].forEach((testCase, index) => {
-    it('fails open once on a miss with ' + testCase.name, async () => {
-      const signalBase = 'https://adoption-' + index + '.signals.encypher.com';
-      const clock = sandbox.useFakeTimers();
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      let callbackCount = 0;
-      const completion = new Promise(resolve => {
-        encypherSubmodule.getBidRequestData(auction, () => {
-          callbackCount += 1;
-          resolve();
-        }, {
-          params: Object.assign({ signalBase, telemetry: false, timeout: 100 }, testCase.params),
-        });
-      });
-
-      const lookup = pendingLookup(signalBase);
-      assertCanonicalLookup(
-        lookup,
-        signalBase,
-        STORY_HASH,
-        STORY_URL,
-        'publisher.example',
-        testCase.adoptionReporting,
-      );
-      assert.strictEqual(server.requests.length, 1, 'adoption reporting must ride on the lookup request');
-      lookup.respond(204, HEADERS, null);
-      await completion;
-      await Promise.resolve();
-      clock.tick(100);
-
-      assert.strictEqual(callbackCount, 1, 'a miss and its cleared deadline must call back exactly once');
-      assertNoInjection(auction);
-      assert.strictEqual(server.requests.length, 1, 'a miss must not trigger a second reporting request');
-      assert.strictEqual(sendBeaconStub.callCount, 0);
-    });
-  });
-
-  it('accepts exact signed claims from an authorized mirror while pinning issuer, JWKS, domain, URL hash, revision, and status', async () => {
-    const signalBase = 'https://partner.signals.encypher.com';
-    addCanonical(PAGE_URL, cleanups);
-    assert.deepStrictEqual(decodeClaims(PAGE_ATT), {
-      content_hash: '7XACtDnprIRfIjV9giusFERzD722AW0-yUMil7nsn3M',
-      declaration: { label: 'human_declared', source_assertion: 'c2pa' },
-      exp: 4102444800,
-      iat: 1704067200,
-      iss: API_ISSUER,
-      manifest_digest: 'BbOr8leaXrZkA814vlV_2GBjOh_iEDx2QgMN7-MsZX8',
-      publisher_domain: 'publisher.example',
-      record_revision: 7,
-      sub: 'epa_1',
-      trust_policy_version: 'v1',
-      url_hash: PAGE_HASH,
-      validation_results: { codes: ['valid'], status: 'valid' },
-    });
-    const auction = makeAuction();
-    let callbackCount = 0;
-    const completion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false, timeout: 100 } });
-    });
-
-    respondReady(signalBase, PAGE_HASH, PAGE_URL, PAGE_SIGNAL, 9);
-    await completion;
-
-    assert.strictEqual(callbackCount, 1);
-    assert.deepStrictEqual(auction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
-    assert.strictEqual(server.requests.some(request => request.url === signalBase + '/.well-known/jwks.json'), false);
-  });
-
-  it('rejects an attacker-signed response from an allowed signal host', async () => {
-    const signalBase = 'https://attacker-signature.signals.encypher.com';
-    addCanonical(PAGE_URL, cleanups);
-    const auction = makeAuction();
-    let callbackCount = 0;
-    const completion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-
-    respondReady(signalBase, PAGE_HASH, PAGE_URL, ATTACKER_SIGNAL, 10);
-    await completion;
-
-    assert.strictEqual(callbackCount, 1);
-    assertNoInjection(auction);
-    assert.strictEqual(server.requests.some(request => request.url === signalBase + '/.well-known/jwks.json'), false);
-  });
-
-  it('rejects a mirror-substituted ref on an otherwise valid signed record', async () => {
-    const signalBase = 'https://partner.signals.encypher.com/approved/reverse-proxy';
-    addCanonical(STORY_URL, cleanups);
-    const auction = makeAuction();
-    const substituted = Object.assign({}, STORY_SIGNAL, {
-      ref: 'https://attacker.example/substituted-evidence',
-    });
-    let callbackCount = 0;
-    const completion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-
-    respondReady(signalBase, STORY_HASH, STORY_URL, substituted, 11);
-    await completion;
-
-    assert.strictEqual(callbackCount, 1);
-    assertNoInjection(auction);
-  });
-
-  it('bounds page-memory reuse to 30 seconds and refreshes when the canonical URL changes', async () => {
-    const signalBase = 'https://lifecycle.signals.encypher.com';
-    const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
-    const canonical = addCanonical(STORY_URL, cleanups);
-    const firstAuction = makeAuction();
-    let firstCallbackCount = 0;
-    const firstCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(firstAuction, () => {
-        firstCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 31);
-    await firstCompletion;
-
-    assert.strictEqual(firstCallbackCount, 1);
-    assert.deepStrictEqual(firstAuction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    const lookupCountAfterFirstAuction = server.requests.filter(request => (
-      request.url.startsWith(signalBase + '/v1/attestations/')
-    )).length;
-
-    clock.tick(10000);
-    const reusedStoryAuction = makeAuction();
-    let reusedStoryCallbackCount = 0;
-    const reusedStoryCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(reusedStoryAuction, () => {
-        reusedStoryCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    await reusedStoryCompletion;
-
-    assert.strictEqual(reusedStoryCallbackCount, 1);
-    assert.deepStrictEqual(reusedStoryAuction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.strictEqual(server.requests.filter(request => (
-      request.url.startsWith(signalBase + '/v1/attestations/')
-    )).length, lookupCountAfterFirstAuction);
-
-    canonical.href = PAGE_URL;
-    const changedUrlAuction = makeAuction();
-    let changedUrlCallbackCount = 0;
-    const changedUrlCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(changedUrlAuction, () => {
-        changedUrlCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    assert.strictEqual(changedUrlCallbackCount, 0);
-    assertNoInjection(changedUrlAuction);
-    respondReady(signalBase, PAGE_HASH, PAGE_URL, PAGE_SIGNAL, 32);
-    await changedUrlCompletion;
-
-    assert.strictEqual(changedUrlCallbackCount, 1);
-    assert.deepStrictEqual(changedUrlAuction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
-    const lookupCountAfterCanonicalChange = server.requests.filter(request => (
-      request.url.startsWith(signalBase + '/v1/attestations/')
-    )).length;
-    assert.strictEqual(lookupCountAfterCanonicalChange, lookupCountAfterFirstAuction + 1);
-
-    clock.tick(29999);
-    const withinTtlAuction = makeAuction();
-    let withinTtlCallbackCount = 0;
-    const withinTtlCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(withinTtlAuction, () => {
-        withinTtlCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    await withinTtlCompletion;
-
-    assert.strictEqual(withinTtlCallbackCount, 1);
-    assert.deepStrictEqual(withinTtlAuction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
-    assert.strictEqual(server.requests.filter(request => (
-      request.url.startsWith(signalBase + '/v1/attestations/')
-    )).length, lookupCountAfterCanonicalChange);
-
-    clock.tick(1);
-    const staleAuction = makeAuction();
-    let staleCallbackCount = 0;
-    const staleCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(staleAuction, () => {
-        staleCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    assert.strictEqual(staleCallbackCount, 0, 'status refresh must complete before callback');
-    assertNoInjection(staleAuction);
-    const staleLookup = pendingLookup(signalBase);
-    assertCanonicalLookup(staleLookup, signalBase, PAGE_HASH, PAGE_URL);
-    staleLookup.respond(200, HEADERS, JSON.stringify({
-      v: 1,
-      status: 'stale',
-      dataset_version: 33,
-      record: null,
-    }));
-    await staleCompletion;
-
-    assert.strictEqual(staleCallbackCount, 1);
-    assertNoInjection(staleAuction);
-    assert.strictEqual(server.requests.filter(request => (
-      request.url.startsWith(signalBase + '/v1/attestations/')
-    )).length, lookupCountAfterCanonicalChange + 1);
-  });
-
-  it('refreshes an expired page-memory record and fails open on an edge miss', async () => {
-    const signalBase = 'https://expiration.signals.encypher.com';
-    addCanonical(PAGE_URL, cleanups);
-    const clock = sandbox.useFakeTimers({ now: 2000000000 * 1000 });
-    const firstAuction = makeAuction();
-    let firstCallbackCount = 0;
-    const firstCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(firstAuction, () => {
-        firstCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    respondReady(signalBase, PAGE_HASH, PAGE_URL, CACHE_SIGNAL, 33);
-    await firstCompletion;
-    assert.strictEqual(firstCallbackCount, 1);
-    assert.deepStrictEqual(firstAuction.adUnits[0].ortb2Imp.ext.c2pa, CACHE_SIGNAL);
-    const lookupCountAfterFirstAuction = server.requests.filter(request => (
-      request.url.startsWith(signalBase + '/v1/attestations/')
-    )).length;
-
-    clock.tick(11000);
-    const expiredAuction = makeAuction();
-    let expiredCallbackCount = 0;
-    const expiredCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(expiredAuction, () => {
-        expiredCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-
-    assert.strictEqual(expiredCallbackCount, 0, 'fresh lookup must complete before callback');
-    assertNoInjection(expiredAuction);
-    const expiredLookup = pendingLookup(signalBase);
-    assertCanonicalLookup(expiredLookup, signalBase, PAGE_HASH, PAGE_URL);
-    expiredLookup.respond(204, HEADERS, null);
-    await expiredCompletion;
-
-    assert.strictEqual(expiredCallbackCount, 1);
-    assertNoInjection(expiredAuction);
-    assert.strictEqual(server.requests.filter(request => (
-      request.url.startsWith(signalBase + '/v1/attestations/')
-    )).length, lookupCountAfterFirstAuction + 1);
-  });
-
-  [
-    {
-      name: 'an extra ready-envelope key',
-      envelope: Object.assign(ready(STORY_SIGNAL, 40), { operator_note: 'unsigned' }),
-    },
-    {
-      name: 'an unsupported ready-envelope version',
-      envelope: Object.assign(ready(STORY_SIGNAL, 40), { v: 2 }),
-    },
-    {
-      name: 'a non-positive dataset revision',
-      envelope: ready(STORY_SIGNAL, 0),
-    },
-    {
-      name: 'an extra compact-carrier key',
-      envelope: ready(Object.assign({}, STORY_SIGNAL, { score: 99 }), 40),
-    },
-    {
-      name: 'a missing compact-carrier field',
-      envelope: ready({ v: 1, id: STORY_SIGNAL.id, ref: STORY_SIGNAL.ref }, 40),
-    },
-    {
-      name: 'an unsupported compact-carrier version',
-      envelope: ready(Object.assign({}, STORY_SIGNAL, { v: 2 }), 40),
-    },
-    {
-      name: 'a compact carrier over the 1 KiB ceiling',
-      envelope: ready(Object.assign({}, STORY_SIGNAL, { att: 'x'.repeat(1100) }), 40),
-    },
-  ].forEach((testCase, index) => {
-    it('fails open once on a ready response with ' + testCase.name, () => {
-      const signalBase = 'https://invalid-ready-' + index + '.signals.encypher.com';
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-      }, { params: { signalBase, telemetry: false } });
-      const lookup = pendingLookup(signalBase);
-      assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-      lookup.respond(200, HEADERS, JSON.stringify(testCase.envelope));
-
-      assert.strictEqual(callbackCount, 1);
-      assertNoInjection(auction);
-      assert.strictEqual(pendingRequest(PINNED_JWKS_URL), undefined);
-      assert.strictEqual(sendBeaconStub.callCount, 0);
-    });
-  });
-
-  [
-    {
-      name: 'an unparseable URL',
-      signalBase: 'https://[',
-    },
-    {
-      name: 'URL credentials',
-      signalBase: 'https://user:pass@signals.encypher.com',
-    },
-    {
-      name: 'an empty query component',
-      signalBase: 'https://signals.encypher.com?',
-    },
-    {
-      name: 'an empty query component on an allowed subdomain',
-      signalBase: 'https://partner.signals.encypher.com?',
-    },
-    {
-      name: 'a query component',
-      signalBase: 'https://signals.encypher.com?tenant=publisher',
-    },
-    {
-      name: 'an empty fragment component',
-      signalBase: 'https://signals.encypher.com#',
-    },
-    {
-      name: 'an empty fragment component on an allowed subdomain',
-      signalBase: 'https://partner.signals.encypher.com#',
-    },
-    {
-      name: 'a fragment delimiter followed only by a removable slash',
-      signalBase: 'https://signals.encypher.com#/',
-    },
-    {
-      name: 'a fragment delimiter followed only by a removable slash on an allowed subdomain',
-      signalBase: 'https://partner.signals.encypher.com#/',
-    },
-    {
-      name: 'a fragment component',
-      signalBase: 'https://signals.encypher.com#publisher',
-    },
-    {
-      name: 'an arbitrary host',
-      signalBase: 'https://attacker.example',
-    },
-    {
-      name: 'a hostname-prefix lookalike',
-      signalBase: 'https://signals.encypher.com.attacker.example',
-    },
-    {
-      name: 'the uncontrolled parent domain',
-      signalBase: 'https://encypher.com',
-    },
-    {
-      name: 'a hostname-suffix lookalike',
-      signalBase: 'https://evil-signals.encypher.com',
-    },
-    {
-      name: 'an explicit custom port',
-      signalBase: 'https://signals.encypher.com:8443',
-    },
-    {
-      name: 'a legacy arbitrary fixture host',
-      signalBase: 'https://signal.test',
-    },
-  ].forEach(({ name, signalBase }) => {
-    it('fails open once without network activity for signalBase with ' + name, () => {
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      const original = structuredClone(auction);
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-      }, { params: { signalBase, telemetry: true } });
-
-      assert.strictEqual(callbackCount, 1, 'invalid signalBase must fail open synchronously exactly once');
-      assert.deepStrictEqual(auction, original);
-      assertNoInjection(auction);
-      assert.strictEqual(server.requests.length, 0, 'invalid configuration must not request signals or JWKS');
-      assert.strictEqual(sendBeaconStub.callCount, 0, 'invalid signalBase must not emit telemetry');
-    });
-  });
-
-  it('fails open once when request construction throws synchronously', () => {
-    const signalBase = 'https://request-failure.signals.encypher.com';
-    const clock = sandbox.useFakeTimers();
-    sandbox.stub(window, 'Request').throws(new TypeError('request construction failed'));
-    addCanonical(STORY_URL, cleanups);
+  it('does no work when RTD core supplies no auction budget', () => {
     const auction = makeAuction();
     const original = structuredClone(auction);
     let callbackCount = 0;
-
     encypherSubmodule.getBidRequestData(auction, () => {
       callbackCount += 1;
-    }, { params: { signalBase, telemetry: false, timeout: 100 } });
-
+    }, { params: { timeout: 300 } }, undefined, 0);
     assert.strictEqual(callbackCount, 1);
     assert.deepStrictEqual(auction, original);
-    assertNoInjection(auction);
+    assert.strictEqual(digestStub.callCount, 0);
     assert.strictEqual(server.requests.length, 0);
-    assert.strictEqual(sendBeaconStub.callCount, 0);
-    clock.tick(100);
-    assert.strictEqual(callbackCount, 1, 'cleared request and deadline timers must not call back again');
   });
 
-  it('rejects lookup redirects and fails open exactly once without carrier or key request when fetch rejects', async () => {
-    const signalBase = 'https://redirect-failure.signals.encypher.com';
+  [
+    {
+      name: 'crypto',
+      remove() {
+        sandbox.stub(window, 'crypto').value(undefined);
+      },
+    },
+    {
+      name: 'crypto.subtle',
+      remove() {
+        sandbox.stub(window.crypto, 'subtle').value(undefined);
+      },
+    },
+    {
+      name: 'crypto.subtle.digest',
+      remove() {
+        digestStub.restore();
+        sandbox.stub(window.crypto.subtle, 'digest').value(undefined);
+      },
+    },
+  ].forEach(testCase => {
+    it('fails open exactly once when ' + testCase.name + ' is unavailable', async () => {
+      testCase.remove();
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      await run.completion;
+      await Promise.resolve();
+      assert.strictEqual(run.callbackCount(), 1);
+      assertNoInjection(run.auction);
+      assert.strictEqual(server.requests.length, 0);
+    });
+  });
+
+  it('fails open exactly once when the URL digest rejects', async () => {
+    digestStub.rejects(new Error('digest unavailable'));
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await run.completion;
+    await Promise.resolve();
+    assert.strictEqual(run.callbackCount(), 1);
+    assertNoInjection(run.auction);
+    assert.strictEqual(server.requests.length, 0);
+  });
+
+  it('clamps work to a smaller positive RTD core budget', async () => {
     const clock = sandbox.useFakeTimers();
     addCanonical(STORY_URL, cleanups);
-    const auction = makeAuction();
-    const original = structuredClone(auction);
     let callbackCount = 0;
-    const completion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false, timeout: 100 } });
-    });
-
-    const lookup = pendingLookup(signalBase);
-    assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-    assert.strictEqual(
-      lookup.fetch.request.redirect,
-      'error',
-      'the browser must reject redirects before publisher_domain and urlHash can reach another origin',
-    );
-    lookup.error(new TypeError('redirect rejected'));
-    await completion;
-
-    assert.strictEqual(callbackCount, 1);
-    assert.deepStrictEqual(auction, original);
-    assertNoInjection(auction);
-    assert.strictEqual(pendingRequest(PINNED_JWKS_URL), undefined);
-    assert.strictEqual(sendBeaconStub.callCount, 0);
-    clock.tick(100);
-    assert.strictEqual(callbackCount, 1, 'cleared request and deadline timers must not call back again');
-  });
-
-  it('rejects pinned JWKS redirects and fails open exactly once without a carrier when fetch rejects', async () => {
-    const signalBase = 'https://jwks-redirect-failure.signals.encypher.com';
-    const clock = sandbox.useFakeTimers();
-    addCanonical(STORY_URL, cleanups);
-    const auction = makeAuction();
-    const original = structuredClone(auction);
-    let callbackCount = 0;
-    const completion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false, timeout: 100 } });
-    });
-
-    const lookup = pendingLookup(signalBase);
-    assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-    lookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 47)));
-
-    const jwks = pendingRequest(PINNED_JWKS_URL);
-    assert.ok(jwks, 'the pinned JWKS must be requested before verification');
-    assert.strictEqual(jwks.fetch.request.credentials, 'omit');
-    assert.strictEqual(
-      jwks.fetch.request.redirect,
-      'error',
-      'the browser must reject redirects while fetching the pinned verification key set',
-    );
-    assert.deepStrictEqual(
-      Array.from(jwks.fetch.request.headers.entries()),
-      [['accept', 'application/json']],
-      'the pinned JWKS Request must contain only the fixed CORS-safelisted Accept header',
-    );
-    jwks.error(new TypeError('redirect rejected'));
-    await completion;
-
-    assert.strictEqual(callbackCount, 1);
-    assert.deepStrictEqual(auction, original);
-    assertNoInjection(auction);
-    assert.strictEqual(sendBeaconStub.callCount, 0);
-    clock.tick(100);
-    assert.strictEqual(callbackCount, 1, 'cleared request and deadline timers must not call back again');
-  });
-
-  it('fails open without requesting keys when the total deadline expires after the edge response', async () => {
-    const signalBase = 'https://deadline.signals.encypher.com';
-    const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
-    addCanonical(STORY_URL, cleanups);
-    const auction = makeAuction();
-    const original = structuredClone(auction);
-    let callbackCount = 0;
-    const completion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false, timeout: 100 } });
-    });
-
-    const lookup = pendingLookup(signalBase);
-    assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-    clock.setSystemTime(1704067200 * 1000 + 100);
-    lookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 48)));
-    await completion;
-
-    assert.strictEqual(callbackCount, 1);
-    assert.deepStrictEqual(auction, original);
-    assertNoInjection(auction);
-    assert.strictEqual(pendingRequest(PINNED_JWKS_URL), undefined);
-    assert.strictEqual(sendBeaconStub.callCount, 0);
-  });
-
-  [
-    {
-      name: 'an unsafe signal origin',
-      startOnly: true,
-      signalBase: 'http://signals.encypher.com',
-    },
-    {
-      name: 'an HTTP 204 miss',
-      respond(request) { request.respond(204, HEADERS, null); },
-    },
-    {
-      name: 'a network failure',
-      respond(request) { request.error(new TypeError('edge unavailable')); },
-    },
-    {
-      name: 'malformed JSON',
-      respond(request) { request.respond(200, HEADERS, '{not-json'); },
-    },
-    {
-      name: 'a stale tombstone',
-      respond(request) {
-        request.respond(200, HEADERS, JSON.stringify({
-          v: 1,
-          status: 'stale',
-          dataset_version: 41,
-          record: null,
-        }));
-      },
-    },
-    {
-      name: 'a stale tombstone carrying an unsigned record',
-      respond(request) {
-        request.respond(200, HEADERS, JSON.stringify({
-          v: 1,
-          status: 'stale',
-          dataset_version: 42,
-          record: STORY_SIGNAL,
-        }));
-      },
-    },
-    {
-      name: 'a revoked tombstone',
-      respond(request) {
-        request.respond(200, HEADERS, JSON.stringify({
-          v: 1,
-          status: 'revoked',
-          dataset_version: 42,
-          record: null,
-        }));
-      },
-    },
-  ].forEach((testCase, index) => {
-    it('fails open and calls back exactly once on ' + testCase.name, (done) => {
-      const signalBase = testCase.signalBase || 'https://fail-open-' + index + '.signals.encypher.com';
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      const original = structuredClone(auction);
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        if (callbackCount > 1) {
-          done(new Error('auction callback invoked more than once'));
-          return;
-        }
-        try {
-          assert.deepStrictEqual(auction, original);
-          assertNoInjection(auction);
-          assert.strictEqual(sendBeaconStub.callCount, 0);
-          done();
-        } catch (error) {
-          done(error);
-        }
-      }, { params: { signalBase, telemetry: false } });
-
-      if (testCase.startOnly) {
-        assert.strictEqual(callbackCount, 1);
-        return;
-      }
-      assert.strictEqual(callbackCount, 0);
-      const lookup = pendingLookup(signalBase);
-      assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-      testCase.respond(lookup);
-    });
-  });
-
-  [
-    {
-      name: 'a non-200 pinned JWKS response',
-      respond(request) { request.respond(503, HEADERS, 'unavailable'); },
-    },
-    {
-      name: 'malformed pinned JWKS JSON',
-      respond(request) { request.respond(200, HEADERS, '{not-json'); },
-    },
-  ].forEach((testCase, index) => {
-    it('fails open once when key discovery returns ' + testCase.name, (done) => {
-      const signalBase = 'https://jwks-failure-' + index + '.signals.encypher.com';
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      const original = structuredClone(auction);
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        if (callbackCount > 1) {
-          done(new Error('auction callback invoked more than once'));
-          return;
-        }
-        try {
-          assert.deepStrictEqual(auction, original);
-          assertNoInjection(auction);
-          assert.strictEqual(sendBeaconStub.callCount, 0);
-          done();
-        } catch (error) {
-          done(error);
-        }
-      }, { params: { signalBase, telemetry: false } });
-
-      const lookup = pendingLookup(signalBase);
-      assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-      lookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 49)));
-      const jwks = pendingRequest(PINNED_JWKS_URL);
-      assert.ok(jwks, 'the pinned JWKS must be requested before verification');
-      testCase.respond(jwks);
-    });
-  });
-
-  [
-    {
-      name: 'an extra signed claim',
-      mutate(claims) { claims.operator_note = 'not-in-the-contract'; },
-    },
-    {
-      name: 'a malformed digest claim',
-      mutate(claims) { claims.content_hash = 'not-a-sha256-digest'; },
-    },
-  ].forEach((testCase, index) => {
-    it('fails open once when the attestation contains ' + testCase.name, (done) => {
-      const signalBase = 'https://invalid-claims-' + index + '.signals.encypher.com';
-      const record = Object.assign({}, STORY_SIGNAL, {
-        att: replaceClaims(STORY_ATT, testCase.mutate),
-      });
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      const original = structuredClone(auction);
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        if (callbackCount > 1) {
-          done(new Error('auction callback invoked more than once'));
-          return;
-        }
-        try {
-          assert.deepStrictEqual(auction, original);
-          assertNoInjection(auction);
-          assert.strictEqual(sendBeaconStub.callCount, 0);
-          done();
-        } catch (error) {
-          done(error);
-        }
-      }, { params: { signalBase, telemetry: false } });
-
-      respondReady(signalBase, STORY_HASH, STORY_URL, record, 51 + index);
-    });
-  });
-
-  [
-    {
-      name: 'a malformed P-256 coordinate',
-      jwks: { keys: [Object.assign({}, TRUSTED_JWK, { x: 'not-a-coordinate' })] },
-    },
-    {
-      name: 'duplicate matching key IDs',
-      jwks: { keys: [TRUSTED_JWK, Object.assign({}, TRUSTED_JWK)] },
-    },
-  ].forEach((testCase, index) => {
-    it('fails open once when the pinned key set contains ' + testCase.name, (done) => {
-      const signalBase = 'https://unusable-jwk-' + index + '.signals.encypher.com';
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      const original = structuredClone(auction);
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        if (callbackCount > 1) {
-          done(new Error('auction callback invoked more than once'));
-          return;
-        }
-        try {
-          assert.deepStrictEqual(auction, original);
-          assertNoInjection(auction);
-          assert.strictEqual(sendBeaconStub.callCount, 0);
-          done();
-        } catch (error) {
-          done(error);
-        }
-      }, { params: { signalBase, telemetry: false } });
-
-      const lookup = pendingLookup(signalBase);
-      assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-      lookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 55 + index)));
-      assert.strictEqual(respondJwksIfRequested(testCase.jwks), true);
-    });
-  });
-
-  [
-    {
-      name: 'malformed protected-header encoding',
-      mutate(segments) { segments[0] = '*'; },
-    },
-    {
-      name: 'malformed payload encoding',
-      mutate(segments) { segments[1] = '*'; },
-    },
-    {
-      name: 'non-canonical signature encoding',
-      mutate(segments) { segments[2] = segments[2].slice(0, -1) + 'h'; },
-    },
-  ].forEach((testCase, index) => {
-    it('fails open once on ' + testCase.name, (done) => {
-      const signalBase = 'https://malformed-jws-' + index + '.signals.encypher.com';
-      const segments = STORY_ATT.split('.');
-      testCase.mutate(segments);
-      const malformedRecord = Object.assign({}, STORY_SIGNAL, { att: segments.join('.') });
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      const original = structuredClone(auction);
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        if (callbackCount > 1) {
-          done(new Error('auction callback invoked more than once'));
-          return;
-        }
-        try {
-          assert.deepStrictEqual(auction, original);
-          assertNoInjection(auction);
-          assert.strictEqual(sendBeaconStub.callCount, 0);
-          done();
-        } catch (error) {
-          done(error);
-        }
-      }, { params: { signalBase, telemetry: false } });
-
-      respondReady(signalBase, STORY_HASH, STORY_URL, malformedRecord, 50 + index);
-    });
-  });
-
-  [
-    ['key import', 'importKey'],
-    ['signature verification', 'verify'],
-  ].forEach(([operation, method], index) => {
-    it('fails open once when WebCrypto ' + operation + ' rejects', (done) => {
-      const signalBase = 'https://webcrypto-failure-' + index + '.signals.encypher.com';
-      sandbox.stub(window.crypto.subtle, method).rejects(new Error(operation + ' failed'));
-      addCanonical(STORY_URL, cleanups);
-      const auction = makeAuction();
-      const original = structuredClone(auction);
-      let callbackCount = 0;
-
-      encypherSubmodule.getBidRequestData(auction, () => {
-        callbackCount += 1;
-        if (callbackCount > 1) {
-          done(new Error('auction callback invoked more than once'));
-          return;
-        }
-        try {
-          assert.deepStrictEqual(auction, original);
-          assertNoInjection(auction);
-          assert.strictEqual(sendBeaconStub.callCount, 0);
-          done();
-        } catch (error) {
-          done(error);
-        }
-      }, { params: { signalBase, telemetry: false } });
-
-      respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 53 + index);
-    });
-  });
-
-  it('fails open once on an invalid ES256 signature', (done) => {
-    const signalBase = 'https://invalid-signature.signals.encypher.com';
-    addCanonical(STORY_URL, cleanups);
-    const auction = makeAuction();
-    const invalidSignature = Object.assign({}, STORY_SIGNAL, {
-      att: STORY_ATT.slice(0, -1) + (STORY_ATT.endsWith('A') ? 'B' : 'A'),
-    });
-    let callbackCount = 0;
-
-    encypherSubmodule.getBidRequestData(auction, () => {
+    encypherSubmodule.getBidRequestData(makeAuction(), () => {
       callbackCount += 1;
-      if (callbackCount > 1) {
-        done(new Error('auction callback invoked more than once'));
-        return;
-      }
-      try {
-        assertNoInjection(auction);
-        done();
-      } catch (error) {
-        done(error);
-      }
-    }, { params: { signalBase, telemetry: false } });
-
-    respondReady(signalBase, STORY_HASH, STORY_URL, invalidSignature, 50);
-  });
-
-  it('uses one total timeout across signal and JWKS reads, then ignores a late response', () => {
-    const signalBase = 'https://timeout.signals.encypher.com';
-    const clock = sandbox.useFakeTimers();
-    server.autoTimeout = true;
-    addCanonical(STORY_URL, cleanups);
-    const auction = makeAuction();
-    let callbackCount = 0;
-
-    encypherSubmodule.getBidRequestData(auction, () => {
-      callbackCount += 1;
-    }, { params: { signalBase, telemetry: false, timeout: 100 } });
-
-    const lookup = pendingLookup(signalBase);
-    assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
-    clock.tick(90);
-    lookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 60)));
-    const jwks = pendingRequest(PINNED_JWKS_URL);
-    assert.ok(jwks);
-    clock.tick(9);
+    }, { params: { timeout: 300 } }, undefined, 25);
+    clock.tick(24);
+    await Promise.resolve();
     assert.strictEqual(callbackCount, 0);
     clock.tick(1);
-
-    assert.strictEqual(jwks.fetch.request.signal.aborted, true);
-    assert.strictEqual(callbackCount, 1);
-    assertNoInjection(auction);
-    jwks.respond(200, HEADERS, JSON.stringify(JWKS));
-    assert.strictEqual(callbackCount, 1);
-    assertNoInjection(auction);
-  });
-
-  it('refreshes pinned JWKS immediately on an unknown kid before failing open once', (done) => {
-    const signalBase = 'https://unknown-kid.signals.encypher.com';
-    const canonical = addCanonical(STORY_URL, cleanups);
-    const firstAuction = makeAuction();
-    let firstCallbackCount = 0;
-    let secondCallbackCount = 0;
-    let refreshResponded = false;
-
-    encypherSubmodule.getBidRequestData(firstAuction, () => {
-      firstCallbackCount += 1;
-      if (firstCallbackCount > 1) {
-        done(new Error('first callback invoked more than once'));
-        return;
-      }
-      try {
-        canonical.href = PAGE_URL;
-        const encodedHeader = btoa(JSON.stringify({
-          alg: 'ES256',
-          kid: 'emergency-rotated-key',
-          typ: 'epat+jws',
-        })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const unknownKidRecord = Object.assign({}, PAGE_SIGNAL, {
-          att: encodedHeader + '.' + PAGE_ATT.split('.').slice(1).join('.'),
-        });
-        const secondAuction = makeAuction();
-
-        encypherSubmodule.getBidRequestData(secondAuction, () => {
-          secondCallbackCount += 1;
-          try {
-            assert.strictEqual(refreshResponded, true);
-            assert.strictEqual(secondCallbackCount, 1);
-            assertNoInjection(secondAuction);
-            done();
-          } catch (error) {
-            done(error);
-          }
-        }, { params: { signalBase, telemetry: false } });
-
-        const lookup = pendingLookup(signalBase);
-        assertCanonicalLookup(lookup, signalBase, PAGE_HASH, PAGE_URL);
-        lookup.respond(200, HEADERS, JSON.stringify(ready(unknownKidRecord, 61)));
-        Promise.resolve().then(() => {
-          if (secondCallbackCount > 0) return;
-          const jwksRequests = server.requests.filter(request => request.url === PINNED_JWKS_URL);
-          assert.strictEqual(jwksRequests.length, 2);
-          const refreshedJwks = pendingRequest(PINNED_JWKS_URL);
-          assert.ok(refreshedJwks);
-          refreshResponded = true;
-          refreshedJwks.respond(200, HEADERS, JSON.stringify({ keys: [] }));
-        }).catch(done);
-      } catch (error) {
-        done(error);
-      }
-    }, { params: { signalBase, telemetry: false } });
-
-    respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 60);
-  });
-
-  it('discards a cached record whose expiration claim can no longer be decoded', async () => {
-    const signalBase = 'https://cached-expiration.signals.encypher.com';
-    addCanonical(STORY_URL, cleanups);
-    const firstAuction = makeAuction();
-    let firstCallbackCount = 0;
-    const firstCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(firstAuction, () => {
-        firstCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 62);
-    await firstCompletion;
-
-    sandbox.stub(window, 'atob').throws(new TypeError('decoder unavailable'));
-    const secondAuction = makeAuction();
-    const original = structuredClone(secondAuction);
-    let secondCallbackCount = 0;
-    const secondCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(secondAuction, () => {
-        secondCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-
-    const refreshedLookup = pendingLookup(signalBase);
-    assertCanonicalLookup(refreshedLookup, signalBase, STORY_HASH, STORY_URL);
-    refreshedLookup.respond(204, HEADERS, null);
-    await secondCompletion;
-
-    assert.strictEqual(firstCallbackCount, 1);
-    assert.strictEqual(secondCallbackCount, 1);
-    assert.deepStrictEqual(secondAuction, original);
-    assertNoInjection(secondAuction);
-    assert.strictEqual(sendBeaconStub.callCount, 0);
-  });
-
-  it('refreshes after cached verification rejects and fails open if refreshed verification also rejects', async () => {
-    const signalBase = 'https://verification-refresh.signals.encypher.com';
-    const canonical = addCanonical(STORY_URL, cleanups);
-    const firstAuction = makeAuction();
-    let firstCallbackCount = 0;
-    const firstCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(firstAuction, () => {
-        firstCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-    respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 64);
-    await firstCompletion;
-
-    canonical.href = PAGE_URL;
-    const secondAuction = makeAuction();
-    const original = structuredClone(secondAuction);
-    let secondCallbackCount = 0;
-    const secondCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(secondAuction, () => {
-        secondCallbackCount += 1;
-        resolve();
-      }, { params: { signalBase, telemetry: false } });
-    });
-
-    const cachedVerificationClock = sandbox.stub(Date, 'now').callThrough();
-    cachedVerificationClock.onCall(2).throws(new TypeError('cached verification clock unavailable'));
-    const lookup = pendingLookup(signalBase);
-    assertCanonicalLookup(lookup, signalBase, PAGE_HASH, PAGE_URL);
-    lookup.respond(200, HEADERS, JSON.stringify(ready(PAGE_SIGNAL, 65)));
     await Promise.resolve();
-
-    const refreshedJwks = pendingRequest(PINNED_JWKS_URL);
-    assert.ok(refreshedJwks, 'cached verification rejection must force a pinned-key refresh');
-    cachedVerificationClock.restore();
-    sandbox.stub(Date, 'now').onFirstCall().throws(new TypeError('refreshed verification clock unavailable'));
-    refreshedJwks.respond(200, HEADERS, JSON.stringify(JWKS));
-    await secondCompletion;
-
-    assert.strictEqual(firstCallbackCount, 1);
-    assert.strictEqual(secondCallbackCount, 1);
-    assert.deepStrictEqual(secondAuction, original);
-    assertNoInjection(secondAuction);
-    assert.strictEqual(server.requests.filter(request => request.url === PINNED_JWKS_URL).length, 2);
-    assert.strictEqual(sendBeaconStub.callCount, 0);
+    assert.strictEqual(callbackCount, 1);
   });
 
-  it('emits only diagnostic telemetry after callback and swallows telemetry transport failure', async () => {
-    const signalBase = 'https://telemetry.signals.encypher.com';
+  it('ignores a late digest settlement after timeout and calls back exactly once', async () => {
+    const clock = sandbox.useFakeTimers();
+    let resolveDigest;
+    digestStub.returns(new Promise(resolve => { resolveDigest = resolve; }));
     addCanonical(STORY_URL, cleanups);
-    const auction = makeAuction();
-    let callbackCount = 0;
-    let telemetryBody;
+    const run = beginAuction({ timeout: 25 });
+    clock.tick(25);
+    await run.completion;
+    assert.strictEqual(run.callbackCount(), 1);
+    resolveDigest(DIGEST_BYTES_BY_CANONICAL_URL.get(STORY_URL).buffer);
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.strictEqual(run.callbackCount(), 1);
+    assertNoInjection(run.auction);
+    assert.strictEqual(server.requests.length, 0);
+  });
 
-    sendBeaconStub.callsFake((url, serializedBody) => {
-      assert.strictEqual(callbackCount, 1, 'callback must precede telemetry');
-      assert.strictEqual(url, signalBase + '/v1/telemetry/rtd');
-      telemetryBody = serializedBody;
-      throw new Error('diagnostic transport failed');
-    });
+  it('aborts a non-200 lookup transport before invoking the callback', async () => {
+    addCanonical(STORY_URL, cleanups);
+    let abortedAtCallback = false;
+    let callbackCount = 0;
+    const auction = makeAuction();
+    let lookup;
     const completion = new Promise(resolve => {
       encypherSubmodule.getBidRequestData(auction, () => {
         callbackCount += 1;
+        abortedAtCallback = lookup.fetch.request.signal.aborted;
         resolve();
-      }, { params: { signalBase, telemetry: true } });
+      }, { params: { timeout: 300 } });
+    });
+    lookup = pendingLookup();
+    lookup.respond(503, HEADERS, 'unavailable');
+    await completion;
+    assert.strictEqual(abortedAtCallback, true);
+    assert.strictEqual(callbackCount, 1);
+    assertNoInjection(auction);
+  });
+
+  it('accepts only an exact JSON ready decision and uses cache no-store for lookup and JWKS', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    const lookup = pendingLookup();
+    assertCanonicalLookup(lookup, STORY_HASH, STORY_URL);
+    await respondDecision(ready(STORY_SIGNAL, 17));
+    await run.completion;
+    assert.strictEqual(run.callbackCount(), 1);
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.strictEqual(server.requests.filter(request => request.url === PINNED_JWKS_URL).length, 1);
+  });
+
+  [
+    { name: 'unknown status', value: { v: 1, status: 'unknown', dataset_version: 1, record: null } },
+    { name: 'missing record key', value: { v: 1, status: 'miss', dataset_version: 1 } },
+    { name: 'extra key', value: { v: 1, status: 'miss', dataset_version: 1, record: null, extra: true } },
+    { name: 'zero dataset version', value: { v: 1, status: 'miss', dataset_version: 0, record: null } },
+    { name: 'record on miss', value: { v: 1, status: 'miss', dataset_version: 1, record: STORY_SIGNAL } },
+    { name: 'null record on ready', value: { v: 1, status: 'ready', dataset_version: 1, record: null } },
+  ].forEach(testCase => {
+    it('fails open on a decision with ' + testCase.name, async () => {
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      await respondDecision(testCase.value);
+      await run.completion;
+      assert.strictEqual(run.callbackCount(), 1);
+      assertNoInjection(run.auction);
+    });
+  });
+
+  it('treats a versioned JSON miss as authoritative and HTTP 204 as invalid', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const jsonMiss = beginAuction();
+    await respondDecision(miss('miss', 4));
+    await jsonMiss.completion;
+    assertNoInjection(jsonMiss.auction);
+
+    resetProviderState();
+    const noContent = beginAuction();
+    pendingLookup().respond(204, HEADERS, null);
+    await noContent.completion;
+    assertNoInjection(noContent.auction);
+  });
+
+  it('keeps the page dataset floor and stale barrier across canonical URL hashes', async () => {
+    const canonical = addCanonical(STORY_URL, cleanups);
+    const first = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 10));
+    await first.completion;
+
+    canonical.href = PAGE_URL;
+    const stale = beginAuction();
+    await respondDecision(miss('stale', 12));
+    await stale.completion;
+
+    const atBarrier = beginAuction();
+    await respondDecision(ready(PAGE_SIGNAL, 12));
+    await atBarrier.completion;
+    assertNoInjection(atBarrier.auction);
+
+    const aboveBarrier = beginAuction();
+    await respondDecision(ready(PAGE_SIGNAL, 13));
+    await aboveBarrier.completion;
+    assert.deepStrictEqual(aboveBarrier.auction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
+
+    canonical.href = STORY_URL;
+    const belowFloor = beginAuction();
+    await respondDecision(miss('miss', 11));
+    await belowFloor.completion;
+    assertNoInjection(belowFloor.auction);
+  });
+
+  ['miss', 'revoked'].forEach(status => {
+    it('keeps a page-lifetime per-hash ' + status + ' blocker and rejects ready at or below it', async () => {
+      addCanonical(PAGE_URL, cleanups);
+      const blocked = beginAuction();
+      await respondDecision(miss(status, 20));
+      await blocked.completion;
+
+      const equalReady = beginAuction();
+      await respondDecision(ready(PAGE_SIGNAL, 20));
+      await equalReady.completion;
+      assertNoInjection(equalReady.auction);
+
+      const newerReady = beginAuction();
+      await respondDecision(ready(PAGE_SIGNAL, 21));
+      await newerReady.completion;
+      assert.deepStrictEqual(newerReady.auction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
+    });
+  });
+
+  it('lets an accepted blocker evict a ready decision even when its reuse window remains open', async () => {
+    addCanonical(PAGE_URL, cleanups);
+    const readyRun = beginAuction();
+    const blockerRun = beginAuction();
+    const requests = server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/'));
+    requests[0].respond(200, HEADERS, JSON.stringify(ready(PAGE_SIGNAL, 30)));
+    await respondJwksIfRequested();
+    await readyRun.completion;
+    requests[1].respond(200, HEADERS, JSON.stringify(miss('revoked', 31)));
+    await blockerRun.completion;
+
+    const later = beginAuction();
+    assert.ok(pendingLookup(), 'blocker must remove ready reuse');
+    await respondDecision(miss('revoked', 31));
+    await later.completion;
+    assertNoInjection(later.auction);
+  });
+
+  it('does not let an invalid high-version ready poison any watermark or decision state', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const invalidRecord = Object.assign({}, STORY_SIGNAL, {
+      att: STORY_ATT.slice(0, -1) + (STORY_ATT.endsWith('A') ? 'B' : 'A'),
+    });
+    const invalid = beginAuction();
+    await respondDecision(ready(invalidRecord, 100));
+    await invalid.completion;
+    assertNoInjection(invalid.auction);
+
+    const valid = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 5));
+    await valid.completion;
+    assert.deepStrictEqual(valid.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+  });
+
+  it('does not let a lower blocker evict a newer ready decision', async () => {
+    addCanonical(PAGE_URL, cleanups);
+    const readyRun = beginAuction();
+    const lowerBlocker = beginAuction();
+    const requests = server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/'));
+    requests[0].respond(200, HEADERS, JSON.stringify(ready(PAGE_SIGNAL, 40)));
+    await respondJwksIfRequested();
+    await readyRun.completion;
+    requests[1].respond(200, HEADERS, JSON.stringify(miss('revoked', 39)));
+    await lowerBlocker.completion;
+
+    const reused = beginAuction();
+    await reused.completion;
+    assert.deepStrictEqual(reused.auction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
+    assert.strictEqual(server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/')).length, 2);
+  });
+
+  it('commits signed record revisions and requires byte-identical equality at equal dataset and revision', async () => {
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    addCanonical(PAGE_URL, cleanups);
+    const equal = recordWithClaims(PAGE_SIGNAL, claims => {
+      claims.record_revision = 7;
+    });
+    const conflicting = recordWithClaims(PAGE_SIGNAL, claims => {
+      claims.record_revision = 7;
+      claims.validation_results.codes = ['valid', 'different'];
+    });
+    const lowerRevision = recordWithClaims(PAGE_SIGNAL, claims => {
+      claims.record_revision = 6;
+    });
+    const runs = [beginAuction(), beginAuction(), beginAuction(), beginAuction()];
+    const requests = server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/'));
+
+    requests[0].respond(200, HEADERS, JSON.stringify(ready(PAGE_SIGNAL, 50)));
+    await respondJwksIfRequested();
+    await runs[0].completion;
+
+    requests[1].respond(200, HEADERS, JSON.stringify(ready(equal, 50)));
+    await runs[1].completion;
+    assert.deepStrictEqual(runs[1].auction.adUnits[0].ortb2Imp.ext.c2pa, equal);
+
+    requests[2].respond(200, HEADERS, JSON.stringify(ready(conflicting, 50)));
+    await runs[2].completion;
+    assertNoInjection(runs[2].auction);
+
+    requests[3].respond(200, HEADERS, JSON.stringify(ready(lowerRevision, 51)));
+    await runs[3].completion;
+    assertNoInjection(runs[3].auction);
+
+    const cached = beginAuction();
+    await cached.completion;
+    assert.deepStrictEqual(cached.auction.adUnits[0].ortb2Imp.ext.c2pa, equal);
+  });
+
+  it('retains the highest signed revision when a blocker supersedes ready state', async () => {
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    addCanonical(PAGE_URL, cleanups);
+    const lowerRevision = recordWithClaims(PAGE_SIGNAL, claims => {
+      claims.record_revision = 6;
+    });
+    const higherRevision = recordWithClaims(PAGE_SIGNAL, claims => {
+      claims.record_revision = 8;
+    });
+    const readyRun = beginAuction();
+    const blockerRun = beginAuction();
+    const lowerRun = beginAuction();
+    const requests = server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/'));
+
+    requests[0].respond(200, HEADERS, JSON.stringify(ready(PAGE_SIGNAL, 52)));
+    await respondJwksIfRequested();
+    await readyRun.completion;
+    requests[1].respond(200, HEADERS, JSON.stringify(miss('revoked', 53)));
+    await blockerRun.completion;
+    requests[2].respond(200, HEADERS, JSON.stringify(ready(lowerRevision, 54)));
+    await lowerRun.completion;
+    assertNoInjection(lowerRun.auction);
+
+    const recovery = beginAuction();
+    await respondDecision(ready(higherRevision, 54));
+    await recovery.completion;
+    assert.deepStrictEqual(recovery.auction.adUnits[0].ortb2Imp.ext.c2pa, higherRevision);
+  });
+
+  it('reuses ready status for less than 30 seconds and refreshes at the boundary', async () => {
+    const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
+    addCanonical(STORY_URL, cleanups);
+    const first = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 55));
+    await first.completion;
+    const initialLookups = server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/')).length;
+
+    clock.tick(29999);
+    const reused = beginAuction();
+    await reused.completion;
+    assert.deepStrictEqual(reused.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.strictEqual(server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/')).length, initialLookups);
+
+    clock.tick(1);
+    const refreshed = beginAuction();
+    assert.ok(pendingLookup());
+    await respondDecision(miss('miss', 56));
+    await refreshed.completion;
+    assertNoInjection(refreshed.auction);
+  });
+
+  it('refreshes instead of injecting when cached verification crosses the ready-status expiry', async () => {
+    const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    let resolveCachedVerification;
+    const verify = sandbox.stub(window.crypto.subtle, 'verify');
+    verify.onCall(0).resolves(true);
+    verify.onCall(1).returns(new Promise(resolve => { resolveCachedVerification = resolve; }));
+    addCanonical(STORY_URL, cleanups);
+
+    const prime = beginAuction({ timeout: 40000 });
+    await respondDecision(ready(STORY_SIGNAL, 55));
+    await prime.completion;
+
+    clock.tick(29999);
+    const expiredDuringVerification = beginAuction({ timeout: 5000 });
+    for (let attempt = 0; attempt < 20 && verify.callCount < 2; attempt += 1) await Promise.resolve();
+    assert.strictEqual(verify.callCount, 2, 'cached signature verification must be pending');
+    clock.tick(2);
+    resolveCachedVerification(true);
+
+    const lookup = await findPending(SIGNAL_ORIGIN + '/v1/attestations/' + STORY_HASH +
+      '?publisher_domain=publisher.example&module_version=1.1.0');
+    assert.ok(lookup, 'an expired cached status must trigger a fresh lookup');
+    lookup.respond(200, HEADERS, JSON.stringify(miss('miss', 56)));
+    await expiredDuringVerification.completion;
+    assertNoInjection(expiredDuringVerification.auction);
+  });
+
+  it('rejects a signed record that expires while WebCrypto verification is pending', async () => {
+    const nowSeconds = 1704067200;
+    const clock = sandbox.useFakeTimers({ now: nowSeconds * 1000 });
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    let resolveVerification;
+    const verify = sandbox.stub(window.crypto.subtle, 'verify')
+      .returns(new Promise(resolve => { resolveVerification = resolve; }));
+    addCanonical(STORY_URL, cleanups);
+    const expiring = recordWithClaims(STORY_SIGNAL, claims => {
+      claims.exp = nowSeconds + 1;
+      claims.record_revision = 2;
     });
 
-    respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 63);
-    await completion;
+    const run = beginAuction({ timeout: 5000 });
+    await respondDecision(ready(expiring, 57));
+    for (let attempt = 0; attempt < 20 && verify.callCount < 1; attempt += 1) await Promise.resolve();
+    assert.strictEqual(verify.callCount, 1, 'signature verification must be pending');
+    clock.tick(1000);
+    resolveVerification(true);
 
-    assert.strictEqual(callbackCount, 1);
-    assert.deepStrictEqual(auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.strictEqual(sendBeaconStub.callCount, 1);
-    assertDiagnostic(telemetryBody, 'injected', 2, 63);
-    assert.strictEqual(telemetryBody.includes(STORY_URL), false);
-    assert.strictEqual(telemetryBody.includes(STORY_HASH), false);
-    assert.strictEqual(telemetryBody.includes(STORY_SIGNAL.id), false);
-    assert.strictEqual(telemetryBody.includes(STORY_SIGNAL.att), false);
+    await run.completion;
+    assertNoInjection(run.auction);
+  });
+
+  it('refreshes the signal lookup when a cached JWS expires before its status TTL', async () => {
+    const nowSeconds = 1704067200;
+    const clock = sandbox.useFakeTimers({ now: nowSeconds * 1000 });
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    addCanonical(STORY_URL, cleanups);
+    const expiring = recordWithClaims(STORY_SIGNAL, claims => {
+      claims.exp = nowSeconds + 10;
+      claims.record_revision = 2;
+    });
+    const renewed = recordWithClaims(STORY_SIGNAL, claims => {
+      claims.exp = nowSeconds + 1000;
+      claims.record_revision = 3;
+    });
+    const first = beginAuction();
+    await respondDecision(ready(expiring, 57));
+    await first.completion;
+
+    clock.tick(11000);
+    const refreshed = beginAuction();
+    assert.strictEqual(pendingLookup(), undefined, 'cached status is reverified before fallback lookup');
+    assert.strictEqual(await respondJwksIfRequested(), true, 'failed cached verification refreshes pinned keys');
+    let lookup;
+    for (let attempt = 0; attempt < 30 && !lookup; attempt += 1) {
+      lookup = pendingLookup();
+      if (!lookup) await Promise.resolve();
+    }
+    assert.ok(lookup, 'expired cached JWS must trigger a fresh signal lookup');
+    lookup.respond(200, HEADERS, JSON.stringify(ready(renewed, 58)));
+    assert.strictEqual(await respondJwksIfRequested(), true);
+    await refreshed.completion;
+    assert.deepStrictEqual(refreshed.auction.adUnits[0].ortb2Imp.ext.c2pa, renewed);
+  });
+
+  it('rechecks every state comparison at commit time under reverse verification completion', async () => {
+    const canonical = addCanonical(STORY_URL, cleanups);
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    let resolveLow;
+    let resolveHigh;
+    const verify = sandbox.stub(window.crypto.subtle, 'verify');
+    verify.onCall(0).resolves(true);
+    verify.onCall(1).returns(new Promise(resolve => { resolveLow = resolve; }));
+    verify.onCall(2).returns(new Promise(resolve => { resolveHigh = resolve; }));
+    verify.onCall(3).resolves(true);
+
+    const prime = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 1));
+    await prime.completion;
+
+    canonical.href = PAGE_URL;
+    const lowRecord = recordWithClaims(PAGE_SIGNAL, claims => {
+      claims.record_revision = 7;
+    });
+    const highRecord = recordWithClaims(PAGE_SIGNAL, claims => {
+      claims.record_revision = 8;
+    });
+    const low = beginAuction();
+    const high = beginAuction();
+    const requests = server.requests.filter(request => (
+      request.readyState !== XMLHttpRequest.DONE &&
+      request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/')
+    ));
+    requests[0].respond(200, HEADERS, JSON.stringify(ready(lowRecord, 10)));
+    requests[1].respond(200, HEADERS, JSON.stringify(ready(highRecord, 11)));
+    for (let attempt = 0; attempt < 20; attempt += 1) await Promise.resolve();
+    assert.ok(resolveLow && resolveHigh, 'both signature verifications must be pending');
+
+    resolveHigh(true);
+    await high.completion;
+    resolveLow(true);
+    await low.completion;
+    assert.deepStrictEqual(high.auction.adUnits[0].ortb2Imp.ext.c2pa, highRecord);
+    assertNoInjection(low.auction);
+
+    const reused = beginAuction();
+    await reused.completion;
+    assert.deepStrictEqual(reused.auction.adUnits[0].ortb2Imp.ext.c2pa, highRecord);
+  });
+
+  it('orders ready, miss, revoked, and stale decisions without rolling state backward', async () => {
+    addCanonical(PAGE_URL, cleanups);
+    const firstReady = beginAuction();
+    const missRun = beginAuction();
+    const revokedRun = beginAuction();
+    const staleRun = beginAuction();
+    const requests = server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/'));
+
+    requests[0].respond(200, HEADERS, JSON.stringify(ready(PAGE_SIGNAL, 60)));
+    await respondJwksIfRequested();
+    await firstReady.completion;
+    requests[1].respond(200, HEADERS, JSON.stringify(miss('miss', 61)));
+    await missRun.completion;
+    requests[2].respond(200, HEADERS, JSON.stringify(miss('revoked', 62)));
+    await revokedRun.completion;
+    requests[3].respond(200, HEADERS, JSON.stringify(miss('stale', 63)));
+    await staleRun.completion;
+
+    const belowStale = beginAuction();
+    await respondDecision(ready(PAGE_SIGNAL, 63));
+    await belowStale.completion;
+    assertNoInjection(belowStale.auction);
+
+    const recovery = beginAuction();
+    await respondDecision(ready(PAGE_SIGNAL, 64));
+    await recovery.completion;
+    assert.deepStrictEqual(recovery.auction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
+  });
+
+  it('injects through auction-local copies and preserves publisher objects with missing impression containers', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const source = makeAuction();
+    source.adUnits[0].ortb2Imp.ext.c2pa = { publisher: 'keep-original' };
+    source.adUnits.push({ code: 'missing-all', mediaTypes: { banner: {} } });
+    source.adUnits.push({ code: 'missing-ext', ortb2Imp: { id: 'imp-4' } });
+    const sourceArray = source.adUnits;
+    const sourceUnits = sourceArray.slice();
+    const sourceImps = sourceUnits.map(unit => unit.ortb2Imp);
+    const sourceExts = sourceImps.map(imp => imp && imp.ext);
+    const original = structuredClone(source);
+    const run = beginAuction({}, source);
+    await respondDecision(ready(STORY_SIGNAL, 70));
+    await run.completion;
+
+    assert.notStrictEqual(run.auction.adUnits, sourceArray);
+    run.auction.adUnits.forEach((unit, index) => {
+      assert.notStrictEqual(unit, sourceUnits[index]);
+      assert.notStrictEqual(unit.ortb2Imp, sourceImps[index]);
+      assert.notStrictEqual(unit.ortb2Imp.ext, sourceExts[index]);
+      assert.deepStrictEqual(unit.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+      assert.notStrictEqual(unit.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    });
+    assert.deepStrictEqual(sourceArray, original.adUnits);
+    assert.strictEqual(run.auction.adUnits[0].ortb2Imp.ext.caller_imp, 'keep-one');
+    assert.strictEqual(run.auction.adUnits[1].caller_unit, 'keep-unit');
+    assert.deepStrictEqual(run.auction.adUnits[2].mediaTypes, { banner: {} });
+    assert.strictEqual(run.auction.adUnits[3].ortb2Imp.id, 'imp-4');
+    assert.deepStrictEqual(sourceArray[0].ortb2Imp.ext.c2pa, { publisher: 'keep-original' });
+    assert.deepStrictEqual(run.auction.ortb2Fragments, original.ortb2Fragments);
+  });
+
+  it('isolates sequential ready, miss, revoked, and wrong-page outcomes that reuse publisher ad units', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const publisher = makeAuction();
+    const sharedAdUnits = publisher.adUnits;
+    const original = structuredClone(sharedAdUnits);
+
+    const missed = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    await respondDecision(miss('miss', 71));
+    await missed.completion;
+    const revoked = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    await respondDecision(miss('revoked', 72));
+    await revoked.completion;
+    const wrongPage = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    await respondDecision(ready(PAGE_SIGNAL, 73));
+    await wrongPage.completion;
+    const injected = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    await respondDecision(ready(STORY_SIGNAL, 73));
+    await injected.completion;
+
+    assert.strictEqual(missed.auction.adUnits, sharedAdUnits);
+    assert.strictEqual(revoked.auction.adUnits, sharedAdUnits);
+    assert.strictEqual(wrongPage.auction.adUnits, sharedAdUnits);
+    assertNoInjection(missed.auction);
+    assertNoInjection(revoked.auction);
+    assertNoInjection(wrongPage.auction);
+    assert.notStrictEqual(injected.auction.adUnits, sharedAdUnits);
+    assert.deepStrictEqual(injected.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.deepStrictEqual(sharedAdUnits, original);
+  });
+
+  it('isolates concurrent ready, miss, revoked, and wrong-page auctions completed in reverse order', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const publisher = makeAuction();
+    const sharedAdUnits = publisher.adUnits;
+    const original = structuredClone(sharedAdUnits);
+    const injected = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    const missed = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    const revoked = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    const wrongPage = beginAuction({}, Object.assign({}, publisher, { adUnits: sharedAdUnits }));
+    const requests = server.requests.filter(request => request.url.startsWith(SIGNAL_ORIGIN + '/v1/attestations/'));
+
+    requests[3].respond(200, HEADERS, JSON.stringify(ready(PAGE_SIGNAL, 100)));
+    await respondJwksIfRequested();
+    await wrongPage.completion;
+    requests[2].respond(200, HEADERS, JSON.stringify(miss('revoked', 82)));
+    await revoked.completion;
+    requests[1].respond(200, HEADERS, JSON.stringify(miss('miss', 81)));
+    await missed.completion;
+    requests[0].respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 84)));
+    await respondJwksIfRequested();
+    await injected.completion;
+
+    assert.notStrictEqual(injected.auction.adUnits, sharedAdUnits);
+    assert.deepStrictEqual(injected.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.strictEqual(missed.auction.adUnits, sharedAdUnits);
+    assert.strictEqual(revoked.auction.adUnits, sharedAdUnits);
+    assert.strictEqual(wrongPage.auction.adUnits, sharedAdUnits);
+    assertNoInjection(missed.auction);
+    assertNoInjection(revoked.auction);
+    assertNoInjection(wrongPage.auction);
+    assert.deepStrictEqual(sharedAdUnits, original);
+  });
+
+  const bodyCases = [
+    {
+      name: 'limit plus one',
+      body(limit) {
+        return { matching: 'plus-one', chunks: [new Uint8Array(limit + 1)], headers: HEADERS };
+      },
+      cancelled: true,
+    },
+    {
+      name: 'one oversized chunk without Content-Length',
+      body(limit) {
+        return { matching: 'single-oversized', chunks: [new Uint8Array(limit + 128)], headers: HEADERS };
+      },
+      cancelled: true,
+    },
+    {
+      name: 'many chunks crossing the limit',
+      body(limit) {
+        return {
+          matching: 'multiple-oversized',
+          chunks: [new Uint8Array(Math.floor(limit / 2)), new Uint8Array(Math.floor(limit / 2)), new Uint8Array(2)],
+          headers: HEADERS,
+        };
+      },
+      cancelled: true,
+    },
+    {
+      name: 'deceptive small Content-Length',
+      body(limit) {
+        return {
+          matching: 'deceptive-length',
+          chunks: [new Uint8Array(limit), new Uint8Array(1)],
+          headers: Object.assign({}, HEADERS, { 'Content-Length': '1' }),
+        };
+      },
+      cancelled: true,
+    },
+    {
+      name: 'reader rejection',
+      body() {
+        return { matching: 'reader-rejection', chunks: [], headers: HEADERS, rejectRead: true };
+      },
+      cancelled: true,
+    },
+    {
+      name: 'null response body',
+      body() {
+        return { matching: 'body-null', chunks: [], headers: HEADERS, bodyNull: true };
+      },
+      cancelled: false,
+    },
+    {
+      name: 'malformed UTF-8',
+      body() {
+        return { matching: 'malformed-utf8', chunks: [Uint8Array.from([0xc3, 0x28])], headers: HEADERS };
+      },
+      cancelled: false,
+    },
+  ];
+
+  ['lookup', 'JWKS'].forEach(endpoint => {
+    const limit = endpoint === 'lookup' ? 4096 : 65536;
+
+    it('accepts an exact ' + limit + '-byte ' + endpoint + ' body', async () => {
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      const value = endpoint === 'lookup' ? ready(STORY_SIGNAL, 80) : JWKS;
+      const body = paddedJson(value, limit);
+      const state = installStreamResponse(sandbox, body, { chunks: utf8Chunks(body) });
+      if (endpoint === 'lookup') {
+        pendingLookup().respond(200, HEADERS, body);
+        await respondJwksIfRequested();
+      } else {
+        pendingLookup().respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 80)));
+        const jwks = await findPending(PINNED_JWKS_URL);
+        jwks.respond(200, HEADERS, body);
+      }
+      await run.completion;
+      assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+      assert.strictEqual(state.cancelCount, 0);
+    });
+
+    it('rejects an over-limit declared Content-Length before reading the ' + endpoint + ' body', async () => {
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      const body = 'declared-over-limit';
+      const state = installStreamResponse(sandbox, body, { chunks: [new Uint8Array(1)] });
+      let request;
+      if (endpoint === 'lookup') {
+        request = pendingLookup();
+      } else {
+        pendingLookup().respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 81)));
+        request = await findPending(PINNED_JWKS_URL);
+      }
+      request.respond(200, Object.assign({}, HEADERS, { 'Content-Length': String(limit + 1) }), body);
+      await run.completion;
+      assertNoInjection(run.auction);
+      assert.strictEqual(state.readCount, 0);
+      assert.strictEqual(state.cancelCount, 1);
+      assert.strictEqual(request.fetch.request.signal.aborted, true);
+    });
+
+    bodyCases.forEach(testCase => {
+      it('rejects ' + testCase.name + ' for the ' + endpoint + ' body', async () => {
+        addCanonical(STORY_URL, cleanups);
+        const run = beginAuction();
+        const fixture = testCase.body(limit);
+        const state = installStreamResponse(sandbox, fixture.matching, {
+          chunks: fixture.chunks.slice(),
+          rejectRead: fixture.rejectRead,
+          bodyNull: fixture.bodyNull,
+        });
+        let request;
+        if (endpoint === 'lookup') {
+          request = pendingLookup();
+        } else {
+          pendingLookup().respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 82)));
+          request = await findPending(PINNED_JWKS_URL);
+        }
+        request.respond(200, fixture.headers, fixture.matching);
+        await run.completion;
+        assertNoInjection(run.auction);
+        assert.strictEqual(state.cancelCount > 0, testCase.cancelled);
+        if (testCase.cancelled) assert.strictEqual(request.fetch.request.signal.aborted, true);
+      });
+    });
+
+    it('cancels the ' + endpoint + ' reader and aborts its request on the deadline', async () => {
+      const clock = sandbox.useFakeTimers();
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction({ timeout: 100 });
+      const body = 'pending-reader';
+      const state = installStreamResponse(sandbox, body, { chunks: [], pendingRead: true });
+      let request;
+      if (endpoint === 'lookup') {
+        request = pendingLookup();
+      } else {
+        pendingLookup().respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 83)));
+        request = await findPending(PINNED_JWKS_URL);
+      }
+      request.respond(200, HEADERS, body);
+      await Promise.resolve();
+      clock.tick(100);
+      await run.completion;
+      assertNoInjection(run.auction);
+      assert.strictEqual(state.cancelCount, 1);
+      assert.strictEqual(request.fetch.request.signal.aborted, true);
+    });
+  });
+
+  [
+    { event: 'miss', envelope: miss('miss', 90), datasetVersion: 90 },
+    { event: 'revoked', envelope: miss('revoked', 91), datasetVersion: 91 },
+    { event: 'stale', envelope: miss('stale', 92), datasetVersion: 92 },
+    { event: 'invalid', envelope: { v: 1, status: 'miss', dataset_version: 93 }, datasetVersion: undefined },
+  ].forEach(testCase => {
+    it('reports impression_count zero for the ' + testCase.event + ' diagnostic outcome', async () => {
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction({ telemetry: true });
+      await respondDecision(testCase.envelope);
+      await run.completion;
+      const telemetry = await findPending(SIGNAL_ORIGIN + '/v1/telemetry/rtd');
+      assert.ok(telemetry);
+      assertDiagnostic(telemetry.requestBody, testCase.event, 0, testCase.datasetVersion);
+    });
+  });
+
+  it('reports the actual copied impression count only for injected diagnostics', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction({ telemetry: true });
+    await respondDecision(ready(STORY_SIGNAL, 94));
+    await run.completion;
+    const telemetry = await findPending(SIGNAL_ORIGIN + '/v1/telemetry/rtd');
+    assert.strictEqual(telemetry.fetch.request.credentials, 'omit');
+    assert.strictEqual(telemetry.fetch.request.cache, 'no-store');
+    assert.strictEqual(telemetry.fetch.request.redirect, 'error');
+    assert.strictEqual(requestInit(telemetry.url).referrerPolicy, 'no-referrer');
+    assertDiagnostic(telemetry.requestBody, 'injected', 2, 94);
+  });
+
+  it('reports impression_count zero for timeout diagnostics', async () => {
+    const clock = sandbox.useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction({ telemetry: true, timeout: 100 });
+    clock.tick(100);
+    await run.completion;
+    await Promise.resolve();
+    const telemetry = await findPending(SIGNAL_ORIGIN + '/v1/telemetry/rtd');
+    assertDiagnostic(telemetry.requestBody, 'timeout', 0, undefined);
+  });
+
+  it('keeps issuer, reference, JWKS, claims, and ES256 verification pinned', async () => {
+    addCanonical(PAGE_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(ATTACKER_SIGNAL, 95), {
+      jwks: {
+        keys: [Object.assign({}, TRUSTED_JWK, { kid: 'attacker-key' })],
+      },
+    });
+    await run.completion;
+    assertNoInjection(run.auction);
+    assert.deepStrictEqual(decodeClaims(PAGE_ATT).record_revision, 7);
+    assert.strictEqual(server.requests.some(request => request.url.includes('/.well-known/jwks.json')), false);
   });
 });

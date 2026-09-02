@@ -1,13 +1,12 @@
 import { submodule } from '../src/hook.js';
-import { fetcherFactory, sendBeacon } from '../src/ajax.js';
+import { fetcherFactory } from '../src/ajax.js';
 import type { AllConsentData } from '../src/consentHandler.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
 import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 
 const REAL_TIME_MODULE = 'realTimeData';
 export const MODULE_NAME = 'encypher';
-const DEFAULT_SIGNAL_HOST = 'signals.encypher.com';
-const DEFAULT_SIGNAL_BASE = 'https://' + DEFAULT_SIGNAL_HOST;
+const SIGNAL_ORIGIN = 'https://signals.encypher.com';
 export const TRUSTED_ISSUER = 'https://api.encypher.com';
 export const TRUSTED_JWKS_URL = TRUSTED_ISSUER + '/api/v1/public/provenance/jwks.json';
 const TRUSTED_ATTESTATION_BASE = TRUSTED_ISSUER + '/api/v1/public/provenance/attestations/';
@@ -18,19 +17,10 @@ const MAX_EXTENSION_BYTES = 1024;
 const CLOCK_SKEW_SECONDS = 60;
 const JWKS_CACHE_TTL_MS = 60_000;
 const RECORD_STATUS_CACHE_TTL_MS = 30_000;
-const SHA256_K = [
-  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-];
+const LOOKUP_MAX_BYTES = 4 * 1024;
+const JWKS_MAX_BYTES = 64 * 1024;
 
 export interface EncypherRtdParams {
-  signalBase?: string;
   timeout?: number;
   telemetry?: boolean;
   adoptionReporting?: boolean;
@@ -54,15 +44,15 @@ export interface C2paSignalV1 {
 type JsonObject = Record<string, unknown>;
 type DiagnosticEvent = 'injected' | 'miss' | 'stale' | 'revoked' | 'invalid' | 'timeout';
 
-interface RecordCacheEntry {
-  record: C2paSignalV1;
-  datasetVersion: number;
-  statusExpiresAt: number;
-}
+type DecisionStatus = 'ready' | 'miss' | 'revoked';
 
-interface JwkCacheEntry {
-  jwks: unknown;
-  expiresAt: number;
+interface DecisionState {
+  datasetVersion: number;
+  status: DecisionStatus;
+  record?: C2paSignalV1;
+  recordRevision?: number;
+  recordFingerprint?: string;
+  statusExpiresAt?: number;
 }
 
 interface RequestCallbacks {
@@ -70,69 +60,17 @@ interface RequestCallbacks {
   error: (timedOut: boolean) => void;
 }
 
-type VerificationCallback = (valid: boolean, timedOut: boolean) => void;
+const decisions = new Map<string, DecisionState>();
+let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
+let maxDatasetVersionSeen = 0;
+let globalStaleBarrier = 0;
 
-const recordCache = new Map<string, RecordCacheEntry>();
-const jwkCache = new Map<string, JwkCacheEntry>();
-
-function rotateRight(value: number, amount: number): number {
-  return (value >>> amount) | (value << (32 - amount));
-}
-
-/** Synchronous SHA-256 for the canonical URL lookup key. */
-export function sha256(value: string): Uint8Array {
-  const input = new TextEncoder().encode(value);
-  const bitLength = input.length * 8;
-  const paddedLength = Math.ceil((input.length + 9) / 64) * 64;
-  const bytes = new Uint8Array(paddedLength);
-  bytes.set(input);
-  bytes[input.length] = 0x80;
-  const view = new DataView(bytes.buffer);
-  view.setUint32(paddedLength - 8, Math.floor(bitLength / 0x100000000));
-  view.setUint32(paddedLength - 4, bitLength >>> 0);
-
-  const state = new Uint32Array([
-    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
-  ]);
-  const words = new Uint32Array(64);
-  for (let offset = 0; offset < paddedLength; offset += 64) {
-    for (let index = 0; index < 16; index++) words[index] = view.getUint32(offset + index * 4);
-    for (let index = 16; index < 64; index++) {
-      const s0 = rotateRight(words[index - 15], 7) ^ rotateRight(words[index - 15], 18) ^ (words[index - 15] >>> 3);
-      const s1 = rotateRight(words[index - 2], 17) ^ rotateRight(words[index - 2], 19) ^ (words[index - 2] >>> 10);
-      words[index] = (words[index - 16] + s0 + words[index - 7] + s1) >>> 0;
-    }
-    let [a, b, c, d, e, f, g, h] = state;
-    for (let index = 0; index < 64; index++) {
-      const s1 = rotateRight(e, 6) ^ rotateRight(e, 11) ^ rotateRight(e, 25);
-      const choice = (e & f) ^ (~e & g);
-      const temp1 = (h + s1 + choice + SHA256_K[index] + words[index]) >>> 0;
-      const s0 = rotateRight(a, 2) ^ rotateRight(a, 13) ^ rotateRight(a, 22);
-      const majority = (a & b) ^ (a & c) ^ (b & c);
-      const temp2 = (s0 + majority) >>> 0;
-      h = g;
-      g = f;
-      f = e;
-      e = (d + temp1) >>> 0;
-      d = c;
-      c = b;
-      b = a;
-      a = (temp1 + temp2) >>> 0;
-    }
-    state[0] = (state[0] + a) >>> 0;
-    state[1] = (state[1] + b) >>> 0;
-    state[2] = (state[2] + c) >>> 0;
-    state[3] = (state[3] + d) >>> 0;
-    state[4] = (state[4] + e) >>> 0;
-    state[5] = (state[5] + f) >>> 0;
-    state[6] = (state[6] + g) >>> 0;
-    state[7] = (state[7] + h) >>> 0;
-  }
-  const digest = new Uint8Array(32);
-  const output = new DataView(digest.buffer);
-  state.forEach((word, index) => output.setUint32(index * 4, word));
-  return digest;
+/** SHA-256 bytes for the canonical URL lookup key. */
+export function sha256(value: string): Promise<Uint8Array> {
+  const subtle = window.crypto && window.crypto.subtle;
+  if (!subtle || typeof subtle.digest !== 'function') return Promise.reject(new Error('WebCrypto SHA-256 unavailable'));
+  return subtle.digest('SHA-256', new TextEncoder().encode(value))
+    .then(digest => new Uint8Array(digest));
 }
 
 function normalizePercentEncoding(value: string): string {
@@ -150,7 +88,7 @@ function compareText(left: string, right: string): number {
 
 function base64url(bytes: Uint8Array): string {
   let binary = '';
-  bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+  for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -183,10 +121,10 @@ export function getCanonicalUrl(): string {
   return parsed.href;
 }
 
-function exactKeys(value: unknown, expected: string[]): value is JsonObject {
+function exactKeys(value: unknown, expected: readonly string[]): value is JsonObject {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const actual = Object.keys(value).sort();
-  return actual.length === expected.length && expected.slice().sort().every((key, index) => key === actual[index]);
+  const actual = Object.keys(value);
+  return actual.length === expected.length && expected.every(key => actual.includes(key));
 }
 
 function compactRecord(record: unknown): C2paSignalV1 | null {
@@ -218,69 +156,57 @@ function selectJwk(jwks: unknown, kid: unknown): JsonWebKey | null {
   return match;
 }
 
-function validClaims(claims: unknown, record: C2paSignalV1, publisherDomain: string, urlHash: string, now: number): boolean {
+function validClaims(claims: unknown, record: C2paSignalV1, publisherDomain: string, urlHash: string, now: number): number | null {
   if (!exactKeys(claims, [
     'iss', 'sub', 'iat', 'exp', 'publisher_domain', 'url_hash', 'content_hash', 'manifest_digest',
     'validation_results', 'declaration', 'trust_policy_version', 'record_revision',
-  ])) return false;
+  ])) return null;
   const digestPattern = /^[A-Za-z0-9_-]{43}$/;
   const expectedRef = TRUSTED_ATTESTATION_BASE + encodeURIComponent(record.id);
-  if (record.ref !== expectedRef) return false;
-  if (claims.iss !== TRUSTED_ISSUER || claims.sub !== record.id || claims.publisher_domain !== publisherDomain) return false;
-  if (typeof claims.iat !== 'number' || !Number.isInteger(claims.iat) || claims.iat < 0) return false;
-  if (typeof claims.exp !== 'number' || !Number.isInteger(claims.exp) || claims.exp < 1) return false;
-  if (claims.iat > now + CLOCK_SKEW_SECONDS || claims.exp <= now) return false;
-  if (claims.url_hash !== urlHash) return false;
+  if (record.ref !== expectedRef) return null;
+  if (claims.iss !== TRUSTED_ISSUER || claims.sub !== record.id || claims.publisher_domain !== publisherDomain) return null;
+  if (typeof claims.iat !== 'number' || !Number.isInteger(claims.iat) || claims.iat < 0) return null;
+  if (typeof claims.exp !== 'number' || !Number.isInteger(claims.exp) || claims.exp < 1) return null;
+  if (claims.iat > now + CLOCK_SKEW_SECONDS || claims.exp <= now) return null;
   if (
-    typeof claims.url_hash !== 'string' || !digestPattern.test(claims.url_hash) ||
+    claims.url_hash !== urlHash ||
     typeof claims.content_hash !== 'string' || !digestPattern.test(claims.content_hash) ||
     typeof claims.manifest_digest !== 'string' || !digestPattern.test(claims.manifest_digest)
-  ) return false;
-  if (typeof claims.trust_policy_version !== 'string' || claims.trust_policy_version.length === 0) return false;
-  if (typeof claims.record_revision !== 'number' || !Number.isInteger(claims.record_revision) || claims.record_revision < 1) return false;
+  ) return null;
+  if (typeof claims.trust_policy_version !== 'string' || claims.trust_policy_version.length === 0) return null;
+  if (typeof claims.record_revision !== 'number' || !Number.isInteger(claims.record_revision) || claims.record_revision < 1) return null;
   const results = claims.validation_results;
-  if (!exactKeys(results, ['status', 'codes']) || results.status !== 'valid' || !Array.isArray(results.codes)) return false;
-  if (results.codes.length > 32 || !results.codes.every(code => typeof code === 'string')) return false;
+  if (!exactKeys(results, ['status', 'codes']) || results.status !== 'valid' || !Array.isArray(results.codes)) return null;
+  if (results.codes.length > 32 || !results.codes.every(code => typeof code === 'string')) return null;
   const declaration = claims.declaration;
-  if (!exactKeys(declaration, ['label', 'source_assertion'])) return false;
-  if (typeof declaration.label !== 'string' || !['human_declared', 'ai_assisted', 'unknown'].includes(declaration.label)) return false;
-  return typeof declaration.source_assertion === 'string' && declaration.source_assertion.length > 0;
+  if (!exactKeys(declaration, ['label', 'source_assertion'])) return null;
+  if (typeof declaration.label !== 'string' || !['human_declared', 'ai_assisted', 'unknown'].includes(declaration.label)) return null;
+  if (typeof declaration.source_assertion !== 'string' || declaration.source_assertion.length === 0) return null;
+  return claims.record_revision;
 }
 
-function recordExpiresAt(record: C2paSignalV1): number | null {
-  try {
-    const segments = record.att.split('.');
-    if (segments.length !== 3) return null;
-    const claims = decodeJson(segments[1]);
-    if (!claims || typeof claims !== 'object' || Array.isArray(claims)) return null;
-    const exp = (claims as JsonObject).exp;
-    return typeof exp === 'number' && Number.isInteger(exp) && exp >= 1 ? exp : null;
-  } catch {
-    return null;
-  }
-}
-
-async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain: string, urlHash: string): Promise<boolean> {
+async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain: string, urlHash: string): Promise<number | null> {
   const segments = record.att.split('.');
-  if (segments.length !== 3) return false;
+  if (segments.length !== 3) return null;
   let protectedHeader: unknown;
   let claims: unknown;
   try {
     protectedHeader = decodeJson(segments[0]);
     claims = decodeJson(segments[1]);
   } catch {
-    return false;
+    return null;
   }
-  if (!exactKeys(protectedHeader, ['alg', 'kid', 'typ']) || protectedHeader.alg !== 'ES256' || protectedHeader.typ !== 'epat+jws') return false;
+  if (!exactKeys(protectedHeader, ['alg', 'kid', 'typ']) || protectedHeader.alg !== 'ES256' || protectedHeader.typ !== 'epat+jws') return null;
   const jwk = selectJwk(jwks, protectedHeader.kid);
-  if (!jwk || !validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000))) return false;
+  const recordRevision = validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000));
+  if (!jwk || recordRevision === null) return null;
   let signature: Uint8Array;
   try {
     signature = decodeBase64url(segments[2]);
   } catch {
-    return false;
+    return null;
   }
-  if (signature.length !== 64) return false;
+  if (signature.length !== 64) return null;
   try {
     const key = await window.crypto.subtle.importKey(
       'jwk',
@@ -289,34 +215,38 @@ async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain
       false,
       ['verify']
     );
-    return await window.crypto.subtle.verify(
+    const valid = await window.crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       key,
       signature,
       new TextEncoder().encode(segments[0] + '.' + segments[1])
     );
+    return valid
+      ? validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function impressionCount(auction: StartAuctionOptions): number {
-  return Array.isArray(auction && auction.adUnits) ? auction.adUnits.length : 0;
-}
-
 function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1): number {
-  let count = 0;
-  auction.adUnits.forEach(adUnit => {
-    if (!adUnit.ortb2Imp) adUnit.ortb2Imp = {};
-    if (!adUnit.ortb2Imp.ext) adUnit.ortb2Imp.ext = {};
-    const extension = adUnit.ortb2Imp.ext as Record<string, unknown>;
+  const sourceAdUnits = Array.isArray(auction.adUnits) ? auction.adUnits : [];
+  auction.adUnits = sourceAdUnits.map(adUnit => {
+    const sourceImp = adUnit.ortb2Imp || {};
+    const extension = { ...(sourceImp.ext || {}) } as Record<string, unknown>;
     extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
-    count += 1;
+    return {
+      ...adUnit,
+      ortb2Imp: {
+        ...sourceImp,
+        ext: extension,
+      },
+    };
   });
-  return count;
+  return sourceAdUnits.length;
 }
 
-function emitDiagnostic(signalBase: string, params: EncypherRtdParams, event: DiagnosticEvent, count: number, datasetVersion: number | undefined, startedAt: number): void {
+function emitDiagnostic(params: EncypherRtdParams, event: DiagnosticEvent, count: number, datasetVersion: number | undefined, startedAt: number): void {
   if (params.telemetry !== true) return;
   const payload: {
     v: 1;
@@ -336,101 +266,168 @@ function emitDiagnostic(signalBase: string, params: EncypherRtdParams, event: Di
   };
   if (datasetVersion !== undefined) payload.dataset_version = datasetVersion;
   try {
-    sendBeacon(signalBase + '/v1/telemetry/rtd', JSON.stringify(payload));
+    fetcherFactory()(SIGNAL_ORIGIN + '/v1/telemetry/rtd', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'omit',
+      cache: 'no-store',
+      keepalive: true,
+      redirect: 'error',
+      referrerPolicy: 'no-referrer',
+      headers: { 'Content-Type': 'text/plain' },
+    }).catch(() => {});
   } catch {
     // Diagnostics never affect an auction.
   }
 }
 
-function normalizedSignalBase(params: EncypherRtdParams): string | null {
-  const value = String(params.signalBase || DEFAULT_SIGNAL_BASE);
-  if (value.includes('?') || value.includes('#')) return null;
-  try {
-    const parsed = new URL(value);
-    const signalHostAllowed = parsed.hostname === DEFAULT_SIGNAL_HOST || parsed.hostname.endsWith('.' + DEFAULT_SIGNAL_HOST);
-    if (
-      parsed.protocol !== 'https:' ||
-      !signalHostAllowed ||
-      parsed.port ||
-      parsed.username ||
-      parsed.password ||
-      parsed.search ||
-      parsed.hash
-    ) return null;
-    parsed.pathname = parsed.pathname.replace(/\/+$/, '');
-    return parsed.href.replace(/\/+$/, '');
-  } catch {
-    return null;
-  }
-}
-
-function requestText(url: string, timeout: number, callbacks: RequestCallbacks): void {
+function requestText(url: string, timeout: number, maxBytes: number, callbacks: RequestCallbacks): void {
   const controller = new AbortController();
-  let timedOut = false;
-  let responseStatus = 0;
-  const timer = setTimeout(() => {
-    timedOut = true;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let settled = false;
+  const cancelReader = (): void => {
+    if (!reader) return;
+    try {
+      reader.cancel().catch(() => {});
+    } catch {
+      // Cancellation is best-effort after a failed response.
+    }
+  };
+  const fail = (timedOut: boolean, cancel: boolean): void => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    if (cancel) cancelReader();
     controller.abort();
-  }, timeout);
+    callbacks.error(timedOut);
+  };
+  const timer = setTimeout(() => fail(true, true), timeout);
   try {
     fetcherFactory(timeout)(url, {
       method: 'GET',
       credentials: 'omit',
+      cache: 'no-store',
       redirect: 'error',
       headers: { Accept: 'application/json' },
+      referrerPolicy: 'no-referrer',
       signal: controller.signal,
     }).then(response => {
-      responseStatus = response.status;
-      return response.text();
-    }).then(text => {
-      clearTimeout(timer);
-      callbacks.success(text, responseStatus);
-    }, () => {
-      clearTimeout(timer);
-      callbacks.error(timedOut);
-    });
+      if (settled) return;
+      if (response.status !== 200) {
+        settled = true;
+        clearTimeout(timer);
+        controller.abort();
+        callbacks.success('', response.status);
+        return;
+      }
+      if (!response.body || typeof response.body.getReader !== 'function') {
+        fail(false, false);
+        return;
+      }
+      try {
+        reader = response.body.getReader();
+      } catch {
+        fail(false, false);
+        return;
+      }
+      if (!reader || typeof reader.read !== 'function' || typeof reader.cancel !== 'function') {
+        fail(false, false);
+        return;
+      }
+      const contentLength = response.headers && response.headers.get('Content-Length');
+      if (contentLength !== null) {
+        const declaredBytes = Number(contentLength);
+        if (Number.isInteger(declaredBytes) && declaredBytes >= 0 && declaredBytes > maxBytes) {
+          fail(false, true);
+          return;
+        }
+      }
+      const chunks: Uint8Array[] = [];
+      let decodedBytes = 0;
+      const readNext = (): void => {
+        if (settled || !reader) return;
+        reader.read().then(result => {
+          if (settled) return;
+          if (result.done) {
+            const joined = new Uint8Array(decodedBytes);
+            let offset = 0;
+            for (const chunk of chunks) {
+              joined.set(chunk, offset);
+              offset += chunk.byteLength;
+            }
+            let text: string;
+            try {
+              text = new TextDecoder('utf-8', { fatal: true }).decode(joined);
+            } catch {
+              fail(false, false);
+              return;
+            }
+            settled = true;
+            clearTimeout(timer);
+            callbacks.success(text, response.status);
+            return;
+          }
+          if (!(result.value instanceof Uint8Array)) {
+            fail(false, true);
+            return;
+          }
+          decodedBytes += result.value.byteLength;
+          if (decodedBytes > maxBytes) {
+            fail(false, true);
+            return;
+          }
+          chunks.push(result.value);
+          readNext();
+        }, () => fail(false, true));
+      };
+      readNext();
+    }, () => fail(false, false));
   } catch {
-    clearTimeout(timer);
-    callbacks.error(false);
+    fail(false, false);
   }
 }
 
 function cachedTrustedJwks(): unknown | null {
-  const entry = jwkCache.get(TRUSTED_JWKS_URL);
-  if (!entry || entry.expiresAt <= Date.now()) {
-    jwkCache.delete(TRUSTED_JWKS_URL);
+  if (!trustedJwkCache || trustedJwkCache.expiresAt <= Date.now()) {
+    trustedJwkCache = null;
     return null;
   }
-  return entry.jwks;
+  return trustedJwkCache.jwks;
 }
 
-function verifyWithTrustedJwks(record: C2paSignalV1, publisherDomain: string, urlHash: string, remainingTime: () => number, completeVerification: VerificationCallback): void {
+function verifyWithTrustedJwks(
+  record: C2paSignalV1,
+  publisherDomain: string,
+  urlHash: string,
+  remainingTime: () => number,
+  completeVerification: (recordRevision: number | null, timedOut: boolean) => void
+): void {
   const fetchAndVerify = (): void => {
     const remaining = remainingTime();
     if (remaining <= 0) {
-      completeVerification(false, true);
+      completeVerification(null, true);
       return;
     }
-    requestText(TRUSTED_JWKS_URL, remaining, {
+    requestText(TRUSTED_JWKS_URL, remaining, JWKS_MAX_BYTES, {
       success(jwksText, status) {
         if (status !== 200) {
-          completeVerification(false, false);
+          completeVerification(null, false);
           return;
         }
         let jwks: unknown;
         try {
           jwks = JSON.parse(jwksText);
         } catch {
-          completeVerification(false, false);
+          completeVerification(null, false);
           return;
         }
-        verifyRecord(record, jwks, publisherDomain, urlHash).then(valid => {
-          if (valid) jwkCache.set(TRUSTED_JWKS_URL, { jwks, expiresAt: Date.now() + JWKS_CACHE_TTL_MS });
-          completeVerification(valid, false);
-        }, () => completeVerification(false, false));
+        verifyRecord(record, jwks, publisherDomain, urlHash).then(recordRevision => {
+          if (recordRevision !== null) trustedJwkCache = { jwks, expiresAt: Date.now() + JWKS_CACHE_TTL_MS };
+          completeVerification(recordRevision, false);
+        }, () => completeVerification(null, false));
       },
       error(timedOut) {
-        completeVerification(false, timedOut);
+        completeVerification(null, timedOut);
       },
     });
   };
@@ -440,17 +437,66 @@ function verifyWithTrustedJwks(record: C2paSignalV1, publisherDomain: string, ur
     fetchAndVerify();
     return;
   }
-  verifyRecord(record, cached, publisherDomain, urlHash).then(valid => {
-    if (valid) {
-      completeVerification(true, false);
+  verifyRecord(record, cached, publisherDomain, urlHash).then(recordRevision => {
+    if (recordRevision !== null) {
+      completeVerification(recordRevision, false);
       return;
     }
-    jwkCache.delete(TRUSTED_JWKS_URL);
+    trustedJwkCache = null;
     fetchAndVerify();
   }, () => {
-    jwkCache.delete(TRUSTED_JWKS_URL);
+    trustedJwkCache = null;
     fetchAndVerify();
   });
+}
+
+function commitReadyDecision(urlHash: string, record: C2paSignalV1, datasetVersion: number, recordRevision: number, statusExpiresAt: number): boolean {
+  if (
+    statusExpiresAt <= Date.now() ||
+    datasetVersion < maxDatasetVersionSeen ||
+    datasetVersion <= globalStaleBarrier
+  ) return false;
+  const current = decisions.get(urlHash);
+  const recordFingerprint = JSON.stringify(record);
+  if (current) {
+    if (datasetVersion < current.datasetVersion) return false;
+    if (current.status !== 'ready' && datasetVersion <= current.datasetVersion) return false;
+    if (current.recordRevision !== undefined && recordRevision < current.recordRevision) return false;
+    if (
+      current.status === 'ready' &&
+      datasetVersion === current.datasetVersion &&
+      recordRevision === current.recordRevision &&
+      recordFingerprint !== current.recordFingerprint
+    ) return false;
+  }
+  decisions.set(urlHash, {
+    datasetVersion,
+    status: 'ready',
+    record,
+    recordRevision,
+    recordFingerprint,
+    statusExpiresAt,
+  });
+  maxDatasetVersionSeen = datasetVersion;
+  return true;
+}
+
+function commitNonReadyDecision(urlHash: string, status: 'miss' | 'revoked' | 'stale', datasetVersion: number): void {
+  if (datasetVersion < maxDatasetVersionSeen) return;
+  maxDatasetVersionSeen = datasetVersion;
+  if (status === 'stale') {
+    globalStaleBarrier = datasetVersion;
+    return;
+  }
+  const current = decisions.get(urlHash);
+  if (
+    current &&
+    (
+      datasetVersion < current.datasetVersion ||
+      (datasetVersion === current.datasetVersion && current.status === 'revoked' && status === 'miss')
+    )
+  ) return;
+  decisions.set(urlHash, { datasetVersion, status, recordRevision: current?.recordRevision });
 }
 
 const init = (_config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentData): boolean => true;
@@ -458,15 +504,22 @@ const init = (_config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentDa
 const getBidRequestData = (
   auction: StartAuctionOptions,
   callback: () => void,
-  moduleConfig: RTDProviderConfig<'encypher'>
+  moduleConfig: RTDProviderConfig<'encypher'>,
+  _userConsent?: AllConsentData,
+  rtdTimeout?: number
 ): void => {
   const params = (moduleConfig && moduleConfig.params) || {};
-  const signalBase = normalizedSignalBase(params);
   const startedAt = Date.now();
-  const totalImpressions = impressionCount(auction);
-  const timeout = typeof params.timeout === 'number' && Number.isFinite(params.timeout)
+  const configuredTimeout = typeof params.timeout === 'number' && Number.isFinite(params.timeout)
     ? Math.max(1, params.timeout)
     : DEFAULT_TIMEOUT_MS;
+  const timeout = typeof rtdTimeout === 'number' && Number.isFinite(rtdTimeout)
+    ? Math.max(0, Math.min(configuredTimeout, rtdTimeout))
+    : configuredTimeout;
+  if (timeout === 0) {
+    callback();
+    return;
+  }
   const deadlineAt = startedAt + timeout;
   let completed = false;
   let deadlineTimer: number | undefined;
@@ -474,98 +527,154 @@ const getBidRequestData = (
     if (completed) return;
     completed = true;
     window.clearTimeout(deadlineTimer);
-    const injectedCount = record ? injectPerImpression(auction, record) : totalImpressions;
+    const injectedCount = event === 'injected' && record ? injectPerImpression(auction, record) : 0;
     callback();
-    if (signalBase) emitDiagnostic(signalBase, params, event, injectedCount, datasetVersion, startedAt);
+    emitDiagnostic(params, event, injectedCount, datasetVersion, startedAt);
   };
-  if (!signalBase) {
+  deadlineTimer = window.setTimeout(() => finish('timeout'), timeout);
+  const remainingTime = (): number => deadlineAt - Date.now();
+  if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle.digest !== 'function') {
     finish('invalid');
     return;
   }
-  deadlineTimer = window.setTimeout(() => finish('timeout'), timeout);
-  const remainingTime = (): number => deadlineAt - Date.now();
 
-  const canonicalUrl = getCanonicalUrl();
-  const urlHash = base64url(sha256(canonicalUrl));
-  const publisherDomain = new URL(canonicalUrl).hostname.toLowerCase();
-  const cacheKey = signalBase + '|' + urlHash;
-  const acceptVerified = (record: C2paSignalV1, datasetVersion: number, statusExpiresAt: number): void => {
-    verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (valid, timedOut) => {
-      if (completed) return;
-      if (!valid) {
-        recordCache.delete(cacheKey);
-        finish(timedOut ? 'timeout' : 'invalid', datasetVersion);
-        return;
-      }
-      recordCache.set(cacheKey, { record, datasetVersion, statusExpiresAt });
-      finish('injected', datasetVersion, record);
-    });
-  };
-
-  const cached = recordCache.get(cacheKey);
-  if (cached) {
-    const expiresAt = recordExpiresAt(cached.record);
-    if (
-      expiresAt !== null &&
-      expiresAt > Math.floor(Date.now() / 1000) &&
-      cached.statusExpiresAt > Date.now()
-    ) {
-      acceptVerified(cached.record, cached.datasetVersion, cached.statusExpiresAt);
-      return;
-    }
-    recordCache.delete(cacheKey);
+  let canonicalUrl: string;
+  let publisherDomain: string;
+  try {
+    canonicalUrl = getCanonicalUrl();
+    publisherDomain = new URL(canonicalUrl).hostname.toLowerCase();
+  } catch {
+    finish('invalid');
+    return;
   }
 
-  const reportingQuery = params.adoptionReporting === false ? '&adoption_reporting=0' : '';
-  requestText(signalBase + '/v1/attestations/' + urlHash + '?publisher_domain=' + encodeURIComponent(publisherDomain) + '&module_version=' + encodeURIComponent(MODULE_VERSION) + reportingQuery, Math.max(1, remainingTime()), {
-    success(responseText, status) {
-      if (completed) return;
-      if (status === 204) {
-        finish('miss');
-        return;
-      }
-      let envelope: unknown;
-      try {
-        envelope = JSON.parse(responseText);
-      } catch {
-        finish('invalid');
-        return;
-      }
-      if (
-        !exactKeys(envelope, ['v', 'status', 'dataset_version', 'record']) ||
-        envelope.v !== 1 ||
-        typeof envelope.dataset_version !== 'number' ||
-        !Number.isInteger(envelope.dataset_version) ||
-        envelope.dataset_version < 1
-      ) {
-        finish('invalid');
-        return;
-      }
-      if (envelope.status === 'stale' || envelope.status === 'revoked') {
-        if (envelope.record !== null) {
-          finish('invalid');
+  sha256(canonicalUrl).then(digest => {
+    if (completed) return;
+    if (remainingTime() <= 0) {
+      finish('timeout');
+      return;
+    }
+    const urlHash = base64url(digest);
+    function acceptVerified(
+      record: C2paSignalV1,
+      datasetVersion: number,
+      statusExpiresAt: number,
+      cachedDecision?: DecisionState
+    ): void {
+      verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (recordRevision, timedOut) => {
+        if (completed) return;
+        if (timedOut) {
+          finish('timeout', datasetVersion);
           return;
         }
-        finish(envelope.status, envelope.dataset_version);
+        if (
+          recordRevision === null ||
+          !commitReadyDecision(urlHash, record, datasetVersion, recordRevision, statusExpiresAt)
+        ) {
+          if (cachedDecision && remainingTime() > 0) {
+            if (decisions.get(urlHash) === cachedDecision) cachedDecision.statusExpiresAt = 0;
+            requestLookup();
+            return;
+          }
+          finish('invalid', datasetVersion);
+          return;
+        }
+        finish('injected', datasetVersion, record);
+      });
+    }
+
+    function requestLookup(): void {
+      if (remainingTime() <= 0) {
+        finish('timeout');
         return;
       }
-      const record = envelope.status === 'ready' ? compactRecord(envelope.record) : null;
-      if (!record) {
-        finish('invalid');
-        return;
-      }
-      acceptVerified(record, envelope.dataset_version, Date.now() + RECORD_STATUS_CACHE_TTL_MS);
-    },
-    error(timedOut) {
-      finish(timedOut ? 'timeout' : 'invalid');
-    },
+      const reportingQuery = params.adoptionReporting === false ? '&adoption_reporting=0' : '';
+      requestText(
+        SIGNAL_ORIGIN + '/v1/attestations/' + urlHash +
+        '?publisher_domain=' + encodeURIComponent(publisherDomain) +
+        '&module_version=' + encodeURIComponent(MODULE_VERSION) +
+        reportingQuery,
+        Math.max(1, remainingTime()),
+        LOOKUP_MAX_BYTES,
+        {
+          success(responseText, status) {
+            if (completed) return;
+            if (status !== 200) {
+              finish('invalid');
+              return;
+            }
+            let envelope: unknown;
+            try {
+              envelope = JSON.parse(responseText);
+            } catch {
+              finish('invalid');
+              return;
+            }
+            if (
+              !exactKeys(envelope, ['v', 'status', 'dataset_version', 'record']) ||
+              envelope.v !== 1 ||
+              !['ready', 'miss', 'revoked', 'stale'].includes(String(envelope.status)) ||
+              typeof envelope.dataset_version !== 'number' ||
+              !Number.isInteger(envelope.dataset_version) ||
+              envelope.dataset_version < 1
+            ) {
+              finish('invalid');
+              return;
+            }
+            const datasetVersion = envelope.dataset_version;
+            if (envelope.status !== 'ready') {
+              if (envelope.record !== null) {
+                finish('invalid');
+                return;
+              }
+              const status = envelope.status as 'miss' | 'revoked' | 'stale';
+              commitNonReadyDecision(urlHash, status, datasetVersion);
+              finish(status, datasetVersion);
+              return;
+            }
+            if (datasetVersion < maxDatasetVersionSeen) {
+              finish('invalid', datasetVersion);
+              return;
+            }
+            const record = compactRecord(envelope.record);
+            if (!record) {
+              finish('invalid');
+              return;
+            }
+            acceptVerified(record, datasetVersion, Date.now() + RECORD_STATUS_CACHE_TTL_MS);
+          },
+          error(timedOut) {
+            finish(timedOut ? 'timeout' : 'invalid');
+          },
+        }
+      );
+    }
+
+    const cached = decisions.get(urlHash);
+    if (
+      cached &&
+      cached.status === 'ready' &&
+      cached.record &&
+      cached.statusExpiresAt !== undefined &&
+      cached.statusExpiresAt > Date.now() &&
+      cached.datasetVersion >= maxDatasetVersionSeen &&
+      cached.datasetVersion > globalStaleBarrier
+    ) {
+      acceptVerified(cached.record, cached.datasetVersion, cached.statusExpiresAt, cached);
+      return;
+    }
+    requestLookup();
+  }, () => {
+    if (!completed) finish(remainingTime() <= 0 ? 'timeout' : 'invalid');
   });
 };
 
 /** Clear page-lifecycle memory between isolated module tests. */
-export function resetBeaconState(): void {
-  recordCache.clear();
-  jwkCache.clear();
+export function resetProviderState(): void {
+  decisions.clear();
+  trustedJwkCache = null;
+  maxDatasetVersionSeen = 0;
+  globalStaleBarrier = 0;
 }
 
 export const encypherSubmodule: RtdProviderSpec<'encypher'> = {
