@@ -1,9 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import type { BidderSpec, ExtendedResponse } from '../src/adapters/bidderFactory.js';
+import type { BidRequest } from '../src/adapterManager.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, setOnAny } from '../src/utils.js';
+import { deepSetValue, groupBy, isNumber, isStr, replaceAuctionPrice } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import type { AdapterRequest, AdapterResponse, BidderSpec, ExtendedResponse, ServerResponse } from '../src/adapters/bidderFactory.js';
-import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 
 type Peak226Region = 'us' | 'eu' | 'jp';
 
@@ -27,89 +27,90 @@ export interface Peak226BidderParams {
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    peak226: Peak226BidderParams;
+    [BIDDER_CODE]: Peak226BidderParams;
   }
 }
 
 const BIDDER_CODE = 'peak226';
-// TODO: unverified against vendor-list.consensu.org — confirm this ID is
-// actually registered to peak226 before release.
 const GVLID = 1202;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_TTL = 300;
 const DEFAULT_REGION: Peak226Region = 'us';
-// TODO: placeholder domains — replace with the real per-datacenter endpoints.
 const ENDPOINTS: Record<Peak226Region, string> = {
-  us: 'https://us.peak226.com/openrtb2',
-  eu: 'https://eu.peak226.com/openrtb2',
-  jp: 'https://jp.peak226.com/openrtb2',
+  us: 'https://us.a.viddea.com/edge_direct',
+  eu: 'https://eu.a.viddea.com/edge_direct',
+  jp: 'https://jp.a.viddea.com/edge_direct',
 };
+
+type Peak226BidRequest = BidRequest<typeof BIDDER_CODE>;
+
+function isNonEmptyId(value: unknown): boolean {
+  return (typeof value === 'string' && value.length > 0) || isNumber(value);
+}
+
+function getRegion(bid: Peak226BidRequest): Peak226Region {
+  const region = bid.params?.region;
+  return region && ENDPOINTS[region] ? region : DEFAULT_REGION;
+}
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
     netRevenue: true,
-    ttl: 300,
+    ttl: DEFAULT_TTL,
+    currency: DEFAULT_CURRENCY,
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    imp.tagid = bidRequest.params.placementId;
+    imp.tagid = String(bidRequest.params.placementId);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const publisherId = setOnAny(context.bidRequests, 'params.publisherId');
-    if (publisherId) {
-      // site vs app is already decided by ortbConverter from ortb2; mirror
-      // that choice so publisher.id lands on the right object.
-      if (request.app) {
-        deepSetValue(request, 'app.publisher.id', String(publisherId));
-      } else {
-        deepSetValue(request, 'site.publisher.id', String(publisherId));
-      }
+    // every bid in a request shares the same publisherId (see buildRequests)
+    const publisherId = context.bidRequests[0]?.params?.publisherId;
+    if (isNonEmptyId(publisherId)) {
+      deepSetValue(request, `${request.app ? 'app' : 'site'}.publisher.id`, String(publisherId));
     }
     return request;
   },
-  // No `bidResponse` override: peak226 is assumed to return standard ORTB 2.6
-  // responses (`seatbid[].bid[].mtype` set) and plain VAST for video, with no
-  // bidder-hosted outstream renderer required. Revisit once the real
-  // response shape is confirmed.
+  bidResponse(buildBidResponse, bid, context) {
+    // peak226 returns ${AUCTION_PRICE} in markup and notice URLs; core only expands it in
+    // banner markup at render time, so resolve it here for VAST, nurl and burl as well.
+    if (isStr(bid.adm)) bid.adm = replaceAuctionPrice(bid.adm, bid.price);
+    if (isStr(bid.nurl)) bid.nurl = replaceAuctionPrice(bid.nurl, bid.price);
+    if (isStr(bid.burl)) bid.burl = replaceAuctionPrice(bid.burl, bid.price);
+    return buildBidResponse(bid, context);
+  },
 });
 
-const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
-  const { publisherId, placementId } = bid.params || {};
-  if (!publisherId || !placementId) {
-    return false;
-  }
-  const video = deepAccess(bid, 'mediaTypes.video');
-  if (video) {
-    if (!Array.isArray(video.mimes) || video.mimes.length === 0) {
-      return false;
-    }
-    if (!video.playerSize && !bid.sizes) {
-      return false;
-    }
-  }
-  return true;
+const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (bid) => {
+  const { publisherId, placementId } = bid.params ?? ({} as Partial<Peak226BidderParams>);
+  return isNonEmptyId(publisherId) && isNonEmptyId(placementId);
 };
 
-const buildRequests = (
-  validBidRequests: BidRequest<typeof BIDDER_CODE>[],
-  bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
-): AdapterRequest => {
-  const region = (setOnAny(validBidRequests, 'params.region') || DEFAULT_REGION) as Peak226Region;
-  const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
-
-  return {
-    method: 'POST',
-    url: ENDPOINTS[region] || ENDPOINTS[DEFAULT_REGION],
-    data,
-  };
+const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBidRequests, bidderRequest) => {
+  // region selects the endpoint and publisherId is request-level (site/app.publisher.id),
+  // so bids that differ on either must go out as separate requests.
+  const groups: Record<string, Array<{ bid: Peak226BidRequest }>> = groupBy(
+    validBidRequests.map((bid) => ({ bid, key: `${getRegion(bid)}|${bid.params.publisherId}` })),
+    'key',
+  );
+  return Object.values(groups).map((group) => {
+    const bidRequests = group.map(({ bid }) => bid);
+    return {
+      method: 'POST' as const,
+      url: ENDPOINTS[getRegion(bidRequests[0])],
+      data: converter.toORTB({ bidRequests, bidderRequest }),
+    };
+  });
 };
 
-const interpretResponse = (serverResponse: ServerResponse, request: AdapterRequest): AdapterResponse => {
-  if (!serverResponse || !serverResponse.body || !serverResponse.body.seatbid) {
+const interpretResponse: BidderSpec<typeof BIDDER_CODE>['interpretResponse'] = (serverResponse, request) => {
+  if (!serverResponse?.body?.seatbid) {
     return [];
   }
   const response = converter.fromORTB({ request: request.data, response: serverResponse.body }) as ExtendedResponse;
-  return response.bids || [];
+  return response.bids ?? [];
 };
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
@@ -119,8 +120,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  // `getUserSyncs` intentionally omitted for v1, pending confirmation of
-  // sync support (pixel/iframe) and the actual sync URL(s).
 };
 
 registerBidder(spec);
