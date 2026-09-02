@@ -8,6 +8,7 @@ import { interpretResponse as nexxInterpretResponse, enrichImp, enrichRequest, g
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
+import type { RequireAtLeastOne } from '../src/types/objects.d.ts';
 
 const BIDDER_CODE = 'insurads';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
@@ -15,12 +16,6 @@ const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '7.1';
 const GVLID = 596;
 const ALT_KEY = 'nexx360_storage';
-
-type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
-  Omit<T, Keys> & {
-    [K in Keys]-?: Required<Pick<T, K>> &
-    Partial<Pick<T, Exclude<Keys, K>>>
-  }[Keys];
 
 type InsurAdsBidParams = RequireAtLeastOne<{
   tagId?: string;
