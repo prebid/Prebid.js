@@ -25,6 +25,28 @@ const getReferrerInfo = (bidderRequest) => {
   return bidderRequest?.refererInfo?.page ?? '';
 };
 
+const isUsablePageUrl = (url) => typeof url === 'string' && /^https?:\/\//i.test(url);
+
+const getTopWindowUrl = () => {
+  try {
+    return utils.canAccessWindowTop() ? utils.getWindowTop().location.href : '';
+  } catch {
+    return '';
+  }
+};
+
+const getPageUrl = (bidderRequest) => {
+  const refererInfo = bidderRequest?.refererInfo;
+
+  return [
+    refererInfo?.page,
+    refererInfo?.topmostLocation,
+    refererInfo?.location,
+    getTopWindowUrl(),
+    typeof window !== 'undefined' ? window.location?.href : ''
+  ].find(isUsablePageUrl) ?? '';
+};
+
 const normalizeKeywords = (input) => {
   if (!input) return [];
 
@@ -226,6 +248,7 @@ export const spec = {
       };
     })();
     const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
+    const pageUrl = getPageUrl(bidderRequest);
 
     if (bidRequests.length === 0) {
       return [];
@@ -263,7 +286,7 @@ export const spec = {
 
       const payload = {
         userLanguage: navigator.language,
-        pageUrl: bidRequest?.refererInfo?.page,
+        pageUrl,
         pageDomain: bidRequest?.refererInfo?.referer,
         userId: bidRequest.userId,
         eids: (bidRequest.userIdAsEids || []).map(eid => ({
@@ -291,7 +314,7 @@ export const spec = {
           tcfeu: gdpr?.consentString || "",
           usp: usp?.uspString || "",
         },
-        xPageUrl: window.location.href,
+        xPageUrl: pageUrl,
         wdb: hasWallet,
         externalRef: bidRequest.bidId,
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
