@@ -7,6 +7,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./sharethroughBidAdapter.d.ts').SharethroughBidderParams} SharethroughBidderParams
+ * @typedef {BidRequest & {params: SharethroughBidderParams}} SharethroughBidRequest
+ */
+
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
@@ -53,6 +59,10 @@ export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
   gvlid: 80,
+  /**
+   * @param {SharethroughBidRequest} bid
+   * @returns {boolean}
+   */
   isBidRequestValid: (bid) => !!bid.params.pkey,
 
   buildRequests: (bidRequests, bidderRequest) => {
