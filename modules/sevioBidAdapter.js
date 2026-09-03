@@ -38,13 +38,22 @@ const getTopWindowUrl = () => {
 const getPageUrl = (bidderRequest) => {
   const refererInfo = bidderRequest?.refererInfo;
 
-  return [
-    refererInfo?.page,
-    refererInfo?.topmostLocation,
-    refererInfo?.location,
-    getTopWindowUrl(),
-    typeof window !== 'undefined' ? window.location?.href : ''
-  ].find(isUsablePageUrl) ?? '';
+  const candidates = [
+    () => refererInfo?.page,
+    () => refererInfo?.topmostLocation,
+    () => refererInfo?.location,
+    getTopWindowUrl,
+    () => utils.getWindowLocation()?.href
+  ];
+
+  for (const candidate of candidates) {
+    const url = candidate();
+    if (isUsablePageUrl(url)) {
+      return url;
+    }
+  }
+
+  return '';
 };
 
 const normalizeKeywords = (input) => {

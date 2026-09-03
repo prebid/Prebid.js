@@ -657,6 +657,29 @@ describe('sevioBidAdapter', function () {
       expect(out[0].data.xPageUrl).to.equal('https://example.com/article?a=1');
     });
 
+    it('does not touch browser globals when refererInfo.page is usable', function () {
+      const canAccessWindowTop = sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      const getWindowLocation = sandbox.stub(utils, 'getWindowLocation');
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://example.com/article' }
+      });
+
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/article');
+      expect(canAccessWindowTop.called).to.equal(false);
+      expect(getWindowLocation.called).to.equal(false);
+    });
+
+    it('falls back to the current window location as a last resort', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+      sandbox.stub(utils, 'getWindowLocation').returns({ href: 'https://example.com/self' });
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', topmostLocation: 'about:srcdoc' }
+      });
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/self');
+    });
+
     it('falls back to topmostLocation, then location, when page is unavailable', function () {
       let out = spec.buildRequests([bid()], {
         refererInfo: { page: null, topmostLocation: 'https://example.com/top' }
@@ -698,6 +721,17 @@ describe('sevioBidAdapter', function () {
       });
       expect(utils.getWindowTop.threw()).to.equal(true);
       expect(out[0].data.xPageUrl).to.not.match(/^about:/);
+    });
+
+    it('sends an empty string when no candidate is a real page URL', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+      sandbox.stub(utils, 'getWindowLocation').returns({ href: 'about:srcdoc' });
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', topmostLocation: 'about:srcdoc', location: null }
+      });
+      expect(out[0].data.xPageUrl).to.equal('');
+      expect(out[0].data.pageUrl).to.equal('');
     });
 
     it('does not throw when refererInfo is missing', function () {
