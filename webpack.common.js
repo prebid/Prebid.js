@@ -1,5 +1,5 @@
 const path = require('path');
-const { argv } = require('yargs');
+const argv = require('./gulpHelpers.js').argv
 const TerserPlugin = require('terser-webpack-plugin');
 const helpers = require('./gulpHelpers.js');
 const {precompilationKey} = require('./gulp.cache.js');
