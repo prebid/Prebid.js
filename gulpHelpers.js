@@ -47,12 +47,12 @@ const {values: argv, tokens} = parseArgs({
   },
 });
 
-// yargs mapped `--no-foo` to `foo: false`, camelized `--foo-bar` to
-// `fooBar`, and let the last occurrence of a flag win; parseArgs does none
-// of that and keeps the literal keys. Replay the boolean option tokens in
-// order to restore it: each boolean option is recognized under its declared
-// name and its kebab-case form, negated or not, and the last occurrence
-// wins. Other flags are left exactly as parseArgs parsed them.
+// yargs mapped `--no-foo` to `foo: false` and camelized `--foo-bar` to
+// `fooBar`; parseArgs does neither and keeps the literal keys. Replay the
+// boolean option tokens to restore that: each boolean option is recognized
+// under its declared name and its kebab-case form, negated or not, and the
+// occurrence appearing last on the command line wins. Other flags are left
+// exactly as parseArgs parsed them.
 const booleanSpellings = new Map(BOOLEAN_OPTIONS.flatMap((option) => {
   const kebab = option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
   return [...new Set([option, kebab])].flatMap((name) => [
