@@ -47,29 +47,30 @@ const {values: argv, tokens} = parseArgs({
   },
 });
 
-// yargs mapped `--no-foo` to `foo: false` and let the last occurrence of a
-// flag win; parseArgs knows nothing about negation and keeps the literal
-// "no-foo" key. Replay the boolean option tokens in order to restore that,
-// accepting each option's negation under its declared name and its
-// kebab-case form. Positive flags are only recognized under declared names.
-const negatedBooleans = new Map(BOOLEAN_OPTIONS.flatMap((option) => [
-  [`no-${option}`, option],
-  [`no-${option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`, option],
-]));
+// yargs mapped `--no-foo` to `foo: false`, camelized `--foo-bar` to
+// `fooBar`, and let the last occurrence of a flag win; parseArgs does none
+// of that and keeps the literal keys. Replay the boolean option tokens in
+// order to restore it: each boolean option is recognized under its declared
+// name and its kebab-case form, negated or not, and the last occurrence
+// wins. Other flags are left exactly as parseArgs parsed them.
+const booleanSpellings = new Map(BOOLEAN_OPTIONS.flatMap((option) => {
+  const kebab = option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+  return [...new Set([option, kebab])].flatMap((name) => [
+    [name, {option, negated: false}],
+    [`no-${name}`, {option, negated: true}],
+  ]);
+}));
 tokens.forEach((token) => {
   if (token.kind !== 'option') {
     return;
   }
-  if (token.value === undefined) {
-    const option = negatedBooleans.get(token.name);
-    if (option) {
-      argv[option] = false;
-      delete argv[token.name];
-      return;
-    }
+  const match = booleanSpellings.get(token.name);
+  if (!match || (match.negated && token.value !== undefined)) {
+    return;
   }
-  if (BOOLEAN_OPTIONS.includes(token.name)) {
-    argv[token.name] = token.value ?? true;
+  argv[match.option] = match.negated ? false : (token.value ?? true);
+  if (token.name !== match.option) {
+    delete argv[token.name];
   }
 });
 

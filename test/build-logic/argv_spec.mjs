@@ -49,10 +49,17 @@ describe('build CLI argument parsing', () => {
     expect(parse('--coverage', '--no-coverage')).to.eql({ coverage: false });
   });
 
+  it('recognizes every boolean option under its kebab-case positive spelling', () => {
+    expect(parse(...BOOLEAN_OPTIONS.map((option) => `--${kebab(option)}`)))
+      .to.eql(Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, true])));
+  });
+
   it('lets a later explicit value win over a negation, and vice versa', () => {
     expect(parse('--no-fetch', '--fetch=1')).to.eql({ fetch: '1' });
     expect(parse('--fetch=1', '--no-fetch')).to.eql({ fetch: false });
     expect(parse('--coverage', '--coverage=')).to.eql({ coverage: '' });
+    // "=false" is the string 'false', which is truthy — same trap as yargs.
+    expect(parse('--no-coverage', '--coverage=false')).to.eql({ coverage: 'false' });
   });
 
   it('does not negate misspelled flags', () => {
@@ -60,13 +67,10 @@ describe('build CLI argument parsing', () => {
     expect(parse('--no-sourcemaps')).to.eql({ 'no-sourcemaps': true });
   });
 
-  it('does not recognize positive flags outside their declared spelling', () => {
-    // A negation followed by the kebab-case positive spelling stays negated:
-    // only the declared camelCase name is a recognized positive flag.
-    expect(parse('--no-source-maps', '--source-maps')).to.eql({
-      sourceMaps: false,
-      'source-maps': true,
-    });
+  it('lets spellings of the same flag override each other', () => {
+    expect(parse('--no-source-maps', '--sourceMaps')).to.eql({ sourceMaps: true });
+    expect(parse('--no-sourceMaps', '--source-maps')).to.eql({ sourceMaps: true });
+    expect(parse('--source-maps', '--no-sourceMaps')).to.eql({ sourceMaps: false });
   });
 
   it('handles boolean options whose own names start with "no"', () => {
