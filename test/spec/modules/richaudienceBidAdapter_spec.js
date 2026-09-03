@@ -5,6 +5,7 @@ import {
 } from 'modules/richaudienceBidAdapter.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as refererDetection from 'src/refererDetection.js';
 import sinon from 'sinon';
 
 describe('Richaudience adapter tests', function () {
@@ -474,6 +475,235 @@ describe('Richaudience adapter tests', function () {
     expect(request[0].adUnitCode).to.equal('test-div');
   });
 
+  describe('video ORTB fields', function () {
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    };
+
+    function bidFor(mediaTypes) {
+      return [{
+        adUnitCode: 'test-div',
+        bidId: '2c7c8e9c900244',
+        mediaTypes: mediaTypes,
+        bidder: 'richaudience',
+        params: { pid: 'ADb1f40rmi', supplyType: 'site' },
+        auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563'
+      }];
+    }
+
+    function videoDataFor(video) {
+      const request = spec.buildRequests(bidFor({
+        video: Object.assign({ playerSize: [640, 480], mimes: ['video/mp4'] }, video)
+      }), bidderRequest);
+      return JSON.parse(request[0].data).videoData;
+    }
+
+    it('forwards the plcmt and playbackmethod declared on the ad unit', function () {
+      const videoData = videoDataFor({ context: 'instream', plcmt: 2, playbackmethod: [2, 6] });
+      expect(videoData).to.have.property('plcmt').and.to.equal(2);
+      expect(videoData).to.have.property('playbackmethod').and.to.deep.equal([2, 6]);
+    });
+
+    it('forwards the plcmt the core derives for outstream ad units', function () {
+      expect(videoDataFor({ context: 'outstream', plcmt: 4 })).to.have.property('plcmt').and.to.equal(4);
+    });
+
+    it('omits plcmt and playbackmethod when the ad unit declares neither', function () {
+      const videoData = videoDataFor({ context: 'instream' });
+      expect(videoData).to.not.have.property('plcmt');
+      expect(videoData).to.not.have.property('playbackmethod');
+    });
+
+    it('does not send video fields on banner requests', function () {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, bidderRequest);
+      expect(JSON.parse(request[0].data).videoData).to.deep.equal({ format: 'banner' });
+    });
+
+    it('marks a banner-only ad unit as banner', function () {
+      const request = spec.buildRequests(bidFor({ banner: { sizes: [[300, 250]] } }), bidderRequest);
+      expect(JSON.parse(request[0].data).videoData).to.deep.equal({ format: 'banner' });
+    });
+
+    it('sends both the banner sizes and the video data on multiformat ad units', function () {
+      const request = spec.buildRequests(bidFor({
+        banner: { sizes: [[300, 250]] },
+        video: { context: 'outstream', playerSize: [640, 480], mimes: ['video/mp4'], plcmt: 4 }
+      }), bidderRequest);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.sizes).to.deep.equal([{ w: 300, h: 250 }]);
+      expect(requestContent.videoData.format).to.equal('outstream');
+      expect(requestContent.videoData.plcmt).to.equal(4);
+    });
+  });
+
+  it('announces the prebid channel and version', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const channel = JSON.parse(request[0].data).ext.prebid.channel;
+    expect(channel).to.have.property('name').and.to.equal('pbjs');
+    expect(channel.version).to.be.a('string').and.to.match(/^\d+\.\d+\.\d+/);
+  });
+
+  it('announces the prebid channel on video requests too', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent.ext.prebid.channel.name).to.equal('pbjs');
+    expect(requestContent.device.ext.visibility).to.have.property('hidden').and.to.be.a('boolean');
+  });
+
+  describe('floors', function () {
+    const bidderRequestEUR = {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: { page: 'https://domain.com', numIframes: 0 },
+      ortb2: { ext: { prebid: { adServerCurrency: 'EUR' } } }
+    };
+
+    function bannerBid(overrides) {
+      return Object.assign({
+        adUnitCode: 'test-div',
+        bidId: '2c7c8e9c900244',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidder: 'richaudience',
+        params: { pid: 'ADb1f40rmi', supplyType: 'site' },
+        auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563'
+      }, overrides);
+    }
+
+    it('falls back to params.bidfloor when the floors module is absent', function () {
+      const bid = bannerBid({ params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.5 } });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.5);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('queries getFloor() in the currency announced in currencyCode', function () {
+      const calls = [];
+      const bid = bannerBid({
+        getFloor: (args) => {
+          calls.push(args);
+          return { currency: args.currency, floor: 1.2 };
+        }
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(1.2);
+      expect(requestContent.currencyCode).to.equal('EUR');
+      expect(calls).to.have.lengthOf(1);
+      expect(calls[0]).to.deep.equal({ currency: 'EUR', mediaType: '*', size: '*' });
+    });
+
+    it('lets the core resolve the media type instead of picking one', function () {
+      const calls = [];
+      const bid = bannerBid({
+        mediaTypes: { video: { context: 'outstream', playerSize: [640, 480], mimes: ['video/mp4'] } },
+        getFloor: (args) => {
+          calls.push(args);
+          return { currency: args.currency, floor: 0.8 };
+        }
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      expect(JSON.parse(request[0].data).bidfloor).to.equal(0.8);
+      expect(calls.map(c => c.mediaType)).to.deep.equal(['*']);
+    });
+
+    it('sends the higher of params.bidfloor and the floors module value', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.5 },
+        getFloor: ({ currency }) => ({ currency, floor: 1.2 })
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(1.2);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('keeps params.bidfloor when it is the higher of the two', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 2.5 },
+        getFloor: ({ currency }) => ({ currency, floor: 1.2 })
+      });
+      const requestContent = JSON.parse(spec.buildRequests([bid], bidderRequestEUR)[0].data);
+      expect(requestContent.bidfloor).to.equal(2.5);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('omits bidfloor and currencyCode when getFloor() yields no usable floor and there is no param', function () {
+      const bid = bannerBid({ getFloor: () => null });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.not.have.property('bidfloor');
+      expect(requestContent).to.not.have.property('currencyCode');
+    });
+
+    it('announces a floor the module could not convert in its own currency', function () {
+      const bid = bannerBid({
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        getFloor: () => ({ currency: 'USD', floor: 0.9 })
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      expect(request).to.have.lengthOf(1);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.9);
+      expect(requestContent.currencyCode).to.equal('USD');
+    });
+
+    it('leaves params.bidfloor out when it cannot be compared with the module floor', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 2.5 },
+        getFloor: () => ({ currency: 'USD', floor: 0.9 })
+      });
+      const requestContent = JSON.parse(spec.buildRequests([bid], bidderRequestEUR)[0].data);
+      expect(requestContent.bidfloor).to.equal(0.9);
+      expect(requestContent.currencyCode).to.equal('USD');
+    });
+
+    it('falls back to params.bidfloor when getFloor() throws', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.33 },
+        getFloor: () => { throw new Error('no floor'); }
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.33);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('omits bidfloor when getFloor() throws and there is no param', function () {
+      const bid = bannerBid({ getFloor: () => { throw new Error('no floor'); } });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      expect(JSON.parse(request[0].data)).to.not.have.property('bidfloor');
+    });
+
+    it('defaults the announced currency to USD when no ad server currency is set', function () {
+      const bid = bannerBid({ params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.5 } });
+      const request = spec.buildRequests([bid], {
+        gdprConsent: { consentString: '', gdprApplies: false },
+        refererInfo: { page: 'https://domain.com', numIframes: 0 }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.5);
+      expect(requestContent.currencyCode).to.equal('USD');
+    });
+  });
+
   describe('gdpr test', function () {
     it('Verify build request with GDPR', function () {
       config.setConfig({
@@ -539,6 +769,36 @@ describe('Richaudience adapter tests', function () {
       });
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
+    });
+  });
+
+  describe('page visibility test', function () {
+    function setPageHidden(hidden) {
+      Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
+    }
+
+    afterEach(function () {
+      delete document.hidden;
+    });
+
+    function buildAndParse() {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        refererInfo: {
+          page: 'https://domain.com',
+          numIframes: 0
+        }
+      });
+      return JSON.parse(request[0].data);
+    }
+
+    it('reports the page as not hidden when the tab is active', function () {
+      setPageHidden(false);
+      expect(buildAndParse().device.ext.visibility.hidden).to.equal(false);
+    });
+
+    it('reports the page as hidden when the tab is in the background', function () {
+      setPageHidden(true);
+      expect(buildAndParse().device.ext.visibility.hidden).to.equal(true);
     });
   });
 
@@ -664,6 +924,72 @@ describe('Richaudience adapter tests', function () {
     const bids = spec.interpretResponse(response, request[0]);
     expect(bids).to.have.lengthOf(1);
     expect(bids[0].meta.advertiserDomains).to.deep.equal([]);
+  });
+
+  it('returns [] when cpm is 0 or undefined', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const zeroCpm = { body: { ...BID_RESPONSE.body, cpm: 0 } };
+    expect(spec.interpretResponse(zeroCpm, request[0])).to.deep.equal([]);
+
+    const noCpm = { body: { ...BID_RESPONSE.body } };
+    delete noCpm.body.cpm;
+    expect(spec.interpretResponse(noCpm, request[0])).to.deep.equal([]);
+  });
+
+  it('returns [] when the creative for the media type is missing', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const noAdm = { body: { ...BID_RESPONSE.body } };
+    delete noAdm.body.adm;
+    expect(spec.interpretResponse(noAdm, request[0])).to.deep.equal([]);
+
+    const noVast = { body: { ...BID_RESPONSE_VIDEO.body } };
+    delete noVast.body.vastXML;
+    expect(spec.interpretResponse(noVast, request[0])).to.deep.equal([]);
+  });
+
+  it('returns [] on an empty no-bid body without throwing', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    expect(spec.interpretResponse({ body: {} }, request[0])).to.deep.equal([]);
+    expect(spec.interpretResponse({ body: null }, request[0])).to.deep.equal([]);
+    expect(spec.interpretResponse({}, request[0])).to.deep.equal([]);
+  });
+
+  it('builds a video bid without a renderer when the request carries no videoData', function () {
+    const bidRequest = { bidId: 'req-1', tagId: 'test-div', data: JSON.stringify({ bidId: 'req-1' }) };
+    const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, bidRequest);
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].vastXml).to.equal('<VAST></VAST>');
+    expect(bids[0].renderer).to.equal(undefined);
   });
 
   it('no banner media response inestream', function () {
@@ -1371,15 +1697,31 @@ describe('Richaudience adapter tests', function () {
     });
 
     it('Verifies user syncs URL image include with GPP', function () {
+      const refererStub = sinon.stub(refererDetection, 'getRefererInfo').returns({ page: 'http://domain.com' });
       const gppConsent = {
         gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA',
         applicableSections: [0]
       };
       const result = spec.getUserSyncs({ pixelEnabled: true }, undefined, undefined, undefined, gppConsent);
+      refererStub.restore();
       expect(result).to.deep.equal([{
         type: 'image',
         url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
       }]);
+    });
+
+    it('Verifies image sync is skipped when the page referer is unavailable', function () {
+      config.setConfig({
+        'userSync': { filterSettings: { image: { bidders: '*', filter: 'include' } } }
+      });
+
+      const refererStub = sinon.stub(refererDetection, 'getRefererInfo').returns({ page: null });
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [BID_RESPONSE], {
+        consentString: '',
+        gdprApplies: false
+      });
+      refererStub.restore();
+      expect(syncs).to.have.lengthOf(0);
     });
   });
 });

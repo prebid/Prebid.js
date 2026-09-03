@@ -1,12 +1,12 @@
-import { deepAccess, triggerPixel } from '../src/utils.js';
+import { deepAccess, isFn, logWarn, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'richaudience';
-let REFERER = '';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -30,29 +30,32 @@ export const spec = {
    * @returns {ServerRequest} Info describing the request to the server
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const referer = raiGetReferer(bidderRequest.refererInfo);
+
     return validBidRequests.map(bid => {
+      const floor = raiGetFloor(bid, bidderRequest);
       var payload = {
-        bidfloor: raiGetFloor(bid, config),
+        bidfloor: floor?.value,
         ifa: bid.params.ifa,
         pid: bid.params.pid,
-        currencyCode: getCurrencyFromBidderRequest(bidderRequest),
+        currencyCode: floor?.currency,
         auctionId: bid.auctionId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
-        referer: (typeof bidderRequest.refererInfo.page !== 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
+        referer: referer,
         transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: bidderRequest.timeout || 600,
         eids: deepAccess(bid, 'userIdAsEids') ? bid.userIdAsEids : [],
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
+        device: { ext: { visibility: { hidden: raiIsPageHidden() } } },
         kws: bid.params.keywords,
         schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
-        userData: deepAccess(bid, 'ortb2.user.data')
+        userData: deepAccess(bid, 'ortb2.user.data'),
+        ext: { prebid: { channel: { name: 'pbjs', version: '$prebid.version$' } } }
       };
-
-      REFERER = (typeof bidderRequest.refererInfo.page !== 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null);
 
       payload.gdpr_consent = '';
       payload.gdpr = false;
@@ -100,49 +103,51 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    // try catch
     const response = serverResponse.body;
-    if (response) {
-      const bidResponse = {
-        requestId: bidRequest.bidId,
-        cpm: response.cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: response.creative_id,
-        mediaType: response.media_type,
-        netRevenue: response.netRevenue,
-        currency: response.currency,
-        ttl: response.ttl,
-        meta: {
-          advertiserDomains: response.adomain?.length ? [response.adomain[0]] : []
-        },
-        dealId: response.dealId
-      };
 
-      if (response.media_type === 'video') {
-        bidResponse.vastXml = response.vastXML;
-        try {
-          if (bidResponse.vastXml != null) {
-            if (bidRequest.videoData.format === 'outstream' || bidRequest.videoData.format === 'banner') {
-              bidResponse.renderer = Renderer.install({
-                id: bidRequest.bidId,
-                adUnitCode: bidRequest.adUnitCode,
-                loaded: false,
-                config: response.media_type,
-                url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-              });
-              bidResponse.renderer.setRender(renderer);
-            }
-          }
-        } catch (e) {
-          bidResponse.ad = response.adm;
-        }
-      } else {
-        bidResponse.ad = response.adm;
-      }
-
-      bidResponses.push(bidResponse);
+    if (!response) {
+      return bidResponses;
     }
+
+    const isVideo = response.media_type === 'video';
+    const creative = isVideo ? response.vastXML : response.adm;
+    if (!(response.cpm > 0) || !creative) {
+      return bidResponses;
+    }
+
+    const bidResponse = {
+      requestId: bidRequest.bidId,
+      cpm: response.cpm,
+      width: response.width,
+      height: response.height,
+      creativeId: response.creative_id,
+      mediaType: response.media_type,
+      netRevenue: response.netRevenue,
+      currency: response.currency,
+      ttl: response.ttl,
+      meta: {
+        advertiserDomains: response.adomain?.length ? [response.adomain[0]] : []
+      },
+      dealId: response.dealId
+    };
+
+    if (isVideo) {
+      bidResponse.vastXml = response.vastXML;
+      if (bidRequest.videoData?.format === 'outstream' || bidRequest.videoData?.format === 'banner') {
+        bidResponse.renderer = Renderer.install({
+          id: bidRequest.bidId,
+          adUnitCode: bidRequest.adUnitCode,
+          loaded: false,
+          config: response.media_type,
+          url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+        });
+        bidResponse.renderer.setRender(renderer);
+      }
+    } else {
+      bidResponse.ad = response.adm;
+    }
+
+    bidResponses.push(bidResponse);
     return bidResponses;
   },
   /***
@@ -186,8 +191,10 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && REFERER != null && syncs.length === 0 && raiSync.raiImage !== 'exclude') {
-      let syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
+    const referer = raiGetReferer(getRefererInfo());
+
+    if (syncOptions.pixelEnabled && referer != null && syncs.length === 0 && raiSync.raiImage !== 'exclude') {
+      let syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${referer}`;
       if (consent !== '') {
         syncUrl += `&${consent}`;
       }
@@ -212,6 +219,10 @@ export const spec = {
 
 registerBidder(spec);
 
+function raiGetReferer(refererInfo) {
+  return refererInfo?.page != null ? encodeURIComponent(refererInfo.page) : null;
+}
+
 function raiGetSizes(bid) {
   let raiNewSizes;
   if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
@@ -228,10 +239,14 @@ function raiGetSizes(bid) {
 function raiGetVideoInfo(bid) {
   let videoData;
   if (bid.mediaTypes?.video) {
+    const video = bid.mediaTypes.video;
+
     videoData = {
-      format: bid.mediaTypes.video.context,
-      playerSize: bid.mediaTypes.video.playerSize,
-      mimes: bid.mediaTypes.video.mimes
+      format: video.context,
+      playerSize: video.playerSize,
+      mimes: video.mimes,
+      plcmt: video.plcmt,
+      playbackmethod: video.playbackmethod
     };
   } else {
     videoData = {
@@ -264,6 +279,10 @@ function raiGetResolution() {
   return resolution;
 }
 
+function raiIsPageHidden() {
+  return typeof document !== 'undefined' && document.hidden === true;
+}
+
 function raiSetPbAdSlot(bid) {
   let pbAdSlot = '';
   if (deepAccess(bid, 'ortb2Imp.ext.gpid') != null) {
@@ -293,24 +312,28 @@ function raiGetSyncInclude(config) {
   }
 }
 
-function raiGetFloor(bid, config) {
-  try {
-    let raiFloor;
-    if (bid.params.bidfloor != null) {
-      raiFloor = bid.params.bidfloor;
-    } else if (typeof bid.getFloor === 'function') {
-      const floorSpec = bid.getFloor({
-        currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
-        mediaType: typeof bid.mediaTypes['banner'] === 'object' ? 'banner' : 'video',
-        size: '*'
-      });
+function raiGetFloor(bid, bidderRequest) {
+  const currency = getCurrencyFromBidderRequest(bidderRequest) || 'USD';
+  const paramFloor = parseFloat(bid.params.bidfloor);
 
-      raiFloor = floorSpec.floor;
+  if (isFn(bid.getFloor)) {
+    let floorInfo;
+    try {
+      floorInfo = bid.getFloor({ currency, mediaType: '*', size: '*' });
+    } catch (e) {
+      logWarn(`${BIDDER_CODE}: cannot compute floor for bid`, bid, e);
     }
-    return raiFloor;
-  } catch (e) {
-    return 0;
+    const moduleFloor = parseFloat(floorInfo?.floor);
+    if (moduleFloor && !isNaN(moduleFloor)) {
+      if (floorInfo.currency !== currency) {
+        logWarn(`${BIDDER_CODE}: announcing a ${floorInfo.currency} floor, ${currency} could not be delivered`);
+        return { value: moduleFloor, currency: floorInfo.currency };
+      }
+      return { value: isNaN(paramFloor) ? moduleFloor : Math.max(paramFloor, moduleFloor), currency };
+    }
   }
+
+  return isNaN(paramFloor) ? undefined : { value: paramFloor, currency };
 }
 
 function raiGetTimeoutURL(data) {
