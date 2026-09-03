@@ -191,11 +191,23 @@ function assertCanonicalLookup(lookup, hash, canonicalUrl, publisherDomain = 'pu
   );
 }
 
+function nextTask() {
+  return new Promise(resolve => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      channel.port2.close();
+      resolve();
+    };
+    channel.port2.postMessage(null);
+  });
+}
+
 async function findPending(url) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     const request = pendingRequest(url);
     if (request) return request;
-    await Promise.resolve();
+    await nextTask();
   }
   return null;
 }
@@ -728,7 +740,7 @@ describe('encypherRtdProvider decision-network v1', () => {
 
     clock.tick(29999);
     const expiredDuringVerification = beginAuction({ timeout: 5000 });
-    for (let attempt = 0; attempt < 20 && verify.callCount < 2; attempt += 1) await Promise.resolve();
+    for (let attempt = 0; attempt < 20 && verify.callCount < 2; attempt += 1) await nextTask();
     assert.strictEqual(verify.callCount, 2, 'cached signature verification must be pending');
     clock.tick(2);
     resolveCachedVerification(true);
@@ -756,7 +768,7 @@ describe('encypherRtdProvider decision-network v1', () => {
 
     const run = beginAuction({ timeout: 5000 });
     await respondDecision(ready(expiring, 57));
-    for (let attempt = 0; attempt < 20 && verify.callCount < 1; attempt += 1) await Promise.resolve();
+    for (let attempt = 0; attempt < 20 && verify.callCount < 1; attempt += 1) await nextTask();
     assert.strictEqual(verify.callCount, 1, 'signature verification must be pending');
     clock.tick(1000);
     resolveVerification(true);
@@ -790,7 +802,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     let lookup;
     for (let attempt = 0; attempt < 30 && !lookup; attempt += 1) {
       lookup = pendingLookup();
-      if (!lookup) await Promise.resolve();
+      if (!lookup) await nextTask();
     }
     assert.ok(lookup, 'expired cached JWS must trigger a fresh signal lookup');
     lookup.respond(200, HEADERS, JSON.stringify(ready(renewed, 58)));
@@ -829,7 +841,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     ));
     requests[0].respond(200, HEADERS, JSON.stringify(ready(lowRecord, 10)));
     requests[1].respond(200, HEADERS, JSON.stringify(ready(highRecord, 11)));
-    for (let attempt = 0; attempt < 20; attempt += 1) await Promise.resolve();
+    for (let attempt = 0; attempt < 20; attempt += 1) await nextTask();
     assert.ok(resolveLow && resolveHigh, 'both signature verifications must be pending');
 
     resolveHigh(true);
@@ -1109,7 +1121,7 @@ describe('encypherRtdProvider decision-network v1', () => {
         request = await findPending(PINNED_JWKS_URL);
       }
       request.respond(200, HEADERS, body);
-      await Promise.resolve();
+      await nextTask();
       clock.tick(100);
       await run.completion;
       assertNoInjection(run.auction);
@@ -1154,7 +1166,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     const run = beginAuction({ telemetry: true, timeout: 100 });
     clock.tick(100);
     await run.completion;
-    await Promise.resolve();
+    await nextTask();
     const telemetry = await findPending(SIGNAL_ORIGIN + '/v1/telemetry/rtd');
     assertDiagnostic(telemetry.requestBody, 'timeout', 0, undefined);
   });
