@@ -47,11 +47,11 @@ const {values: argv, tokens} = parseArgs({
   },
 });
 
-// yargs mapped `--no-foo` to `foo: false` — in both the camelCase and
-// kebab-case spellings of `foo` — and let the last occurrence of a flag win.
-// parseArgs knows nothing about negation and keeps the literal "no-foo" key,
-// so replay the boolean option tokens in order to restore that behavior.
-// Positive flags are only recognized under their declared camelCase names.
+// yargs mapped `--no-foo` to `foo: false` and let the last occurrence of a
+// flag win; parseArgs knows nothing about negation and keeps the literal
+// "no-foo" key. Replay the boolean option tokens in order to restore that,
+// accepting each option's negation under its declared name and its
+// kebab-case form. Positive flags are only recognized under declared names.
 const negatedBooleans = new Map(BOOLEAN_OPTIONS.flatMap((option) => [
   [`no-${option}`, option],
   [`no-${option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`, option],
