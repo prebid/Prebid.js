@@ -7,7 +7,7 @@
  */
 import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
-import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { isPlainObject, isArray, isStr, isNumber, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
 /**
@@ -18,6 +18,25 @@ export function createRtdProvider(moduleName) {
   const SUBMODULE_NAME = moduleName;
   const GVLID = 1116;
   const MARKETING_TAG_URL = 'https://static.anonymised.io/light/loader.js';
+
+  /**
+   * localStorage key holding the SignalLift blob written by the Anonymised Marketing Tag. It carries
+   * several unrelated fields (the CUID, a hashed email); only `iabAudience` is ever read here.
+   */
+  const SIGNAL_LIFT_STORAGE_KEY = 'anon-sl';
+
+  /**
+   * sessionStorage key holding this session's SignalLift A/B group, written by the Marketing Tag.
+   * 'h' marks the holdout arm, which must receive no signals at all - see getPpsSegment.
+   */
+  const SIGNAL_LIFT_GROUP_KEY = 'anon-sl-group-session';
+  const HOLDOUT_GROUP = 'h';
+
+  /**
+   * IAB Audience Taxonomy 1.1, per the AdCOM segtax registry. Fixed by the taxonomy the Marketing
+   * Tag populates, so it is not configurable.
+   */
+  const IAB_AUDIENCE_SEGTAX = 4;
 
   const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
   /**
@@ -44,6 +63,77 @@ export function createRtdProvider(moduleName) {
       return null;
     }
   }
+  /**
+   * True when this session was assigned to the SignalLift holdout arm.
+   *
+   * SignalLift withholds every signal from a percentage of sessions so the revenue lift of the
+   * feature can be measured. The Marketing Tag already applies this to the signals it sets on Google
+   * Ad Manager; emitting the same audience into the bidstream would put a holdout session back into
+   * the treated population through another channel and make the measurement meaningless.
+   *
+   * An absent value means treatment, not holdout: the key is only written once the Marketing Tag has
+   * run, and the far more common reason for it to be missing is that the tag has not reached that
+   * point on this page yet.
+   * @returns {boolean}
+   */
+  function isSignalLiftHoldout() {
+    return storage.getDataFromSessionStorage(SIGNAL_LIFT_GROUP_KEY) === HOLDOUT_GROUP;
+  }
+
+  /**
+   * Build the Seller-Defined Audiences segment from the SignalLift data the Marketing Tag stores.
+   *
+   * The `ppsEnabled` check is not redundant with the presence of `iabAudience`. The Marketing Tag
+   * carries `iabAudience` forward from the previous page view without re-checking whether the feature
+   * is still on, so a publisher who turns PPS off keeps a stale audience array in storage
+   * indefinitely, with `settings.ppsEnabled` set to false alongside it. The flag is what says the
+   * signal is still live; the array only says one was computed at some point.
+   *
+   * @returns {Object|undefined} an ORTB user.data entry, or undefined when there is nothing to send
+   */
+  function getPpsSegment() {
+    const raw = storage.getDataFromLocalStorage(SIGNAL_LIFT_STORAGE_KEY);
+    if (!raw) {
+      return undefined;
+    }
+
+    const signalLift = tryParse(raw);
+    if (!isPlainObject(signalLift)) {
+      return undefined;
+    }
+
+    if (signalLift.settings?.ppsEnabled !== true) {
+      logMessage(`${SUBMODULE_NAME}RtdProvider: PPS is not enabled for this publisher; no SDA segment`);
+      return undefined;
+    }
+
+    // Deliberately narrow: `anon-sl` also holds the CUID and a hashed email, and neither belongs in
+    // user.data. Only the taxonomy IDs are read, and each one is coerced to the string ORTB expects.
+    const iabAudience = signalLift.iabAudience;
+    if (!isArray(iabAudience)) {
+      return undefined;
+    }
+
+    const segment = iabAudience
+      .filter(id => (isStr(id) && id.trim()) || isNumber(id))
+      .map(id => ({ id: String(id) }));
+
+    if (!segment.length) {
+      return undefined;
+    }
+
+    if (isSignalLiftHoldout()) {
+      logMessage(`${SUBMODULE_NAME}RtdProvider: session is in the SignalLift holdout group; no SDA segment`);
+      return undefined;
+    }
+
+    return {
+      name: 'anonymised.io',
+      ext: { segtax: IAB_AUDIENCE_SEGTAX },
+      segment
+    };
+  }
+
   /**
    * Load the Anonymised Marketing Tag script
    * @param {Object} config
@@ -76,6 +166,31 @@ export function createRtdProvider(moduleName) {
   }
 
   /**
+   * Read the proprietary Anonymised cohort IDs the Marketing Tag stores.
+   * @param {Object} config this submodule's publisher configuration
+   * @returns {Array|undefined} the cohort IDs, or undefined when there are none to send
+   */
+  function getCohortSegments(config) {
+    const cohortStorageKey = config.params.cohortStorageKey;
+
+    if (cohortStorageKey !== 'cohort_ids') {
+      logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
+      return undefined;
+    }
+
+    const jsonData = storage.getDataFromLocalStorage(cohortStorageKey);
+    if (!jsonData) {
+      return undefined;
+    }
+
+    // Deliberately a bare truthiness check, matching the behaviour this module has always had:
+    // an empty array still produces a segment (with an empty `segment` list), and a stored value
+    // that is not an array still throws on `.map` in the caller. Both are long-standing quirks;
+    // changing either here would alter what publishers already receive.
+    return tryParse(jsonData) || undefined;
+  }
+
+  /**
    * Real-time data retrieval from Anonymised
    * @param {Object} reqBidsConfigObj
    * @param {function} onDone
@@ -83,52 +198,53 @@ export function createRtdProvider(moduleName) {
    * @param {Object} userConsent
    */
   function getRealTimeData(reqBidsConfigObj, onDone, config, userConsent) {
-    if (config && isPlainObject(config.params)) {
-      const cohortStorageKey = config.params.cohortStorageKey;
-      const bidders = config.params.bidders;
-
-      if (cohortStorageKey !== 'cohort_ids') {
-        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
+    try {
+      if (!config || !isPlainObject(config.params)) {
         return;
       }
 
-      const jsonData = storage.getDataFromLocalStorage(cohortStorageKey);
-      if (!jsonData) {
-        return;
-      }
+      // Two independent segments share one user.data array: the proprietary Anonymised cohort, and
+      // the IAB Audience Taxonomy 1.1 audience from SignalLift. Neither is a precondition for the
+      // other - a publisher may have cohorts without PPS, PPS without cohorts, or both.
+      const userData = [];
+      const cohortSegments = getCohortSegments(config);
 
-      const segments = tryParse(jsonData);
-
-      if (segments) {
-        const udSegment = {
+      if (cohortSegments) {
+        userData.push({
           name: 'anonymised.io',
           ext: {
             segtax: config.params.segtax
           },
-          segment: segments.map(x => ({ id: x }))
-        };
-
-        logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);
-        const data = {
-          rtd: {
-            ortb2: {
-              user: {
-                data: [
-                  udSegment
-                ]
-              }
-            }
-          }
-        };
-
-        if (bidders?.includes('appnexus')) {
-          data.rtd.ortb2.user.keywords = segments.map(x => `perid=${x}`).join(',');
-        }
-
-        addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
+          segment: cohortSegments.map(x => ({ id: x }))
+        });
       }
+
+      const ppsSegment = getPpsSegment();
+      if (ppsSegment) {
+        userData.push(ppsSegment);
+      }
+
+      if (!userData.length) {
+        return;
+      }
+
+      logMessage(`${SUBMODULE_NAME}RtdProvider: user.data: `, userData);
+      const user = { data: userData };
+
+      // Unchanged: the keywords side effect carries the cohort IDs only, and only for appnexus. The
+      // SDA segment has no keywords equivalent - appnexus reads segtax 4 from user.data directly.
+      if (cohortSegments && config.params.bidders?.includes('appnexus')) {
+        user.keywords = cohortSegments.map(x => `perid=${x}`).join(',');
+      }
+
+      addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, { ortb2: { user } });
+    } finally {
+      // The RTD module holds the auction open until every `waitForIt` submodule calls back, so this
+      // has to run on every path, including the ones that contribute nothing.
+      onDone();
     }
   }
+
   /**
    * Module init
    * @param {Object} config

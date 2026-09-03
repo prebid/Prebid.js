@@ -1,0 +1,10 @@
+[
+    "rtdModule",
+    "userId",
+    "pubProvidedIdSystem",
+    "openxBidAdapter",
+    "pubmaticBidAdapter",
+    "dataControllerModule",
+    "anonymisedRtdProvider",
+    "anonymisedIdSystem"
+  ]
