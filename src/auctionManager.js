@@ -79,18 +79,28 @@ export function newAuctionManager() {
 
   // Auctions that have not yet ended, keyed by auctionId. The auctionId can be
   // supplied by the publisher, so concurrent auctions may share one: each key
-  // holds the set of live auctions using it. Auctions are added on creation
-  // and removed when their `end` promise resolves, so the map holds no
-  // reference to an auction past its end.
+  // holds the set of live auctions using it. An entry is added on creation and
+  // removed when the auction's `end` promise resolves. An auction whose `end`
+  // never resolves — e.g. callBids() throwing out of makeBidRequests before
+  // the timeout timer is armed, or a request queued on origin capacity that
+  // never frees — stays in this map for the page lifetime; clearAllAuctions
+  // does not clear it, because mid-flight routing (below) depends on entries
+  // surviving that call. This residual is bounded by those error paths and is
+  // the same class of retention that existed before per-auction routing.
   const _inFlightAuctions = new Map();
 
   // Single listener routing PBS analytics nonbids to the auction(s) they
-  // belong to. Routing goes through the in-flight map, not the TTL'd auction
-  // cache, so nonbids reach their auction while it is in flight even if the
-  // cache is cleared (e.g. clearAllAuctions) before the PBS response arrives.
+  // belong to. Delivery targets the union of the in-flight set for the
+  // auctionId and the auction found in the TTL'd cache, deduplicated: the
+  // in-flight set covers auctions that ended or were removed from the cache
+  // (e.g. clearAllAuctions) while the PBS response was outstanding, and the
+  // cache covers auctions that have ended but not yet been evicted by TTL.
   events.on(EVENTS.PBS_ANALYTICS, (event) => {
     if (event.seatnonbid != null) {
-      _inFlightAuctions.get(event.auctionId)?.forEach((auction) => auction.addNonBids(event.seatnonbid));
+      const targets = new Set(_inFlightAuctions.get(event.auctionId));
+      const cached = getAuction(event.auctionId);
+      if (cached != null) targets.add(cached);
+      targets.forEach((auction) => auction.addSeatNonBids(event.seatnonbid));
     }
   });
 

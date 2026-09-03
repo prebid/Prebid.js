@@ -240,15 +240,15 @@ function makeTidGuard({ bidderCode }) {
 // the same guard: stable proxy identity, and one transmitTid activity check
 // per bidder request. The cache is keyed weakly, so an entry cannot outlive
 // the bidderRequest it guards.
-const tidGuards = new WeakMap();
-export const guardTids: any = (bidderRequest) => {
+const tidGuards = new WeakMap<object, ReturnType<typeof makeTidGuard>>();
+export function guardTids<B extends BidderCode>(bidderRequest: ClientBidderRequest<B>) {
   let guard = tidGuards.get(bidderRequest);
   if (guard == null) {
     guard = makeTidGuard(bidderRequest);
     tidGuards.set(bidderRequest, guard);
   }
   return guard;
-};
+}
 
 declare module '../events' {
   interface Events {

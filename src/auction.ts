@@ -220,7 +220,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
   function addBidReceived(bid) { _bidsReceived.add(bid); }
   function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
-  function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
+  function addSeatNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
 
   function getProperties() {
     return {
@@ -448,7 +448,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     addBidReceived,
     addBidRejected,
     addNoBid,
-    addNonBids,
+    addSeatNonBids,
     callBids,
     addWinningBid,
     setBidTargeting,

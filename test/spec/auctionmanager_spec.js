@@ -864,6 +864,17 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()).to.eql(['test']);
     });
 
+    it('adds nonbids emitted after the auction ends while it is still retained', async () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      auction.callBids();
+      await auction.end;
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: ['late']
+      });
+      expect(auction.getNonBids()).to.eql(['late']);
+    });
+
     it('ignores PBS_ANALYTICS events naming an unknown auction, without throwing', () => {
       const auction = auctionManager.createAuction({ adUnits });
       expect(() => {
