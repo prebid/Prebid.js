@@ -15,6 +15,7 @@ The Floxis Bid Adapter enables integration with the Floxis programmatic advertis
 - OpenRTB 2.x compliant
 - Privacy signal forwarding (GDPR/TCF, USP, GPP, COPPA) via Prebid.js core
 - User identity (User ID / `eids`) and supply chain (`schain`) passthrough
+- First-party fallback id for cookieless browsers (`user.ext.floxisId`)
 - Prebid.js Floors Module support (plus a static `bidFloor` param fallback)
 - User sync (iframe and pixel cookie matching)
 
@@ -28,6 +29,22 @@ The Floxis Bid Adapter supports the Prebid.js [Floors Module](https://docs.prebi
 
 ## User Identity & Supply Chain
 `user.ext.eids` from the Prebid [User ID module](https://docs.prebid.org/dev-docs/modules/userId.html) and `source.ext.schain` (set via `pbjs.setConfig({ schain })` or `ortb2`) are forwarded automatically through first-party-data passthrough — no adapter-specific configuration is required.
+
+## First-Party Fallback Id
+Floxis's primary identity signal, the `__fxId` cookie set on `.floxis.tech`, is a third-party cookie relative to the publisher and is blocked by Safari, Firefox and other ITP/ETP browsers. To keep an identity-of-last-resort in those browsers, the adapter mints a random v4 UUID **in the publisher's own page context** (first-party) and places it at `user.ext.floxisId` in the OpenRTB request.
+
+- **Storage & scope**: the id is persisted via `localStorage` (preferred) and a cookie, both scoped to the *publisher's own origin* — it is per-publisher, not cross-site, and is never shared between different sites running the adapter. Cookie lifetime is ~30 days; the id is regenerated if the stored value is not a well-formed 36-character UUID.
+- **Priority on the backend**: the client id is a fallback only. Floxis's backend applies `processedCookieUserId (the __fxId cookie) .orElse(clientFloxisId) .orElse(existing user.id)` — when the `__fxId` cookie is present (e.g. Chrome/Edge), behavior is unchanged and the client id is ignored.
+- **Consent**: storage access goes through Prebid.js core's `storageManager`, gated by the standard `deviceAccess` config and GDPR purpose-1 consent under Floxis's registered `gvlid` (1609) — the adapter adds no bespoke consent logic. If storage access is disallowed, no id is generated or sent, and the auction is unaffected.
+- **Publisher opt-in required**: since Prebid.js 7.x, bidder-level storage access is denied by default and must be explicitly granted per bidder — without it, no `floxisId` is ever generated (a safe no-op, not an error). Enable it via:
+```js
+// https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html
+pbjs.bidderSettings = {
+    floxis: {
+        storageAllowed: true
+    }
+}
+```
 
 ## Privacy
 GDPR/TCF, US Privacy, GPP and COPPA signals are handled by Prebid.js core and automatically included in the OpenRTB request; consent strings are also appended to user-sync calls. Floxis is registered with IAB Europe TCF as Vendor ID **1609**, declared via the adapter's `gvlid`.
@@ -109,4 +126,4 @@ pbjs.setConfig({
 The adapter reports client-observed auction timeouts and bidder transport errors to Floxis as cookieless operational telemetry. Each beacon is a `keepalive` fetch sent with credentials omitted (no cookies) and scheduled off the auction's critical path, so it carries only the seat, region, event type, and relevant operational dimensions (HTTP status, timeout flag, duration, auction ID, publisher domain) — no user or device identifier is included. Consent signals are forwarded as opaque pass-through parameters where available. Each beacon fires at most once per distinct seat+region pair per event, and telemetry failures are silently suppressed so they never affect the auction lifecycle.
 
 ## Testing
-Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building (params, host-label safety, floors, FPD/consent passthrough), response interpretation and meta mapping, user syncs, billing notifications, and error/timeout telemetry callbacks.
+Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building (params, host-label safety, floors, FPD/consent passthrough, first-party fallback id), response interpretation and meta mapping, user syncs, billing notifications, and error/timeout telemetry callbacks.

@@ -16,7 +16,7 @@ const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
 const UNICORN_PB_VERSION = '1.1';
-const ADSLOT_SIGNAL_VERSION = 1; // imp.ext.unicorn schema version
+const ADSLOT_SIGNAL_VERSION = 1; // imp.ext.adslot schema version
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
@@ -172,10 +172,21 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       secure: 1,
       bidfloor: parseFloat(0)
     };
+    const ext = {};
     if (adslot) {
       // Slot geometry/viewability, sent only in this adapter's own OpenRTB
       // payload — not shared FPD, so no other bidder or PBS ever sees it.
-      impObj.ext = { unicorn: adslot.signal };
+      ext.adslot = adslot.signal;
+    }
+    // GPID (Global Placement ID) — set by the gpid / gptPreAuction module on
+    // ortb2Imp.ext.gpid. Forwarded so the exchange can key on a stable slot id
+    // that is independent of the ad unit code.
+    const gpid = deepAccess(br, 'ortb2Imp.ext.gpid');
+    if (gpid) {
+      ext.gpid = gpid;
+    }
+    if (Object.keys(ext).length > 0) {
+      impObj.ext = ext;
     }
     return impObj;
   });
