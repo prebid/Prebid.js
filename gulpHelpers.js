@@ -57,15 +57,19 @@ const negatedBooleans = new Map(BOOLEAN_OPTIONS.flatMap((option) => [
   [`no-${option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`, option],
 ]));
 tokens.forEach((token) => {
-  if (token.kind !== 'option' || token.value !== undefined) {
+  if (token.kind !== 'option') {
     return;
   }
-  const option = negatedBooleans.get(token.name);
-  if (option) {
-    argv[option] = false;
-    delete argv[token.name];
-  } else if (BOOLEAN_OPTIONS.includes(token.name)) {
-    argv[token.name] = true;
+  if (token.value === undefined) {
+    const option = negatedBooleans.get(token.name);
+    if (option) {
+      argv[option] = false;
+      delete argv[token.name];
+      return;
+    }
+  }
+  if (BOOLEAN_OPTIONS.includes(token.name)) {
+    argv[token.name] = token.value ?? true;
   }
 });
 
@@ -292,5 +296,6 @@ module.exports = {
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
   },
-  argv
+  argv,
+  BOOLEAN_OPTIONS
 };

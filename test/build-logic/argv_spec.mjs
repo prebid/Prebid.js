@@ -3,8 +3,13 @@ import { describe, it } from 'mocha';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import helpers from '../../gulpHelpers.js';
+
+const { BOOLEAN_OPTIONS } = helpers;
 
 const HELPERS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../gulpHelpers.js');
+
+const kebab = (option) => option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
 // gulpHelpers parses process.argv when it is first required, so each case
 // needs its own process.
@@ -15,6 +20,7 @@ function parse(...args) {
     '--',
     ...args,
   ], { encoding: 'utf8' });
+  expect(result.error, `spawn failed: ${result.error}`).to.equal(undefined);
   expect(result.status, result.stderr).to.equal(0);
   return JSON.parse(result.stdout);
 }
@@ -28,23 +34,14 @@ describe('build CLI argument parsing', () => {
     });
   });
 
-  it('accepts negation in the camelCase spelling', () => {
-    expect(parse('--no-sourceMaps', '--no-manualEnable')).to.eql({
-      sourceMaps: false,
-      manualEnable: false,
-    });
+  it('negates every boolean option under its declared spelling', () => {
+    expect(parse(...BOOLEAN_OPTIONS.map((option) => `--no-${option}`)))
+      .to.eql(Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, false])));
   });
 
-  it('accepts negation in the kebab-case spelling', () => {
-    expect(parse('--no-source-maps', '--no-manual-enable')).to.eql({
-      sourceMaps: false,
-      manualEnable: false,
-    });
-  });
-
-  it('negates ES5 in either capitalization', () => {
-    expect(parse('--no-ES5')).to.eql({ ES5: false });
-    expect(parse('--no-es5')).to.eql({ ES5: false });
+  it('negates every boolean option under its kebab-case spelling', () => {
+    expect(parse(...BOOLEAN_OPTIONS.map((option) => `--no-${kebab(option)}`)))
+      .to.eql(Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, false])));
   });
 
   it('lets the last occurrence of a flag win', () => {
@@ -52,9 +49,24 @@ describe('build CLI argument parsing', () => {
     expect(parse('--coverage', '--no-coverage')).to.eql({ coverage: false });
   });
 
+  it('lets a later explicit value win over a negation, and vice versa', () => {
+    expect(parse('--no-fetch', '--fetch=1')).to.eql({ fetch: '1' });
+    expect(parse('--fetch=1', '--no-fetch')).to.eql({ fetch: false });
+    expect(parse('--coverage', '--coverage=')).to.eql({ coverage: '' });
+  });
+
   it('does not negate misspelled flags', () => {
     expect(parse('--no-COVERAGE')).to.eql({ 'no-COVERAGE': true });
     expect(parse('--no-sourcemaps')).to.eql({ 'no-sourcemaps': true });
+  });
+
+  it('does not recognize positive flags outside their declared spelling', () => {
+    // A negation followed by the kebab-case positive spelling stays negated:
+    // only the declared camelCase name is a recognized positive flag.
+    expect(parse('--no-source-maps', '--source-maps')).to.eql({
+      sourceMaps: false,
+      'source-maps': true,
+    });
   });
 
   it('handles boolean options whose own names start with "no"', () => {
@@ -62,7 +74,11 @@ describe('build CLI argument parsing', () => {
     expect(parse('--no-nolint', '--no-notest')).to.eql({ nolint: false, notest: false });
   });
 
-  it('leaves string options, undeclared flags, and positionals alone', () => {
+  it('parses flags placed after a task word', () => {
+    expect(parse('test-only', '--no-coverage')).to.eql({ coverage: false });
+  });
+
+  it('leaves string options and undeclared flags alone', () => {
     expect(parse('--file', 'foo.js', '--modules', 'a,b', '--no-lint', '--somethingElse')).to.eql({
       file: 'foo.js',
       modules: 'a,b',
@@ -71,7 +87,7 @@ describe('build CLI argument parsing', () => {
     });
   });
 
-  it('does not rewrite a flag given an explicit value', () => {
+  it('does not rewrite a flag given an explicit value once', () => {
     expect(parse('--coverage=false')).to.eql({ coverage: 'false' });
   });
 });
