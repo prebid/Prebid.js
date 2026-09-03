@@ -199,7 +199,7 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-export const guardTids: any = memoize(({ bidderCode }) => {
+function makeTidGuard({ bidderCode }) {
   const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
     if (TIDS.hasOwnProperty(prop)) {
@@ -234,7 +234,23 @@ export const guardTids: any = memoize(({ bidderCode }) => {
       }
     })
   };
-});
+}
+
+// Guards are cached in a WeakMap keyed by the bidderRequest, so that the two
+// uses within one bid cycle (request validation and buildRequests) share one
+// guard — stable proxy identity, one tidsAllowed activity check per bidder
+// request — while the cache entry lives no longer than the bidderRequest
+// itself. A strong (Map-based) cache here would retain every bidderRequest,
+// its bids, and the per-auction ortb2 for the page lifetime.
+const tidGuards = new WeakMap();
+export const guardTids: any = (bidderRequest) => {
+  let guard = tidGuards.get(bidderRequest);
+  if (guard == null) {
+    guard = makeTidGuard(bidderRequest);
+    tidGuards.set(bidderRequest, guard);
+  }
+  return guard;
+};
 
 declare module '../events' {
   interface Events {

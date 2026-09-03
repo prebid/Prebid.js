@@ -846,6 +846,40 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
+    it('does not choke on PBS_ANALYTICS events for unknown auctions', () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      expect(() => {
+        events.emit(EVENTS.PBS_ANALYTICS, {
+          auctionId: 'no-such-auction',
+          seatnonbid: ['test']
+        });
+      }).to.not.throw();
+      expect(auction.getNonBids()).to.eql([]);
+    });
+
+    it('does not add nonbids when seatnonbid is null or absent', () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId()
+      });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: null
+      });
+      expect(auction.getNonBids()).to.eql([]);
+    });
+
+    it('routes nonbids to the auction they belong to when multiple auctions are live', () => {
+      const auction1 = auctionManager.createAuction({ adUnits });
+      const auction2 = auctionManager.createAuction({ adUnits });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction2.getAuctionId(),
+        seatnonbid: ['nonbid2']
+      });
+      expect(auction1.getNonBids()).to.eql([]);
+      expect(auction2.getNonBids()).to.eql(['nonbid2']);
+    });
+
     it('resolves .requestsDone', async () => {
       const auction = auctionManager.createAuction({ adUnits });
       stubCallAdapters.resetHistory();
@@ -940,6 +974,24 @@ describe('auctionmanager.js', function () {
           await clock.tick(0);
           await clock.tick(20 * 1000);
           expect(auctionManager.getBidsReceived().length).to.equal(1);
+        });
+
+        it('pick up updates to minBidCacheTTL on every live auction', async () => {
+          const auction2 = auctionManager.createAuction({ adUnits });
+          indexAuctions.push(auction2);
+          auction.callBids();
+          auction2.callBids();
+          await auction.end;
+          await auction2.end;
+          clock.tick(10 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(4);
+          config.setConfig({
+            minBidCacheTTL: 20
+          });
+          await clock.tick(0);
+          await clock.tick(20 * 1000);
+          // each auction had one ttl=10 bid (now stale) and one ttl=100 bid
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
         });
 
         it('do not expire targeted bids when minTargetedBidCacheTTL is set', async () => {

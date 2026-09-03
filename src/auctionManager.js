@@ -29,7 +29,8 @@
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import { AuctionIndex } from './auctionIndex.js';
-import { BID_STATUS, JSON_MAPPING } from './constants.js';
+import { BID_STATUS, EVENTS, JSON_MAPPING } from './constants.js';
+import * as events from './events.js';
 import { useMetrics } from './utils/perfMetrics.js';
 import { ttlCollection } from './utils/ttlCollection.js';
 import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
@@ -59,7 +60,12 @@ export function newAuctionManager() {
     }),
   });
 
-  onMinBidCacheTTLChange(() => _auctions.refresh());
+  onMinBidCacheTTLChange(() => {
+    for (const auction of _auctions) {
+      auction.refreshBidTTLs();
+    }
+    _auctions.refresh();
+  });
 
   const auctionManager = {
     onExpiry: _auctions.onExpiry
@@ -70,6 +76,16 @@ export function newAuctionManager() {
       if (auction.getAuctionId() === auctionId) return auction;
     }
   }
+
+  // Route PBS analytics nonbids to the auction they belong to.
+  // Registered once per manager rather than once per auction: a per-auction
+  // listener stays in the global event registry for the page lifetime and
+  // keeps the entire auction closure reachable.
+  events.on(EVENTS.PBS_ANALYTICS, (event) => {
+    if (event.seatnonbid != null) {
+      getAuction(event.auctionId)?.addNonBids(event.seatnonbid);
+    }
+  });
 
   auctionManager.addWinningBid = function(bid) {
     const metrics = useMetrics(bid.metrics);
