@@ -423,7 +423,7 @@ describe('Seedtag Adapter', function () {
           expect(data.bidRequests[0].bidFloor).to.equal(bidFloor);
         });
 
-        it('should request banner floor when bid has banner and video mediaTypes', function () {
+        it('should request wildcard floor when bid has banner and video mediaTypes', function () {
           const { getFloor } = buildRequestWithFloor({
             banner: {},
             video: {
@@ -434,7 +434,7 @@ describe('Seedtag Adapter', function () {
 
           expect(getFloor.calledWith({
             currency: BIDFLOOR_CURRENCY,
-            mediaType: 'banner',
+            mediaType: '*',
             size: '*'
           })).to.equal(true);
         });

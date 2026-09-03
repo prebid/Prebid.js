@@ -43,9 +43,11 @@ function getBidFloor(bidRequest) {
   let floorInfo = {};
 
   let mediaType = '*';
-  if (bidRequest.mediaTypes?.banner) {
+  const hasBanner = hasBannerMediaType(bidRequest);
+  const hasVideo = hasVideoMediaType(bidRequest);
+  if (hasBanner && !hasVideo) {
     mediaType = BANNER;
-  } else if (bidRequest.mediaTypes?.video) {
+  } else if (hasVideo && !hasBanner) {
     mediaType = VIDEO;
   }
 
