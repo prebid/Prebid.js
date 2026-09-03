@@ -85,21 +85,24 @@ export function newAuctionManager() {
   // the timeout timer is armed, or a request queued on origin capacity that
   // never frees — stays in this map for the page lifetime; clearAllAuctions
   // does not clear it, because mid-flight routing (below) depends on entries
-  // surviving that call. This residual is bounded by those error paths and is
-  // the same class of retention that existed before per-auction routing.
+  // surviving that call. This is bounded to those error paths: entries are not
+  // retained per normal auction, and do not accumulate with auction count.
   const _inFlightAuctions = new Map();
 
   // Single listener routing PBS analytics nonbids to the auction(s) they
   // belong to. Delivery targets the union of the in-flight set for the
-  // auctionId and the auction found in the TTL'd cache, deduplicated: the
-  // in-flight set covers auctions that ended or were removed from the cache
-  // (e.g. clearAllAuctions) while the PBS response was outstanding, and the
-  // cache covers auctions that have ended but not yet been evicted by TTL.
+  // auctionId and every auction in the TTL'd cache with a matching id,
+  // deduplicated: the in-flight set covers auctions that ended or were removed
+  // from the cache (e.g. clearAllAuctions) while the PBS response was
+  // outstanding, and the cache covers auctions that have ended but not yet
+  // been evicted by TTL. auctionId can be publisher-supplied, so more than one
+  // auction may match on either side.
   events.on(EVENTS.PBS_ANALYTICS, (event) => {
     if (event.seatnonbid != null) {
       const targets = new Set(_inFlightAuctions.get(event.auctionId));
-      const cached = getAuction(event.auctionId);
-      if (cached != null) targets.add(cached);
+      for (const auction of _auctions) {
+        if (auction.getAuctionId() === event.auctionId) targets.add(auction);
+      }
       targets.forEach((auction) => auction.addSeatNonBids(event.seatnonbid));
     }
   });

@@ -920,6 +920,21 @@ describe('auctionmanager.js', function () {
       expect(auction2.getNonBids()).to.eql(['nonbid']);
     });
 
+    it('routes nonbids to every ended-but-retained auction sharing an auctionId', async () => {
+      const auction1 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      const auction2 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      auction1.callBids();
+      auction2.callBids();
+      await auction1.end;
+      await auction2.end;
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: 'shared-auction-id',
+        seatnonbid: ['late']
+      });
+      expect(auction1.getNonBids()).to.eql(['late']);
+      expect(auction2.getNonBids()).to.eql(['late']);
+    });
+
     it('resolves .requestsDone', async () => {
       const auction = auctionManager.createAuction({ adUnits });
       stubCallAdapters.resetHistory();
