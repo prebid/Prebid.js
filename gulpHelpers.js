@@ -27,9 +27,10 @@ const BOOLEAN_OPTIONS = [
   'polyfills',
 ];
 
-const {values: argv} = parseArgs({
+const {values: argv, tokens} = parseArgs({
   strict: false,
   allowPositionals: true,
+  tokens: true,
   options: {
     // boolean flags
     ...Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, {type: 'boolean'}])),
@@ -46,15 +47,23 @@ const {values: argv} = parseArgs({
   },
 });
 
-// The Codex bot keeps yargs' handling of negated boolean flags, which parseArgs
-// would otherwise retain under literal keys such as "no-coverage".
-Object.entries(argv).forEach(([arg, value]) => {
-  if (arg.startsWith('no-') && value === true) {
-    const option = BOOLEAN_OPTIONS.find((candidate) =>
-      candidate.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase() === arg.slice(3).toLowerCase());
-    if (option) {
-      argv[option] = false;
-      delete argv[arg];
+// yargs mapped `--no-foo` to `foo: false`, accepted both the camelCase and
+// kebab-case spellings of `foo`, and let the last occurrence of a flag win;
+// parseArgs knows nothing about negation and keeps the literal "no-foo" key.
+// Replay the boolean option tokens in order to restore the yargs behavior.
+const booleanByBareName = new Map(BOOLEAN_OPTIONS.map((option) => [option.toLowerCase(), option]));
+tokens.forEach((token) => {
+  if (token.kind !== 'option' || token.value !== undefined) {
+    return;
+  }
+  const negated = token.name.startsWith('no-');
+  const option = negated
+    ? booleanByBareName.get(token.name.slice(3).replace(/-/g, '').toLowerCase())
+    : (BOOLEAN_OPTIONS.includes(token.name) ? token.name : undefined);
+  if (option) {
+    argv[option] = !negated;
+    if (token.name !== option) {
+      delete argv[token.name];
     }
   }
 });
