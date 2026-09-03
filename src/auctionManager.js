@@ -77,13 +77,20 @@ export function newAuctionManager() {
     }
   }
 
-  // Route PBS analytics nonbids to the auction they belong to.
-  // Registered once per manager rather than once per auction: a per-auction
-  // listener stays in the global event registry for the page lifetime and
-  // keeps the entire auction closure reachable.
+  // Auctions that have not yet ended, keyed by auctionId. The auctionId can be
+  // supplied by the publisher, so concurrent auctions may share one: each key
+  // holds the set of live auctions using it. Auctions are added on creation
+  // and removed when their `end` promise resolves, so the map holds no
+  // reference to an auction past its end.
+  const _inFlightAuctions = new Map();
+
+  // Single listener routing PBS analytics nonbids to the auction(s) they
+  // belong to. Routing goes through the in-flight map, not the TTL'd auction
+  // cache, so nonbids reach their auction while it is in flight even if the
+  // cache is cleared (e.g. clearAllAuctions) before the PBS response arrives.
   events.on(EVENTS.PBS_ANALYTICS, (event) => {
     if (event.seatnonbid != null) {
-      getAuction(event.auctionId)?.addNonBids(event.seatnonbid);
+      _inFlightAuctions.get(event.auctionId)?.forEach((auction) => auction.addNonBids(event.seatnonbid));
     }
   });
 
@@ -141,6 +148,20 @@ export function newAuctionManager() {
   auctionManager.createAuction = function(opts) {
     const auction = newAuction(opts);
     _addAuction(auction);
+    const auctionId = auction.getAuctionId();
+    if (!_inFlightAuctions.has(auctionId)) {
+      _inFlightAuctions.set(auctionId, new Set());
+    }
+    _inFlightAuctions.get(auctionId).add(auction);
+    auction.end.then(() => {
+      const auctions = _inFlightAuctions.get(auctionId);
+      if (auctions != null) {
+        auctions.delete(auction);
+        if (auctions.size === 0) {
+          _inFlightAuctions.delete(auctionId);
+        }
+      }
+    });
     return auction;
   };
 

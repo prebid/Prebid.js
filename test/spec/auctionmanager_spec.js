@@ -846,7 +846,25 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
-    it('does not choke on PBS_ANALYTICS events for unknown auctions', () => {
+    it('does not register a listener per auction', () => {
+      const q = () => (events.get()[EVENTS.PBS_ANALYTICS]?.que ?? []).length;
+      const before = q();
+      auctionManager.createAuction({ adUnits });
+      auctionManager.createAuction({ adUnits });
+      expect(q()).to.equal(before);
+    });
+
+    it('adds nonbids emitted after the auction cache is cleared mid-flight', () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      auctionManager.clearAllAuctions();
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: ['test']
+      });
+      expect(auction.getNonBids()).to.eql(['test']);
+    });
+
+    it('ignores PBS_ANALYTICS events naming an unknown auction, without throwing', () => {
       const auction = auctionManager.createAuction({ adUnits });
       expect(() => {
         events.emit(EVENTS.PBS_ANALYTICS, {
@@ -878,6 +896,17 @@ describe('auctionmanager.js', function () {
       });
       expect(auction1.getNonBids()).to.eql([]);
       expect(auction2.getNonBids()).to.eql(['nonbid2']);
+    });
+
+    it('routes nonbids to every live auction sharing the same auctionId', () => {
+      const auction1 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      const auction2 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: 'shared-auction-id',
+        seatnonbid: ['nonbid']
+      });
+      expect(auction1.getNonBids()).to.eql(['nonbid']);
+      expect(auction2.getNonBids()).to.eql(['nonbid']);
     });
 
     it('resolves .requestsDone', async () => {
@@ -991,6 +1020,19 @@ describe('auctionmanager.js', function () {
           await clock.tick(0);
           await clock.tick(20 * 1000);
           // each auction had one ttl=10 bid (now stale) and one ttl=100 bid
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
+        });
+
+        it('exposes refreshBidTTLs on the auction, and repeated calls retain the same bids as one', async () => {
+          config.setConfig({
+            minBidCacheTTL: 30
+          });
+          auction.callBids();
+          await auction.end;
+          expect(auction.refreshBidTTLs).to.be.a('function');
+          auction.refreshBidTTLs();
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
+          auction.refreshBidTTLs();
           expect(auctionManager.getBidsReceived().length).to.equal(2);
         });
 

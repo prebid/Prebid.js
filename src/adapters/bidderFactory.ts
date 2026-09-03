@@ -236,12 +236,10 @@ function makeTidGuard({ bidderCode }) {
   };
 }
 
-// Guards are cached in a WeakMap keyed by the bidderRequest, so that the two
-// uses within one bid cycle (request validation and buildRequests) share one
-// guard — stable proxy identity, one tidsAllowed activity check per bidder
-// request — while the cache entry lives no longer than the bidderRequest
-// itself. A strong (Map-based) cache here would retain every bidderRequest,
-// its bids, and the per-auction ortb2 for the page lifetime.
+// Guards are cached per bidderRequest, so every use of the same request sees
+// the same guard: stable proxy identity, and one transmitTid activity check
+// per bidder request. The cache is keyed weakly, so an entry cannot outlive
+// the bidderRequest it guards.
 const tidGuards = new WeakMap();
 export const guardTids: any = (bidderRequest) => {
   let guard = tidGuards.get(bidderRequest);

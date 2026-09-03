@@ -1831,7 +1831,11 @@ describe('bidderFactory', () => {
       const guard1 = guardTids(request1);
       const guard2 = guardTids(request2);
       expect(guard1).to.not.equal(guard2);
-      expect(guard1.bidderRequest(request1)).to.not.equal(guard2.bidderRequest(request2));
+      // bidRequest is memoized per guard (keyed by bidId): the same guard
+      // returns the same proxy for the same bid, different guards do not.
+      const bid = { bidId: 'bid-1' };
+      expect(guard1.bidRequest(bid)).to.equal(guard1.bidRequest(bid));
+      expect(guard1.bidRequest(bid)).to.not.equal(guard2.bidRequest(bid));
     });
   });
 });
