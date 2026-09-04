@@ -121,7 +121,7 @@ export function consentCheck(bidderRequest, req) {
 
 export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint) => {
   const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-  const isCk2trk = syncEndpoint.includes('ck.2trk.info');
+  const isCk2trk = syncEndpoint.includes('ban.2trk.info');
 
   let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;
 
