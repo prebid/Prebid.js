@@ -119,6 +119,20 @@ describe('bidViewabilityPixels library', function () {
       expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.include('script async src="https://viewable-js.com"');
     });
 
+    it('should HTML-escape JS tracker URLs so they cannot break out of the script src attribute', function () {
+      const maliciousUrl = 'https://tracker.invalid/"></script><script>alert(document.domain)</script>';
+      const bid = {
+        eventtrackers: [
+          { event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_JS, url: maliciousUrl }
+        ]
+      };
+      fireViewabilityPixels(bid);
+      expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
+      const markup = insertHtmlIntoIframeSpy.getCall(0).args[0];
+      expect(markup).to.include('&quot;');
+      expect(markup).to.not.include('"></script><script>');
+    });
+
     it('should fire both img (triggerPixel) and js (insertHtmlIntoIframe) viewable trackers', function () {
       const bid = {
         eventtrackers: [
