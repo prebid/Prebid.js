@@ -681,6 +681,46 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user.keywords).to.be.undefined;
     });
 
+    it('sets the SDA segment when the config has no `params` at all', function() {
+      // params is optional in RTDProviderConfig, and the SDA segment takes no configuration here,
+      // so a PPS-only publisher can legitimately supply nothing but `name`.
+      getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+
+      getRealTimeData(bidConfig, () => {}, { name: 'anonymised' }, {});
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
+    });
+
+    it('sets the SDA segment when `params` is an empty object', function() {
+      getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+
+      getRealTimeData(bidConfig, () => {}, { name: 'anonymised', params: {} }, {});
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
+    });
+
+    it('does not complain about `cohortStorageKey` when none is configured', function() {
+      const logErrorSpy = sinon.spy(require('src/utils.js'), 'logError');
+      try {
+        getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+
+        getRealTimeData(bidConfig, () => {}, { name: 'anonymised' }, {});
+        expect(logErrorSpy.calledWithMatch('cohortStorageKey')).to.be.false;
+      } finally {
+        logErrorSpy.restore();
+      }
+    });
+
+    it('still complains about a `cohortStorageKey` that is set to the wrong value', function() {
+      const logErrorSpy = sinon.spy(require('src/utils.js'), 'logError');
+      try {
+        getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+
+        getRealTimeData(bidConfig, () => {}, { params: { cohortStorageKey: 'wrong_key' } }, {});
+        expect(logErrorSpy.calledWithMatch('cohortStorageKey')).to.be.true;
+      } finally {
+        logErrorSpy.restore();
+      }
+    });
+
     it('sets the SDA segment even when `cohortStorageKey` is misconfigured', function() {
       getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
 

@@ -194,11 +194,18 @@ export function createRtdProvider(moduleName) {
 
   /**
    * Read the proprietary Anonymised cohort IDs the Marketing Tag stores.
-   * @param {Object} config this submodule's publisher configuration
+   * @param {Object} params this submodule's publisher configuration params
    * @returns {Array|undefined} the cohort IDs, or undefined when there are none to send
    */
-  function getCohortSegments(config) {
-    const cohortStorageKey = config.params.cohortStorageKey;
+  function getCohortSegments(params) {
+    const cohortStorageKey = params.cohortStorageKey;
+
+    // No key at all means the publisher is not using cohorts - a PPS-only integration needs no
+    // params whatsoever - which is a valid setup rather than a mistake worth logging. A key that
+    // is present but wrong is a mistake, and still reported as one.
+    if (cohortStorageKey == null) {
+      return undefined;
+    }
 
     if (cohortStorageKey !== 'cohort_ids') {
       logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
@@ -226,21 +233,23 @@ export function createRtdProvider(moduleName) {
    */
   function getRealTimeData(reqBidsConfigObj, onDone, config, userConsent) {
     try {
-      if (!config || !isPlainObject(config.params)) {
-        return;
-      }
+      // `params` is optional in RTDProviderConfig, and the SDA segment is configured entirely by
+      // the Marketing Tag rather than here, so a publisher who wants only that can legitimately
+      // supply nothing but `name`. A missing or malformed `params` therefore means "nothing
+      // configured", not "do nothing".
+      const params = isPlainObject(config?.params) ? config.params : {};
 
       // Two independent segments share one user.data array: the proprietary Anonymised cohort, and
       // the IAB Audience Taxonomy 1.1 audience from SignalLift. Neither is a precondition for the
       // other - a publisher may have cohorts without PPS, PPS without cohorts, or both.
       const userData = [];
-      const cohortSegments = getCohortSegments(config);
+      const cohortSegments = getCohortSegments(params);
 
       if (cohortSegments) {
         userData.push({
           name: 'anonymised.io',
           ext: {
-            segtax: config.params.segtax
+            segtax: params.segtax
           },
           segment: cohortSegments.map(x => ({ id: x }))
         });
@@ -260,7 +269,7 @@ export function createRtdProvider(moduleName) {
 
       // Unchanged: the keywords side effect carries the cohort IDs only, and only for appnexus. The
       // SDA segment has no keywords equivalent - appnexus reads segtax 4 from user.data directly.
-      if (cohortSegments && config.params.bidders?.includes('appnexus')) {
+      if (cohortSegments && params.bidders?.includes('appnexus')) {
         user.keywords = cohortSegments.map(x => `perid=${x}`).join(',');
       }
 
