@@ -2,13 +2,16 @@ import {
   getViewportOffset,
   intersections,
   mkIntersectionHook,
+  mkPrewarmHook,
   percentInView,
   viewportIntersections,
 } from '../../../libraries/percentInView/percentInView.js';
 import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
-import { enable, disable } from 'test/mocks/percentInView.js';
+import { enable, disable, enableFrameRect, disableFrameRect } from 'test/mocks/percentInView.js';
 
 import { defer } from 'src/utils/promise.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import { config } from 'src/config.js';
 
 describe('percentInView', () => {
   before(() => {
@@ -143,6 +146,14 @@ describe('percentInView', () => {
         expect(result).to.eql(entry);
       });
     });
+    it('observe should wait when the element is already observed but has no entry yet', async () => {
+      obs.observe(el);
+      const pm = obs.observe(el);
+      const entry = { target: el, time: 1 };
+      callback([entry]);
+      expect(await pm).to.eql(entry);
+    });
+
     it('should ignore stale entries', async () => {
       const entry = {
         target: el,
@@ -258,22 +269,316 @@ describe('percentInView', () => {
       sandbox.stub(bbox, 'getBoundingClientRect');
     });
 
-    it('does not use intersection if w/h are relevant', () => {
-      bbox.getBoundingClientRect.returns({
-        width: 0,
-        height: 0,
-        left: -50,
-        top: -100,
-      });
+    it('does not use intersection ratio if w/h are relevant', () => {
+      const element = {};
       intersection = {
         boundingClientRect: {
           width: 0,
           height: 0,
+          left: -50,
+          top: -100,
         },
         isIntersecting: true,
         intersectionRatio: 1
       };
-      expect(percentInView({}, { w: 100, h: 200 })).to.not.eql(100);
+      // a quarter of the overridden 100x200 size lies within the viewport
+      expect(percentInView(element, { w: 100, h: 200 })).to.eql(25);
+      // the observer already reported where the element is; measuring it again would
+      // force a layout
+      sinon.assert.neverCalledWith(bbox.getBoundingClientRect, element);
+    });
+
+    it('uses the intersection ratio when the element has an area', () => {
+      intersection = {
+        boundingClientRect: {
+          width: 300,
+          height: 250,
+        },
+        isIntersecting: true,
+        intersectionRatio: 0.5
+      };
+      expect(percentInView({})).to.eql(50);
+    });
+
+    Object.entries({
+      'height': { width: 300, height: 0 },
+      'width': { width: 0, height: 250 },
+    }).forEach(([dimension, boundingClientRect]) => {
+      it(`returns 0 for an element with no ${dimension} and no size override`, () => {
+        // intersection observers report a ratio of 1 for zero-area targets
+        intersection = {
+          boundingClientRect,
+          isIntersecting: true,
+          intersectionRatio: 1
+        };
+        expect(percentInView({})).to.eql(0);
+      });
+    });
+  });
+
+  describe('viewabilityMeasurement', () => {
+    afterEach(() => {
+      config.resetConfig();
+      delete getGlobal().yield;
+    });
+
+    function usesObserver() {
+      const getIntersection = sandbox.stub(viewportIntersections, 'getIntersection');
+      sandbox.stub(viewportIntersections, 'observe');
+      sandbox.stub(bbox, 'getBoundingClientRect').returns({ width: 1, height: 1, left: 0, top: 0, right: 1, bottom: 1 });
+      percentInView(document.createElement('div'));
+      return getIntersection.called;
+    }
+
+    it('uses the observer when neither it nor pbjs.yield is set', () => {
+      expect(usesObserver()).to.be.true;
+    });
+
+    it('is taken from pbjs.yield when unset', () => {
+      getGlobal().yield = false;
+      expect(usesObserver()).to.be.false;
+    });
+
+    it('uses the observer when pbjs.yield is explicitly true', () => {
+      getGlobal().yield = true;
+      expect(usesObserver()).to.be.true;
+    });
+
+    it('overrides pbjs.yield when set to observer', () => {
+      getGlobal().yield = false;
+      config.setConfig({ auctionOptions: { viewabilityMeasurement: 'observer' } });
+      expect(usesObserver()).to.be.true;
+    });
+
+    it('overrides pbjs.yield when set to boundingBox', () => {
+      getGlobal().yield = true;
+      config.setConfig({ auctionOptions: { viewabilityMeasurement: 'boundingBox' } });
+      expect(usesObserver()).to.be.false;
+    });
+  });
+
+  describe('when yielding is disabled', () => {
+    beforeEach(() => {
+      getGlobal().yield = false;
+    });
+    afterEach(() => {
+      delete getGlobal().yield;
+    });
+
+    it('the intersection hook does not wait', () => {
+      const next = sinon.stub();
+      const request = { adUnits: [{ element: 'el1' }] };
+      const intersections = { observe: sinon.stub().returns(new Promise(() => {})) };
+      mkIntersectionHook(intersections)(next, request);
+      // synchronously, with no observation started
+      sinon.assert.calledWith(next, request);
+      sinon.assert.notCalled(intersections.observe);
+    });
+
+    it('the prewarm hook does not observe', () => {
+      const next = sinon.stub();
+      const request = { adUnits: [{ element: 'el1' }] };
+      const intersections = { observe: sinon.stub().resolves() };
+      mkPrewarmHook(intersections)(next, request);
+      sinon.assert.notCalled(intersections.observe);
+      sinon.assert.calledWith(next, request);
+    });
+
+    it('percentInView measures the DOM instead of consulting the observer', () => {
+      const getIntersection = sandbox.stub(viewportIntersections, 'getIntersection');
+      const observe = sandbox.stub(viewportIntersections, 'observe');
+      const el = document.createElement('div');
+      el.style.cssText = 'position:absolute;left:0;top:0;width:50px;height:50px';
+      document.body.appendChild(el);
+      try {
+        expect(percentInView(el)).to.be.a('number');
+        sinon.assert.notCalled(getIntersection);
+        sinon.assert.notCalled(observe);
+      } finally {
+        el.remove();
+      }
+    });
+  });
+
+  describe('prewarm hook', () => {
+    let intersections, hook, next, request;
+    beforeEach(() => {
+      next = sinon.stub();
+      intersections = { observe: sinon.stub().resolves() };
+      hook = mkPrewarmHook(intersections);
+      request = {};
+    });
+
+    it('observes the element of every ad unit', () => {
+      request.adUnits = [{ element: 'el1' }, { code: 'el2' }];
+      sandbox.stub(document, 'getElementById').returns('el2');
+      hook(next, request);
+      sinon.assert.calledWith(intersections.observe, 'el1');
+      sinon.assert.calledWith(intersections.observe, 'el2');
+    });
+
+    it('does not wait for the observations to resolve', () => {
+      let observed;
+      intersections.observe.returns(new Promise((resolve) => { observed = resolve; }));
+      request.adUnits = [{ element: 'el1' }];
+      hook(next, request);
+      sinon.assert.calledWith(next, request);
+      observed();
+    });
+
+    it('continues when an element cannot be observed', async () => {
+      intersections.observe.rejects(new Error());
+      request.adUnits = [{ element: 'el1' }];
+      hook(next, request);
+      sinon.assert.calledWith(next, request);
+      // give the rejection a chance to surface as an unhandled rejection
+      await delay();
+    });
+
+    it('does not choke on a request with no ad units', () => {
+      hook(next, request);
+      sinon.assert.notCalled(intersections.observe);
+      sinon.assert.calledWith(next, request);
+    });
+  });
+
+  describe('prewarm followed by the auction hook', () => {
+    it('still waits for the observer when prewarm has already observed the element', async () => {
+      let callback;
+      const nakedObs = { observe: sinon.stub() };
+      const obs = intersections((cb) => { callback = cb; return nakedObs; });
+      const el = document.createElement('div');
+      const request = { adUnits: [{ element: el }] };
+
+      // requestBids: prewarm starts the observation
+      mkPrewarmHook(obs)(sinon.stub(), request);
+      // startAuction runs before anything has yielded, so no entry has arrived yet
+      const next = sinon.stub();
+      mkIntersectionHook(obs)(next, request);
+
+      await delay(0);
+      expect(obs.getIntersection(el)).to.eql(null);
+      sinon.assert.notCalled(next);
+
+      callback([{ target: el, time: 1, isIntersecting: true, intersectionRatio: 1 }]);
+      await delay(0);
+      sinon.assert.called(next);
+    });
+  });
+
+  describe('frame rect mock', () => {
+    // only applies when karma runs the tests in an iframe, which excludes the debug page
+    if (window.frameElement == null) return;
+
+    afterEach(() => {
+      enableFrameRect();
+    });
+
+    it('reports the top window viewport while enabled', () => {
+      const { left, top, width, height } = window.frameElement.getBoundingClientRect();
+      const doc = window.top.document.documentElement;
+      expect({ left, top, width, height }).to.eql({
+        left: 0, top: 0, width: doc.clientWidth, height: doc.clientHeight
+      });
+    });
+
+    it('reports the real frame rect once disabled', () => {
+      disableFrameRect();
+      // the frame element belongs to the containing document, so its rect comes from that realm
+      const { DOMRect } = window.frameElement.ownerDocument.defaultView;
+      expect(window.frameElement.getBoundingClientRect()).to.be.instanceOf(DOMRect);
+    });
+  });
+
+  describe('percentInView, with no intersection available', () => {
+    let container;
+
+    beforeEach(() => {
+      // no intersection entry, so the measurement runs off the DOM
+      sandbox.stub(viewportIntersections, 'getIntersection').returns(undefined);
+      sandbox.stub(viewportIntersections, 'observe');
+      bbox.clearCache();
+      container = document.createElement('div');
+      container.style.cssText = 'position:absolute;left:0;top:0';
+      document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+      container.remove();
+      bbox.clearCache();
+    });
+
+    function measure(html) {
+      container.innerHTML = html;
+      bbox.clearCache();
+      return percentInView(container.querySelector('#target'));
+    }
+
+    const TARGET = '<div id="target" style="width:50px;height:50px"></div>';
+
+    it('is clipped by an overflow-hidden ancestor', () => {
+      const unclipped = measure(TARGET);
+      expect(unclipped).to.be.greaterThan(0);
+      const clipped = measure(`<div style="overflow:hidden;width:50px;height:25px">${TARGET}</div>`);
+      expect(clipped).to.be.greaterThan(0);
+      expect(clipped).to.be.lessThan(unclipped);
+    });
+
+    it('returns 0 for an element held entirely outside an overflow-hidden ancestor', () => {
+      expect(measure(
+        `<div style="overflow:hidden;width:50px;height:25px">
+           <div style="position:relative;top:200px">${TARGET}</div>
+         </div>`
+      )).to.eql(0);
+    });
+
+    it('returns 0 for an element scrolled out of a scrolling ancestor', () => {
+      expect(measure(
+        `<div style="overflow:auto;width:50px;height:25px">
+           <div style="height:400px"></div>${TARGET}
+         </div>`
+      )).to.eql(0);
+    });
+
+    // identical markup except for what makes the clipper contain the target, so the only thing
+    // the comparison can be measuring is whether the clip was applied
+    const ABS_TARGET = '<div id="target" style="position:absolute;top:0;left:0;width:50px;height:50px"></div>';
+    const escaping = () => measure(`<div style="overflow:hidden;width:50px;height:25px">${ABS_TARGET}</div>`);
+
+    it('is not clipped by an ancestor that does not contain it', () => {
+      const contained = measure(
+        `<div style="overflow:hidden;width:50px;height:25px;position:relative">${ABS_TARGET}</div>`
+      );
+      expect(contained).to.be.lessThan(escaping());
+    });
+
+    it('is clipped by an ancestor that establishes a containing block', () => {
+      const contained = measure(
+        `<div style="overflow:hidden;width:50px;height:25px;transform:translateX(0)">${ABS_TARGET}</div>`
+      );
+      expect(contained).to.be.lessThan(escaping());
+    });
+
+    it('is not clipped by an ancestor when it is fixed to the viewport', () => {
+      // the target sits well clear of the clipper, so any clipping at all would report 0
+      expect(measure(
+        `<div style="overflow:hidden;width:50px;height:25px;position:relative">
+           <div id="target" style="position:fixed;top:200px;left:200px;width:50px;height:50px"></div>
+         </div>`
+      )).to.be.greaterThan(0);
+    });
+
+    Object.entries({
+      'visibility:hidden': 'visibility:hidden',
+      'opacity:0': 'opacity:0',
+    }).forEach(([label, css]) => {
+      it(`returns 0 for an element with ${label}`, () => {
+        expect(measure(`<div id="target" style="width:50px;height:50px;${css}"></div>`)).to.eql(0);
+      });
+
+      it(`returns 0 for an element under an ancestor with ${label}`, () => {
+        expect(measure(`<div style="${css}">${TARGET}</div>`)).to.eql(0);
+      });
     });
   });
 });
