@@ -42,10 +42,19 @@ export const BIDFLOOR_CURRENCY = 'USD';
 function getBidFloor(bidRequest) {
   let floorInfo = {};
 
+  let mediaType = '*';
+  const hasBanner = hasBannerMediaType(bidRequest);
+  const hasVideo = hasVideoMediaType(bidRequest);
+  if (hasBanner && !hasVideo) {
+    mediaType = BANNER;
+  } else if (hasVideo && !hasBanner) {
+    mediaType = VIDEO;
+  }
+
   if (typeof bidRequest.getFloor === 'function') {
     floorInfo = bidRequest.getFloor({
       currency: BIDFLOOR_CURRENCY,
-      mediaType: '*',
+      mediaType: mediaType,
       size: '*'
     });
   }
