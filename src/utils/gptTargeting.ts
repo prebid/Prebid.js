@@ -1,6 +1,34 @@
 // shim for the deprecation of GPT setTargeting / getTargeting methods
 
+import { TARGETING_KEYS } from '../constants.js';
 import type { GptApi, GptSlot } from '../types/gpt.d.ts';
+
+const targetedAdIdsBySlot = new WeakMap<GptSlot, Set<string>>();
+
+function collectTargetedAdIds(targeting: Record<string, string | string[]>): Set<string> {
+  const adIds = new Set<string>();
+  Object.entries(targeting).forEach(([key, value]) => {
+    if (!key.startsWith(TARGETING_KEYS.AD_ID)) return;
+    (Array.isArray(value) ? value : [value]).forEach((v) => {
+      if (v) adIds.add(String(v));
+    });
+  });
+  return adIds;
+}
+
+export function recordSlotTargeting(slot: GptSlot, targeting: Record<string, string | string[]>): void {
+  targetedAdIdsBySlot.set(slot, collectTargetedAdIds(targeting));
+}
+
+export function slotHasTargetedAdId(slot: GptSlot, adId: string): boolean {
+  return targetedAdIdsBySlot.get(slot)?.has(adId) ?? false;
+}
+
+export function findSlotElementIdByAdId(adId: string, getSlots: () => GptSlot[] = () => (window as any).googletag.pubads().getSlots()): string | null {
+  if (adId == null) return null;
+  const slot = getSlots().find((s) => slotHasTargetedAdId(s, adId));
+  return (slot as any)?.getSlotElementId?.() ?? null;
+}
 
 /**
  * The new config API on gpt and Slot we assume with the hasConfigApi typeguard.

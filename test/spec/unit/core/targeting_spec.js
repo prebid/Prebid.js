@@ -9,8 +9,9 @@ import {
 import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
 import { createBidReceived } from 'test/fixtures/fixtures.js';
-import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
+import { DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
 import { auctionManager } from 'src/auctionManager.js';
+import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
 import { createBid } from '../../../../src/bidfactory.js';
@@ -1687,6 +1688,87 @@ describe('targeting tests', function () {
         });
         targetingInstance.presetGPTTargeting();
         sinon.assert.notCalled(window.googletag.pubads);
+      });
+    });
+    describe('event hooks', () => {
+      let presetGPTTargetingStub;
+      let slot;
+      const adUnitCode = 'div-1';
+      const targetedAdId = 'ad-b';
+      const olderAdId = 'ad-a';
+
+      beforeEach(() => {
+        slot = {
+          getAdUnitPath: sinon.stub().returns('/slot/path'),
+          getSlotElementId: sinon.stub().returns(adUnitCode),
+          updateTargetingFromMap: sinon.stub()
+        };
+        slots = [slot];
+        presetGPTTargetingStub = sandbox.stub(targetingInstance, 'presetGPTTargeting');
+      });
+
+      function installGptTargeting(adId) {
+        targetingInstance.updateGPTTargeting({
+          [adUnitCode]: { [TARGETING_KEYS.AD_ID]: adId }
+        }, 'set');
+      }
+
+      it('calls presetGPTTargeting with adUnitCodes on AUCTION_INIT', () => {
+        const adUnitCodes = ['div-1', 'div-2'];
+        events.emit(EVENTS.AUCTION_INIT, { adUnitCodes });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, adUnitCodes);
+      });
+
+      it('does not reset on BID_WON when the bid adId was not targeted on a GPT slot', () => {
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: olderAdId, auctionId: 'auction-a' });
+        sinon.assert.notCalled(presetGPTTargetingStub);
+      });
+
+      it('calls presetGPTTargeting on BID_WON when bid adId is currently targeted', () => {
+        installGptTargeting(targetedAdId);
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId, auctionId: 'auction-b' });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
+      });
+
+      it('ignores BID_WON from an older bid after newer targeting is installed', () => {
+        installGptTargeting(targetedAdId);
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: olderAdId, auctionId: 'auction-a' });
+        sinon.assert.notCalled(presetGPTTargetingStub);
+      });
+
+      it('calls presetGPTTargeting on BID_WON for cached bid whose adId is still targeted', () => {
+        installGptTargeting(olderAdId);
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, {
+          adUnitCode,
+          adId: olderAdId,
+          auctionId: 'auction-a',
+          latestTargetedAuctionId: 'auction-b'
+        });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
+      });
+
+      it('ignores delayed BID_WON for a cached bid that was not selected in later targeting', () => {
+        installGptTargeting(olderAdId);
+        installGptTargeting(targetedAdId);
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, {
+          adUnitCode,
+          adId: olderAdId,
+          auctionId: 'auction-a',
+          latestTargetedAuctionId: 'auction-c'
+        });
+        sinon.assert.notCalled(presetGPTTargetingStub);
+      });
+
+      it('still ignores unmatched BID_WON after AUCTION_END', () => {
+        installGptTargeting(targetedAdId);
+        events.emit(EVENTS.AUCTION_END, { adUnitCodes: [adUnitCode], auctionId: 'auction-b' });
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: olderAdId, auctionId: 'auction-a' });
+        sinon.assert.notCalled(presetGPTTargetingStub);
       });
     });
   });

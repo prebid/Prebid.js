@@ -14,8 +14,9 @@ import 'src/utils/adUnits';
 
 import { expect } from 'chai';
 
-import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, TARGETING_KEYS } from 'src/constants.js';
 import { PUC_MIN_VERSION } from 'src/creativeRenderers.js';
+import { recordSlotTargeting } from 'src/utils/gptTargeting.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('secureCreatives', () => {
@@ -561,7 +562,7 @@ describe('secureCreatives', () => {
     });
 
     it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
-      slots[1].setTargeting('hb_adid', ['adId']);
+      recordSlotTargeting(slots[1], { [TARGETING_KEYS.AD_ID]: 'adId' });
       resizeRemoteCreative({
         adId: 'adId',
         width: 300,
@@ -569,6 +570,25 @@ describe('secureCreatives', () => {
       });
       [0, 2].forEach((i) => sinon.assert.notCalled(slots[i].getSlotElementId));
       sinon.assert.called(slots[1].getSlotElementId);
+      sinon.assert.calledWith(document.getElementById, 'div2');
+    });
+
+    it('should still find gpt slot after targeting is cleared', function () {
+      recordSlotTargeting(slots[1], { [TARGETING_KEYS.AD_ID]: 'adId' });
+      resizeRemoteCreative({
+        adId: 'adId',
+        width: 300,
+        height: 250,
+      });
+      slots[1].setTargeting('hb_adid', []);
+      document.getElementById.resetHistory();
+
+      resizeRemoteCreative({
+        adId: 'adId',
+        width: 400,
+        height: 300,
+      });
+
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
 
