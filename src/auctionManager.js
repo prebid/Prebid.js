@@ -29,7 +29,8 @@
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import { AuctionIndex } from './auctionIndex.js';
-import { BID_STATUS, JSON_MAPPING } from './constants.js';
+import { BID_STATUS, EVENTS, JSON_MAPPING } from './constants.js';
+import * as events from './events.js';
 import { useMetrics } from './utils/perfMetrics.js';
 import { ttlCollection } from './utils/ttlCollection.js';
 import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
@@ -59,7 +60,12 @@ export function newAuctionManager() {
     }),
   });
 
-  onMinBidCacheTTLChange(() => _auctions.refresh());
+  onMinBidCacheTTLChange(() => {
+    for (const auction of _auctions) {
+      auction.refreshBidTTLs();
+    }
+    _auctions.refresh();
+  });
 
   const auctionManager = {
     onExpiry: _auctions.onExpiry
@@ -70,6 +76,36 @@ export function newAuctionManager() {
       if (auction.getAuctionId() === auctionId) return auction;
     }
   }
+
+  // Auctions that have not yet ended, keyed by auctionId. The auctionId can be
+  // supplied by the publisher, so concurrent auctions may share one: each key
+  // holds the set of live auctions using it. An entry is added on creation and
+  // removed when the auction's `end` promise resolves. An auction whose `end`
+  // never resolves — e.g. callBids() throwing out of makeBidRequests before
+  // the timeout timer is armed, or a request queued on origin capacity that
+  // never frees — stays in this map for the page lifetime; clearAllAuctions
+  // does not clear it, because mid-flight routing (below) depends on entries
+  // surviving that call. This is bounded to those error paths: entries are not
+  // retained per normal auction, and do not accumulate with auction count.
+  const _inFlightAuctions = new Map();
+
+  // Single listener routing PBS analytics nonbids to the auction(s) they
+  // belong to. Delivery targets the union of the in-flight set for the
+  // auctionId and every auction in the TTL'd cache with a matching id,
+  // deduplicated: the in-flight set covers auctions that ended or were removed
+  // from the cache (e.g. clearAllAuctions) while the PBS response was
+  // outstanding, and the cache covers auctions that have ended but not yet
+  // been evicted by TTL. auctionId can be publisher-supplied, so more than one
+  // auction may match on either side.
+  events.on(EVENTS.PBS_ANALYTICS, (event) => {
+    if (event.seatnonbid != null) {
+      const targets = new Set(_inFlightAuctions.get(event.auctionId));
+      for (const auction of _auctions) {
+        if (auction.getAuctionId() === event.auctionId) targets.add(auction);
+      }
+      targets.forEach((auction) => auction.addSeatNonBids(event.seatnonbid));
+    }
+  });
 
   auctionManager.addWinningBid = function(bid) {
     const metrics = useMetrics(bid.metrics);
@@ -125,6 +161,20 @@ export function newAuctionManager() {
   auctionManager.createAuction = function(opts) {
     const auction = newAuction(opts);
     _addAuction(auction);
+    const auctionId = auction.getAuctionId();
+    if (!_inFlightAuctions.has(auctionId)) {
+      _inFlightAuctions.set(auctionId, new Set());
+    }
+    _inFlightAuctions.get(auctionId).add(auction);
+    auction.end.then(() => {
+      const auctions = _inFlightAuctions.get(auctionId);
+      if (auctions != null) {
+        auctions.delete(auction);
+        if (auctions.size === 0) {
+          _inFlightAuctions.delete(auctionId);
+        }
+      }
+    });
     return auction;
   };
 

@@ -199,7 +199,7 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-export const guardTids: any = memoize(({ bidderCode }) => {
+function makeTidGuard({ bidderCode }) {
   const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
     if (TIDS.hasOwnProperty(prop)) {
@@ -234,7 +234,21 @@ export const guardTids: any = memoize(({ bidderCode }) => {
       }
     })
   };
-});
+}
+
+// Guards are cached per bidderRequest, so every use of the same request sees
+// the same guard: stable proxy identity, and one transmitTid activity check
+// per bidder request. The cache is keyed weakly, so an entry cannot outlive
+// the bidderRequest it guards.
+const tidGuards = new WeakMap<object, ReturnType<typeof makeTidGuard>>();
+export function guardTids<B extends BidderCode>(bidderRequest: ClientBidderRequest<B>) {
+  let guard = tidGuards.get(bidderRequest);
+  if (guard == null) {
+    guard = makeTidGuard(bidderRequest);
+    tidGuards.set(bidderRequest, guard);
+  }
+  return guard;
+}
 
 declare module '../events' {
   interface Events {
