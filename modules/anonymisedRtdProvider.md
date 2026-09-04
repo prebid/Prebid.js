@@ -62,6 +62,20 @@ If the publisher has Anonymised's SignalLift service installed with PPS enabled,
 
 No additional configuration is required. This entry is independent of the `cohortStorageKey` and `segtax` params above: it is written even when no cohort segment is present, and vice versa.
 
+A publisher who wants only this entry, and who already installs the Anonymised Marketing Tag on the page directly, can configure the module with `name` alone. Note that `params.tagConfig.clientId` is what makes this module load the Marketing Tag: omit `params` and the tag must be installed by other means, or no audience signals will be available to read:
+
+```javascript
+ pbjs.setConfig({
+   realTimeData: {
+     dataProviders: [
+       {
+         name: "anonymised"
+       }
+     ]
+   }
+ });
+```
+
 The entry is not written when PPS is not enabled in the publisher's Marketing Tag configuration, when no audience signals are available, or when the session is in the SignalLift holdout group.
 
 The `anonymisedRtdProvider` must be integrated into the publisher's website along with the [Anonymised Marketing Tag](https://support.anonymised.io/integrate/marketing-tag?t=LPukVCXzSIcRoal5jggyeg). One way to install the Marketing Tag is through `anonymisedRtdProvider` by specifying the required [parameters](https://support.anonymised.io/integrate/optional-anonymised-tag-parameters?t=LPukVCXzSIcRoal5jggyeg) in the `tagConfig` object.  
