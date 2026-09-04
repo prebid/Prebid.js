@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sevioBidAdapter.js';
 import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 const ENDPOINT_URL = 'https://req.adx.ws/prebid';
 
 describe('sevioBidAdapter', function () {
@@ -624,6 +625,119 @@ describe('sevioBidAdapter', function () {
       expect(native.image).to.equal('https://img.example/img.png');
       expect(native.image_width).to.equal(200);
       expect(native.image_height).to.equal(100);
+    });
+  });
+  describe('page URL resolution', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    function bid() {
+      return {
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'bid-page-url',
+        bidderRequestId: 'br-page-url',
+        auctionId: 'auc-page-url'
+      };
+    }
+
+    it('sends refererInfo.page as pageUrl and xPageUrl', function () {
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://example.com/article?a=1', topmostLocation: 'https://example.com/article?a=1' }
+      });
+      expect(out[0].data.pageUrl).to.equal('https://example.com/article?a=1');
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/article?a=1');
+    });
+
+    it('does not touch browser globals when refererInfo.page is usable', function () {
+      const canAccessWindowTop = sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      const getWindowLocation = sandbox.stub(utils, 'getWindowLocation');
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://example.com/article' }
+      });
+
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/article');
+      expect(canAccessWindowTop.called).to.equal(false);
+      expect(getWindowLocation.called).to.equal(false);
+    });
+
+    it('falls back to the current window location as a last resort', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+      sandbox.stub(utils, 'getWindowLocation').returns({ href: 'https://example.com/self' });
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', topmostLocation: 'about:srcdoc' }
+      });
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/self');
+    });
+
+    it('falls back to topmostLocation, then location, when page is unavailable', function () {
+      let out = spec.buildRequests([bid()], {
+        refererInfo: { page: null, topmostLocation: 'https://example.com/top' }
+      });
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/top');
+
+      out = spec.buildRequests([bid()], {
+        refererInfo: { page: null, topmostLocation: null, location: 'https://example.com/loc' }
+      });
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/loc');
+    });
+
+    it('skips about: URLs (srcdoc/blank iframe) and uses the top window location', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      sandbox.stub(utils, 'getWindowTop').returns({ location: { href: 'https://example.com/host-page' } });
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', topmostLocation: 'about:srcdoc', location: 'about:srcdoc' }
+      });
+      expect(out[0].data.pageUrl).to.equal('https://example.com/host-page');
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/host-page');
+    });
+
+    it('never sends an about: URL when the top window is not reachable', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', topmostLocation: 'about:srcdoc' }
+      });
+      expect(out[0].data.xPageUrl).to.not.match(/^about:/);
+    });
+
+    it('tolerates a throwing top window', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      sandbox.stub(utils, 'getWindowTop').throws(new Error('cross-origin'));
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc' }
+      });
+      expect(utils.getWindowTop.threw()).to.equal(true);
+      expect(out[0].data.xPageUrl).to.not.match(/^about:/);
+    });
+
+    it('sends an empty string when no candidate is a real page URL', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+      sandbox.stub(utils, 'getWindowLocation').returns({ href: 'about:srcdoc' });
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', topmostLocation: 'about:srcdoc', location: null }
+      });
+      expect(out[0].data.xPageUrl).to.equal('');
+      expect(out[0].data.pageUrl).to.equal('');
+    });
+
+    it('does not throw when refererInfo is missing', function () {
+      const out = spec.buildRequests([bid()], {});
+      expect(out[0].data.xPageUrl).to.be.a('string');
+      expect(out[0].data.xPageUrl).to.not.match(/^about:/);
     });
   });
 });
