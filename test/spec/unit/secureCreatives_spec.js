@@ -1,5 +1,4 @@
 import { getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
-import { clearGptSlotElementIdCache } from 'src/utils/gptSlotCache.js';
 import * as utils from 'src/utils.js';
 import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -15,8 +14,9 @@ import 'src/utils/adUnits';
 
 import { expect } from 'chai';
 
-import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, TARGETING_KEYS } from 'src/constants.js';
 import { PUC_MIN_VERSION } from 'src/creativeRenderers.js';
+import { recordSlotTargeting } from 'src/utils/gptTargeting.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('secureCreatives', () => {
@@ -548,7 +548,6 @@ describe('secureCreatives', () => {
     }
     let slots;
     beforeEach(() => {
-      clearGptSlotElementIdCache();
       slots = [
         mockSlot('div1', 'au1'),
         mockSlot('div2', 'au2'),
@@ -563,7 +562,7 @@ describe('secureCreatives', () => {
     });
 
     it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
-      slots[1].setTargeting('hb_adid', ['adId']);
+      recordSlotTargeting(slots[1], { [TARGETING_KEYS.AD_ID]: 'adId' });
       resizeRemoteCreative({
         adId: 'adId',
         width: 300,
@@ -574,8 +573,8 @@ describe('secureCreatives', () => {
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
 
-    it('should use cached gpt slot element id after targeting is cleared', function () {
-      slots[1].setTargeting('hb_adid', ['adId']);
+    it('should still find gpt slot after targeting is cleared', function () {
+      recordSlotTargeting(slots[1], { [TARGETING_KEYS.AD_ID]: 'adId' });
       resizeRemoteCreative({
         adId: 'adId',
         width: 300,
@@ -583,7 +582,6 @@ describe('secureCreatives', () => {
       });
       slots[1].setTargeting('hb_adid', []);
       document.getElementById.resetHistory();
-      slots.forEach((slot) => slot.getSlotElementId.resetHistory());
 
       resizeRemoteCreative({
         adId: 'adId',
@@ -592,7 +590,6 @@ describe('secureCreatives', () => {
       });
 
       sinon.assert.calledWith(document.getElementById, 'div2');
-      slots.forEach((slot) => sinon.assert.notCalled(slot.getSlotElementId));
     });
 
     it('should find correct apn tag based on adUnitCode', () => {

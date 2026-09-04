@@ -25,7 +25,7 @@ import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
 import { isBidUsable } from './targeting/filters.ts';
 import { sortByHighestDesirability } from './utils/desirability.ts';
-import { updateSlotTargetingFromMap } from "./utils/gptTargeting.ts";
+import { recordSlotTargeting, slotHasTargetedAdId, updateSlotTargetingFromMap } from "./utils/gptTargeting.ts";
 
 var pbTargetingKeys = [];
 
@@ -217,21 +217,11 @@ declare module './config' {
 
 export function newTargeting(auctionManager) {
   const latestAuctionForAdUnit = {};
-  // Auction whose targeting was last installed on GPT for each ad unit.
-  const installedTargetingAuctionId: Partial<Record<AdUnitCode, Identifier>> = {};
 
-  function shouldResetGptTargetingOnBidWon(bid: Bid & { latestTargetedAuctionId?: Identifier }) {
-    const { adUnitCode, auctionId, latestTargetedAuctionId } = bid;
-    const installed = installedTargetingAuctionId[adUnitCode];
-
-    // No targeting installed yet — safe to clear.
-    if (installed == null) return true;
-    // Bid from the auction that currently owns GPT targeting.
-    if (auctionId === installed) return true;
-    // Cached bid from an older auction that was used in the installed auction's targeting.
-    if (latestTargetedAuctionId === installed) return true;
-
-    return false;
+  function shouldResetGptTargetingOnBidWon(bid: Bid) {
+    if (!isGptPubadsDefined() || bid?.adId == null) return false;
+    return (window as any).googletag.pubads().getSlots()
+      .some((slot) => slotHasTargetedAdId(slot, bid.adId));
   }
 
   const targeting = {
@@ -327,6 +317,9 @@ export function newTargeting(auctionManager) {
           });
           logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
           updateSlotTargetingFromMap(slot, Object.assign({}, resetMap, targeting[targetId]));
+          if (operation === 'set') {
+            recordSlotTargeting(slot, targeting[targetId]);
+          }
           if (postUpdate != null) postUpdate(targeting[targetId]);
         });
       });
@@ -343,7 +336,6 @@ export function newTargeting(auctionManager) {
       targeting.updateGPTTargeting(targetingSet, 'set', (targetingData) => lock.lock(targetingData));
 
       Object.keys(targetingSet).forEach((adUnitCode) => {
-        installedTargetingAuctionId[adUnitCode] = latestAuctionForAdUnit[adUnitCode];
         Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
           if (targetingKey === TARGETING_KEYS.AD_ID) {
             auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_STATUS.BID_TARGETING_SET);

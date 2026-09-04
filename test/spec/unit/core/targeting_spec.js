@@ -1694,6 +1694,8 @@ describe('targeting tests', function () {
       let presetGPTTargetingStub;
       let slot;
       const adUnitCode = 'div-1';
+      const targetedAdId = 'ad-b';
+      const olderAdId = 'ad-a';
 
       beforeEach(() => {
         slot = {
@@ -1705,9 +1707,10 @@ describe('targeting tests', function () {
         presetGPTTargetingStub = sandbox.stub(targetingInstance, 'presetGPTTargeting');
       });
 
-      function installGptTargeting(auctionId) {
-        targetingInstance.setLatestAuctionForAdUnit(adUnitCode, auctionId);
-        targetingInstance.setTargetingForGPT([adUnitCode]);
+      function installGptTargeting(adId) {
+        targetingInstance.updateGPTTargeting({
+          [adUnitCode]: { [TARGETING_KEYS.AD_ID]: adId }
+        }, 'set');
       }
 
       it('calls presetGPTTargeting with adUnitCodes on AUCTION_INIT', () => {
@@ -1716,41 +1719,55 @@ describe('targeting tests', function () {
         sinon.assert.calledWithExactly(presetGPTTargetingStub, adUnitCodes);
       });
 
-      it('calls presetGPTTargeting on BID_WON when no GPT targeting is installed', () => {
-        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-a' });
-        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
-      });
-
-      it('calls presetGPTTargeting on BID_WON when bid is from the installed auction', () => {
-        installGptTargeting('auction-b');
-        presetGPTTargetingStub.resetHistory();
-        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-b' });
-        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
-      });
-
-      it('ignores BID_WON from an older auction after newer targeting is installed', () => {
-        installGptTargeting('auction-b');
-        presetGPTTargetingStub.resetHistory();
-        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-a' });
+      it('does not reset on BID_WON when the bid adId was not targeted on a GPT slot', () => {
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: olderAdId, auctionId: 'auction-a' });
         sinon.assert.notCalled(presetGPTTargetingStub);
       });
 
-      it('calls presetGPTTargeting on BID_WON for cached bid used in installed auction targeting', () => {
-        installGptTargeting('auction-b');
+      it('calls presetGPTTargeting on BID_WON when bid adId is currently targeted', () => {
+        installGptTargeting(targetedAdId);
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId, auctionId: 'auction-b' });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
+      });
+
+      it('ignores BID_WON from an older bid after newer targeting is installed', () => {
+        installGptTargeting(targetedAdId);
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: olderAdId, auctionId: 'auction-a' });
+        sinon.assert.notCalled(presetGPTTargetingStub);
+      });
+
+      it('calls presetGPTTargeting on BID_WON for cached bid whose adId is still targeted', () => {
+        installGptTargeting(olderAdId);
         presetGPTTargetingStub.resetHistory();
         events.emit(EVENTS.BID_WON, {
           adUnitCode,
+          adId: olderAdId,
           auctionId: 'auction-a',
           latestTargetedAuctionId: 'auction-b'
         });
         sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
       });
 
-      it('ignores BID_WON after AUCTION_END when newer targeting is still installed', () => {
-        installGptTargeting('auction-b');
+      it('ignores delayed BID_WON for a cached bid that was not selected in later targeting', () => {
+        installGptTargeting(olderAdId);
+        installGptTargeting(targetedAdId);
+        presetGPTTargetingStub.resetHistory();
+        events.emit(EVENTS.BID_WON, {
+          adUnitCode,
+          adId: olderAdId,
+          auctionId: 'auction-a',
+          latestTargetedAuctionId: 'auction-c'
+        });
+        sinon.assert.notCalled(presetGPTTargetingStub);
+      });
+
+      it('still ignores unmatched BID_WON after AUCTION_END', () => {
+        installGptTargeting(targetedAdId);
         events.emit(EVENTS.AUCTION_END, { adUnitCodes: [adUnitCode], auctionId: 'auction-b' });
         presetGPTTargetingStub.resetHistory();
-        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-a' });
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: olderAdId, auctionId: 'auction-a' });
         sinon.assert.notCalled(presetGPTTargetingStub);
       });
     });

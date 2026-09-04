@@ -17,8 +17,7 @@ import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.
 import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
 import { auctionManager } from './auctionManager.js';
-import { cacheGptSlotElementId, getCachedGptSlotElementId } from './utils/gptSlotCache.js';
-import { getSlotTargetingKeys, getSlotTargeting } from './utils/gptTargeting.js';
+import { findSlotElementIdByAdId } from './utils/gptTargeting.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -86,27 +85,7 @@ function getResizer(adId, bidResponse) {
     resizeRemoteCreative({ ...bidResponse, width, height, adId });
   };
 }
-function resolveDfpElementId(adId) {
-  const cached = getCachedGptSlotElementId(adId);
-  if (cached != null) return cached;
-
-  if (!isGptPubadsDefined()) return null;
-
-  const slot = window.googletag.pubads().getSlots().find(slot => {
-    return getSlotTargetingKeys(slot).find(key => {
-      return getSlotTargeting(slot, key).includes(adId);
-    });
-  });
-  const slotElementId = slot?.getSlotElementId?.() ?? null;
-  if (slotElementId != null) {
-    cacheGptSlotElementId(adId, slotElementId);
-  }
-  return slotElementId;
-}
-
 function handleRenderRequest(reply, message, bidResponse) {
-  // Cache the slot before BID_WON clears hb_* targeting (needed for later resize requests).
-  resolveDfpElementId(message.adId);
   handleRender({
     renderFn(adData) {
       reply(Object.assign({
@@ -217,7 +196,7 @@ export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, 
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      const dfpId = resolveDfpElementId(adId);
+      const dfpId = findSlotElementIdByAdId(adId);
       if (dfpId) {
         return dfpId;
       }
