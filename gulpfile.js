@@ -13,6 +13,7 @@ var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
 var webpackConfig = require('./webpack.conf.js');
 const standaloneConfig = require('./webpack.standalone.js');
+const {bundler: makeBundlerConfig, manifest: makeManifestConfig} = require('./web-bundler/webpack.bundler.js');
 var helpers = require('./gulpHelpers.js');
 const execaTask = helpers.execaTask;
 var concat = require('gulp-concat');
@@ -26,6 +27,9 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const rename = require('gulp-rename');
 const merge = require('merge-stream');
+const { resolveDependencies } = require('./web-bundler/dependencies.mjs');
+const { getChecksum, getManifest } = require('./web-bundler/manifest.mjs');
+const { injector } = require('./web-bundler/buildOptionsInjector.mjs');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -293,12 +297,9 @@ function disclosureSummary(modules, summaryFileName) {
   return stream;
 }
 
-const MODULES_REQUIRING_METADATA = ['storageControl'];
-
-function bundle(dev, moduleArr) {
+function getFilesToBundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
-  const sm = dev || argv.sourceMaps;
 
   if (modules.length === 0) {
     modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
@@ -308,21 +309,16 @@ function bundle(dev, moduleArr) {
       throw new PluginError('bundle', 'invalid modules: ' + diff.join(', ') + '. Check your modules list.');
     }
   }
+  const chunks = resolveDependencies(modules, require(helpers.getBuiltPath(dev, 'dependencies.json')), (module) => helpers.getMetadataEntry(module) != null);
+  return {
+    modules,
+    files: chunks.map((file) => helpers.getBuiltPath(dev, file))
+  }
+}
 
-  const metadataModules = modules.find(module => MODULES_REQUIRING_METADATA.includes(module))
-    ? modules.concat(['prebid-core']).map(helpers.getMetadataEntry).filter(name => name != null)
-    : [];
-
-  const coreFile = helpers.getBuiltPrebidCoreFile(dev);
-  const moduleFiles = helpers.getBuiltModules(dev, modules)
-    .concat(metadataModules.map(mod => helpers.getBuiltPath(dev, `${mod}.js`)));
-  const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
-  const dependencies = new Set();
-  [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
-    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
-  });
-  const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
-
+function bundle(dev, moduleArr) {
+  const sm = dev || argv.sourceMaps;
+  const {files: entries, modules} = getFilesToBundle(dev, moduleArr);
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
   // change output filename if argument --tag given
@@ -346,8 +342,10 @@ function bundle(dev, moduleArr) {
 function setupDist() {
   return gulp.src(['build/dist/**/*'])
     .pipe(rename(function (path) {
-      if (path.dirname === '.' && path.basename === 'prebid') {
+      if (path.dirname === '.' && (path.basename === 'prebid' || path.basename === 'prebid.web')) {
         path.dirname = '../not-for-prod';
+      } else if (path.dirname === '.' && path.basename === 'bundle') {
+        path.dirname = '..';
       }
     }))
     .pipe(gulp.dest('dist/chunks'))
@@ -498,6 +496,7 @@ function startLocalServer(options = {}) {
       return [
         function (req, res, next) {
           res.setHeader('Ad-Auction-Allowed', 'True');
+          res.setHeader('Access-Control-Allow-Origin', '*');
           next();
         }
       ];
@@ -527,6 +526,46 @@ function watchTaskMaker(options = {}) {
 const watch = watchTaskMaker({task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev-no-precomp', test))});
 const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp.series('build-bundle-dev-no-precomp')});
 
+
+function buildManifest(dev) {
+
+  function writeJSON(name, json) {
+    return fs.promises.writeFile(helpers.getBuiltPath(dev, name), JSON.stringify(json, null, 2));
+  }
+
+  return function(done) {
+    getManifest(require(helpers.getBuiltPath(dev, 'dependencies.json')), getFilesToBundle(dev).files)
+      .then(manifest => {
+        return Promise.all([
+          writeJSON('checksums.json', manifest.checksums),
+          writeJSON('manifest.json', manifest),
+        ])
+      }).then(() => done(), done);
+  }
+}
+
+function buildManifestChecksums(dev) {
+  return function (done) {
+    Promise.all(
+      ['manifest.js', 'manifest.json']
+        .map(file =>
+          getChecksum(helpers.getBuiltPath(dev, file))
+            .then(digest => fs.promises.writeFile(helpers.getBuiltPath(dev, `${file}.checksum`), digest))
+        )
+    ).then(() => done(), done);
+  };
+}
+
+function buildOptionsInjector(dev) {
+  return function (done) {
+    fs.promises.readFile(helpers.getBuiltPath(dev, 'buildOptions.js'))
+      .then((contents) => injector(contents.toString()))
+      .then((tpl) => fs.promises.writeFile(helpers.getBuiltPath(dev, 'injectBuildOptions.mjs'), tpl))
+      .then(() => done(), done);
+  }
+}
+
+
 // support tasks
 gulp.task(lint);
 gulp.task(watch);
@@ -538,16 +577,21 @@ gulp.task(cleanCache);
 gulp.task(escapePostbidConfig);
 
 
-gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
+gulp.task('build-web-bundler-prod', gulp.series(buildManifest(false), makeWebpackPkg(makeManifestConfig(false)), gulp.parallel(buildManifestChecksums(false), buildOptionsInjector(false)), makeWebpackPkg(makeBundlerConfig(false))));
+gulp.task('build-web-bundler-dev', gulp.series(buildManifest(true), makeDevpackPkg(makeManifestConfig(true)), gulp.parallel(buildManifestChecksums(true), buildOptionsInjector(true)), makeDevpackPkg(makeBundlerConfig(true))));
+gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneConfig), makeDevpackPkg(), gulp.parallel('build-web-bundler-dev', gulpBundle.bind(null, true))));
 gulp.task('build-bundle-dev', gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp'));
-gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneConfig), makeWebpackPkg(), gulp.parallel('build-web-bundler-prod', gulpBundle.bind(null, false))));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeVerbose(standaloneConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
-gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'));
+// match spec files only: a bare directory arg makes mocha filter by --extension and stay
+// non-recursive, but a glob is taken "as is without extensions" (see mocha's lookup-files),
+// so `**/*` would load test/build-logic/fixtures/**.ts as if they were specs.
+gulp.task('test-build-logic', execaTask('npx mocha \"./test/build-logic/**/*_spec.@(js|mjs)\"'));
 gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})));
 gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
