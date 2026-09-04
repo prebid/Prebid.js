@@ -111,7 +111,20 @@ export function createRtdProvider(moduleName) {
       return undefined;
     }
 
-    const signalLift = tryParse(raw);
+    // Parsed here rather than through tryParse, which logs the value it failed on. This blob can
+    // hold the CUID and a hashed email, and logError emits an AUCTION_DEBUG event whatever the
+    // debug setting, so a malformed value would carry those identifiers to any subscriber. The
+    // thrown error is not logged either: V8 quotes the first ten characters of the input in a
+    // SyntaxError message when the text is malformed from the start. Only the error's class name,
+    // which cannot contain stored data, is reported.
+    let signalLift;
+    try {
+      signalLift = JSON.parse(raw);
+    } catch (err) {
+      logError(`${SUBMODULE_NAME}RtdProvider: could not parse the stored SignalLift value (${err?.name})`);
+      return undefined;
+    }
+
     if (!isPlainObject(signalLift)) {
       return undefined;
     }

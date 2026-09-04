@@ -542,6 +542,54 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
     });
 
+    it('does not set the SDA segment when the stored value parses to a non-object', function() {
+      // Valid JSON that is not an object - a bare number, null, or an array - reaches the code
+      // past the try/catch, so it needs rejecting separately from a parse failure.
+      ['null', '42', '[]', '"a string"'].forEach(stored => {
+        const cfg = { ortb2Fragments: { global: {} } };
+        getDataFromLocalStorageStub.withArgs('anon-sl').returns(stored);
+
+        getRealTimeData(cfg, () => {}, rtdConfig, {});
+        expect(cfg.ortb2Fragments.global.user, `stored: ${stored}`).to.be.undefined;
+      });
+    });
+
+    it('never logs the stored value, or an error quoting it, when parsing fails', function() {
+      // anon-sl can hold the CUID and a hashed email, and logError/logWarn emit an AUCTION_DEBUG
+      // event whatever the debug setting - so anything passed to them is readable by any
+      // subscriber. A value malformed from the first character is the dangerous shape: V8 quotes
+      // the opening characters of the input in the SyntaxError message, so logging the caught
+      // error would leak them too.
+      const logErrorSpy = sinon.spy(require('src/utils.js'), 'logError');
+      const logWarnSpy = sinon.spy(require('src/utils.js'), 'logWarn');
+      const logMessageSpy = sinon.spy(require('src/utils.js'), 'logMessage');
+      const secret = 'SECRETCUID-and-a-hashed-email';
+
+      try {
+        getDataFromLocalStorageStub.withArgs('anon-sl').returns(secret);
+
+        getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+
+        // Guard against a vacuous pass: if the spies caught nothing the loop below proves nothing.
+        expect(logErrorSpy.called, 'expected a parse failure to be reported').to.be.true;
+
+        const logged = [logErrorSpy, logWarnSpy, logMessageSpy]
+          .flatMap(spy => spy.getCalls())
+          .flatMap(call => call.args)
+          .map(arg => (arg instanceof Error ? `${arg.name}: ${arg.message}` : String(arg)))
+          .join(' | ');
+
+        // Not just the whole value: no run of its opening characters may appear either.
+        for (let end = secret.length; end >= 4; end--) {
+          expect(logged, `leaked "${secret.slice(0, end)}"`).to.not.contain(secret.slice(0, end));
+        }
+      } finally {
+        logErrorSpy.restore();
+        logWarnSpy.restore();
+        logMessageSpy.restore();
+      }
+    });
+
     it('drops entries that are not usable taxonomy IDs', function() {
       getDataFromLocalStorageStub.withArgs('anon-sl')
         .returns(signalLift({ iabAudience: ['522', '', null, { id: 6 }, 687] }));
