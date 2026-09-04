@@ -5,6 +5,12 @@ import { mergeDeep } from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./openxBidAdapter.d.ts').OpenxBidderParams} OpenxBidderParams
+ * @typedef {BidRequest & {params: OpenxBidderParams}} OpenxBidRequest
+ */
+
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
 export const REQUEST_URL = 'https://rtb.openx.net/openrtbb/prebidjs';
@@ -126,6 +132,10 @@ const converter = ortbConverter({
   }
 });
 
+/**
+ * @param {OpenxBidRequest} bidRequest
+ * @returns {boolean}
+ */
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||
     bidRequest.params.platform;
