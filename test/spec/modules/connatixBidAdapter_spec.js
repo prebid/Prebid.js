@@ -769,15 +769,13 @@ describe('connatixBidAdapter', function () {
       expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
     });
     it('Should append coppa to the url if coppa is true', function () {
-      config.setConfig({
-        coppa: true
-      });
       const userSyncList = spec.getUserSyncs(
         { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
         { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
-        { gppString: 'GPP', applicableSections: [2, 4] }
+        { gppString: 'GPP', applicableSections: [2, 4] },
+        true
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4&coppa=1`);
