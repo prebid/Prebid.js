@@ -35,22 +35,24 @@ pbjs.setConfig({
         advertiserTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // advertiserTargeting: ['genres', 'emotions', 'themes'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones'
 
         // Enable targeting keys for publisher data
         publisherTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // publisherTargeting: ['tones', 'risk'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones'
       }
     }]
   }
 });
 ```
 
+Optionally, include `includeTrafficQuality: true` in the `params` object for traffic quality targeting.
+
 ## Functionality
 
-At a high level, the Mobian RTD Module is designed to call the Mobian Contextal API on page load, requesting the Mobian classifications and results for the URL. The classifications and results are designed to be picked up by any SSP or DSP in the Prebid.js ecosystem. The module also supports placing the Mobian classifications on each ad slot on the page, thus allowing for targeting within GAM.
+At a high level, the Mobian RTD Module calls Mobian services on page load, requesting the configured classifications and results for the URL. Contextual classifications are requested from the Contextual API assessment endpoint. When `includeTrafficQuality` is set to `true`, a separate request is made to the traffic quality API. Configurations that request both types of data make the two requests independently so either result can still be used if the other request fails. The classifications and results are designed to be picked up by any SSP or DSP in the Prebid.js ecosystem. The module also supports placing the Mobian classifications on each ad slot on the page, thus allowing for targeting within GAM.
 
 ## Available Classifications
 
@@ -159,6 +161,30 @@ p0 = Advertisers (via Campaign IDs) should AVOID targeting these personas
 p1 = Advertisers (via Campaign IDs) should target these personas
 
 *AP Values is in the early stages of testing and is subject to change.
+
+------------------
+
+Traffic Quality (`tq`)
+
+quality.outcomes.net endpoint key: mobian_tq
+
+Targetable Key: mobian_tq
+
+Possible values: Integer values defined by the Mobian response
+
+Description: Measure of traffic quality.
+
+------------------
+
+Traffic Group (`tg`)
+
+Prebid.outcomes.net endpoint key: mobian_tg
+
+Targetable Key: mobian_tg
+
+Possible values: Integer values defined by the Mobian response
+
+Description: Traffic Group is returned with the contextual assessment results and remains independent from the request-specific `tq` signal.
 
 ------------------
 

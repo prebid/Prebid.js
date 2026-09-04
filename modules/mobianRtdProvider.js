@@ -19,8 +19,9 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 /**
  * @typedef {Object} MobianConfigParams
  * @property {string} [prefix] - Optional prefix for targeting keys (default: 'mobian')
- * @property {boolean} [publisherTargeting] - Optional boolean to enable targeting for publishers (default: false)
- * @property {boolean} [advertiserTargeting] - Optional boolean to enable targeting for advertisers (default: false)
+ * @property {boolean|string[]} [publisherTargeting] - Optional targeting keys to enable for publishers (default: false)
+ * @property {boolean|string[]} [advertiserTargeting] - Optional targeting keys to enable for advertisers (default: false)
+ * @property {boolean} [includeTrafficQuality] - Include traffic quality when targeting is enabled with boolean true (default: false)
  */
 
 /**
@@ -36,6 +37,7 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
  */
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
+export const MOBIAN_QUALITY_URL = 'https://quality.outcomes.net/api/prebid/v1/ivt';
 const MOBIAN_TCF_ID = 1348;
 export const AP_VALUES = 'apValues';
 export const CATEGORIES = 'categories';
@@ -58,12 +60,13 @@ export const CONTEXT_KEYS = [
   GENRES,
   RISK,
   SENTIMENT,
-  TQ,
   TG,
   THEMES,
   TONES
 ];
 
+export const TRAFFIC_QUALITY_KEYS = [TQ];
+const ALL_TARGETING_KEYS = [...CONTEXT_KEYS, ...TRAFFIC_QUALITY_KEYS];
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 
 export const MAX_CACHE_SIZE = 10;
@@ -73,26 +76,11 @@ const logMessage = (...args) => {
   _logMessage('Mobian', ...args);
 };
 
-function getNormalizedPageUrl() {
-  try {
-    const { origin, pathname } = window.location;
-    return origin + pathname;
-  } catch (e) {
-    // Fallback to href if origin/pathname are not available, but keep normalization consistent
-    const href = window.location && window.location.href;
-    if (typeof href === 'string') {
-      // Strip query string and hash to match origin + pathname behavior
-      return href.split(/[?#]/)[0];
-    }
-    return '';
-  }
-}
-
 export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
   const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
   const cache = new Map();
   return function () {
-    const pageUrl = getNormalizedPageUrl();
+    const pageUrl = window.location.href;
     if (cache.has(pageUrl)) {
       return cache.get(pageUrl);
     }
@@ -112,6 +100,28 @@ export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
 }
 
 export const getContextData = makeMemoizedFetch();
+
+export function makeMemoizedTrafficQualityFetch() {
+  let pending;
+  return function () {
+    if (pending) {
+      return pending;
+    }
+    pending = fetchTrafficQualityData()
+      .then((response) => makeTrafficQualityDataFromResponse(response))
+      .catch((error) => {
+        logMessage('error', error);
+        pending = undefined;
+        return {};
+      });
+    return pending;
+  };
+}
+
+export const getTrafficQualityData = makeMemoizedTrafficQualityFetch();
+
+dep.getContextData = getContextData;
+dep.getTrafficQualityData = getTrafficQualityData;
 
 const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value });
 
@@ -142,15 +152,26 @@ export async function fetchContextData() {
   });
 }
 
+export async function fetchTrafficQualityData() {
+  const pageUrl = encodeURIComponent(window.location.href);
+  const requestUrl = `${MOBIAN_QUALITY_URL}?url=${pageUrl}`;
+  const request = dep.ajaxBuilder();
+
+  return new Promise((resolve, reject) => {
+    request(requestUrl, { success: resolve, error: reject });
+  });
+}
+
 export function getConfig(config) {
+  const includeTrafficQuality = config?.params?.includeTrafficQuality === true;
   const [advertiserTargeting, publisherTargeting] = ['advertiserTargeting', 'publisherTargeting'].map((key) => {
     const value = config?.params?.[key];
     if (!value) {
       return [];
     } else if (value === true) {
-      return CONTEXT_KEYS;
+      return [...(includeTrafficQuality ? ALL_TARGETING_KEYS : CONTEXT_KEYS)];
     } else if (Array.isArray(value) && value.length) {
-      return value.filter((key) => CONTEXT_KEYS.includes(key));
+      return value.filter((key) => ALL_TARGETING_KEYS.includes(key));
     }
     return [];
   });
@@ -189,11 +210,41 @@ export function makeDataFromResponse(contextData) {
     [GENRES]: results.mobianGenres,
     [RISK]: results.mobianRisk || 'unknown',
     [SENTIMENT]: results.mobianSentiment || 'unknown',
-    [TQ]: results.mobian_tq,
     [TG]: results.mobian_tg,
     [THEMES]: results.mobianThemes,
     [TONES]: results.mobianTones,
   };
+}
+
+/**
+ * @param {Object|string} trafficQualityData
+ * @returns {Partial<MobianContextData>}
+ */
+export function makeTrafficQualityDataFromResponse(trafficQualityData) {
+  const data = typeof trafficQualityData === 'string' ? safeJSONParse(trafficQualityData) : trafficQualityData;
+  // access `results` without optional chaining so an unparseable response throws and is retried
+  const trafficQuality = data.results?.mobian_tq;
+  return trafficQuality == null ? {} : { [TQ]: trafficQuality };
+}
+
+/**
+ * @param {string[]} targetingKeys
+ * @returns {Promise<Partial<MobianContextData>>}
+ */
+export async function getTargetingData(targetingKeys) {
+  const requests = [];
+  if (targetingKeys.some((key) => CONTEXT_KEYS.includes(key))) {
+    requests.push(dep.getContextData());
+  }
+  if (targetingKeys.some((key) => TRAFFIC_QUALITY_KEYS.includes(key))) {
+    requests.push(dep.getTrafficQualityData());
+  }
+
+  const results = await Promise.all(requests.map((request) => request.catch((error) => {
+    logMessage('error', error);
+    return {};
+  })));
+  return Object.assign({}, ...results);
 }
 
 /**
@@ -226,7 +277,8 @@ function init(rawConfig) {
   logMessage('init', rawConfig);
   const config = getConfig(rawConfig);
   if (config.publisherTargeting.length) {
-    getContextData().then((contextData) => setTargeting(config, contextData));
+    getTargetingData(config.publisherTargeting)
+      .then((contextData) => setTargeting(config, contextData));
   }
   return true;
 }
@@ -242,7 +294,7 @@ function getBidRequestData(bidReqConfig, callback, rawConfig) {
     return;
   }
 
-  getContextData()
+  getTargetingData(advertiserTargeting)
     .then((contextData) => {
       extendBidRequestConfig(bidReqConfig, contextData, config);
     })
