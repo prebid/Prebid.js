@@ -1,33 +1,29 @@
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
-import { ajax } from '../src/ajax.js';
-import { deepSetValue, logError, logInfo, logWarn } from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { getCanonicalUrl, hashUrl } from '../libraries/encypherUtils/encypherUtils.ts';
+import { fetcherFactory } from '../src/ajax.js';
 import type { AllConsentData } from '../src/consentHandler.ts';
-import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
+import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 
 const REAL_TIME_MODULE = 'realTimeData';
 export const MODULE_NAME = 'encypher';
-const LOG_PREFIX = '[EncypherRTD]: ';
-const STORAGE_KEY = 'encypher_provenance_v1';
-const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-const DEFAULT_API_BASE = 'https://api.encypher.com';
-const ALLOWED_API_HOSTS = ['api.encypher.com', 'staging-api.encypher.com'];
-const MAX_CONTENT_LENGTH = 50000;
-const MIN_CONTENT_LENGTH = 50;
-const AJAX_TIMEOUT_MS = 2000;
-
-// ---------------------------------------------------------------------------
-// Public interface types
-// ---------------------------------------------------------------------------
+const SIGNAL_ORIGIN = 'https://signals.encypher.com';
+export const TRUSTED_ISSUER = 'https://api.encypher.com';
+export const TRUSTED_JWKS_URL = TRUSTED_ISSUER + '/api/v1/public/provenance/jwks.json';
+const TRUSTED_ATTESTATION_BASE = TRUSTED_ISSUER + '/api/v1/public/provenance/attestations/';
+const MODULE_VERSION = '1.1.0';
+const SCHEMA_VERSION = 1;
+const DEFAULT_TIMEOUT_MS = 300;
+const MAX_EXTENSION_BYTES = 1024;
+const CLOCK_SKEW_SECONDS = 60;
+const JWKS_CACHE_TTL_MS = 60_000;
+const RECORD_STATUS_CACHE_TTL_MS = 30_000;
+const LOOKUP_MAX_BYTES = 4 * 1024;
+const JWKS_MAX_BYTES = 64 * 1024;
 
 export interface EncypherRtdParams {
-  /** Override API base URL (default: https://api.encypher.com). */
-  apiBase?: string;
-  /** Manual manifest URL; skips the signing API call (Path A). */
-  manifestUrl?: string;
+  timeout?: number;
+  telemetry?: boolean;
+  adoptionReporting?: boolean;
 }
 
 declare module './rtdModule/spec.ts' {
@@ -38,390 +34,648 @@ declare module './rtdModule/spec.ts' {
   }
 }
 
-export interface C2paPayload {
-  manifest_url: string;
-  verified: boolean;
-  signer_tier: string;
-  signed_at?: string;
-  content_hash?: string;
-  source: 'cms' | 'cache' | 'auto';
-  extraction_method?: 'json-ld' | 'article-element' | 'role-main';
-  action?: string;
+export interface C2paSignalV1 {
+  v: 1;
+  id: string;
+  ref: string;
+  att: string;
 }
 
-interface ContentExtraction {
-  text: string;
-  source: 'json-ld' | 'article-element' | 'role-main';
-  metadata: Record<string, any> | null;
+type JsonObject = Record<string, unknown>;
+type DiagnosticEvent = 'injected' | 'miss' | 'stale' | 'revoked' | 'invalid' | 'timeout';
+
+type DecisionStatus = 'ready' | 'miss' | 'revoked';
+
+interface DecisionState {
+  datasetVersion: number;
+  status: DecisionStatus;
+  record?: C2paSignalV1;
+  recordRevision?: number;
+  recordFingerprint?: string;
+  statusExpiresAt?: number;
 }
 
-// ---------------------------------------------------------------------------
-// Storage
-// ---------------------------------------------------------------------------
+interface RequestCallbacks {
+  success: (text: string, status: number) => void;
+  error: (timedOut: boolean) => void;
+}
 
-export const storage = getStorageManager({
-  moduleType: MODULE_TYPE_RTD,
-  moduleName: MODULE_NAME,
-});
+const decisions = new Map<string, DecisionState>();
+let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
+let maxDatasetVersionSeen = 0;
+let globalStaleBarrier = 0;
 
-// ---------------------------------------------------------------------------
-// Cache (localStorage via Prebid storageManager for consent enforcement)
-// ---------------------------------------------------------------------------
+/** SHA-256 bytes for the canonical URL lookup key. */
+export function sha256(value: string): Promise<Uint8Array> {
+  const subtle = window.crypto && window.crypto.subtle;
+  if (!subtle || typeof subtle.digest !== 'function') return Promise.reject(new Error('WebCrypto SHA-256 unavailable'));
+  return subtle.digest('SHA-256', new TextEncoder().encode(value))
+    .then(digest => new Uint8Array(digest));
+}
 
-export function readCache(urlHash: string): Record<string, any> | null {
-  if (!storage.localStorageIsEnabled()) return null;
-  try {
-    const raw = storage.getDataFromLocalStorage(STORAGE_KEY);
-    if (!raw) return null;
-    const store = JSON.parse(raw);
-    const entry = store[urlHash];
-    if (!entry) return null;
-    if (Date.now() > entry.expires_at) {
-      delete store[urlHash];
-      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(store));
-      return null;
+function normalizePercentEncoding(value: string): string {
+  return value.replace(/%([0-9a-f]{2})/gi, (encoded, digits) => {
+    const character = String.fromCharCode(parseInt(digits, 16));
+    return /^[A-Za-z0-9._~-]$/.test(character) ? character : '%' + digits.toUpperCase();
+  });
+}
+
+function compareText(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
+function base64url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeBase64url(value: unknown): Uint8Array {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]+$/.test(value)) throw new Error('invalid base64url');
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
+  const binary = atob(padded);
+  const decoded = Uint8Array.from(binary, character => character.charCodeAt(0));
+  if (base64url(decoded) !== value) throw new Error('non-canonical base64url');
+  return decoded;
+}
+
+function decodeJson(segment: string): unknown {
+  return JSON.parse(new TextDecoder().decode(decodeBase64url(segment)));
+}
+
+/** Canonical page URL under the generated v1 URL profile. */
+export function getCanonicalUrl(): string {
+  const link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  const raw = (link && link.href) ? link.href : window.location.href;
+  const parsed = new URL(raw, window.location.href);
+  parsed.hash = '';
+  parsed.pathname = normalizePercentEncoding(parsed.pathname);
+  const query: Array<[string, string]> = [];
+  parsed.searchParams.forEach((value, name) => query.push([name, value]));
+  query.sort((left, right) => compareText(left[0], right[0]) || compareText(left[1], right[1]));
+  parsed.search = '';
+  query.forEach(([name, value]) => parsed.searchParams.append(name, value));
+  if (parsed.search) parsed.search = normalizePercentEncoding(parsed.search);
+  return parsed.href;
+}
+
+function exactKeys(value: unknown, expected: readonly string[]): value is JsonObject {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const actual = Object.keys(value);
+  return actual.length === expected.length && expected.every(key => actual.includes(key));
+}
+
+function compactRecord(record: unknown): C2paSignalV1 | null {
+  if (!exactKeys(record, ['v', 'id', 'ref', 'att'])) return null;
+  if (record.v !== 1 || typeof record.id !== 'string' || !record.id || typeof record.att !== 'string') return null;
+  if (typeof record.ref !== 'string' || !record.ref.startsWith('https://')) return null;
+  if (new TextEncoder().encode(JSON.stringify(record)).length > MAX_EXTENSION_BYTES) return null;
+  return { v: 1, id: record.id, ref: record.ref, att: record.att };
+}
+
+function selectJwk(jwks: unknown, kid: unknown): JsonWebKey | null {
+  if (!exactKeys(jwks, ['keys']) || !Array.isArray(jwks.keys)) return null;
+  let match: JsonWebKey | null = null;
+  for (const key of jwks.keys) {
+    if (
+      exactKeys(key, ['alg', 'crv', 'kid', 'kty', 'use', 'x', 'y']) &&
+      key.kid === kid &&
+      key.kty === 'EC' &&
+      key.crv === 'P-256' &&
+      key.alg === 'ES256' &&
+      key.use === 'sig' &&
+      typeof key.x === 'string' && /^[A-Za-z0-9_-]{43}$/.test(key.x) &&
+      typeof key.y === 'string' && /^[A-Za-z0-9_-]{43}$/.test(key.y)
+    ) {
+      if (match !== null) return null;
+      match = key;
     }
-    return entry.payload;
-  } catch (e) {
-    logWarn(LOG_PREFIX, 'Cache read error', e);
+  }
+  return match;
+}
+
+function validClaims(claims: unknown, record: C2paSignalV1, publisherDomain: string, urlHash: string, now: number): number | null {
+  if (!exactKeys(claims, [
+    'iss', 'sub', 'iat', 'exp', 'publisher_domain', 'url_hash', 'content_hash', 'manifest_digest',
+    'validation_results', 'declaration', 'trust_policy_version', 'record_revision',
+  ])) return null;
+  const digestPattern = /^[A-Za-z0-9_-]{43}$/;
+  const expectedRef = TRUSTED_ATTESTATION_BASE + encodeURIComponent(record.id);
+  if (record.ref !== expectedRef) return null;
+  if (claims.iss !== TRUSTED_ISSUER || claims.sub !== record.id || claims.publisher_domain !== publisherDomain) return null;
+  if (typeof claims.iat !== 'number' || !Number.isInteger(claims.iat) || claims.iat < 0) return null;
+  if (typeof claims.exp !== 'number' || !Number.isInteger(claims.exp) || claims.exp < 1) return null;
+  if (claims.iat > now + CLOCK_SKEW_SECONDS || claims.exp <= now) return null;
+  if (
+    claims.url_hash !== urlHash ||
+    typeof claims.content_hash !== 'string' || !digestPattern.test(claims.content_hash) ||
+    typeof claims.manifest_digest !== 'string' || !digestPattern.test(claims.manifest_digest)
+  ) return null;
+  if (typeof claims.trust_policy_version !== 'string' || claims.trust_policy_version.length === 0) return null;
+  if (typeof claims.record_revision !== 'number' || !Number.isInteger(claims.record_revision) || claims.record_revision < 1) return null;
+  const results = claims.validation_results;
+  if (!exactKeys(results, ['status', 'codes']) || results.status !== 'valid' || !Array.isArray(results.codes)) return null;
+  if (results.codes.length > 32 || !results.codes.every(code => typeof code === 'string')) return null;
+  const declaration = claims.declaration;
+  if (!exactKeys(declaration, ['label', 'source_assertion'])) return null;
+  if (typeof declaration.label !== 'string' || !['human_declared', 'ai_assisted', 'unknown'].includes(declaration.label)) return null;
+  if (typeof declaration.source_assertion !== 'string' || declaration.source_assertion.length === 0) return null;
+  return claims.record_revision;
+}
+
+async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain: string, urlHash: string): Promise<number | null> {
+  const segments = record.att.split('.');
+  if (segments.length !== 3) return null;
+  let protectedHeader: unknown;
+  let claims: unknown;
+  try {
+    protectedHeader = decodeJson(segments[0]);
+    claims = decodeJson(segments[1]);
+  } catch {
+    return null;
+  }
+  if (!exactKeys(protectedHeader, ['alg', 'kid', 'typ']) || protectedHeader.alg !== 'ES256' || protectedHeader.typ !== 'epat+jws') return null;
+  const jwk = selectJwk(jwks, protectedHeader.kid);
+  const recordRevision = validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000));
+  if (!jwk || recordRevision === null) return null;
+  let signature: Uint8Array;
+  try {
+    signature = decodeBase64url(segments[2]);
+  } catch {
+    return null;
+  }
+  if (signature.length !== 64) return null;
+  try {
+    const key = await window.crypto.subtle.importKey(
+      'jwk',
+      jwk,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
+    const valid = await window.crypto.subtle.verify(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      key,
+      signature,
+      new TextEncoder().encode(segments[0] + '.' + segments[1])
+    );
+    return valid
+      ? validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
+      : null;
+  } catch {
     return null;
   }
 }
 
-export function writeCache(urlHash: string, payload: Record<string, any>): void {
-  if (!storage.localStorageIsEnabled()) return;
+function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1): number {
+  const sourceAdUnits = Array.isArray(auction.adUnits) ? auction.adUnits : [];
+  auction.adUnits = sourceAdUnits.map(adUnit => {
+    const sourceImp = adUnit.ortb2Imp || {};
+    const extension = { ...(sourceImp.ext || {}) } as Record<string, unknown>;
+    extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
+    return {
+      ...adUnit,
+      ortb2Imp: {
+        ...sourceImp,
+        ext: extension,
+      },
+    };
+  });
+  return sourceAdUnits.length;
+}
+
+function emitDiagnostic(params: EncypherRtdParams, event: DiagnosticEvent, count: number, datasetVersion: number | undefined, startedAt: number): void {
+  if (params.telemetry !== true) return;
+  const payload: {
+    v: 1;
+    schema_version: number;
+    module_version: string;
+    event: DiagnosticEvent;
+    impression_count: number;
+    duration_ms: number;
+    dataset_version?: number;
+  } = {
+    v: 1,
+    schema_version: SCHEMA_VERSION,
+    module_version: MODULE_VERSION,
+    event,
+    impression_count: count,
+    duration_ms: Math.max(0, Date.now() - startedAt),
+  };
+  if (datasetVersion !== undefined) payload.dataset_version = datasetVersion;
   try {
-    const raw = storage.getDataFromLocalStorage(STORAGE_KEY);
-    const store = raw ? JSON.parse(raw) : {};
-    store[urlHash] = { payload, expires_at: Date.now() + CACHE_TTL_MS };
-    storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(store));
-  } catch (e) {
-    logWarn(LOG_PREFIX, 'Cache write error', e);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Content extraction
-// ---------------------------------------------------------------------------
-
-function extractMetadata(item: Record<string, any>): Record<string, any> | null {
-  const meta: Record<string, any> = {};
-
-  const author = item.author;
-  if (author) {
-    if (typeof author === 'string') {
-      meta.author = author;
-    } else if (author.name) {
-      meta.author = author.name;
-    } else if (Array.isArray(author) && author[0]) {
-      meta.author = author[0].name || (typeof author[0] === 'string' ? author[0] : undefined);
-    }
-  }
-
-  if (item.datePublished) meta.datePublished = item.datePublished;
-  if (item.dateModified) meta.dateModified = item.dateModified;
-  if (item.articleSection) meta.section = item.articleSection;
-  if (item.wordCount) meta.wordCount = Number(item.wordCount) || undefined;
-
-  if (item.keywords) {
-    meta.keywords = Array.isArray(item.keywords)
-      ? item.keywords.join(',')
-      : String(item.keywords);
-  }
-
-  const pub = item.publisher;
-  if (pub && pub.name) meta.publisher = pub.name;
-
-  if (item.inLanguage) meta.language = item.inLanguage;
-
-  return Object.keys(meta).length > 0 ? meta : null;
-}
-
-export function extractContent(): ContentExtraction | null {
-  // 1. JSON-LD structured data
-  const scripts = document.querySelectorAll('script[type="application/ld+json"]');
-  for (let i = 0; i < scripts.length; i++) {
-    try {
-      let data = JSON.parse(scripts[i].textContent || '');
-      if (data['@graph'] && Array.isArray(data['@graph'])) {
-        data = data['@graph'];
-      }
-      const items = Array.isArray(data) ? data : [data];
-      for (let j = 0; j < items.length; j++) {
-        const item = items[j];
-        const type = item['@type'] || '';
-        if (/Article|NewsArticle|BlogPosting|Report/i.test(type)) {
-          const body = item.articleBody || item.text || '';
-          if (body.length >= MIN_CONTENT_LENGTH) {
-            return {
-              text: body.slice(0, MAX_CONTENT_LENGTH),
-              source: 'json-ld',
-              metadata: extractMetadata(item),
-            };
-          }
-        }
-      }
-    } catch (_) { /* malformed JSON-LD, skip */ }
-  }
-
-  // 2. <article> element
-  const article = document.querySelector('article');
-  if (article) {
-    const text = (article.textContent || '').trim();
-    if (text.length >= MIN_CONTENT_LENGTH) {
-      return { text: text.slice(0, MAX_CONTENT_LENGTH), source: 'article-element', metadata: null };
-    }
-  }
-
-  // 3. [role="main"]
-  const main = document.querySelector('[role="main"]');
-  if (main) {
-    const text = (main.textContent || '').trim();
-    if (text.length >= MIN_CONTENT_LENGTH) {
-      return { text: text.slice(0, MAX_CONTENT_LENGTH), source: 'role-main', metadata: null };
-    }
-  }
-
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Path A helpers
-// ---------------------------------------------------------------------------
-
-function buildManifestPayload(manifest: Record<string, any>, manifestUrl: string): Partial<C2paPayload> {
-  return {
-    manifest_url: manifestUrl,
-    verified: manifest.status === 'ok',
-    signer_tier: manifest.signerTier || 'local',
-    action: (manifest.actions && manifest.actions[0] && manifest.actions[0].action) || undefined,
-    signed_at: manifest.signedAt || undefined,
-    source: 'cms',
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Path C helpers
-// ---------------------------------------------------------------------------
-
-function signContent(
-  text: string,
-  apiBase: string,
-  pageUrl: string,
-  metadata: Record<string, any> | null,
-  cb: (err: any, resp: any) => void
-): void {
-  const payload: Record<string, any> = {
-    text,
-    page_url: pageUrl,
-    document_title: document.title || undefined,
-  };
-  if (metadata) {
-    payload.metadata = metadata;
-  }
-  const body = JSON.stringify(payload);
-
-  ajax(
-    apiBase + '/api/v1/public/prebid/sign',
-    {
-      success(responseText: string) {
-        try {
-          cb(null, JSON.parse(responseText));
-        } catch (e) {
-          cb(e, null);
-        }
-      },
-      error(error: any) {
-        cb(error, null);
-      },
-    },
-    body,
-    {
+    fetcherFactory()(SIGNAL_ORIGIN + '/v1/telemetry/rtd', {
       method: 'POST',
-    }
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Submodule interface
-// ---------------------------------------------------------------------------
-
-function isAllowedApiUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:') return false;
-    return ALLOWED_API_HOSTS.indexOf(parsed.hostname) !== -1;
-  } catch (_) {
-    return false;
+      body: JSON.stringify(payload),
+      credentials: 'omit',
+      cache: 'no-store',
+      keepalive: true,
+      redirect: 'error',
+      referrerPolicy: 'no-referrer',
+      headers: { 'Content-Type': 'text/plain' },
+    }).catch(() => {});
+  } catch {
+    // Diagnostics never affect an auction.
   }
 }
 
-/**
- * Check if privacy signals allow data transmission.
- * Returns false when any applicable regulation indicates opt-out or restriction.
- */
-function hasConsentForDataTransmission(userConsent: AllConsentData | null | undefined): boolean {
-  if (!userConsent) return true;
-
-  // COPPA: children's data must never be transmitted
-  if (userConsent.coppa === true) return false;
-
-  // USP/CCPA: position 2 is the opt-out-sale flag; 'Y' means user opted out
-  if (userConsent.usp && typeof userConsent.usp === 'string') {
-    if (userConsent.usp[2] === 'Y') return false;
-  }
-
-  // GDPR: require a consent string when GDPR applies
-  if (userConsent.gdpr) {
-    if (userConsent.gdpr.gdprApplies && !userConsent.gdpr.consentString) return false;
-  }
-
-  return true;
-}
-
-const init = (
-  _config: RTDProviderConfig<'encypher'>,
-  _userConsent: AllConsentData
-): boolean => {
-  return true;
-};
-
-/**
- * Three execution paths in strict priority:
- *
- *   Path A (CMS): <meta name="c2pa-manifest-url"> or params.manifestUrl
- *   Path B (Cache): localStorage hit for canonical URL hash
- *   Path C (Auto-sign): Extract article text from DOM, POST to Encypher API
- *
- * Every path and every error branch calls callback().
- */
-const getBidRequestData = (
-  reqBidsConfigObj: StartAuctionOptions,
-  callback: () => void,
-  moduleConfig: RTDProviderConfig<'encypher'>,
-  userConsent: AllConsentData
-): void => {
-  const params = (moduleConfig && moduleConfig.params) || {};
-  const apiBase = params.apiBase || DEFAULT_API_BASE;
-  const canonicalUrl = getCanonicalUrl();
-  const urlHash = hashUrl(canonicalUrl);
-
-  let callbackFired = false;
-  function done() {
-    if (callbackFired) return;
-    callbackFired = true;
-    callback();
-  }
-
-  const timer = setTimeout(() => {
-    if (!callbackFired) {
-      logWarn(LOG_PREFIX, 'Timeout reached, continuing without provenance');
-      done();
-    }
-  }, AJAX_TIMEOUT_MS);
-
-  function finish() {
-    clearTimeout(timer);
-    done();
-  }
-
-  // -- Path A: CMS meta tag or manual manifestUrl override -----------------
-  const metaTag = document.querySelector('meta[name="c2pa-manifest-url"]') as HTMLMetaElement | null;
-  const manifestUrl = (metaTag && metaTag.content) || params.manifestUrl || null;
-
-  if (manifestUrl) {
+function requestText(url: string, timeout: number, maxBytes: number, callbacks: RequestCallbacks): void {
+  const controller = new AbortController();
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let settled = false;
+  const cancelReader = (): void => {
+    if (!reader) return;
     try {
-      if (new URL(manifestUrl).protocol !== 'https:') {
-        logWarn(LOG_PREFIX, 'Path A: manifestUrl must use HTTPS, skipping');
-        finish();
+      reader.cancel().catch(() => {});
+    } catch {
+      // Cancellation is best-effort after a failed response.
+    }
+  };
+  const fail = (timedOut: boolean, cancel: boolean): void => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    if (cancel) cancelReader();
+    controller.abort();
+    callbacks.error(timedOut);
+  };
+  const timer = setTimeout(() => fail(true, true), timeout);
+  try {
+    fetcherFactory(timeout)(url, {
+      method: 'GET',
+      credentials: 'omit',
+      cache: 'no-store',
+      redirect: 'error',
+      headers: { Accept: 'application/json' },
+      referrerPolicy: 'no-referrer',
+      signal: controller.signal,
+    }).then(response => {
+      if (settled) return;
+      if (response.status !== 200) {
+        settled = true;
+        clearTimeout(timer);
+        controller.abort();
+        callbacks.success('', response.status);
         return;
       }
-    } catch (_) {
-      logWarn(LOG_PREFIX, 'Path A: invalid manifestUrl, skipping');
-      finish();
-      return;
-    }
-    logInfo(LOG_PREFIX, 'Path A: fetching manifest from', manifestUrl);
-    ajax(
-      manifestUrl,
-      {
-        success(responseText: string) {
-          try {
-            const manifest = JSON.parse(responseText);
-            const payload = buildManifestPayload(manifest, manifestUrl);
-            deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.ext.data.c2pa', payload);
-            logInfo(LOG_PREFIX, 'Path A: provenance injected');
-          } catch (e) {
-            logError(LOG_PREFIX, 'Path A: manifest parse error', e);
+      if (!response.body || typeof response.body.getReader !== 'function') {
+        fail(false, false);
+        return;
+      }
+      try {
+        reader = response.body.getReader();
+      } catch {
+        fail(false, false);
+        return;
+      }
+      if (!reader || typeof reader.read !== 'function' || typeof reader.cancel !== 'function') {
+        fail(false, false);
+        return;
+      }
+      const contentLength = response.headers && response.headers.get('Content-Length');
+      if (contentLength !== null) {
+        const declaredBytes = Number(contentLength);
+        if (Number.isInteger(declaredBytes) && declaredBytes >= 0 && declaredBytes > maxBytes) {
+          fail(false, true);
+          return;
+        }
+      }
+      const chunks: Uint8Array[] = [];
+      let decodedBytes = 0;
+      const readNext = (): void => {
+        if (settled || !reader) return;
+        reader.read().then(result => {
+          if (settled) return;
+          if (result.done) {
+            const joined = new Uint8Array(decodedBytes);
+            let offset = 0;
+            for (const chunk of chunks) {
+              joined.set(chunk, offset);
+              offset += chunk.byteLength;
+            }
+            let text: string;
+            try {
+              text = new TextDecoder('utf-8', { fatal: true }).decode(joined);
+            } catch {
+              fail(false, false);
+              return;
+            }
+            settled = true;
+            clearTimeout(timer);
+            callbacks.success(text, response.status);
+            return;
           }
-          finish();
-        },
-        error(e: any) {
-          logError(LOG_PREFIX, 'Path A: manifest fetch error', e);
-          finish();
-        },
-      },
-      null,
-      { method: 'GET' }
-    );
-    return;
+          if (!(result.value instanceof Uint8Array)) {
+            fail(false, true);
+            return;
+          }
+          decodedBytes += result.value.byteLength;
+          if (decodedBytes > maxBytes) {
+            fail(false, true);
+            return;
+          }
+          chunks.push(result.value);
+          readNext();
+        }, () => fail(false, true));
+      };
+      readNext();
+    }, () => fail(false, false));
+  } catch {
+    fail(false, false);
   }
+}
 
-  // -- Path B: localStorage cache hit --------------------------------------
-  const cached = readCache(urlHash);
-  if (cached) {
-    logInfo(LOG_PREFIX, 'Path B: cache hit for', canonicalUrl);
-    const payload = Object.assign({}, cached, { source: 'cache' });
-    deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.ext.data.c2pa', payload);
-    finish();
-    return;
+function cachedTrustedJwks(): unknown | null {
+  if (!trustedJwkCache || trustedJwkCache.expiresAt <= Date.now()) {
+    trustedJwkCache = null;
+    return null;
   }
+  return trustedJwkCache.jwks;
+}
 
-  // -- Path C: auto-sign via Encypher API ----------------------------------
-
-  if (!hasConsentForDataTransmission(userConsent)) {
-    logInfo(LOG_PREFIX, 'Path C: skipping, no consent for data transmission');
-    finish();
-    return;
-  }
-
-  if (!isAllowedApiUrl(apiBase + '/api/v1/public/prebid/sign')) {
-    logWarn(LOG_PREFIX, 'Path C: apiBase not in allowed hosts, skipping');
-    finish();
-    return;
-  }
-
-  const content = extractContent();
-  if (!content) {
-    logInfo(LOG_PREFIX, 'Path C: no extractable content, skipping');
-    finish();
-    return;
-  }
-
-  logInfo(LOG_PREFIX, 'Path C: signing content via', content.source);
-  signContent(content.text, apiBase, canonicalUrl, content.metadata, (err, resp) => {
-    if (err || !resp || !resp.success) {
-      logWarn(LOG_PREFIX, 'Path C: sign API error, continuing without provenance', err);
-      finish();
+function verifyWithTrustedJwks(
+  record: C2paSignalV1,
+  publisherDomain: string,
+  urlHash: string,
+  remainingTime: () => number,
+  completeVerification: (recordRevision: number | null, timedOut: boolean) => void
+): void {
+  const fetchAndVerify = (): void => {
+    const remaining = remainingTime();
+    if (remaining <= 0) {
+      completeVerification(null, true);
       return;
     }
+    requestText(TRUSTED_JWKS_URL, remaining, JWKS_MAX_BYTES, {
+      success(jwksText, status) {
+        if (status !== 200) {
+          completeVerification(null, false);
+          return;
+        }
+        let jwks: unknown;
+        try {
+          jwks = JSON.parse(jwksText);
+        } catch {
+          completeVerification(null, false);
+          return;
+        }
+        verifyRecord(record, jwks, publisherDomain, urlHash).then(recordRevision => {
+          if (recordRevision !== null) trustedJwkCache = { jwks, expiresAt: Date.now() + JWKS_CACHE_TTL_MS };
+          completeVerification(recordRevision, false);
+        }, () => completeVerification(null, false));
+      },
+      error(timedOut) {
+        completeVerification(null, timedOut);
+      },
+    });
+  };
 
-    const payload: C2paPayload = {
-      manifest_url: resp.manifest_url,
-      verified: true,
-      signer_tier: resp.signer_tier || 'encypher_free',
-      signed_at: resp.signed_at,
-      content_hash: resp.content_hash,
-      extraction_method: content.source,
-      source: 'auto',
-    };
+  const cached = cachedTrustedJwks();
+  if (!cached) {
+    fetchAndVerify();
+    return;
+  }
+  verifyRecord(record, cached, publisherDomain, urlHash).then(recordRevision => {
+    if (recordRevision !== null) {
+      completeVerification(recordRevision, false);
+      return;
+    }
+    trustedJwkCache = null;
+    fetchAndVerify();
+  }, () => {
+    trustedJwkCache = null;
+    fetchAndVerify();
+  });
+}
 
-    writeCache(urlHash, payload);
-    deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.ext.data.c2pa', payload);
-    logInfo(LOG_PREFIX, 'Path C: provenance signed and injected');
-    finish();
+function commitReadyDecision(urlHash: string, record: C2paSignalV1, datasetVersion: number, recordRevision: number, statusExpiresAt: number): boolean {
+  if (
+    statusExpiresAt <= Date.now() ||
+    datasetVersion < maxDatasetVersionSeen ||
+    datasetVersion <= globalStaleBarrier
+  ) return false;
+  const current = decisions.get(urlHash);
+  const recordFingerprint = JSON.stringify(record);
+  if (current) {
+    if (datasetVersion < current.datasetVersion) return false;
+    if (current.status !== 'ready' && datasetVersion <= current.datasetVersion) return false;
+    if (current.recordRevision !== undefined && recordRevision < current.recordRevision) return false;
+    if (
+      current.status === 'ready' &&
+      datasetVersion === current.datasetVersion &&
+      recordRevision === current.recordRevision &&
+      recordFingerprint !== current.recordFingerprint
+    ) return false;
+  }
+  decisions.set(urlHash, {
+    datasetVersion,
+    status: 'ready',
+    record,
+    recordRevision,
+    recordFingerprint,
+    statusExpiresAt,
+  });
+  maxDatasetVersionSeen = datasetVersion;
+  return true;
+}
+
+function commitNonReadyDecision(urlHash: string, status: 'miss' | 'revoked' | 'stale', datasetVersion: number): void {
+  if (datasetVersion < maxDatasetVersionSeen) return;
+  maxDatasetVersionSeen = datasetVersion;
+  if (status === 'stale') {
+    globalStaleBarrier = datasetVersion;
+    return;
+  }
+  const current = decisions.get(urlHash);
+  if (
+    current &&
+    (
+      datasetVersion < current.datasetVersion ||
+      (datasetVersion === current.datasetVersion && current.status === 'revoked' && status === 'miss')
+    )
+  ) return;
+  decisions.set(urlHash, { datasetVersion, status, recordRevision: current?.recordRevision });
+}
+
+const init = (_config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentData): boolean => true;
+
+const getBidRequestData = (
+  auction: StartAuctionOptions,
+  callback: () => void,
+  moduleConfig: RTDProviderConfig<'encypher'>,
+  _userConsent?: AllConsentData,
+  rtdTimeout?: number
+): void => {
+  const params = (moduleConfig && moduleConfig.params) || {};
+  const startedAt = Date.now();
+  const configuredTimeout = typeof params.timeout === 'number' && Number.isFinite(params.timeout)
+    ? Math.max(1, params.timeout)
+    : DEFAULT_TIMEOUT_MS;
+  const timeout = typeof rtdTimeout === 'number' && Number.isFinite(rtdTimeout)
+    ? Math.max(0, Math.min(configuredTimeout, rtdTimeout))
+    : configuredTimeout;
+  if (timeout === 0) {
+    callback();
+    return;
+  }
+  const deadlineAt = startedAt + timeout;
+  let completed = false;
+  let deadlineTimer: number | undefined;
+  const finish = (event: DiagnosticEvent, datasetVersion?: number, record?: C2paSignalV1): void => {
+    if (completed) return;
+    completed = true;
+    window.clearTimeout(deadlineTimer);
+    const injectedCount = event === 'injected' && record ? injectPerImpression(auction, record) : 0;
+    callback();
+    emitDiagnostic(params, event, injectedCount, datasetVersion, startedAt);
+  };
+  deadlineTimer = window.setTimeout(() => finish('timeout'), timeout);
+  const remainingTime = (): number => deadlineAt - Date.now();
+  if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle.digest !== 'function') {
+    finish('invalid');
+    return;
+  }
+
+  let canonicalUrl: string;
+  let publisherDomain: string;
+  try {
+    canonicalUrl = getCanonicalUrl();
+    publisherDomain = new URL(canonicalUrl).hostname.toLowerCase();
+  } catch {
+    finish('invalid');
+    return;
+  }
+
+  sha256(canonicalUrl).then(digest => {
+    if (completed) return;
+    if (remainingTime() <= 0) {
+      finish('timeout');
+      return;
+    }
+    const urlHash = base64url(digest);
+    function acceptVerified(
+      record: C2paSignalV1,
+      datasetVersion: number,
+      statusExpiresAt: number,
+      cachedDecision?: DecisionState
+    ): void {
+      verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (recordRevision, timedOut) => {
+        if (completed) return;
+        if (timedOut) {
+          finish('timeout', datasetVersion);
+          return;
+        }
+        if (
+          recordRevision === null ||
+          !commitReadyDecision(urlHash, record, datasetVersion, recordRevision, statusExpiresAt)
+        ) {
+          if (cachedDecision && remainingTime() > 0) {
+            if (decisions.get(urlHash) === cachedDecision) cachedDecision.statusExpiresAt = 0;
+            requestLookup();
+            return;
+          }
+          finish('invalid', datasetVersion);
+          return;
+        }
+        finish('injected', datasetVersion, record);
+      });
+    }
+
+    function requestLookup(): void {
+      if (remainingTime() <= 0) {
+        finish('timeout');
+        return;
+      }
+      const reportingQuery = params.adoptionReporting === false ? '&adoption_reporting=0' : '';
+      requestText(
+        SIGNAL_ORIGIN + '/v1/attestations/' + urlHash +
+        '?publisher_domain=' + encodeURIComponent(publisherDomain) +
+        '&module_version=' + encodeURIComponent(MODULE_VERSION) +
+        reportingQuery,
+        Math.max(1, remainingTime()),
+        LOOKUP_MAX_BYTES,
+        {
+          success(responseText, status) {
+            if (completed) return;
+            if (status !== 200) {
+              finish('invalid');
+              return;
+            }
+            let envelope: unknown;
+            try {
+              envelope = JSON.parse(responseText);
+            } catch {
+              finish('invalid');
+              return;
+            }
+            if (
+              !exactKeys(envelope, ['v', 'status', 'dataset_version', 'record']) ||
+              envelope.v !== 1 ||
+              !['ready', 'miss', 'revoked', 'stale'].includes(String(envelope.status)) ||
+              typeof envelope.dataset_version !== 'number' ||
+              !Number.isInteger(envelope.dataset_version) ||
+              envelope.dataset_version < 1
+            ) {
+              finish('invalid');
+              return;
+            }
+            const datasetVersion = envelope.dataset_version;
+            if (envelope.status !== 'ready') {
+              if (envelope.record !== null) {
+                finish('invalid');
+                return;
+              }
+              const status = envelope.status as 'miss' | 'revoked' | 'stale';
+              commitNonReadyDecision(urlHash, status, datasetVersion);
+              finish(status, datasetVersion);
+              return;
+            }
+            if (datasetVersion < maxDatasetVersionSeen) {
+              finish('invalid', datasetVersion);
+              return;
+            }
+            const record = compactRecord(envelope.record);
+            if (!record) {
+              finish('invalid');
+              return;
+            }
+            acceptVerified(record, datasetVersion, Date.now() + RECORD_STATUS_CACHE_TTL_MS);
+          },
+          error(timedOut) {
+            finish(timedOut ? 'timeout' : 'invalid');
+          },
+        }
+      );
+    }
+
+    const cached = decisions.get(urlHash);
+    if (
+      cached &&
+      cached.status === 'ready' &&
+      cached.record &&
+      cached.statusExpiresAt !== undefined &&
+      cached.statusExpiresAt > Date.now() &&
+      cached.datasetVersion >= maxDatasetVersionSeen &&
+      cached.datasetVersion > globalStaleBarrier
+    ) {
+      acceptVerified(cached.record, cached.datasetVersion, cached.statusExpiresAt, cached);
+      return;
+    }
+    requestLookup();
+  }, () => {
+    if (!completed) finish(remainingTime() <= 0 ? 'timeout' : 'invalid');
   });
 };
+
+/** Clear page-lifecycle memory between isolated module tests. */
+export function resetProviderState(): void {
+  decisions.clear();
+  trustedJwkCache = null;
+  maxDatasetVersionSeen = 0;
+  globalStaleBarrier = 0;
+}
 
 export const encypherSubmodule: RtdProviderSpec<'encypher'> = {
   name: MODULE_NAME as 'encypher',
@@ -430,5 +684,3 @@ export const encypherSubmodule: RtdProviderSpec<'encypher'> = {
 };
 
 submodule(REAL_TIME_MODULE, encypherSubmodule);
-
-export { getCanonicalUrl, hashUrl };
