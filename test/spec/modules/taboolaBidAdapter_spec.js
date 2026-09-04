@@ -1418,6 +1418,65 @@ describe('Taboola Adapter', function () {
         expect(res.data.device.ext.scroll.left).to.be.a('number');
       });
 
+      describe('user interaction signals in device.ext.bs', function () {
+        afterEach(function () {
+          delete window.TRC;
+        });
+
+        it('should forward getCtx result verbatim as device.ext.bs', function () {
+          window.TRC = { getCtx: () => ({ lm: 1234, lt: -1 }) };
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext.bs).to.deep.equal({ lm: 1234, lt: -1 });
+        });
+
+        it('should omit bs when window.TRC is not available', function () {
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+        });
+
+        it('should omit bs when getCtx returns undefined', function () {
+          window.TRC = { getCtx: () => undefined };
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+        });
+
+        it('should omit bs when getCtx throws', function () {
+          window.TRC = { getCtx: () => { throw new Error('boom'); } };
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+        });
+
+        it('should strip bs inherited from ortb2 device.ext when no fresh signal is available', function () {
+          const bidderRequest = {
+            ...commonBidderRequest,
+            ortb2: { device: { ext: { bs: { lm: 1, lt: 2 }, other: 'keep' } } }
+          };
+          const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+          expect(res.data.device.ext.other).to.equal('keep');
+        });
+
+        it('should override bs inherited from ortb2 device.ext with the fresh signal', function () {
+          window.TRC = { getCtx: () => ({ lm: 10, lt: 20 }) };
+          const bidderRequest = {
+            ...commonBidderRequest,
+            ortb2: { device: { ext: { bs: { lm: 1, lt: 2 } } } }
+          };
+          const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+          expect(res.data.device.ext.bs).to.deep.equal({ lm: 10, lt: 20 });
+        });
+
+        it('should resolve getCtx at auction time and stop sending bs once it is removed', function () {
+          window.TRC = { getCtx: () => ({ lm: 5, lt: 6 }) };
+          const [first] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(first.data.device.ext.bs).to.deep.equal({ lm: 5, lt: 6 });
+
+          delete window.TRC.getCtx;
+          const [second] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(second.data.device.ext).to.not.have.property('bs');
+        });
+      });
+
       it('should include viewability in imp.ext when element exists', function () {
         const adUnitCode = 'test-viewability-div';
         const testDiv = document.createElement('div');
