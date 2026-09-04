@@ -1,12 +1,78 @@
 const fs = require('fs');
 const path = require('path');
-const argv = require('yargs').argv;
+const {parseArgs} = require('node:util');
 const MANIFEST = 'package.json';
 const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
+
+const BOOLEAN_OPTIONS = [
+  'nolint',
+  'nolintfix',
+  'lintWarnings',
+  'sourceMaps',
+  'manualEnable',
+  'coverage',
+  'https',
+  'local',
+  'fetch',
+  'watch',
+  'browserstack',
+  'notest',
+  'analytics',
+  'ES5',
+  'analyze',
+  'polyfills',
+];
+
+const {values: argv, tokens} = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  tokens: true,
+  options: {
+    // boolean flags
+    ...Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, {type: 'boolean'}])),
+    // string options
+    host: {type: 'string'},
+    file: {type: 'string'},
+    modules: {type: 'string'},
+    browsers: {type: 'string'},
+    disable: {type: 'string'},
+    enable: {type: 'string'},
+    distUrlBase: {type: 'string'},
+    bundleName: {type: 'string'},
+    tag: {type: 'string'},
+  },
+});
+
+// yargs mapped `--no-foo` to `foo: false` and camelized `--foo-bar` to
+// `fooBar`; parseArgs does neither and keeps the literal keys. Replay the
+// boolean option tokens to restore that: each boolean option is recognized
+// under its declared name and its kebab-case form, negated or not, and the
+// occurrence appearing last on the command line wins. Other flags are left
+// exactly as parseArgs parsed them.
+const booleanSpellings = new Map(BOOLEAN_OPTIONS.flatMap((option) => {
+  const kebab = option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+  return [...new Set([option, kebab])].flatMap((name) => [
+    [name, {option, negated: false}],
+    [`no-${name}`, {option, negated: true}],
+  ]);
+}));
+tokens.forEach((token) => {
+  if (token.kind !== 'option') {
+    return;
+  }
+  const match = booleanSpellings.get(token.name);
+  if (!match || (match.negated && token.value !== undefined)) {
+    return;
+  }
+  argv[match.option] = match.negated ? false : (token.value ?? true);
+  if (token.name !== match.option) {
+    delete argv[token.name];
+  }
+});
 
 const PRECOMPILED_PATH = './dist/src'
 const MODULE_PATH = './modules';
@@ -230,5 +296,7 @@ module.exports = {
   },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
+  },
+  argv,
+  BOOLEAN_OPTIONS
 };

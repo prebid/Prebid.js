@@ -400,6 +400,71 @@ describe('Seedtag Adapter', function () {
         expect(bidRequests[1]).not.to.have.property('bidFloor');
       });
 
+      describe('getFloor mediaType', function () {
+        function buildRequestWithFloor(mediaTypes) {
+          const getFloor = sinon.stub().returns({
+            currency: BIDFLOOR_CURRENCY,
+            floor: bidFloor
+          });
+          const bidRequest = getSlotConfigs(mediaTypes, mandatoryDisplayParams);
+          bidRequest.getFloor = getFloor;
+          const request = spec.buildRequests([bidRequest], bidderRequest);
+          return { getFloor, data: JSON.parse(request.data) };
+        }
+
+        it('should request banner floor when bid has only banner mediaType', function () {
+          const { getFloor, data } = buildRequestWithFloor({ banner: {} });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: 'banner',
+            size: '*'
+          })).to.equal(true);
+          expect(data.bidRequests[0].bidFloor).to.equal(bidFloor);
+        });
+
+        it('should request wildcard floor when bid has banner and video mediaTypes', function () {
+          const { getFloor } = buildRequestWithFloor({
+            banner: {},
+            video: {
+              context: 'outstream',
+              playerSize: [[600, 200]],
+            },
+          });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: '*',
+            size: '*'
+          })).to.equal(true);
+        });
+
+        it('should request video floor when bid has only video mediaType', function () {
+          const { getFloor } = buildRequestWithFloor({
+            video: {
+              context: 'instream',
+              playerSize: [[300, 200]],
+            },
+          });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: 'video',
+            size: '*'
+          })).to.equal(true);
+        });
+
+        it('should request wildcard floor when bid has neither banner nor video mediaType', function () {
+          const { getFloor } = buildRequestWithFloor({ native: {} });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: '*',
+            size: '*'
+          })).to.equal(true);
+        });
+      });
+
       it('should not launch an exception when request a video with no playerSize', function () {
         const validBidRequests = [
           getSlotConfigs(
