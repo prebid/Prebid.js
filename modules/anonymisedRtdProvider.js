@@ -26,10 +26,19 @@ export function createRtdProvider(moduleName) {
   const SIGNAL_LIFT_STORAGE_KEY = 'anon-sl';
 
   /**
-   * sessionStorage key holding this session's SignalLift A/B group, written by the Marketing Tag.
-   * 'h' marks the holdout arm, which must receive no signals at all - see getPpsSegment.
+   * localStorage key holding the SignalLift A/B group, written by the Marketing Tag whenever it
+   * writes the sessionStorage copy below. Persisted because the audience data in `anon-sl` is
+   * itself in localStorage and so survives across sessions, while a sessionStorage-only group is
+   * unknown on the first auction of a new tab - which would have let a returning holdout user's
+   * stale audience data through unfiltered (ANON-8367).
    */
-  const SIGNAL_LIFT_GROUP_KEY = 'anon-sl-group-session';
+  const SIGNAL_LIFT_GROUP_KEY = 'anon-sl-group';
+
+  /**
+   * sessionStorage fallback for Marketing Tag versions older than ANON-8367 that only wrote the
+   * session-scoped copy of the group.
+   */
+  const SIGNAL_LIFT_GROUP_SESSION_KEY = 'anon-sl-group-session';
   const HOLDOUT_GROUP = 'h';
 
   /**
@@ -71,13 +80,18 @@ export function createRtdProvider(moduleName) {
    * Ad Manager; emitting the same audience into the bidstream would put a holdout session back into
    * the treated population through another channel and make the measurement meaningless.
    *
-   * An absent value means treatment, not holdout: the key is only written once the Marketing Tag has
-   * run, and the far more common reason for it to be missing is that the tag has not reached that
-   * point on this page yet.
+   * The persisted localStorage copy is checked first since it is available on the first auction of
+   * a new tab; the sessionStorage copy is a fallback for Marketing Tag versions that predate it.
+   *
+   * An absent value in both means treatment, not holdout: the keys are only written once the
+   * Marketing Tag has run, and the far more common reason for both to be missing is that the tag
+   * has not reached that point on this page yet.
    * @returns {boolean}
    */
   function isSignalLiftHoldout() {
-    return storage.getDataFromSessionStorage(SIGNAL_LIFT_GROUP_KEY) === HOLDOUT_GROUP;
+    const group = storage.getDataFromLocalStorage(SIGNAL_LIFT_GROUP_KEY) ??
+      storage.getDataFromSessionStorage(SIGNAL_LIFT_GROUP_SESSION_KEY);
+    return group === HOLDOUT_GROUP;
   }
 
   /**

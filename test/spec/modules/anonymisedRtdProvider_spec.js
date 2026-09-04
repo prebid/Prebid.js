@@ -565,9 +565,9 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
     });
 
-    it('does not set the SDA segment for a session in the SignalLift holdout group', function() {
+    it('does not set the SDA segment when the persisted (localStorage) group is holdout', function() {
       getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
-      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('h');
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('h');
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
@@ -577,16 +577,16 @@ describe('anonymisedRtdProvider', function() {
       getDataFromLocalStorageStub.withArgs('cohort_ids')
         .returns(JSON.stringify(['TCZPQOWPEJG3MJOTUQUF793A']));
       getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
-      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('h');
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('h');
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(bidConfig.ortb2Fragments.global.user.data).to.have.lengthOf(1);
       expect(bidConfig.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(503);
     });
 
-    it('sets the SDA segment for the treatment group', function() {
+    it('sets the SDA segment when the persisted (localStorage) group is treatment', function() {
       getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
-      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('t');
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('t');
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
@@ -594,10 +594,34 @@ describe('anonymisedRtdProvider', function() {
 
     it('treats a missing group assignment as treatment', function() {
       getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns(null);
       getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns(null);
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
+    });
+
+    it('prefers the persisted (localStorage) group over the sessionStorage group', function() {
+      // A Marketing Tag that has run in this tab writes both; the persisted copy is what let this
+      // module know the group before the tab had a session value (ANON-8367), so it must win any
+      // disagreement rather than the two being merged or the session value taking precedence.
+      getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('h');
+      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('t');
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
+    });
+
+    it('falls back to the sessionStorage group for a Marketing Tag version that predates ANON-8367', function() {
+      // Older tag versions only ever wrote anon-sl-group-session; anon-sl-group is absent, not 'h'
+      // or 't', on every page view for those publishers until they upgrade.
+      getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns(null);
+      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('h');
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
     });
 
     it('does not add appnexus keywords for the SDA segment', function() {
