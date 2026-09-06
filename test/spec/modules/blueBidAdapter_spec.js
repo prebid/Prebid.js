@@ -159,5 +159,36 @@ describe('blueBidAdapter:', function () {
       expect(ortbResponse.length).to.eq(1);
       expect(ortbResponse[0].mediaType).to.eq('banner');
     });
+
+    it('should not throw and should omit creativeId when bid.ext is absent', function () {
+      const response = {
+        id: 'response-id-123456',
+        cur: 'USD',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '2rgRKcbHfDyX6ZU4zuPuf521444:0',
+                impid: '3b948a96652621',
+                price: 2,
+                adomain: ['example.com'],
+                adid: '0',
+                adm: '<iframe></iframe>',
+                h: 600,
+                w: 300,
+                exp: 60,
+              },
+            ],
+            seat: '1',
+          },
+        ],
+      };
+
+      const ortbResponse = spec.interpretResponse({ body: response }, { data: '{}' });
+
+      expect(ortbResponse.length).to.eq(1);
+      expect(ortbResponse[0].creativeId).to.be.undefined;
+      expect(ortbResponse[0].creative_id).to.be.undefined;
+    });
   });
 });

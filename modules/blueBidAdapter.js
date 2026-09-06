@@ -52,7 +52,7 @@ export const spec = {
     serverResponse.body.seatbid.forEach((response) => {
       response.bid.forEach((bid) => {
         const baseBid = buildBidObjectBase(bid, serverResponse.body, BIDDER_CODE, DEFAULT_CURRENCY);
-        const blueSpecific = { creativeId: bid.ext.blue.adId, creative_id: bid.ext.blue.adId, ttl: 1200 };
+        const blueSpecific = { creativeId: bid.ext?.blue?.adId, creative_id: bid.ext?.blue?.adId, ttl: 1200 };
         bids.push({ ...baseBid, ...blueSpecific });
       });
     });
