@@ -67,9 +67,14 @@ function getUtiqFromStorage() {
 
   return {
     utiq:
-      utiqPass && utiqPass.atid
-        ? utiqPass.atid
-        : null,
+      {
+        id: utiqPass && utiqPass.atid
+          ? utiqPass.atid
+          : null,
+        category: utiqPass && utiqPass.category
+          ? utiqPass.category
+          : null,
+      }
   };
 }
 
@@ -148,8 +153,16 @@ export const utiqIdSubmodule = {
       source: 'utiq.com',
       atype: 1,
       getValue: function (data) {
-        return data;
+        return data.id;
       },
+      getUidExt: function (data) {
+        const category = (data && data.category) || false;
+        return {
+          utiq: {
+            category
+          }
+        };
+      }
     },
   }
 };
