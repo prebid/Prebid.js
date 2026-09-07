@@ -17,6 +17,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'utiqMtpId';
 const LOG_PREFIX = 'Utiq MTP module';
+const CATEGORY_PRIORITIES = ['mobile', 'fixed'];
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_UID,
@@ -44,13 +45,16 @@ function getUtiqFromStorage() {
     Array.isArray(utiqPassStorage.connectId.idGraph) &&
     utiqPassStorage.connectId.idGraph.length > 0
   ) {
-    utiqPass = utiqPassStorage.connectId.idGraph[0];
+    const idGraph = utiqPassStorage.connectId.idGraph;
+
+    utiqPass = CATEGORY_PRIORITIES.reduce((acc, cat) => acc || idGraph.find(g => g.category === cat), null) || idGraph[0];
+
+    logInfo(
+      `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
+        utiqPass
+      )}`
+    );
   }
-  logInfo(
-    `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
-      utiqPass
-    )}`
-  );
 
   return {
     utiqMtp: utiqPass && utiqPass.mtid

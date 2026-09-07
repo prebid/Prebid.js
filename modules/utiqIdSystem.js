@@ -17,6 +17,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'utiqId';
 const LOG_PREFIX = 'Utiq module';
+const CATEGORY_PRIORITIES = ['mobile', 'netid', 'fixed'];
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_UID,
@@ -33,16 +34,11 @@ function getUtiqFromStorage() {
     storage.getDataFromLocalStorage('utiqPass')
   );
 
-  const netIdAdtechpass = storage.getDataFromLocalStorage('netid_utiq_adtechpass');
-
-  if (netIdAdtechpass) {
-    logInfo(
-      `${LOG_PREFIX}: Local storage netid_utiq_adtechpass: ${netIdAdtechpass}`
-    );
-    return {
-      utiq: netIdAdtechpass,
-    };
-  }
+  logInfo(
+    `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
+      utiqPassStorage
+    )}`
+  );
 
   if (
     utiqPassStorage &&
@@ -50,19 +46,29 @@ function getUtiqFromStorage() {
     Array.isArray(utiqPassStorage.connectId.idGraph) &&
     utiqPassStorage.connectId.idGraph.length > 0
   ) {
-    utiqPass = utiqPassStorage.connectId.idGraph[0];
+    const idGraph = utiqPassStorage.connectId.idGraph;
 
-    logInfo(
-      `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
-        utiqPassStorage
-      )}`
-    );
+    utiqPass = CATEGORY_PRIORITIES.reduce((acc, cat) => acc || idGraph.find(g => g.category === cat), null) || idGraph[0];
 
     logInfo(
       `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
         utiqPass
       )}`
     );
+  }
+
+  const netIdAdtechpass = storage.getDataFromLocalStorage('netid_utiq_adtechpass');
+
+  if (netIdAdtechpass) {
+    const atidPriority = CATEGORY_PRIORITIES.findIndex(el => utiqPass && el === utiqPass.category);
+    const netIdPriority = CATEGORY_PRIORITIES.findIndex(el => el === 'netid');
+
+    if (atidPriority >= 0 && netIdPriority < atidPriority) {
+      logInfo(
+        `${LOG_PREFIX}: Local storage netid_utiq_adtechpass: ${netIdAdtechpass}`
+      );
+      return { utiq: { atid: netIdAdtechpass, category: 'netid' } };
+    }
   }
 
   return {

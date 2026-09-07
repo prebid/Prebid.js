@@ -6,11 +6,11 @@ describe('utiqMtpIdSystem', () => {
 
   const getStorageData = (idGraph) => {
     if (!idGraph) {
-      idGraph = { id: 501, domain: '' };
+      idGraph = [{ id: 501, domain: '' }];
     }
     return {
       'connectId': {
-        'idGraph': [idGraph],
+        'idGraph': idGraph,
       }
     };
   };
@@ -35,20 +35,20 @@ describe('utiqMtpIdSystem', () => {
     });
 
     it('tests if localstorage & JSON works properly ', () => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'domainValue',
         'mtid': 'mtidValue',
-      };
+      }];
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
       expect(JSON.parse(storage.getDataFromLocalStorage(utiqPassKey))).to.have.property('connectId');
     });
 
     it('returns {id: {utiq: data.utiq}} if we have the right data stored in the localstorage ', () => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'test.domain',
         'mtid': 'mtidValue',
         'category': 'categoryValue',
-      };
+      }];
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
       const response = utiqMtpIdSubmodule.getId();
       expect(response).to.have.property('id');
@@ -58,11 +58,11 @@ describe('utiqMtpIdSystem', () => {
     });
 
     it('returns {utiqMtp: data.utiqMtp} if we have the right data stored in the localstorage right after the callback is called', (done) => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'test.domain',
         'mtid': 'mtidValue',
         'category': 'categoryValue',
-      };
+      }];
       const response = utiqMtpIdSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
@@ -80,11 +80,11 @@ describe('utiqMtpIdSystem', () => {
     });
 
     it('returns {utiqMtp: data.utiqMtp} if we have the right data stored in the localstorage right after 500ms delay', (done) => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'test.domain',
         'mtid': 'mtidValue',
         'category': 'categoryValue',
-      };
+      }];
 
       const response = utiqMtpIdSubmodule.getId();
       expect(response).to.have.property('callback');
@@ -105,10 +105,10 @@ describe('utiqMtpIdSystem', () => {
     });
 
     it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'test.domain',
         'mtid': 'mtidValue',
-      };
+      }];
 
       const response = utiqMtpIdSubmodule.getId({ params: { maxDelayTime: 200 } });
       expect(response).to.have.property('callback');
@@ -169,11 +169,11 @@ describe('utiqMtpIdSystem', () => {
 
     domains.forEach(domain => {
       it(`correctly sets utiq value for domain name ${domain}`, (done) => {
-        const idGraph = {
+        const idGraph = [{
           'domain': domain,
           'mtid': 'mtidValue',
           'category': 'categoryValue',
-        };
+        }];
 
         storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
 
@@ -190,6 +190,33 @@ describe('utiqMtpIdSystem', () => {
         expect(response.id.utiqMtp.category).to.be.equal('categoryValue');
         done();
       });
+    });
+  });
+
+  describe('utiq getUtiqFromStorage', () => {
+    afterEach(() => {
+      storage.removeDataFromLocalStorage(utiqPassKey);
+    });
+
+    it(`correctly set mobilePassKey as martechpass utiq value on mobile connection found in the idGraph`, (done) => {
+      // given
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData([{
+        'domain': 'TEST DOMAIN',
+        'mtid': 'TEST FIXED MTID',
+        'category': 'fixed',
+      }, {
+        'domain': 'TEST DOMAIN',
+        'mtid': 'TEST MOBILE MTID',
+        'category': 'mobile',
+      }]))); // setting idGraph
+
+      // when
+      const response = utiqMtpIdSubmodule.getId();
+
+      // then
+      expect(response.id.utiqMtp.mtid).to.be.equal('TEST MOBILE MTID');
+      expect(response.id.utiqMtp.category).to.be.equal('mobile');
+      done();
     });
   });
 });
