@@ -53,7 +53,7 @@ describe('utiqMtpIdSystem', () => {
       const response = utiqMtpIdSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('utiqMtp');
-      expect(response.id.utiqMtp.id).to.be.equal('mtidValue');
+      expect(response.id.utiqMtp.mtid).to.be.equal('mtidValue');
       expect(response.id.utiqMtp.category).to.be.equal('categoryValue');
     });
 
@@ -72,7 +72,7 @@ describe('utiqMtpIdSystem', () => {
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiqMtp');
-          expect(result.utiqMtp.id).to.be.equal('mtidValue');
+          expect(result.utiqMtp.mtid).to.be.equal('mtidValue');
           expect(result.utiqMtp.category).to.be.equal('categoryValue');
           done();
         });
@@ -97,7 +97,7 @@ describe('utiqMtpIdSystem', () => {
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiqMtp');
-          expect(result.utiqMtp.id).to.be.equal('mtidValue');
+          expect(result.utiqMtp.mtid).to.be.equal('mtidValue');
           expect(result.utiqMtp.category).to.be.equal('categoryValue');
           done();
         });
@@ -186,7 +186,7 @@ describe('utiqMtpIdSystem', () => {
         const response = utiqMtpIdSubmodule.getId();
         expect(response).to.have.property('id');
         expect(response.id).to.have.property('utiqMtp');
-        expect(response.id.utiqMtp.id).to.be.equal('mtidValue');
+        expect(response.id.utiqMtp.mtid).to.be.equal('mtidValue');
         expect(response.id.utiqMtp.category).to.be.equal('categoryValue');
         done();
       });

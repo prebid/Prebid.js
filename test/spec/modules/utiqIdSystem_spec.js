@@ -54,7 +54,7 @@ describe('utiqIdSystem', () => {
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('utiq');
-      expect(response.id.utiq.id).to.be.equal('atidValue');
+      expect(response.id.utiq.atid).to.be.equal('atidValue');
       expect(response.id.utiq.category).to.be.equal('categoryValue');
     });
 
@@ -73,7 +73,7 @@ describe('utiqIdSystem', () => {
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
-          expect(result.utiq.id).to.be.equal('atidValue');
+          expect(result.utiq.atid).to.be.equal('atidValue');
           expect(result.utiq.category).to.be.equal('categoryValue');
           done();
         });
@@ -98,7 +98,7 @@ describe('utiqIdSystem', () => {
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
-          expect(result.utiq.id).to.be.equal('atidValue');
+          expect(result.utiq.atid).to.be.equal('atidValue');
           expect(result.utiq.category).to.be.equal('categoryValue');
           done();
         });
@@ -187,7 +187,7 @@ describe('utiqIdSystem', () => {
         const response = utiqIdSubmodule.getId();
         expect(response).to.have.property('id');
         expect(response.id).to.have.property('utiq');
-        expect(response.id.utiq.id).to.be.equal('atidValue');
+        expect(response.id.utiq.atid).to.be.equal('atidValue');
         expect(response.id.utiq.category).to.be.equal('categoryValue');
         done();
       });
@@ -212,7 +212,7 @@ describe('utiqIdSystem', () => {
       const response = utiqIdSubmodule.getId();
 
       // then
-      expect(response.id.utiq.id).to.be.equal('TEST ATID');
+      expect(response.id.utiq.atid).to.be.equal('TEST ATID');
       expect(response.id.utiq.category).to.be.equal('categoryValue');
       done();
     });
