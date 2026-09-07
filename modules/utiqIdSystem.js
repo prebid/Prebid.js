@@ -25,7 +25,7 @@ export const storage = getStorageManager({
 
 /**
  * Get the "atid" from html5 local storage to make it available to the UserId module.
- * @returns {{utiq: (*|string)}}
+ * @returns {{utiq: (*|{atid:string,category:string})}}
  */
 function getUtiqFromStorage() {
   let utiqPass;
@@ -68,7 +68,7 @@ function getUtiqFromStorage() {
   return {
     utiq: utiqPass && utiqPass.atid
       ? {
-          id: utiqPass.atid,
+          atid: utiqPass.atid,
           category: utiqPass.category,
         }
       : null
@@ -150,7 +150,7 @@ export const utiqIdSubmodule = {
       source: 'utiq.com',
       atype: 1,
       getValue: function (data) {
-        return data.id;
+        return data.atid;
       },
       getUidExt: function (data) {
         const category = (data && data.category) || false;

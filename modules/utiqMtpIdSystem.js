@@ -25,7 +25,7 @@ export const storage = getStorageManager({
 
 /**
  * Get the "mtid" from html5 local storage to make it available to the UserId module.
- * @returns {{utiqMtp: (*|string)}}
+ * @returns {{utiqMtp: (*|{mtid:string,category:string})}}
  */
 function getUtiqFromStorage() {
   let utiqPass;
@@ -55,7 +55,7 @@ function getUtiqFromStorage() {
   return {
     utiqMtp: utiqPass && utiqPass.mtid
       ? {
-          id: utiqPass.mtid,
+          mtid: utiqPass.mtid,
           category: utiqPass.category,
         }
       : null
@@ -137,7 +137,7 @@ export const utiqMtpIdSubmodule = {
       source: 'utiq-mtp.com',
       atype: 1,
       getValue: function (data) {
-        return data.id;
+        return data.mtid;
       },
       getUidExt: function (data) {
         const category = (data && data.category) || false;
