@@ -29,38 +29,49 @@ export const storage = getStorageManager({
  * @returns {{utiqMtp: (*|{mtid:string,category:string})}}
  */
 function getUtiqFromStorage() {
-  let utiqPass;
-  const utiqPassStorage = JSON.parse(
+  let utiqMtpPass;
+  const utiqMtpPassStorage = JSON.parse(
     storage.getDataFromLocalStorage('utiqPass')
   );
   logInfo(
     `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
-      utiqPassStorage
+      utiqMtpPassStorage
     )}`
   );
 
   if (
-    utiqPassStorage &&
-    utiqPassStorage.connectId &&
-    Array.isArray(utiqPassStorage.connectId.idGraph) &&
-    utiqPassStorage.connectId.idGraph.length > 0
+    utiqMtpPassStorage &&
+    utiqMtpPassStorage.connectId &&
+    Array.isArray(utiqMtpPassStorage.connectId.idGraph) &&
+    utiqMtpPassStorage.connectId.idGraph.length > 0
   ) {
-    const idGraph = utiqPassStorage.connectId.idGraph;
+    const idGraph = utiqMtpPassStorage.connectId.idGraph;
 
-    utiqPass = CATEGORY_PRIORITIES.reduce((acc, cat) => acc || idGraph.find(g => g.category === cat), null) || idGraph[0];
+    for (let i = 0; i < CATEGORY_PRIORITIES.length; i++) {
+      const found = idGraph.find(g => g.category === CATEGORY_PRIORITIES[i]);
+      if (found) {
+        utiqMtpPass = found;
+        break; // Stop immediately once the highest priority is found
+      }
+    }
+
+    // Fallback to the first item if no prioritized category matched
+    if (!utiqMtpPass) {
+      utiqMtpPass = idGraph[0];
+    }
 
     logInfo(
       `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
-        utiqPass
+        utiqMtpPass
       )}`
     );
   }
 
   return {
-    utiqMtp: utiqPass && utiqPass.mtid
+    utiqMtp: utiqMtpPass && utiqMtpPass.mtid
       ? {
-          mtid: utiqPass.mtid,
-          category: utiqPass.category,
+          mtid: utiqMtpPass.mtid,
+          category: utiqMtpPass.category,
         }
       : null
   };

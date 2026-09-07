@@ -48,7 +48,18 @@ function getUtiqFromStorage() {
   ) {
     const idGraph = utiqPassStorage.connectId.idGraph;
 
-    utiqPass = CATEGORY_PRIORITIES.reduce((acc, cat) => acc || idGraph.find(g => g.category === cat), null) || idGraph[0];
+    for (let i = 0; i < CATEGORY_PRIORITIES.length; i++) {
+      const found = idGraph.find(g => g.category === CATEGORY_PRIORITIES[i]);
+      if (found) {
+        utiqPass = found;
+        break; // Stop immediately once the highest priority is found
+      }
+    }
+
+    // Fallback to the first item if no prioritized category matched
+    if (!utiqPass) {
+      utiqPass = idGraph[0];
+    }
 
     logInfo(
       `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
