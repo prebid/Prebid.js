@@ -48,18 +48,21 @@ describe('utiqIdSystem', () => {
       const idGraph = {
         'domain': 'test.domain',
         'atid': 'atidValue',
+        'category': 'categoryValue',
       };
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('utiq');
-      expect(response.id.utiq).to.be.equal('atidValue');
+      expect(response.id.utiq.id).to.be.equal('atidValue');
+      expect(response.id.utiq.category).to.be.equal('categoryValue');
     });
 
     it('returns {utiq: data.utiq} if we have the right data stored in the localstorage right after the callback is called', (done) => {
       const idGraph = {
         'domain': 'test.domain',
         'atid': 'atidValue',
+        'category': 'categoryValue',
       };
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('callback');
@@ -70,7 +73,8 @@ describe('utiqIdSystem', () => {
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
-          expect(result.utiq).to.be.equal('atidValue');
+          expect(result.utiq.id).to.be.equal('atidValue');
+          expect(result.utiq.category).to.be.equal('categoryValue');
           done();
         });
       }
@@ -80,6 +84,7 @@ describe('utiqIdSystem', () => {
       const idGraph = {
         'domain': 'test.domain',
         'atid': 'atidValue',
+        'category': 'categoryValue',
       };
 
       const response = utiqIdSubmodule.getId();
@@ -93,7 +98,8 @@ describe('utiqIdSystem', () => {
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
-          expect(result.utiq).to.be.equal('atidValue');
+          expect(result.utiq.id).to.be.equal('atidValue');
+          expect(result.utiq.category).to.be.equal('categoryValue');
           done();
         });
       }
@@ -167,6 +173,7 @@ describe('utiqIdSystem', () => {
         const idGraph = {
           'domain': domain,
           'atid': 'atidValue',
+          'category': 'categoryValue',
         };
 
         storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
@@ -180,7 +187,8 @@ describe('utiqIdSystem', () => {
         const response = utiqIdSubmodule.getId();
         expect(response).to.have.property('id');
         expect(response.id).to.have.property('utiq');
-        expect(response.id.utiq).to.be.equal('atidValue');
+        expect(response.id.utiq.id).to.be.equal('atidValue');
+        expect(response.id.utiq.category).to.be.equal('categoryValue');
         done();
       });
     });
@@ -196,6 +204,7 @@ describe('utiqIdSystem', () => {
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData({
         'domain': 'TEST DOMAIN',
         'atid': 'TEST ATID',
+        'category': 'categoryValue',
       }))); // setting idGraph
       storage.setDataInLocalStorage(netIdKey, ''); // setting an empty value
 
@@ -203,7 +212,8 @@ describe('utiqIdSystem', () => {
       const response = utiqIdSubmodule.getId();
 
       // then
-      expect(response.id.utiq).to.be.equal('TEST ATID');
+      expect(response.id.utiq.id).to.be.equal('TEST ATID');
+      expect(response.id.utiq.category).to.be.equal('categoryValue');
       done();
     });
 

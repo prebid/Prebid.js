@@ -66,15 +66,12 @@ function getUtiqFromStorage() {
   }
 
   return {
-    utiq:
-      {
-        id: utiqPass && utiqPass.atid
-          ? utiqPass.atid
-          : null,
-        category: utiqPass && utiqPass.category
-          ? utiqPass.category
-          : null,
-      }
+    utiq: utiqPass && utiqPass.atid
+      ? {
+          id: utiqPass.atid,
+          category: utiqPass.category,
+        }
+      : null
   };
 }
 
