@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/bmsBidAdapter.js';
+import { isValid } from 'src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
@@ -160,7 +161,7 @@ describe('bmsBidAdapter:', function () {
       expect(ortbResponse[0].mediaType).to.eq('banner');
     });
 
-    it('should not throw and should omit creativeId when bid.ext is absent', function () {
+    it('should fall back to bid.adid and still produce a valid bid when bid.ext is absent', function () {
       const response = {
         id: 'response-id-123456',
         cur: 'USD',
@@ -187,7 +188,10 @@ describe('bmsBidAdapter:', function () {
       const ortbResponse = spec.interpretResponse({ body: response }, { data: '{}' });
 
       expect(ortbResponse.length).to.eq(1);
-      expect(ortbResponse[0].creativeId).to.be.undefined;
+      expect(ortbResponse[0].creativeId).to.eq('0');
+      // bidderFactory.isValid requires a non-null creativeId; this proves the bid
+      // actually survives the core auction lifecycle, not just interpretResponse().
+      expect(isValid('div-gpt-ad-1460505iosakju-0', ortbResponse[0])).to.be.true;
     });
   });
 });
