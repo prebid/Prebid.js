@@ -35,20 +35,21 @@ pbjs.setConfig({
         advertiserTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // advertiserTargeting: ['genres', 'emotions', 'themes'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones', 'tq'
 
         // Enable targeting keys for publisher data
         publisherTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // publisherTargeting: ['tones', 'risk'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones', 'tq'
       }
     }]
   }
 });
 ```
 
-Optionally, include `includeTrafficQuality: true` in the `params` object for traffic quality targeting.
+- With `advertiserTargeting: true` or `publisherTargeting: true`, add `includeTrafficQuality: true` to the `params` object.
+- With an array, list `tq` in it, e.g. `advertiserTargeting: ['genres', 'tq']`. `includeTrafficQuality` is ignored when the value is an array.
 
 ## Functionality
 

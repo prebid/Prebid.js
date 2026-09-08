@@ -9,31 +9,10 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- */
-
-/**
- * @typedef {Object} MobianConfig
- * @property {MobianConfigParams} params
- */
-
-/**
- * @typedef {Object} MobianConfigParams
- * @property {string} [prefix] - Optional prefix for targeting keys (default: 'mobian')
- * @property {boolean|string[]} [publisherTargeting] - Optional targeting keys to enable for publishers (default: false)
- * @property {boolean|string[]} [advertiserTargeting] - Optional targeting keys to enable for advertisers (default: false)
- * @property {boolean} [includeTrafficQuality] - Include traffic quality when targeting is enabled with boolean true (default: false)
- */
-
-/**
- * @typedef {Object} MobianContextData
- * @property {Object} apValues
- * @property {string[]} categories
- * @property {string[]} emotions
- * @property {string[]} genres
- * @property {string} risk
- * @property {string} sentiment
- * @property {string[]} themes
- * @property {string[]} tones
+ * @typedef {import('./mobianRtdProvider.d.ts').MobianRtdProviderConfig} MobianRtdProviderConfig
+ * @typedef {import('./mobianRtdProvider.d.ts').MobianResolvedConfig} MobianResolvedConfig
+ * @typedef {import('./mobianRtdProvider.d.ts').MobianTargetingKey} MobianTargetingKey
+ * @typedef {import('./mobianRtdProvider.d.ts').MobianContextData} MobianContextData
  */
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
@@ -125,6 +104,9 @@ dep.getTrafficQualityData = getTrafficQualityData;
 
 const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value });
 
+/**
+ * @param {MobianResolvedConfig} config
+ */
 export function makeContextDataToKeyValuesReducer(config) {
   const { prefix } = config;
   return function contextDataToKeyValuesReducer(keyValues, [key, value]) {
@@ -162,6 +144,10 @@ export async function fetchTrafficQualityData() {
   });
 }
 
+/**
+ * @param {MobianRtdProviderConfig} config
+ * @returns {MobianResolvedConfig}
+ */
 export function getConfig(config) {
   const includeTrafficQuality = config?.params?.includeTrafficQuality === true;
   const [advertiserTargeting, publisherTargeting] = ['advertiserTargeting', 'publisherTargeting'].map((key) => {
@@ -181,7 +167,7 @@ export function getConfig(config) {
 }
 
 /**
- * @param {MobianConfig} config
+ * @param {MobianResolvedConfig} config
  * @param {MobianContextData} contextData
  */
 export function setTargeting(config, contextData) {
@@ -218,7 +204,7 @@ export function makeDataFromResponse(contextData) {
 
 /**
  * @param {Object|string} trafficQualityData
- * @returns {Partial<MobianContextData>}
+ * @returns {MobianContextData}
  */
 export function makeTrafficQualityDataFromResponse(trafficQualityData) {
   const data = typeof trafficQualityData === 'string' ? safeJSONParse(trafficQualityData) : trafficQualityData;
@@ -228,8 +214,8 @@ export function makeTrafficQualityDataFromResponse(trafficQualityData) {
 }
 
 /**
- * @param {string[]} targetingKeys
- * @returns {Promise<Partial<MobianContextData>>}
+ * @param {MobianTargetingKey[]} targetingKeys
+ * @returns {Promise<MobianContextData>}
  */
 export async function getTargetingData(targetingKeys) {
   const requests = [];
@@ -250,7 +236,7 @@ export async function getTargetingData(targetingKeys) {
 /**
  * @param {Object} bidReqConfig
  * @param {MobianContextData} contextData
- * @param {MobianConfig} config
+ * @param {MobianResolvedConfig} config
  */
 export function extendBidRequestConfig(bidReqConfig, contextData, config) {
   logMessage('extendBidRequestConfig', bidReqConfig, contextData);
@@ -270,7 +256,7 @@ export function extendBidRequestConfig(bidReqConfig, contextData, config) {
 }
 
 /**
- * @param {MobianConfig} rawConfig
+ * @param {MobianRtdProviderConfig} rawConfig
  * @returns {boolean}
  */
 function init(rawConfig) {
@@ -283,6 +269,11 @@ function init(rawConfig) {
   return true;
 }
 
+/**
+ * @param {Object} bidReqConfig
+ * @param {() => void} callback
+ * @param {MobianRtdProviderConfig} rawConfig
+ */
 function getBidRequestData(bidReqConfig, callback, rawConfig) {
   logMessage('getBidRequestData', bidReqConfig);
 
