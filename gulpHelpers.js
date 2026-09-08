@@ -86,7 +86,7 @@ const SOURCE_FOLDERS = [
   'modules',
   'test',
   'public'
-]
+];
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
