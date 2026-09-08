@@ -158,14 +158,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     return validBidRequests.map((bid: any) => ({
       method: 'POST',
       url: ENDPOINT,
-      // contentType is application/json on purpose, even though it makes the
-      // POST a non-simple CORS request that triggers a preflight: the endpoint
-      // is declared `[Consumes("application/json")]` and answers text/plain
-      // with 415. The preflight is answered at the edge and cached for 24h
-      // (Access-Control-Max-Age), so it costs one OPTIONS per origin per day,
-      // not one per auction. withCredentials is false - no cookies, no sync.
+      // No contentType: bidderFactory serialises the object and the default
+      // text/plain keeps the auction a "simple" cross-origin POST with no
+      // preflight round-trip. The endpoint parses the JSON body under
+      // text/plain. withCredentials is false - no cookies, no sync.
       data: converter.toORTB({ bidRequests: [bid], bidderRequest }),
-      options: { contentType: 'application/json', withCredentials: false },
+      options: { withCredentials: false },
     }));
   },
 
