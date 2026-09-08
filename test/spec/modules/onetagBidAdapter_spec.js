@@ -1,4 +1,4 @@
-import { spec, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
+import { spec, dep, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
@@ -737,7 +737,7 @@ describe('onetag', function () {
       const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
-      expect(payload.ortb2).to.exist.and.to.deep.equal(firtPartyData);
+      expect(payload.ortb2).to.exist.and.to.deep.equal({ ...firtPartyData, tmax: 3000 });
     });
     it('Should send DSA (ortb2 field)', function () {
       const dsa = {
@@ -765,7 +765,53 @@ describe('onetag', function () {
       const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
-      expect(payload.ortb2).to.exist.and.to.deep.equal(dsa);
+      expect(payload.ortb2).to.exist.and.to.deep.equal({ ...dsa, tmax: 3000 });
+    });
+    it('Should send the auction timeout as ortb2.tmax', function () {
+      const bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 1200
+      };
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+      expect(payload.ortb2.tmax).to.equal(1200);
+    });
+    it('Should let the auction timeout win over a publisher-set ortb2.tmax', function () {
+      const bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 1200,
+        'ortb2': { tmax: 500, site: { domain: 'page.example.com' } }
+      };
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+      expect(payload.ortb2.tmax).to.equal(1200);
+      expect(payload.ortb2.site.domain).to.equal('page.example.com');
+    });
+    it('Should not set ortb2.tmax when the auction timeout is not a number', function () {
+      const bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6'
+      };
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+      expect(payload.ortb2).to.be.undefined;
+    });
+    it('Should not mutate the shared ortb2 object of the bidder request', function () {
+      const ortb2 = { site: { domain: 'page.example.com' } };
+      const bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 1200,
+        ortb2
+      };
+      spec.buildRequests([bannerBid], bidderRequest);
+      expect(ortb2).to.deep.equal({ site: { domain: 'page.example.com' } });
     });
     it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
       const bidderRequest = {
@@ -1017,6 +1063,60 @@ describe('onetag', function () {
         ]
       };
       expect(isSchainValid(validSchain)).to.be.true;
+    });
+  });
+  describe('onTimeout', function () {
+    const TIMEOUT_ENDPOINT = 'https://onetag-sys.com/ptimeout';
+    let ajaxStub;
+    beforeEach(function () {
+      ajaxStub = sinon.stub(dep, 'ajax');
+    });
+    afterEach(function () {
+      ajaxStub.restore();
+    });
+    function createTimeoutData(bidder = 'onetag') {
+      return {
+        bidder,
+        params: [{ pubId: '386276e072' }],
+        adUnitCode: 'banner-0',
+        auctionId: 'f8c64531-ee71-46c1-b2dc-8b4a124be6e8',
+        bidId: 'c860a979-6665-4bbd-80bb-78de34fafd11',
+        timeout: 1
+      };
+    }
+    it('Should expose an onTimeout function', function () {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('Should POST the timed-out onetag bids to the ptimeout endpoint', function () {
+      const timeoutData = [createTimeoutData('onetag')];
+      spec.onTimeout(timeoutData);
+      expect(ajaxStub.calledOnce).to.be.true;
+      const [url, callback, data, options] = ajaxStub.firstCall.args;
+      expect(url).to.equal(TIMEOUT_ENDPOINT);
+      expect(callback).to.equal(null);
+      expect(JSON.parse(data)).to.deep.equal(timeoutData);
+      expect(options.method).to.equal('POST');
+      expect(options.contentType).to.equal('text/plain');
+      expect(options.keepalive).to.be.true;
+      expect(options.withCredentials).to.be.false;
+    });
+    it('Should only forward bids belonging to onetag', function () {
+      const onetagBid = createTimeoutData('onetag');
+      spec.onTimeout([createTimeoutData('otherBidder'), onetagBid]);
+      expect(ajaxStub.calledOnce).to.be.true;
+      const sent = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(sent).to.have.lengthOf(1);
+      expect(sent[0].bidder).to.equal('onetag');
+    });
+    it('Should not call ajax when no onetag bid timed out', function () {
+      spec.onTimeout([createTimeoutData('otherBidder')]);
+      expect(ajaxStub.notCalled).to.be.true;
+    });
+    it('Should not call ajax when timeoutData is empty or not an array', function () {
+      spec.onTimeout([]);
+      spec.onTimeout(undefined);
+      spec.onTimeout(null);
+      expect(ajaxStub.notCalled).to.be.true;
     });
   });
 });

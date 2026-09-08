@@ -14,13 +14,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
 
@@ -39,7 +39,10 @@ jobs:
         run: git diff --name-only --diff-filter=A origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge | grep '^\(modules\|src\|libraries\)/.*\.js$' > __new_js_files.txt || true
 
       - name: Run linter on base branch
-        run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __base.json || true
+        run: |
+          files=$(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) || true
+          # eslint with no file arguments would lint the whole repo; report nothing instead
+          if [ -z "$files" ]; then echo '[]' > __base.json; else npx eslint --no-inline-config --format json $files > __base.json || true; fi
 
       - name: Check out PR
         run: git checkout ${{ github.event.pull_request.head.sha }}
@@ -48,7 +51,10 @@ jobs:
         run: npm ci
 
       - name: Run linter on PR
-        run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __pr.json || true
+        run: |
+          files=$(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) || true
+          # eslint with no file arguments would lint the whole repo; report nothing instead
+          if [ -z "$files" ]; then echo '[]' > __pr.json; else npx eslint --no-inline-config --format json $files > __pr.json || true; fi
 
       - name: Compare them and post comment if necessary
         uses: actions/github-script@v9

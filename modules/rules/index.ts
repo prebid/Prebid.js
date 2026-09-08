@@ -151,7 +151,7 @@ declare module '../../src/config' {
 
 const MODULE_NAME = 'shapingRules';
 
-const globalRandomStore = new WeakMap<{ auctionId: string }, number>();
+const globalRandomStore = new WeakMap<object, number>();
 
 let auctionConfigStore = new Map<string, any>();
 

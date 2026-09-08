@@ -20,6 +20,7 @@ import { DEBUG_MODE } from './constants.js';
 import type { UserSyncConfig } from "./userSync.ts";
 import type { DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty } from "./types/objects.d.ts";
 import type { BidderCode } from "./types/common.d.ts";
+import type { GptSlot } from "./types/gpt.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import { Bid } from './bidfactory.ts';
 
@@ -279,7 +280,7 @@ export interface Config {
   /**
    * Customize how a GPT slot is matched to an ad unit code during targeting.
    */
-  customGptSlotMatching?: (slot: googletag.Slot) => ((adUnitCode: string) => boolean) | undefined;
+  customGptSlotMatching?: (slot: GptSlot) => ((adUnitCode: string) => boolean) | undefined;
   /**
    * List of fingerprinting APIs to disable. When an API is listed, the corresponding library
    * returns a safe default instead of reading the real value. Supported: 'devicepixelratio', 'webdriver', 'resolvedoptions'.
@@ -393,7 +394,7 @@ export function newConfig() {
     const conf = _getConfig();
     Object.defineProperty(conf, 'ortb2', {
       get: function () {
-        throw new Error('invalid access to \'orbt2\' config - use request parameters instead');
+        throw new Error('invalid access to \'ortb2\' config - use request parameters instead');
       }
     });
     return conf;

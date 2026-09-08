@@ -20,6 +20,12 @@ const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const registeredSubModules = [];
+/**
+ * `init()` result, by registered submodule. Providers are initialized at most once - some of them do
+ * not expect to be initialized again - so this keeps track of the ones that were already given a
+ * chance to run, and of whether they accepted it.
+ */
+const initializedSubModules = new Map<any, boolean>();
 export let subModules = [];
 let _moduleConfig: RealTimeDataConfig;
 let _dataProviders = [];
@@ -31,18 +37,35 @@ let _userConsent;
  * @param {Object} submodule The RTD submodule to register.
  * @param {string} submodule.name The name of the RTD submodule.
  * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
- * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
+  if (registeredSubModules.some((sm) => sm.name === submodule.name)) {
+    logWarn(`RTD provider '${submodule.name}' is already registered, ignoring duplicate registration`);
+    return;
+  }
   registeredSubModules.push(submodule);
   GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
-  return function detach() {
-    const idx = registeredSubModules.indexOf(submodule);
-    if (idx >= 0) {
-      registeredSubModules.splice(idx, 1);
-      initSubModules();
-    }
-  };
+  // providers may be loaded after the module was configured (and therefore already initialized);
+  // pick them up now, since `realTimeData` configuration is accepted only once.
+  initSubModules();
+}
+
+/**
+ * Unregister a Real-Time Data (RTD) submodule, disabling it for subsequent auctions.
+ *
+ * FOR TESTS ONLY. Nothing in production unregisters a provider; this exists so that test suites can
+ * undo their registrations. Keeping it a standalone export - rather than something handed out by
+ * `attachRealTimeDataProvider` - means builds that never reference it can leave it out.
+ *
+ * @param {Object} submodule the submodule to unregister, as passed to `attachRealTimeDataProvider`.
+ */
+export function detachRealTimeDataProvider(submodule) {
+  const idx = registeredSubModules.indexOf(submodule);
+  if (idx >= 0) {
+    registeredSubModules.splice(idx, 1);
+    initializedSubModules.delete(submodule);
+    initSubModules();
+  }
 }
 
 /**
@@ -98,10 +121,13 @@ export function init(config) {
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
     _dataProviders = realTimeData.dataProviders;
+    initializedSubModules.clear();
     setEventsListeners();
     getHook('startAuction').before(setBidRequestsData, 20); // RTD should run before FPD
     adapterManager.callDataDeletionRequest.before(onDataDeletionRequest);
-    initSubModules();
+    // the providers available at this point are logged as a list below, rather than one by one
+    initSubModules(false);
+    logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
   });
 }
 
@@ -117,19 +143,45 @@ function getConsentData() {
 /**
  * call each sub module init function by config order
  * if no init function / init return failure / module not configured - remove it from submodules list
+ *
+ * this runs every time a provider is registered or unregistered; providers that were already
+ * initialized keep their previous `init` result instead of running again.
+ *
+ * @param logNewlyEnabled log a message for each provider that is enabled by this pass. Providers can
+ *        be registered at any time and independently from one another, so each one is reported as it
+ *        becomes available.
  */
-function initSubModules() {
+function initSubModules(logNewlyEnabled = true) {
+  if (!_dataProviders.length) {
+    subModules = [];
+    return;
+  }
   _userConsent = getConsentData();
   const subModulesByOrder = [];
   _dataProviders.forEach(provider => {
     const sm = ((registeredSubModules) || []).find(s => s.name === provider.name);
-    const initResponse = sm && sm.init && sm.init(provider, _userConsent);
-    if (initResponse) {
+    if (!sm) {
+      return;
+    }
+    if (!initializedSubModules.has(sm)) {
+      let enabled = false;
+      try {
+        enabled = !!(sm.init && sm.init(provider, _userConsent));
+      } catch (e) {
+        // A provider that throws on init is treated as one that returned false, so that the
+        // providers configured after it are still given their turn
+        logError(`Error executing ${sm.name}.init`, e);
+      }
+      initializedSubModules.set(sm, enabled);
+      if (enabled && logNewlyEnabled) {
+        logInfo(`Real time data module: enabling submodule ${sm.name}`);
+      }
+    }
+    if (initializedSubModules.get(sm)) {
       subModulesByOrder.push(Object.assign(sm, { config: provider }));
     }
   });
   subModules = subModulesByOrder;
-  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
 }
 
 /**
@@ -156,7 +208,10 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   });
 
   const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0;
-  let callbacksExpected = prioritySubModules.length;
+  // Tracked by submodule identity rather than as a bare counter, so that a submodule which calls
+  // its own callback more than once can only ever clear its own slot, and can never affect -
+  // accidentally or otherwise - how long the auction waits for any other submodule.
+  const pendingPrioritySubModules = new Set(prioritySubModules);
   let isDone = false;
   let waitTimeout;
 
@@ -190,17 +245,31 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
         return Reflect.deleteProperty(target, prop);
       }
     });
-    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+    try {
+      sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+    } catch (e) {
+      // Without this, one throwing provider would take the whole loop down with it and every
+      // provider behind it would lose its chance to enrich the auction. A provider that threw
+      // will also never call its callback, so it stops being something to wait for
+      logError(`Error executing ${sm.name}.getBidRequestData`, e);
+      pendingPrioritySubModules.delete(sm);
+    }
   });
+
+  // The callback is what normally notices that the last priority submodule is done. If that
+  // submodule threw instead, there is nobody left to notice it
+  if (prioritySubModules.length && pendingPrioritySubModules.size === 0) {
+    setTimeout(exitHook, 0);
+  }
 
   function onGetBidRequestDataCallback() {
     if (isDone) {
       return;
     }
     if (this.config && this.config.waitForIt) {
-      callbacksExpected--;
+      pendingPrioritySubModules.delete(this);
     }
-    if (callbacksExpected === 0) {
+    if (pendingPrioritySubModules.size === 0) {
       setTimeout(exitHook, 0);
     }
   }
@@ -235,7 +304,15 @@ export function getAdUnitTargeting(auction) {
   }
   const targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
-    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
+    let smTargeting;
+    try {
+      smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
+    } catch (e) {
+      // This runs as the AUCTION_END preprocess, outside the try/catch that guards the event
+      // handlers, so a throw here would also cost every provider its onAuctionEndEvent
+      logError(`Error executing ${relevantSubModules[i].name}.getTargetingData`, e);
+      continue;
+    }
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
     } else {
@@ -268,5 +345,7 @@ export function onDataDeletionRequest(next, ...args) {
   next.apply(this, args);
 }
 
-module('realTimeData', attachRealTimeDataProvider);
+// `postInstallAllowed` lets provider bundles register through `submodule('realTimeData', ...)` after
+// Prebid has booted; `attachRealTimeDataProvider` initializes them on the spot when that happens.
+module('realTimeData', attachRealTimeDataProvider, { postInstallAllowed: true });
 init(config);

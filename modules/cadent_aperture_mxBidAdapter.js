@@ -15,8 +15,8 @@ import { parseDomain } from '../src/refererDetection.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
-const ENDPOINT = 'hb.emxdgt.com';
-const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
+const ENDPOINT = 'hb-pub.ssp.cadent.com';
+const RENDERER_URL = 'https://js.ssp.cadent.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 const ALIASES = [
@@ -374,7 +374,7 @@ export const spec = {
     const syncs = [];
     const consentParams = [];
     if (syncOptions.iframeEnabled) {
-      let url = 'https://biddr.brealtime.com/check.html';
+      let url = 'https://js.ssp.cadent.com/check.html';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined
         if (typeof gdprConsent.gdprApplies === 'boolean') {

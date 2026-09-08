@@ -8,6 +8,11 @@ import {
 } from '../../../modules/debugging/debugging.js';
 import '../../../modules/debugging/index.js';
 import { makePbsInterceptor } from '../../../modules/debugging/pbsInterceptor.js';
+import {
+  configureFpdValidation,
+  startAuctionFpdValidationHook,
+  validateOrtb2ForDebug,
+} from '../../../modules/debugging/fpdValidation.js';
 import { config } from '../../../src/config.js';
 import { hook } from '../../../src/hook.js';
 import {
@@ -296,6 +301,112 @@ describe('Debugging config', () => {
     const getStorage = () => { throw new Error(); };
     getConfig({ enabled: false }, { getStorage, logger: { logError }, hook, utils });
     expect(logError.called).to.be.true;
+  });
+});
+
+describe('fpdValidation', () => {
+  const invalidOrtb2 = {
+    imp: { id: 'invalid-top-level-property' },
+    user: { yob: 'not-a-number' },
+  };
+
+  it('should validate against a clone and keep original ortb2 untouched', () => {
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
+    const result = validateOrtb2ForDebug(invalidOrtb2);
+    expect(result).to.equal(invalidOrtb2);
+    expect(result.imp).to.deep.equal({ id: 'invalid-top-level-property' });
+    expect(result.user).to.deep.equal({ yob: 'not-a-number' });
+    // debugging does not alter data, so warnings read "Invalid" rather than "Filtered"
+    expect(logWarn.firstCall.args[0]).to.match(/^Invalid /);
+  });
+
+  it('should throw when deepClone is not available', () => {
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils: { ...utils, deepClone: undefined }, logger: { logWarn } });
+    expect(() => validateOrtb2ForDebug(invalidOrtb2)).to.throw();
+    expect(logWarn.called).to.be.false;
+  });
+
+  it('should validate global and bidder ortb2 on startAuction', () => {
+    const bidderOrtb2 = { user: { yob: 'bidder-not-a-number' } };
+    const globalOrtb2 = { ...invalidOrtb2 };
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
+    const next = sinon.stub();
+
+    startAuctionFpdValidationHook(next, {
+      ortb2Fragments: {
+        global: globalOrtb2,
+        bidder: { testBidder: bidderOrtb2 }
+      }
+    });
+
+    expect(next.calledOnce).to.be.true;
+    expect(logWarn.callCount).to.be.at.least(2);
+    expect(globalOrtb2.imp).to.deep.equal({ id: 'invalid-top-level-property' });
+    expect(bidderOrtb2.user.yob).to.equal('bidder-not-a-number');
+  });
+
+  it('should never mutate req.ortb2Fragments, even when validation filters data', () => {
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
+    const req = {
+      ortb2Fragments: {
+        global: {
+          imp: { id: 'invalid-top-level-property' },
+          user: { yob: 'not-a-number' },
+          device: { w: 1920, h: 1080 },
+        },
+        bidder: {
+          bidderA: { user: { yob: 'bidder-not-a-number' }, site: { domain: 'example.com' } },
+        },
+      },
+    };
+    const snapshot = utils.deepClone(req.ortb2Fragments);
+
+    startAuctionFpdValidationHook(sinon.stub(), req);
+
+    // validation actually ran against the invalid data...
+    expect(logWarn.called).to.be.true;
+    // ...but the request fragments are left untouched
+    expect(req.ortb2Fragments).to.deep.equal(snapshot);
+  });
+
+  it('should always call next passing it the original request', () => {
+    configureFpdValidation({ utils, logger: { logWarn: sinon.spy() } });
+    const next = sinon.stub();
+    const req = { ortb2Fragments: { global: { user: { yob: 'not-a-number' } }, bidder: {} } };
+
+    startAuctionFpdValidationHook(next, req);
+
+    expect(next.calledOnce).to.be.true;
+    expect(next.firstCall.args[0]).to.equal(req);
+  });
+
+  it('should call next passing it the original request when there is nothing to validate', () => {
+    configureFpdValidation({ utils, logger: { logWarn: sinon.spy() } });
+    const next = sinon.stub();
+    const req = {};
+
+    startAuctionFpdValidationHook(next, req);
+
+    expect(next.calledOnce).to.be.true;
+    expect(next.firstCall.args[0]).to.equal(req);
+  });
+
+  it('should call next passing it the original request even if validation throws', () => {
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
+    const next = sinon.stub();
+    const req = {};
+    Object.defineProperty(req, 'ortb2Fragments', {
+      get() { throw new Error('boom'); }
+    });
+
+    expect(() => startAuctionFpdValidationHook(next, req)).to.not.throw();
+    expect(next.calledOnce).to.be.true;
+    expect(next.firstCall.args[0]).to.equal(req);
   });
 });
 

@@ -322,6 +322,36 @@ describe('Prebid Adapter: Startio', function () {
       expect(request.imp[0].banner.battr).to.deep.equal([3, 4]);
     });
 
+    it('should advertise the prebid channel (name + version) so the endpoint can identify the version', function () {
+      const request = spec.buildRequests([DEFAULT_REQUEST_DATA], DEFAULT_BIDDER_REQUEST)[0].data;
+
+      expect(request.ext.prebid.channel).to.be.an('object');
+      expect(request.ext.prebid.channel.name).to.equal('pbjs');
+      expect(request.ext.prebid.channel.version).to.be.a('string').that.is.not.empty;
+    });
+
+    it('should map params.placementId to imp.tagid', function () {
+      let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
+      bidRequest.params.placementId = 'placement-abc';
+
+      const request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
+
+      expect(request.imp[0].tagid).to.equal('placement-abc');
+    });
+
+    it('should append testAdsEnabled=true to the endpoint only when params.testAdsEnabled is set', function () {
+      let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
+
+      let request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0];
+      expect(request.url).to.include('pbc-rtb.startappnetwork.com');
+      expect(request.url).to.not.include('testAdsEnabled');
+
+      bidRequest.params.testAdsEnabled = true;
+      request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0];
+      expect(request.url).to.include('pbc-rtb.startappnetwork.com');
+      expect(request.url).to.include('testAdsEnabled=true');
+    });
+
     if (FEATURES.VIDEO) {
       it('should build request for video media type', function () {
         const bidRequest = VALID_MEDIA_TYPES_REQUESTS[VIDEO][0];

@@ -6,7 +6,7 @@ import adapterManager, {
 } from '../adapterManager.js';
 import { config } from '../config.js';
 import { BannerBid, Bid, BidResponse, createBid } from '../bidfactory.js';
-import { type SyncType, userSync } from '../userSync.js';
+import { type UserSync, userSync } from '../userSync.js';
 import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
@@ -35,13 +35,13 @@ import { useMetrics } from '../utils/perfMetrics.js';
 import { isActivityAllowed } from '../activities/rules.js';
 import { activityParams } from '../activities/activityParams.js';
 import { MODULE_TYPE_BIDDER } from '../activities/modules.js';
-import { ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD } from '../activities/activities.js';
+import { ACTIVITY_TRANSMIT_TID } from '../activities/activities.js';
 import type { AnyFunction, Wraps } from "../types/functions.d.ts";
 import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
 import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
 import type { AddBidResponse } from "../auction.ts";
 import type { MediaType } from "../mediaTypes.ts";
-import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentDataForKey } from "../consentHandler.ts";
+import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, coppaDataHandler, type ConsentDataForKey } from "../consentHandler.ts";
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -91,6 +91,7 @@ import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentDataForKey } from "
  *
  * @property {('image'|'iframe')} type The type of user sync to be done.
  * @property {string} url The URL which makes the sync happen.
+ * @property {function} [onCleanup] Releases work associated with an iframe when it is removed.
  */
 
 // common params for all mediaTypes
@@ -155,8 +156,9 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
     responses: ServerResponse[],
     gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
     uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
-    gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>
-  ) => ({ type: SyncType, url: string })[];
+    gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>,
+    coppa: boolean
+  ) => UserSync[];
   alwaysHasCapacity?: boolean;
 }
 
@@ -454,7 +456,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     // If the adapter code fails, no bids should be added. After all the bids have been added,
     // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
     const onSuccess = wrapCallback(function(response, responseObj) {
-      networkDone();
+      networkDone?.();
       try {
         response = JSON.parse(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -502,37 +504,39 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     });
 
     const onFailure = wrapCallback(function (errorMessage, error) {
-      networkDone();
+      networkDone?.();
       onError(errorMessage, error);
       requestDone();
     });
 
     onRequest(request);
 
-    const networkDone = requestMetrics.startTiming('net');
+    let networkDone;
 
     const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
 
     function getOptions(defaults) {
-      const ro = request.options;
-      return Object.assign(defaults, ro, {
-        browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
-          ? false
-          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code)),
-        suppressTopicsEnrollmentWarning: ro?.hasOwnProperty('suppressTopicsEnrollmentWarning')
-          ? ro.suppressTopicsEnrollmentWarning
-          : !debugMode
-      });
+      return Object.assign(defaults, request.options);
     }
+
+    // start network timer here so we do not include the compression time in `net` metric
+    const doAjax = (url: string, payload: unknown, options: AjaxOptions) => {
+      networkDone = requestMetrics.startTiming('net');
+      ajax(
+        url,
+        {
+          success: onSuccess,
+          error: onFailure
+        },
+        payload,
+        options
+      );
+    };
 
     switch (request.method) {
       case 'GET':
-        ajax(
+        doAjax(
           `${request.url}${formatGetParameters(request.data)}`,
-          {
-            success: onSuccess,
-            error: onFailure
-          },
           undefined,
           getOptions({
             method: 'GET',
@@ -543,12 +547,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       case 'POST':
         const enableGZipCompression = request.options?.endpointCompression;
         const callAjax = ({ url, payload }) => {
-          ajax(
+          doAjax(
             url,
-            {
-              success: onSuccess,
-              error: onFailure
-            },
             payload,
             getOptions({
               method: 'POST',
@@ -595,13 +595,13 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
     let syncs = spec.getUserSyncs({
       iframeEnabled: userSync.canBidderRegisterSync('iframe', spec.code),
       pixelEnabled: userSync.canBidderRegisterSync('image', spec.code),
-    }, responses, gdprConsent, uspConsent, gppConsent);
+    }, responses, gdprConsent, uspConsent, gppConsent, coppaDataHandler.getCoppa());
     if (syncs) {
       if (!Array.isArray(syncs)) {
         syncs = [syncs];
       }
       syncs.forEach((sync) => {
-        userSync.registerSync(sync.type, spec.code, sync.url);
+        userSync.registerSync(sync.type, spec.code, sync.url, sync.onCleanup);
       });
       userSync.bidderDone(spec.code);
     }

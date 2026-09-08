@@ -3,7 +3,6 @@ import { dep, spec } from 'modules/adelerateBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
 // load modules that register ORTB processors
 import 'src/prebid.js';
 import 'modules/currency.js';
@@ -749,19 +748,13 @@ describe('AdelerateBidAdapter', function () {
     });
 
     it('should include COPPA flag in sync URL when enabled', function () {
-      const stub = sinon.stub(config, 'getConfig');
-      stub.withArgs('coppa').returns(true);
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null, true);
       expect(syncs[0].url).to.include('coppa=1');
-      stub.restore();
     });
 
     it('should not include COPPA flag when not enabled', function () {
-      const stub = sinon.stub(config, 'getConfig');
-      stub.withArgs('coppa').returns(false);
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null, false);
       expect(syncs[0].url).to.not.include('coppa');
-      stub.restore();
     });
   });
 

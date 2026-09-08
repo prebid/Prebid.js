@@ -4,6 +4,7 @@ import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' };
@@ -281,6 +282,30 @@ describe('gumgumAdapter', function () {
         }]
       };
       const bidRequest = spec.buildRequests([filteredRequest])[0];
+      expect(bidRequest.data.pubProvidedId).to.equal(undefined);
+    });
+    it('should include growthcode.io in pubProvidedId when stype is present', function () {
+      const request = {
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'growthcode.io',
+          uids: [{ id: 'gcid-1', atype: 1, ext: { stype: 'ppuid' } }]
+        }]
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      const pubProvidedIds = JSON.parse(bidRequest.data.pubProvidedId);
+      expect(pubProvidedIds.length).to.equal(1);
+      expect(pubProvidedIds[0].source).to.equal('growthcode.io');
+    });
+    it('should not include growthcode.io in pubProvidedId when stype is missing', function () {
+      const request = {
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'growthcode.io',
+          uids: [{ id: 'gcid-1', atype: 1 }]
+        }]
+      };
+      const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.pubProvidedId).to.equal(undefined);
     });
     it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
@@ -1297,6 +1322,26 @@ describe('gumgumAdapter', function () {
       // params are stripped from pu property
       expect(bidRequest.data.pu.includes('ggad')).to.be.false;
       expect(bidRequest.data.pu.includes('ggdeal')).to.be.false;
+    });
+
+    it('should still set pu when getWindowTop throws', function () {
+      const getWindowTopStub = sinon.stub(utils, 'getWindowTop').throws(new Error('cross-origin'));
+      const pageUrl = 'https://www.prebid.org/article?param1=foo';
+      const topmostLocation = 'https://www.prebid.org/top';
+
+      try {
+        const bidRequest = spec.buildRequests(bidRequests, {
+          refererInfo: {
+            page: pageUrl,
+            topmostLocation
+          }
+        })[0];
+
+        expect(bidRequest.data.pu).to.equal(pageUrl);
+        expect(bidRequest.data.tpl).to.equal(topmostLocation);
+      } finally {
+        getWindowTopStub.restore();
+      }
     });
 
     it('should handle ORTB2 device data', function () {

@@ -45,10 +45,10 @@ function previousDisclosure(moduleName, {componentType, componentName, disclosur
             const disclosureAgeDays = ((new Date()).getTime() - new Date(disclosure.timestamp).getTime()) /
               (1000 * 60  * 60 * 24);
             if (disclosureAgeDays <= MAX_DISCLOSURE_AGE_DAYS) {
-              console.info(`Using previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}, disclosure is ${Math.floor(disclosureAgeDays)} days old)`);
+              console.info(`Using previously fetched disclosure for "${componentType}.${componentName}" (url: ${disclosureURL}, disclosure is ${Math.floor(disclosureAgeDays)} days old)`);
               resolve(disclosure)
             } else {
-              console.warn(`Previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${Math.floor(disclosureAgeDays)} days) and won't be reused`);
+              console.warn(`Previously fetched disclosure for "${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${Math.floor(disclosureAgeDays)} days) and won't be reused`);
               resolve(null);
             }
           }
@@ -178,14 +178,66 @@ async function validateGvlIds() {
   }
 }
 
+// The mapping error reporting below was written by Claude, an AI bot.
+
+/**
+ * Describes, in markdown, the modules and components that could not be matched to each other.
+ */
+export function formatMappingErrors({unmatched, ambiguous, orphaned}) {
+  const sections = [];
+
+  function declaration({componentType, componentName, aliasOf}) {
+    return `${componentType} ${aliasOf ? 'alias' : 'code'} \`${componentName}\``;
+  }
+
+  if (unmatched.length > 0) {
+    sections.push(
+      ['The following modules do not define a component that matches their file name:']
+        .concat(unmatched.map(({moduleName, componentType, expectedName}) =>
+          ` * \`${moduleName}\` should define ${componentType} code \`${expectedName}\``))
+        .join('\n')
+    );
+  }
+  if (ambiguous.length > 0) {
+    sections.push(
+      ['The following modules match more than one component:']
+        .concat(ambiguous.map(({moduleName, names}) =>
+          ` * \`${moduleName}\` matches ${names.map(name => `\`${name}\``).join(', ')}`))
+        .join('\n')
+    );
+  }
+  if (orphaned.length > 0) {
+    sections.push(
+      ['The following components are not defined by any module file:']
+        .concat(orphaned.map(component => ` * ${declaration(component)}`))
+        .join('\n')
+    );
+  }
+  return sections.join('\n\n');
+}
+
+/**
+ * When `METADATA_ERROR_REPORT` is set (as it is in CI), save the report there so that it can be
+ * quoted back to the contributor.
+ */
+function saveErrorReport(report) {
+  const dest = process.env.METADATA_ERROR_REPORT;
+  if (dest) {
+    fs.writeFileSync(dest, report);
+  }
+}
+
 async function compileModuleMetadata(fetch = true) {
   const processed = [];
   const found = new WeakSet();
-  let err = false;
+  const unmatched = [];
+  const ambiguous = [];
   for (const moduleName of helpers.getModuleNames()) {
-    let predicate;
+    let predicate, componentType, expectedName;
     for (const [suffix, moduleType] of Object.entries(modules)) {
       if (moduleName.endsWith(suffix)) {
+        componentType = moduleType;
+        expectedName = overrides[moduleName] ?? moduleName.slice(0, -suffix.length);
         predicate = overrides.hasOwnProperty(moduleName)
           ? ({componentName, aliasOf}) => componentName === overrides[moduleName] || aliasOf === overrides[moduleName]
           : matches(moduleName, suffix);
@@ -198,11 +250,9 @@ async function compileModuleMetadata(fetch = true) {
       meta.forEach((entry) => found.add(entry));
       const names = new Set(meta.map(({componentName, aliasOf}) => aliasOf ?? componentName));
       if (names.size === 0) {
-        console.error('Cannot determine module name for module file: ', moduleName);
-        err = true;
+        unmatched.push({moduleName, componentType, expectedName});
       } else if (names.size > 1) {
-        console.error('More than one module name matches module file:', moduleName, names);
-        err = true;
+        ambiguous.push({moduleName, names: Array.from(names)});
       } else {
         await updateModuleMetadata(moduleName, meta, fetch);
         processed.push(moduleName);
@@ -210,13 +260,12 @@ async function compileModuleMetadata(fetch = true) {
     }
   }
 
-  const notFound = moduleMetadata.components.filter(entry => !found.has(entry));
-  if (notFound.length > 0) {
-    console.error('Could not find module name for metadata', notFound);
-    err = true;
-  }
+  const orphaned = moduleMetadata.components.filter(entry => !found.has(entry));
 
-  if (err) {
+  if (unmatched.length + ambiguous.length + orphaned.length > 0) {
+    const report = formatMappingErrors({unmatched, ambiguous, orphaned});
+    console.error(report);
+    saveErrorReport(report);
     throw new Error('Could not compile module metadata');
   }
   return processed;

@@ -5,6 +5,7 @@ import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
@@ -14,10 +15,12 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {BidRequest & { timeout: number }} TimedOutBid A bid request that exceeded the auction timeout.
  */
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
+const TIMEOUT_ENDPOINT = 'https://onetag-sys.com/ptimeout';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 const NATIVE_SUFFIX = 'Ad';
@@ -130,6 +133,12 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
   if (bidderRequest && bidderRequest.ortb2) {
     payload.ortb2 = bidderRequest.ortb2;
+  }
+  const tmax = parseInt(bidderRequest && bidderRequest.timeout, 10);
+  if (!isNaN(tmax)) {
+    // Mirror core's ORTB converter: the auction timeout wins over any publisher-set
+    // `ortb2.tmax`. Shallow-copy first, `bidderRequest.ortb2` is shared with every bid.
+    payload.ortb2 = { ...payload.ortb2, tmax };
   }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
@@ -293,7 +302,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.8'
+      adapter: '1.1.9'
     }
   };
 }
@@ -501,6 +510,33 @@ export function isSchainValid(schain) {
   return isValid;
 }
 
+/**
+ * Notifies the OneTag server that one or more of our bids timed out.
+ * @param {Array<TimedOutBid>} timeoutData One entry per timed-out bid.
+ */
+function onTimeout(timeoutData) {
+  if (!Array.isArray(timeoutData) || timeoutData.length === 0) {
+    return;
+  }
+  const onetagTimeouts = timeoutData.filter(bid => bid && bid.bidder === BIDDER_CODE);
+  if (onetagTimeouts.length === 0) {
+    return;
+  }
+  dep.ajax(TIMEOUT_ENDPOINT, null, JSON.stringify(onetagTimeouts), {
+    method: 'POST',
+    contentType: 'text/plain',
+    keepalive: true,
+    withCredentials: false
+  });
+}
+
+// Container for the external dependencies used internally by the adapter.
+// Kept separate from `spec` (the interface exposed to Prebid) so these
+// dependencies can be stubbed in unit tests through a mutable reference.
+export const dep = {
+  ajax
+};
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -508,8 +544,8 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
-  getUserSyncs: getUserSyncs
-
+  getUserSyncs: getUserSyncs,
+  onTimeout: onTimeout
 };
 
 registerBidder(spec);

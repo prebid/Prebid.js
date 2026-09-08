@@ -201,7 +201,7 @@ const interpretResponse = (serverResponse, request = {}) => {
   return baseInterpretResponse(serverResponse);
 };
 
-const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
   let res = serverResponses?.find?.(r => r.partner && r.area && r.pid);
 
   if (!res) {
@@ -222,7 +222,8 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     serverResponses,
     gdprConsent,
     uspConsent,
-    gppConsent
+    gppConsent,
+    coppa
   );
 
   return syncs.map(sync => ({

@@ -1077,9 +1077,8 @@ describe('ConnectAd Adapter', function () {
       });
     }
 
-    it('should append coppa flag when coppa config is enabled', function () {
-      config.setConfig({ coppa: true });
-      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, {}, null);
+    it('should append coppa flag when coppa is enabled', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, {}, null, null, null, true);
       expect(result[0].url).to.equal('https://sync.connectad.io/iFrameSyncer?coppa=1&');
     });
 

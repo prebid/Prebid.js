@@ -1621,11 +1621,10 @@ describe('PubMatic adapter', () => {
       });
 
       it('returns iframe sync url with consent parameters and COPPA', () => {
-        config.setConfig({ coppa: true });
         const gdprConsent = { gdprApplies: true, consentString: 'CONSENT' };
         const uspConsent = '1YNN';
         const gppConsent = { gppString: 'GPP', applicableSections: [2, 4] };
-        const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, uspConsent, gppConsent);
+        const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, uspConsent, gppConsent, true);
         expect(sync).to.deep.equal({
           type: 'iframe',
           url: 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=5670&gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2%2C4&coppa=1'

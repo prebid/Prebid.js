@@ -55,7 +55,7 @@ export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
     url: ENDPOINT,
     data: JSON.stringify(request),
     options: {
-      contentType: 'application/json',
+      contentType: 'text/plain',
     }
   };
 };

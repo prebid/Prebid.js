@@ -1,0 +1,16 @@
+{
+  "disclosures": [
+    {
+      "identifier": "stackup:enrich:v1:*",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1, 4]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Cached ORTB enrichment for the current article is stored in sessionStorage"
+    }
+  ]
+}

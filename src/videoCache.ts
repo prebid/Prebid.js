@@ -13,6 +13,7 @@ import { qualifiedAjaxBuilder } from './ajax.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { generateUUID, logError, logWarn } from './utils.js';
+import { attributeValue, cdata } from './utils/xml.js';
 import { addBidToAuction } from './auction.js';
 import { hook } from './hook.js';
 import { OUTSTREAM } from './video.js';
@@ -45,25 +46,21 @@ export interface VastTrackers {
  * @return A VAST URL which loads XML from the given URI.
  */
 function wrapURI(uri: string, trackers?: VastTrackers) {
-  // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
-  // We could make sure it's a valid URI... but since we're loading VAST XML from the
-  // URL they provide anyway, that's probably not a big deal.
-
   // Build Impression tags
   const impressions = trackers?.impression?.length
-    ? trackers.impression.map(trk => `<Impression><![CDATA[${trk}]]></Impression>`).join('')
+    ? trackers.impression.map(trk => `<Impression>${cdata(trk)}</Impression>`).join('')
     : '';
 
   // Build Error tags
   const errors = trackers?.error?.length
-    ? trackers.error.map(trk => `<Error><![CDATA[${trk}]]></Error>`).join('')
+    ? trackers.error.map(trk => `<Error>${cdata(trk)}</Error>`).join('')
     : '';
 
   // Build TrackingEvents for Linear creative
   let trackingEventsXml = '';
   if (trackers?.trackingEvents?.length) {
     const trackingTags = trackers.trackingEvents
-      .map(({ event, url }) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`)
+      .map(({ event, url }) => `<Tracking event="${attributeValue(event)}">${cdata(url)}</Tracking>`)
       .join('');
     trackingEventsXml = `<Creative><Linear><TrackingEvents>${trackingTags}</TrackingEvents></Linear></Creative>`;
   }
@@ -72,7 +69,7 @@ function wrapURI(uri: string, trackers?: VastTrackers) {
     '<Ad>' +
     '<Wrapper>' +
     '<AdSystem>prebid.org wrapper</AdSystem>' +
-    '<VASTAdTagURI><![CDATA[' + uri + ']]></VASTAdTagURI>' +
+    '<VASTAdTagURI>' + cdata(uri) + '</VASTAdTagURI>' +
     impressions +
     errors +
     '<Creatives>' + trackingEventsXml + '</Creatives>' +

@@ -1,0 +1,1009 @@
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { toOrtbNativeRequest } from '../src/native.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
+import { config } from '../src/config.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { BID_RESPONSE } from '../src/pbjsORTB.js';
+import { deepSetValue, deepAccess, mergeDeep, getUniqueIdentifierStr, isPlainObject, isStr, logMessage, logWarn, logError } from '../src/utils.js';
+import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 300
+  },
+  processors: pbsExtensions,
+  overrides: {
+    [BID_RESPONSE]: {
+      // Re-attribute every bid to OCM by overriding the shared pbsExtensions `bidderCode` processor
+      // rather than rewriting bidResponse.bidderCode after the fact in interpretResponse. That
+      // processor sets bidderCode from seatbid.seat, which for OCM is the real server-side seat PBS
+      // resolved from the stored request (e.g. `appnexus`) — a code Prebid does not know as a partner
+      // of `ocm`, so core would drop the bid as an unregistered alternate bidder
+      // (isInvalidAlternateBidder in src/adapters/bidderFactory). Overriding here keeps the whole
+      // response mapping inside the converter and applies to any caller of it, not just the
+      // interpretResponse path. `orig` still runs so the seat-derived fields it computes are set
+      // first; core overwrites adapterCode with the requesting bidder immediately afterwards.
+      bidderCode(orig, bidResponse, bid, context) {
+        orig(bidResponse, bid, context);
+        bidResponse.bidderCode = BIDDER_CODE;
+      }
+    }
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+
+    // Add publisherId to site or app
+    addOrtbPublisherData(request, context.bidRequests || []);
+
+    // Reserve client-side headroom in the tmax handed to PBS (see setRequestTimeouts).
+    setRequestTimeouts(request, bidderRequest);
+
+    return request;
+  },
+  imp(buildImp, bidRequest, context) {
+    if (bidRequest?.params?.placementId) {
+      bidRequest.ortb2Imp = bidRequest.ortb2Imp || {};
+      bidRequest.ortb2Imp.ext = bidRequest.ortb2Imp.ext || {};
+      bidRequest.ortb2Imp.ext.prebid = bidRequest.ortb2Imp.ext.prebid || {};
+      bidRequest.ortb2Imp.ext.prebid.storedrequest = bidRequest.ortb2Imp.ext.prebid.storedrequest || {};
+      bidRequest.ortb2Imp.ext.prebid.storedrequest.id = bidRequest.params.placementId;
+    }
+
+    const imp = buildImp(bidRequest, context);
+
+    // The pbsExtensions params processor sets imp.ext.prebid.bidder.ocm = bid.params, which makes
+    // PBS try to call a server-side bidder named "ocm" with those params instead of resolving demand
+    // from the stored request — that is what breaks the OCM setup. Remove only that field; the rest
+    // of imp.ext.prebid (storedrequest, the price-floors floorMin set by setImpExtPrebidFloors, and
+    // adunitcode) is valid for PBS and passes through. imp.bidfloor / imp.bidfloorcur live at the imp
+    // root, are populated by the price-floors module, and are untouched here.
+    if (imp?.ext?.prebid?.bidder) {
+      delete imp.ext.prebid.bidder;
+    }
+
+    return imp;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    // Attach the OCM outstream video renderer here rather than in interpretResponse: the converter
+    // exposes context.bidRequest (the original Prebid bid request, matched to this bid by imp id),
+    // which is the only place the video context (outstream vs instream) is known. interpretResponse
+    // only receives the ServerRequest, so it cannot tell which bids are outstream.
+    maybeAttachOutstreamRenderer(bidResponse, context.bidRequest);
+
+    // Register the impression event URL PBS returns at bid.ext.prebid.events.imp as an ORTB event
+    // tracker so Prebid core fires it at billing time. The matching win URL is registered upstream by
+    // the shared pbsExtensions processor (addEventTrackers). See addPbsEventTrackers.
+    addPbsEventTrackers(bidResponse, bid);
+
+    return bidResponse;
+  }
+});
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
+/**
+ * OCM bidder-specific parameters (the adapter's public interface). The type is declared in the
+ * co-located ocmBidAdapter.d.ts, which also augments the global `BidderParams` map so `adUnit.bids[]`
+ * with `bidder: 'ocm'` are typed. Importing it here pulls the declaration into the TS program.
+ * @typedef {import('./ocmBidAdapter.d.ts').OcmBidParams} OcmBidParams
+ */
+
+const ENDPOINT = 'https://pbam.orangeclickmedia.com/openrtb2/auction';
+
+// getUserSyncs can only emit GET descriptors, but PBS /cookie_sync is POST-only. Syncing is
+// therefore routed through a GET-renderable loader page (hosted on the OCM origin) that POSTs to
+// /cookie_sync and drops the per-bidder sync pixels it returns. See ocmBidAdapter.md.
+const USER_SYNC_LOADER = 'https://pbam.orangeclickmedia.com/static/cookie_sync.html';
+
+// Image-sync counterpart of the loader page. Prebid core's default userSync.filterSettings enables
+// image syncs only (see USERSYNC_DEFAULT_CONFIG in src/userSync), so an iframe-only adapter syncs
+// nothing at all for every publisher who has not explicitly turned iframe syncing on for `ocm`.
+// An <img> cannot POST to /cookie_sync either, so the image path targets a GET endpoint on the OCM
+// origin that performs the POST server-side and 302-chains the redirect-type syncs PBS returns.
+// It takes the same query string as the loader; see ocmBidAdapter.md for both deployment targets.
+const USER_SYNC_REDIRECT = 'https://pbam.orangeclickmedia.com/cookie_sync/redirect';
+
+// Maximum number of bidders forwarded to a single cookie_sync (mirrors the cookie_sync `limit`).
+const MAX_SYNC_COUNT = 10;
+
+// Sync types, as named by Prebid (`image` is what PBS/`syncOptions.pixelEnabled` call a pixel sync).
+const SYNC_TYPE_IFRAME = 'iframe';
+const SYNC_TYPE_IMAGE = 'image';
+
+const BIDDER_CODE = 'ocm';
+
+const GVLID = 1148;
+
+// Headroom subtracted from the auction timeout before it is passed to PBS as `tmax`; see resolveTmax.
+// Capped proportionally so a short auction timeout is not reduced to an unusable tmax.
+const TMAX_BUFFER_MS = 200;
+const TMAX_BUFFER_MAX_RATIO = 0.25;
+
+// Outstream video renderer. OCM outstream bids are rendered client-side by the OCM Video Player;
+// Prebid's Renderer lazily loads this script (via loadExternalScript) the first time such a bid
+// renders, and it exposes the global `window.OcmPlayer(containerId, config, callback)`. Instream
+// video is deliberately left to the publisher's own player / ad server, so no renderer is attached
+// for it. The same player is used as a custom renderer in the OCM prebid wrapper (dsg-core).
+const RENDERER_URL = 'https://cdn.orangeclickmedia.com/tech/libs/ocm-player.js';
+
+/**
+ * Checks if the bid request includes video media type
+ * @param {BidRequest} bid - The bid request object to check
+ * @returns {boolean} True if video media type is present, false otherwise
+ */
+function hasTypeVideo(bid) {
+  return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
+}
+
+/**
+ * Determines if the native request uses ORTB (OpenRTB) format
+ * @param {BidRequest} bidRequest - The bid request to check
+ * @returns {boolean} True if using ORTB native format, false otherwise
+ */
+function isNativeOrtbVersion(bidRequest) {
+  return bidRequest.mediaTypes.native.ortb && typeof bidRequest.mediaTypes.native.ortb === 'object';
+}
+
+/**
+ * Validates a native asset object according to ORTB native spec
+ * Checks for required fields: id, content (title/img/data/video), and type-specific requirements
+ * @param {Object} asset - The native asset to validate
+ * @returns {boolean} True if the asset is valid, false otherwise
+ */
+function isValidAsset(asset) {
+  // Asset must have a valid integer ID
+  if (!asset.hasOwnProperty('id') || !Number.isInteger(asset.id)) {
+    return false;
+  }
+
+  // Asset must contain at least one content type
+  const hasValidContent = asset.title || asset.img || asset.data || asset.video;
+  if (!hasValidContent) {
+    return false;
+  }
+
+  // Title assets must have a valid length
+  if (asset.title && (!asset.title.len || !Number.isInteger(asset.title.len))) {
+    return false;
+  }
+
+  // Data assets must have a valid type
+  if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) {
+    return false;
+  }
+
+  // Video assets must have required fields: mimes, duration constraints, and protocols.
+  // Duration bounds are checked with Number.isInteger so a legitimate minduration/maxduration of 0
+  // is not mistakenly rejected as falsy.
+  if (asset.video && (!asset.video.mimes || !Number.isInteger(asset.video.minduration) || !Number.isInteger(asset.video.maxduration) || !asset.video.protocols)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validates a native event tracker object according to ORTB native spec
+ * Checks for required event type and tracking methods
+ * @param {Object} et - The event tracker to validate
+ * @returns {boolean} True if the event tracker is valid, false otherwise
+ */
+function isValidEventTracker(et) {
+  // Event tracker must have a valid event type (integer) and at least one method
+  if (!et.event || !Number.isInteger(et.event) || !Array.isArray(et.methods) || et.methods.length === 0) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validates a bid request for a specific media type
+ * @param {string} type - The media type to validate (BANNER, VIDEO, or NATIVE)
+ * @param {BidRequest} bid - The bid request to validate
+ * @returns {boolean} True if the bid is valid for the specified media type, false otherwise
+ */
+function isValid(type, bid) {
+  // Banner bids must declare at least one size
+  if (type === BANNER) {
+    return hasBannerSizes(bid);
+  }
+
+  // Video bids must have a valid context (outstream/instream) and at least one player size
+  if (type === VIDEO && hasTypeVideo(bid)) {
+    const context = bid.mediaTypes.video.context;
+    if (context === 'outstream' || context === 'instream') {
+      return hasVideoSize(bid);
+    }
+  }
+
+  // Native bids must have valid assets and optionally valid event trackers
+  if (type === NATIVE) {
+    // Read mediaTypes.native defensively: isValid(NATIVE, ...) is evaluated for every bid (see
+    // isBidRequestValid), including banner/video bids or malformed bids with no mediaTypes at all, so
+    // the presence check must not assume mediaTypes exists (mirrors hasBannerSizes / hasTypeVideo).
+    const native = bid?.mediaTypes?.native;
+    if (typeof native !== 'object' || native === null) {
+      return false;
+    }
+
+    // Handle legacy native params by converting to ORTB format
+    if (!isNativeOrtbVersion(bid)) {
+      if (bid.nativeParams === undefined) return false;
+      const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
+      return ortbConversion && ortbConversion.assets &&
+        Array.isArray(ortbConversion.assets) && ortbConversion.assets.length > 0 &&
+        ortbConversion.assets.every(asset => isValidAsset(asset));
+    }
+
+    // Validate ORTB native format
+    let isValidAssets = false;
+    let isValidEventTrackers;
+
+    const assets = bid.mediaTypes.native?.ortb?.assets;
+    const eventTrackers = bid.mediaTypes.native?.ortb?.eventtrackers;
+
+    // At least one valid asset is required
+    if (assets && Array.isArray(assets) && assets.length > 0 && assets.every(asset => isValidAsset(asset))) {
+      isValidAssets = true;
+    }
+
+    // Event trackers are optional, but if present must be valid
+    if (eventTrackers && Array.isArray(eventTrackers) && eventTrackers.length > 0) {
+      isValidEventTrackers = eventTrackers.every(eventTracker => isValidEventTracker(eventTracker));
+    } else {
+      isValidEventTrackers = true;
+    }
+    return isValidAssets && isValidEventTrackers;
+  }
+
+  return false;
+}
+
+/**
+ * Determines whether a bid declares at least one banner size.
+ * Reads mediaTypes.banner.sizes — the shape Prebid core normalizes ad-unit sizes into. The actual
+ * ORTB sizes are built by ortbConverter; this is only a presence check for validation, so no size
+ * objects are allocated here.
+ * @param {BidRequest} bid - The bid request object
+ * @returns {boolean} True if at least one banner size is present, false otherwise
+ */
+function hasBannerSizes(bid) {
+  const sizes = bid?.mediaTypes?.banner?.sizes;
+  return Array.isArray(sizes) && sizes.length > 0;
+}
+
+/**
+ * Determines whether a video bid declares at least one player size.
+ * @param {BidRequest} bid - The bid request object with video media type
+ * @returns {boolean} True if at least one player size is present, false otherwise
+ */
+function hasVideoSize(bid) {
+  const playerSize = bid?.mediaTypes?.video?.playerSize;
+  return Array.isArray(playerSize) && playerSize.length > 0;
+}
+
+/**
+ * Determines whether or not the given bid request is valid.
+ * Validates required parameters (publisherId, placementId) and media type specifications.
+ * @param {BidRequest} bid - The bid request object to validate
+ * @returns {boolean} True if this is a valid bid with all required params and at least one valid media type, false otherwise
+ */
+function isBidRequestValid(bid) {
+  if (!bid?.params) {
+    return false;
+  }
+
+  /** @type {OcmBidParams} */
+  const params = bid.params;
+  // publisherId and placementId are both required and must be strings
+  if (typeof params.publisherId !== 'string' || typeof params.placementId !== 'string') {
+    return false;
+  }
+
+  // Bid must be valid for at least one supported media type
+  return isValid(BANNER, bid) || isValid(VIDEO, bid) || isValid(NATIVE, bid);
+}
+
+/**
+ * Adds publisher identification data to the OpenRTB request
+ * Merges publisherId from bid params into the site or app publisher object
+ * @param {Object} data - The OpenRTB request data object
+ * @param {Array<BidRequest>} bidRequests - Array of bid requests containing publisher params
+ * @returns {void}
+ */
+function addOrtbPublisherData(data, bidRequests) {
+  const params = bidRequests[0]?.params || {};
+  const key = data.app ? 'app' : 'site';
+
+  // Set the publisher id unconditionally so it is attached even when the converter/FPD
+  // did not pre-seed a publisher object (deepSetValue creates the intermediate objects).
+  if (params.publisherId) {
+    deepSetValue(data, `${key}.publisher.id`, params.publisherId);
+  }
+}
+
+/**
+ * The latest `tmax` that still leaves room for a PBS response to travel back and be parsed before
+ * Prebid's client-side auction timer fires: the auction timeout minus a buffer covering the round
+ * trip and client-side response processing. The buffer is capped at a quarter of the timeout so a
+ * deliberately short auction timeout is shortened proportionally instead of being cut to near-zero.
+ * @param {Object} bidderRequest - The bidder request (source of `timeout`)
+ * @returns {number|undefined} The buffered deadline, or undefined when no timeout is known
+ */
+function bufferedDeadline(bidderRequest) {
+  const auctionTimeout = Number(bidderRequest?.timeout);
+  if (!Number.isFinite(auctionTimeout) || auctionTimeout <= 0) {
+    return undefined;
+  }
+
+  const buffer = Math.min(TMAX_BUFFER_MS, Math.floor(auctionTimeout * TMAX_BUFFER_MAX_RATIO));
+  return Math.max(Math.floor(auctionTimeout) - buffer, 1);
+}
+
+/**
+ * Resolves the `tmax` to send to Prebid Server.
+ *
+ * The converter's default processor sets `tmax` to the full Prebid auction timeout, but Prebid's
+ * client-side auction timer is already running and does not wait for this request: a PBS response
+ * that leaves the server at exactly `tmax` still has to travel back and be parsed, by which point
+ * the auction has timed out and the bids are discarded even though PBS answered in time. So PBS is
+ * given the buffered deadline instead.
+ *
+ * A publisher-supplied `ortb2.tmax` is honoured — the default processor would otherwise clobber it
+ * with the auction timeout — but only down to that same deadline. Raising `tmax` past it cannot buy
+ * the publisher anything: the auction timer is not extended by the value we send, so the extra time
+ * is spent producing a response that arrives too late to be used. A publisher tightening the
+ * server's budget is respected; one loosening it beyond the client deadline is capped, which also
+ * keeps `tmax` within the `ext.tmaxmax` this adapter itself advertises (see setRequestTimeouts).
+ * @param {Object} bidderRequest - The bidder request (source of `timeout` and `ortb2`)
+ * @returns {number|undefined} The tmax to send, or undefined when no timeout is known
+ */
+function resolveTmax(bidderRequest) {
+  const deadline = bufferedDeadline(bidderRequest);
+
+  const publisherTmax = Number(bidderRequest?.ortb2?.tmax);
+  if (Number.isFinite(publisherTmax) && publisherTmax > 0) {
+    const requested = Math.max(Math.floor(publisherTmax), 1);
+    return deadline === undefined ? requested : Math.min(requested, deadline);
+  }
+
+  return deadline;
+}
+
+/**
+ * Applies the buffered `tmax` to the ORTB request and advertises the un-buffered auction timeout as
+ * `ext.tmaxmax` — the ORTB signal for the maximum tmax the caller will honour — so PBS still knows
+ * the real ceiling it is working against (this mirrors what Prebid's own PBS adapter sends).
+ *
+ * An `ext.tmaxmax` already present from first-party data is left alone, and `tmax` is deliberately not
+ * narrowed to it — core's own PBS adapter makes the same trade (ortbConverter.js preserves a supplied
+ * `ext.tmaxmax` while computing `tmax` independently of it), and `ortb2.tmax` stays the one knob for
+ * tightening the server's budget. So a publisher who pins a `tmaxmax` under the buffered deadline can
+ * end up advertising a ceiling below the `tmax` sent with it; that is their stated ceiling, honoured
+ * verbatim, and no PBS treats the field as a hard cap.
+ * @param {Object} request - The ORTB request, mutated in place. Always an object: the converter's
+ *   REQUEST builder either returns one or rethrows, and the caller has already dereferenced it.
+ * @param {Object} bidderRequest - The bidder request
+ * @returns {void}
+ */
+function setRequestTimeouts(request, bidderRequest) {
+  const tmax = resolveTmax(bidderRequest);
+  if (tmax !== undefined) {
+    request.tmax = tmax;
+  }
+
+  const auctionTimeout = Number(bidderRequest?.timeout);
+  if (Number.isFinite(auctionTimeout) && auctionTimeout > 0 && request.ext?.tmaxmax == null) {
+    deepSetValue(request, 'ext.tmaxmax', Math.floor(auctionTimeout));
+  }
+}
+
+/**
+ * Publisher account of each in-flight auction, keyed by its ORTB request id.
+ *
+ * `getUserSyncs` is handed only the auction responses — never the bid requests — so the account the
+ * cookie_sync must name cannot be read from `params` there. It is recorded here when the request is
+ * built and matched back by the request id PBS echoes as the response id (see resolveSyncAccount).
+ * Keying on that id, rather than holding one module-level value, is what keeps overlapping OCM
+ * auctions (or a second pbjs instance on the page) from leaking one publisher's account into
+ * another's sync.
+ */
+const requestAccounts = new Map();
+
+// Cap on the retained request-id → account entries. Entries are deliberately not removed once read:
+// getUserSyncs is not guaranteed to run for an auction at all (syncing may be disabled, blocked by
+// COPPA/GDPR, or the response may name no bidders), so deleting only on read would leak the rest.
+// Evicting the oldest entry bounds the map instead; only a handful of auctions are ever in flight.
+const MAX_TRACKED_ACCOUNTS = 20;
+
+/**
+ * Records the publisher account an auction is being sent under, keyed by its ORTB request id.
+ *
+ * The account is read back off the built request (`app.publisher.id` / `site.publisher.id`, in the
+ * precedence addOrtbPublisherData writes them) rather than from `params.publisherId`, so the value
+ * handed to cookie_sync is exactly the one PBS resolves this auction's account from — including when
+ * it came from first-party data rather than the bid params.
+ * @param {Object} request - The built ORTB request
+ * @returns {void}
+ */
+function trackRequestAccount(request) {
+  const account = request?.app?.publisher?.id || request?.site?.publisher?.id;
+  if (!account) {
+    return;
+  }
+
+  // Re-insert rather than overwrite so a repeated id (only possible when first-party data pins
+  // `ortb2.id`) moves to the back of the eviction order instead of keeping its original position.
+  requestAccounts.delete(request.id);
+  requestAccounts.set(request.id, account);
+
+  while (requestAccounts.size > MAX_TRACKED_ACCOUNTS) {
+    requestAccounts.delete(requestAccounts.keys().next().value);
+  }
+}
+
+/**
+ * Resolves the publisher account for a cookie_sync from the auction responses in hand, by matching
+ * each response's id against the account recorded when that request was built (see
+ * trackRequestAccount). ORTB requires `BidResponse.id` to be the id of the request it answers, and
+ * PBS sets it from exactly that, so the id is a reliable per-auction key.
+ *
+ * A response matching no tracked request yields no account rather than any fallback: naming the wrong
+ * publisher is worse than naming none, since PBS applies the account's own cookie-sync policy. A
+ * response with no id therefore matches nothing — checked here, so an entry that somehow ended up
+ * keyed `undefined` could never be handed to every id-less response instead.
+ * @param {Array} serverResponses - Auction responses
+ * @returns {string|undefined} The account, or undefined when no response matches a tracked request
+ */
+function resolveSyncAccount(serverResponses) {
+  return (serverResponses || [])
+    .map((response) => {
+      const id = response?.body?.id;
+      return id ? requestAccounts.get(id) : undefined;
+    })
+    .find(Boolean);
+}
+
+/**
+ * Constructs server requests from the list of valid bid requests.
+ * Builds OpenRTB-formatted requests to send to the OCM bid server.
+ * @param {Array<BidRequest>} bidRequests - Array of valid bid requests
+ * @param {Object} bidderRequest - Additional data for the bidder request (referer, GDPR consent, etc.)
+ * @returns {ServerRequest} Server request object with url, method, and data
+ */
+function buildRequests(bidRequests, bidderRequest) {
+  const ortbRequest = converter.toORTB({ bidderRequest, bidRequests });
+
+  // Remember which publisher account this auction runs under, so the cookie_sync registered after it
+  // can name the same one (see trackRequestAccount).
+  trackRequestAccount(ortbRequest);
+
+  return {
+    method: 'POST',
+    url: ENDPOINT,
+    data: ortbRequest,
+  };
+}
+
+/**
+ * Parses the server response and converts it into bid response objects.
+ * Interprets OpenRTB bid responses and maps them to Prebid bid objects.
+ * @param {Object} response - The server's response object
+ * @param {Object} request - The original bidder request for reference
+ * @returns {Array} Array of bid response objects
+ */
+function interpretResponse(response, request) {
+  // Return the bids array (not the converter's wrapper object): bidderFactory only treats a wrapper
+  // as a BidderAuctionResponse when its keys are limited to bids/paapi, so returning the array is
+  // the robust, conventional contract. Attribution to OCM is handled inside the converter by the
+  // `bidderCode` bidResponse override, not here.
+  const { bids = [] } = converter.fromORTB({ request: request.data, response: response.body });
+  return bids;
+}
+
+/**
+ * Collects the bidders PBS actually invoked for the stored request, which it reports in the auction
+ * response (`ext.responsetimemillis` keys, plus any `seatbid[].seat`). The client has no visibility
+ * into the stored request's contents, so this is the only source for the cookie_sync bidder list.
+ * @param {Array} serverResponses - Auction responses
+ * @returns {Array<string>} The participating bidder names, capped at MAX_SYNC_COUNT
+ */
+function collectSyncBidders(serverResponses) {
+  const bidders = new Set();
+  (serverResponses || []).forEach((response) => {
+    const body = response?.body;
+    Object.keys(body?.ext?.responsetimemillis || {}).forEach((bidder) => bidders.add(bidder));
+    (body?.seatbid || []).forEach((seatbid) => {
+      if (seatbid?.seat) bidders.add(seatbid.seat);
+    });
+  });
+  return [...bidders].slice(0, MAX_SYNC_COUNT);
+}
+
+/**
+ * Picks the `userSync.filterSettings` entry that applies to one sync type, mirroring core's own
+ * validation (`isFilterConfigValid` in src/userSync): `all` and the per-type key are mutually
+ * exclusive, `filter` must be include/exclude, and `bidders` must be `'*'` or a non-empty array of
+ * names, none of them `'*'`. Core warns about an entry that fails any of these and then ignores it
+ * for that type — a rule core refused to apply on the page is not one to enforce against PBS either.
+ * @param {Object} publisherSettings - The publisher's `userSync.filterSettings` config
+ * @param {string} type - SYNC_TYPE_IFRAME or SYNC_TYPE_IMAGE
+ * @returns {Object|undefined} The entry core would honour for this type, or undefined if there is none
+ */
+function resolveFilterEntry(publisherSettings, type) {
+  if (publisherSettings.all && publisherSettings[type]) {
+    return undefined;
+  }
+  const entry = publisherSettings.all || publisherSettings[type];
+  if (!isPlainObject(entry)) {
+    return undefined;
+  }
+
+  const { filter, bidders } = entry;
+  if (filter && filter !== 'include' && filter !== 'exclude') {
+    return undefined;
+  }
+  const biddersValid = bidders === '*' || (
+    Array.isArray(bidders) && bidders.length > 0 &&
+    bidders.every((bidder) => isStr(bidder) && bidder !== '*')
+  );
+  return biddersValid ? entry : undefined;
+}
+
+/**
+ * Translates one sync type's entry from the publisher's `userSync.filterSettings` into the
+ * per-type filter PBS `/cookie_sync` accepts (`{bidders: '*' | string[], filter: 'include'|'exclude'}`).
+ *
+ * The publisher's `bidders` list names *client-side* Prebid bidder codes, while PBS reads the
+ * forwarded list as server-side bidder names — the seats inside OCM's stored request. Those are not
+ * the same set, so only one direction of the publisher's rule survives the translation:
+ *
+ * - `include` authorises client-side adapters to register a sync. The only name in it that concerns
+ *   this adapter is `ocm`, and core has already applied it when it computed `syncOptions`; every
+ *   other name authorises *that adapter's own* syncs and says nothing about OCM's seats. Reusing the
+ *   remainder as a server-side allowlist would silently drop every seat the publisher never named
+ *   (`bidders: ['ocm', 'rubicon']` would sync the rubicon seat and nothing else), so an authorised
+ *   type is forwarded as allow-all and PBS decides.
+ * - `exclude` names bidders the publisher wants kept from syncing. PBS bidder names and Prebid bidder
+ *   codes are the same names by convention, so this one is forwarded: at worst it is a no-op for a
+ *   name that is not a seat, and it can only ever drop a sync — never authorise one core did not.
+ * @param {Object} [publisherSettings] - The publisher's `userSync.filterSettings` config
+ * @param {string} type - SYNC_TYPE_IFRAME or SYNC_TYPE_IMAGE
+ * @returns {{bidders: string|Array<string>, filter: string}} A PBS cookie_sync per-type filter
+ */
+function toPbsSyncFilter(publisherSettings, type) {
+  const allowAll = { bidders: '*', filter: 'include' };
+  if (!isPlainObject(publisherSettings)) {
+    return allowAll;
+  }
+
+  // No entry core would honour, or an entry that is not an exclude rule, leaves every PBS-side
+  // bidder authorised; see above.
+  const entry = resolveFilterEntry(publisherSettings, type);
+  if (!entry || entry.filter !== 'exclude') {
+    return allowAll;
+  }
+
+  // `bidders` is `'*'` or a non-empty array of names by now, so only our own code has to be dropped.
+  if (entry.bidders === '*') {
+    return { bidders: '*', filter: 'exclude' };
+  }
+  const bidders = entry.bidders.filter((bidder) => bidder !== BIDDER_CODE);
+  return bidders.length > 0 ? { bidders, filter: 'exclude' } : allowAll;
+}
+
+/**
+ * Builds the `filterSettings` object forwarded to PBS `/cookie_sync`, so the syncs dropped downstream
+ * honour the publisher's actual per-bidder rules rather than a coarse "these types are allowed" flag.
+ *
+ * A type Prebid did not authorise for `ocm` is blocked outright with `{bidders: '*', filter: 'exclude'}`
+ * — PBS treats an absent per-type filter as "allowed for everyone", so the block has to be explicit.
+ * @param {Object} syncOptions - Allowed sync types (iframeEnabled/pixelEnabled) for this bidder
+ * @returns {Object} A PBS cookie_sync `filterSettings` object keyed by sync type
+ */
+function buildSyncFilterSettings(syncOptions) {
+  const publisherSettings = config.getConfig('userSync.filterSettings');
+  const enabled = {
+    [SYNC_TYPE_IFRAME]: !!syncOptions?.iframeEnabled,
+    [SYNC_TYPE_IMAGE]: !!syncOptions?.pixelEnabled
+  };
+
+  return [SYNC_TYPE_IFRAME, SYNC_TYPE_IMAGE].reduce((filterSettings, type) => {
+    filterSettings[type] = enabled[type]
+      ? toPbsSyncFilter(publisherSettings, type)
+      : { bidders: '*', filter: 'exclude' };
+    return filterSettings;
+  }, {});
+}
+
+/**
+ * Determines whether the downstream cookie-sync pixels may be dropped at all under the privacy
+ * signals in play. Both checks gate the whole flow rather than individual pixels, because every sync
+ * the loader (or the redirect endpoint) drops exists to read/write a device identifier:
+ *
+ * - COPPA: a child-directed page must not have third-party sync pixels dropped on it.
+ * - TCF purpose 1 ("store and/or access information on a device") is the purpose cookie syncing
+ *   needs; without consent for it there is nothing legitimate for PBS to sync.
+ * @param {Object} [gdprConsent] - GDPR consent data
+ * @returns {boolean} True if syncing may proceed
+ */
+function syncsAllowedByPrivacy(gdprConsent) {
+  if (config.getConfig('coppa') === true) {
+    logWarn(`${BIDDER_CODE}: user syncing skipped because COPPA is enabled`);
+    return false;
+  }
+  if (!hasPurpose1Consent(gdprConsent)) {
+    logWarn(`${BIDDER_CODE}: user syncing skipped, no GDPR purpose 1 consent`);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Registers user syncs (cookie syncing) for OCM's Prebid Server.
+ *
+ * Because `getUserSyncs` can only return GET descriptors while PBS `/cookie_sync` is POST-only, the
+ * sync is routed through an OCM-hosted GET endpoint that POSTs to `/cookie_sync` (with credentials)
+ * on the client's behalf. Both endpoints take the same query string:
+ *
+ * - iframe syncing enabled: the loader page (USER_SYNC_LOADER), which drops the per-bidder sync
+ *   pixels PBS returns. Preferred, because it can drop both iframe and redirect syncs.
+ * - iframe disabled but image syncing enabled: the redirect endpoint (USER_SYNC_REDIRECT), which
+ *   302-chains the redirect-type syncs PBS returns. This is the case for every publisher who has not
+ *   explicitly enabled iframe syncing for `ocm`, since core's default filterSettings allow only image
+ *   syncs — without it the adapter would silently sync nothing at all.
+ *
+ * @param {Object} syncOptions - Allowed sync types for this bidder (iframeEnabled/pixelEnabled). They
+ *   select the endpoint above, and are folded into the `filterSettings` forwarded to PBS so a type the
+ *   publisher did not authorise is never dropped downstream either.
+ * @param {Array} serverResponses - Auction responses; source of the participating bidder list and,
+ *   through the request id each one echoes, of the publisher account the sync is made under
+ * @param {Object} gdprConsent - GDPR consent data (gdprApplies, consentString)
+ * @param {string} uspConsent - US privacy (CCPA) consent string
+ * @param {Object} gppConsent - GPP consent data (gppString, applicableSections)
+ * @returns {Array<{type: string, url: string}>} A single sync, or empty if syncing is disabled,
+ *   disallowed by COPPA/GDPR, or the auction response named no bidders
+ */
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  const iframeEnabled = !!syncOptions?.iframeEnabled;
+  const pixelEnabled = !!syncOptions?.pixelEnabled;
+
+  if (!iframeEnabled && !pixelEnabled) {
+    logWarn(`${BIDDER_CODE}: no user syncs registered, neither iframe nor image syncing is enabled for "${BIDDER_CODE}" (see userSync.filterSettings)`);
+    return [];
+  }
+
+  if (!syncsAllowedByPrivacy(gdprConsent)) {
+    return [];
+  }
+
+  const bidders = collectSyncBidders(serverResponses);
+  if (bidders.length === 0) {
+    return [];
+  }
+
+  const params = [
+    `bidders=${encodeURIComponent(bidders.join(','))}`,
+    `limit=${MAX_SYNC_COUNT}`,
+    // Forward the publisher's own per-bidder sync policy so PBS applies it to the syncs it hands back,
+    // instead of the endpoint dropping whatever PBS chose to return.
+    `filterSettings=${encodeURIComponent(JSON.stringify(buildSyncFilterSettings(syncOptions)))}`,
+    // Prebid only authorised syncing the bidders that participated in this auction, so disable PBS
+    // cooperative syncing (which would sync additional, unrequested bidders).
+    'coopSync=0'
+  ];
+
+  // The publisher account this auction ran under, matched to these exact responses by ORTB request id
+  // (see resolveSyncAccount). PBS resolves the cookie_sync against it — the account's sync limits,
+  // coop-sync default and privacy enforcement all come from it — and a host running with
+  // `account_required` rejects a cookie_sync that names no account at all.
+  const account = resolveSyncAccount(serverResponses);
+  if (account) {
+    params.push(`account=${encodeURIComponent(account)}`);
+  }
+
+  if (gdprConsent) {
+    if (gdprConsent.gdprApplies !== undefined) {
+      params.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
+    }
+    if (gdprConsent.consentString) {
+      params.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`);
+    }
+  }
+
+  if (uspConsent) {
+    params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+  }
+
+  if (gppConsent) {
+    if (gppConsent.gppString) {
+      params.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`);
+    }
+    if (Array.isArray(gppConsent.applicableSections) && gppConsent.applicableSections.length > 0) {
+      params.push(`gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
+    }
+  }
+
+  // Prefer the iframe loader when it is available: it can drop both iframe and redirect syncs, while
+  // the image path is limited to the redirect chain the browser will follow for a single pixel.
+  return iframeEnabled
+    ? [{ type: SYNC_TYPE_IFRAME, url: `${USER_SYNC_LOADER}?${params.join('&')}` }]
+    : [{ type: SYNC_TYPE_IMAGE, url: `${USER_SYNC_REDIRECT}?${params.join('&')}` }];
+}
+
+/**
+ * Determines whether a bid request is an outstream video placement. Only outstream needs a
+ * client-side renderer: instream video is played by the publisher's own video player / ad server,
+ * while banner and native are rendered by Prebid core.
+ * @param {BidRequest} bidRequest - The originating bid request
+ * @returns {boolean} True if mediaTypes.video.context === 'outstream'
+ */
+function isOutstreamVideo(bidRequest) {
+  return deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream';
+}
+
+/**
+ * Determines whether a renderer object counts as a publisher-supplied renderer. This mirrors Prebid
+ * core's isRendererPreferredFromAdUnit (src/Renderer.js), which only prefers an ad-unit/mediaType
+ * renderer that defines BOTH `url` and `render`. In particular, the documented OCM override shape
+ * `mediaTypes.video.renderer.options` (an options-only holder with no `url`/`render`) is NOT a
+ * publisher renderer, so it must not suppress the OCM renderer.
+ * @param {Object} [renderer] - A candidate renderer (ad unit or mediaTypes.video level)
+ * @returns {boolean} True if it is a real publisher renderer that should take precedence
+ */
+function isPublisherRenderer(renderer) {
+  return !!(renderer && renderer.url && renderer.render && renderer.backupOnly !== true);
+}
+
+/**
+ * Determines whether the OCM renderer should be installed on a bid. It is skipped only when the
+ * publisher supplied their own real renderer (at the ad unit or mediaTypes.video level) that is not
+ * flagged backupOnly, so the publisher's renderer wins. An options-only renderer holder (the
+ * documented `mediaTypes.video.renderer.options` override) does not count and still gets the OCM
+ * renderer, matching the precedence Prebid core enforces at render time (isRendererPreferredFromAdUnit).
+ * @param {BidRequest} bidRequest - The originating bid request
+ * @returns {boolean} True if the OCM renderer should be installed
+ */
+function shouldAttachRenderer(bidRequest) {
+  return !(isPublisherRenderer(bidRequest?.renderer) ||
+    isPublisherRenderer(deepAccess(bidRequest, 'mediaTypes.video.renderer')));
+}
+
+/**
+ * Attaches the OCM outstream video renderer to a bid response when applicable, mutating it in place.
+ * No-op for non-video bids, instream video, or when a publisher renderer takes precedence.
+ * @param {Object} bidResponse - The bid response built by the ORTB converter
+ * @param {BidRequest} [bidRequest] - The originating bid request (context.bidRequest)
+ * @returns {void}
+ */
+function maybeAttachOutstreamRenderer(bidResponse, bidRequest) {
+  if (!bidResponse || bidResponse.mediaType !== VIDEO || !bidRequest) {
+    return;
+  }
+  if (isOutstreamVideo(bidRequest) && shouldAttachRenderer(bidRequest)) {
+    bidResponse.renderer = createRenderer(bidRequest);
+  }
+}
+
+/**
+ * Builds a (not-yet-loaded) Prebid Renderer for an outstream video bid. The Renderer lazily loads
+ * RENDERER_URL via loadExternalScript on first render, then calls ocmOutstreamRender. Publisher
+ * overrides from mediaTypes.video.renderer.options (or params.rendererConfig) are stored on the
+ * renderer config and deep-merged into the player config at render time.
+ * @param {BidRequest} bidRequest - The originating bid request
+ * @returns {Renderer} The configured renderer
+ */
+function createRenderer(bidRequest) {
+  const config = deepAccess(bidRequest, 'mediaTypes.video.renderer.options') ||
+    deepAccess(bidRequest, 'params.rendererConfig') || {};
+
+  const renderer = Renderer.install({
+    id: bidRequest.adUnitCode,
+    url: RENDERER_URL,
+    config,
+    adUnitCode: bidRequest.adUnitCode,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(ocmOutstreamRender);
+  } catch (e) {
+    logError(`${BIDDER_CODE}: error calling setRender on outstream renderer`, e);
+  }
+
+  return renderer;
+}
+
+/**
+ * Renderer entry point Prebid invokes when an outstream bid wins and must be displayed. Rendering is
+ * deferred via renderer.push so the player call only runs once RENDERER_URL has loaded and
+ * window.OcmPlayer is defined (push buffers the call until then; see src/Renderer.js).
+ * @param {Object} bid - The winning bid (vastUrl/vastXml, playerWidth/playerHeight, adUnitCode, renderer)
+ * @param {Document} [doc] - Document Prebid wants the ad rendered into (defaults to window.document)
+ * @returns {void}
+ */
+function ocmOutstreamRender(bid, doc) {
+  bid.renderer.push(() => renderOcmPlayer(bid, doc));
+}
+
+/**
+ * Instantiates the OCM Video Player for an outstream bid. Locates the ad slot by adUnitCode, injects
+ * a dedicated wrapper element (so the player cannot clobber sibling slot content), builds the player
+ * config from the bid, and calls the global window.OcmPlayer(containerId, config, callback).
+ * @param {Object} bid - The winning bid
+ * @param {Document} [doc] - Target document (defaults to window.document)
+ * @returns {void}
+ */
+function renderOcmPlayer(bid, doc) {
+  const ownerDocument = doc || document;
+
+  if (typeof window.OcmPlayer !== 'function') {
+    logError(`${BIDDER_CODE}: window.OcmPlayer unavailable; cannot render outstream bid for ${bid?.adUnitCode}`);
+    return;
+  }
+
+  const slot = ownerDocument.getElementById(bid.adUnitCode);
+  if (!slot) {
+    logError(`${BIDDER_CODE}: outstream container '${bid.adUnitCode}' not found`);
+    return;
+  }
+
+  // Render into a dedicated child element so repeat renders / multiple slots cannot collide.
+  const wrapper = ownerDocument.createElement('div');
+  wrapper.id = `ocm-player-wrapper-${bid.adId || getUniqueIdentifierStr()}`;
+  slot.appendChild(wrapper);
+
+  try {
+    window.OcmPlayer(wrapper.id, buildOcmPlayerConfig(bid), () => {
+      logMessage(`${BIDDER_CODE}: OCM player ready for ad unit ${bid.adUnitCode}`);
+    });
+  } catch (e) {
+    logError(`${BIDDER_CODE}: OCM player failed to render for ${bid.adUnitCode}`, e);
+  }
+}
+
+/**
+ * Builds the OCM Video Player config for an outstream bid, mirroring the defaults used by OCM's
+ * prebid wrapper (in-article outstream, muted autoplay, collapse on completion). The VAST source —
+ * preferring the hosted bid.vastUrl and falling back to inline bid.vastXml — is injected as the
+ * preroll, and the player is sized from the bid's player/creative dimensions. Publisher overrides
+ * stored on the renderer config are deep-merged last so they take precedence.
+ * @param {Object} bid - The winning bid
+ * @returns {Object} The config object passed to window.OcmPlayer
+ */
+function buildOcmPlayerConfig(bid) {
+  const overrides = (typeof bid.renderer?.getConfig === 'function' && bid.renderer.getConfig()) || {};
+
+  const width = bid.playerWidth || bid.width;
+  const height = bid.playerHeight || bid.height;
+  const vast = bid.vastUrl || bid.vastXml;
+
+  const config = {
+    player: {
+      outstream: { type: 'in-article' },
+      titleBar: false,
+      playAds: true,
+      autoplay: true,
+      autoplayInview: true,
+      autoplayInviewPct: 50,
+      pauseWhenOutOfViewport: false,
+      volume: true,
+      fullscreen: false,
+      controls: true,
+      controlsTimeout: 500,
+      autohideAdControls: true,
+      startVolume: 0,
+      muted: true,
+      onVideoEnd: 'collapse'
+    },
+    playlist: [],
+    ads: {
+      data: {},
+      preroll: [{ waterfall: [{ vast: { url: vast } }] }],
+      prebid: { enabled: false }
+    }
+  };
+
+  if (width != null) {
+    config.player.width = typeof width === 'number' ? `${width}px` : width;
+  }
+  if (height != null) {
+    config.player.height = typeof height === 'number' ? `${height}px` : height;
+  }
+
+  return mergeDeep(config, overrides);
+}
+
+/**
+ * Registers the impression event URL PBS returns on a bid at `bid.ext.prebid.events.imp` as an ORTB
+ * event tracker on the bid response, so Prebid core fires it at the protocol-defined time instead of
+ * this adapter pinging it directly. It is added as an EVENT_TYPE_IMPRESSION image pixel, which core
+ * fires when the bid is billed — on render for a normal ad unit, or on `pbjs.triggerBilling()` for a
+ * unit that defers billing (adapterManager.triggerBilling, invoked from auction addWinningBid).
+ *
+ * The win URL (`bid.ext.prebid.events.win`) is intentionally not handled here: the shared pbsExtensions
+ * processor (addEventTrackers in libraries/pbsExtensions/processors/eventTrackers.js) already maps it
+ * to an EVENT_TYPE_WIN tracker, which core fires the moment the bid wins (markWinningBid in
+ * src/adRendering). That processor does not map `events.imp` — the impression URL this fills in.
+ *
+ * The dedup guard is still needed on the impression path: that same shared processor maps a legacy
+ * `bid.burl` to an EVENT_TYPE_IMPRESSION tracker, so when PBS sets `burl` to the same `/event` URL it
+ * puts in `events.imp`, skipping the duplicate avoids firing the impression twice. For video, PBS
+ * injects the impression tracker into the VAST server-side, so `events.imp` is normally absent on
+ * video bids and nothing is added for them.
+ * @param {Object} bidResponse - The bid response built by the ORTB converter (mutated in place)
+ * @param {Object} bid - The raw ORTB bid, source of ext.prebid.events.imp
+ * @returns {void}
+ */
+function addPbsEventTrackers(bidResponse, bid) {
+  const impUrl = bid?.ext?.prebid?.events?.imp;
+  if (!bidResponse || !impUrl) {
+    return;
+  }
+
+  bidResponse.eventtrackers = bidResponse.eventtrackers || [];
+  const alreadyTracked = bidResponse.eventtrackers.some(
+    (tracker) => tracker.event === EVENT_TYPE_IMPRESSION && tracker.method === TRACKER_METHOD_IMG && tracker.url === impUrl
+  );
+  if (!alreadyTracked) {
+    bidResponse.eventtrackers.push({ method: TRACKER_METHOD_IMG, event: EVENT_TYPE_IMPRESSION, url: impUrl });
+  }
+}
+
+// No onBidWon handler is registered. OCM's billing URL (bid.burl) is turned into an ORTB
+// EVENT_TYPE_IMPRESSION tracker by the shared pbsExtensions processor (see addPbsEventTrackers), and
+// Prebid core fires that tracker exactly once at billing time (adapterManager.triggerBilling). Firing
+// burl again from onBidWon would double-count the billing event. The win-notice URL (bid.nurl) is
+// likewise consumed by the ORTB converter per media type (a render pixel for banner, the creative URL
+// for video/audio), so the adapter never pings it directly either.
+
+/**
+ * Logs a warning when OCM bid request(s) time out. Auction analytics are reported separately by
+ * the OCM analytics adapter (ocmPbaAdapter), so this handler is log-only to aid debugging and
+ * deliberately performs no network calls (avoiding duplicate event reporting).
+ * @param {Array<Object>} timeoutData - Array of timeout information objects
+ * @returns {void}
+ */
+function onTimeout(timeoutData) {
+  logWarn(`${BIDDER_CODE}: bid request(s) timed out`, timeoutData);
+}
+
+/**
+ * Logs an error when the OCM server responds with an error. Log-only for debugging; no network
+ * calls are made because analytics are handled by the OCM analytics adapter (ocmPbaAdapter).
+ * @param {Object} args - Error context
+ * @param {Object} args.error - The error/XHR object
+ * @param {Object} args.bidderRequest - The originating bidder request
+ * @returns {void}
+ */
+function onBidderError({ error, bidderRequest }) {
+  logError(`${BIDDER_CODE}: server responded with an error`, error, bidderRequest);
+}
+
+/**
+ * Bidder adapter specification object for OCM
+ * @type {Object}
+ */
+export const spec = {
+  code: BIDDER_CODE,
+  gvlid: GVLID,
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  isBidRequestValid: isBidRequestValid,
+  buildRequests: buildRequests,
+  interpretResponse: interpretResponse,
+  getUserSyncs: getUserSyncs,
+  onTimeout: onTimeout,
+  onBidderError: onBidderError,
+};
+
+registerBidder(spec);

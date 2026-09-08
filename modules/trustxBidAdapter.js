@@ -10,7 +10,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -30,6 +29,29 @@ const ortbAdapterConverter = ortbConverter({
   context: {
     netRevenue: NET_REVENUE,
     ttl: BID_TTL
+  },
+  overrides: {
+    imp: {
+      video(fillVideoImp, impression, bidRequest, context) {
+        if (containsVideoRequest(bidRequest)) {
+          const bidderVideoParams = Object.assign({}, bidRequest.params?.video);
+          delete bidderVideoParams.pos;
+          const videoParams = Object.assign(
+            {},
+            bidRequest.mediaTypes[VIDEO],
+            bidderVideoParams
+          );
+          bidRequest = {
+            ...bidRequest,
+            mediaTypes: {
+              ...bidRequest.mediaTypes,
+              [VIDEO]: videoParams
+            }
+          };
+        }
+        fillVideoImp(impression, bidRequest, context);
+      }
+    }
   },
   imp(buildImp, bidRequest, context) {
     const impression = buildImp(bidRequest, context);
@@ -119,7 +141,7 @@ const ortbAdapterConverter = ortbConverter({
     }
 
     // COPPA
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest.ortb2?.regs?.coppa === 1) {
       deepSetValue(requestObj, 'regs.coppa', 1);
     }
 

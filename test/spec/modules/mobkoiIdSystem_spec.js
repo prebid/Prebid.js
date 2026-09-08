@@ -107,7 +107,7 @@ describe('mobkoiIdSystem', function () {
       buildEquativPixelUrlStub = sandbox.stub(mobkoiUtils, 'buildEquativPixelUrl');
     });
 
-    it('should call insertUserSyncIframe with the correctly encoded URL', function () {
+    it('should call insertUserSyncIframe with the correctly encoded URL and cleanup callback', function () {
       const syncUserOptions = {};
       const gdprConsent = {};
       const onCompleteCallback = sinon.spy();
@@ -119,6 +119,17 @@ describe('mobkoiIdSystem', function () {
       const expectedEncodedUrl = encodeURIComponent(testPixelUrl);
       expect(insertUserSyncIframeStub.calledOnce).to.be.true;
       expect(insertUserSyncIframeStub.firstCall.args[0]).to.include('pixelUrl=' + expectedEncodedUrl);
+      expect(insertUserSyncIframeStub.firstCall.args[3]).to.be.a('function');
+
+      insertUserSyncIframeStub.firstCall.args[3]();
+      window.dispatchEvent(new MessageEvent('message', {
+        data: {
+          type: 'MOBKOI_PIXEL_SYNC_COMPLETE',
+          syncData: TEST_SAS_ID
+        }
+      }));
+
+      expect(onCompleteCallback.calledOnceWithExactly(null)).to.be.true;
     });
   });
 

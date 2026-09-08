@@ -1,6 +1,7 @@
 import { spec, ENDPOINT_URL, expandAuctionMacros } from 'modules/kimberliteBidAdapter.js';
 import { assert } from 'chai';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { createTrackPixelHtml } from '../../../src/utils.js';
 
 describe('kimberliteBidAdapter', function () {
   const sizes = [[640, 480]];
@@ -145,7 +146,6 @@ describe('kimberliteBidAdapter', function () {
     const bannerAdm = '<a href="http://test.landing.com?p=${AUCTION_PRICE}&c=${AUCTION_CURRENCY}">landing</a>';
     const videoAdm = '<VAST version="3.0"><Impression>http://video-test.landing.com?p=${AUCTION_PRICE}&c=${AUCTION_CURRENCY}</Impression>test vast</VAST>';
     const nurl = 'http://nurl.landing.com?p=${AUCTION_PRICE}&c=${AUCTION_CURRENCY}';
-    const nurlPixel = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${nurl}"></div>`;
 
     const currencies = [
       undefined,
@@ -215,7 +215,7 @@ describe('kimberliteBidAdapter', function () {
             creativeId: 1,
             ttl: 300,
             netRevenue: true,
-            ad: nurlPixel + bannerAdm,
+            ad: createTrackPixelHtml(expandAuctionMacros(nurl, 1, currency)),
             meta: {}
           },
           {
@@ -240,7 +240,7 @@ describe('kimberliteBidAdapter', function () {
 
       it('pass on valid request', function () {
         const bids = spec.interpretResponse(bidderResponse, bidRequest);
-        expectedBids[0].ad = expandAuctionMacros(expectedBids[0].ad, expectedBids[0].cpm, bidderResponse.body.cur);
+        expectedBids[0].ad = expectedBids[0].ad + expandAuctionMacros(bannerAdm, expectedBids[0].cpm, bidderResponse.body.cur);
         assert.deepEqual(bids[0], expectedBids[0]);
         if (FEATURES.VIDEO) {
           expectedBids[1].vastXml =

@@ -1348,6 +1348,20 @@ describe('gdpr enforcement', function () {
       expect(ACTIVE_RULES.purpose[1]).to.deep.equal(rules[0]);
       expect(ACTIVE_RULES.purpose[2]).to.deep.equal(rules[1]);
     });
+
+    Object.entries({
+      'undefined': undefined,
+      'null': null,
+    }).forEach(([t, cfg]) => {
+      it(`should not throw when config is ${t} (e.g. for non-GDPR countries)`, function () {
+        expect(() => setEnforcementConfig(cfg)).to.not.throw();
+      });
+
+      it(`should fall back to the default purpose declaration when config is ${t}`, function () {
+        setEnforcementConfig(cfg);
+        expect(getPurposeDeclarations(null)).to.eql(DEFAULT_PURPOSE_DECLARATION);
+      });
+    });
   });
 
   describe('TCF2FinalResults', function() {

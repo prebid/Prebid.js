@@ -4,7 +4,9 @@ import * as sinon from 'sinon';
 import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
-import { attachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
+import { attachRealTimeDataProvider, detachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
+import { submodule } from 'src/hook.js';
+import * as utils from 'src/utils.js';
 import { GDPR_GVLIDS } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
@@ -102,24 +104,22 @@ describe('Real time module', function () {
     });
 
     it('are registered when RTD module is registered', () => {
-      let mod;
+      const mod = { name: 'mockRtd', gvlid: 123 };
       try {
-        mod = attachRealTimeDataProvider({ name: 'mockRtd', gvlid: 123 });
+        attachRealTimeDataProvider(mod);
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
       } finally {
-        if (mod) {
-          mod();
-        }
+        detachRealTimeDataProvider(mod);
       }
     });
   });
 
   describe('', () => {
-    let PROVIDERS, _detachers, rules;
+    let PROVIDERS, rules;
 
     beforeEach(function () {
       PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
-      _detachers = PROVIDERS.map(rtdModule.attachRealTimeDataProvider);
+      PROVIDERS.forEach((provider) => rtdModule.attachRealTimeDataProvider(provider));
       rtdModule.init(config);
       config.setConfig(conf);
       rules = [
@@ -133,7 +133,7 @@ describe('Real time module', function () {
     });
 
     afterEach(function () {
-      _detachers.forEach((f) => f());
+      PROVIDERS.forEach((provider) => rtdModule.detachRealTimeDataProvider(provider));
       config.resetConfig();
       rules.forEach(rule => rule());
     });
@@ -251,6 +251,26 @@ describe('Real time module', function () {
       });
     });
 
+    it('should still place targeting from the other submodules when one throws', () => {
+      const auction = {
+        adUnitCodes: ['ad1', 'ad2'],
+        adUnits: [
+          {
+            code: 'ad1'
+          },
+          {
+            code: 'ad2',
+          }
+        ]
+      };
+      validSMWait.getTargetingData = () => {
+        throw new Error('this provider is broken');
+      };
+
+      expect(() => rtdModule.getAdUnitTargeting(auction)).to.not.throw();
+      expect(auction.adUnits[1].adserverTargeting).to.eql({ key: 'validSM' });
+    });
+
     describe('setBidRequestData', () => {
       let withWait, withoutWait;
 
@@ -298,6 +318,58 @@ describe('Real time module', function () {
           expect(withoutWait.cbRan).to.be.false;
         });
       });
+
+      it('should not let a priority submodule release the auction early by invoking its own callback more than once', () => {
+        const doubleCalling = {
+          name: 'doubleCallingSM',
+          config: { waitForIt: true },
+          getBidRequestData: sinon.stub().callsFake((_, cb) => {
+            cb();
+            cb(); // buggy (or adversarial) submodule invoking its own callback twice
+          })
+        };
+        withWait.cbTime = 20;
+        rtdModule.subModules.push(doubleCalling);
+
+        return runSetBidRequestData().then(() => {
+          // the second callback must only ever clear doubleCallingSM's own slot; it must not
+          // also release the auction on validSMWait's behalf
+          expect(withWait.cbRan).to.be.true;
+        });
+      });
+
+      it('should run the submodules that follow one that throws', () => {
+        const throwing = {
+          name: 'throwingSM',
+          config: { waitForIt: false },
+          getBidRequestData: sinon.stub().throws(new Error('this provider is broken'))
+        };
+        rtdModule.subModules.unshift(throwing);
+
+        return runSetBidRequestData().then(() => {
+          expect(withWait.cbRan).to.be.true;
+          expect(withoutWait.cbRan).to.be.true;
+        });
+      });
+
+      it('should not hold the auction for a priority submodule that throws', () => {
+        const throwing = {
+          name: 'throwingPrioritySM',
+          config: { waitForIt: true },
+          getBidRequestData: sinon.stub().throws(new Error('this provider is broken'))
+        };
+        // the only submodule left, so nothing else can release the auction on its behalf
+        rtdModule.subModules.splice(0, rtdModule.subModules.length, throwing);
+
+        // a provider that threw will never call its callback, so the auction has to be released
+        // without waiting out the whole 100ms auctionDelay
+        const released = runSetBidRequestData().then(() => 'released');
+        const waitedOut = new Promise((resolve) => setTimeout(() => resolve('waited out'), 90));
+
+        return Promise.race([released, waitedOut]).then((outcome) => {
+          expect(outcome).to.equal('released');
+        });
+      });
     });
   });
 
@@ -321,7 +393,6 @@ describe('Real time module', function () {
       }
     };
     let providers;
-    let _detachers;
 
     function eventHandlingProvider(name) {
       const provider = {
@@ -334,13 +405,13 @@ describe('Real time module', function () {
 
     beforeEach(() => {
       providers = [eventHandlingProvider('tp1'), eventHandlingProvider('tp2')];
-      _detachers = providers.map(rtdModule.attachRealTimeDataProvider);
+      providers.forEach((provider) => rtdModule.attachRealTimeDataProvider(provider));
       rtdModule.init(config);
       config.setConfig(conf);
     });
 
     afterEach(() => {
-      _detachers.forEach((d) => d());
+      providers.forEach((provider) => rtdModule.detachRealTimeDataProvider(provider));
       config.resetConfig();
     });
 
@@ -385,12 +456,10 @@ describe('Real time module', function () {
         init: () => true,
         onDataDeletionRequest: sinon.stub()
       };
-      detach = ((orig) => {
-        const smDetach = attachRealTimeDataProvider(mod);
-        return function () {
-          orig();
-          smDetach();
-        };
+      attachRealTimeDataProvider(mod);
+      detach = ((orig) => function () {
+        orig();
+        detachRealTimeDataProvider(mod);
       })(detach);
       return mod;
     }
@@ -437,6 +506,223 @@ describe('Real time module', function () {
           sinon.assert.calledWith(sm2.onDataDeletionRequest, cfg2);
         });
       });
+    });
+  });
+
+  describe('provider registration', () => {
+    let attached;
+
+    function mockProvider(name, initResponse = true) {
+      return {
+        name,
+        init: sinon.stub().returns(initResponse),
+        getBidRequestData: sinon.stub().callsFake((req, done) => done())
+      };
+    }
+
+    function attach(provider) {
+      rtdModule.attachRealTimeDataProvider(provider);
+      attached.push(provider);
+      return provider;
+    }
+
+    function configure(...providerConfigs) {
+      rtdModule.init(config);
+      config.setConfig({
+        realTimeData: {
+          dataProviders: providerConfigs.map((cfg) => typeof cfg === 'string' ? { name: cfg } : cfg)
+        }
+      });
+    }
+
+    beforeEach(() => {
+      attached = [];
+    });
+
+    afterEach(() => {
+      attached.forEach((provider) => rtdModule.detachRealTimeDataProvider(provider));
+      config.resetConfig();
+      // `dataProviders` is kept in module scope and is not cleared by resetConfig; blank it out
+      // so that it does not leak into unrelated tests
+      configure();
+      config.resetConfig();
+    });
+
+    describe('activates a provider that registers', () => {
+      it('before configuration', () => {
+        const provider = attach(mockProvider('beforeConfig'));
+        configure('beforeConfig');
+        sinon.assert.called(provider.init);
+        expect(rtdModule.subModules).to.include(provider);
+      });
+
+      it('after configuration', () => {
+        configure('afterConfig');
+        const provider = attach(mockProvider('afterConfig'));
+        sinon.assert.called(provider.init);
+        expect(rtdModule.subModules).to.include(provider);
+      });
+    });
+
+    it('passes the provider its configuration when it registers after configuration', () => {
+      const cfg = { name: 'lateWithConfig', params: { key: 'value' } };
+      configure(cfg);
+      const provider = attach(mockProvider('lateWithConfig'));
+      sinon.assert.calledWith(provider.init, cfg);
+      expect(provider.config).to.eql(cfg);
+    });
+
+    it('runs a provider that registered after configuration on the next auction', (done) => {
+      configure('lateForAuction');
+      const provider = attach(mockProvider('lateForAuction'));
+      rtdModule.setBidRequestsData(() => {
+        sinon.assert.called(provider.getBidRequestData);
+        done();
+      }, { bidRequest: {} });
+    });
+
+    it('keeps providers in configuration order when one registers late', () => {
+      const first = attach(mockProvider('first'));
+      configure('first', 'second');
+      const second = attach(mockProvider('second'));
+      expect(rtdModule.subModules).to.eql([first, second]);
+    });
+
+    it('does not re-initialize providers when another one registers late', () => {
+      const early = attach(mockProvider('early'));
+      configure('early', 'late');
+      sinon.assert.calledOnce(early.init);
+      attach(mockProvider('late'));
+      sinon.assert.calledOnce(early.init);
+    });
+
+    it('does not activate or retry a provider whose init fails', () => {
+      configure('failing', 'other');
+      const failing = attach(mockProvider('failing', false));
+      expect(rtdModule.subModules).to.not.include(failing);
+      sinon.assert.calledOnce(failing.init);
+      attach(mockProvider('other'));
+      sinon.assert.calledOnce(failing.init);
+    });
+
+    it('does not let a provider that throws in init keep the others from initializing', () => {
+      const throwing = attach(mockProvider('throwing'));
+      throwing.init.throws(new Error('this provider is broken'));
+      const other = attach(mockProvider('other'));
+      configure('throwing', 'other');
+      expect(rtdModule.subModules).to.not.include(throwing);
+      expect(rtdModule.subModules).to.include(other);
+    });
+
+    it('does not activate a provider that is registered but not configured', () => {
+      configure('configured');
+      const unconfigured = attach(mockProvider('unconfigured'));
+      sinon.assert.notCalled(unconfigured.init);
+      expect(rtdModule.subModules).to.not.include(unconfigured);
+    });
+
+    it('ignores a second registration under the same name', () => {
+      configure('dupe');
+      const first = attach(mockProvider('dupe'));
+      const second = attach(mockProvider('dupe'));
+      sinon.assert.notCalled(second.init);
+      expect(rtdModule.subModules).to.eql([first]);
+    });
+
+    it('re-initializes a provider that is registered again after detaching', () => {
+      configure('reattach');
+      const provider = mockProvider('reattach');
+      rtdModule.attachRealTimeDataProvider(provider);
+      rtdModule.detachRealTimeDataProvider(provider);
+      expect(rtdModule.subModules).to.not.include(provider);
+      attach(provider);
+      sinon.assert.calledTwice(provider.init);
+      expect(rtdModule.subModules).to.include(provider);
+    });
+
+    describe('logging', () => {
+      let logInfoStub;
+
+      beforeEach(() => {
+        logInfoStub = sinon.stub(utils, 'logInfo');
+      });
+
+      afterEach(() => {
+        logInfoStub.restore();
+      });
+
+      function messages(prefix) {
+        return logInfoStub.args
+          .map(([msg]) => msg)
+          .filter((msg) => typeof msg === 'string' && msg.startsWith(prefix));
+      }
+
+      const announcements = () => messages('Real time data module enabled');
+      const enablements = () => messages('Real time data module: enabling submodule');
+
+      describe('announces the enabled submodules once', () => {
+        it('listing the providers that registered before configuration', () => {
+          attach(mockProvider('one'));
+          attach(mockProvider('two'));
+          configure('one', 'two');
+          expect(announcements()).to.have.length(1);
+          expect(announcements()[0]).to.contain('one').and.to.contain('two');
+        });
+
+        it('without repeating it for each provider that registers after configuration', () => {
+          configure('one', 'two');
+          attach(mockProvider('one'));
+          attach(mockProvider('two'));
+          expect(announcements()).to.have.length(1);
+          expect(announcements()[0]).to.not.contain('one');
+          expect(announcements()[0]).to.not.contain('two');
+        });
+      });
+
+      describe('announces each provider enabled after configuration', () => {
+        it('as it is enabled, rather than in configuration order', () => {
+          configure('one', 'two');
+          attach(mockProvider('two'));
+          attach(mockProvider('one'));
+          expect(enablements()).to.eql([
+            'Real time data module: enabling submodule two',
+            'Real time data module: enabling submodule one'
+          ]);
+        });
+
+        it('only once per provider', () => {
+          configure('one', 'two');
+          attach(mockProvider('one'));
+          attach(mockProvider('two'));
+          expect(enablements().filter((msg) => msg.endsWith('one'))).to.have.length(1);
+        });
+
+        it('but not for providers already enabled at configuration time', () => {
+          attach(mockProvider('one'));
+          configure('one');
+          expect(enablements()).to.be.empty;
+        });
+
+        it('but not for a provider whose init fails', () => {
+          configure('failing');
+          attach(mockProvider('failing', false));
+          expect(enablements()).to.be.empty;
+        });
+
+        it('but not for a provider that is not configured', () => {
+          configure('configured');
+          attach(mockProvider('unconfigured'));
+          expect(enablements()).to.be.empty;
+        });
+      });
+    });
+
+    it('installs a provider submitted through `submodule` after hooks are ready', () => {
+      configure('viaSubmodule');
+      const provider = mockProvider('viaSubmodule');
+      submodule('realTimeData', provider);
+      attached.push(provider);
+      expect(rtdModule.subModules).to.include(provider);
     });
   });
 });

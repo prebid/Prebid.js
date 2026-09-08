@@ -40,7 +40,7 @@ jobs:
       bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name:  Restore working directory
         uses: ./.github/actions/load
         with:
@@ -115,7 +115,7 @@ jobs:
   e2e-tests:
     needs: [setup, build]
     if: ${{ !inputs.coverage-only }}
-    name: "E2E (browser: ${{ matrix.browser.wdioName }})"
+    name: "E2E (browser: ${{ matrix.browser.wdioName }} ${{ matrix.browser.version }})"
     strategy:
       fail-fast: false
       matrix:
@@ -128,7 +128,7 @@ jobs:
       test-cmd: npx gulp e2e-test-nobuild --local
       chunks: 1
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
-      install-safari: ${{ matrix.browser.os == 'macos' }}
+      configure-safari: ${{ matrix.browser.os == 'macos' }}
       browserstack: false
 
   unit-tests:

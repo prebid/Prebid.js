@@ -1205,6 +1205,36 @@ describe('teadsBidAdapter', () => {
       expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
     });
 
+    it('should add coppa to payload when coppa applies', function () {
+      const bidRequestWithCoppa = Object.assign({}, bidderRequestDefault, {
+        ortb2: {
+          regs: {
+            coppa: 1
+          }
+        }
+      });
+
+      const requestWithCoppa = spec.buildRequests(bidRequests, bidRequestWithCoppa);
+
+      expect(JSON.parse(requestWithCoppa.data).coppa).to.equal(1);
+    });
+
+    it('should not add coppa to payload when coppa does not apply or is not set', function () {
+      const bidRequestWithoutCoppa = Object.assign({}, bidderRequestDefault, {
+        ortb2: {
+          regs: {
+            coppa: 0
+          }
+        }
+      });
+
+      const requestWithoutCoppa = spec.buildRequests(bidRequests, bidRequestWithoutCoppa);
+      expect(JSON.parse(requestWithoutCoppa.data).coppa).to.not.exist;
+
+      const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
+      expect(JSON.parse(defaultRequest.data).coppa).to.not.exist;
+    });
+
     it('should include timeout in the payload when provided', function() {
       const bidderRequest = {
         timeout: 3000

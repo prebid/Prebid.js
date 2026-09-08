@@ -40,7 +40,7 @@ export interface BidderSettings<B extends BidderCode> {
    */
   allowedAlternateBidderCodes?: ['*'] | BidderCode[];
   /**
-   * If true (the default), allow the `Sec-Browsing-Topics` header in requests to their exchange.
+   * @deprecated - see
    */
   topicsHeader?: boolean;
 }

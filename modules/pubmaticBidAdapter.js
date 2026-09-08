@@ -16,6 +16,8 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('./pubmaticBidAdapter.d.ts').PubmaticBidderParams} PubmaticBidderParams
+ * @typedef {BidRequest & {params: PubmaticBidderParams}} PubmaticBidRequest
  */
 
 const BIDDER_CODE = 'pubmatic';
@@ -744,7 +746,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {PubmaticBidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: bid => {
@@ -845,7 +847,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) => {
     let syncurl = pubId;
 
     // Attaching GDPR Consent Params in UserSync url
@@ -864,7 +866,7 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       syncurl += '&coppa=1';
     }
 

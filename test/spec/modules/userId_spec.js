@@ -1071,7 +1071,7 @@ describe('User ID', function () {
         // ppid should NOT have been set
         expect(window.googletag._ppid).to.equal(undefined);
         // a warning should have been emmited
-        expect(utils.logWarn.args[0][0]).to.exist.and.to.contain('User ID - Googletag Publisher Provided ID for pubcid.org is not between 32 and 150 characters - pubcommonIdValue');
+        expect(utils.logWarn.args[0][0]).to.exist.and.to.contain("User ID - Googletag Publisher Provided ID for pubcid.org doesn't match the PPID requirements - pubcommonIdValue");
       });
     });
 
@@ -2495,6 +2495,67 @@ describe('User ID', function () {
           sinon.assert.calledOnce(mockGetId);
 
           expect(mockGetId.getCall(0).args[0].enabledStorageTypes).to.deep.equal([userIdConfig.userSync.userIds[0].storage.type]);
+        });
+      });
+    });
+
+    describe('refreshInSeconds with html5 storage and no previously stored "last" timestamp', function () {
+      let mockGetId;
+      let mockDecode;
+      let mockIdSystem;
+      const mockIdKey = 'MOCKID_HTML5';
+
+      beforeEach(function () {
+        mockGetId = sinon.stub();
+        mockDecode = sinon.stub();
+        mockIdSystem = {
+          name: 'mockIdHtml5',
+          getId: mockGetId,
+          decode: mockDecode
+        };
+
+        coreStorage.removeDataFromLocalStorage(mockIdKey);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_exp`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_last`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_cst`);
+        allConsent.reset();
+
+        init(config);
+        attachIdSystem(mockIdSystem);
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+        coreStorage.removeDataFromLocalStorage(mockIdKey);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_exp`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_last`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_cst`);
+      });
+
+      it('treats a stored id with no "_last" entry as due for refresh, not as never-refreshable', function () {
+        // simulates an id that was stored before `refreshInSeconds` was configured (or otherwise
+        // never recorded a last-refresh time): the id and its expiry exist, but "_last" does not.
+        coreStorage.setDataInLocalStorage(mockIdKey, JSON.stringify({ id: '1234' }));
+        coreStorage.setDataInLocalStorage(`${mockIdKey}_exp`, new Date(Date.now() + 60000).toUTCString());
+        coreStorage.setDataInLocalStorage(`${mockIdKey}_cst`, getConsentHash());
+
+        config.setConfig({
+          userSync: {
+            userIds: [{
+              name: 'mockIdHtml5',
+              storage: {
+                name: mockIdKey,
+                type: 'html5',
+                refreshInSeconds: 30
+              }
+            }],
+            auctionDelay: 5
+          }
+        });
+
+        return runBidsHook((config) => {
+        }, { adUnits }).then(() => {
+          sinon.assert.calledOnce(mockGetId);
         });
       });
     });

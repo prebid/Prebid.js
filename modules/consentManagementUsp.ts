@@ -13,6 +13,7 @@ import { enrichFPD } from '../src/fpd/enrichment.js';
 import { cmpClient } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
+import type { USPConsentData } from "../src/types/consent/usp.d.ts";
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -22,7 +23,6 @@ export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
 
-type USPConsentData = string;
 type BaseUSPConfig = {
   /**
    * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
@@ -39,9 +39,6 @@ type StaticUSPData = {
 type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
 
 declare module '../src/consentHandler' {
-  interface ConsentData {
-    [CONSENT_USP]: USPConsentData;
-  }
   interface ConsentManagementConfig {
     [CONSENT_USP]?: USPCMConfig;
   }
