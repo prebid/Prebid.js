@@ -103,7 +103,7 @@ export const utiqIdSubmodule = {
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function
-   * @returns {{utiq: {atid:string,category:string}} | null}
+   * @returns {{utiq: {atid: string, category: string} | string } | null}
    */
   decode(bidId) {
     logInfo(`${LOG_PREFIX}: Decoded ID value ${JSON.stringify(bidId)}`);
