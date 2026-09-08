@@ -1258,9 +1258,11 @@ describe('User ID', function () {
         // still be fetching, and the auction must keep waiting for them.
         startInit();
         let auctionStarted = false;
+        // `mkDelay`, not `delay`: with the real one the 10ms `auctionDelay` timer wins
+        // the race on a slow browser and releases the auction before the assertion.
         startAuctionHook(() => {
           auctionStarted = true;
-        }, { adUnits: [getAdUnitMock()] }, { delay: delay() });
+        }, { adUnits: [getAdUnitMock()] }, { mkDelay: delay() });
         return clearStack().then(() => {
           // init has passed consent by now, so `initialized` is set and the refresh
           // takes the cancel path; mockId's callback is still outstanding.
