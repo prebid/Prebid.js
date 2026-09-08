@@ -207,16 +207,40 @@ describe('adferryBidAdapter', function () {
       expect(bid.meta.advertiserDomains).to.deep.equal(['brand.com']);
     });
 
-    it('sniffs VAST markup when mtype is missing', function () {
-      // Pre-2.6 responses say what they are through the markup itself.
+    it('defaults the currency to USD when the response omits cur', function () {
+      // oRTB's protocol default is USD; without a context currency the bid
+      // would have none and bidderFactory would reject it.
       const [req] = spec.buildRequests([validBid], bidderRequest);
-      const [bid] = spec.interpretResponse(respond(req, {
-        price: 3.0,
-        adm: '<VAST version="3.0"></VAST>',
-        crid: 'af_1a2b3c4d',
-      }), req);
-      expect(bid.mediaType).to.equal('video');
-      expect(bid.vastXml).to.contain('VAST');
+      const [bid] = spec.interpretResponse({
+        body: {
+          id: req.data.id,
+          seatbid: [{ bid: [{ impid: req.data.imp[0].id, price: 4.5, adm: '<VAST/>', crid: 'c', mtype: 2 }] }],
+        },
+      }, req);
+      expect(bid.currency).to.equal('USD');
+    });
+
+    it('keeps each bid\'s media type independent for a multiformat imp', function () {
+      // ortbConverter reuses one per-impression context across bids; an audio
+      // bid must not drag a sibling video bid for the same imp into audio.
+      const mfBid = { ...validBid, mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]] }, audio: { mimes: ['audio/mp4'] } } };
+      const [req] = spec.buildRequests([mfBid], bidderRequest);
+      const impid = req.data.imp[0].id;
+      const bids = spec.interpretResponse({
+        body: {
+          id: req.data.id,
+          cur: 'USD',
+          seatbid: [{
+            bid: [
+              { id: 'a', impid, price: 2.2, adm: '<VAST/>', crid: 'ca', mtype: 3 },
+              { id: 'v', impid, price: 3.3, adm: '<VAST/>', crid: 'cv', mtype: 2 },
+            ]
+          }],
+        },
+      }, req);
+      const byId = Object.fromEntries(bids.map((b) => [b.creativeId, b.mediaType]));
+      expect(byId.ca).to.equal('audio');
+      expect(byId.cv).to.equal('video');
     });
 
     it('returns nothing on a no-bid', function () {
