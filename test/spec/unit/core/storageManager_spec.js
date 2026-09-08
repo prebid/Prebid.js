@@ -350,6 +350,13 @@ describe('canSetCookie', () => {
     expect(canSetCookie()).to.be.false;
   });
 
+  it('should not cache false results', () => {
+    allow = false;
+    expect(canSetCookie()).to.be.false;
+    allow = true;
+    expect(canSetCookie()).to.be.true;
+  });
+
   it('should cache results', () => {
     expect(canSetCookie()).to.be.true;
     allow = false;

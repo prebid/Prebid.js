@@ -506,6 +506,25 @@ describe('consentManagement', function () {
         sinon.assert.calledOnce(adapterManager.callDataDeletionRequest);
       });
 
+      it('registers deletion request event listener only once across consent lookups', () => {
+        let listener;
+        const uspapiStub = sandbox.stub(window, '__uspapi').callsFake((cmd, _, cb) => {
+          if (cmd === 'registerDeletion') {
+            listener = cb;
+          } else if (cmd === 'getUSPData') {
+            cb({ uspString: 'string' }, true);
+          }
+        });
+
+        setConsentConfig(goodConfig);
+        requestBidsHook(() => {}, {});
+        requestBidsHook(() => {}, {});
+
+        expect(uspapiStub.getCalls().filter(call => call.args[0] === 'registerDeletion')).to.have.length(1);
+        listener();
+        sinon.assert.calledOnce(adapterManager.callDataDeletionRequest);
+      });
+
       it('does not fail if CMP does not support registerDeletion', () => {
         sandbox.stub(window, '__uspapi').callsFake((cmd, _, cb) => {
           if (cmd === 'registerDeletion') {

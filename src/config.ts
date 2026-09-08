@@ -65,7 +65,7 @@ function attachProperties(config, useDefaultValues = true) {
   } : {};
 
   const validateauctionOptions = (() => {
-    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
+    const boolKeys = ['cleanupAuctionData', 'suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
     const arrKeys = ['secondaryBidders'];
     const allKeys = [].concat(boolKeys).concat(arrKeys);
 
