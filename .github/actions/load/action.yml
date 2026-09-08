@@ -25,7 +25,6 @@ runs:
     - name: Download artifact
       id: download
       continue-on-error: true
-      # Automated fix prepared by a Codex bot.
       uses: actions/download-artifact@v8
       with:
         path: '${{ runner.temp }}'
