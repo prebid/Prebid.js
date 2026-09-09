@@ -1371,8 +1371,7 @@ describe('fwsspBidAdapter', () => {
             tid: 'ortb2imp-tid-should-not-use',
             tidt: 2
           }
-        },
-        transactionId: 'legacy-tid-should-not-use'
+        }
       };
       const bidderRequest = {
         ortb2: {
