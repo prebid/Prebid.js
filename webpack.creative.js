@@ -1,7 +1,8 @@
 const path = require('path');
 const helpers = require('./gulpHelpers.js');
+const addCommonConfig = require('./webpack.common.js');
 
-module.exports = {
+module.exports = addCommonConfig({
   mode: 'production',
   context: helpers.getPrecompiledPath(),
   devtool: false,
@@ -32,8 +33,10 @@ module.exports = {
     path: path.resolve('./build/creative'),
   },
   module: {
-    rules: [{
-      extractSourceMap: true
-    }]
+    rules: [
+      {
+        extractSourceMap: true
+      }
+    ]
   }
-}
+});

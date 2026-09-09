@@ -57,7 +57,7 @@ export function getAcceptableFlags(
   consentData: TCFConsentData,
   type: 'purpose' | 'feature',
   purpose: number,
-  gvlid: number,
+  gvlid: number | typeof VENDORLESS_GVLID,
   purposeDeclarations = getPurposeDeclarations
 ): {
     acceptConsent: boolean,

@@ -30,7 +30,14 @@ const VALID_API_RESPONSE = {
       data: [
         {
           name: "data.stackup-ai.com",
-          ext: { segtax: 502 },
+          ext: {
+            segtax: 502,
+            stackup: {
+              taxonomy_version: "1.0",
+              dimension: "content",
+              source_tier: "enrichment",
+            },
+          },
           segment: [
             { id: "113", name: "Security", ext: { confidence: 0.95 } },
             { id: "79", name: "Mobile Devices", ext: { confidence: 0.9 } },
@@ -793,7 +800,7 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site.content.data).to.have.length(2);
     });
 
-    it("should union an existing provider block with the same name and segtax", function () {
+    it("should preserve non-conflicting ext metadata in a matching provider block", function () {
       const req = {
         ortb2Fragments: {
           global: {
@@ -802,7 +809,7 @@ describe("StackUp RTD Provider", function () {
                 data: [
                   {
                     name: "data.stackup-ai.com",
-                    ext: { segtax: 502 },
+                    ext: { segtax: 502, stackup: { dimension: "content" } },
                     segment: [{ id: "old", name: "Old Segment" }],
                   },
                 ],
@@ -819,6 +826,14 @@ describe("StackUp RTD Provider", function () {
         "113",
         "79",
       ]);
+      expect(data[0].ext).to.deep.equal({
+        segtax: 502,
+        stackup: {
+          taxonomy_version: "1.0",
+          dimension: "content",
+          source_tier: "enrichment",
+        },
+      });
     });
 
     it("should merge by name plus segtax while preserving publisher-owned fields", async function () {

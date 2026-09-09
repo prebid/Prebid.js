@@ -1,4 +1,4 @@
-import { isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import { guardTids, isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -766,12 +766,14 @@ describe('bidderFactory', () => {
 
       it('should register usersync pixels', function () {
         const bidder = newBidder(spec);
+        const onCleanup = sinon.spy();
 
         spec.isBidRequestValid.returns(false);
         spec.buildRequests.returns([]);
         spec.getUserSyncs.returns([{
           type: 'iframe',
-          url: 'usersync.com'
+          url: 'usersync.com',
+          onCleanup
         }]);
 
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
@@ -780,6 +782,7 @@ describe('bidderFactory', () => {
         expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
         expect(userSyncStub.firstCall.args[1]).to.equal(spec.code);
         expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
+        expect(userSyncStub.firstCall.args[3]).to.equal(onCleanup);
       });
 
       it('should logError and reject bid when required bid response params are missing', function () {
@@ -1813,6 +1816,26 @@ describe('bidderFactory', () => {
       expect(recorded['adapter.client.net']).to.eql([0]);
       // `total` spans compression, so it is the timer that should account for the delay.
       expect(recorded['adapter.client.total']).to.equal(COMPRESSION_MS);
+    });
+  });
+
+  describe('guardTids', () => {
+    it('returns the same guard for the same bidderRequest across calls', () => {
+      const bidderRequest = { bidderCode: 'mockBidder', bids: [] };
+      expect(guardTids(bidderRequest)).to.equal(guardTids(bidderRequest));
+    });
+
+    it('returns independent guards for different bidderRequests', () => {
+      const request1 = { bidderCode: 'mockBidder', bids: [] };
+      const request2 = { bidderCode: 'mockBidder', bids: [] };
+      const guard1 = guardTids(request1);
+      const guard2 = guardTids(request2);
+      expect(guard1).to.not.equal(guard2);
+      // bidRequest is memoized per guard (keyed by bidId): the same guard
+      // returns the same proxy for the same bid, different guards do not.
+      const bid = { bidId: 'bid-1' };
+      expect(guard1.bidRequest(bid)).to.equal(guard1.bidRequest(bid));
+      expect(guard1.bidRequest(bid)).to.not.equal(guard2.bidRequest(bid));
     });
   });
 });

@@ -293,8 +293,18 @@ export function parseXML(xml, bid) {
     if (ct) {
       const companion = xml.getElementsByTagName('Companion')[0];
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-      const htmlContent = document.createElement('html');
-      htmlContent.innerHTML = htmlResource.textContent;
+      // Parse in an inert document. `htmlResource.textContent` is bidder-controlled
+      // and only ever read for attribute values, so it must not be activated:
+      // parsing it into any node owned by the live document compiles its
+      // event-handler attributes into live handlers and starts its image loads.
+      //
+      // `createHTMLDocument` rather than `DOMParser` because this keeps the same
+      // parse algorithm - a fragment parse with `<html>` as context - and so keeps
+      // the same document order. The extractors below all take
+      // `querySelectorAll(...)[0]`, so a parse that surfaces earlier matches
+      // changes which element they read, not just whether they find one.
+      const htmlContent = document.implementation.createHTMLDocument('');
+      htmlContent.documentElement.innerHTML = htmlResource.textContent;
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
       ret.currency = extractCurrency(htmlContent, ret.currency);
@@ -329,6 +339,13 @@ export function isAllowedToBidUp(html, currentURL) {
     if (allowedToPush) {
       const excludedURL = html.querySelectorAll('[excludedURLs]')[0];
       if (excludedURL) {
+        // TODO: this reads the attribute off `domainsMap`, not off `excludedURL` -
+        // the element `querySelectorAll` just selected for exactly this purpose.
+        // The two are the same element only when the first `[domainMap]` match is
+        // also the first `[excludedURLs]` match, and when they are not, the wrong
+        // exclusion list is applied or the read throws into the catch below. Bids
+        // are both wrongly allowed and wrongly dropped as a result, and the paths
+        // that do not throw leave nothing behind to notice them by.
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
           const excluded = JSON.parse(excludedURLsString);

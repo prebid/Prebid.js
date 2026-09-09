@@ -194,6 +194,7 @@ function getCacheConfig(): {
 
 export const subModuleObj: RtdProviderSpec<"stackupRtd"> = {
   name: MODULE_NAME as "stackupRtd",
+  disclosureURL: "local://modules/stackupRtdProvider.json",
   init,
   getBidRequestData,
 };
@@ -691,7 +692,10 @@ function mergeDataBlocks(target: any[], ours: any[]): void {
 function dataBlockKey(block: any): string {
   const name = isStr(block?.name) ? block.name : "";
   const segtax = isNumber(block?.ext?.segtax) ? block.ext.segtax : "";
-  return `${name}\u0000${segtax}`;
+  const dimension = isStr(block?.ext?.stackup?.dimension)
+    ? block.ext.stackup.dimension
+    : "";
+  return `${name}\u0000${segtax}\u0000${dimension}`;
 }
 
 function mergeDataBlock(publisherBlock: any, stackupBlock: any): any {
@@ -705,7 +709,23 @@ function mergeDataBlock(publisherBlock: any, stackupBlock: any): any {
       segments.push(segment);
     }
   }
-  return { ...stackup, ...publisher, segment: segments };
+  return {
+    ...stackup,
+    ...publisher,
+    ext: mergeDataBlockExtPublisherFirst(publisher.ext, stackup.ext),
+    segment: segments,
+  };
+}
+
+function mergeDataBlockExtPublisherFirst(publisher: any, stackup: any): any {
+  if (!isPlainObject(stackup)) return publisher;
+  if (!isPlainObject(publisher)) return stackup;
+
+  const merged = { ...stackup, ...publisher };
+  if (isPlainObject(stackup.stackup) && isPlainObject(publisher.stackup)) {
+    merged.stackup = { ...stackup.stackup, ...publisher.stackup };
+  }
+  return merged;
 }
 
 function dedupeSegments(block: any): any {
