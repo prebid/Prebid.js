@@ -340,11 +340,19 @@ function bundle(dev, moduleArr) {
 }
 
 function setupDist() {
+  function matches(names) {
+    const hits = names.flatMap(name => [name, `${name}.map`]);
+    return function(path) {
+      return path.dirname === '.' && hits.includes(path.basename + path.extname);
+    }
+  }
+  const isNotForProd = matches(['prebid.js', 'prebid.web.js']);
+  const isWebBundler = matches(['bundle.js']);
   return gulp.src(['build/dist/**/*'])
     .pipe(rename(function (path) {
-      if (path.dirname === '.' && (path.basename === 'prebid' || path.basename === 'prebid.web')) {
+      if (isNotForProd(path)) {
         path.dirname = '../not-for-prod';
-      } else if (path.dirname === '.' && path.basename === 'bundle') {
+      } else if (isWebBundler(path)) {
         path.dirname = '..';
       }
     }))
