@@ -62,6 +62,7 @@ export function cleanDependencies(dependencies, requiresMeta = requiresMetadata)
 export function getManifest(dependencies, chunkFiles) {
   return Promise.all(
     chunkFiles
+      .filter(file => file !== BO_CHUNK)
       .map(file => getChecksum(file).then(digest => [path.basename(file), digest]))
   ).then(entries => ({
     checksums: Object.fromEntries(entries), dependencies: cleanDependencies(dependencies)
