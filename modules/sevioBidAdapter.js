@@ -36,24 +36,15 @@ const getTopWindowUrl = () => {
 };
 
 const getPageUrl = (bidderRequest) => {
-  const refererInfo = bidderRequest?.refererInfo;
+  const page = bidderRequest?.refererInfo?.page;
 
-  const candidates = [
-    () => refererInfo?.page,
-    () => refererInfo?.topmostLocation,
-    () => refererInfo?.location,
-    getTopWindowUrl,
-    () => utils.getWindowLocation()?.href
-  ];
-
-  for (const candidate of candidates) {
-    const url = candidate();
-    if (isUsablePageUrl(url)) {
-      return url;
-    }
+  if (isUsablePageUrl(page)) {
+    return page;
   }
 
-  return '';
+  const topWindowUrl = getTopWindowUrl();
+
+  return isUsablePageUrl(topWindowUrl) ? topWindowUrl : '';
 };
 
 const normalizeKeywords = (input) => {
