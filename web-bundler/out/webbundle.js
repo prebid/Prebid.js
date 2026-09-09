@@ -13,7 +13,7 @@ if (!options.defineGlobal) {
   checkAndRun(options.pbGlobal, () => {
     injectBuildOptions(options);
     const loader = scriptLoader(options.distUrlBase, scope);
-    return Promise.all(
+    return Promise.allSettled(
       Object.entries(checksums).map(([file, checksum]) => loader(file, checksum))
     );
   });

@@ -39,11 +39,18 @@ export async function loadModules(loader, manifest, modules, resolveDeps = resol
     throw new Error(`Cannot find modules: ${missing.join(', ')}`);
   }
   const chunks = resolveDeps(modules, manifest.dependencies, (module) => manifest.checksums.hasOwnProperty(module + METADATA_SUFFIX));
-  return Promise.all(
+  return Promise.allSettled(
     chunks.map(chunk => loader(chunk, manifest.checksums[chunk]))
   );
 }
 
+/**
+ * Check if a prebid instance already claimed `globalVarName`, and if not, run load() and call processQueue.
+ *
+ * `load` MUST resolve only when settled - if it loads N scripts, it must wait for all N to load or fail.
+ *  A fast fail (e.g. using Promise.all) can allow later invocations of checkAndRun to see the same globalVarName
+ *  as unclaimed even though a script still in flight may set `libLoaded`.
+ */
 export function checkAndRun(globalVarName, load) {
   if (window[globalVarName]?.libLoaded || window[globalVarName]?.__loading) {
     let debugEnabled = true;
@@ -59,9 +66,7 @@ export function checkAndRun(globalVarName, load) {
     window[globalVarName].__loading = true;
     return load()
       .finally(() => {
-        if (window[globalVarName].libLoaded) {
-          delete window[globalVarName].__loading;
-        }
+        delete window[globalVarName].__loading;
       }).then(() => {
         window[globalVarName].processQueue();
       });
