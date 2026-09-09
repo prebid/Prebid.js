@@ -766,6 +766,43 @@ describe("StackUp RTD Provider", function () {
       await flushMicrotasks();
     });
 
+    async function loadDualTaxonomyResponse() {
+      _resetStateForTesting();
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(DUAL_TAXONOMY_API_RESPONSE);
+      await flushMicrotasks();
+    }
+
+    it("should not add StackUp page categories to a publisher cattax", async function () {
+      await loadDualTaxonomyResponse();
+      const req = {
+        ortb2Fragments: { global: { site: { cattax: 1, content: { data: [] } } } },
+      };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      expect(req.ortb2Fragments.global.site.cattax).to.equal(1);
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
+    });
+
+    it("should not add a StackUp cattax to publisher page categories", async function () {
+      await loadDualTaxonomyResponse();
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: { pagecat: ["IAB-publisher"], content: { data: [] } },
+          },
+        },
+      };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.pagecat).to.deep.equal([
+        "IAB-publisher",
+      ]);
+    });
+
     it("should not overwrite a publisher-supplied content id", function () {
       const req = {
         ortb2Fragments: {

@@ -642,11 +642,12 @@ function mergeIntoOrtb2(
 
 function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
   global.site = global.site ?? {};
-  if (global.site.cattax === undefined && ours.cattax !== undefined) {
-    global.site.cattax = ours.cattax;
-  }
-  if (global.site.pagecat === undefined && ours.pagecat !== undefined) {
-    global.site.pagecat = ours.pagecat;
+  // cattax defines how pagecat values are interpreted, so they must be
+  // adopted together. Filling either independently could pair publisher
+  // categories with StackUp's taxonomy (or the reverse).
+  if (global.site.cattax === undefined && global.site.pagecat === undefined) {
+    if (ours.cattax !== undefined) global.site.cattax = ours.cattax;
+    if (ours.pagecat !== undefined) global.site.pagecat = ours.pagecat;
   }
   global.site.content = global.site.content ?? { data: [] };
   const target = global.site.content;
