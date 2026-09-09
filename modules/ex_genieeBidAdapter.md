@@ -102,6 +102,18 @@ pbjs.setConfig({
 });
 ```
 
+### Device storage
+
+The adapter itself does not read or write publisher-domain (first-party) storage. All storage
+is on Geniee's own domains, `*.genieesspv.jp` and `*.gssprt.jp`: bid requests are sent with
+credentials, so Geniee's `gid` user-identifier cookie accompanies them, and the sync iframe
+above stores the matched identifiers and sync-state markers of the Exchange's demand partners.
+The full inventory (cookie names, domains, lifetimes and TCF purposes) is declared in the TCF
+device-storage disclosure at <https://genieesspv.jp/disclosure.json>, referenced from the
+adapter via `disclosureURL`. Geniee is not registered in the IAB Global Vendor List because
+the Exchange does not serve GDPR territories (no request is sent when GDPR applies, see
+[Description](#description)).
+
 ## Example Bid Request
 
 For the ad unit above, the adapter POSTs the following OpenRTB bid request (JSON body) to

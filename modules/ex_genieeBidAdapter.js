@@ -184,6 +184,10 @@ function validateBanner(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
+  // Geniee is not registered in the IAB Global Vendor List (this Exchange does
+  // not serve GDPR territories, see buildRequests), so the device-storage
+  // disclosure is hosted on Geniee's own domain instead of referenced through a gvlid.
+  disclosureURL: 'https://genieesspv.jp/disclosure.json',
 
   /**
    * Determines whether or not the given bid request is valid.
