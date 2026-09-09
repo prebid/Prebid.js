@@ -251,6 +251,26 @@ describe('Real time module', function () {
       });
     });
 
+    it('should still place targeting from the other submodules when one throws', () => {
+      const auction = {
+        adUnitCodes: ['ad1', 'ad2'],
+        adUnits: [
+          {
+            code: 'ad1'
+          },
+          {
+            code: 'ad2',
+          }
+        ]
+      };
+      validSMWait.getTargetingData = () => {
+        throw new Error('this provider is broken');
+      };
+
+      expect(() => rtdModule.getAdUnitTargeting(auction)).to.not.throw();
+      expect(auction.adUnits[1].adserverTargeting).to.eql({ key: 'validSM' });
+    });
+
     describe('setBidRequestData', () => {
       let withWait, withoutWait;
 
@@ -296,6 +316,58 @@ describe('Real time module', function () {
         return runSetBidRequestData().then(() => {
           expect(withWait.cbRan).to.be.true;
           expect(withoutWait.cbRan).to.be.false;
+        });
+      });
+
+      it('should not let a priority submodule release the auction early by invoking its own callback more than once', () => {
+        const doubleCalling = {
+          name: 'doubleCallingSM',
+          config: { waitForIt: true },
+          getBidRequestData: sinon.stub().callsFake((_, cb) => {
+            cb();
+            cb(); // buggy (or adversarial) submodule invoking its own callback twice
+          })
+        };
+        withWait.cbTime = 20;
+        rtdModule.subModules.push(doubleCalling);
+
+        return runSetBidRequestData().then(() => {
+          // the second callback must only ever clear doubleCallingSM's own slot; it must not
+          // also release the auction on validSMWait's behalf
+          expect(withWait.cbRan).to.be.true;
+        });
+      });
+
+      it('should run the submodules that follow one that throws', () => {
+        const throwing = {
+          name: 'throwingSM',
+          config: { waitForIt: false },
+          getBidRequestData: sinon.stub().throws(new Error('this provider is broken'))
+        };
+        rtdModule.subModules.unshift(throwing);
+
+        return runSetBidRequestData().then(() => {
+          expect(withWait.cbRan).to.be.true;
+          expect(withoutWait.cbRan).to.be.true;
+        });
+      });
+
+      it('should not hold the auction for a priority submodule that throws', () => {
+        const throwing = {
+          name: 'throwingPrioritySM',
+          config: { waitForIt: true },
+          getBidRequestData: sinon.stub().throws(new Error('this provider is broken'))
+        };
+        // the only submodule left, so nothing else can release the auction on its behalf
+        rtdModule.subModules.splice(0, rtdModule.subModules.length, throwing);
+
+        // a provider that threw will never call its callback, so the auction has to be released
+        // without waiting out the whole 100ms auctionDelay
+        const released = runSetBidRequestData().then(() => 'released');
+        const waitedOut = new Promise((resolve) => setTimeout(() => resolve('waited out'), 90));
+
+        return Promise.race([released, waitedOut]).then((outcome) => {
+          expect(outcome).to.equal('released');
         });
       });
     });
@@ -531,6 +603,15 @@ describe('Real time module', function () {
       sinon.assert.calledOnce(failing.init);
       attach(mockProvider('other'));
       sinon.assert.calledOnce(failing.init);
+    });
+
+    it('does not let a provider that throws in init keep the others from initializing', () => {
+      const throwing = attach(mockProvider('throwing'));
+      throwing.init.throws(new Error('this provider is broken'));
+      const other = attach(mockProvider('other'));
+      configure('throwing', 'other');
+      expect(rtdModule.subModules).to.not.include(throwing);
+      expect(rtdModule.subModules).to.include(other);
     });
 
     it('does not activate a provider that is registered but not configured', () => {

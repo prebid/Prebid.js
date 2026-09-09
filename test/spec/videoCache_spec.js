@@ -456,6 +456,58 @@ describe('The video cache', function () {
       updateVast(bidResponse);
       expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>');
     });
+
+    // The wrapper is built by string interpolation, so tracker values that contain XML syntax must
+    // not be able to close the element they are placed in.
+    describe('tracker values containing XML syntax', () => {
+      // ']]>' closes a CDATA section; the text after it would otherwise be parsed as markup.
+      const BREAKOUT = 'https://tracker.example/a]]></Impression><Impression><![CDATA[https://evil.example/pwn';
+
+      function parsed() {
+        updateVast(bidResponse);
+        const doc = new DOMParser().parseFromString(bidResponse.vastXml, 'text/xml');
+        expect(doc.getElementsByTagName('parsererror')).to.have.lengthOf(0);
+        return doc;
+      }
+
+      it('keeps an impression tracker in a single Impression element', () => {
+        bidResponse.vastTrackers = { impression: [BREAKOUT] };
+        const impressions = parsed().getElementsByTagName('Impression');
+        expect(impressions).to.have.lengthOf(1);
+        expect(impressions[0].textContent).to.equal(BREAKOUT);
+      });
+
+      it('keeps an error tracker in a single Error element', () => {
+        bidResponse.vastTrackers = { error: [BREAKOUT] };
+        const errors = parsed().getElementsByTagName('Error');
+        expect(errors).to.have.lengthOf(1);
+        expect(errors[0].textContent).to.equal(BREAKOUT);
+      });
+
+      it('keeps a tracking event url in a single Tracking element', () => {
+        bidResponse.vastTrackers = { trackingEvents: [{ event: 'start', url: BREAKOUT }] };
+        const tracking = parsed().getElementsByTagName('Tracking');
+        expect(tracking).to.have.lengthOf(1);
+        expect(tracking[0].textContent).to.equal(BREAKOUT);
+      });
+
+      it('does not let a tracking event name add attributes to Tracking', () => {
+        const event = 'start" foo="bar';
+        bidResponse.vastTrackers = { trackingEvents: [{ event, url: 'https://tracker.example/s' }] };
+        const tracking = parsed().getElementsByTagName('Tracking')[0];
+        expect(tracking.getAttributeNames()).to.eql(['event']);
+        expect(tracking.getAttribute('event')).to.equal(event);
+      });
+
+      it('keeps the vast url in a single VASTAdTagURI element', () => {
+        bidResponse.vastUrl = 'https://bidder.example/v.xml]]></VASTAdTagURI><Impression><![CDATA[https://evil.example/x';
+        const doc = parsed();
+        const uris = doc.getElementsByTagName('VASTAdTagURI');
+        expect(uris).to.have.lengthOf(1);
+        expect(uris[0].textContent).to.equal(bidResponse.vastUrl);
+        expect(doc.getElementsByTagName('Impression')).to.have.lengthOf(0);
+      });
+    });
   });
 
   describe('local video cache', function() {

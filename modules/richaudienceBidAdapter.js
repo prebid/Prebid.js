@@ -21,7 +21,7 @@ export const spec = {
    * @returns {boolean} True if this is a valid bid, and false otherwise
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.pid && bid.params.supplyType);
+    return !!(bid.params && bid.params.pid);
   },
   /***
    * Build a server request from the list of valid BidRequests
@@ -35,24 +35,16 @@ export const spec = {
         bidfloor: raiGetFloor(bid, config),
         ifa: bid.params.ifa,
         pid: bid.params.pid,
-        supplyType: bid.params.supplyType,
         currencyCode: getCurrencyFromBidderRequest(bidderRequest),
         auctionId: bid.auctionId,
-        bidId: bid.bidId,
-        BidRequestsCount: bid.bidRequestsCount,
-        bidder: bid.bidder,
-        bidderRequestId: bid.bidderRequestId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
         referer: (typeof bidderRequest.refererInfo.page !== 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
-        numIframes: (typeof bidderRequest.refererInfo.numIframes !== 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: bidderRequest.timeout || 600,
         eids: deepAccess(bid, 'userIdAsEids') ? bid.userIdAsEids : [],
-        demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
-        cpuc: null,
         kws: bid.params.keywords,
         schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),
@@ -94,6 +86,9 @@ export const spec = {
         method: 'POST',
         url: endpoint,
         data: payloadString,
+        bidId: bid.bidId,
+        videoData: payload.videoData,
+        adUnitCode: bid.adUnitCode,
       };
     });
   },
@@ -106,10 +101,10 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     // try catch
-    var response = serverResponse.body;
+    const response = serverResponse.body;
     if (response) {
-      var bidResponse = {
-        requestId: JSON.parse(bidRequest.data).bidId,
+      const bidResponse = {
+        requestId: bidRequest.bidId,
         cpm: response.cpm,
         width: response.width,
         height: response.height,
@@ -119,7 +114,7 @@ export const spec = {
         currency: response.currency,
         ttl: response.ttl,
         meta: {
-          advertiserDomains: [response.adomain[0]]
+          advertiserDomains: response.adomain?.length ? [response.adomain[0]] : []
         },
         dealId: response.dealId
       };
@@ -128,16 +123,16 @@ export const spec = {
         bidResponse.vastXml = response.vastXML;
         try {
           if (bidResponse.vastXml != null) {
-            if (JSON.parse(bidRequest.data).videoData.format === 'outstream' || JSON.parse(bidRequest.data).videoData.format === 'banner') {
+            if (bidRequest.videoData.format === 'outstream' || bidRequest.videoData.format === 'banner') {
               bidResponse.renderer = Renderer.install({
                 id: bidRequest.bidId,
-                adunitcode: bidRequest.tagId,
+                adUnitCode: bidRequest.adUnitCode,
                 loaded: false,
                 config: response.media_type,
                 url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
               });
+              bidResponse.renderer.setRender(renderer);
             }
-            bidResponse.renderer.setRender(renderer);
           }
         } catch (e) {
           bidResponse.ad = response.adm;
@@ -230,26 +225,9 @@ function raiGetSizes(bid) {
   }
 }
 
-function raiGetDemandType(bid) {
-  let raiFormat = 'display';
-  if (typeof bid.sizes !== 'undefined') {
-    bid.sizes.forEach(function (sz) {
-      if ((sz[0] === 1800 && sz[1] === 1000) || (sz[0] === 1 && sz[1] === 1)) {
-        raiFormat = 'skin';
-      }
-    });
-  }
-  if (bid.mediaTypes !== undefined) {
-    if (bid.mediaTypes.video !== undefined) {
-      raiFormat = 'video';
-    }
-  }
-  return raiFormat;
-}
-
 function raiGetVideoInfo(bid) {
   let videoData;
-  if (raiGetDemandType(bid) === 'video') {
+  if (bid.mediaTypes?.video) {
     videoData = {
       format: bid.mediaTypes.video.context,
       playerSize: bid.mediaTypes.video.playerSize,

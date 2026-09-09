@@ -134,6 +134,12 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2) {
     payload.ortb2 = bidderRequest.ortb2;
   }
+  const tmax = parseInt(bidderRequest && bidderRequest.timeout, 10);
+  if (!isNaN(tmax)) {
+    // Mirror core's ORTB converter: the auction timeout wins over any publisher-set
+    // `ortb2.tmax`. Shallow-copy first, `bidderRequest.ortb2` is shared with every bid.
+    payload.ortb2 = { ...payload.ortb2, tmax };
+  }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
@@ -296,7 +302,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.8'
+      adapter: '1.1.9'
     }
   };
 }

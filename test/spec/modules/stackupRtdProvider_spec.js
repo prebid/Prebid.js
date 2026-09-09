@@ -21,6 +21,11 @@ const VALID_CONFIG = {
   },
 };
 
+const OVERWRITE_CATEGORIES_CONFIG = {
+  ...VALID_CONFIG,
+  params: { ...VALID_CONFIG.params, overwritePublisherCategories: true },
+};
+
 // Minimal valid API response matching RawEnrichmentResponse schema
 const VALID_API_RESPONSE = {
   site: {
@@ -56,6 +61,29 @@ const VALID_API_RESPONSE = {
       },
     ],
   },
+};
+
+// Variant of VALID_API_RESPONSE carrying an additional segtax:7 (IAB Content
+// Taxonomy 3.0) block, used to exercise the content.cat/site.pagecat mirror.
+const CT3_API_RESPONSE = {
+  site: {
+    content: {
+      id: "test-article-001",
+      title: "Test Article Title",
+      data: [
+        ...VALID_API_RESPONSE.site.content.data,
+        {
+          name: "data.stackup-ai.com",
+          ext: { segtax: 7 },
+          segment: [
+            { id: "483", name: "Sports" },
+            { id: "533", name: "Soccer" },
+          ],
+        },
+      ],
+    },
+  },
+  user: { data: [] },
 };
 
 function respond200(body) {
@@ -624,11 +652,61 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site).to.be.undefined;
     });
 
-    it("should reject content segments with segtax !== 502", async function () {
+    it("should accept and merge a content block with any well-formed segtax", async function () {
+      const resp = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      // A taxonomy this module has no special handling for — still passed
+      // through as-is provided the block itself is shape-valid, so the
+      // backend can introduce new taxonomies without a client-side change.
+      resp.site.content.data.push({
+        name: "foreign.example.com",
+        ext: { segtax: 999 },
+        segment: [{ id: "x", name: "Foreign" }],
+      });
+      const req = await runAndGetReq(resp);
+      const data = req.ortb2Fragments.global.site.content.data;
+      expect(data).to.have.length(2);
+      expect(data.map((b) => b.ext.segtax)).to.include(999);
+    });
+
+    it("should reject content segments with a missing or non-numeric segtax", async function () {
       const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
-      bad.site.content.data[0].ext.segtax = 999;
+      delete bad.site.content.data[0].ext.segtax;
       const req = await runAndGetReq(bad);
       expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
+    it("should reject a content segment with segtax 0", async function () {
+      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      bad.site.content.data[0].ext.segtax = 0;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
+    it("should reject a content segment with a negative segtax", async function () {
+      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      bad.site.content.data[0].ext.segtax = -1;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
+    it("should reject a content segment with a non-integer segtax", async function () {
+      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      bad.site.content.data[0].ext.segtax = 502.5;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
+    it("should accept publisher-FPD blocks (segtax 600)", async function () {
+      const resp = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      resp.site.content.data.push({
+        name: "publisher.example.com",
+        ext: { segtax: 600, stackup: { dimension: "publisher_intelligence" } },
+        segment: [{ id: "cpm_tier", name: "cpm_tier", value: "Mid-range" }],
+      });
+      const req = await runAndGetReq(resp);
+      const data = req.ortb2Fragments.global.site.content.data;
+      expect(data).to.have.length(2);
+      expect(data.map((b) => b.ext.segtax)).to.include(600);
     });
 
     it("should reject content segments where segment is not an array", async function () {
@@ -783,6 +861,221 @@ describe("StackUp RTD Provider", function () {
       const segs = req.ortb2Fragments.global.site.content.data[0].segment;
       expect(segs).to.have.length(1);
       expect(segs[0].ext.confidence).to.equal(0.95);
+    });
+  });
+
+  // ── 9b. content.cat / site.pagecat mirroring (segtax 7) ───────────────────
+
+  describe("CT3.0 (segtax 7) cat/pagecat mirroring", function () {
+    beforeEach(async function () {
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(CT3_API_RESPONSE);
+      await flushMicrotasks();
+    });
+
+    it("should accept and merge a segtax:7 content block", function () {
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const data = req.ortb2Fragments.global.site.content.data;
+      const ct3Block = data.find((b) => b.ext.segtax === 7);
+      expect(ct3Block).to.not.be.undefined;
+      expect(ct3Block.segment.map((s) => s.id)).to.have.members([
+        "483",
+        "533",
+      ]);
+    });
+
+    it("should mirror segtax:7 ids into content.cat and set content.cattax to 7", function () {
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const content = req.ortb2Fragments.global.site.content;
+      expect(content.cattax).to.equal(7);
+      expect(content.cat).to.have.members(["483", "533"]);
+    });
+
+    it("should not overwrite a publisher-supplied content.cat", function () {
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: { content: { data: [], cat: ["999"], cattax: 6 } },
+          },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const content = req.ortb2Fragments.global.site.content;
+      expect(content.cat).to.deep.equal(["999"]);
+      expect(content.cattax).to.equal(6);
+    });
+
+    it("should mirror segtax:7 ids into site.pagecat and set site.cattax to 7", function () {
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.equal(7);
+      expect(site.pagecat).to.have.members(["483", "533"]);
+    });
+
+    it("should not overwrite a publisher-supplied site.pagecat", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { pagecat: ["999"], cattax: 6 } },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const site = req.ortb2Fragments.global.site;
+      expect(site.pagecat).to.deep.equal(["999"]);
+      expect(site.cattax).to.equal(6);
+    });
+
+    it("should overwrite a publisher-supplied content.cat when params.overwritePublisherCategories is true", function () {
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: { content: { data: [], cat: ["999"], cattax: 6 } },
+          },
+        },
+      };
+      subModuleObj.getBidRequestData(
+        req,
+        sinon.spy(),
+        OVERWRITE_CATEGORIES_CONFIG
+      );
+      const content = req.ortb2Fragments.global.site.content;
+      expect(content.cattax).to.equal(7);
+      expect(content.cat).to.have.members(["483", "533"]);
+    });
+
+    it("should overwrite a publisher-supplied site.pagecat when params.overwritePublisherCategories is true", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { pagecat: ["999"], cattax: 6 } },
+        },
+      };
+      subModuleObj.getBidRequestData(
+        req,
+        sinon.spy(),
+        OVERWRITE_CATEGORIES_CONFIG
+      );
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.equal(7);
+      expect(site.pagecat).to.have.members(["483", "533"]);
+    });
+
+    it("should exclude a publisher's own pre-existing segtax:7 block from the content.cat/site.pagecat mirror", function () {
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: {
+              content: {
+                data: [
+                  {
+                    name: "other-ct-vendor.com",
+                    ext: { segtax: 7 },
+                    segment: [{ id: "999", name: "OtherVendorCategory" }],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const content = req.ortb2Fragments.global.site.content;
+      const site = req.ortb2Fragments.global.site;
+      expect(content.cat).to.have.members(["483", "533"]);
+      expect(content.cat).to.not.include("999");
+      expect(site.pagecat).to.have.members(["483", "533"]);
+      expect(site.pagecat).to.not.include("999");
+      // the other vendor's block itself is preserved, just not mirrored
+      expect(content.data.map((b) => b.name)).to.include("other-ct-vendor.com");
+    });
+
+    it("should give StackUp's ids exclusive priority (not a union) when overwritePublisherCategories is true", function () {
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: {
+              content: {
+                data: [
+                  {
+                    name: "other-ct-vendor.com",
+                    ext: { segtax: 7 },
+                    segment: [{ id: "999", name: "OtherVendorCategory" }],
+                  },
+                ],
+                cat: ["999"],
+                cattax: 7,
+              },
+              pagecat: ["999"],
+              cattax: 7,
+            },
+          },
+        },
+      };
+      subModuleObj.getBidRequestData(
+        req,
+        sinon.spy(),
+        OVERWRITE_CATEGORIES_CONFIG
+      );
+      const content = req.ortb2Fragments.global.site.content;
+      const site = req.ortb2Fragments.global.site;
+      expect(content.cat).to.deep.equal(["483", "533"]);
+      expect(site.pagecat).to.deep.equal(["483", "533"]);
+    });
+
+    it("should not set site.cattax/pagecat when the publisher already set site.cat with no explicit cattax", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { cat: ["1"] } },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.be.undefined;
+      expect(site.pagecat).to.be.undefined;
+      expect(site.cat).to.deep.equal(["1"]);
+    });
+
+    it("should not set site.cattax/pagecat when the publisher already set site.sectioncat with no explicit cattax", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { sectioncat: ["2"] } },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.be.undefined;
+      expect(site.pagecat).to.be.undefined;
+    });
+
+    it("should mirror into site.pagecat/cattax despite a pre-existing site.cat when overwritePublisherCategories is true", function () {
+      const req = {
+        ortb2Fragments: {
+          global: { site: { cat: ["1"] } },
+        },
+      };
+      subModuleObj.getBidRequestData(
+        req,
+        sinon.spy(),
+        OVERWRITE_CATEGORIES_CONFIG
+      );
+      const site = req.ortb2Fragments.global.site;
+      expect(site.cattax).to.equal(7);
+      expect(site.pagecat).to.have.members(["483", "533"]);
+    });
+
+    it("should not mirror a segtax:502 block into content.cat or site.pagecat", async function () {
+      _resetStateForTesting();
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(VALID_API_RESPONSE); // segtax 502 only, no segtax 7
+      await flushMicrotasks();
+
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      expect(req.ortb2Fragments.global.site.content.cat).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.content.cattax).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
     });
   });
 

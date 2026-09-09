@@ -100,6 +100,10 @@ export interface BaseBidResponse {
    * Billing tracker URL.
    */
   burl?: string;
+  /**
+   * View tracker URL supplied by the GAM creative.
+   */
+  viewUrl?: string;
 
   desirability: number;
 }

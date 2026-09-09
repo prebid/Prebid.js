@@ -1,6 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getAdUrlByRegion } from '../libraries/smartyadsUtils/getAdUrlByRegion.js';
 import { interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
@@ -32,11 +31,16 @@ export const spec = {
       'deviceHeight': winTop.screen.height,
       'host': location?.domain ?? '',
       'page': location?.page ?? '',
-      'coppa': config.getConfig('coppa') === true ? 1 : 0,
+      'coppa': bidderRequest?.ortb2?.regs?.coppa === 1 ? 1 : 0,
       'placements': placements,
       'eeid': validBidRequests[0]?.userIdAsEids,
       'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
+
+    const schain = bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      request.schain = schain;
+    }
 
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
@@ -56,6 +60,7 @@ export const spec = {
       if (i === 0) adUrl = getAdUrlByRegion(bid);
 
       const traff = bid.params.traffic || BANNER;
+
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,
@@ -63,10 +68,6 @@ export const spec = {
         traffic: traff,
         publisherId: bid.params.accountid
       });
-      const schain = bid?.ortb2?.source?.ext?.schain;
-      if (schain) {
-        placements.schain = schain;
-      }
     }
 
     return {

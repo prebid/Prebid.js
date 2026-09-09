@@ -41,7 +41,11 @@ const allowedImports = {
   // even innocuous imports can become problematic if the source changes,
   // and it's too easy to forget this is a problem for debugging-standalone.
   'modules/debugging': [false],
-  libraries: [],
+  libraries: [
+    // ponyfill for the fetch family, injected by plugins/polyfillFetch.js and only
+    // for build targets that lack AbortController - see libraries/fetchPonyfill
+    'whatwg-fetch'
+  ],
   creative: [],
 }
 
@@ -70,6 +74,8 @@ module.exports = [
       '*.mjs',
       'metadata/**/*',
       'customize/**/*',
+      // inputs for tests that run linter rules themselves, and not all of them are meant to pass
+      'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
     ],
@@ -97,6 +103,10 @@ module.exports = [
       'import/resolver': {
         [path.resolve('./plugins/eslint/resolver')]: true,
         node: true,
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       }
     },
     languageOptions: {
@@ -128,6 +138,14 @@ module.exports = [
       'import/no-named-as-default': 'warn',
       'import/no-named-as-default-member': 'warn',
       'import/no-duplicates': 'warn',
+      'import/no-extraneous-dependencies': ['error', {
+        // flag imports that are not runtime or peer dependencies;
+        // except for tests, which are allowed devDependencies
+        devDependencies: sourcePattern('test'),
+        peerDependencies: true,
+        optionalDependencies: false,
+        includeTypes: true,
+      }],
       'prebid/no-implicit-operand-conversion': 'error',
       'no-restricted-syntax': [
         'error',
@@ -155,6 +173,9 @@ module.exports = [
       // also see: reality. These are here to stay.
       // we're working on them though :)
 
+      // @augmentationOptional is read by prebid/augmentation-reachable, and by the same check
+      // after declaration emit
+      'jsdoc/check-tag-names': ['warn', {definedTags: ['augmentationOptional']}],
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
@@ -193,6 +214,21 @@ module.exports = [
     ],
     rules: {
       'prebid/declaration-filename': 'error'
+    }
+  },
+  {
+    files: getSourceFolders().flatMap(tsPattern),
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/augmentation-reachable': ['error', {
+        // core's entry point as it is before precompilation, when this runs
+        coreEntry: 'src/prebid.public.ts',
+        // an augmentation in test code reaches no consumer either way
+        ignore: ['test'],
+        project: 'tsconfig.json'
+      }]
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {

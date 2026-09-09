@@ -6,7 +6,10 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn, onBidBillable
+  createInterpretResponseFn,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
@@ -48,6 +51,8 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable,
   gvlid: GVLID,
 };
 

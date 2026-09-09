@@ -17,6 +17,29 @@ import { AuctionIndex } from '../../../src/auctionIndex.js';
 import { server } from '../../mocks/xhr.js';
 import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js';
 
+/**
+ * Responds to the two requests getVastXml makes for a locally cached bid: first to the ad server for
+ * the GAM wrapper, then to fetch the blob that wrapper points at. The mock server responds to one
+ * request per `respond()` call, and the second request is only issued once the first has resolved,
+ * so the second response has to wait for it to arrive.
+ */
+function respondToAdServerThenBlob() {
+  server.respond();
+
+  let timeout;
+
+  const respondWhenBlobRequested = () => {
+    if (server.requests.length >= 2) {
+      server.respond();
+      clearTimeout(timeout);
+    } else {
+      timeout = setTimeout(respondWhenBlobRequested, 50);
+    }
+  };
+
+  respondWhenBlobRequested();
+}
+
 describe('The DFP video support module', function () {
   before(() => {
     hook.ready();
@@ -781,20 +804,7 @@ describe('The DFP video support module', function () {
       })
       .finally(config.resetConfig);
 
-    server.respond();
-
-    let timeout;
-
-    const waitForSecondRequest = () => {
-      if (server.requests.length >= 2) {
-        server.respond();
-        clearTimeout(timeout);
-      } else {
-        timeout = setTimeout(waitForSecondRequest, 50);
-      }
-    };
-
-    waitForSecondRequest();
+    respondToAdServerThenBlob();
   });
 
   it('should return unmodified gam vast wrapper if it doesn\'nt contain locally cached uuid', (done) => {
@@ -854,6 +864,46 @@ describe('The DFP video support module', function () {
       .finally(config.resetConfig);
 
     server.respond();
+  });
+
+  // The cached bid's own vastXml reaches this path as a blob (see vastLocalCache in videoCache) and
+  // is placed in a CDATA section, so it must not be able to close that section and add structure.
+  it('should not let locally cached blob content alter the wrapper structure', (done) => {
+    config.setConfig({ cache: { useLocal: true } });
+    const url = 'https://pubads.g.doubleclick.net/gampad/ads';
+    // ']]>' ends a CDATA section; what follows would otherwise be parsed as markup.
+    const blobContent = '<VAST version="3.0"></VAST>]]></VASTAdTagURI><Impression><![CDATA[https://evil.example/pwn';
+    const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
+    const uuid = generateUUID();
+    const localMap = new Map([[uuid, blobUrl]]);
+
+    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuid;
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+
+    server.respondWith(/^https:\/\/pubads.*/, gamWrapper);
+    server.respondWith(/^blob:http:*/, blobContent);
+
+    getVastXml({ url, adUnit: {}, bid: {} }, localMap)
+      .then((vastXml) => {
+        const doc = new DOMParser().parseFromString(vastXml, 'application/xml');
+        expect(doc.getElementsByTagName('parsererror')).to.have.lengthOf(0);
+        expect(doc.getElementsByTagName('VASTAdTagURI')).to.have.lengthOf(1);
+        expect(doc.getElementsByTagName('Impression')).to.have.lengthOf(0);
+        done();
+      })
+      .catch(done)
+      .finally(config.resetConfig);
+
+    respondToAdServerThenBlob();
   });
 
   it('should return returned unmodified gam vast wrapper if exception has been thrown', (done) => {

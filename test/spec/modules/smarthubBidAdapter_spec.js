@@ -570,5 +570,10 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.be.a('string');
       expect(syncData[0].url).to.equal('https://us.shb-sync.com/iframe?pbjs=1&coppa=0&pid=300');
     });
+    it('Should preserve COPPA when wrapping sync config', function() {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, undefined, true);
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&coppa=1&pid=300');
+    });
   });
 });

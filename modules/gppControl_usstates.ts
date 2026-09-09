@@ -171,6 +171,10 @@ export const getSections = (() => {
 
 const handles = [];
 
+// re-exported so that the declaration below is part of a consumer's program: declaration emit
+// keeps this, but drops the value import above, whose bindings no type refers to
+export type { MSPAConfig } from '../libraries/mspa/activityControls.js';
+
 declare module '../libraries/mspa/activityControls' {
   interface MSPAConfig {
     /**

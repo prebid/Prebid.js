@@ -14,22 +14,14 @@ import { type CMConfig, configParser } from '../libraries/consentManagement/cmUt
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
 import { CONSENT_GPP } from "../src/consentHandler.ts";
 
+import type { GPPConsentData, RelevantCMPData } from '../src/types/consent/gpp.d.ts';
+
 export let consentConfig = {} as any;
 
 // CMP event manager instance for GPP
 let gppCmpEventManager: CmpEventManager | null = null;
 
-type RelevantCMPData = {
-  applicableSections: number[]
-  gppString: string;
-  parsedSections: Record<string, unknown>
-};
-
-type CMPData = RelevantCMPData & { [key: string]: unknown };
-
-export type GPPConsentData = RelevantCMPData & {
-  gppData: CMPData;
-};
+export type { GPPConsentData } from '../src/types/consent/gpp.d.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GPPConfig {
@@ -39,9 +31,6 @@ export interface GPPConfig {
 export type GPPCMConfig = GPPConfig & CMConfig<RelevantCMPData>;
 
 declare module '../src/consentHandler' {
-  interface ConsentData {
-    [CONSENT_GPP]: GPPConsentData;
-  }
   interface ConsentManagementConfig {
     [CONSENT_GPP]?: GPPCMConfig;
   }

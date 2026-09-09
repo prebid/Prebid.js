@@ -75,7 +75,7 @@ describe('Allegro Bid Adapter', () => {
 
     it('converts extension fields by default', () => {
       sinon.stub(config, 'getConfig').callsFake((key) => undefined);
-      const bidRequests = [buildBidRequest({})];
+      const bidRequests = [buildBidRequest({ params: { publisherId: 'gwp_pb' } })];
       const ortb2 = {
         site: { ext: { siteCustom: 'val' }, publisher: { ext: { pubCustom: 'pub' } } },
         user: { ext: { userCustom: 'usr' }, data: [{ ext: { dataCustom: 'd1' } }] },
@@ -90,6 +90,7 @@ describe('Allegro Bid Adapter', () => {
 
       expect(data.site.ext).to.equal(undefined);
       expect(data.site['[com.google.doubleclick.site]'].siteCustom).to.equal('val');
+      expect(data['[com.allegro.dsp.ext]'].inventory.id).to.equal('gwp_pb');
       expect(data.site.publisher['[com.google.doubleclick.publisher]'].pubCustom).to.equal('pub');
       expect(data.user['[com.google.doubleclick.user]'].userCustom).to.equal('usr');
       expect(data.user.data[0]['[com.google.doubleclick.data]'].dataCustom).to.equal('d1');
@@ -111,6 +112,23 @@ describe('Allegro Bid Adapter', () => {
       const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests, ortb2));
       expect(req.data.site.ext.siteCustom).to.equal('val');
       expect(req.data.site['[com.google.doubleclick.site]']).to.equal(undefined);
+    });
+
+    it('does not add the inventory extension when publisherId is absent', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({})];
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests));
+      expect(req.data?.['[com.allegro.dsp.ext]']).to.equal(undefined);
+    });
+
+    it('sets inventory.id even when allegro.convertExtensionFields = false', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'allegro.convertExtensionFields') return false;
+        return undefined;
+      });
+      const bidRequests = [buildBidRequest({ params: { publisherId: 'gwp_pb' } })];
+      const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests));
+      expect(req.data['[com.allegro.dsp.ext]'].inventory.id).to.equal('gwp_pb');
     });
 
     it('converts numeric flags to booleans (topframe, secure, test) when present', () => {
