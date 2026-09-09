@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { logMessage, logError, isEmpty, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
@@ -58,7 +57,7 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
 

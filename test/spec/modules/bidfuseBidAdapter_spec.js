@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/bidfuseBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
-import { config } from "../../../src/config.ts";
 
 const bidder = 'bidfuse';
 
@@ -310,10 +309,7 @@ describe('BidfuseBidAdapter', function () {
     });
 
     it('should have valid user sync with coppa 1 on response', function () {
-      config.setConfig({
-        coppa: 1
-      });
-      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse], undefined, undefined, undefined, true);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=1'
@@ -331,7 +327,7 @@ describe('BidfuseBidAdapter', function () {
         applicableSections: [7]
       };
 
-      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent, uspConsent, gppConsent);
+      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent, uspConsent, gppConsent, true);
 
       expect(result).to.deep.equal([{
         'url': 'https://syncbf.bidfuse.com/image?pbjs=1&gdpr=1&gdpr_consent=consent_string&ccpa_consent=usp_string&gpp=gpp_string&gpp_sid=7&coppa=1',

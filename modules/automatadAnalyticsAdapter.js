@@ -10,6 +10,22 @@ import adapterManager from '../src/adapterManager.js';
 import { config } from '../src/config.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
+import * as events from '../src/events.js';
+import { getExternalVideoEventName } from '../libraries/video/shared/helpers.js';
+import {
+  AD_LOADED,
+  AD_STARTED,
+  AD_IMPRESSION,
+  AD_TIME,
+  AD_SKIPPED,
+  AD_ERROR,
+  AD_COMPLETE,
+  AUCTION_AD_LOAD_ATTEMPT,
+  AUCTION_AD_LOAD_QUEUED,
+  AUCTION_AD_LOAD_ABORT,
+  BID_IMPRESSION,
+  BID_ERROR
+} from '../libraries/video/constants/events.js';
 
 /** Prebid Event Handlers */
 
@@ -113,6 +129,90 @@ const processEvents = () => {
             window.atmtdAnalytics.auctionDebugHandler(args);
           }
           break;
+        case 'videoAuctionAdLoadAttempt':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler) {
+            window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAuctionAdLoadQueued':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler) {
+            window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAuctionAdLoadAbort':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAbortHandler) {
+            window.atmtdAnalytics.videoAuctionAdLoadAbortHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoBidImpression':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidImpressionHandler) {
+            window.atmtdAnalytics.videoBidImpressionHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoBidError':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidErrorHandler) {
+            window.atmtdAnalytics.videoBidErrorHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdLoaded':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdLoadedHandler) {
+            window.atmtdAnalytics.videoAdLoadedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdStarted':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdStartedHandler) {
+            window.atmtdAnalytics.videoAdStartedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdImpression':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdImpressionHandler) {
+            window.atmtdAnalytics.videoAdImpressionHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdSkipped':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdSkippedHandler) {
+            window.atmtdAnalytics.videoAdSkippedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdError':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdErrorHandler) {
+            window.atmtdAnalytics.videoAdErrorHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdComplete':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdCompleteHandler) {
+            window.atmtdAnalytics.videoAdCompleteHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case AD_QUARTILE_EVENT:
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdQuartileHandler) {
+            window.atmtdAnalytics.videoAdQuartileHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
         case 'slotRenderEnded':
           if (window.atmtdAnalytics && window.atmtdAnalytics.slotRenderEndedGPTHandler) {
             window.atmtdAnalytics.slotRenderEndedGPTHandler(args);
@@ -173,6 +273,131 @@ const addGPTHandlers = () => {
   });
 };
 
+const VIDEO_EVENTS = [
+  AUCTION_AD_LOAD_ATTEMPT,
+  AUCTION_AD_LOAD_QUEUED,
+  AUCTION_AD_LOAD_ABORT,
+  BID_IMPRESSION,
+  BID_ERROR,
+  AD_LOADED,
+  AD_STARTED,
+  AD_IMPRESSION,
+  AD_SKIPPED,
+  AD_ERROR,
+  AD_COMPLETE
+].map(getExternalVideoEventName);
+
+const AD_TIME_EVENT = getExternalVideoEventName(AD_TIME);
+const AD_QUARTILE_EVENT = 'videoAdQuartile';
+const QUARTILES = [
+  { name: 'firstQuartile', threshold: 0.25 },
+  { name: 'midpoint', threshold: 0.5 },
+  { name: 'thirdQuartile', threshold: 0.75 }
+];
+var registeredVideoHandlers = [];
+var quartileStateByAd = new Map();
+
+const getAdKey = (args) => {
+  return (args && (args.adId || args.vastAdId || args.adTagUrl)) || 'default';
+};
+
+const resetQuartileState = (args) => {
+  if (args) {
+    quartileStateByAd.delete(getAdKey(args));
+  } else {
+    quartileStateByAd.clear();
+  }
+};
+
+// Sample high-frequency adTime ticks into quartile events (25/50/75).
+// Most ticks return null and are dropped, at most one emit per quartile per ad.
+const sampleAdTimeToQuartile = (args) => {
+  const time = args && args.time;
+  const duration = args && args.duration;
+  if (!(duration > 0) || !(time >= 0)) {
+    return null;
+  }
+
+  const progress = time / duration;
+  const adKey = getAdKey(args);
+  let fired = quartileStateByAd.get(adKey);
+  if (!fired) {
+    fired = new Set();
+    quartileStateByAd.set(adKey, fired);
+  }
+
+  for (let i = 0; i < QUARTILES.length; i++) {
+    const { name, threshold } = QUARTILES[i];
+    if (progress >= threshold && !fired.has(name)) {
+      fired.add(name);
+      return Object.assign({}, args, {
+        quartile: name,
+        progress,
+        type: AD_QUARTILE_EVENT
+      });
+    }
+  }
+  return null;
+};
+
+const shouldTrackQuartiles = (includeEvents, excludeEvents = []) => {
+  if (excludeEvents.includes(AD_QUARTILE_EVENT) || excludeEvents.includes(AD_TIME_EVENT)) {
+    return false;
+  }
+  return includeEvents == null ||
+    includeEvents.includes(AD_QUARTILE_EVENT) ||
+    includeEvents.includes(AD_TIME_EVENT);
+};
+
+const removeVideoHandlers = () => {
+  registeredVideoHandlers.forEach(([eventType, handler]) => events.off(eventType, handler));
+  registeredVideoHandlers = [];
+  resetQuartileState();
+};
+
+const addVideoHandlers = (configuration = {}) => {
+  self.removeVideoHandlers();
+  const { includeEvents, excludeEvents = [] } = configuration;
+  // if includeEvents is set, only those that appear in the whitelist.
+  const trackedVideoEvents = VIDEO_EVENTS
+    .filter((ev) => includeEvents == null || includeEvents.includes(ev))
+    .filter((ev) => !excludeEvents.includes(ev));
+  const videoEventSet = new Set(trackedVideoEvents);
+
+  // Replay video events that fired before these listeners were attached.
+  events.getEvents().forEach((event) => {
+    if (event && videoEventSet.has(event.eventType)) {
+      atmtdAdapter.track({ eventType: event.eventType, args: event.args });
+    }
+  });
+
+  trackedVideoEvents.forEach((eventType) => {
+    if (events.has(eventType)) {
+      const handler = (args) => atmtdAdapter.track({ eventType, args });
+      events.on(eventType, handler);
+      registeredVideoHandlers.push([eventType, handler]);
+    } else {
+      self.prettyLog('warn', `Video event ${eventType} is not registered, skipping listener. Is the video module included?`);
+    }
+  });
+
+  // Listen to adTime only to derive quartiles
+  if (shouldTrackQuartiles(includeEvents, excludeEvents)) {
+    if (events.has(AD_TIME_EVENT)) {
+      const adTimeHandler = (args) => {
+        const quartileArgs = sampleAdTimeToQuartile(args);
+        if (quartileArgs) {
+          atmtdAdapter.track({ eventType: AD_QUARTILE_EVENT, args: quartileArgs });
+        }
+      };
+      events.on(AD_TIME_EVENT, adTimeHandler);
+      registeredVideoHandlers.push([AD_TIME_EVENT, adTimeHandler]);
+    } else {
+      self.prettyLog('warn', `Video event ${AD_TIME_EVENT} is not registered, skipping quartile sampling. Is the video module included?`);
+    }
+  }
+};
+
 const initializeQueue = () => {
   self.__atmtdAnalyticsQueue.push = (args) => {
     self.qBeingUsed = true;
@@ -201,6 +426,7 @@ const baseAdapter = adapter({ analyticsType: 'bundle' });
 const atmtdAdapter = Object.assign({}, baseAdapter, {
 
   disableAnalytics() {
+    self.removeVideoHandlers();
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
@@ -280,6 +506,106 @@ const atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args]);
         }
         break;
+      case 'videoAuctionAdLoadAttempt':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAuctionAdLoadQueued':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAuctionAdLoadAbort':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAbortHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAuctionAdLoadAbortHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAuctionAdLoadAbortHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoBidImpression':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidImpressionHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoBidImpressionHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoBidImpressionHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoBidError':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidErrorHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoBidErrorHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoBidErrorHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdLoaded':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdLoadedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdLoadedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdLoadedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdStarted':
+        resetQuartileState(args);
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdStartedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdStartedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdStartedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdImpression':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdImpressionHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdImpressionHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdImpressionHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdSkipped':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdSkippedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdSkippedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdSkippedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        resetQuartileState(args);
+        break;
+      case 'videoAdError':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdErrorHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdErrorHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdErrorHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        resetQuartileState(args);
+        break;
+      case 'videoAdComplete':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdCompleteHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdCompleteHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdCompleteHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        resetQuartileState(args);
+        break;
+      case AD_QUARTILE_EVENT:
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdQuartileHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdQuartileHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdQuartileHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
     }
   }
 });
@@ -301,6 +627,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
 
   self.initializeQueue();
   self.addGPTHandlers();
+  self.addVideoHandlers(configuration);
 
   window.__atmtdSDKConfig = {
     publisherID: conf.publisherID,
@@ -325,7 +652,11 @@ export var self = {
   processEvents,
   initializeQueue,
   addGPTHandlers,
+  addVideoHandlers,
+  removeVideoHandlers,
   prettyLog,
+  sampleAdTimeToQuartile,
+  resetQuartileState,
   queuePointer,
   retryCount,
   isLoggingEnabled,

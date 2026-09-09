@@ -179,7 +179,7 @@ export const spec = {
 
     return bids;
   },
-  getUserSyncs: function (syncOptions, bid, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, bid, gdprConsent, uspConsent, gppConsent, coppa) {
     const syncs = [];
 
     let syncurl = 'pixid=' + pixID;
@@ -192,7 +192,7 @@ export const spec = {
       syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       syncurl += '&coppa=1';
     }
 

@@ -4,7 +4,6 @@ import {
   deepAccess,
   isArray,
   isNumber,
-  generateUUID,
   isEmpty,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -12,10 +11,68 @@ import { getStorageManager } from '../src/storageManager.js';
 const BIDDER_CODE = 'pstudio';
 const ENDPOINT = 'https://exchange.pstudio.tadex.id/prebid-bid';
 const TIME_TO_LIVE = 300;
-// in case that the publisher limits number of user syncs, these syncs will be discarded from the end of the list
-// so more important syncing calls should be at the start of the list
+const LOCAL_STORAGE_KEY = 'u_profile_id';
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+let _tmaPrimed = false;
+let _cachedUserId;
+
+export function __forTestingResetState() {
+  _tmaPrimed = false;
+  _cachedUserId = undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Hook-safety helpers
+// ---------------------------------------------------------------------------
+// fun-hooks returns `undefined` when a hooked function is called before
+// Prebid's ready() fires. We treat that as "not ready" and skip — never throw.
+function storageReady() {
+  try {
+    return typeof storage.localStorageIsEnabled() === 'boolean'
+      ? storage.localStorageIsEnabled()
+      : false;
+  } catch {
+    return false;
+  }
+}
+
+function lsGet(key) {
+  try {
+    if (!storageReady()) return undefined;
+    return storage.getDataFromLocalStorage(key);
+  } catch {
+    return undefined;
+  }
+}
+
+function tmaGetIdCached() {
+  const v = lsGet(LOCAL_STORAGE_KEY);
+  if (v) {
+    _cachedUserId = v;
+  } else {
+    _cachedUserId = undefined;
+  }
+  return _cachedUserId;
+}
+
+// Primes _cachedUserId from LS and triggers a background sync, but ONLY when
+// invoked from a Prebid lifecycle method (i.e. after fun-hooks is ready).
+function tmaPrime() {
+  if (_tmaPrimed) return;
+  _tmaPrimed = true;
+
+  if (!_cachedUserId) {
+    const v = lsGet(LOCAL_STORAGE_KEY);
+    if (v) _cachedUserId = v;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// User syncs config
+// ---------------------------------------------------------------------------
 const USER_SYNCS = [
-  // PARTNER_UID is a partner user id
   {
     type: 'img',
     url: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=%PARTNER_UID%&dsp=ttd',
@@ -27,9 +84,10 @@ const USER_SYNCS = [
     macro: '%USERID%',
   },
 ];
-const COOKIE_NAME = '__tadexid';
-const COOKIE_TTL_DAYS = 365;
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+// ============================
+// Adapter spec
+// ============================
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const VIDEO_PARAMS = [
   'mimes',
@@ -49,8 +107,6 @@ const VIDEO_PARAMS = [
   'linearity',
 ];
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
@@ -61,26 +117,24 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    tmaPrime();
+
     return validBidRequests.map((bid) => ({
       method: 'POST',
       url: ENDPOINT,
       data: JSON.stringify(buildRequestData(bid, bidderRequest)),
-      options: {
-        contentType: 'application/json',
-        withCredentials: true,
-      },
+      options: { contentType: 'application/json', withCredentials: true },
     }));
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-
     if (!serverResponse.body.bids) return [];
     const { id } = JSON.parse(bidRequest.data);
 
     serverResponse.body.bids.forEach((bid) => {
       const { cpm, width, height, currency, ad, meta } = bid;
-      const bidResponse = {
+      let bidResponse = {
         requestId: id,
         cpm,
         width,
@@ -89,11 +143,8 @@ export const spec = {
         currency,
         netRevenue: bid.net_revenue,
         ttl: TIME_TO_LIVE,
-        meta: {
-          advertiserDomains: meta.advertiser_domains,
-        },
+        meta: { advertiserDomains: meta.advertiser_domains },
       };
-
       if (bid.vast_url || bid.vast_xml) {
         bidResponse.vastUrl = bid.vast_url;
         bidResponse.vastXml = bid.vast_xml;
@@ -101,22 +152,17 @@ export const spec = {
       } else {
         bidResponse.ad = ad;
       }
-
       bidResponses.push(bidResponse);
     });
-
     return bidResponses;
   },
 
-  getUserSyncs(_optionsType, _serverResponse, _gdprConsent, _uspConsent) {
+  getUserSyncs(syncOptions, _serverResponse, _gdprConsent, _uspConsent) {
     const syncs = [];
+    if (!syncOptions) return syncs;
 
-    let userId = readUserIdFromCookie(COOKIE_NAME);
-
-    if (!userId) {
-      userId = generateId();
-      writeIdToCookie(COOKIE_NAME, userId);
-    }
+    const userId = tmaGetIdCached();
+    if (!userId) return syncs;
 
     USER_SYNCS.forEach((userSync) => {
       if (userSync.type === 'img') {
@@ -131,9 +177,11 @@ export const spec = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Request building
+// ---------------------------------------------------------------------------
 function buildRequestData(bid, bidderRequest) {
-  const payloadObject = buildBaseObject(bid, bidderRequest);
-
+  let payloadObject = buildBaseObject(bid, bidderRequest);
   if (bid.mediaTypes.banner) {
     return buildBannerObject(bid, payloadObject);
   } else if (bid.mediaTypes.video) {
@@ -144,9 +192,9 @@ function buildRequestData(bid, bidderRequest) {
 function buildBaseObject(bid, bidderRequest) {
   const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
   const { pubid, adtagid, bcat, badv, bapp } = bid.params;
+
   const { userId } = bid;
   const uid2Token = userId?.uid2?.id;
-
   if (uid2Token) {
     if (firstPartyData.user) {
       firstPartyData.user.uid2_token = uid2Token;
@@ -154,12 +202,13 @@ function buildBaseObject(bid, bidderRequest) {
       firstPartyData.user = { uid2_token: uid2Token };
     }
   }
-  const userCookieId = readUserIdFromCookie(COOKIE_NAME);
-  if (userCookieId) {
+
+  const userProfileId = tmaGetIdCached();
+  if (userProfileId) {
     if (firstPartyData.user) {
-      firstPartyData.user.id = userCookieId;
+      firstPartyData.user.id = userProfileId;
     } else {
-      firstPartyData.user = { id: userCookieId };
+      firstPartyData.user = { id: userProfileId };
     }
   }
 
@@ -176,78 +225,28 @@ function buildBaseObject(bid, bidderRequest) {
 
 function buildBannerObject(bid, payloadObject) {
   const { sizes, pos, name } = bid.mediaTypes.banner;
-
-  payloadObject.banner_properties = {
-    name,
-    sizes,
-    pos,
-  };
-
+  payloadObject.banner_properties = { name, sizes, pos };
   return payloadObject;
 }
 
 function buildVideoObject(bid, payloadObject) {
   const { context, playerSize, w, h } = bid.mediaTypes.video;
-
   payloadObject.video_properties = {
     context,
     w: w || playerSize[0][0],
     h: h || playerSize[0][1],
   };
-
   for (const param of VIDEO_PARAMS) {
     const paramValue = deepAccess(bid, `mediaTypes.video.${param}`);
-
-    if (paramValue) {
-      payloadObject.video_properties[param] = paramValue;
-    }
+    if (paramValue) payloadObject.video_properties[param] = paramValue;
   }
-
   return payloadObject;
 }
 
-function readUserIdFromCookie(key) {
-  try {
-    const storedValue = storage.getCookie(key);
+function prepareFirstPartyData({ user, device, site, app, regs } = {}) {
+  let userData, deviceData, siteData, appData, regsData;
 
-    if (storedValue !== null) {
-      return storedValue;
-    }
-  } catch (error) {
-  }
-}
-
-function generateId() {
-  return generateUUID();
-}
-
-function daysToMs(days) {
-  return days * DAY_IN_MS;
-}
-
-function writeIdToCookie(key, value) {
-  if (storage.cookiesAreEnabled()) {
-    const expires = new Date(
-      Date.now() + daysToMs(parseInt(COOKIE_TTL_DAYS))
-    ).toUTCString();
-    storage.setCookie(key, value, expires, '/');
-  }
-}
-
-function prepareFirstPartyData({ user, device, site, app, regs }) {
-  let userData;
-  let deviceData;
-  let siteData;
-  let appData;
-  let regsData;
-
-  if (user) {
-    userData = {
-      yob: user.yob,
-      gender: user.gender,
-    };
-  }
-
+  if (user) userData = { yob: user.yob, gender: user.gender };
   if (device) {
     deviceData = {
       ua: device.ua,
@@ -278,14 +277,9 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
           type: device.geo.type,
         },
       }),
-      ...(device.ext && {
-        ext: {
-          ifatype: device.ext.ifatype,
-        },
-      }),
+      ...(device.ext && { ext: { ifatype: device.ext.ifatype } }),
     };
   }
-
   if (site) {
     siteData = {
       id: site.id,
@@ -319,7 +313,6 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
       mobile: site.mobile,
     };
   }
-
   if (app) {
     appData = {
       id: app.id,
@@ -356,10 +349,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
       }),
     };
   }
-
-  if (regs) {
-    regsData = { coppa: regs.coppa };
-  }
+  if (regs) regsData = { coppa: regs.coppa };
 
   return cleanObject({
     user: userData,
@@ -371,16 +361,13 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
 }
 
 function cleanObject(data) {
-  for (const key in data) {
+  for (let key in data) {
     if (typeof data[key] === 'object') {
       cleanObject(data[key]);
-
       if (isEmpty(data[key])) delete data[key];
     }
-
     if (data[key] === undefined) delete data[key];
   }
-
   return data;
 }
 
@@ -391,16 +378,13 @@ function isVideoRequestValid(bidRequest) {
       'mediaTypes.video',
       {}
     );
-
     const areSizesValid =
       (isNumber(w) && isNumber(h)) || validateSizes(playerSize);
     const areMimesValid = isArray(mimes) && mimes.length > 0;
     const areProtocolsValid =
       isArray(protocols) && protocols.length > 0 && protocols.every(isNumber);
-
     return areSizesValid && areMimesValid && areProtocolsValid;
   }
-
   return true;
 }
 
@@ -413,21 +397,5 @@ function validateSizes(sizes) {
     )
   );
 }
-
-/* function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.floorPrice ? bid.params.floorPrice : null;
-  }
-
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*',
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
-} */
 
 registerBidder(spec);

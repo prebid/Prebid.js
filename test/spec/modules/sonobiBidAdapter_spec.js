@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { _getPlatform, spec } from 'modules/sonobiBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { userSync } from '../../../src/userSync.js';
-import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import { parseQS } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -438,15 +437,16 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.fpd).to.equal(encodeURIComponent(JSON.stringify(ortb2)));
     });
 
-    it('should populate coppa as 1 if set in config', function () {
-      config.setConfig({ coppa: true });
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+    it('should populate coppa as 1 if set in the bidder request', function () {
+      const bidRequests = spec.buildRequests(bidRequest, {
+        ...bidderRequests,
+        ortb2: { ...bidderRequests.ortb2, regs: { coppa: 1 } }
+      });
 
       expect(bidRequests.data.coppa).to.equal(encodeURIComponent(1));
     });
 
-    it('should populate coppa as 0 if set in config', function () {
-      config.setConfig({ coppa: false });
+    it('should populate coppa as 0 if absent from the bidder request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
 
       expect(bidRequests.data.coppa).to.equal(encodeURIComponent(0));

@@ -7,14 +7,16 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn
+  createInterpretResponseFn,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
  * @typedef {import('./copper6sspBidAdapter.d.ts').Copper6SSPBidRequestParams} Copper6SSPBidRequestParams
  */
 
-const DEFAULT_SUB_DOMAIN = 'exchange';
+const DEFAULT_SUB_DOMAIN = 'bidder';
 const BIDDER_CODE = 'copper6ssp';
 const BIDDER_VERSION = '1.0.0';
 const GVLID = 1356;
@@ -83,6 +85,9 @@ export const spec = {
   interpretResponse,
   getUserSyncs,
   onBidWon,
+  disclosureURL: "https://privacy.copper6.com/deviceStorage.json",
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

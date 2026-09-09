@@ -31,7 +31,6 @@ import { chunk } from '../libraries/chunk/chunk.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'mediafuse';
-const GVLID = 32;
 const ENDPOINT_URL_NORMAL = 'https://ib.adnxs.com/openrtb2/prebidjs';
 const ENDPOINT_URL_SIMPLE = 'https://ib.adnxs-simple.com/openrtb2/prebidjs';
 const SOURCE = 'pbjs';
@@ -788,7 +787,6 @@ function hasOmidSupport(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   maintainer: { email: 'indrajit@oncoredigital.com' },
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function (bid) {

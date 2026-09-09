@@ -535,10 +535,8 @@ describe('ttdBidAdapter', function () {
 
     it('adds coppa consent info to the request', function () {
       const clonedBidderRequest = deepClone(baseBidderRequest);
-
-      config.setConfig({ coppa: true });
+      clonedBidderRequest.ortb2 = { regs: { coppa: 1 } };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
-      config.resetConfig();
       expect(requestBody.regs.coppa).to.equal(1);
     });
 

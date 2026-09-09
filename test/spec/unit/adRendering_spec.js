@@ -208,7 +208,7 @@ describe('adRendering', () => {
       let bid;
       beforeEach(() => {
         bid = { adId: '123' };
-        sandbox.stub(utils, 'triggerPixel');
+        sandbox.stub(utils, 'politeTriggerPixel');
       });
       it('should fire BID_WON', () => {
         markWinningBid(bid);
@@ -217,7 +217,7 @@ describe('adRendering', () => {
       it('should fire win tracking pixels', () => {
         bid.eventtrackers = [{ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker' }];
         markWinningBid(bid);
-        sinon.assert.calledWith(utils.triggerPixel, 'tracker');
+        sinon.assert.calledWith(utils.politeTriggerPixel, 'tracker');
       });
       it('should NOT fire non-win or non-pixel trackers', () => {
         bid.eventtrackers = [
@@ -225,7 +225,7 @@ describe('adRendering', () => {
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'ignored' }
         ];
         markWinningBid(bid);
-        sinon.assert.notCalled(utils.triggerPixel);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
       });
     });
 

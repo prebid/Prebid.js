@@ -477,5 +477,9 @@ describe('AxisBidAdapter', function () {
       expect(syncData[0].url).to.be.a('string');
       expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0');
     });
+    it('Should include configured COPPA in the sync URL', function() {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {}, {}, true);
+      expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&coppa=1');
+    });
   });
 });

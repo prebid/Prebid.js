@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldmoBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 // above is used for debugging purposes only
@@ -382,8 +383,8 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should not write 0 bidfloor value by default', function() {
-        const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
-        expect(placementsData[0].bidfloor).to.be.undefined;
+        const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid({}, { bidFloor: undefined })]));
+        expect(placementsData[0].bidFloor).to.be.undefined;
       });
 
       it('should not exceed max url length', () => {
@@ -466,6 +467,25 @@ describe('YieldmoAdapter', function () {
         expect(biddata[0].data.gpc).to.equal('1');
       });
 
+      it('should discard the banner request entirely when coppa is set', function () {
+        config.setConfig({ coppa: true });
+        try {
+          expect(build([mockBannerBid()])).to.deep.equal([]);
+        } finally {
+          config.resetConfig();
+        }
+      });
+
+      it('should discard the request when coppa is set to the numeric flag (coppa: 1)', function () {
+        config.setConfig({ coppa: 1 });
+        try {
+          expect(build([mockBannerBid()])).to.deep.equal([]);
+          expect(build([mockVideoBid()], mockBidderRequest({}, [mockVideoBid()]))).to.deep.equal([]);
+        } finally {
+          config.resetConfig();
+        }
+      });
+
       it('should add eids to the banner bid request', function () {
         const params = {
           userIdAsEids: [{
@@ -485,7 +505,7 @@ describe('YieldmoAdapter', function () {
             }]
           }]
         };
-        expect(buildAndGetData([mockBannerBid({ ...params })]).eids).equal(JSON.stringify(params.fakeUserIdAsEids));
+        expect(buildAndGetData([mockBannerBid({ ...params })]).eids).equal(JSON.stringify(params.userIdAsEids));
       });
     });
 
@@ -565,12 +585,12 @@ describe('YieldmoAdapter', function () {
           expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
         });
 
-        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+        it('should set video.skip=1 if params.video.skippable is present', function () {
           utils.deepAccess(videoBid, 'params.video')['skippable'] = true;
           expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
         });
 
-        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+        it('should set video.skip=1 if params.video.skippable=true overrides mediaTypes.video.skippable=false', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = true;
           expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
@@ -1062,6 +1082,10 @@ describe('YieldmoAdapter', function () {
     });
     it('should register no syncs', function () {
       expect(spec.getUserSyncs({})).to.deep.equal([]);
+    });
+    it('should register no syncs on COPPA (child-directed) traffic', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, undefined, true)).to.deep.equal([]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [], undefined, undefined, undefined, true)).to.deep.equal([]);
     });
   });
 });

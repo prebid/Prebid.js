@@ -645,5 +645,9 @@ describe('TeqBlazeBidderUtils', function () {
       expect(syncData[0].url).to.be.a('string');
       expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0`);
     });
+    it('Should include configured COPPA in the sync URL', function () {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, undefined, true);
+      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&coppa=1`);
+    });
   });
 });

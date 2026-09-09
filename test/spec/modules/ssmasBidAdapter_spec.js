@@ -52,6 +52,14 @@ describe('ssmasBidAdapter', function () {
       expect(request[0].method).to.equal(SSMAS_REQUEST_METHOD);
       expect(request[0].url).to.equal(SSMAS_ENDPOINT);
     });
+
+    it('passes COPPA from the bidder request', function () {
+      const request = spec.buildRequests([bid], {
+        ...bidderRequest,
+        ortb2: { ...bidderRequest.ortb2, regs: { coppa: 1 } }
+      });
+      expect(request[0].data.regs.coppa).to.equal(1);
+    });
   });
 
   describe('register adapter functions', () => {

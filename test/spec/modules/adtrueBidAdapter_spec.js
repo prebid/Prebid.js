@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adtrueBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
 
 describe('AdTrueBidAdapter', function () {
   const adapter = newBidder(spec);
@@ -344,7 +343,7 @@ describe('AdTrueBidAdapter', function () {
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
 
-      it('should NOT include coppa flag in bid request if coppa config is not present', () => {
+      it('should NOT include coppa flag in bid request if coppa is not present', () => {
         const request = spec.buildRequests(bidRequests, {});
         const data = JSON.parse(request.data);
         if (data.regs) {
@@ -354,28 +353,13 @@ describe('AdTrueBidAdapter', function () {
           expect(data.regs).to.equal(undefined);
         }
       });
-      it('should include coppa flag in bid request if coppa is set to true', () => {
-        const sandbox = sinon.createSandbox();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'coppa': true
-          };
-          return config[key];
-        });
-        const request = spec.buildRequests(bidRequests, {});
+      it('should include coppa flag in bid request if coppa is set in ortb2 regs', () => {
+        const request = spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } });
         const data = JSON.parse(request.data);
         expect(data.regs.coppa).to.equal(1);
-        sandbox.restore();
       });
-      it('should NOT include coppa flag in bid request if coppa is set to false', () => {
-        const sandbox = sinon.createSandbox();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'coppa': false
-          };
-          return config[key];
-        });
-        const request = spec.buildRequests(bidRequests, {});
+      it('should NOT include coppa flag in bid request if coppa is set to 0', () => {
+        const request = spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 0 } } });
         const data = JSON.parse(request.data);
         if (data.regs) {
           // in case GDPR is set then data.regs will exist
@@ -383,7 +367,6 @@ describe('AdTrueBidAdapter', function () {
         } else {
           expect(data.regs).to.equal(undefined);
         }
-        sandbox.restore();
       });
     });
   });
@@ -489,14 +472,14 @@ describe('AdTrueBidAdapter', function () {
     afterEach(function () {
       sandbox.restore();
     });
-    it('execute as per config', function () {
+    it('returns iframe syncs', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [bidResponses], undefined, undefined)).to.deep.equal([{
         type: 'iframe',
         url: 'https://hb.adtrue.com/prebid/usersync?bidder=adtrue&publisherId=1212&zoneId=21423&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
     // Multiple user sync output
-    it('execute as per config', function () {
+    it('returns multiple user syncs', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [bidResponses2], undefined, undefined)).to.deep.equal([
         {
           type: 'image',
@@ -516,11 +499,14 @@ describe('AdTrueBidAdapter', function () {
         { pixelEnabled: true },
         [bidResponses],
         { gdprApplies: true, consentString: 'consentData' },
-        '1YNN'
+        '1YNN',
+        undefined,
+        true
       );
       expect(syncs[0].url).to.contain('gdpr=1');
       expect(syncs[0].url).to.contain('gdpr_consent=consentData');
       expect(syncs[0].url).to.contain('us_privacy=1YNN');
+      expect(syncs[0].url).to.contain('coppa=1');
     });
   });
 });

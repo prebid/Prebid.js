@@ -409,12 +409,12 @@ describe('Richaudience adapter tests', function () {
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('bidfloor').and.to.equal(0.5);
     expect(requestContent).to.have.property('pid').and.to.equal('ADb1f40rmi');
-    expect(requestContent).to.have.property('supplyType').and.to.equal('site');
+    expect(requestContent).to.not.have.property('supplyType');
     expect(requestContent).to.have.property('auctionId').and.to.equal('0cb3144c-d084-4686-b0d6-f5dbe917c563');
-    expect(requestContent).to.have.property('bidId').and.to.equal('2c7c8e9c900244');
-    expect(requestContent).to.have.property('BidRequestsCount').and.to.equal(1);
-    expect(requestContent).to.have.property('bidder').and.to.equal('richaudience');
-    expect(requestContent).to.have.property('bidderRequestId').and.to.equal('1858b7382993ca');
+    expect(requestContent).to.not.have.property('bidId');
+    expect(requestContent).to.not.have.property('BidRequestsCount');
+    expect(requestContent).to.not.have.property('bidder');
+    expect(requestContent).to.not.have.property('bidderRequestId');
     expect(requestContent).to.have.property('tagId').and.to.equal('test-div');
     expect(requestContent).to.have.property('referer').and.to.equal('https%3A%2F%2Fdomain.com');
     expect(requestContent).to.have.property('sizes');
@@ -428,7 +428,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.sizes[3]).to.have.property('h').and.to.equal(250);
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
     expect(requestContent).to.have.property('timeout').and.to.equal(600);
-    expect(requestContent).to.have.property('numIframes').and.to.equal(0);
+    expect(requestContent).to.not.have.property('numIframes');
     expect(typeof requestContent.scr_rsl === 'string');
     expect(typeof requestContent.gpid === 'string');
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
@@ -449,7 +449,7 @@ describe('Richaudience adapter tests', function () {
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
 
-    expect(requestContent).to.have.property('demand').and.to.equal('video');
+    expect(requestContent).to.not.have.property('demand');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('instream');
   });
 
@@ -468,8 +468,10 @@ describe('Richaudience adapter tests', function () {
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
 
-    expect(requestContent).to.have.property('demand').and.to.equal('video');
+    expect(requestContent).to.not.have.property('demand');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
+    expect(request[0].videoData).to.have.property('format').and.to.equal('outstream');
+    expect(request[0].adUnitCode).to.equal('test-div');
   });
 
   describe('gdpr test', function () {
@@ -499,7 +501,7 @@ describe('Richaudience adapter tests', function () {
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
     });
 
-    it('Verify adding ifa when supplyType equal to app', function () {
+    it('Verify adding ifa param', function () {
       const request = spec.buildRequests(DEFAULT_PARAMS_APP, {
         gdprConsent: {
           consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -511,7 +513,6 @@ describe('Richaudience adapter tests', function () {
         }
       });
       const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.have.property('supplyType').and.to.equal('app');
       expect(requestContent).to.have.property('ifa').and.to.equal('AAAAAAAAA-BBBB-CCCC-1111-222222220000');
     });
 
@@ -631,6 +632,7 @@ describe('Richaudience adapter tests', function () {
     const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
+    expect(bid.requestId).to.equal('2c7c8e9c900244');
     expect(bid.cpm).to.equal(1.50);
     expect(bid.ad).to.equal('<!-- script -->');
     expect(bid.mediaType).to.equal('js');
@@ -642,6 +644,26 @@ describe('Richaudience adapter tests', function () {
     expect(bid.ttl).to.equal(300);
     expect(bid.dealId).to.equal('dealId');
     expect(bid.meta.advertiserDomains[0]).to.equal('richaudience.com');
+  });
+
+  it('response without adomain does not throw and returns empty advertiserDomains', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const response = { body: { ...BID_RESPONSE.body } };
+    delete response.body.adomain;
+
+    const bids = spec.interpretResponse(response, request[0]);
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].meta.advertiserDomains).to.deep.equal([]);
   });
 
   it('no banner media response inestream', function () {
@@ -692,6 +714,7 @@ describe('Richaudience adapter tests', function () {
     expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal('<VAST></VAST>');
     expect(bid.renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
+    expect(bid.renderer.adUnitCode).to.equal('test-div');
     expect(bid.cpm).to.equal(1.50);
     expect(bid.width).to.equal(1);
     expect(bid.height).to.equal(1);
@@ -700,6 +723,22 @@ describe('Richaudience adapter tests', function () {
     expect(bid.currency).to.equal('USD');
     expect(bid.ttl).to.equal(300);
     expect(bid.dealId).to.equal('dealId');
+  });
+
+  it('interpretResponse reads the render context from the request without parsing its data', function () {
+    const request = {
+      bidId: '2c7c8e9c900244',
+      tagId: 'test-div',
+      videoData: { format: 'outstream' },
+      data: 'not-json'
+    };
+
+    let bids;
+    expect(() => { bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request); }).to.not.throw();
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].mediaType).to.equal('video');
+    expect(bids[0].vastXml).to.equal('<VAST></VAST>');
+    expect(bids[0].renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
   });
 
   it('banner media and response VAST', function () {
@@ -751,7 +790,7 @@ describe('Richaudience adapter tests', function () {
       params: {
         pid: 'ADb1f40rmi'
       }
-    })).to.equal(false);
+    })).to.equal(true);
     expect(spec.isBidRequestValid({
       params: {
         supplyType: 'site'
@@ -806,7 +845,7 @@ describe('Richaudience adapter tests', function () {
         pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
         bidfloor: 0.50,
       }
-    })).to.equal(false);
+    })).to.equal(true);
     expect(spec.isBidRequestValid({
       params: {
         pid: ['1gCB5ZC4XL', '1a40xk8qSV'],

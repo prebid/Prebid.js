@@ -8,7 +8,7 @@ class GlobalObjectProperty1 extends string {
   
   GlobalObjectProperty1() {
       
-      ( this = "enumerateDevices"  and weight = 838.34  and global0 = "navigator"  and global1 = "mediaDevices" )
+      ( this = "enumerateDevices"  and weight = 460.63  and global0 = "navigator"  and global1 = "mediaDevices" )
   }  
 
   float getWeight() {

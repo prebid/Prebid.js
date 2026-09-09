@@ -3,8 +3,7 @@ import { percentInView } from '../percentInView/percentInView.js';
 import { getMinSize } from '../sizeUtils/sizeUtils.js';
 import { isIframe } from './index.js';
 
-export function getRoundedViewability(adUnitCode, processedSizes) {
-  const element = document.getElementById(adUnitCode);
+export function getRoundedViewability(element, processedSizes) {
   const minSize = getMinSize(processedSizes);
   const viewabilityAmount = isViewabilityMeasurable(element) ? getViewability(element, minSize) : 'na';
   return isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
