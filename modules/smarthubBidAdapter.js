@@ -34,7 +34,8 @@ const ALIASES = {
   'adastra': { area: '1', pid: '33' },
   'radiantfusion': { area: '1', pid: '455' },
   'stackup': { area: '13', pid: '469' },
-  'adnex': { area: '2', pid: '359' }
+  'adnex': { area: '2', pid: '359' },
+  'ppcbuzz': { area: '2', pid: '398' }
 };
 
 const BASE_URL_TEMPLATES = {
@@ -86,6 +87,9 @@ const PARTNER_ENDPOINTS = {
     us_east: 'https://stackup-prebid.attekmi.co/pbjs',
   },
   adnex: {
+    us_east: 'https://adnex-prebid.attekmi.co/pbjs'
+  },
+  ppcbuzz: {
     us_east: 'https://adnex-prebid.attekmi.co/pbjs'
   }
 };
