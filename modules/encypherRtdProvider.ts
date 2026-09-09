@@ -1,4 +1,4 @@
-import { submodule } from '../src/hook.js';
+import { getHook, submodule } from '../src/hook.js';
 import { fetcherFactory } from '../src/ajax.js';
 import type { AllConsentData } from '../src/consentHandler.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
@@ -9,14 +9,17 @@ export const MODULE_NAME = 'encypher';
 const SIGNAL_ORIGIN = 'https://signals.encypher.com';
 export const TRUSTED_ISSUER = 'https://api.encypher.com';
 export const TRUSTED_JWKS_URL = TRUSTED_ISSUER + '/api/v1/public/provenance/jwks.json';
-const TRUSTED_ATTESTATION_BASE = TRUSTED_ISSUER + '/api/v1/public/provenance/attestations/';
+const EVIDENCE_COLLECTION = TRUSTED_ISSUER + '/api/v1/public/provenance/evidence';
+const ACCEPTED_TRUST_POLICY_VERSION = 'adtech-v1-2026-07';
 const MODULE_VERSION = '1.1.0';
 const SCHEMA_VERSION = 1;
 const DEFAULT_TIMEOUT_MS = 300;
 const MAX_EXTENSION_BYTES = 1024;
-const CLOCK_SKEW_SECONDS = 60;
-const JWKS_CACHE_TTL_MS = 60_000;
+const MAX_REF_BYTES = 96;
+const CLOCK_SKEW_SECONDS = 30;
+const MAX_ATTESTATION_LIFETIME_SECONDS = 3600;
 const RECORD_STATUS_CACHE_TTL_MS = 30_000;
+const JWKS_CACHE_TTL_MS = 30_000;
 const LOOKUP_MAX_BYTES = 4 * 1024;
 const JWKS_MAX_BYTES = 64 * 1024;
 
@@ -64,6 +67,8 @@ const decisions = new Map<string, DecisionState>();
 let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
 let maxDatasetVersionSeen = 0;
 let globalStaleBarrier = 0;
+let isolatedAdUnitArrays = new WeakSet<object>();
+let isolationHookInstalled = false;
 
 /** SHA-256 bytes for the canonical URL lookup key. */
 export function sha256(value: string): Promise<Uint8Array> {
@@ -126,11 +131,41 @@ function exactKeys(value: unknown, expected: readonly string[]): value is JsonOb
   const actual = Object.keys(value);
   return actual.length === expected.length && expected.every(key => actual.includes(key));
 }
+function canonicalEvidenceRef(value: string): boolean {
+  if (new TextEncoder().encode(value).length > MAX_REF_BYTES) return false;
+  try {
+    const parsed = new URL(value);
+    if (
+      parsed.origin !== TRUSTED_ISSUER ||
+      parsed.username !== '' ||
+      parsed.password !== '' ||
+      parsed.search !== '' ||
+      parsed.hash !== ''
+    ) return false;
+    const prefix = new URL(EVIDENCE_COLLECTION).pathname + '/';
+    const compactUuid = parsed.pathname.startsWith(prefix)
+      ? parsed.pathname.slice(prefix.length)
+      : '';
+    if (!/^[A-Za-z0-9_-]{22}$/.test(compactUuid) ||
+      parsed.pathname !== prefix + compactUuid ||
+      value !== EVIDENCE_COLLECTION + '/' + compactUuid) return false;
+    return decodeBase64url(compactUuid).length === 16;
+  } catch {
+    return false;
+  }
+}
 
 function compactRecord(record: unknown): C2paSignalV1 | null {
   if (!exactKeys(record, ['v', 'id', 'ref', 'att'])) return null;
-  if (record.v !== 1 || typeof record.id !== 'string' || !record.id || typeof record.att !== 'string') return null;
-  if (typeof record.ref !== 'string' || !record.ref.startsWith('https://')) return null;
+  if (
+    record.v !== 1 ||
+    typeof record.id !== 'string' ||
+    !record.id ||
+    record.id.length > 32 ||
+    typeof record.att !== 'string' ||
+    typeof record.ref !== 'string' ||
+    !canonicalEvidenceRef(record.ref)
+  ) return null;
   if (new TextEncoder().encode(JSON.stringify(record)).length > MAX_EXTENSION_BYTES) return null;
   return { v: 1, id: record.id, ref: record.ref, att: record.att };
 }
@@ -162,18 +197,21 @@ function validClaims(claims: unknown, record: C2paSignalV1, publisherDomain: str
     'validation_results', 'declaration', 'trust_policy_version', 'record_revision',
   ])) return null;
   const digestPattern = /^[A-Za-z0-9_-]{43}$/;
-  const expectedRef = TRUSTED_ATTESTATION_BASE + encodeURIComponent(record.id);
-  if (record.ref !== expectedRef) return null;
   if (claims.iss !== TRUSTED_ISSUER || claims.sub !== record.id || claims.publisher_domain !== publisherDomain) return null;
   if (typeof claims.iat !== 'number' || !Number.isInteger(claims.iat) || claims.iat < 0) return null;
   if (typeof claims.exp !== 'number' || !Number.isInteger(claims.exp) || claims.exp < 1) return null;
-  if (claims.iat > now + CLOCK_SKEW_SECONDS || claims.exp <= now) return null;
+  if (
+    claims.iat > now + CLOCK_SKEW_SECONDS ||
+    claims.exp <= now ||
+    claims.exp <= claims.iat ||
+    claims.exp - claims.iat > MAX_ATTESTATION_LIFETIME_SECONDS
+  ) return null;
   if (
     claims.url_hash !== urlHash ||
     typeof claims.content_hash !== 'string' || !digestPattern.test(claims.content_hash) ||
     typeof claims.manifest_digest !== 'string' || !digestPattern.test(claims.manifest_digest)
   ) return null;
-  if (typeof claims.trust_policy_version !== 'string' || claims.trust_policy_version.length === 0) return null;
+  if (claims.trust_policy_version !== ACCEPTED_TRUST_POLICY_VERSION) return null;
   if (typeof claims.record_revision !== 'number' || !Number.isInteger(claims.record_revision) || claims.record_revision < 1) return null;
   const results = claims.validation_results;
   if (!exactKeys(results, ['status', 'codes']) || results.status !== 'valid' || !Array.isArray(results.codes)) return null;
@@ -229,21 +267,41 @@ async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain
   }
 }
 
-function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1): number {
+function isolateAuctionAdUnits(auction: StartAuctionOptions): void {
+  if (Array.isArray(auction.adUnits) && isolatedAdUnitArrays.has(auction.adUnits)) return;
   const sourceAdUnits = Array.isArray(auction.adUnits) ? auction.adUnits : [];
   auction.adUnits = sourceAdUnits.map(adUnit => {
-    const sourceImp = adUnit.ortb2Imp || {};
-    const extension = { ...(sourceImp.ext || {}) } as Record<string, unknown>;
-    extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
-    return {
-      ...adUnit,
-      ortb2Imp: {
-        ...sourceImp,
-        ext: extension,
-      },
-    };
+    const isolatedAdUnit = { ...adUnit };
+    if (adUnit.ortb2Imp) {
+      isolatedAdUnit.ortb2Imp = { ...adUnit.ortb2Imp };
+      if (adUnit.ortb2Imp.ext) {
+        isolatedAdUnit.ortb2Imp.ext = { ...adUnit.ortb2Imp.ext };
+      }
+    }
+    return isolatedAdUnit;
   });
-  return sourceAdUnits.length;
+  isolatedAdUnitArrays.add(auction.adUnits);
+}
+
+function isolateBeforeRtd(next: (auction?: StartAuctionOptions) => void, auction?: StartAuctionOptions): void {
+  if (auction) isolateAuctionAdUnits(auction);
+  next(auction);
+}
+
+function closeAuctionOwnership(next: (auction?: StartAuctionOptions) => void, auction?: StartAuctionOptions): void {
+  if (auction && Array.isArray(auction.adUnits)) isolatedAdUnitArrays.delete(auction.adUnits);
+  next(auction);
+}
+
+function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1): number | null {
+  if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return null;
+  const adUnits = auction.adUnits;
+  adUnits.forEach(adUnit => {
+    const impression = adUnit.ortb2Imp || (adUnit.ortb2Imp = {});
+    const extension = impression.ext || (impression.ext = {});
+    extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
+  });
+  return adUnits.length;
 }
 
 function emitDiagnostic(params: EncypherRtdParams, event: DiagnosticEvent, count: number, datasetVersion: number | undefined, startedAt: number): void {
@@ -499,7 +557,15 @@ function commitNonReadyDecision(urlHash: string, status: 'miss' | 'revoked' | 's
   decisions.set(urlHash, { datasetVersion, status, recordRevision: current?.recordRevision });
 }
 
-const init = (_config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentData): boolean => true;
+const init = (_config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentData): boolean => {
+  if (!isolationHookInstalled) {
+    const startAuction = getHook('startAuction');
+    startAuction.before(isolateBeforeRtd, 21);
+    startAuction.before(closeAuctionOwnership, 19);
+    isolationHookInstalled = true;
+  }
+  return true;
+};
 
 const getBidRequestData = (
   auction: StartAuctionOptions,
@@ -528,9 +594,18 @@ const getBidRequestData = (
     completed = true;
     window.clearTimeout(deadlineTimer);
     const injectedCount = event === 'injected' && record ? injectPerImpression(auction, record) : 0;
+    const reportedEvent = injectedCount === null ? 'invalid' : event;
     callback();
-    emitDiagnostic(params, event, injectedCount, datasetVersion, startedAt);
+    emitDiagnostic(params, reportedEvent, injectedCount === null ? 0 : injectedCount, datasetVersion, startedAt);
   };
+  if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) {
+    finish('invalid');
+    return;
+  }
+  if (auction.adUnits.length === 0) {
+    callback();
+    return;
+  }
   deadlineTimer = window.setTimeout(() => finish('timeout'), timeout);
   const remainingTime = (): number => deadlineAt - Date.now();
   if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle.digest !== 'function') {
@@ -675,6 +750,13 @@ export function resetProviderState(): void {
   trustedJwkCache = null;
   maxDatasetVersionSeen = 0;
   globalStaleBarrier = 0;
+  isolatedAdUnitArrays = new WeakSet<object>();
+  if (isolationHookInstalled) {
+    const startAuction = getHook('startAuction');
+    startAuction.getHooks({ hook: isolateBeforeRtd }).remove();
+    startAuction.getHooks({ hook: closeAuctionOwnership }).remove();
+    isolationHookInstalled = false;
+  }
 }
 
 export const encypherSubmodule: RtdProviderSpec<'encypher'> = {

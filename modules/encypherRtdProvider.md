@@ -49,7 +49,7 @@ The module adds one compact object to each impression and preserves all existing
       "c2pa": {
         "v": 1,
         "id": "epa_01J...",
-        "ref": "https://api.encypher.com/api/v1/public/provenance/attestations/epa_01J...",
+        "ref": "https://api.encypher.com/api/v1/public/provenance/evidence/cQAAAAAAAAAAAAAAAAACAQ",
         "att": "eyJhbGciOiJFUzI1NiIs..."
       }
     }
@@ -61,7 +61,7 @@ The module adds one compact object to each impression and preserves all existing
 | --- | --- | --- |
 | `v` | integer | Protocol version. Must be 1. |
 | `id` | string | Stable provenance record ID. |
-| `ref` | HTTPS URL | Deterministic public attestation resource derived from the signed record ID. |
+| `ref` | HTTPS URL | Exact canonical evidence locator under Encypher's pinned public evidence collection. Its 22-character base64url suffix decodes to a 16-byte identifier independent of the signed subject. |
 | `att` | compact JWS | ES256 attestation binding the record ID to the URL digest, exact publisher domain, policy version, revision, and expiration. |
 
 The serialized extension is limited to 1 KiB.
@@ -76,16 +76,16 @@ Before injection, the module also requires:
 
 - A valid ES256 signature from the selected `kid` in the pinned JWKS at `https://api.encypher.com/api/v1/public/provenance/jwks.json`.
 - Exact canonical claim fields plus the pinned `https://api.encypher.com` issuer, canonical URL digest, publisher domain, record ID, validation result, declaration, policy version, signed revision, and lifetime bindings.
-- Exact equality between `ref` and `https://api.encypher.com/api/v1/public/provenance/attestations/{signed sub}`.
+- Exact canonical `ref` syntax under `https://api.encypher.com/api/v1/public/provenance/evidence/`, with no credentials, query, fragment, alternate encoding, or non-canonical path.
 - A serialized extension no larger than 1 KiB.
 
 Page-lifetime state rejects response reordering. Non-ready decisions advance a dataset floor when received. `stale` also advances a global stale barrier. `miss` and `revoked` block the affected URL hash and supersede an equal or older ready decision. A ready decision changes state only after signature verification returns its signed record revision. At commit time the module rechecks the dataset floor, stale barrier, per-hash blocker, highest verified revision, and byte-identical equality for equal dataset and revision. Invalid high-version ready responses change no state. Lower blockers cannot evict newer ready decisions.
 
-A ready edge status may be reused for at most 30 seconds, but its JWS is verified before each injection. JWKS entries expire after 60 seconds. Blocking decisions and monotonic watermarks remain for the page lifetime.
+A ready edge status may be reused for at most 30 seconds, but its JWS is verified before each injection. JWKS entries expire after 30 seconds. Blocking decisions and monotonic watermarks remain for the page lifetime.
 
-The module invokes the callback exactly once within the configured total deadline. HTTP errors, malformed decisions, invalid keys or signatures, substituted references, expired attestations, oversized bodies, network failures, and timeouts leave the auction unchanged.
+The module invokes the callback exactly once within the configured total deadline. HTTP errors, malformed decisions, invalid keys or signatures, substituted references, expired attestations, oversized bodies, network failures, and timeouts add no provenance data to the auction.
 
-On a verified hit, the module replaces the auction's ad-unit array with auction-local shallow copies. Each copied ad unit has fresh `ortb2Imp` and `ext` objects and a fresh four-field carrier. Publisher-supplied ad-unit objects, extension objects, and any existing `c2pa` value remain unchanged.
+When configured, the module establishes auction-local shallow copies of the ad-unit, `ortb2Imp`, and impression `ext` objects before RTD providers start. Publisher-supplied objects and any existing publisher `c2pa` value remain unchanged. After a verified hit, the module adds a fresh four-field carrier in place on that stable auction graph. References captured by other RTD providers remain live, so their later asynchronous writes and Encypher's carrier both reach the auction.
 
 ## Trust split and residual authority risk
 
@@ -95,7 +95,7 @@ The browser state machine protects against honest response reordering, HTTP-cach
 
 ## Diagnostic telemetry
 
-When `telemetry` is `true`, the module sends a post-callback event to `https://signals.encypher.com/v1/telemetry/rtd` through Prebid's fetch wrapper with keepalive, omitted credentials, no referrer, no-store caching, and redirects rejected. The event contains only its protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. `impression_count` is the number of copied impressions only for `injected`; every non-injected outcome reports zero. The event contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect the auction.
+When `telemetry` is `true`, the module sends a post-callback event to `https://signals.encypher.com/v1/telemetry/rtd` through Prebid's fetch wrapper with keepalive, omitted credentials, no referrer, no-store caching, and redirects rejected. The event contains only its protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. `impression_count` is the number of impressions injected on the owned auction graph; every non-injected outcome reports zero. The event contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect the auction.
 
 ## Publisher adoption reporting
 

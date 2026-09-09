@@ -9,6 +9,9 @@ import {
 import * as ajaxModule from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
 import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
+import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
+import { config } from 'src/config.js';
+import * as rtdModule from '../../../modules/rtdModule/index.js';
 
 const HEADERS = {
   'Content-Type': 'application/json',
@@ -17,41 +20,43 @@ const HEADERS = {
 const API_ISSUER = 'https://api.encypher.com';
 const PINNED_JWKS_URL = API_ISSUER + '/api/v1/public/provenance/jwks.json';
 const SIGNAL_ORIGIN = 'https://signals.encypher.com';
+const EVIDENCE_COLLECTION = API_ISSUER + '/api/v1/public/provenance/evidence';
+const ACCEPTED_TRUST_POLICY_VERSION = 'adtech-v1-2026-07';
 const TRUSTED_JWK = {
   kty: 'EC',
   crv: 'P-256',
   alg: 'ES256',
   use: 'sig',
   kid: 'encypher-attestation-test',
-  x: 'j9xua-aq-3EounwfIMfY384Tjwg_NqreCG3TD6WLxCE',
-  y: 'oRMmulqdsg3Wc8gfcNyYhsYmpLdNVIMJdZifLP1g-VY',
+  x: 'tQyvq36Eax9iRiGU2B6ylH07NQE6uu6EKZ6xJQUd9Bw',
+  y: 'COYWHwE8Gui2aEq-akzzs-5mlK8oV3z5-0F3nnTHPLw',
 };
 const JWKS = { keys: [TRUSTED_JWK] };
 
 const STORY_URL = 'https://publisher.example/news/story';
 const STORY_HASH = 'YwYup-oKQVmF441UPY_xsaQOgkvLeMgO6TtSTGbE4NM';
-const STORY_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImVuY3lwaGVyLWF0dGVzdGF0aW9uLXRlc3QiLCJ0eXAiOiJlcGF0K2p3cyJ9.eyJjb250ZW50X2hhc2giOiJJTEdLX3F0MEQxWTV4VGhZT2lTUlpQTjRkd3VZY04za3VUd19YZVNncFA0IiwiZGVjbGFyYXRpb24iOnsibGFiZWwiOiJodW1hbl9kZWNsYXJlZCIsInNvdXJjZV9hc3NlcnRpb24iOiJjMnBhIn0sImV4cCI6NDEwMjQ0NDgwMCwiaWF0IjoxNzA0MDY3MjAwLCJpc3MiOiJodHRwczovL2FwaS5lbmN5cGhlci5jb20iLCJtYW5pZmVzdF9kaWdlc3QiOiJiTnYwWU9aTXFpRFBtbFcwaGYwaW1fQWtZS0o1M0daeHVKSXNvZHloTVJnIiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjoxLCJzdWIiOiJlcGFfcyIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoidjEiLCJ1cmxfaGFzaCI6Ill3WXVwLW9LUVZtRjQ0MVVQWV94c2FRT2drdkxlTWdPNlR0U1RHYkU0Tk0iLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOnsiY29kZXMiOlsidmFsaWQiXSwic3RhdHVzIjoidmFsaWQifX0.IK4fVNiciTbvNdPr6PO79B8VPIJVe0G0fcaJlWIBnPKkpQhnIbaqZQUUTdXg4rOvvRZE0Kr7LguR6jiuX6hfXg';
+const STORY_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImVuY3lwaGVyLWF0dGVzdGF0aW9uLXRlc3QiLCJ0eXAiOiJlcGF0K2p3cyJ9.eyJjb250ZW50X2hhc2giOiJJTEdLX3F0MEQxWTV4VGhZT2lTUlpQTjRkd3VZY04za3VUd19YZVNncFA0IiwiZGVjbGFyYXRpb24iOnsibGFiZWwiOiJodW1hbl9kZWNsYXJlZCIsInNvdXJjZV9hc3NlcnRpb24iOiJjMnBhIn0sImV4cCI6MTcwNDA3MDgwMCwiaWF0IjoxNzA0MDY3MjAwLCJpc3MiOiJodHRwczovL2FwaS5lbmN5cGhlci5jb20iLCJtYW5pZmVzdF9kaWdlc3QiOiJiTnYwWU9aTXFpRFBtbFcwaGYwaW1fQWtZS0o1M0daeHVKSXNvZHloTVJnIiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjoxLCJzdWIiOiJlcGFfcyIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoiYWR0ZWNoLXYxLTIwMjYtMDciLCJ1cmxfaGFzaCI6Ill3WXVwLW9LUVZtRjQ0MVVQWV94c2FRT2drdkxlTWdPNlR0U1RHYkU0Tk0iLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOnsiY29kZXMiOlsidmFsaWQiXSwic3RhdHVzIjoidmFsaWQifX0.rqfqfn7ShZA8paQzBsev5xOVibDchyyP5yPbSomaViW2opONn_wVSSjoXdsn_tlpgZdaVBfI-eHu3BFIvCc4TA';
 const STORY_SIGNAL = {
   v: 1,
   id: 'epa_s',
-  ref: API_ISSUER + '/api/v1/public/provenance/attestations/epa_s',
+  ref: EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAQ',
   att: STORY_ATT,
 };
 
 const PAGE_URL = 'https://publisher.example/security/pinned-trust';
 const PAGE_HASH = '1q1b1Xp1WxrlV3fXBmso8ipBZim9402-ELdZgMlkk20';
-const PAGE_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImVuY3lwaGVyLWF0dGVzdGF0aW9uLXRlc3QiLCJ0eXAiOiJlcGF0K2p3cyJ9.eyJjb250ZW50X2hhc2giOiI3WEFDdERucHJJUmZJalY5Z2l1c0ZFUnpENzIyQVcwLXlVTWlsN25zbjNNIiwiZGVjbGFyYXRpb24iOnsibGFiZWwiOiJodW1hbl9kZWNsYXJlZCIsInNvdXJjZV9hc3NlcnRpb24iOiJjMnBhIn0sImV4cCI6NDEwMjQ0NDgwMCwiaWF0IjoxNzA0MDY3MjAwLCJpc3MiOiJodHRwczovL2FwaS5lbmN5cGhlci5jb20iLCJtYW5pZmVzdF9kaWdlc3QiOiJCYk9yOGxlYVhyWmtBODE0dmxWXzJHQmpPaF9pRUR4MlFnTU43LU1zWlg4IiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjo3LCJzdWIiOiJlcGFfMSIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoidjEiLCJ1cmxfaGFzaCI6IjFxMWIxWHAxV3hybFYzZlhCbXNvOGlwQlppbTk0MDItRUxkWmdNbGtrMjAiLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOnsiY29kZXMiOlsidmFsaWQiXSwic3RhdHVzIjoidmFsaWQifX0.fsDUCUcWwTG-F69lf330v7fIqCT2sg0clak9BWWfjAbFGu-msrIZSu11gn9puGx-lzopvSxYxXEXoEGRBzWggg';
+const PAGE_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImVuY3lwaGVyLWF0dGVzdGF0aW9uLXRlc3QiLCJ0eXAiOiJlcGF0K2p3cyJ9.eyJjb250ZW50X2hhc2giOiI3WEFDdERucHJJUmZJalY5Z2l1c0ZFUnpENzIyQVcwLXlVTWlsN25zbjNNIiwiZGVjbGFyYXRpb24iOnsibGFiZWwiOiJodW1hbl9kZWNsYXJlZCIsInNvdXJjZV9hc3NlcnRpb24iOiJjMnBhIn0sImV4cCI6MTcwNDA3MDgwMCwiaWF0IjoxNzA0MDY3MjAwLCJpc3MiOiJodHRwczovL2FwaS5lbmN5cGhlci5jb20iLCJtYW5pZmVzdF9kaWdlc3QiOiJCYk9yOGxlYVhyWmtBODE0dmxWXzJHQmpPaF9pRUR4MlFnTU43LU1zWlg4IiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjo3LCJzdWIiOiJlcGFfMSIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoiYWR0ZWNoLXYxLTIwMjYtMDciLCJ1cmxfaGFzaCI6IjFxMWIxWHAxV3hybFYzZlhCbXNvOGlwQlppbTk0MDItRUxkWmdNbGtrMjAiLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOnsiY29kZXMiOlsidmFsaWQiXSwic3RhdHVzIjoidmFsaWQifX0.Ct07rrs5ALV1asaQqYzORSW2kWwjxBRSwL_imQV1o_PoFRB7lv0KpcHvRwW1hKhnuo0mL_ag1KaZulcKf4OyCw';
 const PAGE_SIGNAL = {
   v: 1,
   id: 'epa_1',
-  ref: API_ISSUER + '/api/v1/public/provenance/attestations/epa_1',
+  ref: EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAg',
   att: PAGE_ATT,
 };
 const ATTACKER_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImF0dGFja2VyLWtleSIsInR5cCI6ImVwYXQrandzIn0.eyJjb250ZW50X2hhc2giOiI3WEFDdERucHJJUmZJalY5Z2l1c0ZFUnpENzIyQVcwLXlVTWlsN25zbjNNIiwiZGVjbGFyYXRpb24iOiJodW1hbl9kZWNsYXJlZCIsImV4cCI6NDEwMjQ0NDgwMCwiaWF0IjoxNzA0MDY3MjAwLCJpc3MiOiJodHRwczovL2F0dGFja2VyLmV4YW1wbGUiLCJtYW5pZmVzdF9kaWdlc3QiOiJCYk9yOGxlYVhyWmtBODE0dmxWXzJHQmpPaF9pRUR4MlFnTU43LU1zWlg4IiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjo3LCJzdWIiOiJlcGFfYXR0YWNrZXJfMSIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoxLCJ1cmxfaGFzaCI6IjFxMWIxWHAxV3hybFYzZlhCbXNvOGlwQlppbTk0MDItRUxkWmdNbGtrMjAiLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOlsiY2xhaW1TaWduYXR1cmUudmFsaWQiXX0.Zi0M0Q9zAx0MAWPck9fw-aWsYYjNtDNOn5HZssJpK1syfBRxbQn2trYl2Fi96R41IDhBjvBJ_EKqg-bnrSUHsw';
 const ATTACKER_SIGNAL = {
   v: 1,
   id: 'epa_attacker_1',
-  ref: API_ISSUER + '/api/v1/public/provenance/attestations/epa_attacker_1',
+  ref: EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAw',
   att: ATTACKER_ATT,
 };
 
@@ -230,7 +235,32 @@ async function respondDecision(envelope, { jwks = JWKS, headers = HEADERS } = {}
   if (envelope.status === 'ready') await respondJwksIfRequested(jwks);
 }
 
-function beginAuction(params = {}, auction = makeAuction()) {
+function configureActualRtd(realTimeData) {
+  // Consume any module-load listener, then install exactly one RTD hook for this
+  // auction. Tests remove that hook after each real-loop scenario.
+  config.setConfig({ realTimeData: { dataProviders: [] } });
+  startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+  rtdModule.init(config);
+  config.setConfig({ realTimeData });
+}
+
+function prepareAuction(auction) {
+  let isolatedAuction;
+  function stopAfterIsolation(_next, request) {
+    isolatedAuction = request;
+  }
+  startAuction.before(stopAfterIsolation, 20.5);
+  try {
+    startAuction(auction);
+  } finally {
+    startAuction.getHooks({ hook: stopAfterIsolation }).remove();
+  }
+  assert.ok(isolatedAuction, 'Encypher auction isolation hook must run before RTD');
+  return isolatedAuction;
+}
+
+function beginAuction(params = {}, auction = makeAuction(), prepare = true) {
+  if (prepare) auction = prepareAuction(auction);
   let callbackCount = 0;
   const completion = new Promise(resolve => {
     encypherSubmodule.getBidRequestData(auction, () => {
@@ -280,6 +310,31 @@ function recordWithClaims(record, mutate) {
 
 function miss(status, datasetVersion) {
   return { v: 1, status, dataset_version: datasetVersion, record: null };
+}
+
+function carrierAtBytes(target) {
+  for (let idLength = 5; idLength <= 32; idLength += 1) {
+    const id = 'r'.repeat(idLength);
+    for (let codeCount = 1; codeCount <= 8; codeCount += 1) {
+      for (let padding = 1; padding <= 1024; padding += 1) {
+        const candidate = Object.assign(
+          {},
+          recordWithClaims(STORY_SIGNAL, claims => {
+            claims.sub = id;
+            claims.validation_results.codes = [
+              ...Array.from({ length: codeCount - 1 }, () => 'valid'),
+              'A'.repeat(padding),
+            ];
+          }),
+          { id },
+        );
+        if (new TextEncoder().encode(JSON.stringify(candidate)).byteLength === target) {
+          return candidate;
+        }
+      }
+    }
+  }
+  throw new Error('could not construct a valid-shape carrier at ' + target + ' bytes');
 }
 
 function paddedJson(value, byteLength) {
@@ -336,17 +391,25 @@ describe('encypherRtdProvider decision-network v1', () => {
   let sandbox;
   let cleanups;
   let digestStub;
+  let dateNowStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     cleanups = [];
+    dateNowStub = sandbox.stub(Date, 'now').returns(1704067200 * 1000);
     digestStub = sandbox.stub(window.crypto.subtle, 'digest').callsFake((_algorithm, encoded) => {
       const value = new TextDecoder().decode(encoded);
       const expected = DIGEST_BYTES_BY_CANONICAL_URL.get(value);
       assert.ok(expected, 'test digest fixture missing for ' + value);
       return GreedyPromise.resolve(expected.buffer);
     });
+    encypherSubmodule.init({ params: {} });
   });
+
+  function useFakeTimers(options = { now: 1704067200 * 1000 }) {
+    dateNowStub.restore();
+    return sandbox.useFakeTimers(options);
+  }
 
   afterEach(() => {
     sandbox.restore();
@@ -384,7 +447,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('does no work when RTD core supplies no auction budget', () => {
-    const auction = makeAuction();
+    const auction = prepareAuction(makeAuction());
     const original = structuredClone(auction);
     let callbackCount = 0;
     encypherSubmodule.getBidRequestData(auction, () => {
@@ -441,10 +504,10 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('clamps work to a smaller positive RTD core budget', async () => {
-    const clock = sandbox.useFakeTimers();
+    const clock = useFakeTimers();
     addCanonical(STORY_URL, cleanups);
     let callbackCount = 0;
-    encypherSubmodule.getBidRequestData(makeAuction(), () => {
+    encypherSubmodule.getBidRequestData(prepareAuction(makeAuction()), () => {
       callbackCount += 1;
     }, { params: { timeout: 300 } }, undefined, 25);
     clock.tick(24);
@@ -456,7 +519,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('ignores a late digest settlement after timeout and calls back exactly once', async () => {
-    const clock = sandbox.useFakeTimers();
+    const clock = useFakeTimers();
     let resolveDigest;
     digestStub.returns(new Promise(resolve => { resolveDigest = resolve; }));
     addCanonical(STORY_URL, cleanups);
@@ -476,7 +539,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     addCanonical(STORY_URL, cleanups);
     let abortedAtCallback = false;
     let callbackCount = 0;
-    const auction = makeAuction();
+    const auction = prepareAuction(makeAuction());
     let lookup;
     const completion = new Promise(resolve => {
       encypherSubmodule.getBidRequestData(auction, () => {
@@ -531,6 +594,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertNoInjection(jsonMiss.auction);
 
     resetProviderState();
+    encypherSubmodule.init({ params: {} });
     const noContent = beginAuction();
     pendingLookup().respond(204, HEADERS, null);
     await noContent.completion;
@@ -704,7 +768,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('reuses ready status for less than 30 seconds and refreshes at the boundary', async () => {
-    const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
+    const clock = useFakeTimers({ now: 1704067200 * 1000 });
     addCanonical(STORY_URL, cleanups);
     const first = beginAuction();
     await respondDecision(ready(STORY_SIGNAL, 55));
@@ -726,7 +790,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('refreshes instead of injecting when cached verification crosses the ready-status expiry', async () => {
-    const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
+    const clock = useFakeTimers({ now: 1704067200 * 1000 });
     sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
     let resolveCachedVerification;
     const verify = sandbox.stub(window.crypto.subtle, 'verify');
@@ -755,7 +819,7 @@ describe('encypherRtdProvider decision-network v1', () => {
 
   it('rejects a signed record that expires while WebCrypto verification is pending', async () => {
     const nowSeconds = 1704067200;
-    const clock = sandbox.useFakeTimers({ now: nowSeconds * 1000 });
+    const clock = useFakeTimers({ now: nowSeconds * 1000 });
     sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
     let resolveVerification;
     const verify = sandbox.stub(window.crypto.subtle, 'verify')
@@ -779,7 +843,7 @@ describe('encypherRtdProvider decision-network v1', () => {
 
   it('refreshes the signal lookup when a cached JWS expires before its status TTL', async () => {
     const nowSeconds = 1704067200;
-    const clock = sandbox.useFakeTimers({ now: nowSeconds * 1000 });
+    const clock = useFakeTimers({ now: nowSeconds * 1000 });
     sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
     sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
     addCanonical(STORY_URL, cleanups);
@@ -917,6 +981,302 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.deepStrictEqual(run.auction.ortb2Fragments, original.ortb2Fragments);
   });
 
+  it('continues an empty actual auction once without starting Encypher network work', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const request = Object.assign({}, makeAuction(), { adUnits: [], adUnitCodes: [] });
+    let providerCallbackCount = 0;
+    const getBidRequestData = encypherSubmodule.getBidRequestData;
+    sandbox.stub(encypherSubmodule, 'getBidRequestData').callsFake((auction, callback, ...args) => {
+      getBidRequestData(auction, () => {
+        providerCallbackCount += 1;
+        callback();
+      }, ...args);
+    });
+    let actualAuctionCount = 0;
+    let actualRequest;
+    function captureActualAuction(_next, auction) {
+      actualAuctionCount += 1;
+      actualRequest = auction;
+    }
+
+    startAuction.before(captureActualAuction, 18);
+    try {
+      configureActualRtd({
+        auctionDelay: 100,
+        dataProviders: [{
+          name: MODULE_NAME,
+          waitForIt: true,
+          params: { timeout: 100, telemetry: true },
+        }],
+      });
+      startAuction(request);
+      const lookup = pendingLookup();
+      if (lookup) {
+        lookup.respond(200, HEADERS, JSON.stringify(miss('miss', 71)));
+        await nextTask();
+      }
+      clock.tick(0);
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (actualAuctionCount !== 0) break;
+        await nextTask();
+      }
+
+      assert.strictEqual(providerCallbackCount, 1);
+      assert.strictEqual(actualAuctionCount, 1);
+      assert.deepStrictEqual(actualRequest.adUnits, []);
+      assert.strictEqual(server.requests.length, 0, 'empty auctions must not start lookup, JWKS, or telemetry requests');
+    } finally {
+      startAuction.getHooks({ hook: captureActualAuction }).remove();
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      config.resetConfig();
+    }
+  });
+
+  it('does not inject when earlier RTD work leaves verification past the core deadline', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    let resolveVerification;
+    const verify = sandbox.stub(window.crypto.subtle, 'verify')
+      .returns(new Promise(resolve => { resolveVerification = resolve; }));
+    const request = makeAuction();
+    request.adUnitCodes = request.adUnits.map(adUnit => adUnit.code);
+    let earlierCallback;
+    const earlier = {
+      name: 'encypherDeadlineSibling',
+      init: () => true,
+      getBidRequestData(_auction, callback) {
+        earlierCallback = callback;
+        clock.tick(90);
+      },
+    };
+    let encypherCallbackCount = 0;
+    const getBidRequestData = encypherSubmodule.getBidRequestData;
+    sandbox.stub(encypherSubmodule, 'getBidRequestData').callsFake((auction, callback, ...args) => {
+      getBidRequestData(auction, () => {
+        encypherCallbackCount += 1;
+        callback();
+      }, ...args);
+    });
+    let actualAuctionCount = 0;
+    let actualAdUnits;
+    function captureActualAuction(_next, actualRequest) {
+      actualAuctionCount += 1;
+      actualAdUnits = checkAdUnitSetup(actualRequest.adUnits);
+    }
+
+    rtdModule.attachRealTimeDataProvider(earlier);
+    startAuction.before(captureActualAuction, 18);
+    try {
+      configureActualRtd({
+        auctionDelay: 100,
+        dataProviders: [
+          { name: earlier.name, waitForIt: true },
+          { name: MODULE_NAME, waitForIt: true, params: { timeout: 300, telemetry: true } },
+        ],
+      });
+      startAuction(request);
+      await respondDecision(ready(STORY_SIGNAL, 71));
+      for (let attempt = 0; attempt < 20 && verify.callCount < 1; attempt += 1) await nextTask();
+      const verificationStarted = verify.callCount;
+
+      clock.tick(10);
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (actualAuctionCount !== 0) break;
+        await nextTask();
+      }
+      if (resolveVerification) resolveVerification(true);
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (encypherCallbackCount !== 0) break;
+        await nextTask();
+      }
+      if (earlierCallback) earlierCallback();
+      clock.tick(0);
+
+      assert.strictEqual(verificationStarted, 1, 'signature verification must be pending before the core deadline');
+      assert.strictEqual(encypherCallbackCount, 1);
+      assert.strictEqual(actualAuctionCount, 1);
+      assertNoInjection({ adUnits: actualAdUnits });
+      assertNoInjection(request);
+      const injectedTelemetry = server.requests.find(candidate => (
+        candidate.url === SIGNAL_ORIGIN + '/v1/telemetry/rtd' &&
+        JSON.parse(candidate.requestBody).event === 'injected'
+      ));
+      assert.strictEqual(injectedTelemetry, undefined);
+    } finally {
+      if (resolveVerification) resolveVerification(true);
+      if (earlierCallback) earlierCallback();
+      clock.tick(300);
+      startAuction.getHooks({ hook: captureActualAuction }).remove();
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      rtdModule.detachRealTimeDataProvider(earlier);
+      config.resetConfig();
+    }
+  });
+
+  it('does not inject after waiting siblings release the core before non-waiting Encypher finishes', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    let resolveVerification;
+    const verify = sandbox.stub(window.crypto.subtle, 'verify')
+      .returns(new Promise(resolve => { resolveVerification = resolve; }));
+    const request = makeAuction();
+    request.adUnitCodes = request.adUnits.map(adUnit => adUnit.code);
+    const waitingSibling = {
+      name: 'encypherEarlyExitSibling',
+      init: () => true,
+      getBidRequestData(_auction, callback) {
+        callback();
+      },
+    };
+    let encypherCallbackCount = 0;
+    const getBidRequestData = encypherSubmodule.getBidRequestData;
+    sandbox.stub(encypherSubmodule, 'getBidRequestData').callsFake((auction, callback, ...args) => {
+      getBidRequestData(auction, () => {
+        encypherCallbackCount += 1;
+        callback();
+      }, ...args);
+    });
+    let actualAuctionCount = 0;
+    let actualAdUnits;
+    function captureActualAuction(_next, actualRequest) {
+      actualAuctionCount += 1;
+      actualAdUnits = checkAdUnitSetup(actualRequest.adUnits);
+    }
+
+    rtdModule.attachRealTimeDataProvider(waitingSibling);
+    startAuction.before(captureActualAuction, 18);
+    try {
+      configureActualRtd({
+        auctionDelay: 100,
+        dataProviders: [
+          { name: MODULE_NAME, waitForIt: false, params: { timeout: 300, telemetry: true } },
+          { name: waitingSibling.name, waitForIt: true },
+        ],
+      });
+      startAuction(request);
+      clock.tick(0);
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (actualAuctionCount !== 0) break;
+        await nextTask();
+      }
+      await respondDecision(ready(STORY_SIGNAL, 71));
+      for (let attempt = 0; attempt < 20 && verify.callCount < 1; attempt += 1) await nextTask();
+      const verificationStarted = verify.callCount;
+      if (resolveVerification) resolveVerification(true);
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (encypherCallbackCount !== 0) break;
+        await nextTask();
+      }
+
+      assert.strictEqual(verificationStarted, 1, 'signature verification must begin after the core continues');
+      assert.strictEqual(encypherCallbackCount, 1);
+      assert.strictEqual(actualAuctionCount, 1);
+      assertNoInjection({ adUnits: actualAdUnits });
+      assertNoInjection(request);
+      const injectedTelemetry = server.requests.find(candidate => (
+        candidate.url === SIGNAL_ORIGIN + '/v1/telemetry/rtd' &&
+        JSON.parse(candidate.requestBody).event === 'injected'
+      ));
+      assert.strictEqual(injectedTelemetry, undefined);
+    } finally {
+      if (resolveVerification) resolveVerification(true);
+      clock.tick(300);
+      startAuction.getHooks({ hook: captureActualAuction }).remove();
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      rtdModule.detachRealTimeDataProvider(waitingSibling);
+      config.resetConfig();
+    }
+  });
+
+  it('preserves sibling writes captured on both sides of Encypher in the actual RTD provider loop', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const publisher = makeAuction();
+    const publisherAdUnits = publisher.adUnits;
+    const original = structuredClone(publisherAdUnits);
+    const request = Object.assign({}, publisher, {
+      adUnits: publisherAdUnits,
+      adUnitCodes: publisherAdUnits.map(adUnit => adUnit.code),
+    });
+    const captures = {};
+    const callbacks = {};
+    const sibling = name => ({
+      name,
+      init: () => true,
+      getBidRequestData(auction, callback) {
+        captures[name] = {
+          units: auction.adUnits,
+          unit: auction.adUnits[0],
+          ext: auction.adUnits[0].ortb2Imp.ext,
+        };
+        callbacks[name] = callback;
+      },
+    });
+    const before = sibling('encypherSiblingBefore');
+    const after = sibling('encypherSiblingAfter');
+    let resolveEncypher;
+    const encypherFinished = new Promise(resolve => { resolveEncypher = resolve; });
+    const getBidRequestData = encypherSubmodule.getBidRequestData;
+    sandbox.stub(encypherSubmodule, 'getBidRequestData').callsFake((auction, callback, ...args) => {
+      getBidRequestData(auction, () => {
+        callback();
+        resolveEncypher();
+      }, ...args);
+    });
+    let resolveActualAuction;
+    const actualAuctionStarted = new Promise(resolve => { resolveActualAuction = resolve; });
+    function captureActualAuction(_next, actualRequest) {
+      resolveActualAuction(checkAdUnitSetup(actualRequest.adUnits));
+    }
+    rtdModule.attachRealTimeDataProvider(before);
+    rtdModule.attachRealTimeDataProvider(after);
+    startAuction.before(captureActualAuction, 18);
+    try {
+      configureActualRtd({
+        auctionDelay: 300,
+        dataProviders: [
+          { name: before.name, waitForIt: true },
+          { name: MODULE_NAME, waitForIt: true, params: { timeout: 300 } },
+          { name: after.name, waitForIt: true },
+        ],
+      });
+      startAuction(request);
+      assert.deepStrictEqual(
+        rtdModule.subModules.map(provider => provider.name),
+        [before.name, MODULE_NAME, after.name],
+      );
+      await respondDecision(ready(STORY_SIGNAL, 71));
+      await encypherFinished;
+      captures[before.name].ext.data = { sibling_before: { score: 7 } };
+      captures[after.name].ext.data.sibling_after = { score: 9 };
+      captures[before.name].ext.before_marker = 'preserved';
+      captures[after.name].ext.after_marker = 'preserved';
+      callbacks[before.name]();
+      callbacks[after.name]();
+      const actualAdUnits = await actualAuctionStarted;
+      [before.name, after.name].forEach(name => {
+        assert.strictEqual(request.adUnits, captures[name].units);
+        assert.strictEqual(request.adUnits[0], captures[name].unit);
+        assert.strictEqual(request.adUnits[0].ortb2Imp.ext, captures[name].ext);
+      });
+      assert.deepStrictEqual(actualAdUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+      assert.deepStrictEqual(actualAdUnits[0].ortb2Imp.ext.data, {
+        sibling_before: { score: 7 },
+        sibling_after: { score: 9 },
+      });
+      assert.strictEqual(actualAdUnits[0].ortb2Imp.ext.before_marker, 'preserved');
+      assert.strictEqual(actualAdUnits[0].ortb2Imp.ext.after_marker, 'preserved');
+      assert.deepStrictEqual(publisherAdUnits, original);
+    } finally {
+      startAuction.getHooks({ hook: captureActualAuction }).remove();
+      rtdModule.detachRealTimeDataProvider(before);
+      rtdModule.detachRealTimeDataProvider(after);
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      config.resetConfig();
+    }
+  });
   it('isolates sequential ready, miss, revoked, and wrong-page outcomes that reuse publisher ad units', async () => {
     addCanonical(STORY_URL, cleanups);
     const publisher = makeAuction();
@@ -936,13 +1296,9 @@ describe('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(STORY_SIGNAL, 73));
     await injected.completion;
 
-    assert.strictEqual(missed.auction.adUnits, sharedAdUnits);
-    assert.strictEqual(revoked.auction.adUnits, sharedAdUnits);
-    assert.strictEqual(wrongPage.auction.adUnits, sharedAdUnits);
     assertNoInjection(missed.auction);
     assertNoInjection(revoked.auction);
     assertNoInjection(wrongPage.auction);
-    assert.notStrictEqual(injected.auction.adUnits, sharedAdUnits);
     assert.deepStrictEqual(injected.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
     assert.deepStrictEqual(sharedAdUnits, original);
   });
@@ -969,11 +1325,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     await respondJwksIfRequested();
     await injected.completion;
 
-    assert.notStrictEqual(injected.auction.adUnits, sharedAdUnits);
     assert.deepStrictEqual(injected.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.strictEqual(missed.auction.adUnits, sharedAdUnits);
-    assert.strictEqual(revoked.auction.adUnits, sharedAdUnits);
-    assert.strictEqual(wrongPage.auction.adUnits, sharedAdUnits);
     assertNoInjection(missed.auction);
     assertNoInjection(revoked.auction);
     assertNoInjection(wrongPage.auction);
@@ -1108,7 +1460,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     });
 
     it('cancels the ' + endpoint + ' reader and aborts its request on the deadline', async () => {
-      const clock = sandbox.useFakeTimers();
+      const clock = useFakeTimers();
       addCanonical(STORY_URL, cleanups);
       const run = beginAuction({ timeout: 100 });
       const body = 'pending-reader';
@@ -1147,7 +1499,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     });
   });
 
-  it('reports the actual copied impression count only for injected diagnostics', async () => {
+  it('reports the actual injected impression count only for injected diagnostics', async () => {
     addCanonical(STORY_URL, cleanups);
     const run = beginAuction({ telemetry: true });
     await respondDecision(ready(STORY_SIGNAL, 94));
@@ -1161,7 +1513,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('reports impression_count zero for timeout diagnostics', async () => {
-    const clock = sandbox.useFakeTimers();
+    const clock = useFakeTimers();
     addCanonical(STORY_URL, cleanups);
     const run = beginAuction({ telemetry: true, timeout: 100 });
     clock.tick(100);
@@ -1169,6 +1521,110 @@ describe('encypherRtdProvider decision-network v1', () => {
     await nextTask();
     const telemetry = await findPending(SIGNAL_ORIGIN + '/v1/telemetry/rtd');
     assertDiagnostic(telemetry.requestBody, 'timeout', 0, undefined);
+  });
+
+  it('accepts the frozen launch policy and exact canonical evidence locator', async () => {
+    addCanonical(STORY_URL, cleanups);
+    assert.strictEqual(new TextEncoder().encode(STORY_SIGNAL.ref).byteLength, 81);
+    assert.strictEqual(decodeClaims(STORY_ATT).trust_policy_version, ACCEPTED_TRUST_POLICY_VERSION);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 95));
+    await run.completion;
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+  });
+
+  it('does not derive the unsigned evidence locator UUID from the signed subject', async () => {
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    addCanonical(STORY_URL, cleanups);
+    const id = 'independent-record-id';
+    const signal = Object.assign({}, recordWithClaims(STORY_SIGNAL, claims => {
+      claims.sub = id;
+    }), { id });
+    const run = beginAuction();
+    await respondDecision(ready(signal, 96));
+    await run.completion;
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, signal);
+  });
+
+  [
+    ['missing trust policy', claims => { delete claims.trust_policy_version; }],
+    ['unknown trust policy', claims => { claims.trust_policy_version = 'adtech-v1-2026-08'; }],
+    ['legacy trust policy', claims => { claims.trust_policy_version = 'v1'; }],
+    ['zero lifetime', claims => { claims.exp = claims.iat; }],
+    ['negative lifetime', claims => { claims.exp = claims.iat - 1; }],
+    ['lifetime above 3600 seconds', claims => { claims.exp = claims.iat + 3601; }],
+    ['issued 31 seconds in the future', claims => { claims.iat = 1704067231; claims.exp = claims.iat + 3600; }],
+    ['expires at the current second', claims => { claims.iat = 1704063600; claims.exp = 1704067200; }],
+    ['expired one second ago', claims => { claims.iat = 1704063599; claims.exp = 1704067199; }],
+  ].forEach(([name, mutate], index) => {
+    it('rejects ' + name + ' under the frozen policy bounds', async () => {
+      sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+      sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      await respondDecision(ready(recordWithClaims(STORY_SIGNAL, mutate), 100 + index));
+      await run.completion;
+      assertNoInjection(run.auction);
+    });
+  });
+
+  [
+    ['legacy /a route', API_ISSUER + '/a/cQAAAAAAAAAAAAAAAAACAQ'],
+    ['attestation lookup route', API_ISSUER + '/api/v1/public/provenance/attestations/epa_s'],
+    ['wrong origin', 'https://api.encypher.example/api/v1/public/provenance/evidence/cQAAAAAAAAAAAAAAAAACAQ'],
+    ['userinfo origin confusion', 'https://api.encypher.com@attacker.example/api/v1/public/provenance/evidence/cQAAAAAAAAAAAAAAAAACAQ'],
+    ['query', STORY_SIGNAL.ref + '?download=1'],
+    ['fragment', STORY_SIGNAL.ref + '#evidence'],
+    ['padded UUID', STORY_SIGNAL.ref + '='],
+    ['short UUID', EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACA'],
+    ['long UUID', EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAQA'],
+    ['non-base64url UUID', EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACA%'],
+    ['over 96 bytes', EVIDENCE_COLLECTION + '/' + 'A'.repeat(38)],
+  ].forEach(([name, ref], index) => {
+    it('rejects the ' + name + ' evidence locator', async () => {
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      await respondDecision(ready(Object.assign({}, STORY_SIGNAL, { ref }), 120 + index));
+      await run.completion;
+      assertNoInjection(run.auction);
+    });
+  });
+
+  it('accepts the 30-second future-iat boundary and exact 3600-second lifetime', async () => {
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    addCanonical(STORY_URL, cleanups);
+    const boundary = recordWithClaims(STORY_SIGNAL, claims => {
+      claims.iat = 1704067230;
+      claims.exp = claims.iat + 3600;
+    });
+    const run = beginAuction();
+    await respondDecision(ready(boundary, 140));
+    await run.completion;
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, boundary);
+  });
+
+  it('accepts a carrier at the exact 1024-byte canonical JSON boundary', async () => {
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    addCanonical(STORY_URL, cleanups);
+    const boundary = carrierAtBytes(1024);
+    assert.strictEqual(new TextEncoder().encode(JSON.stringify(boundary)).byteLength, 1024);
+    const run = beginAuction();
+    await respondDecision(ready(boundary, 142));
+    await run.completion;
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, boundary);
+  });
+
+  it('rejects a carrier whose canonical JSON exceeds 1024 UTF-8 bytes', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const oversized = carrierAtBytes(1025);
+    assert.strictEqual(new TextEncoder().encode(JSON.stringify(oversized)).byteLength, 1025);
+    const run = beginAuction();
+    await respondDecision(ready(oversized, 143));
+    await run.completion;
+    assertNoInjection(run.auction);
   });
 
   it('keeps issuer, reference, JWKS, claims, and ES256 verification pinned', async () => {
