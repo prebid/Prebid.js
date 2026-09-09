@@ -90,7 +90,7 @@ const PARTNER_ENDPOINTS = {
     us_east: 'https://adnex-prebid.attekmi.co/pbjs'
   },
   ppcbuzz: {
-    us_east: 'https://adnex-prebid.attekmi.co/pbjs'
+    us_east: 'https://ppcbuzz-prebid.attekmi.co/pbjs'
   }
 };
 
