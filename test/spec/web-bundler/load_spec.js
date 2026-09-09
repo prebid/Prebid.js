@@ -101,38 +101,52 @@ describe('web bundler load utils', () => {
       expect(ran).to.be.true;
     });
 
-    it('should mark the global as loaded', () => {
+    it('should mark the global as loading', () => {
       checkAndRun('pbGlobal', () => Promise.resolve());
-      expect(window.pbGlobal.libLoaded).to.be.true;
+      expect(window.pbGlobal.__loading).to.be.true;
+    });
+
+    it('should unmark the global once loaded', async () => {
+      await checkAndRun('pbGlobal', () => Promise.resolve().then(() => {
+        window.pbGlobal.libLoaded = true;
+        throw new Error();
+      })).catch(() => {});
+      expect(window.pbGlobal.__loading).to.not.exist;
     });
 
     it('should run load and call processQueue when it resolves', async () => {
       window.pbGlobal.processQueue = sinon.stub();
-      const p = Promise.resolve();
-      load.returns(p);
-      checkAndRun('pbGlobal', load);
+      load.returns(Promise.resolve());
+      const p = checkAndRun('pbGlobal', load);
       sinon.assert.called(load);
       await p;
       sinon.assert.called(window.pbGlobal.processQueue);
     });
 
-    it('should not run load if the global is loaded already', () => {
-      window.pbGlobal.libLoaded = true;
-      window.pbGlobal.getConfig = () => null;
-      checkAndRun('pbGlobal', load);
-      sinon.assert.notCalled(load);
-      sinon.assert.notCalled(consoleWarn);
-    });
-
     Object.entries({
-      'debug is enabled': () => true,
-      'debug flag cannot be determined': () => { throw new Error(); }
-    }).forEach(([t, getConfig]) => {
-      it(`should log a warning if ${t}`, () => {
-        window.pbGlobal.libLoaded = true;
-        window.pbGlobal.getConfig = getConfig;
+      loaded: 'libLoaded',
+      loading: '__loading'
+    }).forEach(([t, prop]) => {
+      it(`should not run load if the global is ${t} already`, () => {
+        window.pbGlobal[prop] = true;
+        window.pbGlobal.getConfig = () => null;
         checkAndRun('pbGlobal', load);
-        sinon.assert.called(consoleWarn);
+        sinon.assert.notCalled(load);
+        sinon.assert.notCalled(consoleWarn);
+      });
+
+      Object.entries({
+        'debug is enabled': () => true,
+        'debug flag cannot be determined': () => {
+          throw new Error();
+        }
+      }).forEach(([t, getConfig]) => {
+        it(`should log a warning if ${t}`, () => {
+          window.pbGlobal[prop] = true;
+          window.pbGlobal.getConfig = getConfig;
+          checkAndRun('pbGlobal', load);
+          sinon.assert.called(consoleWarn);
+        });
       });
     });
   });
