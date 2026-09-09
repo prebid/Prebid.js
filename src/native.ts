@@ -70,12 +70,20 @@ type LegacyAssetRequest = {
   required?: boolean;
 };
 
+type LegacyVideoAssetRequest = LegacyAssetRequest & {
+  mimes?: string[];
+  protocols?: number[];
+  minduration?: number;
+  maxduration?: number;
+};
+
 export type LegacyNativeRequest = {
   privacyLink?: LegacyAssetRequest;
   clickUrl?: LegacyAssetRequest;
   title?: LegacyAssetRequest & {
     len?: number;
   };
+  video?: LegacyVideoAssetRequest;
   ext?: Ext;
 } & {
   [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]?: LegacyAssetRequest & {
@@ -595,6 +603,9 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
         // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
         len: asset.len || 140
       };
+    // video case
+    } else if (key === 'video') {
+      ortbAsset.video = getDefinedParams(asset, ['mimes', 'protocols', 'minduration', 'maxduration']);
     // all extensions to the native bid request are passed as is
     } else if (key === 'ext') {
       ortbAsset.ext = asset;
@@ -672,11 +683,15 @@ export function fromOrtbNativeRequest(openRTBRequest: NativeRequest) {
       if (asset.data.len) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
+    } else if (asset.video) {
+      oldNativeObject.video = {
+        required: asset.required ? Boolean(asset.required) : false,
+        ...getDefinedParams(asset.video, ['mimes', 'protocols', 'minduration', 'maxduration'])
+      };
     }
     if (openRTBRequest.privacy) {
       oldNativeObject.privacyLink = { required: false };
     }
-    // video was not supported by old prebid assets
   }
   return oldNativeObject;
 }
@@ -792,6 +807,13 @@ export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbR
           };
         });
         break;
+      case 'video':
+        useRequestAsset(asset => asset.video != null, videoAsset => {
+          videoAsset.video = {
+            vasttag: value
+          };
+        });
+        break;
       default:
         if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
           useRequestAsset(asset => asset.data != null && asset.data.type === NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]], dataAsset => {
@@ -829,6 +851,8 @@ export function toLegacyResponse(ortbResponse: NativeResponse, ortbRequest: Nati
       };
     } else if (asset.data) {
       legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset?.data?.type]]] = asset.data.value;
+    } else if (asset.video) {
+      legacyResponse.video = asset.video.vasttag;
     }
   }
 
