@@ -1,4 +1,6 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
+import * as utils from 'src/utils.js';
 import { spec } from 'modules/adbixBidAdapter.js';
 
 describe('Adbix Bidder Adapter', function () {
@@ -39,6 +41,29 @@ describe('Adbix Bidder Adapter', function () {
 
   function buildBody(bids = [validBid], bidderRequest = {}) {
     return JSON.parse(buildRequest(bids, bidderRequest).data);
+  }
+
+  function buildResponseBid(overrides = {}) {
+    return {
+      id: 'adbix-response-1',
+      impid: 'adbix-bid-id-1',
+      price: 0.10,
+      adm: '<div>Adbix test creative</div>',
+      adomain: ['adbix.net'],
+      crid: 'adbix-test-300x250',
+      w: 300,
+      h: 250,
+      ...overrides
+    };
+  }
+
+  function interpretResponseBids(serverBids) {
+    return spec.interpretResponse({
+      body: {
+        cur: 'USD',
+        seatbid: [{ seat: 'adbix', bid: serverBids }]
+      }
+    }, {});
   }
 
   it('accepts a bid with publisherId, placementId and banner size', function () {
@@ -334,6 +359,82 @@ describe('Adbix Bidder Adapter', function () {
       .to.deep.equal([true, false]);
   });
 
+  it('copies banner pos from mediaTypes when ortb2Imp banner pos is absent', function () {
+    const bid = {
+      ...validBid,
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+          pos: 1
+        }
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].banner.pos).to.equal(1);
+  });
+
+  it('prefers publisher ortb2Imp banner pos over mediaTypes pos', function () {
+    const bid = {
+      ...validBid,
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+          pos: 1
+        }
+      },
+      ortb2Imp: {
+        banner: {
+          pos: 4
+        }
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].banner.pos).to.equal(4);
+  });
+
+  it('omits banner pos when neither ortb2Imp nor mediaTypes sets it', function () {
+    const body = buildBody([validBid]);
+
+    expect(body.imp[0].banner).to.not.have.property('pos');
+  });
+
+  it('preserves publisher banner format extensions instead of overwriting them', function () {
+    const publisherFormat = [
+      { w: 300, h: 250, ext: { custom: 'keep-me' } }
+    ];
+    const bid = {
+      ...validBid,
+      ortb2Imp: {
+        banner: {
+          format: publisherFormat
+        }
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].banner.format).to.deep.equal(publisherFormat);
+  });
+
+  it('does not treat non-boolean test values as test traffic', function () {
+    const bid = {
+      ...validBid,
+      params: {
+        ...validBid.params,
+        test: 'false'
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.test).to.equal(0);
+    expect(body.imp[0].ext.prebid.bidder.adbix.test).to.equal(false);
+  });
+
   it('does not return an image user sync when pixel sync is disabled', function () {
     const syncs = spec.getUserSyncs({
       iframeEnabled: true,
@@ -356,66 +457,89 @@ describe('Adbix Bidder Adapter', function () {
   });
 
   it('parses a valid Adbix OpenRTB bid response', function () {
-    const bids = spec.interpretResponse({
-      body: {
-        cur: 'USD',
-
-        seatbid: [{
-          seat: 'adbix',
-
-          bid: [{
-            id: 'adbix-response-1',
-            impid: 'adbix-bid-id-1',
-            price: 0.10,
-            adm: '<div>Adbix test creative</div>',
-            adomain: ['adbix.net'],
-            crid: 'adbix-test-300x250',
-            w: 300,
-            h: 250,
-            ttl: 300
-          }]
-        }]
-      }
-    }, {});
+    const bids = interpretResponseBids([buildResponseBid({ ttl: 300 })]);
 
     expect(bids).to.have.length(1);
     expect(bids[0].requestId).to.equal('adbix-bid-id-1');
     expect(bids[0].cpm).to.equal(0.10);
     expect(bids[0].width).to.equal(300);
     expect(bids[0].height).to.equal(250);
+    expect(bids[0].ttl).to.equal(300);
     expect(bids[0].meta.advertiserDomains)
       .to.deep.equal(['adbix.net']);
   });
 
   it('ignores malformed bids in an Adbix OpenRTB response', function () {
-    const bids = spec.interpretResponse({
-      body: {
-        cur: 'USD',
-        seatbid: [{
-          bid: [
-            {
-              id: 'invalid-response-1',
-              impid: 'adbix-bid-id-invalid',
-              price: 0,
-              adm: '<div>Invalid creative</div>',
-              w: 300,
-              h: 250
-            },
-            {
-              id: 'valid-response-1',
-              impid: 'adbix-bid-id-valid',
-              price: 0.20,
-              adm: '<div>Valid creative</div>',
-              crid: 'adbix-valid-300x250',
-              w: 300,
-              h: 250
-            }
-          ]
-        }]
+    const bids = interpretResponseBids([
+      {
+        id: 'invalid-response-1',
+        impid: 'adbix-bid-id-invalid',
+        price: 0,
+        adm: '<div>Invalid creative</div>',
+        w: 300,
+        h: 250
+      },
+      {
+        id: 'valid-response-1',
+        impid: 'adbix-bid-id-valid',
+        price: 0.20,
+        adm: '<div>Valid creative</div>',
+        crid: 'adbix-valid-300x250',
+        w: 300,
+        h: 250
       }
-    }, {});
+    ]);
 
     expect(bids).to.have.length(1);
     expect(bids[0].requestId).to.equal('adbix-bid-id-valid');
+  });
+
+  it('prefers OpenRTB exp over ttl for bid expiry', function () {
+    const bids = interpretResponseBids([buildResponseBid({ exp: 60, ttl: 300 })]);
+
+    expect(bids).to.have.length(1);
+    expect(bids[0].ttl).to.equal(60);
+  });
+
+  it('falls back to ttl and then the default when exp is absent', function () {
+    const withTtl = interpretResponseBids([buildResponseBid({ ttl: 120 })]);
+    expect(withTtl[0].ttl).to.equal(120);
+
+    const withoutExpiry = interpretResponseBids([buildResponseBid()]);
+    expect(withoutExpiry[0].ttl).to.equal(300);
+  });
+
+  it('retains the win notice URL and fires it when the bid wins', function () {
+    const sandbox = sinon.createSandbox();
+    const triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
+
+    try {
+      const bids = interpretResponseBids([
+        buildResponseBid({ nurl: 'https://adbix.net/win.php?id=1' })
+      ]);
+
+      expect(bids).to.have.length(1);
+      expect(bids[0].nurl).to.equal('https://adbix.net/win.php?id=1');
+
+      spec.onBidWon(bids[0]);
+      expect(triggerPixelStub.calledOnceWith('https://adbix.net/win.php?id=1'))
+        .to.equal(true);
+    } finally {
+      sandbox.restore();
+    }
+  });
+
+  it('does not fire a win notice when the bid has no nurl', function () {
+    const sandbox = sinon.createSandbox();
+    const triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
+
+    try {
+      spec.onBidWon({});
+      spec.onBidWon({ nurl: '' });
+
+      expect(triggerPixelStub.called).to.equal(false);
+    } finally {
+      sandbox.restore();
+    }
   });
 });
