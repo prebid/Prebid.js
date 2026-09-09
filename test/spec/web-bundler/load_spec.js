@@ -101,6 +101,11 @@ describe('web bundler load utils', () => {
       expect(ran).to.be.true;
     });
 
+    it('should mark the global as loaded', () => {
+      checkAndRun('pbGlobal', () => Promise.resolve());
+      expect(window.pbGlobal.libLoaded).to.be.true;
+    });
+
     it('should run load and call processQueue when it resolves', async () => {
       window.pbGlobal.processQueue = sinon.stub();
       const p = Promise.resolve();

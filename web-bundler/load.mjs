@@ -54,6 +54,8 @@ export function checkAndRun(globalVarName, load) {
       console.warn(`Attempted to load a copy of Prebid.js that clashes with the existing '${globalVarName}' instance. Load aborted.`);
     }
   } else {
+    window[globalVarName] = window[globalVarName] || {};
+    window[globalVarName].libLoaded = true;
     load().then(() => {
       window[globalVarName].processQueue();
     })
