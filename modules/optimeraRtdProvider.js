@@ -115,9 +115,14 @@ export function loadOPS() {
     id: 'optimera-ops',
     'data-cid': clientID,
   });
-  // loadExternalScript inserts into the head; move it to the body instead.
-  if (script && document.body) {
-    document.body.appendChild(script);
+  // loadExternalScript inserts the tag into the head; the oPS script is meant to
+  // live on the body, so move it there once the body is available.
+  if (script) {
+    if (document.body) {
+      document.body.appendChild(script);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => document.body?.appendChild(script), { once: true });
+    }
   }
   return script;
 }
