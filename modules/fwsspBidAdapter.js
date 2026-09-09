@@ -606,7 +606,6 @@ export function getBidFloor(bid, config) {
  * 1. _fw_programmatic_tid from keyValues
  * 2. ortb2Imp.ext.tid from bidRequest
  * 3. ortb2.source.tid from bidderRequest
- * 4. Legacy transactionId from bidRequest
  *
  * Priority order for TIDT:
  * 1. _fw_programmatic_tidt from keyValues
@@ -639,14 +638,6 @@ export function extractTransactionIds(bidRequest, bidderRequest, keyValues) {
     const ortb2SourceTid = deepAccess(bidderRequest, 'ortb2.source.tid');
     if (ortb2SourceTid != null) {
       tid = ortb2SourceTid;
-    }
-  }
-
-  // Priority 4: Check legacy transactionId field
-  if (tid == null) {
-    const legacyTid = deepAccess(bidRequest, 'transactionId');
-    if (legacyTid != null) {
-      tid = legacyTid;
     }
   }
 
