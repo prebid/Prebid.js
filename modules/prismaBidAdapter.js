@@ -24,7 +24,7 @@ const GVLID = 965;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['prismadirect'], // short code
+  aliases: [{ code: 'prismadirect', gvlid: GVLID }], // short code
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
