@@ -199,14 +199,21 @@ function getClipRects(element) {
   return rects;
 }
 
-const percentInViewStatic = (element, { w, h } = {}) => {
+/**
+ * Percentage of `box` - a bounding box for `element`, in the coordinates of `element`'s viewport -
+ * that lies within the top window's viewport, accounting for everything that clips or hides
+ * `element`.
+ *
+ * `box` is passed in rather than measured so that a caller that already has the element's rect does
+ * not force a layout for it; the ancestors that clip it are still inspected.
+ */
+const percentInViewOfElementBox = (element, box) => {
   const clipRects = getClipRects(element);
-  return clipRects == null ? 0 : percentInViewOfBox(
-    getBoundingBox(element, { w, h }),
-    element?.ownerDocument?.defaultView,
-    clipRects
-  );
+  return clipRects == null ? 0 : percentInViewOfBox(box, element?.ownerDocument?.defaultView, clipRects);
 };
+
+const percentInViewStatic = (element, { w, h } = {}) =>
+  percentInViewOfElementBox(element, getBoundingBox(element, { w, h }));
 
 export const dep = {
   // for stubbing in tests, see test/mocks/percentInView.js
@@ -361,8 +368,10 @@ export function percentInView(element, { w, h } = {}) {
     if (adjusted.width !== bbox.width || adjusted.height !== bbox.height) {
       // the element has collapsed, so the observer's ratio describes a rect of no area;
       // recompute from the w/h override, reusing the position the observer already
-      // reported to avoid forcing a layout for a rect we have on hand
-      return percentInViewOfBox(adjusted, element?.ownerDocument?.defaultView);
+      // reported to avoid forcing a layout for a rect we have on hand. The observer's ratio is
+      // what accounts for clipping, and it is being discarded here, so the clipping ancestors
+      // have to be walked as they are for any other measurement taken from the DOM
+      return percentInViewOfElementBox(element, adjusted);
     }
     if (bbox.width === 0 || bbox.height === 0) {
       // an element with no area renders nothing, but intersection observers report a ratio

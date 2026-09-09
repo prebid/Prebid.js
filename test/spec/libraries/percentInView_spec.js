@@ -581,4 +581,57 @@ describe('percentInView', () => {
       });
     });
   });
+
+  describe('percentInView, with a size override for a collapsed element', () => {
+    let container;
+
+    beforeEach(() => {
+      sandbox.stub(viewportIntersections, 'observe');
+      sandbox.stub(viewportIntersections, 'getIntersection').callsFake((element) => ({
+        // the observer reports where the element is, but it has collapsed and so has no area of
+        // its own; its ratio describes that empty rect and cannot be used
+        boundingClientRect: bbox.getBoundingClientRect(element),
+        isIntersecting: true,
+        intersectionRatio: 1
+      }));
+      bbox.clearCache();
+      container = document.createElement('div');
+      container.style.cssText = 'position:absolute;left:0;top:0';
+      document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+      container.remove();
+      bbox.clearCache();
+    });
+
+    function measure(html) {
+      container.innerHTML = html;
+      bbox.clearCache();
+      return percentInView(container.querySelector('#target'), { w: 50, h: 50 });
+    }
+
+    const TARGET = '<div id="target" style="width:0;height:0"></div>';
+
+    it('measures the overridden size against the viewport', () => {
+      expect(measure(TARGET)).to.eql(100);
+    });
+
+    it('is clipped by an overflow-hidden ancestor', () => {
+      // half of the overridden 50x50 falls outside the 50x25 clipper
+      expect(measure(`<div style="overflow:hidden;width:50px;height:25px">${TARGET}</div>`)).to.eql(50);
+    });
+
+    it('returns 0 for an element held entirely outside an overflow-hidden ancestor', () => {
+      expect(measure(
+        `<div style="overflow:hidden;width:50px;height:25px">
+           <div style="position:relative;top:200px">${TARGET}</div>
+         </div>`
+      )).to.eql(0);
+    });
+
+    it('returns 0 for an element under a hidden ancestor', () => {
+      expect(measure(`<div style="visibility:hidden">${TARGET}</div>`)).to.eql(0);
+    });
+  });
 });
