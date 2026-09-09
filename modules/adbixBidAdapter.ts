@@ -9,7 +9,7 @@ import type {
   ClientBidderRequest
 } from '../src/adapterManager.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { triggerPixel } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'adbix';
 const ENDPOINT = 'https://adbix.net/api/prebid-auction.php';
@@ -96,16 +96,18 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       : ortb2.app
         ? { site: undefined, app: ortb2.app, dooh: undefined }
         : { site, app: undefined, dooh: undefined };
-    // OpenRTB's request-level test flag applies to the whole batch. Only
-    // mark the batch as test traffic when every impression explicitly sets
-    // a boolean-true test param; ignore invalid (non-boolean) values.
+    // OpenRTB's request-level test flag applies to the whole batch. An explicit
+    // boolean bidder param overrides the publisher's global flag; otherwise the
+    // publisher's ortb2.test flag is preserved. Invalid values are ignored.
+    const testFlags = validBidRequests.map((bid) => getAdbixParams(bid).test);
+    const hasExplicitTestFlag = testFlags.some((flag) => typeof flag === 'boolean');
     const isTestRequest = validBidRequests.length > 0 &&
-      validBidRequests.every((bid) => getAdbixParams(bid).test === true);
+      testFlags.every((flag) => flag === true);
 
     const request = {
       ...ortb2,
       id: bidderRequest.bidderRequestId,
-      test: isTestRequest ? 1 : 0,
+      test: hasExplicitTestFlag ? (isTestRequest ? 1 : 0) : (ortb2.test ? 1 : 0),
       tmax: bidderRequest.timeout || 800,
       ...clientContext,
 
@@ -256,7 +258,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 
   onBidWon: function (bid: any) {
     if (bid && typeof bid.nurl === 'string' && bid.nurl.length > 0) {
-      triggerPixel(bid.nurl);
+      // Report the win with keepalive so page navigation cannot cancel it.
+      ajax(bid.nurl, undefined, undefined, { method: 'GET', keepalive: true });
     }
   },
 
