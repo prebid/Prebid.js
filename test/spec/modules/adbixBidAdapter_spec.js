@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as utils from 'src/utils.js';
+import * as ajaxModule from 'src/ajax.js';
 import { spec } from 'modules/adbixBidAdapter.js';
 
 describe('Adbix Bidder Adapter', function () {
@@ -435,6 +435,38 @@ describe('Adbix Bidder Adapter', function () {
     expect(body.imp[0].ext.prebid.bidder.adbix.test).to.equal(false);
   });
 
+  it('preserves the publisher global ortb2 test flag when bids omit the test param', function () {
+    const bid = {
+      ...validBid,
+      params: {
+        publisherId: 'test-publisher',
+        placementId: 'test-300x250'
+      }
+    };
+
+    const body = buildBody([bid], { ortb2: { test: 1 } });
+    expect(body.test).to.equal(1);
+
+    const liveBody = buildBody([bid]);
+    expect(liveBody.test).to.equal(0);
+  });
+
+  it('lets an explicit boolean test param override the global ortb2 test flag', function () {
+    const liveBid = {
+      ...validBid,
+      params: {
+        ...validBid.params,
+        test: false
+      }
+    };
+
+    const liveBody = buildBody([liveBid], { ortb2: { test: 1 } });
+    expect(liveBody.test).to.equal(0);
+
+    const testBody = buildBody([validBid], { ortb2: { test: 0 } });
+    expect(testBody.test).to.equal(1);
+  });
+
   it('does not return an image user sync when pixel sync is disabled', function () {
     const syncs = spec.getUserSyncs({
       iframeEnabled: true,
@@ -509,9 +541,9 @@ describe('Adbix Bidder Adapter', function () {
     expect(withoutExpiry[0].ttl).to.equal(300);
   });
 
-  it('retains the win notice URL and fires it when the bid wins', function () {
+  it('retains the win notice URL and reports it with keepalive when the bid wins', function () {
     const sandbox = sinon.createSandbox();
-    const triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
+    const ajaxStub = sandbox.stub(ajaxModule, 'ajax');
 
     try {
       const bids = interpretResponseBids([
@@ -522,22 +554,23 @@ describe('Adbix Bidder Adapter', function () {
       expect(bids[0].nurl).to.equal('https://adbix.net/win.php?id=1');
 
       spec.onBidWon(bids[0]);
-      expect(triggerPixelStub.calledOnceWith('https://adbix.net/win.php?id=1'))
-        .to.equal(true);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal('https://adbix.net/win.php?id=1');
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', keepalive: true });
     } finally {
       sandbox.restore();
     }
   });
 
-  it('does not fire a win notice when the bid has no nurl', function () {
+  it('does not report a win notice when the bid has no nurl', function () {
     const sandbox = sinon.createSandbox();
-    const triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
+    const ajaxStub = sandbox.stub(ajaxModule, 'ajax');
 
     try {
       spec.onBidWon({});
       spec.onBidWon({ nurl: '' });
 
-      expect(triggerPixelStub.called).to.equal(false);
+      expect(ajaxStub.called).to.equal(false);
     } finally {
       sandbox.restore();
     }
