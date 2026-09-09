@@ -1,8 +1,9 @@
 import { METADATA_SUFFIX, resolveDependencies } from './dependencies.mjs';
 
-export function scriptLoader(base) {
+export function scriptLoader(base, scope) {
   return function(chunk, checksum) {
     const script = document.createElement('script');
+    script.__pbjsScope = scope;
     Object.entries({
       src: base + chunk,
       defer: 'defer',

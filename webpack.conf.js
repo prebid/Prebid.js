@@ -106,6 +106,9 @@ module.exports = addCommonConfig({
   output: {
     chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
     chunkLoading: 'jsonp',
+    // install the chunkLoadingGlobal in currentScript.__pbjsScope if it exists (set up by web-bundler/out/bundler.js and web-bundler/load.mjs)
+    // this is to allow multiple instances of bundle to load without interfering with each other
+    globalObject: "('undefined' != typeof document && document.currentScript && document.currentScript.__pbjsScope || self)",
   },
   optimization: {
     usedExports: true,

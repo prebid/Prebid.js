@@ -90,6 +90,17 @@ describe('web bundler load utils', () => {
       consoleWarn.restore();
     });
 
+    it('should run load() synchronously', () => {
+      // load() needs to be called synchronously so that when called by bundle.js, document.currentScript
+      // still refers to the right element (with __pbjsScope)
+      let ran = false;
+      checkAndRun('pbGlobal', () => {
+        ran = true;
+        return Promise.resolve();
+      });
+      expect(ran).to.be.true;
+    });
+
     it('should run load and call processQueue when it resolves', async () => {
       window.pbGlobal.processQueue = sinon.stub();
       const p = Promise.resolve();
