@@ -15,7 +15,7 @@
  * @property {string} device
  * @property {string} apiVersion
  * @property {string} transmitWithBidRequests
- * @property {boolean} callOPS
+ * @property {boolean|string} callOPS
  */
 
 import { logInfo, logError, mergeDeep } from '../src/utils.js';
