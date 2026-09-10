@@ -124,6 +124,11 @@ function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
   }
 }
 
+function chromeNeedsNoSandbox(isDocker = require('is-docker')(), getuid = process.getuid) {
+  // Codex added the uid check because container detection is not reliable in every agent runtime.
+  return isDocker || (typeof getuid === 'function' && getuid() === 0);
+}
+
 function setBrowsers(karmaConf, browserstack) {
   karmaConf.customLaunchers = karmaConf.customLaunchers || {};
   karmaConf.customLaunchers.ChromeNoSandbox = {
@@ -144,8 +149,7 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.customLaunchers = require('./browsers.json');
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
-    var isDocker = require('is-docker')();
-    if (isDocker) {
+    if (chromeNeedsNoSandbox()) {
       karmaConf.browsers = ['ChromeNoSandbox'];
     } else {
       karmaConf.browsers = ['ChromeHeadless'];
@@ -227,3 +231,5 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
   setBrowsers(config, browserstack);
   return config;
 }
+
+module.exports.chromeNeedsNoSandbox = chromeNeedsNoSandbox;
