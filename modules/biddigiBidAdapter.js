@@ -5,6 +5,13 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isNumber, logWarn } from '../src/utils.js';
 
 /**
+ * @typedef {import('./biddigiBidAdapter.d.ts').BiddigiBidRequestParams} BiddigiBidRequestParams
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {object} BiddigiBidRequest
+ * @property {BiddigiBidRequestParams} params
+ */
+
+/**
  * BidDigi Prebid.js bidder adapter.
  *
  * Registers `biddigi` as a bidder in the standard Prebid.js unified auction, builds an
@@ -41,6 +48,11 @@ const converter = ortbConverter({
     ttl: DEFAULT_TTL,
     currency: DEFAULT_CURRENCY, // fallback when the response doesn't set ortbResponse.cur — see libraries/ortbConverter/processors/default.js props processor
   },
+  /**
+   * @param {function} buildImp
+   * @param {BiddigiBidRequest} bidRequest
+   * @param {object} context
+   */
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
@@ -69,6 +81,10 @@ const converter = ortbConverter({
   // no per-bidder override needed here.
 });
 
+/**
+ * @param {BiddigiBidRequest[]} validBidRequests
+ * @return {string} the BidDigi auction-service URL to POST this auction to.
+ */
 function endpointFor(validBidRequests) {
   const region = validBidRequests?.[0]?.params?.region;
   if (region && !BIDDIGI_ENDPOINTS[region]) {
@@ -82,7 +98,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
-   * @param {object} bid
+   * @param {BiddigiBidRequest} bid
    * @return {boolean} true if this bid request has the minimum params BidDigi's endpoint needs.
    */
   isBidRequestValid: function (bid) {
@@ -91,7 +107,7 @@ export const spec = {
   },
 
   /**
-   * @param {object[]} validBidRequests
+   * @param {BiddigiBidRequest[]} validBidRequests
    * @param {object} bidderRequest
    * @return {object|object[]} one POST request per call (BidDigi's endpoint accepts a single
    *   oRTB request covering every imp in the auction, matching standard Prebid.js practice for
@@ -118,7 +134,7 @@ export const spec = {
   },
 
   /**
-   * @param {object} response the http response from BidDigi's auction endpoint
+   * @param {ServerResponse} response the http response from BidDigi's auction endpoint
    * @param {object} request the request object returned by buildRequests
    * @return {object[]} array of Prebid bid response objects
    */
@@ -130,7 +146,7 @@ export const spec = {
 
   /**
    * @param {object} syncOptions
-   * @param {object[]} serverResponses
+   * @param {ServerResponse[]} serverResponses
    * @param {object} gdprConsent
    * @param {string} uspConsent
    * @param {object} gppConsent
