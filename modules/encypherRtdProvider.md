@@ -34,7 +34,7 @@ pbjs.setConfig({
 | --- | --- | --- |
 | `timeout` | `300` | Provider deadline in milliseconds for WebCrypto hashing plus signal and JWKS reads. The effective budget is the smaller of this value and the RTD core `auctionDelay`. A provider with no RTD delay budget does not start asynchronous work. |
 | `telemetry` | unset | Set to `true` to emit diagnostic-only delivery events after the auction callback. |
-| `adoptionReporting` | `true` | Enables privacy-minimized, domain-level adoption reporting on the existing signal lookup. Set to `false` to stop future adoption observations without changing auction behavior. |
+| `adoptionReporting` | `true` | Enables privacy-minimized, domain-level adoption reporting on consent-allowed signal lookups. Set to `false` to stop future adoption observations without changing auction behavior. |
 
 The signal origin is not configurable. Lookups and telemetry use exactly `https://signals.encypher.com`.
 
@@ -49,7 +49,7 @@ The module adds one compact object to each impression and preserves all existing
       "c2pa": {
         "v": 1,
         "id": "epa_01J...",
-        "ref": "https://api.encypher.com/api/v1/public/provenance/evidence/cQAAAAAAAAAAAAAAAAACAQ",
+        "ref": "https://api.encypher.com/api/v1/proof/bNv0YOZMqiDPmlW0hf0im_AkYKJ53GZxuJIsodyhMRg",
         "att": "eyJhbGciOiJFUzI1NiIs..."
       }
     }
@@ -61,8 +61,8 @@ The module adds one compact object to each impression and preserves all existing
 | --- | --- | --- |
 | `v` | integer | Protocol version. Must be 1. |
 | `id` | string | Stable provenance record ID. |
-| `ref` | HTTPS URL | Exact canonical evidence locator under Encypher's pinned public evidence collection. Its 22-character base64url suffix decodes to a 16-byte identifier independent of the signed subject. |
-| `att` | compact JWS | ES256 attestation binding the record ID to the URL digest, exact publisher domain, policy version, revision, and expiration. |
+| `ref` | HTTPS URL | Content-addressed public evidence URL derived from the signed manifest SHA-256 digest. Its canonical 43-character unpadded base64url suffix encodes 32 bytes. |
+| `att` | compact JWS | ES256 attestation binding the record ID to the URL digest, exact publisher domain, manifest digest, policy version, revision, and expiration. |
 
 The serialized extension is limited to 1 KiB.
 
@@ -75,8 +75,8 @@ Deploy the edge's exact JSON and `Cache-Control: no-store` response contract bef
 Before injection, the module also requires:
 
 - A valid ES256 signature from the selected `kid` in the pinned JWKS at `https://api.encypher.com/api/v1/public/provenance/jwks.json`.
-- Exact canonical claim fields plus the pinned `https://api.encypher.com` issuer, canonical URL digest, publisher domain, record ID, validation result, declaration, policy version, signed revision, and lifetime bindings.
-- Exact canonical `ref` syntax under `https://api.encypher.com/api/v1/public/provenance/evidence/`, with no credentials, query, fragment, alternate encoding, or non-canonical path.
+- Exact canonical claim fields plus the pinned `https://api.encypher.com` issuer, canonical URL digest, publisher domain, record ID, manifest digest, validation result, declaration, policy version, signed revision, and lifetime bindings.
+- Exact equality between `ref` and `https://api.encypher.com/api/v1/proof/` followed by the signed `manifest_digest`, encoded as canonical unpadded base64url for 32 bytes, with no credentials, query, fragment, alternate encoding, or non-canonical path. The browser does not fetch the evidence.
 - A serialized extension no larger than 1 KiB.
 
 Page-lifetime state rejects response reordering. Non-ready decisions advance a dataset floor when received. `stale` also advances a global stale barrier. `miss` and `revoked` block the affected URL hash and supersede an equal or older ready decision. A ready decision changes state only after signature verification returns its signed record revision. At commit time the module rechecks the dataset floor, stale barrier, per-hash blocker, highest verified revision, and byte-identical equality for equal dataset and revision. Invalid high-version ready responses change no state. Lower blockers cannot evict newer ready decisions.
@@ -93,9 +93,19 @@ The record JWS authenticates the carrier and its signed claims. The pinned `http
 
 The browser state machine protects against honest response reordering, HTTP-cache rollback, and concurrent-auction mutation. It does not provide a signed proof of current status. Compromise of `signals.encypher.com`, its Cloudflare account or route, or its TLS control plane can replay a still-unexpired issuer-signed record. Compromise of the pinned JWKS origin can substitute verification keys. These authority compromises are outside this browser protocol's protection.
 
+The evidence URL is cryptographically bound to the signed manifest digest. Substituting another syntactically valid evidence URL without changing the signed attestation causes rejection. Evidence retrieval still depends on the proof endpoint's availability and access controls; the browser does not treat a valid signature as proof of current availability.
+
+## Consent and data transmission
+
+The provider skips all work when COPPA applies, the US Privacy string records a sale opt-out, or GDPR applicability is true or unresolved. Encypher has no registered GVL ID, so a consent string or another vendor's consent cannot authorize transmission to Encypher. When GDPR consent management is enabled but supplies no data, the provider also skips the lookup. Builds without consent modules can perform the lookup.
+
+Blocked calls complete the RTD callback without URL hashing, signal or JWKS requests, cached-signal injection, diagnostics, or adoption reporting. Ordinary auctions continue. Consent is checked again for every auction, including auctions that could otherwise reuse a cached signal.
+
+Allowed lookup requests disclose the canonical URL digest, canonical publisher hostname, and module version to the fixed signal authority. They do not upload the raw URL, page content, manifest, cookies, bids, prices, deals, or creatives. Requests omit browser credentials and referrers. The URL digest is not an anonymization guarantee; canonical URLs can contain visitor-specific query values.
+
 ## Diagnostic telemetry
 
-When `telemetry` is `true`, the module sends a post-callback event to `https://signals.encypher.com/v1/telemetry/rtd` through Prebid's fetch wrapper with keepalive, omitted credentials, no referrer, no-store caching, and redirects rejected. The event contains only its protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. `impression_count` is the number of impressions injected on the owned auction graph; every non-injected outcome reports zero. The event contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect the auction.
+When consent permits transmission and `telemetry` is `true`, the module sends a post-callback event to `https://signals.encypher.com/v1/telemetry/rtd` through Prebid's fetch wrapper with keepalive, omitted credentials, no referrer, no-store caching, and redirects rejected. The event contains only its protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. `impression_count` is the number of impressions injected on the owned auction graph; every non-injected outcome reports zero. The event contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect the auction.
 
 ## Publisher adoption reporting
 
