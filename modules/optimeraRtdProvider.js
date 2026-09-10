@@ -9,13 +9,7 @@
  */
 
 /**
- * @typedef {Object} ModuleParams
- * @property {string} clientID
- * @property {string} optimeraKeyName
- * @property {string} device
- * @property {string} apiVersion
- * @property {string} transmitWithBidRequests
- * @property {boolean|string} callOPS
+ * @typedef {import('./optimeraRtdProvider.d.ts').OptimeraRtdParams} ModuleParams
  */
 
 import { logInfo, logError, mergeDeep } from '../src/utils.js';
