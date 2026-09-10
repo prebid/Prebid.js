@@ -12,6 +12,7 @@ import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
 import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
 import { config } from 'src/config.js';
 import * as rtdModule from '../../../modules/rtdModule/index.js';
+import { gdprDataHandler } from 'src/consentHandler.js';
 
 const HEADERS = {
   'Content-Type': 'application/json',
@@ -20,7 +21,7 @@ const HEADERS = {
 const API_ISSUER = 'https://api.encypher.com';
 const PINNED_JWKS_URL = API_ISSUER + '/api/v1/public/provenance/jwks.json';
 const SIGNAL_ORIGIN = 'https://signals.encypher.com';
-const EVIDENCE_COLLECTION = API_ISSUER + '/api/v1/public/provenance/evidence';
+const PROOF_COLLECTION = API_ISSUER + '/api/v1/proof';
 const ACCEPTED_TRUST_POLICY_VERSION = 'adtech-v1-2026-07';
 const TRUSTED_JWK = {
   kty: 'EC',
@@ -39,7 +40,7 @@ const STORY_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImVuY3lwaGVyLWF0dGVzdGF0aW9uLXRlc
 const STORY_SIGNAL = {
   v: 1,
   id: 'epa_s',
-  ref: EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAQ',
+  ref: PROOF_COLLECTION + '/bNv0YOZMqiDPmlW0hf0im_AkYKJ53GZxuJIsodyhMRg',
   att: STORY_ATT,
 };
 
@@ -49,14 +50,14 @@ const PAGE_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImVuY3lwaGVyLWF0dGVzdGF0aW9uLXRlc3
 const PAGE_SIGNAL = {
   v: 1,
   id: 'epa_1',
-  ref: EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAg',
+  ref: PROOF_COLLECTION + '/BbOr8leaXrZkA814vlV_2GBjOh_iEDx2QgMN7-MsZX8',
   att: PAGE_ATT,
 };
 const ATTACKER_ATT = 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImF0dGFja2VyLWtleSIsInR5cCI6ImVwYXQrandzIn0.eyJjb250ZW50X2hhc2giOiI3WEFDdERucHJJUmZJalY5Z2l1c0ZFUnpENzIyQVcwLXlVTWlsN25zbjNNIiwiZGVjbGFyYXRpb24iOiJodW1hbl9kZWNsYXJlZCIsImV4cCI6NDEwMjQ0NDgwMCwiaWF0IjoxNzA0MDY3MjAwLCJpc3MiOiJodHRwczovL2F0dGFja2VyLmV4YW1wbGUiLCJtYW5pZmVzdF9kaWdlc3QiOiJCYk9yOGxlYVhyWmtBODE0dmxWXzJHQmpPaF9pRUR4MlFnTU43LU1zWlg4IiwicHVibGlzaGVyX2RvbWFpbiI6InB1Ymxpc2hlci5leGFtcGxlIiwicmVjb3JkX3JldmlzaW9uIjo3LCJzdWIiOiJlcGFfYXR0YWNrZXJfMSIsInRydXN0X3BvbGljeV92ZXJzaW9uIjoxLCJ1cmxfaGFzaCI6IjFxMWIxWHAxV3hybFYzZlhCbXNvOGlwQlppbTk0MDItRUxkWmdNbGtrMjAiLCJ2YWxpZGF0aW9uX3Jlc3VsdHMiOlsiY2xhaW1TaWduYXR1cmUudmFsaWQiXX0.Zi0M0Q9zAx0MAWPck9fw-aWsYYjNtDNOn5HZssJpK1syfBRxbQn2trYl2Fi96R41IDhBjvBJ_EKqg-bnrSUHsw';
 const ATTACKER_SIGNAL = {
   v: 1,
   id: 'epa_attacker_1',
-  ref: EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAw',
+  ref: PROOF_COLLECTION + '/BbOr8leaXrZkA814vlV_2GBjOh_iEDx2QgMN7-MsZX8',
   att: ATTACKER_ATT,
 };
 
@@ -259,14 +260,14 @@ function prepareAuction(auction) {
   return isolatedAuction;
 }
 
-function beginAuction(params = {}, auction = makeAuction(), prepare = true) {
+function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare = true) {
   if (prepare) auction = prepareAuction(auction);
   let callbackCount = 0;
   const completion = new Promise(resolve => {
     encypherSubmodule.getBidRequestData(auction, () => {
       callbackCount += 1;
       resolve();
-    }, { params: Object.assign({ timeout: 300 }, params) });
+    }, { params: Object.assign({ timeout: 300 }, params) }, userConsent);
   });
   return {
     auction,
@@ -431,6 +432,139 @@ describe('encypherRtdProvider decision-network v1', () => {
     await run.completion;
     assert.strictEqual(run.callbackCount(), 1);
     assertNoInjection(run.auction);
+  });
+
+  [
+    {
+      name: 'COPPA applies',
+      consent: { coppa: true, gdpr: null, usp: null, gpp: null },
+    },
+    {
+      name: 'GDPR applies without a consent string',
+      consent: {
+        coppa: false,
+        gdpr: { gdprApplies: true, consentString: '' },
+        usp: null,
+        gpp: null,
+      },
+    },
+    {
+      name: 'GDPR applies despite a consent string and unrelated vendor grants',
+      consent: {
+        coppa: false,
+        gdpr: {
+          gdprApplies: true,
+          consentString: 'populated-tcf-consent',
+          vendorData: {
+            purpose: {
+              consents: { 2: true, 7: true },
+              legitimateInterests: { 2: true, 7: true },
+            },
+            vendor: {
+              consents: { 42: true },
+              legitimateInterests: { 42: true },
+            },
+          },
+        },
+        usp: null,
+        gpp: null,
+      },
+    },
+    {
+      name: 'USP records a sale opt-out',
+      consent: { coppa: false, gdpr: null, usp: '1YYN', gpp: null },
+    },
+  ].forEach(testCase => {
+    it('blocks all work and callbacks once when ' + testCase.name, async () => {
+      addCanonical(STORY_URL, cleanups);
+      const auction = prepareAuction(makeAuction());
+      const original = structuredClone(auction);
+      const run = beginAuction({ telemetry: true }, auction, testCase.consent, false);
+
+      await run.completion;
+      await Promise.resolve();
+
+      assert.strictEqual(run.callbackCount(), 1);
+      assert.deepStrictEqual(run.auction, original);
+      assertNoInjection(run.auction);
+      assert.strictEqual(digestStub.callCount, 0);
+      assert.strictEqual(server.requests.length, 0);
+    });
+  });
+
+  it('blocks all work when the configured GDPR handler supplies no consent data', async () => {
+    gdprDataHandler.enable();
+    try {
+      addCanonical(STORY_URL, cleanups);
+      const auction = prepareAuction(makeAuction());
+      const original = structuredClone(auction);
+      const consent = { coppa: false, gdpr: null, usp: null, gpp: null };
+      const run = beginAuction({ telemetry: true }, auction, consent, false);
+
+      await run.completion;
+      await Promise.resolve();
+
+      assert.strictEqual(run.callbackCount(), 1);
+      assert.deepStrictEqual(run.auction, original);
+      assertNoInjection(run.auction);
+      assert.strictEqual(digestStub.callCount, 0);
+      assert.strictEqual(server.requests.length, 0);
+    } finally {
+      gdprDataHandler.reset();
+    }
+  });
+
+  it('continues lookup and injection when GDPR does not apply and USP does not opt out', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const consent = {
+      coppa: false,
+      gdpr: { gdprApplies: false, consentString: '' },
+      usp: '1YNN',
+      gpp: null,
+    };
+    const run = beginAuction({}, makeAuction(), consent);
+
+    assertCanonicalLookup(pendingLookup(), STORY_HASH, STORY_URL);
+    await respondDecision(ready(STORY_SIGNAL, 2));
+    await run.completion;
+
+    assert.strictEqual(run.callbackCount(), 1);
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+  });
+
+  it('does not inject or contact Encypher while consent denies a cached signal', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const allowed = {
+      coppa: false,
+      gdpr: { gdprApplies: false, consentString: '' },
+      usp: '1YNN',
+      gpp: null,
+    };
+    const denied = {
+      coppa: false,
+      gdpr: { gdprApplies: true, consentString: '' },
+      usp: '1YNN',
+      gpp: null,
+    };
+    const prime = beginAuction({}, makeAuction(), allowed);
+    await respondDecision(ready(STORY_SIGNAL, 3));
+    await prime.completion;
+    const requestCount = server.requests.length;
+    const digestCount = digestStub.callCount;
+
+    const blocked = beginAuction({ telemetry: true }, makeAuction(), denied);
+    await blocked.completion;
+    await Promise.resolve();
+
+    assert.strictEqual(blocked.callbackCount(), 1);
+    assertNoInjection(blocked.auction);
+    assert.strictEqual(digestStub.callCount, digestCount);
+    assert.strictEqual(server.requests.length, requestCount);
+
+    const restored = beginAuction({}, makeAuction(), allowed);
+    await restored.completion;
+    assert.deepStrictEqual(restored.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.strictEqual(server.requests.length, requestCount);
   });
 
   it('matches the generated canonical URL and unpadded SHA-256 vectors', async () => {
@@ -1523,7 +1657,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertDiagnostic(telemetry.requestBody, 'timeout', 0, undefined);
   });
 
-  it('accepts the frozen launch policy and exact canonical evidence locator', async () => {
+  it('accepts the frozen launch policy and exact signed-digest proof locator', async () => {
     addCanonical(STORY_URL, cleanups);
     assert.strictEqual(new TextEncoder().encode(STORY_SIGNAL.ref).byteLength, 81);
     assert.strictEqual(decodeClaims(STORY_ATT).trust_policy_version, ACCEPTED_TRUST_POLICY_VERSION);
@@ -1533,18 +1667,13 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
   });
 
-  it('does not derive the unsigned evidence locator UUID from the signed subject', async () => {
-    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
-    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+  it('rejects a valid signed record when its canonical evidence locator is substituted', async () => {
     addCanonical(STORY_URL, cleanups);
-    const id = 'independent-record-id';
-    const signal = Object.assign({}, recordWithClaims(STORY_SIGNAL, claims => {
-      claims.sub = id;
-    }), { id });
+    const signal = Object.assign({}, STORY_SIGNAL, { ref: PAGE_SIGNAL.ref });
     const run = beginAuction();
     await respondDecision(ready(signal, 96));
     await run.completion;
-    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, signal);
+    assertNoInjection(run.auction);
   });
 
   [
@@ -1572,17 +1701,19 @@ describe('encypherRtdProvider decision-network v1', () => {
   [
     ['legacy /a route', API_ISSUER + '/a/cQAAAAAAAAAAAAAAAAACAQ'],
     ['attestation lookup route', API_ISSUER + '/api/v1/public/provenance/attestations/epa_s'],
-    ['wrong origin', 'https://api.encypher.example/api/v1/public/provenance/evidence/cQAAAAAAAAAAAAAAAAACAQ'],
-    ['userinfo origin confusion', 'https://api.encypher.com@attacker.example/api/v1/public/provenance/evidence/cQAAAAAAAAAAAAAAAAACAQ'],
+    ['obsolete evidence route', API_ISSUER + '/api/v1/public/provenance/evidence/cQAAAAAAAAAAAAAAAAACAQ'],
+    ['wrong origin', 'https://api.encypher.example/api/v1/proof/bNv0YOZMqiDPmlW0hf0im_AkYKJ53GZxuJIsodyhMRg'],
+    ['userinfo origin confusion', 'https://api.encypher.com@attacker.example/api/v1/proof/bNv0YOZMqiDPmlW0hf0im_AkYKJ53GZxuJIsodyhMRg'],
     ['query', STORY_SIGNAL.ref + '?download=1'],
     ['fragment', STORY_SIGNAL.ref + '#evidence'],
-    ['padded UUID', STORY_SIGNAL.ref + '='],
-    ['short UUID', EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACA'],
-    ['long UUID', EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACAQA'],
-    ['non-base64url UUID', EVIDENCE_COLLECTION + '/cQAAAAAAAAAAAAAAAAACA%'],
-    ['over 96 bytes', EVIDENCE_COLLECTION + '/' + 'A'.repeat(38)],
+    ['padded digest', STORY_SIGNAL.ref + '='],
+    ['noncanonical digest pad bits', STORY_SIGNAL.ref.slice(0, -1) + 'h'],
+    ['short digest', PROOF_COLLECTION + '/' + 'A'.repeat(42)],
+    ['long digest', PROOF_COLLECTION + '/' + 'A'.repeat(44)],
+    ['non-base64url digest', PROOF_COLLECTION + '/' + 'A'.repeat(42) + '%'],
+    ['over 96 bytes', PROOF_COLLECTION + '/' + 'A'.repeat(59)],
   ].forEach(([name, ref], index) => {
-    it('rejects the ' + name + ' evidence locator', async () => {
+    it('rejects the ' + name + ' proof locator', async () => {
       addCanonical(STORY_URL, cleanups);
       const run = beginAuction();
       await respondDecision(ready(Object.assign({}, STORY_SIGNAL, { ref }), 120 + index));
