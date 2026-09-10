@@ -1,9 +1,11 @@
 import * as utils from "../src/utils.js";
 import { detectWalletsPresence } from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { parseDomain } from "../src/refererDetection.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
 import { getDomComplexity, getPageDescription, getPageTitle } from "../libraries/fpdUtils/pageInfo.js";
+import { getBrowserLanguage } from "../libraries/fpdUtils/deviceInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
@@ -45,6 +47,44 @@ const getPageUrl = (bidderRequest) => {
   const topWindowUrl = getTopWindowUrl();
 
   return isUsablePageUrl(topWindowUrl) ? topWindowUrl : '';
+};
+
+const isUsableDimension = (value) => typeof value === 'number' && isFinite(value) && value > 0;
+
+const getScreenDimensions = (bidderRequest) => {
+  const device = bidderRequest?.ortb2?.device;
+
+  if (isUsableDimension(device?.w) && isUsableDimension(device?.h)) {
+    return { width: device.w, height: device.h };
+  }
+
+  const { width, height } = utils.getWinDimensions().screen;
+
+  return { width, height };
+};
+
+const getPageReferrer = (bidderRequest) => bidderRequest?.refererInfo?.ref ?? '';
+
+const getPageDomain = (bidderRequest, pageUrl) => {
+  return bidderRequest?.refererInfo?.domain || parseDomain(pageUrl) || '';
+};
+
+const isUsableLanguage = (value) => typeof value === 'string' && value.trim() !== '';
+
+const getUserLanguage = (bidderRequest) => {
+  const device = bidderRequest?.ortb2?.device;
+
+  if (isUsableLanguage(device?.langb)) {
+    return device.langb;
+  }
+
+  if (isUsableLanguage(device?.language)) {
+    return device.language;
+  }
+
+  const browserLanguage = getBrowserLanguage();
+
+  return isUsableLanguage(browserLanguage) ? browserLanguage : '';
 };
 
 const normalizeKeywords = (input) => {
@@ -249,6 +289,10 @@ export const spec = {
     })();
     const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
     const pageUrl = getPageUrl(bidderRequest);
+    const pageDomain = getPageDomain(bidderRequest, pageUrl);
+    const userLanguage = getUserLanguage(bidderRequest);
+    const screenDimensions = getScreenDimensions(bidderRequest);
+    const pageReferer = getPageReferrer(bidderRequest);
 
     if (bidRequests.length === 0) {
       return [];
@@ -285,9 +329,9 @@ export const spec = {
       });
 
       const payload = {
-        userLanguage: navigator.language,
+        userLanguage,
         pageUrl,
-        pageDomain: bidRequest?.refererInfo?.referer,
+        pageDomain,
         userId: bidRequest.userId,
         eids: (bidRequest.userIdAsEids || []).map(eid => ({
           source: eid.source,
@@ -319,7 +363,7 @@ export const spec = {
         externalRef: bidRequest.bidId,
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
         referer: getReferrerInfo(bidderRequest),
-        pageReferer: document.referrer,
+        pageReferer,
         context: [{
           source: "title",
           text: getPageTitle().slice(0, 300)
@@ -329,8 +373,8 @@ export const spec = {
         }],
         domComplexity: getDomComplexity(document),
         device: bidderRequest?.ortb2?.device || {},
-        deviceWidth: screen.width,
-        deviceHeight: screen.height,
+        deviceWidth: screenDimensions.width,
+        deviceHeight: screenDimensions.height,
         timeout: bidderRequest?.timeout,
         viewportHeight: utils.getWinDimensions().visualViewport.height,
         viewportWidth: utils.getWinDimensions().visualViewport.width,
