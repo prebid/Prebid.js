@@ -649,19 +649,42 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
     });
 
-    it('prefers the persisted (localStorage) group over the sessionStorage group', function() {
-      // A Marketing Tag that has run in this tab writes both; the persisted copy is what let this
-      // module know the group before the tab had a session value (ANON-8367), so it must win any
-      // disagreement rather than the two being merged or the session value taking precedence.
+    it('honours this tab\'s own holdout group over a sibling tab\'s persisted treatment group', function() {
+      // anon-sl-group is shared by every tab on the origin and holds whichever tag run wrote last,
+      // so a treatment tab can overwrite it while this tab stays in the holdout. The session copy
+      // is scoped to this tab and is the group these auctions actually belong to.
       getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
-      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('h');
-      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('t');
+      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('h');
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('t');
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
     });
 
-    it('falls back to the sessionStorage group for a Marketing Tag version that predates ANON-8367', function() {
+    it('honours this tab\'s own treatment group over a sibling tab\'s persisted holdout group', function() {
+      // The same precedence in the other direction: a holdout sibling must not suppress the
+      // segment for a tab this user is in the treatment arm of.
+      getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('t');
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('h');
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
+    });
+
+    it('falls back to the persisted group before the Marketing Tag has run in this tab', function() {
+      // The first auction of a new tab: no session assignment exists yet, but anon-sl has survived
+      // from an earlier session, so the persisted group is what keeps a returning holdout user's
+      // stale audience data from going out unfiltered (ANON-8367).
+      getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
+      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns(null);
+      getDataFromLocalStorageStub.withArgs('anon-sl-group').returns('h');
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
+    });
+
+    it('uses the sessionStorage group for a Marketing Tag version that predates ANON-8367', function() {
       // Older tag versions only ever wrote anon-sl-group-session; anon-sl-group is absent, not 'h'
       // or 't', on every page view for those publishers until they upgrade.
       getDataFromLocalStorageStub.withArgs('anon-sl').returns(signalLift());
