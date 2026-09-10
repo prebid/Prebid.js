@@ -1,6 +1,6 @@
 import { getHook, submodule } from '../src/hook.js';
 import { fetcherFactory } from '../src/ajax.js';
-import { gdprDataHandler, type AllConsentData } from '../src/consentHandler.ts';
+import { gdprDataHandler, gppDataHandler, type AllConsentData } from '../src/consentHandler.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
 import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 
@@ -132,12 +132,72 @@ function exactKeys(value: unknown, expected: readonly string[]): value is JsonOb
   return actual.length === expected.length && expected.every(key => actual.includes(key));
 }
 
+const GPP_SECTION_NAMES: Record<number, string> = {
+  7: 'usnat',
+  8: 'usca',
+  9: 'usva',
+  10: 'usco',
+  11: 'usut',
+  12: 'usct'
+};
+
+const GPP_OPT_OUT_FIELDS = ['SaleOptOut', 'SharingOptOut', 'TargetedAdvertisingOptOut'] as const;
+
+function gppSectionAllowsData(section: unknown): boolean {
+  const segments = Array.isArray(section) ? section : [section];
+  if (segments.length === 0) return false;
+  let hasSaleOptOut = false;
+  for (const segment of segments) {
+    if (!segment || typeof segment !== 'object' || Array.isArray(segment)) return false;
+    for (const field of GPP_OPT_OUT_FIELDS) {
+      if (!Object.prototype.hasOwnProperty.call(segment, field)) continue;
+      const value = (segment as JsonObject)[field];
+      if (value !== 0 && value !== 1 && value !== 2) return false;
+      if (field === 'SaleOptOut') hasSaleOptOut = true;
+      if (value === 1) return false;
+    }
+    if (Object.prototype.hasOwnProperty.call(segment, 'Gpc')) {
+      const gpc = (segment as JsonObject).Gpc;
+      if (gpc !== false && gpc !== true && gpc !== 0 && gpc !== 1) return false;
+      if (gpc === true || gpc === 1) return false;
+    }
+  }
+  return hasSaleOptOut;
+}
+
+function hasGppConsentForDataTransmission(gpp: unknown): boolean {
+  if (!gpp || typeof gpp !== 'object' || Array.isArray(gpp)) return false;
+  const consent = gpp as JsonObject;
+  const applicableSections = consent.applicableSections;
+  if (!Array.isArray(applicableSections)) return false;
+  if (applicableSections.length === 1 && applicableSections[0] === -1) return true;
+  const parsedSections = consent.parsedSections;
+  if (
+    typeof consent.gppString !== 'string' ||
+    consent.gppString.length === 0 ||
+    applicableSections.length === 0 ||
+    !parsedSections ||
+    typeof parsedSections !== 'object' ||
+    Array.isArray(parsedSections)
+  ) {
+    return false;
+  }
+  for (const sid of applicableSections) {
+    if (!Number.isInteger(sid)) return false;
+    const sectionName = GPP_SECTION_NAMES[sid];
+    if (!sectionName || !gppSectionAllowsData((parsedSections as JsonObject)[sectionName])) return false;
+  }
+  return true;
+}
+
 function hasConsentForDataTransmission(userConsent: AllConsentData | null | undefined): boolean {
   if (gdprDataHandler.enabled && userConsent?.gdpr == null) return false;
+  if (gppDataHandler.enabled && userConsent?.gpp == null) return false;
   if (!userConsent) return true;
   if (userConsent.coppa === true) return false;
   if (typeof userConsent.usp === 'string' && userConsent.usp[2] === 'Y') return false;
   if (userConsent.gdpr && userConsent.gdpr.gdprApplies !== false) return false;
+  if (userConsent.gpp != null && !hasGppConsentForDataTransmission(userConsent.gpp)) return false;
   return true;
 }
 function canonicalDigest(value: unknown): value is string {

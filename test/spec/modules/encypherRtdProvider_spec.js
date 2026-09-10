@@ -12,7 +12,8 @@ import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
 import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
 import { config } from 'src/config.js';
 import * as rtdModule from '../../../modules/rtdModule/index.js';
-import { gdprDataHandler } from 'src/consentHandler.js';
+import { gdprDataHandler, gppDataHandler } from 'src/consentHandler.js';
+import { toConsentData } from '../../../modules/consentManagementGpp.js';
 
 const HEADERS = {
   'Content-Type': 'application/json',
@@ -276,6 +277,10 @@ function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare
   };
 }
 
+function consentWithGpp(gpp) {
+  return { coppa: false, gdpr: null, usp: null, gpp };
+}
+
 function assertNoInjection(auction) {
   auction.adUnits.forEach(adUnit => {
     assert.strictEqual(adUnit.ortb2Imp && adUnit.ortb2Imp.ext && adUnit.ortb2Imp.ext.c2pa, undefined);
@@ -412,8 +417,28 @@ describe('encypherRtdProvider decision-network v1', () => {
     return sandbox.useFakeTimers(options);
   }
 
+  async function assertGppDenied(gpp) {
+    addCanonical(STORY_URL, cleanups);
+    const auction = prepareAuction(makeAuction());
+    const consent = consentWithGpp(gpp);
+    const originalAuction = structuredClone(auction);
+    const originalConsent = structuredClone(consent);
+    const run = beginAuction({ telemetry: true }, auction, consent, false);
+
+    await run.completion;
+    await Promise.resolve();
+
+    assert.strictEqual(run.callbackCount(), 1);
+    assert.deepStrictEqual(run.auction, originalAuction);
+    assert.deepStrictEqual(consent, originalConsent);
+    assertNoInjection(run.auction);
+    assert.strictEqual(digestStub.callCount, 0);
+    assert.strictEqual(server.requests.length, 0);
+  }
+
   afterEach(() => {
     sandbox.restore();
+    gppDataHandler.reset();
     resetProviderState();
     cleanups.forEach(cleanup => cleanup());
   });
@@ -492,6 +517,134 @@ describe('encypherRtdProvider decision-network v1', () => {
     });
   });
 
+  [
+    {
+      name: 'GPP alone records a US national sale opt-out',
+      gpp: toConsentData({
+        gppString: 'national-sale-opt-out',
+        applicableSections: [7],
+        parsedSections: {
+          usnat: { SaleOptOut: 1, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+        },
+      }),
+    },
+    {
+      name: 'a later California segment enables GPC',
+      gpp: toConsentData({
+        gppString: 'california-segmented-gpc',
+        applicableSections: [8],
+        parsedSections: {
+          usca: [
+            { SaleOptOut: 2, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+            { Gpc: 1 },
+          ],
+        },
+      }),
+    },
+    {
+      name: 'the applicable Virginia section opts out of sharing',
+      gpp: toConsentData({
+        gppString: 'virginia-sharing-opt-out',
+        applicableSections: [9],
+        parsedSections: {
+          usva: { SaleOptOut: 2, SharingOptOut: 1, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+        },
+      }),
+    },
+    {
+      name: 'the applicable Colorado section opts out of targeted advertising',
+      gpp: toConsentData({
+        gppString: 'colorado-targeted-advertising-opt-out',
+        applicableSections: [10],
+        parsedSections: {
+          usco: { SaleOptOut: 2, SharingOptOut: 2, TargetedAdvertisingOptOut: 1, Gpc: 0 },
+        },
+      }),
+    },
+    {
+      name: 'the applicable Utah section is missing',
+      gpp: toConsentData({
+        gppString: 'missing-applicable-section',
+        applicableSections: [11],
+        parsedSections: {},
+      }),
+    },
+    {
+      name: 'an unknown section is marked applicable',
+      gpp: toConsentData({
+        gppString: 'unknown-applicable-section',
+        applicableSections: [13],
+        parsedSections: {
+          usunknown: { SaleOptOut: 2, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+        },
+      }),
+    },
+    {
+      name: 'the applicable Connecticut section omits the required sale choice',
+      gpp: toConsentData({
+        gppString: 'connecticut-unresolved-sale-choice',
+        applicableSections: [12],
+        parsedSections: {
+          usct: { SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+        },
+      }),
+    },
+    {
+      name: 'an applicable section contains a malformed opt-out value',
+      gpp: toConsentData({
+        gppString: 'malformed-opt-out-value',
+        applicableSections: [7],
+        parsedSections: {
+          usnat: { SaleOptOut: 2, SharingOptOut: true },
+        },
+      }),
+    },
+    {
+      name: 'an applicable segmented section contains a non-object segment',
+      gpp: toConsentData({
+        gppString: 'malformed-segmented-section',
+        applicableSections: [8],
+        parsedSections: {
+          usca: [{ SaleOptOut: 2 }, null],
+        },
+      }),
+    },
+    {
+      name: 'the no-applicable sentinel is mixed with an applicable section',
+      gpp: toConsentData({
+        gppString: 'mixed-no-applicable-sentinel',
+        applicableSections: [-1, 7],
+        parsedSections: {
+          usnat: { SaleOptOut: 2 },
+        },
+      }),
+    },
+  ].forEach(testCase => {
+    it('blocks before hashing, fetch, injection, or reporting when ' + testCase.name, async () => {
+      await assertGppDenied(testCase.gpp);
+    });
+  });
+
+  it('blocks unresolved GPP data when the global handler is enabled', async () => {
+    gppDataHandler.enable();
+    try {
+      await assertGppDenied(null);
+    } finally {
+      gppDataHandler.reset();
+    }
+  });
+
+  it('blocks the actual empty GPP fallback when the global handler is enabled', async () => {
+    const fallback = toConsentData(null);
+    gppDataHandler.enable();
+    gppDataHandler.setConsentData(fallback);
+    try {
+      await assertGppDenied(fallback);
+    } finally {
+      gppDataHandler.reset();
+    }
+  });
+
   it('blocks all work when the configured GDPR handler supplies no consent data', async () => {
     gdprDataHandler.enable();
     try {
@@ -532,22 +685,87 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
   });
 
-  it('does not inject or contact Encypher while consent denies a cached signal', async () => {
+  [
+    {
+      name: 'US national consent has no sale, sharing, targeted-advertising, or GPC opt-out',
+      gpp: toConsentData({
+        gppString: 'national-consent',
+        applicableSections: [7],
+        parsedSections: {
+          usnat: { SaleOptOut: 2, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+        },
+      }),
+    },
+    {
+      name: 'California consent has no sale or GPC opt-out',
+      gpp: toConsentData({
+        gppString: 'california-consent',
+        applicableSections: [8],
+        parsedSections: {
+          usca: { SaleOptOut: 2, Gpc: false },
+        },
+      }),
+    },
+    {
+      name: 'GPP explicitly reports no applicable section',
+      gpp: toConsentData({ applicableSections: [-1] }),
+    },
+    {
+      name: 'only an inactive California section records opt-outs',
+      gpp: toConsentData({
+        gppString: 'national-consent-with-inactive-california-opt-out',
+        applicableSections: [7],
+        parsedSections: {
+          usnat: { SaleOptOut: 2, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+          usca: { SaleOptOut: 1, SharingOptOut: 1, TargetedAdvertisingOptOut: 1, Gpc: 1 },
+        },
+      }),
+    },
+  ].forEach((testCase, index) => {
+    it('continues verified lookup and injection when ' + testCase.name, async () => {
+      addCanonical(STORY_URL, cleanups);
+      const consent = consentWithGpp(testCase.gpp);
+      const originalConsent = structuredClone(consent);
+      const run = beginAuction({}, makeAuction(), consent);
+
+      assertCanonicalLookup(pendingLookup(), STORY_HASH, STORY_URL);
+      await respondDecision(ready(STORY_SIGNAL, 4 + index));
+      await run.completion;
+
+      assert.strictEqual(run.callbackCount(), 1);
+      run.auction.adUnits.forEach(adUnit => {
+        assert.deepStrictEqual(adUnit.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+      });
+      assert.deepStrictEqual(consent, originalConsent);
+    });
+  });
+
+  it('blocks a cached carrier under GPP opt-out and restores it after permission returns', async () => {
     addCanonical(STORY_URL, cleanups);
-    const allowed = {
-      coppa: false,
-      gdpr: { gdprApplies: false, consentString: '' },
-      usp: '1YNN',
-      gpp: null,
-    };
-    const denied = {
-      coppa: false,
-      gdpr: { gdprApplies: true, consentString: '' },
-      usp: '1YNN',
-      gpp: null,
-    };
+    const allowed = consentWithGpp(toConsentData({
+      gppString: 'national-consent',
+      applicableSections: [7],
+      parsedSections: {
+        usnat: { SaleOptOut: 2, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+      },
+    }));
+    const denied = consentWithGpp(toConsentData({
+      gppString: 'national-sale-opt-out',
+      applicableSections: [7],
+      parsedSections: {
+        usnat: { SaleOptOut: 1, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+      },
+    }));
+    const restored = consentWithGpp(toConsentData({
+      gppString: 'california-consent',
+      applicableSections: [8],
+      parsedSections: {
+        usca: { SaleOptOut: 2, SharingOptOut: 2, TargetedAdvertisingOptOut: 2, Gpc: 0 },
+      },
+    }));
+    const consentSnapshots = [allowed, denied, restored].map(consent => structuredClone(consent));
     const prime = beginAuction({}, makeAuction(), allowed);
-    await respondDecision(ready(STORY_SIGNAL, 3));
+    await respondDecision(ready(STORY_SIGNAL, 8));
     await prime.completion;
     const requestCount = server.requests.length;
     const digestCount = digestStub.callCount;
@@ -561,10 +779,20 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.strictEqual(digestStub.callCount, digestCount);
     assert.strictEqual(server.requests.length, requestCount);
 
-    const restored = beginAuction({}, makeAuction(), allowed);
-    await restored.completion;
-    assert.deepStrictEqual(restored.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    const resumed = beginAuction({}, makeAuction(), restored);
+    await resumed.completion;
+
+    assert.strictEqual(resumed.callbackCount(), 1);
+    resumed.auction.adUnits.forEach(adUnit => {
+      assert.deepStrictEqual(adUnit.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    });
+    assert.strictEqual(digestStub.callCount, digestCount + 1);
     assert.strictEqual(server.requests.length, requestCount);
+    assert.deepStrictEqual(
+      [allowed, denied, restored],
+      consentSnapshots,
+      'privacy snapshots must remain caller-owned',
+    );
   });
 
   it('matches the generated canonical URL and unpadded SHA-256 vectors', async () => {

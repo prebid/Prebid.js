@@ -99,6 +99,8 @@ The evidence URL is cryptographically bound to the signed manifest digest. Subst
 
 The provider skips all work when COPPA applies, the US Privacy string records a sale opt-out, or GDPR applicability is true or unresolved. Encypher has no registered GVL ID, so a consent string or another vendor's consent cannot authorize transmission to Encypher. When GDPR consent management is enabled but supplies no data, the provider also skips the lookup. Builds without consent modules can perform the lookup.
 
+GPP consent is checked independently of the legacy US Privacy string. Applicable US national and state sections 7-12 block transmission on sale, sharing, targeted-advertising opt-outs, or GPC. Object and segmented section representations are supported. Unknown applicable sections, missing or malformed consent fields, and unresolved configured GPP consent fail closed. Only applicable sections are inspected; an exact `[-1]` applicable-section list means no GPP section applies. Other privacy gates still apply.
+
 Blocked calls complete the RTD callback without URL hashing, signal or JWKS requests, cached-signal injection, diagnostics, or adoption reporting. Ordinary auctions continue. Consent is checked again for every auction, including auctions that could otherwise reuse a cached signal.
 
 Allowed lookup requests disclose the canonical URL digest, canonical publisher hostname, and module version to the fixed signal authority. They do not upload the raw URL, page content, manifest, cookies, bids, prices, deals, or creatives. Requests omit browser credentials and referrers. The URL digest is not an anonymization guarantee; canonical URLs can contain visitor-specific query values.
