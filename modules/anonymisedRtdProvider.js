@@ -12,6 +12,8 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('./anonymisedRtdProvider.d.ts').AnonymisedRtdProviderParams} AnonymisedRtdProviderParams
+ * @typedef {import('./rtdModule/spec.js').RTDProviderConfig<'anonymised'>} AnonymisedRtdConfig
  */
 export function createRtdProvider(moduleName) {
   const MODULE_NAME = 'realTimeData';
@@ -173,7 +175,7 @@ export function createRtdProvider(moduleName) {
 
   /**
    * Load the Anonymised Marketing Tag script
-   * @param {Object} config
+   * @param {AnonymisedRtdConfig} config
    */
   function tryLoadMarketingTag(config) {
     const clientId = config?.params?.tagConfig?.clientId;
@@ -204,7 +206,7 @@ export function createRtdProvider(moduleName) {
 
   /**
    * Read the proprietary Anonymised cohort IDs the Marketing Tag stores.
-   * @param {Object} params this submodule's publisher configuration params
+   * @param {AnonymisedRtdProviderParams} params this submodule's publisher configuration params
    * @returns {Array|undefined} the cohort IDs, or undefined when there are none to send
    */
   function getCohortSegments(params) {
@@ -238,7 +240,7 @@ export function createRtdProvider(moduleName) {
    * Real-time data retrieval from Anonymised
    * @param {Object} reqBidsConfigObj
    * @param {function} onDone
-   * @param {Object} config
+   * @param {AnonymisedRtdConfig} config
    * @param {Object} userConsent
    */
   function getRealTimeData(reqBidsConfigObj, onDone, config, userConsent) {
@@ -293,7 +295,7 @@ export function createRtdProvider(moduleName) {
 
   /**
    * Module init
-   * @param {Object} config
+   * @param {AnonymisedRtdConfig} config
    * @param {Object} userConsent
    * @return {boolean}
    */
