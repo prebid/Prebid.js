@@ -22,7 +22,7 @@ import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
@@ -58,6 +58,53 @@ const BID = {
       'gpid': '1234567890'
     }
   }
+};
+
+const NATIVE_ORTB = {
+  ver: '1.2',
+  assets: [
+    { id: 1, required: 1, title: { len: 80 } },
+    { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+    { id: 3, required: 1, data: { type: 1 } }
+  ]
+};
+
+const NATIVE_ORTB_RESPONSE = {
+  ver: '1.2',
+  assets: [
+    { id: 1, title: { text: 'Native title' } },
+    { id: 2, img: { url: 'https://cdn.example/img.jpg', w: 1200, h: 627 } },
+    { id: 3, data: { value: 'Advertiser' } }
+  ],
+  link: { url: 'https://advertiser.example/click' }
+};
+
+const NATIVE_BID = {
+  'bidId': '2d52001cabd527',
+  'adUnitCode': 'div-native-1',
+  'bidderRequestId': '12a8ae9ada9c13',
+  ortb2Imp: {
+    ext: {
+      tid: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+    }
+  },
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'params': {
+    'subDomain': SUB_DOMAIN,
+    'cId': '635509f7ff6642d368cb9837',
+    'pId': '59ac17c192832d0011283fe3',
+    'bidFloor': 0.1
+  },
+  'sizes': [],
+  'mediaTypes': {
+    'native': {
+      'ortb': NATIVE_ORTB
+    }
+  },
+  'nativeOrtbRequest': NATIVE_ORTB
 };
 
 const VIDEO_BID = {
@@ -223,6 +270,23 @@ const VIDEO_SERVER_RESPONSE = {
   }
 };
 
+const NATIVE_SERVER_RESPONSE = {
+  body: {
+    cid: '635509f7ff6642d368cb9837',
+    results: [{
+      ad: JSON.stringify({ native: NATIVE_ORTB_RESPONSE }),
+      advertiserDomains: ['vidazoo.com'],
+      exp: 60,
+      width: 1,
+      height: 1,
+      mediaType: 'native',
+      creativeId: '12610997325162499419',
+      price: 1.5,
+      cookies: []
+    }]
+  }
+};
+
 const ORTB2_OBJ = {
   "device": ORTB2_DEVICE,
   "regs": { "coppa": 0, "gpp": "gpp_string", "gpp_sid": [7] },
@@ -278,8 +342,8 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('exists and contains media types', function () {
-      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
-      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(3);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO, NATIVE]);
     });
   });
 
@@ -682,6 +746,19 @@ describe('VidazooBidAdapter', function () {
       expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
     });
 
+    it('should build native request with mediaTypes.native and nativeOrtbRequest', function () {
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([NATIVE_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].data.mediaTypes).to.deep.equal(NATIVE_BID.mediaTypes);
+      expect(requests[0].data.nativeOrtbRequest).to.deep.equal(NATIVE_ORTB);
+      expect(requests[0].data.bidId).to.equal(NATIVE_BID.bidId);
+      expect(requests[0].data.publisherId).to.equal(NATIVE_BID.params.pId);
+    });
+
     after(function () {
       getGlobal().bidderSettings = {};
       config.resetConfig();
@@ -794,6 +871,16 @@ describe('VidazooBidAdapter', function () {
           advertiserDomains: ['vidazoo.com']
         }
       });
+    });
+
+    it('should return an array of interpreted native responses', function () {
+      const responses = adapter.interpretResponse(NATIVE_SERVER_RESPONSE, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0].mediaType).to.equal(NATIVE);
+      expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
+      expect(responses[0].cpm).to.equal(1.5);
+      expect(responses[0].vastXml).to.be.undefined;
+      expect(responses[0].ad).to.be.undefined;
     });
 
     it('should populate requestId from response in case of singleRequest true', function () {
