@@ -119,7 +119,7 @@ const converter = ortbConverter({
     }
 
     // Add renderer if needed for outstream video
-    if (bidResponse.mediaType === VIDEO && bid.ext.libertas.ovp) {
+    if (bidResponse.mediaType === VIDEO && bid.ext?.libertas?.ovp) {
       bidResponse.width = bid.w;
       bidResponse.height = bid.h;
       bidResponse.renderer = createRenderer(bidRequest, bid.ext.libertas.vp);
@@ -295,10 +295,11 @@ export const spec = {
       triggerPixel(bid.nurl);
     }
 
-    if (bid.meta.libertas.pxl && bid.meta.libertas.pxl.length > 0) {
-      for (var i = 0; i < bid.meta.libertas.pxl.length; i++) {
-        if (Number(bid.meta.libertas.pxl[i].type) === 0) {
-          triggerPixel(bid.meta.libertas.pxl[i].url);
+    const pxl = bid.meta?.libertas?.pxl;
+    if (pxl && pxl.length > 0) {
+      for (var i = 0; i < pxl.length; i++) {
+        if (Number(pxl[i].type) === 0) {
+          triggerPixel(pxl[i].url);
         }
       }
     }
