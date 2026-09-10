@@ -565,6 +565,38 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.device.ext.visibility).to.have.property('hidden').and.to.be.a('boolean');
   });
 
+  describe('displaymanager', function () {
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    };
+
+    function payloadFor(ortb2Imp, bids) {
+      const bid = Object.assign({}, (bids || DEFAULT_PARAMS_WO_OPTIONAL)[0], ortb2Imp ? { ortb2Imp } : {});
+      return JSON.parse(spec.buildRequests([bid], bidderRequest)[0].data);
+    }
+
+    it('announces Prebid.js and its version when the publisher declares nothing', function () {
+      const requestContent = payloadFor();
+      expect(requestContent).to.have.property('displaymanager').and.to.equal('Prebid.js');
+      expect(requestContent.displaymanagerver).to.be.a('string').and.to.match(/^\d+\.\d+\.\d+/);
+    });
+
+    it('lets the publisher override both fields through ortb2Imp', function () {
+      const requestContent = payloadFor({ displaymanager: 'PublisherPlayer', displaymanagerver: '4.2.0' });
+      expect(requestContent).to.have.property('displaymanager').and.to.equal('PublisherPlayer');
+      expect(requestContent).to.have.property('displaymanagerver').and.to.equal('4.2.0');
+    });
+
+    it('only defaults the field the publisher left out', function () {
+      const requestContent = payloadFor({ displaymanager: 'PublisherPlayer' });
+      expect(requestContent).to.have.property('displaymanager').and.to.equal('PublisherPlayer');
+      expect(requestContent.displaymanagerver).to.be.a('string').and.to.match(/^\d+\.\d+\.\d+/);
+    });
+  });
+
   describe('floors', function () {
     const bidderRequestEUR = {
       gdprConsent: {

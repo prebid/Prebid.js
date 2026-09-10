@@ -54,6 +54,8 @@ export const spec = {
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
         userData: deepAccess(bid, 'ortb2.user.data'),
+        displaymanager: bid.ortb2Imp?.displaymanager || 'Prebid.js',
+        displaymanagerver: bid.ortb2Imp?.displaymanagerver || '$prebid.version$',
         ext: { prebid: { channel: { name: 'pbjs', version: '$prebid.version$' } } }
       };
 
