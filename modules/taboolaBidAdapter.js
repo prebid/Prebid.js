@@ -134,9 +134,18 @@ export function getPageVisibility() {
   }
 }
 
+export function getUserInteractionSignals() {
+  try {
+    return window.TRC?.getCtx?.();
+  } catch (e) {
+    return undefined;
+  }
+}
+
 export function getDeviceExtSignals(existingExt = {}) {
   const viewport = getViewportCoordinates();
-  return {
+  const bs = getUserInteractionSignals();
+  const ext = {
     ...existingExt,
     bot: detectBot(),
     visibility: getPageVisibility(),
@@ -145,6 +154,12 @@ export function getDeviceExtSignals(existingExt = {}) {
       left: Math.round(viewport.left)
     }
   };
+  if (bs) {
+    ext.bs = bs;
+  } else {
+    delete ext.bs;
+  }
+  return ext;
 }
 
 export function getElementSignals(bidRequest) {
