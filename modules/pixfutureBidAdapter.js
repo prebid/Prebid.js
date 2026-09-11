@@ -1,13 +1,13 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { deepAccess, isArray, isNumber, isPlainObject } from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
 import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { addUserId, hasUserInfo, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({ bidderCode: 'pixfuture' });
@@ -57,7 +57,7 @@ export const spec = {
 
       const userObjBid = (validBidRequests || []).find(hasUserInfo);
       let userObj = {};
-      if (config.getConfig('coppa') === true) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         userObj = { coppa: true };
       }
 

@@ -353,7 +353,7 @@ function getBidAdapter() {
 
   function getRequestUser(ortb2) {
     const user = ortb2.user || {};
-    if (config.getConfig('coppa') === true) {
+    if (ortb2?.regs?.coppa === 1) {
       user.coppa = true;
     }
 

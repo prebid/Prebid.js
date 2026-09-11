@@ -725,10 +725,10 @@ describe('Adagio bid adapter', () => {
 
       it('should send the Coppa "required" flag set to "1" in the request', function () {
         const bidderRequest = new BidderRequestBuilder().build();
+        bidderRequest.ortb2 = { regs: { coppa: 1 } };
 
         sandbox.stub(config, 'getConfig')
-          .withArgs('userSync').returns({ syncEnabled: true })
-          .withArgs('coppa').returns(true);
+          .withArgs('userSync').returns({ syncEnabled: true });
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 

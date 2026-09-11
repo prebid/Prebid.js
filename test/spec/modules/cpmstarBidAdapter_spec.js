@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/cpmstarBidAdapter.js';
 import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
 
 const valid_bid_requests = [{
   'bidder': 'cpmstar',
@@ -121,9 +120,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0].url).to.include('us_privacy=1YYY');
     });
     it('should produce a request with support for COPPA', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      var requests = spec.buildRequests(valid_bid_requests, bidderRequest);
-      config.getConfig.restore();
+      var requests = spec.buildRequests(valid_bid_requests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       expect(requests[0]).to.have.property('url');
       expect(requests[0].url).to.include('tfcd=1');
     });

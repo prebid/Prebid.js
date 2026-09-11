@@ -26,6 +26,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
 import { validateOrtbFields } from '../src/prebid.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -146,9 +147,9 @@ function _getGdprConsent(bidderRequest) {
   });
 }
 
-function _getCoppa() {
+function _getCoppa(bidderRequest) {
   return {
-    required: config.getConfig('coppa') === true ? 1 : 0
+    required: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0
   };
 }
 
@@ -529,7 +530,7 @@ export const spec = {
     const pageviewId = _internal.getAdagioNs().pageviewId;
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
-    const coppa = _getCoppa();
+    const coppa = _getCoppa(bidderRequest);
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];

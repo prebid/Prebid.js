@@ -1,6 +1,5 @@
 import { spec } from 'modules/lkqdBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
 import { expect } from 'chai';
 
 describe('lkqdBidAdapter', () => {
@@ -106,11 +105,7 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('should populate height, width, c1, c20, coppa with 2 imp', () => {
-      sandbox.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-
-      const requests = spec.buildRequests(bidRequests, {});
+      const requests = spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } });
       expect(requests.length).to.equal(1);
 
       const serverRequestObject = requests[0];
