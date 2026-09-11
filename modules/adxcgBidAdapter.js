@@ -7,8 +7,7 @@ import {
   triggerPixel,
   logMessage,
   deepSetValue,
-  getBidIdParameter,
-  isPlainObject
+  getBidIdParameter
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { applyCommonImpParams } from '../libraries/impUtils.js';
@@ -53,7 +52,7 @@ export const spec = {
   },
 
   interpretResponse: (response, request) => {
-    if (isPlainObject(response.body)) {
+    if (response.body) {
       const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
       return bids;
     }

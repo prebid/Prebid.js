@@ -1,5 +1,5 @@
 import { compose } from './lib/composer.js';
-import { logError, memoize } from '../../src/utils.js';
+import { isPlainObject, logError, memoize } from '../../src/utils.js';
 import { DEFAULT_PROCESSORS } from './processors/default.js';
 import { BID_RESPONSE, DEFAULT, getProcessors, IMP, REQUEST, RESPONSE } from '../../src/pbjsORTB.js';
 import { mergeProcessors } from './lib/mergeProcessors.js';
@@ -106,6 +106,34 @@ type ConverterConfig<B extends BidderCode> = Customizers<B> & {
   processors?: () => Processors<B>;
   overrides?: Overrides<B>;
 };
+
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * Deletes any `__proto__` / `constructor` / `prototype` own keys from `value` (an untrusted ORTB
+ * response, or part of one) at every nesting level - including inside arrays such as
+ * `seatbid[].bid[]` - so a malicious exchange cannot smuggle prototype-polluting keys through to
+ * response/bidResponse processors. Sanitizes in place (rather than cloning) so that processors
+ * which mutate the response/bid objects they are handed - e.g. to rename or move a field - keep
+ * doing so on the same object identity callers already hold a reference to.
+ */
+function sanitizeResponse(value: unknown, seen = new Set<unknown>()): void {
+  if (Array.isArray(value)) {
+    if (seen.has(value)) return;
+    seen.add(value);
+    value.forEach(item => sanitizeResponse(item, seen));
+  } else if (isPlainObject(value)) {
+    if (seen.has(value)) return;
+    seen.add(value);
+    for (const key of Object.keys(value)) {
+      if (UNSAFE_KEYS.has(key)) {
+        delete (value as Record<string, unknown>)[key];
+      } else {
+        sanitizeResponse((value as Record<string, unknown>)[key], seen);
+      }
+    }
+  }
+}
 
 export function ortbConverter<B extends BidderCode>({
   context: defaultContext = {},
@@ -223,6 +251,11 @@ export function ortbConverter<B extends BidderCode>({
       request: ORTBRequest;
       response: ORTBResponse | null;
     }): AdapterResponse {
+      if (isPlainObject(response)) {
+        sanitizeResponse(response);
+      } else {
+        response = null;
+      }
       const ctx = REQ_CTX.get(request);
       if (ctx == null) {
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`');
