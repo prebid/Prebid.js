@@ -118,6 +118,39 @@ export function ortbConverter<B extends BidderCode>({
 }: ConverterConfig<B> = {}) {
   const REQ_CTX = new WeakMap();
 
+  function sanitizeORTB(value, seen = new WeakMap()) {
+    // Codex bot: keep hostile response handling at this shared conversion boundary.
+    if (value == null || typeof value !== 'object') {
+      return value;
+    }
+    if (seen.has(value)) {
+      return seen.get(value);
+    }
+    const descriptors: [string, PropertyDescriptor | undefined][] = Object.keys(value)
+      .map(key => [key, Object.getOwnPropertyDescriptor(value, key)]);
+    const standardPrototype = Array.isArray(value) ? Array.prototype : Object.prototype;
+    const canSanitizeInPlace = Object.getPrototypeOf(value) === standardPrototype && descriptors.every(([key, descriptor]) =>
+      descriptor && 'value' in descriptor && descriptor.writable &&
+      ((key !== '__proto__' && key !== 'prototype' && key !== 'constructor') || descriptor.configurable)
+    );
+    const sanitized = canSanitizeInPlace ? value : (Array.isArray(value) ? [] : {});
+    seen.set(value, sanitized);
+    descriptors.forEach(([key, descriptor]) => {
+      // These keys can turn otherwise ordinary recursive assignment into writes
+      // to an object's prototype. ORTB extension objects are untrusted too.
+      if (key === '__proto__' || key === 'prototype' || key === 'constructor') {
+        if (canSanitizeInPlace) {
+          delete sanitized[key];
+        }
+        return;
+      }
+      if (descriptor && 'value' in descriptor) {
+        sanitized[key] = sanitizeORTB(descriptor.value, seen);
+      }
+    });
+    return sanitized;
+  }
+
   function builder(slot, wrapperFn, builderFn, errorHandler) {
     let build;
     return function (...args) {
@@ -227,6 +260,7 @@ export function ortbConverter<B extends BidderCode>({
       if (ctx == null) {
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`');
       }
+      response = sanitizeORTB(response);
       function augmentContext(ctx, extraParams = {}) {
         return Object.assign(ctx, { ortbRequest: request }, extraParams);
       }
