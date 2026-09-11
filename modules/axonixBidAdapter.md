@@ -1,253 +1,122 @@
-# Overview
+## Acxiom Real ID Submodule
+
+Acxiom Real ID module surfaces an Acxiom Real ID in the bid request via the Prebid User ID system. The module sends a POST request to the lookup API with the partner ID, source ID, and user agent, and stores the returned token for use in bid requests.
+
+> **Important — a hashed email (`hem`) is required to resolve an ID.** The lookup API resolves the Acxiom Real ID **solely** by matching the supplied hashed email (HEM). If `params.hem` is not provided, the API has nothing to match against and returns an empty result, so no ID is stored and none is added to the bid request. Configuring only `partnerId` will therefore never resolve an ID on its own — you must also pass `params.hem` for any user you want to resolve (typically a logged-in / known user whose email you can hash). See [Passing the hashed email (`hem`)](#passing-the-hashed-email-hem) for how to produce it.
+
+## Building Prebid with Acxiom Real ID Support
+
+Add the Acxiom Real ID submodule to your Prebid.js package:
 
 ```
-Module Name: Axonix Bidder Adapter
-Module Type: Bidder Adapter
-Maintainer: engineering@emodo.com
+gulp build --modules=acxiomRealIdSystem,userId
 ```
 
-# Description
+## Configuration
 
-Module that connects to Axonix OpenRTB demand to fetch bids for **Banner** and **Video** inventory.
+The following configuration parameters are available:
 
-The adapter sends one POST request per ad unit bid to the Axonix Prebid.js v2 endpoint. Bid requests include device, site/app, consent, supply chain, first-party data (`ortb2`), and user ID signals when available.
+| Param | Scope | Type | Description | Example |
+| --- | --- | --- | --- | --- |
+| name | Required | String | Module identifier | `'acxiomRealId'` |
+| params | Required | Object | Module configuration | |
+| params.partnerId | Required | String | Partner ID issued by GrowthCode on behalf of Acxiom | `'ABC123'` |
+| params.hem | Required to resolve | String | SHA-256 hashed email of the user. This is the **only** signal the API matches on — without it the API returns an empty result and no ID is set. Technically optional (the module will still fire a request without it), but resolution is impossible unless it is supplied. The module forwards this value to the API **exactly as provided** — no hashing or transformation is applied. See [Passing the hashed email](#passing-the-hashed-email-hem). | `'a1b2c3...'` |
+| params.sourceId | Optional | String | EID source to request from the lookup API. Defaults to `'acxiom.id'` | `'acxiom.id'` |
+| params.apiUrl | Optional | String | Override the full API endpoint URL | `'https://ids.api.gcprivacy.id/v1/eid/l'` |
+| storage | Required | Object | Storage configuration | |
+| storage.type | Required | String | Storage type | `'html5'` |
+| storage.name | Required | String | Storage key | `'acxiomRealId'` |
+| storage.expires | Required | Number | TTL in days | `7` |
 
-Integration requires a valid Axonix `supplyId`. Contact Axonix for account setup and regional endpoint details.
+### Example Configuration
 
-**Supported media types:** banner, video  
-**GVL ID:** 141
-
-# Bid Parameters
-
-| Name | Scope | Type | Description | Example |
-| ---- | ----- | ---- | ----------- | ------- |
-| `supplyId` | required | String | Axonix supply identifier | `"your-supply-id"` |
-| `region` | optional | String | Axonix regional endpoint prefix. Defaults to `us-east-1` | `"us-east-1"` |
-| `referrer` | optional | String | Page URL override for the bid request | `"https://example.com/page"` |
-
-**Default bid endpoint:**
-
-```
-https://openrtb-{region}.axonix.com/supply/prebid-js/v2/prebid/{supplyId}
-```
-
-If `region` is omitted, `us-east-1` is used.
-
-# Banner Test Parameters
-
-The following parameters will make an ad call to our test campaign. Note that these may or may not return
-a response as they are subject to the same pacing and targeting rules as a 'real' campaign. Refresh
-your test page if you do not receive a response for one or both placements on the first try.
-
-```javascript
-const AD_UNITS = [
-  {
-    code: 'target-div',
-    mediaTypes: {
-      banner: {
-        sizes: [[320, 50]],
-      }
-    },
-    bids: [{
-      bidder: 'axonix',
-      params: {
-        supplyId: '837b4df0-1c5b-4080-88af-03d4090651cf'
-      },
-    }],
-  }
-];
-```
-
-# Video Test Parameters
-
-Video ad units must include a non-empty `mimes` array.
-
-```javascript
-const AD_UNITS = [
-  {
-    code: 'target-div',
-    mediaTypes: {
-      video: {
-        context: 'instream',
-        playerSize: [[1280, 720]],
-        mimes: ['video/mp4', 'application/javascript', 'video/mpeg', 'video/mpg'],
-        protocols: [2, 3, 5, 6],
-        playbackmethod: [2],
-        minduration: 5,
-        maxduration: 31,
-        startdelay: 0,
-        placement: 1,
-        skip: 1,
-      },
-    },
-    bids: [{
-      bidder: 'axonix',
-      params: {
-        supplyId: '837b4df0-1c5b-4080-88af-03d4090651cf'
-      },
-    }],
-  }
-];
-```
-
-# Multi-format Test Parameters
-
-```javascript
-const AD_UNITS = [
-  {
-    code: 'target-div',
-    mediaTypes: {
-      banner: {
-        sizes: [[320, 50]],
-      },
-      video: {
-        context: 'instream',
-        playerSize: [[1280, 720]],
-        mimes: ['video/mp4', 'application/javascript', 'video/mpeg', 'video/mpg'],
-        protocols: [2, 3, 5, 6],
-        playbackmethod: [2],
-        minduration: 5,
-        maxduration: 31,
-        startdelay: 0,
-        placement: 1,
-        skip: 1,
-      }
-    },
-    bids: [{
-      bidder: 'axonix',
-      params: {
-        supplyId: '837b4df0-1c5b-4080-88af-03d4090651cf'
-      },
-    }],
-  }
-];
-```
-
-# Floor Pricing
-
-The adapter reads floors from the Prebid.js [Price Floors](https://docs.prebid.org/dev-docs/modules/floors.html) module via `bidRequest.getFloor()`.
-
-```javascript
-pbjs.setConfig({
-  floors: {
-    data: {
-      currency: 'USD',
-      schema: {
-        fields: ['mediaType', 'size']
-      },
-      values: {
-        'banner|320x50': 0.01,
-        'video|1280x720': 0.01,
-        '*|*': 0.01
-      }
-    }
-  }
-});
-```
-
-# First-Party Data (ortb2)
-
-Site, app, device, user, and regulatory data from global `ortb2` configuration are forwarded with each request.
-
-```javascript
-pbjs.setConfig({
-  ortb2: {
-    site: {
-      name: 'Publisher Site',
-      domain: 'publisher.com',
-      cat: ['IAB1-1']
-    },
-    device: {
-      ifa: 'advertising-id',
-      make: 'Apple',
-      model: 'iPhone'
-    },
-    user: {
-      ext: {
-        data: [{
-          name: 'publisher_segments',
-          segment: [{ id: 'sports_fan' }]
-        }]
-      }
-    }
-  }
-});
-```
-
-# Privacy and Compliance
-
-GDPR, US Privacy (CCPA), and GPP consent objects are included automatically when configured through Prebid consent management.
-
-```javascript
-pbjs.setConfig({
-  consentManagement: {
-    gdpr: {
-      cmpApi: 'iab',
-      timeout: 10000
-    },
-    usp: {
-      cmpApi: 'iab',
-      timeout: 1000
-    },
-    gpp: {
-      cmpApi: 'iab',
-      timeout: 10000
-    }
-  }
-});
-```
-
-# Supply Chain (schain)
-
-Supply chain objects from `ortb2.source` or bidder-specific schain configuration are forwarded with bid requests.
-
-```javascript
-pbjs.setBidderConfig({
-  bidders: ['axonix'],
-  config: {
-    schain: {
-      validation: 'strict',
-      config: {
-        ver: '1.0',
-        complete: 1,
-        nodes: [{
-          asi: 'publisher.com',
-          sid: 'pub-123',
-          hp: 1
-        }]
-      }
-    }
-  }
-});
-```
-
-# App Inventory
-
-For in-app traffic, set the global Prebid `app` object or provide `ortb2.app`.
-
-```javascript
-pbjs.setConfig({
-  app: {
-    bundle: 'com.publisher.app',
-    storeurl: 'https://play.google.com/store/apps/details?id=com.publisher.app',
-    domain: 'publisher.com'
-  }
-});
-```
-
-# User ID Modules
-
-User ID modules are supported through Prebid's standard user ID pipeline. Encoded IDs are forwarded as `userIdAsEids` in the bid request payload.
+Both `partnerId` and `hem` are required. `partnerId` alone will not resolve — with no `params.hem` the API has nothing to match on and always returns an empty result, so **no ID is resolved or stored**.
 
 ```javascript
 pbjs.setConfig({
   userSync: {
     userIds: [{
-      name: 'unifiedId',
+      name: 'acxiomRealId',
       params: {
-        partner: 'abc'
+        partnerId: 'YOUR_PARTNER_ID',
+        hem: 'a1b2c3...' // required — SHA-256 or MD5 hashed email
+      },
+      storage: {
+        type: 'html5',
+        name: 'acxiomRealId',
+        expires: 7
       }
     }]
   }
 });
+```
+
+### Passing the hashed email (`hem`)
+
+The `hem` value is a **hashed email (HEM)** — a hash of the user's email address. The module sends this value to the API **unchanged**, and the lookup is an **exact match** against the ID graph — so the value you send must be produced the same way the graph was keyed (same hash algorithm and the same email form). Use the exact hashing convention agreed with your GrowthCode contact.
+
+If the hashed email is available at page-configuration time, set it directly in `params.hem` (see [Example Configuration](#example-configuration)).
+
+Because the email is often only known after the user logs in (i.e. after the initial Prebid config), you can supply the `hem` later by re-setting the User ID configuration and refreshing:
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    // setConfig REPLACES userSync.userIds, so re-list all of your userId configs here.
+    userIds: [
+      {
+        name: 'acxiomRealId',
+        params: { partnerId: 'YOUR_PARTNER_ID', hem: hashedEmail },
+        storage: { type: 'html5', name: 'acxiomRealId', expires: 7 }
+      }
+      // ...your other userId submodule configs
+    ]
+  }
+});
+pbjs.refreshUserIds(); // re-run resolution now that a hem is available
+```
+
+> Use `setConfig` (which replaces `userSync.userIds`) and re-list all of your userId configs. Do **not** use `mergeConfig` to add the `hem` — it appends to the array and would create a duplicate `acxiomRealId` entry instead of updating the existing one.
+
+**Notes:**
+- The lookup is an exact match on the hashed email, so it must be produced the same way the ID graph was built (same hash algorithm — e.g. SHA-256 or MD5 — and the same email form).
+- Only supply a `hem` for users whose email you legitimately hold and for whom you have the appropriate consent.
+- `refreshUserIds()` re-queries only when no ID is already stored for this module. If a previous lookup already stored an ID (in `storage.name`), that stored value is returned as-is; clear it first if you need to force a fresh lookup with a newly available `hem`.
+- If no `hem` is available for a given user (e.g. anonymous / logged-out), it is expected that no ID resolves — Prebid will log an informational `request id responded with an empty value` message, which is normal and not an error.
+
+### Configuration with Custom API URL
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    userIds: [{
+      name: 'acxiomRealId',
+      params: {
+        partnerId: 'YOUR_PARTNER_ID',
+        hem: 'sha256_hashed_email_here',
+        apiUrl: 'https://ids.api.gcprivacy.id/v1/eid/l'
+      },
+      storage: {
+        type: 'html5',
+        name: 'acxiomRealId',
+        expires: 7
+      }
+    }]
+  }
+});
+```
+
+### EID Output
+
+The module produces the following EID structure in `user.ext.eids`:
+
+```json
+{
+  "source": "acxiom.id",
+  "uids": [{
+    "id": "<real_id_token>",
+    "atype": 1
+  }]
+}
 ```
