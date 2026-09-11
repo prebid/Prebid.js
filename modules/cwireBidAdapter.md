@@ -8,7 +8,9 @@ Maintainer: devs@cwire.com
 
 ## Description
 
-Prebid.js Adapter for C-Wire.
+Prebid.js Adapter for C-Wire. Uses native OpenRTB 2.x request/response handling via Prebid's `ortbConverter` library. Supports banner and video.
+
+Bid requests are POSTed as OpenRTB 2.x JSON to `https://prebid2.cwi.re/v1/bid`. Bidder params and cwire-specific signals are carried under `imp[].ext.bidder` and `request.ext.cwire` / `imp[].ext.cwire`.
 
 ## Configuration
 
@@ -24,13 +26,14 @@ Below, the list of C-WIRE params and where they can be set.
 | cwdebug     |       x       |               | boolean  |    NO    |
 | cwfeatures  |       x       |               |  string  |    NO    |
 
-
 ### adUnit configuration
+
+#### Banner
 
 ```javascript
 var adUnits = [
   {
-    code: 'target_div_id', // REQUIRED 
+    code: 'target_div_id', // REQUIRED
     bids: [{
       bidder: 'cwire',
       mediaTypes: {
@@ -45,7 +48,7 @@ var adUnits = [
     }]
   }
 ];
-// old version for the compatibility
+// legacy configuration (still supported)
 var adUnits = [
     {
         code: 'target_div_id', // REQUIRED
@@ -65,9 +68,39 @@ var adUnits = [
 ];
 ```
 
+#### Video
+
+```javascript
+var adUnits = [
+  {
+    code: 'video_target_div_id', // REQUIRED
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4'],
+        protocols: [2, 3, 5, 6],
+        startdelay: 0,
+        placement: 1,
+        playbackmethod: [2],
+        api: [2],
+        linearity: 1
+      }
+    },
+    bids: [{
+      bidder: 'cwire',
+      params: {
+        domainId: 1422,               // required - number
+        placementId: 2211521,         // optional - number
+      }
+    }]
+  }
+];
+```
+
 ### URL parameters
 
-For debugging and testing purposes url parameters can be set.
+For debugging and testing purposes URL parameters can be set.
 
 **Example:**
 
