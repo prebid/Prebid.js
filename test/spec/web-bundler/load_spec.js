@@ -76,6 +76,29 @@ describe('web bundler load utils', () => {
         sinon.assert.match(e.message, /someModule/);
       }
     });
+    it('should reject after all chunk loads settle if one fails', async () => {
+      const failure = new Error('chunk failed');
+      let finishPendingLoad;
+      loader.onFirstCall().returns(Promise.reject(failure));
+      loader.onSecondCall().returns(new Promise(resolve => {
+        finishPendingLoad = resolve;
+      }));
+      resolveDeps.returns(['failed', 'pending']);
+
+      const load = doLoad([]);
+      let settled = false;
+      load.then(() => { settled = true; }, () => { settled = true; });
+      await Promise.resolve();
+      expect(settled).to.be.false;
+
+      finishPendingLoad();
+      try {
+        await load;
+        sinon.assert.fail('did not reject');
+      } catch (e) {
+        expect(e).to.equal(failure);
+      }
+    });
   });
 
   describe('checkAdnRun', () => {

@@ -1,6 +1,4 @@
-import { scriptLoader } from '../load.mjs';
-
-import { checkAndRun } from '../load.mjs'
+import { checkAndRun, loadChunks, scriptLoader } from '../load.mjs';
 import options from 'buildOptions.mjs';
 import checksums from 'checksums.json';
 import {injectBuildOptions} from 'injectBuildOptions';
@@ -13,8 +11,6 @@ if (!options.defineGlobal) {
   checkAndRun(options.pbGlobal, () => {
     injectBuildOptions(options);
     const loader = scriptLoader(options.distUrlBase, scope);
-    return Promise.allSettled(
-      Object.entries(checksums).map(([file, checksum]) => loader(file, checksum))
-    );
+    return loadChunks(loader, Object.keys(checksums), checksums);
   });
 }
