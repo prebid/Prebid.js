@@ -7,7 +7,6 @@ import {
   setPageTargeting,
   setSlotTargeting, slotHasTargetedAdId,
 } from '../../../../src/utils/gptTargeting.js';
-import { TARGETING_KEYS } from '../../../../src/constants.js';
 
 describe('gpt targeting shim', () => {
   let mockGam;
@@ -149,11 +148,11 @@ describe('gpt targeting shim', () => {
   });
 
   describe('slot targeting adId cache', () => {
-    it('records hb_adid values and finds the matching slot element id', () => {
+    it('records provided ad ids and finds the matching slot element id', () => {
       const slotA = { getSlotElementId: () => 'div-a' };
       const slotB = { getSlotElementId: () => 'div-b' };
-      recordSlotTargeting(slotA, { [TARGETING_KEYS.AD_ID]: 'ad-a', hb_pb: '1.00' });
-      recordSlotTargeting(slotB, { [`${TARGETING_KEYS.AD_ID}_rubicon`]: 'ad-b' });
+      recordSlotTargeting(slotA, ['ad-a']);
+      recordSlotTargeting(slotB, ['ad-b']);
 
       expect(slotHasTargetedAdId(slotA, 'ad-a')).to.equal(true);
       expect(slotHasTargetedAdId(slotA, 'ad-b')).to.equal(false);
@@ -162,10 +161,17 @@ describe('gpt targeting shim', () => {
 
     it('overwrites previously recorded ad ids for a slot', () => {
       const slot = { getSlotElementId: () => 'div-1' };
-      recordSlotTargeting(slot, { [TARGETING_KEYS.AD_ID]: 'old' });
-      recordSlotTargeting(slot, { [TARGETING_KEYS.AD_ID]: 'new' });
+      recordSlotTargeting(slot, ['old']);
+      recordSlotTargeting(slot, ['new']);
       expect(slotHasTargetedAdId(slot, 'old')).to.equal(false);
       expect(slotHasTargetedAdId(slot, 'new')).to.equal(true);
+    });
+
+    it('ignores empty ad ids', () => {
+      const slot = { getSlotElementId: () => 'div-1' };
+      recordSlotTargeting(slot, ['ad-1', '']);
+      expect(slotHasTargetedAdId(slot, 'ad-1')).to.equal(true);
+      expect(slotHasTargetedAdId(slot, '')).to.equal(false);
     });
   });
 });

@@ -1,23 +1,15 @@
 // shim for the deprecation of GPT setTargeting / getTargeting methods
 
-import { TARGETING_KEYS } from '../constants.js';
 import type { GptApi, GptSlot } from '../types/gpt.d.ts';
 
 const targetedAdIdsBySlot = new WeakMap<GptSlot, Set<string>>();
 
-function collectTargetedAdIds(targeting: Record<string, string | string[]>): Set<string> {
-  const adIds = new Set<string>();
-  Object.entries(targeting).forEach(([key, value]) => {
-    if (!key.startsWith(TARGETING_KEYS.AD_ID)) return;
-    (Array.isArray(value) ? value : [value]).forEach((v) => {
-      if (v) adIds.add(String(v));
-    });
+export function recordSlotTargeting(slot: GptSlot, adIds: Iterable<string> = []): void {
+  const recorded = new Set<string>();
+  Array.from(adIds).forEach((adId) => {
+    if (adId) recorded.add(String(adId));
   });
-  return adIds;
-}
-
-export function recordSlotTargeting(slot: GptSlot, targeting: Record<string, string | string[]>): void {
-  targetedAdIdsBySlot.set(slot, collectTargetedAdIds(targeting));
+  targetedAdIdsBySlot.set(slot, recorded);
 }
 
 export function slotHasTargetedAdId(slot: GptSlot, adId: string): boolean {

@@ -14,7 +14,7 @@ import 'src/utils/adUnits';
 
 import { expect } from 'chai';
 
-import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, TARGETING_KEYS } from 'src/constants.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 import { PUC_MIN_VERSION } from 'src/creativeRenderers.js';
 import { recordSlotTargeting } from 'src/utils/gptTargeting.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -562,7 +562,7 @@ describe('secureCreatives', () => {
     });
 
     it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
-      recordSlotTargeting(slots[1], { [TARGETING_KEYS.AD_ID]: 'adId' });
+      recordSlotTargeting(slots[1], ['adId']);
       resizeRemoteCreative({
         adId: 'adId',
         width: 300,
@@ -574,7 +574,7 @@ describe('secureCreatives', () => {
     });
 
     it('should still find gpt slot after targeting is cleared', function () {
-      recordSlotTargeting(slots[1], { [TARGETING_KEYS.AD_ID]: 'adId' });
+      recordSlotTargeting(slots[1], ['adId']);
       resizeRemoteCreative({
         adId: 'adId',
         width: 300,
