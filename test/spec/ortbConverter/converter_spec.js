@@ -104,6 +104,30 @@ describe('pbjs-ortb converter', () => {
     return ortbConverter(options);
   }
 
+  function unsafeMerge(target, source) {
+    Object.keys(source).forEach(key => {
+      if (source[key] && typeof source[key] === 'object') {
+        target[key] = target[key] || {};
+        unsafeMerge(target[key], source[key]);
+      } else {
+        target[key] = source[key];
+      }
+    });
+  }
+
+  function convertWithUnsafeProcessor(response) {
+    const converter = makeConverter({
+      bidResponse(buildBidResponse, bid, context) {
+        unsafeMerge({}, bid);
+        return buildBidResponse(bid, context);
+      }
+    });
+    return converter.fromORTB({
+      request: converter.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }),
+      response
+    });
+  }
+
   it('runs each processor', () => {
     const cvt = makeConverter();
     const request = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST });
@@ -129,6 +153,72 @@ describe('pbjs-ortb converter', () => {
       seatbid: MOCK_ORTB_RESPONSE.seatbid[1]
     }]);
     expect(response.marker).to.be.true;
+  });
+
+  it('removes malicious __proto__ keys before processing an ORTB response', () => {
+    const response = JSON.parse('{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}');
+
+    expect(convertWithUnsafeProcessor(response).bids).to.have.lengthOf(1);
+    expect(Object.prototype).to.not.have.property('polluted');
+  });
+
+  it('removes malicious constructor.prototype keys before processing an ORTB response', () => {
+    const response = JSON.parse('{"seatbid":[{"bid":[{"impid":"imp0","constructor":{"prototype":{"polluted":true}}}]}]}');
+
+    expect(convertWithUnsafeProcessor(response).bids).to.have.lengthOf(1);
+    expect(Object.prototype).to.not.have.property('polluted');
+  });
+
+  it('preserves valid nested ORTB response data', () => {
+    const response = {
+      ...MOCK_ORTB_RESPONSE,
+      ext: { response: { value: true } },
+      seatbid: [{
+        ...MOCK_ORTB_RESPONSE.seatbid[0],
+        ext: { seat: { value: true } },
+        bid: [{
+          ...MOCK_ORTB_RESPONSE.seatbid[0].bid[0],
+          ext: { bid: { value: true } }
+        }]
+      }]
+    };
+    let processedResponse;
+    const converter = makeConverter({
+      response(buildResponse, bids, ortbResponse, context) {
+        processedResponse = ortbResponse;
+        return buildResponse(bids, ortbResponse, context);
+      }
+    });
+
+    const converted = converter.fromORTB({
+      request: converter.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }),
+      response
+    });
+
+    expect(converted.bids).to.have.lengthOf(1);
+    expect(processedResponse).to.deep.equal(response);
+    expect(Object.prototype).to.not.have.property('polluted');
+  });
+
+  it('sanitizes deeply nested responses without overflowing the call stack', () => {
+    const response = { seatbid: [] };
+    let nested = response;
+    for (let i = 0; i < 20000; i++) {
+      nested.ext = {};
+      nested = nested.ext;
+    }
+    Object.defineProperty(nested, '__proto__', {
+      configurable: true,
+      enumerable: true,
+      value: { polluted: true }
+    });
+    const converter = makeConverter();
+
+    expect(() => converter.fromORTB({
+      request: converter.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }),
+      response
+    })).to.not.throw();
+    expect(Object.prototype).to.not.have.property('polluted');
   });
 
   it('fromORTB throws if request was not produced by the same converter', () => {
