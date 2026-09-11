@@ -39,9 +39,19 @@ export async function loadModules(loader, manifest, modules, resolveDeps = resol
     throw new Error(`Cannot find modules: ${missing.join(', ')}`);
   }
   const chunks = resolveDeps(modules, manifest.dependencies, (module) => manifest.checksums.hasOwnProperty(module + METADATA_SUFFIX));
-  return Promise.allSettled(
-    chunks.map(chunk => loader(chunk, manifest.checksums[chunk]))
+  return loadChunks(loader, chunks, manifest.checksums);
+}
+
+export async function loadChunks(loader, chunks, checksums) {
+  // Codex bot: wait for every load before surfacing a failure so late scripts cannot race a retry.
+  const results = await Promise.allSettled(
+    chunks.map(chunk => loader(chunk, checksums[chunk]))
   );
+  const failure = results.find(result => result.status === 'rejected');
+  if (failure) {
+    throw failure.reason;
+  }
+  return results;
 }
 
 /**
@@ -72,4 +82,3 @@ export function checkAndRun(globalVarName, load) {
       });
   }
 }
-
