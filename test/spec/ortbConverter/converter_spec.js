@@ -200,6 +200,27 @@ describe('pbjs-ortb converter', () => {
     expect(Object.prototype).to.not.have.property('polluted');
   });
 
+  it('sanitizes deeply nested responses without overflowing the call stack', () => {
+    const response = { seatbid: [] };
+    let nested = response;
+    for (let i = 0; i < 20000; i++) {
+      nested.ext = {};
+      nested = nested.ext;
+    }
+    Object.defineProperty(nested, '__proto__', {
+      configurable: true,
+      enumerable: true,
+      value: { polluted: true }
+    });
+    const converter = makeConverter();
+
+    expect(() => converter.fromORTB({
+      request: converter.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }),
+      response
+    })).to.not.throw();
+    expect(Object.prototype).to.not.have.property('polluted');
+  });
+
   it('fromORTB throws if request was not produced by the same converter', () => {
     expect(() => {
       makeConverter().fromORTB({

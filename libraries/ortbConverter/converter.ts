@@ -118,36 +118,58 @@ export function ortbConverter<B extends BidderCode>({
 }: ConverterConfig<B> = {}) {
   const REQ_CTX = new WeakMap();
 
-  function sanitizeORTB(value, seen = new WeakMap()) {
+  function sanitizeORTB(value) {
     // Codex bot: keep hostile response handling at this shared conversion boundary.
     if (value == null || typeof value !== 'object') {
       return value;
     }
-    if (seen.has(value)) {
-      return seen.get(value);
+
+    function container(source) {
+      const standardPrototype = Array.isArray(source) ? Array.prototype : Object.prototype;
+      const removableKeys = ['__proto__', 'prototype', 'constructor'].every(key => {
+        const descriptor = Object.getOwnPropertyDescriptor(source, key);
+        return !descriptor || descriptor.configurable;
+      });
+      return Object.getPrototypeOf(source) === standardPrototype && Object.isExtensible(source) && removableKeys
+        ? source
+        : (Array.isArray(source) ? [] : {});
     }
-    const descriptors: [string, PropertyDescriptor | undefined][] = Object.keys(value)
-      .map(key => [key, Object.getOwnPropertyDescriptor(value, key)]);
-    const standardPrototype = Array.isArray(value) ? Array.prototype : Object.prototype;
-    const canSanitizeInPlace = Object.getPrototypeOf(value) === standardPrototype && descriptors.every(([key, descriptor]) =>
-      descriptor && 'value' in descriptor && descriptor.writable &&
-      ((key !== '__proto__' && key !== 'prototype' && key !== 'constructor') || descriptor.configurable)
-    );
-    const sanitized = canSanitizeInPlace ? value : (Array.isArray(value) ? [] : {});
-    seen.set(value, sanitized);
-    descriptors.forEach(([key, descriptor]) => {
-      // These keys can turn otherwise ordinary recursive assignment into writes
-      // to an object's prototype. ORTB extension objects are untrusted too.
-      if (key === '__proto__' || key === 'prototype' || key === 'constructor') {
-        if (canSanitizeInPlace) {
-          delete sanitized[key];
+
+    const sanitized = container(value);
+    const seen = new WeakMap([[value, sanitized]]);
+    const pending = [[value, sanitized]];
+    while (pending.length) {
+      const [source, target] = pending.pop();
+      Object.keys(source).forEach(key => {
+        // These keys can turn otherwise ordinary recursive assignment into writes
+        // to an object's prototype. ORTB extension objects are untrusted too.
+        if (key === '__proto__' || key === 'prototype' || key === 'constructor') {
+          if (source === target) {
+            const descriptor = Object.getOwnPropertyDescriptor(source, key);
+            if (descriptor?.configurable) {
+              delete target[key];
+            }
+          }
+          return;
         }
-        return;
-      }
-      if (descriptor && 'value' in descriptor) {
-        sanitized[key] = sanitizeORTB(descriptor.value, seen);
-      }
-    });
+        const descriptor = Object.getOwnPropertyDescriptor(source, key);
+        if (!descriptor || !('value' in descriptor)) {
+          return;
+        }
+        const child = descriptor.value;
+        if (child == null || typeof child !== 'object') {
+          target[key] = child;
+          return;
+        }
+        let sanitizedChild = seen.get(child);
+        if (!sanitizedChild) {
+          sanitizedChild = container(child);
+          seen.set(child, sanitizedChild);
+          pending.push([child, sanitizedChild]);
+        }
+        target[key] = sanitizedChild;
+      });
+    }
     return sanitized;
   }
 
