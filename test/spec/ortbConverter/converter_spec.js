@@ -160,6 +160,43 @@ describe('pbjs-ortb converter', () => {
     });
   });
 
+  describe('sanitizes prototype-polluting keys in the response', () => {
+    // JSON.parse (unlike an object literal) creates "__proto__" as a genuine own
+    // data property, matching what an ajax response body actually looks like.
+    const MALICIOUS_RESPONSE = JSON.parse(`{
+      "seatbid": [{
+        "seat": "mockBidder1",
+        "bid": [{
+          "impid": "imp0",
+          "__proto__": {"polluted": true},
+          "constructor": {"prototype": {"polluted": true}}
+        }]
+      }]
+    }`);
+
+    afterEach(() => {
+      delete Object.prototype.polluted;
+    });
+
+    it('strips __proto__/constructor own keys from the bid before processors see it, at any nesting level', () => {
+      let seenBid;
+      const cvt = makeConverter({
+        bidResponse(buildBidResponse, bid, context) {
+          seenBid = bid;
+          return buildBidResponse(bid, context);
+        }
+      });
+      const request = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST });
+      const response = cvt.fromORTB({ request, response: MALICIOUS_RESPONSE });
+
+      expect(Object.prototype.hasOwnProperty.call(seenBid, '__proto__')).to.be.false;
+      expect(Object.prototype.hasOwnProperty.call(seenBid, 'constructor')).to.be.false;
+      expect(seenBid.impid).to.equal('imp0');
+      expect(response.bids).to.have.lengthOf(1);
+      expect(Object.prototype.polluted).to.be.undefined;
+    });
+  });
+
   it('gives precedence to the bidRequests argument over bidderRequest.bids', () => {
     expect(makeConverter().toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, bidRequests: [MOCK_BIDDER_REQUEST.bids[0]] })).to.eql({
       id: 'req0',
