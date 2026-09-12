@@ -67,7 +67,8 @@ function attachProperties(config, useDefaultValues = true) {
   const validateauctionOptions = (() => {
     const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
     const arrKeys = ['secondaryBidders'];
-    const allKeys = [].concat(boolKeys).concat(arrKeys);
+    const enumKeys = { viewabilityMeasurement: ['observer', 'boundingBox'] };
+    const allKeys = [].concat(boolKeys).concat(arrKeys).concat(Object.keys(enumKeys));
 
     return function validateauctionOptions(val) {
       if (!isPlainObject(val)) {
@@ -91,6 +92,11 @@ function attachProperties(config, useDefaultValues = true) {
         } else if (boolKeys.includes(k)) {
           if (!isBoolean(val[k])) {
             logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
+        } else if (enumKeys.hasOwnProperty(k)) {
+          if (!enumKeys[k].includes(val[k])) {
+            logWarn(`Auction Options ${k} must be one of: ${enumKeys[k].join(', ')}`);
             return false;
           }
         }

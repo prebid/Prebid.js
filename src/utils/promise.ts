@@ -23,6 +23,32 @@ export function delay(delayMs = 0): Promise<void> {
   });
 }
 
+/**
+ * Like `delay`, but asks for high priority scheduling, so that the continuation is dispatched ahead
+ * of ordinary timers and network callbacks once the main thread frees up. Use this where a timeout
+ * is meant to act as an upper bound: plain timers queue behind work that is already pending, which
+ * on a busy page can put them arbitrarily far past their deadline.
+ *
+ * This is not a real time guarantee. Nothing in JS preempts a running task, so a single long task
+ * still pushes the continuation past `delayMs`; what this bounds is the wait by the longest blocking
+ * task rather than by the whole backlog of ready work.
+ */
+export function urgentDelay(delayMs = 0): Promise<void> {
+  const scheduler = (window as any).scheduler;
+  if (typeof scheduler?.postTask === 'function') {
+    try {
+      return PbPromise.resolve(
+        scheduler.postTask(() => {}, { priority: 'user-blocking', delay: delayMs })
+        // a task can only be aborted through a signal, which is not used here; resolve regardless so
+        // that callers racing against this never stall on a rejection
+      ).catch(() => {}) as Promise<void>;
+    } catch (e) {
+      // options rejected by this implementation of postTask; fall back to a timer
+    }
+  }
+  return delay(delayMs);
+}
+
 export interface Defer<T> {
   promise: Promise<T>;
   resolve: Parameters<ConstructorParameters<typeof Promise<T>>[0]>[0],
