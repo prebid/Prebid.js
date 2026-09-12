@@ -1,0 +1,9 @@
+{
+  "disclosures": [],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Adbix bidder does not store identifiers on the user's device. Its image user sync sets no cookies."
+    }
+  ]
+}

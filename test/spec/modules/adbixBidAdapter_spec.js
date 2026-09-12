@@ -1,0 +1,578 @@
+import { expect } from 'chai';
+import sinon from 'sinon';
+import * as ajaxModule from 'src/ajax.js';
+import { spec } from 'modules/adbixBidAdapter.js';
+
+describe('Adbix Bidder Adapter', function () {
+  const validBid = {
+    bidder: 'adbix',
+    bidId: 'adbix-bid-id-1',
+
+    params: {
+      publisherId: 'test-publisher',
+      placementId: 'test-300x250',
+      test: true
+    },
+
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      }
+    },
+
+    getFloor: () => ({
+      floor: 0,
+      currency: 'USD'
+    })
+  };
+
+  function buildRequest(bids = [validBid], bidderRequest = {}) {
+    return spec.buildRequests(bids, {
+      bidderRequestId: 'auction-001',
+      timeout: 800,
+      refererInfo: {
+        domain: 'example.com',
+        page: 'https://example.com/article',
+        ref: 'https://google.com/'
+      },
+      ...bidderRequest
+    });
+  }
+
+  function buildBody(bids = [validBid], bidderRequest = {}) {
+    return JSON.parse(buildRequest(bids, bidderRequest).data);
+  }
+
+  function buildResponseBid(overrides = {}) {
+    return {
+      id: 'adbix-response-1',
+      impid: 'adbix-bid-id-1',
+      price: 0.10,
+      adm: '<div>Adbix test creative</div>',
+      adomain: ['adbix.net'],
+      crid: 'adbix-test-300x250',
+      w: 300,
+      h: 250,
+      ...overrides
+    };
+  }
+
+  function interpretResponseBids(serverBids) {
+    return spec.interpretResponse({
+      body: {
+        cur: 'USD',
+        seatbid: [{ seat: 'adbix', bid: serverBids }]
+      }
+    }, {});
+  }
+
+  it('accepts a bid with publisherId, placementId and banner size', function () {
+    expect(spec.isBidRequestValid(validBid)).to.equal(true);
+  });
+
+  it('rejects a bid without publisherId', function () {
+    const bid = {
+      ...validBid,
+      params: {
+        placementId: 'test-300x250'
+      }
+    };
+
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+  });
+
+  it('rejects a bid without placementId', function () {
+    const bid = {
+      ...validBid,
+      params: {
+        publisherId: 'test-publisher'
+      }
+    };
+
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+  });
+
+  it('rejects a bid without a valid banner size array', function () {
+    const bid = {
+      ...validBid,
+      mediaTypes: {
+        banner: {
+          sizes: '300x250'
+        }
+      }
+    };
+
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+  });
+
+  it('builds an OpenRTB-style test request for the Adbix endpoint', function () {
+    const request = buildRequest();
+    expect(request.method).to.equal('POST');
+    expect(request.url).to.equal('https://adbix.net/api/prebid-auction.php');
+
+    const body = JSON.parse(request.data);
+
+    expect(body.id).to.equal('auction-001');
+    expect(body.test).to.equal(1);
+    expect(body.imp[0].id).to.equal('adbix-bid-id-1');
+    expect(body.imp[0].banner.format).to.deep.equal([
+      { w: 300, h: 250 }
+    ]);
+
+    expect(body.imp[0].ext.prebid.bidder.adbix.publisherId)
+      .to.equal('test-publisher');
+
+    expect(body.imp[0].ext.prebid.bidder.adbix.placementId)
+      .to.equal('test-300x250');
+  });
+
+  it('preserves global ortb2 fields and supply-chain data', function () {
+    const ortb2 = {
+      device: {
+        w: 390,
+        h: 844,
+        ua: 'test-user-agent'
+      },
+      cur: ['EUR'],
+      ext: {
+        publisherField: 'preserved'
+      },
+      regs: {
+        coppa: 1,
+        ext: {
+          gpp: 'test-gpp'
+        }
+      },
+      user: {
+        id: 'test-user-id'
+      },
+      bcat: ['IAB1'],
+      badv: ['blocked.example'],
+      battr: [1],
+      bapp: ['com.example.app'],
+      wseat: ['seat-1'],
+      source: {
+        tid: 'auction-tid',
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: []
+          }
+        }
+      }
+    };
+
+    const body = buildBody([validBid], { ortb2 });
+
+    expect(body.device).to.deep.equal(ortb2.device);
+    expect(body.cur).to.deep.equal(ortb2.cur);
+    expect(body.ext).to.deep.equal(ortb2.ext);
+    expect(body.regs).to.deep.equal(ortb2.regs);
+    expect(body.user).to.deep.equal(ortb2.user);
+    expect(body.bcat).to.deep.equal(ortb2.bcat);
+    expect(body.badv).to.deep.equal(ortb2.badv);
+    expect(body.battr).to.deep.equal(ortb2.battr);
+    expect(body.bapp).to.deep.equal(ortb2.bapp);
+    expect(body.wseat).to.deep.equal(ortb2.wseat);
+    expect(body.source).to.deep.equal(ortb2.source);
+  });
+
+  it('preserves configured site values over refererInfo fallbacks', function () {
+    const ortb2 = {
+      site: {
+        domain: 'configured.example',
+        page: 'https://configured.example/page',
+        ref: 'https://configured.example/ref',
+        publisher: {
+          id: 'publisher-1'
+        }
+      }
+    };
+
+    const body = buildBody([validBid], {
+      ortb2,
+      refererInfo: {
+        domain: 'actual.example',
+        page: 'https://actual.example/page',
+        ref: 'https://actual.example/ref'
+      }
+    });
+
+    expect(body.site).to.deep.equal(ortb2.site);
+  });
+
+  it('sends app context without adding a site section', function () {
+    const app = {
+      id: 'app-1',
+      name: 'Test App'
+    };
+
+    const body = buildBody([validBid], {
+      ortb2: {
+        app,
+        device: {
+          ua: 'app-user-agent'
+        }
+      }
+    });
+
+    expect(body.app).to.deep.equal(app);
+    expect(body).to.not.have.property('site');
+  });
+
+  it('sends dooh context without adding site or app sections', function () {
+    const dooh = {
+      id: 'dooh-1',
+      name: 'Test DOOH'
+    };
+
+    const body = buildBody([validBid], {
+      ortb2: {
+        dooh
+      }
+    });
+
+    expect(body.dooh).to.deep.equal(dooh);
+    expect(body).to.not.have.property('site');
+    expect(body).to.not.have.property('app');
+  });
+
+  it('preserves publisher ortb2Imp ext.prebid fields and Adbix bidder params', function () {
+    const bid = {
+      ...validBid,
+
+      ortb2Imp: {
+        instl: 1,
+
+        ext: {
+          prebid: {
+            storedrequest: {
+              id: 'stored-request-id'
+            },
+
+            passthrough: {
+              customField: 'custom-value'
+            },
+
+            bidder: {
+              anotherBidder: {
+                placementId: 'another-placement'
+              }
+            }
+          },
+
+          customExtensionField: 'preserved'
+        }
+      }
+    };
+
+    const body = buildBody([bid], { refererInfo: {} });
+    const imp = body.imp[0];
+
+    expect(imp.instl).to.equal(1);
+    expect(imp.ext.customExtensionField).to.equal('preserved');
+    expect(imp.ext.prebid.storedrequest).to.deep.equal({
+      id: 'stored-request-id'
+    });
+    expect(imp.ext.prebid.passthrough).to.deep.equal({
+      customField: 'custom-value'
+    });
+    expect(imp.ext.prebid.bidder.anotherBidder).to.deep.equal({
+      placementId: 'another-placement'
+    });
+    expect(imp.ext.prebid.bidder.adbix.publisherId)
+      .to.equal('test-publisher');
+    expect(imp.ext.prebid.bidder.adbix.placementId)
+      .to.equal('test-300x250');
+    expect(imp.ext.prebid.bidder.adbix.test).to.equal(true);
+  });
+
+  it('preserves an impression floor when getFloor is unavailable', function () {
+    const bid = {
+      ...validBid,
+      getFloor: undefined,
+      ortb2Imp: {
+        bidfloor: 1.5,
+        bidfloorcur: 'EUR'
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].bidfloor).to.equal(1.5);
+    expect(body.imp[0].bidfloorcur).to.equal('EUR');
+  });
+
+  it('preserves an impression floor when getFloor returns no usable floor', function () {
+    const bid = {
+      ...validBid,
+      getFloor: () => ({
+        floor: 0,
+        currency: 'USD'
+      }),
+      ortb2Imp: {
+        bidfloor: 1.75,
+        bidfloorcur: 'GBP'
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].bidfloor).to.equal(1.75);
+    expect(body.imp[0].bidfloorcur).to.equal('GBP');
+  });
+
+  it('uses the floor and currency returned by getFloor when valid', function () {
+    const bid = {
+      ...validBid,
+      getFloor: () => ({
+        floor: 2.25,
+        currency: 'EUR'
+      }),
+      ortb2Imp: {
+        bidfloor: 1,
+        bidfloorcur: 'USD'
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].bidfloor).to.equal(2.25);
+    expect(body.imp[0].bidfloorcur).to.equal('EUR');
+  });
+
+  it('does not mark a mixed test and live batch as a test request', function () {
+    const liveBid = {
+      ...validBid,
+      bidId: 'adbix-bid-id-live',
+      params: {
+        ...validBid.params,
+        test: false
+      }
+    };
+
+    const body = buildBody([validBid, liveBid]);
+
+    expect(body.test).to.equal(0);
+    expect(body.imp.map((imp) => imp.ext.prebid.bidder.adbix.test))
+      .to.deep.equal([true, false]);
+  });
+
+  it('copies banner pos from mediaTypes when ortb2Imp banner pos is absent', function () {
+    const bid = {
+      ...validBid,
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+          pos: 1
+        }
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].banner.pos).to.equal(1);
+  });
+
+  it('prefers publisher ortb2Imp banner pos over mediaTypes pos', function () {
+    const bid = {
+      ...validBid,
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+          pos: 1
+        }
+      },
+      ortb2Imp: {
+        banner: {
+          pos: 4
+        }
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].banner.pos).to.equal(4);
+  });
+
+  it('omits banner pos when neither ortb2Imp nor mediaTypes sets it', function () {
+    const body = buildBody([validBid]);
+
+    expect(body.imp[0].banner).to.not.have.property('pos');
+  });
+
+  it('preserves publisher banner format extensions instead of overwriting them', function () {
+    const publisherFormat = [
+      { w: 300, h: 250, ext: { custom: 'keep-me' } }
+    ];
+    const bid = {
+      ...validBid,
+      ortb2Imp: {
+        banner: {
+          format: publisherFormat
+        }
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.imp[0].banner.format).to.deep.equal(publisherFormat);
+  });
+
+  it('does not treat non-boolean test values as test traffic', function () {
+    const bid = {
+      ...validBid,
+      params: {
+        ...validBid.params,
+        test: 'false'
+      }
+    };
+
+    const body = buildBody([bid]);
+
+    expect(body.test).to.equal(0);
+    expect(body.imp[0].ext.prebid.bidder.adbix.test).to.equal(false);
+  });
+
+  it('preserves the publisher global ortb2 test flag when bids omit the test param', function () {
+    const bid = {
+      ...validBid,
+      params: {
+        publisherId: 'test-publisher',
+        placementId: 'test-300x250'
+      }
+    };
+
+    const body = buildBody([bid], { ortb2: { test: 1 } });
+    expect(body.test).to.equal(1);
+
+    const liveBody = buildBody([bid]);
+    expect(liveBody.test).to.equal(0);
+  });
+
+  it('lets an explicit boolean test param override the global ortb2 test flag', function () {
+    const liveBid = {
+      ...validBid,
+      params: {
+        ...validBid.params,
+        test: false
+      }
+    };
+
+    const liveBody = buildBody([liveBid], { ortb2: { test: 1 } });
+    expect(liveBody.test).to.equal(0);
+
+    const testBody = buildBody([validBid], { ortb2: { test: 0 } });
+    expect(testBody.test).to.equal(1);
+  });
+
+  it('does not return an image user sync when pixel sync is disabled', function () {
+    const syncs = spec.getUserSyncs({
+      iframeEnabled: true,
+      pixelEnabled: false
+    });
+
+    expect(syncs).to.deep.equal([]);
+  });
+
+  it('returns an image user sync when pixel sync is enabled', function () {
+    const syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
+    });
+
+    expect(syncs).to.deep.equal([{
+      type: 'image',
+      url: 'https://adbix.net/sync/index.php'
+    }]);
+  });
+
+  it('parses a valid Adbix OpenRTB bid response', function () {
+    const bids = interpretResponseBids([buildResponseBid({ ttl: 300 })]);
+
+    expect(bids).to.have.length(1);
+    expect(bids[0].requestId).to.equal('adbix-bid-id-1');
+    expect(bids[0].cpm).to.equal(0.10);
+    expect(bids[0].width).to.equal(300);
+    expect(bids[0].height).to.equal(250);
+    expect(bids[0].ttl).to.equal(300);
+    expect(bids[0].meta.advertiserDomains)
+      .to.deep.equal(['adbix.net']);
+  });
+
+  it('ignores malformed bids in an Adbix OpenRTB response', function () {
+    const bids = interpretResponseBids([
+      {
+        id: 'invalid-response-1',
+        impid: 'adbix-bid-id-invalid',
+        price: 0,
+        adm: '<div>Invalid creative</div>',
+        w: 300,
+        h: 250
+      },
+      {
+        id: 'valid-response-1',
+        impid: 'adbix-bid-id-valid',
+        price: 0.20,
+        adm: '<div>Valid creative</div>',
+        crid: 'adbix-valid-300x250',
+        w: 300,
+        h: 250
+      }
+    ]);
+
+    expect(bids).to.have.length(1);
+    expect(bids[0].requestId).to.equal('adbix-bid-id-valid');
+  });
+
+  it('prefers OpenRTB exp over ttl for bid expiry', function () {
+    const bids = interpretResponseBids([buildResponseBid({ exp: 60, ttl: 300 })]);
+
+    expect(bids).to.have.length(1);
+    expect(bids[0].ttl).to.equal(60);
+  });
+
+  it('falls back to ttl and then the default when exp is absent', function () {
+    const withTtl = interpretResponseBids([buildResponseBid({ ttl: 120 })]);
+    expect(withTtl[0].ttl).to.equal(120);
+
+    const withoutExpiry = interpretResponseBids([buildResponseBid()]);
+    expect(withoutExpiry[0].ttl).to.equal(300);
+  });
+
+  it('retains the win notice URL and reports it with keepalive when the bid wins', function () {
+    const sandbox = sinon.createSandbox();
+    const ajaxStub = sandbox.stub(ajaxModule, 'ajax');
+
+    try {
+      const bids = interpretResponseBids([
+        buildResponseBid({ nurl: 'https://adbix.net/win.php?id=1' })
+      ]);
+
+      expect(bids).to.have.length(1);
+      expect(bids[0].nurl).to.equal('https://adbix.net/win.php?id=1');
+
+      spec.onBidWon(bids[0]);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal('https://adbix.net/win.php?id=1');
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', keepalive: true });
+    } finally {
+      sandbox.restore();
+    }
+  });
+
+  it('does not report a win notice when the bid has no nurl', function () {
+    const sandbox = sinon.createSandbox();
+    const ajaxStub = sandbox.stub(ajaxModule, 'ajax');
+
+    try {
+      spec.onBidWon({});
+      spec.onBidWon({ nurl: '' });
+
+      expect(ajaxStub.called).to.equal(false);
+    } finally {
+      sandbox.restore();
+    }
+  });
+});
