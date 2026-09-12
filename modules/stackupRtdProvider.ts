@@ -31,29 +31,14 @@ const MODULE_TYPE = "realTimeData";
 const DEFAULT_TIMEOUT = 300;
 const DEFAULT_API_URL = "https://api.stackup-ai.com/v1/enrich-ortb-rtd";
 const CACHE_KEY_PREFIX = "stackup:enrich:v1:";
-const CACHE_SCHEMA_VERSION = 1;
+const CACHE_SCHEMA_VERSION = 2;
+const CONTENT_SEGTAXES = new Set([6, 9, 502, 600]);
+const USER_SEGTAXES = new Set([4, 501]);
 // Maximum number of auction snapshots to keep in memory at once.
 // On long-lived SPA sessions many auctions can fire; without a cap the map
 // grows without bound. FIFO eviction keeps the last N entries — enough for
 // any analytics adapter to read a snapshot before it is evicted.
 const MAX_SNAPSHOTS = 10;
-
-// segtax values StackUP currently emits (informational — any well-formed
-// segtax block is accepted and merged into ortb2, see isValidEnrichment, so
-// the backend can introduce new taxonomies without a client-side change).
-//   4   = IAB Audience Taxonomy
-//   7   = IAB Content Taxonomy 3.0
-//   501 = StackUP Audience Taxonomy 1.0 (legacy audience signals)
-//   502 = StackUP Content Taxonomy 1.0
-//   600 = StackUP Publisher FPD (private)
-
-// segtax value used to mirror IAB Content Taxonomy 3.0 segment ids into the
-// standard content.cat[]/site.pagecat[] fields (see mergeSiteContent/mergeSitePagecat).
-// Unlike passthrough above, this stays hardcoded: cattax only has a small,
-// spec-registered set of legal content-taxonomy values, so which segtax may
-// be mirrored into content.cat/site.pagecat is a spec constant, not something
-// the backend can change unilaterally.
-const CT3_SEGTAX = 7;
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -103,10 +88,6 @@ export interface StackupRtdParams {
   };
   debug?: boolean;
   debugDomain?: string; // overrides the domain sent to the API when debug: true
-  // default: false — the CT3.0 category mirror (content.cat/content.cattax,
-  // site.pagecat/site.cattax) never overwrites a value the publisher already
-  // set. Set true to let StackUp's classification take priority instead.
-  overwritePublisherCategories?: boolean;
 }
 
 declare module "./rtdModule/spec.ts" {
@@ -120,22 +101,37 @@ declare module "./rtdModule/spec.ts" {
 type BrandSafetyBlock = unknown; // TODO: define properly when we have real data
 type EmotionBlock = unknown; // TODO: define properly when we have real data
 
-// types/stackup.ts — shared between RTD and analytics modules
+interface Ortb2Segment {
+  id: string;
+  name?: string;
+  value?: string;
+  ext?: { confidence?: number };
+}
 
-// Any numeric segtax is accepted — StackUP may introduce new taxonomies on
-// the backend without a corresponding client-side change (see isValidEnrichment).
-export type StackupSegtax = number;
+interface Ortb2DataBlock<TSegtax extends number> {
+  id?: string;
+  name: string;
+  ext?: {
+    segtax?: TSegtax;
+    [key: string]: unknown;
+  };
+  segment: Ortb2Segment[];
+}
+
+// types/stackup.ts — shared between RTD and analytics modules
 
 export interface EnrichmentSnapshot {
   articleId: string;
   fetchedAt: number; // unix ms when enrichment landed
   source: "api" | "cache";
   site: {
+    cattax?: number;
+    pagecat?: string[];
     content: {
-      id: string;
+      id?: string;
       title?: string;
       data: Ortb2ContentSegment[];
-      ext?: {
+      ext?: Record<string, unknown> & {
         brand_safety?: BrandSafetyBlock;
         emotion?: EmotionBlock;
       };
@@ -146,50 +142,22 @@ export interface EnrichmentSnapshot {
   };
 }
 
-export interface Ortb2ContentSegment {
-  id?: string;
-  name: string; // provider domain: 'data.stackup-ai.com'
-  ext: {
-    segtax: StackupSegtax; // typically 502 (content) or 600 (publisher FPD)
-    stackup?: {
-      taxonomy_version: string;
-      source_tier?: string;
-      dimension?: string;
-    };
-  };
-  segment: Array<{
-    id: string;
-    name?: string; // optional — some segments carry only id + value
-    value?: string;
-    ext?: { confidence?: number };
-  }>;
-}
+export type Ortb2ContentSegment = Ortb2DataBlock<6 | 9 | 502 | 600>;
 
-export interface Ortb2UserSegment {
-  id?: string;
-  name: string; // provider domain: 'data.stackup-ai.com'
-  ext: {
-    segtax: StackupSegtax; // typically 501 (legacy audience) or 4 (IAB Audience)
-    stackup?: { dimension: string; taxonomy_version: string };
-  };
-  segment: Array<{
-    id: string;
-    name?: string; // optional — profile dimension uses only id + value
-    value?: string;
-    ext?: { confidence?: number };
-  }>;
-}
+export type Ortb2UserSegment = Ortb2DataBlock<4 | 501>;
 
 // Raw JSON shape returned by the Stackup enrichment API.
 // Mirrors EnrichmentSnapshot.site/user but without the client-added fields
 // (articleId, fetchedAt, source) that are stamped on after a successful fetch.
 interface RawEnrichmentResponse {
   site: {
+    cattax?: number;
+    pagecat?: string[];
     content: {
       id?: string;
       title?: string;
       data: Ortb2ContentSegment[];
-      ext?: {
+      ext?: Record<string, unknown> & {
         brand_safety?: BrandSafetyBlock;
         emotion?: EmotionBlock;
       };
@@ -374,11 +342,13 @@ function fetchEnrichment(
         fetchedAt: Date.now(),
         source: "api",
         site: {
-          content: {
-            ...data.site.content,
-            id: data.site.content.id ?? articleId,
-            data: data.site.content.data,
-          },
+          ...(data.site.cattax !== undefined
+            ? { cattax: data.site.cattax }
+            : {}),
+          ...(data.site.pagecat !== undefined
+            ? { pagecat: data.site.pagecat }
+            : {}),
+          content: { ...data.site.content },
         },
         user: { data: data.user?.data ?? [] },
       };
@@ -389,33 +359,55 @@ function fetchEnrichment(
 
 function isValidEnrichment(data: any): data is RawEnrichmentResponse {
   if (!isPlainObject(data)) return false;
-  if (!data.site?.content) return false;
+  if (!isPlainObject(data.site) || !isPlainObject(data.site.content)) {
+    return false;
+  }
   if (!isArray(data.site.content.data)) return false;
+  if (data.site.cattax !== undefined && !isNumber(data.site.cattax)) {
+    return false;
+  }
+  if (
+    data.site.pagecat !== undefined &&
+    (!isArray(data.site.pagecat) || !data.site.pagecat.every(isStr))
+  ) {
+    return false;
+  }
 
-  // Validate every block's shape regardless of segtax — any taxonomy the
-  // backend emits is accepted here (see StackupSegtax); only the CT3.0
-  // mirror into content.cat/site.pagecat is gated to a specific segtax.
-  // segtax must be a positive integer — the registry is 1-based, so 0,
-  // negatives, NaN and non-integers are never valid taxonomy ids.
   for (const block of data.site.content.data) {
-    const segtax = block?.ext?.segtax;
-    if (!isNumber(segtax) || segtax <= 0 || segtax % 1 !== 0) return false;
-    if (!isStr(block.name)) return false;
-    if (!isArray(block.segment)) return false;
-    for (const seg of block.segment) {
-      if (!isStr(seg.id)) return false;
-      // name is optional — some dimensions (e.g. profile) carry only id + value
-      if (seg.name !== undefined && !isStr(seg.name)) return false;
-      if (seg.ext?.confidence !== undefined) {
-        if (!isNumber(seg.ext.confidence)) return false;
-        if (seg.ext.confidence < 0 || seg.ext.confidence > 1) return false;
-      }
-    }
+    if (!isValidDataBlock(block, CONTENT_SEGTAXES)) return false;
   }
 
   // user.data is optional — some articles have site-level enrichment only
-  if (data.user?.data && !isArray(data.user.data)) return false;
+  if (data.user !== undefined && !isPlainObject(data.user)) return false;
+  if (data.user?.data !== undefined && !isArray(data.user.data)) return false;
+  for (const block of data.user?.data ?? []) {
+    if (!isValidDataBlock(block, USER_SEGTAXES)) return false;
+  }
 
+  return true;
+}
+
+function isValidDataBlock(block: any, allowedSegtaxes: Set<number>): boolean {
+  if (!isPlainObject(block) || !isStr(block.name)) return false;
+  if (block.ext !== undefined && !isPlainObject(block.ext)) return false;
+  const segtax = block.ext?.segtax;
+  if (
+    segtax !== undefined &&
+    (!isNumber(segtax) || !allowedSegtaxes.has(segtax))
+  ) {
+    return false;
+  }
+  if (!isArray(block.segment)) return false;
+  for (const segment of block.segment) {
+    if (!isPlainObject(segment) || !isStr(segment.id)) return false;
+    if (segment.name !== undefined && !isStr(segment.name)) return false;
+    if (segment.value !== undefined && !isStr(segment.value)) return false;
+    if (segment.ext !== undefined && !isPlainObject(segment.ext)) return false;
+    if (segment.ext?.confidence !== undefined) {
+      if (!isNumber(segment.ext.confidence)) return false;
+      if (segment.ext.confidence < 0 || segment.ext.confidence > 1) return false;
+    }
+  }
   return true;
 }
 
@@ -598,13 +590,11 @@ function getBidRequestData(
     release();
   }, effectiveTimeout);
 
-  const allowCategoryOverwrite = config.params?.overwritePublisherCategories === true;
-
   const onReady = () => {
     clearTimeout(timeoutId);
     if (state.enrichment) {
       try {
-        mergeIntoOrtb2(reqBidsConfigObj, state.enrichment, allowCategoryOverwrite);
+        mergeIntoOrtb2(reqBidsConfigObj, state.enrichment);
         // Stash snapshot keyed by auctionId so analytics adapter can retrieve it
         if (reqBidsConfigObj.auctionId) {
           storeSnapshot(reqBidsConfigObj.auctionId, state.enrichment);
@@ -640,153 +630,108 @@ function storeSnapshot(auctionId: string, snapshot: EnrichmentSnapshot): void {
 
 function mergeIntoOrtb2(
   reqBidsConfigObj: StartAuctionOptions,
-  enrichment: EnrichmentSnapshot,
-  allowCategoryOverwrite: boolean
+  enrichment: EnrichmentSnapshot
 ): void {
   const global = reqBidsConfigObj.ortb2Fragments?.global ?? {};
   reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments ?? {};
   reqBidsConfigObj.ortb2Fragments.global = global;
 
-  mergeSiteContent(global, enrichment.site.content, allowCategoryOverwrite);
+  mergeSiteContent(global, enrichment.site);
   mergeUserData(global, enrichment.user.data);
-  mergeSitePagecat(global, enrichment.site.content, allowCategoryOverwrite);
 }
 
-function mergeSiteContent(
-  global: any,
-  ours: any,
-  allowCategoryOverwrite: boolean
-): void {
+function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
   global.site = global.site ?? {};
+  // cattax defines how pagecat values are interpreted, so they must be
+  // adopted together. Filling either independently could pair publisher
+  // categories with StackUp's taxonomy (or the reverse).
+  if (global.site.cattax === undefined && global.site.pagecat === undefined) {
+    if (ours.cattax !== undefined) global.site.cattax = ours.cattax;
+    if (ours.pagecat !== undefined) global.site.pagecat = ours.pagecat;
+  }
   global.site.content = global.site.content ?? { data: [] };
   const target = global.site.content;
+  const ourContent = ours.content;
 
-  target.id = target.id ?? ours.id;
-  target.title = target.title ?? ours.title;
-
-  // Array merge by block identity (name + segtax + dimension).
-  // StackUP emits multiple blocks under the same provider `name`
-  // (e.g. several segtax:501 user dimensions all named data.stackup-ai.com),
-  // so keying on `name` alone would overwrite sibling dimensions.
-  target.data = target.data ?? [];
-  for (const ourBlock of ours.data) {
-    const existingIdx = target.data.findIndex(
-      (b: any) => blockKey(b) === blockKey(ourBlock)
-    );
-    if (existingIdx >= 0) {
-      target.data[existingIdx] = dedupeSegments(ourBlock);
-    } else {
-      target.data.push(dedupeSegments(ourBlock));
-    }
+  if (target.id === undefined && ourContent.id !== undefined) {
+    target.id = ourContent.id;
+  }
+  if (target.title === undefined && ourContent.title !== undefined) {
+    target.title = ourContent.title;
   }
 
-  // Extension merge — publisher wins on conflict
-  target.ext = target.ext ?? {};
-  if (!target.ext.brand_safety && ours.ext?.brand_safety) {
-    target.ext.brand_safety = ours.ext.brand_safety;
-  }
-  if (!target.ext.emotion && ours.ext?.emotion) {
-    target.ext.emotion = ours.ext.emotion;
-  }
+  target.data = isArray(target.data) ? target.data : [];
+  mergeDataBlocks(target.data, ourContent.data);
 
-  // Mirror IAB Content Taxonomy 3.0 (segtax 7) segment ids into the standard
-  // content.cat[]/content.cattax field so buyers reading either content.data[]
-  // or content.cat[] see the same signal. Collected from `ours.data` (the
-  // enrichment's own blocks) rather than the merged `target.data` — the
-  // latter may also contain an unrelated provider's segtax:7 block already
-  // set by the publisher, which must never be blended into StackUp's mirror.
-  // Never invents or maps ids — only copies what the API already returned.
-  // By default (allowCategoryOverwrite false) this is skipped entirely if the
-  // publisher already declared content.cat, or declared a cattax that isn't
-  // CT3.0, so it never conflates taxonomies or clobbers publisher-set FPD
-  // unless explicitly opted in via params.overwritePublisherCategories.
-  const ct3Ids = collectSegtaxIds(ours.data, CT3_SEGTAX);
-  const catIsFree = allowCategoryOverwrite || !(isArray(target.cat) && target.cat.length);
-  const cattaxIsFree =
-    allowCategoryOverwrite || !target.cattax || target.cattax === CT3_SEGTAX;
-  if (ct3Ids.length && catIsFree && cattaxIsFree) {
-    target.cattax = CT3_SEGTAX;
-    target.cat = ct3Ids;
+  if (ourContent.ext !== undefined) {
+    target.ext = mergeContentExtPublisherFirst(target.ext, ourContent.ext);
   }
-}
-
-// Mirrors IAB Content Taxonomy 3.0 (segtax 7) segment ids from the
-// enrichment's own content blocks into the standard site.pagecat[]/site.cattax
-// field, with the same publisher-wins guards as the content.cat mirror above.
-// Sourced from `ours` (StackUP's own blocks), not the merged site.content.data,
-// so an unrelated provider's pre-existing segtax:7 block is never mixed in.
-function mergeSitePagecat(
-  global: any,
-  ours: any,
-  allowCategoryOverwrite: boolean
-): void {
-  const ct3Ids = collectSegtaxIds(ours.data, CT3_SEGTAX);
-  if (!ct3Ids.length) return;
-  global.site = global.site ?? {};
-
-  // site.cattax applies to cat[], sectioncat[], and pagecat[] together
-  // (defaulting to 1, IAB Content Category Taxonomy 1.0, when omitted), so
-  // a publisher-set site.cat/site.sectioncat with no explicit cattax must
-  // block this mirror too, or setting cattax here would silently reinterpret
-  // those untouched fields' ids as CT3.0.
-  const hasPublisherCategories = ["cat", "sectioncat", "pagecat"].some(
-    (field) => isArray(global.site[field]) && global.site[field].length
-  );
-  if (!allowCategoryOverwrite && hasPublisherCategories) return;
-  if (
-    !allowCategoryOverwrite &&
-    global.site.cattax &&
-    global.site.cattax !== CT3_SEGTAX
-  ) {
-    return;
-  }
-  global.site.cattax = CT3_SEGTAX;
-  global.site.pagecat = ct3Ids;
 }
 
 function mergeUserData(global: any, ours: any[]): void {
   global.user = global.user ?? {};
-  global.user.data = global.user.data ?? [];
+  global.user.data = isArray(global.user.data) ? global.user.data : [];
 
+  mergeDataBlocks(global.user.data, ours);
+}
+
+function mergeDataBlocks(target: any[], ours: any[]): void {
   for (const ourBlock of ours) {
-    const existingIdx = global.user.data.findIndex(
-      (b: any) => blockKey(b) === blockKey(ourBlock)
+    const dedupedOurs = dedupeSegments(ourBlock);
+    const key = dataBlockKey(dedupedOurs);
+    const existingIdx = target.findIndex(
+      (block: any) => dataBlockKey(block) === key
     );
     if (existingIdx >= 0) {
-      global.user.data[existingIdx] = dedupeSegments(ourBlock);
+      target[existingIdx] = mergeDataBlock(target[existingIdx], dedupedOurs);
     } else {
-      global.user.data.push(dedupeSegments(ourBlock));
+      target.push(dedupedOurs);
     }
   }
 }
 
-// Identity key for an ORTB data block. StackUP delivers several blocks under a
-// single provider `name`, distinguished only by taxonomy (`ext.segtax`) and,
-// for user data, `ext.stackup.dimension` (profile, purchase_intent, ...).
-// Merging/de-duping on `name` alone collapses these siblings, so the key
-// combines all three.
-function blockKey(block: any): string {
-  const name = block?.name ?? "";
-  const segtax = block?.ext?.segtax ?? "";
-  const dimension = block?.ext?.stackup?.dimension ?? "";
-  return `${name}|${segtax}|${dimension}`;
+function dataBlockKey(block: any): string {
+  const name = isStr(block?.name) ? block.name : "";
+  const segtax = isNumber(block?.ext?.segtax) ? block.ext.segtax : "";
+  const dimension = isStr(block?.ext?.stackup?.dimension)
+    ? block.ext.stackup.dimension
+    : "";
+  return `${name}\u0000${segtax}\u0000${dimension}`;
 }
 
-// Collects deduped segment ids from data blocks tagged with the given segtax.
-// Used to mirror already backend-classified categories into flat cat/pagecat
-// fields — never computes or guesses an id itself.
-function collectSegtaxIds(blocks: any[] | undefined, segtax: number): string[] {
-  const ids = new Set<string>();
-  for (const block of blocks ?? []) {
-    if (block?.ext?.segtax !== segtax) continue;
-    for (const seg of block.segment ?? []) ids.add(seg.id);
+function mergeDataBlock(publisherBlock: any, stackupBlock: any): any {
+  const publisher = dedupeSegments(publisherBlock);
+  const stackup = dedupeSegments(stackupBlock);
+  const segments = [...publisher.segment];
+  const publisherIds = new Set(segments.map((segment: any) => segment.id));
+  for (const segment of stackup.segment) {
+    if (!publisherIds.has(segment.id)) {
+      publisherIds.add(segment.id);
+      segments.push(segment);
+    }
   }
-  return Array.from(ids);
+  return {
+    ...stackup,
+    ...publisher,
+    ext: mergeDataBlockExtPublisherFirst(publisher.ext, stackup.ext),
+    segment: segments,
+  };
+}
+
+function mergeDataBlockExtPublisherFirst(publisher: any, stackup: any): any {
+  if (!isPlainObject(stackup)) return publisher;
+  if (!isPlainObject(publisher)) return stackup;
+
+  const merged = { ...stackup, ...publisher };
+  if (isPlainObject(stackup.stackup) && isPlainObject(publisher.stackup)) {
+    merged.stackup = { ...stackup.stackup, ...publisher.stackup };
+  }
+  return merged;
 }
 
 function dedupeSegments(block: any): any {
   const byId = new Map<string, any>();
-  for (const seg of block.segment) {
+  for (const seg of isArray(block?.segment) ? block.segment : []) {
     const existing = byId.get(seg.id);
     if (!existing) {
       byId.set(seg.id, seg);
@@ -797,6 +742,17 @@ function dedupeSegments(block: any): any {
     if (ourConf > theirConf) byId.set(seg.id, seg);
   }
   return { ...block, segment: Array.from(byId.values()) };
+}
+
+function mergeContentExtPublisherFirst(publisher: any, stackup: any): any {
+  if (!isPlainObject(stackup)) return publisher;
+  if (!isPlainObject(publisher)) return stackup;
+
+  const merged = { ...stackup, ...publisher };
+  if (isPlainObject(stackup.stackup) && isPlainObject(publisher.stackup)) {
+    merged.stackup = { ...stackup.stackup, ...publisher.stackup };
+  }
+  return merged;
 }
 
 function registerSubmodule() {

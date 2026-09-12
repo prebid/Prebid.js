@@ -10,12 +10,11 @@ Maintainers: anton@stackup-ai.com, chen@stackup-ai.com, nicolas@stackup-ai.com
 
 The Stack Up RTD module enriches Prebid.js bid requests with contextual and audience segments derived from the content of the current page. Before the auction fires, the module calls the Stack Up enrichment API (or reads from a `sessionStorage` cache on revisit) and merges the response into the global `ortb2` fragments:
 
-- **`site.content.data`** — Content segments (`segtax 502`, or `segtax 7` for IAB Content Taxonomy 3.0) such as topics, brand-safety and emotion signals attached to the article, plus publisher first-party signals (`segtax 600`).
-- **`user.data`** — Audience segments inferred from contextual signals: IAB Audience (`segtax 4`) and legacy Stack Up Audience Taxonomy 1.0 (`segtax 501`).
+- **`site.content.data`** — IAB Content Taxonomy 2.2 (`segtax: 6`) and 3.1 (`segtax: 9`) segments, untagged Stack Up proprietary segments, and optional publisher profile data (`segtax: 600`).
+- **`site.cattax` / `site.pagecat`** — the matching Content Taxonomy 2.2 page category when one is available.
+- **`user.data`** — IAB Audience Taxonomy segments (`segtax: 4`) and untagged Stack Up proprietary audience segments inferred from contextual signals.
 
-Any block with a valid shape (string `name`, a numeric `segtax`, and well-formed `segment[]` entries) is merged regardless of its taxonomy — StackUp can introduce new taxonomies from the backend alone, without a client update. A malformed block causes the whole enrichment response to be rejected. Multiple blocks sharing a provider `name` are kept as distinct entries — they are de-duplicated by `name` + `segtax` + `dimension`, not by `name` alone.
-
-When the API returns an IAB Content Taxonomy 3.0 (`segtax 7`) block, its category ids are also mirrored into the standard `site.content.cat`/`site.content.cattax` and `site.pagecat`/`site.cattax` fields, so buyers reading either the flat category fields or `content.data[]` see the same signal. By default the mirror never overwrites a value the publisher already set — see `params.overwritePublisherCategories` below.
+During migration the module also accepts the legacy Stack Up content and audience values (`segtax: 502` and `segtax: 501`) from cached or not-yet-rebuilt enrichment responses.
 
 Every bidder that participates in the auction receives these segments in its `ortb2` object. No cookies, fingerprints, or user identifiers are transmitted to the Stack Up API — only a URL path and publisher domain.
 
@@ -82,7 +81,6 @@ pbjs.setConfig({
 | `params.cache.storage`    |  optional   | String  | Cache backend: `'session'` for browser sessionStorage or `'memory'` for in-process cache                                    |                    `'session'`                    |
 | `params.debug`            |  optional   | Boolean | Enable verbose `[stackupRtd]` console logging                                                                               |                      `false`                      |
 | `params.debugDomain`      |  optional   | String  | Override the domain sent to the API when `debug: true`                                                                      |                    page domain                    |
-| `params.overwritePublisherCategories` | optional | Boolean | Let StackUp's IAB Content Taxonomy 3.0 classification overwrite a publisher-supplied `content.cat`/`site.pagecat`/`cattax` instead of deferring to it | `false` |
 
 ## Consent
 
@@ -129,70 +127,57 @@ After a successful enrichment the following fields are merged into the global `o
 ```json
 {
   "site": {
+    "cattax": 2,
+    "pagecat": ["IAB19-6"],
     "content": {
-      "id": "<articleId>",
       "title": "<article title>",
-      "cat": ["<CT3.0 id>"],
-      "cattax": 7,
       "data": [
         {
           "name": "data.stackup-ai.com",
-          "ext": { "segtax": 502 },
-          "segment": [
-            {
-              "id": "IAB-123",
-              "name": "Technology",
-              "ext": { "confidence": 0.95 }
-            }
-          ]
+          "ext": { "segtax": 6 },
+          "segment": [{ "id": "324" }, { "id": "328" }]
         },
         {
           "name": "data.stackup-ai.com",
-          "ext": { "segtax": 7 },
-          "segment": [{ "id": "<CT3.0 id>", "name": "<CT3.0 name>" }]
+          "ext": { "segtax": 9 },
+          "segment": [{ "id": "602" }, { "id": "607" }]
         },
         {
-          "name": "<publisher-domain>",
-          "ext": { "segtax": 600 },
+          "name": "data.stackup-ai.com",
           "segment": [
-            { "id": "cpm_tier", "name": "cpm_tier", "value": "Mid-range" }
+            { "id": "stackup:content:smartwatches" }
           ]
         }
       ],
       "ext": {
-        "brand_safety": {},
-        "emotion": {}
+        "stackup": {
+          "content_suitability": {
+            "framework": "garm",
+            "floor_violation": 0,
+            "risk": "low"
+          },
+          "emotion": {}
+        }
       }
-    },
-    "pagecat": ["<CT3.0 id>"],
-    "cattax": 7
+    }
   },
   "user": {
     "data": [
       {
         "name": "data.stackup-ai.com",
-        "ext": { "segtax": 501 },
-        "segment": [
-          {
-            "id": "AUD-456",
-            "name": "Tech Enthusiasts",
-            "ext": { "confidence": 0.87 }
-          }
-        ]
+        "ext": { "segtax": 4 },
+        "segment": [{ "id": "AUD-456" }]
       },
       {
         "name": "data.stackup-ai.com",
-        "ext": { "segtax": 4 },
-        "segment": [{ "id": "IAB-1", "name": "Automotive" }]
+        "segment": [{ "id": "stackup:interests:technology" }]
       }
     ]
   }
 }
 ```
 
-`site.content.data` carries content segments (`segtax 502` and `segtax 7` IAB Content Taxonomy 3.0) and publisher first-party signals (`segtax 600`); `user.data` carries audience segments (`segtax 4` IAB Audience and `segtax 501` legacy Stack Up). A block with any other, vendor-defined `segtax` is still merged as long as it is shape-valid — only a malformed block (not an unrecognised taxonomy) causes the whole response to be rejected. `site.content.ext.brand_safety` and `site.content.ext.emotion` are optional fields populated when the API returns them. Existing publisher values in `ext` are preserved — the module only fills fields that are absent.
-
-When a `segtax 7` block is present, its ids are also copied into `site.content.cat`/`site.content.cattax` and `site.pagecat`/`site.cattax`. This mirror only fills those fields if the publisher hasn't already set them (or set `params.overwritePublisherCategories: true`) — it never invents or maps ids itself, only relays what the enrichment API already classified.
+Data blocks are matched by `name` plus `ext.segtax`, so the 2.2 and 3.1 blocks remain separate. Matching blocks are unioned by `segment[].id`; publisher-provided segment fields win on an ID collision. Existing publisher `site.cattax`, `site.pagecat`, and content extension values are preserved. The resolved URL path is used for the API lookup and cache key, but is not synthesized into `site.content.id`.
 
 ## Integration Example
 
