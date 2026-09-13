@@ -75,6 +75,12 @@ export function checkAndRun(globalVarName, load) {
     window[globalVarName] = window[globalVarName] || {};
     window[globalVarName].__loading = true;
     return load()
+      .catch((reason) => {
+        // A successfully loaded core chunk claims the global before the remaining chunks settle.
+        // Release that claim when another chunk fails so a corrected bundle load can retry.
+        delete window[globalVarName].libLoaded;
+        throw reason;
+      })
       .finally(() => {
         delete window[globalVarName].__loading;
       }).then(() => {

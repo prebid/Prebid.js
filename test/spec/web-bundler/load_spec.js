@@ -137,6 +137,21 @@ describe('web bundler load utils', () => {
       expect(window.pbGlobal.__loading).to.not.exist;
     });
 
+    it('should permit a retry when a partial load claimed the global', async () => {
+      const failure = new Error('chunk failed');
+      await checkAndRun('pbGlobal', () => Promise.resolve().then(() => {
+        window.pbGlobal.libLoaded = true;
+        throw failure;
+      })).catch(() => {});
+
+      window.pbGlobal.processQueue = sinon.stub();
+      load.returns(Promise.resolve());
+      await checkAndRun('pbGlobal', load);
+
+      sinon.assert.calledOnce(load);
+      sinon.assert.calledOnce(window.pbGlobal.processQueue);
+    });
+
     it('should run load and call processQueue when it resolves', async () => {
       window.pbGlobal.processQueue = sinon.stub();
       load.returns(Promise.resolve());
