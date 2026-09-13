@@ -7,10 +7,9 @@ const options = parseParams(new URL(document.currentScript.src).search);
 
 // webpack jsonp chunks install themselves into currentScript.__pbjsScope if present -
 // this allows isolating from other prebid instances on the page
-const scope = document.currentScript.__pbjsScope = {};
-
 const global = options.buildOptions.pbGlobal;
-checkAndRun(global, () => {
+checkAndRun(global, (scope) => {
+  document.currentScript.__pbjsScope = scope;
   injectBuildOptions(options.buildOptions);
   const loader = scriptLoader(options.buildOptions.distUrlBase, scope);
   return getManifest(loader, manifestChecksum)

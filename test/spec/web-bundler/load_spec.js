@@ -1,4 +1,4 @@
-import { checkAndRun, getManifest, loadModules } from 'web-bundler/load.mjs';
+import { checkAndRun, getManifest, loadModules, scriptLoader } from 'web-bundler/load.mjs';
 
 describe('web bundler load utils', () => {
   let loader, success, fail;
@@ -7,6 +7,33 @@ describe('web bundler load utils', () => {
       success = resolve;
       fail = reject;
     }));
+  });
+
+  describe('scriptLoader', () => {
+    let appendChild;
+    beforeEach(() => {
+      appendChild = sinon.stub(document.head, 'appendChild');
+    });
+    afterEach(() => {
+      appendChild.restore();
+    });
+
+    it('should reuse successful chunks and retry failed chunks in the same scope', async () => {
+      const scope = {};
+      const firstLoader = scriptLoader('/dist/', scope);
+      const successful = firstLoader('core.js', 'core-checksum');
+      appendChild.firstCall.args[0].onload();
+      await successful;
+
+      const retryLoader = scriptLoader('/dist/', scope);
+      expect(retryLoader('core.js', 'core-checksum')).to.equal(successful);
+      const failed = retryLoader('module.js', 'module-checksum');
+      appendChild.secondCall.args[0].onerror(new Error('chunk failed'));
+      await failed.catch(() => {});
+
+      retryLoader('module.js', 'module-checksum');
+      sinon.assert.callCount(appendChild, 3);
+    });
   });
   describe('getManifest', () => {
     it('should load manifest.js as JSONP', async () => {
@@ -139,16 +166,19 @@ describe('web bundler load utils', () => {
 
     it('should permit a retry when a partial load claimed the global', async () => {
       const failure = new Error('chunk failed');
-      await checkAndRun('pbGlobal', () => Promise.resolve().then(() => {
+      let failedScope;
+      await checkAndRun('pbGlobal', (scope) => Promise.resolve().then(() => {
+        failedScope = scope;
         window.pbGlobal.libLoaded = true;
         throw failure;
       })).catch(() => {});
+      expect(window.pbGlobal.libLoaded).to.be.true;
 
       window.pbGlobal.processQueue = sinon.stub();
       load.returns(Promise.resolve());
       await checkAndRun('pbGlobal', load);
 
-      sinon.assert.calledOnce(load);
+      sinon.assert.calledOnceWithExactly(load, failedScope);
       sinon.assert.calledOnce(window.pbGlobal.processQueue);
     });
 
