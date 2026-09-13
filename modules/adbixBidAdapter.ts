@@ -65,7 +65,6 @@ function getBannerSizes(bid: AdbixBidRequest): Array<[number, number]> {
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  disclosureURL: 'local://modules/adbixBidAdapterDisclosure.json',
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function (bid: AdbixBidRequest): boolean {
