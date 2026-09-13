@@ -124,32 +124,31 @@ export function ortbConverter<B extends BidderCode>({
       return value;
     }
 
-    function container(source) {
-      const standardPrototype = Array.isArray(source) ? Array.prototype : Object.prototype;
-      const removableKeys = ['__proto__', 'prototype', 'constructor'].every(key => {
-        const descriptor = Object.getOwnPropertyDescriptor(source, key);
-        return !descriptor || descriptor.configurable;
-      });
-      return Object.getPrototypeOf(source) === standardPrototype && Object.isExtensible(source) && removableKeys
-        ? source
-        : (Array.isArray(source) ? [] : {});
+    function isUnsafeKey(key) {
+      return key === 'prototype' || Object.getOwnPropertyDescriptor(Object.prototype, key) != null;
     }
 
-    const sanitized = container(value);
+    function frame(source) {
+      const keys = Object.keys(source);
+      const standardPrototype = Array.isArray(source) ? Array.prototype : Object.prototype;
+      const canSanitizeInPlace = Object.getPrototypeOf(source) === standardPrototype && Object.isExtensible(source) &&
+        !keys.some(isUnsafeKey);
+      const target = canSanitizeInPlace
+        ? source
+        : (Array.isArray(source) ? [] : {});
+      return [source, target, keys];
+    }
+
+    const initial = frame(value);
+    const sanitized = initial[1];
     const seen = new WeakMap([[value, sanitized]]);
-    const pending = [[value, sanitized]];
+    const pending = [initial];
     while (pending.length) {
-      const [source, target] = pending.pop();
-      Object.keys(source).forEach(key => {
-        // These keys can turn otherwise ordinary recursive assignment into writes
-        // to an object's prototype. ORTB extension objects are untrusted too.
-        if (key === '__proto__' || key === 'prototype' || key === 'constructor') {
-          if (source === target) {
-            const descriptor = Object.getOwnPropertyDescriptor(source, key);
-            if (descriptor?.configurable) {
-              delete target[key];
-            }
-          }
+      const [source, target, keys] = pending.pop();
+      keys.forEach(key => {
+        // Inherited-property names can make ordinary recursive assignment descend
+        // into Object.prototype. ORTB extension objects are untrusted too.
+        if (isUnsafeKey(key)) {
           return;
         }
         const descriptor = Object.getOwnPropertyDescriptor(source, key);
@@ -163,9 +162,10 @@ export function ortbConverter<B extends BidderCode>({
         }
         let sanitizedChild = seen.get(child);
         if (!sanitizedChild) {
-          sanitizedChild = container(child);
+          const childFrame = frame(child);
+          sanitizedChild = childFrame[1];
           seen.set(child, sanitizedChild);
-          pending.push([child, sanitizedChild]);
+          pending.push(childFrame);
         }
         target[key] = sanitizedChild;
       });

@@ -169,6 +169,14 @@ describe('pbjs-ortb converter', () => {
     expect(Object.prototype).to.not.have.property('polluted');
   });
 
+  it('removes inherited-property merge gadgets before processing an ORTB response', () => {
+    const response = JSON.parse('{"seatbid":[{"bid":[{"impid":"imp0","hasOwnProperty":{"call":false}}]}]}');
+
+    expect(convertWithUnsafeProcessor(response).bids).to.have.lengthOf(1);
+    expect(Object.prototype.hasOwnProperty).to.not.have.own.property('call');
+    expect(() => Object.prototype.hasOwnProperty.call({}, 'property')).to.not.throw();
+  });
+
   it('preserves valid nested ORTB response data', () => {
     const response = {
       ...MOCK_ORTB_RESPONSE,
