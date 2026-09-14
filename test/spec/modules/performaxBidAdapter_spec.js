@@ -4,6 +4,10 @@ import * as utils from '../../../src/utils.js';
 import sinon from 'sinon';
 
 describe('Performax adapter', function () {
+  it('declares the px alias with Performax\'s GVL ID', function () {
+    expect(spec.aliases).to.deep.equal([{ code: 'px', gvlid: 732 }]);
+  });
+
   const bids = [{
     bidder: 'performax',
     params: {
