@@ -23,7 +23,11 @@ pbjs.setConfig({
       waitForIt: true,
       params: {
         timeout: 300,
-        telemetry: true
+        telemetry: true,
+        gamTargeting: {
+          includeAttestationId: true,
+          packages: ['VPP-V1']
+        }
       }
     }]
   }
@@ -35,8 +39,36 @@ pbjs.setConfig({
 | `timeout` | `300` | Provider deadline in milliseconds for WebCrypto hashing plus signal and JWKS reads. The effective budget is the smaller of this value and the RTD core `auctionDelay`. A provider with no RTD delay budget does not start asynchronous work. |
 | `telemetry` | unset | Set to `true` to emit diagnostic-only delivery events after the auction callback. |
 | `adoptionReporting` | `true` | Enables privacy-minimized, domain-level adoption reporting on consent-allowed signal lookups. Set to `false` to stop future adoption observations without changing auction behavior. |
+| `gamTargeting` | `false` | Ad server key-values for GAM line items. Either `false` or an object with the optional `includeAttestationId` boolean and the optional `packages` string array. See Targeting Contract V1. |
 
 The signal origin is not configurable. Lookups and telemetry use exactly `https://signals.encypher.com`.
+
+## Targeting Contract V1: GAM key-values
+
+With `gamTargeting` set to an object, the module implements the standard RTD `getTargetingData` hook, so Prebid's ad server targeting carries the result for each ad unit that reached a verified injection in that auction. The module makes no extra request and adds no auction delay.
+
+| Key | Value | Emitted when |
+| --- | --- | --- |
+| `encypher_verified` | `"1"` | The ad unit received `ortb2Imp.ext.c2pa` in this auction. |
+| `encypher_att` | attestation ID, the same value as `ortb2Imp.ext.c2pa.id` | `includeAttestationId` is `true` and the ID matches `[A-Za-z0-9_-]{1,32}`. |
+| `encypher_pkg` | array of publisher package codes, copied verbatim from `packages` | `packages` is non-empty. |
+
+Rules:
+
+- Absence is the negative signal. A miss, stale, revoked, invalid, or timed-out outcome emits nothing, and neither does an auction that a consent gate suppressed.
+- Targeting is per auction. A verified hit does not carry into the next auction for the same ad unit code.
+- Each `packages` entry must match `[A-Za-z0-9_-]{1,32}`. The module never derives package codes from provenance evidence.
+- A malformed `gamTargeting` value, an unknown key inside it, or a rejected package code logs one warning at `init` and leaves targeting off. Existing installs that omit the parameter see no behavior change.
+- The serialized key-value payload is at most 256 bytes per ad unit. On overflow the module drops `encypher_pkg`, then `encypher_att`, then `encypher_verified`. Only `encypher_pkg` is unbounded in practice, because the attestation ID is limited to 32 characters.
+- Keys and values are lowercase ASCII. No URL, digest, price, deal, or user value appears in targeting.
+
+## GAM line-item setup
+
+1. In Google Ad Manager, open Inventory, then Key-values, and create `encypher_verified` with the predefined value `1`. Create `encypher_att` as a freeform key only if you set `includeAttestationId`, and `encypher_pkg` with one predefined value per package code you configured.
+2. Register the keys with Prebid's ad server targeting for the GPT call. With `pbjs.setTargetingForGPTAsync()` the keys are applied automatically. With manual GPT code, read `pbjs.getAdserverTargetingForAdUnitCode(code)` after the auction and pass the values to `googletag.pubads().setTargeting`.
+3. Add `encypher_verified` is `1` to the line item's custom targeting. For a programmatic guaranteed or preferred deal, set the same custom targeting on the proposal line item; the key is ordinary GAM custom targeting and needs no buyer-side change.
+4. For lift measurement, duplicate the line item with `encypher_verified` is none of `1` as the negative control, and keep every other setting identical.
+5. Confirm delivery on a signed page and on an unsigned control page before raising the line item's priority. An unsigned page must show no `encypher_verified` value at all.
 
 ## `imp.ext.c2pa` data injected
 
@@ -101,7 +133,7 @@ The provider skips all work when COPPA applies, the US Privacy string records a 
 
 GPP consent is checked independently of the legacy US Privacy string. Applicable US national and state sections 7-12 block transmission on sale, sharing, targeted-advertising opt-outs, or GPC. Object and segmented section representations are supported. Unknown applicable sections, missing or malformed consent fields, and unresolved configured GPP consent fail closed. Only applicable sections are inspected; an exact `[-1]` applicable-section list means no GPP section applies. Other privacy gates still apply.
 
-Blocked calls complete the RTD callback without URL hashing, signal or JWKS requests, cached-signal injection, diagnostics, or adoption reporting. Ordinary auctions continue. Consent is checked again for every auction, including auctions that could otherwise reuse a cached signal.
+Blocked calls complete the RTD callback without URL hashing, signal or JWKS requests, cached-signal injection, diagnostics, or adoption reporting. A blocked auction also clears the ad server targeting memory for its ad units, so it emits no GAM key-value, and consent is checked again when targeting is requested. Ordinary auctions continue. Consent is checked again for every auction, including auctions that could otherwise reuse a cached signal.
 
 Allowed lookup requests disclose the canonical URL digest, canonical publisher hostname, and module version to the fixed signal authority. They do not upload the raw URL, page content, manifest, cookies, bids, prices, deals, or creatives. Requests omit browser credentials and referrers. The URL digest is not an anonymization guarantee; canonical URLs can contain visitor-specific query values.
 
