@@ -59,8 +59,10 @@ Rules:
 - Targeting is per auction. A verified hit does not carry into the next auction for the same ad unit code.
 - Each `packages` entry must match `[A-Za-z0-9_-]{1,32}`. The module never derives package codes from provenance evidence.
 - A malformed `gamTargeting` value, an unknown key inside it, or a rejected package code logs one warning at `init` and leaves targeting off. Existing installs that omit the parameter see no behavior change.
-- The serialized key-value payload is at most 256 bytes per ad unit. On overflow the module drops `encypher_pkg`, then `encypher_att`, then `encypher_verified`. Only `encypher_pkg` is unbounded in practice, because the attestation ID is limited to 32 characters.
-- Keys and values are lowercase ASCII. No URL, digest, price, deal, or user value appears in targeting.
+- The serialized key-value payload is at most 256 bytes per ad unit. On overflow the module drops `encypher_pkg`, then `encypher_att`, then `encypher_verified`. Only `encypher_pkg` can reach the cap in practice: with `encypher_pkg` gone the payload is at most 75 bytes, because the attestation ID is limited to 32 characters.
+- Keys are lowercase ASCII; values are ASCII. Package codes and attestation IDs may contain uppercase letters. No URL, digest, price, deal, or user value appears in targeting.
+
+On a page that calls `requestBids` more than once, clear the keys on the ad server slot before each set. Prebid's `auctionManager.getAdUnits()` returns the ad units of every retained auction, and `targeting.getAdUnitTargeting` reads `adserverTargeting` from all of them, so a verified earlier auction keeps supplying `encypher_verified` for the same ad unit code after a later auction missed. The module cannot correct this from `getTargetingData`: it returns no entry for the missed ad unit, and an empty value would reach the ad server as a present key with an empty string rather than an absent key.
 
 ## GAM line-item setup
 
