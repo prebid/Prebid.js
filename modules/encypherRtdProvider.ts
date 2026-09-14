@@ -434,7 +434,12 @@ function gamTargetingSettings(moduleConfig: RTDProviderConfig<'encypher'>): GamT
   return parseGamTargeting(params.gamTargeting);
 }
 
-/** Drop optional keys until the serialized payload fits the per-ad-unit cap. */
+/**
+ * Drop optional keys until the serialized payload fits the per-ad-unit cap.
+ * Only the `encypher_pkg` step is reachable in practice: without it the payload is at most
+ * 75 bytes, since `record.id` is limited to 32 characters. The later steps stay as a guard
+ * in case the contract admits a longer value.
+ */
 function fitTargetingCap(values: TargetingValues): TargetingValues | null {
   let dropIndex = 0;
   while (
