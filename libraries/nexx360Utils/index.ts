@@ -134,7 +134,7 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
     if (imp.video.w != null && imp.video.h != null) {
       const declaredPrimary = sizesToSizeTuples(playerSize)[0];
       if (!declaredPrimary || declaredPrimary[0] !== imp.video.w || declaredPrimary[1] !== imp.video.h) {
-        playerSize = [imp.video.w, imp.video.h];
+        playerSize = [[imp.video.w, imp.video.h]];
       }
     }
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { enrichImp } from '../../../../libraries/nexx360Utils/index.js';
+import { enrichImp } from '../../../../libraries/nexx360Utils';
 
 // Minimal bidRequest carrying the ad-unit level mediaTypes.video.
 const makeBidRequest = (video) => ({
@@ -13,14 +13,14 @@ describe('nexx360Utils enrichImp video.ext.playerSize', () => {
     // converter resolved 640x480 onto the imp, ad unit declared 854x480
     const imp = { video: { w: 640, h: 480 } };
     enrichImp(imp, makeBidRequest({ playerSize: [[854, 480]], context: 'instream' }));
-    expect(imp.video.ext.playerSize).to.deep.equal([640, 480]);
-    expect(imp.video.ext.playerSize).to.deep.equal([imp.video.w, imp.video.h]);
+    expect(imp.video.ext.playerSize).to.deep.equal([[640, 480]]);
+    expect(imp.video.ext.playerSize).to.deep.equal([[imp.video.w, imp.video.h]]);
   });
 
-  it('forwards a single declared size unchanged (established flat wire shape) when not overridden', () => {
+  it('forwards a single declared size unchanged when not overridden', () => {
     const imp = { video: { w: 640, h: 480 } };
-    enrichImp(imp, makeBidRequest({ playerSize: [640, 480] }));
-    expect(imp.video.ext.playerSize).to.deep.equal([640, 480]);
+    enrichImp(imp, makeBidRequest({ playerSize: [[640, 480]] }));
+    expect(imp.video.ext.playerSize).to.deep.equal([[640, 480]]);
   });
 
   it('forwards a multi-size declaration unchanged when not overridden', () => {
@@ -37,7 +37,7 @@ describe('nexx360Utils enrichImp video.ext.playerSize', () => {
 
   it('writes video.ext.context from mediaTypes.video.context', () => {
     const imp = { video: { w: 640, h: 480 } };
-    enrichImp(imp, makeBidRequest({ playerSize: [640, 480], context: 'outstream' }));
+    enrichImp(imp, makeBidRequest({ playerSize: [[640, 480]], context: 'outstream' }));
     expect(imp.video.ext.context).to.equal('outstream');
   });
 
