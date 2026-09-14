@@ -7,6 +7,7 @@ import {
   sha256,
 } from '../../../modules/encypherRtdProvider.js';
 import * as ajaxModule from 'src/ajax.js';
+import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
 import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
@@ -391,6 +392,32 @@ function utf8Chunks(text, chunkSizes = []) {
   });
   if (offset < bytes.byteLength) chunks.push(bytes.slice(offset));
   return chunks;
+}
+
+function getTargeting(adUnitCodes, params = {}, userConsent) {
+  return encypherSubmodule.getTargetingData(
+    adUnitCodes,
+    { params: Object.assign({ timeout: 300 }, params) },
+    userConsent,
+  );
+}
+
+function targetingBytes(values) {
+  return new TextEncoder().encode(JSON.stringify(values)).byteLength;
+}
+
+function packagesForTargetingBytes(target, attestationId) {
+  for (let count = 1; count <= 12; count += 1) {
+    for (let length = 1; length <= 32; length += 1) {
+      const packages = Array.from(
+        { length: count },
+        (_unused, index) => (index === count - 1 ? 'B'.repeat(length) : 'A'.repeat(32)),
+      );
+      const values = { encypher_verified: '1', encypher_att: attestationId, encypher_pkg: packages };
+      if (targetingBytes(values) === target) return packages;
+    }
+  }
+  throw new Error('could not construct a package list at ' + target + ' bytes');
 }
 
 describe('encypherRtdProvider decision-network v1', () => {
@@ -961,6 +988,28 @@ describe('encypherRtdProvider decision-network v1', () => {
     pendingLookup().respond(204, HEADERS, null);
     await noContent.completion;
     assertNoInjection(noContent.auction);
+  });
+
+  it('fails open when a 200 lookup body is not JSON', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    pendingLookup().respond(200, HEADERS, '<html>proxy notice</html>');
+    await run.completion;
+    assert.strictEqual(run.callbackCount(), 1);
+    assertNoInjection(run.auction);
+  });
+
+  it('rejects a ready decision below the page dataset floor', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const floor = beginAuction();
+    await respondDecision(miss('miss', 30));
+    await floor.completion;
+
+    const belowFloor = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 29));
+    await belowFloor.completion;
+    assertNoInjection(belowFloor.auction);
+    assert.strictEqual(server.requests.some(request => request.url === PINNED_JWKS_URL), false);
   });
 
   it('keeps the page dataset floor and stale barrier across canonical URL hashes', async () => {
@@ -1998,5 +2047,252 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertNoInjection(run.auction);
     assert.deepStrictEqual(decodeClaims(PAGE_ATT).record_revision, 7);
     assert.strictEqual(server.requests.some(request => request.url.includes('/.well-known/jwks.json')), false);
+  });
+
+  it('emits Targeting Contract V1 keys only for ad units injected in this auction', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 200));
+    await run.completion;
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle', 'sidebar'], { gamTargeting: {} }), {
+      leaderboard: { encypher_verified: '1' },
+      rectangle: { encypher_verified: '1' },
+    });
+  });
+
+  it('emits the attestation id only when includeAttestationId is true', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 201));
+    await run.completion;
+    assert.strictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa.id, 'epa_s');
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true } }), {
+      leaderboard: { encypher_verified: '1', encypher_att: 'epa_s' },
+    });
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: false } }), {
+      leaderboard: { encypher_verified: '1' },
+    });
+  });
+
+  it('copies configured package codes verbatim and omits the key when none are configured', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 202));
+    await run.completion;
+    const packages = ['VPP-V1', 'house_2026'];
+    const emitted = getTargeting(['leaderboard'], { gamTargeting: { packages } });
+    assert.deepStrictEqual(emitted, {
+      leaderboard: { encypher_verified: '1', encypher_pkg: ['VPP-V1', 'house_2026'] },
+    });
+    emitted.leaderboard.encypher_pkg.push('injected-by-caller');
+    assert.deepStrictEqual(packages, ['VPP-V1', 'house_2026'], 'publisher configuration must not be mutable through targeting');
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { packages: [] } }), {
+      leaderboard: { encypher_verified: '1' },
+    });
+  });
+
+  it('omits the attestation id when the record id is not GAM-safe ASCII', async () => {
+    sandbox.stub(window.crypto.subtle, 'importKey').resolves({});
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    addCanonical(STORY_URL, cleanups);
+    const spacedId = recordWithClaims(
+      Object.assign({}, STORY_SIGNAL, { id: 'epa s' }),
+      claims => { claims.sub = 'epa s'; },
+    );
+    const run = beginAuction();
+    await respondDecision(ready(spacedId, 203));
+    await run.completion;
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, spacedId);
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true } }), {
+      leaderboard: { encypher_verified: '1' },
+    });
+  });
+
+  [
+    { name: 'miss', envelope: miss('miss', 204) },
+    { name: 'revoked', envelope: miss('revoked', 205) },
+    { name: 'stale', envelope: miss('stale', 206) },
+    { name: 'invalid', envelope: ready(Object.assign({}, STORY_SIGNAL, { att: 'not.a.jws' }), 207) },
+  ].forEach(testCase => {
+    it('emits no targeting for the ' + testCase.name + ' outcome', async () => {
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      await respondDecision(testCase.envelope);
+      await run.completion;
+      assertNoInjection(run.auction);
+      assert.deepStrictEqual(
+        getTargeting(['leaderboard', 'rectangle'], {
+          gamTargeting: { includeAttestationId: true, packages: ['VPP-V1'] },
+        }),
+        {},
+      );
+    });
+  });
+
+  it('emits no targeting for the timeout outcome', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction({ timeout: 100 });
+    clock.tick(100);
+    await run.completion;
+    assertNoInjection(run.auction);
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+  });
+
+  it('emits no targeting for an auction the module does not own', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction({}, makeAuction(), undefined, false);
+    await run.completion;
+    assertNoInjection(run.auction);
+    assert.strictEqual(server.requests.length, 0);
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+  });
+
+  it('keeps a 256-byte payload and drops packages first above the cap', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const atCap = packagesForTargetingBytes(256, 'epa_s');
+    const overCap = packagesForTargetingBytes(257, 'epa_s');
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 208));
+    await run.completion;
+
+    const fits = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: atCap } });
+    assert.deepStrictEqual(fits, {
+      leaderboard: { encypher_verified: '1', encypher_att: 'epa_s', encypher_pkg: atCap },
+    });
+    assert.strictEqual(targetingBytes(fits.leaderboard), 256);
+
+    const dropped = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: overCap } });
+    assert.deepStrictEqual(dropped, {
+      leaderboard: { encypher_verified: '1', encypher_att: 'epa_s' },
+    });
+    assert.strictEqual(targetingBytes(dropped.leaderboard) <= 256, true);
+  });
+
+  it('emits no targeting for an auction that consent suppressed', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const allowed = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 209));
+    await allowed.completion;
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), {
+      leaderboard: { encypher_verified: '1' },
+    });
+
+    const blocked = beginAuction({}, makeAuction(), { coppa: true, gdpr: null, usp: null, gpp: null });
+    await blocked.completion;
+    assertNoInjection(blocked.auction);
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+  });
+
+  it('emits no targeting when consent no longer permits transmission at auction end', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 210));
+    await run.completion;
+    assert.deepStrictEqual(
+      getTargeting(['leaderboard'], { gamTargeting: {} }, { coppa: false, gdpr: null, usp: '1YYN', gpp: null }),
+      {},
+    );
+  });
+
+  it('emits nothing when gamTargeting is unset or false', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 211));
+    await run.completion;
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle']), {});
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: false }), {});
+  });
+
+  [
+    ['boolean true', true],
+    ['an array', []],
+    ['null', null],
+    ['an unknown key', { packages: ['VPP-V1'], segment: 'sports' }],
+    ['a non-boolean includeAttestationId', { includeAttestationId: 'yes' }],
+    ['non-array packages', { packages: 'VPP-V1' }],
+    ['a package code with a space', { packages: ['VPP V1'] }],
+    ['an empty package code', { packages: [''] }],
+    ['a 33-character package code', { packages: ['A'.repeat(33)] }],
+    ['a non-string package code', { packages: [1] }],
+  ].forEach(([name, gamTargeting], index) => {
+    it('warns at init and emits nothing for ' + name, async () => {
+      const warn = sandbox.stub(utils, 'logWarn');
+      assert.strictEqual(encypherSubmodule.init({ params: { gamTargeting } }), true);
+      assert.strictEqual(warn.callCount, 1);
+      assert.strictEqual(warn.firstCall.args[0].includes('gamTargeting'), true);
+
+      addCanonical(STORY_URL, cleanups);
+      const run = beginAuction();
+      await respondDecision(ready(STORY_SIGNAL, 212 + index));
+      await run.completion;
+      assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+      assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting }), {});
+    });
+  });
+
+  it('does not warn for absent, disabled, or accepted gamTargeting values', () => {
+    const warn = sandbox.stub(utils, 'logWarn');
+    [
+      undefined,
+      false,
+      {},
+      { includeAttestationId: true },
+      { includeAttestationId: false, packages: [] },
+      { packages: ['VPP-V1', 'A_b-9', 'A'.repeat(32)] },
+    ].forEach(gamTargeting => {
+      assert.strictEqual(encypherSubmodule.init({ params: { gamTargeting } }), true);
+    });
+    assert.strictEqual(encypherSubmodule.init({}), true);
+    assert.strictEqual(warn.callCount, 0);
+  });
+
+  it('does not leak a previous auction hit into the next auction', async () => {
+    const canonical = addCanonical(STORY_URL, cleanups);
+    const hit = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 230));
+    await hit.completion;
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {
+      leaderboard: { encypher_verified: '1' },
+      rectangle: { encypher_verified: '1' },
+    });
+
+    canonical.href = PAGE_URL;
+    const revoked = beginAuction();
+    await respondDecision(miss('revoked', 231));
+    await revoked.completion;
+    assertNoInjection(revoked.auction);
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+  });
+
+  it('places the V1 keys on auction ad units through the RTD core', async () => {
+    addCanonical(STORY_URL, cleanups);
+    try {
+      configureActualRtd({
+        auctionDelay: 300,
+        dataProviders: [{
+          name: MODULE_NAME,
+          waitForIt: true,
+          params: { timeout: 300, gamTargeting: { includeAttestationId: true, packages: ['VPP-V1'] } },
+        }],
+      });
+      const run = beginAuction();
+      await respondDecision(ready(STORY_SIGNAL, 232));
+      await run.completion;
+      const adUnits = rtdModule.getAdUnitTargeting({
+        adUnitCodes: ['leaderboard'],
+        adUnits: [{ code: 'leaderboard' }],
+      });
+      assert.deepStrictEqual(adUnits[0].adserverTargeting, {
+        encypher_verified: '1',
+        encypher_att: 'epa_s',
+        encypher_pkg: ['VPP-V1'],
+      });
+    } finally {
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      config.resetConfig();
+    }
   });
 });
