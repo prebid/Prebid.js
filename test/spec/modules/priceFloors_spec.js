@@ -2288,6 +2288,17 @@ describe('the price floors module', function () {
       expect(reject.calledOnce).to.be.true;
       expect(returnedBidResponse).to.not.exist;
     });
+    it('does not enforce floorMin against a bid when the matching rule explicitly sets a null floor', function () {
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      // floorMin is a safety-net minimum; a null rule value means "no floor for this match" and should
+      // take precedence, exactly as it already does for getFloor() (see 'setting null as rule value' tests)
+      _floorDataForAuction[AUCTION_ID].data.floorMin = 5;
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': null };
+      runBidResponse();
+      expect(reject.called).to.be.false;
+      expect(returnedBidResponse).to.exist;
+      expect(returnedBidResponse).to.not.haveOwnProperty('floorData');
+    });
     it('enforces floors for all bidders by default', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
       _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };

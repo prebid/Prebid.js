@@ -8,6 +8,7 @@ import { Nexx360ImpressionAuction, Nexx360ServerAuction } from '../libraries/nex
 
 const analyticsType = 'endpoint';
 const ANALYTICS_CODE = 'nexx360';
+const GVLID = 965;
 const DEFAULT_ENDPOINT = 'https://monitoring.nexx360.io';
 
 const {
@@ -782,6 +783,7 @@ nexx360AnalyticsAdapter.enableAnalytics = function(config: { options?: Partial<N
 adapterManager.registerAnalyticsAdapter({
   adapter: nexx360AnalyticsAdapter,
   code: ANALYTICS_CODE,
+  gvlid: GVLID,
 });
 
 export default nexx360AnalyticsAdapter;

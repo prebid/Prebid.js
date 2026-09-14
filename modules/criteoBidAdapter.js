@@ -260,6 +260,10 @@ export const spec = {
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
 
+      function cleanupGumMessageHandler() {
+        window.removeEventListener('message', handleGumMessage, true);
+      }
+
       function handleGumMessage(event) {
         if (!event.data || event.origin !== 'https://gum.criteo.com') {
           return;
@@ -269,7 +273,7 @@ export const spec = {
           return;
         }
 
-        window.removeEventListener('message', handleGumMessage, true);
+        cleanupGumMessageHandler();
 
         event.stopImmediatePropagation();
 
@@ -288,14 +292,15 @@ export const spec = {
         }
       }
 
-      window.removeEventListener('message', handleGumMessage, true);
+      cleanupGumMessageHandler();
       window.addEventListener('message', handleGumMessage, true);
 
       const jsonHashSerialized = JSON.stringify(jsonHash).replace(/"/g, '%22');
 
       return [{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`
+        url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`,
+        onCleanup: cleanupGumMessageHandler
       }];
     } else if (syncOptions.pixelEnabled && hasPurpose1Consent(gdprConsent)) {
       const queryParams = [];

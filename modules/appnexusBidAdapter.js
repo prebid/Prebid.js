@@ -40,6 +40,8 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./appnexusBidAdapter.d.ts').AppnexusBidderParams} AppnexusBidderParams
+ * @typedef {BidRequest & {params: AppnexusBidderParams}} AppnexusBidRequest
  */
 
 const BIDDER_CODE = 'appnexus';
@@ -132,7 +134,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bid The bid to validate.
+   * @param {AppnexusBidRequest} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {

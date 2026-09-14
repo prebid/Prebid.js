@@ -452,14 +452,14 @@ describe('adapterManager tests', function () {
     describe('triggerBilling', () => {
       beforeEach(() => {
         criteoSpec.onBidBillable = sinon.spy();
-        sandbox.stub(utils.internal, 'triggerPixel');
+        sandbox.stub(utils, 'politeTriggerPixel');
       });
       it('should fire impression pixels from eventtrackers', () => {
         bids[0].eventtrackers = [
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'tracker' },
         ];
         adapterManager.triggerBilling(bids[0]);
-        sinon.assert.calledWith(utils.internal.triggerPixel, 'tracker');
+        sinon.assert.calledWith(utils.politeTriggerPixel, 'tracker');
       });
 
       it('should NOT fire non-impression or non-pixel trackers', () => {
@@ -468,7 +468,7 @@ describe('adapterManager tests', function () {
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'ignored' },
         ];
         adapterManager.triggerBilling(bids[0]);
-        sinon.assert.notCalled(utils.internal.triggerPixel);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
       });
       describe('on client bids', () => {
         it('should call bidder\'s onBidBillable', () => {

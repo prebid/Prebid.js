@@ -37,6 +37,11 @@ export const spec = {
       'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
 
+    const schain = bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      request.schain = schain;
+    }
+
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent;
@@ -55,6 +60,7 @@ export const spec = {
       if (i === 0) adUrl = getAdUrlByRegion(bid);
 
       const traff = bid.params.traffic || BANNER;
+
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,
@@ -62,10 +68,6 @@ export const spec = {
         traffic: traff,
         publisherId: bid.params.accountid
       });
-      const schain = bid?.ortb2?.source?.ext?.schain;
-      if (schain) {
-        placements.schain = schain;
-      }
     }
 
     return {
