@@ -177,7 +177,7 @@ After a successful enrichment the following fields are merged into the global `o
 }
 ```
 
-Data blocks are matched by `name` plus `ext.segtax`, so the 2.2 and 3.1 blocks remain separate. Matching blocks are unioned by `segment[].id`; publisher-provided segment fields win on an ID collision. Existing publisher `site.cattax`, `site.pagecat`, and content extension values are preserved. The resolved URL path is used for the API lookup and cache key, but is not synthesized into `site.content.id`.
+Data blocks are matched by `name` plus `ext.segtax`, so the 2.2 and 3.1 blocks remain separate. Matching blocks are unioned by `segment[].id`; publisher-provided segment fields win on an ID collision. Existing publisher `site.cattax`, `site.pagecat`, and content extension values are preserved. The `site.cattax`/`site.pagecat` pair is copied only when the enrichment response carries both halves and the publisher has declared no `site.cat`, `site.sectioncat`, or `site.pagecat` of their own — one `site.cattax` governs all three arrays, so a partial copy would reinterpret category ids the module never set. The resolved URL path is used for the API lookup and cache key, but is not synthesized into `site.content.id`.
 
 ## Integration Example
 

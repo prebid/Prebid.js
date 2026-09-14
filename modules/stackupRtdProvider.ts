@@ -664,23 +664,29 @@ function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
   }
 }
 
-// One `site.cattax` declares the taxonomy of `cat[]`, `sectioncat[]` and
+// `site.cattax` declares the taxonomy of `cat[]`, `sectioncat[]` and
 // `pagecat[]` at once, and is read as 1 (IAB Content Category Taxonomy 1.0)
-// when omitted. Adopting StackUp's taxonomy next to a publisher `cat` or
-// `sectioncat` would therefore relabel ids the module never set, so any
-// publisher-declared site category blocks the copy — not just `pagecat`.
+// when omitted. The pair is therefore only safe to adopt when both of these
+// hold:
+//   - the response carries both halves — a lone `pagecat` would be read under
+//     the default taxonomy rather than StackUp's, and a lone `cattax` would
+//     relabel categories we did not supply;
+//   - the publisher declared no site categories at all — writing our `cattax`
+//     alongside a publisher `cat`/`sectioncat`/`pagecat` would silently
+//     reinterpret their ids, even though those arrays are left untouched.
 function mergeSiteCategories(
   site: any,
   ours: EnrichmentSnapshot["site"]
 ): void {
+  if (ours.cattax === undefined || ours.pagecat === undefined) return;
   if (site.cattax !== undefined) return;
   const publisherHasCategories = SITE_CATEGORY_FIELDS.some(
     (field) => isArray(site[field]) && site[field].length
   );
   if (publisherHasCategories) return;
 
-  if (ours.cattax !== undefined) site.cattax = ours.cattax;
-  if (ours.pagecat !== undefined) site.pagecat = ours.pagecat;
+  site.cattax = ours.cattax;
+  site.pagecat = ours.pagecat;
 }
 
 function mergeUserData(global: any, ours: any[]): void {

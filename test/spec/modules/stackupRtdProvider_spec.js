@@ -766,11 +766,21 @@ describe("StackUp RTD Provider", function () {
       await flushMicrotasks();
     });
 
-    async function loadDualTaxonomyResponse() {
+    async function loadResponse(responseBody) {
       _resetStateForTesting();
       subModuleObj.init(VALID_CONFIG, {});
-      respond200(DUAL_TAXONOMY_API_RESPONSE);
+      respond200(responseBody);
       await flushMicrotasks();
+    }
+
+    async function loadDualTaxonomyResponse() {
+      await loadResponse(DUAL_TAXONOMY_API_RESPONSE);
+    }
+
+    function dualTaxonomyResponseWithout(...fields) {
+      const response = JSON.parse(JSON.stringify(DUAL_TAXONOMY_API_RESPONSE));
+      for (const field of fields) delete response.site[field];
+      return response;
     }
 
     it("should not add StackUp page categories to a publisher cattax", async function () {
@@ -835,6 +845,27 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site.sectioncat).to.deep.equal([
         "IAB1-2",
       ]);
+    });
+
+    it("should not copy page categories when the response omits cattax", async function () {
+      await loadResponse(dualTaxonomyResponseWithout("cattax"));
+      const req = { ortb2Fragments: { global: {} } };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      // Unpaired pagecat would be read under the default taxonomy (1).
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+    });
+
+    it("should not copy a cattax when the response omits pagecat", async function () {
+      await loadResponse(dualTaxonomyResponseWithout("pagecat"));
+      const req = { ortb2Fragments: { global: {} } };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
     });
 
     it("should not overwrite a publisher-supplied content id", function () {
