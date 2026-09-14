@@ -96,7 +96,7 @@ The module adds one compact object to each impression and preserves all existing
 | `ref` | HTTPS URL | Content-addressed public evidence URL derived from the signed manifest SHA-256 digest. Its canonical 43-character unpadded base64url suffix encodes 32 bytes. |
 | `att` | compact JWS | ES256 attestation binding the record ID to the URL digest, exact publisher domain, manifest digest, policy version, revision, and expiration. |
 
-The serialized extension is limited to 1 KiB.
+The measured limit is 1024 UTF-8 bytes of `JSON.stringify` over the four-field record itself, as returned by the signal origin, not over the surrounding `ext` object. A record one byte over the limit is classified invalid and injects nothing, so a minting service must check the compact record's own serialized size.
 
 ## Validation, freshness, and fail-open behavior
 
@@ -118,6 +118,8 @@ A ready edge status may be reused for at most 30 seconds, but its JWS is verifie
 The module invokes the callback exactly once within the configured total deadline. HTTP errors, malformed decisions, invalid keys or signatures, substituted references, expired attestations, oversized bodies, network failures, and timeouts add no provenance data to the auction.
 
 When configured, the module establishes auction-local shallow copies of the ad-unit, `ortb2Imp`, and impression `ext` objects before RTD providers start. Publisher-supplied objects and any existing publisher `c2pa` value remain unchanged. After a verified hit, the module adds a fresh four-field carrier in place on that stable auction graph. References captured by other RTD providers remain live, so their later asynchronous writes and Encypher's carrier both reach the auction.
+
+Because of those copies, `pbjs.adUnits` never carries the record. Wrapper code that wants to read the carrier itself, instead of using `gamTargeting`, must read `adUnits[].ortb2Imp.ext.c2pa` from the `auctionEnd` payload, which keeps the same `ortb2Imp` reference the module wrote.
 
 ## Trust split and residual authority risk
 
