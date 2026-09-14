@@ -34,6 +34,8 @@ const CACHE_KEY_PREFIX = "stackup:enrich:v1:";
 const CACHE_SCHEMA_VERSION = 2;
 const CONTENT_SEGTAXES = new Set([6, 9, 502, 600]);
 const USER_SEGTAXES = new Set([4, 501]);
+// Site category arrays governed by a single `site.cattax`.
+const SITE_CATEGORY_FIELDS = ["cat", "sectioncat", "pagecat"];
 // Maximum number of auction snapshots to keep in memory at once.
 // On long-lived SPA sessions many auctions can fire; without a cap the map
 // grows without bound. FIFO eviction keeps the last N entries — enough for
@@ -642,13 +644,7 @@ function mergeIntoOrtb2(
 
 function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
   global.site = global.site ?? {};
-  // cattax defines how pagecat values are interpreted, so they must be
-  // adopted together. Filling either independently could pair publisher
-  // categories with StackUp's taxonomy (or the reverse).
-  if (global.site.cattax === undefined && global.site.pagecat === undefined) {
-    if (ours.cattax !== undefined) global.site.cattax = ours.cattax;
-    if (ours.pagecat !== undefined) global.site.pagecat = ours.pagecat;
-  }
+  mergeSiteCategories(global.site, ours);
   global.site.content = global.site.content ?? { data: [] };
   const target = global.site.content;
   const ourContent = ours.content;
@@ -666,6 +662,25 @@ function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
   if (ourContent.ext !== undefined) {
     target.ext = mergeContentExtPublisherFirst(target.ext, ourContent.ext);
   }
+}
+
+// One `site.cattax` declares the taxonomy of `cat[]`, `sectioncat[]` and
+// `pagecat[]` at once, and is read as 1 (IAB Content Category Taxonomy 1.0)
+// when omitted. Adopting StackUp's taxonomy next to a publisher `cat` or
+// `sectioncat` would therefore relabel ids the module never set, so any
+// publisher-declared site category blocks the copy — not just `pagecat`.
+function mergeSiteCategories(
+  site: any,
+  ours: EnrichmentSnapshot["site"]
+): void {
+  if (site.cattax !== undefined) return;
+  const publisherHasCategories = SITE_CATEGORY_FIELDS.some(
+    (field) => isArray(site[field]) && site[field].length
+  );
+  if (publisherHasCategories) return;
+
+  if (ours.cattax !== undefined) site.cattax = ours.cattax;
+  if (ours.pagecat !== undefined) site.pagecat = ours.pagecat;
 }
 
 function mergeUserData(global: any, ours: any[]): void {
