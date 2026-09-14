@@ -130,7 +130,13 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
   const divId = bidRequest.params.divId || bidRequest.adUnitCode;
   deepSetValue(imp, 'ext.divId', divId);
   if (imp.video) {
-    const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    // imp.video.w/h are set by the ortbConverter's default imp builder and already reflect any
+    // publisher size override (e.g. ortb2Imp.video.w/h). Deriving playerSize from them keeps
+    // video.ext.playerSize in sync with video.w/h; falling back to the raw, override-blind
+    // mediaTypes.video.playerSize only when the converter left w/h unset.
+    const playerSize = (imp.video.w != null && imp.video.h != null)
+      ? [[imp.video.w, imp.video.h]]
+      : deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
     deepSetValue(imp, 'video.ext.playerSize', playerSize);
     deepSetValue(imp, 'video.ext.context', videoContext);
