@@ -17,7 +17,7 @@ import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.
 import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
 import { auctionManager } from './auctionManager.js';
-import { findSlotElementIdByAdId } from './utils/gptTargeting.js';
+import { findSlotElementIdByAdId, getSlotTargeting, getSlotTargetingKeys } from './utils/gptTargeting.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -196,7 +196,7 @@ export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, 
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      const dfpId = findSlotElementIdByAdId(adId);
+      const dfpId = getDfpElementId(adId);
       if (dfpId) {
         return dfpId;
       }
@@ -207,6 +207,19 @@ export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, 
         return apnId;
       }
     }
+  }
+
+  function getDfpElementId(adId) {
+    const dfpId = findSlotElementIdByAdId(adId);
+    if (dfpId) {
+      return dfpId;
+    }
+    const slot = window.googletag.pubads().getSlots().find(slot => {
+      return getSlotTargetingKeys(slot).find(key => {
+        return getSlotTargeting(slot, key).includes(adId);
+      });
+    });
+    return slot ? slot.getSlotElementId() : null;
   }
 
   function getAstElementId(adUnitCode) {

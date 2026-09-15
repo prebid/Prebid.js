@@ -592,6 +592,16 @@ describe('secureCreatives', () => {
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
 
+    it('should find GPT slots that were not set up with setTargeting', () => {
+      slots[0].setTargeting('hb_adid', ['adId']);
+      resizeRemoteCreative({
+        adId: 'adId',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(document.getElementById, 'div1');
+    });
+
     it('should find correct apn tag based on adUnitCode', () => {
       window.apntag = {
         getTag: sinon.stub()
