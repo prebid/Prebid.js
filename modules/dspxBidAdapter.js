@@ -1,4 +1,4 @@
-import { deepAccess, logMessage, getBidIdParameter, logError, logWarn } from '../src/utils.js';
+import { createIframe, deepAccess, logMessage, getBidIdParameter, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -185,31 +185,19 @@ export const spec = {
  */
 function outstreamRender(bid) {
   logMessage('[DSPx][outstreamRender] bid:', bid);
-  const embedCode = createOutstreamEmbedCode(bid);
   try {
-    const inIframe = getBidIdParameter('iframe', bid.renderer.config);
-    if (inIframe && window.document.getElementById(inIframe).nodeName === 'IFRAME') {
-      const iframe = window.document.getElementById(inIframe);
-      const framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
-      framedoc.body.appendChild(embedCode);
-      if (typeof window.dspxRender === 'function') {
-        window.dspxRender(bid);
-      } else {
-        logError('[DSPx][outstreamRender] Error: dspxRender function is not found');
-      }
+    const rendererConfig = (bid.renderer && bid.renderer.config) || {};
+    const slot = getBidIdParameter('slot', rendererConfig) || bid.adUnitCode;
+    const slotEl = slot && window.document.getElementById(slot);
+    if (!slotEl) {
+      logError('[DSPx][outstreamRender] Error: slot not found');
       return;
     }
-
-    const slot = getBidIdParameter('slot', bid.renderer.config) || bid.adUnitCode;
-    if (slot && window.document.getElementById(slot)) {
-      window.document.getElementById(slot).appendChild(embedCode);
-      if (typeof window.dspxRender === 'function') {
-        window.dspxRender(bid);
-      } else {
-        logError('[DSPx][outstreamRender] Error: dspxRender function is not found');
-      }
-    } else if (slot) {
-      logError('[DSPx][outstreamRender] Error: slot not found');
+    slotEl.appendChild(createOutstreamEmbedCode(bid));
+    if (typeof window.dspxRender === 'function') {
+      window.dspxRender(bid);
+    } else {
+      logError('[DSPx][outstreamRender] Error: dspxRender function is not found');
     }
   } catch (err) {
     logError('[DSPx][outstreamRender] Error:' + err.message);
@@ -217,34 +205,44 @@ function outstreamRender(bid) {
 }
 
 /**
- * create Outstream Embed Code Node
+ * Strip executable markup from a response-supplied HTML string.
+ * Parse in an inert document so handler attributes never compile against the page.
+ */
+export function sanitizeOutstreamMarkup(html) {
+  const inert = window.document.implementation.createHTMLDocument('');
+  inert.body.innerHTML = html || '';
+  Array.from(inert.querySelectorAll('script')).forEach((script) => script.remove());
+  Array.from(inert.body.querySelectorAll('*')).forEach((el) => {
+    Array.from(el.attributes).forEach((attr) => {
+      if (/^on/i.test(attr.name)) {
+        el.removeAttribute(attr.name);
+      }
+    });
+  });
+  return inert.body.innerHTML;
+}
+
+/**
+ * Create outstream embed code. Markup from the bid response is placed in a
+ * renderer iframe and is never reconstituted as page-level script.
  *
  * @param bid
  * @returns {DocumentFragment}
  */
-function createOutstreamEmbedCode(bid) {
+export function createOutstreamEmbedCode(bid) {
   const fragment = window.document.createDocumentFragment();
-  const div = window.document.createElement('div');
-  div.innerHTML = deepAccess(bid, 'renderer.config.code', '');
-  fragment.appendChild(div);
-
-  // run scripts
-  var scripts = div.getElementsByTagName('script');
-  var scriptsClone = [];
-  for (var idx = 0; idx < scripts.length; idx++) {
-    scriptsClone.push(scripts[idx]);
-  }
-  for (var i = 0; i < scriptsClone.length; i++) {
-    var currentScript = scriptsClone[i];
-    var s = document.createElement('script');
-    for (var j = 0; j < currentScript.attributes.length; j++) {
-      var a = currentScript.attributes[j];
-      s.setAttribute(a.name, a.value);
-    }
-    s.appendChild(document.createTextNode(currentScript.innerHTML));
-    currentScript.parentNode.replaceChild(s, currentScript);
-  }
-
+  const width = bid.width || '100%';
+  const height = bid.height || '100%';
+  const iframe = createIframe(window.document, {
+    width,
+    height
+  }, {
+    width: typeof width === 'number' ? `${width}px` : width,
+    height: typeof height === 'number' ? `${height}px` : height,
+    border: '0px'
+  });
+  iframe.srcdoc = sanitizeOutstreamMarkup(deepAccess(bid, 'renderer.config.code', '') || '');
+  fragment.appendChild(iframe);
   return fragment;
 }
 
