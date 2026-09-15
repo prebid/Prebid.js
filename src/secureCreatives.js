@@ -11,12 +11,7 @@ import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.
 import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
 import { auctionManager } from './auctionManager.js';
-import {
-  findSlotElementIdByAdId,
-  getSlotTargeting,
-  getSlotTargetingKeys,
-  slotHasTargetedAdId
-} from './utils/gptTargeting.js';
+import { findSlotElementIdByAdId, getSlotTargeting, getSlotTargetingKeys } from './utils/gptTargeting.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
