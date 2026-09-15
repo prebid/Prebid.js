@@ -592,8 +592,10 @@ describe('bidderFactory', () => {
       });
 
       // What the guard removes, and that it leaves data alone, is covered where it is defined,
-      // in test/spec/unit/utils/untrustedJson_spec.js. These cover the wiring: that a bidder's
-      // response goes through it, and that an unparseable body still reaches the adapter as text.
+      // in test/spec/unit/utils/untrustedJson_spec.js. Only the first case below detects the
+      // guard's absence; the other two hold with a plain JSON.parse too, and are here to pin the
+      // way this call site would fail if the guard ever threw - the assignment would not complete
+      // and the adapter would be handed the raw body as text.
       it('routes the response body through the guard', function () {
         responseBody = '{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}';
 

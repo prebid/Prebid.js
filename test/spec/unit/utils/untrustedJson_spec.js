@@ -17,7 +17,12 @@ describe('parseUntrustedJSON', () => {
     return target;
   }
 
+  const realObjectKeys = Object.keys;
+  const realObjectAssign = Object.assign;
+
   afterEach(() => {
+    Object.keys = realObjectKeys;
+    Object.assign = realObjectAssign;
     // Pollution that escapes surfaces as unrelated failures in every later spec of the chunk
     // rather than as a failure of the test that caused it.
     delete Object.prototype.polluted;
@@ -49,6 +54,26 @@ describe('parseUntrustedJSON', () => {
       expect(Object.keys(parsed)).to.deep.equal(['impid']);
       naiveMerge({}, parsed);
       expect({}.polluted).to.equal(undefined);
+    });
+
+    it('drops a constructor key holding any object, not only one carrying a prototype', () => {
+      // A merge follows the key name, so it lands on the Object function whatever the value holds,
+      // and `keys`/`assign` are own writable properties of it. Breaking those breaks the page -
+      // and breaks this guard, which calls Object.keys itself.
+      const parsed = parseUntrustedJSON('{"ext":{"constructor":{"keys":"pwned","assign":"pwned"}}}');
+
+      expect(Object.keys(parsed.ext)).to.deep.equal([]);
+      naiveMerge({}, parsed.ext);
+      expect(Object.keys).to.be.a('function');
+      expect(Object.assign).to.be.a('function');
+    });
+
+    it('drops a constructor key nested under an inherited name', () => {
+      const parsed = parseUntrustedJSON('{"ext":{"toString":{"constructor":{"keys":"pwned"}}}}');
+
+      expect(Object.keys(parsed.ext.toString)).to.deep.equal([]);
+      naiveMerge({}, parsed.ext);
+      expect(Object.keys).to.be.a('function');
     });
 
     it('drops them at any depth, and inside arrays', () => {

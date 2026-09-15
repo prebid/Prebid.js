@@ -1,21 +1,33 @@
 /**
- * JSON parsing for text that came from outside the page - bidder and server response bodies.
+ * JSON parsing for response bodies that core parses on an adapter's behalf - a bidder's HTTP
+ * response, and Prebid Server's. That is the boundary this covers; a module that fetches and
+ * parses its own endpoint is not behind it.
  *
  * `JSON.parse` is not itself unsafe: a `"__proto__"` key in the text becomes an ordinary own
- * property rather than changing the object's prototype. The exposure is downstream. Code that
- * folds a response into an object of its own with a recursive merge assigns key by key, and
- * `target.__proto__ = value` does reach the prototype - so an attacker-chosen key in the text
- * becomes a write to `Object.prototype` several call frames away from the parse.
+ * property rather than changing the object's prototype. The exposure is downstream, in code that
+ * folds a response into an object of its own. Two shapes of recursive merge, two routes:
  *
- * Two keys carry that route and are removed here: `__proto__`, and `constructor` when it holds an
- * object with its own `prototype`. A `constructor` holding anything else is ordinary data and is
- * kept.
+ *   target[key] = value                  assignment. `target.__proto__ = value` reaches the
+ *                                        prototype, because the name resolves to the inherited
+ *                                        setter. The name is what matters, so removing it works.
  *
- * What this does not stop: a merge written as `target[key] = target[key] || {}` resolves its own
- * left-hand side through the prototype chain, so it follows *any* inherited name - `push`,
- * `hasOwnProperty` - and then recurses into the shared object it landed on. Nothing about such a
- * key is unusual in the response text, so no parse-time filter can pick it out. A merge closes
- * that by guarding its read with `Object.prototype.hasOwnProperty.call`, as `mergeDeep` does.
+ *   target[key] = target[key] || {}      the left side is a *read*, which walks the prototype
+ *   merge(target[key], source[key])      chain. Any inherited name lands the recursion on a
+ *                                        shared object - `constructor` on the `Object` function,
+ *                                        `hasOwnProperty` on that method - and writes into it.
+ *
+ * Removed here: `__proto__`, which carries the first route; and `constructor` whenever it holds an
+ * object, which carries the second one to `Object` itself, where a write lands on `Object.keys` or
+ * `Object.assign` and breaks the page. A `constructor` holding a string or a number is ordinary
+ * data and is kept - it cannot be recursed into.
+ *
+ * The rest of the second route is deliberately not filtered, and could be: the sanitizer this
+ * replaced dropped every name found on `Object.prototype`. It also dropped legitimate response
+ * fields called `toString` or `valueOf`, and which fields it dropped varied with what other
+ * scripts on the page had done to `Object.prototype`. That cost was judged higher than the
+ * residue. What closes the residue is the merge, not the parse: test the value's type before
+ * recursing, as `mergeDeep` does with `isPlainObject` - an inherited method is not a plain object,
+ * so it is replaced rather than merged into.
  *
  * Distinct from `safeJSONParse` in src/utils.js, which swallows a parse error and returns
  * undefined while removing nothing. This removes those keys and lets a parse error through.
@@ -27,14 +39,14 @@ const CONSTRUCTOR_KEY = 'constructor';
 /**
  * Captured at module load, which precedes any response.
  *
- * Reading `Object.prototype.hasOwnProperty.call` per call would let a page replace it - and so
- * would a hostile response that reached a naive merge, since `hasOwnProperty` is one of the
- * inherited names such a merge follows. This guard would then throw rather than strip, and its
- * callers read a throw as "that body was not JSON": one such response would leave every later one
- * unparsed, or discarded.
+ * A guard that reads `Object.keys` or `Object.prototype.hasOwnProperty.call` at call time depends
+ * on globals that the merges above can overwrite - `constructor` reaches the first, `hasOwnProperty`
+ * the second. It would then throw rather than strip, and both callers read a throw as "that body
+ * was not JSON": one such response would leave every later one unparsed, or discarded.
  */
 const hasOwn: (obj: unknown, key: string) => boolean =
   Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+const ownKeys: (obj: object) => string[] = Object.keys;
 
 /**
  * Deletes those keys wherever they appear, in place.
@@ -56,14 +68,14 @@ function stripGadgetKeys<T>(root: T): T {
       delete node[PROTO_KEY];
     }
     if (hasOwn(node, CONSTRUCTOR_KEY)) {
-      // When it is the gadget shape, the whole key goes, siblings of `prototype` included - the
-      // key is what a merge follows, so keeping a pruned version of it would not be safer.
       const value = node[CONSTRUCTOR_KEY];
-      if (value !== null && typeof value === 'object' && hasOwn(value, 'prototype')) {
+      if (value !== null && typeof value === 'object') {
+        // The whole key goes, whatever it contains. A merge follows the key name, so what the
+        // value holds decides only where the write lands, not whether one happens.
         delete node[CONSTRUCTOR_KEY];
       }
     }
-    Object.keys(node).forEach(key => {
+    ownKeys(node).forEach(key => {
       const value = node[key];
       if (value !== null && typeof value === 'object') {
         pending.push(value);
