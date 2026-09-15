@@ -2,10 +2,16 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./mycodemediaBidAdapter.d.ts').MCodeMediaBidderParams} MCodeMediaBidderParams
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec<'mcodemedia'>} MCodeMediaBidderSpec
+ */
+
 const BIDDER_CODE = 'mcodemedia';
 const AD_URL = 'https://east-backend.mycodemedia.com/pbjs';
 const SYNC_URL = 'https://usersync.mycodemedia.com';
 
+/** @type {MCodeMediaBidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
