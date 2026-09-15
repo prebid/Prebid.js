@@ -1,6 +1,5 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
-import * as ajaxModule from 'src/ajax.js';
+import { server } from 'test/mocks/xhr.js';
 import { spec } from 'modules/adbixBidAdapter.js';
 
 describe('Adbix Bidder Adapter', function () {
@@ -542,37 +541,28 @@ describe('Adbix Bidder Adapter', function () {
   });
 
   it('retains the win notice URL and reports it with keepalive when the bid wins', function () {
-    const sandbox = sinon.createSandbox();
-    const ajaxStub = sandbox.stub(ajaxModule, 'ajax');
+    const bids = interpretResponseBids([
+      buildResponseBid({ nurl: 'https://adbix.net/win.php?id=1' })
+    ]);
 
-    try {
-      const bids = interpretResponseBids([
-        buildResponseBid({ nurl: 'https://adbix.net/win.php?id=1' })
-      ]);
+    expect(bids).to.have.length(1);
+    expect(bids[0].nurl).to.equal('https://adbix.net/win.php?id=1');
 
-      expect(bids).to.have.length(1);
-      expect(bids[0].nurl).to.equal('https://adbix.net/win.php?id=1');
+    spec.onBidWon(bids[0]);
 
-      spec.onBidWon(bids[0]);
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal('https://adbix.net/win.php?id=1');
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', keepalive: true });
-    } finally {
-      sandbox.restore();
-    }
+    // `ajax` is rewritten at build time by plugins/callerContext.js, so the binding the
+    // adapter calls cannot be stubbed on the module namespace; assert against the global
+    // fetch mock's recorded requests (server.requests) instead.
+    const winRequests = server.requests.filter((req) => req.url === bids[0].nurl);
+    expect(winRequests).to.have.length(1);
+    expect(winRequests[0].method).to.equal('GET');
+    expect(winRequests[0].fetch.request.keepalive).to.equal(true);
   });
 
   it('does not report a win notice when the bid has no nurl', function () {
-    const sandbox = sinon.createSandbox();
-    const ajaxStub = sandbox.stub(ajaxModule, 'ajax');
+    spec.onBidWon({});
+    spec.onBidWon({ nurl: '' });
 
-    try {
-      spec.onBidWon({});
-      spec.onBidWon({ nurl: '' });
-
-      expect(ajaxStub.called).to.equal(false);
-    } finally {
-      sandbox.restore();
-    }
+    expect(server.requests).to.have.length(0);
   });
 });
