@@ -1364,7 +1364,7 @@ describe('fwsspBidAdapter', () => {
   });
 
   describe('extractTransactionIds', () => {
-    it('should extract TID from ortb2Imp and TIDT from keyValues', () => {
+    it('should extract TID and TIDT from ortb2Imp', () => {
       const bidRequest = {
         ortb2Imp: {
           ext: {
@@ -1381,13 +1381,10 @@ describe('fwsspBidAdapter', () => {
           }
         }
       };
-      const keyValues = {
-        _fw_programmatic_tidt: '1'
-      };
 
-      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      const result = extractTransactionIds(bidRequest, bidderRequest);
       expect(result.tid).to.equal('ortb2imp-tid-from-prebid');
-      expect(result.tidt).to.equal('1');
+      expect(result.tidt).to.equal(2);
     });
 
     it('should extract TID from ortb2.source.tid when ortb2Imp.ext.tid not present', () => {
@@ -1399,11 +1396,10 @@ describe('fwsspBidAdapter', () => {
           }
         }
       };
-      const keyValues = {};
 
-      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      const result = extractTransactionIds(bidRequest, bidderRequest);
       expect(result.tid).to.equal('source-tid-789');
-      expect(result.tidt).to.equal(2);
+      expect(result.tidt).to.be.null;
     });
 
     it('should prioritize ortb2Imp.ext.tid over ortb2.source.tid', () => {
@@ -1421,18 +1417,16 @@ describe('fwsspBidAdapter', () => {
           }
         }
       };
-      const keyValues = {};
 
-      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      const result = extractTransactionIds(bidRequest, bidderRequest);
       expect(result.tid).to.equal('ortb2imp-tid-priority');
     });
 
     it('should return null TID when no TID found in any location', () => {
       const bidRequest = {};
       const bidderRequest = {};
-      const keyValues = {};
 
-      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      const result = extractTransactionIds(bidRequest, bidderRequest);
       expect(result.tid).to.be.null;
       expect(result.tidt).to.be.null; // No TIDT when no TID
     });
@@ -1447,14 +1441,13 @@ describe('fwsspBidAdapter', () => {
         }
       };
       const bidderRequest = {};
-      const keyValues = {};
 
-      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      const result = extractTransactionIds(bidRequest, bidderRequest);
       expect(result.tid).to.equal('test-tid');
       expect(result.tidt).to.equal(1);
     });
 
-    it('should generate default TIDT when not found (non-primary ad server)', () => {
+    it('should return null TIDT when not found in ortb2Imp', () => {
       const bidRequest = {
         ortb2Imp: {
           ext: {
@@ -1463,11 +1456,10 @@ describe('fwsspBidAdapter', () => {
         }
       };
       const bidderRequest = {};
-      const keyValues = {};
 
-      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      const result = extractTransactionIds(bidRequest, bidderRequest);
       expect(result.tid).to.equal('test-tid');
-      expect(result.tidt).to.equal(2); // Non-primary ad server (FW SSP)
+      expect(result.tidt).to.be.null;
     });
 
     it('should handle all fields present with correct priority', () => {
@@ -1487,18 +1479,15 @@ describe('fwsspBidAdapter', () => {
           }
         }
       };
-      const keyValues = {
-        _fw_programmatic_tidt: '2'
-      };
 
-      const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
+      const result = extractTransactionIds(bidRequest, bidderRequest);
       expect(result.tid).to.equal('ortb2imp-tid');
-      expect(result.tidt).to.equal('2');
+      expect(result.tidt).to.equal(1);
     });
   });
 
   describe('TID/TIDT integration in buildRequests', () => {
-    it('should include TID from ortb2Imp and TIDT from keyValues', () => {
+    it('should include TID from ortb2Imp without TIDT', () => {
       const bidRequests = [{
         'bidder': 'fwssp',
         'adUnitCode': 'adunit-code',
@@ -1517,17 +1506,14 @@ describe('fwsspBidAdapter', () => {
           'serverUrl': 'https://example.com/ad/g/1',
           'networkId': '42015',
           'profile': '42015:profile',
-          'siteSectionId': 'test-site-section',
-          'adRequestKeyValues': {
-            '_fw_programmatic_tidt': '1'
-          }
+          'siteSectionId': 'test-site-section'
         }
       }];
 
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload).to.include('_fw_programmatic_tid=prebid-tid-from-ortb2');
-      expect(payload).to.include('_fw_programmatic_tidt=1');
+      expect(payload).to.not.include('_fw_programmatic_tidt');
     });
 
     it('should include TID and TIDT from ortb2Imp when not in keyValues', () => {
@@ -1589,7 +1575,7 @@ describe('fwsspBidAdapter', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload).to.include('_fw_programmatic_tid=source-tid-789');
-      expect(payload).to.include('_fw_programmatic_tidt=2'); // Default generated
+      expect(payload).to.not.include('_fw_programmatic_tidt');
     });
 
     it('should not include TID/TIDT when not provided anywhere', () => {
