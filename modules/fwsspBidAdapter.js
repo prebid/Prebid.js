@@ -107,12 +107,12 @@ export const spec = {
       keyValues._fw_bidfloorcur = currency;
 
       // Add transaction ID (TID) and transaction ID type (TIDT) with priority handling
-      const { tid, tidt } = extractTransactionIds(currentBidRequest, bidderRequest, keyValues);
+      const { tid, tidt } = extractTransactionIds(currentBidRequest, bidderRequest);
       if (tid) {
         keyValues._fw_programmatic_tid = tid;
-      }
-      if (tidt) {
-        keyValues._fw_programmatic_tidt = tidt;
+        if (tidt) {
+          keyValues._fw_programmatic_tidt = tidt;
+        }
       }
 
       // Add GDPR flag and consent string
@@ -608,15 +608,13 @@ export function getBidFloor(bid, config) {
  * 3. Legacy transactionId from bidRequest
  *
  * Priority order for TIDT:
- * 1. _fw_programmatic_tidt from keyValues
- * 2. ortb2Imp.ext.tidt from bidRequest
+ * 1. ortb2Imp.ext.tidt from bidRequest
  *
  * @param {object} bidRequest - The bid request object
  * @param {object} bidderRequest - The bidder request object
- * @param {object} keyValues - The key-values object to check for existing TIDT
  * @returns {object} Object containing tid and tidt values
  */
-export function extractTransactionIds(bidRequest, bidderRequest, keyValues) {
+export function extractTransactionIds(bidRequest, bidderRequest) {
   let tid = null;
   let tidt = null;
 
@@ -642,24 +640,12 @@ export function extractTransactionIds(bidRequest, bidderRequest, keyValues) {
     }
   }
 
-  // TIDT extraction with priority (only if TID exists)
+  // TIDT extraction (only if TID exists)
   if (tid != null) {
-    // Priority 1: Check if TIDT already exists in keyValues
-    if (keyValues._fw_programmatic_tidt != null) {
-      tidt = keyValues._fw_programmatic_tidt;
-    }
-
-    // Priority 2: Check ortb2Imp.ext.tidt
-    if (tidt == null) {
-      const ortb2Tidt = deepAccess(bidRequest, 'ortb2Imp.ext.tidt');
-      if (ortb2Tidt != null) {
-        tidt = ortb2Tidt;
-      }
-    }
-
-    // Priority 3: Determine default TIDT based on role
-    if (tidt == null) {
-      tidt = 2; // Default to non-primary ad server
+    // Check ortb2Imp.ext.tidt
+    const ortb2Tidt = deepAccess(bidRequest, 'ortb2Imp.ext.tidt');
+    if (ortb2Tidt != null) {
+      tidt = ortb2Tidt;
     }
   }
 
