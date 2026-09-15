@@ -23,6 +23,8 @@ describe('parseUntrustedJSON', () => {
   afterEach(() => {
     Object.keys = realObjectKeys;
     Object.assign = realObjectAssign;
+    delete Function.keys;
+    delete Object.prototype.toString.constructor;
     // Pollution that escapes surfaces as unrelated failures in every later spec of the chunk
     // rather than as a failure of the test that caused it.
     delete Object.prototype.polluted;
@@ -58,22 +60,26 @@ describe('parseUntrustedJSON', () => {
 
     it('drops a constructor key holding any object, not only one carrying a prototype', () => {
       // A merge follows the key name, so it lands on the Object function whatever the value holds,
-      // and `keys`/`assign` are own writable properties of it. Breaking those breaks the page -
-      // and breaks this guard, which calls Object.keys itself.
+      // and `keys`/`assign` are own writable properties of it. Breaking those breaks the page.
+      // The guard itself survives, because it binds both at module load rather than reading them
+      // per call - which is why the assertions below can still use them.
       const parsed = parseUntrustedJSON('{"ext":{"constructor":{"keys":"pwned","assign":"pwned"}}}');
-
-      expect(Object.keys(parsed.ext)).to.deep.equal([]);
       naiveMerge({}, parsed.ext);
+
+      expect(realObjectKeys(parsed.ext)).to.deep.equal([]);
       expect(Object.keys).to.be.a('function');
       expect(Object.assign).to.be.a('function');
     });
 
     it('drops a constructor key nested under an inherited name', () => {
+      // Were this kept, the merge would follow `toString` to Object.prototype.toString and
+      // `constructor` from there to the Function object - so the write lands on Function.keys,
+      // not on Object.keys.
       const parsed = parseUntrustedJSON('{"ext":{"toString":{"constructor":{"keys":"pwned"}}}}');
-
-      expect(Object.keys(parsed.ext.toString)).to.deep.equal([]);
       naiveMerge({}, parsed.ext);
-      expect(Object.keys).to.be.a('function');
+
+      expect(realObjectKeys(parsed.ext.toString)).to.deep.equal([]);
+      expect(Function.keys).to.equal(undefined);
     });
 
     it('drops them at any depth, and inside arrays', () => {

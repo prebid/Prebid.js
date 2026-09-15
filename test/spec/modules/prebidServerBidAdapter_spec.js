@@ -3250,10 +3250,12 @@ describe('S2S Adapter', function () {
       }
     });
 
-    it('syncs from a cookie-sync body that the real guard has stripped', function () {
-      // The wiring case below stubs the guard out, so nothing there exercises the strip on a
-      // bidder_status shape. This one runs the real thing.
+    it('strips the cookie-sync body before the sync code reads it', function () {
       const pixel = sinon.stub(utils, 'triggerPixel');
+      // A spy calls through, so the real guard runs and its return value can be asserted on.
+      // Nothing in doAllSyncs merges the body, so the sync's own behaviour cannot show the strip -
+      // asserting only that the sync fired would pass with no guard at all.
+      const guard = sinon.spy(untrustedJson, 'parseUntrustedJSON');
       try {
         const s2sConfig = utils.deepClone(CONFIG);
         s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
@@ -3262,36 +3264,15 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig });
         adapter.callBids(s2sBidRequest, utils.deepClone(BID_REQUESTS), addBidResponse, done, ajax);
 
-        server.requests[0].respond(200, {}, '{"__proto__":{"polluted":true},"bidder_status":' +
-          '[{"bidder":"appnexus","no_cookie":true,"constructor":{"keys":"pwned"},' +
-          '"usersync":{"url":"http://sync.test/real","type":"image"}}]}');
+        server.requests[0].respond(200, {}, '{"__proto__":{"polluted":true},' +
+          '"constructor":{"keys":"pwned"},"bidder_status":' +
+          '[{"bidder":"appnexus","no_cookie":true,' +
+          '"usersync":{"url":"http://sync.test/px","type":"image"}}]}');
 
-        sinon.assert.calledWith(pixel, 'http://sync.test/real');
-        expect({}.polluted).to.equal(undefined);
-      } finally {
-        pixel.restore();
-      }
-    });
-
-    it('routes the cookie-sync response through the guard, and still syncs', function () {
-      const pixel = sinon.stub(utils, 'triggerPixel');
-      // Nothing downstream of this parse reads a polluting key, so the sync completing is not on
-      // its own evidence that the body went through the guard. Spy on the guard for that half,
-      // call through for the other.
-      const guard = sinon.stub(untrustedJson, 'parseUntrustedJSON').callsFake(text => JSON.parse(text));
-      try {
-        const s2sConfig = utils.deepClone(CONFIG);
-        s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
-        const s2sBidRequest = utils.deepClone(REQUEST);
-        s2sBidRequest.s2sConfig = s2sConfig;
-        config.setConfig({ s2sConfig });
-        adapter.callBids(s2sBidRequest, utils.deepClone(BID_REQUESTS), addBidResponse, done, ajax);
-
-        server.requests[0].respond(200, {}, '{"__proto__":{"polluted":true},"bidder_status":' +
-          '[{"bidder":"appnexus","no_cookie":true,"usersync":{"url":"http://sync.test/px","type":"image"}}]}');
-
+        // Asserted on the root, because doAllSyncs shifts entries off bidder_status as it runs -
+        // by now that array is empty, and anything read out of it would say nothing.
+        expect(Object.keys(guard.returnValues[0])).to.deep.equal(['bidder_status']);
         sinon.assert.calledWith(pixel, 'http://sync.test/px');
-        sinon.assert.calledWith(guard, sinon.match('"bidder_status"'));
       } finally {
         guard.restore();
         pixel.restore();

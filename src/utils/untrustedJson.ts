@@ -1,7 +1,8 @@
 /**
- * JSON parsing for response bodies that core parses on an adapter's behalf - a bidder's HTTP
- * response, and Prebid Server's. That is the boundary this covers; a module that fetches and
- * parses its own endpoint is not behind it.
+ * JSON parsing for the response bodies core parses on an adapter's behalf: a bidder's HTTP
+ * response body, and Prebid Server's. Two things sit outside it - a module that fetches and parses
+ * its own endpoint, and content carried *inside* one of these bodies and parsed again elsewhere,
+ * of which an `adm` holding a native ORTB document is the case in point.
  *
  * `JSON.parse` is not itself unsafe: a `"__proto__"` key in the text becomes an ordinary own
  * property rather than changing the object's prototype. The exposure is downstream, in code that
@@ -21,16 +22,15 @@
  * `Object.assign` and breaks the page. A `constructor` holding a string or a number is ordinary
  * data and is kept - it cannot be recursed into.
  *
- * The rest of the second route is deliberately not filtered, and could be: the sanitizer this
- * replaced dropped every name found on `Object.prototype`. It also dropped legitimate response
- * fields called `toString` or `valueOf`, and which fields it dropped varied with what other
- * scripts on the page had done to `Object.prototype`. That cost was judged higher than the
- * residue. What closes the residue is the merge, not the parse: test the value's type before
- * recursing, as `mergeDeep` does with `isPlainObject` - an inherited method is not a plain object,
- * so it is replaced rather than merged into.
+ * The rest of the second route is not filtered here. Dropping every name that appears on
+ * `Object.prototype` takes legitimate response fields called `toString` or `valueOf` with it, and
+ * makes which fields survive depend on what other scripts on the page have added to
+ * `Object.prototype`. What closes that route is the merge rather than the parse: test the value's
+ * type before recursing, so that an inherited method is replaced rather than merged into
+ * (`mergeDeep` in src/utils.js does this with `isPlainObject`).
  *
- * Distinct from `safeJSONParse` in src/utils.js, which swallows a parse error and returns
- * undefined while removing nothing. This removes those keys and lets a parse error through.
+ * `safeJSONParse` in src/utils.js is a different function with a different contract. Check which
+ * one you want rather than picking by name.
  */
 
 const PROTO_KEY = '__proto__';
@@ -43,6 +43,10 @@ const CONSTRUCTOR_KEY = 'constructor';
  * on globals that the merges above can overwrite - `constructor` reaches the first, `hasOwnProperty`
  * the second. It would then throw rather than strip, and both callers read a throw as "that body
  * was not JSON": one such response would leave every later one unparsed, or discarded.
+ *
+ * The array methods used below are not captured, because neither route reaches them: a merge that
+ * lands on `Array.prototype.push` writes own properties onto that function rather than replacing
+ * it, and `Array.prototype` is not writable through either route.
  */
 const hasOwn: (obj: unknown, key: string) => boolean =
   Function.prototype.call.bind(Object.prototype.hasOwnProperty);
@@ -55,10 +59,10 @@ const ownKeys: (obj: object) => string[] = Object.keys;
  * inherited keys would visit whatever the page has put on `Object.prototype` - including, when
  * that value is an object, itself, without end.
  *
- * Unconditional. A pre-check on the raw text would have to decide from the text which keys the
- * parse will produce, and JSON can spell any letter as a `\uXXXX` escape; Prebid Server escapes
- * `<`, `>` and `&` that way inside creative markup, so the bodies such a check would most need to
- * be careful about are also the ones it would least often let it skip.
+ * Unconditional. A pre-check on the raw text can be written, and has to match every `\uXXXX`
+ * spelling of each key rather than the literal one. It pays only on bodies it lets skip the walk,
+ * and Prebid Server escapes `<`, `>` and `&` that way inside creative markup, so a body carrying a
+ * creative tends to trip it anyway. The walk costs a fraction of the parse it follows.
  */
 function stripGadgetKeys<T>(root: T): T {
   const pending: any[] = [root];
