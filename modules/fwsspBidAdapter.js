@@ -603,9 +603,9 @@ export function getBidFloor(bid, config) {
 /**
  * Extracts transaction ID (TID) and transaction ID type (TIDT) from bid request
  * Priority order for TID:
- * 1. _fw_programmatic_tid from keyValues
- * 2. ortb2Imp.ext.tid from bidRequest
- * 3. ortb2.source.tid from bidderRequest
+ * 1. ortb2Imp.ext.tid from bidRequest
+ * 2. ortb2.source.tid from bidderRequest
+ * 3. Legacy transactionId from bidRequest
  *
  * Priority order for TIDT:
  * 1. _fw_programmatic_tidt from keyValues
@@ -613,31 +613,32 @@ export function getBidFloor(bid, config) {
  *
  * @param {object} bidRequest - The bid request object
  * @param {object} bidderRequest - The bidder request object
- * @param {object} keyValues - The key-values object to check for existing TID/TIDT
+ * @param {object} keyValues - The key-values object to check for existing TIDT
  * @returns {object} Object containing tid and tidt values
  */
 export function extractTransactionIds(bidRequest, bidderRequest, keyValues) {
   let tid = null;
   let tidt = null;
 
-  // Priority 1: Check if TID already exists in keyValues
-  if (keyValues._fw_programmatic_tid != null) {
-    tid = keyValues._fw_programmatic_tid;
+  // Priority 1: Check ortb2Imp.ext.tid
+  const ortb2ImpTid = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
+  if (ortb2ImpTid != null) {
+    tid = ortb2ImpTid;
   }
 
-  // Priority 2: Check ortb2Imp.ext.tid
-  if (tid == null) {
-    const ortb2ImpTid = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-    if (ortb2ImpTid != null) {
-      tid = ortb2ImpTid;
-    }
-  }
-
-  // Priority 3: Check ortb2.source.tid
+  // Priority 2: Check ortb2.source.tid
   if (tid == null && bidderRequest) {
     const ortb2SourceTid = deepAccess(bidderRequest, 'ortb2.source.tid');
     if (ortb2SourceTid != null) {
       tid = ortb2SourceTid;
+    }
+  }
+
+  // Priority 3: Check legacy transactionId field
+  if (tid == null) {
+    const legacyTid = deepAccess(bidRequest, 'transactionId');
+    if (legacyTid != null) {
+      tid = legacyTid;
     }
   }
 
