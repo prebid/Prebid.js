@@ -7,47 +7,57 @@
  * `target.__proto__ = value` does reach the prototype - so an attacker-chosen key in the text
  * becomes a write to `Object.prototype` several call frames away from the parse.
  *
- * This removes the two keys that a merge can follow, leaving everything else exactly as
- * `JSON.parse` produced it.
+ * Two keys carry that route and are removed here: `__proto__`, and `constructor` when it holds an
+ * object with its own `prototype`. A `constructor` holding anything else is ordinary data and is
+ * kept.
+ *
+ * What this does not stop: a merge written as `target[key] = target[key] || {}` resolves its own
+ * left-hand side through the prototype chain, so it follows *any* inherited name - `push`,
+ * `hasOwnProperty` - and then recurses into the shared object it landed on. Nothing about such a
+ * key is unusual in the response text, so no parse-time filter can pick it out. A merge closes
+ * that by guarding its read with `Object.prototype.hasOwnProperty.call`, as `mergeDeep` does.
+ *
+ * Distinct from `safeJSONParse` in src/utils.js, which swallows a parse error and returns
+ * undefined while removing nothing. This removes those keys and lets a parse error through.
  */
 
-/** Keys whose own presence on a parsed object gives a recursive merge a route to a prototype. */
 const PROTO_KEY = '__proto__';
 const CONSTRUCTOR_KEY = 'constructor';
 
-const hasOwn = (obj, key: string): boolean => Object.prototype.hasOwnProperty.call(obj, key);
-
 /**
- * Whether `text` could contain either key, cheap enough to run on every response.
+ * Captured at module load, which precedes any response.
  *
- * Deliberately over-inclusive: a false positive costs one traversal, a false negative costs the
- * guard. JSON can spell any letter as a `\uXXXX` escape, so `"__proto__"` has many textual forms
- * and a search for the literal spelling alone would be bypassable - any escaped form contains
- * `\u`, so the presence of an escape anywhere is treated as a possible hit.
+ * Reading `Object.prototype.hasOwnProperty.call` per call would let a page replace it - and so
+ * would a hostile response that reached a naive merge, since `hasOwnProperty` is one of the
+ * inherited names such a merge follows. This guard would then throw rather than strip, and its
+ * callers read a throw as "that body was not JSON": one such response would leave every later one
+ * unparsed, or discarded.
  */
-function mayCarryGadget(text: string): boolean {
-  return /"(?:__proto__|constructor)"\s*:|\\u/.test(text);
-}
+const hasOwn: (obj: unknown, key: string) => boolean =
+  Function.prototype.call.bind(Object.prototype.hasOwnProperty);
 
 /**
- * Deletes the two keys wherever they appear, in place, breadth-first.
+ * Deletes those keys wherever they appear, in place.
  *
- * Iterative rather than recursive so that response nesting cannot overflow the stack, and over
- * own keys only: walking inherited keys would visit whatever the page has put on
- * `Object.prototype`, including - if that value is an object - itself, without end.
+ * Iterative, so that response nesting cannot overflow the stack, and over own keys only: walking
+ * inherited keys would visit whatever the page has put on `Object.prototype` - including, when
+ * that value is an object, itself, without end.
+ *
+ * Unconditional. A pre-check on the raw text would have to decide from the text which keys the
+ * parse will produce, and JSON can spell any letter as a `\uXXXX` escape; Prebid Server escapes
+ * `<`, `>` and `&` that way inside creative markup, so the bodies such a check would most need to
+ * be careful about are also the ones it would least often let it skip.
  */
 function stripGadgetKeys<T>(root: T): T {
-  const queue: any[] = [root];
-  while (queue.length) {
-    const node = queue.pop();
+  const pending: any[] = [root];
+  while (pending.length) {
+    const node = pending.pop();
     if (hasOwn(node, PROTO_KEY)) {
       delete node[PROTO_KEY];
     }
     if (hasOwn(node, CONSTRUCTOR_KEY)) {
-      // Only when it is the gadget shape. A response field that happens to be called
-      // `constructor` and holds a string is ordinary data and is kept. When it does hold an
-      // object with its own `prototype`, the whole key goes, siblings of `prototype` included -
-      // the key is what a merge follows, so keeping a pruned version of it would not be safer.
+      // When it is the gadget shape, the whole key goes, siblings of `prototype` included - the
+      // key is what a merge follows, so keeping a pruned version of it would not be safer.
       const value = node[CONSTRUCTOR_KEY];
       if (value !== null && typeof value === 'object' && hasOwn(value, 'prototype')) {
         delete node[CONSTRUCTOR_KEY];
@@ -56,7 +66,7 @@ function stripGadgetKeys<T>(root: T): T {
     Object.keys(node).forEach(key => {
       const value = node[key];
       if (value !== null && typeof value === 'object') {
-        queue.push(value);
+        pending.push(value);
       }
     });
   }
@@ -66,14 +76,10 @@ function stripGadgetKeys<T>(root: T): T {
 /**
  * Parses JSON that came from outside the page.
  *
- * Throws what `JSON.parse` throws on text that is not JSON, so a caller's existing handling of
- * an unparseable body is unchanged. Text that parses always yields a value, never an exception
- * about its contents.
+ * Throws what `JSON.parse` throws on text that is not JSON, so a caller's existing handling of an
+ * unparseable body is unchanged. Text that parses always yields a value.
  */
 export function parseUntrustedJSON(text: string): any {
   const parsed = JSON.parse(text);
-  if (parsed === null || typeof parsed !== 'object' || !mayCarryGadget(text)) {
-    return parsed;
-  }
-  return stripGadgetKeys(parsed);
+  return parsed !== null && typeof parsed === 'object' ? stripGadgetKeys(parsed) : parsed;
 }

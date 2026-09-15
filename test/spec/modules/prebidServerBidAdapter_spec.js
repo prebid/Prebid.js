@@ -29,6 +29,7 @@ import { hook } from '../../../src/hook.js';
 import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
 import { auctionManager } from '../../../src/auctionManager.js';
 import * as pbsOrtbConverter from 'modules/prebidServerBidAdapter/ortbConverter.js';
+import * as untrustedJson from 'src/utils/untrustedJson.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -3249,8 +3250,12 @@ describe('S2S Adapter', function () {
       }
     });
 
-    it('still runs cookie syncs when the sync response carries a polluting key', function () {
+    it('routes the cookie-sync response through the guard, and still syncs', function () {
       const pixel = sinon.stub(utils, 'triggerPixel');
+      // Nothing downstream of this parse reads a polluting key, so the sync completing is not on
+      // its own evidence that the body went through the guard. Spy on the guard for that half,
+      // call through for the other.
+      const guard = sinon.stub(untrustedJson, 'parseUntrustedJSON').callsFake(text => JSON.parse(text));
       try {
         const s2sConfig = utils.deepClone(CONFIG);
         s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
@@ -3263,7 +3268,9 @@ describe('S2S Adapter', function () {
           '[{"bidder":"appnexus","no_cookie":true,"usersync":{"url":"http://sync.test/px","type":"image"}}]}');
 
         sinon.assert.calledWith(pixel, 'http://sync.test/px');
+        sinon.assert.calledWith(guard, sinon.match('"bidder_status"'));
       } finally {
+        guard.restore();
         pixel.restore();
       }
     });

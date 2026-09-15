@@ -23,6 +23,7 @@ describe('parseUntrustedJSON', () => {
     delete Object.prototype.polluted;
     delete Object.prototype.isMobile;
     delete Object.prototype.legacyHelper;
+    delete Object.prototype.hasOwnProperty.call;
   });
 
   describe('removes the keys a recursive merge can follow', () => {
@@ -105,6 +106,26 @@ describe('parseUntrustedJSON', () => {
       const parsed = parseUntrustedJSON('{"ext":{"constructor":"acme-v2"},"impid":"imp0"}');
 
       expect(parsed.impid).to.equal('imp0');
+    });
+
+    it('when the page has replaced Object.prototype.hasOwnProperty', () => {
+      // Reachable precisely because the inherited-name class above is not stopped here: a merge
+      // that follows one can write onto Object.prototype.hasOwnProperty. Reading it per call
+      // would make this throw, and both callers read a throw as "that body was not JSON" - so one
+      // such response would leave every later one unparsed.
+      Object.prototype.hasOwnProperty.call = false;
+      let parsed, threw;
+      try {
+        parsed = parseUntrustedJSON('{"impid":"imp0","__proto__":{"polluted":true}}');
+      } catch (e) {
+        threw = e;
+      }
+      // Restored before any assertion, because chai reads it too.
+      delete Object.prototype.hasOwnProperty.call;
+
+      expect(threw).to.equal(undefined);
+      expect(Object.keys(parsed)).to.deep.equal(['impid']);
+      expect({}.polluted).to.equal(undefined);
     });
 
     it('on nesting deep enough to overflow a recursive walk', () => {
