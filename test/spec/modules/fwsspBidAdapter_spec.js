@@ -1364,29 +1364,29 @@ describe('fwsspBidAdapter', () => {
   });
 
   describe('extractTransactionIds', () => {
-    it('should extract TID from keyValues with highest priority', () => {
+    it('should extract TID from ortb2Imp and TIDT from keyValues', () => {
       const bidRequest = {
         ortb2Imp: {
           ext: {
-            tid: 'ortb2imp-tid-should-not-use',
+            tid: 'ortb2imp-tid-from-prebid',
             tidt: 2
           }
-        }
+        },
+        transactionId: 'legacy-tid'
       };
       const bidderRequest = {
         ortb2: {
           source: {
-            tid: 'source-tid-should-not-use'
+            tid: 'source-tid'
           }
         }
       };
       const keyValues = {
-        _fw_programmatic_tid: 'kv-tid-123',
         _fw_programmatic_tidt: '1'
       };
 
       const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
-      expect(result.tid).to.equal('kv-tid-123');
+      expect(result.tid).to.equal('ortb2imp-tid-from-prebid');
       expect(result.tidt).to.equal('1');
     });
 
@@ -1477,7 +1477,8 @@ describe('fwsspBidAdapter', () => {
             tid: 'ortb2imp-tid',
             tidt: 1
           }
-        }
+        },
+        transactionId: 'legacy-tid'
       };
       const bidderRequest = {
         ortb2: {
@@ -1487,24 +1488,28 @@ describe('fwsspBidAdapter', () => {
         }
       };
       const keyValues = {
-        _fw_programmatic_tid: 'kv-tid',
         _fw_programmatic_tidt: '2'
       };
 
       const result = extractTransactionIds(bidRequest, bidderRequest, keyValues);
-      expect(result.tid).to.equal('kv-tid'); // KV has highest priority
-      expect(result.tidt).to.equal('2'); // KV has highest priority
+      expect(result.tid).to.equal('ortb2imp-tid');
+      expect(result.tidt).to.equal('2');
     });
   });
 
   describe('TID/TIDT integration in buildRequests', () => {
-    it('should include TID and TIDT in request when passed via keyValues', () => {
+    it('should include TID from ortb2Imp and TIDT from keyValues', () => {
       const bidRequests = [{
         'bidder': 'fwssp',
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
           'video': {
             'playerSize': [640, 480]
+          }
+        },
+        'ortb2Imp': {
+          'ext': {
+            'tid': 'prebid-tid-from-ortb2'
           }
         },
         'bidId': '30b31c1838de1e',
@@ -1514,7 +1519,6 @@ describe('fwsspBidAdapter', () => {
           'profile': '42015:profile',
           'siteSectionId': 'test-site-section',
           'adRequestKeyValues': {
-            '_fw_programmatic_tid': 'test-tid-123',
             '_fw_programmatic_tidt': '1'
           }
         }
@@ -1522,7 +1526,7 @@ describe('fwsspBidAdapter', () => {
 
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
-      expect(payload).to.include('_fw_programmatic_tid=test-tid-123');
+      expect(payload).to.include('_fw_programmatic_tid=prebid-tid-from-ortb2');
       expect(payload).to.include('_fw_programmatic_tidt=1');
     });
 
