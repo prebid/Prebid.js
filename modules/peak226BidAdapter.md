@@ -28,9 +28,14 @@ Peak226 does not perform user syncs.
 
 | Name          | Scope    | Type     | Description                                                              | Example     |
 |---------------|----------|----------|--------------------------------------------------------------------------|-------------|
-| `publisherId` | required | `string` | Your Peak226 publisher/account ID.                                       | `'pub-123'` |
-| `placementId` | required | `string` | Placement ID for this ad unit.                                           | `'plc-456'` |
+| `publisherId` | required* | `string` | Your Peak226 publisher/account ID.                                      | `'pub-123'` |
+| `placementId` | required* | `string` | Placement ID for this ad unit.                                          | `'plc-456'` |
 | `region`      | optional | `string` | Data center to send the request to: `'us'`, `'eu'` or `'jp'`. Default `'us'`. | `'eu'`      |
+
+\* Both IDs may instead be supplied as standard ORTB first party data —
+`ortb2.{site|app|dooh}.publisher.id` and `ortb2Imp.tagid` — in which case the params are not
+needed. When both are present the bid params win, so they act as per-ad-unit overrides. The
+request is rejected only if neither source provides a value.
 
 # Test Parameters
 

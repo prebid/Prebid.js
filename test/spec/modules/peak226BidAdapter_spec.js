@@ -148,14 +148,40 @@ describe('peak226BidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('rejects when publisherId is missing or empty', function () {
+    it('rejects when publisherId is missing or empty in both params and ortb2', function () {
       expect(spec.isBidRequestValid(bannerBid({ placementId: 'plc-test' }))).to.equal(false);
       expect(spec.isBidRequestValid(bannerBid({ publisherId: '', placementId: 'plc-test' }))).to.equal(false);
     });
 
-    it('rejects when placementId is missing or empty', function () {
+    it('rejects when placementId is missing or empty in both params and ortb2Imp', function () {
       expect(spec.isBidRequestValid(bannerBid({ publisherId: 'pub-test' }))).to.equal(false);
       expect(spec.isBidRequestValid(bannerBid({ publisherId: 'pub-test', placementId: '' }))).to.equal(false);
+    });
+
+    it('accepts a bid with no params when ortb2 and ortb2Imp supply the ids', function () {
+      ['site', 'app', 'dooh'].forEach((section) => {
+        const bid = bannerBid(undefined, {
+          ortb2: { [section]: { publisher: { id: 'pub-fpd' } } },
+          ortb2Imp: { tagid: 'tag-fpd' },
+        });
+        delete bid.params;
+        expect(spec.isBidRequestValid(bid), section).to.equal(true);
+      });
+    });
+
+    it('accepts a bid that mixes params with ortb2-supplied ids', function () {
+      const fromOrtb2Publisher = bannerBid({ placementId: 'plc-test' }, {
+        ortb2: { site: { publisher: { id: 'pub-fpd' } } },
+      });
+      expect(spec.isBidRequestValid(fromOrtb2Publisher)).to.equal(true);
+
+      const fromOrtb2Tagid = bannerBid({ publisherId: 'pub-test' }, { ortb2Imp: { tagid: 'tag-fpd' } });
+      expect(spec.isBidRequestValid(fromOrtb2Tagid)).to.equal(true);
+    });
+
+    it('rejects when ortb2 carries a client section without a publisher id', function () {
+      const bid = bannerBid({ placementId: 'plc-test' }, { ortb2: { site: { domain: 'example.com' } } });
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('does not validate media types (core does)', function () {
@@ -221,6 +247,57 @@ describe('peak226BidAdapter', function () {
       expect(data.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
       expect(data.imp[0].tagid).to.equal('home-atf');
       expect(data.imp[0].ext.gpid).to.equal('/1234/home#div-banner');
+    });
+
+    it('sets publisher.id on dooh when the request is a dooh request', function () {
+      const bids = [bannerBid()];
+      const breq = bidderRequest(bids);
+      breq.ortb2 = { dooh: { venuetype: ['airport'] } };
+      const [{ data }] = spec.buildRequests(bids, breq);
+      expect(data.dooh.publisher.id).to.equal('pub-test');
+      expect(data.site).to.be.undefined;
+      expect(data.app).to.be.undefined;
+    });
+
+    it('uses the ortb2 publisher id and ortb2Imp.tagid when no params are given', function () {
+      const bid = bannerBid(undefined, { ortb2Imp: { tagid: 'tag-fpd' } });
+      delete bid.params;
+      const breq = bidderRequest([bid], { site: { publisher: { id: 'pub-fpd' } } });
+      bid.ortb2 = breq.ortb2;
+      const requests = spec.buildRequests([bid], breq);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].url).to.equal(ENDPOINTS.us);
+      expect(requests[0].data.site.publisher.id).to.equal('pub-fpd');
+      expect(requests[0].data.imp[0].tagid).to.equal('tag-fpd');
+    });
+
+    it('lets params override the ortb2 publisher id and ortb2Imp.tagid', function () {
+      const bid = bannerBid({ publisherId: 'pub-param', placementId: 'plc-param' }, {
+        ortb2Imp: { tagid: 'tag-fpd' },
+      });
+      const breq = bidderRequest([bid], { site: { publisher: { id: 'pub-fpd' } } });
+      bid.ortb2 = breq.ortb2;
+      const [{ data }] = spec.buildRequests([bid], breq);
+      expect(data.site.publisher.id).to.equal('pub-param');
+      expect(data.imp[0].tagid).to.equal('plc-param');
+    });
+
+    it('splits bids whose ortb2 publisher ids differ into separate requests', function () {
+      const first = bannerBid(undefined, {
+        ortb2: { site: { publisher: { id: 'pub-a' } } },
+        ortb2Imp: { tagid: 'tag-a' },
+      });
+      const second = bannerBid(undefined, {
+        bidId: 'bid-banner-2',
+        adUnitCode: 'div-banner-2',
+        ortb2: { site: { publisher: { id: 'pub-b' } } },
+        ortb2Imp: { tagid: 'tag-b' },
+      });
+      [first, second].forEach((bid) => delete bid.params);
+      const bids = [first, second];
+      const requests = spec.buildRequests(bids, bidderRequest(bids));
+      expect(requests).to.have.lengthOf(2);
+      expect(requests.map((r) => r.data.imp[0].tagid)).to.have.members(['tag-a', 'tag-b']);
     });
 
     it('forwards price floors in USD', function () {
