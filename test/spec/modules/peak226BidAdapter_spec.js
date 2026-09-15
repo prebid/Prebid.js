@@ -153,9 +153,14 @@ describe('peak226BidAdapter', function () {
       expect(spec.isBidRequestValid(bannerBid({ publisherId: '', placementId: 'plc-test' }))).to.equal(false);
     });
 
-    it('rejects when placementId is missing or empty in both params and ortb2Imp', function () {
-      expect(spec.isBidRequestValid(bannerBid({ publisherId: 'pub-test' }))).to.equal(false);
-      expect(spec.isBidRequestValid(bannerBid({ publisherId: 'pub-test', placementId: '' }))).to.equal(false);
+    it('rejects when placementId is missing or empty in params, ortb2Imp.tagid and ortb2Imp.ext.gpid', function () {
+      expect(spec.isBidRequestValid(bannerBid({ publisherId: 'pub-test' }, { ortb2Imp: {} }))).to.equal(false);
+      expect(spec.isBidRequestValid(bannerBid({ publisherId: 'pub-test', placementId: '' }, { ortb2Imp: {} }))).to.equal(false);
+    });
+
+    it('accepts a bid with no placementId or tagid when ortb2Imp.ext.gpid supplies the id', function () {
+      const bid = bannerBid({ publisherId: 'pub-test' });
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('accepts a bid with no params when ortb2 and ortb2Imp supply the ids', function () {

@@ -19,7 +19,8 @@ export interface Peak226BidderParams {
   publisherId?: string;
   /**
    * Placement ID for this ad unit. Optional override for `imp.tagid`, which can also be
-   * supplied through `ortb2Imp`.
+   * supplied through `ortb2Imp`. `ortb2Imp.ext.gpid` is also accepted as a placement
+   * identifier for validity purposes when neither this param nor `ortb2Imp.tagid` is set.
    */
   placementId?: string;
   /**
@@ -93,7 +94,8 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     // placementId only overrides imp.tagid; ortb2Imp.tagid (merged in by the FPD processor)
-    // stands on its own when the param is absent.
+    // stands on its own when the param is absent. ortb2Imp.ext.gpid also reaches imp.ext.gpid
+    // via that same merge with no adapter-side handling needed here.
     const placementId = bidRequest.params?.placementId;
     if (isNonEmptyId(placementId)) {
       imp.tagid = String(placementId);
@@ -131,9 +133,15 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   },
 });
 
+// imp.ext.gpid (typically set by the gptPreAuction module) is a more broadly supported
+// placement identifier than imp.tagid, so it also counts as a valid placement id here even
+// though it never needs adapter-side handling to reach the request (see the imp() processor).
+function getPlacementId(bid: Peak226BidRequest): unknown {
+  return bid.params?.placementId ?? bid.ortb2Imp?.tagid ?? deepAccess(bid.ortb2Imp, 'ext.gpid');
+}
+
 const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (bid) => {
-  const placementId = bid.params?.placementId ?? bid.ortb2Imp?.tagid;
-  return isNonEmptyId(getPublisherId(bid)) && isNonEmptyId(placementId);
+  return isNonEmptyId(getPublisherId(bid)) && isNonEmptyId(getPlacementId(bid));
 };
 
 const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBidRequests, bidderRequest) => {
