@@ -12,6 +12,7 @@ import { executeRenderer } from '../../../src/Renderer.js';
 import { expect } from 'chai';
 import { userSync } from '../../../src/userSync.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { coppaDataHandler } from '../../../src/consentHandler.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -733,6 +734,16 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.regs.coppa.required).to.equal(1);
+      });
+
+      it('should honor a request-level COPPA override set to 0', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+        bidderRequest.ortb2 = { regs: { coppa: 0 } };
+        sandbox.stub(coppaDataHandler, 'getCoppa').returns(true);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.regs.coppa.required).to.equal(0);
       });
     });
 
