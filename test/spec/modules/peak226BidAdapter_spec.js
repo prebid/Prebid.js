@@ -472,6 +472,41 @@ describe('peak226BidAdapter', function () {
         expect(out[0].native.ortb.assets).to.have.lengthOf(2);
         expect(out[0].native.ortb.link.url).to.equal('https://example.com/click?p=1.5');
       });
+
+      it('parses a native bid returned via the non-standard adm_native field', function () {
+        // peak226 sends native markup as an already-parsed object under adm_native instead of
+        // adm (a JSON string per OpenRTB), with adm left empty; core's native processor only
+        // reads bid.adm and throws if it's not a populated object/string.
+        const request = build([nativeBid()]);
+        const bid = ortbBid({
+          impid: 'bid-native-1',
+          price: 0.134235255767336,
+          crid: '89735525',
+          w: undefined,
+          h: undefined,
+          mtype: 4,
+          adm: '',
+        });
+        bid.adm_native = {
+          ver: '1',
+          assets: [
+            { id: 1, title: { text: 'Dave: Credit, Cash & Money App' } },
+            { id: 2, img: { url: 'https://cdn.example.com/creative.png', w: 480, h: 320 } },
+          ],
+          link: { url: 'https://example.com/click_short/abc' },
+          imptrackers: ['https://example.com/ad_delivered/abc'],
+          eventtrackers: [
+            { event: 1, method: 1, url: 'https://example.com/edge_direct_imp/abc/${AUCTION_PRICE}' },
+          ],
+        };
+        const out = spec.interpretResponse(ortbResponse([bid]), request);
+        expect(out).to.have.lengthOf(1);
+        expect(out[0].mediaType).to.equal(NATIVE);
+        expect(out[0].native.ortb.assets).to.have.lengthOf(2);
+        expect(out[0].native.ortb.eventtrackers[0].url).to.equal(
+          'https://example.com/edge_direct_imp/abc/0.134235255767336'
+        );
+      });
     }
   });
 });

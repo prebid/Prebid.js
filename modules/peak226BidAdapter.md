@@ -46,7 +46,7 @@ var adUnits = [
     },
     bids: [{
       bidder: 'peak226',
-      params: { publisherId: 'pub-test', placementId: 'plc-test' }
+      params: { publisherId: 'hb-test', placementId: 'hb-test' }
     }]
   },
   {
@@ -63,7 +63,7 @@ var adUnits = [
     },
     bids: [{
       bidder: 'peak226',
-      params: { publisherId: 'pub-test', placementId: 'plc-test' }
+      params: { publisherId: 'hb-test', placementId: 'hb-test' }
     }]
   },
   {
@@ -80,7 +80,7 @@ var adUnits = [
     },
     bids: [{
       bidder: 'peak226',
-      params: { publisherId: 'pub-test', placementId: 'plc-test', region: 'eu' }
+      params: { publisherId: 'hb-test', placementId: 'hb-test', region: 'eu' }
     }]
   }
 ];

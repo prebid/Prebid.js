@@ -48,6 +48,24 @@ function isNonEmptyId(value: unknown): boolean {
   return (typeof value === 'string' && value.length > 0) || isNumber(value);
 }
 
+// peak226 embeds ${AUCTION_PRICE} in pixel/tracker URLs anywhere inside a native response
+// (observed so far in adm_native.eventtrackers[].url), and core has no macro-resolution path
+// for native trackers, so walk the whole object rather than a fixed list of fields.
+function resolveAuctionPriceDeep<T>(value: T, price: number): T {
+  if (typeof value === 'string') {
+    return replaceAuctionPrice(value, price) as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => resolveAuctionPriceDeep(entry, price)) as unknown as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [key, resolveAuctionPriceDeep(entry, price)]),
+    ) as T;
+  }
+  return value;
+}
+
 function getRegion(bid: Peak226BidRequest): Peak226Region {
   const region = bid.params?.region;
   return region && ENDPOINTS[region] ? region : DEFAULT_REGION;
@@ -74,6 +92,15 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
+    // Native responses arrive in a non-standard `adm_native` field (an already-parsed ORTB
+    // native object) instead of the OpenRTB-standard `adm` (a JSON string); map it over so
+    // the default native processor (which only reads bid.adm) can pick it up.
+    const admNative = (bid as unknown as { adm_native?: unknown }).adm_native;
+    if (!bid.adm && admNative) {
+      // core's native processor accepts adm as either a JSON string or an already-parsed
+      // object at runtime, even though the ORTB type only declares the string form.
+      bid.adm = resolveAuctionPriceDeep(admNative, bid.price) as unknown as string;
+    }
     // peak226 returns ${AUCTION_PRICE} in markup and notice URLs; core only expands it in
     // banner markup at render time, so resolve it here for VAST, nurl and burl as well.
     if (isStr(bid.adm)) bid.adm = replaceAuctionPrice(bid.adm, bid.price);
