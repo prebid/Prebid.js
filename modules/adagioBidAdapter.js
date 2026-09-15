@@ -149,7 +149,7 @@ function _getGdprConsent(bidderRequest) {
 
 function _getCoppa(bidderRequest) {
   return {
-    required: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0
+    required: (bidderRequest?.ortb2?.regs?.coppa ?? coppaDataHandler.getCoppa()) ? 1 : 0
   };
 }
 
