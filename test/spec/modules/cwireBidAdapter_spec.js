@@ -1,58 +1,79 @@
-import { expect } from "chai";
-import { newBidder } from "../../../src/adapters/bidderFactory.js";
-import { BID_ENDPOINT, spec, storage } from "../../../modules/cwireBidAdapter.js";
-import { deepClone, logInfo } from "../../../src/utils.js";
-import * as utils from "src/utils.js";
-import sinon, { stub } from "sinon";
-import { config } from "../../../src/config.js";
-import * as autoplayLib from "../../../libraries/autoplayDetection/autoplay.js";
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
+import {
+  BID_ENDPOINT,
+  EVENT_ENDPOINT,
+  spec,
+  storage,
+} from '../../../modules/cwireBidAdapter.js';
+import * as utils from 'src/utils.js';
+import * as ajaxLib from 'src/ajax.js';
+import * as autoplayLib from '../../../libraries/autoplayDetection/autoplay.js';
 import * as adUnits from 'src/utils/adUnits';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import 'modules/priceFloors.js';
+import 'modules/currency.js';
 
-describe("C-WIRE bid adapter", () => {
-  config.setConfig({ debug: true });
-  let sandbox;
-  const adapter = newBidder(spec);
-  const bidRequests = [
+function makeBannerBid(overrides = {}) {
+  return Object.assign(
     {
-      bidder: "cwire",
-      params: {
-        pageId: "4057",
-        placementId: "ad-slot-bla",
-      },
-      adUnitCode: "adunit-code",
-      sizes: [
-        [300, 250],
-        [300, 600],
-      ],
-      bidId: "30b31c1838de1e",
-      bidderRequestId: "22edbae2733bf6",
-      auctionId: "1d1a030790a475",
-      transactionId: "04f2659e-c005-4eb1-a57c-fa93145e3843",
+      bidder: 'cwire',
+      params: { domainId: 1422, placementId: 2211521 },
+      adUnitCode: 'adunit-code',
+      mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843',
     },
-  ];
-  const bidderRequest = {
-    pageViewId: "326dca71-9ca0-4e8f-9e4d-6106161ac1ad"
-  };
-  const response = {
-    body: {
-      cwid: "2ef90743-7936-4a82-8acf-e73382a64e94",
-      hash: "17112D98BBF55D3A",
-      bids: [
-        {
-          html: "<h1>Hello world</h1>",
-          cpm: 100,
-          currency: "CHF",
-          dimensions: [1, 1],
-          netRevenue: true,
-          creativeId: "3454",
-          requestId: "2c634d4ca5ccfb",
-          placementId: 177,
-          transactionId: "b4b32618-1350-4828-b6f0-fbb5c329e9a4",
-          ttl: 360,
+    overrides
+  );
+}
+
+function makeVideoBid(overrides = {}) {
+  return Object.assign(
+    {
+      bidder: 'cwire',
+      params: { domainId: 1422 },
+      adUnitCode: 'video-adunit',
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: ['video/mp4'],
+          protocols: [2, 3, 5, 6],
+          api: [2],
+          linearity: 1,
         },
-      ],
+      },
+      bidId: 'video-bid-id',
+      bidderRequestId: 'video-request-id',
+      auctionId: 'video-auction-id',
+      transactionId: 'video-transaction-id',
     },
-  };
+    overrides
+  );
+}
+
+function makeBidderRequest(overrides = {}) {
+  return Object.assign(
+    {
+      bidderCode: 'cwire',
+      auctionId: '1d1a030790a475',
+      bidderRequestId: '22edbae2733bf6',
+      pageViewId: '326dca71-9ca0-4e8f-9e4d-6106161ac1ad',
+      refererInfo: { page: 'https://example.com/article' },
+      timeout: 1000,
+      ortb2: {},
+    },
+    overrides
+  );
+}
+
+describe('C-WIRE bid adapter (ORTB2)', () => {
+  const adapter = newBidder(spec);
+  let sandbox;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
@@ -61,423 +82,447 @@ describe("C-WIRE bid adapter", () => {
   afterEach(function () {
     sandbox.restore();
   });
-  describe("inherited functions", function () {
-    it("exists and is a function", function () {
-      expect(adapter.callBids).to.exist.and.to.be.a("function");
-      expect(spec.isBidRequestValid).to.exist.and.to.be.a("function");
-      expect(spec.buildRequests).to.exist.and.to.be.a("function");
-      expect(spec.interpretResponse).to.exist.and.to.be.a("function");
-    });
-  });
-  describe("buildRequests", function () {
-    it("sends bid request to ENDPOINT via POST", function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.equal(BID_ENDPOINT);
-      expect(request.method).to.equal("POST");
-    });
-  });
-  describe("buildRequests with given creative", function () {
-    let utilsStub;
 
-    beforeEach(function () {
-      utilsStub = stub(utils, "getParameterByName").callsFake(function () {
-        return "str-str";
+  describe('inherited functions', function () {
+    it('exposes the standard bidderFactory interface', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function');
+      expect(spec.buildRequests).to.exist.and.to.be.a('function');
+      expect(spec.interpretResponse).to.exist.and.to.be.a('function');
+    });
+
+    it('declares banner and video as supported media types', function () {
+      expect(spec.supportedMediaTypes).to.include.members([BANNER, VIDEO]);
+    });
+
+    it('uses the v1 bid endpoint', function () {
+      expect(BID_ENDPOINT).to.equal('https://prebid2.cwi.re/v1/bid');
+    });
+
+    it('uses the v1 event endpoint', function () {
+      expect(EVENT_ENDPOINT).to.equal('https://prebid2.cwi.re/v1/event');
+    });
+  });
+
+  describe('isBidRequestValid', function () {
+    it('returns true when domainId is a number', function () {
+      expect(spec.isBidRequestValid(makeBannerBid({ params: { domainId: 42 } }))).to.equal(true);
+    });
+
+    it('returns true with legacy pageId+placementId when domainId is missing', function () {
+      expect(
+        spec.isBidRequestValid(makeBannerBid({ params: { pageId: 42, placementId: 99 } }))
+      ).to.equal(true);
+    });
+
+    it('returns false when params are absent', function () {
+      const bid = makeBannerBid();
+      delete bid.params;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('returns false when domainId is missing and pageId+placementId incomplete', function () {
+      expect(spec.isBidRequestValid(makeBannerBid({ params: { pageId: 42 } }))).to.equal(false);
+    });
+
+    it('returns false when domainId is missing and legacy pageId is missing', function () {
+      expect(spec.isBidRequestValid(makeBannerBid({ params: { placementId: 99 } }))).to.equal(false);
+    });
+  });
+
+  describe('buildRequests: envelope', function () {
+    it('POSTs a single ORTB2 request to /v2/bid', function () {
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.method).to.equal('POST');
+      expect(req.url).to.equal(BID_ENDPOINT);
+      expect(req.data).to.be.an('object');
+      expect(req.data.imp).to.be.an('array');
+      expect(req.data.imp).to.have.lengthOf(1);
+    });
+
+    it('passes bidderRequest.timeout through as tmax', function () {
+      const req = spec.buildRequests(
+        [makeBannerBid()],
+        makeBidderRequest({ timeout: 750 })
+      );
+      expect(req.data.tmax).to.equal(750);
+    });
+  });
+
+  describe('buildRequests: imp shape', function () {
+    it('places bidder params under imp.ext.bidder', function () {
+      const bid = makeBannerBid({ params: { domainId: 1422, placementId: 2211521 } });
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const imp = req.data.imp[0];
+      expect(imp.ext.bidder.domainId).to.equal(1422);
+      expect(imp.ext.bidder.placementId).to.equal(2211521);
+    });
+
+    it('forwards legacy pageId under imp.ext.bidder when present', function () {
+      const bid = makeBannerBid({ params: { pageId: 42, placementId: 99 } });
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const imp = req.data.imp[0];
+      expect(imp.ext.bidder.pageId).to.equal(42);
+      expect(imp.ext.bidder.placementId).to.equal(99);
+    });
+
+    it('emits imp.banner when adunit is banner-only', function () {
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      const imp = req.data.imp[0];
+      expect(imp.banner).to.exist;
+      expect(imp.video).to.not.exist;
+    });
+
+    if (FEATURES.VIDEO) {
+      it('emits imp.video when adunit is video-only', function () {
+        const req = spec.buildRequests([makeVideoBid()], makeBidderRequest());
+        const imp = req.data.imp[0];
+        expect(imp.video).to.exist;
+        expect(imp.banner).to.not.exist;
       });
-    });
 
-    afterEach(function () {
-      utilsStub.restore();
-    });
+      it('emits both imp.banner and imp.video for a multi-format adunit', function () {
+        const bid = makeBannerBid({
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] },
+            video: { context: 'instream', playerSize: [640, 480], mimes: ['video/mp4'] },
+          },
+        });
+        const req = spec.buildRequests([bid], makeBidderRequest());
+        const imp = req.data.imp[0];
+        expect(imp.banner).to.exist;
+        expect(imp.video).to.exist;
+      });
+    }
 
-    it("should add creativeId if url parameter given", function () {
-      // set from bid.params
-      const bidRequest = deepClone(bidRequests[0]);
-
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-      expect(payload.cwcreative).to.exist;
-      expect(payload.cwcreative).to.deep.equal("str-str");
+    it('populates imp.bidfloor from getFloor when priceFloors module active', function () {
+      const bid = makeBannerBid({
+        getFloor: () => ({ currency: 'USD', floor: 1.23 }),
+      });
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const imp = req.data.imp[0];
+      expect(imp.bidfloor).to.equal(1.23);
+      expect(imp.bidfloorcur).to.equal('USD');
     });
   });
 
-  describe("buildRequests reads adUnit offsetWidth and offsetHeight", function () {
-    beforeEach(function () {
-      const documentStub = sandbox.stub(adUnits, "getAdUnitElement");
-      documentStub.returns({
-        offsetWidth: 200,
-        offsetHeight: 250,
+  describe('buildRequests: imp.ext.cwire (slot signals)', function () {
+    it('captures slot dimensions when the slot element has bounds', function () {
+      sandbox.stub(adUnits, 'getAdUnitElement').returns({
         getBoundingClientRect() {
           return { width: 200, height: 250 };
         },
+        style: {},
       });
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      const ext = req.data.imp[0].ext.cwire;
+      expect(ext.dimensions).to.deep.equal({ width: 200, height: 250 });
     });
-    it("width and height should be set", function () {
-      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      logInfo(JSON.stringify(payload));
-
-      expect(payload.slots[0].cwExt.dimensions.width).to.equal(200);
-      expect(payload.slots[0].cwExt.dimensions.height).to.equal(250);
-      expect(payload.slots[0].cwExt.style.maxHeight).to.not.exist;
-      expect(payload.slots[0].cwExt.style.maxWidth).to.not.exist;
-    });
-    afterEach(function () {
-      sandbox.restore();
-    });
-  });
-  describe("buildRequests reads style attributes", function () {
-    beforeEach(function () {
-      const documentStub = sandbox.stub(adUnits, "getAdUnitElement");
-      documentStub.returns({
-        style: {
-          maxWidth: "400px",
-          maxHeight: "350px",
-        },
+    it('captures maxWidth/maxHeight when slot style sets them', function () {
+      sandbox.stub(adUnits, 'getAdUnitElement').returns({
         getBoundingClientRect() {
           return { width: 0, height: 0 };
         },
+        style: { maxWidth: '400px', maxHeight: '350px' },
       });
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      const ext = req.data.imp[0].ext.cwire;
+      expect(ext.style.maxWidth).to.equal('400px');
+      expect(ext.style.maxHeight).to.equal('350px');
     });
-    it("css maxWidth should be set", function () {
-      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-      logInfo(JSON.stringify(payload));
-
-      expect(payload.slots[0].cwExt.style.maxWidth).to.eq("400px");
-      expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
-    });
-    afterEach(function () {
-      sandbox.restore();
+    it('writes autoplay flag from isAutoplayEnabled', function () {
+      sandbox.stub(autoplayLib, 'isAutoplayEnabled').returns(true);
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.data.imp[0].ext.cwire.autoplay).to.equal(true);
     });
   });
 
-  describe("buildRequests reads feature flags", function () {
-    beforeEach(function () {
-      sandbox.stub(utils, "getParameterByName").callsFake(function () {
-        return "feature1,feature2";
+  describe('buildRequests: request.ext.cwire (page-level signals)', function () {
+    it('writes pageViewId and sdk.version', function () {
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      const ext = req.data.ext.cwire;
+      expect(ext.pageViewId).to.equal('326dca71-9ca0-4e8f-9e4d-6106161ac1ad');
+      expect(ext.sdk).to.have.property('version');
+    });
+
+    it('writes cwid from localStorage when present', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('cwid-from-storage');
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.data.ext.cwire.cwid).to.equal('cwid-from-storage');
+    });
+
+    it('omits cwid when localStorage is disabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.data.ext.cwire.cwid).to.equal(undefined);
+    });
+
+    it('writes refgroups from cwgroups URL parameter', function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake((name) => {
+        if (name === 'cwgroups') return 'g1,g2';
+        return '';
       });
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.data.ext.cwire.refgroups).to.deep.equal(['g1', 'g2']);
     });
 
-    it("read from url parameter", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      logInfo(JSON.stringify(payload));
-
-      expect(payload.featureFlags).to.exist;
-      expect(payload.featureFlags).to.include.members(["feature1", "feature2"]);
-    });
-    afterEach(function () {
-      sandbox.restore();
-    });
-  });
-
-  describe("buildRequests reads cwgroups flag", function () {
-    beforeEach(function () {
-      sandbox.stub(utils, "getParameterByName").callsFake(function () {
-        return "group1,group2";
+    it('writes featureFlags from cwfeatures URL parameter', function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake((name) => {
+        if (name === 'cwfeatures') return 'f1,f2';
+        return '';
       });
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.data.ext.cwire.featureFlags).to.deep.equal(['f1', 'f2']);
     });
 
-    it("read from url parameter", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      logInfo(JSON.stringify(payload));
-
-      expect(payload.refgroups).to.exist;
-      expect(payload.refgroups).to.include.members(["group1", "group2"]);
-    });
-    afterEach(function () {
-      sandbox.restore();
-    });
-  });
-
-  describe("buildRequests reads debug flag", function () {
-    beforeEach(function () {
-      sandbox.stub(utils, "getParameterByName").callsFake(function () {
-        return "true";
+    it('writes cwcreative from URL parameter', function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake((name) => {
+        if (name === 'cwcreative') return '1234';
+        return '';
       });
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.data.ext.cwire.cwcreative).to.equal('1234');
     });
 
-    it("read from url parameter", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      logInfo(JSON.stringify(payload));
-
-      expect(payload.debug).to.exist;
-      expect(payload.debug).to.equal(true);
-    });
-    afterEach(function () {
-      sandbox.restore();
-    });
-  });
-
-  describe("buildRequests reads cw_id from Localstorage", function () {
-    before(function () {
-      sandbox.stub(storage, "localStorageIsEnabled").callsFake(() => true);
-      sandbox.stub(storage, "setDataInLocalStorage");
-      sandbox
-        .stub(storage, "getDataFromLocalStorage")
-        .callsFake((key) => "taerfagerg");
-    });
-
-    it("cw_id is set", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      logInfo(JSON.stringify(payload));
-
-      expect(payload.cwid).to.exist;
-      expect(payload.cwid).to.equal("taerfagerg");
-    });
-    afterEach(function () {
-      sandbox.restore();
-    });
-  });
-
-  describe("buildRequests maps flattens params for legacy compat", function () {
-    beforeEach(function () {
-      const documentStub = sandbox.stub(document, "getElementById");
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
-        getBoundingClientRect() {
-          return { width: 0, height: 0 };
-        },
+    it('writes debug=true when cwdebug URL parameter is set', function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake((name) => {
+        if (name === 'cwdebug') return 'true';
+        return '';
       });
-    });
-    it("pageId flattened", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      logInfo(JSON.stringify(payload));
-
-      expect(payload.slots[0].pageId).to.exist;
-    });
-    afterEach(function () {
-      sandbox.restore();
-    });
-  });
-
-  describe("pageId and placementId are required params", function () {
-    it("invalid request", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-      delete bidRequest.params;
-
-      const valid = spec.isBidRequestValid(bidRequest);
-      expect(valid).to.be.false;
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      expect(req.data.ext.cwire.debug).to.equal(true);
     });
 
-    it("valid request", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-      bidRequest.params.pageId = 42;
-      bidRequest.params.placementId = 42;
-
-      const valid = spec.isBidRequestValid(bidRequest);
-      expect(valid).to.be.true;
-    });
-
-    it("cwcreative must be of type string", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-      bidRequest.params.pageId = 42;
-      bidRequest.params.placementId = 42;
-
-      const valid = spec.isBidRequestValid(bidRequest);
-      expect(valid).to.be.true;
-    });
-
-    it("build request adds pageId", function () {
-      const bidRequest = deepClone(bidRequests[0]);
-
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.slots[0].pageId).to.exist;
+    it('omits cwire ext fields that are empty', function () {
+      sandbox.stub(utils, 'getParameterByName').returns('');
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      const ext = req.data.ext.cwire;
+      expect(ext.cwid).to.equal(undefined);
+      expect(ext.refgroups).to.equal(undefined);
+      expect(ext.featureFlags).to.equal(undefined);
+      expect(ext.cwcreative).to.equal(undefined);
+      expect(ext.debug).to.equal(undefined);
     });
   });
 
-  describe("process serverResponse", function () {
-    it("html to ad mapping", function () {
-      const bidResponse = deepClone(response);
-      const bids = spec.interpretResponse(bidResponse, {});
-
-      expect(bids[0].ad).to.exist;
-    });
-  });
-
-  describe("add user-syncs", function () {
-    it("empty user-syncs if no consent given", function () {
-      const userSyncs = spec.getUserSyncs({}, {}, {}, {});
-
-      expect(userSyncs).to.be.empty;
-    });
-    it("empty user-syncs if no syncOption enabled", function () {
-      const gdprConsent = {
-        vendorData: {
-          purpose: {
-            consents: 1,
+  describe('interpretResponse', function () {
+    function bannerOrtbResponse(impId) {
+      return {
+        seatbid: [
+          {
+            bid: [
+              {
+                id: 'seat-banner',
+                impid: impId,
+                price: 1.5,
+                adm: '<h1>Hello world</h1>',
+                crid: 'creative-banner',
+                cid: 'campaign-1',
+                w: 300,
+                h: 250,
+                mtype: 1,
+                adomain: ['example.com'],
+              },
+            ],
           },
-        },
-        gdprApplies: false,
-        consentString: "testConsentString",
+        ],
+        cur: 'USD',
       };
-      const userSyncs = spec.getUserSyncs({}, {}, gdprConsent, {});
+    }
 
-      expect(userSyncs).to.be.empty;
+    function videoOrtbResponse(impId, vast = '<VAST version="3.0"><Ad></Ad></VAST>') {
+      return {
+        seatbid: [
+          {
+            bid: [
+              {
+                id: 'seat-video',
+                impid: impId,
+                price: 5.0,
+                adm: vast,
+                crid: 'creative-video',
+                cid: 'campaign-2',
+                w: 640,
+                h: 480,
+                mtype: 2,
+                adomain: ['example.com'],
+              },
+            ],
+          },
+        ],
+        cur: 'USD',
+      };
+    }
+
+    it('maps a banner ORTB response to a Prebid banner bid', function () {
+      const bid = makeBannerBid();
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const bids = spec.interpretResponse({ body: bannerOrtbResponse(req.data.imp[0].id) }, req);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal(BANNER);
+      expect(bids[0].ad).to.equal('<h1>Hello world</h1>');
+      expect(bids[0].cpm).to.equal(1.5);
     });
 
-    it("user-syncs with enabled pixel option", function () {
-      const gdprConsent = {
-        vendorData: {
-          purpose: {
-            consents: 1,
-          },
-        },
-        gdprApplies: false,
-        consentString: "testConsentString",
-      };
-      const synOptions = { pixelEnabled: true, iframeEnabled: true };
-      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+    it('falls back to mediaType from the request when mtype is missing (banner-only adunit)', function () {
+      const bid = makeBannerBid();
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const noMtypeResponse = bannerOrtbResponse(req.data.imp[0].id);
+      delete noMtypeResponse.seatbid[0].bid[0].mtype;
+      const bids = spec.interpretResponse({ body: noMtypeResponse }, req);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal(BANNER);
+    });
 
-      expect(userSyncs[0].type).to.equal("image");
-      expect(userSyncs[0].url).to.equal(
-        "https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString"
+    if (FEATURES.VIDEO) {
+      it('maps a video ORTB response (mtype=2) to a video bid with vastXml', function () {
+        const bid = makeVideoBid();
+        const req = spec.buildRequests([bid], makeBidderRequest());
+        const vast = '<VAST version="3.0"><Ad></Ad></VAST>';
+        const bids = spec.interpretResponse(
+          { body: videoOrtbResponse(req.data.imp[0].id, vast) },
+          req
+        );
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+        expect(bids[0].vastXml).to.equal(vast);
+      });
+
+      it('falls back to mediaType from the request when mtype is missing (video-only adunit)', function () {
+        const bid = makeVideoBid();
+        const req = spec.buildRequests([bid], makeBidderRequest());
+        const vast = '<VAST version="3.0"><Ad></Ad></VAST>';
+        const noMtypeResponse = videoOrtbResponse(req.data.imp[0].id, vast);
+        delete noMtypeResponse.seatbid[0].bid[0].mtype;
+        const bids = spec.interpretResponse({ body: noMtypeResponse }, req);
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+      });
+    }
+
+    it('returns [] when seatbid is empty', function () {
+      const bid = makeBannerBid();
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const bids = spec.interpretResponse({ body: { seatbid: [], cur: 'USD' } }, req);
+      expect(bids).to.deep.equal([]);
+    });
+
+    it('persists cwid from response.ext.cwire.cwid into localStorage when not already stored', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      const setStub = sandbox.stub(storage, 'setDataInLocalStorage');
+
+      const bid = makeBannerBid();
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const body = bannerOrtbResponse(req.data.imp[0].id);
+      body.ext = { cwire: { cwid: 'new-cwid-from-server' } };
+      spec.interpretResponse({ body }, req);
+
+      expect(setStub.calledWith('cw_cwid', 'new-cwid-from-server')).to.equal(true);
+    });
+
+    it('does not persist cwid from response when localStorage is disabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+      const setStub = sandbox.stub(storage, 'setDataInLocalStorage');
+
+      const bid = makeBannerBid();
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const body = bannerOrtbResponse(req.data.imp[0].id);
+      body.ext = { cwire: { cwid: 'new-cwid-from-server' } };
+      spec.interpretResponse({ body }, req);
+
+      expect(setStub.called).to.equal(false);
+    });
+
+    it('does not overwrite an existing cwid in localStorage', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('existing-cwid');
+      const setStub = sandbox.stub(storage, 'setDataInLocalStorage');
+
+      const bid = makeBannerBid();
+      const req = spec.buildRequests([bid], makeBidderRequest());
+      const body = bannerOrtbResponse(req.data.imp[0].id);
+      body.ext = { cwire: { cwid: 'new-cwid-from-server' } };
+      spec.interpretResponse({ body }, req);
+
+      expect(setStub.called).to.equal(false);
+    });
+  });
+
+  describe('event beacons', function () {
+    it('onBidWon POSTs a BID_WON beacon to the v2 event endpoint', function () {
+      const sendBeacon = sandbox.stub(ajaxLib, 'sendBeacon');
+      const wonBid = { adUnitCode: 'au', cpm: 1.5, requestId: 'r' };
+      spec.onBidWon(wonBid);
+      expect(sendBeacon.calledOnce).to.equal(true);
+      const [url, payload] = sendBeacon.firstCall.args;
+      expect(url).to.equal(EVENT_ENDPOINT);
+      const event = JSON.parse(payload);
+      expect(event.type).to.equal('BID_WON');
+      expect(event.payload.bid).to.deep.equal(wonBid);
+    });
+
+    it('onBidderError POSTs a BID_ERROR beacon to the v2 event endpoint', function () {
+      const sendBeacon = sandbox.stub(ajaxLib, 'sendBeacon');
+      const error = { reason: 'boom' };
+      const bidderRequest = { bidderCode: 'cwire' };
+      spec.onBidderError({ error, bidderRequest });
+      expect(sendBeacon.calledOnce).to.equal(true);
+      const [url, payload] = sendBeacon.firstCall.args;
+      expect(url).to.equal(EVENT_ENDPOINT);
+      const event = JSON.parse(payload);
+      expect(event.type).to.equal('BID_ERROR');
+      expect(event.payload.error).to.deep.equal(error);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    it('returns no syncs when GDPR purpose-1 consent is missing', function () {
+      expect(spec.getUserSyncs({}, {}, {}, {})).to.be.empty;
+    });
+
+    it('returns no syncs when no syncOption is enabled', function () {
+      const gdprConsent = {
+        vendorData: { purpose: { consents: 1 } },
+        gdprApplies: false,
+        consentString: 'testConsentString',
+      };
+      expect(spec.getUserSyncs({}, {}, gdprConsent, {})).to.be.empty;
+    });
+
+    it('returns a pixel sync when pixelEnabled and gdprApplies=false', function () {
+      const gdprConsent = {
+        vendorData: { purpose: { consents: 1 } },
+        gdprApplies: false,
+        consentString: 'testConsentString',
+      };
+      const syncs = spec.getUserSyncs(
+        { pixelEnabled: true, iframeEnabled: true },
+        {},
+        gdprConsent,
+        {}
+      );
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal(
+        'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString'
       );
     });
 
-    it("user-syncs with enabled iframe option", function () {
+    it('returns an iframe sync when only iframeEnabled and gdprApplies=true', function () {
       const gdprConsent = {
-        vendorData: {
-          purpose: {
-            consents: {
-              1: true,
-            },
-          },
-        },
+        vendorData: { purpose: { consents: { 1: true } } },
         gdprApplies: true,
-        consentString: "abc123",
+        consentString: 'abc123',
       };
-      const synOptions = { iframeEnabled: true };
-      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
-
-      expect(userSyncs[0].type).to.equal("iframe");
-      expect(userSyncs[0].url).to.equal(
-        "https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123"
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, gdprConsent, {});
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal(
+        'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123'
       );
-    });
-  });
-
-  describe("buildRequests includes autoplay", function () {
-    afterEach(function () {
-      sandbox.restore();
-    });
-
-    it("should include autoplay: true when autoplay is enabled", function () {
-      sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(true);
-
-      const bidRequest = deepClone(bidRequests[0]);
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.slots[0].params.autoplay).to.equal(true);
-    });
-
-    it("should include autoplay: false when autoplay is disabled", function () {
-      sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(false);
-
-      const bidRequest = deepClone(bidRequests[0]);
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.slots[0].params.autoplay).to.equal(false);
-    });
-  });
-
-  describe("buildRequests with floor", function () {
-    it("should include floor in params when getFloor is defined", function () {
-      const bid = {
-        bidId: "123",
-        adUnitCode: "test-div",
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250]],
-          },
-        },
-        params: {
-          pageId: 4057,
-          placementId: "abc123",
-        },
-        getFloor: function ({ currency, mediaType, size }) {
-          expect(currency).to.equal("USD");
-          expect(mediaType).to.equal("*");
-          expect(size).to.equal("*");
-          return {
-            currency: "USD",
-            floor: 1.23,
-          };
-        },
-      };
-
-      const bidderRequest = {
-        refererInfo: {
-          page: "https://example.com",
-        },
-      };
-
-      const request = spec.buildRequests([bid], bidderRequest);
-
-      const payload = JSON.parse(request.data);
-      const slot = payload.slots[0];
-
-      expect(slot.params).to.have.property("floor");
-      expect(slot.params.floor).to.deep.equal({
-        currency: "USD",
-        floor: 1.23,
-      });
-    });
-
-    it("should not include floor in params if getFloor is not defined", function () {
-      const bid = {
-        bidId: "456",
-        adUnitCode: "test-div",
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250]],
-          },
-        },
-        params: {
-          pageId: 4057,
-          placementId: "abc123",
-        },
-        // no getFloor
-      };
-
-      const bidderRequest = {
-        refererInfo: {
-          page: "https://example.com",
-        },
-      };
-
-      const request = spec.buildRequests([bid], bidderRequest);
-      const payload = JSON.parse(request.data);
-      const slot = payload.slots[0];
-
-      expect(slot.params.floor).to.deep.equal({});
     });
   });
 });
