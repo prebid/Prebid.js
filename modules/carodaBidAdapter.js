@@ -14,6 +14,7 @@ import {
   sizeTupleToRtbSize,
   sizesToSizeTuples
 } from '../src/utils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const { getConfig } = config;
 
@@ -65,7 +66,7 @@ export const spec = {
     if (schain) {
       request.schain = schain;
     }
-    if (config.getConfig('coppa')) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(request, 'privacy.coppa', 1);
     }
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {

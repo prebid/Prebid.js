@@ -2,8 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepAccess, deepSetValue } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -71,7 +71,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || // gdpr
             USPConsent(bidderRequest.uspConsent) || // usp
-            config.getConfig('coppa') || // coppa
+            (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) || // coppa
             invalidCurrency(getCurrencyFromBidderRequest(bidderRequest)) // currency validation
     ) {
       return {
