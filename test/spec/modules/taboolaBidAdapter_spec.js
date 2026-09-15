@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec, internal, BANNER_ENDPOINT_URL, NATIVE_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility } from 'modules/taboolaBidAdapter.js';
-import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
 import { server } from '../../mocks/xhr.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -121,7 +120,7 @@ describe('Taboola Adapter', function () {
       expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
     });
 
-    it('should not fire nurl when deferBilling is true', function () {
+    it('should fire nurl as a win notice even when deferBilling is true', function () {
       const nurl = 'http://win.example.com/${AUCTION_PRICE}';
       const bid = {
         requestId: 1,
@@ -136,6 +135,25 @@ describe('Taboola Adapter', function () {
         height: 250,
         nurl: nurl,
         deferBilling: true
+      };
+      spec.onBidWon(bid);
+      expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
+    });
+
+    it('should not fire burl on bid won', function () {
+      const burl = 'http://billing.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        burl: burl
       };
       spec.onBidWon(bid);
       expect(server.requests.length).to.equal(0);
@@ -168,7 +186,7 @@ describe('Taboola Adapter', function () {
       expect(server.requests[0].url).to.equals('http://billing.example.com/3.4');
     });
 
-    it('should fall back to nurl when burl is not available', function () {
+    it('should not fire nurl when burl is not available', function () {
       const nurl = 'http://win.example.com/${AUCTION_PRICE}';
       const bid = {
         requestId: 1,
@@ -184,7 +202,31 @@ describe('Taboola Adapter', function () {
         nurl: nurl
       };
       spec.onBidBillable(bid);
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should fire both nurl on bid won and burl on bid billable for the same bid', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const burl = 'http://billing.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        burl: burl
+      };
+      spec.onBidWon(bid);
+      spec.onBidBillable(bid);
+      expect(server.requests.length).to.equal(2);
       expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
+      expect(server.requests[1].url).to.equals('http://billing.example.com/3.4');
     });
 
     it('should not fire anything when neither burl nor nurl is available', function () {
@@ -489,6 +531,27 @@ describe('Taboola Adapter', function () {
         expect(res.data.device.ext.visibility).to.exist;
       });
 
+      it('should prioritize site.content.language from ortb2 over navigator.language', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            ...commonBidderRequest.ortb2,
+            site: {
+              content: {
+                language: 'hi'
+              }
+            }
+          }
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.site.content.language).to.equal('hi');
+      });
+
+      it('should fall back to navigator.language when site.content.language is not set in ortb2', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.site.content.language).to.equal(navigator.language);
+      });
+
       it('should pass user entities', function () {
         const bidderRequest = {
           ...commonBidderRequest,
@@ -601,12 +664,12 @@ describe('Taboola Adapter', function () {
       });
 
       it('should pass coppa consent', function () {
-        config.setConfig({ coppa: true });
-
-        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: { regs: { coppa: 1 } }
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.regs.coppa).to.equal(1);
-
-        config.resetConfig();
       });
     });
 

@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/smartyadsBidAdapter.js';
-import { config } from '../../../src/config.js';
 
 describe('SmartyadsAdapter', function () {
   const bid = {
@@ -65,17 +64,8 @@ describe('SmartyadsAdapter', function () {
   });
 
   describe('with COPPA', function() {
-    beforeEach(function() {
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-    });
-    afterEach(function() {
-      config.getConfig.restore();
-    });
-
     it('should send the Coppa "required" flag set to "1" in the request', function () {
-      const serverRequest = spec.buildRequests([bid]);
+      const serverRequest = spec.buildRequests([bid], { ortb2: { regs: { coppa: 1 } } });
       expect(serverRequest.data.coppa).to.equal(1);
     });
   });

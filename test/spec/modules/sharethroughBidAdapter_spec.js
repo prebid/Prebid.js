@@ -417,6 +417,7 @@ describe('sharethrough adapter spec', function () {
           ref: 'https://referer.com',
         },
         ortb2: {
+          regs: { coppa: 1 },
           source: {
             tid: 'auction-id',
           },
@@ -602,9 +603,11 @@ describe('sharethrough adapter spec', function () {
 
         describe('coppa', () => {
           it('should populate request accordingly when coppa does not apply', () => {
-            config.setConfig({ coppa: false });
-
-            const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+            const request = {
+              ...bidderRequest,
+              ortb2: { ...bidderRequest.ortb2, regs: { coppa: 0 } }
+            };
+            const openRtbReq = spec.buildRequests(bidRequests, request)[0].data;
 
             expect(openRtbReq.regs.coppa).to.equal(0);
           });

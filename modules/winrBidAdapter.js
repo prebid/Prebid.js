@@ -146,7 +146,7 @@ export const spec = {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       userObj = { 'coppa': true };
     }
 

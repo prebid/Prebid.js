@@ -27,6 +27,8 @@ import { getDNT } from '../libraries/dnt/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('./yieldmoBidAdapter.d.ts').YieldmoBidderParams} YieldmoBidderParams
+ * @typedef {BidRequest & {params: YieldmoBidderParams}} YieldmoBidRequest
  */
 
 const BIDDER_CODE = 'yieldmo';
@@ -54,7 +56,7 @@ export const spec = {
   gvlid: GVLID,
   /**
    * Determines whether or not the given bid request is valid.
-   * @param {object} bid bid to validate
+   * @param {YieldmoBidRequest} bid bid to validate
    * @return {boolean} true if valid, otherwise false
    */
   isBidRequestValid: function (bid) {
@@ -222,11 +224,10 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent, coppa) {
     // COPPA: Yieldmo does not serve or track child-directed inventory —
     // suppress cookie-sync pixels on COPPA traffic, mirroring the bid discard.
-    // Use coppaDataHandler so the numeric core flag (coppa: 1) counts too.
-    if (coppaDataHandler.getCoppa()) {
+    if (coppa) {
       return [];
     }
     const syncs = [];

@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/consumableBidAdapter.js';
 import { createBid } from 'src/bidfactory.js';
-import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 
 const BIDDER_REQUEST_1 = {
@@ -496,16 +495,20 @@ describe('Consumable BidAdapter', function () {
       expect(data.schain).to.be.undefined;
     });
 
-    it('should contain coppa if configured', function () {
-      config.setConfig({ coppa: true });
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+    it('should contain coppa if present in the request regs', function () {
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, {
+        ...BIDDER_REQUEST_1,
+        ortb2: {
+          ...BIDDER_REQUEST_1.ortb2,
+          regs: { coppa: 1 }
+        }
+      });
       const data = JSON.parse(request.data);
 
       expect(data.coppa).to.be.true;
     });
 
-    it('should not contain coppa if not configured', function () {
-      config.setConfig({ coppa: false });
+    it('should not contain coppa if not present in the request regs', function () {
       const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
       const data = JSON.parse(request.data);
 

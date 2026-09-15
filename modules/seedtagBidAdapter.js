@@ -1,6 +1,5 @@
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
@@ -43,10 +42,19 @@ export const BIDFLOOR_CURRENCY = 'USD';
 function getBidFloor(bidRequest) {
   let floorInfo = {};
 
+  let mediaType = '*';
+  const hasBanner = hasBannerMediaType(bidRequest);
+  const hasVideo = hasVideoMediaType(bidRequest);
+  if (hasBanner && !hasVideo) {
+    mediaType = BANNER;
+  } else if (hasVideo && !hasBanner) {
+    mediaType = VIDEO;
+  }
+
   if (typeof bidRequest.getFloor === 'function') {
     floorInfo = bidRequest.getFloor({
       currency: BIDFLOOR_CURRENCY,
-      mediaType: '*',
+      mediaType: mediaType,
       size: '*'
     });
   }
@@ -327,7 +335,7 @@ export const spec = {
       payload.schain = schain;
     }
 
-    const coppa = config.getConfig('coppa');
+    const coppa = bidderRequest.ortb2?.regs?.coppa;
     if (coppa) {
       payload.coppa = coppa;
     }

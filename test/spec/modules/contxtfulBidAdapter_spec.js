@@ -862,6 +862,20 @@ describe('contxtful bid adapter', function () {
       ]);
     });
 
+    it('will preserve COPPA in wrapped user sync urls', () => {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [{ body: bidResponse }], undefined, undefined, undefined, true);
+      expect(userSyncs).to.deep.equal([
+        {
+          'url': 'mysyncurl.com/image?pbjs=1&coppa=1&qparam1=qparamv1&qparam2=qparamv2',
+          'type': 'image'
+        }
+      ]);
+    });
+
     it('will trigger user sync if enable iframe mode', () => {
       const syncOptions = {
         iframeEnabled: true

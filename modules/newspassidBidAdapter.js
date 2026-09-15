@@ -129,10 +129,10 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
     if (!syncOptions.iframeEnabled) return []; // disable if iframe sync is disabled
     if (!hasPurpose1Consent(gdprConsent)) return []; // disable if no purpose1 consent
-    if (config.getConfig('coppa') === true) return []; // disable syncs for coppa
+    if (coppa) return []; // disable syncs for coppa
 
     const params = {
       gdpr: gdprConsent?.gdprApplies ? 1 : 0,

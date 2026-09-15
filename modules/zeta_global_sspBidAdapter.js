@@ -1,7 +1,6 @@
 import { deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { parseDomain } from '../src/refererDetection.js';
 
 /**
@@ -267,7 +266,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) => {
     let syncurl = '';
 
     // Attaching GDPR Consent Params in UserSync url
@@ -287,8 +286,8 @@ export const spec = {
       syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
-    // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    // COPPA is supplied by core's COPPA handler (updated by the Codex bot).
+    if (coppa) {
       syncurl += '&coppa=1';
     }
 

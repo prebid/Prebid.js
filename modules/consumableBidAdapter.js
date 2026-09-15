@@ -1,5 +1,4 @@
 import { logWarn, deepAccess, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -87,7 +86,7 @@ export const spec = {
       data.schain = schain;
     }
 
-    if (config.getConfig('coppa')) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       data.coppa = true;
     }
 

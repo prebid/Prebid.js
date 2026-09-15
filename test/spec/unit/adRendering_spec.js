@@ -7,7 +7,7 @@ import {
   getRenderingData,
   handleCreativeEvent,
   handleNativeMessage,
-  handleRender, markWinningBid, renderIfDeferred,
+  handleRender, markWinningBid, renderAdDirect, renderIfDeferred,
 } from '../../../src/adRendering.js';
 import { getPreparedBidForAuction } from '../../../src/auction.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
@@ -17,6 +17,8 @@ import { VIDEO } from '../../../src/mediaTypes.js';
 import { auctionManager } from '../../../src/auctionManager.js';
 import adapterManager from '../../../src/adapterManager.js';
 import { bidFilters } from 'src/targeting/filters.js';
+import * as creativeRenderers from 'src/creativeRenderers.js';
+import { PbPromise } from 'src/utils/promise.js';
 import {
   EVENT_TYPE_IMPRESSION,
   EVENT_TYPE_WIN,
@@ -204,11 +206,116 @@ describe('adRendering', () => {
       });
     });
 
+    describe('renderAdDirect, when legacyRender is enabled', () => {
+      const SAFE_RENDERER_URL = 'https://example.com/renderer.js';
+      let doc, bid, creativeRender;
+
+      // the creative renderer is picked up and invoked asynchronously; wait for that chain to
+      // settle so the assertions see its final state and nothing leaks past the test.
+      const settled = () => new Promise((resolve) => setTimeout(resolve));
+
+      function mockDoc() {
+        const el = { insertBefore: sinon.stub(), firstChild: null };
+        const mock = {
+          write: sinon.stub(),
+          close: sinon.stub(),
+          readyState: 'complete',
+          body: { appendChild: sinon.stub() },
+          createElement: sinon.stub().returns({ style: {} }),
+          getElementsByTagName: sinon.stub().returns([el]),
+        };
+        mock.defaultView = { document: mock };
+        return mock;
+      }
+
+      beforeEach(() => {
+        bid = {
+          adId: 'legacy-ad-id',
+          ad: '<div>markup</div>',
+          creativeId: 'creative-id',
+          bidder: 'mockBidder',
+        };
+        doc = mockDoc();
+        sandbox.stub(auctionManager, 'findBidByAdId').callsFake((id) => id === bid.adId ? bid : undefined);
+        // stub out the creative renderer: the real one builds an iframe on the top document and
+        // loads safeRenderer.url from it, which would leak DOM, network and late events into
+        // the rest of the suite.
+        creativeRender = sinon.stub();
+        sandbox.stub(creativeRenderers, 'getCreativeRenderer').returns(PbPromise.resolve(creativeRender));
+        config.setConfig({ auctionOptions: { legacyRender: true } });
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+        // renderFn appends a creative comment to the render document; take it back off the real
+        // one, which the main-document case below has to use.
+        Array.from(document.documentElement.childNodes)
+          .filter((node) => node.nodeType === Node.COMMENT_NODE && node.textContent.includes(bid.creativeId))
+          .forEach((node) => node.remove());
+      });
+
+      it('writes the ad directly when the bid has no safe renderer', async () => {
+        renderAdDirect(doc, bid.adId);
+        await settled();
+        sinon.assert.calledWith(doc.write, bid.ad);
+        sinon.assert.called(doc.close);
+        sinon.assert.notCalled(creativeRenderers.getCreativeRenderer);
+        sinon.assert.notCalled(creativeRender);
+      });
+
+      it('runs the creative renderer, and does not write the ad, when the bid has a safe renderer', async () => {
+        bid.safeRenderer = { url: SAFE_RENDERER_URL };
+        renderAdDirect(doc, bid.adId);
+        await settled();
+        sinon.assert.notCalled(doc.write);
+        sinon.assert.calledWith(creativeRenderers.getCreativeRenderer, bid);
+        sinon.assert.calledOnce(creativeRender);
+        expect(creativeRender.firstCall.args[0]).to.deep.include({
+          adId: bid.adId,
+          safeRenderer: { url: SAFE_RENDERER_URL, config: undefined },
+        });
+      });
+
+      it('does not write the ad when the bid has a safe renderer without a url', async () => {
+        // the branch is keyed on the presence of a safe renderer, matching getCreativeRendererSource,
+        // rather than on its url - so a malformed safeRenderer does not silently fall back to
+        // document.write.
+        bid.safeRenderer = { config: {} };
+        renderAdDirect(doc, bid.adId);
+        await settled();
+        sinon.assert.notCalled(doc.write);
+        sinon.assert.calledOnce(creativeRender);
+      });
+
+      it('does not write to the main document that safeRenderer.url exempted from the guard', async () => {
+        bid.safeRenderer = { url: SAFE_RENDERER_URL };
+        sandbox.stub(utils, 'inIframe').returns(false);
+        const write = sandbox.stub(document, 'write');
+        const close = sandbox.stub(document, 'close');
+        renderAdDirect(document, bid.adId);
+        await settled();
+        sinon.assert.notCalled(write);
+        sinon.assert.notCalled(close);
+        sinon.assert.calledOnce(creativeRender);
+      });
+
+      if (FEATURES.VIDEO) {
+        it('does not write a video bid that safeRenderer.url exempted from the guard', async () => {
+          bid.mediaType = VIDEO;
+          bid.safeRenderer = { url: SAFE_RENDERER_URL };
+          renderAdDirect(doc, bid.adId);
+          await settled();
+          sinon.assert.notCalled(doc.write);
+          sinon.assert.calledOnce(creativeRender);
+        });
+      }
+    });
+
     describe('markWinningBid', () => {
       let bid;
       beforeEach(() => {
         bid = { adId: '123' };
-        sandbox.stub(utils, 'triggerPixel');
+        sandbox.stub(utils, 'politeTriggerPixel');
       });
       it('should fire BID_WON', () => {
         markWinningBid(bid);
@@ -217,7 +324,7 @@ describe('adRendering', () => {
       it('should fire win tracking pixels', () => {
         bid.eventtrackers = [{ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker' }];
         markWinningBid(bid);
-        sinon.assert.calledWith(utils.triggerPixel, 'tracker');
+        sinon.assert.calledWith(utils.politeTriggerPixel, 'tracker');
       });
       it('should NOT fire non-win or non-pixel trackers', () => {
         bid.eventtrackers = [
@@ -225,7 +332,7 @@ describe('adRendering', () => {
           { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'ignored' }
         ];
         markWinningBid(bid);
-        sinon.assert.notCalled(utils.triggerPixel);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
       });
     });
 

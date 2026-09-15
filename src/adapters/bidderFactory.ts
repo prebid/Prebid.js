@@ -6,7 +6,7 @@ import adapterManager, {
 } from '../adapterManager.js';
 import { config } from '../config.js';
 import { BannerBid, Bid, BidResponse, createBid } from '../bidfactory.js';
-import { type SyncType, userSync } from '../userSync.js';
+import { type UserSync, userSync } from '../userSync.js';
 import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
@@ -91,6 +91,7 @@ import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, coppaDataHandler, type ConsentD
  *
  * @property {('image'|'iframe')} type The type of user sync to be done.
  * @property {string} url The URL which makes the sync happen.
+ * @property {function} [onCleanup] Releases work associated with an iframe when it is removed.
  */
 
 // common params for all mediaTypes
@@ -157,7 +158,7 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
     uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
     gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>,
     coppa: boolean
-  ) => ({ type: SyncType, url: string })[];
+  ) => UserSync[];
   alwaysHasCapacity?: boolean;
 }
 
@@ -198,7 +199,7 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-export const guardTids: any = memoize(({ bidderCode }) => {
+function makeTidGuard({ bidderCode }) {
   const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
     if (TIDS.hasOwnProperty(prop)) {
@@ -233,7 +234,21 @@ export const guardTids: any = memoize(({ bidderCode }) => {
       }
     })
   };
-});
+}
+
+// Guards are cached per bidderRequest, so every use of the same request sees
+// the same guard: stable proxy identity, and one transmitTid activity check
+// per bidder request. The cache is keyed weakly, so an entry cannot outlive
+// the bidderRequest it guards.
+const tidGuards = new WeakMap<object, ReturnType<typeof makeTidGuard>>();
+export function guardTids<B extends BidderCode>(bidderRequest: ClientBidderRequest<B>) {
+  let guard = tidGuards.get(bidderRequest);
+  if (guard == null) {
+    guard = makeTidGuard(bidderRequest);
+    tidGuards.set(bidderRequest, guard);
+  }
+  return guard;
+}
 
 declare module '../events' {
   interface Events {
@@ -455,7 +470,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     // If the adapter code fails, no bids should be added. After all the bids have been added,
     // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
     const onSuccess = wrapCallback(function(response, responseObj) {
-      networkDone();
+      networkDone?.();
       try {
         response = JSON.parse(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -503,14 +518,14 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     });
 
     const onFailure = wrapCallback(function (errorMessage, error) {
-      networkDone();
+      networkDone?.();
       onError(errorMessage, error);
       requestDone();
     });
 
     onRequest(request);
 
-    const networkDone = requestMetrics.startTiming('net');
+    let networkDone;
 
     const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
 
@@ -518,14 +533,24 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       return Object.assign(defaults, request.options);
     }
 
+    // start network timer here so we do not include the compression time in `net` metric
+    const doAjax = (url: string, payload: unknown, options: AjaxOptions) => {
+      networkDone = requestMetrics.startTiming('net');
+      ajax(
+        url,
+        {
+          success: onSuccess,
+          error: onFailure
+        },
+        payload,
+        options
+      );
+    };
+
     switch (request.method) {
       case 'GET':
-        ajax(
+        doAjax(
           `${request.url}${formatGetParameters(request.data)}`,
-          {
-            success: onSuccess,
-            error: onFailure
-          },
           undefined,
           getOptions({
             method: 'GET',
@@ -536,12 +561,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       case 'POST':
         const enableGZipCompression = request.options?.endpointCompression;
         const callAjax = ({ url, payload }) => {
-          ajax(
+          doAjax(
             url,
-            {
-              success: onSuccess,
-              error: onFailure
-            },
             payload,
             getOptions({
               method: 'POST',
@@ -594,7 +615,7 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
         syncs = [syncs];
       }
       syncs.forEach((sync) => {
-        userSync.registerSync(sync.type, spec.code, sync.url);
+        userSync.registerSync(sync.type, spec.code, sync.url, sync.onCleanup);
       });
       userSync.bidderDone(spec.code);
     }

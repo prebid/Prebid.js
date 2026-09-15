@@ -134,9 +134,9 @@ const constructUrl = (userSyncsDefault, userSyncServer) => {
 };
 
 // Returns the list of user synchronization objects.
-const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
   // Get User Sync Defaults from pbjs lib
-  const userSyncsDefaultLib = getUserSyncsLib('')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
+  const userSyncsDefaultLib = getUserSyncsLib('')(syncOptions, null, gdprConsent, uspConsent, gppConsent, coppa);
   const userSyncsDefault = userSyncsDefaultLib?.find(item => item.url !== undefined);
 
   // Map Server Responses to User Syncs list

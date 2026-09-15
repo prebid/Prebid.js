@@ -7,6 +7,10 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
+/**
+ * @typedef {import('./allegroBidAdapter.d.ts').AllegroBidRequestParams} AllegroBidRequestParams
+ */
+
 const BIDDER_CODE = 'allegro';
 const BIDDER_URL = 'https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid';
 const GVLID = 1493;
@@ -140,6 +144,11 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
+    const publisherId = bidderRequest.bids.find(bid => /** @type {AllegroBidRequestParams} */ (bid.params)?.publisherId)?.params.publisherId;
+    if (publisherId) {
+      request['[com.allegro.dsp.ext]'] = { inventory: { id: publisherId } };
+    }
+
     if (request?.device?.dnt !== undefined) {
       request.device.dnt = request.device.dnt === 1;
     }
@@ -164,7 +173,6 @@ const converter = ortbConverter({
 
     return request;
   },
-
   /**
    * Post-processes each Prebid bid response, mapping Allegro DSP extension
    * fields onto the standard `meta` object so publishers can consume them.

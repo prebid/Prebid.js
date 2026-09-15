@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { deepClone } from 'src/utils';
+import * as utils from 'src/utils';
 import { spec as adapter } from 'modules/sparteoBidAdapter';
+import { Renderer } from 'src/Renderer.js';
 
 const CURRENCY = 'EUR';
 const TTL = 60;
@@ -257,6 +259,17 @@ describe('SparteoAdapter', function () {
         delete wrongBid.mediaTypes.video.playerSize;
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
       });
+
+      it('should return false because the bid params are missing', function () {
+        expect(adapter.isBidRequestValid({})).to.equal(false);
+      });
+
+      it('should return false because the placement is neither banner nor video', function () {
+        const wrongBid = deepClone(VALID_BID_BANNER);
+        delete wrongBid.mediaTypes.banner;
+
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
+      });
     });
   });
 
@@ -299,6 +312,16 @@ describe('SparteoAdapter', function () {
           expect(request).to.deep.equal(expectedRequest);
         });
       }
+
+      it('sets publisher.ext.params.publisherId under site root when params.publisherId is provided', function () {
+        const bid = deepClone(VALID_BID_BANNER);
+        bid.params.publisherId = 'pub-123';
+
+        const request = adapter.buildRequests([bid], { bids: [bid], ortb2: ORTB2_GLOBAL });
+        delete request.data.id;
+
+        expect(request.data.site.publisher.ext.params.publisherId).to.equal('pub-123');
+      });
     });
   });
 
@@ -408,7 +431,7 @@ describe('SparteoAdapter', function () {
       });
 
       if (FEATURES.VIDEO) {
-        it('should fallback to nurl as vastUrl when no cache URL is present', function () {
+        it('should not use nurl as vastUrl when no cache URL is present', function () {
           const response = {
             body: {
               'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
@@ -442,7 +465,7 @@ describe('SparteoAdapter', function () {
           const request = adapter.buildRequests([VALID_BID_VIDEO], BIDDER_REQUEST_VIDEO);
           const bids = adapter.interpretResponse(response, request);
 
-          expect(bids[0].vastUrl).to.equal('https://t.bidder.sparteo.com/vast');
+          expect(bids[0].vastUrl).to.equal(null);
           expect(bids[0].nurl).to.equal('https://t.bidder.sparteo.com/vast');
         });
 
@@ -497,11 +520,205 @@ describe('SparteoAdapter', function () {
           let formattedReponse = adapter.interpretResponse(response, request);
 
           expect(formattedReponse[0].renderer.url).to.equal(response.body.seatbid[0].bid[0].ext.prebid.renderer.url);
-          expect(formattedReponse[0].renderer.config).to.deep.equal(response.body.seatbid[0].bid[0].ext.prebid.renderer);
+          // config now carries a documentResolver callback (for iframe render support) in addition
+          // to the server-provided renderer config, so assert the server config is included rather
+          // than an exact match.
+          expect(formattedReponse[0].renderer.config).to.deep.include(response.body.seatbid[0].bid[0].ext.prebid.renderer);
+          expect(formattedReponse[0].renderer.config.documentResolver).to.be.a('function');
         });
       }
     });
   });
+
+  if (FEATURES.VIDEO) {
+    describe('outstream renderer', function () {
+      const AD_UNIT_CODE = 'id-5678';
+      const RENDERER_RESPONSE = {
+        body: {
+          id: '63f4d300-6896-4bdc-8561-0932f73148b1',
+          cur: 'EUR',
+          seatbid: [{
+            seat: 'sparteo',
+            group: 0,
+            bid: [{
+              id: 'cdbb6982-a269-40c7-84e5-04797f11d87b',
+              impid: '5e6f7g8h',
+              price: 5,
+              ext: { prebid: { type: 'video', renderer: { url: 'testVideoPlayer.js', options: { showVolume: false } } } },
+              adm: 'tag',
+              crid: 'crid',
+              w: 640,
+              h: 480
+            }]
+          }]
+        }
+      };
+
+      function freshRenderer() {
+        const request = adapter.buildRequests([VALID_BID_VIDEO], BIDDER_REQUEST_VIDEO);
+        return adapter.interpretResponse(RENDERER_RESPONSE, request)[0].renderer;
+      }
+
+      function renderBid(renderer) {
+        return { adUnitCode: AD_UNIT_CODE, renderer, vastXml: '<VAST/>', width: 640, height: 480 };
+      }
+
+      // Minimal Document stand-in: getElementById resolves the slot only when hasSlot is true,
+      // and defaultView is the window ANOutstreamVideo is looked up on.
+      function fakeDoc(hasSlot, win, slotId = AD_UNIT_CODE) {
+        return {
+          getElementById: (id) => (hasSlot && id === AD_UNIT_CODE ? { id: slotId } : null),
+          defaultView: win
+        };
+      }
+
+      describe('documentResolver', function () {
+        it('returns the render document when it holds the slot', function () {
+          const resolver = freshRenderer().getConfig().documentResolver;
+          const renderDoc = fakeDoc(true, {});
+          const sourceDoc = fakeDoc(false, {});
+          expect(resolver({ adUnitCode: AD_UNIT_CODE }, sourceDoc, renderDoc)).to.equal(renderDoc);
+        });
+
+        it('falls back to the source document when the render document lacks the slot', function () {
+          const resolver = freshRenderer().getConfig().documentResolver;
+          const renderDoc = fakeDoc(false, {});
+          const sourceDoc = fakeDoc(true, {});
+          expect(resolver({ adUnitCode: AD_UNIT_CODE }, sourceDoc, renderDoc)).to.equal(sourceDoc);
+        });
+
+        it('defaults to the render document when there is no source document', function () {
+          const resolver = freshRenderer().getConfig().documentResolver;
+          const renderDoc = fakeDoc(false, {});
+          expect(resolver({ adUnitCode: AD_UNIT_CODE }, null, renderDoc)).to.equal(renderDoc);
+        });
+      });
+
+      describe('render', function () {
+        afterEach(function () {
+          delete window.ANOutstreamVideo;
+        });
+
+        it('renders the outstream ad into the render document via ANOutstreamVideo', function () {
+          const renderAd = sinon.stub();
+          const doc = fakeDoc(true, { ANOutstreamVideo: { renderAd } });
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+          renderer._render(renderBid(renderer), doc);
+
+          sinon.assert.calledOnce(renderAd);
+          const args = renderAd.getCall(0).args[0];
+          expect(args.targetId).to.equal(AD_UNIT_CODE);
+          expect(args.sizes).to.deep.equal([640, 480]);
+          expect(args.adResponse.ad.video.content).to.equal('<VAST/>');
+        });
+
+        it('does not render when the slot is absent from the render document', function () {
+          const renderAd = sinon.stub();
+          const doc = fakeDoc(false, { ANOutstreamVideo: { renderAd } });
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+          renderer._render(renderBid(renderer), doc);
+          sinon.assert.notCalled(renderAd);
+        });
+
+        it('does not throw when ANOutstreamVideo is unavailable on the render window', function () {
+          const doc = fakeDoc(true, {});
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+          expect(() => renderer._render(renderBid(renderer), doc)).to.not.throw();
+        });
+
+        it('swallows errors thrown by ANOutstreamVideo.renderAd', function () {
+          const renderAd = sinon.stub().throws(new Error('boom'));
+          const doc = fakeDoc(true, { ANOutstreamVideo: { renderAd } });
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+          expect(() => renderer._render(renderBid(renderer), doc)).to.not.throw();
+          sinon.assert.calledOnce(renderAd);
+        });
+
+        it('falls back to the global document when no doc argument is provided', function () {
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+
+          // No `doc` passed: outstreamRender must fall back to the global `document`. The slot
+          // won't be found there, so it just logs and returns - the point here is the fallback
+          // itself doesn't throw.
+          expect(() => renderer._render(renderBid(renderer))).to.not.throw();
+        });
+
+        it('falls back to window when the render document has no defaultView', function () {
+          const renderAd = sinon.stub();
+          window.ANOutstreamVideo = { renderAd };
+          const doc = fakeDoc(true, undefined);
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+
+          renderer._render(renderBid(renderer), doc);
+
+          sinon.assert.calledOnce(renderAd);
+        });
+
+        it('defaults rendererOptions to {} when the server config has no options', function () {
+          const renderAd = sinon.stub();
+          const doc = fakeDoc(true, { ANOutstreamVideo: { renderAd } });
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+          delete renderer.config.options;
+
+          renderer._render(renderBid(renderer), doc);
+
+          sinon.assert.calledOnce(renderAd);
+          expect(renderAd.getCall(0).args[0].rendererOptions).to.deep.equal({});
+        });
+
+        it('defaults options when the renderer has no config', function () {
+          const renderAd = sinon.stub();
+          const doc = fakeDoc(true, { ANOutstreamVideo: { renderAd } });
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+          renderer.config = null;
+
+          expect(() => renderer._render(renderBid(renderer), doc)).to.not.throw();
+
+          sinon.assert.calledOnce(renderAd);
+          expect(renderAd.getCall(0).args[0].rendererOptions).to.deep.equal({});
+        });
+
+        it('falls back to adUnitCode when the slot element has no id', function () {
+          const renderAd = sinon.stub();
+          const doc = fakeDoc(true, { ANOutstreamVideo: { renderAd } }, '');
+          const renderer = freshRenderer();
+          renderer.loaded = true;
+
+          renderer._render(renderBid(renderer), doc);
+
+          sinon.assert.calledOnce(renderAd);
+          expect(renderAd.getCall(0).args[0].targetId).to.equal(AD_UNIT_CODE);
+        });
+      });
+
+      describe('createRenderer error handling', function () {
+        let setRenderStub;
+        let logWarnStub;
+
+        afterEach(function () {
+          if (setRenderStub) { setRenderStub.restore(); setRenderStub = null; }
+          if (logWarnStub) { logWarnStub.restore(); logWarnStub = null; }
+        });
+
+        it('logs a warning and does not throw when Renderer.prototype.setRender throws', function () {
+          setRenderStub = sinon.stub(Renderer.prototype, 'setRender').throws(new Error('boom'));
+          logWarnStub = sinon.stub(utils, 'logWarn');
+
+          expect(() => freshRenderer()).to.not.throw();
+
+          sinon.assert.calledOnce(logWarnStub);
+        });
+      });
+    });
+  }
 
   describe('onBidWon', function () {
     describe('Check methods succeed', function () {
@@ -552,12 +769,39 @@ describe('SparteoAdapter', function () {
     });
   });
 
+  describe('onTimeout', function () {
+    it('should not throw', function () {
+      expect(() => adapter.onTimeout({})).to.not.throw();
+    });
+  });
+
+  describe('onSetTargeting', function () {
+    it('should not throw', function () {
+      expect(() => adapter.onSetTargeting({})).to.not.throw();
+    });
+  });
+
   describe('getUserSyncs', function () {
     beforeEach(function () {
       delete window.sparteoCrossfire;
     });
 
     describe('Check methods succeed', function () {
+      // `isSynced` is a module-level flag that only ever flips false -> true, never back (it is
+      // never reset between tests since the module is loaded once for the whole spec run). This
+      // test must therefore run BEFORE the "fires" test below: it keeps iframeEnabled false so it
+      // never trips the flag, leaving the gate open for the next test to exercise the full path.
+      it('falls back to default empty values when GDPR/GPP consent sub-fields are missing', function () {
+        const syncOptions = { iframeEnabled: false };
+        const gdprConsent = { gdprApplies: false };
+        const gppConsent = {};
+
+        const result = adapter.getUserSyncs(syncOptions, null, gdprConsent, undefined, gppConsent);
+
+        expect(result).to.be.undefined;
+        expect(window.sparteoCrossfire).to.be.undefined;
+      });
+
       it('should return the sync url with GDPR, USP and GPP consent params', function () {
         const syncOptions = {
           'iframeEnabled': true,
@@ -795,6 +1039,24 @@ describe('SparteoAdapter', function () {
           'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&app_domain=dev.sparteo.com&bundle=unknown'
         );
       });
+    });
+
+    it('produces &bundle=unknown when the app.bundle field is entirely absent', function () {
+      const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}${APP_DOMAIN_QUERY}${BUNDLE_QUERY}';
+      const bid = deepClone(VALID_BID_BANNER);
+      bid.params.endpoint = ENDPOINT;
+
+      const bidderReq = {
+        bids: [bid],
+        ortb2: { app: { domain: 'dev.sparteo.com' } }
+      };
+
+      const req = adapter.buildRequests([bid], bidderReq);
+      delete req.data.id;
+
+      expect(req.url).to.equal(
+        'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&app_domain=dev.sparteo.com&bundle=unknown'
+      );
     });
 
     it('app domain missing becomes app_domain=unknown while keeping bundle', function () {

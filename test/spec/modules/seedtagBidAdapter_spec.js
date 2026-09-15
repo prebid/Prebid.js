@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { getTimeoutUrl, spec, BIDFLOOR_CURRENCY } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
-import { config } from '../../../src/config.js';
 import * as adUnits from 'src/utils/adUnits';
 
 const PUBLISHER_ID = '0000-0000-01';
@@ -401,6 +400,71 @@ describe('Seedtag Adapter', function () {
         expect(bidRequests[1]).not.to.have.property('bidFloor');
       });
 
+      describe('getFloor mediaType', function () {
+        function buildRequestWithFloor(mediaTypes) {
+          const getFloor = sinon.stub().returns({
+            currency: BIDFLOOR_CURRENCY,
+            floor: bidFloor
+          });
+          const bidRequest = getSlotConfigs(mediaTypes, mandatoryDisplayParams);
+          bidRequest.getFloor = getFloor;
+          const request = spec.buildRequests([bidRequest], bidderRequest);
+          return { getFloor, data: JSON.parse(request.data) };
+        }
+
+        it('should request banner floor when bid has only banner mediaType', function () {
+          const { getFloor, data } = buildRequestWithFloor({ banner: {} });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: 'banner',
+            size: '*'
+          })).to.equal(true);
+          expect(data.bidRequests[0].bidFloor).to.equal(bidFloor);
+        });
+
+        it('should request wildcard floor when bid has banner and video mediaTypes', function () {
+          const { getFloor } = buildRequestWithFloor({
+            banner: {},
+            video: {
+              context: 'outstream',
+              playerSize: [[600, 200]],
+            },
+          });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: '*',
+            size: '*'
+          })).to.equal(true);
+        });
+
+        it('should request video floor when bid has only video mediaType', function () {
+          const { getFloor } = buildRequestWithFloor({
+            video: {
+              context: 'instream',
+              playerSize: [[300, 200]],
+            },
+          });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: 'video',
+            size: '*'
+          })).to.equal(true);
+        });
+
+        it('should request wildcard floor when bid has neither banner nor video mediaType', function () {
+          const { getFloor } = buildRequestWithFloor({ native: {} });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: '*',
+            size: '*'
+          })).to.equal(true);
+        });
+      });
+
       it('should not launch an exception when request a video with no playerSize', function () {
         const validBidRequests = [
           getSlotConfigs(
@@ -427,23 +491,22 @@ describe('Seedtag Adapter', function () {
     });
 
     describe('COPPA param', function () {
-      it('should add COPPA param to payload when prebid config has parameter COPPA equal to true', function () {
-        config.setConfig({ coppa: true });
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
+      it('should add COPPA param to payload when present in the bidder request', function () {
+        const request = spec.buildRequests(validBidRequests, {
+          ...bidderRequest,
+          ortb2: { regs: { coppa: 1 } }
+        });
         const data = JSON.parse(request.data);
-        expect(data.coppa).to.equal(true);
+        expect(data.coppa).to.equal(1);
       });
 
-      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
-        config.setConfig({ coppa: false });
-
+      it('should not add COPPA param to payload when the bidder request has no COPPA flag', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.coppa).to.be.undefined;
       });
 
-      it('should not add COPPA param to payload when prebid config has not parameter COPPA', function () {
+      it('should not add COPPA param to payload when the bidder request has no ORTB2 data', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.coppa).to.be.undefined;

@@ -123,14 +123,13 @@ describe('snigelBidAdapter', function () {
     });
 
     it('should forward whether or not COPPA applies', function () {
-      config.setConfig({
-        'coppa': true,
+      const request = spec.buildRequests([], {
+        ...BASE_BIDDER_REQUEST,
+        ortb2: { regs: { coppa: 1 } }
       });
-
-      const request = spec.buildRequests([], BASE_BIDDER_REQUEST);
       expect(request).to.have.property('data');
       const data = JSON.parse(request.data);
-      expect(data).to.have.property('coppa').and.to.equal(true);
+      expect(data).to.have.property('coppa').and.to.equal(1);
     });
 
     it('should forward refresh information', function () {

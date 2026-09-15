@@ -1,9 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/trustxBidAdapter.js';
 
-import sinon from 'sinon';
-import { config } from 'src/config.js';
-
 const getBannerRequest = () => {
   return {
     bidderCode: 'trustx',
@@ -659,16 +656,14 @@ describe('trustxBidAdapter', function() {
       });
 
       it('should include COPPA flag in request when set to true', function() {
-        // Mock the config.getConfig function to return true for coppa
-        sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-
-        const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+        const bidderRequest = {
+          ...mockBidderRequest,
+          ortb2: { regs: { coppa: 1 } }
+        };
+        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequest);
         const data = requests.data;
 
         expect(data.regs).to.have.property('coppa', 1);
-
-        // Restore the stub
-        config.getConfig.restore();
       });
     });
   });

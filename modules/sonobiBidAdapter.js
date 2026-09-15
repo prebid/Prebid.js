@@ -154,7 +154,7 @@ export const spec = {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest.ortb2?.regs?.coppa === 1) {
       payload.coppa = 1;
     } else {
       payload.coppa = 0;

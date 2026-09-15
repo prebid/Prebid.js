@@ -14,9 +14,10 @@ import { configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
 import { CONSENT_GDPR } from "../src/consentHandler.ts";
 import type { CMConfig } from "../libraries/consentManagement/cmUtils.ts";
-import { TCF_CMP_VERSION, type TCFConsentData } from '../libraries/consentManagement/consentUtils.js';
+import { TCF_CMP_VERSION } from '../libraries/consentManagement/consentUtils.js';
+import type { TCFConsentData } from '../src/types/consent/tcf.d.ts';
 
-export type { TCFConsentData } from '../libraries/consentManagement/consentUtils.js';
+export type { TCFConsentData } from '../src/types/consent/tcf.d.ts';
 
 export let consentConfig: any = {};
 export let gdprScope;
@@ -46,9 +47,6 @@ export interface TCFConfig {
 type TCFCMConfig = TCFConfig & CMConfig<TCFConsentData>;
 
 declare module '../src/consentHandler' {
-  interface ConsentData {
-    [CONSENT_GDPR]: TCFConsentData;
-  }
   interface ConsentManagementConfig {
     [CONSENT_GDPR]?: TCFCMConfig;
   }

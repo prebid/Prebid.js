@@ -6,6 +6,18 @@ import { getOsVersion } from '../../../libraries/advangUtils/index.js';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 
 describe('nexverseBidAdapterTests', () => {
+  describe('getUserSyncs', () => {
+    it('includes configured COPPA in the sync URL', () => {
+      const [sync] = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, true);
+      expect(sync.url).to.include('&coppa=1');
+    });
+
+    it('reports COPPA as disabled in the sync URL', () => {
+      const [sync] = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, false);
+      expect(sync.url).to.include('&coppa=0');
+    });
+  });
+
   describe('isBidRequestValid', function () {
     const sbid = {
       'adUnitCode': 'div',

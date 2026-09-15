@@ -74,10 +74,25 @@ export type AnalyticsConfig<P extends AnalyticsProvider> = (
        */
       excludeEvents?: (keyof events.Events)[];
       /**
-       * Adapter specific options
+       * Adapter specific options, on top of the ones every adapter takes.
+       *
+       * Providers that declare `options` in AnalyticsProviderConfig use the type they declared
+       * there; anything else takes an open bag.
        */
-      options?: P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : Record<string, unknown>
+      options?: P extends keyof AnalyticsProviderConfig
+        ? (AnalyticsProviderConfig[P] extends { options: infer O } ? O & DefaultOptions : Record<string, unknown>)
+        : Record<string, unknown>
     };
+
+/**
+ * Configuration for any one provider - the type it declared, or the open-ended shape for providers
+ * that declared none. Mapping over the declared providers keeps each one's options to itself;
+ * naming them as a type argument (`AnalyticsConfig<keyof AnalyticsProviderConfig>`) instantiates
+ * with a union, and intersects every provider's options with every other provider's.
+ */
+export type SomeAnalyticsConfig =
+  { [P in keyof AnalyticsProviderConfig]: AnalyticsConfig<P> }[keyof AnalyticsProviderConfig]
+  | AnalyticsConfig<AnalyticsProvider>;
 
 type AnalyticsAdapterOptions = {
   analyticsType?: AnalyticsType;

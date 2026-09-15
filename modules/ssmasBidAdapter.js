@@ -2,7 +2,6 @@ import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { triggerPixel, deepSetValue } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { config } from '../src/config.js';
 
 export const SSMAS_CODE = 'ssmas';
 const SSMAS_SERVER = 'ads.ssmas.com';
@@ -58,7 +57,7 @@ export const spec = {
       data.regs.ext.consent = bidderRequest.uspConsent.consentString;
       data.regs.ext.ccpa = 1;
     }
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest.ortb2?.regs?.coppa === 1) {
       data.regs.coppa = 1;
     }
 

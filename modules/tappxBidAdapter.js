@@ -3,7 +3,6 @@
 import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseDomain } from '../src/refererDetection.js';
 import { getDNT } from '../libraries/dnt/index.js';
@@ -476,8 +475,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   }
 
   // COPPA compliance
-  if (config.getConfig('coppa') === true) {
-    regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
+  if (bidderRequest.ortb2?.regs?.coppa === 1) {
+    regs.coppa = 1;
   }
   // < GDPR
 

@@ -2,7 +2,6 @@ import { generateUUID, _each, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
@@ -331,7 +330,7 @@ function getRequestData(bid, bidderRequest) {
     });
   }
 
-  if (config.getConfig('coppa')) {
+  if (bidderRequest?.ortb2?.regs?.coppa) {
     bidData.coppa = true;
   }
 

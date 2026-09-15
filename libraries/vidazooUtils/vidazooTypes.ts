@@ -16,10 +16,8 @@ export interface VidazooBaseBidderParams {
   /**
    * Placement id on platform.
    */
+
   placementId?: number;
-  /**
-   * Custom parameters for the request
-   */
   ext?: Ext;
   /**
    * Subdomain define subdomain in the bid request URL

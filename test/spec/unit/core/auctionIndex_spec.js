@@ -9,7 +9,7 @@ describe('auction index', () => {
       getAdUnits() { return adUnits; },
       getBidRequests() { return bidderRequests; },
       getFPD() {
-        return { global: { ortb2 } };
+        return { global: ortb2 };
       }
     };
   }
