@@ -28,6 +28,7 @@ import * as activityRules from 'src/activities/rules.js';
 import { hook } from '../../../src/hook.js';
 import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
 import { auctionManager } from '../../../src/auctionManager.js';
+import * as pbsOrtbConverter from 'modules/prebidServerBidAdapter/ortbConverter.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -3217,6 +3218,54 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.imp[0]).to.be.a('object');
       expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.prebid.storedrequest.id');
       expect(parsedRequestBody.imp[0].ext.prebid.storedrequest.id).to.equal(storedRequestId);
+    });
+  });
+
+  describe('parsing an untrusted response body', function () {
+    // What the guard removes, and that it leaves data alone, is covered where it is defined,
+    // in test/spec/unit/utils/untrustedJson_spec.js. These cover the wiring for this module's
+    // two response bodies, neither of which passes through bidderFactory.
+    afterEach(function () {
+      delete Object.prototype.polluted;
+      // The sync case below marks its bidders synced; without this the next spec that
+      // expects a sync finds one already done and sees no call at all.
+      resetSyncedStatus();
+    });
+
+    it('strips polluting keys from the auction response before the converter sees it', function () {
+      const interpret = sinon.stub(pbsOrtbConverter, 'interpretPBSResponse').returns({ bids: [] });
+      try {
+        config.setConfig({ s2sConfig: CONFIG });
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        const hostile = JSON.stringify(RESPONSE_OPENRTB).replace(/^\{/, '{"__proto__":{"polluted":true},');
+        server.requests[0].respond(200, {}, hostile);
+
+        sinon.assert.calledOnce(interpret);
+        const received = interpret.firstCall.args[0];
+        expect(Object.prototype.hasOwnProperty.call(received, '__proto__')).to.equal(false);
+        expect(received.seatbid).to.be.an('array');
+      } finally {
+        interpret.restore();
+      }
+    });
+
+    it('still runs cookie syncs when the sync response carries a polluting key', function () {
+      const pixel = sinon.stub(utils, 'triggerPixel');
+      try {
+        const s2sConfig = utils.deepClone(CONFIG);
+        s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+        config.setConfig({ s2sConfig });
+        adapter.callBids(s2sBidRequest, utils.deepClone(BID_REQUESTS), addBidResponse, done, ajax);
+
+        server.requests[0].respond(200, {}, '{"__proto__":{"polluted":true},"bidder_status":' +
+          '[{"bidder":"appnexus","no_cookie":true,"usersync":{"url":"http://sync.test/px","type":"image"}}]}');
+
+        sinon.assert.calledWith(pixel, 'http://sync.test/px');
+      } finally {
+        pixel.restore();
+      }
     });
   });
 

@@ -118,61 +118,6 @@ export function ortbConverter<B extends BidderCode>({
 }: ConverterConfig<B> = {}) {
   const REQ_CTX = new WeakMap();
 
-  function sanitizeORTB(value) {
-    // Codex bot: keep hostile response handling at this shared conversion boundary.
-    if (value == null || typeof value !== 'object') {
-      return value;
-    }
-
-    function isUnsafeKey(key) {
-      return key === 'prototype' || Object.getOwnPropertyDescriptor(Object.prototype, key) != null;
-    }
-
-    function frame(source) {
-      const keys = Object.keys(source);
-      const standardPrototype = Array.isArray(source) ? Array.prototype : Object.prototype;
-      const canSanitizeInPlace = Object.getPrototypeOf(source) === standardPrototype && Object.isExtensible(source) &&
-        !keys.some(isUnsafeKey);
-      const target = canSanitizeInPlace
-        ? source
-        : (Array.isArray(source) ? [] : {});
-      return [source, target, keys];
-    }
-
-    const initial = frame(value);
-    const sanitized = initial[1];
-    const seen = new WeakMap([[value, sanitized]]);
-    const pending = [initial];
-    while (pending.length) {
-      const [source, target, keys] = pending.pop();
-      keys.forEach(key => {
-        // Inherited-property names can make ordinary recursive assignment descend
-        // into Object.prototype. ORTB extension objects are untrusted too.
-        if (isUnsafeKey(key)) {
-          return;
-        }
-        const descriptor = Object.getOwnPropertyDescriptor(source, key);
-        if (!descriptor || !('value' in descriptor)) {
-          return;
-        }
-        const child = descriptor.value;
-        if (child == null || typeof child !== 'object') {
-          target[key] = child;
-          return;
-        }
-        let sanitizedChild = seen.get(child);
-        if (!sanitizedChild) {
-          const childFrame = frame(child);
-          sanitizedChild = childFrame[1];
-          seen.set(child, sanitizedChild);
-          pending.push(childFrame);
-        }
-        target[key] = sanitizedChild;
-      });
-    }
-    return sanitized;
-  }
-
   function builder(slot, wrapperFn, builderFn, errorHandler) {
     let build;
     return function (...args) {
@@ -282,7 +227,6 @@ export function ortbConverter<B extends BidderCode>({
       if (ctx == null) {
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`');
       }
-      response = sanitizeORTB(response);
       function augmentContext(ctx, extraParams = {}) {
         return Object.assign(ctx, { ortbRequest: request }, extraParams);
       }
