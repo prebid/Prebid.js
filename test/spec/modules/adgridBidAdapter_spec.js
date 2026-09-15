@@ -336,11 +336,34 @@ describe('adgrid bid adapter tests', () => {
             w: 640,
             h: 480,
             ext: {
-              playerSize: [640, 480],
+              playerSize: [[640, 480]],
               context: 'outstream',
             },
           };
           expect(video).to.eql(expectedVideo);
+        });
+
+        it('video.ext.playerSize follows a publisher ortb2Imp.video size override instead of the raw ad-unit playerSize', () => {
+          const overriddenBids = structuredClone(sampleBids);
+          overriddenBids[0].mediaTypes = {
+            video: {
+              context: 'outstream',
+              playerSize: [854, 480],
+              mimes: ['video/mp4'],
+            }
+          };
+          overriddenBids[0].ortb2Imp = {
+            ...overriddenBids[0].ortb2Imp,
+            video: {
+              w: 640,
+              h: 480,
+            }
+          };
+          const request = spec.buildRequests(overriddenBids, bidderRequest);
+          const video = request.data.imp[0].video;
+          expect(video.w).to.equal(640);
+          expect(video.h).to.equal(480);
+          expect(video.ext.playerSize).to.eql([[640, 480]]);
         });
 
         it('We perform a test with a instream adunit', () => {
