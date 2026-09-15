@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import {
+  getAdUnitBidLimitMap,
   getGPTSlotsForAdUnits,
   getHighestCpmBidsFromBidPool,
   sortByDealAndPriceBucketOrDesirability,
   targeting as targetingInstance
-  , getAdUnitBidLimitMap
 } from 'src/targeting.js';
 import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
@@ -19,7 +19,7 @@ import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import { getHighestCpm } from '../../../../src/utils/reducers.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
-import { lock, targetingLock } from '../../../../src/targeting/lock.js';
+import { lock } from '../../../../src/targeting/lock.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);

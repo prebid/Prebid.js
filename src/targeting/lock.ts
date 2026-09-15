@@ -2,9 +2,8 @@ import type { TargetingMap } from "../targeting.ts";
 import { config } from "../config.ts";
 import { ttlCollection } from "../utils/ttlCollection.ts";
 import { isGptPubadsDefined } from "../utils.js";
-import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
 import { getSlotTargeting } from "../utils/gptTargeting.ts";
-import type { GptSlot } from "../types/gpt";
+import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
 
 const DEFAULT_LOCK_TIMEOUT = 3000;
 
