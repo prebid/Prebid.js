@@ -3269,9 +3269,13 @@ describe('S2S Adapter', function () {
           '[{"bidder":"appnexus","no_cookie":true,' +
           '"usersync":{"url":"http://sync.test/px","type":"image"}}]}');
 
-        // Asserted on the root, because doAllSyncs shifts entries off bidder_status as it runs -
-        // by now that array is empty, and anything read out of it would say nothing.
-        expect(Object.keys(guard.returnValues[0])).to.deep.equal(['bidder_status']);
+        // Matched on the argument, not on call order: this test's own callBids also fires an
+        // auction request, and a future guarded parse anywhere earlier would silently make
+        // returnValues[0] a different body. Asserted on the root, because doAllSyncs shifts
+        // entries off bidder_status as it runs - by now that array is empty.
+        const syncCall = guard.getCalls().find(c => c.args[0].includes('bidder_status'));
+        expect(syncCall, 'the sync body was never parsed through the guard').to.exist;
+        expect(Object.keys(syncCall.returnValue)).to.deep.equal(['bidder_status']);
         sinon.assert.calledWith(pixel, 'http://sync.test/px');
       } finally {
         guard.restore();
