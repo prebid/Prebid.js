@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { parseUntrustedJSON } from 'src/utils/untrustedJson.js';
+import * as logging from 'src/utils/logging.js';
 
 describe('parseUntrustedJSON', () => {
   // How an adapter folds a response into an object of its own. Assignment key by key is what
@@ -124,6 +125,33 @@ describe('parseUntrustedJSON', () => {
 
     it('throws what JSON.parse throws when the text is not JSON', () => {
       expect(() => parseUntrustedJSON('not json at all')).to.throw(SyntaxError);
+    });
+  });
+
+  describe('warns once per body', () => {
+    let warn;
+    beforeEach(() => { warn = sinon.stub(logging, 'logWarn'); });
+    afterEach(() => { warn.restore(); });
+
+    it('logs one warning naming what it removed, however many keys there were', () => {
+      const bid = i => `{"impid":"i${i}","__proto__":{"p":true},"ext":{"constructor":{"k":1}}}`;
+      parseUntrustedJSON(`{"seatbid":[{"bid":[${[0, 1, 2].map(bid).join(',')}]}]}`);
+
+      expect(warn.callCount).to.equal(1);
+      expect(warn.firstCall.args[0]).to.contain('__proto__ (3)').and.to.contain('constructor (3)');
+    });
+
+    it('names only what it actually removed', () => {
+      parseUntrustedJSON('{"ext":{"constructor":{"k":1}}}');
+
+      expect(warn.firstCall.args[0]).to.contain('constructor (1)');
+      expect(warn.firstCall.args[0]).to.not.contain('__proto__');
+    });
+
+    it('says nothing about a clean body', () => {
+      parseUntrustedJSON('{"ext":{"constructor":"acme-v2","toString":"t"}}');
+
+      expect(warn.called).to.equal(false);
     });
   });
 
