@@ -19,6 +19,7 @@ import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import { getHighestCpm } from '../../../../src/utils/reducers.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
+import { lock, targetingLock } from '../../../../src/targeting/lock.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -1728,6 +1729,13 @@ describe('targeting tests', function () {
         presetGPTTargetingStub.resetHistory();
         events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId, auctionId: 'auction-b' });
         sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
+      });
+
+      it('releases targeting lock on BID_WON', () => {
+        sandbox.stub(lock, 'unlock');
+        installGptTargeting(targetedAdId);
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId, auctionId: 'auction-b' });
+        sinon.assert.calledWith(lock.unlock, slot);
       });
 
       it('ignores BID_WON from an older bid after newer targeting is installed', () => {

@@ -218,10 +218,10 @@ declare module './config' {
 export function newTargeting(auctionManager) {
   const latestAuctionForAdUnit = {};
 
-  function shouldResetGptTargetingOnBidWon(bid: Bid) {
-    if (!isGptPubadsDefined() || bid?.adId == null) return false;
+  function getBidSlots(bid: Bid) {
+    if (!isGptPubadsDefined() || bid?.adId == null) return [];
     return (window as any).googletag.pubads().getSlots()
-      .some((slot) => slotHasTargetedAdId(slot, bid.adId));
+      .filter((slot) => slotHasTargetedAdId(slot, bid.adId));
   }
 
   const targeting = {
@@ -378,8 +378,11 @@ export function newTargeting(auctionManager) {
   });
 
   events.on(EVENTS.BID_WON, (bid) => {
-    if (!shouldResetGptTargetingOnBidWon(bid)) return;
-    targeting.presetGPTTargeting([bid.adUnitCode]);
+    const slots = getBidSlots(bid);
+    if (slots.length > 0) {
+      slots.forEach(slot => lock.unlock(slot));
+      targeting.presetGPTTargeting([bid.adUnitCode]);
+    }
   });
 
   function getBidsIncludedInBidderTargeting(bids: Bid[]): Bid[] {

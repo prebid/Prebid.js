@@ -4,6 +4,7 @@ import { ttlCollection } from "../utils/ttlCollection.ts";
 import { isGptPubadsDefined } from "../utils.js";
 import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
 import { getSlotTargeting } from "../utils/gptTargeting.ts";
+import type { GptSlot } from "../types/gpt";
 
 const DEFAULT_LOCK_TIMEOUT = 3000;
 
@@ -43,10 +44,13 @@ export function targetingLock() {
     }
     locked.clear();
   });
+  function unlock(slot) {
+    keys?.forEach(key => getSlotTargeting(slot, key)?.forEach(locked.delete));
+  }
   const [setupGpt, tearDownGpt] = (() => {
     let enabled = false;
     function onGptRender({ slot }: SlotRenderEndedEvent) {
-      keys?.forEach(key => getSlotTargeting(slot, key)?.forEach(locked.delete));
+      unlock(slot);
     }
     return [
       () => {
@@ -71,7 +75,8 @@ export function targetingLock() {
     lock(targeting: TargetingMap<unknown>) {
       setupGpt();
       keys?.forEach(key => targeting[key] != null && locked.add(targeting[key]));
-    }
+    },
+    unlock
   };
 }
 
