@@ -3,7 +3,7 @@ import { spec } from '../../../modules/mycodemediaBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'mycodemedia';
+const bidder = 'mcodemedia';
 
 describe('MyCodeMediaBidAdapter', function () {
   const userIdAsEids = [{
