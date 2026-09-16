@@ -3,7 +3,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 import { config } from '../src/config.js';
-import { replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { politeTriggerPixel, replaceAuctionPrice } from '../src/utils.js';
 
 const BIDDER_CODE = 'silvermob';
 const GVLID = 1058;
@@ -61,6 +61,11 @@ function unwrapNativeAdm(adm) {
   return parsed;
 }
 
+function sendNotice(url, bid) {
+  if (typeof url !== 'string' || !url) return;
+  politeTriggerPixel(replaceAuctionPrice(url, bid.originalCpm || bid.cpm));
+}
+
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -95,8 +100,10 @@ const converter = ortbConverter({
       bid.adm = unwrapNativeAdm(bid.adm);
     }
     const bidResponse = buildBidResponse(bid, context);
-    // The endpoint may deliver its win notice in `nurl`; when markup is inline, that is not a VAST location.
-    if (bid.nurl && bid.adm) {
+    // The endpoint may deliver its win notice in `nurl`. For banners the converter already embeds it as a
+    // tracking pixel in `ad`; for inline video / native markup keep it for onBidWon instead of treating it
+    // as a VAST location.
+    if (bid.nurl && bid.adm && bidResponse.mediaType !== BANNER) {
       bidResponse.nurl = bid.nurl;
       if (bidResponse.vastUrl === bid.nurl) delete bidResponse.vastUrl;
     }
@@ -167,10 +174,12 @@ export const spec = {
   },
 
   onBidWon: (bid) => {
-    const cpm = bid.originalCpm || bid.cpm;
-    [bid.burl, bid.nurl]
-      .filter((url) => typeof url === 'string' && url)
-      .forEach((url) => triggerPixel(replaceAuctionPrice(url, cpm)));
+    sendNotice(bid.nurl, bid);
+  },
+
+  // Billing is deferred by core when the publisher sets `adUnit.deferBilling`, so `burl` must not fire on win.
+  onBidBillable: (bid) => {
+    sendNotice(bid.burl, bid);
   }
 };
 

@@ -370,13 +370,16 @@ describe('silvermobAdapter', function () {
       expect(bids[0].ad).to.equal(ad);
     });
 
-    it('should keep the win notice and billing URLs for onBidWon', async function () {
+    it('should leave the banner win notice to the embedded pixel and keep burl for billing', async function () {
       const [request] = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const nurl = 'https://us.silvermob.com/marketplace/api/dsp/notify/1?wp=${AUCTION_PRICE}';
       const bids = spec.interpretResponse(bannerResponse({
-        nurl: 'https://us.silvermob.com/marketplace/api/dsp/notify/1?wp=${AUCTION_PRICE}',
+        nurl,
         burl: 'https://us.silvermob.com/marketplace/api/dsp/burl?wp=${AUCTION_PRICE}'
       }), request);
-      expect(bids[0].nurl).to.equal('https://us.silvermob.com/marketplace/api/dsp/notify/1?wp=${AUCTION_PRICE}');
+      expect(bids[0].nurl).to.be.undefined;
+      expect(bids[0].ad).to.include('notify/1');
+      expect(bids[0].ad).to.include(ad);
       expect(bids[0].burl).to.equal('https://us.silvermob.com/marketplace/api/dsp/burl?wp=${AUCTION_PRICE}');
       expect(bids[0].vastUrl).to.be.undefined;
     });
@@ -496,30 +499,37 @@ describe('silvermobAdapter', function () {
     });
   });
 
-  describe('onBidWon', function () {
-    let triggerPixelStub;
+  describe('win and billing notices', function () {
+    let pixelStub;
+    const bid = {
+      cpm: 1.5,
+      originalCpm: 2.25,
+      burl: 'https://us.silvermob.com/burl?wp=${AUCTION_PRICE}',
+      nurl: 'https://us.silvermob.com/nurl?wp=${AUCTION_PRICE}'
+    };
     beforeEach(function () {
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+      pixelStub = sinon.stub(utils, 'politeTriggerPixel');
     });
     afterEach(function () {
-      triggerPixelStub.restore();
+      pixelStub.restore();
     });
 
-    it('should fire burl and nurl with the auction price substituted', function () {
-      spec.onBidWon({
-        cpm: 1.5,
-        originalCpm: 2.25,
-        burl: 'https://us.silvermob.com/burl?wp=${AUCTION_PRICE}',
-        nurl: 'https://us.silvermob.com/nurl?wp=${AUCTION_PRICE}'
-      });
-      expect(triggerPixelStub.calledTwice).to.equal(true);
-      expect(triggerPixelStub.firstCall.args[0]).to.equal('https://us.silvermob.com/burl?wp=2.25');
-      expect(triggerPixelStub.secondCall.args[0]).to.equal('https://us.silvermob.com/nurl?wp=2.25');
+    it('onBidWon should fire only nurl with the auction price substituted', function () {
+      spec.onBidWon(bid);
+      expect(pixelStub.calledOnce).to.equal(true);
+      expect(pixelStub.firstCall.args[0]).to.equal('https://us.silvermob.com/nurl?wp=2.25');
+    });
+
+    it('onBidBillable should fire only burl with the auction price substituted', function () {
+      spec.onBidBillable(bid);
+      expect(pixelStub.calledOnce).to.equal(true);
+      expect(pixelStub.firstCall.args[0]).to.equal('https://us.silvermob.com/burl?wp=2.25');
     });
 
     it('should do nothing without notice URLs', function () {
       spec.onBidWon({ cpm: 1.5 });
-      expect(triggerPixelStub.called).to.equal(false);
+      spec.onBidBillable({ cpm: 1.5 });
+      expect(pixelStub.called).to.equal(false);
     });
   });
 });
