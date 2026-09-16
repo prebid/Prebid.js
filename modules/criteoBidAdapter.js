@@ -17,6 +17,8 @@ import { config } from '../src/config.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ * @typedef {import('./criteoBidAdapter.d.ts').CriteoBidderParams} CriteoBidderParams
+ * @typedef {BidRequest & {params: CriteoBidderParams}} CriteoBidRequest
  */
 
 const GVLID = 91;
@@ -333,8 +335,8 @@ export const spec = {
   },
 
   /**
-   * f
-   * @param {object} bid
+   * Parameter typing added by the Codex bot as a follow-up to #15428.
+   * @param {CriteoBidRequest} bid
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
