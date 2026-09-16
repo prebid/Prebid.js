@@ -972,5 +972,36 @@ describe('Ezoic adapter', function () {
       const url = new URL(syncs[0].url);
       expect(url.searchParams.has('r')).to.equal(false);
     });
+
+    it('omits the bidders param when the bid response has no usersync hint', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: { nobid: true } }]);
+
+      const url = new URL(syncs[0].url);
+      expect(url.searchParams.has('bidders')).to.equal(false);
+    });
+
+    it('forwards sanitized usersync bidders from the bid response', function () {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { usersync: { bidders: ['rubicon', 'Medianet', 'bad!', 'rubicon', 12, null] } } }]
+      );
+
+      const url = new URL(syncs[0].url);
+      expect(url.searchParams.get('bidders')).to.equal('rubicon,medianet');
+    });
+
+    it('caps forwarded usersync bidders at 10', function () {
+      const hinted = [];
+      for (let i = 0; i < 12; i++) {
+        hinted.push('bidder' + i);
+      }
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { usersync: { bidders: hinted } } }]
+      );
+
+      const url = new URL(syncs[0].url);
+      expect(url.searchParams.get('bidders')).to.equal(hinted.slice(0, 10).join(','));
+    });
   });
 });

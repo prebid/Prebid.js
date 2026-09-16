@@ -364,6 +364,39 @@ function normalizeBid(rawBid, sourceBid) {
   return bidResponse;
 }
 
+function usersyncBiddersFromServerResponses(serverResponses) {
+  const bidders = [];
+  const seen = {};
+  if (!Array.isArray(serverResponses)) {
+    return bidders;
+  }
+  try {
+    for (const response of serverResponses) {
+      const list = response?.body?.usersync?.bidders;
+      if (!Array.isArray(list)) {
+        continue;
+      }
+      for (const entry of list) {
+        if (typeof entry !== 'string') {
+          continue;
+        }
+        const bidder = entry.trim().toLowerCase();
+        if (!/^[a-z0-9_]{1,40}$/.test(bidder) || seen[bidder]) {
+          continue;
+        }
+        seen[bidder] = true;
+        bidders.push(bidder);
+        if (bidders.length >= 10) {
+          return bidders;
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore malformed responses; omit the bidders param rather than throw.
+  }
+  return bidders;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
@@ -445,6 +478,8 @@ export const spec = {
       gpp_sid: gppConsent?.applicableSections?.join(',') || '',
       us_privacy: uspConsent || '',
     });
+    const bidders = usersyncBiddersFromServerResponses(serverResponses);
+    if (bidders.length) params.set('bidders', bidders.join(','));
 
     return [{
       type: 'iframe',
