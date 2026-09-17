@@ -2,7 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { isNumber, logWarn } from '../src/utils.js';
+import { isNumber, isStr, logWarn } from '../src/utils.js';
 
 /**
  * @typedef {import('./biddigiBidAdapter.d.ts').BiddigiBidRequestParams} BiddigiBidRequestParams
@@ -42,6 +42,77 @@ const BIDDIGI_ENDPOINTS = {
 };
 const DEFAULT_REGION = 'in';
 
+/**
+ * Determines the media type of a bid whose response omits `mtype`.
+ *
+ * `mtype` is an OpenRTB 2.6 field. This adapter advertises 2.5+, and a spec-compliant 2.5
+ * response has no `mtype` at all — in which case ortbConverter's default media-type processor
+ * throws "Cannot determine mediaType for response" and silently drops the bid, so the publisher
+ * gets no bids from a response that was perfectly legal. BidDigi's own auction-service happens to
+ * default every bid to `mtype: 1` today, but an adapter must not depend on one server's
+ * behaviour: any 2.5 exchange fronted by this code, and any future BidDigi connector that stops
+ * setting it, would break with no error surfaced.
+ *
+ * Resolution order is markup first (unambiguous when present), then the matching request
+ * impression, then banner — the same approach adtrgtmeBidAdapter.js uses for the identical
+ * 2.5-response problem.
+ *
+ * @param {object} bid the oRTB seatbid[].bid[] entry
+ * @param {object} [imp] the request impression this bid answers
+ * @return {string} one of BANNER, VIDEO, NATIVE
+ */
+function resolveResponseMediaType(bid, imp) {
+  if (isStr(bid.adm)) {
+    const markup = bid.adm.trim();
+    if (markup.startsWith('{') || markup.startsWith('[')) {
+      return NATIVE;
+    }
+    if (/<vast/i.test(markup)) {
+      return VIDEO;
+    }
+  }
+  // No usable markup (e.g. VAST delivered via nurl): fall back to what was asked for.
+  if (imp?.video && (bid.nurl || !imp.banner)) {
+    return VIDEO;
+  }
+  if (imp?.native && !imp.banner && !imp.video) {
+    return NATIVE;
+  }
+  return BANNER;
+}
+
+/**
+ * Unwraps the legacy `{"native": {...}}` envelope in a native bid's `adm`.
+ *
+ * OpenRTB Native 1.1 wrapped the response object in a top-level `native` key; 1.2 dropped it and
+ * puts `assets` at the root. Both are in the wild, and BidDigi's exchange forwards whatever its
+ * demand partner sent. Prebid's own fillNativeResponse (libraries/ortbConverter/processors/
+ * native.js) only accepts the 1.2 shape — it reads `ortb.assets` and throws "ORTB native response
+ * contained no assets" for the 1.1 shape, which the converter turns into a dropped bid with no
+ * error surfaced to the publisher.
+ *
+ * So a 1.1-shaped native bid is worth real money and silently earns nothing. Normalizing here
+ * means the adapter accepts both spellings rather than only the one this codebase happens to emit.
+ * Returns the bid unchanged (same object, not a copy) for every non-native or already-1.2 bid.
+ *
+ * @param {object} bid the oRTB seatbid[].bid[] entry
+ * @param {string} mediaType the resolved media type for this bid
+ * @return {object} the bid, with `adm` normalized to the 1.2 shape when it was 1.1
+ */
+function normalizeNativeAdm(bid, mediaType) {
+  if (mediaType !== NATIVE || !isStr(bid.adm)) return bid;
+  let parsed;
+  try {
+    parsed = JSON.parse(bid.adm);
+  } catch (e) {
+    return bid; // not JSON after all -- let the default processor report it
+  }
+  if (parsed && !Array.isArray(parsed.assets) && Array.isArray(parsed.native?.assets)) {
+    return Object.assign({}, bid, { adm: JSON.stringify(parsed.native) });
+  }
+  return bid;
+}
+
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -76,9 +147,25 @@ const converter = ortbConverter({
     if (!request.cur) request.cur = [DEFAULT_CURRENCY];
     return request;
   },
-  // currency, cpm, dealId, creativeId, meta.advertiserDomains etc. are all handled by the
-  // default `props` bidResponse processor (see libraries/ortbConverter/processors/default.js) —
-  // no per-bidder override needed here.
+  /**
+   * currency, cpm, dealId, creativeId, meta.advertiserDomains etc. are all handled by the
+   * default `props` bidResponse processor (see libraries/ortbConverter/processors/default.js).
+   * The only thing overridden here is the media type, and only when the response omits `mtype`
+   * — see resolveResponseMediaType above for why that case has to be handled rather than assumed
+   * away.
+   *
+   * @param {function} buildBidResponse
+   * @param {object} bid
+   * @param {object} context
+   */
+  bidResponse(buildBidResponse, bid, context) {
+    if (bid.mtype == null) {
+      context.mediaType = resolveResponseMediaType(bid, context.imp);
+    }
+    // MTYPE_TO_MEDIA_TYPE: 4 is native in ORTB 2.6; context.mediaType covers the 2.5 case above.
+    const mediaType = context.mediaType || (bid.mtype === 4 ? NATIVE : null);
+    return buildBidResponse(normalizeNativeAdm(bid, mediaType), context);
+  },
 });
 
 /**
