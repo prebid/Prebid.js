@@ -16,7 +16,7 @@ import {
  * @typedef {import('./copper6sspBidAdapter.d.ts').Copper6SSPBidRequestParams} Copper6SSPBidRequestParams
  */
 
-const DEFAULT_SUB_DOMAIN = 'exchange';
+const DEFAULT_SUB_DOMAIN = 'bidder';
 const BIDDER_CODE = 'copper6ssp';
 const BIDDER_VERSION = '1.0.0';
 const GVLID = 1356;

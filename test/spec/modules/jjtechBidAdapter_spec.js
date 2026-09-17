@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/jjtechBidAdapter.ts';
 import { deepClone } from '../../../src/utils.js';
 
-const ENDPOINT_URL = 'https://prebid-server.jambojar-tech.com/openrtb2/auction';
+const ENDPOINT_URL = 'https://ind-apac.jambojar.com/jjt-prebid/rtb-apac';
 
 const bidRequestBase = {
   adUnitCode: 'banner-ad-unit-code',
@@ -86,6 +86,11 @@ describe('JJTech bid adapter', () => {
       expect(request.url).to.equal(ENDPOINT_URL);
     });
 
+    it('sends the request without credentials', () => {
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.options.withCredentials).to.equal(false);
+    });
+
     it('builds an ORTB request with one banner imp per bid', () => {
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.imp).to.have.lengthOf(1);
@@ -94,7 +99,7 @@ describe('JJTech bid adapter', () => {
       expect(request.data.site.page).to.equal('https://example.com/article');
     });
 
-    it('puts placementId on each imp at ext.prebid.storedrequest.id', () => {
+    it('puts placementId on each imp at ext.jjtech.placementId', () => {
       const secondBid = deepClone(bidRequestBase);
       secondBid.bidId = 'bid-id-2';
       secondBid.adUnitCode = 'banner-ad-unit-code-2';
@@ -103,8 +108,8 @@ describe('JJTech bid adapter', () => {
 
       const request = spec.buildRequests([bid, secondBid], bidderRequest);
       expect(request.data.imp).to.have.lengthOf(2);
-      expect(request.data.imp[0].ext.prebid.storedrequest.id).to.equal('test-placement-1');
-      expect(request.data.imp[1].ext.prebid.storedrequest.id).to.equal('test-placement-2');
+      expect(request.data.imp[0].ext.jjtech.placementId).to.equal('test-placement-1');
+      expect(request.data.imp[1].ext.jjtech.placementId).to.equal('test-placement-2');
     });
 
     it('forwards the US privacy string', () => {
