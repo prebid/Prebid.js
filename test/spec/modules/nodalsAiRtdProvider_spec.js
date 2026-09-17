@@ -71,6 +71,8 @@ const generateGdprConsent = (consent = {}) => {
   const defaults = {
     gdprApplies: true,
     purpose1Consent: true,
+    purpose3Consent: true,
+    purpose4Consent: true,
     purpose7Consent: true,
     nodalsConsent: true,
   };
@@ -84,8 +86,8 @@ const generateGdprConsent = (consent = {}) => {
           consents: {
             1: mergedConsent.purpose1Consent,
             2: true,
-            3: true,
-            4: true,
+            3: mergedConsent.purpose3Consent,
+            4: mergedConsent.purpose4Consent,
             5: true,
             6: true,
             7: mergedConsent.purpose7Consent,
@@ -145,9 +147,17 @@ describe('NodalsAI RTD Provider', () => {
   const permissiveUserConsent = generateGdprConsent();
   const vendorRestrictiveUserConsent = generateGdprConsent({ nodalsConsent: false });
   const noPurpose1UserConsent = generateGdprConsent({ purpose1Consent: false });
+  const noPurpose3UserConsent = generateGdprConsent({ purpose3Consent: false });
+  const noPurpose4UserConsent = generateGdprConsent({ purpose4Consent: false });
   const noPurpose7UserConsent = generateGdprConsent({ purpose7Consent: false });
   const outsideGdprUserConsent = generateGdprConsent({ gdprApplies: false });
-  const leastPermissiveUserConsent = generateGdprConsent({ purpose1Consent: false, purpose7Consent: false, nodalsConsent: false });
+  const leastPermissiveUserConsent = generateGdprConsent({
+    purpose1Consent: false,
+    purpose3Consent: false,
+    purpose4Consent: false,
+    purpose7Consent: false,
+    nodalsConsent: false,
+  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -223,12 +233,38 @@ describe('NodalsAI RTD Provider', () => {
         expect(server.requests.length).to.equal(0);
       });
 
+      it('should return false when user is under GDPR jurisdiction and purpose3 has not been granted', () => {
+        const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose3UserConsent);
+        server.respond();
+
+        expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
+      });
+
+      it('should return false when user is under GDPR jurisdiction and purpose4 has not been granted', () => {
+        const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose4UserConsent);
+        server.respond();
+
+        expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
+      });
+
       it('should return false when user is under GDPR jurisdiction and purpose7 has not been granted', () => {
         const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose7UserConsent);
         server.respond();
 
         expect(result).to.be.false;
         expect(server.requests.length).to.equal(0);
+      });
+
+      it('should return true when user is under GDPR jurisdiction and a non-required purpose has not been granted', () => {
+        const userConsent = JSON.parse(JSON.stringify(permissiveUserConsent));
+        userConsent.gdpr.vendorData.purpose.consents[2] = false;
+        const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
+        server.respond();
+
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
       });
 
       it('should return false when user is under GDPR jurisdiction and Nodals AI as a vendor has no consent', () => {

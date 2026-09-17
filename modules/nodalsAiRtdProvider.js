@@ -12,6 +12,7 @@ const ENGINE_VESION = '1.x.x';
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
 const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
+const REQUIRED_TCF_PURPOSES = [1, 3, 4, 7];
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
@@ -256,9 +257,9 @@ class NodalsAiRtdProvider {
       [false, undefined].includes(userConsent.gdpr.vendorData?.vendor?.consents?.[this.gvlid])
     ) {
       return false;
-    } else if (userConsent.gdpr.vendorData?.purpose?.consents[1] === false ||
-      userConsent.gdpr.vendorData?.purpose?.consents[7] === false
-    ) {
+    }
+    const purposeConsents = userConsent.gdpr.vendorData?.purpose?.consents;
+    if (REQUIRED_TCF_PURPOSES.some((purpose) => purposeConsents?.[purpose] === false)) {
       return false;
     }
     return true;
