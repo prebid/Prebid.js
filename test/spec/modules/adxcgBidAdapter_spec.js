@@ -265,6 +265,31 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     expect(bids).to.have.lengthOf(0);
   });
 
+  it('does not pollute Object.prototype from a malicious ORTB response body', function () {
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    const ortbRequest = request.data;
+    const maliciousResponse = JSON.parse(`{
+      "seatbid": [{
+        "bid": [{
+          "impid": "${ortbRequest.imp[0].id}",
+          "price": 1.25,
+          "adm": "This is an Ad",
+          "mtype": 1,
+          "__proto__": {"polluted": true},
+          "constructor": {"prototype": {"polluted": true}}
+        }]
+      }]
+    }`);
+    try {
+      const bids = spec.interpretResponse({ body: maliciousResponse }, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].cpm).to.equal(1.25);
+      expect(Object.prototype.polluted).to.be.undefined;
+    } finally {
+      delete Object.prototype.polluted;
+    }
+  });
+
   if (FEATURES.NATIVE) {
     it('Verify Native request', function () {
       const request = spec.buildRequests(nativeSlotConfig, bidderRequest);
