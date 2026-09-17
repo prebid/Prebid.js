@@ -283,6 +283,161 @@ describe('biddigiAdapter', function () {
       const bids = spec.interpretResponse(serverResponse, request);
       expect(bids[0].currency).to.equal('INR');
     });
+
+    // ------------------------------------------------------------------------------------
+    // OpenRTB 2.5 responses (no `mtype`).
+    //
+    // `mtype` is a 2.6 field. This adapter advertises 2.5+, so a spec-compliant 2.5 response
+    // carries no `mtype` at all -- and ortbConverter's default media-type processor then throws
+    // "Cannot determine mediaType for response" and drops the bid, returning nothing from a
+    // response that was perfectly legal.
+    //
+    // Every other test in this block sets `mtype: 1`, which is exactly what masked this. These
+    // assert the PROTOCOL property -- a legal 2.5 bid must produce a bid object -- not whatever
+    // the adapter currently happens to do. They fail against the adapter as it stood before the
+    // resolveResponseMediaType fix.
+    // ------------------------------------------------------------------------------------
+    it('interprets a banner bid when the response omits mtype (ORTB 2.5)', async function () {
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const serverResponse = {
+        body: {
+          id: request.data.id,
+          cur: 'INR',
+          seatbid: [{
+            bid: [{
+              impid: request.data.imp[0].id,
+              price: 12.5,
+              adm: '<div>ad</div>',
+              w: 300,
+              h: 250,
+              crid: 'creative-25',
+              // no mtype -- this is the whole point
+            }],
+          }],
+        },
+      };
+
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids).to.have.lengthOf(1,
+        'a legal ORTB 2.5 bid must not be silently dropped for lacking a 2.6-only field');
+      expect(bids[0].mediaType).to.equal('banner');
+      expect(bids[0].cpm).to.equal(12.5);
+    });
+
+    if (FEATURES.VIDEO) {
+      it('infers video from VAST markup when the response omits mtype', async function () {
+        const request = spec.buildRequests([VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        const serverResponse = {
+          body: {
+            id: request.data.id,
+            cur: 'INR',
+            seatbid: [{
+              bid: [{
+                impid: request.data.imp[0].id,
+                price: 40,
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                crid: 'creative-vast',
+              }],
+            }],
+          },
+        };
+
+        const bids = spec.interpretResponse(serverResponse, request);
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal('video');
+      });
+    }
+
+    if (FEATURES.NATIVE) {
+      const nativeBody = {
+        ver: '1.2',
+        link: { url: 'https://biddigi.com' },
+        assets: [
+          { id: 0, title: { text: 'A native title' } },
+          { id: 1, img: { url: 'https://cdn.biddigi.com/i.png', w: 300, h: 250 } },
+          { id: 2, data: { value: 'BidDigi' } },
+        ],
+      };
+
+      // ORTB Native 1.2 shape: `assets` at the root of adm. This is what Prebid's own
+      // fillNativeResponse expects, and it is the only shape that worked before this change.
+      it('interprets a native bid in the ORTB Native 1.2 shape', async function () {
+        const request = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        const serverResponse = {
+          body: {
+            id: request.data.id,
+            cur: 'INR',
+            seatbid: [{
+              bid: [{
+                impid: request.data.imp[0].id,
+                price: 30,
+                crid: 'creative-native-12',
+                mtype: 4,
+                adm: JSON.stringify(nativeBody),
+              }],
+            }],
+          },
+        };
+
+        const bids = spec.interpretResponse(serverResponse, request);
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal('native');
+        expect(bids[0].native.ortb.assets).to.have.lengthOf(3);
+      });
+
+      // ORTB Native 1.1 shape: the same payload wrapped in a top-level `native` key. Plenty of
+      // exchanges still emit this, and BidDigi forwards whatever its demand partner sent.
+      // Prebid's fillNativeResponse reads `ortb.assets`, so before normalizeNativeAdm this threw
+      // "ORTB native response contained no assets" and the bid was dropped with nothing logged to
+      // the publisher -- a paying bid earning zero.
+      it('interprets a native bid wrapped in the legacy 1.1 `native` envelope', async function () {
+        const request = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        const serverResponse = {
+          body: {
+            id: request.data.id,
+            cur: 'INR',
+            seatbid: [{
+              bid: [{
+                impid: request.data.imp[0].id,
+                price: 30,
+                crid: 'creative-native-11',
+                mtype: 4,
+                adm: JSON.stringify({ native: nativeBody }),
+              }],
+            }],
+          },
+        };
+
+        const bids = spec.interpretResponse(serverResponse, request);
+        expect(bids).to.have.lengthOf(1,
+          'a 1.1-shaped native bid is legal and worth money -- dropping it silently is the bug');
+        expect(bids[0].mediaType).to.equal('native');
+        expect(bids[0].native.ortb.assets).to.have.lengthOf(3);
+      });
+
+      // Both fixes together: 2.5 response (no mtype) AND the 1.1 envelope.
+      it('interprets a native bid with neither mtype nor the 1.2 shape', async function () {
+        const request = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        const serverResponse = {
+          body: {
+            id: request.data.id,
+            cur: 'INR',
+            seatbid: [{
+              bid: [{
+                impid: request.data.imp[0].id,
+                price: 30,
+                crid: 'creative-native-25',
+                adm: JSON.stringify({ native: nativeBody }),
+              }],
+            }],
+          },
+        };
+
+        const bids = spec.interpretResponse(serverResponse, request);
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal('native');
+      });
+    }
   });
 
   describe('getUserSyncs', function () {
