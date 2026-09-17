@@ -3,7 +3,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./mycodemediaBidAdapter.d.ts').MCodeMediaBidderParams} MCodeMediaBidderParams
+ * @typedef {import('./mcodemediaBidAdapter.d.ts').MCodeMediaBidderParams} MCodeMediaBidderParams
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec<'mcodemedia'>} MCodeMediaBidderSpec
  */
 
