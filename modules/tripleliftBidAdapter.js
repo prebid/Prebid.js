@@ -5,6 +5,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
+/**
+ * Type declarations added by the Codex bot.
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./tripleliftBidAdapter.d.ts').TripleliftBidderParams} TripleliftBidderParams
+ * @typedef {BidRequest & {params: TripleliftBidderParams}} TripleliftBidRequest
+ */
+
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
@@ -18,6 +25,10 @@ export const tripleliftAdapterSpec = {
   gvlid: GVLID,
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  /**
+   * @param {TripleliftBidRequest} bid
+   * @returns {boolean}
+   */
   isBidRequestValid: function (bid) {
     return typeof bid.params.inventoryCode !== 'undefined';
   },
