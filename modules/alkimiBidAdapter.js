@@ -5,6 +5,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'alkimi';
 const GVLID = 1169;
@@ -90,7 +91,7 @@ export const spec = {
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
       schain: validBidRequests[0]?.ortb2?.source?.ext?.schain,
-      cpp: config.getConfig('coppa') ? 1 : 0,
+      cpp: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
       device: {
         dnt: getDNT() ? 1 : 0,
         w: screen.width,
