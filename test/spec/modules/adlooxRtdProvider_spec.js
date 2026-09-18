@@ -1,6 +1,8 @@
 import adapterManager from 'src/adapterManager.js';
 import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
 import { auctionManager } from 'src/auctionManager.js';
+import { config as pbConfig } from 'src/config.js';
+import { viewportIntersections } from 'libraries/percentInView/percentInView.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
@@ -218,6 +220,43 @@ describe('Adloox RTD Provider', function () {
       getGlobalStub.restore();
 
       done();
+    });
+
+    Object.entries({
+      // wait for an entry, so that the measurement is the observer's rather than a fallback
+      observer: (element) => viewportIntersections.observe(element),
+      // no observer is consulted in this mode, so the measurement has to come from the DOM
+      boundingBox: () => pbConfig.setConfig({ auctionOptions: { viewabilityMeasurement: 'boundingBox' } })
+    }).forEach(([measurement, setup]) => {
+      it(`should set viewability targeting when viewability is measured with ${measurement}`, async function () {
+        const element = document.createElement('div');
+        element.id = adUnit.code;
+        element.style.cssText = 'position:absolute;left:0;top:0;width:50px;height:50px';
+        document.body.appendChild(element);
+        await setup(element);
+
+        const adUnitWithSegments = utils.deepClone(adUnit);
+        const getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
+          adUnits: [adUnitWithSegments]
+        });
+        const auction = { adUnits: [adUnitWithSegments] };
+        const getAuctionStub = sinon.stub(auctionManager.index, 'getAuction').returns({
+          adUnits: [adUnitWithSegments],
+          getFPD: () => { return { global: {} }; }
+        });
+
+        try {
+          CONFIG.params = { thresholds: [50] };
+          expect(rtdProvider.init(CONFIG)).is.true;
+          const targetingData = rtdProvider.getTargetingData([adUnitWithSegments.code], CONFIG, null, auction);
+          expect(targetingData[adUnit.code].adl_atf).to.eql([50]);
+        } finally {
+          getAuctionStub.restore();
+          getGlobalStub.restore();
+          element.remove();
+          pbConfig.resetConfig();
+        }
+      });
     });
   });
 });
