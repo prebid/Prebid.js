@@ -71,6 +71,7 @@ const generateGdprConsent = (consent = {}) => {
   const defaults = {
     gdprApplies: true,
     purpose1Consent: true,
+    purpose2Consent: true,
     purpose3Consent: true,
     purpose4Consent: true,
     purpose7Consent: true,
@@ -85,7 +86,7 @@ const generateGdprConsent = (consent = {}) => {
         purpose: {
           consents: {
             1: mergedConsent.purpose1Consent,
-            2: true,
+            2: mergedConsent.purpose2Consent,
             3: mergedConsent.purpose3Consent,
             4: mergedConsent.purpose4Consent,
             5: true,
@@ -147,12 +148,14 @@ describe('NodalsAI RTD Provider', () => {
   const permissiveUserConsent = generateGdprConsent();
   const vendorRestrictiveUserConsent = generateGdprConsent({ nodalsConsent: false });
   const noPurpose1UserConsent = generateGdprConsent({ purpose1Consent: false });
+  const noPurpose2UserConsent = generateGdprConsent({ purpose2Consent: false });
   const noPurpose3UserConsent = generateGdprConsent({ purpose3Consent: false });
   const noPurpose4UserConsent = generateGdprConsent({ purpose4Consent: false });
   const noPurpose7UserConsent = generateGdprConsent({ purpose7Consent: false });
   const outsideGdprUserConsent = generateGdprConsent({ gdprApplies: false });
   const leastPermissiveUserConsent = generateGdprConsent({
     purpose1Consent: false,
+    purpose2Consent: false,
     purpose3Consent: false,
     purpose4Consent: false,
     purpose7Consent: false,
@@ -233,6 +236,14 @@ describe('NodalsAI RTD Provider', () => {
         expect(server.requests.length).to.equal(0);
       });
 
+      it('should return false when user is under GDPR jurisdiction and purpose2 has not been granted', () => {
+        const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose2UserConsent);
+        server.respond();
+
+        expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
+      });
+
       it('should return false when user is under GDPR jurisdiction and purpose3 has not been granted', () => {
         const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose3UserConsent);
         server.respond();
@@ -259,7 +270,7 @@ describe('NodalsAI RTD Provider', () => {
 
       it('should return true when user is under GDPR jurisdiction and a non-required purpose has not been granted', () => {
         const userConsent = JSON.parse(JSON.stringify(permissiveUserConsent));
-        userConsent.gdpr.vendorData.purpose.consents[2] = false;
+        userConsent.gdpr.vendorData.purpose.consents[5] = false;
         const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
         server.respond();
 

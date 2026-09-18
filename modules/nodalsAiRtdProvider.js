@@ -12,7 +12,7 @@ const ENGINE_VESION = '1.x.x';
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
 const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
-const REQUIRED_TCF_PURPOSES = [1, 3, 4, 7];
+const REQUIRED_TCF_PURPOSES = [1, 2, 3, 4, 7];
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
