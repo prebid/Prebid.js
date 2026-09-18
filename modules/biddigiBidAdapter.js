@@ -1,4 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { resolveResponseMediaType } from '../libraries/ortb2Utils/mediaType.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -41,45 +42,6 @@ const BIDDIGI_ENDPOINTS = {
   us: BIDDIGI_AUCTION_URL,
 };
 const DEFAULT_REGION = 'in';
-
-/**
- * Determines the media type of a bid whose response omits `mtype`.
- *
- * `mtype` is an OpenRTB 2.6 field. This adapter advertises 2.5+, and a spec-compliant 2.5
- * response has no `mtype` at all — in which case ortbConverter's default media-type processor
- * throws "Cannot determine mediaType for response" and silently drops the bid, so the publisher
- * gets no bids from a response that was perfectly legal. BidDigi's own auction-service happens to
- * default every bid to `mtype: 1` today, but an adapter must not depend on one server's
- * behaviour: any 2.5 exchange fronted by this code, and any future BidDigi connector that stops
- * setting it, would break with no error surfaced.
- *
- * Resolution order is markup first (unambiguous when present), then the matching request
- * impression, then banner — the same approach adtrgtmeBidAdapter.js uses for the identical
- * 2.5-response problem.
- *
- * @param {object} bid the oRTB seatbid[].bid[] entry
- * @param {object} [imp] the request impression this bid answers
- * @return {string} one of BANNER, VIDEO, NATIVE
- */
-function resolveResponseMediaType(bid, imp) {
-  if (isStr(bid.adm)) {
-    const markup = bid.adm.trim();
-    if (markup.startsWith('{') || markup.startsWith('[')) {
-      return NATIVE;
-    }
-    if (/<vast/i.test(markup)) {
-      return VIDEO;
-    }
-  }
-  // No usable markup (e.g. VAST delivered via nurl): fall back to what was asked for.
-  if (imp?.video && (bid.nurl || !imp.banner)) {
-    return VIDEO;
-  }
-  if (imp?.native && !imp.banner && !imp.video) {
-    return NATIVE;
-  }
-  return BANNER;
-}
 
 /**
  * Unwraps the legacy `{"native": {...}}` envelope in a native bid's `adm`.
