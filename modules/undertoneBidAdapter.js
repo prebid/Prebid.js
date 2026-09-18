@@ -9,6 +9,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./undertoneBidAdapter.d.ts').UndertoneBidderParams} UndertoneBidderParams
+ * @typedef {BidRequest & {params: UndertoneBidderParams}} UndertoneBidRequest
+ */
+
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
 const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
@@ -53,6 +59,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
+  /**
+   * @param {UndertoneBidRequest} bid
+   * @return {boolean}
+   */
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);

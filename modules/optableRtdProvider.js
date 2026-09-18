@@ -4,6 +4,14 @@ import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import { deepAccess, mergeDeep, prefixLog } from '../src/utils.js';
 
+/**
+ * @typedef {import('./optableRtdProvider.d.ts').OptableRtdProviderConfig} OptableRtdProviderConfig
+ * @typedef {import('./optableRtdProvider.d.ts').OptableRtdProviderParams} OptableRtdProviderParams
+ * @typedef {import('./optableRtdProvider.d.ts').OptableRtdConfig} OptableRtdConfig
+ * @typedef {import('./optableRtdProvider.d.ts').OptableHandleRtd} OptableHandleRtd
+ * @typedef {import('./optableRtdProvider.d.ts').OptableMergeFn} OptableMergeFn
+ */
+
 const MODULE_NAME = 'optable';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD]:`;
 const optableLog = prefixLog(LOG_PREFIX);
@@ -11,7 +19,8 @@ const { logMessage, logWarn, logError } = optableLog;
 
 /**
  * Extracts the parameters for Optable RTD module from the config object passed at instantiation
- * @param {Object} moduleConfig Configuration object for the module
+ * @param {OptableRtdProviderConfig} moduleConfig Configuration object for the module
+ * @returns {OptableRtdProviderParams}
  */
 export const parseConfig = (moduleConfig) => {
   let bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
@@ -73,10 +82,7 @@ const waitForOptableEvent = (eventName) => {
 
 /**
  * Default function to handle/enrich RTD data
- * @param reqBidsConfigObj Bid request configuration object
- * @param optableExtraData Additional data to be used by the Optable SDK
- * @param mergeFn Function to merge data
- * @returns {Promise<void>}
+ * @type {OptableHandleRtd}
  */
 export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
   // Wait for the Optable SDK to dispatch targeting data via event
@@ -96,10 +102,10 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
 
 /**
  * Get data from Optable and merge it into the global ORTB2 object
- * @param {Function} handleRtdFn Function to handle RTD data
+ * @param {OptableHandleRtd} handleRtdFn Function to handle RTD data
  * @param {Object} reqBidsConfigObj Bid request configuration object
- * @param {Object} optableExtraData Additional data to be used by the Optable SDK
- * @param {Function} mergeFn Function to merge data
+ * @param {OptableRtdConfig} optableExtraData Additional data to be used by the Optable SDK
+ * @param {OptableMergeFn} mergeFn Function to merge data
  */
 export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn) => {
   if (handleRtdFn.constructor.name === 'AsyncFunction') {
@@ -112,7 +118,7 @@ export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExt
 /**
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} callback Called on completion
- * @param {Object} moduleConfig Configuration for Optable RTD module
+ * @param {OptableRtdProviderConfig} moduleConfig Configuration for Optable RTD module
  * @param {Object} userConsent
  */
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
@@ -154,10 +160,10 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
 
 /**
  * Get Optable targeting data and merge it into the ad units
- * @param adUnits Array of ad units
- * @param moduleConfig Module configuration
- * @param userConsent User consent
- * @param auction Auction object
+ * @param {string[]} adUnits Array of ad units
+ * @param {OptableRtdProviderConfig} moduleConfig Module configuration
+ * @param {Object} userConsent User consent
+ * @param {Object} auction Auction object
  * @returns {Object} Targeting data
  */
 export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) => {
@@ -215,9 +221,9 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
 
 /**
  * Dummy init function
- * @param {Object} config Module configuration
- * @param {boolean} userConsent User consent
- * @returns true
+ * @param {OptableRtdProviderConfig} config Module configuration
+ * @param {Object} userConsent User consent
+ * @returns {true}
  */
 const init = (config, userConsent) => {
   return true;

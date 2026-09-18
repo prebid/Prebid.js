@@ -62,6 +62,16 @@ let implRef: HumanSecurityImpl | null = null;
 let clientId: string = '';
 let verbose: boolean = false;
 let sessionId: string = '';
+let pending: ((impl?: HumanSecurityImpl | null) => void)[] = [];
+
+/**
+ * Hands every auction waiting on the implementation script back to the caller, either to be
+ * enriched by the now available implementation or to be released unenriched
+ */
+
+const flushPending = (impl?: HumanSecurityImpl | null) => {
+  pending.splice(0).forEach((resume) => resume(impl));
+};
 
 /**
  * Injects HUMAN Security script on the page to facilitate pre-bid signal collection.
@@ -74,10 +84,12 @@ const load = (config: RTDProviderConfig<'humansecurity'>) => {
     throw new Error(`The 'clientId' parameter must be a short alphanumeric string`);
   }
 
-  // Load/reset the state
+  // Load/reset the state. Anything parked on the previous session is released rather than
+  // carried over, since the script this reload injects will publish under a new session ID
   verbose = !!config?.params?.verbose;
   implRef = null;
   sessionId = generateUUID();
+  flushPending(null);
 
   // Get the best domain possible here, it still might be null
   const refDomain = getRefererInfo().domain || '';
@@ -118,10 +130,13 @@ const getImpl = () => {
 
 const onImplLoaded = (config: RTDProviderConfig<'humansecurity'>) => {
   const impl = getImpl();
-  if (!impl) return;
 
   // And set up a bridge between the RTD submodule and the implementation.
-  impl.connect(getGlobal(), null, config);
+  if (impl) impl.connect(getGlobal(), null, config);
+
+  // Runs even when the implementation could not be resolved, so that a script which loads but
+  // fails to publish its API releases the auctions waiting on it instead of stranding them
+  flushPending(impl);
 };
 
 /**
@@ -141,8 +156,16 @@ const getBidRequestData = (
 ) => {
   const impl = getImpl();
   if (!impl || typeof impl.getBidRequestData !== 'function') {
-    // Implementation not available; continue auction by invoking the callback.
-    callback();
+    // The script is injected asynchronously, so an auction started in the same task as
+    // setConfig arrives before it lands. Park it for onImplLoaded instead of giving up on
+    // enriching it; the RTD module still releases the auction at auctionDelay either way
+    pending.push((readyImpl) => {
+      if (readyImpl && typeof readyImpl.getBidRequestData === 'function') {
+        readyImpl.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
+      } else {
+        callback();
+      }
+    });
     return;
   }
 

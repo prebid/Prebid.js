@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prebid Chrome DevTools"
+  short_description: "Inspect Prebid auctions through Chrome MCP"
+  default_prompt: "Use $prebid-chrome-devtools to inspect and diagnose the current Prebid.js page."

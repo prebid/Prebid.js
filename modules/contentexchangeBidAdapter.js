@@ -5,11 +5,9 @@ import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } fro
 const BIDDER_CODE = 'contentexchange';
 const AD_URL = 'https://eu2.adnetwork.agency/pbjs';
 const SYNC_URL = 'https://sync2.adnetwork.agency';
-const GVLID = 864;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),
