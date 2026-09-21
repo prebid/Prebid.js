@@ -77,18 +77,87 @@ describe('AdqueryIdSystem', function () {
       expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
     });
 
-    it('discards a stored qid longer than 36 characters and generates a fresh one', function () {
-      const oversizedQid = 'a'.repeat(37);
+    it('discards a stored qid longer than 40 characters and generates a fresh one', function () {
+      const oversizedQid = 'a'.repeat(41);
       getDataFromLocalStorageStub.withArgs('qid').returns(oversizedQid);
 
       const result = adqueryIdSubmodule.getId();
 
       expect(removeDataFromLocalStorageStub.calledWith('qid')).to.be.true;
       expect(result.id).to.not.equal(oversizedQid);
-      expect(result.id.length).to.be.at.most(36);
+      expect(result.id.length).to.be.at.most(40);
       expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
     });
   });
+
+  describe('extendId', function () {
+    let getDataFromLocalStorageStub;
+    let setDataInLocalStorageStub;
+    let removeDataFromLocalStorageStub;
+
+    beforeEach(function () {
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+      removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+    });
+
+    afterEach(function () {
+      getDataFromLocalStorageStub.restore();
+      setDataInLocalStorageStub.restore();
+      removeDataFromLocalStorageStub.restore();
+    });
+
+    it('keeps a valid stored qid untouched', function () {
+      const result = adqueryIdSubmodule.extendId({}, {}, 'existing-qid');
+
+      expect(result).to.be.undefined;
+      expect(setDataInLocalStorageStub.called).to.be.false;
+    });
+
+    it('keeps a stored qid of exactly 40 characters', function () {
+      const result = adqueryIdSubmodule.extendId({}, {}, 'a'.repeat(40));
+
+      expect(result).to.be.undefined;
+    });
+
+    it('replaces a stored qid longer than 40 characters with a fresh one', function () {
+      const oversizedQid = 'a'.repeat(41);
+
+      const result = adqueryIdSubmodule.extendId({}, {}, oversizedQid);
+
+      expect(result.id).to.be.a('string').that.is.not.empty;
+      expect(result.id).to.not.equal(oversizedQid);
+      expect(result.id.length).to.be.at.most(40);
+      expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
+    });
+
+    it('replaces a stored qid that is not a string', function () {
+      const result = adqueryIdSubmodule.extendId({}, {}, { qid: 'x' });
+
+      expect(result.id).to.be.a('string').that.is.not.empty;
+    });
+
+    it('reuses a valid qid from localStorage instead of generating a new one', function () {
+      getDataFromLocalStorageStub.withArgs('qid').returns('existing-qid');
+
+      const result = adqueryIdSubmodule.extendId({}, {}, 'a'.repeat(41));
+
+      expect(result).to.deep.equal({ id: 'existing-qid' });
+      expect(setDataInLocalStorageStub.called).to.be.false;
+    });
+
+    it('removes an oversized qid from localStorage and generates a fresh one', function () {
+      const oversizedQid = 'a'.repeat(41);
+      getDataFromLocalStorageStub.withArgs('qid').returns(oversizedQid);
+
+      const result = adqueryIdSubmodule.extendId({}, {}, oversizedQid);
+
+      expect(removeDataFromLocalStorageStub.calledWith('qid')).to.be.true;
+      expect(result.id).to.not.equal(oversizedQid);
+      expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
+    });
+  });
+
   describe('eid', () => {
     before(() => {
       attachIdSystem(adqueryIdSubmodule);
