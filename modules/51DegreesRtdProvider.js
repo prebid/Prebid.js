@@ -495,11 +495,21 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
 // front of it, can act on.
 const PMP_PREFERENCE_COOKIE = '__mtm_pref';
 
-// The three answers the Model Terms for Marketing define, which are also
-// the values id.usage takes, so the word read from the cookie is sent on
-// unchanged. Anything else is treated as no answer, because a value this
-// module does not understand is not one it should be passing along.
-const PMP_USAGES = ['standard', 'personalized', 'non-marketing'];
+// The two marketing answers, which are also the values id.usage takes, so
+// the word read from the cookie is sent on unchanged. Anything else is
+// treated as no answer, because a value this module does not understand is
+// not one it should be passing along.
+//
+// The third answer the Model Terms for Marketing define, non-marketing, is
+// deliberately not among them. A 51Did issued for that usage is provided
+// under legitimate interest and must not leave the customer environment,
+// and everything this module does with a 51Did is put it in user.eids on
+// the bid request, which is the one place it must not go. Asking the cloud
+// for one would only produce an identifier this module then has to throw
+// away, so it does not ask. The visitor who declines marketing gets no
+// id.usage, the cloud returns the fodid properties with a no-value reason,
+// and no eids entry is made, which is the outcome their answer asks for.
+const PMP_USAGES = ['standard', 'personalized'];
 
 // Storage manager scoped to this RTD module. Required by Prebid's storage
 // activity rules and the no-restricted-globals lint.

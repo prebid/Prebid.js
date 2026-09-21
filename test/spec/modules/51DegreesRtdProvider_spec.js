@@ -892,11 +892,14 @@ describe('51DegreesRtdProvider', function() {
       expect(resolveIdUsage({ params: {} })).to.equal('personalized');
     });
 
-    it('reads "non-marketing" from the preference cookie', function() {
-      // The visitor who declines marketing has still answered, and that
-      // answer is as much a stated usage as the other two.
+    it('does not pass on "non-marketing"', function() {
+      // A 51Did issued for non-marketing must not leave the customer
+      // environment, and this module's only use for one is user.eids on
+      // the bid request. Asking for it would produce an identifier that
+      // must then be thrown away, so the answer is not passed on and no
+      // 51Did is issued.
       setPreference('non-marketing');
-      expect(resolveIdUsage({ params: {} })).to.equal('non-marketing');
+      expect(resolveIdUsage({ params: {} })).to.be.undefined;
     });
 
     it('returns undefined for a value it does not understand', function() {
