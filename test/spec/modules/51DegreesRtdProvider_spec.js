@@ -871,55 +871,66 @@ describe('51DegreesRtdProvider', function() {
   });
 
   describe('resolveIdUsage', function() {
-    const PMP_STORAGE_KEY = '__51d_pmp_pref';
+    const PMP_PREFERENCE_COOKIE = '__mtm_pref';
+
+    const setPreference = (value) => {
+      document.cookie = PMP_PREFERENCE_COOKIE + '=' + value + '; path=/';
+    };
 
     afterEach(function() {
-      localStorage.removeItem(PMP_STORAGE_KEY);
+      document.cookie =
+        PMP_PREFERENCE_COOKIE + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     });
 
-    it('reads "standard" from PMP storage when params absent', function() {
-      localStorage.setItem(
-        PMP_STORAGE_KEY,
-        JSON.stringify({ v: 1, p: 'standard', t: Date.now() }),
-      );
+    it('reads "standard" from the preference cookie', function() {
+      setPreference('standard');
       expect(resolveIdUsage({ params: {} })).to.equal('standard');
     });
 
-    it('reads "personalized" from PMP storage when params absent', function() {
-      localStorage.setItem(
-        PMP_STORAGE_KEY,
-        JSON.stringify({ v: 1, p: 'personalized', t: Date.now() }),
-      );
+    it('reads "personalized" from the preference cookie', function() {
+      setPreference('personalized');
       expect(resolveIdUsage({ params: {} })).to.equal('personalized');
     });
 
-    it('returns undefined when PMP storage has unknown schema version', function() {
-      localStorage.setItem(
-        PMP_STORAGE_KEY,
-        JSON.stringify({ v: 2, p: 'standard', t: Date.now() }),
-      );
+    it('reads "non-marketing" from the preference cookie', function() {
+      // The visitor who declines marketing has still answered, and that
+      // answer is as much a stated usage as the other two.
+      setPreference('non-marketing');
+      expect(resolveIdUsage({ params: {} })).to.equal('non-marketing');
+    });
+
+    it('returns undefined for a value it does not understand', function() {
+      setPreference('never-heard-of-it');
       expect(resolveIdUsage({ params: {} })).to.be.undefined;
     });
 
-    it('returns undefined when PMP storage has unknown preference value', function() {
-      localStorage.setItem(
-        PMP_STORAGE_KEY,
-        JSON.stringify({ v: 1, p: 'never-heard-of-it', t: Date.now() }),
-      );
+    it('returns undefined when the cookie is empty', function() {
+      setPreference('');
       expect(resolveIdUsage({ params: {} })).to.be.undefined;
     });
 
-    it('returns undefined when PMP storage is malformed JSON', function() {
-      localStorage.setItem(PMP_STORAGE_KEY, 'not-json{');
-      expect(resolveIdUsage({ params: {} })).to.be.undefined;
-    });
-
-    it('returns undefined when both sources are absent', function() {
+    it('returns undefined when the visitor has not answered', function() {
       expect(resolveIdUsage({ params: {} })).to.be.undefined;
     });
 
     it('returns undefined when moduleConfig has no params', function() {
       expect(resolveIdUsage({})).to.be.undefined;
+    });
+
+    it('does not read the store the answer used to be kept in', function() {
+      // The answer was a JSON object in localStorage under a vendor
+      // specific name. Nothing writes it now, and a visitor still holding
+      // a stale one has not been asked again, so it must not be sent as
+      // though it were current.
+      localStorage.setItem(
+        '__51d_pmp_pref',
+        JSON.stringify({ v: 1, p: 'personalized', t: Date.now() }),
+      );
+      try {
+        expect(resolveIdUsage({ params: {} })).to.be.undefined;
+      } finally {
+        localStorage.removeItem('__51d_pmp_pref');
+      }
     });
   });
 
