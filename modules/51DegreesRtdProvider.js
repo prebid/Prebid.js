@@ -481,11 +481,25 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
   return { user: { eids } };
 };
 
-// PMP localStorage contract, duplicated from pmp/src/storage.ts of the
-// 51Degrees/cloud repo. If PMP bumps SCHEMA_VERSION the shape check fails
-// closed and we fall through to undefined.
-const PMP_STORAGE_KEY = '__51d_pmp_pref';
-const PMP_SCHEMA_VERSION = 1;
+// The cookie the 51Degrees Preference Management Platform writes on the
+// publisher's own site, holding the visitor's answer as one bare word.
+// The name names no vendor on purpose, so a consent tool other than that
+// one can set the same cookie and be understood the same way, and it is
+// never HttpOnly, because the page that writes it reads it back.
+//
+// The answer used to be a JSON object in localStorage under a vendor
+// specific name. That store is no longer written, so reading it returns
+// nothing for every visitor. A cookie is read instead because a request
+// carries cookies and carries neither localStorage nor sessionStorage,
+// which makes this the only form of the answer a server, or anything in
+// front of it, can act on.
+const PMP_PREFERENCE_COOKIE = '__mtm_pref';
+
+// The three answers the Model Terms for Marketing define, which are also
+// the values id.usage takes, so the word read from the cookie is sent on
+// unchanged. Anything else is treated as no answer, because a value this
+// module does not understand is not one it should be passing along.
+const PMP_USAGES = ['standard', 'personalized', 'non-marketing'];
 
 // Storage manager scoped to this RTD module. Required by Prebid's storage
 // activity rules and the no-restricted-globals lint.
@@ -495,7 +509,7 @@ export const storageManager = getStorageManager({
 });
 
 /**
- * Resolves the id.usage value from PMP localStorage.
+ * Resolves the id.usage value from the preference cookie.
  * Returns undefined when no valid value is found,
  * which signals the caller to omit id.usage from the cloud URL entirely.
  *
@@ -504,17 +518,12 @@ export const storageManager = getStorageManager({
  */
 export const resolveIdUsage = (moduleConfig) => {
   try {
-    const stored = storageManager.getDataFromLocalStorage(PMP_STORAGE_KEY);
-    if (!stored) {
-      return undefined;
-    }
-    const parsed = JSON.parse(stored);
-    if (parsed && parsed.v === PMP_SCHEMA_VERSION &&
-        (parsed.p === 'standard' || parsed.p === 'personalized')) {
-      return parsed.p;
+    const stored = storageManager.getCookie(PMP_PREFERENCE_COOKIE);
+    if (stored && PMP_USAGES.includes(stored)) {
+      return stored;
     }
   } catch (_) {
-    // Storage unavailable or JSON malformed; fall through.
+    // Storage unavailable; fall through.
   }
   return undefined;
 };
