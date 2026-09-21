@@ -802,6 +802,42 @@ describe('ocmBidAdapter', function () {
       const bid = interpret(macroResponse({ burl: IMP_URL, events: { imp: IMP_URL } }));
       expect(impTrackers(bid)).to.have.lengthOf(1);
     });
+
+    // The substitution pass walks the raw ORTB response before the converter does, so it has to
+    // tolerate the shapes a server can legitimately return: no seatbid at all, and a seat block
+    // carrying no bids.
+    it('handles a response with no seatbid without throwing', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      let result;
+      expect(() => { result = spec.interpretResponse({ body: { id: 'auction-empty', cur: 'USD' } }, request); }).to.not.throw();
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('handles a seatbid entry with no bids without throwing', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      let result;
+      const response = { body: { id: 'auction-seat-empty', cur: 'USD', seatbid: [{ seat: 'ocm' }] } };
+      expect(() => { result = spec.interpretResponse(response, request); }).to.not.throw();
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    // With neither a usable price nor an id there is no substitution to make, so the URLs are left
+    // exactly as the server sent them rather than rewritten with empty values.
+    it('leaves both URLs untouched when the bid supplies neither a price nor an id', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      const burl = 'https://dsp.orangeclickmedia.com/bill?price=${AUCTION_PRICE}&bidid=${AUCTION_BID_ID}';
+      const response = {
+        body: {
+          id: 'auction-no-subs',
+          cur: 'USD',
+          seatbid: [{ seat: 'ocm', bid: [{ impid: 'bid-banner-1', burl, ext: { prebid: { events: { imp: burl } } } }] }]
+        }
+      };
+      expect(() => spec.interpretResponse(response, request)).to.not.throw();
+      const raw = response.body.seatbid[0].bid[0];
+      expect(raw.burl).to.equal(burl);
+      expect(raw.ext.prebid.events.imp).to.equal(burl);
+    });
   });
 
   describe('outstream renderer', function () {
@@ -984,6 +1020,29 @@ describe('ocmBidAdapter', function () {
       }
       expect(config.player.width).to.equal('640px');
       expect(config.player.height).to.equal('480px');
+      expect(config.player.outstream.type).to.equal('in-article');
+    });
+
+    // buildOcmPlayerConfig falls back to an empty override set when the renderer cannot supply one,
+    // so the player still receives the adapter's own defaults instead of a merge against undefined.
+    it('renders with the default player config when the renderer supplies no overrides', function () {
+      const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
+      const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
+      bid.adUnitCode = outstreamVideoBid.adUnitCode;
+      bid.adId = 'ad-id-no-overrides';
+
+      const slot = document.createElement('div');
+      slot.id = outstreamVideoBid.adUnitCode;
+      document.body.appendChild(slot);
+      window.OcmPlayer = sinon.spy();
+      bid.renderer.getConfig = () => undefined;
+
+      bid.renderer.loaded = true;
+      expect(() => bid.renderer._render(bid)).to.not.throw();
+
+      expect(window.OcmPlayer.calledOnce).to.equal(true);
+      const config = window.OcmPlayer.firstCall.args[1];
+      expect(config.player.muted).to.equal(true);
       expect(config.player.outstream.type).to.equal('in-article');
     });
 
@@ -1251,6 +1310,17 @@ describe('ocmBidAdapter', function () {
         setFilterSettings({ iframe: { bidders: ['ocm'], filter: 'include' } });
         const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
         expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+
+      // Dropping ocm from an exclude list can empty it. An empty `bidders` array is not a valid PBS
+      // filter, so the type falls back to allow-all and PBS decides.
+      it('falls back to allow-all when an exclude list named only ocm', function () {
+        setFilterSettings({ image: { bidders: ['ocm'], filter: 'exclude' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
           bidders: '*',
           filter: 'include'
         });
