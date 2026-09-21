@@ -17,7 +17,7 @@ declare module '../src/adUnits' {
 }
 
 const BIDDER_CODE = 'jjtech';
-const ENDPOINT_URL = 'https://prebid-server.jambojar-tech.com/openrtb2/auction';
+const ENDPOINT_URL = 'https://ind-apac.jambojar.com/jjt-prebid/rtb-apac';
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 
@@ -30,7 +30,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, 'ext.prebid.storedrequest.id', bidRequest.params.placementId);
+    deepSetValue(imp, 'ext.jjtech.placementId', bidRequest.params.placementId);
     return imp;
   },
 });
@@ -45,6 +45,9 @@ const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBid
     method: 'POST',
     url: ENDPOINT_URL,
     data,
+    // the adapter sets no cookies and registers no user syncs; sending the
+    // request uncredentialed lets the endpoint serve a wildcard CORS policy
+    options: { withCredentials: false },
   };
 };
 

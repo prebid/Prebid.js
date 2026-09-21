@@ -31,6 +31,7 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'modules/nodalsAiRtdProvider.js',
   'modules/anonymisedRtdProvider.js',
   'modules/optableRtdProvider.js',
+  'modules/optimeraRtdProvider.js',
   'modules/oftmediaRtdProvider.js',
   'modules/panxoRtdProvider.js',
   'modules/mileRtdProvider.ts',
