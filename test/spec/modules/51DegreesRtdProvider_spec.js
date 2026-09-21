@@ -767,6 +767,29 @@ describe('51DegreesRtdProvider', function() {
       expect(convert51DegreesFoDiDToOrtb2({}, TDL_URL)).to.deep.equal({});
     });
 
+    it('emits no entry for an identifier asked for under non-marketing use', function() {
+      // A 51Did issued for non-marketing use is provided under legitimate
+      // interest and must not leave the customer environment. The bid
+      // request is the one place it must not go; the identifier is still
+      // produced and still reaches the page.
+      expect(convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL, 'non-marketing')).to.deep.equal({});
+    });
+
+    it('emits an entry for the marketing usages', function() {
+      ['standard', 'personalized'].forEach((usage) => {
+        const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL, usage);
+        expect(result.user.eids, usage).to.have.lengthOf(1);
+      });
+    });
+
+    it('emits an entry when no usage is known, as on the page integration path', function() {
+      // The page's own integration was loaded with whichever usage the
+      // publisher chose, which is not visible in the payload it hands
+      // over, so nothing is suppressed on that path.
+      const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL, undefined);
+      expect(result.user.eids).to.have.lengthOf(1);
+    });
+
     it('drops non-string id values', function() {
       const result = convert51DegreesFoDiDToOrtb2(
         { idproblic: 123, idprobglobal: 'global-uid-base64' }, TDL_URL);
@@ -892,14 +915,13 @@ describe('51DegreesRtdProvider', function() {
       expect(resolveIdUsage({ params: {} })).to.equal('personalized');
     });
 
-    it('does not pass on "non-marketing"', function() {
-      // A 51Did issued for non-marketing must not leave the customer
-      // environment, and this module's only use for one is user.eids on
-      // the bid request. Asking for it would produce an identifier that
-      // must then be thrown away, so the answer is not passed on and no
-      // 51Did is issued.
+    it('reads "non-marketing" from the preference cookie', function() {
+      // The visitor who declines marketing has still answered, and that
+      // answer is as much a stated usage as the other two. What it must
+      // not produce is an eids entry, which convert51DegreesFoDiDToOrtb2
+      // is responsible for and is covered there.
       setPreference('non-marketing');
-      expect(resolveIdUsage({ params: {} })).to.be.undefined;
+      expect(resolveIdUsage({ params: {} })).to.equal('non-marketing');
     });
 
     it('returns undefined for a value it does not understand', function() {
