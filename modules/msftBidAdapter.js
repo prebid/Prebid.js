@@ -207,9 +207,11 @@ const converter = ortbConverter({
 
     if (bidderRequest?.gdprConsent?.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
       const ac = bidderRequest.gdprConsent.addtlConsent;
-      // pull only the ids from the string (after the ~) and convert them to an array of ints
-      const acStr = ac.substring(ac.indexOf('~') + 1);
-      const addtlConsent = acStr.split('.').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      const segments = ac.split('~');
+      const consentedSegment = segments[1] || '';
+      // ACv1 uses: version~vendorIds; ACv2 uses: version~consentedVendorIds~dv.disclosedVendorIds
+      // Only the consented-vendor segment should be populated into user.ext.addtl_consent.
+      const addtlConsent = consentedSegment.split('.').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
       if (addtlConsent.length > 0) {
         deepSetValue(request, 'user.ext.addtl_consent', addtlConsent);
       }
