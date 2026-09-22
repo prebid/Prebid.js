@@ -74,7 +74,7 @@ tokens.forEach((token) => {
   }
 });
 
-const PRECOMPILED_PATH = './dist/src'
+const PRECOMPILED_PATH = './dist/src';
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
@@ -86,7 +86,7 @@ const SOURCE_FOLDERS = [
   'modules',
   'test',
   'public'
-]
+];
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {

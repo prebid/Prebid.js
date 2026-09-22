@@ -86,7 +86,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
@@ -111,6 +111,8 @@ export const spec = {
       gdpr: gdprApplies ? 1 : 0,
       gdpr_consent: consentString,
       us_privacy: uspConsent,
+      gpp: gppConsent?.gppString,
+      gpp_sid: gppConsent?.gppString ? gppConsent.applicableSections?.toString() : undefined,
       bidders: bidders.join(','),
       coop_sync: 0
     };
