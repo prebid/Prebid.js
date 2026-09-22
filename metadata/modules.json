@@ -94,6 +94,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adbix",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adbro",
       "aliasOf": null,
       "gvlid": 1316,
@@ -1713,7 +1720,7 @@
       "componentType": "bidder",
       "componentName": "ccx",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 773,
       "disclosureURL": null
     },
     {
