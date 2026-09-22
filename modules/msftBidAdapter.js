@@ -205,6 +205,16 @@ const converter = ortbConverter({
       });
     }
 
+    if (bidderRequest?.gdprConsent?.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+      const ac = bidderRequest.gdprConsent.addtlConsent;
+      // pull only the ids from the string (after the ~) and convert them to an array of ints
+      const acStr = ac.substring(ac.indexOf('~') + 1);
+      const addtlConsent = acStr.split('.').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      if (addtlConsent.length > 0) {
+        deepSetValue(request, 'user.ext.addtl_consent', addtlConsent);
+      }
+    }
+
     const extANData = {
       prebid: true,
       hb_source: 1,
