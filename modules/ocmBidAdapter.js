@@ -208,20 +208,21 @@ function hasAssetContent(asset) {
  * A native ad unit core rejected outright is logged, because the failure is otherwise invisible from
  * the page: core deletes `mediaTypes.native` when the ad unit is malformed (most often ORTB assets
  * with no integer `id`), leaving an ad unit whose `mediaTypes` is `{}` and no native bid at all.
+ *
+ * `FEATURES.NATIVE` gates both conditions rather than returning early, because a build without
+ * native compiles out the converter's native imp processor: there would be nothing to send even if
+ * an ad unit somehow carried a native ORTB request, and the warning below would fire on every
+ * native ad unit in a build that was never going to bid on one.
  * @param {BidRequest} bid - The bid request object
  * @returns {boolean} True if core derived a native ORTB request whose assets all carry content
  */
 function hasNativeAssets(bid) {
-  if (!FEATURES.NATIVE) {
-    return false;
-  }
-
   const assets = bid?.nativeOrtbRequest?.assets;
-  if (Array.isArray(assets) && assets.length > 0 && assets.every(hasAssetContent)) {
+  if (FEATURES.NATIVE && Array.isArray(assets) && assets.length > 0 && assets.every(hasAssetContent)) {
     return true;
   }
 
-  if (bid?.mediaTypes?.native) {
+  if (FEATURES.NATIVE && bid?.mediaTypes?.native) {
     logWarn(`${BIDDER_CODE}: mediaTypes.native is set but no usable native ORTB request was derived from it; the native request is skipped. Check mediaTypes.native.ortb assets (each needs an integer id and exactly one of title/img/data/video, and img assets need w/wmin and h/hmin).`, bid);
   }
   return false;
