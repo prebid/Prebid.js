@@ -22,10 +22,6 @@ const MAX_QID_LENGTH = 40;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'qid' });
 
-function isValidQid(qid) {
-  return typeof qid === 'string' && qid.length > 0 && qid.length <= MAX_QID_LENGTH;
-}
-
 function getStoredQid() {
   const qid = storage.getDataFromLocalStorage('qid');
 
@@ -93,7 +89,7 @@ export const adqueryIdSubmodule = {
   },
   /**
    * called by the userId module instead of getId when a stored id already exists,
-   * replaces a stored qid that is invalid (e.g. longer than 40 characters)
+   * replaces a stored qid longer than 40 characters
    * @function
    * @param {SubmoduleConfig} config
    * @param {Object} consentData
@@ -102,11 +98,11 @@ export const adqueryIdSubmodule = {
    */
   extendId(config, consentData, storedId) {
     logInfo('[EXTENDID]');
-    if (isValidQid(storedId)) {
+    if (!storedId || storedId.length <= MAX_QID_LENGTH) {
       return;
     }
 
-    logInfo('adqueryIdSubmodule stored QID invalid, replacing:', storedId);
+    logInfo('adqueryIdSubmodule stored QID too long, replacing:', storedId.length);
 
     return { id: getStoredQid() || generateQid() };
   },
