@@ -31,6 +31,40 @@ object are detailed here.
 | --- | --- | --- | ---
 | adUnitId | Required | String | The ad unit ID provided by Insticator. 
 
+### User
+
+Supplied under `params.user`. First party data set through `ortb2.user` is also
+forwarded, and where both name the same field the `ortb2` value is used.
+
+| Key | Scope | Type | Description
+| --- | --- | --- | ---
+| yob | Optional | Integer | Year of birth.
+| gender | Optional | String | `M`, `F` or `O`.
+| keywords | Optional | String | Comma separated keywords.
+| data | Optional | Array | OpenRTB `user.data` segments. Concatenated after any set on `ortb2.user.data`.
+| ext | Optional | Object | Merged under `user.ext`.
+
+### Video
+
+Supplied under `params.video`, and taking precedence over the same field on
+`mediaTypes.video`. Every key is optional and is dropped if it fails validation.
+
+`minduration`, `maxduration`, `protocols`, `startdelay`, `linearity`, `skip`,
+`skipmin`, `skipafter`, `sequence`, `battr`, `maxextended`, `minbitrate`,
+`maxbitrate`, `playbackmethod`, `playbackend`, `delivery`, `pos`, `api`,
+`podid`, `podseq`, `poddur`, `slotinpod`, `mincpmpersec`, `maxseq`, `rqddurs`,
+`ext`
+
+### Audio
+
+Supplied under `params.audio`, and taking precedence over the same field on
+`mediaTypes.audio`. Every key is optional and is dropped if it fails validation.
+
+`mimes`, `minduration`, `maxduration`, `poddur`, `protocols`, `startdelay`,
+`rqddurs`, `podid`, `podseq`, `sequence`, `slotinpod`, `mincpmpersec`, `battr`,
+`maxextended`, `minbitrate`, `maxbitrate`, `delivery`, `companionad`, `api`,
+`companiontype`, `maxseq`, `feed`, `stitched`, `nvol`, `durfloors`, `ext`
+
 
 # Test Parameters
 
@@ -91,7 +125,10 @@ object are detailed here.
                    audio: {
                        mimes: ['audio/mp4', 'audio/mpeg'],
                        minduration: 5,
-                       maxduration: 30
+                       maxduration: 30,
+                       feed: 3,
+                       stitched: 0,
+                       nvol: 1
                    }
                },
                bids: [

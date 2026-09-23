@@ -39,6 +39,7 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'mincpmpersec': (value) => typeof value === 'number' && value > 0,
   'maxseq': (value) => isInteger(value) && value > 0,
   'rqddurs': (value) => isArrayOfNums(value) && value.every(v => v > 0),
+  'ext': (value) => isPlainObject(value),
 };
 
 export const OPTIONAL_AUDIO_PARAMS = {
@@ -75,7 +76,7 @@ const ORTB_SITE_FIRST_PARTY_DATA = {
   'sectioncat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
   'pagecat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
   'search': v => typeof v === 'string',
-  'mobile': v => isInteger(),
+  'mobile': v => isInteger(v),
   'content': v => typeof v === 'object',
   'keywords': v => typeof v === 'string',
 };
@@ -129,10 +130,17 @@ function buildBanner(bidRequest) {
     });
   }
 
-  return {
+  const bannerObj = {
     format,
     pos,
   };
+
+  const bannerExt = deepAccess(bidRequest, 'mediaTypes.banner.ext');
+  if (isPlainObject(bannerExt)) {
+    bannerObj.ext = mergeDeep({}, bannerExt);
+  }
+
+  return bannerObj;
 }
 
 function buildVideo(bidRequest) {
@@ -149,7 +157,7 @@ function buildVideo(bidRequest) {
   }
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  const videoBidderParams = { ...deepAccess(bidRequest, 'params.video', {}) };
 
   const optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
@@ -182,6 +190,10 @@ function buildVideo(bidRequest) {
     ...videoBidderParams // bidder specific overrides for video
   };
 
+  if (optionalParams.ext && videoBidderParams.ext) {
+    videoObj.ext = mergeDeep({}, optionalParams.ext, videoBidderParams.ext);
+  }
+
   return videoObj;
 }
 
@@ -211,7 +223,6 @@ function buildAudio(bidRequest) {
     ...audioParamOverrides
   };
 
-  // ext holds independent keys, so a bidder-level ext extends the ad unit's rather than replacing it.
   if (optionalParams.ext && audioParamOverrides.ext) {
     audioObj.ext = mergeDeep({}, optionalParams.ext, audioParamOverrides.ext);
   }
@@ -220,31 +231,34 @@ function buildAudio(bidRequest) {
 }
 
 function buildImpression(bidRequest) {
+  const insticatorBidderParams = {};
+
+  if (bidRequest?.params?.adUnitId) {
+    insticatorBidderParams.adUnitId = bidRequest.params.adUnitId;
+  }
+
+  if (bidRequest?.params?.publisherId) {
+    insticatorBidderParams.publisherId = bidRequest.params.publisherId;
+  }
+
+  const impExtOverrides = {
+    insticator: {
+      adUnitId: bidRequest.params.adUnitId,
+    },
+  };
+
+  if (Object.keys(insticatorBidderParams).length > 0) {
+    impExtOverrides.prebid = { bidder: { insticator: insticatorBidderParams } };
+  }
+
   const imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
     instl: deepAccess(bidRequest, 'ortb2Imp.instl'),
+    rwdd: deepAccess(bidRequest, 'ortb2Imp.rwdd'),
     secure: location.protocol === 'https:' ? 1 : 0,
-    ext: {
-      gpid: deepAccess(bidRequest, 'ortb2Imp.ext.gpid'),
-      insticator: {
-        adUnitId: bidRequest.params.adUnitId,
-      },
-    },
+    ext: mergeDeep({}, deepAccess(bidRequest, 'ortb2Imp.ext'), impExtOverrides),
   };
-
-  const impFirstPartyData = deepAccess(bidRequest, 'ortb2Imp.ext.data');
-  if (impFirstPartyData && Object.keys(impFirstPartyData).length > 0) {
-    deepSetValue(imp, 'ext.data', impFirstPartyData);
-  }
-
-  if (bidRequest?.params?.adUnitId) {
-    deepSetValue(imp, 'ext.prebid.bidder.insticator.adUnitId', bidRequest.params.adUnitId);
-  }
-
-  if (bidRequest?.params?.publisherId) {
-    deepSetValue(imp, 'ext.prebid.bidder.insticator.publisherId', bidRequest.params.publisherId);
-  }
 
   const bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
 
@@ -332,7 +346,9 @@ function buildDevice(bidRequest) {
   };
 
   if (typeof deviceConfig === 'object') {
+    const ourExt = device.ext;
     Object.assign(device, deviceConfig);
+    device.ext = mergeDeep({}, deviceConfig.ext, ourExt);
   }
 
   return device;
@@ -361,7 +377,7 @@ function _getUspConsent(bidderRequest) {
 
 function buildRegs(bidderRequest) {
   const regs = {
-    ext: {},
+    ext: mergeDeep({}, deepAccess(bidderRequest, 'ortb2.regs.ext')),
   };
   if (bidderRequest.gdprConsent) {
     regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
@@ -387,15 +403,10 @@ function buildRegs(bidderRequest) {
     regs.ext.ccpa = usp.uspConsent;
   }
 
-  const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
-  if (dsa) {
-    regs.ext.dsa = dsa;
-  }
-
   return regs;
 }
 
-function buildUser(bid) {
+function buildUser(bid, bidderRequest) {
   const userId = getUserId() || generateUUID();
   const yob = deepAccess(bid, 'params.user.yob');
   const gender = deepAccess(bid, 'params.user.gender');
@@ -421,12 +432,19 @@ function buildUser(bid) {
     userData.keywords = keywords;
   }
 
-  if (data) {
-    userData.data = data;
+  const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
+  const userDataSegments = [
+    ...(isArray(ortb2UserData) ? ortb2UserData : []),
+    ...(isArray(data) ? data : []),
+  ];
+  if (userDataSegments.length > 0) {
+    userData.data = userDataSegments;
   }
 
-  if (ext) {
-    userData.ext = ext;
+  const ortb2UserExt = deepAccess(bidderRequest, 'ortb2.user.ext');
+  const userExt = mergeDeep({}, ortb2UserExt, ext);
+  if (Object.keys(userExt).length > 0) {
+    userData.ext = userExt;
   }
 
   return userData;
@@ -452,12 +470,14 @@ function extractEids(bids) {
 }
 
 function buildRequest(validBidRequests, bidderRequest) {
+  const ortb2 = bidderRequest.ortb2 || {};
+
   const req = {
     id: bidderRequest.bidderRequestId,
     tmax: bidderRequest.timeout,
     source: {
       fd: 1,
-      tid: bidderRequest.ortb2?.source?.tid,
+      tid: ortb2.source?.tid,
     },
     site: {
       // TODO: are these the right refererInfo values?
@@ -467,45 +487,50 @@ function buildRequest(validBidRequests, bidderRequest) {
     },
     device: buildDevice(bidderRequest),
     regs: buildRegs(bidderRequest),
-    user: buildUser(validBidRequests[0]),
+    user: buildUser(validBidRequests[0], bidderRequest),
     imp: validBidRequests.map((bidRequest) => buildImpression(bidRequest)),
-    ext: {
+    ext: mergeDeep({}, ortb2.ext, {
       insticator: {
         adapter: {
           vendor: 'prebid',
           prebid: '$prebid.version$'
         }
       }
-    }
+    }),
   };
 
   const params = config.getConfig('insticator.params');
 
   if (params) {
-    req.ext = {
-      insticator: { ...req.ext.insticator, ...params },
-    };
+    req.ext.insticator = { ...req.ext.insticator, ...params };
   }
 
   const schain = extractSchain(validBidRequests, bidderRequest.bidderRequestId);
 
-  if (schain) {
-    req.source.ext = { schain };
+  const sourceExt = mergeDeep({}, ortb2.source?.ext, schain ? { schain } : null);
+  if (Object.keys(sourceExt).length > 0) {
+    req.source.ext = sourceExt;
   }
 
   const eids = extractEids(validBidRequests);
 
   if (eids) {
-    req.user.ext = { eids };
+    deepSetValue(req, 'user.ext.eids', eids);
   }
 
-  const ortb2SiteData = deepAccess(bidderRequest, 'ortb2.site');
+  const ortb2SiteData = ortb2.site;
   if (ortb2SiteData) {
     for (const key in ORTB_SITE_FIRST_PARTY_DATA) {
       const value = ortb2SiteData[key];
-      if (value && ORTB_SITE_FIRST_PARTY_DATA[key](value)) {
+      if (value !== undefined && value !== null && ORTB_SITE_FIRST_PARTY_DATA[key](value)) {
         req.site[key] = value;
       }
+    }
+    if (isPlainObject(ortb2SiteData.ext)) {
+      req.site.ext = mergeDeep({}, ortb2SiteData.ext);
+    }
+    if (isPlainObject(ortb2SiteData.publisher?.ext)) {
+      deepSetValue(req, 'site.publisher.ext', mergeDeep({}, ortb2SiteData.publisher.ext));
     }
   }
 
