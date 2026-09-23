@@ -17,6 +17,8 @@ This module connects publishers to Insticator exchange of demand sources through
 | Type | Support
 | --- | ---
 | Banner | Fully supported for all approved sizes.
+| Video | Fully supported.
+| Audio | Fully supported.
 
 # Bid Parameters
 
@@ -31,6 +33,8 @@ object are detailed here.
 
 
 # Test Parameters
+
+### Banner
 ```
     var adUnits = [
            {
@@ -38,6 +42,56 @@ object are detailed here.
                mediaTypes: {
                    banner: {
                        sizes: [[300, 250], [300, 600]]
+                   }
+               },
+               bids: [
+                   {
+                       bidder: 'insticator',
+                       params: {
+                           adUnitId: 'test'
+                       }
+                   }
+               ]
+           }
+	]
+```
+
+### Video
+```
+    var adUnits = [
+           {
+               code: 'test-video-div',
+               mediaTypes: {
+                   video: {
+                       playerSize: [[640, 480]],
+                       mimes: ['video/mp4'],
+                       plcmt: 1,
+                       minduration: 1,
+                       maxduration: 30
+                   }
+               },
+               bids: [
+                   {
+                       bidder: 'insticator',
+                       params: {
+                           adUnitId: 'test'
+                       }
+                   }
+               ]
+           }
+	]
+```
+
+### Audio
+```
+    var adUnits = [
+           {
+               code: 'test-audio-div',
+               mediaTypes: {
+                   audio: {
+                       mimes: ['audio/mp4', 'audio/mpeg'],
+                       minduration: 5,
+                       maxduration: 30
                    }
                },
                bids: [
