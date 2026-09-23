@@ -57,14 +57,14 @@ export function getAcceptableFlags(
   consentData: TCFConsentData,
   type: 'purpose' | 'feature',
   purpose: number,
-  gvlid: number,
+  gvlid: number | typeof VENDORLESS_GVLID,
   purposeDeclarations = getPurposeDeclarations
 ): {
     acceptConsent: boolean,
     acceptLI: boolean
   } {
   let acceptConsent, acceptLI;
-  if (typeof gvlid !== 'number' && gvlid === VENDORLESS_GVLID) {
+  if (gvlid === VENDORLESS_GVLID) {
     acceptConsent = true;
     acceptLI = type === 'feature' ? false : PUBLISHER_LI_PURPOSES.includes(purpose);
   } else {

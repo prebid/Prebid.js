@@ -226,7 +226,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   const matchingData: any = {
     floorMin: floorData.floorMin || 0,
     floorRuleValue: floorData.values[matchingRule],
-    matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
+    matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for analytics adapters
     matchingRule: matchingRule === floorData.meta?.defaultRule ? undefined : matchingRule
   };
   // use adUnit floorMin as priority!
@@ -662,7 +662,7 @@ export function parseFloorData(floorsData, location) {
  * @param {function} fn required; The next function in the chain, used by hook.ts
  */
 export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook(fn, reqBidsConfigObj) {
-  // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
+  // preserves all module related variables for the current auction instance (used primarily for concurrent auctions)
   const hookConfig = {
     reqBidsConfigObj,
     context: this,
@@ -827,7 +827,7 @@ declare module '../src/adUnits' {
 export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> & {
   enabled?: boolean;
   /**
-   * The mimimum CPM floor used by the Price Floors Module.
+   * The minimum CPM floor used by the Price Floors Module.
    * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
    */
   floorMin?: number;
@@ -1037,7 +1037,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
     try {
       adjustedCpm = getGlobal().convertCurrency(bid.cpm, bidResponseCurrency.toUpperCase(), floorCurrency);
     } catch (err) {
-      logError(`${MODULE_NAME}: Unable do get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled? ${bid}`);
+      logError(`${MODULE_NAME}: Unable to get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled?`, bid);
       return fn.call(this, adUnitCode, bid, reject);
     }
   }

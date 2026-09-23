@@ -1,6 +1,7 @@
 import { EVENT_TYPE_VIEWABLE, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from '../../src/eventTrackers.js';
 import { filterEventTrackers, legacyPropertiesToOrtbNative } from '../../src/native.js';
 import { triggerPixel, insertHtmlIntoIframe } from '../../src/utils.js';
+import { attributeValue } from '../../src/utils/xml.js';
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import adapterManager from '../../src/adapterManager.js';
@@ -43,8 +44,9 @@ export function fireViewabilityPixels(bid) {
   }
 
   img.forEach(triggerPixel);
-  if (js.length > 0) {
-    const markup = js.map(url => `<script async src="${url}"></script>`).join('\n');
+  const safeJs = js.filter(url => /^https?:\/\//i.test(url));
+  if (safeJs.length > 0) {
+    const markup = safeJs.map(url => `<script async src="${attributeValue(url)}"></script>`).join('\n');
     insertHtmlIntoIframe(markup);
   }
 }
