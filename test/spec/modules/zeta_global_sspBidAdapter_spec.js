@@ -392,7 +392,10 @@ describe('Zeta Ssp Bid Adapter', function () {
     const bid2 = bidResponse[1];
     const receivedBid2 = response.body.seatbid[0].bid[1];
     expect(bid2).to.not.be.empty;
-    expect(bid2.vastXml).to.equal(receivedBid2.adm);
+    // vastXml is only populated when the VIDEO feature is built in.
+    if (FEATURES.VIDEO) {
+      expect(bid2.vastXml).to.equal(receivedBid2.adm);
+    }
     expect(bid2.mediaType).to.equal(VIDEO);
     expect(bid2.cpm).to.equal(receivedBid2.price);
     expect(bid2.height).to.equal(receivedBid2.h);
@@ -403,7 +406,9 @@ describe('Zeta Ssp Bid Adapter', function () {
     const bid3 = bidResponse[2];
     const receivedBid3 = response.body.seatbid[0].bid[2];
     expect(bid3).to.not.be.empty;
-    expect(bid3.vastXml).to.equal(receivedBid3.adm);
+    if (FEATURES.VIDEO) {
+      expect(bid3.vastXml).to.equal(receivedBid3.adm);
+    }
     expect(bid3.mediaType).to.equal(VIDEO);
     expect(bid3.cpm).to.equal(receivedBid3.price);
     expect(bid3.height).to.equal(receivedBid3.h);
@@ -571,21 +576,24 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.user.ext.consent).to.eql('consentString');
   });
 
-  it('Test video object', function () {
-    const request = spec.buildRequests(videoRequest, videoRequest[0]);
-    const payload = request.data;
+  // imp.video is only built when the VIDEO feature is compiled in.
+  if (FEATURES.VIDEO) {
+    it('Test video object', function () {
+      const request = spec.buildRequests(videoRequest, videoRequest[0]);
+      const payload = request.data;
 
-    expect(payload.imp[0].video.minduration).to.eql(videoRequest[0].mediaTypes.video.minduration);
-    expect(payload.imp[0].video.maxduration).to.eql(videoRequest[0].mediaTypes.video.maxduration);
-    expect(payload.imp[0].video.protocols).to.eql(videoRequest[0].mediaTypes.video.protocols);
-    expect(payload.imp[0].video.mimes).to.eql(videoRequest[0].mediaTypes.video.mimes);
-    expect(payload.imp[0].video.w).to.eql(720);
-    expect(payload.imp[0].video.h).to.eql(340);
-    expect(payload.imp[0].video.placement).to.eql(videoRequest[0].mediaTypes.video.placement);
-    expect(payload.imp[0].video.plcmt).to.eql(videoRequest[0].mediaTypes.video.plcmt);
+      expect(payload.imp[0].video.minduration).to.eql(videoRequest[0].mediaTypes.video.minduration);
+      expect(payload.imp[0].video.maxduration).to.eql(videoRequest[0].mediaTypes.video.maxduration);
+      expect(payload.imp[0].video.protocols).to.eql(videoRequest[0].mediaTypes.video.protocols);
+      expect(payload.imp[0].video.mimes).to.eql(videoRequest[0].mediaTypes.video.mimes);
+      expect(payload.imp[0].video.w).to.eql(720);
+      expect(payload.imp[0].video.h).to.eql(340);
+      expect(payload.imp[0].video.placement).to.eql(videoRequest[0].mediaTypes.video.placement);
+      expect(payload.imp[0].video.plcmt).to.eql(videoRequest[0].mediaTypes.video.plcmt);
 
-    expect(payload.imp[0].banner).to.be.undefined;
-  });
+      expect(payload.imp[0].banner).to.be.undefined;
+    });
+  }
 
   it('Test required params in banner request', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
@@ -707,7 +715,9 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse).to.not.be.empty;
     expect(bidResponse.length).to.eql(1);
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
-    expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+    if (FEATURES.VIDEO) {
+      expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+    }
     expect(bidResponse[0].dspId).to.eql(response.body.seatbid[0].seat);
   });
 
@@ -720,7 +730,9 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse).to.not.be.empty;
     expect(bidResponse.length).to.eql(1);
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
-    expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+    if (FEATURES.VIDEO) {
+      expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+    }
     expect(bidResponse[0].dspId).to.eql(response.body.seatbid[0].seat);
   });
 
