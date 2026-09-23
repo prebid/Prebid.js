@@ -71,7 +71,7 @@ export const spec = {
       at: 1,
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
-      device: buildDevice(),
+      device: buildDevice(bidderRequest),
       user: user && user.length === 1 ? user[0] : {}
     };
 
@@ -288,14 +288,16 @@ function buildSite(bidderRequest) {
   return site;
 }
 
-function buildDevice() {
+function buildDevice(bidderRequest) {
+  // core FPD enrichment already fills ortb2.device from the browser (ua, w, h, language);
+  // read it from the request rather than from navigator/screen directly
   return {
-    ua: navigator.userAgent,
+    ua: deepAccess(bidderRequest, 'ortb2.device.ua'),
     js: 1,
     dnt: getDNT() ? 1 : 0,
-    h: screen.height,
-    w: screen.width,
-    language: navigator.language
+    h: deepAccess(bidderRequest, 'ortb2.device.h'),
+    w: deepAccess(bidderRequest, 'ortb2.device.w'),
+    language: deepAccess(bidderRequest, 'ortb2.device.language')
   };
 }
 
