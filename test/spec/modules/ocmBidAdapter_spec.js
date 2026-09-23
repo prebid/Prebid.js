@@ -45,21 +45,25 @@ describe('ocmBidAdapter', function () {
     }
   };
 
+  const nativeOrtb = {
+    ver: '1.2',
+    assets: [
+      { id: 1, required: 1, title: { len: 80 } },
+      { id: 2, required: 0, data: { type: 1 } }
+    ]
+  };
+
+  // Prebid core derives `nativeOrtbRequest` from mediaTypes.native (ORTB or legacy params) and copies
+  // it onto every bid before an adapter sees it (decorateAdUnitsWithNativeParams in src/native, plus
+  // ADUNIT_BID_PROPERTIES in adapterManager). It is what the ORTB converter serialises into
+  // imp.native, so every native fixture here carries it exactly as production does.
   const nativeBid = {
     bidder: 'ocm',
     adUnitCode: 'div-native',
     bidId: 'bid-native-1',
     params: { ...baseParams },
-    mediaTypes: {
-      native: {
-        ortb: {
-          assets: [
-            { id: 1, required: 1, title: { len: 80 } },
-            { id: 2, required: 0, data: { type: 1 } }
-          ]
-        }
-      }
-    }
+    mediaTypes: { native: { ortb: nativeOrtb } },
+    nativeOrtbRequest: nativeOrtb
   };
 
   describe('isBidRequestValid', function () {
@@ -71,8 +75,10 @@ describe('ocmBidAdapter', function () {
       expect(spec.isBidRequestValid(videoBid)).to.equal(true);
     });
 
+    // Native is only ever sent when the NATIVE feature is compiled in; a build without it cannot
+    // produce a native imp, so the adapter must not claim the bid is valid either.
     it('returns true for a valid ORTB native bid', function () {
-      expect(spec.isBidRequestValid(nativeBid)).to.equal(true);
+      expect(spec.isBidRequestValid(nativeBid)).to.equal(!!FEATURES.NATIVE);
     });
 
     it('returns false when publisherId is missing', function () {
@@ -111,126 +117,98 @@ describe('ocmBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    // Regression: a native video asset with minduration:0 must be accepted.
-    // Before the fix the falsy `!asset.video.minduration` check rejected a legitimate 0.
-    it('accepts a native video asset with minduration of 0', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: {
-          native: {
-            ortb: {
-              assets: [{
-                id: 1,
-                required: 1,
-                video: { mimes: ['video/mp4'], minduration: 0, maxduration: 30, protocols: [2, 3] }
-              }]
-            }
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('rejects a native video asset that is missing minduration', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: {
-          native: {
-            ortb: {
-              assets: [{
-                id: 1,
-                required: 1,
-                video: { mimes: ['video/mp4'], maxduration: 30, protocols: [2, 3] }
-              }]
-            }
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('rejects an ORTB native bid whose event tracker has no methods', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: {
-          native: {
-            ortb: {
-              assets: [{ id: 1, required: 1, title: { len: 80 } }],
-              eventtrackers: [{ event: 1, methods: [] }]
-            }
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('accepts an ORTB native bid with a valid event tracker', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: {
-          native: {
-            ortb: {
-              assets: [{ id: 1, required: 1, title: { len: 80 } }],
-              eventtrackers: [{ event: 1, methods: [1, 2] }]
-            }
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
     it('returns false for a bid with no params object', function () {
       expect(spec.isBidRequestValid({ bidder: 'ocm' })).to.equal(false);
     });
 
-    // isValidAsset rejection paths, reached through the ORTB native validation branch.
-    it('rejects an ORTB native asset that has no valid integer id', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: { native: { ortb: { assets: [{ required: 1, title: { len: 80 } }] } } }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+    if (FEATURES.NATIVE) {
+      // Regression: the adapter used to re-validate mediaTypes.native.ortb assets with its own copy of
+      // core's rules. Assets core rejects but that copy accepted (an img asset with no w/h is the
+      // common one) made the bid "valid" while core had already dropped nativeOrtbRequest, so the
+      // converter built an imp with no `native` object at all and PBS received an empty impression.
+      it('rejects a native bid whose ad unit Prebid could not turn into a native ORTB request', function () {
+        const bid = {
+          ...nativeBid,
+          mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1, img: { type: 3 } }] } } },
+          nativeOrtbRequest: undefined
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
 
-    it('rejects an ORTB native asset with no content (title/img/data/video)', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1 }] } } }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      it('warns when mediaTypes.native is declared but no native ORTB request was derived', function () {
+        const logWarnStub = sinon.stub(utils, 'logWarn');
+        try {
+          spec.isBidRequestValid({ ...nativeBid, nativeOrtbRequest: undefined });
+          expect(logWarnStub.called).to.equal(true);
+          expect(logWarnStub.firstCall.args[0]).to.contain('mediaTypes.native');
+        } finally {
+          logWarnStub.restore();
+        }
+      });
 
-    it('rejects an ORTB native title asset that is missing a valid len', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1, title: {} }] } } }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      it('rejects a native bid whose derived ORTB request has no assets', function () {
+        const bid = { ...nativeBid, nativeOrtbRequest: { ver: '1.2', assets: [] } };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
 
-    it('rejects an ORTB native data asset that is missing a valid type', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1, data: {} }] } } }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      // Core's isOpenRTBAssetValid tests img/title/data/video in an if/else chain with no final
+      // branch, so an asset that declares none of them is accepted and survives into
+      // nativeOrtbRequest. PBS has nothing to fill it with, so the adapter makes that one check.
+      it('rejects a derived ORTB request whose asset carries no title/img/data/video', function () {
+        const bid = { ...nativeBid, nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, required: 1 }] } };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
 
-    // Legacy (non-ORTB) native path: mediaTypes.native carries no `ortb`, so the adapter converts
-    // bid.nativeParams via toOrtbNativeRequest and validates the resulting assets.
-    it('returns false for a legacy native bid with no nativeParams', function () {
-      const bid = { ...nativeBid, mediaTypes: { native: {} } };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      it('rejects a derived ORTB request where only some assets carry content', function () {
+        const bid = {
+          ...nativeBid,
+          nativeOrtbRequest: {
+            ver: '1.2',
+            assets: [{ id: 1, required: 1, title: { len: 80 } }, { id: 2, required: 0 }]
+          }
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
 
-    it('returns true for a legacy native bid whose nativeParams convert to a valid asset', function () {
-      const bid = {
-        ...nativeBid,
-        mediaTypes: { native: {} },
-        nativeParams: { title: { required: true, len: 80 } }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      it('accepts assets carrying any one of the four ORTB content objects', function () {
+        [
+          { id: 1, title: { len: 80 } },
+          { id: 1, img: { type: 3, w: 150, h: 150 } },
+          { id: 1, data: { type: 1 } },
+          { id: 1, video: { mimes: ['video/mp4'], minduration: 0, maxduration: 30, protocols: [2, 3] } }
+        ].forEach((asset) => {
+          const bid = { ...nativeBid, nativeOrtbRequest: { ver: '1.2', assets: [asset] } };
+          expect(spec.isBidRequestValid(bid), JSON.stringify(asset)).to.equal(true);
+        });
+      });
+
+      // Legacy (non-ORTB) native ad units: core converts mediaTypes.native params into the same
+      // nativeOrtbRequest, so they are valid on exactly the same terms as ORTB ones.
+      it('returns true for a legacy native bid core converted to an ORTB request', function () {
+        const bid = {
+          ...nativeBid,
+          mediaTypes: { native: { title: { required: true, len: 80 } } },
+          nativeParams: { title: { required: true, len: 80 } },
+          nativeOrtbRequest: { ver: '1.2', assets: [{ id: 0, required: 1, title: { len: 80 } }] }
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+
+      it('returns false for a legacy native bid core could not convert', function () {
+        const bid = { ...nativeBid, mediaTypes: { native: {} }, nativeOrtbRequest: undefined };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      // A broken native declaration must not cost the ad unit its other formats.
+      it('stays valid through banner when the native part of a multi-format ad unit is unusable', function () {
+        const bid = {
+          ...nativeBid,
+          mediaTypes: { banner: { sizes: [[300, 250]] }, native: { ortb: { assets: [] } } },
+          nativeOrtbRequest: undefined
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+    }
   });
 
   describe('buildRequests', function () {
@@ -508,10 +486,34 @@ describe('ocmBidAdapter', function () {
         const parsed = JSON.parse(imp.native.request);
         expect(parsed.assets).to.have.lengthOf(3);
         expect(parsed.ver).to.equal('1.2');
+        expect(imp.native.ver).to.equal('1.2');
       }
       // The stored-request wiring and PBS bidder-params cleanup apply to native imps as well.
       expect(imp.ext.prebid.storedrequest.id).to.equal('plc-456');
       expect(imp.ext.prebid.bidder).to.equal(undefined);
+    });
+
+    // An ORTB native ad unit that does not spell out `ver` used to produce an imp.native with no
+    // version at all (only the legacy path got one, from core's toOrtbNativeRequest). The converter
+    // context now defaults it, while a publisher-supplied version still wins.
+    it('defaults the native request version and keeps a publisher-supplied one', function () {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
+      const { ver, ...versionless } = nativeOrtbRequest;
+      const defaulted = spec.buildRequests(
+        [{ ...nativeRequestBid, nativeOrtbRequest: versionless }],
+        nativeBidderRequest
+      ).data.imp[0];
+      expect(defaulted.native.ver).to.equal('1.2');
+      expect(JSON.parse(defaulted.native.request).ver).to.equal('1.2');
+
+      const pinned = { ...nativeOrtbRequest, ver: '1.1' };
+      const pinnedImp = spec.buildRequests(
+        [{ ...nativeRequestBid, nativeOrtbRequest: pinned }],
+        nativeBidderRequest
+      ).data.imp[0];
+      expect(pinnedImp.native.ver).to.equal('1.1');
     });
 
     it('interprets a native ORTB response into bidResponse.native.ortb', function () {
