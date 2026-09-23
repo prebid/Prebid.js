@@ -311,6 +311,24 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.site.domain).to.eql('zetaglobal.com');
   });
 
+  it('Test long https page is truncated to 100 chars and protocol stripped', function () {
+    const longPageRequest = deepClone(bannerRequest);
+    // > 100 chars, https:// prefix, and no '#'/'?' so cropPage falls through to the plain return.
+    longPageRequest[0].refererInfo = { page: 'https://www.zetaglobal.com/' + 'a'.repeat(200) };
+    const request = spec.buildRequests(longPageRequest, longPageRequest[0]);
+    const payload = request.data;
+    // 100 char truncation, then 'https://' (8) and 'www.' (4) removed -> 88 chars.
+    expect(payload.site.page).to.eql('zetaglobal.com/' + 'a'.repeat(73));
+    expect(payload.site.page.length).to.eql(88);
+  });
+
+  it('Test interpretResponse with no body returns empty array', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    expect(spec.interpretResponse({}, request)).to.eql([]);
+    expect(spec.interpretResponse({ body: null }, request)).to.eql([]);
+    expect(spec.interpretResponse(undefined, request)).to.eql([]);
+  });
+
   it('Test the request processing function', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     expect(request).to.not.be.empty;
