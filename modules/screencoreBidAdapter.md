@@ -8,30 +8,25 @@
 
 # Description
 
-Module that connects to Screencore's Open RTB demand sources.
+Module that connects to Screencore's SSP demand source via OpenRTB.
 
 # Test Parameters
+
+## SSP Integration
+
 ```js
 var adUnits = [
   {
-    code: 'test-ad',
+    code: "test-ad",
     sizes: [[300, 250]],
     bids: [
       {
-        bidder: 'Screencore',
+        bidder: "screencore",
         params: {
-          cId: '562524b21b1c1f08117fc7f9',
-          pId: '59ac17c192832d0011283fe3',
-          bidFloor: 0.0001,
-          ext: {
-            param1: 'loremipsum',
-            param2: 'dolorsitamet'
-          },
-          placementId: 'testBanner',
-          endpointId: 'testEndpoint'
-        }
-      }
-    ]
-  }
+          sspPlacementId: "123",
+        },
+      },
+    ],
+  },
 ];
 ```
