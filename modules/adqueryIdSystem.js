@@ -98,11 +98,11 @@ export const adqueryIdSubmodule = {
    */
   extendId(config, consentData, storedId) {
     logInfo('[EXTENDID]');
-    if (!storedId || storedId.length <= MAX_QID_LENGTH) {
+    if (!storedId || (typeof storedId === 'string' && storedId.length <= MAX_QID_LENGTH)) {
       return;
     }
 
-    logInfo('adqueryIdSubmodule stored QID too long, replacing:', storedId.length);
+    logInfo('adqueryIdSubmodule stored QID invalid, replacing:', typeof storedId === 'string' ? storedId.length : typeof storedId);
 
     return { id: getStoredQid() || generateQid() };
   },

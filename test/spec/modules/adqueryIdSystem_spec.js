@@ -131,6 +131,14 @@ describe('AdqueryIdSystem', function () {
       expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
     });
 
+    it('replaces a stored qid that is not a string', function () {
+      const result = adqueryIdSubmodule.extendId({}, {}, { qid: 'a'.repeat(41) });
+
+      expect(result.id).to.be.a('string').that.is.not.empty;
+      expect(result.id.length).to.be.at.most(40);
+      expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
+    });
+
     it('reuses a valid qid from localStorage instead of generating a new one', function () {
       getDataFromLocalStorageStub.withArgs('qid').returns('existing-qid');
 
