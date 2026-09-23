@@ -49,10 +49,10 @@ describe('ortbVideoUtils', function () {
     });
 
     it('drops params that fail validation and reports each one', function () {
-      const rejected = [];
+      const onInvalid = sinon.spy();
       const bid = { mediaTypes: { video: { playerSize: [640, 480], mimes: [], skip: 2 } } };
-      expect(buildOrtbVideo(bid, validators, name => rejected.push(name))).to.deep.equal({ w: 640, h: 480 });
-      expect(rejected).to.deep.equal(['mimes', 'skip']);
+      expect(buildOrtbVideo(bid, validators, onInvalid)).to.deep.equal({ w: 640, h: 480 });
+      expect(onInvalid.args.map(call => call[0])).to.deep.equal(['mimes', 'skip']);
     });
 
     it('ignores params that are not in the validator list', function () {

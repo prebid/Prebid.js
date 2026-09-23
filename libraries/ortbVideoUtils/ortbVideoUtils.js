@@ -43,8 +43,10 @@ export function getMergedVideoParams(bid) {
 export function buildOrtbVideo(bid, validators, onInvalid = () => {}) {
   const videoParams = getMergedVideoParams(bid);
   const video = {};
+  const names = Object.keys(validators);
 
-  Object.keys(validators).forEach(name => {
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
     if (Object.prototype.hasOwnProperty.call(videoParams, name)) {
       if (validators[name](videoParams[name])) {
         video[name] = videoParams[name];
@@ -52,7 +54,7 @@ export function buildOrtbVideo(bid, validators, onInvalid = () => {}) {
         onInvalid(name);
       }
     }
-  });
+  }
 
   return video;
 }
