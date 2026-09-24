@@ -35,7 +35,11 @@ pbjs.setConfig({
         advertiserTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // advertiserTargeting: ['genres', 'emotions', 'themes'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones', 'tq'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones', 'tq', 'vp'
+
+        // Request per-slot viewability targeting from the viewability API
+        includeViewabilityTargeting: true,
+        viewabilityTargetingPlacementSource: 'gam_ad_unit',
 
         // Enable targeting keys for publisher data
         publisherTargeting: true,
@@ -50,6 +54,7 @@ pbjs.setConfig({
 
 - With `advertiserTargeting: true` or `publisherTargeting: true`, add `includeTrafficQuality: true` to the `params` object.
 - With an array, list `tq` in it, e.g. `advertiserTargeting: ['genres', 'tq']`. `includeTrafficQuality` is ignored when the value is an array.
+- With `advertiserTargeting: true`, add `includeViewabilityTargeting: true` and `viewabilityTargetingPlacementSource` to request per-slot viewability targeting. With an array, list `vp` in `advertiserTargeting`; `includeViewabilityTargeting` is ignored.
 
 ## Functionality
 
@@ -189,6 +194,14 @@ Description: Traffic Group is returned with the contextual assessment results an
 
 ------------------
 
+Viewability (`vp`)
+
+Targeting keys: `mobian_vp_likely_viewable`, `mobian_vp_probability`, `mobian_vp_bucket_percent`, and `mobian_vp_confidence`
+
+Description: Viewability results are requested once for each unique page URL, ad unit code, and `viewabilityTargetingPlacementSource` combination. The request includes the page URL, `viewabilityTargetingPlacementSource`, and the ad unit code as `placement_id`. Known results set all four slot-level targeting keys as strings. Unknown or incomplete results set no keys. A failed request is ignored for that slot and may be retried by a later bid request.
+
+------------------
+
 Additional Results Fields (API response)
 
 The fields below are present in the Mobian Contextual API `results` schema and are useful for downstream interpretation of content maturity and taxonomy.
@@ -219,14 +232,9 @@ Behavior when unavailable: may be returned as an empty array.
 
 ## GAM Targeting:
 
-On each page load, the Mobian RTD module finds each ad slot on the page and performs the following function:
+For viewability, the Mobian RTD module requests and stores the per-ad-unit result during `getBidRequestData`. During `AUCTION_END`, it returns the result through the RTD `getTargetingData` interface as ad-server targeting data. Prebid then applies those values through its normal targeting flow when `pbjs.setTargetingForGPTAsync()` is called.
 
-```js
-window.googletag.cmd.push(() => {
-  window.googletag.pubads().setTargeting(key, value);
-```
-
-"key" and "value" will be replaced with the various classifications as described in the previous section. Notably, this function runs before ad calls are made to GAM, which enables the keys and value to be used for targeting or blocking in GAM.
+"key" and "value" will be replaced with the various classifications as described in the previous section. The publisher should call `pbjs.setTargetingForGPTAsync()` after the relevant GPT slots have been defined and before the ad request is made, which enables the keys and values to be used for targeting or blocking in GAM.
 
 For more details on how to set up key-value pairs in GAM, please see this documentation from Google: https://support.google.com/admanager/answer/9796369
 

@@ -17,13 +17,19 @@ import {
   THEMES,
   TONES,
   TRAFFIC_QUALITY_KEYS,
+  VIEWABILITY_KEYS,
+  VP,
   extendBidRequestConfig,
   fetchContextData,
+  fetchViewabilityData,
+  getPageUrl,
   getConfig,
   getContextData,
   makeMemoizedFetch,
+  makeMemoizedViewabilityFetch,
   makeContextDataToKeyValuesReducer,
   makeDataFromResponse,
+  makeViewabilityDataFromResponse,
   mobianBrandSafetySubmodule,
   setTargeting,
   dep,
@@ -69,7 +75,31 @@ describe('Mobian RTD Submodule', function () {
     [TQ]: 1,
   };
 
-  const targetingKeys = [...CONTEXT_KEYS, ...TRAFFIC_QUALITY_KEYS];
+  const mockViewabilityResponse = JSON.stringify({
+    results: {
+      viewability: {
+        status: 'known',
+        level: 'placement',
+        likely_viewable: true,
+        probability: 0.72,
+        bucket_percent: 70,
+        sample_count: 42,
+        effective_samples: 38.5,
+        confidence: 'medium',
+        updated_at: '2026-09-17T14:30:00Z'
+      }
+    }
+  });
+
+  const mockViewabilityData = {
+    likely_viewable: 'true',
+    probability: '0.72',
+    bucket_percent: '70',
+    confidence: 'medium',
+  };
+
+  const trafficTargetingKeys = [...CONTEXT_KEYS, ...TRAFFIC_QUALITY_KEYS];
+  const targetingKeys = [...trafficTargetingKeys, ...VIEWABILITY_KEYS];
 
   const mockCombinedData = {
     ...mockContextData,
@@ -120,7 +150,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('fetchContextData', function () {
     it('should request context data using the full page URL', async function () {
-      const originalHref = window.location.href;
+      const originalHref = getPageUrl();
       let requestedUrl;
       ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
         requestedUrl = url;
@@ -130,7 +160,7 @@ describe('Mobian RTD Submodule', function () {
       try {
         history.pushState({}, '', '/context-page?ignored=true#ignored');
         const contextData = await fetchContextData();
-        const pageUrl = encodeURIComponent(window.location.href);
+        const pageUrl = encodeURIComponent(getPageUrl());
         expect(contextData).to.deep.equal(mockResponse);
         expect(requestedUrl).to.equal(`https://prebid.outcomes.net/api/prebid/v1/assessment/async?url=${pageUrl}`);
       } finally {
@@ -141,7 +171,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('fetchTrafficQualityData', function () {
     it('should request traffic quality using the full page URL', async function () {
-      const originalHref = window.location.href;
+      const originalHref = getPageUrl();
       const mockIvtResponse = JSON.stringify({ results: { mobian_tq: 1 } });
       let requestedUrl;
       ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
@@ -152,12 +182,27 @@ describe('Mobian RTD Submodule', function () {
       try {
         history.pushState({}, '', '/traffic-quality-page?ignored=true#ignored');
         const trafficQualityData = await mobianProvider.fetchTrafficQualityData();
-        const pageUrl = encodeURIComponent(window.location.href);
+        const pageUrl = encodeURIComponent(getPageUrl());
         expect(trafficQualityData).to.equal(mockIvtResponse);
         expect(requestedUrl).to.equal(`https://quality.outcomes.net/api/prebid/v1/ivt?url=${pageUrl}`);
       } finally {
         history.replaceState({}, '', originalHref);
       }
+    });
+  });
+
+  describe('fetchViewabilityData', function () {
+    it('should request viewability using the full page URL, placement source, and ad unit code', async function () {
+      const pageUrl = 'https://example.com/viewability-page?ignored=true#ignored';
+      let requestedUrl;
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
+        requestedUrl = url;
+        callbacks.success(mockViewabilityResponse);
+      });
+
+      const viewabilityData = await fetchViewabilityData(pageUrl, 'ad-unit-1', 'gam_ad_unit');
+      expect(viewabilityData).to.equal(mockViewabilityResponse);
+      expect(requestedUrl).to.equal(`https://quality.outcomes.net/api/prebid/v1/viewability?url=${encodeURIComponent(pageUrl)}&placement_source=gam_ad_unit&placement_id=ad-unit-1`);
     });
   });
 
@@ -191,6 +236,29 @@ describe('Mobian RTD Submodule', function () {
     ].forEach(({ response, description }) => {
       it(`should return no targeting data for ${description}`, function () {
         const data = mobianProvider.makeTrafficQualityDataFromResponse(response);
+        expect(data).to.deep.equal({});
+      });
+    });
+  });
+
+  describe('makeViewabilityDataFromResponse', function () {
+    [
+      { response: mockViewabilityResponse, description: 'JSON text' },
+      { response: JSON.parse(mockViewabilityResponse), description: 'an object' },
+    ].forEach(({ response, description }) => {
+      it(`should format viewability data from ${description}`, function () {
+        const data = makeViewabilityDataFromResponse(response);
+        expect(data).to.deep.equal(mockViewabilityData);
+      });
+    });
+
+    [
+      { response: { results: { viewability: { status: 'unknown' } } }, description: 'an unknown response' },
+      { response: { results: { viewability: { status: 'known', likely_viewable: true } } }, description: 'a known response missing fields' },
+      { response: { results: {} }, description: 'a response without viewability' },
+    ].forEach(({ response, description }) => {
+      it(`should return no targeting data for ${description}`, function () {
+        const data = makeViewabilityDataFromResponse(response);
         expect(data).to.deep.equal({});
       });
     });
@@ -365,9 +433,52 @@ describe('Mobian RTD Submodule', function () {
       });
       expect(config).to.deep.equal({
         prefix: 'mobian',
-        publisherTargeting: targetingKeys,
-        advertiserTargeting: targetingKeys,
+        publisherTargeting: trafficTargetingKeys,
+        advertiserTargeting: trafficTargetingKeys,
       });
+    });
+
+    it('should add viewability to boolean targeting when it is included', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          includeViewabilityTargeting: true,
+          viewabilityTargetingPlacementSource: 'gam_ad_unit',
+          publisherTargeting: true,
+          advertiserTargeting: true,
+        }
+      });
+      expect(config).to.deep.equal({
+        prefix: 'mobian',
+        publisherTargeting: CONTEXT_KEYS,
+        advertiserTargeting: [...CONTEXT_KEYS, ...VIEWABILITY_KEYS],
+        viewabilityTargetingPlacementSource: 'gam_ad_unit',
+      });
+    });
+
+    it('should not add traffic quality when only viewability is included', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          includeViewabilityTargeting: true,
+          publisherTargeting: true,
+        }
+      });
+      expect(config.publisherTargeting).to.deep.equal(CONTEXT_KEYS);
+    });
+
+    it('should add both traffic quality and viewability when both are included', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          includeTrafficQuality: true,
+          includeViewabilityTargeting: true,
+          publisherTargeting: true,
+          advertiserTargeting: true,
+        }
+      });
+      expect(config.publisherTargeting).to.deep.equal(trafficTargetingKeys);
+      expect(config.advertiserTargeting).to.deep.equal(targetingKeys);
     });
 
     it('should return independent targeting arrays for boolean targeting', function () {
@@ -382,9 +493,9 @@ describe('Mobian RTD Submodule', function () {
 
       expect(config.publisherTargeting).not.to.equal(config.advertiserTargeting);
       config.advertiserTargeting.pop();
-      expect(config.publisherTargeting).to.deep.equal(targetingKeys);
+      expect(config.publisherTargeting).to.deep.equal(trafficTargetingKeys);
       const nextConfig = getConfig({ params: { publisherTargeting: true, includeTrafficQuality: true } });
-      expect(nextConfig.publisherTargeting).to.deep.equal(targetingKeys);
+      expect(nextConfig.publisherTargeting).to.deep.equal(trafficTargetingKeys);
     });
 
     it('should ignore includeTrafficQuality for explicit targeting arrays', function () {
@@ -458,7 +569,7 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  describe('getTargetingData', function () {
+  describe('getContextAndTrafficQualityData', function () {
     let getContextDataStub;
     let getTrafficQualityDataStub;
 
@@ -506,7 +617,7 @@ describe('Mobian RTD Submodule', function () {
         getContextDataStub.resolves(mockContextData);
         getTrafficQualityDataStub.resolves(mockTrafficQualityData);
 
-        const data = await mobianProvider.getTargetingData(testCase.targetingKeys);
+        const data = await mobianProvider.getContextAndTrafficQualityData(testCase.targetingKeys);
 
         expect(getContextDataStub.callCount).to.equal(testCase.expectedContextCalls);
         expect(getTrafficQualityDataStub.callCount).to.equal(testCase.expectedTrafficQualityCalls);
@@ -525,7 +636,7 @@ describe('Mobian RTD Submodule', function () {
         resolveTrafficQuality = resolve;
       }));
 
-      const pending = mobianProvider.getTargetingData([RISK, TQ]);
+      const pending = mobianProvider.getContextAndTrafficQualityData([RISK, TQ]);
       pending.then(() => {
         settled = true;
       });
@@ -580,7 +691,7 @@ describe('Mobian RTD Submodule', function () {
           getTrafficQualityDataStub.resolves(testCase.trafficQualityResult);
         }
 
-        const data = await mobianProvider.getTargetingData([RISK, TQ]);
+        const data = await mobianProvider.getContextAndTrafficQualityData([RISK, TQ]);
 
         expect(data).to.deep.equal(testCase.expectedData);
       });
@@ -590,15 +701,18 @@ describe('Mobian RTD Submodule', function () {
   describe('RTD lifecycle', function () {
     let getContextDataStub;
     let getTrafficQualityDataStub;
+    let getViewabilityDataStub;
 
     beforeEach(function () {
       getContextDataStub = sinon.stub(dep, 'getContextData');
       getTrafficQualityDataStub = sinon.stub(dep, 'getTrafficQualityData');
+      getViewabilityDataStub = sinon.stub(dep, 'getViewabilityData');
     });
 
     afterEach(function () {
       getContextDataStub.restore();
       getTrafficQualityDataStub.restore();
+      getViewabilityDataStub.restore();
     });
 
     it('should make no requests when publisher and advertiser targeting are disabled', async function () {
@@ -619,6 +733,137 @@ describe('Mobian RTD Submodule', function () {
       expect(getTrafficQualityDataStub.called).to.equal(false);
       expect(setKeyValueSpy.called).to.equal(false);
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.equal({});
+      expect(callback.calledOnce).to.equal(true);
+    });
+
+    it('should request viewability once per unique ad unit and expose targeting through RTD', async function () {
+      getViewabilityDataStub.resolves(mockViewabilityData);
+      const callback = sinon.spy();
+      const rawConfig = {
+        params: {
+          includeViewabilityTargeting: true,
+          viewabilityTargetingPlacementSource: 'gam_ad_unit',
+          publisherTargeting: false,
+          advertiserTargeting: true,
+        }
+      };
+      bidReqConfig.adUnits = [
+        { code: 'ad-unit-1' },
+        { code: 'ad-unit-1' },
+        { code: 'ad-unit-2' },
+      ];
+
+      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(getViewabilityDataStub.callCount).to.equal(2);
+      expect(getViewabilityDataStub.calledWith(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.equal(true);
+      expect(getViewabilityDataStub.calledWith(getPageUrl(), 'ad-unit-2', 'gam_ad_unit')).to.equal(true);
+      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1', 'ad-unit-2'], rawConfig)).to.deep.equal({
+        'ad-unit-1': {
+          mobian_vp_likely_viewable: 'true',
+          mobian_vp_probability: '0.72',
+          mobian_vp_bucket_percent: '70',
+          mobian_vp_confidence: 'medium',
+        },
+        'ad-unit-2': {
+          mobian_vp_likely_viewable: 'true',
+          mobian_vp_probability: '0.72',
+          mobian_vp_bucket_percent: '70',
+          mobian_vp_confidence: 'medium',
+        },
+      });
+      expect(setKeyValueSpy.called).to.equal(false);
+      expect(callback.calledOnce).to.equal(true);
+      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1', 'ad-unit-2'], rawConfig)).to.deep.equal({
+        'ad-unit-1': {
+          mobian_vp_likely_viewable: 'true',
+          mobian_vp_probability: '0.72',
+          mobian_vp_bucket_percent: '70',
+          mobian_vp_confidence: 'medium',
+        },
+        'ad-unit-2': {
+          mobian_vp_likely_viewable: 'true',
+          mobian_vp_probability: '0.72',
+          mobian_vp_bucket_percent: '70',
+          mobian_vp_confidence: 'medium',
+        },
+      });
+    });
+
+    it('should skip viewability requests when viewabilityTargetingPlacementSource is missing', async function () {
+      const callback = sinon.spy();
+      const rawConfig = {
+        params: {
+          includeViewabilityTargeting: true,
+          publisherTargeting: false,
+          advertiserTargeting: true,
+        }
+      };
+      bidReqConfig.adUnits = [{ code: 'ad-unit-1' }];
+
+      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(getViewabilityDataStub.called).to.equal(false);
+      expect(callback.calledOnce).to.equal(true);
+    });
+
+    it('should discard failed viewability requests without discarding successful targeting', async function () {
+      getViewabilityDataStub.callsFake((pageUrl, adUnitCode) => adUnitCode === 'ad-unit-1'
+        ? Promise.reject(new Error('viewability failure'))
+        : Promise.resolve(mockViewabilityData));
+      const callback = sinon.spy();
+      const rawConfig = {
+        params: {
+          includeViewabilityTargeting: true,
+          viewabilityTargetingPlacementSource: 'gam_ad_unit',
+          publisherTargeting: false,
+          advertiserTargeting: true,
+        }
+      };
+      bidReqConfig.adUnits = [{ code: 'ad-unit-1' }, { code: 'ad-unit-2' }];
+
+      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1', 'ad-unit-2'], rawConfig)).to.deep.equal({
+        'ad-unit-2': {
+          mobian_vp_likely_viewable: 'true',
+          mobian_vp_probability: '0.72',
+          mobian_vp_bucket_percent: '70',
+          mobian_vp_confidence: 'medium',
+        },
+      });
+      expect(setKeyValueSpy.called).to.equal(false);
+      expect(callback.calledOnce).to.equal(true);
+    });
+
+    it('should request explicitly targeted viewability without the include flag', async function () {
+      const callback = sinon.spy();
+      const rawConfig = {
+        params: {
+          viewabilityTargetingPlacementSource: 'gam_ad_unit',
+          publisherTargeting: false,
+          advertiserTargeting: [VP],
+        }
+      };
+      bidReqConfig.adUnits = [{ code: 'ad-unit-1' }];
+
+      getViewabilityDataStub.resolves(mockViewabilityData);
+      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(getViewabilityDataStub.calledWith(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.equal(true);
+      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1'], rawConfig)).to.deep.equal({
+        'ad-unit-1': {
+          mobian_vp_likely_viewable: 'true',
+          mobian_vp_probability: '0.72',
+          mobian_vp_bucket_percent: '70',
+          mobian_vp_confidence: 'medium',
+        },
+      });
+      expect(setKeyValueSpy.called).to.equal(false);
       expect(callback.calledOnce).to.equal(true);
     });
 
@@ -677,6 +922,70 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
+  describe('makeMemoizedViewabilityFetch', function () {
+    it('should evict the oldest entry at the configured viewability cache size', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.success(mockViewabilityResponse);
+      });
+      const maxSize = 3;
+      const memoizedFetch = makeMemoizedViewabilityFetch(maxSize);
+      const pageUrl = (suffix) => `https://example.com/viewability-cache-size-${suffix}`;
+
+      for (let i = 0; i < maxSize; i++) {
+        await memoizedFetch(pageUrl(i), 'ad-unit-1', 'gam_ad_unit');
+      }
+      expect(fetchCount).to.equal(maxSize);
+
+      await memoizedFetch(pageUrl('overflow'), 'ad-unit-1', 'gam_ad_unit');
+      expect(fetchCount).to.equal(maxSize + 1);
+
+      await memoizedFetch(pageUrl(0), 'ad-unit-1', 'gam_ad_unit');
+      expect(fetchCount).to.equal(maxSize + 2);
+    });
+
+    it('should cache by full page URL, ad unit code, and placement source', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.success(mockViewabilityResponse);
+      });
+      const memoizedFetch = makeMemoizedViewabilityFetch();
+      const pageUrl = 'https://example.com/viewability-cache-page';
+
+      await memoizedFetch(pageUrl, 'ad-unit-1', 'gam_ad_unit');
+      await memoizedFetch(pageUrl, 'ad-unit-1', 'gam_ad_unit');
+      expect(fetchCount).to.equal(1, 'the same URL and ad unit should use the cached response');
+
+      await memoizedFetch(pageUrl, 'ad-unit-2', 'gam_ad_unit');
+      expect(fetchCount).to.equal(2, 'a different ad unit should trigger a fetch');
+
+      await memoizedFetch(pageUrl, 'ad-unit-1', 'other_source');
+      expect(fetchCount).to.equal(3, 'a different placement source should trigger a fetch');
+
+      await memoizedFetch(`${pageUrl}-next`, 'ad-unit-1', 'gam_ad_unit');
+      expect(fetchCount).to.equal(4, 'a different URL should trigger a fetch');
+    });
+
+    it('should retry a failed viewability request on a later invocation', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        if (fetchCount === 1) {
+          callbacks.error(new Error('viewability failure'));
+        } else {
+          callbacks.success(mockViewabilityResponse);
+        }
+      });
+      const memoizedFetch = makeMemoizedViewabilityFetch();
+
+      expect(await memoizedFetch(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.deep.equal({});
+      expect(await memoizedFetch(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.deep.equal(mockViewabilityData);
+      expect(fetchCount).to.equal(2);
+    });
+  });
+
   describe('makeMemoizedFetch cache eviction', function () {
     it('should cache context data by the full page URL', async function () {
       let fetchCount = 0;
@@ -686,7 +995,7 @@ describe('Mobian RTD Submodule', function () {
       });
 
       const memoizedFetch = makeMemoizedFetch();
-      const originalHref = window.location.href;
+      const originalHref = getPageUrl();
 
       try {
         history.pushState({}, '', '/cache-page?version=1#first');
@@ -722,7 +1031,7 @@ describe('Mobian RTD Submodule', function () {
       await memoizedFetch();
       expect(fetchCount).to.equal(1);
 
-      const originalHref = window.location.href;
+      const originalHref = getPageUrl();
       try {
         history.pushState({}, '', '/page2');
         await memoizedFetch();
@@ -752,7 +1061,7 @@ describe('Mobian RTD Submodule', function () {
       });
 
       const memoizedFetch = makeMemoizedFetch(NaN);
-      const originalHref = window.location.href;
+      const originalHref = getPageUrl();
 
       try {
         for (let i = 0; i < MAX_CACHE_SIZE; i++) {
@@ -789,7 +1098,7 @@ describe('Mobian RTD Submodule', function () {
       });
 
       const memoizedFetch = makeMemoizedFetch(1.9);
-      const originalHref = window.location.href;
+      const originalHref = getPageUrl();
 
       try {
         await memoizedFetch();
@@ -881,7 +1190,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('request cache integration', function () {
     it('should share context and IVT requests between init and getBidRequestData and only key context by URL', async function () {
-      const originalHref = window.location.href;
+      const originalHref = getPageUrl();
       const requestedUrls = [];
       const mockIvtResponse = JSON.stringify({ results: { mobian_tq: 1 } });
       const rawConfig = {
