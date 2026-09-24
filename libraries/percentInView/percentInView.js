@@ -371,7 +371,7 @@ export function percentInView(element, { w, h } = {}) {
       // reported to avoid forcing a layout for a rect we have on hand. The observer's ratio is
       // what accounts for clipping, and it is being discarded here, so the clipping ancestors
       // have to be walked as they are for any other measurement taken from the DOM
-      return percentInViewOfElementBox(element, adjusted);
+      return percentInViewStatic(element, { w, h });
     }
     if (bbox.width === 0 || bbox.height === 0) {
       // an element with no area renders nothing, but intersection observers report a ratio
