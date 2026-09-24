@@ -3,6 +3,13 @@ import { spec } from 'modules/adspiritBidAdapter.js';
 import { getWinDimensions, resetWinDimensions } from 'src/utils.js';
 
 describe('Adspirit Bidder Spec', function () {
+  describe('gvlid', function () {
+    it('should declare Adspirit and Twiago GVL IDs', function () {
+      expect(spec.gvlid).to.equal(6);
+      expect(spec.aliases).to.deep.equal([{ code: 'twiago', gvlid: 242 }]);
+    });
+  });
+
   // isBidRequestValid ---case
   describe('isBidRequestValid', function () {
     it('should return true if the bid request is valid', function () {
