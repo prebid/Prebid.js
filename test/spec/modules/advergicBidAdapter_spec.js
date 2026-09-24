@@ -699,39 +699,6 @@ describe('Advergic adapter', () => {
       }
     });
 
-    it('should send loss analytics to the existing endpoint', () => {
-      spec.onBidLost({
-        requestId: 'bid-001',
-        auctionId: 'auction-001',
-        adId: 'ad-001',
-        bidId: 'server-bid-1',
-        impId: 'bid-001',
-        campaignId: 'campaign-1',
-        cpm: 2,
-        currency: 'USD',
-        creativeId: 'creative-1',
-        adUnitCode: 'advergic-test-div',
-        mediaType: BANNER,
-        width: 300,
-        height: 250,
-        timeToRespond: 20
-      });
-
-      const lossRequests = server.requests.filter(
-        (req) => req.url === 'https://pbs.avads.live/rtb/loss'
-      );
-
-      expect(lossRequests).to.have.length(1);
-      expect(lossRequests[0].method).to.equal('POST');
-
-      const body = JSON.parse(lossRequests[0].fetch.requestBody);
-      expect(body).to.include({
-        requestId: 'bid-001',
-        bidId: 'server-bid-1',
-        campaignId: 'campaign-1'
-      });
-    });
-
     it('should send timeout analytics to the existing endpoint', () => {
       spec.onTimeout([{
         bidId: 'bid-001',
@@ -782,14 +749,13 @@ describe('Advergic adapter', () => {
       });
     });
 
-    it('should disable loss, timeout and error analytics together', () => {
+    it('should disable timeout and error analytics together', () => {
       config.setConfig({
         advergic: {
           disableEventTracking: true
         }
       });
 
-      spec.onBidLost({ requestId: 'bid-001' });
       spec.onTimeout([{ bidId: 'bid-001' }]);
       spec.onBidderError({
         error: new Error('failed'),
@@ -798,7 +764,6 @@ describe('Advergic adapter', () => {
 
       expect(server.requests.filter(
         (req) => [
-          'https://pbs.avads.live/rtb/loss',
           'https://pbs.avads.live/rtb/timeout',
           'https://pbs.avads.live/rtb/error'
         ].includes(req.url)

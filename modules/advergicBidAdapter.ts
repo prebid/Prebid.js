@@ -7,6 +7,7 @@
  */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import type { BidderSpec } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { deepAccess, isArray, logError, logWarn, isFn, getWinDimensions, generateUUID, triggerPixel } from '../src/utils.js';
@@ -16,20 +17,159 @@ import { getStorageManager } from '../src/storageManager.js';
 const BIDDER_CODE = 'advergic';
 const ENDPOINT_URL = 'https://pbs.avads.live/rtb/bid';
 const WIN_URL = 'https://pbs.avads.live/rtb/win';
-const LOSS_URL = 'https://pbs.avads.live/rtb/loss';
 const TIMEOUT_URL = 'https://pbs.avads.live/rtb/timeout';
 const ERROR_URL = 'https://pbs.avads.live/rtb/error';
 const SYNC_URL = 'https://pbs.avads.live/id/setuid?bidder=advergic';
 const ADAPTER_VERSION = '1.0.0';
-const GVLID = undefined; // TODO: Register with IAB Global Vendor List
+const GVLID: number | undefined = undefined; // TODO: Register with IAB Global Vendor List
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+/* -------------------------------------------------------------------------- */
+/*                         Public API type declarations                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Bid params accepted by the Advergic adapter (`bids[].params`).
+ */
+type AdvergicBidParams = {
+  /** Advergic account identifier (required). */
+  accountId: string;
+  /** Optional endpoint identifier; used as `imp.tagid`, falls back to the ad unit code. */
+  endpointId?: string;
+  /** Optional publisher identifier; used as `site.publisher.id`. */
+  publisherId?: string;
+  /** Banner position (OpenRTB `banner.pos`). Defaults to 0. */
+  position?: number;
+  /** Arbitrary custom data forwarded in `imp.ext.advergic.custom`. */
+  custom?: Record<string, unknown>;
+};
+
+declare module '../src/adapters/bidderFactory.js' {
+  interface BidderParams {
+    [BIDDER_CODE]: AdvergicBidParams;
+  }
+}
+
+/**
+ * Publisher-level configuration read via `pbjs.setConfig({ advergic: {...} })`.
+ */
+type AdvergicConfig = {
+  /** When true, disables optional win/timeout/error analytics requests. */
+  disableEventTracking?: boolean;
+};
+
+declare module '../src/config.js' {
+  interface Config {
+    advergic?: AdvergicConfig;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             Internal type helpers                          */
+/* -------------------------------------------------------------------------- */
+
+type SiteMetadata = {
+  title: string;
+  description: string;
+  keywords: string;
+  ogTags: Record<string, string>;
+  canonical: string;
+  language: string;
+};
+
+type DeviceInfo = {
+  ua: string;
+  language: string;
+  deviceType: number;
+  screen: { width: number; height: number };
+  viewport: { width: number; height: number };
+  pixelRatio: number;
+  connectionType: string | undefined;
+};
+
+type FirstPartyData = {
+  site: Record<string, any>;
+  user: Record<string, any>;
+  device: Record<string, any>;
+  regs: Record<string, any>;
+  source: Record<string, any>;
+};
+
+type AdvergicSeatBid = {
+  seat?: string;
+  bid?: AdvergicServerBid[];
+  [key: string]: any;
+};
+
+type AdvergicServerBid = {
+  id?: string;
+  impid?: string;
+  price?: number;
+  w?: number;
+  h?: number;
+  crid?: string;
+  cid?: string;
+  dealid?: string;
+  adm?: string;
+  adomain?: string[];
+  cat?: string[];
+  burl?: string;
+  ext?: {
+    dsa?: unknown;
+    advertiser_name?: string;
+    brand?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+};
+
+type AdvergicServerResponseBody = {
+  cur?: string;
+  seatbid?: AdvergicSeatBid[];
+  ext?: {
+    sync?: {
+      iframe?: string[];
+      image?: string[];
+    };
+    [key: string]: any;
+  };
+  [key: string]: any;
+};
+
+/**
+ * Bid response object built by `interpretResponse`. Extends the standard Prebid
+ * bid fields with Advergic-specific ones used for win tracking.
+ */
+type AdvergicBidResponse = {
+  requestId: string;
+  cpm: number;
+  currency: string;
+  width?: number;
+  height?: number;
+  creativeId?: string;
+  bidId?: string;
+  campaignId?: string;
+  impId?: string;
+  dealId?: string | undefined;
+  ttl: number;
+  netRevenue: boolean;
+  meta: Record<string, any>;
+  ad?: string;
+  mediaType?: string;
+  burl?: string;
+  originalBid?: AdvergicServerBid;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                   Helpers                                  */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Helper function to extract site metadata for fraud prevention and targeting
  * @returns {Object} Site metadata object
  */
-function getSiteMetadata() {
-  const metadata = {
+function getSiteMetadata(): SiteMetadata {
+  const metadata: SiteMetadata = {
     title: document.title || '',
     description: '',
     keywords: '',
@@ -74,7 +214,7 @@ function getSiteMetadata() {
  * Build device information object
  * @returns {Object} Device information
  */
-function getDeviceInfo() {
+function getDeviceInfo(): DeviceInfo {
   const winDimensions = getWinDimensions();
   return {
     ua: navigator.userAgent,
@@ -97,7 +237,7 @@ function getDeviceInfo() {
  * Determine device type based on screen size and user agent
  * @returns {number} Device type per OpenRTB 2.5: 1=Mobile, 2=Desktop, 3=Connected TV, 4=Phone, 5=Tablet, 6=Connected Device, 7=Set Top Box
  */
-function getDeviceType() {
+function getDeviceType(): number {
   const ua = navigator.userAgent;
   if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
     return 5; // Tablet (OpenRTB 2.5)
@@ -113,7 +253,7 @@ function getDeviceType() {
  * @param {Object} bidderRequest - The bidder request object
  * @returns {Object} First party data
  */
-function getFirstPartyData(bidderRequest) {
+function getFirstPartyData(bidderRequest: any): FirstPartyData {
   const ortb2 = bidderRequest.ortb2 || {};
   return {
     site: ortb2.site || {},
@@ -127,22 +267,64 @@ function getFirstPartyData(bidderRequest) {
 /**
  * Check whether optional bidder event tracking has been disabled by the publisher.
  * This provides the required publisher control for the adapter's non-auction
- * win/loss/timeout/error analytics requests.
+ * win/timeout/error analytics requests.
  * @returns {boolean} True when event tracking is disabled.
  */
-function isEventTrackingDisabled() {
+function isEventTrackingDisabled(): boolean {
   return config.getConfig('advergic.disableEventTracking') === true;
 }
 
-export const spec = {
+/**
+ * Get or generate user ID for tracking.
+ * @returns {string} User ID
+ */
+function getUserId(): string {
+  const USER_ID_KEY = 'advergic_uid';
+
+  try {
+    let userId = storage.getDataFromLocalStorage(USER_ID_KEY);
+
+    if (!userId) {
+      userId = generateUUID();
+      storage.setDataInLocalStorage(USER_ID_KEY, userId);
+    }
+
+    return userId;
+  } catch (e) {
+    logWarn('Advergic: Error accessing localStorage for user ID', e);
+    return generateUUID();
+  }
+}
+
+/**
+ * Replace macros in URL
+ * @param {string} url URL with macros
+ * @param {Object} bid Bid object
+ * @returns {string} URL with replaced macros
+ */
+function replaceBidMacros(url: string, bid: any): string {
+  return url
+    .replace(/\${AUCTION_PRICE}/g, bid.cpm)
+    .replace(/\${AUCTION_CURRENCY}/g, bid.currency || 'USD')
+    .replace(/\${AUCTION_ID}/g, bid.auctionId)
+    .replace(/\${AUCTION_BID_ID}/g, bid.requestId)
+    .replace(/\${AUCTION_IMP_ID}/g, bid.adId)
+    .replace(/\${AUCTION_AD_ID}/g, bid.creativeId);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                Bidder spec                                 */
+/* -------------------------------------------------------------------------- */
+
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid
-   * @param {BidRequest} bid The bid params to validate
-   * @return {boolean} True if this is a valid bid, and false otherwise
+   * @param bid The bid params to validate
+   * @return True if this is a valid bid, and false otherwise
    */
   isBidRequestValid: function(bid) {
     // Validate required parameters
@@ -174,9 +356,9 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests
-   * @param {BidRequest[]} validBidRequests - an array of bids
-   * @param {BidderRequest} bidderRequest - master bidRequest object
-   * @return {ServerRequest|ServerRequest[]} Info describing the request to the server
+   * @param validBidRequests an array of bids
+   * @param bidderRequest master bidRequest object
+   * @return Info describing the request to the server
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const siteMetadata = getSiteMetadata();
@@ -184,9 +366,9 @@ export const spec = {
     const fpd = getFirstPartyData(bidderRequest);
 
     // Build impression objects per OpenRTB 2.5 spec
-    const imps = validBidRequests.map((bidRequest, index) => {
+    const imps = validBidRequests.map((bidRequest: any, index: number) => {
       const ortb2Imp = bidRequest.ortb2Imp || {};
-      const imp = {
+      const imp: Record<string, any> = {
         ...ortb2Imp,
         id: bidRequest.bidId,
         tagid: bidRequest.params.endpointId || bidRequest.adUnitCode,
@@ -220,7 +402,7 @@ export const spec = {
       // Banner
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.banner) {
         const banner = bidRequest.mediaTypes.banner;
-        const formats = (banner.sizes || bidRequest.sizes || []).map(size => ({
+        const formats = (banner.sizes || bidRequest.sizes || []).map((size: number[]) => ({
           w: size[0],
           h: size[1]
         }));
@@ -242,14 +424,14 @@ export const spec = {
     });
 
     // Build OpenRTB 2.5 request
-    const refererInfo = bidderRequest.refererInfo || {};
+    const refererInfo: Record<string, any> = bidderRequest.refererInfo || {};
     const page = refererInfo.page || fpd.site.page || window.location.href;
     const ref = refererInfo.ref || fpd.site.ref || document.referrer;
     const domain = refererInfo.domain || fpd.site.domain || window.location.hostname;
     const ortbRegs = fpd.regs || {};
     const ortbSource = fpd.source || {};
 
-    const ortbRequest = {
+    const ortbRequest: Record<string, any> = {
       id: bidderRequest.bidderRequestId || bidderRequest.auctionId,
       at: 1, // First price auction
       tmax: bidderRequest.timeout,
@@ -264,7 +446,7 @@ export const spec = {
         ref,
         publisher: {
           ...fpd.site?.publisher,
-          id: validBidRequests[0]?.params?.publisherId || fpd.site?.publisher?.id || ''
+          id: (validBidRequests[0]?.params as AdvergicBidParams | undefined)?.publisherId || fpd.site?.publisher?.id || ''
         },
         ext: {
           ...fpd.site?.ext,
@@ -370,51 +552,51 @@ export const spec = {
         contentType: 'application/json',
         withCredentials: true
       }
-    };
+    } as any;
   },
 
   /**
    * Unpack the response from the server into a list of bids
-   * @param {ServerResponse} serverResponse A successful response from the server
-   * @param {BidRequest} bidRequest The corresponding bid request
-   * @return {Bid[]} An array of bids which were nested inside the server
+   * @param serverResponse A successful response from the server
+   * @param bidRequest The corresponding bid request
+   * @return An array of bids which were nested inside the server response
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidResponses = [];
+    const bidResponses: AdvergicBidResponse[] = [];
 
     if (!serverResponse || !serverResponse.body) {
       logWarn('Advergic: Empty server response');
-      return bidResponses;
+      return bidResponses as any;
     }
 
-    const response = serverResponse.body;
+    const response = serverResponse.body as AdvergicServerResponseBody;
 
     // Handle OpenRTB 2.5 response format
     if (!response.seatbid || !isArray(response.seatbid)) {
       logWarn('Advergic: Invalid response format - missing seatbid');
-      return bidResponses;
+      return bidResponses as any;
     }
 
-    response.seatbid.forEach(seatbid => {
+    response.seatbid.forEach((seatbid: AdvergicSeatBid) => {
       if (!seatbid.bid || !isArray(seatbid.bid)) {
         return;
       }
 
-      seatbid.bid.forEach(bid => {
+      seatbid.bid.forEach((bid: AdvergicServerBid) => {
         // Validate required fields
         if (!bid.impid || !bid.price || bid.price <= 0) {
           logWarn('Advergic: Invalid bid object', bid);
           return;
         }
 
-        const bidResponse = {
+        const bidResponse: AdvergicBidResponse = {
           requestId: bid.impid,
           cpm: bid.price,
           currency: response.cur || 'USD',
           width: bid.w,
           height: bid.h,
           creativeId: bid.crid || bid.id,
-          bidId: bid.id,           // Backend's BidID for win/loss tracking
+          bidId: bid.id,           // Backend's BidID for win tracking
           campaignId: bid.cid,     // Campaign ID for analytics
           impId: bid.impid,        // Explicit impression ID
           dealId: bid.dealid || undefined,
@@ -469,23 +651,23 @@ export const spec = {
       });
     });
 
-    return bidResponses;
+    return bidResponses as any;
   },
 
   /**
    * Register User Sync Pixels
-   * @param {SyncOptions} syncOptions Configuration object
-   * @param {ServerResponse[]} serverResponses List of server's responses
-   * @param {Object} gdprConsent GDPR consent object
-   * @param {string} uspConsent US Privacy consent string
-   * @param {Object} gppConsent GPP consent object
-   * @return {UserSync[]} The user syncs which should be dropped
+   * @param syncOptions Configuration object
+   * @param serverResponses List of server's responses
+   * @param gdprConsent GDPR consent object
+   * @param uspConsent US Privacy consent string
+   * @param gppConsent GPP consent object
+   * @return The user syncs which should be dropped
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-    const syncs = [];
+    const syncs: Array<{ type: 'iframe' | 'image'; url: string }> = [];
 
     // Build query parameters for consent
-    const queryParams = [];
+    const queryParams: string[] = [];
 
     if (gdprConsent) {
       queryParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
@@ -507,12 +689,12 @@ export const spec = {
 
     // Check if server returned user sync URLs
     if (serverResponses && serverResponses.length > 0) {
-      serverResponses.forEach(response => {
+      serverResponses.forEach((response: any) => {
         if (response.body && response.body.ext && response.body.ext.sync) {
           const syncUrls = response.body.ext.sync;
 
           if (syncOptions.iframeEnabled && syncUrls.iframe && isArray(syncUrls.iframe)) {
-            syncUrls.iframe.forEach(url => {
+            syncUrls.iframe.forEach((url: string) => {
               syncs.push({
                 type: 'iframe',
                 url: url + queryString
@@ -521,7 +703,7 @@ export const spec = {
           }
 
           if (syncOptions.pixelEnabled && syncUrls.image && isArray(syncUrls.image)) {
-            syncUrls.image.forEach(url => {
+            syncUrls.image.forEach((url: string) => {
               syncs.push({
                 type: 'image',
                 url: url + queryString
@@ -553,7 +735,7 @@ export const spec = {
 
   /**
    * Handle win notification
-   * @param {Bid} bid The bid that won the auction
+   * @param bid The bid that won the auction
    */
   onBidWon: function(bid) {
     // Fire OpenRTB billing notification URL (burl). This is part of the
@@ -567,20 +749,21 @@ export const spec = {
     if (isEventTrackingDisabled()) return;
 
     // Send win notification to Advergic for analytics
+    const b = bid as any;
     const winData = {
-      requestId: bid.requestId,
-      auctionId: bid.auctionId,
-      adId: bid.adId,
-      bidId: bid.bidId,           // Backend's BidID for tracking
-      impId: bid.impId,           // Impression ID
-      campaignId: bid.campaignId, // Campaign ID
-      cpm: bid.cpm,
-      currency: bid.currency,
-      creativeId: bid.creativeId,
-      adUnitCode: bid.adUnitCode,
-      mediaType: bid.mediaType,
-      size: `${bid.width}x${bid.height}`,
-      timeToRespond: bid.timeToRespond,
+      requestId: b.requestId,
+      auctionId: b.auctionId,
+      adId: b.adId,
+      bidId: b.bidId,           // Backend's BidID for tracking
+      impId: b.impId,           // Impression ID
+      campaignId: b.campaignId, // Campaign ID
+      cpm: b.cpm,
+      currency: b.currency,
+      creativeId: b.creativeId,
+      adUnitCode: b.adUnitCode,
+      mediaType: b.mediaType,
+      size: `${b.width}x${b.height}`,
+      timeToRespond: b.timeToRespond,
       timestamp: Date.now()
     };
 
@@ -592,45 +775,13 @@ export const spec = {
   },
 
   /**
-   * Handle bid loss notification
-   * @param {Bid} bid The bid that lost the auction
-   */
-  onBidLost: function(bid) {
-    if (isEventTrackingDisabled()) return;
-
-    // Send loss notification to Advergic for analytics
-    const lossData = {
-      requestId: bid.requestId,
-      auctionId: bid.auctionId,
-      adId: bid.adId,
-      bidId: bid.bidId,           // Backend's BidID for tracking
-      impId: bid.impId,           // Impression ID
-      campaignId: bid.campaignId, // Campaign ID
-      cpm: bid.cpm,
-      currency: bid.currency,
-      creativeId: bid.creativeId,
-      adUnitCode: bid.adUnitCode,
-      mediaType: bid.mediaType,
-      size: `${bid.width}x${bid.height}`,
-      timeToRespond: bid.timeToRespond,
-      timestamp: Date.now()
-    };
-
-    ajax(LOSS_URL, null, JSON.stringify(lossData), {
-      method: 'POST',
-      contentType: 'application/json',
-      withCredentials: true
-    });
-  },
-
-  /**
    * Handle timeout
-   * @param {BidRequest[]} timeoutData List of bids that timed out
+   * @param timeoutData List of bids that timed out
    */
   onTimeout: function(timeoutData) {
     if (isEventTrackingDisabled() || !timeoutData || timeoutData.length === 0) return;
 
-    const timeoutPayload = timeoutData.map(bid => ({
+    const timeoutPayload = (timeoutData as any[]).map((bid: any) => ({
       bidId: bid.bidId,
       auctionId: bid.auctionId,
       adUnitCode: bid.adUnitCode,
@@ -647,17 +798,18 @@ export const spec = {
 
   /**
    * Handle bid error
-   * @param {Object} error The error that occurred
-   * @param {BidderRequest} bidderRequest The request that caused the error
+   * @param params Error details
+   * @param params.error The error that occurred
+   * @param params.bidderRequest The request that caused the error
    */
-  onBidderError: function({ error, bidderRequest } = {}) {
+  onBidderError: function({ error, bidderRequest } = {} as any) {
     logError('Advergic: Bidder error', error);
 
     if (isEventTrackingDisabled()) return;
 
     // Send error notification for monitoring
     const errorData = {
-      error: error?.message || 'Unknown error',
+      error: (error as any)?.message || 'Unknown error',
       auctionId: bidderRequest?.auctionId,
       bidderRequestId: bidderRequest?.bidderRequestId,
       timestamp: Date.now()
@@ -668,55 +820,7 @@ export const spec = {
       contentType: 'application/json',
       withCredentials: true
     });
-  },
-
-  /**
-   * Handle set targeting
-   * Called when targeting data is set
-   * @param {Bid} bid The bid that is setting targeting
-   */
-  onSetTargeting: function(bid) {
-    // Optional: Track when targeting is set for analytics
-    logWarn('Advergic: Setting targeting for bid', bid.adId);
   }
 };
-
-/**
- * Get or generate user ID for tracking.
- * @returns {string} User ID
- */
-function getUserId() {
-  const USER_ID_KEY = 'advergic_uid';
-
-  try {
-    let userId = storage.getDataFromLocalStorage(USER_ID_KEY);
-
-    if (!userId) {
-      userId = generateUUID();
-      storage.setDataInLocalStorage(USER_ID_KEY, userId);
-    }
-
-    return userId;
-  } catch (e) {
-    logWarn('Advergic: Error accessing localStorage for user ID', e);
-    return generateUUID();
-  }
-}
-
-/**
- * Replace macros in URL
- * @param {string} url URL with macros
- * @param {Object} bid Bid object
- * @returns {string} URL with replaced macros
- */
-function replaceBidMacros(url, bid) {
-  return url
-    .replace(/\${AUCTION_PRICE}/g, bid.cpm)
-    .replace(/\${AUCTION_CURRENCY}/g, bid.currency || 'USD')
-    .replace(/\${AUCTION_ID}/g, bid.auctionId)
-    .replace(/\${AUCTION_BID_ID}/g, bid.requestId)
-    .replace(/\${AUCTION_IMP_ID}/g, bid.adId)
-    .replace(/\${AUCTION_AD_ID}/g, bid.creativeId);
-}
 
 registerBidder(spec);
