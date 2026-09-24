@@ -538,8 +538,10 @@ function getSlotPosition(divId) {
       const body = d.body;
       const clientTop = d.clientTop || body.clientTop || 0;
       const clientLeft = d.clientLeft || body.clientLeft || 0;
-      const scrollTop = wt.pageYOffset || windowDimensions.document.documentElement.scrollTop || windowDimensions.document.body.scrollTop;
-      const scrollLeft = wt.pageXOffset || windowDimensions.document.documentElement.scrollLeft || windowDimensions.document.body.scrollLeft;
+      // A genuine scroll offset of 0 (page at top/left) is a valid measurement, not a missing
+      // one, so these must not fall through to the next source on 0 - hence ?? rather than ||.
+      const scrollTop = wt.pageYOffset ?? windowDimensions.document.documentElement.scrollTop ?? windowDimensions.document.body.scrollTop;
+      const scrollLeft = wt.pageXOffset ?? windowDimensions.document.documentElement.scrollLeft ?? windowDimensions.document.body.scrollLeft;
 
       const elComputedStyle = wt.getComputedStyle(domElement, null);
       const mustDisplayElement = elComputedStyle.display === 'none';
