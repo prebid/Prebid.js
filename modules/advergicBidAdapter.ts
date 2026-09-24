@@ -165,6 +165,21 @@ type AdvergicBidResponse = {
 /* -------------------------------------------------------------------------- */
 
 /**
+ * Resolve the COPPA flag for the request. Prefers the enriched ORTB2 signal
+ * (bidderRequest.ortb2.regs.coppa) and only falls back to the legacy `coppa`
+ * config for compatibility when the ORTB2 value is absent.
+ * @param bidderRequest The bidder request object
+ * @returns COPPA flag (0 or 1)
+ */
+function getCoppa(bidderRequest: any): number {
+  const ortbCoppa = bidderRequest?.ortb2?.regs?.coppa;
+  if (typeof ortbCoppa === 'number') {
+    return ortbCoppa;
+  }
+  return config.getConfig('coppa') === true ? 1 : 0;
+}
+
+/**
  * Helper function to extract site metadata for fraud prevention and targeting
  * @returns {Object} Site metadata object
  */
@@ -488,9 +503,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       // Regulations (GDPR, CCPA, COPPA, GPP)
       regs: {
         ...ortbRegs,
-        coppa: typeof ortbRegs.coppa === 'number'
-          ? ortbRegs.coppa
-          : (config.getConfig('coppa') === true ? 1 : 0),
+        coppa: getCoppa(bidderRequest),
         ext: {
           ...ortbRegs.ext
         }

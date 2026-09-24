@@ -613,6 +613,14 @@ describe('Advergic adapter', () => {
       });
     });
 
+    it('should fall back to the coppa config when ortb2.regs.coppa is absent', () => {
+      config.setConfig({ coppa: true });
+      const bidderRequest = clone(BASE_BIDDER_REQUEST);
+      delete bidderRequest.ortb2.regs.coppa;
+      const request = buildRequest(BASE_BID, bidderRequest);
+      expect(request.data.regs.coppa).to.equal(1);
+    });
+
     it('should fire burl separately from optional analytics tracking', () => {
       const imageUrls = [];
       const imageStub = sinon.stub(window, 'Image').callsFake(function() {
