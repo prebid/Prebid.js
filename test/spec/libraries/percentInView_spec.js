@@ -634,4 +634,79 @@ describe('percentInView', () => {
       expect(measure(`<div style="visibility:hidden">${TARGET}</div>`)).to.eql(0);
     });
   });
+
+  describe('percentInView, with a size override and an intersection entry that has aged', () => {
+    let container, entry;
+
+    beforeEach(() => {
+      sandbox.stub(viewportIntersections, 'observe');
+      sandbox.stub(viewportIntersections, 'getIntersection').callsFake(() => entry);
+      bbox.clearCache();
+      container = document.createElement('div');
+      container.style.cssText = 'position:absolute;left:0;top:0';
+      document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+      container.remove();
+      bbox.clearCache();
+    });
+
+    const TARGET = '<div id="target" style="width:0;height:0;position:relative"></div>';
+
+    /**
+     * Lay out `html` and record the entry the observer reports for `#target` as it is then.
+     *
+     * A collapsed target has no area, so its ratio is 1 for as long as it intersects the viewport
+     * at all and 0 once it does not. It crosses none of the observer's intermediate thresholds
+     * while it moves about within the viewport, and no further entry is delivered - so the one
+     * recorded here is the one a later measurement still sees.
+     */
+    function observed(html) {
+      container.innerHTML = html;
+      bbox.clearCache();
+      const target = container.querySelector('#target');
+      const { width, height, left, top, right, bottom } = bbox.getBoundingClientRect(target);
+      entry = {
+        boundingClientRect: { width, height, left, top, right, bottom },
+        isIntersecting: true,
+        intersectionRatio: 1
+      };
+      return target;
+    }
+
+    /**
+     * Measure `target` the way a later auction does: the rect cache is cleared, so everything read
+     * from the DOM is current, while the intersection entry is the one recorded earlier.
+     */
+    function measure(target) {
+      bbox.clearCache();
+      return percentInView(target, { w: 50, h: 50 });
+    }
+
+    it('measures where the element is now, not where it was when the entry was recorded', () => {
+      const target = observed(TARGET);
+      // half of the overridden height now lies above the viewport
+      target.style.top = '-25px';
+      expect(measure(target)).to.eql(50);
+    });
+
+    it('measures against a clipping ancestor where the element is now', () => {
+      const target = observed(
+        `<div style="overflow:hidden;width:50px;height:25px">${TARGET}</div>`
+      );
+      // the element has since been scrolled out of the container that clips it. The container's own
+      // box is read from the DOM and is current; only the element's position is not
+      target.style.top = '25px';
+      expect(measure(target)).to.eql(0);
+    });
+
+    it('measures the element at its real size once it is no longer collapsed', () => {
+      const target = observed(TARGET);
+      // a creative has rendered, so the element has an area of its own and the w/h override no
+      // longer applies to it. Half of that area lies above the viewport
+      target.style.cssText = 'position:relative;width:50px;height:100px;top:-50px';
+      expect(measure(target)).to.eql(50);
+    });
+  });
 });
