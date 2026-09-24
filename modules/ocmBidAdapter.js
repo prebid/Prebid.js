@@ -1,7 +1,6 @@
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
-import { toOrtbNativeRequest } from '../src/native.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { config } from '../src/config.js';
@@ -13,7 +12,12 @@ import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG } from '../src/eventTrackers.
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    // Default the native request version. `fillNativeImp` merges context.nativeRequest under the ad
+    // unit's own request, so a publisher who sets `mediaTypes.native.ortb.ver` still wins; this only
+    // keeps `imp.native.ver` from being absent when they do not (the legacy native path already gets
+    // 1.2 from core's toOrtbNativeRequest, the ORTB path got nothing).
+    nativeRequest: { ver: '1.2' }
   },
   processors: pbsExtensions,
   overrides: {
@@ -145,68 +149,6 @@ function hasTypeVideo(bid) {
 }
 
 /**
- * Determines if the native request uses ORTB (OpenRTB) format
- * @param {BidRequest} bidRequest - The bid request to check
- * @returns {boolean} True if using ORTB native format, false otherwise
- */
-function isNativeOrtbVersion(bidRequest) {
-  return bidRequest.mediaTypes.native.ortb && typeof bidRequest.mediaTypes.native.ortb === 'object';
-}
-
-/**
- * Validates a native asset object according to ORTB native spec
- * Checks for required fields: id, content (title/img/data/video), and type-specific requirements
- * @param {Object} asset - The native asset to validate
- * @returns {boolean} True if the asset is valid, false otherwise
- */
-function isValidAsset(asset) {
-  // Asset must have a valid integer ID
-  if (!asset.hasOwnProperty('id') || !Number.isInteger(asset.id)) {
-    return false;
-  }
-
-  // Asset must contain at least one content type
-  const hasValidContent = asset.title || asset.img || asset.data || asset.video;
-  if (!hasValidContent) {
-    return false;
-  }
-
-  // Title assets must have a valid length
-  if (asset.title && (!asset.title.len || !Number.isInteger(asset.title.len))) {
-    return false;
-  }
-
-  // Data assets must have a valid type
-  if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) {
-    return false;
-  }
-
-  // Video assets must have required fields: mimes, duration constraints, and protocols.
-  // Duration bounds are checked with Number.isInteger so a legitimate minduration/maxduration of 0
-  // is not mistakenly rejected as falsy.
-  if (asset.video && (!asset.video.mimes || !Number.isInteger(asset.video.minduration) || !Number.isInteger(asset.video.maxduration) || !asset.video.protocols)) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Validates a native event tracker object according to ORTB native spec
- * Checks for required event type and tracking methods
- * @param {Object} et - The event tracker to validate
- * @returns {boolean} True if the event tracker is valid, false otherwise
- */
-function isValidEventTracker(et) {
-  // Event tracker must have a valid event type (integer) and at least one method
-  if (!et.event || !Number.isInteger(et.event) || !Array.isArray(et.methods) || et.methods.length === 0) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
  * Validates a bid request for a specific media type
  * @param {string} type - The media type to validate (BANNER, VIDEO, or NATIVE)
  * @param {BidRequest} bid - The bid request to validate
@@ -226,46 +168,63 @@ function isValid(type, bid) {
     }
   }
 
-  // Native bids must have valid assets and optionally valid event trackers
+  // Native bids are valid only when the converter will actually be able to build imp.native
   if (type === NATIVE) {
-    // Read mediaTypes.native defensively: isValid(NATIVE, ...) is evaluated for every bid (see
-    // isBidRequestValid), including banner/video bids or malformed bids with no mediaTypes at all, so
-    // the presence check must not assume mediaTypes exists (mirrors hasBannerSizes / hasTypeVideo).
-    const native = bid?.mediaTypes?.native;
-    if (typeof native !== 'object' || native === null) {
-      return false;
-    }
-
-    // Handle legacy native params by converting to ORTB format
-    if (!isNativeOrtbVersion(bid)) {
-      if (bid.nativeParams === undefined) return false;
-      const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
-      return ortbConversion && ortbConversion.assets &&
-        Array.isArray(ortbConversion.assets) && ortbConversion.assets.length > 0 &&
-        ortbConversion.assets.every(asset => isValidAsset(asset));
-    }
-
-    // Validate ORTB native format
-    let isValidAssets = false;
-    let isValidEventTrackers;
-
-    const assets = bid.mediaTypes.native?.ortb?.assets;
-    const eventTrackers = bid.mediaTypes.native?.ortb?.eventtrackers;
-
-    // At least one valid asset is required
-    if (assets && Array.isArray(assets) && assets.length > 0 && assets.every(asset => isValidAsset(asset))) {
-      isValidAssets = true;
-    }
-
-    // Event trackers are optional, but if present must be valid
-    if (eventTrackers && Array.isArray(eventTrackers) && eventTrackers.length > 0) {
-      isValidEventTrackers = eventTrackers.every(eventTracker => isValidEventTracker(eventTracker));
-    } else {
-      isValidEventTrackers = true;
-    }
-    return isValidAssets && isValidEventTrackers;
+    return hasNativeAssets(bid);
   }
 
+  return false;
+}
+
+/**
+ * Determines whether a native asset declares one of the four ORTB content objects. Exactly one is
+ * required of every asset (ORTB Native 1.2 §4.4); an asset with none is unfillable.
+ * @param {Object} asset - An asset from the ORTB native request
+ * @returns {boolean} True if the asset carries a title, img, data or video object
+ */
+function hasAssetContent(asset) {
+  return !!(asset?.title || asset?.img || asset?.data || asset?.video);
+}
+
+/**
+ * Determines whether a native bid will produce a usable `imp.native`.
+ *
+ * The single source of truth is `bidRequest.nativeOrtbRequest` — the ORTB native request Prebid core
+ * derives from the ad unit (from `mediaTypes.native.ortb`, or from legacy `mediaTypes.native` params
+ * via toOrtbNativeRequest) and copies onto every bid. It is also the only field the converter's native
+ * imp processor reads, so "core produced a native request" and "this adapter can send one" are the
+ * same condition, and validating anything else lets through bids whose imp carries no `native` object
+ * at all: core drops the derived request when its own asset validation fails (an `img` asset with no
+ * `w`/`wmin` or `h`/`hmin`, say), while leaving `mediaTypes.native` in place. Per-type asset shapes
+ * are therefore not re-validated here — core has already done exactly that (isOpenRTBBidRequestValid
+ * in src/native), and a second, drifting copy of those rules is what let the empty imp through.
+ *
+ * The one rule core does not enforce is that an asset carry any content at all: isOpenRTBAssetValid
+ * tests `img`, `title`, `data` and `video` in an if/else chain with no final branch, so an asset
+ * declaring none of them (`{id: 1}`) matches nothing, falls through and is accepted. Such an asset
+ * reaches PBS with nothing to fill, so it is checked here — the one check that is this adapter's to
+ * make, rather than a copy of core's.
+ *
+ * A native ad unit core rejected outright is logged, because the failure is otherwise invisible from
+ * the page: core deletes `mediaTypes.native` when the ad unit is malformed (most often ORTB assets
+ * with no integer `id`), leaving an ad unit whose `mediaTypes` is `{}` and no native bid at all.
+ *
+ * `FEATURES.NATIVE` gates both conditions rather than returning early, because a build without
+ * native compiles out the converter's native imp processor: there would be nothing to send even if
+ * an ad unit somehow carried a native ORTB request, and the warning below would fire on every
+ * native ad unit in a build that was never going to bid on one.
+ * @param {BidRequest} bid - The bid request object
+ * @returns {boolean} True if core derived a native ORTB request whose assets all carry content
+ */
+function hasNativeAssets(bid) {
+  const assets = bid?.nativeOrtbRequest?.assets;
+  if (FEATURES.NATIVE && Array.isArray(assets) && assets.length > 0 && assets.every(hasAssetContent)) {
+    return true;
+  }
+
+  if (FEATURES.NATIVE && bid?.mediaTypes?.native) {
+    logWarn(`${BIDDER_CODE}: mediaTypes.native is set but no usable native ORTB request was derived from it; the native request is skipped. Check mediaTypes.native.ortb assets (each needs an integer id and exactly one of title/img/data/video, and img assets need w/wmin and h/hmin).`, bid);
+  }
   return false;
 }
 
