@@ -36,6 +36,7 @@ import { convertCamelToUnderscore, appnexusAliases } from '../libraries/appnexus
 import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -156,7 +157,7 @@ export const spec = {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       userObj = { 'coppa': true };
     }
     if (userObjBid) {

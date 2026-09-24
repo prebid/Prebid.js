@@ -2,12 +2,12 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { _each, deepAccess, getWinDimensions, getWindowTop, logError, logWarn, parseSizesInput } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
-import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -469,7 +469,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const gppConsent = bidderRequest && bidderRequest.gppConsent;
   const timeout = bidderRequest && bidderRequest.timeout;
-  const coppa = config.getConfig('coppa') === true ? 1 : 0;
+  const coppa = (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   const mosttopLocation = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.topmostLocation;
   _each(validBidRequests, bidRequest => {

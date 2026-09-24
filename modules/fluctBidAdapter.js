@@ -2,6 +2,7 @@ import { _each, deepAccess, deepSetValue, isEmpty, isFn, isPlainObject } from '.
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -179,7 +180,7 @@ export const spec = {
           consent: bidderRequest.uspConsent,
         });
       }
-      if (config.getConfig('coppa') === true) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         deepSetValue(data, 'regs.coppa', 1);
       }
       if (bidderRequest.gppConsent) {
