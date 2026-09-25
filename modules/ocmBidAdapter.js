@@ -7,7 +7,7 @@ import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { BID_RESPONSE } from '../src/pbjsORTB.js';
-import { deepSetValue, deepAccess, mergeDeep, getUniqueIdentifierStr, isPlainObject, isStr, logMessage, logWarn, logError } from '../src/utils.js';
+import { deepSetValue, deepAccess, mergeDeep, getUniqueIdentifierStr, isPlainObject, isStr, logMessage, logWarn, logError, replaceMacros } from '../src/utils.js';
 import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const converter = ortbConverter({
@@ -492,7 +492,66 @@ function buildRequests(bidRequests, bidderRequest) {
     method: 'POST',
     url: ENDPOINT,
     data: ortbRequest,
+    // Let Prebid core gzip the ORTB body (CompressionStream) and append `?gzip=1` so PBS knows to
+    // inflate it. Cuts request bandwidth to pbam roughly 5-10x. Core skips this in debug mode or on
+    // browsers without CompressionStream and falls back to plain JSON, so nothing else changes here.
+    options: { endpointCompression: true },
   };
+}
+
+/**
+ * Resolves the billing macros the OCM DSP emits in its notification URLs, on the raw ORTB bid.
+ *
+ * `${AUCTION_PRICE}` is filled from `bid.price` — the clearing price in the response currency
+ * (`BidResponse.cur`). That is what the DSP's `/bill` endpoint expects: it stamps the auction
+ * currency into the signed `cur` query parameter at bid time and converts the reported price to
+ * the campaign currency itself. Substituting the bidder's own pre-conversion bid
+ * (`ext.origbidcpm`/`ext.origbidcur`, which PBS leaves on the bid after converting `price`) would
+ * be mis-billed by exactly the FX rate, and would also be measured against the DSP's signed
+ * `maxprice` ceiling — which is likewise the converted `bid.price`.
+ *
+ * `${AUCTION_BID_ID}` is filled from the ORTB `bid.id` — the identifier the bidder itself minted
+ * and the only one it can correlate against its own records. It is deliberately NOT
+ * `bid.ext.prebid.bidid`, which is a PBS-generated per-bid UUID the bidder has never seen: that
+ * value matches the `b=` parameter in PBS's own event URLs and is the right key for OCM analytics,
+ * but substituting it into the *bidder's* URL would hand the DSP an id it cannot resolve. Nor is it
+ * top-level `BidResponse.bidid`, which OpenRTB nominally specifies but OCM's PBS does not populate.
+ *
+ * A macro whose source field is absent is left untouched rather than replaced with an empty string,
+ * so a malformed value never silently becomes a well-formed request carrying no price. (Note
+ * `replaceMacros` maps a falsy substitution to `''`, hence the explicit presence checks and the
+ * stringified price, which keeps a legitimate `0` from being blanked.)
+ *
+ * @param {Object} ortbResponse - The raw ORTB bid response body, mutated in place
+ * @returns {Object} The same response object, for convenient chaining
+ */
+function substituteBillingMacros(ortbResponse) {
+  (ortbResponse?.seatbid || []).forEach((seatbid) => {
+    (seatbid?.bid || []).forEach((bid) => {
+      const subs = {};
+      if (typeof bid?.price === 'number' && Number.isFinite(bid.price)) {
+        subs.AUCTION_PRICE = String(bid.price);
+      }
+      if (isStr(bid?.id) && bid.id !== '') {
+        subs.AUCTION_BID_ID = bid.id;
+      }
+      if (Object.keys(subs).length === 0) {
+        return;
+      }
+
+      // Both URLs below become EVENT_TYPE_IMPRESSION trackers, and addPbsEventTrackers de-duplicates
+      // them by string equality. Substituting both here — upstream of either tracker path — keeps
+      // that comparison valid by construction; substituting only one would fire billing twice.
+      if (isStr(bid.burl)) {
+        bid.burl = replaceMacros(bid.burl, subs);
+      }
+      const impUrl = bid?.ext?.prebid?.events?.imp;
+      if (isStr(impUrl)) {
+        deepSetValue(bid, 'ext.prebid.events.imp', replaceMacros(impUrl, subs));
+      }
+    });
+  });
+  return ortbResponse;
 }
 
 /**
@@ -507,7 +566,12 @@ function interpretResponse(response, request) {
   // as a BidderAuctionResponse when its keys are limited to bids/paapi, so returning the array is
   // the robust, conventional contract. Attribution to OCM is handled inside the converter by the
   // `bidderCode` bidResponse override, not here.
-  const { bids = [] } = converter.fromORTB({ request: request.data, response: response.body });
+  // Resolve billing macros on the raw ORTB response BEFORE the converter runs, so both the shared
+  // pbsExtensions `burl` processor and addPbsEventTrackers observe an already-substituted URL and
+  // core keeps ownership of when the tracker fires (adapterManager.triggerBilling, once, at billing
+  // time — including deferred billing). It is also the only layer where the DSP's own bid price is
+  // still reachable; see substituteBillingMacros.
+  const { bids = [] } = converter.fromORTB({ request: request.data, response: substituteBillingMacros(response.body) });
   return bids;
 }
 

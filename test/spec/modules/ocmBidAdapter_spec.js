@@ -242,6 +242,11 @@ describe('ocmBidAdapter', function () {
       expect(request.data).to.be.an('object');
     });
 
+    it('asks core to gzip the request body via options.endpointCompression', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      expect(request.options.endpointCompression).to.equal(true);
+    });
+
     it('maps placementId into imp.ext.prebid.storedrequest.id', function () {
       const request = spec.buildRequests([bannerBid], bannerBidderRequest);
       const imp = request.data.imp[0];
@@ -661,6 +666,180 @@ describe('ocmBidAdapter', function () {
     });
   });
 
+  describe('billing macro substitution', function () {
+    const BURL = 'https://dsp.orangeclickmedia.com/bill?impid=i-1&price=${AUCTION_PRICE}&cur=USD&sig=abc';
+    const IMP_URL = 'https://pbam.orangeclickmedia.com/event?t=imp&b=evt-bid-1&a=pub-123';
+
+    // Mirrors the captured production shape: PBS converts the bidder's bid to the request currency
+    // and leaves the pre-conversion original on the bid as ext.origbidcpm/ext.origbidcur. The two
+    // must stay distinct here so a regression to the wrong currency fails loudly.
+    const CONVERTED_PRICE = 0.016756615; // USD, what PBS returns as bid.price
+    const ORIGINAL_PRICE = 0.01459; // EUR, what the bidder actually bid
+
+    // `bidId: null` omits the ORTB bid.id entirely (passing `undefined` would re-trigger the
+    // default). `pbsBidId` sets the PBS-generated ext.prebid.bidid, which must NOT be used.
+    function macroResponse({ burl, events, price = CONVERTED_PRICE, bidId = 'ortb-bid-1', pbsBidId, origbid = true } = {}) {
+      const ext = {};
+      if (events || pbsBidId) {
+        ext.prebid = {};
+        if (events) ext.prebid.events = events;
+        if (pbsBidId) ext.prebid.bidid = pbsBidId;
+      }
+      if (origbid) {
+        ext.origbidcpm = ORIGINAL_PRICE;
+        ext.origbidcur = 'EUR';
+      }
+      const bid = {
+        impid: 'bid-banner-1',
+        price,
+        adm: '<div>OCM Ad</div>',
+        crid: 'creative-1',
+        w: 300,
+        h: 250,
+        mtype: 1,
+        ext
+      };
+      if (bidId) bid.id = bidId;
+      if (burl !== undefined) bid.burl = burl;
+      return { body: { id: 'auction-macro', cur: 'USD', seatbid: [{ seat: 'ocm', bid: [bid] }] } };
+    }
+
+    function impTrackers(bid) {
+      return (bid.eventtrackers || []).filter((t) => t.event === EVENT_TYPE_IMPRESSION && t.method === TRACKER_METHOD_IMG);
+    }
+
+    function interpret(response) {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      return spec.interpretResponse(response, request)[0];
+    }
+
+    it('substitutes ${AUCTION_PRICE} in burl with the clearing price', function () {
+      const bid = interpret(macroResponse({ burl: BURL }));
+      const trackers = impTrackers(bid);
+      expect(trackers).to.have.lengthOf(1);
+      expect(trackers[0].url).to.contain(`price=${CONVERTED_PRICE}`);
+      expect(trackers[0].url).to.not.contain('${AUCTION_PRICE}');
+    });
+
+    // The DSP stamps the auction currency into the signed `cur` parameter at bid time and converts
+    // the reported price itself, so ${AUCTION_PRICE} must be bid.price in the response currency —
+    // NOT the bidder's pre-conversion ext.origbidcpm, which would be mis-billed by the FX rate.
+    it('uses the converted bid.price, not the pre-conversion ext.origbidcpm', function () {
+      const bid = interpret(macroResponse({ burl: BURL }));
+      const url = impTrackers(bid)[0].url;
+      expect(url).to.contain(`price=${CONVERTED_PRICE}`);
+      expect(url).to.not.contain(String(ORIGINAL_PRICE));
+    });
+
+    it('substitutes ${AUCTION_BID_ID} from the ORTB bid.id', function () {
+      const burl = 'https://dsp.orangeclickmedia.com/bill?bidid=${AUCTION_BID_ID}&price=${AUCTION_PRICE}';
+      const bid = interpret(macroResponse({ burl, bidId: 'uuid-42' }));
+      const url = impTrackers(bid)[0].url;
+      expect(url).to.contain('bidid=uuid-42');
+      expect(url).to.not.contain('${AUCTION_BID_ID}');
+    });
+
+    // ext.prebid.bidid is minted by PBS for its own event URLs; the bidder has never seen it, so
+    // handing it back in the bidder's own URL would be an id the DSP cannot resolve.
+    it('does not use the PBS-generated ext.prebid.bidid for ${AUCTION_BID_ID}', function () {
+      const burl = 'https://dsp.orangeclickmedia.com/bill?bidid=${AUCTION_BID_ID}';
+      const bid = interpret(macroResponse({ burl, bidId: 'ortb-id-1', pbsBidId: 'pbs-generated-9' }));
+      const url = impTrackers(bid)[0].url;
+      expect(url).to.contain('bidid=ortb-id-1');
+      expect(url).to.not.contain('pbs-generated-9');
+    });
+
+    // Emptying the macro would turn a malformed request into a well-formed one carrying no id,
+    // which the DSP would accept and mis-attribute. Leaving it intact keeps the failure loud.
+    it('leaves ${AUCTION_BID_ID} untouched when the ORTB bid.id is absent', function () {
+      const burl = 'https://dsp.orangeclickmedia.com/bill?bidid=${AUCTION_BID_ID}&price=${AUCTION_PRICE}';
+      const bid = interpret(macroResponse({ burl, bidId: null }));
+      const url = impTrackers(bid)[0].url;
+      expect(url).to.contain('bidid=${AUCTION_BID_ID}');
+      expect(url).to.contain(`price=${CONVERTED_PRICE}`);
+    });
+
+    it('replaces every occurrence of a macro in one URL', function () {
+      const burl = 'https://dsp.orangeclickmedia.com/bill?price=${AUCTION_PRICE}&check=${AUCTION_PRICE}';
+      const bid = interpret(macroResponse({ burl }));
+      const url = impTrackers(bid)[0].url;
+      expect(url).to.not.contain('${AUCTION_PRICE}');
+      expect(url).to.equal(`https://dsp.orangeclickmedia.com/bill?price=${CONVERTED_PRICE}&check=${CONVERTED_PRICE}`);
+    });
+
+    it('substitutes a zero clearing price rather than blanking the macro', function () {
+      const bid = interpret(macroResponse({ burl: BURL, price: 0 }));
+      const trackers = impTrackers(bid);
+      // A zero-price bid may not survive as a bid response; assert only when it does.
+      if (trackers.length) {
+        expect(trackers[0].url).to.contain('price=0');
+        expect(trackers[0].url).to.not.contain('price=&');
+      }
+    });
+
+    it('leaves a burl with no macros unchanged', function () {
+      const plain = 'https://dsp.orangeclickmedia.com/bill?impid=i-1&sig=abc';
+      const bid = interpret(macroResponse({ burl: plain }));
+      expect(impTrackers(bid)[0].url).to.equal(plain);
+    });
+
+    it('produces no impression tracker and no error when burl is absent', function () {
+      let bid;
+      expect(() => { bid = interpret(macroResponse({})); }).to.not.throw();
+      expect(impTrackers(bid)).to.have.lengthOf(0);
+    });
+
+    it('substitutes the impression event URL so the dedup guard still matches burl', function () {
+      const shared = 'https://pbam.orangeclickmedia.com/event?t=imp&b=evt-bid-1&price=${AUCTION_PRICE}';
+      const bid = interpret(macroResponse({ burl: shared, events: { imp: shared } }));
+      const trackers = impTrackers(bid);
+      expect(trackers).to.have.lengthOf(1);
+      expect(trackers[0].url).to.contain(`price=${CONVERTED_PRICE}`);
+      expect(trackers[0].url).to.not.contain('${AUCTION_PRICE}');
+    });
+
+    it('still registers exactly one impression tracker when burl equals a macro-free events.imp', function () {
+      const bid = interpret(macroResponse({ burl: IMP_URL, events: { imp: IMP_URL } }));
+      expect(impTrackers(bid)).to.have.lengthOf(1);
+    });
+
+    // The substitution pass walks the raw ORTB response before the converter does, so it has to
+    // tolerate the shapes a server can legitimately return: no seatbid at all, and a seat block
+    // carrying no bids.
+    it('handles a response with no seatbid without throwing', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      let result;
+      expect(() => { result = spec.interpretResponse({ body: { id: 'auction-empty', cur: 'USD' } }, request); }).to.not.throw();
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('handles a seatbid entry with no bids without throwing', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      let result;
+      const response = { body: { id: 'auction-seat-empty', cur: 'USD', seatbid: [{ seat: 'ocm' }] } };
+      expect(() => { result = spec.interpretResponse(response, request); }).to.not.throw();
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    // With neither a usable price nor an id there is no substitution to make, so the URLs are left
+    // exactly as the server sent them rather than rewritten with empty values.
+    it('leaves both URLs untouched when the bid supplies neither a price nor an id', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      const burl = 'https://dsp.orangeclickmedia.com/bill?price=${AUCTION_PRICE}&bidid=${AUCTION_BID_ID}';
+      const response = {
+        body: {
+          id: 'auction-no-subs',
+          cur: 'USD',
+          seatbid: [{ seat: 'ocm', bid: [{ impid: 'bid-banner-1', burl, ext: { prebid: { events: { imp: burl } } } }] }]
+        }
+      };
+      expect(() => spec.interpretResponse(response, request)).to.not.throw();
+      const raw = response.body.seatbid[0].bid[0];
+      expect(raw.burl).to.equal(burl);
+      expect(raw.ext.prebid.events.imp).to.equal(burl);
+    });
+  });
+
   describe('outstream renderer', function () {
     const RENDERER_URL = 'https://cdn.orangeclickmedia.com/tech/libs/ocm-player.js';
 
@@ -841,6 +1020,29 @@ describe('ocmBidAdapter', function () {
       }
       expect(config.player.width).to.equal('640px');
       expect(config.player.height).to.equal('480px');
+      expect(config.player.outstream.type).to.equal('in-article');
+    });
+
+    // buildOcmPlayerConfig falls back to an empty override set when the renderer cannot supply one,
+    // so the player still receives the adapter's own defaults instead of a merge against undefined.
+    it('renders with the default player config when the renderer supplies no overrides', function () {
+      const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
+      const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
+      bid.adUnitCode = outstreamVideoBid.adUnitCode;
+      bid.adId = 'ad-id-no-overrides';
+
+      const slot = document.createElement('div');
+      slot.id = outstreamVideoBid.adUnitCode;
+      document.body.appendChild(slot);
+      window.OcmPlayer = sinon.spy();
+      bid.renderer.getConfig = () => undefined;
+
+      bid.renderer.loaded = true;
+      expect(() => bid.renderer._render(bid)).to.not.throw();
+
+      expect(window.OcmPlayer.calledOnce).to.equal(true);
+      const config = window.OcmPlayer.firstCall.args[1];
+      expect(config.player.muted).to.equal(true);
       expect(config.player.outstream.type).to.equal('in-article');
     });
 
@@ -1108,6 +1310,17 @@ describe('ocmBidAdapter', function () {
         setFilterSettings({ iframe: { bidders: ['ocm'], filter: 'include' } });
         const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
         expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+
+      // Dropping ocm from an exclude list can empty it. An empty `bidders` array is not a valid PBS
+      // filter, so the type falls back to allow-all and PBS decides.
+      it('falls back to allow-all when an exclude list named only ocm', function () {
+        setFilterSettings({ image: { bidders: ['ocm'], filter: 'exclude' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
           bidders: '*',
           filter: 'include'
         });
