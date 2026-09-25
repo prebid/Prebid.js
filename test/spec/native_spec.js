@@ -451,7 +451,13 @@ describe('native.js', function () {
 
   const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
     title: 'vtitle',
-    body: 'vbody'
+    body: 'vbody',
+    video: {
+      mimes: ['video/mp4'],
+      protocols: [2, 3],
+      minduration: 5,
+      maxduration: 60
+    }
   });
   const SAMPLE_ORTB_RESPONSE = {
     link: {
@@ -469,6 +475,12 @@ describe('native.js', function () {
         data: {
           value: 'vbody'
         }
+      },
+      {
+        id: 2,
+        video: {
+          vasttag: 'https://vast.example/tag.xml'
+        }
       }
     ],
     eventtrackers: [
@@ -482,13 +494,14 @@ describe('native.js', function () {
       const actual = toLegacyResponse(SAMPLE_ORTB_RESPONSE, SAMPLE_ORTB_REQUEST);
       expect(actual.body).to.equal('vbody');
       expect(actual.title).to.equal('vtitle');
+      expect(actual.video).to.equal('https://vast.example/tag.xml');
       expect(actual.clickUrl).to.equal('url');
       expect(actual.javascriptTrackers).to.equal('<script async src="https://sampleurljs.com"></script>');
       expect(actual.impressionTrackers.length).to.equal(2);
       expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
       expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
     });
-    ['img.type', 'title.text', 'data.type'].forEach(prop => {
+    ['img.type', 'title.text', 'data.type', 'video.vasttag'].forEach(prop => {
       it(`does not choke when the request does not have ${prop}, but the response does`, () => {
         const request = { ortb: { assets: [{ id: 1 }] } };
         const response = { ortb: { assets: [{ id: 1 }] } };
@@ -826,6 +839,28 @@ describe('validate native', function () {
     expect(ortb.privacy).to.equal(1);
   });
 
+  it('should convert legacy video asset to OpenRTB request', () => {
+    const ortb = toOrtbNativeRequest({
+      video: {
+        required: true,
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+    expect(ortb.assets[0]).to.deep.include({
+      id: 0,
+      required: 1,
+      video: {
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+  });
+
   ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
     it(`should not generate an empty asset for key ${nativeKey}`, () => {
       const ortbReq = toOrtbNativeRequest({
@@ -897,6 +932,16 @@ describe('validate native', function () {
             'type': 2,
             'len': 140
           }
+        },
+        {
+          'id': 129,
+          'required': 1,
+          'video': {
+            'mimes': ['video/mp4'],
+            'protocols': [2, 3],
+            'minduration': 5,
+            'maxduration': 60
+          }
         }
       ]
     };
@@ -938,6 +983,13 @@ describe('validate native', function () {
     });
     expect(oldNativeRequest.privacyLink).to.include({
       required: false
+    });
+    expect(oldNativeRequest.video).to.deep.include({
+      required: true,
+      mimes: ['video/mp4'],
+      protocols: [2, 3],
+      minduration: 5,
+      maxduration: 60
     });
   });
 
@@ -1362,6 +1414,27 @@ describe('toOrtbNativeResponse', () => {
     sinon.assert.match(response.assets[0], {
       img: {
         url: 'image-url'
+      }
+    });
+  });
+
+  it('should convert a legacy video asset to an ORTB vasttag', () => {
+    const legacyResponse = {
+      video: 'https://vast.example/tag.xml'
+    };
+    const request = toOrtbNativeRequest({
+      video: {
+        required: true,
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    sinon.assert.match(response.assets[0], {
+      video: {
+        vasttag: 'https://vast.example/tag.xml'
       }
     });
   });
