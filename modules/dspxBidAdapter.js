@@ -1,6 +1,19 @@
-import { deepAccess, logMessage, getBidIdParameter, logError, logWarn } from '../src/utils.js';
+import {
+  deepAccess,
+  logMessage,
+  getBidIdParameter,
+  logError,
+  logWarn,
+  isSafeFrameWindow,
+  inIframe,
+  getWindowSelf
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getViewability } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 import {
   fillUsersIds,
@@ -25,9 +38,9 @@ const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 const GVLID = 602;
-const VIDEO_ORTB_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'plcmt', 'linearity', 'skip', 'skipmin',
-  'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad',
-  'api', 'companiontype', 'ext'];
+const VPL_COMPACT_ARRAY_FIELDS = ['protocols', 'battr', 'playbackmethod', 'delivery', 'api'];
+const VIDEO_ORTB_PARAMS = ['maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'plcmt', 'linearity', 'skip',
+  'skipafter', 'sequence', 'battr', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'api'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -65,6 +78,7 @@ export const spec = {
       const mediaTypesInfo = getMediaTypesInfo(bidRequest);
       const type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
       const sizes = mediaTypesInfo[type];
+      const { width: vpWidth, height: vpHeight } = getViewportSize();
 
       payload = {
         _f: 'auto',
@@ -72,6 +86,8 @@ export const spec = {
         inventory_item_id: placementId,
         srw: sizes ? sizes[0].width : 0,
         srh: sizes ? sizes[0].height : 0,
+        vpw: vpWidth,
+        vph: vpHeight,
         idt: 100,
         rnd: rnd,
         ref: referrer,
@@ -80,10 +96,15 @@ export const spec = {
       };
 
       payload.pfilter = params.pfilter ?? {};
+      payload.instl = deepAccess(bidRequest.ortb2Imp, 'instl');
       payload.bcat = deepAccess(bidderRequest.ortb2, 'bcat') ? bidderRequest.ortb2.bcat.join(",") : (params.bcat ?? null);
       payload.pcat = deepAccess(bidderRequest.ortb2, 'site.pagecat') ? bidderRequest.ortb2.site.pagecat.join(",") : null;
       payload.dvt = params.dvt ?? null;
       isDev && (payload.prebidDevMode = 1);
+
+      // Frame/Container Context
+      payload.topf = inIframe() ? null : 1;
+      payload.safeframe = isSafeFrameWindow() ? 1 : null; // SafeFrame API available
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (!payload.pfilter.gdpr_consent) {
@@ -97,6 +118,20 @@ export const spec = {
         if (bidFloor > 0) {
           payload.pfilter.floorprice = bidFloor;
         }
+      }
+
+      // Add viewability metrics: sv=svx_svy_svw_svh_svv
+      const slotElement = getAdUnitElement(bidRequest);
+      if (slotElement) {
+        const rect = getBoundingClientRect(slotElement);
+        const svx = Math.round(rect.left);
+        const svy = Math.round(rect.top);
+        const svw = Math.round(rect.width);
+        const svh = Math.round(rect.height);
+        // self, not top: we also measure inside frames, where top.document throws
+        const expectedSize = sizes ? { w: sizes[0].width, h: sizes[0].height } : undefined;
+        const svv = Math.round(getViewability(slotElement, getWindowSelf(), expectedSize));
+        payload.sv = [svx, svy, svw, svh, svv].join('_');
       }
 
       if (auctionId) {
@@ -118,7 +153,13 @@ export const spec = {
         Object.keys(videoParams)
           .filter(key => VIDEO_ORTB_PARAMS.includes(key))
           .forEach(key => {
-            payload.vpl[key] = videoParams[key];
+            const value = videoParams[key];
+            if (Array.isArray(value) && value.length === 0) {
+              return;
+            }
+            payload.vpl[key] = VPL_COMPACT_ARRAY_FIELDS.includes(key) && Array.isArray(value)
+              ? value.join(',')
+              : value;
           });
       }
 
@@ -171,10 +212,16 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     logMessage('DSPx: serverResponse', serverResponse);
     logMessage('DSPx: bidRequest', bidRequest);
-    return interpretResponse(serverResponse, bidRequest, (bidRequest, response) => newRenderer(bidRequest, response));
+    const bidResponses = interpretResponse(serverResponse, bidRequest, (bidRequest, response) => newRenderer(bidRequest, response));
+    bidResponses.forEach(bidResponse => {
+      if (!bidResponse.mediaType) {
+        bidResponse.mediaType = BANNER;
+      }
+    });
+    return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    return handleSyncUrls(syncOptions, serverResponses, gdprConsent);
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    return handleSyncUrls(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, { enforcePurpose1: true });
   }
 };
 
