@@ -247,6 +247,7 @@ export const deepSetNotEmptyValue = (obj, key, value) => {
  * @param {Object} [data51.fodid] 51DiD data (mapped to user.eids)
  * @param {Object} [options]
  * @param {string} [options.tdlUrl] TDL URL passed through to the EID entry
+ * @param {string} [options.idUsage] The id.usage the module itself asked for
  *
  * @returns {Object} Enriched ORTB2 object
  */
@@ -259,7 +260,7 @@ export const convert51DegreesDataToOrtb2 = (data51, options = {}) => {
 
   mergeDeep(ortb2Data, convert51DegreesDeviceToOrtb2(data51.device));
   mergeDeep(ortb2Data, convert51DegreesIpToOrtb2(data51.ip));
-  mergeDeep(ortb2Data, convert51DegreesFoDiDToOrtb2(data51.fodid, options.tdlUrl));
+  mergeDeep(ortb2Data, convert51DegreesFoDiDToOrtb2(data51.fodid, options.tdlUrl, options.idUsage));
 
   return ortb2Data;
 };
@@ -430,6 +431,15 @@ const FODID_EID = {
  * every entry, followed by the publisher's own TDL when one is
  * configured.
  *
+ * A 51Did issued for non-marketing use is provided under legitimate
+ * interest and must not leave the customer environment, so it is not put
+ * on the bid request. The identifier is still produced and still reaches
+ * the page for whatever the publisher uses it for; this is the one
+ * boundary it does not cross. Only the module's own request knows the
+ * usage it asked for. Where the page's own integration made the request,
+ * the usage is whichever that integration was loaded with and is not
+ * visible here, so nothing is suppressed on that path.
+ *
  * @param {Object} fodid 51Degrees fodid object
  * @param {string} [fodid.idproblic] License-tier Probabilistic 51DiD
  * @param {string} [fodid.idprobglobal] Global-tier Probabilistic 51DiD
@@ -438,11 +448,19 @@ const FODID_EID = {
  * @param {string} [fodid.idhemlic] License-tier Hashed Email 51DiD
  * @param {string} [fodid.idhemglobal] Global-tier Hashed Email 51DiD
  * @param {string} [tdlUrl] TDL URL passed from module config
+ * @param {string} [idUsage] The id.usage the module itself asked for, where
+ *                           the module made the request
  * @returns {Object} Enriched ORTB2 fragment ({user:{eids:[...]}}) or {} when
- *                   no uids are available
+ *                   no uids are available, or when the identifier was asked
+ *                   for under non-marketing use
  */
-export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
+export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl, idUsage) => {
   if (!fodid) {
+    return {};
+  }
+
+  if (idUsage === PMP_USAGE_NON_MARKETING) {
+    logMessage('51Did was requested for non-marketing use; no eids entry is made');
     return {};
   }
 
@@ -481,11 +499,34 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
   return { user: { eids } };
 };
 
-// PMP localStorage contract, duplicated from pmp/src/storage.ts of the
-// 51Degrees/cloud repo. If PMP bumps SCHEMA_VERSION the shape check fails
-// closed and we fall through to undefined.
-const PMP_STORAGE_KEY = '__51d_pmp_pref';
-const PMP_SCHEMA_VERSION = 1;
+// The cookie the 51Degrees Preference Management Platform writes on the
+// publisher's own site, holding the visitor's answer as one bare word.
+// The name names no vendor on purpose, so a consent tool other than that
+// one can set the same cookie and be understood the same way, and it is
+// never HttpOnly, because the page that writes it reads it back.
+//
+// The answer used to be a JSON object in localStorage under a vendor
+// specific name. That store is no longer written, so reading it returns
+// nothing for every visitor. A cookie is read instead because a request
+// carries cookies and carries neither localStorage nor sessionStorage,
+// which makes this the only form of the answer a server, or anything in
+// front of it, can act on.
+const PMP_PREFERENCE_COOKIE = '__mtm_pref';
+
+// The visitor who declines marketing. The answer is carried to the cloud
+// like the other two, because the module is not the only thing that reads
+// what its script returns: the script publishes its response on the page,
+// and the publisher's own code may use the identifier for purposes that
+// are not marketing at all. What must not happen is that identifier
+// reaching demand, and that is enforced where it would leave, in
+// convert51DegreesFoDiDToOrtb2, rather than by refusing to ask for it.
+const PMP_USAGE_NON_MARKETING = 'non-marketing';
+
+// The three answers the Model Terms for Marketing define, which are also
+// the values id.usage takes, so the word read from the cookie is sent on
+// unchanged. Anything else is treated as no answer, because a value this
+// module does not understand is not one it should be passing along.
+const PMP_USAGES = ['standard', 'personalized', PMP_USAGE_NON_MARKETING];
 
 // Storage manager scoped to this RTD module. Required by Prebid's storage
 // activity rules and the no-restricted-globals lint.
@@ -495,7 +536,7 @@ export const storageManager = getStorageManager({
 });
 
 /**
- * Resolves the id.usage value from PMP localStorage.
+ * Resolves the id.usage value from the preference cookie.
  * Returns undefined when no valid value is found,
  * which signals the caller to omit id.usage from the cloud URL entirely.
  *
@@ -504,17 +545,12 @@ export const storageManager = getStorageManager({
  */
 export const resolveIdUsage = (moduleConfig) => {
   try {
-    const stored = storageManager.getDataFromLocalStorage(PMP_STORAGE_KEY);
-    if (!stored) {
-      return undefined;
-    }
-    const parsed = JSON.parse(stored);
-    if (parsed && parsed.v === PMP_SCHEMA_VERSION &&
-        (parsed.p === 'standard' || parsed.p === 'personalized')) {
-      return parsed.p;
+    const stored = storageManager.getCookie(PMP_PREFERENCE_COOKIE);
+    if (stored && PMP_USAGES.includes(stored)) {
+      return stored;
     }
   } catch (_) {
-    // Storage unavailable or JSON malformed; fall through.
+    // Storage unavailable; fall through.
   }
   return undefined;
 };
@@ -617,12 +653,14 @@ const dropCachedResponseOnConsentChange = (evidence) => {
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {string} [tdlUrl] TDL URL passed from module config
  * @param {Function} callback Called on completion
+ * @param {string} [idUsage] The id.usage this module asked for, where it
+ *                           made the request itself
  */
-const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
+const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback, idUsage) => {
   try {
     logMessage('51Degrees raw data: ', data);
     const global = reqBidsConfigObj.ortb2Fragments.global;
-    const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
+    const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl, idUsage });
     // Don't clobber a publisher-observed device.ip / device.ipv6 with
     // our IP-derived value. Publisher signal wins.
     if (enrichment.device) {
@@ -660,16 +698,19 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     logMessage('TCF consent string present: ', !!tcString);
     logMessage('GPP string present: ', !!gpp);
 
-    const onData = (data) => {
+    // The usage is known only where this module made the request. The
+    // page's own integration was loaded with whichever usage the publisher
+    // chose, which is not visible in the payload it hands over.
+    const onData = (requestedIdUsage) => (data) => {
       if (!callbackCalled) {
-        enrichFromData(data, reqBidsConfigObj, tdlUrl, callbackOnce);
+        enrichFromData(data, reqBidsConfigObj, tdlUrl, callbackOnce, requestedIdUsage);
       }
     };
 
     const pageFod = getPageFod();
     if (pageFod && pageFod !== ownFod) {
       logMessage('Using on-page 51Degrees integration (window.fod)');
-      pageFod.complete(onData);
+      pageFod.complete(onData(undefined));
       return;
     }
 
@@ -719,7 +760,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
           }
           ownFod = fod;
           // Convert and merge device data in the callback
-          fod.complete(onData);
+          fod.complete(onData(idUsage));
         },
         // Blocked, offline, or a non-200 response. Only the object form of the
         // callback gets told about this; a bare function is called on success only.
