@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/bmsBidAdapter.js';
+import { isValid } from 'src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
@@ -158,6 +159,39 @@ describe('bmsBidAdapter:', function () {
 
       expect(ortbResponse.length).to.eq(1);
       expect(ortbResponse[0].mediaType).to.eq('banner');
+    });
+
+    it('should fall back to bid.adid and still produce a valid bid when bid.ext is absent', function () {
+      const response = {
+        id: 'response-id-123456',
+        cur: 'USD',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '2rgRKcbHfDyX6ZU4zuPuf521444:0',
+                impid: '3b948a96652621',
+                price: 2,
+                adomain: ['example.com'],
+                adid: '0',
+                adm: '<iframe></iframe>',
+                h: 600,
+                w: 300,
+                exp: 60,
+              },
+            ],
+            seat: '1',
+          },
+        ],
+      };
+
+      const ortbResponse = spec.interpretResponse({ body: response }, { data: '{}' });
+
+      expect(ortbResponse.length).to.eq(1);
+      expect(ortbResponse[0].creativeId).to.eq('0');
+      // bidderFactory.isValid requires a non-null creativeId; this proves the bid
+      // actually survives the core auction lifecycle, not just interpretResponse().
+      expect(isValid('div-gpt-ad-1460505iosakju-0', ortbResponse[0])).to.be.true;
     });
   });
 });

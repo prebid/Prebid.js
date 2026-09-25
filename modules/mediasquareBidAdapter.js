@@ -26,7 +26,7 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 791,
-  aliases: ['msq'], // short code
+  aliases: [{ code: 'msq', gvlid: 791 }], // short code
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.

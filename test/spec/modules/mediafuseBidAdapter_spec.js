@@ -162,12 +162,10 @@ describe('mediafuseBidAdapter', function () {
       expect(req.data.user?.ext?.addtl_consent).to.be.undefined;
     });
 
-    it('should set regs.coppa=1 when coppa config is true', function () {
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        if (key === 'coppa') return true;
-        return undefined;
-      });
-      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
+    it('should set regs.coppa=1 when ortb2 regs coppa is 1', function () {
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.ortb2 = { regs: { coppa: 1 } };
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], bidderRequest);
       expect(req.data.regs.coppa).to.equal(1);
     });
   });

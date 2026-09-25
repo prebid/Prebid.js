@@ -18,6 +18,13 @@ import { getPriceBucketString } from '../src/cpmBucketManager.js';
 import { Renderer } from '../src/Renderer.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { toOrtb25 } from '../libraries/ortb2.5Translator/translator.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./ozoneBidAdapter.d.ts').OzoneBidderParams} OzoneBidderParams
+ * @typedef {BidRequest & {params: OzoneBidderParams}} OzoneBidRequest
+ */
 
 const BIDDER_CODE = 'ozone';
 const ORIGIN = 'https://elb.the-ozone-project.com';
@@ -65,6 +72,10 @@ export const spec = {
     }
     return false;
   },
+  /**
+   * @param {OzoneBidRequest} bid
+   * @returns {boolean}
+   */
   isBidRequestValid(bid) {
     const vf = 'VALIDATION FAILED';
     logInfo('isBidRequestValid : ', config.getConfig(), bid);
@@ -336,7 +347,7 @@ export const spec = {
       logInfo('schain found');
       deepSetValue(ozoneRequest, 'source.ext.schain', schain);
     }
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(ozoneRequest, 'regs.coppa', 1);
     }
     const batchRequestsVal = this.getBatchRequests();

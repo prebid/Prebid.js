@@ -11,6 +11,7 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
 import * as events from '../events.js';
+import { parseUntrustedJSON } from '../utils/untrustedJson.js';
 
 import {
   delayExecution,
@@ -199,7 +200,7 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-export const guardTids: any = memoize(({ bidderCode }) => {
+function makeTidGuard({ bidderCode }) {
   const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
     if (TIDS.hasOwnProperty(prop)) {
@@ -234,7 +235,21 @@ export const guardTids: any = memoize(({ bidderCode }) => {
       }
     })
   };
-});
+}
+
+// Guards are cached per bidderRequest, so every use of the same request sees
+// the same guard: stable proxy identity, and one transmitTid activity check
+// per bidder request. The cache is keyed weakly, so an entry cannot outlive
+// the bidderRequest it guards.
+const tidGuards = new WeakMap<object, ReturnType<typeof makeTidGuard>>();
+export function guardTids<B extends BidderCode>(bidderRequest: ClientBidderRequest<B>) {
+  let guard = tidGuards.get(bidderRequest);
+  if (guard == null) {
+    guard = makeTidGuard(bidderRequest);
+    tidGuards.set(bidderRequest, guard);
+  }
+  return guard;
+}
 
 declare module '../events' {
   interface Events {
@@ -458,7 +473,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     const onSuccess = wrapCallback(function(response, responseObj) {
       networkDone?.();
       try {
-        response = JSON.parse(response);
+        response = parseUntrustedJSON(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
 
       // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.

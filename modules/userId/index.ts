@@ -528,21 +528,65 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     return allConsent.promise.finally(initMetrics.startTiming('userId.init.consent'));
   }
 
-  let done = cancelAndTry(
-    PbPromise.all([hooksReady, startInit.promise])
-      .then(timeConsent)
-      .then(checkRefs(() => {
-        initialized = true;
-        initSubmodules(initModules, allModules);
-      }))
-      .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
-      .then(checkRefs(() => {
-        const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
-        if (modWithCb.length) {
-          return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
-        }
-      }))
-  );
+  // Batches of submodule callbacks that have been discovered but have not finished.
+  // A filtered refresh cancels `done`, but the submodules it did not name may still
+  // be fetching, so its replacement chain waits for them rather than releasing the
+  // auction early. Tracked from discovery rather than from the moment they start,
+  // because with `auctionDelay` = 0 callbacks are held until after the auction ends.
+  const inFlight = new Set<ReturnType<typeof defer<void>>>();
+
+  function trackBatch() {
+    const batch = defer<void>();
+    inFlight.add(batch);
+    return {
+      batch,
+      settle: () => {
+        inFlight.delete(batch);
+        batch.resolve();
+      }
+    };
+  }
+
+  function pendingCallbacks() {
+    return inFlight.size
+      ? PbPromise.all(Array.from(inFlight, (batch) => batch.promise)).then(() => undefined)
+      : null;
+  }
+
+  // An unfiltered refresh replaces everything, including work that may never
+  // finish. Release the markers it supersedes, or a later filtered refresh would
+  // wait on a batch nothing is going to complete.
+  function supersedeAll(except) {
+    Array.from(inFlight).forEach((batch) => {
+      if (batch === except) return;
+      inFlight.delete(batch);
+      batch.resolve();
+    });
+  }
+
+  let settleInitial;
+
+  const initChain = PbPromise.all([hooksReady, startInit.promise])
+    .then(timeConsent)
+    .then(checkRefs(() => {
+      initialized = true;
+      initSubmodules(initModules, allModules);
+      if (initModules.submodules.some(item => isFn(item.callback))) {
+        settleInitial = trackBatch().settle;
+      }
+    }))
+    .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
+    .then(checkRefs(() => {
+      const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
+      if (modWithCb.length) {
+        return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
+      }
+    }));
+
+  // never let the marker outlive the chain that owns it
+  initChain.then(() => settleInitial?.(), () => settleInitial?.());
+
+  let done = cancelAndTry(initChain);
 
   /**
    * with `ready` = true, starts initialization; with `refresh` = true, reinitialize submodules (optionally
@@ -564,23 +608,40 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       }
     }
     if (refresh && initialized) {
+      // Captured before the refresh adds a batch of its own. An unfiltered refresh
+      // supersedes everything, so it keeps escaping a stuck initialization; a
+      // filtered one must not shorten the wait for what it left running.
+      // A filtered refresh waits for what it leaves running; an unfiltered one
+      // supersedes it, but only once the replacement is installed below.
+      const priorCallbacks = submoduleNames == null ? null : pendingCallbacks();
+      // Registered now, not when the chain gets there: a second refresh issued
+      // before this one has run must still see this batch as outstanding.
+      const refreshBatch = trackBatch();
+      const settleRefresh = refreshBatch.settle;
+      const chain = done
+        .catch(() => null)
+        .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
+        .then(checkRefs(() => {
+          const cbModules = initSubmodules(
+            initModules,
+            allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
+            true
+          ).filter((sm) => {
+            return sm.callback != null;
+          });
+          if (cbModules.length) {
+            return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
+          }
+        }));
+      chain.then(settleRefresh, settleRefresh);
       done = cancelAndTry(
-        done
-          .catch(() => null)
-          .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
-          .then(checkRefs(() => {
-            const cbModules = initSubmodules(
-              initModules,
-              allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
-              true
-            ).filter((sm) => {
-              return sm.callback != null;
-            });
-            if (cbModules.length) {
-              return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
-            }
-          }))
+        priorCallbacks == null ? chain : PbPromise.all([priorCallbacks, chain]).then(() => undefined)
       );
+      if (submoduleNames == null) {
+        // After the swap, never before: releasing these first can fulfil the chain
+        // this refresh just replaced, and a caller can take it for the current one.
+        supersedeAll(refreshBatch.batch);
+      }
     }
     return done;
   };

@@ -1,8 +1,8 @@
 import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'bmtm';
 const AD_URL = 'https://one.elitebidder.com/api/hb?sid=';
@@ -187,7 +187,7 @@ function buildDevice() {
 
 function buildRegs(bidderRequest) {
   const regs = {
-    coppa: config.getConfig('coppa') === true ? 1 : 0,
+    coppa: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
