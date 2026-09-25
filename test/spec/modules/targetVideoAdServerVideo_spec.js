@@ -176,4 +176,28 @@ describe('TargetVideo Ad Server Video', function() {
     getWinningBidsStub.restore();
     getAllTargetingDataStub.restore();
   });
+
+  it('should only skip params.cust_params keys that exactly match a key already in the iu URL', () => {
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url = buildVideoUrl({
+      params: {
+        iu: 'https://example.com/ads/bid?iu=/video&cust_params=page%3Dhome%26section%3Dsports',
+        cust_params: {
+          age: '25',
+          sport: 'tennis',
+          section: 'news'
+        }
+      },
+      bid,
+      adUnit
+    });
+
+    expect(url).to.include('cust_params=page%3Dhome%26section%3Dsports%26age%3D25%26sport%3Dtennis');
+    expect(url).to.not.include('section%3Dnews');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
 });
