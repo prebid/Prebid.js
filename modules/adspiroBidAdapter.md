@@ -3,7 +3,7 @@
 ```
 Module Name: Adspiro Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: support@adspiro.io
+Maintainer: connect@adspiro.io
 ```
 
 # Description
@@ -12,7 +12,7 @@ Connects to the Adspiro OpenRTB 2.6 exchange for bids. Supports banner, video
 (instream; outstream needs the publisher's own renderer), native (ORTB native
 request) and audio. Adspiro serves US traffic.
 
-Contact support@adspiro.io to get a `publisherId`, then add this line to your
+Contact connect@adspiro.io to get a `publisherId`, then add this line to your
 ads.txt (app-ads.txt for apps):
 
 ```
