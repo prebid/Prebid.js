@@ -47,6 +47,13 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       delete imp.bidfloor;
       delete imp.bidfloorcur;
     }
+    // The floors module also sets per-media-type and per-size floors in the same currency
+    for (const target of [imp.banner, imp.video, imp.native, imp.audio, ...(imp.banner?.format ?? [])]) {
+      if (target?.ext?.bidfloorcur != null && target.ext.bidfloorcur !== CURRENCY) {
+        delete target.ext.bidfloor;
+        delete target.ext.bidfloorcur;
+      }
+    }
     for (const mediaType of [VIDEO, AUDIO] as const) {
       const mimes = imp[mediaType]?.mimes;
       if (imp[mediaType] != null && !(Array.isArray(mimes) && mimes.length > 0)) {

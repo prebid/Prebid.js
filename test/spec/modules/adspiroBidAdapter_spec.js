@@ -191,6 +191,19 @@ describe('adspiroBidAdapter', function () {
         expect(request.data.imp[0]).to.not.have.any.keys('bidfloor', 'bidfloorcur');
       });
 
+      it('removes per-media-type and per-size floors in another currency, keeps them in USD', function () {
+        const floorsIn = (currency) => ({ mediaType, size }) =>
+          ({ currency, floor: Array.isArray(size) ? 2 : mediaType === 'banner' ? 1.5 : 1 });
+
+        const [usd] = buildRequests([makeBid({ getFloor: floorsIn('USD') })]);
+        expect(usd.data.imp[0].banner.ext).to.include({ bidfloor: 1.5, bidfloorcur: 'USD' });
+        usd.data.imp[0].banner.format.forEach((format) => expect(format.ext).to.include({ bidfloor: 2, bidfloorcur: 'USD' }));
+
+        const [eur] = buildRequests([makeBid({ getFloor: floorsIn('EUR') })]);
+        expect(eur.data.imp[0].banner.ext).to.not.have.any.keys('bidfloor', 'bidfloorcur');
+        eur.data.imp[0].banner.format.forEach((format) => expect(format.ext).to.not.have.any.keys('bidfloor', 'bidfloorcur'));
+      });
+
       it('keeps a floor that has no currency', function () {
         const [request] = buildRequests([makeBid({ ortb2Imp: { bidfloor: 0.5 } })]);
         expect(request.data.imp[0].bidfloor).to.equal(0.5);
