@@ -9,6 +9,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { isWebdriverEnabled, isSeleniumDetected } from '../libraries/webdriver/webdriver.js';
 import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 export const storage = getStorageManager({ bidderCode: 'datablocks' });
 
@@ -269,7 +270,7 @@ export const spec = {
       ext: {
         pb_eids: validRequests[0].userIdAsEids || {},
         syncs: this.get_syncs() || {},
-        coppa: config.getConfig('coppa') || 0,
+        coppa: bidderRequest?.ortb2?.regs?.coppa ?? (coppaDataHandler.getCoppa() ? 1 : 0),
         gdpr: bidderRequest.gdprConsent || {},
         usp: bidderRequest.uspConsent || {},
         client_info: this.get_client_info(),
