@@ -19,6 +19,21 @@ describe('Pragma Adx Bid Adapter', function () {
     }
   };
 
+  const validBannerBidRequest = {
+    bidder: 'pragmaAdx',
+    bidId: '3h9j2k4',
+    params: {
+      apiKey: 'adx_pub_test_key',
+      adUnitId: 2,
+      placement: 'sidebar'
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      }
+    }
+  };
+
   describe('isBidRequestValid', function () {
     it('returns true for a valid video bid with apiKey and adUnitId', function () {
       expect(spec.isBidRequestValid(validBidRequest)).to.be.true;
@@ -36,10 +51,14 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('returns false when there is no video mediaType (banner-only bid)', function () {
+    it('returns false when there is neither a video nor a banner mediaType', function () {
       const bid = JSON.parse(JSON.stringify(validBidRequest));
       delete bid.mediaTypes.video;
       expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('returns true for a valid banner bid with apiKey and adUnitId', function () {
+      expect(spec.isBidRequestValid(validBannerBidRequest)).to.be.true;
     });
 
     it('returns false for a falsy bid', function () {
@@ -54,7 +73,7 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal('https://apps.pragma-crm.com/api/adx/prebid');
       expect(requests[0].options).to.deep.equal({
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: false
       });
     });
@@ -134,6 +153,29 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(requests[0].data.gpp_sid).to.deep.equal([2, 6]);
     });
 
+    it('resolves the configured banner size for a banner bid request', function () {
+      const requests = spec.buildRequests([validBannerBidRequest], {});
+      expect(requests[0].data.w).to.equal(300);
+      expect(requests[0].data.h).to.equal(250);
+      expect(requests[0].data.ad_unit_id).to.equal(2);
+    });
+
+    it('falls back to the documented default banner size when none is configured', function () {
+      const bid = JSON.parse(JSON.stringify(validBannerBidRequest));
+      delete bid.mediaTypes.banner.sizes;
+      const requests = spec.buildRequests([bid], {});
+      expect(requests[0].data.w).to.equal(300);
+      expect(requests[0].data.h).to.equal(250);
+    });
+
+    it('accepts a flat [w, h] banner size as well as [[w, h]]', function () {
+      const bid = JSON.parse(JSON.stringify(validBannerBidRequest));
+      bid.mediaTypes.banner.sizes = [728, 90];
+      const requests = spec.buildRequests([bid], {});
+      expect(requests[0].data.w).to.equal(728);
+      expect(requests[0].data.h).to.equal(90);
+    });
+
     it('returns one ServerRequest per bid for multiple valid bid requests', function () {
       const secondBid = JSON.parse(JSON.stringify(validBidRequest));
       secondBid.bidId = 'other-bid-id';
@@ -179,8 +221,47 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(bid.meta.advertiserDomains).to.deep.equal(['advertiser.example.com']);
     });
 
+    it('maps a real DSP-priced banner bid onto a Prebid bid object', function () {
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: '3h9j2k4',
+            cpm: 1.10,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            creativeId: 'adx-456',
+            netRevenue: false,
+            ttl: 300,
+            mediaType: 'banner',
+            ad: '<div>banner markup</div>',
+            meta: { advertiserDomains: ['advertiser.example.com'] }
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+      expect(bid.requestId).to.equal('3h9j2k4');
+      expect(bid.mediaType).to.equal('banner');
+      expect(bid.ad).to.equal('<div>banner markup</div>');
+      expect(bid.vastXml).to.be.undefined;
+    });
+
     it('returns an empty array for an explicit no-bid response', function () {
       const serverResponse = { body: { bids: [], no_bid_reason: 'house' } };
+      expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
+    });
+
+    it('filters out a banner bid with no ad markup', function () {
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'x', cpm: 1.5, mediaType: 'banner', ad: '   '
+          }]
+        }
+      };
       expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
     });
 

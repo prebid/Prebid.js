@@ -8,11 +8,12 @@ Maintainer: mike@pragma-crm.com
 
 # Description
 
-Module that connects to Pragma Adx's video demand. `pragmaAdx` only ever
-answers with a bid when a real external DSP has cleared a genuine price for
-the impression through Pragma's own `run_auction()`; house creatives and
-self-serve customer campaigns intentionally return no bid on this endpoint
-because neither has a real market price to report into a header auction.
+Module that connects to Pragma Adx's video and banner demand. `pragmaAdx`
+only ever answers with a bid when a real external DSP has cleared a genuine
+price for the impression through Pragma's own `run_auction()`; house
+creatives and self-serve customer campaigns intentionally return no bid on
+this endpoint because neither has a real market price to report into a
+header auction.
 
 # Test Parameters
 
@@ -34,6 +35,24 @@ because neither has a real market price to report into a header auction.
                         apiKey: 'adx_pub_test_key',
                         adUnitId: 1,
                         placement: 'article_inline'
+                    }
+                }
+            ]
+        },
+        {
+            code: 'banner-slot-1',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]]
+                }
+            },
+            bids: [
+                {
+                    bidder: 'pragmaAdx',
+                    params: {
+                        apiKey: 'adx_pub_test_key',
+                        adUnitId: 2,
+                        placement: 'sidebar'
                     }
                 }
             ]

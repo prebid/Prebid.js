@@ -1,5 +1,5 @@
 /**
- * Pragma Adx — Prebid.js Bid Adapter (video)
+ * Pragma Adx — Prebid.js Bid Adapter (video + banner)
  *
  * 2026-09-20, "kannst du in earn noch prebid integrieren?" — scoped to
  * "Earn als Prebid-Bidder für fremde Publisher": this file lets a
@@ -7,6 +7,10 @@
  * more configured bidder, competing client-side against their existing
  * demand. It changes nothing about Pragma's own auction or Earn's
  * rewarded-video tab.
+ *
+ * 2026-09-26 — Display/Banner: supportedMediaTypes now includes BANNER;
+ * POST /api/adx/prebid returns bid.ad (markup) for banner ad units, same
+ * DSP-only price discipline as video (see the server-side handler).
  *
  * Interface verified 2026-09-20 against the real Prebid.js Bid Adapter
  * development guide (https://docs.prebid.org/dev-docs/bidder-adaptor.html)
@@ -36,16 +40,15 @@
  *    https://apps.pragma-crm.com/static/prebid/pragmaAdxBidAdapter.js
  *
  * 2. WHAT IS *NOT* TRUE YET — Pragma is **not** a bidder listed in the
- *    official Prebid.js repository, and this file has not been submitted
- *    to or reviewed by Prebid. Getting there is a real external process
- *    outside this codebase's control: per prebid.org's submission
- *    requirements it needs the adapter file, a `_spec.js` unit-test file,
- *    and a `dev-docs/bidders/pragmaAdx.md` documentation page with
- *    biddercode/pbjs/media_types metadata, all passing Prebid's Module
- *    Rules code review. Until that happens, `pragmaAdx` will NOT appear
- *    in Prebid's hosted "download" builder or bidder list — option 1 is
- *    the real integration path. Don't let anyone read this file as a
- *    claim of official Prebid listing.
+ *    official Prebid.js repository. Two real pull requests were opened
+ *    2026-09-21 (prebid/Prebid.js#15639, prebid/prebid.github.io#6751)
+ *    but neither is merged — that review is a real external process
+ *    outside this codebase's control, with no guaranteed timeline. Until
+ *    a Prebid maintainer actually merges both, `pragmaAdx` will NOT
+ *    appear in Prebid's hosted "download" builder or bidder list —
+ *    option 1 is the real integration path. Don't let anyone read this
+ *    file, or the mere existence of those PRs, as a claim of official
+ *    Prebid listing.
  *
  * ── Consent ────────────────────────────────────────────────────────────
  * GDPR/US-Privacy/GPP strings are forwarded exactly as Prebid hands them
@@ -65,11 +68,12 @@
  */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'pragmaAdx';
 const ENDPOINT_URL = 'https://apps.pragma-crm.com/api/adx/prebid';
 const DEFAULT_PLAYER_SIZE = [640, 360];
+const DEFAULT_BANNER_SIZE = [300, 250];
 
 /**
  * Prebid allows playerSize as either [w, h] or [[w, h], ...].
@@ -91,15 +95,32 @@ function resolvePlayerSize(bidRequest) {
   return DEFAULT_PLAYER_SIZE;
 }
 
+function resolveBannerSize(bidRequest) {
+  const banner = (bidRequest.mediaTypes && bidRequest.mediaTypes.banner) || {};
+  let size = banner.sizes;
+  if (Array.isArray(size) && Array.isArray(size[0])) {
+    size = size[0];
+  }
+  if (Array.isArray(size) && size.length === 2) {
+    const width = parseInt(size[0], 10);
+    const height = parseInt(size[1], 10);
+    if (width > 0 && height > 0) {
+      return [width, height];
+    }
+  }
+  return DEFAULT_BANNER_SIZE;
+}
+
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [VIDEO, BANNER],
 
   /**
    * Pragma needs an api_key + ad_unit_id (both issued when a publisher
-   * registers — see https://apps.pragma-crm.com/adx/quickstart) and only
-   * serves video, so a request without a video mediaType is rejected here
-   * rather than wasting a network call on a guaranteed no-bid.
+   * registers — see https://apps.pragma-crm.com/adx/quickstart) and
+   * serves video or banner depending on the ad unit's own format, so a
+   * request with neither mediaType is rejected here rather than wasting
+   * a network call on a guaranteed no-bid.
    */
   isBidRequestValid: function (bid) {
     if (!bid) {
@@ -107,7 +128,8 @@ export const spec = {
     }
     const params = bid.params || {};
     const hasVideo = !!(bid.mediaTypes && bid.mediaTypes.video);
-    return hasVideo && !!params.apiKey && !!params.adUnitId;
+    const hasBanner = !!(bid.mediaTypes && bid.mediaTypes.banner);
+    return (hasVideo || hasBanner) && !!params.apiKey && !!params.adUnitId;
   },
 
   /**
@@ -118,7 +140,8 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return (validBidRequests || []).map(function (bid) {
       const params = bid.params || {};
-      const size = resolvePlayerSize(bid);
+      const hasBanner = !!(bid.mediaTypes && bid.mediaTypes.banner);
+      const size = hasBanner ? resolveBannerSize(bid) : resolvePlayerSize(bid);
       const payload = {
         api_key: params.apiKey,
         ad_unit_id: params.adUnitId,
@@ -173,8 +196,11 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT_URL,
         data: payload,
+        // 'text/plain' keeps this a CORS-simple request (no OPTIONS
+        // preflight) -- the server parses the body as JSON regardless of
+        // Content-Type, so nothing on the wire actually changes.
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: false
         }
       };
@@ -192,11 +218,20 @@ export const spec = {
     const bids = Array.isArray(body.bids) ? body.bids : [];
     return bids
       .filter(function (bid) {
-        // A bid without a real positive price is not a bid.
-        return bid && bid.vastXml && parseFloat(bid.cpm) > 0;
+        // A bid without a real positive price is not a bid; the creative
+        // itself (VAST document for video, markup for banner) must also
+        // actually be present.
+        if (!bid || parseFloat(bid.cpm) <= 0) {
+          return false;
+        }
+        if (bid.mediaType === 'banner') {
+          return !!(bid.ad && String(bid.ad).trim());
+        }
+        return !!(bid.vastXml && String(bid.vastXml).trim());
       })
       .map(function (bid) {
-        return {
+        const isBanner = bid.mediaType === 'banner';
+        const out = {
           requestId: bid.requestId,
           cpm: parseFloat(bid.cpm),
           currency: bid.currency || 'USD',
@@ -208,13 +243,18 @@ export const spec = {
           // own rule is that gross-price bids set this to false.
           netRevenue: bid.netRevenue === true,
           ttl: bid.ttl,
-          mediaType: VIDEO,
-          vastXml: bid.vastXml,
+          mediaType: isBanner ? BANNER : VIDEO,
           meta: {
             advertiserDomains:
               (bid.meta && bid.meta.advertiserDomains) || []
           }
         };
+        if (isBanner) {
+          out.ad = bid.ad;
+        } else {
+          out.vastXml = bid.vastXml;
+        }
+        return out;
       });
   }
 
