@@ -62,11 +62,7 @@ function newWebpackConfig(codeCoverage, disableFeatures, watchMode, singleSpec) 
     loader: 'babel-loader',
     options: {
       cacheDirectory: cacheDir, cacheCompression: false,
-      plugins: [['@babel/plugin-transform-modules-commonjs', {
-        // Preserve the circular-import behavior the test harness relied on
-        // before Babel 8 began snapshotting partially initialized modules.
-        lazy: () => true
-      }]].concat(codeCoverage ? [['babel-plugin-istanbul', {
+      plugins: ['@babel/plugin-transform-modules-commonjs'].concat(codeCoverage ? [['babel-plugin-istanbul', {
         // The coverage instrumentation options below were written by a bot (Claude Code).
         // Keep the specs out of coverage: they run start to finish by definition, so counting them
         // swamps the totals for the code they exercise. `exclude` is anchored to `cwd`, which has to be
