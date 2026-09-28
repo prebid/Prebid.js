@@ -12,6 +12,8 @@ Escalax Bidding adapter requires setup before beginning. Please contact us at <c
 
 # Test Parameters
 
+## Exchange integration
+
 ```js
 const adUnits = [
   {
@@ -72,6 +74,32 @@ const adUnits = [
         params: {
           accountId: "hash",
           sourceId: "sourceId",
+        },
+      },
+    ],
+  },
+];
+```
+
+## SSP integration
+
+```js
+const adUnits = [
+  {
+    code: "banner1",
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250],
+          [300, 600],
+        ],
+      },
+    },
+    bids: [
+      {
+        bidder: "escalax",
+        params: {
+          supplyPlacementId: "hash",
         },
       },
     ],
