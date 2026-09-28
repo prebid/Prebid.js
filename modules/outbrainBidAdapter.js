@@ -10,6 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { Renderer } from '../src/Renderer.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -148,8 +149,8 @@ export const spec = {
     if (bidderRequest.uspConsent) {
       deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
-    if (config.getConfig('coppa') === true) {
-      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1);
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
+      deepSetValue(request, 'regs.coppa', 1);
     }
     if (bidderRequest.gppConsent) {
       deepSetValue(request, 'regs.ext.gpp', bidderRequest.gppConsent.gppString);

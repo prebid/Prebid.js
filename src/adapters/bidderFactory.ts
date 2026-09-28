@@ -11,6 +11,7 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
 import * as events from '../events.js';
+import { parseUntrustedJSON } from '../utils/untrustedJson.js';
 
 import {
   delayExecution,
@@ -472,7 +473,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     const onSuccess = wrapCallback(function(response, responseObj) {
       networkDone?.();
       try {
-        response = JSON.parse(response);
+        response = parseUntrustedJSON(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
 
       // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
