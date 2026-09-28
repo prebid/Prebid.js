@@ -1,4 +1,4 @@
-import { prefixLog } from '../utils.js';
+import { prefixLog } from '../utils/logging.js';
 import { ACTIVITY_PARAM_COMPONENT } from './params.js';
 
 /**

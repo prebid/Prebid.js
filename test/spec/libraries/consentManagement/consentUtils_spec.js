@@ -1,8 +1,16 @@
 import { expect } from 'chai';
-import { hasVendorPurposeConsent } from '../../../../libraries/consentManagement/consentUtils.js';
+import {
+  DEFAULT_PURPOSE_DECLARATION,
+  hasVendorPurposeConsent,
+  setGvlLegalBasisMapping
+} from '../../../../libraries/consentManagement/consentUtils.js';
 
 describe('consentUtils', function () {
   const HOST_GVLID = '52';
+
+  beforeEach(function () {
+    setGvlLegalBasisMapping({ [HOST_GVLID]: DEFAULT_PURPOSE_DECLARATION });
+  });
 
   function mockConsent({ purposeConsent = true, vendorConsent = true, restriction, gdprApplies = true } = {}) {
     const consent = {
