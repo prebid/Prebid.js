@@ -3488,3 +3488,125 @@ describe('InsticatorBidAdapter — native', function () {
     });
   });
 });
+
+describe('InsticatorBidAdapter — defensive paths', function () {
+  const adUnitId = '1a2b3c4d5e6f1a2b3c4d';
+  const bidderRequestId = 'defensive-req-1';
+  const baseBidderRequest = {
+    bidderRequestId,
+    timeout: 300,
+    refererInfo: { page: 'https://example.com', domain: 'example.com', ref: 'https://referrer.com' },
+  };
+
+  function videoBid(video) {
+    return {
+      bidder: 'insticator',
+      adUnitCode: 'defensive-video-adunit',
+      params: { adUnitId },
+      mediaTypes: { video },
+      bidId: 'defensive-video-1',
+    };
+  }
+
+  const validVideo = { w: 640, h: 480, mimes: ['video/mp4'] };
+
+  function buildData(bid, bidderRequestOverrides = {}) {
+    const request = { ...baseBidderRequest, bids: [bid], ...bidderRequestOverrides };
+    return JSON.parse(spec.buildRequests([bid], request)[0].data);
+  }
+
+  describe('video validation', function () {
+    it('rejects a video ad unit that declares a size but no mimes', function () {
+      expect(spec.isBidRequestValid(videoBid({ w: 640, h: 480 }))).to.be.false;
+    });
+
+    it('rejects a video ad unit whose mimes array is empty', function () {
+      expect(spec.isBidRequestValid(videoBid({ w: 640, h: 480, mimes: [] }))).to.be.false;
+    });
+
+    it('logs an invalid optional video param but still accepts the bid', function () {
+      const logErrorStub = sinon.stub(utils, 'logError');
+      try {
+        const bid = videoBid({ ...validVideo, protocols: 'not-an-array' });
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+        const messages = logErrorStub.getCalls().map((call) => String(call.args[0]));
+        expect(messages.some((message) => message.includes('video protocols is invalid'))).to.be.true;
+      } finally {
+        logErrorStub.restore();
+      }
+    });
+  });
+
+  describe('stored user id', function () {
+    it('discards a stored user id that is not 36 characters long', function () {
+      const localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
+      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns('not-a-uuid');
+      getGlobal().bidderSettings = { insticator: { storageAllowed: true } };
+      try {
+        const data = buildData(videoBid(validVideo));
+        expect(data.user.id).to.not.equal('not-a-uuid');
+        expect(data.user.id).to.have.lengthOf(36);
+      } finally {
+        getDataFromLocalStorageStub.restore();
+        localStorageIsEnabledStub.restore();
+        getGlobal().bidderSettings = {};
+      }
+    });
+  });
+
+  describe('coppa', function () {
+    it('sends an explicit ortb2.regs.coppa of 1', function () {
+      const data = buildData(videoBid(validVideo), { ortb2: { regs: { coppa: 1 } } });
+      expect(data.regs.coppa).to.equal(1);
+    });
+
+    it('keeps an explicit ortb2.regs.coppa of 0 rather than falling back to the global config', function () {
+      config.setConfig({ coppa: true });
+      try {
+        const data = buildData(videoBid(validVideo), { ortb2: { regs: { coppa: 0 } } });
+        expect(data.regs.coppa).to.equal(0);
+      } finally {
+        config.resetConfig();
+      }
+    });
+  });
+
+  describe('interpretResponse', function () {
+    it('returns no bids when the response id matches the request but carries no seatbid', function () {
+      const bid = videoBid(validVideo);
+      const request = { bidderRequest: { bidderRequestId, bids: [bid] } };
+      expect(spec.interpretResponse({ body: { id: bidderRequestId, cur: 'USD' } }, request)).to.have.length(0);
+    });
+  });
+
+  describe('native adm detection', function () {
+    const nativeOrtb = {
+      assets: [{ id: 1, required: 1, title: { len: 90 } }],
+      eventtrackers: [{ event: 1, methods: [1] }],
+    };
+    const nativeBid = {
+      bidder: 'insticator',
+      adUnitCode: 'defensive-native-adunit',
+      params: { adUnitId },
+      mediaTypes: { native: { ortb: nativeOrtb } },
+      nativeOrtbRequest: nativeOrtb,
+      bidId: 'defensive-native-1',
+    };
+
+    // Markup that is neither VAST nor JSON: in-banner native arrives on native ad units.
+    it('does not treat markup that is not JSON as native when no mtype is sent', function () {
+      const request = { bidderRequest: { bidderRequestId, bids: [nativeBid] } };
+      const [response] = spec.interpretResponse({
+        body: {
+          id: bidderRequestId,
+          cur: 'USD',
+          seatbid: [{
+            seat: 'seat-1',
+            bid: [{ impid: 'defensive-native-1', crid: 'cr1', price: 1.5, adm: '<div>in-banner creative</div>' }],
+          }],
+        },
+      }, request);
+      expect(response.mediaType).to.equal('banner');
+    });
+  });
+});
