@@ -782,14 +782,14 @@
       "componentType": "bidder",
       "componentName": "adspirit",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 6,
       "disclosureURL": null
     },
     {
       "componentType": "bidder",
       "componentName": "twiago",
       "aliasOf": "adspirit",
-      "gvlid": null,
+      "gvlid": 242,
       "disclosureURL": null
     },
     {
@@ -3230,6 +3230,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mcodemedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mediaConsortium",
       "aliasOf": null,
       "gvlid": 1112,
@@ -3448,13 +3455,6 @@
     {
       "componentType": "bidder",
       "componentName": "my6sense",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "mycodemedia",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
