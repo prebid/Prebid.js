@@ -12,7 +12,14 @@ module.exports = function (options = {}) {
 
   return {
     'presets': [
-      useLocal('@babel/preset-typescript'),
+      [
+        useLocal('@babel/preset-typescript'),
+        {
+          // Preserve Babel 7's behavior until all type-only imports use
+          // TypeScript's explicit `import type` syntax.
+          'onlyRemoveTypeImports': false,
+        }
+      ],
       [
         useLocal('@babel/preset-env'),
         {
