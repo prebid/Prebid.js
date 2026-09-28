@@ -19,6 +19,7 @@ This module connects publishers to Insticator exchange of demand sources through
 | Banner | Fully supported for all approved sizes.
 | Video | Fully supported.
 | Audio | Fully supported.
+| Native | Fully supported via the ORTB config (`mediaTypes.native.ortb`, Prebid.js 8.0+). Publisher-set `ext`, `api` and `battr` on `mediaTypes.native` are forwarded on `imp.native`.
 
 # Bid Parameters
 
@@ -65,6 +66,12 @@ Supplied under `params.audio`, and taking precedence over the same field on
 `maxextended`, `minbitrate`, `maxbitrate`, `delivery`, `companionad`, `api`,
 `companiontype`, `maxseq`, `feed`, `stitched`, `nvol`, `durfloors`, `ext`
 
+
+### Native
+
+Declared via the ORTB-style config on `mediaTypes.native.ortb` per the OpenRTB Dynamic
+Native Ads 1.2 spec. Prebid core validates and normalizes the config; the winning bid
+returns the native response object on `bid.native.ortb`.
 
 # Test Parameters
 
@@ -129,6 +136,38 @@ Supplied under `params.audio`, and taking precedence over the same field on
                        feed: 3,
                        stitched: 0,
                        nvol: 1
+                   }
+               },
+               bids: [
+                   {
+                       bidder: 'insticator',
+                       params: {
+                           adUnitId: 'test'
+                       }
+                   }
+               ]
+           }
+	]
+```
+
+### Native
+```
+    var adUnits = [
+           {
+               code: 'test-native-div',
+               mediaTypes: {
+                   native: {
+                       ortb: {
+                           assets: [
+                               { id: 1, required: 1, title: { len: 90 } },
+                               { id: 2, required: 1, img: { type: 3, wmin: 300, hmin: 250 } },
+                               { id: 3, required: 0, data: { type: 1, len: 25 } },
+                               { id: 4, required: 0, data: { type: 12, len: 15 } }
+                           ],
+                           eventtrackers: [
+                               { event: 1, methods: [1, 2] }
+                           ]
+                       }
                    }
                },
                bids: [
