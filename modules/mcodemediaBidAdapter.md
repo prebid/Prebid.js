@@ -24,7 +24,7 @@ MyCodeMedia bid adapter supports Banner, Video (instream and outstream) and Nati
                     },
                     bids: [
                         {
-                            bidder: 'mycodemedia',
+                            bidder: 'mcodemedia',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ MyCodeMedia bid adapter supports Banner, Video (instream and outstream) and Nati
                     },
                     bids: [
                         {
-                            bidder: 'mycodemedia',
+                            bidder: 'mcodemedia',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ MyCodeMedia bid adapter supports Banner, Video (instream and outstream) and Nati
                     },
                     bids: [
                         {
-                            bidder: 'mycodemedia',
+                            bidder: 'mcodemedia',
                             params: {
                                 placementId: 'testNative',
                             }

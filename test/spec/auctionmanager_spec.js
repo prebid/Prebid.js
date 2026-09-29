@@ -846,6 +846,95 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
+    it('does not register a listener per auction', () => {
+      const q = () => (events.get()[EVENTS.PBS_ANALYTICS]?.que ?? []).length;
+      const before = q();
+      auctionManager.createAuction({ adUnits });
+      auctionManager.createAuction({ adUnits });
+      expect(q()).to.equal(before);
+    });
+
+    it('adds nonbids emitted after the auction cache is cleared mid-flight', () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      auctionManager.clearAllAuctions();
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: ['test']
+      });
+      expect(auction.getNonBids()).to.eql(['test']);
+    });
+
+    it('adds nonbids emitted after the auction ends while it is still retained', async () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      auction.callBids();
+      await auction.end;
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: ['late']
+      });
+      expect(auction.getNonBids()).to.eql(['late']);
+    });
+
+    it('ignores PBS_ANALYTICS events naming an unknown auction, without throwing', () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      expect(() => {
+        events.emit(EVENTS.PBS_ANALYTICS, {
+          auctionId: 'no-such-auction',
+          seatnonbid: ['test']
+        });
+      }).to.not.throw();
+      expect(auction.getNonBids()).to.eql([]);
+    });
+
+    it('does not add nonbids when seatnonbid is null or absent', () => {
+      const auction = auctionManager.createAuction({ adUnits });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId()
+      });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: null
+      });
+      expect(auction.getNonBids()).to.eql([]);
+    });
+
+    it('routes nonbids to the auction they belong to when multiple auctions are live', () => {
+      const auction1 = auctionManager.createAuction({ adUnits });
+      const auction2 = auctionManager.createAuction({ adUnits });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: auction2.getAuctionId(),
+        seatnonbid: ['nonbid2']
+      });
+      expect(auction1.getNonBids()).to.eql([]);
+      expect(auction2.getNonBids()).to.eql(['nonbid2']);
+    });
+
+    it('routes nonbids to every live auction sharing the same auctionId', () => {
+      const auction1 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      const auction2 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: 'shared-auction-id',
+        seatnonbid: ['nonbid']
+      });
+      expect(auction1.getNonBids()).to.eql(['nonbid']);
+      expect(auction2.getNonBids()).to.eql(['nonbid']);
+    });
+
+    it('routes nonbids to every ended-but-retained auction sharing an auctionId', async () => {
+      const auction1 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      const auction2 = auctionManager.createAuction({ adUnits, auctionId: 'shared-auction-id' });
+      auction1.callBids();
+      auction2.callBids();
+      await auction1.end;
+      await auction2.end;
+      events.emit(EVENTS.PBS_ANALYTICS, {
+        auctionId: 'shared-auction-id',
+        seatnonbid: ['late']
+      });
+      expect(auction1.getNonBids()).to.eql(['late']);
+      expect(auction2.getNonBids()).to.eql(['late']);
+    });
+
     it('resolves .requestsDone', async () => {
       const auction = auctionManager.createAuction({ adUnits });
       stubCallAdapters.resetHistory();
@@ -940,6 +1029,37 @@ describe('auctionmanager.js', function () {
           await clock.tick(0);
           await clock.tick(20 * 1000);
           expect(auctionManager.getBidsReceived().length).to.equal(1);
+        });
+
+        it('pick up updates to minBidCacheTTL on every live auction', async () => {
+          const auction2 = auctionManager.createAuction({ adUnits });
+          indexAuctions.push(auction2);
+          auction.callBids();
+          auction2.callBids();
+          await auction.end;
+          await auction2.end;
+          clock.tick(10 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(4);
+          config.setConfig({
+            minBidCacheTTL: 20
+          });
+          await clock.tick(0);
+          await clock.tick(20 * 1000);
+          // each auction had one ttl=10 bid (now stale) and one ttl=100 bid
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
+        });
+
+        it('exposes refreshBidTTLs on the auction, and repeated calls retain the same bids as one', async () => {
+          config.setConfig({
+            minBidCacheTTL: 30
+          });
+          auction.callBids();
+          await auction.end;
+          expect(auction.refreshBidTTLs).to.be.a('function');
+          auction.refreshBidTTLs();
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
+          auction.refreshBidTTLs();
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
         });
 
         it('do not expire targeted bids when minTargetedBidCacheTTL is set', async () => {

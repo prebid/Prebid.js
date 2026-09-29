@@ -265,4 +265,63 @@ describe('Teal Bid Adaper', function () {
       expect(bidders.split(',').length).be.greaterThan(0);
     });
   });
+  describe('getUserSyncs without iframeEnabled', () => {
+    it('should return an empty array', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false }, [{ body: BID_RESPONSE }], null, null, null);
+      expect(syncs).to.deep.equal([]);
+    });
+  });
+  describe('getUserSyncs with no server responses', () => {
+    it('should not return any syncs', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null);
+      expect(syncs).to.be.undefined;
+    });
+  });
+  describe('getUserSyncs consent logic', () => {
+    const getParams = (gdprConsent, uspConsent, gppConsent) => {
+      const [{ url }] = spec.getUserSyncs({ iframeEnabled: true }, [{ body: BID_RESPONSE }], gdprConsent, uspConsent, gppConsent);
+      return parseUrl(url).search;
+    };
+    it('should default gdpr to 0 and omit gdpr_consent when no gdprConsent is passed', () => {
+      const params = getParams(null, null, null);
+      expect(params.gdpr).equal('0');
+      expect(params).to.not.have.property('gdpr_consent');
+    });
+    it('should set gdpr to 1 and include gdpr_consent when gdprApplies is true', () => {
+      const gdprConsent = { gdprApplies: true, consentString: 'GDPR_CONSENT_STRING' };
+      const params = getParams(gdprConsent, null, null);
+      expect(params.gdpr).equal('1');
+      expect(params.gdpr_consent).equal('GDPR_CONSENT_STRING');
+    });
+    it('should set gdpr to 0 when gdprApplies is false', () => {
+      const gdprConsent = { gdprApplies: false, consentString: 'GDPR_CONSENT_STRING' };
+      const params = getParams(gdprConsent, null, null);
+      expect(params.gdpr).equal('0');
+      expect(params.gdpr_consent).equal('GDPR_CONSENT_STRING');
+    });
+    it('should include us_privacy when uspConsent is passed', () => {
+      const params = getParams(null, '1YNY', null);
+      expect(params.us_privacy).equal('1YNY');
+    });
+    it('should omit us_privacy when uspConsent is not passed', () => {
+      const params = getParams(null, null, null);
+      expect(params).to.not.have.property('us_privacy');
+    });
+    it('should include gpp and gpp_sid when gppConsent has a gppString', () => {
+      const gppConsent = { gppString: 'GPP_STRING', applicableSections: [7, 8] };
+      const params = getParams(null, null, gppConsent);
+      expect(params.gpp).equal('GPP_STRING');
+      expect(params.gpp_sid).equal('7,8');
+    });
+    it('should omit gpp and gpp_sid when gppConsent has no gppString', () => {
+      const params = getParams(null, null, { gppString: undefined, applicableSections: [7] });
+      expect(params).to.not.have.property('gpp');
+      expect(params).to.not.have.property('gpp_sid');
+    });
+    it('should omit gpp and gpp_sid when gppConsent is not passed', () => {
+      const params = getParams(null, null, null);
+      expect(params).to.not.have.property('gpp');
+      expect(params).to.not.have.property('gpp_sid');
+    });
+  });
 });

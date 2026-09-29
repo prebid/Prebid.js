@@ -1265,7 +1265,7 @@ describe('Unit: Prebid Module', function () {
 
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
-      triggerPixelStub = sinon.stub(utils.internal, 'triggerPixel');
+      triggerPixelStub = sinon.stub(utils, 'politeTriggerPixel');
     });
 
     afterEach(function () {

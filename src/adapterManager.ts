@@ -9,7 +9,6 @@ import {
   getUniqueIdentifierStr,
   getUserConfiguredParams,
   groupBy,
-  internal,
   isArray,
   isPlainObject,
   isValidMediaTypes,
@@ -18,6 +17,7 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
+  politeTriggerPixel,
   shuffle,
   timestamp,
   uniques,
@@ -1005,7 +1005,7 @@ const adapterManager = {
       if (!BILLED.has(bid)) {
         BILLED.add(bid);
         (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_IMPRESSION]?.[TRACKER_METHOD_IMG] || [])
-          .forEach((url) => internal.triggerPixel(url));
+          .forEach((url) => politeTriggerPixel(url));
         tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
       }
     };

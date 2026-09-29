@@ -19,7 +19,7 @@
   },
   "SafariNative": {
     "wdioName": "safari",
-    "runsOn": "macos-26",
+    "runsOn": "macos-latest",
     "bsName": "safari"
   },
   "FirefoxHeadless": {
