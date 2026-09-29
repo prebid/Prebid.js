@@ -1,4 +1,4 @@
-import { deepAccess, logError, mergeDeep, logWarn } from '../src/utils.js';
+import { deepAccess, logError, mergeDeep, logWarn, isPlainObject } from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -180,11 +180,12 @@ export const spec = {
       }
     }
 
-    if (effectiveGdprApplies) {
-      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', effectiveGdprApplies);
+    // `tryAppendQueryString` drops falsy values, so stringify to preserve an explicit `gdpr=false`
+    if (typeof effectiveGdprApplies === 'boolean') {
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', effectiveGdprApplies.toString());
     }
 
-    if (effectiveConsentString !== null) {
+    if (effectiveConsentString != null) {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'cmp_cs', effectiveConsentString);
     }
 
@@ -398,8 +399,9 @@ function parseNativeAd(bidRequest, bid) {
     return null;
   }
 
-const parsedAd = JSON.parse(trimmedAd);
-    return parsedAd && Array.isArray(parsedAd.assets) ? parsedAd : null;
+  try {
+    const parsedAd = JSON.parse(trimmedAd);
+    return isPlainObject(parsedAd) && Array.isArray(parsedAd.assets) ? parsedAd : null;
   } catch (e) {
     logError('Triplelift: error parsing native ad JSON: ', e);
     return null;
