@@ -2,6 +2,8 @@ import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule/index.js';
 import { EVENTS } from 'src/constants.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { stubAuctionIndex } from '../../../helpers/indexStub.js';
 
 let ortbVideoMock;
 let ortbContentMock;
@@ -357,10 +359,37 @@ describe('Prebid Video', function () {
       emit: sinon.spy()
     };
 
-    it('should ask Impression Verifier to track bid on Bid Adjustment', function () {
+    it('should use the cached Impression Verifier once cache is configured after init', function () {
+      let cacheConfigCb;
+      const getConfig = (topic, cb) => {
+        if (topic === 'cache' && cb) {
+          cacheConfigCb = cb;
+        }
+      };
+      const cachedVerifier = { trackBid: sinon.spy(), getBidIdentifiers: sinon.spy() };
+      const verifierFactory = sinon.spy(isCacheUsed => isCacheUsed ? cachedVerifier : videoImpressionVerifierMock);
+      const bid = {};
+      pbVideoFactory(null, getConfig, null, null, pbEvents, null, null, verifierFactory);
+
+      cacheConfigCb({ cache: { url: 'https://cache.example.com' } });
+      bidAdjustmentCb(bid);
+
+      expect(verifierFactory.lastCall.args[0]).to.be.true;
+      expect(cachedVerifier.trackBid.calledOnce).to.be.true;
+      expect(videoImpressionVerifierMock.trackBid.called).to.be.false;
+    });
+
+    it('should ask Impression Verifier to track bid with its ad unit on Bid Adjustment', function () {
+      const adUnit = { adUnitId: 'au1', code: 'u1', video: { adServer: { tracking: {} } } };
+      const bid = { adUnitId: 'au1', adUnitCode: 'u1' };
+      const indexStub = sinon.stub(auctionManager, 'index').get(() => stubAuctionIndex({ adUnits: [adUnit] }));
       pbVideoFactory(null, null, null, null, pbEvents);
-      bidAdjustmentCb();
+
+      bidAdjustmentCb(bid);
+      indexStub.restore();
+
       expect(videoImpressionVerifierMock.trackBid.calledOnce).to.be.true;
+      expect(videoImpressionVerifierMock.trackBid.calledWith(bid, adUnit)).to.be.true;
     });
 
     it('should trigger video bid impression when the bid matched', function () {

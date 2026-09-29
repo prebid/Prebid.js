@@ -93,8 +93,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
   let videoImpressionVerifier;
 
   function init() {
-    const cache = getConfig('cache');
-    videoImpressionVerifier = videoImpressionVerifierFactory(!!cache);
+    videoImpressionVerifier = videoImpressionVerifierFactory(!!getConfig('cache'));
+    getConfig('cache', ({ cache }) => {
+      videoImpressionVerifier = videoImpressionVerifierFactory(!!cache);
+    });
     getConfig(videoKey, ({ video }) => {
       video.providers.forEach(provider => {
         const divId = provider.divId;
@@ -117,7 +119,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     requestBids.before(beforeBidsRequested, 40);
 
     pbEvents.on(EVENTS.BID_ADJUSTMENT, function (bid) {
-      videoImpressionVerifier.trackBid(bid);
+      videoImpressionVerifier.trackBid(bid, auctionManager.index.getAdUnit(bid));
     });
 
     pbEvents.on(getExternalVideoEventName(AD_IMPRESSION), function (payload) {
