@@ -2467,5 +2467,17 @@ describe('triplelift oRTB bid adapter', function () {
       const result = spec.getUserSyncs(syncOptions, null, gdprConsent, null, gppConsent);
       expect(result[0].url).to.equal(expectedGppSyncUrl);
     });
+
+    it('sends gdpr=false when gdprApplies is explicitly false', function() {
+      const syncOptions = {
+        iframeEnabled: true
+      };
+      const gdprConsent = {
+        gdprApplies: false,
+        consentString: GDPR_CONSENT_STR
+      };
+      const result = spec.getUserSyncs(syncOptions, null, gdprConsent);
+      expect(result[0].url).to.equal('https://eb2.3lift.com/sync?gdpr=false&cmp_cs=' + GDPR_CONSENT_STR + '&');
+    });
   });
 });
