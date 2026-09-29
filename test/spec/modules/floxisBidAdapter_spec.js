@@ -212,6 +212,23 @@ describe('floxisBidAdapter', function () {
       expect(imp.secure).to.equal(1);
     });
 
+    it('should set imp.tagid from adUnitCode', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      expect(requests[0].data.imp[0].tagid).to.equal('adunit-banner');
+    });
+
+    it('should keep a publisher-supplied ortb2Imp.tagid', function () {
+      const bidWithTagid = { ...validBannerBid, ortb2Imp: { tagid: 'publisher-placement-1' } };
+      const requests = spec.buildRequests([bidWithTagid], bidderRequest);
+      expect(requests[0].data.imp[0].tagid).to.equal('publisher-placement-1');
+    });
+
+    it('should fall back to adUnitCode when ortb2Imp.tagid is empty', function () {
+      const bidWithEmptyTagid = { ...validBannerBid, ortb2Imp: { tagid: '' } };
+      const requests = spec.buildRequests([bidWithEmptyTagid], bidderRequest);
+      expect(requests[0].data.imp[0].tagid).to.equal('adunit-banner');
+    });
+
     if (FEATURES.VIDEO) {
       it('should build video imp correctly', function () {
         const requests = spec.buildRequests([validVideoBid], bidderRequest);

@@ -167,6 +167,11 @@ const CONVERTER = ortbConverter({
     const imp = buildImp(bidRequest, context);
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
 
+    // Placement identity for SSP-side reporting; ortb2Imp.tagid (already merged in by buildImp) wins.
+    if (!imp.tagid && bidRequest.adUnitCode) {
+      imp.tagid = bidRequest.adUnitCode;
+    }
+
     // The priceFloors processor already sets imp.bidfloor when the module is active; only fill a
     // floor here when it left none — from getFloor (ignoring 0, which would clobber an FPD floor)
     // or a static params.bidFloor fallback for bundles without the floors module.

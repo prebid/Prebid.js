@@ -28,7 +28,7 @@ import { type Metrics, useMetrics } from './utils/perfMetrics.js';
 import { adjustCpm } from './utils/cpm.js';
 import { getGlobal } from './prebidGlobal.js';
 import { ttlCollection } from './utils/ttlCollection.js';
-import { getEffectiveMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
+import { getEffectiveMinBidCacheTTL } from './bidTTL.js';
 import type { Bid, BidResponse } from "./bidfactory.ts";
 import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
 import type { TargetingMap } from "./targeting.ts";
@@ -216,13 +216,11 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
   let _auctionStatus: AuctionStatus;
   let _nonBids = [];
 
-  onMinBidCacheTTLChange(() => _bidsReceived.refresh());
-
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
   function addBidReceived(bid) { _bidsReceived.add(bid); }
   function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
-  function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
+  function addSeatNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
 
   function getProperties() {
     return {
@@ -446,16 +444,11 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     _bidsReceived.refresh();
   }
 
-  events.on(EVENTS.PBS_ANALYTICS, (event) => {
-    if (event.auctionId === _auctionId && event.seatnonbid != null) {
-      addNonBids(event.seatnonbid);
-    }
-  });
-
   return {
     addBidReceived,
     addBidRejected,
     addNoBid,
+    addSeatNonBids,
     callBids,
     addWinningBid,
     setBidTargeting,
@@ -473,6 +466,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     getNonBids: () => _nonBids,
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
+    refreshBidTTLs: () => _bidsReceived.refresh(),
     end: done.promise,
     requestsDone: requestsDone.promise,
     getProperties

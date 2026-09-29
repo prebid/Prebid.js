@@ -16,8 +16,8 @@ const fs = require('fs');
 const path = require('path');
 const {Transform, PassThrough} = require('node:stream');
 const mergeStream = require('merge-stream');
-const {argv} = require('yargs');
 const helpers = require('./gulpHelpers.js');
+const argv = helpers.argv;
 const PluginError = require('plugin-error');
 
 const PLUGIN = 'gulp.cache';

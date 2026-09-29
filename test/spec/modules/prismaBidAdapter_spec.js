@@ -229,7 +229,7 @@ describe('Prisma bid adapter tests', function () {
 
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.eql('prismadirect');
+    expect(spec.aliases[0]).to.eql({ code: 'prismadirect', gvlid: 965 });
   });
   it('Verifies if bid request valid', function () {
     expect(spec.isBidRequestValid(DISPLAY_BID_REQUEST[0])).to.equal(true);

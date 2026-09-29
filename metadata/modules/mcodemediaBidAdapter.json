@@ -5,7 +5,7 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "mycodemedia",
+      "componentName": "mcodemedia",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null

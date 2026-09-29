@@ -114,6 +114,13 @@
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ppcbuzz",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }
