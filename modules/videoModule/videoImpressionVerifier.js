@@ -15,6 +15,7 @@ export const UUID_MARKER = PB_PREFIX + 'uuid';
 /**
  * @function VideoImpressionVerifier#trackBid
  * @param {Object} bid - Bid that should be tracked.
+ * @param {Object} [adUnit] - Ad Unit for which the bid was made; its video.adServer.tracking config is applied when present.
  * @return {String} - Identifier for the bid being tracked.
  */
 
@@ -82,18 +83,15 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const superGetBidIdentifiers = verifier.getBidIdentifiers;
   const vastXmlEditor = vastXmlEditor_;
 
-  verifier.trackBid = function (bid, globalAdUnits) {
+  verifier.trackBid = function (bid, adUnit) {
     const adIdOverride = superTrackBid(bid);
-    let { vastXml, vastUrl, adId, adUnitCode } = bid;
-    const adUnit = ((globalAdUnits) || []).find(adUnit => adUnitCode === adUnit.code);
-    const videoConfig = adUnit && adUnit.video;
-    const adServerConfig = videoConfig && videoConfig.adServer;
-    const trackingConfig = adServerConfig && adServerConfig.tracking;
+    let { vastXml, vastUrl, adId } = bid;
+    const trackingConfig = adUnit?.video?.adServer?.tracking;
     let impressionUrl;
     let impressionId;
     let errorUrl;
-    const impressionTracking = trackingConfig.impression;
-    const errorTracking = trackingConfig.error;
+    const impressionTracking = trackingConfig?.impression;
+    const errorTracking = trackingConfig?.error;
 
     if (impressionTracking) {
       impressionUrl = getTrackingUrl(impressionTracking.getUrl, bid);
