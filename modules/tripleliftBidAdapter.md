@@ -12,9 +12,9 @@ Connects to Triplelift Exchange for bids.
 
 The Triplelift bid adapter supports Banner, Video and Native.
 
-## Breaking change: `parentId` is required as of Prebid.js 11.33.0
+## Breaking change: `parentId` is required as of Prebid.js 11.37.0
 
-Before 11.33.0 only `inventoryCode` was required. From 11.33.0 onward a bid without
+Before 11.33.0 only `inventoryCode` was required. From 11.37.0 onward a bid without
 `params.parentId` fails validation and is dropped before the auction, so Triplelift will
 not bid on it at all. Add `parentId` to every Triplelift bid before upgrading.
 
