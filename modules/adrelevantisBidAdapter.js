@@ -12,7 +12,6 @@ import {
   logMessage,
   logWarn
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
@@ -22,6 +21,7 @@ import { chunk } from '../libraries/chunk/chunk.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { hasUserInfo, hasAppDeviceInfo, hasAppId } from '../libraries/adrelevantisUtils/bidderUtils.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -83,7 +83,7 @@ export const spec = {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj;
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       userObj = { 'coppa': true };
     }
     if (userObjBid) {

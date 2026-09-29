@@ -25,7 +25,7 @@ var adUnits = [
                     pId: '59ac17c192832d0016683fe3',
                     bidFloor: 0.0001,
                     ext: {
-                        // custom params that were recomended to add by a partner
+                        // custom params that were recommended to add by a partner
                     }
                 }
             }

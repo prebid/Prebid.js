@@ -43,6 +43,10 @@ describe('NativeryAdapter', function () {
 
   afterEach(() => sandBox.restore());
 
+  it('declares the nat alias with Nativery\'s GVL ID', function () {
+    expect(spec.aliases).to.deep.equal([{ code: 'nat', gvlid: 1133 }]);
+  });
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');

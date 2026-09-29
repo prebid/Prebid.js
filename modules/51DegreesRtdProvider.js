@@ -16,6 +16,16 @@ const MODULE_NAME = '51Degrees';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
 const { logMessage, logWarn, logError } = prefixLog(LOG_PREFIX);
 
+// The Model Terms for Marketing, published by the Movement for an Open
+// Web, which every party sending or receiving a 51Did is bound by. They
+// are the legal basis a receiver acts under, so they are named on every
+// 51d.es eids entry rather than left for the receiver to find. The
+// document is versioned and cannot be changed once published, which is
+// what the Terms Document Locator specification asks of a terms
+// document. A publisher's own TDL is listed after this one, being the
+// more specific statement, and never in place of it.
+export const MODEL_TERMS_URL = 'https://m4ow.uk/mtm/2.txt';
+
 // ORTB device types
 const ORTB_DEVICE_TYPE = {
   UNKNOWN: 0,
@@ -416,8 +426,9 @@ const FODID_EID = {
  * atype 1, and Hashed Email is mm 3 (authenticated) atype 3. The type
  * comes from which type-specific property the cloud populated (see
  * FODID_EID). A type's license and global values share its entry,
- * license value first. ext.tdl is populated from the supplied URL on
- * every entry when present, and omitted otherwise.
+ * license value first. ext.tdl names the Model Terms for Marketing on
+ * every entry, followed by the publisher's own TDL when one is
+ * configured.
  *
  * @param {Object} fodid 51Degrees fodid object
  * @param {string} [fodid.idproblic] License-tier Probabilistic 51DiD
@@ -457,15 +468,14 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
 
   const eids = [];
   byMm.forEach((uids, mm) => {
-    const entry = { inserter: '51degrees.com', source: '51d.es', mm, uids };
-    if (tdlUrl) {
-      entry.ext = { tdl: [tdlUrl] };
-    }
-    eids.push(entry);
+    // A fresh array per entry, so a consumer that edits one entry's
+    // terms does not edit every other entry's at the same time.
+    const tdl = tdlUrl ? [MODEL_TERMS_URL, tdlUrl] : [MODEL_TERMS_URL];
+    eids.push({ inserter: '51degrees.com', source: '51d.es', mm, uids, ext: { tdl } });
   });
 
   if (!tdlUrl) {
-    logWarn('tdlUrl is not configured; emitting eids entries without ext.tdl');
+    logWarn('tdlUrl is not configured; eids entries name the Model Terms alone in ext.tdl');
   }
 
   return { user: { eids } };

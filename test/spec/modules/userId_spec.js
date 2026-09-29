@@ -1252,6 +1252,140 @@ describe('User ID', function () {
         });
       });
 
+      it('should not release the auction when a filtered refresh cancels a pending submodule', () => {
+        // A refresh filtered by `submoduleNames` cancels the in-flight init and replaces
+        // it with a chain scoped to the named submodules. Submodules it did not name may
+        // still be fetching, and the auction must keep waiting for them.
+        startInit();
+        let auctionStarted = false;
+        // `mkDelay`, not `delay`: with the real one the 10ms `auctionDelay` timer wins
+        // the race on a slow browser and releases the auction before the assertion.
+        startAuctionHook(() => {
+          auctionStarted = true;
+        }, { adUnits: [getAdUnitMock()] }, { mkDelay: delay() });
+        return clearStack().then(() => {
+          // init has passed consent by now, so `initialized` is set and the refresh
+          // takes the cancel path; mockId's callback is still outstanding.
+          getGlobal().refreshUserIds({ submoduleNames: ['someOtherModule'] });
+          return clearStack();
+        }).then(() => {
+          expect(auctionStarted).to.be.false;
+          mockIdCallback.callArg(0, { id: { MOCKID: '1111' } });
+          return clearStack();
+        }).then(() => {
+          expect(auctionStarted).to.be.true;
+        });
+      });
+
+      it('should not keep waiting on a callback the refresh superseded without a new one', () => {
+        // mockId's first init leaves a callback outstanding that never fires. An
+        // unfiltered refresh whose getId returns an id and no callback supersedes
+        // that work, so `getUserIdsAsync` must stop waiting on the abandoned one:
+        // this is the escape from a stuck initialization that a forced refresh has
+        // always provided.
+        startInit();
+        let resolved = false;
+        return clearStack().then(() => {
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+          getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(resolved).to.be.true;
+          expect(getGlobal().getUserIds()).to.deep.equal({ mid: '2222' });
+        });
+      });
+
+      it('should still escape a stuck initialization through an unfiltered refresh', () => {
+        // mockId's callback never fires. An unfiltered refresh supersedes everything,
+        // so it must not inherit that wait: this is the escape hatch a forced refresh
+        // has always provided, and only the filtered path is being changed here.
+        startInit();
+        let resolved = false;
+        return clearStack().then(() => {
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+          getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(resolved).to.be.true;
+          expect(getGlobal().getUserIds()).to.deep.equal({ mid: '2222' });
+        });
+      });
+
+      describe('with a second submodule', () => {
+        let otherIdCallback;
+        let otherIdSystem;
+        let startBoth;
+
+        beforeEach(() => {
+          otherIdCallback = sinon.stub();
+          coreStorage.setCookie('OTHERID', '', EXPIRED_COOKIE_DATE);
+          otherIdSystem = {
+            name: 'otherId',
+            decode: (value) => ({ 'oid': value['OTHERID'] }),
+            getId: sinon.stub().callsFake(() => ({ callback: otherIdCallback }))
+          };
+          startBoth = () => {
+            init(config);
+            setSubmoduleRegistry([mockIdSystem, otherIdSystem]);
+            config.setConfig({
+              userSync: {
+                auctionDelay: 10,
+                userIds: [
+                  { name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' } },
+                  { name: 'otherId', storage: { name: 'OTHERID', type: 'cookie' } }
+                ]
+              }
+            });
+          };
+        });
+
+        it('should wait for a batch started by an earlier filtered refresh', () => {
+          // Two filtered refreshes back to back. The second must not resolve while the
+          // callback the first one started is still outstanding, so the batch has to be
+          // registered when the refresh is issued rather than when its chain runs.
+          startBoth();
+          const refreshedMockCallback = sinon.stub();
+          let resolved = false;
+          return clearStack().then(() => {
+            mockIdCallback.callArg(0, { MOCKID: 'first' });
+            otherIdCallback.callArg(0, { OTHERID: 'first' });
+            return clearStack();
+          }).then(() => {
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ callback: refreshedMockCallback }));
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            getGlobal().refreshUserIds({ submoduleNames: ['mockId'] });
+            getGlobal().refreshUserIds({ submoduleNames: ['otherId'] });
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.false; // mockId's refreshed callback is still pending
+            refreshedMockCallback.callArg(0, { MOCKID: '2222' });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+
+        it('should not inherit a stuck batch that an unfiltered refresh superseded', () => {
+          // mockId never calls back. An unfiltered refresh escapes it, and a filtered
+          // refresh afterwards must not pick the abandoned batch back up.
+          startBoth();
+          let resolved = false;
+          return clearStack().then(() => {
+            otherIdCallback.callArg(0, { OTHERID: 'first' });
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            return getGlobal().refreshUserIds().then(clearStack);
+          }).then(() => {
+            getGlobal().refreshUserIds({ submoduleNames: ['otherId'] });
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+      });
+
       it('should continue the auction when init fails', (done) => {
         startInit();
         startAuctionHook(() => {
@@ -2495,6 +2629,67 @@ describe('User ID', function () {
           sinon.assert.calledOnce(mockGetId);
 
           expect(mockGetId.getCall(0).args[0].enabledStorageTypes).to.deep.equal([userIdConfig.userSync.userIds[0].storage.type]);
+        });
+      });
+    });
+
+    describe('refreshInSeconds with html5 storage and no previously stored "last" timestamp', function () {
+      let mockGetId;
+      let mockDecode;
+      let mockIdSystem;
+      const mockIdKey = 'MOCKID_HTML5';
+
+      beforeEach(function () {
+        mockGetId = sinon.stub();
+        mockDecode = sinon.stub();
+        mockIdSystem = {
+          name: 'mockIdHtml5',
+          getId: mockGetId,
+          decode: mockDecode
+        };
+
+        coreStorage.removeDataFromLocalStorage(mockIdKey);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_exp`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_last`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_cst`);
+        allConsent.reset();
+
+        init(config);
+        attachIdSystem(mockIdSystem);
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+        coreStorage.removeDataFromLocalStorage(mockIdKey);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_exp`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_last`);
+        coreStorage.removeDataFromLocalStorage(`${mockIdKey}_cst`);
+      });
+
+      it('treats a stored id with no "_last" entry as due for refresh, not as never-refreshable', function () {
+        // simulates an id that was stored before `refreshInSeconds` was configured (or otherwise
+        // never recorded a last-refresh time): the id and its expiry exist, but "_last" does not.
+        coreStorage.setDataInLocalStorage(mockIdKey, JSON.stringify({ id: '1234' }));
+        coreStorage.setDataInLocalStorage(`${mockIdKey}_exp`, new Date(Date.now() + 60000).toUTCString());
+        coreStorage.setDataInLocalStorage(`${mockIdKey}_cst`, getConsentHash());
+
+        config.setConfig({
+          userSync: {
+            userIds: [{
+              name: 'mockIdHtml5',
+              storage: {
+                name: mockIdKey,
+                type: 'html5',
+                refreshInSeconds: 30
+              }
+            }],
+            auctionDelay: 5
+          }
+        });
+
+        return runBidsHook((config) => {
+        }, { adUnits }).then(() => {
+          sinon.assert.calledOnce(mockGetId);
         });
       });
     });

@@ -34,7 +34,8 @@ const ALIASES = {
   'adastra': { area: '1', pid: '33' },
   'radiantfusion': { area: '1', pid: '455' },
   'stackup': { area: '13', pid: '469' },
-  'adnex': { area: '2', pid: '359' }
+  'adnex': { area: '2', pid: '359' },
+  'pubsmart': { area: '1', pid: '463' },
 };
 
 const BASE_URL_TEMPLATES = {
@@ -87,7 +88,10 @@ const PARTNER_ENDPOINTS = {
   },
   adnex: {
     us_east: 'https://adnex-prebid.attekmi.co/pbjs'
-  }
+  },
+  pubsmart: {
+    us_east: 'https://pubsmart-prebid.attekmi.co/pbjs'
+  },
 };
 
 // -- codespace --

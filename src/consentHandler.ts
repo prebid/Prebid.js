@@ -12,7 +12,7 @@ import type { USPConsentData } from "./types/consent/usp.d.ts";
  *
  * see https://github.com/prebid/Prebid.js/issues/8161
  */
-export const VENDORLESS_GVLID = Object.freeze({});
+export const VENDORLESS_GVLID: unique symbol = Symbol("VENDORLESS_GVLID");
 export const CONSENT_GDPR = 'gdpr';
 export const CONSENT_GPP = 'gpp';
 export const CONSENT_USP = 'usp';

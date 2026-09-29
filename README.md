@@ -17,7 +17,17 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 - [Install](#Install)
 - [Build](#Build)
 - [Run](#Run)
+- [Agent tooling](#agent-tooling)
 - [Contribute](#Contribute)
+
+## Agent tooling
+
+Agents debugging a live Prebid.js page can use the repository's
+[`prebid-chrome-devtools` skill](.agents/skills/prebid-chrome-devtools/SKILL.md).
+It explains how to enable Chrome DevTools MCP's experimental third-party tools,
+discover the Prebid.js tool group, and inspect auctions, bids, events, floors,
+and cache eligibility. Invoke it as `$prebid-chrome-devtools` in clients that
+support repository-scoped agent skills.
 
 <a name="Usage"></a>
 
@@ -395,7 +405,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](https:/
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not dead. 11.21+ removes not dead and adds not ios_saf 11.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not dead. 11.22+ adds not ios_saf 11.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

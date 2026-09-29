@@ -30,6 +30,23 @@ function getAdUnitCode(bid) {
   return bid.params?.adUnitCode || bid.adUnitCode;
 }
 
+/**
+ * Resolves the supply chain object, whichever place this Prebid version keeps it.
+ * Current versions put it in `ortb2.source.ext.schain`; older ones set `bid.schain`
+ * on each bid request.
+ *
+ * @param {BidderRequest} bidderRequest
+ * @param {EngerioBidRequest[]} validBidRequests
+ * @returns {object | undefined}
+ */
+function getSupplyChain(bidderRequest, validBidRequests) {
+  return (
+    deepAccess(bidderRequest, 'ortb2.source.ext.schain') ||
+    deepAccess(validBidRequests, '0.ortb2.source.ext.schain') ||
+    deepAccess(validBidRequests, '0.schain')
+  );
+}
+
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
@@ -108,6 +125,14 @@ export const spec = {
 
     if (userAgent) {
       bidRequest.device = mergeDeep({}, ortb2.device || {}, { ua: userAgent });
+    }
+
+    // Engerio validates the last schain node against the publisher's seller id from
+    // https://api.engerio.sk/sellers.json, so forward it explicitly rather than relying on it
+    // having come along with ortb2.
+    const schain = getSupplyChain(bidderRequest, validBidRequests);
+    if (schain) {
+      bidRequest.source = mergeDeep({}, bidRequest.source || {}, { ext: { schain } });
     }
 
     return {

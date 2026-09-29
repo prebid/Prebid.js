@@ -36,7 +36,7 @@ import {
   safeJSONParse
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { viewportIntersections } from '../libraries/percentInView/percentInView.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'adloox';
@@ -190,9 +190,11 @@ function getTargetingData(adUnitArray, config, userConsent, auction) {
       if (v) targeting[unit.code][`${ADSERVER_TARGETING_PREFIX}_${k}`] = v;
     });
 
-    const intersection = viewportIntersections.getIntersection(getAdUnitElement(unit));
-    if (intersection) {
-      const v = val(config.params.thresholds.filter(t => t <= (intersection.intersectionRatio * 100)));
+    // taken through percentInView rather than from the intersection observer directly, so that this
+    // is still reported when viewability is measured without one
+    const element = getAdUnitElement(unit);
+    if (element != null) {
+      const v = val(config.params.thresholds.filter(t => t <= percentInView(element)));
       if (v) targeting[unit.code][`${ADSERVER_TARGETING_PREFIX}_atf`] = v;
     }
   });
