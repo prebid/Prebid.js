@@ -398,9 +398,8 @@ function parseNativeAd(bidRequest, bid) {
     return null;
   }
 
-  try {
-    const parsedAd = JSON.parse(trimmedAd);
-    return parsedAd && parsedAd.assets ? parsedAd : null;
+const parsedAd = JSON.parse(trimmedAd);
+    return parsedAd && Array.isArray(parsedAd.assets) ? parsedAd : null;
   } catch (e) {
     logError('Triplelift: error parsing native ad JSON: ', e);
     return null;
