@@ -42,8 +42,8 @@ module.exports = function (config) {
           loader: 'babel-loader',
           options: {
             // Codex bot: Babel 8 no longer defaults to ES5, so keep the legacy
-            // bundle's syntax target explicit while selecting polyfills separately.
-            targets: { ie: '11' },
+            // bundle's syntax targets explicit while selecting polyfills separately.
+            targets: { ie: '11', safari: '11' },
             presets: [
               // syntax only - polyfills are handled below
               ['@babel/preset-env', {
