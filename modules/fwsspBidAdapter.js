@@ -112,8 +112,6 @@ export const spec = {
         keyValues._fw_programmatic_tid = tid;
         if (tidt) {
           keyValues._fw_programmatic_tidt = tidt;
-        } else {
-          delete keyValues._fw_programmatic_tidt;
         }
       } else {
         delete keyValues._fw_programmatic_tid;
@@ -610,10 +608,10 @@ export function getBidFloor(bid, config) {
  * Priority order for TID:
  * 1. ortb2Imp.ext.tid from bidRequest
  * 2. ortb2.source.tid from bidderRequest
- * 3. Legacy transactionId from bidRequest
  *
  * Priority order for TIDT:
  * 1. ortb2Imp.ext.tidt from bidRequest
+ * 2. keyValues params object
  *
  * @param {object} bidRequest - The bid request object
  * @param {object} bidderRequest - The bidder request object
@@ -634,14 +632,6 @@ export function extractTransactionIds(bidRequest, bidderRequest) {
     const ortb2SourceTid = deepAccess(bidderRequest, 'ortb2.source.tid');
     if (ortb2SourceTid != null) {
       tid = ortb2SourceTid;
-    }
-  }
-
-  // Priority 3: Check legacy transactionId field
-  if (tid == null) {
-    const legacyTid = deepAccess(bidRequest, 'transactionId');
-    if (legacyTid != null) {
-      tid = legacyTid;
     }
   }
 
