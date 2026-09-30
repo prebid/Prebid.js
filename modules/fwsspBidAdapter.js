@@ -611,7 +611,6 @@ export function getBidFloor(bid, config) {
  *
  * Priority order for TIDT:
  * 1. ortb2Imp.ext.tidt from bidRequest
- * 2. keyValues params object
  *
  * @param {object} bidRequest - The bid request object
  * @param {object} bidderRequest - The bidder request object
