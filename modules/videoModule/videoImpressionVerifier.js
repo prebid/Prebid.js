@@ -64,9 +64,7 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     const uuid = superTrackBid(bid);
 
     if (vastUrl) {
-      const url = new URL(vastUrl);
-      url.searchParams.append(UUID_MARKER, uuid);
-      bid.vastUrl = url.toString();
+      bid.vastUrl = appendUuidMarker(vastUrl, uuid);
     } else if (vastXml) {
       bid.vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, uuid);
     }
@@ -105,7 +103,8 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     if (vastXml) {
       vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, adIdOverride, impressionUrl, impressionId, errorUrl);
     } else if (vastUrl) {
-      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, vastUrl, impressionUrl, impressionId, errorUrl);
+      bid.vastUrl = appendUuidMarker(vastUrl, adIdOverride);
+      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, bid.vastUrl, impressionUrl, impressionId, errorUrl);
     }
 
     bid.vastXml = vastXml;
@@ -127,6 +126,18 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 
     return getUrl(bid);
   }
+}
+
+function appendUuidMarker(vastUrl, uuid) {
+  let url;
+  try {
+    url = new URL(vastUrl);
+  } catch (e) {
+    return vastUrl;
+  }
+
+  url.searchParams.append(UUID_MARKER, uuid);
+  return url.toString();
 }
 
 export function baseImpressionVerifier(bidTracker_) {
