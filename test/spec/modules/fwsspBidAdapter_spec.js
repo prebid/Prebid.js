@@ -1647,5 +1647,31 @@ describe('fwsspBidAdapter', () => {
       expect(payload).to.include('_fw_programmatic_tid=publisher-custom-tid-via-ortb2');
       expect(payload).to.include('_fw_programmatic_tidt=2');
     });
+
+    it('should preserve TIDT from adRequestKeyValues when TID not present', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:profile',
+          'siteSectionId': 'test-site-section',
+          'adRequestKeyValues': {
+            '_fw_programmatic_tidt': '2'
+          }
+        }
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_programmatic_tidt=2');
+    });
   });
 });
