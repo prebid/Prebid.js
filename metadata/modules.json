@@ -782,14 +782,14 @@
       "componentType": "bidder",
       "componentName": "adspirit",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 6,
       "disclosureURL": null
     },
     {
       "componentType": "bidder",
       "componentName": "twiago",
       "aliasOf": "adspirit",
-      "gvlid": null,
+      "gvlid": 242,
       "disclosureURL": null
     },
     {
@@ -3230,6 +3230,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mcodemedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mediaConsortium",
       "aliasOf": null,
       "gvlid": 1112,
@@ -3454,13 +3461,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "mycodemedia",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "mytarget",
       "aliasOf": null,
       "gvlid": null,
@@ -3499,6 +3499,13 @@
       "componentName": "newspassid",
       "aliasOf": null,
       "gvlid": 1317,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "nexbid",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3884,6 +3891,13 @@
       "componentName": "panxo",
       "aliasOf": null,
       "gvlid": 1527,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "peak226",
+      "aliasOf": null,
+      "gvlid": 1202,
       "disclosureURL": null
     },
     {
@@ -4679,7 +4693,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "ppcbuzz",
+      "componentName": "pubsmart",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
@@ -4996,7 +5010,7 @@
       "componentType": "bidder",
       "componentName": "trafficgate",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1272,
       "disclosureURL": null
     },
     {

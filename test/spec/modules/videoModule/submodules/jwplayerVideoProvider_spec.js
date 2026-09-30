@@ -377,7 +377,7 @@ describe('JWPlayerProvider', function () {
       provider.offEvent(AD_IMPRESSION, callback);
       expect(offSpy.calledOnce).to.be.true;
       const eventName = offSpy.args[0][0];
-      expect(eventName).to.be.equal('adViewableImpression');
+      expect(eventName).to.be.equal('adImpression');
     });
 
     it('should handle setup complete callbacks', function () {
@@ -526,7 +526,7 @@ describe('JWPlayerProvider', function () {
       provider.onEvent(AD_STARTED, callback, {});
 
       expect(onSpy.calledOnce).to.be.true;
-      expect(onSpy.args[0][0]).to.equal(AD_IMPRESSION); // AD_STARTED maps to AD_IMPRESSION
+      expect(onSpy.args[0][0]).to.equal(AD_STARTED);
 
       const eventHandler = onSpy.args[0][1];
 
@@ -569,7 +569,7 @@ describe('JWPlayerProvider', function () {
       provider.onEvent(AD_IMPRESSION, callback, {});
 
       expect(onSpy.calledOnce).to.be.true;
-      expect(onSpy.args[0][0]).to.equal('adViewableImpression'); // AD_IMPRESSION maps to 'adViewableImpression'
+      expect(onSpy.args[0][0]).to.equal('adImpression');
 
       const eventHandler = onSpy.args[0][1];
 
@@ -2721,7 +2721,7 @@ describe('utils', function () {
     it('should map known events', function () {
       expect(getJwEvent(SETUP_COMPLETE)).to.equal('ready');
       expect(getJwEvent(SEEK_END)).to.equal('seeked');
-      expect(getJwEvent(AD_STARTED)).to.equal(AD_IMPRESSION);
+      expect(getJwEvent(AD_STARTED)).to.equal('adStarted');
     });
 
     it('should return event name when not mapped', function () {
@@ -2731,7 +2731,7 @@ describe('utils', function () {
     it('should map all known event mappings', function () {
       expect(getJwEvent(SETUP_FAILED)).to.equal('setupError');
       expect(getJwEvent(DESTROYED)).to.equal('remove');
-      expect(getJwEvent(AD_IMPRESSION)).to.equal('adViewableImpression');
+      expect(getJwEvent(AD_IMPRESSION)).to.equal('adImpression');
       expect(getJwEvent(PLAYBACK_REQUEST)).to.equal('playAttempt');
       expect(getJwEvent(AUTOSTART_BLOCKED)).to.equal('autostartNotAllowed');
       expect(getJwEvent(CONTENT_LOADED)).to.equal('playlistItem');

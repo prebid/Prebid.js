@@ -566,6 +566,55 @@ describe('bidderFactory', () => {
       });
     });
 
+    describe('parsing an untrusted response body', function () {
+      let ajaxStub, responseBody;
+
+      function parsedBody() {
+        const bidder = newBidder(spec);
+        spec.isBidRequestValid.returns(true);
+        spec.buildRequests.returns({ method: 'POST', url: 'test.url.com', data: {} });
+        spec.getUserSyncs.returns([]);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        expect(spec.interpretResponse.calledOnce).to.equal(true);
+        return spec.interpretResponse.firstCall.args[0].body;
+      }
+
+      beforeEach(function () {
+        responseBody = null;
+        ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
+          callbacks.success(responseBody, { getResponseHeader: sinon.stub() });
+        });
+      });
+
+      afterEach(function () {
+        ajaxStub.restore();
+        delete Object.prototype.polluted;
+      });
+
+      // What the guard removes, and that it leaves data alone, is covered where it is defined,
+      // in test/spec/unit/utils/untrustedJson_spec.js. Only the first case below detects the
+      // guard's absence; the other two hold with a plain JSON.parse too, and are here to pin the
+      // way this call site would fail if the guard ever threw - the assignment would not complete
+      // and the adapter would be handed the raw body as text.
+      it('routes the response body through the guard', function () {
+        responseBody = '{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}';
+
+        expect(Object.keys(parsedBody().seatbid[0].bid[0])).to.deep.equal(['impid']);
+      });
+
+      it('hands a hostile response to the adapter parsed, not as raw text', function () {
+        responseBody = '{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}';
+
+        expect(parsedBody()).to.be.an('object');
+      });
+
+      it('leaves a body that is not JSON alone', function () {
+        responseBody = 'not json at all';
+
+        expect(parsedBody()).to.equal('not json at all');
+      });
+    });
+
     describe('when the ajax call succeeds', function () {
       let ajaxStub;
       let userSyncStub;

@@ -1,4 +1,5 @@
 import { isPlainObject, logWarn, mergeDeep } from '../../../src/utils.js';
+import { parseUntrustedJSON } from '../../../src/utils/untrustedJson.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
 
 export function fillNativeImp(imp, bidRequest, context) {
@@ -21,7 +22,10 @@ export function fillNativeResponse(bidResponse, bid) {
   if (bidResponse.mediaType === NATIVE) {
     let ortb;
     if (typeof bid.adm === 'string') {
-      ortb = JSON.parse(bid.adm);
+      // `adm` travels through the response body as a string, so the guard applied when that body
+      // was parsed could not see inside it. Parsing it produces a second object from the same
+      // untrusted source, which an adapter or a `bidResponse` override may merge.
+      ortb = parseUntrustedJSON(bid.adm);
     } else {
       ortb = bid.adm;
     }
