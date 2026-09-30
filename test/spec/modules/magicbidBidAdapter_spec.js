@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/magicbidBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { FEATURES } from 'src/features.js';
 
 const PUBLISHER_HOST = 'ads-2j0kac.rtb-magicbid.ai';
 
