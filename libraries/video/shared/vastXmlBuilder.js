@@ -12,13 +12,13 @@ export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, er
     wrapperBody += getImpressionNode(impressionUrl, impressionId);
   }
 
-  wrapperBody += (bidderVastTrackers?.impression || []).map(url => getImpressionNode(url)).join('');
+  wrapperBody += Array.from(bidderVastTrackers?.impression || [], url => getImpressionNode(url)).join('');
 
   if (errorUrl) {
     wrapperBody += getErrorNode(errorUrl);
   }
 
-  wrapperBody += (bidderVastTrackers?.error || []).map(url => getErrorNode(url)).join('');
+  wrapperBody += Array.from(bidderVastTrackers?.error || [], url => getErrorNode(url)).join('');
 
   if (bidderVastTrackers?.trackingEvents?.length) {
     wrapperBody += getLinearTrackingCreativesNode(bidderVastTrackers.trackingEvents);
@@ -56,7 +56,7 @@ export function getErrorNode(pingUrl) {
 }
 
 export function getLinearTrackingCreativesNode(trackingEvents) {
-  const trackingNodes = trackingEvents.map(({ event, url }) => getTrackingNode(event, url)).join('');
+  const trackingNodes = Array.from(trackingEvents, ({ event, url }) => getTrackingNode(event, url)).join('');
   const linearNode = getNode('Linear', getNode('TrackingEvents', trackingNodes));
   return getNode('Creatives', getNode('Creative', linearNode));
 }
