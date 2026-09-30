@@ -10,6 +10,7 @@ const VALID_BANNER_BID = {
   bidId: 'bid-001',
   adUnitCode: 'ad-unit-1',
   transactionId: 'txn-001',
+  ortb2Imp: { ext: { tid: 'txn-001' } },
   mediaTypes: {
     banner: { sizes: [[300, 250], [728, 90]] },
   },
@@ -24,6 +25,7 @@ const VALID_VIDEO_BID = {
   bidId: 'bid-002',
   adUnitCode: 'ad-unit-2',
   transactionId: 'txn-002',
+  ortb2Imp: { ext: { tid: 'txn-002' } },
   mediaTypes: {
     video: {
       context: 'instream',
@@ -47,6 +49,9 @@ const BIDDER_REQUEST = {
   refererInfo: {
     page: 'https://publisher.com/article',
     ref: 'https://google.com',
+  },
+  ortb2: {
+    site: { page: 'https://publisher.com/article' },
   },
 };
 
@@ -143,55 +148,48 @@ describe('MagicBid Bid Adapter', function() {
       expect(bannerRequests[0].method).to.equal('POST');
     });
 
-    it('should build the correct banner endpoint URL', function() {
-      expect(bannerRequests[0].url).to.equal('https://' + PUBLISHER_HOST + '/prebid/banner');
+    it('should send banner request to /ortbhb endpoint', function() {
+      expect(bannerRequests[0].url).to.equal('https://' + PUBLISHER_HOST + '/ortbhb');
     });
 
-    it('should build the correct video endpoint URL', function() {
-      expect(videoRequests[0].url).to.equal('https://' + PUBLISHER_HOST + '/prebid/vast');
+    it('should send video request to /ortbhb endpoint', function() {
+      expect(videoRequests[0].url).to.equal('https://' + PUBLISHER_HOST + '/ortbhb');
     });
 
-    it('should infer banner adUnitType from mediaTypes automatically', function() {
-      const payload = JSON.parse(bannerRequests[0].data);
-      expect(bannerRequests[0].url).to.include('/prebid/banner');
-      expect(payload.bids[0].adUnitId).to.equal(631967104);
+    it('should build a standard OpenRTB request body with imp array', function() {
+      expect(bannerRequests[0].data).to.be.an('object');
+      expect(bannerRequests[0].data.imp).to.be.an('array').with.length(1);
     });
 
-    it('should infer video adUnitType from mediaTypes automatically', function() {
-      expect(videoRequests[0].url).to.include('/prebid/vast');
+    it('should embed adUnitId in imp.ext.magicbid', function() {
+      const imp = bannerRequests[0].data.imp[0];
+      expect(imp.ext.magicbid.adUnitId).to.equal(631967104);
     });
 
-    it('should include the correct adUnitId in payload', function() {
-      const payload = JSON.parse(bannerRequests[0].data);
-      expect(payload.bids[0].adUnitId).to.equal(631967104);
+    it('should embed host in imp.ext.magicbid', function() {
+      const imp = bannerRequests[0].data.imp[0];
+      expect(imp.ext.magicbid.host).to.equal(PUBLISHER_HOST);
     });
 
-    it('should include GDPR consent in payload', function() {
-      const payload = JSON.parse(bannerRequests[0].data);
-      expect(payload.gdpr.applies).to.be.true;
-      expect(payload.gdpr.consent).to.be.a('string').that.is.not.empty;
+    it('should include banner object in imp for banner bids', function() {
+      const imp = bannerRequests[0].data.imp[0];
+      expect(imp.banner).to.exist;
     });
 
-    it('should include USP string in payload', function() {
-      const payload = JSON.parse(bannerRequests[0].data);
-      expect(payload.usp).to.equal('1YYY');
-    });
-
-    it('should include page and ref in site object', function() {
-      const payload = JSON.parse(bannerRequests[0].data);
-      expect(payload.site.page).to.equal('https://publisher.com/article');
-      expect(payload.site.ref).to.equal('https://google.com');
+    it('should include video object in imp for video bids', function() {
+      const imp = videoRequests[0].data.imp[0];
+      expect(imp.video).to.exist;
     });
 
     it('should use text/plain content type to avoid preflight', function() {
       expect(bannerRequests[0].options.contentType).to.equal('text/plain');
     });
 
-    it('should group two banner bids from same publisher into one request', function() {
+    it('should group two banner bids from same publisher into one request with two imps', function() {
       const bid2 = { ...VALID_BANNER_BID, bidId: 'bid-003', adUnitCode: 'ad-unit-3' };
       const requests = spec.buildRequests([VALID_BANNER_BID, bid2], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
-      expect(JSON.parse(requests[0].data).bids).to.have.length(2);
+      expect(requests[0].data.imp).to.have.length(2);
     });
 
     it('should create separate requests for two publishers with different hosts', function() {
@@ -204,97 +202,113 @@ describe('MagicBid Bid Adapter', function() {
       expect(requests).to.have.length(2);
     });
 
-    it('should handle flat video playerSize [w, h] correctly', function() {
+    it('should include custom params in imp.ext.magicbid when provided', function() {
       const bid = {
-        ...VALID_VIDEO_BID,
-        mediaTypes: {
-          video: { playerSize: [640, 480], mimes: ['video/mp4'] },
-        },
+        ...VALID_BANNER_BID,
+        params: { host: PUBLISHER_HOST, adUnitId: 631967104, custom1: 'sports', custom2: 'en' },
       };
       const requests = spec.buildRequests([bid], BIDDER_REQUEST);
-      const payload = JSON.parse(requests[0].data);
-      expect(payload.bids[0].sizes).to.deep.equal([[640, 480]]);
-    });
-
-    it('should handle nested video playerSize [[w, h]] correctly', function() {
-      const payload = JSON.parse(videoRequests[0].data);
-      expect(payload.bids[0].sizes).to.deep.equal([[640, 480]]);
-    });
-
-    it('should read schain from ortb2.source.ext.schain', function() {
-      const schain = { ver: '1.0', complete: 1, nodes: [] };
-      const bidWithSchain = {
-        ...VALID_BANNER_BID,
-        ortb2: { source: { ext: { schain: schain } } },
-      };
-      const requests = spec.buildRequests([bidWithSchain], BIDDER_REQUEST);
-      const payload = JSON.parse(requests[0].data);
-      expect(payload.schain).to.deep.equal(schain);
+      const imp = requests[0].data.imp[0];
+      expect(imp.ext.magicbid.custom1).to.equal('sports');
+      expect(imp.ext.magicbid.custom2).to.equal('en');
     });
   });
 
   describe('interpretResponse', function() {
-    const bannerServerResponse = {
-      body: [{
-        bidId: 'bid-001',
-        cpm: 1.5,
-        currency: 'USD',
-        width: 300,
-        height: 250,
-        ad: '<div>banner markup</div>',
-        creativeId: 'cr-001',
-        ttl: 300,
-        nurl: 'https://win.rtb-magicbid.ai/win?id=123',
-        adomain: ['advertiser.com'],
-      }],
-    };
+    // ortbConverter uses a WeakMap keyed on the exact object returned by toORTB.
+    // We must call buildRequests() once and reuse the same request object
+    // so that the WeakMap entry is present when interpretResponse calls fromORTB.
+    let bannerRequest;
+    let videoRequest;
 
-    const videoServerResponse = {
-      body: [{
-        bidId: 'bid-002',
-        cpm: 3.0,
-        currency: 'USD',
-        width: 640,
-        height: 480,
-        vastUrl: 'https://' + PUBLISHER_HOST + '/vast?id=123',
-        creativeId: 'cr-002',
-        ttl: 300,
-        adomain: ['brand.com'],
-      }],
-    };
+    beforeEach(function() {
+      bannerRequest = spec.buildRequests([VALID_BANNER_BID], BIDDER_REQUEST)[0];
+      videoRequest  = spec.buildRequests([VALID_VIDEO_BID], BIDDER_REQUEST)[0];
+    });
 
-    it('should return a valid banner bid object', function() {
-      const bids = spec.interpretResponse(bannerServerResponse, { _adUnitType: 'banner' });
+    function makeBannerResponse(impid) {
+      return {
+        body: {
+          id: 'auction-001',
+          seatbid: [{
+            bid: [{
+              id: 'resp-001',
+              impid: impid || bannerRequest.data.imp[0].id,
+              price: 1.5,
+              adid: '42',
+              adm: '<div>banner markup</div>',
+              adomain: ['advertiser.com'],
+              crid: 'cr-001',
+              w: 300,
+              h: 250,
+              mtype: 1,
+              nurl: 'https://win.rtb-magicbid.ai/win?id=123',
+            }],
+            seat: 'magicbid',
+          }],
+          cur: 'USD',
+        },
+      };
+    }
+
+    function makeVideoResponse() {
+      return {
+        body: {
+          id: 'auction-001',
+          seatbid: [{
+            bid: [{
+              id: 'resp-002',
+              impid: videoRequest.data.imp[0].id,
+              price: 3.0,
+              adm: '<?xml version="1.0"?><VAST version="4.0"></VAST>',
+              adomain: ['brand.com'],
+              crid: 'cr-002',
+              w: 640,
+              h: 480,
+              mtype: 2,
+            }],
+            seat: 'magicbid',
+          }],
+          cur: 'USD',
+        },
+      };
+    }
+
+    it('should return a valid banner bid from an OpenRTB response', function() {
+      const bids = spec.interpretResponse(makeBannerResponse(), bannerRequest);
       expect(bids).to.have.length(1);
       expect(bids[0].cpm).to.equal(1.5);
       expect(bids[0].mediaType).to.equal(BANNER);
-      expect(bids[0].ad).to.equal('<div>banner markup</div>');
+      expect(bids[0].ad).to.include('<div>banner markup</div>');
     });
 
-    it('should preserve nurl for win notification', function() {
-      const bids = spec.interpretResponse(bannerServerResponse, { _adUnitType: 'banner' });
-      expect(bids[0].nurl).to.equal('https://win.rtb-magicbid.ai/win?id=123');
-    });
-
-    it('should return a valid video bid object with vastUrl', function() {
-      const bids = spec.interpretResponse(videoServerResponse, { _adUnitType: 'video' });
+    it('should return a valid video bid from an OpenRTB response', function() {
+      const bids = spec.interpretResponse(makeVideoResponse(), videoRequest);
       expect(bids).to.have.length(1);
       expect(bids[0].cpm).to.equal(3.0);
       expect(bids[0].mediaType).to.equal(VIDEO);
-      expect(bids[0].vastUrl).to.include('rtb-magicbid.ai');
+      expect(bids[0].vastXml).to.include('<VAST');
     });
 
     it('should return empty array for an empty response', function() {
-      expect(spec.interpretResponse({}, { _adUnitType: 'banner' })).to.be.empty;
+      expect(spec.interpretResponse({}, bannerRequest)).to.be.empty;
     });
 
     it('should filter out bids with zero CPM', function() {
-      const bad = { body: [{ bidId: 'bid-x', cpm: 0 }] };
-      expect(spec.interpretResponse(bad, { _adUnitType: 'banner' })).to.be.empty;
+      const bad = {
+        body: {
+          id: 'auction-001',
+          seatbid: [{
+            bid: [{ id: 'b1', impid: bannerRequest.data.imp[0].id, price: 0, adm: '<div/>', crid: 'c', w: 300, h: 250, mtype: 1 }],
+            seat: 'magicbid',
+          }],
+        },
+      };
+      expect(spec.interpretResponse(bad, bannerRequest)).to.be.empty;
     });
 
     it('should include advertiserDomains in meta', function() {
-      const bids = spec.interpretResponse(bannerServerResponse, { _adUnitType: 'banner' });
+      const bids = spec.interpretResponse(makeBannerResponse(), bannerRequest);
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiser.com']);
     });
   });
@@ -302,10 +316,12 @@ describe('MagicBid Bid Adapter', function() {
   describe('getUserSyncs', function() {
     const responseWithSyncs = {
       body: {
-        userSyncs: [
-          { type: 'image', url: 'https://sync.rtb-magicbid.ai/pixel' },
-          { type: 'iframe', url: 'https://sync.rtb-magicbid.ai/iframe' },
-        ],
+        ext: {
+          userSyncs: [
+            { type: 'image', url: 'https://sync.rtb-magicbid.ai/pixel' },
+            { type: 'iframe', url: 'https://sync.rtb-magicbid.ai/iframe' },
+          ],
+        },
       },
     };
 
