@@ -51,6 +51,16 @@ describe('Nexx360 bid adapter tests', () => {
       expect(alias).to.exist;
       expect(alias.gvlid).to.equal(1090);
     });
+
+    // stmbidder is the six-char-unique code for Stailamedia (bidstailamedia collides
+    // with bidstack on "bidsta"); both codes stay declared under Nexx360's GVL ID.
+    it('declares stmbidder alongside bidstailamedia under Nexx360\'s GVL ID', () => {
+      ['stmbidder', 'bidstailamedia'].forEach((code) => {
+        const alias = spec.aliases.find((a) => a.code === code);
+        expect(alias).to.exist;
+        expect(alias.gvlid).to.equal(965);
+      });
+    });
   });
 
   describe('getGzipSetting', () => {
