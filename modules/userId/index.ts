@@ -1184,10 +1184,8 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
         })
       };
 
-      if (autoRefresh) {
-        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
-        newSubmoduleContainer.refreshIds = !previousSubmodule || !deepEqual(newSubmoduleContainer.config, previousSubmodule.config);
-      }
+      const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
+      newSubmoduleContainer.refreshIds = !previousSubmodule || (autoRefresh && !deepEqual(newSubmoduleContainer.config, previousSubmodule.config));
 
       return [...acc, newSubmoduleContainer];
     }, []);
@@ -1351,11 +1349,11 @@ export function init(config, { mkDelay = delay } = {}) {
         unregisterEnforceStorageTypeRule?.();
         unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({ config }) => config), enforceStorageType));
         updateIdPriority(userSync.idPriority, submoduleRegistry);
-        initIdSystem({ ready: true });
         const submodulesToRefresh = submodules.filter(item => item.refreshIds);
         if (submodulesToRefresh.length) {
-          refreshUserIds({ submoduleNames: submodulesToRefresh.map(item => item.submodule.name) });
+          initIdSystem({ refresh: true, submoduleNames: submodulesToRefresh.map(item => item.submodule.name) });
         }
+        initIdSystem({ ready: true });
       }
     }
   });
