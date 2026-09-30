@@ -3503,6 +3503,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "nexbid",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "nextMillennium",
       "aliasOf": null,
       "gvlid": 1060,
@@ -3884,6 +3891,13 @@
       "componentName": "panxo",
       "aliasOf": null,
       "gvlid": 1527,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "peak226",
+      "aliasOf": null,
+      "gvlid": 1202,
       "disclosureURL": null
     },
     {
@@ -4679,7 +4693,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "ppcbuzz",
+      "componentName": "pubsmart",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
@@ -4996,7 +5010,7 @@
       "componentType": "bidder",
       "componentName": "trafficgate",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1272,
       "disclosureURL": null
     },
     {
