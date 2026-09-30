@@ -112,7 +112,12 @@ export const spec = {
         keyValues._fw_programmatic_tid = tid;
         if (tidt) {
           keyValues._fw_programmatic_tidt = tidt;
+        } else {
+          delete keyValues._fw_programmatic_tidt;
         }
+      } else {
+        delete keyValues._fw_programmatic_tid;
+        delete keyValues._fw_programmatic_tidt;
       }
 
       // Add GDPR flag and consent string
