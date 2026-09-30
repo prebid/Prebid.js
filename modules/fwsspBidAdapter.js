@@ -115,7 +115,6 @@ export const spec = {
         }
       } else {
         delete keyValues._fw_programmatic_tid;
-        delete keyValues._fw_programmatic_tidt;
       }
 
       // Add GDPR flag and consent string
