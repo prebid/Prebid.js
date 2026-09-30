@@ -17,6 +17,7 @@ import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -244,7 +245,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     bcat: getBcat(bidRequest),
     cur: [DEFAULT_CURRENCY],
     regs: {
-      coppa: config.getConfig('coppa') ? 1 : 0,
+      coppa: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
       ext: {}
     },
     user: {

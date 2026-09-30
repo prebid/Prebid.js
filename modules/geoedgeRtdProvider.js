@@ -15,6 +15,7 @@
  * @property {?boolean} wap
  * @property {?boolean} gpt
  * @property {?boolean} outstream publisher opt-in to outstream video monitoring
+ * @property {?boolean} display publisher opt-out of display monitoring, defaults to true
  * @property {?string} keyName
  */
 
@@ -84,10 +85,12 @@ export function setWrapper(responseText) {
 /**
  * builds the params object handed to the client inside the frame
  * @param {string} key
+ * @param {?boolean} display publisher opt-out of display monitoring
  * @param {?boolean} outstream publisher opt-in to outstream video monitoring
+ * @param {?Object} bidders
  * @return {Object}
  */
-export function getInitialParams(key, outstream, bidders) {
+export function getInitialParams(key, display, outstream, bidders) {
   const params = {
     wver: '1.1.2',
     wtype: 'pbjs-module',
@@ -97,7 +100,8 @@ export function getInitialParams(key, outstream, bidders) {
     pimp: PV_ID,
     fsRan: true,
     frameApi: true,
-    outstream
+    outstream,
+    display
   };
 
   if (outstream) {
@@ -161,15 +165,17 @@ function stopClientLoadTimer() {
 /**
  * loads the monitoring client in an invisible iframe
  * @param {string} key
+ * @param {?boolean} display publisher opt-out of display monitoring
  * @param {?boolean} outstream publisher opt-in to outstream video monitoring
+ * @param {?Object} bidders
  */
-export function loadClientInIframe(key, outstream, bidders) {
+export function loadClientInIframe(key, display, outstream, bidders) {
   const iframe = createInvisibleIframe();
   const url = getClientUrl(key);
 
   iframe.id = 'grumiFrame';
   insertElement(iframe);
-  iframe.contentWindow.grumi = getInitialParams(key, outstream, bidders);
+  iframe.contentWindow.grumi = getInitialParams(key, display, outstream, bidders);
   clientFrame = iframe;
 
   loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markClientAsLoaded, iframe.contentDocument);
@@ -260,8 +266,9 @@ function shouldWrap(bid, params) {
   const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
   const clientReady = params.wap ? clientLoaded : true;
   const isGPT = params.gpt;
+  const displayEnabled = params.display !== false;
 
-  return wrapperReady && supportedBidder && clientReady && !isGPT;
+  return displayEnabled && wrapperReady && supportedBidder && clientReady && !isGPT;
 }
 
 function conditionallyWrap(bidResponse, config, userConsent) {
@@ -445,21 +452,25 @@ function fireBillableEventsForApplicableBids(params) {
 function setupInPage(params) {
   window.grumi = params;
   window.grumi.fromPrebid = true;
+
   loadExternalScript(getInPageUrl(params.key), MODULE_TYPE_RTD, SUBMODULE_NAME);
 }
 
 function init(config, userConsent) {
   const params = config.params;
+
   if (!params || !params.key) {
     logError('missing key for geoedge RTD module provider');
     return false;
   }
+
   if (params.gpt) {
     setupInPage(params);
   } else {
     fetchWrapper(setWrapper);
-    loadClientInIframe(params.key, params.outstream, params.bidders);
+    loadClientInIframe(params.key, params.display, params.outstream, params.bidders);
   }
+
   fireBillableEventsForApplicableBids(params);
 
   return true;
