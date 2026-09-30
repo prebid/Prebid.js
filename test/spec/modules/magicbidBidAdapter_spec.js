@@ -223,7 +223,7 @@ describe('MagicBid Bid Adapter', function() {
 
     beforeEach(function() {
       bannerRequest = spec.buildRequests([VALID_BANNER_BID], BIDDER_REQUEST)[0];
-      videoRequest  = spec.buildRequests([VALID_VIDEO_BID], BIDDER_REQUEST)[0];
+      videoRequest = spec.buildRequests([VALID_VIDEO_BID], BIDDER_REQUEST)[0];
     });
 
     function makeBannerResponse(impid) {
