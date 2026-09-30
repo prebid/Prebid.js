@@ -1484,6 +1484,22 @@ describe('fwsspBidAdapter', () => {
       expect(result.tid).to.equal('ortb2imp-tid');
       expect(result.tidt).to.equal(1);
     });
+
+    it('should support publisher-provided TID via ortb2Imp (Prebid recommended method)', () => {
+      const bidRequest = {
+        ortb2Imp: {
+          ext: {
+            tid: 'publisher-custom-tid-123',
+            tidt: 1
+          }
+        }
+      };
+      const bidderRequest = {};
+
+      const result = extractTransactionIds(bidRequest, bidderRequest);
+      expect(result.tid).to.equal('publisher-custom-tid-123');
+      expect(result.tidt).to.equal(1);
+    });
   });
 
   describe('TID/TIDT integration in buildRequests', () => {
@@ -1600,6 +1616,36 @@ describe('fwsspBidAdapter', () => {
       const payload = request[0].data;
       expect(payload).to.not.include('_fw_programmatic_tid'); // No fallback generation
       expect(payload).to.not.include('_fw_programmatic_tidt'); // No TIDT without TID
+    });
+
+    it('should include publisher-provided TID/TIDT via ortb2Imp (Prebid recommended method)', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480]
+          }
+        },
+        'ortb2Imp': {
+          'ext': {
+            'tid': 'publisher-custom-tid-via-ortb2',
+            'tidt': 2
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:profile',
+          'siteSectionId': 'test-site-section'
+        }
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_programmatic_tid=publisher-custom-tid-via-ortb2');
+      expect(payload).to.include('_fw_programmatic_tidt=2');
     });
   });
 });
