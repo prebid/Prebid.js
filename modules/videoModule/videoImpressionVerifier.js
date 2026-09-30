@@ -104,7 +104,7 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
       vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, adIdOverride, impressionUrl, impressionId, errorUrl);
     } else if (vastUrl) {
       bid.vastUrl = appendUuidMarker(vastUrl, adIdOverride);
-      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, bid.vastUrl, impressionUrl, impressionId, errorUrl);
+      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, bid.vastUrl, impressionUrl, impressionId, errorUrl, bid.vastTrackers);
     }
 
     bid.vastXml = vastXml;
