@@ -127,6 +127,32 @@ describe('Cached Video Impression Verifier', function () {
     expect(bid.vastUrl).to.equal(malformedVastUrl);
   });
 
+  it('should keep the bidder vast trackers in the vast wrapper built from the vast url', function () {
+    const bidderImpressionUrl = 'https://bidder.example.com/impression';
+    const bidderErrorUrl = 'https://bidder.example.com/error';
+    const bidderStartUrl = 'https://bidder.example.com/start';
+    const bid = {
+      adId: 'a1',
+      adUnitCode,
+      vastUrl,
+      vastTrackers: {
+        impression: [bidderImpressionUrl],
+        error: [bidderErrorUrl],
+        trackingEvents: [{ event: 'start', url: bidderStartUrl }]
+      }
+    };
+
+    verifier.trackBid(bid);
+
+    const vastDoc = parseVast(bid.vastXml);
+    const impressionUrls = Array.from(vastDoc.querySelectorAll('Wrapper > Impression')).map(node => node.textContent);
+    const errorUrls = Array.from(vastDoc.querySelectorAll('Wrapper > Error')).map(node => node.textContent);
+    const startTracker = vastDoc.querySelector('Wrapper Creatives Creative Linear TrackingEvents Tracking[event="start"]');
+    expect(impressionUrls).to.deep.equal([bidderImpressionUrl]);
+    expect(errorUrls).to.deep.equal([bidderErrorUrl]);
+    expect(startTracker?.textContent).to.equal(bidderStartUrl);
+  });
+
   it('should append the impression and error trackers from the ad unit tracking config', function () {
     const bid = { adId: 'a1', adUnitCode, vastXml: inlineVastXml };
     const adUnit = adUnitWithTracking({
