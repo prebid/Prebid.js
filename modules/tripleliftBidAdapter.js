@@ -1,4 +1,5 @@
 import { deepAccess, logError, mergeDeep, logWarn, isPlainObject } from '../src/utils.js';
+import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -403,7 +404,7 @@ function parseNativeAd(bidRequest, bid) {
   }
 
   try {
-    const parsedAd = JSON.parse(trimmedAd);
+    const parsedAd = parseUntrustedJSON(trimmedAd);
     return isPlainObject(parsedAd) && Array.isArray(parsedAd.assets) ? parsedAd : null;
   } catch (e) {
     logError('Triplelift: error parsing native ad JSON: ', e);

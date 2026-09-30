@@ -2285,6 +2285,54 @@ describe('triplelift oRTB bid adapter', function () {
       });
     });
 
+    it('should strip prototype-polluting keys from the native ad payload', function () {
+      const hostileAd = JSON.stringify({
+        ver: '1.2',
+        assets: [{ id: 1, required: 1, title: { text: 'Triplelift Native' } }],
+        link: { url: 'https://www.triplelift.com/' }
+      }).replace(
+        '"link":{',
+        '"__proto__":{"polluted":"yes"},"constructor":{"prototype":{"alsoPolluted":"yes"}},"link":{'
+      );
+
+      const hostileBidderRequest = {
+        bidderCode: 'triplelift',
+        bids: [{
+          bidder: 'triplelift',
+          params: { inventoryCode: 'native_test', parentId: 'parent_test' },
+          mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1, title: { len: 80 } }] } } },
+          adUnitCode: 'adunit-code-native',
+          bidId: 'test-hostile-bid-id',
+        }]
+      };
+
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            imp_id: 'test-hostile-bid-id',
+            cpm: 5,
+            crid: 'test-native-crid',
+            tl_source: 'tlx',
+            media_type: 'native',
+            ad: hostileAd
+          }]
+        }
+      }, { bidderRequest: hostileBidderRequest });
+
+      expect(result).to.have.length(1);
+      const ortb = result[0].native.ortb;
+
+      // the legitimate payload survives intact
+      expect(ortb.assets[0].title.text).to.equal('Triplelift Native');
+      expect(ortb.link.url).to.equal('https://www.triplelift.com/');
+
+      // the gadget keys do not
+      expect(Object.prototype.hasOwnProperty.call(ortb, '__proto__')).to.equal(false);
+      expect(Object.prototype.hasOwnProperty.call(ortb, 'constructor')).to.equal(false);
+      expect({}.polluted).to.equal(undefined);
+      expect({}.alsoPolluted).to.equal(undefined);
+    });
+
     it('should return native response for multi-format (banner + native) request when response is native', function () {
       const multiFormatBidderRequest = {
         bidderCode: 'triplelift',
