@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/magicbidBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { FEATURES } from 'src/features.js';
 
 const PUBLISHER_HOST = 'ads-2j0kac.rtb-magicbid.ai';
 
@@ -177,8 +178,10 @@ describe('MagicBid Bid Adapter', function() {
     });
 
     it('should include video object in imp for video bids', function() {
-      const imp = videoRequests[0].data.imp[0];
-      expect(imp.video).to.exist;
+      if (FEATURES.VIDEO) {
+        const imp = videoRequests[0].data.imp[0];
+        expect(imp.video).to.exist;
+      }
     });
 
     it('should use text/plain content type to avoid preflight', function() {
@@ -283,11 +286,13 @@ describe('MagicBid Bid Adapter', function() {
     });
 
     it('should return a valid video bid from an OpenRTB response', function() {
-      const bids = spec.interpretResponse(makeVideoResponse(), videoRequest);
-      expect(bids).to.have.length(1);
-      expect(bids[0].cpm).to.equal(3.0);
-      expect(bids[0].mediaType).to.equal(VIDEO);
-      expect(bids[0].vastXml).to.include('<VAST');
+      if (FEATURES.VIDEO) {
+        const bids = spec.interpretResponse(makeVideoResponse(), videoRequest);
+        expect(bids).to.have.length(1);
+        expect(bids[0].cpm).to.equal(3.0);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+        expect(bids[0].vastXml).to.include('<VAST');
+      }
     });
 
     it('should return empty array for an empty response', function() {
