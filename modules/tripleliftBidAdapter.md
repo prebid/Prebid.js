@@ -12,20 +12,12 @@ Connects to Triplelift Exchange for bids.
 
 The Triplelift bid adapter supports Banner, Video and Native.
 
-## Breaking change: `parentId` is required as of Prebid.js 11.37.0
-
-Before 11.33.0 only `inventoryCode` was required. From 11.37.0 onward a bid without
-`params.parentId` fails validation and is dropped before the auction, so Triplelift will
-not bid on it at all. Add `parentId` to every Triplelift bid before upgrading.
-
-Contact prebid@triplelift.com if you do not know your `parentId`.
-
 # Bid Params
 
 | Name            | Scope                       | Type   | Description                                                                                                              |
 |-----------------|-----------------------------|--------|--------------------------------------------------------------------------------------------------------------------------|
 | `inventoryCode` | required                    | string | Triplelift inventory code for the placement.                                                                              |
-| `parentId`      | required as of 11.33.0      | string | Identifies the parent account the inventory belongs to. See the breaking change note above.                               |
+| `parentId`      | recommended                 | string | Identifies the parent account the inventory belongs to. Contact prebid@triplelift.com if you do not know your `parentId`. |
 | `publisherId`   | recommended                 | string | Identifies the publisher the inventory belongs to.                                                                        |
 | `floor`         | optional                    | number | Bid floor in USD. Used only when the [Price Floors module](https://docs.prebid.org/dev-docs/modules/floors.html) does not supply one. |
 | `video`         | optional                    | object | ORTB video fields, merged over `mediaTypes.video`.                                                                        |
@@ -66,7 +58,7 @@ var bannerAdUnits = [{
         bidder: 'triplelift',
         params: {
            inventoryCode: 'forbes_main', // required 
-           parentId: 'forbes_main_parent_id', // required
+           parentId: 'forbes_main_parent_id', // recommended
            publisherId: 'forbes_main_publisher_id', // recommended 
            floor: 1.009 // recommended 
         }
@@ -89,7 +81,7 @@ var videoAdUnits = [{
         bidder: 'triplelift',
         params: {
             inventoryCode: 'instream_test', // required
-            parentId: 'instream_parent_id', // required
+            parentId: 'instream_parent_id', // recommended
             publisherId: 'instream_publisher_id', // recommended
             video: {
                 mimes: ['video/mp4'],
@@ -127,7 +119,7 @@ var nativeAdUnits = [{
       bidder: 'triplelift',
       params: {
         inventoryCode: 'native_test', // required
-        parentId: 'native_parent_id', // required
+        parentId: 'native_parent_id', // recommended
         publisherId: 'native_publisher_id', // recommended
       }
     }]
@@ -170,7 +162,7 @@ var multiAdUnit = [{
       bidder: 'triplelift',
       params: {
         inventoryCode: 'native_test', // required
-        parentId: 'native_parent_id', // required
+        parentId: 'native_parent_id', // recommended
         publisherId: 'native_publisher_id', // recommended
         video: {
             mimes: ['video/mp4'],
