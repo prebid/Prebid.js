@@ -6,7 +6,9 @@ import {
   createInterpretResponseFn,
   createUserSyncGetter,
   isBidRequestValid, onBidBillable, onBidWon,
-  tryParseJSON
+  tryParseJSON,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
@@ -34,6 +36,8 @@ export const spec = {
   createFirstPartyData,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {

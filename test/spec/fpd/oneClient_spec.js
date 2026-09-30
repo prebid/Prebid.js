@@ -14,7 +14,7 @@ describe('onlyOneClientSection', () => {
       const req = Object.fromEntries(sections.map(s => [s, { foo: 'bar' }]));
       oneClient(req);
       expect(Object.keys(req)).to.eql([winner]);
-    })
+    });
   });
   it('should not choke if none of the sections are in the request', () => {
     const req = {};

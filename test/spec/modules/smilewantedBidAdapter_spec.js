@@ -518,7 +518,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_DISPLAY, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -541,7 +541,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_VIDEO_INSTREAM, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -564,7 +564,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_VIDEO_OUTSTREAM, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -586,7 +586,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_NATIVE, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 

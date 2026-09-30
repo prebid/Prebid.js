@@ -44,7 +44,7 @@ type MultiBidConfig = ({
    * If not provided, the extra bids will not go to the ad server.
    */
   targetBiddercodePrefix?: string;
-}
+};
 
 declare module '../../src/config' {
   interface Config {
@@ -64,13 +64,13 @@ config.getConfig(MODULE_NAME, conf => {
       multiConfig[entry.bidder] = {
         maxbids: entry.maxBids,
         prefix: entry.targetBiddercodePrefix
-      }
+      };
     } else {
       entry.bidders.forEach(key => {
         multiConfig[key] = {
           maxbids: entry.maxBids,
           prefix: entry.targetBiddercodePrefix
-        }
+        };
       });
     }
   });
@@ -118,10 +118,10 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
     // Loop through bidderRequests and check if bidderCode exists in multiconfig
     // If true, add bidderRequest.bidLimit to bidder request
     if (multiConfig[bidRequest.bidderCode]) {
-      bidRequest.bidLimit = multiConfig[bidRequest.bidderCode].maxbids
+      bidRequest.bidLimit = multiConfig[bidRequest.bidderCode].maxbids;
     }
     return bidRequest;
-  })
+  });
 
   fn.call(this, bidderRequests);
 }
@@ -231,8 +231,8 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
             bid.bidderCode = multiConfig[bid.bidderCode].prefix + (index + 1);
           }
 
-          return bid
-        })
+          return bid;
+        });
       }));
       // Get adjustedBids by bidderCode and reduce using highestCpmCallback
       const bidsByBidderCode = groupBy(adjustedBids, 'bidderCode');
@@ -285,7 +285,7 @@ export function setOrtbExtPrebidMultibid(ortbRequest) {
   if (multibid) {
     deepSetValue(ortbRequest, 'ext.prebid.multibid', multibid.map(o =>
       Object.fromEntries(Object.entries(o).map(([k, v]) => [k.toLowerCase(), v])))
-    )
+    );
   }
 }
 

@@ -29,7 +29,7 @@ export function buildVideoUrl(options) {
     page_url: '[page_url]',
     cachebuster: '[timestamp]',
     gdpr_consent: '[consent]',
-  }
+  };
 
   const adUnit = options.adUnit;
   const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];

@@ -22,7 +22,7 @@ export class GreedyPromise {
           result.push(type, value);
           while (callbacks.length) callbacks.shift()();
         }
-      }
+      };
     });
     try {
       resolver(resolve, reject);
@@ -49,7 +49,7 @@ export class GreedyPromise {
           resolveFn = resolve;
         }
         resolveFn(value);
-      }
+      };
       result.length ? continuation() : this.#callbacks.push(continuation);
     });
   }
@@ -62,7 +62,7 @@ export class GreedyPromise {
     let val;
     return this.then(
       (v) => { val = v; return onFinally(); },
-      (e) => { val = this.constructor.reject(e); return onFinally() }
+      (e) => { val = this.constructor.reject(e); return onFinally(); }
     ).then(() => val);
   }
 
@@ -81,7 +81,7 @@ export class GreedyPromise {
   static race(promises) {
     return new this((resolve, reject) => {
       this.#collect(promises, (success, result) => success ? resolve(result) : reject(result));
-    })
+    });
   }
 
   static all(promises) {
@@ -94,7 +94,7 @@ export class GreedyPromise {
           reject(val);
         }
       }, () => resolve(res));
-    })
+    });
   }
 
   static allSettled(promises) {
@@ -102,23 +102,23 @@ export class GreedyPromise {
       const res = [];
       this.#collect(promises, (success, val, i) => {
         res[i] = success ? { status: 'fulfilled', value: val } : { status: 'rejected', reason: val };
-      }, () => resolve(res))
-    })
+      }, () => resolve(res));
+    });
   }
 
   static resolve(value) {
-    return new this(resolve => resolve(value))
+    return new this(resolve => resolve(value));
   }
 
   static reject(error) {
-    return new this((resolve, reject) => reject(error))
+    return new this((resolve, reject) => reject(error));
   }
 }
 
 export function greedySetTimeout(fn, delayMs = 0) {
   if (delayMs > 0) {
-    return setTimeout(fn, delayMs)
+    return setTimeout(fn, delayMs);
   } else {
-    fn()
+    fn();
   }
 }

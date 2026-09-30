@@ -42,7 +42,7 @@ describe('browsi Bid Adapter Test', function () {
     });
     it('should return false when video mediaType is missing', function () {
       delete bid.mediaTypes[VIDEO];
-      bid.mediaTypes[BANNER] = {}
+      bid.mediaTypes[BANNER] = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -51,7 +51,7 @@ describe('browsi Bid Adapter Test', function () {
     let bidRequest;
     let bidderRequest;
     beforeEach(function () {
-      window[DATA] = {}
+      window[DATA] = {};
       window[DATA][ADAPTER] = { index: 0 };
       bidRequest = [
         {
@@ -126,7 +126,7 @@ describe('browsi Bid Adapter Test', function () {
           schain: inputRequest.ortb2?.source?.ext?.schain,
           params: inputRequest.params
         }
-      }
+      };
       assert.deepEqual(request, requestToExpect);
     });
     it('should pass on timeout in bidderRequest', function() {
@@ -159,7 +159,7 @@ describe('browsi Bid Adapter Test', function () {
       cur: 'USD',
       ttl: 10000,
       someExtraParams: 8,
-    }
+    };
 
     it('should return a valid response', function () {
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
@@ -189,7 +189,7 @@ describe('browsi Bid Adapter Test', function () {
         { url: 'syncUrl1', type: 'image' },
         { url: 'http://syncUrl2', type: 'iframe' }
       ]
-    }
+    };
     const serverResponse = [
       { body: bidResponse }
     ];

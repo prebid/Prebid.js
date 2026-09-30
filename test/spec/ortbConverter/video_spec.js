@@ -193,6 +193,6 @@ describe('ortb -> pbjs video conversion', () => {
     it(`can handle ${t}`, () => {
       fillVideoResponse(response, seatbid, context);
       expect(response).to.eql(expected);
-    })
-  })
-})
+    });
+  });
+});

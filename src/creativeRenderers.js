@@ -12,14 +12,14 @@ export const PUC_MIN_VERSION = 3;
 
 export const getCreativeDefaultRendererSource = hook('sync', function (bidResponse) {
   return RENDERER;
-})
+});
 
 export const getCreativeRendererSource = function(bidResponse) {
   if (getSafeRenderer(bidResponse)) {
     return SAFE_RENDERER;
   }
   return getCreativeDefaultRendererSource(bidResponse);
-}
+};
 
 export const getCreativeRenderer = (function() {
   const renderers = {};
@@ -27,7 +27,7 @@ export const getCreativeRenderer = (function() {
     const src = getCreativeRendererSource(bidResponse);
     if (!renderers.hasOwnProperty(src)) {
       renderers[src] = new PbPromise((resolve) => {
-        const iframe = createInvisibleIframe()
+        const iframe = createInvisibleIframe();
         iframe.srcdoc = `
             <script>${src}</script>
             <script>
@@ -41,11 +41,11 @@ export const getCreativeRenderer = (function() {
             window.removeEventListener('message', listenerForRendererReady);
             resolve(iframe.contentWindow.render);
           }
-        }
+        };
         window.addEventListener('message', listenerForRendererReady);
         document.body.appendChild(iframe);
-      })
+      });
     }
     return renderers[src];
-  }
+  };
 })();

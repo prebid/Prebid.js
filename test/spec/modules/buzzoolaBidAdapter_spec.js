@@ -308,7 +308,7 @@ describe('buzzoolaBidAdapter', () => {
       result.forEach(bid => {
         fields.forEach(field => {
           expect(bid).to.have.own.property(field);
-        })
+        });
       });
     }
 

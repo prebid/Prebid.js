@@ -23,12 +23,12 @@ export const spec = {
   gvlid: IAB_GVL_ID,
   supportedMediaTypes: [BANNER],
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidRequests, bidderRequest })
+    const data = converter.toORTB({ bidRequests, bidderRequest });
     return [{
       method: 'POST',
       url: 'https://o.clickiocdn.com/bids',
       data
-    }]
+    }];
   },
   isBidRequestValid(bid) {
     return true;

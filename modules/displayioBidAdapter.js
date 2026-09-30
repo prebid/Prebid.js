@@ -58,7 +58,7 @@ export const spec = {
       };
 
       if (bidResponse.mediaType === VIDEO) {
-        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url
+        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url;
       }
 
       if (bidResponse.renderURL) {
@@ -83,7 +83,7 @@ function getPayload (bid, bidderRequest) {
       });
       storage.setDataInLocalStorage(US_KEY, us);
     }
-    return us
+    return us;
   })();
   const { params, adUnitCode, bidId } = bid;
   const { siteId, placementId, renderURL, pageCategory, keywords } = params;
@@ -137,7 +137,7 @@ function getPayload (bid, bidderRequest) {
         connection_type: connection?.effectiveType || '',
       }
     }
-  }
+  };
 }
 
 function newRenderer(bid) {
@@ -160,7 +160,7 @@ function webisRender(bid, doc) {
   bid.renderer.push(() => {
     const win = doc?.defaultView || window;
     win.webis.init(bid.adData, bid.adUnitCode, bid.params);
-  })
+  });
 }
 
 registerBidder(spec);

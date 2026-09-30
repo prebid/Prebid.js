@@ -7,7 +7,7 @@ import {
 import { server } from 'test/mocks/xhr.js';
 
 const FUUID_DUMMY_VALUE = 'dacIdTest';
-const AONEID_DUMMY_VALUE = '12345'
+const AONEID_DUMMY_VALUE = '12345';
 const DACID_DUMMY_OBJ = {
   fuuid: FUUID_DUMMY_VALUE,
   uid: AONEID_DUMMY_VALUE
@@ -29,7 +29,7 @@ describe('dacId module', function () {
     undefined,
     null,
     ''
-  ]
+  ];
 
   const configParamTestCase = {
     params: {
@@ -38,7 +38,7 @@ describe('dacId module', function () {
         'e8316b39c08029e1' // invalid
       ]
     }
-  }
+  };
 
   describe('getId()', function () {
     it('should return undefined when oid & fuuid not exist', function () {

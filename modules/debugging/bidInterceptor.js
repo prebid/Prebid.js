@@ -24,11 +24,11 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
           this.logger.logWarn(`Bid interceptor rule definition #${i + 1} contains non-serializable properties and will be lost after a refresh. Rule definition: `, ruleDef);
         }
         return serializable;
-      }
+      };
       return ruleDefs.filter(isSerializable);
     },
     updateConfig(config) {
-      this.rules = (config.intercept || []).map((ruleDef, i) => this.rule(ruleDef, i + 1))
+      this.rules = (config.intercept || []).map((ruleDef, i) => this.rule(ruleDef, i + 1));
     },
     /**
      * @typedef {Object} RuleOptions
@@ -53,7 +53,7 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
         match: this.matcher(ruleDef.when, ruleNo),
         replace: this.replacer(ruleDef.then, ruleNo),
         options: Object.assign({}, this.DEFAULT_RULE_OPTIONS, ruleDef.options),
-      }
+      };
     },
     /**
      * @typedef {Function} MatchPredicate
@@ -110,7 +110,7 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
      */
     replacer(replDef, ruleNo) {
       if (replDef === null) {
-        return () => null
+        return () => null;
       }
       replDef = replDef || {};
       let replFn;
@@ -126,13 +126,13 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
             if (typeof val === 'function') {
               result[key] = val(...args);
             } else if (val != null && typeof val === 'object') {
-              result[key] = replFn({ args, ref: val })
+              result[key] = replFn({ args, ref: val });
             } else {
               result[key] = val;
             }
           });
           return result;
-        }
+        };
       }
       return (bid, ...args) => {
         const response = this.responseDefaults(bid);
@@ -141,7 +141,7 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
         resolver && resolver(bid, response);
         response.isDebug = true;
         return response;
-      }
+      };
     },
     responseDefaults(bid) {
       const response = {
@@ -195,7 +195,7 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
         } else {
           remainder.push(bid);
         }
-      })
+      });
       return [matches, remainder];
     },
     /**
@@ -219,11 +219,11 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
         matches.forEach((match) => {
           const mockResponse = match.rule.replace(match.bid, bidRequest);
           const delay = match.rule.options.delay;
-          this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse)
+          this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse);
           this.setTimeout(() => {
             mockResponse && addBid(mockResponse, match.bid);
             callDone();
-          }, delay)
+          }, delay);
         });
         bidRequest = deepClone(bidRequest);
         bids = bidRequest.bids = remainder;

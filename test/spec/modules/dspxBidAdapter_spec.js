@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { deepClone } from '../../../src/utils.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
@@ -9,8 +9,6 @@ const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 
 describe('dspxAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'dspx',
@@ -46,7 +44,7 @@ describe('dspxAdapter', function () {
         params: {
           someIncorrectParam: 0
         }
-      }
+      };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
@@ -522,7 +520,7 @@ describe('dspxAdapter', function () {
             ]
           },
         },
-      }
+      };
       config.setConfig(GOOGLE_TOPICS_DATA);
       const request = spec.buildRequests([defaultRequest], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA })[0];
       expect(request.data).to.contain('segtx=600&segcl=v1&segs=717%2C808');
@@ -763,22 +761,22 @@ describe('dspxAdapter', function () {
     });
     it(`we have valid sync url for iframe`, function () {
       const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, { consentString: 'anyString' });
-      expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
+      expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString');
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for image`, function () {
       const [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
-      expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString');
       expect(userSync.type).to.be.equal('image');
     });
     it(`we have valid sync url for image and iframe`, function () {
       const userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.length).to.be.equal(3);
-      expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
+      expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString');
       expect(userSync[0].type).to.be.equal('iframe');
-      expect(userSync[1].url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[1].url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString');
       expect(userSync[1].type).to.be.equal('image');
-      expect(userSync[2].url).to.be.equal('anyImageUrl2?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[2].url).to.be.equal('anyImageUrl2?gdpr=1&gdpr_consent=anyString');
       expect(userSync[2].type).to.be.equal('image');
     });
   });

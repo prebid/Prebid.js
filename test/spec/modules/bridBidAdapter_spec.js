@@ -1,4 +1,4 @@
-import { spec } from '../../../modules/bridBidAdapter.js'
+import { spec } from '../../../modules/bridBidAdapter.js';
 import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
 import { deepClone } from '../../../src/utils.js';
 

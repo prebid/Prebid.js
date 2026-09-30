@@ -55,7 +55,7 @@ describe('KoblerAdapter', function () {
   });
 
   afterEach(() => {
-    sandbox.restore()
+    sandbox.restore();
   });
 
   describe('inherited functions', function () {
@@ -420,16 +420,16 @@ describe('KoblerAdapter', function () {
           if (utils.isArray(params.size) && params.size[0] === 580 && params.size[1] === 400) {
             floorPrice = floorPriceFor580x400;
           } else if (params.size === '*') {
-            floorPrice = floorPriceForAnySize
+            floorPrice = floorPriceForAnySize;
           } else {
-            floorPrice = 0
+            floorPrice = 0;
           }
           return {
             currency: params.currency,
             floor: floorPrice
-          }
-        }
-      })
+          };
+        };
+      });
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
@@ -616,7 +616,7 @@ describe('KoblerAdapter', function () {
       const responseWithEmptyBody = {
         body: undefined
       };
-      const bids = spec.interpretResponse(responseWithEmptyBody)
+      const bids = spec.interpretResponse(responseWithEmptyBody);
 
       expect(bids.length).to.be.equal(0);
     });
@@ -666,7 +666,7 @@ describe('KoblerAdapter', function () {
           cur: 'USD'
         }
       };
-      const bids = spec.interpretResponse(responseWithTwoBids, {})
+      const bids = spec.interpretResponse(responseWithTwoBids, {});
 
       const expectedBids = [
         {
@@ -756,7 +756,7 @@ describe('KoblerAdapter', function () {
         const bidToWon = bids[0];
         bidToWon.adserverTargeting = {
           hb_pb: 8
-        }
+        };
         spec.onBidWon(bidToWon);
 
         expect(utils.triggerPixel.callCount).to.be.equal(1);

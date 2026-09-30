@@ -140,7 +140,7 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: false
       }
-    }
+    };
   },
 
   /**
@@ -196,6 +196,6 @@ export const spec = {
     return bidResponses;
   }
 
-}
+};
 
 registerBidder(spec);

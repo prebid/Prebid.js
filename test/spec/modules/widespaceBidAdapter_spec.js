@@ -147,7 +147,7 @@ describe('+widespaceAdatperTest', function () {
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
     before(function() {
       request = spec.buildRequests(bidRequest, bidderRequest);
-    })
+    });
 
     let fakeLocalStorage = {};
     let lsSetStub;

@@ -13,14 +13,14 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import { parseUrl, deepClone, getWinDimensions } from 'src/utils.js';
+import { deepClone, getWinDimensions } from 'src/utils.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import * as utils from 'src/utils.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -94,7 +94,7 @@ const VIDEO_BID = {
       'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -207,15 +207,6 @@ const REQUEST = {
     bidId: '2d52001cabd527'
   }
 };
-
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
 
 describe('ShinezRtbBidAdapter', function () {
   before(() => config.resetConfig());
@@ -447,7 +438,7 @@ describe('ShinezRtbBidAdapter', function () {
     });
 
     it('should build video request with right url domain despite params.host', function () {
-      const videoBidWithHost = VIDEO_BID
+      const videoBidWithHost = VIDEO_BID;
       videoBidWithHost.params.host = "example6.com";
       config.setConfig({
         bidderTimeout: 3000
@@ -578,97 +569,6 @@ describe('ShinezRtbBidAdapter', function () {
     });
   });
 
-  describe('user id system', function () {
-    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
-      const id = Date.now().toString();
-      const bid = deepClone(BID);
-
-      const userId = (function () {
-        switch (idSystemProvider) {
-          case 'lipb':
-            return { lipbid: id };
-          case 'id5id':
-            return { uid: id };
-          default:
-            return id;
-        }
-      })();
-
-      bid.userId = {
-        [idSystemProvider]: userId
-      };
-
-      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
-        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
-      });
-    });
-    // testing bid.userIdAsEids handling
-    it("should include user ids from bid.userIdAsEids (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{ "id": "fakeidi6j6dlc6e" }]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
-    it("should include user ids from bid.userIdAsEids (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{ "id": "fakeidi6j6dlc6e" }]
-        },
-        {
-          "source": "rwdcntrl.net",
-          "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
-    // testing user.ext.eid handling
-    it("should include user ids from user.ext.eid (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{ "id": "fakeid8888dlc6e" }]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
-    it("should include user ids from user.ext.eid (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{ "id": "fakeid8888dlc6e" }]
-            },
-            {
-              "source": "adserver.org",
-              "uids": [{ "id": "fakeid495ff1" }]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
-  });
-
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
       const cid = extractCID({ 'c_id': '1' });
@@ -757,7 +657,7 @@ describe('ShinezRtbBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);

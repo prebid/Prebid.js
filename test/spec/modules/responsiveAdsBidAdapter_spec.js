@@ -30,7 +30,7 @@ describe('responsiveAdsBidAdapter', function() {
 
     bidderRequest = {
       timeout: 3000,
-    }
+    };
   });
 
   afterEach(function () {

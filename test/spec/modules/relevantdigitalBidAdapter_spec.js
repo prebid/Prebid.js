@@ -228,7 +228,7 @@ const resetAndBuildRequest = (params) => {
 describe('Relevant Digital Bid Adaper', function () {
   describe('buildRequests', () => {
     const [request] = resetAndBuildRequest();
-    const { data, url } = request
+    const { data, url } = request;
     it('should give the correct URL', () => {
       expect(url).equal(`https://${PBS_HOST}/openrtb2/auction`);
     });
@@ -241,7 +241,7 @@ describe('Relevant Digital Bid Adaper', function () {
     });
     it('should set tmax to something below the timeout', () => {
       expect(data.tmax).be.greaterThan(0);
-      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout)
+      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout);
     });
   });
   describe('interpreteResponse', () => {
@@ -266,7 +266,7 @@ describe('Relevant Digital Bid Adaper', function () {
     });
   });
   describe('getUserSyncs with iframeEnabled', () => {
-    resetAndBuildRequest()
+    resetAndBuildRequest();
     const allSyncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: BID_RESPONSE }], null, null);
     const [{ url, type }] = allSyncs;
     const { bidders, endpoint } = parseUrl(url).search;
@@ -288,12 +288,12 @@ describe('Relevant Digital Bid Adaper', function () {
     });
   });
   describe('getUserSyncs with pixelEnabled', () => {
-    resetAndBuildRequest()
+    resetAndBuildRequest();
     const responseSyncs = BID_RESPONSE.ext.relevant.sync;
     const allSyncs = spec.getUserSyncs({ pixelEnabled: true }, [{ body: BID_RESPONSE }], null, null);
     it('should return one sync object per pixel', () => {
       const expectedResult = responseSyncs.map(({ url }) => ({ url, type: 'image' }));
-      expect(allSyncs).to.deep.equal(expectedResult)
+      expect(allSyncs).to.deep.equal(expectedResult);
     });
   });
 });

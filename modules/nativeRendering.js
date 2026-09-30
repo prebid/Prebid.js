@@ -9,9 +9,9 @@ function getRenderingDataHook(next, bidResponse, options) {
   if (isNativeResponse(bidResponse)) {
     next.bail({
       native: getNativeRenderingData(bidResponse, auctionManager.index.getAdUnit(bidResponse))
-    })
+    });
   } else {
-    next(bidResponse, options)
+    next(bidResponse, options);
   }
 }
 function getRendererSourceHook(next, bidResponse) {
@@ -23,6 +23,6 @@ function getRendererSourceHook(next, bidResponse) {
 }
 
 if (FEATURES.NATIVE) {
-  getRenderingData.before(getRenderingDataHook)
+  getRenderingData.before(getRenderingDataHook);
   getCreativeDefaultRendererSource.before(getRendererSourceHook);
 }

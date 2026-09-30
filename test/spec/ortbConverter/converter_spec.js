@@ -12,7 +12,7 @@ describe('pbjs-ortb converter', () => {
         id: 112
       }
     ]
-  }
+  };
 
   const MOCK_ORTB_RESPONSE = {
     id: 'response',
@@ -37,7 +37,7 @@ describe('pbjs-ortb converter', () => {
         ]
       }
     ]
-  }
+  };
 
   let processors, reqCnt, impCnt;
 
@@ -94,7 +94,7 @@ describe('pbjs-ortb converter', () => {
           }
         }
       }
-    }
+    };
   });
 
   function makeConverter(options = {}) {
@@ -142,7 +142,7 @@ describe('pbjs-ortb converter', () => {
           ]
         },
         response: MOCK_ORTB_RESPONSE
-      })
+      });
     }).to.throw();
   });
 
@@ -157,8 +157,8 @@ describe('pbjs-ortb converter', () => {
         response: resp
       });
       expect(bids).to.eql([]);
-    })
-  })
+    });
+  });
 
   it('gives precedence to the bidRequests argument over bidderRequest.bids', () => {
     expect(makeConverter().toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, bidRequests: [MOCK_BIDDER_REQUEST.bids[0]] })).to.eql({
@@ -169,7 +169,7 @@ describe('pbjs-ortb converter', () => {
           bidId: 111
         }
       ]
-    })
+    });
   });
 
   it('passes context to every processor', () => {
@@ -204,7 +204,7 @@ describe('pbjs-ortb converter', () => {
     request.imp.forEach(imp => {
       expect(imp.extraArg).to.eql(imp.bidId);
       expect(imp.extraCtx).to.eql('context');
-    })
+    });
   });
 
   it('allows filtering imps with `imp`', () => {
@@ -227,7 +227,7 @@ describe('pbjs-ortb converter', () => {
       }
     });
     expect(cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }).imp.length).to.eql(0);
-  })
+  });
 
   it('allows overriding of response building with bidResponse', () => {
     const cvt = makeConverter({
@@ -271,7 +271,7 @@ describe('pbjs-ortb converter', () => {
           request: buildRequest(imps, bidderRequest, context),
           extraArg: bidderRequest.id,
           extraCtx: context.ctx
-        }
+        };
       }
     });
     const req = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, context: { ctx: 'context' } });
@@ -287,7 +287,7 @@ describe('pbjs-ortb converter', () => {
           response: buildResponse(bidResponses, ortbResponse, context),
           extraArg: ortbResponse.id,
           extraCtx: context.ctx
-        }
+        };
       }
     });
     const resp = cvt.fromORTB({
@@ -297,5 +297,5 @@ describe('pbjs-ortb converter', () => {
     expect(resp.extraArg).to.equal(MOCK_ORTB_RESPONSE.id);
     expect(resp.extraCtx).to.equal('context');
     expect(resp.response.bids.length).to.equal(3);
-  })
-})
+  });
+});

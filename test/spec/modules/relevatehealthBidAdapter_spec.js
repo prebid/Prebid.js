@@ -108,14 +108,16 @@ describe('relevatehealth adapter', function() {
   describe('Validate Request', function() {
     it('Immutable bid request validate', function() {
       const _Request = utils.deepClone(request);
-      const bidRequest = spec.buildRequests(request);
+
+      spec.buildRequests(request);
+
       expect(request).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function() {
       const _Request = spec.buildRequests(request);
       expect(_Request.url).to.equal('https://rtb.relevate.health/prebid/relevate');
       expect(_Request.method).to.equal('POST');
-      expect(_Request.options.contentType).to.equal('application/json');
+      expect(_Request.options.contentType).to.equal('text/plain');
     });
     it('Validate bid request : Impression', function() {
       const _Request = spec.buildRequests(request);

@@ -11,7 +11,7 @@ import {
 } from '../src/utils.js';
 import {
   ajax
-} from '../src/ajax.js'
+} from '../src/ajax.js';
 import {
   submodule
 } from '../src/hook.js';
@@ -57,7 +57,7 @@ function getIdFromStorage() {
  * @returns {void} -
  */
 function clearStorage() {
-  storage.removeDataFromLocalStorage(ADPLUS_UID_NAME)
+  storage.removeDataFromLocalStorage(ADPLUS_UID_NAME);
   storage.setCookie(
     ADPLUS_UID_NAME,
     "",
@@ -80,12 +80,12 @@ function setAdplusIdToCookie(value) {
       return;
     }
 
-    let expiresIn = 0;
+    let expiresIn;
 
     if (value.expiresIn == null || value.expiresIn === -2) {
-      expiresIn = (ROTATION_INTERVAL * 3) - 1000
+      expiresIn = (ROTATION_INTERVAL * 3) - 1000;
     } else {
-      expiresIn = value.expiresIn * 1000
+      expiresIn = value.expiresIn * 1000;
     }
 
     const now = Date.now();
@@ -101,7 +101,7 @@ function setAdplusIdToCookie(value) {
 
     storage.setDataInLocalStorage(ADPLUS_UID_NAME, json);
 
-    const expires = new Date(data.expiresAt).toUTCString()
+    const expires = new Date(data.expiresAt).toUTCString();
     storage.setCookie(
       ADPLUS_UID_NAME,
       json,
@@ -132,7 +132,7 @@ function fetchAdplusId(isRotate, uid, callback) {
       if (response) {
         try {
           const data = JSON.parse(response);
-          if (data == null || !data.uid) {
+          if (!data?.uid) {
             logWarn(LOG_PREFIX + 'AdPlus ID is null');
             return callback();
           }
@@ -163,6 +163,8 @@ export const adplusIdSystemSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+
+  disclosureURL: 'local://modules/adplusIdSystemDisclosure.json',
 
   /**
    * decode the stored id value for passing to bid requests

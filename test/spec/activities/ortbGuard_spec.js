@@ -18,11 +18,11 @@ describe('ortb2Guard', () => {
     isAllowed = sinon.stub();
     ortb2Guard = ortb2GuardFactory(function (activity, params) {
       if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MOD_TYPE && params[ACTIVITY_PARAM_COMPONENT_NAME] === MOD_NAME) {
-        return isAllowed(activity)
+        return isAllowed(activity);
       } else {
-        throw new Error('wrong component')
+        throw new Error('wrong component');
       }
-    })
+    });
   });
 
   function testAllowDeny(transmitActivity, enrichActivity, fn) {
@@ -36,11 +36,11 @@ describe('ortb2Guard', () => {
             if (activity === transmitActivity) return true;
             if (activity === enrichActivity) return allowed;
             throw new Error('wrong activity');
-          })
+          });
         });
         fn(allowed);
-      })
-    })
+      });
+    });
   }
 
   function testPropertiesAreProtected(properties, allowed) {
@@ -56,7 +56,7 @@ describe('ortb2Guard', () => {
         mergeDeep(guard, mod);
         const actual = deepAccess(ortb2, prop);
         if (allowed) {
-          expect(actual).to.eql(orig.concat(insert))
+          expect(actual).to.eql(orig.concat(insert));
         } else {
           expect(actual).to.eql(orig);
         }
@@ -75,7 +75,7 @@ describe('ortb2Guard', () => {
           expect(actual).to.eql([{ n: 'orig' }]);
         }
       });
-    })
+    });
   }
 
   testAllowDeny(ACTIVITY_TRANSMIT_EIDS, ACTIVITY_ENRICH_EIDS, (allowed) => {
@@ -88,7 +88,7 @@ describe('ortb2Guard', () => {
 });
 
 describe('ortb2FragmentsGuard', () => {
-  let guardFragments
+  let guardFragments;
   beforeEach(() => {
     const testGuard = objectGuard([
       writeProtectRule({
@@ -96,7 +96,7 @@ describe('ortb2FragmentsGuard', () => {
         applies: () => true,
         name: 'testRule'
       })
-    ])
+    ]);
     guardFragments = ortb2FragmentsGuardFactory(testGuard);
   });
 
@@ -105,7 +105,7 @@ describe('ortb2FragmentsGuard', () => {
       global: {
         foo: { inner: 'val' }
       }
-    }
+    };
     const guard = guardFragments(fragments);
     guard.global.foo = 'other';
     expect(fragments.global.foo).to.eql({ inner: 'val' });
@@ -132,4 +132,4 @@ describe('ortb2FragmentsGuard', () => {
     guard.bidder.A = { foo: 'denied', other: 'allowed' };
     expect(fragments.bidder.A).to.eql({ other: 'allowed' });
   });
-})
+});

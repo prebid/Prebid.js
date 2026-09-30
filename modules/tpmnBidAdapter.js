@@ -3,7 +3,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
 /**
@@ -40,7 +39,7 @@ export const spec = {
       utils.triggerPixel(bid.burl);
     }
   }
-}
+};
 
 function isBidRequestValid(bid) {
   return (isValidInventoryId(bid) && (isValidBannerRequest(bid) || isValidVideoRequest(bid)));
@@ -86,12 +85,12 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
-  const rtbData = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
+  const rtbData = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } });
 
-  const bid = bidRequests.find((b) => b.params.inventoryId)
+  const bid = bidRequests.find((b) => b.params.inventoryId);
 
   if (bid.params.inventoryId) rtbData.ext = {};
-  if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
+  if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId;
 
   const ortb2Data = bidderRequest?.ortb2 || {};
   const bcat = ortb2Data?.bcat || bid.params.bcat || [];
@@ -112,7 +111,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: BIDDER_ENDPOINT_URL + '?v=' + ADAPTER_VERSION,
     data: rtbData
-  }
+  };
 }
 
 function interpretResponse(response, request) {
@@ -135,10 +134,10 @@ const CONVERTER = ortbConverter({
     [VIDEO, BANNER].forEach(namespace => {
       COMMON_PARAMS.forEach(param => {
         if (bidRequest.params.hasOwnProperty(param)) {
-          utils.deepSetValue(imp, `${namespace}.${param}`, bidRequest.params[param])
+          utils.deepSetValue(imp, `${namespace}.${param}`, bidRequest.params[param]);
         }
-      })
-    })
+      });
+    });
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -160,7 +159,7 @@ const CONVERTER = ortbConverter({
         let videoParams = bidRequest.mediaTypes[VIDEO];
         if (videoParams) {
           videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-          bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } }
+          bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } };
         }
         orig(imp, bidRequest, context);
       },
@@ -202,7 +201,7 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
   const syncArr = [];
   if (syncOptions.iframeEnabled) {
     let policyParam = '';
@@ -216,8 +215,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (uspConsent && uspConsent.consentString) {
       policyParam += `&ccpa_consent=${uspConsent.consentString}`;
     }
-    const coppa = config.getConfig('coppa') ? 1 : 0;
-    policyParam += `&coppa=${coppa}`;
+    policyParam += `&coppa=${coppa ? 1 : 0}`;
     syncArr.push({
       type: 'iframe',
       url: IFRAMESYNC + '?' + policyParam

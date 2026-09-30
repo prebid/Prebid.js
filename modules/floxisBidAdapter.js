@@ -1,15 +1,23 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice } from '../src/utils.js';
+import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'floxis';
+const GVLID = 1609;
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_REGION = 'us-e';
 const DEFAULT_PARTNER = BIDDER_CODE;
 const SYNC_PATH = '/sync';
+const FLOXIS_ID_KEY = 'flx_uid';
+const FLOXIS_ID_COOKIE_EXP = 2592000000; // 30 days
+const UUID_LENGTH = 36;
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
 // Server-echo user-sync: the /pbjs response carries seat + region in this header (on bid and no-bid
 // alike), so getUserSyncs derives sync targets from serverResponses statelessly — no module state that
 // could leak across concurrent auctions. Absent header (older backend) => no sync, a safe no-op.
@@ -87,6 +95,56 @@ function normalizeBidParams(params = {}) {
   };
 }
 
+function isValidFloxisId(id) {
+  return typeof id === 'string' && id.length === UUID_LENGTH;
+}
+
+function getOrCreatePersistedFloxisId() {
+  try {
+    const localOk = storage.localStorageIsEnabled();
+    const cookieOk = storage.cookiesAreEnabled();
+    if (!localOk && !cookieOk) return null;
+
+    let id = localOk ? storage.getDataFromLocalStorage(FLOXIS_ID_KEY) : null;
+    if (!isValidFloxisId(id) && cookieOk) {
+      id = storage.getCookie(FLOXIS_ID_KEY);
+    }
+    const minted = !isValidFloxisId(id);
+    if (minted) {
+      id = generateUUID();
+    }
+
+    if (localOk) {
+      storage.setDataInLocalStorage(FLOXIS_ID_KEY, id);
+    }
+    if (cookieOk) {
+      const expires = new Date(Date.now() + FLOXIS_ID_COOKIE_EXP).toUTCString();
+      storage.setCookie(FLOXIS_ID_KEY, id, expires);
+    }
+
+    if (minted &&
+        storage.getDataFromLocalStorage(FLOXIS_ID_KEY) !== id &&
+        storage.getCookie(FLOXIS_ID_KEY) !== id) {
+      return null;
+    }
+    return id;
+  } catch (e) {
+    return null;
+  }
+}
+
+function createFloxisIdResolver() {
+  let resolved = false;
+  let id = null;
+  return () => {
+    if (!resolved) {
+      resolved = true;
+      id = getOrCreatePersistedFloxisId();
+    }
+    return id;
+  };
+}
+
 // Parse the server-echoed sync header (`seat=<seat>&region=<label>`) into a sync target. Returns null
 // for an absent or malformed header so a response without it simply contributes no sync.
 function parseSyncHeader(headerValue) {
@@ -108,6 +166,11 @@ const CONVERTER = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
+
+    // Placement identity for SSP-side reporting; ortb2Imp.tagid (already merged in by buildImp) wins.
+    if (!imp.tagid && bidRequest.adUnitCode) {
+      imp.tagid = bidRequest.adUnitCode;
+    }
 
     // The priceFloors processor already sets imp.bidfloor when the module is active; only fill a
     // floor here when it left none — from getFloor (ignoring 0, which would clobber an FPD floor)
@@ -150,6 +213,13 @@ const CONVERTER = ortbConverter({
         }
       }
     });
+    if (!req.user?.ext?.floxisId) {
+      const floxisId = context.resolveFloxisId();
+      if (floxisId) {
+        // mergeDeep, not deepSetValue: it repairs a non-object user/user.ext, which publisher ortb2 can supply
+        mergeDeep(req, { user: { ext: { floxisId } } });
+      }
+    }
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -167,6 +237,7 @@ const CONVERTER = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid(bid) {
@@ -176,10 +247,7 @@ export const spec = {
 
   buildRequests(validBidRequests = [], bidderRequest = {}) {
     if (!validBidRequests.length) return [];
-    const filteredBidRequests = validBidRequests.filter((bidRequest) => spec.isBidRequestValid(bidRequest));
-    if (!filteredBidRequests.length) return [];
-
-    const bidRequestsByParams = filteredBidRequests.reduce((groups, bidRequest) => {
+    const bidRequestsByParams = validBidRequests.reduce((groups, bidRequest) => {
       const { seat, region, partner } = normalizeBidParams(bidRequest.params);
       const key = `${seat}|${region}|${partner}`;
       groups[key] = groups[key] || [];
@@ -196,6 +264,7 @@ export const spec = {
     }, {});
 
     const groups = Object.values(bidRequestsByParams);
+    const resolveFloxisId = createFloxisIdResolver();
 
     return groups.map((groupedBidRequests) => {
       const { seat, region, partner } = groupedBidRequests[0].params;
@@ -204,7 +273,7 @@ export const spec = {
       return {
         method: 'POST',
         url,
-        data: CONVERTER.toORTB({ bidRequests: groupedBidRequests, bidderRequest }),
+        data: CONVERTER.toORTB({ bidRequests: groupedBidRequests, bidderRequest, context: { resolveFloxisId } }),
         options: {
           withCredentials: true,
           contentType: 'text/plain'
@@ -222,22 +291,37 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
     if (!serverResponses || !serverResponses.length) return [];
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    // Only honor a body sync whose type is enabled here — core userSync drops a disabled-type sync.
+    const isEnabledSync = (e) => e && typeof e.url === 'string' && e.url &&
+      ((e.type === 'iframe' && syncOptions.iframeEnabled) || (e.type === 'image' && syncOptions.pixelEnabled));
     const query = buildConsentQuery(gdprConsent, uspConsent, gppConsent);
     const consentSuffix = query.length ? '&' + query.join('&') : '';
     const seen = {};
     const syncs = [];
     serverResponses.forEach((serverResponse) => {
+      // body.ext.sync is primary; serverResponse.headers is not a real Headers object in every Prebid build.
+      const bodySyncs = serverResponse?.body?.ext?.sync;
+      if (Array.isArray(bodySyncs) && bodySyncs.length) {
+        const entry = bodySyncs.find((e) => isEnabledSync(e) && e.type === pixelType) || bodySyncs.find(isEnabledSync);
+        if (entry) {
+          if (!seen[entry.url]) {
+            seen[entry.url] = true;
+            syncs.push({ type: entry.type, url: entry.url });
+          }
+          return;
+        }
+        // body carried no entry of an enabled sync type — fall through to the header path below
+      }
       const target = parseSyncHeader(serverResponse?.headers?.get?.(SYNC_HEADER));
       if (!target) return;
       const { seat, region } = target;
       const host = getSyncHost(region);
-      const key = `${seat}|${region}`;
-      if (!host || seen[key]) return;
-      seen[key] = true;
-      syncs.push({
-        type: pixelType,
-        url: `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`
-      });
+      if (!host) return;
+      // Dedupe on the final URL so a header sync collapses with a same-URL body.ext.sync entry in a mixed rollout.
+      const url = `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`;
+      if (seen[url]) return;
+      seen[url] = true;
+      syncs.push({ type: pixelType, url });
     });
     return syncs;
   },

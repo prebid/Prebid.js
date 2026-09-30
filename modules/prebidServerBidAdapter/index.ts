@@ -26,6 +26,8 @@ import * as events from '../../src/events.js';
 import { ajax } from '../../src/ajax.js';
 import { hook } from '../../src/hook.js';
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
+import { parseUntrustedJSON } from '../../src/utils/untrustedJson.js';
+import { hasVendorPurposeConsent } from '../../libraries/consentManagement/consentUtils.js';
 import { buildPBSRequest, interpretPBSResponse } from './ortbConverter.js';
 import { useMetrics } from '../../src/utils/perfMetrics.js';
 import { isActivityAllowed } from '../../src/activities/rules.js';
@@ -34,6 +36,7 @@ import type { Identifier, BidderCode } from '../../src/types/common.d.ts';
 import type { Metrics } from "../../src/utils/perfMetrics.ts";
 import type { ORTBResponse } from "../../src/types/ortb/response.d.ts";
 import type { NativeRequest } from '../../src/types/ortb/native.d.ts';
+import { browserSupportsUserSyncCookies } from "../../src/userSync.ts";
 import type { SyncType } from "../../src/userSync.ts";
 
 const getConfig = config.getConfig;
@@ -99,6 +102,10 @@ type S2SConfig = {
    */
   syncEndpoint: Endpoint;
   /**
+   * GVL ID of the Prebid Server host. When set, endpoint URL selection uses TCF purpose 1 validation for this vendor instead of generic purpose 1 consent.
+   */
+  hostGvlid?: string;
+  /**
    * Max number of userSync URLs that can be executed by Prebid Server cookie_sync per request.
    * If not defined, PBS will execute all userSync URLs included in the request.
    */
@@ -144,7 +151,7 @@ type S2SConfig = {
    * If true, exclude ad units that have no bidders defined.
    */
   filterBidderlessCalls?: boolean;
-}
+};
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
   bidders: Object.freeze([]) as any,
@@ -228,14 +235,14 @@ export function validateConfig(options: S2SConfig[]) {
             activeBidders.add(bidder);
             return true;
           }
-        })
+        });
       }
       return true;
     } else {
       logWarn('prebidServer: s2s config is disabled', s2sConfig);
       return false;
     }
-  })
+  });
 }
 
 /**
@@ -260,6 +267,10 @@ export function resetSyncedStatus() {
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
 function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig: S2SConfig) {
+  if (!browserSupportsUserSyncCookies()) {
+    return;
+  }
+
   if (_s2sConfigs.length === _syncCount) {
     return;
   }
@@ -314,10 +325,10 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig: 
   }
 
   const jsonPayload = JSON.stringify(payload);
-  ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent),
+  ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent, s2sConfig.hostGvlid),
     (response) => {
       try {
-        const responseJson = JSON.parse(response);
+        const responseJson = parseUntrustedJSON(response);
         doAllSyncs(responseJson.bidder_status, s2sConfig);
       } catch (e) {
         logError(e);
@@ -360,7 +371,7 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
   if (s2sConfig.syncUrlModifier && typeof s2sConfig.syncUrlModifier[bidder] === 'function') {
     url = s2sConfig.syncUrlModifier[bidder](type, url, bidder);
   }
-  doBidderSync(type, url, bidder, done, s2sConfig.syncTimeout)
+  doBidderSync(type, url, bidder, done, s2sConfig.syncTimeout);
 }
 
 /**
@@ -411,9 +422,11 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   });
 }
 
-function getMatchingConsentUrl(urlProp, gdprConsent) {
-  const hasPurpose = hasPurpose1Consent(gdprConsent);
-  const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent
+function getMatchingConsentUrl(urlProp, gdprConsent, hostGvlid?: string) {
+  const hasPurpose = hostGvlid
+    ? hasVendorPurposeConsent(gdprConsent, 1, hostGvlid)
+    : hasPurpose1Consent(gdprConsent);
+  const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent;
   if (!url) {
     logWarn('Missing matching consent URL when gdpr=' + hasPurpose);
   }
@@ -448,14 +461,14 @@ export type SeatNonBid = {
    */
   response: ORTBResponse;
   adapterMetrics: Metrics;
-}
+};
 
 export type PbsAnalytics = SeatNonBid & {
   /**
    * The PBS response's `ext.prebid.analytics.tags`.
    */
   atag: unknown;
-}
+};
 
 declare module '../../src/events' {
   interface Events {
@@ -474,14 +487,14 @@ export function PrebidServer() {
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const adapterMetrics = s2sBidRequest.metrics = useMetrics(bidRequests?.[0]?.metrics)
       .newMetrics()
-      .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
+      .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`]);
     done = adapterMetrics.startTiming('total').stopBefore(done);
     bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, { stopPropagation: true }));
 
     const { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
-      if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
+      if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent, s2sBidRequest.s2sConfig.hostGvlid)) {
         const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
         const syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
@@ -495,7 +508,7 @@ export function PrebidServer() {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
-          const { seatNonBidData, atagData } = getAnalyticsFlags(s2sBidRequest.s2sConfig, response)
+          const { seatNonBidData, atagData } = getAnalyticsFlags(s2sBidRequest.s2sConfig, response);
           // pbs analytics event
           if (seatNonBidData || atagData) {
             const data: PbsAnalytics = {
@@ -505,7 +518,7 @@ export function PrebidServer() {
               requestedBidders,
               response,
               adapterMetrics
-            }
+            };
             events.emit(EVENTS.PBS_ANALYTICS, data);
           }
           done(false);
@@ -535,7 +548,7 @@ export function PrebidServer() {
             }
           }
         }
-      })
+      });
     }
   };
 
@@ -550,7 +563,7 @@ type PbsRequestData = {
   endpointUrl: string;
   requestJson: string;
   customHeaders: Record<string, string>;
-}
+};
 
 /**
  * Build and send the appropriate HTTP request over the network, then interpret the response.
@@ -574,11 +587,11 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
 
   const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
   const requestData: PbsRequestData = {
-    endpointUrl: getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+    endpointUrl: getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent, s2sBidRequest.s2sConfig.hostGvlid),
     requestJson: request && JSON.stringify(request),
     customHeaders: s2sBidRequest?.s2sConfig?.customHeaders ?? {},
   };
-  events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
+  events.emit(EVENTS.BEFORE_PBS_HTTP, requestData);
   logInfo('BidRequest: ' + requestData);
   if (request && requestData.requestJson && requestData.endpointUrl) {
     const callAjax = (payload, endpointUrl) => {
@@ -590,7 +603,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
             networkDone();
             let result;
             try {
-              result = JSON.parse(response);
+              result = parseUntrustedJSON(response);
               const { bids } = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
               bids.forEach(onBid);
             } catch (error) {
@@ -616,7 +629,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
           customHeaders: requestData.customHeaders
         }
       );
-    }
+    };
 
     const enableGZipCompression = s2sBidRequest.s2sConfig.endpointCompression && !requestData.customHeaders['Content-Encoding'];
     const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
@@ -642,7 +655,7 @@ function getAnalyticsFlags(s2sConfig, response) {
   return {
     atagData: getAtagData(response),
     seatNonBidData: getNonBidData(s2sConfig, response)
-  }
+  };
 }
 function getNonBidData(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid : undefined;

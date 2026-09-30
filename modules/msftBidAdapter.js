@@ -205,6 +205,18 @@ const converter = ortbConverter({
       });
     }
 
+    if (bidderRequest?.gdprConsent?.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+      const ac = bidderRequest.gdprConsent.addtlConsent;
+      const segments = ac.split('~');
+      const consentedSegment = segments[1] || '';
+      // ACv1 uses: version~vendorIds; ACv2 uses: version~consentedVendorIds~dv.disclosedVendorIds
+      // Only the consented-vendor segment should be populated into user.ext.addtl_consent.
+      const addtlConsent = consentedSegment.split('.').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      if (addtlConsent.length > 0) {
+        deepSetValue(request, 'user.ext.addtl_consent', addtlConsent);
+      }
+    }
+
     const extANData = {
       prebid: true,
       hb_source: 1,
@@ -315,7 +327,11 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [{ code: 'oftmedia', gvlid: 32 }], // TODO fill in after full transition or as seperately requested
+  aliases: [
+    { code: 'oftmedia', gvlid: 32 },
+    { code: 'msftstaila', gvlid: 32 },
+    { code: 'projectagora', gvlid: 1032 }
+  ], // TODO fill in after full transition or as separately requested
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: (bid) => {

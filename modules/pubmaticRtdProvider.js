@@ -31,7 +31,7 @@ export const setYmConfigPromise = (promise) => { _ymConfigPromise = promise; };
 export function ConfigJsonManager() {
   let _ymConfig = {};
   const getYMConfig = () => _ymConfig;
-  const setYMConfig = (config) => { _ymConfig = config; }
+  const setYMConfig = (config) => { _ymConfig = config; };
   let country;
 
   /**
@@ -79,7 +79,7 @@ export function ConfigJsonManager() {
    */
   const getConfigByName = (name) => {
     return getYMConfig()?.plugins?.[name];
-  }
+  };
 
   return {
     fetchConfig,
@@ -183,6 +183,6 @@ export const pubmaticSubmodule = {
 
 export const registerSubModule = () => {
   submodule(CONSTANTS.REAL_TIME_MODULE, pubmaticSubmodule);
-}
+};
 
 registerSubModule();

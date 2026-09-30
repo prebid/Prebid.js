@@ -34,7 +34,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
           const rules = JSON.parse(response);
           timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules);
         } catch (e) {
-          logError('Error parsing json response from timeout provider.')
+          logError('Error parsing json response from timeout provider.');
         }
         callback();
       },

@@ -87,8 +87,8 @@ export const spec = {
       // This is a workaround needed for the rendering step (so that the adserver iframe does not get resized to 1800x1000
       // when there is skin demand
       if (format === 'skin') {
-        bid.width = 1
-        bid.height = 1
+        bid.width = 1;
+        bid.height = 1;
       }
 
       const encoded = window.btoa(JSON.stringify(renderParams));
@@ -120,6 +120,6 @@ export const spec = {
     if (!baseAdapter.onBidWon) { return; }
     baseAdapter.onBidWon(bid);
   }
-}
+};
 
 registerBidder(spec);

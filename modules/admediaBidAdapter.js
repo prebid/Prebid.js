@@ -36,7 +36,7 @@ export const spec = {
       return [];
     }
     return validBidRequests.map(bidRequest => {
-      let sizes = []
+      let sizes = [];
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       }

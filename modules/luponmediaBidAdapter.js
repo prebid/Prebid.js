@@ -16,8 +16,8 @@ const buildServerUrl = (keyId) => {
     host = match[1];
   }
 
-  return `https://${host}.adxpremium.services/openrtb2/auction`
-}
+  return `https://${host}.adxpremium.services/openrtb2/auction`;
+};
 
 function hasRtd() {
   const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
@@ -39,7 +39,7 @@ export const converter = ortbConverter({
     const hasRtdEnabled = hasRtd();
 
     if (!hasRtdEnabled) {
-      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.')
+      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.');
     }
 
     imp.ext.luponmedia = imp.ext.luponmedia || {};

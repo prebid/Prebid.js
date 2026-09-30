@@ -13,6 +13,6 @@ export function addEventTrackers(bidResponse, bid) {
         method: TRACKER_METHOD_IMG,
         event,
         url
-      })
-    })
+      });
+    });
 }

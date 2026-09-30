@@ -3,6 +3,7 @@ import adapterManager from '../src/adapterManager.js';
 import { logInfo, logError } from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const { AUCTION_END, BID_WON } = EVENTS;
 const ANALYTICS_CODE = 'adplus';
@@ -23,61 +24,49 @@ const adplusAnalyticsAdapter = Object.assign(adapter({ SERVER_URL, analyticsType
           (args.bidsReceived || []).forEach(bid => {
             const adUnit = bid.adUnitCode;
             auctionBids[args.auctionId][adUnit] = auctionBids[args.auctionId][adUnit] || [];
-            auctionBids[args.auctionId][adUnit].push({
-              type: 'bid',
-              bidder: bid.bidderCode,
-              auctionId: bid.auctionId,
-              adUnitCode: bid.adUnitCode,
-              cpm: bid.cpm,
-              currency: bid.currency,
-              size: bid.size,
-              width: bid.width,
-              height: bid.height,
-              creativeId: bid.creativeId,
-              timeToRespond: bid.timeToRespond,
-              netRevenue: bid.netRevenue,
-              dealId: bid.dealId || null,
-            });
+            const bidDt = bidDataAdapter('bid', bid);
+            auctionBids[args.auctionId][adUnit].push(bidDt);
           });
           break;
-
-        case BID_WON:
+        case BID_WON: {
           const bid = args;
-          const adUnitBids = (auctionBids[bid.auctionId] || {})[bid.adUnitCode];
+          const adUnitBids = auctionBids?.[bid.auctionId]?.[bid.adUnitCode];
           if (!adUnitBids) {
             logInfo(`[adplusAnalyticsAdapter] No bid data for auction ${bid.auctionId}, ad unit ${bid.adUnitCode}`);
             return;
           }
 
-          const winningBidData = {
-            type: BID_WON,
-            bidder: bid.bidderCode,
-            auctionId: bid.auctionId,
-            adUnitCode: bid.adUnitCode,
-            cpm: bid.cpm,
-            currency: bid.currency,
-            size: bid.size,
-            width: bid.width,
-            height: bid.height,
-            creativeId: bid.creativeId,
-            timeToRespond: bid.timeToRespond,
-            netRevenue: bid.netRevenue,
-            dealId: bid.dealId || null,
-          };
+          const refererInfo = getRefererInfo();
+          const pageUrl = refererInfo?.page || window.location.href || '';
+          const domain = refererInfo?.domain || window.location.hostname || '';
+          const referrer = refererInfo?.ref || window.document.referrer || '';
+
+          const winningBid = bidDataAdapter(BID_WON, bid);
 
           const payload = {
             auctionId: bid.auctionId,
             adUnitCode: bid.adUnitCode,
-            winningBid: winningBidData,
-            allBids: adUnitBids
+            winningBid,
+            allBids: adUnitBids,
+            pageUrl: pageUrl,
+            domain: domain,
+            referrer: referrer,
           };
 
           sendQueue.push(payload);
           if (!isSending) {
             processQueue();
           }
-          break;
 
+          if (auctionBids[bid.auctionId]) {
+            delete auctionBids[bid.auctionId][bid.adUnitCode];
+
+            if (Object.keys(auctionBids[bid.auctionId]).length === 0) {
+              delete auctionBids[bid.auctionId];
+            }
+          }
+          break;
+        }
         default:
           break;
       }
@@ -86,6 +75,36 @@ const adplusAnalyticsAdapter = Object.assign(adapter({ SERVER_URL, analyticsType
     }
   }
 });
+
+function bidDataAdapter(type, bid) {
+  return {
+    type,
+    bidder: bid.bidderCode,
+    auctionId: bid.auctionId,
+    adUnitCode: bid.adUnitCode,
+    adId: getStringValue(bid.adId),
+    adUnitId: getStringValue(bid.adUnitId),
+    requestId: getStringValue(bid.requestId),
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    size: bid.size,
+    width: bid.width,
+    height: bid.height,
+    creativeId: getStringValue(bid.creativeId),
+    timeToRespond: bid.timeToRespond,
+    netRevenue: bid.netRevenue,
+    instl: bid.instl,
+    mediaType: bid.mediaType,
+    dealId: getStringValue(bid.dealId),
+    transactionId: getStringValue(bid.transactionId),
+  };
+}
+
+function getStringValue(value) {
+  return value == null ? undefined : String(value);
+}
 
 function processQueue() {
   if (sendQueue.length === 0) {
@@ -148,6 +167,8 @@ adplusAnalyticsAdapter.auctionBids = auctionBids;
 
 adplusAnalyticsAdapter.reset = function () {
   auctionBids = {};
+  sendQueue = [];
+  isSending = false;
   adplusAnalyticsAdapter.auctionBids = auctionBids;
 };
 

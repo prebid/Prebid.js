@@ -10,16 +10,16 @@ describe('delayIfPrerendering', () => {
 
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
   const delay = delayIfPrerendering(() => enabled, () => {
     ran = true;
-  })
+  });
 
   it('should not delay if page is not prerendering', () => {
     delay();
     expect(ran).to.be.true;
-  })
+  });
 
   describe('when page is prerendering', () => {
     before(() => {
@@ -27,9 +27,9 @@ describe('delayIfPrerendering', () => {
         document.prerendering = null;
         after(() => {
           delete document.prerendering;
-        })
+        });
       }
-    })
+    });
     beforeEach(() => {
       sandbox.stub(document, 'prerendering').get(() => true);
     });
@@ -48,6 +48,6 @@ describe('delayIfPrerendering', () => {
       enabled = false;
       delay();
       expect(ran).to.be.true;
-    })
-  })
-})
+    });
+  });
+});

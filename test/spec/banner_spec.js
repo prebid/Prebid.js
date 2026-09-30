@@ -7,7 +7,7 @@ describe('banner', () => {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-    })
+    });
 
     afterEach(() => {
       sandbox.restore();
@@ -139,10 +139,10 @@ describe('banner', () => {
             format: [{ wratio: 1, hratio: 1 }]
           }
         }
-      }
+      };
       syncOrtb2(adUnit, 'banner');
       sinon.assert.notCalled(logWarnSpy);
-    })
+    });
 
     it('should omit sync if mediaType not present on adUnit', () => {
       const adUnit = {
@@ -256,7 +256,7 @@ describe('banner', () => {
         }
       };
       syncOrtb2(adUnit2, 'banner');
-      expect(adUnit2.ortb2Imp.banner).to.be.undefined
+      expect(adUnit2.ortb2Imp.banner).to.be.undefined;
     });
   });
-})
+});

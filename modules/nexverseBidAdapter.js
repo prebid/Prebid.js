@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 import { getDeviceType } from '../libraries/userAgentUtils/index.js';
 import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid, getBidFloor, getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -139,7 +139,7 @@ export const spec = {
    * @param {Object} gppConsent - GPP consent details.
    * @returns {Array} List of user sync URLs.
    */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
     const type = syncOptions.iframeEnabled ? "iframe" : "image";
     let url = BIDDER_ENDPOINT + `/${type}?pbjs=1`;
 
@@ -162,8 +162,7 @@ export const spec = {
       url += "&gpp_sid=" + gppConsent.applicableSections.join(",");
     }
 
-    const coppa = config.getConfig("coppa") ? 1 : 0;
-    url += `&coppa=${coppa}`;
+    url += `&coppa=${coppa ? 1 : 0}`;
 
     url += `&uid=${getUid(storage)}`;
 
@@ -276,12 +275,12 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     test = 1;
   }
 
-  let yob = parseInt(bid.params.yob)
+  let yob = parseInt(bid.params.yob);
   if (!isNumber(yob)) {
-    yob = null
+    yob = null;
   }
-  let gender = bid.params.gender || ''
-  let keywords = bid.params.keywords || ''
+  let gender = bid.params.gender || '';
+  let keywords = bid.params.keywords || '';
 
   let osInfo = getOsInfo();
 

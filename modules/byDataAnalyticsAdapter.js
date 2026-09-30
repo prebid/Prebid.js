@@ -13,28 +13,28 @@ import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
 import { getTimeZone } from '../libraries/timezone/timezone.js';
 
-const versionCode = '4.4.1'
-const secretKey = 'bydata@123456'
-const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS
-const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
-const analyticsType = 'endpoint'
-const isBydata = isKeyInUrl('bydata_debug')
-const adunitsMap = {}
+const versionCode = '4.4.1';
+const secretKey = 'bydata@123456';
+const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS;
+const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid';
+const analyticsType = 'endpoint';
+const isBydata = isKeyInUrl('bydata_debug');
+const adunitsMap = {};
 const MODULE_CODE = 'bydata';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
-let initOptions = {}
-var payload = {}
-var winPayload = {}
-var isDataSend = window.asc_data || false
-var bdNbTo = { 'to': [], 'nb': [] }
+let initOptions = {};
+var payload = {};
+var winPayload = {};
+var isDataSend = window.asc_data || false;
+var bdNbTo = { 'to': [], 'nb': [] };
 
 /* method used for testing parameters */
 function isKeyInUrl(name) {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const param = urlParams.get(name)
-  return param
+  const param = urlParams.get(name);
+  return param;
 }
 
 /* return ad unit full path wrt custom ad unit code */
@@ -50,31 +50,31 @@ function getAdunitName(code) {
 function onAuctionStart(t) {
   /* map of ad unit code - ad unit full path */
   t.adUnits && t.adUnits.length && t.adUnits.forEach((adu) => {
-    const { code, adunit } = adu
-    adunitsMap[code] = adunit
+    const { code, adunit } = adu;
+    adunitsMap[code] = adunit;
   });
 }
 
 /* EVENT: bid timeout */
 function onBidTimeout(t) {
   if (payload['visitor_data'] && t && t.length > 0) {
-    bdNbTo['to'] = t
+    bdNbTo['to'] = t;
   }
 }
 
 /* EVENT: no bid */
 function onNoBidData(t) {
   if (payload['visitor_data'] && t) {
-    bdNbTo['nb'].push(t)
+    bdNbTo['nb'].push(t);
   }
 }
 
 /* EVENT: bid won */
 function onBidWon(t) {
-  const { isCorrectOption } = initOptions
+  const { isCorrectOption } = initOptions;
   if (isCorrectOption && (isDataSend || isBydata)) {
-    ascAdapter.getBidWonData(t)
-    ascAdapter.sendPayload(winPayload)
+    ascAdapter.getBidWonData(t);
+    ascAdapter.sendPayload(winPayload);
   }
 }
 
@@ -141,31 +141,31 @@ ascAdapter.initConfig = function (config) {
 };
 
 ascAdapter.getBidWonData = function(t) {
-  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t
-  const aun = getAdunitName(adUnitCode)
-  winPayload['aid'] = auctionId
+  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t;
+  const aun = getAdunitName(adUnitCode);
+  winPayload['aid'] = auctionId;
   winPayload['as'] = '';
   winPayload['auctionData'] = [];
-  var data = {}
-  data['au'] = aun
-  data['auc'] = adUnitCode
-  data['aus'] = size
-  data['bid'] = requestId
-  data['bidadv'] = bidder
-  data['br_pb_mg'] = cpm
-  data['br_tr'] = timeToRespond
-  data['bradv'] = bidder
-  data['brid'] = requestId
-  data['brs'] = size
-  data['cur'] = currency
-  data['inb'] = 0
-  data['ito'] = 0
-  data['ipwb'] = 1
-  data['iwb'] = 1
-  data['mt'] = mediaType
-  winPayload['auctionData'].push(data)
-  return winPayload
-}
+  var data = {};
+  data['au'] = aun;
+  data['auc'] = adUnitCode;
+  data['aus'] = size;
+  data['bid'] = requestId;
+  data['bidadv'] = bidder;
+  data['br_pb_mg'] = cpm;
+  data['br_tr'] = timeToRespond;
+  data['bradv'] = bidder;
+  data['brid'] = requestId;
+  data['brs'] = size;
+  data['cur'] = currency;
+  data['inb'] = 0;
+  data['ito'] = 0;
+  data['ipwb'] = 1;
+  data['iwb'] = 1;
+  data['mt'] = mediaType;
+  winPayload['auctionData'].push(data);
+  return winPayload;
+};
 
 ascAdapter.getVisitorData = function (data = {}) {
   var ua = data.uid ? data : {};
@@ -241,7 +241,7 @@ ascAdapter.getVisitorData = function (data = {}) {
   payload['visitor_data'] = signedToken;
   winPayload['visitor_data'] = signedToken;
   return signedToken;
-}
+};
 
 ascAdapter.dataProcess = function (t) {
   if (isBydata) { payload['bydata_debug'] = 'true'; }
@@ -262,7 +262,7 @@ ascAdapter.dataProcess = function (t) {
       var mt = bid.mediaTypes.banner ? 'display' : 'video';
       data['mediaTypes'].push(mt);
       pObj['bids'].push(data);
-    })
+    });
     bidderRequestsData.push(pObj);
   });
   t.bidsReceived && t.bidsReceived.forEach(bid => {
@@ -274,7 +274,7 @@ ascAdapter.dataProcess = function (t) {
     bdsArray.forEach(bid => {
       const { adUnitCode, sizes, bidder, bidId, mediaTypes } = bid;
       sizes.forEach(size => {
-        var sstr = size[0] + 'x' + size[1]
+        var sstr = size[0] + 'x' + size[1];
         payload['auctionData'].push({ au: getAdunitName(adUnitCode), auc: adUnitCode, aus: sstr, mt: mediaTypes[0], bidadv: bidder, bid: bidId, inb: 0, ito: 0, ipwb: 0, iwb: 0 });
       });
     });
@@ -297,7 +297,7 @@ ascAdapter.dataProcess = function (t) {
         rwData['ipwb'] = 1;
       }
     });
-  })
+  });
 
   var winningBids = auctionManager.getAllWinningBids();
   winningBids && winningBids.length > 0 && winningBids.forEach(wBid => {
@@ -306,7 +306,7 @@ ascAdapter.dataProcess = function (t) {
         rwData['iwb'] = 1;
       }
     });
-  })
+  });
 
   payload['auctionData'] && payload['auctionData'].length > 0 && payload['auctionData'].forEach(u => {
     bdNbTo['to'].forEach(i => {
@@ -314,16 +314,16 @@ ascAdapter.dataProcess = function (t) {
     });
     bdNbTo['nb'].forEach(i => {
       if (u.bidadv === i.bidder && u.bid === i.bidId) { u.inb = 1; }
-    })
+    });
   });
   return payload;
-}
+};
 
 ascAdapter.sendPayload = function (data) {
   var obj = { 'records': [{ 'value': data }] };
   const strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
-}
+};
 
 function sendDataOnKf(dataObj) {
   ajax(DEFAULT_EVENT_URL, {

@@ -1,7 +1,6 @@
 import { deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { parseDomain } from '../src/refererDetection.js';
 
 /**
@@ -44,7 +43,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -195,7 +194,7 @@ export const spec = {
         ext: {
           schain: schain
         }
-      }
+      };
     }
 
     if (bidderRequest?.timeout) {
@@ -258,8 +257,8 @@ export const spec = {
             bid.dspId = seat;
           }
           bidResponses.push(bid);
-        })
-      })
+        });
+      });
     }
     return bidResponses;
   },
@@ -267,7 +266,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) => {
     let syncurl = '';
 
     // Attaching GDPR Consent Params in UserSync url
@@ -287,8 +286,8 @@ export const spec = {
       syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
-    // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    // COPPA is supplied by core's COPPA handler (updated by the Codex bot).
+    if (coppa) {
       syncurl += '&coppa=1';
     }
 
@@ -304,7 +303,7 @@ export const spec = {
       }];
     }
   }
-}
+};
 
 function buildBanner(request) {
   let sizes = request.sizes;
@@ -318,18 +317,18 @@ function buildBanner(request) {
       return {
         w: s[0],
         h: s[1]
-      }
+      };
     });
     return {
       w: sizes[0][0],
       h: sizes[0][1],
       format: format
-    }
+    };
   } else {
     return {
       w: sizes[0][0],
       h: sizes[0][1]
-    }
+    };
   }
 }
 

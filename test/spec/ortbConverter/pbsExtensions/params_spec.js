@@ -3,7 +3,7 @@ import { setImpBidParams } from '../../../../libraries/pbsExtensions/processors/
 describe('pbjs -> ortb bid params to imp[].ext.prebid.BIDDER', () => {
   function setParams(bidRequest = {}) {
     const imp = {};
-    setImpBidParams(imp, bidRequest)
+    setImpBidParams(imp, bidRequest);
     return imp;
   }
 
@@ -18,7 +18,7 @@ describe('pbjs -> ortb bid params to imp[].ext.prebid.BIDDER', () => {
           }
         }
       }
-    })
+    });
   });
 
   it('has no effect if bidRequest has no params', () => {

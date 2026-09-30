@@ -138,7 +138,7 @@ function VASTWrapper(options, callback) {
       const epoch = timestamp() - new Date().getTimezoneOffset() * 60 * 1000;
       const expires0 = options.bid.ttl * 1000 - (epoch - options.bid.responseTimestamp);
       const expires = Math.max(30 * 1000, expires0);
-      setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)) }, expires);
+      setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)); }, expires);
     }
 
     if (!result) {

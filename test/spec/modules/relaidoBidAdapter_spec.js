@@ -332,8 +332,8 @@ describe('RelaidoAdapter', function () {
             id: 'hugahuga'
           }
         }
-      ]
-      bidRequest.userIdAsEids = userIdAsEids
+      ];
+      bidRequest.userIdAsEids = userIdAsEids;
       const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(bidRequests.data);
       expect(data.bids[0].userIdAsEids).to.have.lengthOf(1);
@@ -525,7 +525,7 @@ describe('RelaidoAdapter', function () {
         adId: '3b286a4db7031f',
         adUnitCode: bidRequest.adUnitCode,
         ref: window.location.href,
-      }
+      };
       spec.onBidWon(bid);
       const parser = utils.parseUrl(triggerPixelStub.getCall(0).args[0]);
       const query = parser.search;

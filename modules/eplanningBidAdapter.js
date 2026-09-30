@@ -166,7 +166,7 @@ export const spec = {
           syncs.push({
             type: 'iframe',
             url: sync.u,
-          })
+          });
         }
       });
     }
@@ -478,7 +478,7 @@ function getViewabilityTracker() {
   function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
     const visibleIntervals = observedElementIsVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
     if (visibleIntervals === TIME_PARTITIONS) {
-      stopObserveViewability(element)
+      stopObserveViewability(element);
       callback();
     } else {
       setTimeout(processIntervalVisibilityStatus.bind(this, visibleIntervals, element, callback), VIEWABILITY_TIME / TIME_PARTITIONS);

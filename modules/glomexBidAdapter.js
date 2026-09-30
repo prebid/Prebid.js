@@ -1,9 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
-const ENDPOINT = 'https://prebid.mes.glomex.cloud/request-bid'
-const BIDDER_CODE = 'glomex'
-const GVLID = 967
+const ENDPOINT = 'https://prebid.mes.glomex.cloud/request-bid';
+const BIDDER_CODE = 'glomex';
+const GVLID = 967;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -12,9 +12,9 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.integrationId) {
-      return true
+      return true;
     }
-    return false
+    return false;
   },
 
   buildRequests: function (validBidRequests, bidderRequest = {}) {
@@ -50,20 +50,20 @@ export const spec = {
         contentType: 'application/json'
       },
       validBidRequests: validBidRequests,
-    }
+    };
   },
 
   interpretResponse: function (serverResponse, originalBidRequest) {
-    const bidResponses = []
+    const bidResponses = [];
 
     originalBidRequest.validBidRequests.forEach(function (bidRequest) {
       if (!serverResponse.body) {
-        return
+        return;
       }
 
       const matchedBid = ((serverResponse.body.bids) || []).find(function (bid) {
-        return String(bidRequest.bidId) === String(bid.id)
-      })
+        return String(bidRequest.bidId) === String(bid.id);
+      });
 
       if (matchedBid) {
         const bidResponse = {
@@ -80,13 +80,13 @@ export const spec = {
           meta: {
             advertiserDomains: matchedBid.adomain ? matchedBid.adomain : []
           }
-        }
+        };
 
-        bidResponses.push(bidResponse)
+        bidResponses.push(bidResponse);
       }
-    })
-    return bidResponses
+    });
+    return bidResponses;
   }
 };
 
-registerBidder(spec)
+registerBidder(spec);

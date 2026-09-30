@@ -5,7 +5,7 @@ import { hook } from '../../src/hook.js';
 import { install } from './debugging.js';
 import { prefixLog } from '../../src/utils.js';
 import { createBid } from '../../src/bidfactory.js';
-import { DEBUG_KEY } from '../../src/debugging.js';
+import { DEBUG_KEY, getPubcidOptout } from '../../src/debugging.js';
 import * as utils from '../../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { Renderer } from '../../src/Renderer.js';
@@ -21,4 +21,5 @@ install({
   NATIVE,
   VIDEO,
   Renderer,
+  getPubcidOptout,
 });

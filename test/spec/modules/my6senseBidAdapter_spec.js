@@ -82,7 +82,7 @@ describe('My6sense Bid adapter test', function () {
           adm: '<script type="text/javascript" language="JavaScript">\r\n<!--\r\n\r\n//-->\r\n</script>'
         }
       }
-    ]
+    ];
   });
 
   describe('test if requestIsValid function', function () {

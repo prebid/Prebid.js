@@ -374,7 +374,7 @@ const SAMPLE_EVENTS = {
       ]
     }
   }
-}
+};
 
 describe('Uniquest Analytics Adapter', function () {
   let sandbox;

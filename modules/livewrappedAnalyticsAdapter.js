@@ -238,7 +238,7 @@ function getResponses(gdpr, auctionIds) {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       const auction = cache.auctions[auctionId];
       const gdprPos = getGdprPos(gdpr, auction);
-      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
+      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
       const bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
@@ -295,7 +295,7 @@ function getWins(gdpr, auctionIds) {
 }
 
 function getGdprPos(gdpr, auction) {
-  var gdprPos = 0;
+  var gdprPos;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
     if (gdpr[gdprPos].gdprApplies === auction.gdprApplies &&
         gdpr[gdprPos].gdprConsent === auction.gdprConsent) {
@@ -311,7 +311,7 @@ function getGdprPos(gdpr, auction) {
 }
 
 function getAuctionIdPos(auctionIds, auctionId) {
-  var auctionIdPos = 0;
+  var auctionIdPos;
   for (auctionIdPos = 0; auctionIdPos < auctionIds.length; auctionIdPos++) {
     if (auctionIds[auctionIdPos] === auctionId) {
       break;
@@ -427,7 +427,7 @@ function getbidAdUnits() {
 prebidGlobal.clearAllAuctions = function() {
   cache.auctions = {};
   baseClearAllAuctions();
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,

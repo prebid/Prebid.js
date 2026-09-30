@@ -1,3 +1,6 @@
+// the augmentation in this file only applies where the spec is part of the program
+import type {} from './userId/spec.js';
+
 export type EuidIdSystemModuleName = 'euid';
 
 export interface EuidToken {
@@ -60,7 +63,7 @@ export type EuidIdSystemParams = {
    * Hashed, normalized user phone for CSTG mode. Only one DII parameter may be set.
    */
   phoneHash?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -76,4 +79,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

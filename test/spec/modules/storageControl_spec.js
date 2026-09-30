@@ -24,7 +24,7 @@ describe('storageControl', () => {
     let metadata;
     beforeEach(() => {
       metadata = metadataRepository();
-    })
+    });
 
     function mkParams(type = STORAGE_TYPE_COOKIES, key = undefined, bidder = 'mockBidder') {
       return {
@@ -32,7 +32,7 @@ describe('storageControl', () => {
         [ACTIVITY_PARAM_COMPONENT_NAME]: bidder,
         [ACTIVITY_PARAM_STORAGE_TYPE]: type,
         [ACTIVITY_PARAM_STORAGE_KEY]: key
-      }
+      };
     }
 
     it('should return null when no metadata is available', () => {
@@ -96,7 +96,7 @@ describe('storageControl', () => {
 
       it('should return an empty array if the type is neither web nor cookie', () => {
         expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'wrongType', 'mockBidder'), metadata).matches).to.eql([]);
-      })
+      });
 
       Object.entries({
         'its own module': 'mockBidder',
@@ -114,7 +114,7 @@ describe('storageControl', () => {
                 },
               }
             ]
-          )
+          );
         });
       });
 
@@ -138,9 +138,9 @@ describe('storageControl', () => {
                 },
               }
             ]
-          })
-        })
-      })
+          });
+        });
+      });
 
       it('should not match when storage type differs', () => {
         expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'mockKey'), metadata)).to.eql({
@@ -149,14 +149,14 @@ describe('storageControl', () => {
           },
           matches: []
         });
-      })
+      });
     });
   });
   describe('checkDisclosure', () => {
     let disclosures;
     beforeEach(() => {
       disclosures = sinon.stub();
-    })
+    });
     it('should not check when no key is present (e.g. cookiesAreEnabled)', () => {
       expect(checkDisclosure({
         [ACTIVITY_PARAM_COMPONENT_TYPE]: 'bidder',
@@ -172,16 +172,16 @@ describe('storageControl', () => {
         [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockBidder',
         [ACTIVITY_PARAM_STORAGE_TYPE]: STORAGE_TYPE_COOKIES,
         [ACTIVITY_PARAM_STORAGE_KEY]: 'mockCookie'
-      }
+      };
       disclosures.returns({
         matches: [{
           componentName: 'mockBidder',
           identifier: 'mockCookie'
         }]
-      })
+      });
       expect(checkDisclosure(params, disclosures).disclosed).to.be.true;
       sinon.assert.calledWith(disclosures, params);
-    })
+    });
   });
   describe('storageControlRule', () => {
     let enforcement, checkResult, rule;
@@ -253,19 +253,19 @@ describe('storageControl', () => {
         maxAgeSeconds: 10,
         cookieRefresh: true,
         purposes: [1, 2]
-      }])
+      }]);
     });
     it('should not repeat the same module', () => {
       const disclosure = {
         identifier: 'mock', type: 'web', purposes: [1]
-      }
+      };
       hook(next, 'module', disclosure);
       hook(next, 'module', disclosure);
       expect(getDisclosures()).to.eql([{
         disclosedBy: ['module'],
         ...disclosure
-      }])
-    })
+      }]);
+    });
     it('should treat web and cookie disclosures as separate', () => {
       hook(next, 'module1', { identifier: 'mock', type: 'cookie', purposes: [1] });
       hook(next, 'module2', { identifier: 'mock', type: 'web', purposes: [2] });
@@ -282,7 +282,7 @@ describe('storageControl', () => {
           type: 'web',
           purposes: [2]
         }
-      ])
-    })
+      ]);
+    });
   });
-})
+});

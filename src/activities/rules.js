@@ -68,7 +68,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
       return function () {
         const idx = rules.indexOf(entry);
         if (idx >= 0) rules.splice(idx, 1);
-      }
+      };
     },
     /**
      * Test whether an activity is allowed.

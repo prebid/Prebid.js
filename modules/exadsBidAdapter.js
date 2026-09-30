@@ -70,7 +70,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   if (gdprConsent && gdprConsent.gdprApplies) {
     bidRequestData.user['ext'] = {
       consent: gdprConsent.consentString
-    }
+    };
   }
 
   if (validBidRequest.params.dsa && (
@@ -85,7 +85,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
           'datatopub': validBidRequest.params.dsa.datatopub
         }
       }
-    }
+    };
   }
 
   const impData = imps.get(validBidRequest.params.impressionId);
@@ -215,7 +215,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
                 url: asset.img.url,
                 height: h,
                 width: w
-              }
+              };
             } else if (asset.title != null) {
               native.title = asset.title.text;
             } else if (asset.data != null) {
@@ -298,7 +298,7 @@ function makeBidRequest(url, data) {
     method: 'POST',
     url: url,
     data: payloadString
-  }
+  };
 }
 
 function getUrl(adPartner, bid) {

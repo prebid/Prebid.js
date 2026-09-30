@@ -12,7 +12,7 @@ const ENDPOINTS = {
   JPN: 'https://hb-jp.gammaplatform.com',
   US_WEST: 'https://hb-us.gammaplatform.com',
   EU: 'https://hb-eu.gammaplatform.com'
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -68,7 +68,7 @@ export const spec = {
 
     return bids;
   }
-}
+};
 
 /**
  * Get endpoint url by region

@@ -1,6 +1,6 @@
 import { _map } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -26,7 +26,7 @@ function buildBidRequests(validBidRequests) {
     };
 
     return bidRequest;
-  })
+  });
 }
 
 function buildBid(bidData) {
@@ -51,7 +51,7 @@ function buildBid(bidData) {
 }
 
 function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
+  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
 }
 
 function wrapAd(bid, bidData) {
@@ -125,7 +125,7 @@ export const spec = {
       options: {
         contentType: 'application/json'
       }
-    }
+    };
   },
 
   /**
@@ -137,8 +137,8 @@ export const spec = {
   interpretResponse: function(serverResponse) {
     const bids = serverResponse.body && serverResponse.body.bids;
 
-    return Array.isArray(bids) ? bids.map(bid => buildBid(bid)) : []
+    return Array.isArray(bids) ? bids.map(bid => buildBid(bid)) : [];
   }
 
-}
+};
 registerBidder(spec);

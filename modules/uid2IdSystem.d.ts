@@ -1,3 +1,6 @@
+// the augmentation in this file only applies where the spec is part of the program
+import type {} from './userId/spec.js';
+
 export type Uid2IdSystemModuleName = 'uid2';
 
 export interface Uid2Token {
@@ -66,7 +69,7 @@ export type Uid2IdSystemParams = {
    * Hashed, normalized user phone for client-side integration. Only one DII parameter may be set.
    */
   phoneHash?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -82,4 +85,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

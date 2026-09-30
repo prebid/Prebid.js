@@ -27,15 +27,15 @@ export const spec = {
         imp: [cookingImp(bidRequest)],
         device: bidRequest.ortb2?.device,
         site: bidRequest.ortb2?.site,
-      }
+      };
       requests.push({
         method: 'POST',
         url: ENDPOINT_URL + "?item_id=" + itemId,
         data: JSON.stringify(requestData),
       });
-    })
+    });
 
-    return requests
+    return requests;
   },
 
   interpretResponse: (serverResponse, serverRequest) => {
@@ -91,12 +91,12 @@ export const spec = {
         }
       }
 
-      return prBid
+      return prBid;
     });
 
-    return data
+    return data;
   }
-}
+};
 
 registerBidder(spec);
 
@@ -135,7 +135,7 @@ const cookImpBanner = ({ mediaTypes, params }) => {
 
   return {
     format
-  }
+  };
 };
 
 function cookImpVideo({ mediaTypes }) {
@@ -161,12 +161,12 @@ function cookImpVideo({ mediaTypes }) {
     h,
     mimes: video.mimes || ['video/mp4'],
     protocols: video.protocols || [2, 3, 5, 6],
-    placement: video.placement || 1
+    placement: video.placement || placement,
   };
 }
 
 function getBidFloor(bidRequest) {
-  let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
+  let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0);
 
   if (!bidfloor && isFn(bidRequest.getFloor)) {
     const floor = bidRequest.getFloor({

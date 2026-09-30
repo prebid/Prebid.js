@@ -39,7 +39,7 @@ config.getConfig('ttlBuffer', (cfg) => {
   } else {
     logError('Invalid value for ttlBuffer', cfg.ttlBuffer);
   }
-})
+});
 
 export function getBufferedTTL(bid) {
   return bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : TTL_BUFFER);

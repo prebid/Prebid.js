@@ -12,7 +12,6 @@ import {
   logMessage,
   logWarn
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
@@ -22,6 +21,7 @@ import { chunk } from '../libraries/chunk/chunk.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { hasUserInfo, hasAppDeviceInfo, hasAppId } from '../libraries/adrelevantisUtils/bidderUtils.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -83,7 +83,7 @@ export const spec = {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj;
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       userObj = { 'coppa': true };
     }
     if (userObjBid) {
@@ -124,7 +124,7 @@ export const spec = {
     };
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj
+      payload.device = appDeviceObj;
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
@@ -145,7 +145,7 @@ export const spec = {
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
-      }
+      };
       payload.referrer_detection = refererinfo;
     }
 
@@ -154,7 +154,7 @@ export const spec = {
       payload.fpd = {
         keywords: ortb2Site.keywords || '',
         category: deepAccess(ortb2Site, 'ext.data.category') || ''
-      }
+      };
     }
 
     const request = formatRequest(payload, bidderRequest);
@@ -449,7 +449,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
   if (bid.params.category) {
     tag.category = bid.params.category;
   }

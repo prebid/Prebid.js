@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 const BIDDER_CODE = 'distroscale';
 const SHORT_CODE = 'ds';
 const LOG_WARN_PREFIX = 'DistroScale: ';
@@ -78,7 +79,7 @@ function _createImpressionObject(bid) {
     // Use the first preferred size
     var keys = Object.keys(sizes);
     keys.sort(function(a, b) {
-      return sizes[a].idx - sizes[b].idx
+      return sizes[a].idx - sizes[b].idx;
     });
     var bannerObj = {
       pos: 0,
@@ -213,7 +214,7 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 

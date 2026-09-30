@@ -71,7 +71,7 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
 
     if (!hasPurpose1Consent(gdprConsent)) {
       return syncs;
@@ -93,6 +93,6 @@ export const spec = {
   },
 
   supportedMediaTypes: [BANNER, VIDEO]
-}
+};
 
 registerBidder(spec);

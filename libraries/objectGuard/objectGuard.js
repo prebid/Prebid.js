@@ -71,7 +71,7 @@ export function objectGuard(rules) {
           }
           return val;
         }
-      }
+      };
     }
     return node.redactRule;
   }
@@ -80,7 +80,7 @@ export function objectGuard(rules) {
     if (node.wpRule == null) {
       node.wpRule = node.wpRules.length === 0 ? false : {
         check: (applies) => node.wpRules.some(applies),
-      }
+      };
     }
     return node.wpRule;
   }
@@ -166,7 +166,7 @@ export function objectGuard(rules) {
         if (sub !== obj[k]) {
           obj[k] = sub;
         }
-      })
+      });
       return obj;
     }
 
@@ -176,7 +176,7 @@ export function objectGuard(rules) {
         const val = Reflect.get(target, prop, receiver);
         if (final && val != null && typeof val === 'object') {
           // a parent property has write protect rules, keep guarding
-          return mkGuard(val, tree, final, applies, cache)
+          return mkGuard(val, tree, final, applies, cache);
         } else if (tree.children?.hasOwnProperty(prop)) {
           const { children, hasWP } = tree.children[prop];
           if (isData(val)) {
@@ -235,7 +235,7 @@ export function objectGuard(rules) {
 
   return function guard(obj, ...args) {
     const session = {};
-    return mkGuard(obj, root, false, sessionedApplies(session, ...args))
+    return mkGuard(obj, root, false, sessionedApplies(session, ...args));
   };
 }
 
@@ -246,5 +246,5 @@ export function objectGuard(rules) {
 export function writeProtectRule(ruleDef) {
   return Object.assign({
     wp: true,
-  }, ruleDef)
+  }, ruleDef);
 }

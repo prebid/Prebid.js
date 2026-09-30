@@ -45,7 +45,7 @@ describe('Revnew bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
     it('We verify isBidRequestValid with incorrect tagid', () => {
@@ -73,7 +73,7 @@ describe('Revnew bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -88,7 +88,7 @@ describe('Revnew bid adapter tests', () => {
       expect(typeof output.revnewId).to.be.eql('string');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -103,7 +103,7 @@ describe('Revnew bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -118,7 +118,7 @@ describe('Revnew bid adapter tests', () => {
       expect(output.revnewId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -133,7 +133,7 @@ describe('Revnew bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -148,7 +148,7 @@ describe('Revnew bid adapter tests', () => {
       expect(output).to.be.eql('abcdef');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -314,7 +314,7 @@ describe('Revnew bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 

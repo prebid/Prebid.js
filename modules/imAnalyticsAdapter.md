@@ -26,6 +26,7 @@ By enabling this adapter, you agree to Intimate Merger's privacy policy at
 |-----------|-------|------|---------|-------------|
 | `cid` | optional | number | 5126 | The Customer ID provided by Intimate Merger. |
 | `waitTimeout` | optional | number | 1500 | Wait time in milliseconds before sending batched requests. (Default: 1500)  |
+| `cacheTtl` | optional | number | 30000 | Time in milliseconds before stale auction cache entries are removed. (Default: 30000) |
 
 #### Example Configuration
 
@@ -36,7 +37,9 @@ pbjs.enableAnalytics({
         /* Optional: Customer ID */
         cid: 5126,
         /* Optional: Wait 2 seconds */
-        waitTimeout: 2000
+        waitTimeout: 2000,
+        /* Optional: Remove stale auction cache after 60 seconds */
+        cacheTtl: 60000
     }
 });
 ```

@@ -58,5 +58,5 @@ export const spec = {
     };
     return [bidResponse];
   }
-}
+};
 registerBidder(spec);

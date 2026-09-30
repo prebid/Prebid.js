@@ -30,5 +30,5 @@ export default function useVideoCacheStub(responses) {
     return {
       store: storeStub
     };
-  }
+  };
 }

@@ -89,9 +89,9 @@ export const mygaruIdSubmodule = {
       callback: function (done) {
         return requestRemoteIdAsync(url).then((id) => {
           done({ mygaruId: id });
-        })
+        });
       }
-    }
+    };
   },
   eids: {
     'mygaruId': {

@@ -1,4 +1,4 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, logError, replaceAuctionPrice } from '../src/utils.js';
@@ -29,7 +29,7 @@ export const spec = {
     const isValid = bidRequest &&
                     bidRequest.params &&
                     typeof bidRequest.params.publisherId === 'string' &&
-                    bidRequest.params.publisherId.trim().length === 36
+                    bidRequest.params.publisherId.trim().length === 36;
 
     if (!isValid) {
       logError('Bidtheatre Header Bidding Publisher ID not provided or in incorrect format');
@@ -87,7 +87,7 @@ export const spec = {
       method: METHOD,
       url: ENDPOINT_URL,
       data
-    }]
+    }];
   },
   interpretResponse(response, request) {
     if (!response || !response.body || !response.body.seatbid) {
@@ -112,6 +112,6 @@ export const spec = {
   onSetTargeting: function(bid) {},
   // onBidderError: function({ error, bidderRequest }) {},
   onAdRenderSucceeded: function(bid) {}
-}
+};
 
 registerBidder(spec);

@@ -11,7 +11,7 @@ export const MODULE_NAME = 'goldfishAdsRtd';
 export const MODULE_TYPE = 'realTimeData';
 export const ENDPOINT_URL = 'https://prebid.goldfishads.com/iab-segments';
 export const DATA_STORAGE_KEY = 'goldfishads_data';
-export const DATA_STORAGE_TTL = 1800 * 1000// TTL in seconds
+export const DATA_STORAGE_TTL = 1800 * 1000;// TTL in seconds
 
 export const ADAPTER_VERSION = '1.0';
 
@@ -33,7 +33,7 @@ export const manageCallbackResponse = (response) => {
     ext: {
       segtax: 4
     },
-    segment: foo.map((segment) => { return { id: segment } }),
+    segment: foo.map((segment) => { return { id: segment }; }),
   };
   const output = {
     name: 'goldfishads.com',
@@ -53,7 +53,7 @@ const getTargetingDataFromApi = (key) => {
       customHeaders: {
         'Accept': 'application/json'
       }
-    }
+    };
     const callbacks = {
       success(responseText, response) {
         try {
@@ -67,8 +67,8 @@ const getTargetingDataFromApi = (key) => {
         reject(error);
       }
     };
-    ajax(`${ENDPOINT_URL}?key=${key}`, callbacks, null, requestOptions)
-  })
+    ajax(`${ENDPOINT_URL}?key=${key}`, callbacks, null, requestOptions);
+  });
 };
 
 /**
@@ -106,7 +106,7 @@ const getTargetingData = (payload) => new Promise((resolve) => {
   if (targeting === null) {
     getTargetingDataFromApi(payload.key)
       .then((response) => {
-        const now = new Date()
+        const now = new Date();
         const data = {
           targeting: response,
           expiry: now.getTime() + DATA_STORAGE_TTL,
@@ -120,7 +120,7 @@ const getTargetingData = (payload) => new Promise((resolve) => {
   } else {
     resolve(targeting);
   }
-})
+});
 
 /**
  *
@@ -163,7 +163,7 @@ export const updateUserData = (userData, reqBidsConfigObj) => {
     reqBidsConfigObj.ortb2Fragments.bidder[bidderCode].user.data = reqBidsConfigObj.ortb2Fragments.bidder[bidderCode].user.data || userConfig;
   }
   return reqBidsConfigObj;
-}
+};
 
 /**
  *

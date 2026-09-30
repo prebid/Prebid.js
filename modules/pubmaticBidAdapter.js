@@ -16,6 +16,8 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('./pubmaticBidAdapter.d.ts').PubmaticBidderParams} PubmaticBidderParams
+ * @typedef {BidRequest & {params: PubmaticBidderParams}} PubmaticBidRequest
  */
 
 const BIDDER_CODE = 'pubmatic';
@@ -185,7 +187,7 @@ export const shouldAddDealTargeting = (ortb2) => {
   if (hasImSegments) result.im_segments = `im_segments=${imSegmentData.join(',')}`;
   if (hasIasBrandSafety) result['ias-brand-safety'] = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`).join('|');
   return Object.keys(result).length ? result : undefined;
-}
+};
 
 export function _calculateBidCpmAdjustment(bid) {
   if (!bid) return;
@@ -245,7 +247,7 @@ const handleImageProperties = asset => {
   asset.ext && (imgProps.ext = asset.ext);
   asset.mimes && (imgProps.mimes = asset.mimes);
   return imgProps;
-}
+};
 
 const toOrtbNativeRequest = legacyNativeAssets => {
   const ortb = { ver: '1.2', assets: [] };
@@ -281,7 +283,7 @@ const toOrtbNativeRequest = legacyNativeAssets => {
     ortb.assets.push(ortbAsset);
   }
   return ortb;
-}
+};
 
 const setImpFields = imp => {
   imp.displaymanager ||= 'Prebid.js';
@@ -289,21 +291,21 @@ const setImpFields = imp => {
   const gptAdSlot = imp.ext?.data?.adserver?.adslot;
   if (gptAdSlot) imp.ext.dfp_ad_unit_code = gptAdSlot;
   // Delete ext.data in case of no-adserver
-  if (imp.ext?.data && Object.keys(imp.ext.data).length === 0) delete imp.ext.data
-}
+  if (imp.ext?.data && Object.keys(imp.ext.data).length === 0) delete imp.ext.data;
+};
 
 function removeGranularFloor(imp, mediaTypes) {
   mediaTypes.forEach(mt => {
     if (imp[mt]?.ext && imp[mt].ext.bidfloor === imp.bidfloor && imp[mt].ext.bidfloorcur === imp.bidfloorcur) {
       delete imp[mt].ext;
     }
-  })
+  });
 }
 
 const setFloorInImp = (imp, bid) => {
   let bidFloor = -1;
   const requestedMediatypes = Object.keys(bid.mediaTypes);
-  const isMultiFormatRequest = requestedMediatypes.length > 1
+  const isMultiFormatRequest = requestedMediatypes.length > 1;
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (!imp.hasOwnProperty(mediaType)) return;
@@ -344,7 +346,7 @@ const setFloorInImp = (imp, bid) => {
   logInfo(LOG_WARN_PREFIX, 'Updated imp.bidfloor:', imp.bidfloor);
   // remove granular floor if impression level floor is same as granular
   if (isMultiFormatRequest) removeGranularFloor(imp, requestedMediatypes);
-}
+};
 
 const updateBannerImp = (bannerObj, adSlot) => {
   const slot = adSlot.split(':');
@@ -364,12 +366,12 @@ const updateBannerImp = (bannerObj, adSlot) => {
   );
   if (!bannerObj.format?.length) delete bannerObj.format;
   bannerObj.pos ??= 0;
-}
+};
 
 const setImpTagId = (imp, adSlot, hashedKey) => {
   const splits = adSlot.split(':')[0].split('@');
   imp.tagid = hashedKey || splits[0];
-}
+};
 
 const updateNativeImp = (imp, nativeParams) => {
   if (!nativeParams?.ortb) {
@@ -385,7 +387,7 @@ const updateNativeImp = (imp, nativeParams) => {
       imp.native.request = JSON.stringify({ ver: '1.2', ...nativeConfig });
     }
   }
-}
+};
 
 const updateVideoImp = (videoParams, adUnitCode, imp) => {
   const videoImp = imp.video;
@@ -396,7 +398,7 @@ const updateVideoImp = (videoParams, adUnitCode, imp) => {
     delete imp.video;
     logWarn(`${LOG_WARN_PREFIX}Error: Missing ${!videoParams ? 'video config params' : 'video size params (playersize or w&h)'} for adunit: ${adUnitCode} with mediaType set as video. Ignoring video impression in the adunit.`);
   }
-}
+};
 
 const addJWPlayerSegmentData = (imp, jwplayer) => {
   const jwSegData = jwplayer?.targeting;
@@ -417,8 +419,8 @@ const updateRequestExt = (req, bidderRequest) => {
     : allBiddersList;
   req.ext.marketplace = {
     allowedbidders: (biddersList.includes('*') || biddersList.includes('all')) ? allBiddersList : [...new Set(['pubmatic', ...biddersList.filter(val => val && val.trim())])]
-  }
-}
+  };
+};
 
 const reqLevelParams = (req) => {
   deepSetValue(req, 'at', AUCTION_TYPE);
@@ -459,7 +461,7 @@ const updateUserSiteDevice = (req, bidRequest) => {
   } else if (req.user.geo && !req.device.geo) {
     req.device.geo = req.user.geo;
   }
-}
+};
 
 const updateResponseWithCustomFields = (res, bid, ctx) => {
   const { ortbRequest, seatbid } = ctx;
@@ -474,7 +476,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
     res.dealChannel = bid.ext?.deal_channel ? dealChannel[bid.ext.deal_channel] || null : 'PMP';
   }
   if (seatbid.ext?.buyid) {
-    res.adserverTargeting = { 'hb_buyid_pubmatic': seatbid.ext.buyid }
+    res.adserverTargeting = { 'hb_buyid_pubmatic': seatbid.ext.buyid };
   }
   if (bid.ext?.marketplace) {
     res.bidderCode = bid.ext.marketplace;
@@ -511,7 +513,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
     res.meta.secondaryCatIds = bid.cat;
     res.meta.primaryCatId = bid.cat[0];
   }
-}
+};
 
 const addExtenstionParams = (req, bidderRequest) => {
   const { profId, verId, wiid } = conf;
@@ -526,8 +528,8 @@ const addExtenstionParams = (req, bidderRequest) => {
       biddercode: bidderRequest?.bidderCode
     },
     cpmAdjustment: cpmAdjustment
-  }
-}
+  };
+};
 
 const validateAllowedCategories = (acat) => {
   return [...new Set(
@@ -549,7 +551,7 @@ const validateBlockedCategories = (bcats) => {
   const droppedCategories = bcats.filter(item => typeof item !== 'string' || item.length < 3);
   logWarn(LOG_WARN_PREFIX + 'bcat: Each category must be a string with a length greater than 3, ignoring ' + droppedCategories);
   return [...new Set(bcats.filter(item => typeof item === 'string' && item.length >= 3))];
-}
+};
 
 /**
  * Optimizes the impressions array by consolidating impressions for the same ad unit and media type
@@ -744,7 +746,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {PubmaticBidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: bid => {
@@ -804,7 +806,7 @@ export const spec = {
       kadpageurl: page || window.location.href,
       profId: profId,
       verId: verId
-    }
+    };
     validBidRequests.forEach(originalBid => {
       originalBid.params.wiid = originalBid.params.wiid || bidderRequest.auctionId || wiid;
       bid = deepClone(originalBid);
@@ -816,7 +818,7 @@ export const spec = {
       if (acat) {
         allowedIabCategories = allowedIabCategories.concat(acat);
       }
-    })
+    });
     const data = converter.toORTB({ validBidRequests, bidderRequest });
 
     const serverRequest = {
@@ -845,7 +847,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) => {
     let syncurl = pubId;
 
     // Attaching GDPR Consent Params in UserSync url
@@ -864,7 +866,7 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       syncurl += '&coppa=1';
     }
 

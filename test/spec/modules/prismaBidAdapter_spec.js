@@ -1,9 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/prismaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { requestBidsHook } from 'modules/consentManagementTcf.js';
+
+import 'src/utils.js';
 
 describe('Prisma bid adapter tests', function () {
   const DISPLAY_BID_REQUEST = [{
@@ -101,7 +99,7 @@ describe('Prisma bid adapter tests', function () {
       'bidderRequestsCount': 1,
       'bidderWinsCount': 0
     }
-  ]
+  ];
 
   const VIDEO_BID_RESPONSE = {
     'body': {
@@ -231,7 +229,7 @@ describe('Prisma bid adapter tests', function () {
 
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.eql('prismadirect');
+    expect(spec.aliases[0]).to.eql({ code: 'prismadirect', gvlid: 965 });
   });
   it('Verifies if bid request valid', function () {
     expect(spec.isBidRequestValid(DISPLAY_BID_REQUEST[0])).to.equal(true);

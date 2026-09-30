@@ -15,7 +15,7 @@ function validateBuiltServerRequest(builtReq, expectedReq) {
 
   expectedRequestData.id = builtRequestData.id; // Copy the generated ID
 
-  expect(builtRequestData).to.deep.equal(expectedRequestData)
+  expect(builtRequestData).to.deep.equal(expectedRequestData);
 }
 
 describe('33acrossBidAdapter:', function () {
@@ -72,7 +72,7 @@ describe('33acrossBidAdapter:', function () {
       ttxRequest.imp.push({ id });
 
       return this;
-    }
+    };
 
     this.withBanner = () => {
       ttxRequest.imp.forEach((imp) => {
@@ -259,7 +259,7 @@ describe('33acrossBidAdapter:', function () {
                   bidfloors: [floors[i]]
                 }
               }
-            })
+            });
           });
 
           ttxRequest.imp[0].banner.format = format;
@@ -286,7 +286,7 @@ describe('33acrossBidAdapter:', function () {
       });
 
       return this;
-    }
+    };
 
     this.build = () => ttxRequest;
   }
@@ -418,7 +418,7 @@ describe('33acrossBidAdapter:', function () {
       });
 
       return this;
-    }
+    };
 
     this.withUserIds = (eids) => {
       bidRequests.forEach((bid) => {
@@ -478,7 +478,7 @@ describe('33acrossBidAdapter:', function () {
       return bidRequestsBuilder
         .withBanner()
         .build();
-    }
+    };
 
     this.buildBidderRequest = (bidRequests, additionalProps) => {
       const [bidRequest] = bidRequests;
@@ -724,12 +724,12 @@ describe('33acrossBidAdapter:', function () {
             'foo',
             1,
             []
-          ]
+          ];
 
           invalidMimes.forEach((mimes) => {
             this.bid.mediaTypes.video.mimes = mimes;
             expect(spec.isBidRequestValid(this.bid)).to.be.false;
-          })
+          });
         });
       });
 
@@ -740,12 +740,12 @@ describe('33acrossBidAdapter:', function () {
             'foo',
             1,
             []
-          ]
+          ];
 
           invalidMimes.forEach((protocols) => {
             this.bid.mediaTypes.video.protocols = protocols;
             expect(spec.isBidRequestValid(this.bid)).to.be.false;
-          })
+          });
         });
       });
 
@@ -813,7 +813,7 @@ describe('33acrossBidAdapter:', function () {
           });
         });
       });
-    })
+    });
   });
 
   describe('buildRequests()', function() {
@@ -835,7 +835,7 @@ describe('33acrossBidAdapter:', function () {
         const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
-      })
+      });
     });
 
     context('when the zone ID is for an app request', function() {
@@ -917,7 +917,7 @@ describe('33acrossBidAdapter:', function () {
             .withProduct()
             .withViewability({ amount: 75 })
             .build()
-        )
+        );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
 
@@ -1293,7 +1293,7 @@ describe('33acrossBidAdapter:', function () {
             .withProduct()
             .withCoppa(1)
             .build()
-        )
+        );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests, {
           ortb2: {
@@ -1605,7 +1605,7 @@ describe('33acrossBidAdapter:', function () {
           const bidderRequest = this.buildBidderRequest(bidRequests);
 
           bidRequests[0].getFloor = ({ size, currency, mediaType }) => {
-            const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10
+            const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10;
             return (
               {
                 floor,
@@ -1750,7 +1750,7 @@ describe('33acrossBidAdapter:', function () {
           const bidRequests = new BidRequestsBuilder()
             .withBanner()
             .withProduct('inview')
-            .build()
+            .build();
           const serverRequest = this.buildServerRequest(
             new TtxRequestBuilder()
               .withBanner()
@@ -1842,7 +1842,7 @@ describe('33acrossBidAdapter:', function () {
           );
 
           bidRequests[0].getFloor = ({ size, currency, mediaType }) => {
-            const floor = (mediaType === 'video') ? 1.0 : 0.10
+            const floor = (mediaType === 'video') ? 1.0 : 0.10;
             return (
               {
                 floor,
@@ -2446,10 +2446,10 @@ describe('33acrossBidAdapter:', function () {
               type: 'iframe',
               url: `${this.syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
             }
-          ]
+          ];
 
           expect(syncResults).to.deep.equal(expectedSyncs);
-        })
+        });
       });
 
       context('when gdpr applies but there is no consent string', function() {
@@ -2563,10 +2563,10 @@ describe('33acrossBidAdapter:', function () {
               type: 'iframe',
               url: `${this.syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
             }
-          ]
+          ];
 
           expect(syncResults).to.deep.equal(expectedSyncs);
-        })
+        });
       });
 
       context('when there is usPrivacy data', function() {
@@ -2603,10 +2603,10 @@ describe('33acrossBidAdapter:', function () {
               type: 'iframe',
               url: `${this.syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
             }
-          ]
+          ];
 
           expect(syncResults).to.deep.equal(expectedSyncs);
-        })
+        });
       });
 
       context('when there is GPP data', function() {

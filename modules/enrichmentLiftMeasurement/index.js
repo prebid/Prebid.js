@@ -37,7 +37,7 @@ export function init(storageManager = getStorageManager({ moduleType: MODULE_TYP
       modules = internals.getCalculatedSubmodules();
       storeTestConfig(testRun, modules, storeSplits, storageManager);
     } else {
-      modules = testConfig.modules
+      modules = testConfig.modules;
     }
   }
 
@@ -80,14 +80,14 @@ function userIdSystemBlockRule(bannedModules, init) {
     if ((params.init ?? true) === init && params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID && bannedModules.has(params[ACTIVITY_PARAM_COMPONENT_NAME])) {
       return { allow: false, reason: 'disabled due to AB testing' };
     }
-  }
+  };
 };
 
 export function getCalculatedSubmodules(modules = moduleConfig.modules) {
   return (modules || [])
     .map(({ name, percentage }) => {
       const enabled = Math.random() < percentage;
-      return { name, percentage, enabled }
+      return { name, percentage, enabled };
     });
 };
 
@@ -127,7 +127,7 @@ export function storeTestConfig(testRun, modules, storeSplits, storageManager) {
 
 export const internals = {
   getCalculatedSubmodules
-}
+};
 
 GDPR_GVLIDS.register(MODULE_TYPE, MODULE_NAME, VENDORLESS_GVLID);
 

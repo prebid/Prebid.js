@@ -12,7 +12,7 @@ runs:
   steps:
     - name: Restore from cache
       id: restore
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: ${{ runner.temp }}/coverage.info
         key: ${{ inputs.cache-key }}
@@ -30,7 +30,7 @@ runs:
         find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o ${{ runner.temp }}/coverage.info
     - name: Save to cache
       if: ${{ steps.restore.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: ${{ runner.temp }}/coverage.info
         key: ${{ inputs.cache-key }}

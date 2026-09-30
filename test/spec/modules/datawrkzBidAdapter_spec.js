@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { config } from 'src/config.js';
 import { spec } from 'modules/datawrkzBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
@@ -43,7 +42,7 @@ describe('datawrkzAdapterTests', function () {
 
     it('should return false when required site_id param not found', function () {
       const invalidBid = Object.assign({}, bid);
-      invalidBid.params = { 'bidfloor': '1.0' }
+      invalidBid.params = { 'bidfloor': '1.0' };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
@@ -198,9 +197,7 @@ describe('datawrkzAdapterTests', function () {
     });
 
     it('banner bidRequest with slot size as 2 dimensional array', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      const requests = spec.buildRequests(bannerBidRequests, bidderRequest);
-      config.getConfig.restore();
+      const requests = spec.buildRequests(bannerBidRequests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(requests[0].data);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(FINAL_URL);
@@ -229,9 +226,7 @@ describe('datawrkzAdapterTests', function () {
     });
 
     it('native bidRequest fields with slot size as 2 dimensional array', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      const requests = spec.buildRequests(nativeBidRequests, bidderRequest);
-      config.getConfig.restore();
+      const requests = spec.buildRequests(nativeBidRequests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(requests[0].data);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(FINAL_URL);
@@ -257,9 +252,7 @@ describe('datawrkzAdapterTests', function () {
     });
 
     it('instream video bidRequest fields with slot size as 2 dimensional array', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      const requests = spec.buildRequests(instreamVideoBidRequests, bidderRequest);
-      config.getConfig.restore();
+      const requests = spec.buildRequests(instreamVideoBidRequests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(requests[0].data);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(FINAL_URL);
@@ -272,7 +265,7 @@ describe('datawrkzAdapterTests', function () {
 
     it('instream video bidRequest with deals and slot size as 1 dimensional array', function () {
       const requests = spec.buildRequests(instreamVideoBidRequestsSingleArraySlotAndDeals, bidderRequest);
-      const payload = JSON.parse(requests[0].data);
+
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(FINAL_URL);
       expect(requests[0].bidRequest).to.exist;
@@ -280,9 +273,7 @@ describe('datawrkzAdapterTests', function () {
     });
 
     it('outstream video bidRequest fields with slot size as 2 dimensional array', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      const requests = spec.buildRequests(outstreamVideoBidRequests, bidderRequest);
-      config.getConfig.restore();
+      const requests = spec.buildRequests(outstreamVideoBidRequests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(requests[0].data);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(FINAL_URL);

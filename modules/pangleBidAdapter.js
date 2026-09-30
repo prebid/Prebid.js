@@ -1,5 +1,5 @@
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, generateUUID, timestamp, deepAccess } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -22,7 +22,7 @@ const MEDIA_TYPES = {
   Video: 2
 };
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: BIDDER_CODE })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: BIDDER_CODE });
 
 export function isValidUuid(uuid) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -77,14 +77,14 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   bidRequests.forEach((item, idx) => {
     deepSetValue(data.imp[idx], 'ext.networkids', item.params);
     deepSetValue(data.imp[idx], 'banner.api', [5]);
-    deepSetValue(data, 'test', item.params.test ?? 0)
+    deepSetValue(data, 'test', item.params.test ?? 0);
   });
   return {
     method: 'POST',
     url: ENDPOINT,
     data,
     options: { contentType: 'application/json', withCredentials: true }
-  }
+  };
 }
 
 function isVideoBid(bid) {
@@ -159,7 +159,7 @@ export const spec = {
     const bannerBids = bidRequests.filter((bid) => isBannerBid(bid));
     bannerBids.forEach((bid) => {
       reqArr.push(createRequest([bid], bidderRequest, BANNER));
-    })
+    });
     videoBids.forEach((bid) => {
       reqArr.push(createRequest([bid], bidderRequest, VIDEO));
     });

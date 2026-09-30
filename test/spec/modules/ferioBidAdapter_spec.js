@@ -11,6 +11,16 @@ const ALIAS_CODE = "clientABidder";
 const ALIAS_PARAM_BIDDER_CODE = "ferioflow";
 const FERIO_BID_URL = "https://ferio.bid/pbjs/bid";
 const ALIAS_BID_URL = "https://bidder.ferio.cloud/prebid/bid";
+const MYFEATURE_CODE = "myfeature";
+const MYFEATURE_BID_URL = "https://featuretv.bid/prebid/bid";
+const FERIO_ALIASES = [
+  {
+    code: MYFEATURE_CODE,
+    bidUrl: MYFEATURE_BID_URL,
+    syncBaseUrl: "https://featuretv.bid/prebid",
+    skipPbsAliasing: true,
+  },
+];
 
 function bidRequest(overrides = {}) {
   return {
@@ -186,6 +196,224 @@ describe("ferioBidAdapter", function () {
           })
         )
       ).to.equal(true);
+    });
+  });
+
+  describe("aliases", function () {
+    it("registers aliases without leaking endpoint config", function () {
+      expect(spec.aliases).to.have.lengthOf(FERIO_ALIASES.length);
+      FERIO_ALIASES.forEach(({ code, skipPbsAliasing }) => {
+        const alias = spec.aliases.find((alias) => alias.code === code);
+
+        expect(alias).to.exist;
+        expect(alias.skipPbsAliasing).to.equal(skipPbsAliasing);
+        expect(alias).to.not.have.property("endpoint");
+      });
+    });
+
+    it("routes alias bid requests to the alias endpoint", function () {
+      FERIO_ALIASES.forEach(({ code, bidUrl }) => {
+        const aliasBid = bidRequest({ bidder: code });
+        const request = buildRequest([aliasBid], {
+          bidderCode: code,
+          bids: [aliasBid],
+        });
+        const imp = getImp(request, "bid-1");
+
+        expect(request.url).to.equal(bidUrl);
+        expect(imp.ext.prebid.bidder[code]).to.deep.equal({
+          publisherId: "pub-123",
+          adUnitId: "ad-unit-456",
+          tenantId: "tenant-123",
+        });
+        expect(imp.ext.prebid.bidder).to.not.have.property(BIDDER_CODE);
+      });
+
+      const primaryRequest = buildRequest([bidRequest()]);
+      expect(primaryRequest.url).to.equal(FERIO_BID_URL);
+    });
+
+    it("lets embedded aliases override the bidder params key", function () {
+      const aliasSpec = createFerioBidderSpec({
+        endpoint: FERIO_BID_URL,
+        aliases: [
+          {
+            code: ALIAS_CODE,
+            endpoint: ALIAS_BID_URL,
+            paramBidderCode: ALIAS_PARAM_BIDDER_CODE,
+          },
+        ],
+      });
+      const aliasBid = bidRequest({ bidder: ALIAS_CODE });
+      const request = buildRequest(
+        [aliasBid],
+        { bidderCode: ALIAS_CODE, bids: [aliasBid] },
+        aliasSpec
+      );
+      const imp = getImp(request, "bid-1");
+
+      expect(request.url).to.equal(ALIAS_BID_URL);
+      expect(imp.ext.prebid.bidder[ALIAS_PARAM_BIDDER_CODE]).to.deep.equal({
+        publisherId: "pub-123",
+        adUnitId: "ad-unit-456",
+        tenantId: "tenant-123",
+      });
+      expect(imp.ext.prebid.bidder).to.not.have.property(ALIAS_CODE);
+      expect(imp.ext.prebid.bidder).to.not.have.property(BIDDER_CODE);
+    });
+
+    it("attributes alias responses to the alias bidder code", function () {
+      FERIO_ALIASES.forEach(({ code }) => {
+        const aliasBid = bidRequest({ bidder: code });
+        const request = buildRequest([aliasBid], {
+          bidderCode: code,
+          bids: [aliasBid],
+        });
+
+        const bids = spec.interpretResponse(
+          serverResponse([
+            {
+              id: "seat-banner",
+              impid: "bid-1",
+              price: 1.1,
+              adm: "<div>ad</div>",
+              crid: "creative-banner",
+              w: 300,
+              h: 250,
+              mtype: 1,
+            },
+          ]),
+          request
+        );
+
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0]).to.deep.include({
+          requestId: "bid-1",
+          bidderCode: code,
+          adapterCode: code,
+          mediaType: BANNER,
+        });
+      });
+    });
+
+    it("falls back to the primary endpoint for alias and unknown codes without one", function () {
+      const aliasSpec = createFerioBidderSpec({
+        endpoint: FERIO_BID_URL,
+        aliases: [{ code: ALIAS_CODE }],
+      });
+      const aliasBid = bidRequest({ bidder: ALIAS_CODE });
+
+      const aliasRequest = aliasSpec.buildRequests(
+        [aliasBid],
+        bidderRequest({ bidderCode: ALIAS_CODE, bids: [aliasBid] })
+      )[0];
+      expect(aliasRequest.url).to.equal(FERIO_BID_URL);
+
+      const unknownRequest = aliasSpec.buildRequests(
+        [aliasBid],
+        bidderRequest({ bidderCode: "unregisteredAlias", bids: [aliasBid] })
+      )[0];
+      expect(unknownRequest.url).to.equal(FERIO_BID_URL);
+    });
+
+    it("ignores aliases that duplicate the primary or another alias code", function () {
+      const guardedSpec = createFerioBidderSpec({
+        endpoint: FERIO_BID_URL,
+        aliases: [
+          { code: BIDDER_CODE, endpoint: "https://hijack.example/bid" },
+          { code: ALIAS_CODE, endpoint: ALIAS_BID_URL },
+          { code: ALIAS_CODE, endpoint: "https://hijack.example/bid" },
+        ],
+      });
+
+      expect(guardedSpec.aliases).to.have.lengthOf(1);
+      expect(guardedSpec.aliases[0].code).to.equal(ALIAS_CODE);
+
+      const primaryRequest = buildRequest([bidRequest()], {}, guardedSpec);
+      expect(primaryRequest.url).to.equal(FERIO_BID_URL);
+
+      const aliasBid = bidRequest({ bidder: ALIAS_CODE });
+      const aliasRequest = buildRequest(
+        [aliasBid],
+        { bidderCode: ALIAS_CODE },
+        guardedSpec
+      );
+      expect(aliasRequest.url).to.equal(ALIAS_BID_URL);
+    });
+
+    it("builds no alias requests or syncs when an explicit alias endpoint is not https", function () {
+      ["javascript:alert(1)", "http://insecure.ferio.cloud/bid"].forEach(
+        (aliasEndpoint) => {
+          const aliasSpec = createFerioBidderSpec({
+            endpoint: FERIO_BID_URL,
+            aliases: [{ code: ALIAS_CODE, endpoint: aliasEndpoint }],
+          });
+          const aliasBid = bidRequest({ bidder: ALIAS_CODE });
+
+          const aliasRequests = aliasSpec.buildRequests(
+            [aliasBid],
+            bidderRequest({ bidderCode: ALIAS_CODE, bids: [aliasBid] })
+          );
+          expect(aliasRequests).to.deep.equal([]);
+
+          const syncs = aliasSpec.getUserSyncs.call(
+            { ...aliasSpec, code: ALIAS_CODE },
+            { pixelEnabled: true },
+            []
+          );
+          expect(syncs).to.deep.equal([]);
+        }
+      );
+    });
+
+    it("builds no requests when the primary endpoint is not a valid https URL", function () {
+      const invalidSpec = createFerioBidderSpec({ endpoint: "not a url" });
+
+      expect(
+        invalidSpec.buildRequests([bidRequest()], bidderRequest())
+      ).to.deep.equal([]);
+    });
+
+    it("derives alias user sync URLs from the alias endpoint", function () {
+      FERIO_ALIASES.forEach(({ code, syncBaseUrl }) => {
+        const syncs = spec.getUserSyncs.call(
+          { ...spec, code },
+          {
+            iframeEnabled: true,
+            pixelEnabled: true,
+          },
+          []
+        );
+
+        expect(syncs).to.deep.equal([
+          {
+            type: "image",
+            url: `${syncBaseUrl}/sync?us_privacy=&gdpr=0&gdpr_consent=`,
+          },
+          {
+            type: "iframe",
+            url: `${syncBaseUrl}/cli/iframe.html?us_privacy=&gdpr=0&gdpr_consent=`,
+          },
+        ]);
+      });
+    });
+
+    it("falls back to the primary sync base when called without a spec context", function () {
+      const { getUserSyncs } = spec;
+      const syncs = getUserSyncs(
+        {
+          iframeEnabled: false,
+          pixelEnabled: true,
+        },
+        []
+      );
+
+      expect(syncs).to.deep.equal([
+        {
+          type: "image",
+          url: "https://ferio.bid/pbjs/sync?us_privacy=&gdpr=0&gdpr_consent=",
+        },
+      ]);
     });
   });
 

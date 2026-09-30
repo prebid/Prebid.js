@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { AdQueueCoordinator } from '../../../../modules/videoModule/adQueue.js';
-import { AD_BREAK_END, SETUP_COMPLETE } from '../../../../libraries/video/constants/events.js'
+import { AD_BREAK_END, SETUP_COMPLETE } from '../../../../libraries/video/constants/events.js';
 
 const testId = 'testId';
 describe('Ad Queue Coordinator', function () {
@@ -10,7 +10,7 @@ describe('Ad Queue Coordinator', function () {
       offEvents: sinon.spy(),
       setAdTagUrl: sinon.spy(),
       setAdXml: sinon.spy(),
-    }
+    };
   };
 
   const mockEventsFactory = function () {

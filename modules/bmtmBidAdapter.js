@@ -1,8 +1,8 @@
 import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'bmtm';
 const AD_URL = 'https://one.elitebidder.com/api/hb?sid=';
@@ -61,7 +61,7 @@ export const spec = {
         oRTBRequest.imp[0].banner = {
           h: size[0],
           w: size[1],
-        }
+        };
       } else {
         if (bid.mediaTypes.video.playerSize) {
           size = bid.mediaTypes.video.playerSize[0];
@@ -77,20 +77,20 @@ export const spec = {
           api: bid.mediaTypes.video.api ? bid.mediaTypes.video.api : [],
           minduration: bid.mediaTypes.video.minduration ? bid.mediaTypes.video.minduration : 1,
           maxduration: bid.mediaTypes.video.maxduration ? bid.mediaTypes.video.maxduration : 999,
-        }
+        };
       }
 
       oRTBRequest.imp[0].bidfloor = getFloor(bid, size);
-      oRTBRequest.user = getUserIdAsEids(bid.userIdAsEids)
+      oRTBRequest.user = getUserIdAsEids(bid.userIdAsEids);
       const schain = bid?.ortb2?.source?.ext?.schain;
-      oRTBRequest.source = getSchain(schain)
+      oRTBRequest.source = getSchain(schain);
 
       requestData.push({
         method: 'POST',
         url: `${AD_URL}${bid.params.placement_id}`,
         data: JSON.stringify(oRTBRequest),
         bidRequest: bid,
-      })
+      });
     });
     return requestData;
   },
@@ -182,12 +182,12 @@ function buildDevice() {
     js: 1,
     language: navigator.language,
     dnt: getDNT() ? 1 : 0,
-  }
+  };
 }
 
 function buildRegs(bidderRequest) {
   const regs = {
-    coppa: config.getConfig('coppa') === true ? 1 : 0,
+    coppa: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
@@ -218,7 +218,7 @@ function replaceAuctionPrice(str, cpm) {
 
 function getFloor(bid, size) {
   if (typeof bid.getFloor === 'function') {
-    let floorInfo = {};
+    let floorInfo;
     floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: 'banner',
@@ -238,7 +238,7 @@ function getUserIdAsEids(userIds) {
       ext: {
         eids: userIds,
       }
-    }
+    };
   };
   return {};
 }
@@ -249,7 +249,7 @@ function getSchain(schain) {
       ext: {
         schain: schain,
       }
-    }
+    };
   }
   return {};
 }

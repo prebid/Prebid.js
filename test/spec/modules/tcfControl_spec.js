@@ -36,9 +36,8 @@ import { GDPR_GVLIDS, GVL_PURPOSES, VENDORLESS_GVLID } from '../../../src/consen
 import { activityParams } from '../../../src/activities/activityParams.js';
 
 describe('gdpr enforcement', function () {
-  let nextFnSpy;
   let logWarnSpy;
-  let gdprDataHandlerStub;
+
   const staticConfig = {
     cmpApi: 'static',
     timeout: 7500,
@@ -124,7 +123,7 @@ describe('gdpr enforcement', function () {
       gdprApplies,
       apiVersion
     };
-    sandbox.stub(gdprDataHandler, 'getConsentData').callsFake(() => consent)
+    sandbox.stub(gdprDataHandler, 'getConsentData').callsFake(() => consent);
     return consent;
   }
 
@@ -134,7 +133,7 @@ describe('gdpr enforcement', function () {
 
   after(function () {
     requestBids.getHooks().remove();
-  })
+  });
 
   function expectAllow(allow, ruleResult) {
     if (allow) {
@@ -152,7 +151,7 @@ describe('gdpr enforcement', function () {
 
   afterEach(() => {
     sandbox.restore();
-  })
+  });
   describe('getPurposeDeclarations', () => {
     const GVL_ID = 123;
     let origDecl, decl;
@@ -165,11 +164,11 @@ describe('gdpr enforcement', function () {
         flexiblePurposes: [2],
         specialFeatures: [3]
       };
-    })
+    });
     afterEach(() => {
       GVL_PURPOSES[GVL_ID] = origDecl;
       config.resetConfig();
-    })
+    });
     it('should use data from GVL_PURPOSES', () => {
       GVL_PURPOSES[GVL_ID] = decl;
       expect(getPurposeDeclarations(GVL_ID)).to.eql(decl);
@@ -187,7 +186,7 @@ describe('gdpr enforcement', function () {
       expect(getPurposeDeclarations(GVL_ID)).to.eql({
         ...decl,
         purposes: [1, 3]
-      })
+      });
     });
     it('should provide defaults for gvlLegalBasisMapping', () => {
       config.setConfig({
@@ -202,7 +201,7 @@ describe('gdpr enforcement', function () {
         legIntPurposes: [],
         flexiblePurposes: [],
         specialFeatures: []
-      })
+      });
     });
     Object.entries({
       'no declaration is available for a GVL ID': GVL_ID,
@@ -226,9 +225,9 @@ describe('gdpr enforcement', function () {
           legIntPurposes: [],
           flexiblePurposes: [],
           specialFeatures: [],
-        })
-      })
-    })
+        });
+      });
+    });
     it('should fall back to allow nothing when the declaration is invalid', () => {
       config.setConfig({
         gvlLegalBasisMapping: {
@@ -237,8 +236,8 @@ describe('gdpr enforcement', function () {
           }
         }
       });
-      expect(getPurposeDeclarations(GVL_ID)).to.eql(NO_PURPOSE_DECLARATION)
-    })
+      expect(getPurposeDeclarations(GVL_ID)).to.eql(NO_PURPOSE_DECLARATION);
+    });
   });
 
   describe('getAcceptableFlags', () => {
@@ -390,7 +389,7 @@ describe('gdpr enforcement', function () {
             expect(getAcceptableFlags({}, type, purpose, gvlid, getPurposes)).to.eql({
               acceptConsent: expectation.acceptConsent,
               acceptLI: expectation.acceptLI
-            })
+            });
           });
         });
         describe('with restrictions', () => {
@@ -483,7 +482,7 @@ describe('gdpr enforcement', function () {
           rubicon: false
         }).forEach(([bidder, isAllowed]) => {
           expectAllow(isAllowed, rule(activityParams(MODULE_TYPE_BIDDER, bidder)));
-        })
+        });
       });
 
       it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
@@ -542,14 +541,14 @@ describe('gdpr enforcement', function () {
         setupConsentData();
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
       });
-    })
+    });
   });
 
   it(`accessDeviceRule should not enforce consent for vendorless modules if ${STRICT_STORAGE_ENFORCEMENT} is not set`, () => {
     setEnforcementConfig({});
     setupConsentData();
     expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_PREBID, 'mockCoreModule')));
-  })
+  });
 
   describe('syncUserRule', () => {
     it('should allow bidder to do user sync if consent is true', function () {
@@ -567,7 +566,7 @@ describe('gdpr enforcement', function () {
       Object.assign(gvlids, {
         sampleBidder1: 1,
         sampleBidder2: 2
-      })
+      });
       Object.keys(gvlids).forEach(bidder => expect(syncUserRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
     });
 
@@ -586,14 +585,14 @@ describe('gdpr enforcement', function () {
       Object.assign(gvlids, {
         sampleBidder1: 1,
         sampleBidder2: 3
-      })
+      });
 
       Object.entries({
         sampleBidder1: true,
         sampleBidder2: false
       }).forEach(([bidder, isAllowed]) => {
         expectAllow(isAllowed, syncUserRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
-      })
+      });
     });
 
     it('should not check vendor consent when enforceVendor is false', function () {
@@ -611,7 +610,7 @@ describe('gdpr enforcement', function () {
       Object.assign(gvlids, {
         sampleBidder1: 1,
         sampleBidder2: 3
-      })
+      });
       Object.keys(gvlids).forEach(bidder => expect(syncUserRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
     });
   });
@@ -659,7 +658,7 @@ describe('gdpr enforcement', function () {
         sampleUserId: true,
         sampleUserId1: false
       }).forEach(([name, allow]) => {
-        expectAllow(allow, enrichEidsRule(activityParams(MODULE_TYPE_UID, name)))
+        expectAllow(allow, enrichEidsRule(activityParams(MODULE_TYPE_UID, name)));
       });
     });
   });
@@ -680,7 +679,7 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      const cd = setupConsentData()
+      const cd = setupConsentData();
       Object.assign(gvlids, {
         bidder_1: 4,
         bidder_2: 5,
@@ -709,14 +708,14 @@ describe('gdpr enforcement', function () {
       Object.assign(gvlids, {
         bidder_1: 4,
         bidder_2: 5,
-      })
+      });
       Object.entries({
         bidder_1: true,
         bidder_2: false,
         bidder_3: true
       }).forEach(([bidder, allowed]) => {
         expectAllow(allowed, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
-      })
+      });
     });
 
     it('should allow S2S bidder when deferS2Sbidders is true', function() {
@@ -781,15 +780,15 @@ describe('gdpr enforcement', function () {
         analyticsAdapter_C: 1
       });
 
-      setupConsentData()
+      setupConsentData();
 
       Object.entries({
         analyticsAdapter_A: false,
         analyticsAdapter_B: true,
         analyticsAdapter_C: true
       }).forEach(([adapter, allow]) => {
-        expectAllow(allow, reportAnalyticsRule(activityParams(MODULE_TYPE_ANALYTICS, adapter)))
-      })
+        expectAllow(allow, reportAnalyticsRule(activityParams(MODULE_TYPE_ANALYTICS, adapter)));
+      });
     });
   });
 
@@ -821,7 +820,7 @@ describe('gdpr enforcement', function () {
       const consent = setupConsentData();
       consent.vendorData.purpose.consents[4] = true;
       consent.vendorData.vendor.consents[123] = false;
-      expectAllow(false, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')))
+      expectAllow(false, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
   });
 
@@ -833,7 +832,7 @@ describe('gdpr enforcement', function () {
       basicAds: 2,
       personalizedAds: 4,
       measurement: 7,
-    }
+    };
 
     beforeEach(() => {
       cd = setupConsentData();
@@ -873,11 +872,11 @@ describe('gdpr enforcement', function () {
               flexiblePurposes: LI_PURPOSES
             }
           }
-        })
-      })
+        });
+      });
       afterEach(() => {
         config.resetConfig();
-      })
+      });
 
       describe('should deny if', () => {
         describe('config is default', () => {
@@ -994,7 +993,7 @@ describe('gdpr enforcement', function () {
             });
             cd.vendorData.purpose.consents[RULES_2_10[rule]] = true;
             expectAllow(true, runRule());
-          })
+          });
         });
       });
     });
@@ -1012,14 +1011,14 @@ describe('gdpr enforcement', function () {
               }, cfg)
             ]
           }
-        })
+        });
       }
       describe('allows when', () => {
         Object.entries({
           'purpose 4 consent is given'() {
             setupPAdsRule();
             setVendorConsent();
-            cd.vendorData.purpose.consents[4] = true
+            cd.vendorData.purpose.consents[4] = true;
           },
           'enforcePurpose is false, with vendor consent given'() {
             setupPAdsRule({ enforcePurpose: false });
@@ -1051,16 +1050,16 @@ describe('gdpr enforcement', function () {
           },
           'vendor consent is not given'() {
             setupPAdsRule();
-            cd.vendorData.purpose.consents[4] = true
+            cd.vendorData.purpose.consents[4] = true;
           },
         }).forEach(([t, setup]) => {
           it(t, () => {
             setup();
             expectAllow(false, runRule());
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
   });
 
   describe('transmitPreciseGeoRule', () => {
@@ -1068,7 +1067,7 @@ describe('gdpr enforcement', function () {
     let cd;
 
     function runRule() {
-      return transmitPreciseGeoRule(activityParams(MODULE_TYPE_BIDDER, BIDDER))
+      return transmitPreciseGeoRule(activityParams(MODULE_TYPE_BIDDER, BIDDER));
     }
 
     beforeEach(() => {
@@ -1081,13 +1080,13 @@ describe('gdpr enforcement', function () {
             enforceVendor: false
           }]
         }
-      })
+      });
     });
 
     it('should allow when special feature 1 consent is given', () => {
       cd.vendorData.specialFeatureOptins[1] = true;
       expectAllow(true, runRule());
-    })
+    });
     it('should deny when configured, but consent is missing', () => {
       cd.vendorData.specialFeatureOptins[1] = false;
       expectAllow(false, runRule());
@@ -1121,18 +1120,18 @@ describe('gdpr enforcement', function () {
           gvlLegalBasisMapping: {
             [gvlid]: {}
           }
-        })
+        });
         consentDataWithPurposeConsentFalse = utils.deepClone(consentData);
-        consentDataWithPurposeConsentFalse.vendorData.purpose.consents['1'] = false
+        consentDataWithPurposeConsentFalse.vendorData.purpose.consents['1'] = false;
         gdprRule = createGdprRule('storage', true, true, [], [module]);
       });
       afterEach(() => {
         config.resetConfig();
-      })
+      });
       it('should return false if general consent was not given', () => {
         const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, module, gvlid);
         expect(isAllowed).to.be.false;
-      })
+      });
       it('should return true if general consent was given', () => {
         const isAllowed = validateRules(gdprRule, consentData, module, gvlid);
         expect(isAllowed).to.be.true;
@@ -1147,12 +1146,12 @@ describe('gdpr enforcement', function () {
               }
             }
           }
-        })
+        });
         consentDataWithPurposeConsentFalse.vendorData.purpose.legitimateInterests[1] = true;
         const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, module, gvlid);
         expect(isAllowed).to.be.true;
-      })
-    })
+      });
+    });
 
     describe('first party modules', () => {
       Object.entries({
@@ -1177,7 +1176,7 @@ describe('gdpr enforcement', function () {
           let consent;
           beforeEach(() => {
             consent = utils.deepClone(consentData);
-          })
+          });
           const rule = createGdprRule(purpose);
           Object.entries({
             'allowed': true,
@@ -1189,16 +1188,16 @@ describe('gdpr enforcement', function () {
               const actual = validateRules(rule, consent, 'mockModule', VENDORLESS_GVLID);
               expect(actual).to.equal(consentGiven);
             });
-          })
+          });
           it(`should ${allowsLI ? '' : 'NOT '}be allowed when publisher consent is not given, but LI is`, () => {
             consent.vendorData.publisher.consents[purposeNo] = false;
             consent.vendorData.publisher.legitimateInterests[purposeNo] = true;
             const actual = validateRules(rule, consent, 'mockModule', VENDORLESS_GVLID);
             expect(actual).to.equal(allowsLI);
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
 
     describe('validateRules', function () {
       Object.entries({
@@ -1241,28 +1240,28 @@ describe('gdpr enforcement', function () {
                             }
                           }
                         }
-                      }
+                      };
                     });
                     if (allowsLI || ctype !== 'legitimateInterests') {
                       it(`should return ${expected}`, () => {
                         const allowed = validateRules(rule, consentData, 'mockVendor', 123);
                         expect(allowed).to.eql(expected);
-                      })
+                      });
                     } else if (enforceVendor || enforcePurpose) {
                       it(`should return false (LI is irrelevant)`, () => {
                         const allowed = validateRules(rule, consentData, 'mockVendor', 123);
                         expect(allowed).to.be.false;
-                      })
+                      });
                     }
-                  })
-                })
-              })
-            })
-          })
-        })
-      })
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
     });
-  })
+  });
 
   describe('setEnforcementConfig', function () {
     let sandbox;
@@ -1306,7 +1305,7 @@ describe('gdpr enforcement', function () {
         enforcePurpose: false,
         enforceVendor: true,
         vendorExceptions: ['bidderA']
-      }
+      };
       setEnforcementConfig({
         gdpr: {
           rules: [purpose1RuleDefinedInConfig]
@@ -1324,7 +1323,7 @@ describe('gdpr enforcement', function () {
         enforceVendor: true,
         vendorExceptions: ['bidderA'],
         deferS2Sbidders: false
-      }
+      };
       setEnforcementConfig({
         gdpr: {
           rules: [purpose2RuleDefinedInConfig]
@@ -1344,10 +1343,24 @@ describe('gdpr enforcement', function () {
         purpose: 'basicAds',
         enforcePurpose: false,
         enforceVendor: false
-      }]
+      }];
       setEnforcementConfig({ gdpr: { rules } });
       expect(ACTIVE_RULES.purpose[1]).to.deep.equal(rules[0]);
       expect(ACTIVE_RULES.purpose[2]).to.deep.equal(rules[1]);
+    });
+
+    Object.entries({
+      'undefined': undefined,
+      'null': null,
+    }).forEach(([t, cfg]) => {
+      it(`should not throw when config is ${t} (e.g. for non-GDPR countries)`, function () {
+        expect(() => setEnforcementConfig(cfg)).to.not.throw();
+      });
+
+      it(`should fall back to the default purpose declaration when config is ${t}`, function () {
+        setEnforcementConfig(cfg);
+        expect(getPurposeDeclarations(null)).to.eql(DEFAULT_PURPOSE_DECLARATION);
+      });
     });
   });
 
@@ -1370,14 +1383,14 @@ describe('gdpr enforcement', function () {
         purpose: 'basicAds',
         enforcePurpose: false,
         enforceVendor: false
-      }]
+      }];
       setEnforcementConfig({ gdpr: { rules } });
 
-      events.emit('auctionEnd', {})
+      events.emit('auctionEnd', {});
 
       // Assertions
       sinon.assert.calledWith(events.emit.getCall(1), 'tcf2Enforcement', sinon.match.object);
-    })
+    });
   });
 
   describe('gvlid resolution', () => {
@@ -1414,7 +1427,7 @@ describe('gdpr enforcement', function () {
       it('should return null if the wrong GVL ID was registered', () => {
         entry = { gvlid: 123 };
         expect(getGvlid('type', 'someOtherModule')).to.equal(null);
-      })
+      });
 
       Object.entries({
         'without fallback': null,
@@ -1452,10 +1465,10 @@ describe('gdpr enforcement', function () {
             it('should use uid over analytics', () => {
               entry = { modules: { [MODULE_TYPE_UID]: 123, [MODULE_TYPE_ANALYTICS]: 321 } };
               expect(getGvlid(MODULE_TYPE_ANALYTICS, MOCK_MODULE, fallbackFn)).to.equal(123);
-            })
-          })
-        })
-      })
+            });
+          });
+        });
+      });
 
       it('should use fallbackFn if no other lookup produces a gvl id', () => {
         expect(getGvlid('type', MOCK_MODULE, () => 321)).to.equal(321);
@@ -1480,7 +1493,7 @@ describe('gdpr enforcement', function () {
       });
 
       it('should invoke adapter.gvlid if it\'s a function', () => {
-        adapter.gvlid = (cfg) => cfg.k
+        adapter.gvlid = (cfg) => cfg.k;
         const cfg = { k: 231 };
         expect(getGvlidFromAnalyticsAdapter('analytics', cfg)).to.eql(231);
       });
@@ -1490,5 +1503,5 @@ describe('gdpr enforcement', function () {
         expect(getGvlidFromAnalyticsAdapter('analytics')).to.not.be.ok;
       });
     });
-  })
+  });
 });

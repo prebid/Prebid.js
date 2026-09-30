@@ -252,7 +252,7 @@ export const spec = {
       }];
     }
   },
-}
+};
 
 /**
  * NOTE: server side does not yet support multiple formats.
@@ -335,7 +335,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
 
     result = sizeObj;
     return result;
-  }
+  };
 
   let playerSize = _getPlayerSize(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
 

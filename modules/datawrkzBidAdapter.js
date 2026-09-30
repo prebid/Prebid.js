@@ -7,13 +7,13 @@ import {
   isPlainObject,
   getBidIdParameter
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createBid } from '../src/bidfactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { STATUS } from '../src/constants.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -24,8 +24,8 @@ const BIDDER_CODE = 'datawrkz';
 const ALIASES = [];
 const ENDPOINT_URL = 'https://at.datawrkz.com/exchange/openrtb23/';
 const RENDERER_URL = 'https://js.datawrkz.com/prebid/osRenderer.min.js';
-const OUTSTREAM_TYPES = ['inline', 'slider_top_left', 'slider_top_right', 'slider_bottom_left', 'slider_bottom_right', 'interstitial_close', 'listicle']
-const OUTSTREAM_MIMES = ['video/mp4']
+const OUTSTREAM_TYPES = ['inline', 'slider_top_left', 'slider_top_right', 'slider_bottom_left', 'slider_bottom_right', 'interstitial_close', 'listicle'];
+const OUTSTREAM_MIMES = ['video/mp4'];
 const SUPPORTED_AD_TYPES = [BANNER, NATIVE, VIDEO];
 const SUPPORTED_VIDEO_CONTEXTS = [INSTREAM, OUTSTREAM];
 
@@ -77,7 +77,7 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, request) {
     var bidResponses = [];
-    const bidRequest = request.bidRequest
+    const bidRequest = request.bidRequest;
     const bidResponse = serverResponse.body;
 
     // valid object?
@@ -95,7 +95,7 @@ export const spec = {
     }
     return bidResponses;
   },
-}
+};
 
 /* Checks whether the video media type context is supported */
 function isValidVideoMediaTypeContext(context) {
@@ -179,7 +179,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
   }
   const body = deepAccess(bidRequest, 'mediaTypes.native.body');
   if (body) {
-    assets.push(generateNativeDataObj(body, 'desc', ++counter));
+    assets.push(generateNativeDataObj(body, 'desc', counter + 1));
   }
 
   const request = JSON.stringify({ assets: assets });
@@ -283,7 +283,7 @@ function getVideoAdUnitSize(bidRequest) {
       adH = parseInt(playerSize[0][1]);
     }
   }
-  return { adH: adH, adW: adW }
+  return { adH: adH, adW: adW };
 }
 
 /* Get mediatype of the adunit from request */
@@ -321,7 +321,7 @@ function generatePayload(imp, bidderRequest) {
     regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0';
   }
 
-  if (config.getConfig('coppa') === true) {
+  if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
     regs.coppa = '1';
   }
 
@@ -587,13 +587,13 @@ function getNativeAssestObj(obj, assets) {
     return {
       key: 'title',
       value: obj.title.text
-    }
+    };
   }
   if (obj.data) {
     return {
       key: getAssetDataType(obj.id, assets),
       value: obj.data.value
-    }
+    };
   }
   if (obj.img) {
     return {
@@ -603,7 +603,7 @@ function getNativeAssestObj(obj, assets) {
         height: obj.img.h,
         width: obj.img.w
       }
-    }
+    };
   }
 }
 

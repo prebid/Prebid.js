@@ -93,7 +93,7 @@ describe('greenbidsBidAdapter', () => {
       };
       expect(spec.isBidRequestValid(bidNonGbCompatible)).to.equal(false);
     });
-  })
+  });
   describe('buildRequests', function () {
     it('should send bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
@@ -106,11 +106,11 @@ describe('greenbidsBidAdapter', () => {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
-      expect(payload.data[0].auctionId).to.not.exist
+      expect(payload.data[0].auctionId).to.not.exist;
     });
 
     it('should send US Privacy to endpoint', function () {
-      const usPrivacy = 'OHHHFCP1'
+      const usPrivacy = 'OHHHFCP1';
       const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -204,19 +204,19 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should add referer info to payload', function () {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
           page: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.referrer).to.exist;
-      expect(payload.referrer).to.deep.equal('https://example.com/page.html')
+      expect(payload.referrer).to.deep.equal('https://example.com/page.html');
     });
 
     const originalConnection = window.navigator.connection;
@@ -260,7 +260,7 @@ describe('greenbidsBidAdapter', () => {
     it('should add width info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const deviceWidth = screen.width
+      const deviceWidth = screen.width;
 
       expect(payload.deviceWidth).to.exist;
       expect(payload.deviceWidth).to.deep.equal(deviceWidth);
@@ -269,7 +269,7 @@ describe('greenbidsBidAdapter', () => {
     it('should add height info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const deviceHeight = screen.height
+      const deviceHeight = screen.height;
 
       expect(payload.deviceHeight).to.exist;
       expect(payload.deviceHeight).to.deep.equal(deviceHeight);
@@ -278,7 +278,7 @@ describe('greenbidsBidAdapter', () => {
     it('should add pixelRatio info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const pixelRatio = getDevicePixelRatio()
+      const pixelRatio = getDevicePixelRatio();
 
       expect(payload.devicePixelRatio).to.exist;
       expect(payload.devicePixelRatio).to.deep.equal(pixelRatio);
@@ -715,7 +715,7 @@ describe('greenbidsBidAdapter', () => {
         model: '',
         bitness: '64',
         architecture: 'x86'
-      }
+      };
 
       const bidRequest = Object.assign({}, bidRequests[0], {
         ortb2: {
@@ -952,8 +952,7 @@ describe('greenbidsBidAdapter', () => {
           'placementId': 4242,
           'dealId': 'ABC_123'
         }
-      ]
-        ;
+      ];
 
       const result = spec.interpretResponse(bids);
       expect(result).to.eql(expectedResponse);

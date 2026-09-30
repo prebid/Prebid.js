@@ -12,11 +12,11 @@ import { continueAuction } from '../../../modules/priceFloors.js'; // eslint-dis
 
 let _floorConfig = null;
 export const getFloorConfig = () => _floorConfig;
-export const setFloorsConfig = (config) => { _floorConfig = config; }
+export const setFloorsConfig = (config) => { _floorConfig = config; };
 
 let _configJsonManager = null;
 export const getConfigJsonManager = () => _configJsonManager;
-export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager; }
+export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager; };
 
 export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Floor-Provider: '

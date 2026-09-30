@@ -19,15 +19,12 @@ import { server } from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 import { enrichFPD } from '../../../src/fpd/enrichment.js';
 
-var assert = require('chai').assert;
 var expect = require('chai').expect;
 
 describe('currency', function () {
   let fakeCurrencyFileServer;
   let sandbox;
   let clock;
-
-  const fn = sinon.spy();
 
   function makeBid(bidProps) {
     return Object.assign(createBid(), bidProps);
@@ -75,7 +72,7 @@ describe('currency', function () {
         defaultRates: {
           'USD': { 'JPY': 1 }
         }
-      }
+      };
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig(config);
       fakeCurrencyFileServer.respond();
@@ -96,8 +93,8 @@ describe('currency', function () {
       });
       expect(currencyRates.conversions).to.eql({
         'USD': { 'JPY': 2 }
-      })
-    })
+      });
+    });
 
     it('currency file is called even when default rates are specified', function() {
       // RESET to request currency file (specifically url value for this test)
@@ -303,7 +300,7 @@ describe('currency', function () {
         }
       });
       sinon.assert.called(responseReady.resolve);
-    })
+    });
 
     it('uses rates specified in json when provided and consider boosted bid', function () {
       setConfig({
@@ -339,7 +336,7 @@ describe('currency', function () {
         bid = makeBid({ cpm: 100, currency: 'JPY', bidder: 'rubicoin' });
         addBidResponse = sinon.spy();
         reject = sinon.spy();
-      })
+      });
       it('uses default rates if specified', function () {
         setConfig({
           adServerCurrency: 'USD',
@@ -381,8 +378,8 @@ describe('currency', function () {
         addBidResponseHook(addBidResponse, 'au', bid, reject);
         fakeCurrencyFileServer.respond();
         sinon.assert.calledWith(addBidResponse, 'au', bid, reject);
-      })
-    })
+      });
+    });
   });
 
   describe('currency.addBidResponseDecorator bidResponseQueue', function () {
@@ -397,7 +394,7 @@ describe('currency', function () {
 
       let responseAdded = false;
       let isReady = false;
-      responseReady.promise.then(() => { isReady = true });
+      responseReady.promise.then(() => { isReady = true; });
 
       addBidResponseHook(Object.assign(function() {
         responseAdded = true;
@@ -501,7 +498,7 @@ describe('currency', function () {
       sinon.assert.calledWith(addBidResponse, 'au', noConversionBid, reject);
       sinon.assert.calledOnce(reject);
       sinon.assert.calledWith(reject, REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
-    })
+    });
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
@@ -564,9 +561,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ adServerCurrency: 'EUR' });
       return fpd({}).then((ortb) => {
-        expect(ortb.ext.prebid.adServerCurrency).to.eql('EUR')
-      })
-    })
+        expect(ortb.ext.prebid.adServerCurrency).to.eql('EUR');
+      });
+    });
   });
 
   describe('auctionDelay param', () => {

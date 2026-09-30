@@ -109,7 +109,7 @@ describe('sizeMapping', function () {
         return mediaTypes.banner.sizes;
       },
     }
-  }
+  };
   if (FEATURES.VIDEO) {
     suites.video = {
       mediaTypes: {
@@ -120,7 +120,7 @@ describe('sizeMapping', function () {
       getSizes(mediaTypes) {
         return mediaTypes.video.playerSize;
       }
-    }
+    };
   }
   Object.entries(suites).forEach(([mediaType, { mediaTypes, getSizes }]) => {
     describe(`for ${mediaType}`, () => {
@@ -304,7 +304,7 @@ describe('sizeMapping', function () {
         }
       });
 
-      [multiFormatSizes.banner.sizes, multiFormatSizes.video.playerSize].forEach(sz => sz.splice(0, 1, [728, 80]))
+      [multiFormatSizes.banner.sizes, multiFormatSizes.video.playerSize].forEach(sz => sz.splice(0, 1, [728, 80]));
       status = resolveStatus({
         labels: ['tablet']
       }, multiFormatSizes, sizeConfigWithLabels);

@@ -38,8 +38,12 @@ const getMetadata = (() => {
 // on Windows, require paths are not filesystem paths
 const SEP_PAT = new RegExp(path.sep.replace(/\\/g, '\\\\'), 'g')
 
+function toModulePath(path) {
+  return path.replace(SEP_PAT, '/')
+}
+
 function relPath(from, toRelToProjectRoot) {
-  let result = path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
+  let result = toModulePath(path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)));
   if (!result.startsWith('.')) {
     result = `./${result}`
   }
@@ -67,5 +71,6 @@ module.exports = {
   getMetadata,
   relPath,
   isInDirectory,
-  getFreeName
+  getFreeName,
+  toModulePath
 };

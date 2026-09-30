@@ -749,7 +749,7 @@ function getVendorLegitimateInterest(vendorData) {
 /// Local domain cookie management =====================
 invibes.Uid = {
   generate: function () {
-    const maxRand = parseInt('zzzzzz', 36)
+    const maxRand = parseInt('zzzzzz', 36);
     const mkRand = function () {
       return Math.floor(Math.random() * maxRand).toString(36);
     };

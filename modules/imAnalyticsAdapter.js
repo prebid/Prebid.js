@@ -6,6 +6,7 @@ import { sendBeacon } from '../src/ajax.js';
 
 const DEFAULT_BID_WON_TIMEOUT = 1500; // 1.5 second for initial batch
 const DEFAULT_CID = 5126;
+const DEFAULT_CACHE_TTL = 30 * 1000; // 30 seconds
 const API_BASE_URL = 'https://b6.im-apps.net/bid';
 
 const cache = {
@@ -31,6 +32,16 @@ function getWaitTimeout(options) {
   return (typeof waitTimeout === 'number' && waitTimeout >= 0)
     ? waitTimeout
     : DEFAULT_BID_WON_TIMEOUT;
+}
+
+/**
+ * Get cache TTL from adapter options
+ * @param {Object} options - Adapter options
+ * @returns {number} TTL in ms
+ */
+function getTtl(options) {
+  const ttl = options && options.cacheTtl;
+  return (typeof ttl === 'number' && ttl > 0) ? ttl : DEFAULT_CACHE_TTL;
 }
 
 /**
@@ -151,8 +162,21 @@ const imAnalyticsAdapter = Object.assign(
      * @param {Object} args - Auction arguments
      */
     handleAuctionInit(args) {
+      const now = Date.now();
+      const ttl = getTtl(this.options);
+      Object.keys(cache.auctions).forEach(id => {
+        const entry = cache.auctions[id];
+        if (now - (entry.auctionInitTimestamp || 0) > ttl) {
+          clearTimer(entry.wonBidsTimer);
+          delete cache.auctions[id];
+        }
+      });
+
       const consentData = getConsentData();
       const imUid = deepAccess(args.bidderRequests, '0.bids.0.userId.imuid') ?? '';
+      if (cache.auctions[args.auctionId]) {
+        clearTimer(cache.auctions[args.auctionId].wonBidsTimer);
+      }
       cache.auctions[args.auctionId] = {
         imUid,
         consentData,
@@ -256,7 +280,6 @@ const imAnalyticsAdapter = Object.assign(
       auction.wonBidsTimer = null;
 
       if (auction.wonBids.length === 0) {
-        delete cache.auctions[auctionId];
         return;
       }
 
@@ -264,7 +287,7 @@ const imAnalyticsAdapter = Object.assign(
       const ts = auction.auctionInitTimestamp || Date.now();
       const bids = auction.wonBids;
       const uid = auction.imUid;
-      delete cache.auctions[auctionId];
+      auction.wonBids = [];
       sendToApi(buildApiUrlWithOptions(this.options, 'won', auctionId), {
         bids,
         ts,

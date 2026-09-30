@@ -13,7 +13,7 @@ const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 const DEFAULT_VIDEO_CONTEXT = 'instream';
-const ADAPTER_VERSION = '2.1.0';
+const ADAPTER_VERSION = '2.2.0';
 const DEFAULT_BIDDER_CODE = 'yahooAds';
 const VALID_BIDDER_CODES = [DEFAULT_BIDDER_CODE, 'yahoossp', 'yahooAdvertising'];
 const PREBID_VERSION = '$prebid.version$';
@@ -50,7 +50,7 @@ const generateBidRequest = ({ bidderCode, bidId, pos, adUnitCode, adUnitType, bi
   };
 
   if (videoContext === 'outstream') {
-    bidRequest.renderer = undefined
+    bidRequest.renderer = undefined;
   };
 
   if (adUnitType === 'banner' || adUnitType === 'dap-o2' || adUnitType === 'dap-up') {
@@ -74,7 +74,7 @@ const generateBidRequest = ({ bidderCode, bidId, pos, adUnitCode, adUnitType, bi
   };
 
   return bidRequest;
-}
+};
 
 const generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
   const bidderRequest = {
@@ -125,7 +125,7 @@ const generateBuildRequestMock = ({ bidderCode, bidId, pos, adUnitCode, adUnitTy
   const validBidRequests = [bidRequest];
   const bidderRequest = generateBidderRequest(validBidRequests, adUnitCode, ortb2);
 
-  return { bidRequest, validBidRequests, bidderRequest }
+  return { bidRequest, validBidRequests, bidderRequest };
 };
 
 const generateAdmPayload = (admPayloadType) => {
@@ -141,9 +141,9 @@ const generateAdmPayload = (admPayloadType) => {
       const admPayloads = [
         '<script>logInfo(\'ad\'); AdPlacement </script>', // banner
         '<VAST></VAST>' // VAST xml
-      ]
+      ];
       const random = Math.floor(Math.random() * admPayloads.length);
-      ADM_PAYLOAD = admPayloads[random]
+      ADM_PAYLOAD = admPayloads[random];
       break;
     case 'dap-o2':
       ADM_PAYLOAD = '<script>o2playerSettings</script>'; // O2 player
@@ -180,7 +180,7 @@ const generateResponseMock = (admPayloadType, vastVersion, videoContext) => {
   const { validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: admPayloadType, videoContext });
   const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
   return { serverResponse, data, bidderRequest };
-}
+};
 
 // Unit tests
 describe('Yahoo Advertising Bid Adapter:', () => {
@@ -303,7 +303,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             'us_privacy': bidderRequest.uspConsent,
             'gpp': bidderRequest.gppConsent.gppString,
             'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
-          }
+          };
           for (const [key, value] of Object.entries(expectedParams)) {
             it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
               expect(urlParams.get(key)).to.equal(value);
@@ -330,7 +330,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             'us_privacy': '',
             'gpp': '',
             'gpp_sid': ''
-          }
+          };
           for (const [key, value] of Object.entries(expectedParams)) {
             it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
               expect(urlParams.get(key)).to.equal(value);
@@ -382,7 +382,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
-    it('should mark bid ad VALID if pubId exists instead of dcn & pos', () => {
+    it('should mark bid as VALID if pubId exists instead of dcn & pos', () => {
       const validBid = {
         params: {
           pubId: DEFAULT_PUBID
@@ -401,7 +401,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           floor: bidRequest.floors.values[floorObj.mediaType + '|640x480'],
           currency: floorObj.currency,
           mediaType: floorObj.mediaType
-        }
+        };
       };
       bidRequest.floors = {
         currency: 'EUR',
@@ -499,7 +499,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     const INVALID_ORTB2_TYPES = [null, [], 123, 'unsupportedKeyName', true, false, undefined];
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = { site: param }
+        const ortb2 = { site: param };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.be.undefined;
@@ -535,7 +535,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.exist;
-        expect(data.site[param]).to.be.a('array');
+        expect(data.site[param]).to.be.an('array');
         expect(data.site[param]).to.be.equal(ortb2.site[param]);
       });
     });
@@ -635,7 +635,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.site.content[param]).to.be.a('array');
+        expect(data.site.content[param]).to.be.an('array');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
       });
     });
@@ -664,7 +664,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     const INVALID_ORTB2_TYPES = [null, [], 'unsupportedKeyName', true, false, undefined];
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = { user: param }
+        const ortb2 = { user: param };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.be.undefined;
@@ -715,7 +715,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
-        expect(data.user[param]).to.be.a('array');
+        expect(data.user[param]).to.be.an('array');
         expect(data.user[param]).to.be.equal(ortb2.user[param]);
       });
     });
@@ -764,7 +764,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
     });
 
-    const VALID_USER_DATA_ARRAYS = ['segment']
+    const VALID_USER_DATA_ARRAYS = ['segment'];
     VALID_USER_DATA_ARRAYS.forEach(param => {
       it(`should allow supported user data arrays to be added to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
@@ -800,7 +800,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
     // adUnit.ortb2Imp.data (OpenRTB 2.6 moved from ext to top-level)
     it(`should allow adUnit.ortb2Imp.data object (2.6 top-level) to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         data: {
           pbadslot: 'homepage-top-rect',
@@ -812,7 +812,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it(`should allow adUnit.ortb2Imp.ext.data object (2.5 backward compat) to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         ext: {
           data: {
@@ -826,7 +826,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
     // adUnit.ortb2Imp.instl
     it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         instl: 1
       };
@@ -835,7 +835,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "true" to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         instl: true
       };
@@ -844,7 +844,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "false" to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         instl: false
       };
@@ -862,7 +862,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         testing: {
           e2etest: true
         }
-      }
+      };
       bidRequest.params = params;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.id).to.be.equal('8a969516017a7a396ec539d97f540011');
@@ -995,12 +995,12 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it('should return a single request object for single request mode', () => {
-      let { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({});
       const BID_ID_2 = '84ab50xxxxx';
       const BID_POS_2 = 'footer';
       const AD_UNIT_CODE_2 = 'test-ad-unit-code-123';
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: BID_ID_2, pos: BID_POS_2, adUnitCode: AD_UNIT_CODE_2 });
-      validBidRequests = [bidRequest, bidRequest2];
+      const validBidRequests = [bidRequest, bidRequest2];
       bidderRequest.bids = validBidRequests;
 
       config.setConfig({
@@ -1043,16 +1043,13 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   });
 
   describe('Request Headers validation:', () => {
-    it('should return request objects with the relevant custom headers and content type declaration', () => {
+    it('should return request objects with the relevant content type declaration', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       bidderRequest.gdprConsent.gdprApplies = false;
       const options = spec.buildRequests(validBidRequests, bidderRequest)[0].options;
       expect(options).to.deep.equal(
         {
-          contentType: 'application/json',
-          customHeaders: {
-            'x-openrtb-version': '2.6'
-          },
+          contentType: 'text/plain',
           withCredentials: true
         });
     });
@@ -1234,7 +1231,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             }
           }
         }
-      }
+      };
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.publisher).to.deep.equal({
@@ -1255,7 +1252,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             }
           }
         }
-      }
+      };
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({ pubIdMode: true, ortb2 });
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.publisher).to.deep.equal({
@@ -1369,7 +1366,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
     // Validate Key-Value Pairs
     it('should generate supported String, Number, Array of Strings, Array of Numbers key-value pairs and append to imp.ext.kvs', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].params.kvp = {
         key1: 'String',
         key2: 123456,
@@ -1401,17 +1398,17 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const BID_POS_3 = 'hero';
       const AD_UNIT_CODE_3 = 'video-ad-unit';
 
-      let { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({}); // banner
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({}); // banner
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: BID_ID_2, pos: BID_POS_2, adUnitCode: AD_UNIT_CODE_2 }); // banner
       const { bidRequest: bidRequest3 } = generateBuildRequestMock({ bidId: BID_ID_3, pos: BID_POS_3, adUnitCode: AD_UNIT_CODE_3, adUnitType: 'video' }); // video (should be filtered)
-      validBidRequests = [bidRequest, bidRequest2, bidRequest3];
+      const validBidRequests = [bidRequest, bidRequest2, bidRequest3];
       bidderRequest.bids = validBidRequests;
 
-      const reqs = spec.buildRequests(validBidRequests, bidderRequest)
+      const reqs = spec.buildRequests(validBidRequests, bidderRequest);
       expect(reqs).to.be.a('array');
       expect(reqs.length).to.equal(2);
       reqs.forEach(req => {
-        expect(req.data.imp[0].video).to.not.exist
+        expect(req.data.imp[0].video).to.not.exist;
         expect(req.data.imp[0].banner).to.deep.equal({
           mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
           format: [{ w: 300, h: 250 }, { w: 300, h: 600 }]
@@ -1433,17 +1430,17 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const BID_POS_3 = 'hero';
       const AD_UNIT_CODE_3 = 'video-ad-unit';
 
-      let { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video' }); // video
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video' }); // video
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: BID_ID_2, pos: BID_POS_2, adUnitCode: AD_UNIT_CODE_2, adUnitType: 'video' }); // video
       const { bidRequest: bidRequest3 } = generateBuildRequestMock({ bidId: BID_ID_3, pos: BID_POS_3, adUnitCode: AD_UNIT_CODE_3 }); // banner (should be filtered)
-      validBidRequests = [bidRequest, bidRequest2, bidRequest3];
+      const validBidRequests = [bidRequest, bidRequest2, bidRequest3];
       bidderRequest.bids = validBidRequests;
 
-      const reqs = spec.buildRequests(validBidRequests, bidderRequest)
+      const reqs = spec.buildRequests(validBidRequests, bidderRequest);
       expect(reqs).to.be.a('array');
       expect(reqs.length).to.equal(2);
       reqs.forEach(req => {
-        expect(req.data.imp[0].banner).to.not.exist
+        expect(req.data.imp[0].banner).to.not.exist;
         expect(req.data.imp[0].video).to.deep.equal({
           mimes: ['video/mp4', 'application/javascript'],
           w: 300,
@@ -1476,10 +1473,10 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const BID_POS_3 = 'hero';
       const AD_UNIT_CODE_3 = 'native-ad-unit';
 
-      let { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: 'banner' }); // banner
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({ adUnitType: 'banner' }); // banner
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: BID_ID_2, pos: BID_POS_2, adUnitCode: AD_UNIT_CODE_2, adUnitType: 'video' }); // video
       const { bidRequest: bidRequest3 } = generateBuildRequestMock({ bidId: BID_ID_3, pos: BID_POS_3, adUnitCode: AD_UNIT_CODE_3, adUnitType: 'native' }); // native (should be filtered)
-      validBidRequests = [bidRequest, bidRequest2, bidRequest3];
+      const validBidRequests = [bidRequest, bidRequest2, bidRequest3];
       bidderRequest.bids = validBidRequests;
 
       const reqs = spec.buildRequests(validBidRequests, bidderRequest);
@@ -1548,7 +1545,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
               plcmt: 1
             }
           }
-        }
+        };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ bidderCode, adUnitType: 'video', bidOverrideObject: bidOverride });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.imp[0].video).to.deep.equal(bidOverride.imp.video);
@@ -1576,7 +1573,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           playbackmethod: 1,
           placement: 1,
           plcmt: 1
-        }
+        };
         const validBidRequests = [bidRequest];
         bidderRequest.bids = validBidRequests;
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -1610,7 +1607,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           device: {
             ip: '1.2.3.4'
           }
-        }
+        };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ bidderCode, adUnitType: 'video', bidOverrideObject: bidOverride });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.device.ip).to.deep.equal(bidOverride.device.ip);
@@ -1626,7 +1623,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(response[0].ad).to.equal('<script>logInfo(\'ad\'); AdPlacement </script>');
         expect(response[0].mediaType).to.equal('banner');
-      })
+      });
     });
 
     describe('for mediaTypes: "video"', () => {
@@ -1652,7 +1649,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         expect(response[0].ad).to.be.undefined;
         expect(response[0].vastXml).to.equal('<VAST></VAST>');
         expect(response[0].mediaType).to.equal('video');
-      })
+      });
 
       describe('wrapped in video players for display inventory', () => {
         beforeEach(() => {
@@ -1679,7 +1676,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           expect(response[0].vastUrl).to.be.undefined;
           expect(response[0].vastXml).to.be.undefined;
           expect(response[0].mediaType).to.equal('banner');
-        })
+        });
       });
     });
 
@@ -1689,7 +1686,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(response[0].meta.advertiserDomains).to.be.a('array');
         expect(response[0].meta.advertiserDomains[0]).to.equal('advertiser-domain.com');
-      })
+      });
     });
 
     describe('bid response Ad ID / Creative ID', () => {
@@ -1759,7 +1756,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           });
         });
 
-        it('should give presedence to Gloabl ttl over params.ttl ', () => {
+        it('should give precedence to Global ttl over params.ttl ', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
             yahooAds: { ttl: 500 }
@@ -1850,11 +1847,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   });
 
   describe('OpenRTB 2.6 compliance:', () => {
-    it('should use application/json content type and send x-openrtb-version header', () => {
+    it('should use text/plain content type and not send custom headers', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const request = spec.buildRequests(validBidRequests, bidderRequest)[0];
-      expect(request.options.contentType).to.equal('application/json');
-      expect(request.options.customHeaders['x-openrtb-version']).to.equal('2.6');
+      expect(request.options.contentType).to.equal('text/plain');
+      expect(request.options.customHeaders).to.be.undefined;
     });
 
     it('should place us_privacy at regs top-level AND keep in regs.ext for backward compat', () => {

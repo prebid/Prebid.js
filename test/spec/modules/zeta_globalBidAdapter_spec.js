@@ -1,4 +1,4 @@
-import { spec } from '../../../modules/zeta_globalBidAdapter.js'
+import { spec } from '../../../modules/zeta_globalBidAdapter.js';
 
 describe('Zeta Bid Adapter', function() {
   const bannerRequest = [{

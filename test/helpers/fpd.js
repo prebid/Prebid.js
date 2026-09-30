@@ -7,15 +7,15 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
   overrides = Object.assign({}, {
     // override window getters, required for ChromeHeadless, apparently it sees window.self !== window
     getWindowTop() {
-      return window
+      return window;
     },
     getWindowSelf() {
-      return window
+      return window;
     },
     getHighEntropySUA() {
-      return PbPromise.resolve()
+      return PbPromise.resolve();
     }
-  }, overrides)
+  }, overrides);
   Object.entries(overrides)
     .filter(([k]) => dep[k])
     .forEach(([k, v]) => {
@@ -29,12 +29,12 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
     if (v) {
       sandbox.stub(handler, 'getConsentData').callsFake(v);
     }
-  })
+  });
 }
 
 export function addFPDEnrichments(ortb2 = {}, overrides) {
   const sandbox = sinon.createSandbox();
-  mockFpdEnrichments(sandbox, overrides)
+  mockFpdEnrichments(sandbox, overrides);
   return enrichFPD(PbPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }
 
@@ -54,6 +54,6 @@ export function addFPDToBidderRequest(bidderRequest, overrides) {
     return {
       ...bidderRequest,
       ortb2
-    }
+    };
   });
 }

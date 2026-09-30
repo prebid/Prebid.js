@@ -31,5 +31,5 @@ describe('pbjs - ortb ext.prebid.multibid', () => {
     const req = {};
     setOrtbExtPrebidMultibid(req);
     expect(req).to.eql({});
-  })
+  });
 });

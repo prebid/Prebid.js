@@ -2,7 +2,7 @@ const ORTB_NATIVE_ASSET_TYPES = ['img', 'video', 'link', 'data', 'title'];
 
 function getSlotDivid(adUnitCode) {
   const slot = window.googletag?.pubads?.()?.getSlots?.()?.find?.((slot) => {
-    return slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode
+    return slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
   });
   return slot?.getSlotElementId();
 }
@@ -44,7 +44,7 @@ export default function ({ Renderer, BANNER, NATIVE, VIDEO }) {
               player.loadAdXml(bid.vastXml);
             }
           });
-        })
+        });
       }
     },
     [NATIVE]: (bid, bidResponse) => {
@@ -57,10 +57,10 @@ export default function ({ Renderer, BANNER, NATIVE, VIDEO }) {
             },
             assets: bid.nativeOrtbRequest.assets.map(mapDefaultNativeOrtbAsset)
           }
-        }
+        };
       }
     }
-  }
+  };
 
   function mapDefaultNativeOrtbAsset(asset) {
     const assetType = ORTB_NATIVE_ASSET_TYPES.find(type => asset.hasOwnProperty(type));
@@ -74,21 +74,21 @@ export default function ({ Renderer, BANNER, NATIVE, VIDEO }) {
             h: 500,
             url: 'https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png',
           }
-        }
+        };
       case 'video':
         return {
           ...asset,
           video: {
             vasttag: '<?xml version="1.0" encoding="UTF-8"?><VAST version="3.0"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://prebid.org/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery="progressive" width="640" height="360" type="video/mp4" scalable="true" maintainAspectRatio="true"><![CDATA[https://s3.amazonaws.com/files.prebid.org/creatives/PrebidLogo.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>'
           }
-        }
+        };
       case 'data': {
         return {
           ...asset,
           data: {
             value: '5 stars'
           }
-        }
+        };
       }
       case 'title': {
         return {
@@ -96,7 +96,7 @@ export default function ({ Renderer, BANNER, NATIVE, VIDEO }) {
           title: {
             text: 'Prebid Native Example'
           }
-        }
+        };
       }
     }
   }

@@ -292,7 +292,7 @@ export const lotamePanoramaIdSubmodule = {
         return ID_HOST_COOKIELESS;
       }
       return ID_HOST;
-    }
+    };
 
     const resolveIdFunction = function (callback) {
       const queryParams = {};

@@ -22,7 +22,7 @@ const html5Config = {
     name: '_dpes_id',
     expires: 28
   }
-}
+};
 
 describe('Deepintent DPES System', () => {
   describe('Deepintent Dpes Sytsem: test "getId" method', () => {
@@ -64,7 +64,7 @@ describe('Deepintent DPES System', () => {
   describe('eid', () => {
     before(() => {
       attachIdSystem(deepintentDpesSubmodule);
-    })
+    });
     it('deepintentId', function() {
       const userId = {
         deepintentId: 'some-random-id-value'
@@ -76,5 +76,5 @@ describe('Deepintent DPES System', () => {
         uids: [{ id: 'some-random-id-value', atype: 3 }]
       });
     });
-  })
+  });
 });

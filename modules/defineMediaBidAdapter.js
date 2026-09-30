@@ -12,7 +12,7 @@
 import { logInfo, logError, logWarn } from "../src/utils.js";
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ajax } from '../src/ajax.js';
 
 // Bidder identification and compliance constants
@@ -152,7 +152,7 @@ export const spec = {
         url: endpointUrl,
         data: ortbRequest,
         converter: dynamicConverter // Attach converter for response processing
-      }
+      };
     });
   },
 

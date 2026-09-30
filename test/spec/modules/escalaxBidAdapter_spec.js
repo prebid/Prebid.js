@@ -40,7 +40,7 @@ const SIMPLE_BID_REQUEST = {
     gdprApplies: true,
     addtlConsent: '1~1.35.41.101',
   },
-}
+};
 
 const BANNER_BID_REQUEST = {
   bidder: 'escalax',
@@ -63,7 +63,7 @@ const BANNER_BID_REQUEST = {
   transactionId: 'test-transactionId-1',
   code: 'banner_example',
   timeout: 1000,
-}
+};
 
 const VIDEO_BID_REQUEST = {
   placementCode: '/DfpAccount1/slotVideo',
@@ -91,7 +91,7 @@ const VIDEO_BID_REQUEST = {
   auctionId: 'test-auction-1',
   transactionId: 'test-transactionId-1',
   timeout: 1000,
-}
+};
 
 const NATIVE_BID_REQUEST = {
   code: 'native_example',
@@ -150,7 +150,7 @@ const gdprConsent = {
   vendorData: { purpose: { consents: { 1: true } } },
   gdprApplies: true,
   addtlConsent: '1~1.35.41.101',
-}
+};
 
 describe('escalaxAdapter', function () {
   const adapter = newBidder(spec);
@@ -241,7 +241,7 @@ describe('escalaxAdapter', function () {
       const request = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
       expect(request.data.imp[0]).to.be.an('object');
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     let bidRequests, bidderRequest;
@@ -269,7 +269,7 @@ describe('escalaxAdapter', function () {
       const response = spec.interpretResponse(emptyResponse, BANNER_BID_REQUEST);
 
       expect(response).to.be.an('array').that.is.empty;
-    })
+    });
 
     it('Should interpret banner response', function () {
       const serverResponse = {
@@ -295,11 +295,11 @@ describe('escalaxAdapter', function () {
         expect(bid).to.be.an('object');
         expect(bid.currency).to.equal('USD');
         expect(bid.cpm).to.equal(97);
-        expect(bid.ad).to.equal(ad)
+        expect(bid.ad).to.equal(ad);
         expect(bid.width).to.equal(300);
         expect(bid.height).to.equal(250);
         expect(bid.creativeId).to.equal('creative0');
       });
-    })
+    });
   });
 });

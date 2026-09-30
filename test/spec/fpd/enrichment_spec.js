@@ -60,8 +60,8 @@ describe('FPD enrichment', () => {
     describe(`${section}, when set`, () => {
       let ortb2;
       beforeEach(() => {
-        ortb2 = { [section]: { ext: {} } }
-      })
+        ortb2 = { [section]: { ext: {} } };
+      });
 
       it('sets domain and publisher.domain', () => {
         const refererInfo = {
@@ -77,7 +77,7 @@ describe('FPD enrichment', () => {
             }
           });
         });
-      })
+      });
       describe('keywords', () => {
         let tagsToRemove;
         beforeEach(() => {
@@ -88,12 +88,12 @@ describe('FPD enrichment', () => {
 
         afterEach(() => {
           tagsToRemove.forEach(tag => document.head.removeChild(tag));
-        })
+        });
 
         function addMetaKeywords(keywords = ['kw1', 'kw2']) {
           const metaTag = document.createElement('meta');
           metaTag.name = 'keywords';
-          metaTag.content = keywords.join(',')
+          metaTag.content = keywords.join(',');
           document.head.appendChild(metaTag);
           tagsToRemove.push(metaTag);
         }
@@ -132,7 +132,7 @@ describe('FPD enrichment', () => {
                   meta: false
                 }
               }
-            })
+            });
             addMetaKeywords(['kw1', 'kw2']);
             return fpd(ortb2).then(ortb2 => {
               expect(ortb2[section].keywords).to.not.exist;
@@ -158,7 +158,7 @@ describe('FPD enrichment', () => {
             addJsonKeywords(['json1', 'json2']);
             return fpd(ortb2).then(ortb2 => {
               expect(ortb2[section].keywords).to.not.exist;
-            })
+            });
           });
 
           it('should avoid duplicates', () => {
@@ -166,12 +166,12 @@ describe('FPD enrichment', () => {
             addJsonKeywords(['kw2 ', 'kw3']);
             return fpd(ortb2).then(ortb2 => {
               expect(ortb2[section].keywords).to.eql('kw1,kw2,kw3');
-            })
-          })
+            });
+          });
         });
       });
-    })
-  })
+    });
+  });
 
   describe('site', () => {
     describe('when mixed with app/dooh', () => {
@@ -188,10 +188,10 @@ describe('FPD enrichment', () => {
           return fpd({ [prop]: { foo: 'bar' } }).then(ortb2 => {
             expect(ortb2.site).to.not.exist;
             sinon.assert.notCalled(utils.logWarn); // make sure we don't generate "both site and app are set" warnings
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
 
     it('sets page, ref', () => {
       const refererInfo = {
@@ -267,14 +267,14 @@ describe('FPD enrichment', () => {
         win.navigator.userAgent = 'mock-ua';
         return fpd().then(ortb2 => {
           expect(ortb2.device.ua).to.eql('mock-ua');
-        })
+        });
       });
 
       it('sets language', () => {
         win.navigator.language = 'lang-ignored';
         return fpd().then(ortb2 => {
           expect(ortb2.device.language).to.eql('lang');
-        })
+        });
       });
     });
   });
@@ -296,25 +296,25 @@ describe('FPD enrichment', () => {
         it('is not set otherwise', () => {
           return fpd().then(ortb2 => {
             expect(ortb2.regs?.ext?.gpc).to.not.exist;
-          })
-        })
+          });
+        });
       });
-    })
+    });
     describe('coppa', () => {
       [[true, 1], [false, 0]].forEach(([cfgVal, regVal]) => {
         it(`is set to ${regVal} if config = ${cfgVal}`, () => {
           config.setConfig({ coppa: cfgVal });
           return fpd().then(ortb2 => {
             expect(ortb2.regs.coppa).to.eql(regVal);
-          })
+          });
         });
-      })
+      });
 
       it('is not set if not configured', () => {
         return fpd().then(ortb2 => {
           expect(ortb2.regs?.coppa).to.not.exist;
-        })
-      })
+        });
+      });
     });
   });
 
@@ -329,7 +329,7 @@ describe('FPD enrichment', () => {
       });
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.not.exist;
-      })
+      });
     });
     it('uses low entropy values if uaHints is []', () => {
       sandbox.stub(dep, 'getLowEntropySUA').callsFake(() => ({ mock: 'sua' }));
@@ -337,10 +337,10 @@ describe('FPD enrichment', () => {
         firstPartyData: {
           uaHints: [],
         }
-      })
+      });
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.eql({ mock: 'sua' });
-      })
+      });
     });
     it('uses high entropy values otherwise', () => {
       sandbox.stub(dep, 'getHighEntropySUA').callsFake((hints) => Promise.resolve({ hints }));
@@ -350,8 +350,8 @@ describe('FPD enrichment', () => {
         }
       });
       return fpd().then(ortb2 => {
-        expect(ortb2.device.sua).to.eql({ hints: ['h1', 'h2'] })
-      })
+        expect(ortb2.device.sua).to.eql({ hints: ['h1', 'h2'] });
+      });
     });
   });
 
@@ -365,7 +365,7 @@ describe('FPD enrichment', () => {
       expect(ortb2.site).to.not.exist;
       sinon.assert.match(ortb2.dooh, {
         p: 'val'
-      })
+      });
     });
-  })
+  });
 });

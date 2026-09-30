@@ -58,7 +58,7 @@ describe('LoopMeBidAdapter', function () {
       validBids.forEach(function (bid) {
         it('Should return true if bid request valid', function () {
           expect(spec.isBidRequestValid(bid)).eq(true, `Bid: ${JSON.stringify(bid)}`);
-        })
+        });
       });
     });
 
@@ -85,7 +85,7 @@ describe('LoopMeBidAdapter', function () {
         [{ body: {} }],
         [{ body: { ext: {} } }],
         [{ body: { ext: { usersyncs: [] } } }]
-      ].forEach((response) => expect(spec.getUserSyncs({}, response)).to.be.an('array').that.is.empty)
+      ].forEach((response) => expect(spec.getUserSyncs({}, response)).to.be.an('array').that.is.empty);
     });
 
     it('Should return an array of user syncs objects', function () {

@@ -11,17 +11,8 @@ import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
-import {
-  buildUrl,
-  formatQS,
-  isEmpty,
-  isNumber,
-  logError,
-  logWarn,
-  parseSizesInput,
-  parseUrl
-} from '../src/utils.js';
-import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams, gppParams } from '../libraries/gamUtils/gamUtils.js';
+import { buildUrl, isEmpty, isNumber, logError, logWarn, parseSizesInput, parseUrl } from '../src/utils.js';
 import { vastLocalCache } from '../src/videoCache.js';
 import { noCredsFetch as fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
@@ -35,7 +26,7 @@ import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 
 export const dep = {
   ri: getRefererInfo
-}
+};
 
 export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
@@ -91,7 +82,8 @@ export function buildGamVideoUrl(options) {
     derivedParams,
     options.params,
     { cust_params: encodedCustomParams },
-    gdprParams()
+    gdprParams(),
+    gppParams()
   );
 
   // The IMA player adds usp info, but not gpp info
@@ -168,7 +160,7 @@ export function buildGamVideoUrl(options) {
   if (signals.length) {
     queryParams.ppsj = btoa(JSON.stringify({
       PublisherProvidedTaxonomySignals: signals
-    }))
+    }));
   }
 
   return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
@@ -235,7 +227,13 @@ function getCustParams(bid, options, urlCustParams) {
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = options?.params?.cust_params;
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
-  let encodedParams = encodeURIComponent(formatQS(targetingSet));
+  let encodedParams = encodeURIComponent(
+    Object.entries(targetingSet)
+      // arrays should be comma separated - https://support.google.com/admanager/answer/1080597?sjid=507182241587626931-NC
+      .map(([key, value]) => `${key}=${Array.isArray(value) ? value.join(',') : value}`)
+      .join('&')
+  );
+
   if (urlCustParams) {
     encodedParams = urlCustParams + '%26' + encodedParams;
   }
@@ -326,7 +324,7 @@ function retrieveUspInfoFromGpp(gpp) {
   if (parsedSections) {
     if (parsedSections.uspv1) {
       const usp = parsedSections.uspv1;
-      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`
+      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`;
     } else {
       let saleOptOut;
       let saleOptOutNotice;
@@ -348,7 +346,7 @@ function retrieveUspInfoFromGpp(gpp) {
       }
     }
   }
-  return undefined
+  return undefined;
 }
 
 export async function getBase64BlobContent(blobUrl) {

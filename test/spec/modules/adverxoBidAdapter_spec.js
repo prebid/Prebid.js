@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adverxoBidAdapter.js';
-import { config } from 'src/config';
 
 describe('Adverxo Bid Adapter', () => {
   function makeBidRequestWithParams(params) {
@@ -150,10 +149,6 @@ describe('Adverxo Bid Adapter', () => {
     bids: videoOutstreamBidRequests,
     auctionId: 'new-auction-id'
   };
-
-  afterEach(function () {
-    config.resetConfig();
-  });
 
   describe('isBidRequestValid', function () {
     it('should validate bid request with valid params (adUnit as number)', () => {
@@ -743,6 +738,13 @@ describe('Adverxo Bid Adapter', () => {
       const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe&gpp=foo&gpp_sid=123%2C456`
+      }]);
+    });
+
+    it('should add COPPA when enabled', function () {
+      const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, undefined, true);
+      expect(result).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe&coppa=1`
       }]);
     });
   });

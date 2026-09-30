@@ -17,6 +17,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -26,7 +27,7 @@ import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
-const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s'
+const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s';
 
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
@@ -356,7 +357,7 @@ export const spec = {
         request.regs.ext.us_privacy = uspConsent;
       }
 
-      if (config.getConfig('coppa') === true) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         if (!request.regs) {
           request.regs = {};
         }
@@ -376,7 +377,7 @@ export const spec = {
       const site = deepAccess(bidderRequest, 'ortb2.site');
       if (site) {
         const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
-          return category && typeof category === 'string'
+          return category && typeof category === 'string';
         });
         if (pageCategory.length) {
           request.site.cat = pageCategory;
@@ -623,7 +624,7 @@ function createBannerRequest(bid, mediaType) {
   const result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
-    result.format = format
+    result.format = format;
   }
   return result;
 }

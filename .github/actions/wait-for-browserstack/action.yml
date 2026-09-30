@@ -11,11 +11,12 @@ runs:
       run: |
         while            
           status=$(curl -u "${BROWSERSTACK_USERNAME}:${BROWSERSTACK_ACCESS_KEY}" \
-            -X GET "https://api-cloud.browserstack.com/automate/plan.json" 2> /dev/null);
-          running=$(jq '.parallel_sessions_running' <<< $status)
-          max_running=$(jq '.parallel_sessions_max_allowed' <<< $status)
-          queued=$(jq '.queued_sessions' <<< $status)
-          max_queued=$(jq '.queued_sessions_max_allowed' <<< $status)
+            -X GET "https://api-cloud.browserstack.com/automate/plan.json" 2> /dev/null)
+          echo "Response: $status"
+          running=$(jq -e '.parallel_sessions_running' <<< $status || echo "0")
+          max_running=$(jq -e '.parallel_sessions_max_allowed' <<< $status || echo "-1")
+          queued=$(jq -e '.queued_sessions' <<< $status || echo "0")
+          max_queued=$(jq -e '.queued_sessions_max_allowed' <<< $status || echo "0")
           spare=$(( ${max_running} + ${max_queued} - ${running} - ${queued} ))
           required=${{ inputs.sessions }}
           echo "Browserstack status: ${running} sessions running, ${queued} queued, ${spare} free"

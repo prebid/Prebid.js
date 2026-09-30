@@ -30,13 +30,13 @@ const _logError = createLogError(LOG_PRE_FIX);
 function createLogInfo(prefix) {
   return function (...strings) {
     logInfo(prefix + ' ', ...strings);
-  }
+  };
 }
 
 function createLogError(prefix) {
   return function (...strings) {
     logError(prefix + ' ', ...strings);
-  }
+  };
 }
 
 function getEmail(value) {
@@ -220,7 +220,7 @@ function syncCallback() {
     error: function () {
       _logInfo('Data sync failed.');
     }
-  }
+  };
 }
 
 function postData() {

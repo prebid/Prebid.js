@@ -39,7 +39,7 @@ describe('iPROM Adapter', function () {
         ],
         topmostLocation: 'https://adserver.si/index.html',
       }
-    }
+    };
   });
 
   afterEach(function () {

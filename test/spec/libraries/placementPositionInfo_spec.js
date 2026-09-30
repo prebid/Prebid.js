@@ -15,11 +15,10 @@ describe('placementPositionInfo', function () {
   let getWindowSelfStub;
   let getBoundingClientRectStub;
   let percentInViewStub;
-  let cleanObjStub;
 
   let mockDocument;
   let mockWindow;
-  let viewportOffset
+  let viewportOffset;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
@@ -42,7 +41,7 @@ describe('placementPositionInfo', function () {
     getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf').returns(mockWindow);
     getBoundingClientRectStub = sandbox.stub(boundingClientRectLib, 'getBoundingClientRect');
     percentInViewStub = sandbox.stub(percentInViewLib, 'getViewability');
-    cleanObjStub = sandbox.stub(utils, 'cleanObj').callsFake(obj => obj);
+    sandbox.stub(utils, 'cleanObj').callsFake(obj => obj);
     sandbox.stub(winDimensions, 'getWinDimensions').returns(mockWindow);
     viewportOffset = { x: 0, y: 0 };
     sandbox.stub(percentInViewLib, 'getViewportOffset').callsFake(() => viewportOffset);
@@ -401,12 +400,12 @@ describe('placementPositionInfo', function () {
 
   describe('iframe coordinate translation', function () {
     beforeEach(() => {
-      sandbox.stub(adUnits, 'getAdUnitElement').returns({ id: 'test' })
+      sandbox.stub(adUnits, 'getAdUnitElement').returns({ id: 'test' });
       mockWindow.innerHeight = 1000;
       mockDocument.body = {
         scrollHeight: 2000, offsetHeight: 1800
-      }
-      mockDocument.documentElement = { clientHeight: 1900, scrollHeight: 2100, offsetHeight: 1950 }
+      };
+      mockDocument.documentElement = { clientHeight: 1900, scrollHeight: 2100, offsetHeight: 1950 };
     });
     it('should apply iframe offset when running inside a friendly iframe', function () {
       viewportOffset = { y: 200 };

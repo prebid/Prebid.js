@@ -24,7 +24,7 @@ function mockFetchServer() {
     request.clone = () => ({
       ...request,
       blob: () => GreedyPromise.resolve(new Blob([requestBody]))
-    })
+    });
     bodies.set(request, requestBody);
     return request;
   }
@@ -74,7 +74,7 @@ function mockFetchServer() {
               configurable: true,
               writable: false,
               value: target.get(prop)
-            }
+            };
           }
         }
       }),
@@ -109,7 +109,7 @@ function mockFetchServer() {
         Object.assign(mockReq.fetch, {
           response: resp,
           responseBody: body || ''
-        })
+        });
         resolve(resp);
       },
       respond(status = 200, headers, body) {

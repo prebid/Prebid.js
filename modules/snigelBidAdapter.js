@@ -56,7 +56,7 @@ export const spec = {
         gdprConsentString: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.consentString') : undefined,
         gdprConsentProv: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.addtlConsent') : undefined,
         uspConsent: deepAccess(bidderRequest, 'uspConsent'),
-        coppa: getConfig('coppa'),
+        coppa: bidderRequest.ortb2?.regs?.coppa,
         eids: deepAccess(bidRequests, '0.userIdAsEids'),
         schain: deepAccess(bidRequests, '0.ortb2.source.ext.schain'),
         page: getPage(bidderRequest),

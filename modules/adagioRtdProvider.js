@@ -252,7 +252,7 @@ export const _internal = {
         placementFromSource = adUnit.code;
         break;
       case PLACEMENT_SOURCES.GPID:
-        placementFromSource = deepAccess(adUnit, 'ortb2Imp.ext.gpid')
+        placementFromSource = deepAccess(adUnit, 'ortb2Imp.ext.gpid');
         break;
     }
 
@@ -356,7 +356,7 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
 
     // A divId is required to compute the slot position and later to track viewability.
     // If nothing has been explicitly set, we try to get the divId from the GPT slot and fallback to the adUnit code in last resort.
-    let divId = deepAccess(ortb2Imp, 'ext.data.divId')
+    let divId = deepAccess(ortb2Imp, 'ext.data.divId');
     if (!divId) {
       divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
       deepSetValue(ortb2Imp, `ext.data.divId`, divId || adUnit.code);

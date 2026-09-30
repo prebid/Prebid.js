@@ -40,7 +40,7 @@ export function isNumber(object): object is number {
 }
 
 export function isPlainObject(object): object is Record<any, unknown> {
-  return toString.call(object) === '[object Object]'
+  return toString.call(object) === '[object Object]';
 }
 
 export function isBoolean(object): object is boolean {

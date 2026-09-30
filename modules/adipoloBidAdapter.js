@@ -27,10 +27,10 @@ export const spec = {
   isBidRequestValid: bid => isBidRequestValid(bid, ['pid']),
   buildRequests: (validBidRequests, bidderRequest) => {
     const endpoint = `https://${getSubdomain()}.adipolo.live`;
-    return buildRequests(validBidRequests, bidderRequest, endpoint)
+    return buildRequests(validBidRequests, bidderRequest, endpoint);
   },
   interpretResponse,
   getUserSyncs
-}
+};
 
 registerBidder(spec);

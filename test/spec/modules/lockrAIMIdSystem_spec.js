@@ -19,7 +19,7 @@ const getDataFromStorage = (dataKey) => {
 
 const mockHTTPRequestSuccess = (key, value) => {
   coreStorage.setDataInLocalStorage(key, value);
-}
+};
 
 describe("lockr AIM ID System", function () {
   before(() => {

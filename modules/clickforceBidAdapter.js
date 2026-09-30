@@ -129,12 +129,12 @@ export const spec = {
       return [{
         type: 'iframe',
         url: 'https://cdn.holmesmind.com/js/capmapping.htm'
-      }]
+      }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
         url: 'https://c.holmesmind.com/cm'
-      }]
+      }];
     }
   }
 };

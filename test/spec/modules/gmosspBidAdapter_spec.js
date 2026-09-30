@@ -187,7 +187,7 @@ describe('GmosspAdapter', function () {
           type: 'image',
           url: 'https://hoge.com'
         }
-      ])
-    })
+      ]);
+    });
   });
 });

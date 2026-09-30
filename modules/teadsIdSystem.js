@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { isStr, isNumber, logError, logInfo, isEmpty, timestamp } from '../src/utils.js'
+import { isStr, isNumber, logError, logInfo, isEmpty, timestamp } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -58,7 +58,7 @@ export const teadsIdSubmodule = {
    * @returns {{teadsId:string}}
    */
   decode(value) {
-    return { teadsId: value }
+    return { teadsId: value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -223,7 +223,7 @@ export function getCcpaConsentString(ccpaConsentString) {
  * @returns {string}
  */
 export function getCookieExpirationDate(maxAge) {
-  return new Date(timestamp() + maxAge).toUTCString()
+  return new Date(timestamp() + maxAge).toUTCString();
 }
 
 /**
@@ -231,9 +231,9 @@ export function getCookieExpirationDate(maxAge) {
  * @returns {string}
  */
 function getTeadsViewerId() {
-  const teadsViewerId = readCookie()
+  const teadsViewerId = readCookie();
   if (isStr(teadsViewerId)) {
-    return teadsViewerId
+    return teadsViewerId;
   } else {
     return '';
   }

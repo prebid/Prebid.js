@@ -37,7 +37,7 @@ function postAjax(url, data) {
 
 function handleInitSizes(adUnits) {
   return adUnits.map(function (adUnit) {
-    return adUnit.sizes.toString() || ''
+    return adUnit.sizes.toString() || '';
   });
 }
 

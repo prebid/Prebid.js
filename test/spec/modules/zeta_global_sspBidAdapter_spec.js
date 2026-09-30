@@ -1,4 +1,4 @@
-import { spec } from '../../../modules/zeta_global_sspBidAdapter.js'
+import { spec } from '../../../modules/zeta_global_sspBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { deepClone } from '../../../src/utils.js';
 import { expect } from 'chai';
@@ -254,7 +254,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       ],
       cur: 'USD'
     }
-  }
+  };
 
   const responseBannerPayload = {
     data: {
@@ -495,6 +495,12 @@ describe('Zeta Ssp Bid Adapter', function () {
       }]);
       expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, '1NYN')).to.deep.equal([{
         type: 'image', url: `${USER_SYNC_URL_IMAGE}&us_privacy=1NYN`
+      }]);
+    });
+
+    it('COPPA', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined, undefined, true)).to.deep.equal([{
+        type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&coppa=1`
       }]);
     });
 
@@ -780,7 +786,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       prebid: {
         type: 'video'
       }
-    }
+    };
     const bidResponse = spec.interpretResponse(zetaResponse, responseBannerPayload);
     expect(bidResponse).to.not.be.empty;
     expect(bidResponse.length).to.eql(1);
@@ -795,7 +801,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       prebid: {
         type: 'banner'
       }
-    }
+    };
     const bidResponse = spec.interpretResponse(zetaResponse, responseVideoPayload);
     expect(bidResponse).to.not.be.empty;
     expect(bidResponse.length).to.eql(1);

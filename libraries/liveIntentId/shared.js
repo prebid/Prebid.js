@@ -1,7 +1,7 @@
 import { UID1_EIDS } from '../uid1Eids/uid1Eids.js';
 import { UID2_EIDS } from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
-import { isNumber } from '../../src/utils.js'
+import { isNumber } from '../../src/utils.js';
 
 export const PRIMARY_IDS = ['libp'];
 export const GVLID = 148;
@@ -24,27 +24,27 @@ export function parseRequestedAttributes(overrides) {
 }
 
 export function makeSourceEventToSend(configParams) {
-  const sourceEvent = {}
-  let nonEmpty = false
+  const sourceEvent = {};
+  let nonEmpty = false;
   if (typeof configParams.emailHash === 'string') {
-    nonEmpty = true
-    sourceEvent.emailHash = configParams.emailHash
+    nonEmpty = true;
+    sourceEvent.emailHash = configParams.emailHash;
   }
   if (typeof configParams.ipv4 === 'string') {
-    nonEmpty = true
-    sourceEvent.ipv4 = configParams.ipv4
+    nonEmpty = true;
+    sourceEvent.ipv4 = configParams.ipv4;
   }
   if (typeof configParams.ipv6 === 'string') {
-    nonEmpty = true
-    sourceEvent.ipv6 = configParams.ipv6
+    nonEmpty = true;
+    sourceEvent.ipv6 = configParams.ipv6;
   }
   if (typeof configParams.userAgent === 'string') {
-    nonEmpty = true
-    sourceEvent.userAgent = configParams.userAgent
+    nonEmpty = true;
+    sourceEvent.userAgent = configParams.userAgent;
   }
 
   if (nonEmpty) {
-    return sourceEvent
+    return sourceEvent;
   }
 }
 
@@ -64,76 +64,76 @@ function composeIdObject(value) {
   const result = {};
 
   // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
-  const lipbid = value.nonId || value.unifiedId
-  result.lipb = lipbid ? { ...value, lipbid } : value
-  delete result.lipb?.unifiedId
+  const lipbid = value.nonId || value.unifiedId;
+  result.lipb = lipbid ? { ...value, lipbid } : value;
+  delete result.lipb?.unifiedId;
 
   // Lift usage of uid2 by exposing uid2 if we were asked to resolve it.
   // As adapters are applied in lexicographical order, we will always
   // be overwritten by the 'proper' uid2 module if it is present.
   if (value.uid2) {
-    result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.bidswitch) {
-    result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.triplelift) {
-    result.triplelift = { 'id': value.triplelift, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.triplelift = { 'id': value.triplelift, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.zetassp) {
-    result.zetassp = { 'id': value.zetassp, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.zetassp = { 'id': value.zetassp, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.medianet) {
-    result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.magnite) {
-    result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.index) {
-    result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.openx) {
-    result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.pubmatic) {
-    result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.sovrn) {
-    result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.thetradedesk) {
-    result.lipb = { ...result.lipb, tdid: value.thetradedesk }
-    result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
-    delete result.lipb.thetradedesk
+    result.lipb = { ...result.lipb, tdid: value.thetradedesk };
+    result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } };
+    delete result.lipb.thetradedesk;
   }
 
   if (value.sharethrough) {
-    result.sharethrough = { 'id': value.sharethrough, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.sharethrough = { 'id': value.sharethrough, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.sonobi) {
-    result.sonobi = { 'id': value.sonobi, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.sonobi = { 'id': value.sonobi, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.vidazoo) {
-    result.vidazoo = { 'id': value.vidazoo, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.vidazoo = { 'id': value.vidazoo, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
   if (value.nexxen) {
-    result.nexxen = { 'id': value.nexxen, ext: { provider: LI_PROVIDER_DOMAIN } }
+    result.nexxen = { 'id': value.nexxen, ext: { provider: LI_PROVIDER_DOMAIN } };
   }
 
-  return result
+  return result;
 }
 
 export function setUpTreatment(config) {
@@ -330,4 +330,4 @@ export const eids = {
       }
     }
   }
-}
+};

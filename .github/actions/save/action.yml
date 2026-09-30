@@ -15,7 +15,7 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/github-script@v8
+    - uses: actions/github-script@v9
       id: platform
       with:
         script: |
@@ -34,7 +34,7 @@ runs:
         target="$(basename "$wdir")"
         tar ${{ fromJSON(steps.platform.outputs.result).platform == 'win32' && '--force-local' || '' }} -C "$parent" -cf "${{ runner.temp }}/${{ fromJSON(steps.platform.outputs.result).name }}.tar" "$target"
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         path: '${{ runner.temp }}/${{ fromJSON(steps.platform.outputs.result).name }}.tar'
         name: ${{ fromJSON(steps.platform.outputs.result).name }}

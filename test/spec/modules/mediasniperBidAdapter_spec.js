@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/mediasniperBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import * as utils from 'src/utils.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
@@ -8,7 +8,6 @@ const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_BID_TTL = 360;
 
 describe('mediasniperBidAdapter', function () {
-  const adapter = newBidder(spec);
   let utilsMock;
   let sandbox;
 
@@ -484,11 +483,7 @@ describe('mediasniperBidAdapter', function () {
     });
 
     it('Should trigger pixel if bid.burl exists', function () {
-      const result = spec.onBidWon({
-        cpm: 4.2,
-        burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar',
-      });
-
+      spec.onBidWon({ burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar', cpm: 4.2 });
       expect(utils.triggerPixel.callCount).to.equal(1);
       expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
         'https://example.com/p=4.2&foo=bar'

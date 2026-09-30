@@ -17,8 +17,9 @@ import {
   getNextDealId,
   getTopWindowQueryParams,
   getVidazooSessionId
-} from 'libraries/vidazooUtils/bidderUtils.js'
+} from 'libraries/vidazooUtils/bidderUtils.js';
 import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
@@ -96,7 +97,7 @@ const VIDEO_BID = {
       'placement': 1
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -427,8 +428,7 @@ describe('VidazooBidAdapter', function () {
           omidpn: 'MyIntegrationPartner',
           omidpv: '7.1'
         }
-      })
-      ;
+      });
     });
 
     it('should build banner request for each size', function () {
@@ -661,8 +661,8 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should build video request with base url from valid params.host', function () {
-      const videoWithHost = VIDEO_BID
-      videoWithHost.params.host = 'example.com'
+      const videoWithHost = VIDEO_BID;
+      videoWithHost.params.host = 'example.com';
       config.setConfig({
         bidderTimeout: 3000
       });
@@ -672,8 +672,8 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should build video request with default base url ,invalid params.host', function () {
-      const videoWithHost = VIDEO_BID
-      videoWithHost.params.host = 'examplecom'
+      const videoWithHost = VIDEO_BID;
+      videoWithHost.params.host = 'examplecom';
       config.setConfig({
         bidderTimeout: 3000
       });
@@ -828,97 +828,6 @@ describe('VidazooBidAdapter', function () {
     });
   });
 
-  describe('user id system', function () {
-    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
-      const id = Date.now().toString();
-      const bid = utils.deepClone(BID);
-
-      const userId = (function () {
-        switch (idSystemProvider) {
-          case 'lipb':
-            return { lipbid: id };
-          case 'id5id':
-            return { uid: id };
-          default:
-            return id;
-        }
-      })();
-
-      bid.userId = {
-        [idSystemProvider]: userId
-      };
-
-      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
-        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
-      });
-    });
-    // testing bid.userIdAsEids handling
-    it("should include user ids from bid.userIdAsEids (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{ "id": "fakeidi6j6dlc6e" }]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
-    it("should include user ids from bid.userIdAsEids (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{ "id": "fakeidi6j6dlc6e" }]
-        },
-        {
-          "source": "rwdcntrl.net",
-          "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
-    // testing user.ext.eid handling
-    it("should include user ids from user.ext.eid (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{ "id": "fakeid8888dlc6e" }]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
-    it("should include user ids from user.ext.eid (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{ "id": "fakeid8888dlc6e" }]
-            },
-            {
-              "source": "adserver.org",
-              "uids": [{ "id": "fakeid495ff1" }]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
-  });
-
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
       const cid = extractCID({ 'c_id': '1' });
@@ -1007,7 +916,7 @@ describe('VidazooBidAdapter', function () {
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -1023,7 +932,7 @@ describe('VidazooBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
@@ -1054,7 +963,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
@@ -1075,14 +984,7 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('validate onBidWon', function () {
-    beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
-    });
-    afterEach(function () {
-      utils.triggerPixel.restore();
-    });
-
-    it('should call triggerPixel if nurl exists', function () {
+    it('should send keepalive ajax GET if nurl exists', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -1103,15 +1005,16 @@ describe('VidazooBidAdapter', function () {
         ttl: 30,
         width: 300
       };
+      const expectedUrl = 'https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered';
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.true;
-
-      const url = utils.triggerPixel.args[0];
-
-      expect(url[0]).to.be.equal('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+      const matching = server.requests.filter((req) => req.url === expectedUrl);
+      expect(matching.length).to.equal(1);
+      expect(matching[0].method).to.equal('GET');
+      expect(matching[0].fetch.request.keepalive).to.be.true;
     });
 
-    it('should not call triggerPixel if nurl does not exist', function () {
+    it('should not send ping if nurl does not exist', function () {
+      const beforeCount = server.requests.length;
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -1132,7 +1035,7 @@ describe('VidazooBidAdapter', function () {
         width: 300
       };
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.false;
+      expect(server.requests.length).to.equal(beforeCount);
     });
   });
 });

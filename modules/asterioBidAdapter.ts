@@ -10,7 +10,7 @@ export const ENDPOINT = 'https://bid.asterio.ai/prebid/bid';
 
 export const dep = {
   ajax
-}
+};
 
 export type AsterioBidParams = {
   adUnitToken: string;

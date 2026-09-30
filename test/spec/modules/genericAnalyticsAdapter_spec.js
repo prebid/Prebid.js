@@ -123,7 +123,7 @@ describe('Generic analytics', () => {
           recv = arg;
         });
         events.emit(BID_RESPONSE, { i: 1 });
-        sinon.assert.match(recv, [sinon.match({ eventType: BID_RESPONSE, args: { i: 1 } })])
+        sinon.assert.match(recv, [sinon.match({ eventType: BID_RESPONSE, args: { i: 1 } })]);
       });
 
       it('should not cause infinite recursion, if handler triggers more events', () => {
@@ -199,7 +199,7 @@ describe('Generic analytics', () => {
                   return {
                     extra: 'data',
                     prop: bid.prop
-                  }
+                  };
                 }
               }
             }

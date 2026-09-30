@@ -14,7 +14,7 @@ describe('currency utils', () => {
     if (getGlobal().convertCurrency.mock) {
       delete getGlobal().convertCurrency;
     }
-  })
+  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -42,13 +42,13 @@ describe('currency utils', () => {
 
         it('should return input value when suppressErrors = true', () => {
           expect(convertCurrency(123, 'c1', 'c2', true)).to.eql(123);
-        })
-      })
+        });
+      });
     });
 
     describe('when currency module is working', () => {
       beforeEach(() => {
-        sandbox.stub(getGlobal(), 'convertCurrency').callsFake((amt) => amt * 10)
+        sandbox.stub(getGlobal(), 'convertCurrency').callsFake((amt) => amt * 10);
       });
 
       it('should be used for actual conversions', () => {
@@ -59,8 +59,8 @@ describe('currency utils', () => {
       it('should NOT be used when no conversion is necessary', () => {
         expect(convertCurrency(123, 'cur', 'cur')).to.eql(123);
         sinon.assert.notCalled(getGlobal().convertCurrency);
-      })
-    })
+      });
+    });
   });
 
   describe('Currency normalization', () => {
@@ -68,8 +68,8 @@ describe('currency utils', () => {
     beforeEach(() => {
       mockConvert = sinon.stub().callsFake((amt, from, to) => {
         if (from === to) return amt;
-        return amt / from * to
-      })
+        return amt / from * to;
+      });
     });
 
     describe('currencyNormalizer', () => {
@@ -89,14 +89,14 @@ describe('currency utils', () => {
         it(`passes bestEffort = ${bestEffort} to convert`, () => {
           currencyNormalizer(null, bestEffort, mockConvert)(1, 1);
           sinon.assert.calledWith(mockConvert, 1, 1, 1, bestEffort);
-        })
-      })
+        });
+      });
     });
 
     describe('currencyCompare', () => {
-      let compare
+      let compare;
       beforeEach(() => {
-        compare = currencyCompare((val) => [val.amount, val.cur], currencyNormalizer(null, false, mockConvert))
+        compare = currencyCompare((val) => [val.amount, val.cur], currencyNormalizer(null, false, mockConvert));
       });
       [
         [{ amount: 1, cur: 1 }, { amount: 1, cur: 10 }, 1],
@@ -108,6 +108,6 @@ describe('currency utils', () => {
           expect(compare(b, a)).to.equal(-expected);
         });
       });
-    })
-  })
-})
+    });
+  });
+});

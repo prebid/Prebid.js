@@ -42,6 +42,17 @@ interface MgidLegacyParams {
 
 export type MgidBidderParams = MgidParams & MgidLegacyParams;
 
+/**
+ * Bidder-level options, set via `pbjs.bidderSettings.mgid = {...}`.
+ */
+export interface MgidBidderSettings {
+  /**
+   * Opt in to sending MGID usage data (pageview/visit counters, view rates)
+   * with bid requests. Defaults to `false`.
+   */
+  enhancedBidData?: boolean;
+}
+
 declare module '../src/adUnits' {
   interface BidderParams {
     mgid: MgidBidderParams;

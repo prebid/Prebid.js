@@ -9,6 +9,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { isWebdriverEnabled, isSeleniumDetected } from '../libraries/webdriver/webdriver.js';
 import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 export const storage = getStorageManager({ bidderCode: 'datablocks' });
 
@@ -159,7 +160,7 @@ export const spec = {
           });
           window['googletag'].pubads().addEventListener('slotRenderEnded', function(event) {
             scope.queue_metric({ type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() });
-          })
+          });
         }
       }
     }
@@ -197,7 +198,7 @@ export const spec = {
         secure: window.location.protocol === 'https:',
         ortb2: deepAccess(bidRequest, `ortb2Imp`) || {},
         floor: {}
-      }
+      };
 
       // CHECK FOR FLOORS
       if (typeof bidRequest.getFloor === 'function') {
@@ -269,7 +270,7 @@ export const spec = {
       ext: {
         pb_eids: validRequests[0].userIdAsEids || {},
         syncs: this.get_syncs() || {},
-        coppa: config.getConfig('coppa') || 0,
+        coppa: bidderRequest?.ortb2?.regs?.coppa ?? (coppaDataHandler.getCoppa() ? 1 : 0),
         gdpr: bidderRequest.gdprConsent || {},
         usp: bidderRequest.uspConsent || {},
         client_info: this.get_client_info(),
@@ -316,7 +317,7 @@ export const spec = {
     const gdprData = {
       gdpr: 0,
       gdprConsent: ''
-    }
+    };
     if (typeof gdprConsent === 'object') {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         gdprData.gdpr = Number(gdprConsent.gdprApplies);
@@ -339,7 +340,7 @@ export const spec = {
         if (checkValid(sync)) {
           syncs.push(addParams(sync));
         }
-      })
+      });
     }
 
     // APPEND PARAMS TO SYNC URL
@@ -416,7 +417,7 @@ export const spec = {
         default:
           break;
       }
-    })
+    });
 
     return bids;
   }
@@ -434,7 +435,7 @@ export class BotClientTests {
       selenium: function () {
         return isSeleniumDetected(window, document);
       },
-    }
+    };
   }
 
   doTests() {

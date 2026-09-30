@@ -91,8 +91,8 @@ describe('Targeting lock', () => {
             eventHandlers[event] = listener;
           },
           removeEventListener: sinon.stub()
-        }
-      })
+        };
+      });
 
       it('should unlock on slotRenderEnded', () => {
         lock.lock(targeting);
@@ -104,11 +104,17 @@ describe('Targeting lock', () => {
         expect(lock.isLocked(targeting)).to.be.false;
       });
 
+      it('can unlock a given slot', () => {
+        lock.lock(targeting);
+        lock.unlock({ getTargeting: (key) => [targeting[key]] });
+        expect(lock.isLocked(targeting)).to.be.false;
+      });
+
       it('should unregister when disabled', () => {
         lock.lock(targeting);
         config.resetConfig();
-        sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded')
-      })
+        sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded');
+      });
     });
   });
 });

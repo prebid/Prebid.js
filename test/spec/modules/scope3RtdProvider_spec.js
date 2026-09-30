@@ -581,18 +581,18 @@ describe('Scope3 RTD Module', function() {
 
       const getAuctionStub = sinon.stub(auctionManager.index, 'getAuction').returns({
         adUnits: reqBidsConfigObj.adUnits,
-        getFPD: () => { return reqBidsConfigObj.ortb2Fragments }
+        getFPD: () => { return reqBidsConfigObj.ortb2Fragments; }
       });
 
-      const targetingData = scope3SubModule.getTargetingData([reqBidsConfigObj.adUnits[0].code], config, {}, { adUnits: reqBidsConfigObj.adUnits })
-      expect(targetingData['test-ad-unit-nocache']).to.be.an('object')
-      expect(targetingData['test-ad-unit-nocache']['axei']).to.be.an('array')
-      expect(targetingData['test-ad-unit-nocache']['axei'].length).to.equal(1)
-      expect(targetingData['test-ad-unit-nocache']['axei']).to.contain('x82s')
-      expect(targetingData['test-ad-unit-nocache']['axex']).to.be.an('array')
-      expect(targetingData['test-ad-unit-nocache']['axex'].length).to.equal(1)
-      expect(targetingData['test-ad-unit-nocache']['axex']).to.contain('c4x9')
-      expect(targetingData['test-ad-unit-nocache']['axem']).to.equal('ctx9h3v8s5')
+      const targetingData = scope3SubModule.getTargetingData([reqBidsConfigObj.adUnits[0].code], config, {}, { adUnits: reqBidsConfigObj.adUnits });
+      expect(targetingData['test-ad-unit-nocache']).to.be.an('object');
+      expect(targetingData['test-ad-unit-nocache']['axei']).to.be.an('array');
+      expect(targetingData['test-ad-unit-nocache']['axei'].length).to.equal(1);
+      expect(targetingData['test-ad-unit-nocache']['axei']).to.contain('x82s');
+      expect(targetingData['test-ad-unit-nocache']['axex']).to.be.an('array');
+      expect(targetingData['test-ad-unit-nocache']['axex'].length).to.equal(1);
+      expect(targetingData['test-ad-unit-nocache']['axex']).to.contain('c4x9');
+      expect(targetingData['test-ad-unit-nocache']['axem']).to.equal('ctx9h3v8s5');
 
       getAuctionStub.restore();
     });

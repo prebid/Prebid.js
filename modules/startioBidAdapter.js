@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { logError, isFn, isPlainObject, formatQS } from '../src/utils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
@@ -26,6 +26,11 @@ const converter = ortbConverter({
       imp.bidfloorcur = 'USD';
     }
 
+    const placementId = bidRequest.params?.placementId;
+    if (placementId != null) {
+      imp.tagid = String(placementId);
+    }
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -41,6 +46,7 @@ const converter = ortbConverter({
     }
     request.ext = request.ext || {};
     request.ext.prebid = request.ext.prebid || {};
+    request.ext.prebid.channel = Object.assign({}, request.ext.prebid.channel, { name: 'pbjs', version: '$prebid.version$' });
 
     const ortb = bidderRequest.ortb2;
     request.regs ??= {};
@@ -64,7 +70,7 @@ const converter = ortbConverter({
       if (request.imp[0].hasOwnProperty(mediaType)) {
         request.imp[0][mediaType].battr ??= ortb?.[mediaType]?.battr || bidParams?.battr;
       }
-    })
+    });
 
     return request;
   },
@@ -80,7 +86,7 @@ const converter = ortbConverter({
       return buildBidResponse(bid, context);
     }
 
-    logError('Bid type is incorrect for bid: ', bid['id'])
+    logError('Bid type is incorrect for bid: ', bid['id']);
   },
   context: {
     netRevenue: true,
@@ -107,6 +113,10 @@ function isValidBidFloorCurrency(bid) {
   return !bid.ortb2Imp?.bidfloorcur || bid.ortb2Imp.bidfloorcur === 'USD';
 }
 
+function getEndpointUrl(bidRequest) {
+  return bidRequest.params?.testAdsEnabled ? `${ENDPOINT_URL}&testAdsEnabled=true` : ENDPOINT_URL;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
@@ -124,7 +134,7 @@ export const spec = {
 
       return {
         method: METHOD,
-        url: ENDPOINT_URL,
+        url: getEndpointUrl(bidRequest),
         options: {
           contentType: 'text/plain',
           withCredentials: true,

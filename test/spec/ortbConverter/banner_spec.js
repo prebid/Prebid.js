@@ -160,7 +160,7 @@ describe('pbjs -> ortb banner conversion', () => {
     const imp = {};
     fillBannerImp(imp, { mediaTypes: { banner: { sizes: [1, 2] } } }, { mediaType: VIDEO });
     expect(imp).to.eql({});
-  })
+  });
 });
 
 describe('ortb -> pbjs banner conversion', () => {
@@ -227,7 +227,7 @@ describe('ortb -> pbjs banner conversion', () => {
   ].forEach(({ t, seatbid, response, expected }) => {
     it(`can handle ${t}`, () => {
       seatbid2Banner(response, seatbid, context);
-      expect(response).to.eql(expected)
-    })
+      expect(response).to.eql(expected);
+    });
   });
-})
+});

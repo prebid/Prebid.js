@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logInfo } from '../src/utils.js'
+import { logInfo } from '../src/utils.js';
 import { fetch } from '../src/ajax.js';
 import type { RtdProviderSpec } from './rtdModule/spec.ts';
 

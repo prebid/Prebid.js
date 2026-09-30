@@ -49,8 +49,8 @@ export const c1xAdapter = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payload = {};
-    let tagObj = {};
+    let payload;
+    let tagObj;
     const bidRequest = [];
     const adunits = validBidRequests.length;
     const rnd = new Date().getTime();
@@ -70,8 +70,7 @@ export const c1xAdapter = {
     // for GDPR support
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload['consent_string'] = bidderRequest.gdprConsent.consentString;
-      payload['consent_required'] = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies.toString() : 'true'
-      ;
+      payload['consent_required'] = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies.toString() : 'true';
     }
 
     Object.assign(payload, tagObj);
@@ -99,7 +98,7 @@ export const c1xAdapter = {
       return bidResponses;
     } else {
       serverResponse.forEach(bid => {
-        logInfo(bid)
+        logInfo(bid);
         if (bid.bid) {
           if (bid.bidType === 'NET_BID') {
             netRevenue = !netRevenue;
@@ -117,7 +116,7 @@ export const c1xAdapter = {
           };
 
           if (bid.dealId) {
-            curBid['dealId'] = bid.dealId
+            curBid['dealId'] = bid.dealId;
           }
 
           for (let i = 0; i < requests.length; i++) {
@@ -137,7 +136,7 @@ export const c1xAdapter = {
     return bidResponses;
   }
 
-}
+};
 
 function bidToTag(bid, index) {
   const tag = {};

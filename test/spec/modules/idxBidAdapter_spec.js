@@ -1,12 +1,12 @@
-import { expect } from 'chai'
-import { spec } from 'modules/idxBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/idxBidAdapter.js';
 
-const BIDDER_CODE = 'idx'
-const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid'
-const DEFAULT_PRICE = 1
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_BANNER_WIDTH = 300
-const DEFAULT_BANNER_HEIGHT = 250
+const BIDDER_CODE = 'idx';
+const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid';
+const DEFAULT_PRICE = 1;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_BANNER_WIDTH = 300;
+const DEFAULT_BANNER_HEIGHT = 250;
 
 describe('idxBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -17,18 +17,18 @@ describe('idxBidAdapter', function () {
           sizes: [[DEFAULT_BANNER_WIDTH, DEFAULT_BANNER_HEIGHT]]
         }
       }
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(validBid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(validBid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, validBid)
-      bid.mediaTypes = {}
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      const bid = Object.assign({}, validBid);
+      bid.mediaTypes = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
   describe('buildRequests', function () {
     const bidRequests = [
       {
@@ -40,7 +40,7 @@ describe('idxBidAdapter', function () {
           }
         },
       }
-    ]
+    ];
     const bidderRequest = {
       bidderCode: BIDDER_CODE,
       bidderRequestId: '12345asdf',
@@ -49,14 +49,14 @@ describe('idxBidAdapter', function () {
           ...bidRequests[0]
         }
       ],
-    }
+    };
 
     it('sends video bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      expect(request.url).to.equal(ENDPOINT_URL)
-      expect(request.method).to.equal('POST')
-    })
-  })
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.method).to.equal('POST');
+    });
+  });
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
       const response = {
@@ -79,7 +79,7 @@ describe('idxBidAdapter', function () {
             seat: BIDDER_CODE
           }
         ],
-      }
+      };
 
       const expectedResponse = [
         {
@@ -94,10 +94,10 @@ describe('idxBidAdapter', function () {
           ttl: 300,
           meta: { advertiserDomains: [] },
         }
-      ]
-      const result = spec.interpretResponse({ body: response })
+      ];
+      const result = spec.interpretResponse({ body: response });
 
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-    })
-  })
-})
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
+  });
+});

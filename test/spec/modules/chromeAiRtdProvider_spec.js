@@ -1,7 +1,7 @@
 import * as chromeAiRtdProvider from 'modules/chromeAiRtdProvider.js';
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
-import * as storageManager from 'src/storageManager.js';
+
+import 'src/storageManager.js';
 
 describe('Chrome AI RTD Provider', function () {
   // Set up sandbox for all stubs
@@ -22,8 +22,6 @@ describe('Chrome AI RTD Provider', function () {
   let mockSummarizerInstance;
 
   // Mock API availability status
-  let mockLanguageDetectorAvailability;
-  let mockSummarizerAvailability;
 
   // Original globals
   let originalLanguageDetector;
@@ -79,10 +77,6 @@ describe('Chrome AI RTD Provider', function () {
       ready: Promise.resolve(),
       addEventListener: sandbox.stub()
     };
-
-    // Reset mock availability to default values
-    mockLanguageDetectorAvailability = 'available';
-    mockSummarizerAvailability = 'available';
 
     // Mock global Chrome AI API constructors and their methods
     // LanguageDetector

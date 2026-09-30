@@ -21,10 +21,10 @@ export function getPageDescription(win = window) {
 
   try {
     element = win.top.document.querySelector('meta[name="description"]') ||
-      win.top.document.querySelector('meta[property="og:description"]')
+      win.top.document.querySelector('meta[property="og:description"]');
   } catch (e) {
     element = document.querySelector('meta[name="description"]') ||
-      document.querySelector('meta[property="og:description"]')
+      document.querySelector('meta[property="og:description"]');
   }
 
   return (element && element.content) || '';

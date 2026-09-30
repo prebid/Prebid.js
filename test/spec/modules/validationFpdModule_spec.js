@@ -1,9 +1,8 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {
-  filterArrayData,
-  validateFpd
-} from 'modules/validationFpdModule/index.js';
+import { fpdValidator } from '../../../libraries/fpdUtils/validateFpd.js';
+
+const { filterArrayData, validateFpd } = fpdValidator(utils);
 
 describe('the first party data validation module', function () {
   const ortb2 = {
@@ -31,32 +30,6 @@ describe('the first party data validation module', function () {
             foo: 'bar'
           }
         }]
-      }
-    }
-  };
-
-  const conf = {
-    device: {
-      h: 500,
-      w: 750
-    },
-    user: {
-      keywords: 'test1, test2',
-      gender: 'f',
-      data: [{
-        segment: [{
-          id: 'test'
-        }],
-        name: 'alt'
-      }]
-    },
-    site: {
-      ref: 'domain.com',
-      page: 'www.domain.com/test',
-      ext: {
-        data: {
-          inventory: ['first']
-        }
       }
     }
   };
@@ -239,7 +212,7 @@ describe('the first party data validation module', function () {
       duplicate.device = {
         h: '1',
         w: '1'
-      }
+      };
 
       const expected = {
         user: {

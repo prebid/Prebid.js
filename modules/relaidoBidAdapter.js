@@ -291,7 +291,7 @@ function isVideoValid(bid) {
 }
 
 function getUuid() {
-  const id = storage.getCookie(UUID_KEY)
+  const id = storage.getCookie(UUID_KEY);
   if (id) return id;
   const newId = generateUUID();
   storage.setCookie(UUID_KEY, newId);
@@ -370,7 +370,7 @@ function getTargeting(bidRequest) {
   const targetings = {};
   const pubads = getPubads();
   if (pubads) {
-    Object.assign(targetings, getPageTargetingMap())
+    Object.assign(targetings, getPageTargetingMap());
   }
   const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
   if (adUnitSlot) {
@@ -405,6 +405,6 @@ export const spec = {
   getUserSyncs: getUserSyncs,
   onBidWon,
   onTimeout
-}
+};
 
 registerBidder(spec);

@@ -41,6 +41,9 @@ pbjs.setConfig({
                 refreshInSeconds: 86400
             }
         }, {
+            // the Anonymised Marketing Tag owns this ID; it must be configured without `storage`
+            name: "anonymisedId"
+        }, {
             name: "pubCommonId",
             storage: {
                 type: "cookie",

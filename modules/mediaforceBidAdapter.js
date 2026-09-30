@@ -29,7 +29,7 @@ const GVLID = 671;
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
 const TEST_ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid?debug_key=abcdefghijklmnop';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
-const DEFAULT_CURRENCY = 'USD'
+const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -102,7 +102,7 @@ export const spec = {
             validImp = true;
             break;
         }
-      })
+      });
 
       let request = requestsMap[bid.params.publisher_id];
       if (!request) {
@@ -208,7 +208,7 @@ export const spec = {
         if (bid.mediaType) {
           bidResponses.push(bid);
         }
-      })
+      });
     });
 
     return bidResponses;
@@ -244,9 +244,9 @@ function createBannerRequest(bid) {
     format.push(parseGPTSingleSizeArrayToRtbSize(sizes[f]));
   }
   if (format.length) {
-    r.format = format
+    r.format = format;
   }
-  return r
+  return r;
 }
 
 function createVideoRequest(bid) {
@@ -296,7 +296,7 @@ export function resolveFloor(bid) {
 
   if (typeof bid.getFloor === 'function') {
     for (const mediaType of SUPPORTED_MEDIA_TYPES) {
-      const mediaTypeDef = bid.mediaTypes?.[mediaType]
+      const mediaTypeDef = bid.mediaTypes?.[mediaType];
       if (mediaTypeDef) {
         const sizes = getMediaTypeSizes(mediaType, mediaTypeDef) || ['*'];
         for (const size of sizes) {

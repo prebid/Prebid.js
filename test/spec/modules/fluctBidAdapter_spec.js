@@ -427,13 +427,11 @@ describe('fluctAdapter', function () {
       });
     });
 
-    it('includes data.regs.coppa if config.getConfig("coppa") is true', function () {
-      const cfg = {
-        coppa: true,
-      };
-      sb.stub(config, 'getConfig').callsFake(key => cfg[key]);
-
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+    it('includes data.regs.coppa if ortb2.regs.coppa is 1', function () {
+      const request = spec.buildRequests(bidRequests, {
+        ...bidderRequest,
+        ortb2: { regs: { coppa: 1 } }
+      })[0];
       expect(request.data.regs.coppa).to.eql(1);
     });
 
@@ -702,7 +700,7 @@ describe('fluctAdapter', function () {
     it('sends no instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.instl).to.eql(0);
-    })
+    });
 
     it('sends ortb2Imp.instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests.map((req) => ({

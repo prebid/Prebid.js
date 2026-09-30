@@ -1,8 +1,6 @@
 import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl, storage } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import { ENDPOINT_DOMAIN, ENDPOINT_PROTOCOL } from '../../../modules/adpartnerBidAdapter.js';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
@@ -611,7 +609,7 @@ describe('TheMediaGrid Adapter', function () {
           ]
         }
       };
-      const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } }
+      const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } };
       const [request] = spec.buildRequests([bidRequestWithKW], { ...bidderRequest, ortb2 });
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
@@ -739,15 +737,15 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.site.content.id).to.equal(contentId);
     });
 
-    it('should contain regs.coppa if coppa is true in config', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'coppa' ? true : null);
-      const [request] = spec.buildRequests([bidRequests[0]], bidderRequest);
+    it('should contain regs.coppa if coppa is true in ortb2', function () {
+      const [request] = spec.buildRequests([bidRequests[0]], {
+        ...bidderRequest,
+        ortb2: { regs: { coppa: 1 } }
+      });
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('regs');
       expect(payload.regs).to.have.property('coppa', 1);
-      getConfigStub.restore();
     });
     it('should contain imp[].ext.data.adserver if available', function() {
       const ortb2Imp = [{
@@ -949,7 +947,7 @@ describe('TheMediaGrid Adapter', function () {
       });
 
       getDataFromLocalStorageStub.restore();
-    })
+    });
 
     it('tmax should be set as integer', function() {
       let [request] = spec.buildRequests([bidRequests[0]], { ...bidderRequest, timeout: '10' });
@@ -958,7 +956,7 @@ describe('TheMediaGrid Adapter', function () {
       [request] = spec.buildRequests([bidRequests[0]], { ...bidderRequest, timeout: 'ddqwdwdq' });
       payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(null);
-    })
+    });
 
     it('should add ORTB2 device data to the request', function () {
       const bidderRequestWithDevice = {

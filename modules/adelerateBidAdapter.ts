@@ -3,7 +3,6 @@ import { deepAccess, deepSetValue } from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
 
 export const dep = {
   ajax
@@ -151,7 +150,7 @@ function interpretResponse(serverResponse, request) {
   return (result as { bids: any[] }).bids;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
   const params = [];
 
   if (gdprConsent) {
@@ -172,7 +171,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     params.push(`gpp_sid=${gppConsent.applicableSections.join(',')}`);
   }
 
-  if (config.getConfig('coppa') === true) {
+  if (coppa) {
     params.push('coppa=1');
   }
 

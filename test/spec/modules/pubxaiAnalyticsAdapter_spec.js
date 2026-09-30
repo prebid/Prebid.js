@@ -9,22 +9,22 @@ import { EVENTS } from 'src/constants.js';
 import adapterManager from 'src/adapterManager.js';
 import { getWindowLocation } from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import * as events from 'src/events.js'
-import 'modules/userId/index.js'
+import * as events from 'src/events.js';
+import 'modules/userId/index.js';
 
 const readBlobSafariCompat = (blob) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsText(blob)
-  })
-}
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsText(blob);
+  });
+};
 
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
     sinon.stub(events, 'getEvents').returns([]);
-    getGlobal().refreshUserIds?.()
+    getGlobal().refreshUserIds?.();
   });
 
   afterEach(() => {

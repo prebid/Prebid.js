@@ -1,61 +1,8 @@
 const ghRequester = require('./ghRequest.js');
 const AWS = require("@aws-sdk/client-s3");
-const fs = require('fs');
+const { coreFileMatcher } = require('./coreFiles.js');
 
-const MODULE_PATTERNS = [
-  /^modules\/([^\/]+)BidAdapter(\.(\w+)|\/)/,
-  /^modules\/([^\/]+)AnalyticsAdapter(\.(\w+)|\/)/,
-  /^modules\/([^\/]+)RtdProvider(\.(\w+)|\/)/,
-  /^modules\/([^\/]+)IdSystem(\.(\w+)|\/)/
-]
-
-const EXCLUDE_PATTERNS = [
-  /^test\//,
-  /^integrationExamples\//,
-  /^[^\/]+$/,
-  /^.github\//,
-]
-
-const LIBRARY_PATTERN = /^libraries\/([^\/]+)\//;
-
-function extractVendor(chunkName) {
-  for (const pat of MODULE_PATTERNS) {
-    const match = pat.exec(`modules/${chunkName}`);
-    if (match != null) {
-      return match[1];
-    }
-  }
-  return chunkName;
-}
-
-const getLibraryRefs = (() => {
-  const deps = JSON.parse(fs.readFileSync(process.env.DEPENDENCIES_JSON).toString());
-  const refs = {};
-  return function (libraryName) {
-    if (!refs.hasOwnProperty(libraryName)) {
-      refs[libraryName] = new Set();
-      Object.entries(deps)
-        .filter(([name, deps]) => deps.includes(`${libraryName}.js`))
-        .forEach(([name]) => refs[libraryName].add(extractVendor(name)))
-    }
-    return refs[libraryName];
-  }
-})();
-
-function isCoreFile(path) {
-  if (EXCLUDE_PATTERNS.find(pat => pat.test(path))) {
-    return false;
-  }
-  if (MODULE_PATTERNS.find(pat => pat.test(path)) ) {
-    return false;
-  }
-  const lib = LIBRARY_PATTERN.exec(path);
-  if (lib != null) {
-    // a library is "core" if it's used by more than one vendor
-    return getLibraryRefs(lib[1]).size > 1;
-  }
-  return true;
-}
+const isCoreFile = coreFileMatcher();
 
 async function isPrebidMember(ghHandle) {
   const client = new AWS.S3({region: 'us-east-2'});
@@ -147,7 +94,7 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam, au
     prebidReviewers,
     prebidEngineers,
     review,
-  }
+  };
   data.review.requires = reviewRequirements(data);
   data.review.ok = data.draft || satisfiesReviewRequirements(data.review);
   return data;

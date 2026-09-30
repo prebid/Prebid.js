@@ -14,7 +14,7 @@ describe('ttlCollection', () => {
     coll.add(1);
     coll.delete(1);
     expect(coll.toArray()).to.eql([]);
-  })
+  });
 
   it('can clear', () => {
     const coll = ttlCollection();
@@ -28,7 +28,7 @@ describe('ttlCollection', () => {
     coll.add('1');
     coll.add('2');
     expect(Array.from(coll)).to.eql(['1', '2']);
-  })
+  });
 
   describe('autopurge', () => {
     let clock, pms, waitForPromises;
@@ -57,7 +57,7 @@ describe('ttlCollection', () => {
             startTime: (item) => resolve(item.start == null ? new Date().getTime() : item.start),
             ttl: (item) => resolve(item.ttl),
             slack: SLACK
-          })
+          });
         });
 
         it('should clear items after enough time has passed', () => {
@@ -88,7 +88,7 @@ describe('ttlCollection', () => {
             sinon.assert.calledWith(cb, i1);
             clock.tick(3000);
             sinon.assert.calledWith(cb, i2);
-          })
+          });
         });
 
         it('should not fire onExpiry for items that are deleted', () => {
@@ -101,8 +101,8 @@ describe('ttlCollection', () => {
             coll.delete(i);
             clock.tick(SLACK);
             sinon.assert.notCalled(cb);
-          })
-        })
+          });
+        });
 
         it('should allow unregistration of onExpiry callbacks', () => {
           const cb = sinon.stub();
@@ -111,8 +111,8 @@ describe('ttlCollection', () => {
           return waitForPromises().then(() => {
             clock.tick(500 + SLACK);
             sinon.assert.notCalled(cb);
-          })
-        })
+          });
+        });
 
         it('should not wait too long if a shorter ttl shows up', () => {
           coll.add({ ttl: 4000 });

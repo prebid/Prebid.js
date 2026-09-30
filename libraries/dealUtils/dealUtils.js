@@ -8,7 +8,7 @@ export const addDealCustomTargetings = (imp, dctr, logPrefix = "") => {
   } else {
     logWarn(logPrefix + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
   }
-}
+};
 
 export const addPMPDeals = (imp, deals, logPrefix = "") => {
   if (!isArray(deals)) {
@@ -25,4 +25,4 @@ export const addPMPDeals = (imp, deals, logPrefix = "") => {
       logWarn(`${logPrefix}Error: deal-id present in array bid.params.deals should be a string with more than 3 characters length, deal-id ignored: ${deal}`);
     }
   });
-}
+};

@@ -23,7 +23,7 @@ const NON_MEASURABLE = -1;
 const PRODUCT = {
   standard: 1,
   sticky: 2
-}
+};
 
 let USER_SYNCED = false;
 
@@ -42,25 +42,25 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (!bid.params) {
-      logWarn('[Underdog Media] bid params are missing')
+      logWarn('[Underdog Media] bid params are missing');
       return false;
     }
 
     if (!bid.params.siteId) {
-      logWarn('[Underdog Media] siteId is missing')
+      logWarn('[Underdog Media] siteId is missing');
       return false;
     }
 
     if (bid.params.productId) {
       if (!PRODUCT[bid.params.productId]) {
-        logWarn('[Underdog Media] invalid productId')
+        logWarn('[Underdog Media] invalid productId');
         return false;
       }
     }
 
     const bidSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
     if (!bidSizes || bidSizes.length < 1) {
-      logWarn('[Underdog Media] bid sizes are missing')
+      logWarn('[Underdog Media] bid sizes are missing');
       return false;
     }
 
@@ -86,7 +86,7 @@ export const spec = {
       } else if (idObj.source === 'pubcid.org') {
         pubcid = idObj.uids[0].id;
       }
-    })
+    });
 
     const data = {
       dt: 10,
@@ -102,46 +102,46 @@ export const spec = {
         unifiedId
       },
       version: UDM_ADAPTER_VERSION
-    }
+    };
 
     validBidRequests.forEach(bidParam => {
-      const placementObject = {}
+      const placementObject = {};
       const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
       sizes = flatten(sizes, parseSizesInput(bidParamSizes));
       siteId = +bidParam.params.siteId;
-      const adUnitCode = bidParam.adUnitCode
-      const element = _getAdSlotHTMLElement(bidParam)
-      const minSize = _getMinSize(bidParamSizes)
+      const adUnitCode = bidParam.adUnitCode;
+      const element = _getAdSlotHTMLElement(bidParam);
+      const minSize = _getMinSize(bidParamSizes);
 
-      placementObject.sizes = parseSizesInput(bidParamSizes)
-      placementObject.adUnitCode = adUnitCode
-      placementObject.productId = PRODUCT[bidParam.params.productId] || PRODUCT.standard
+      placementObject.sizes = parseSizesInput(bidParamSizes);
+      placementObject.adUnitCode = adUnitCode;
+      placementObject.productId = PRODUCT[bidParam.params.productId] || PRODUCT.standard;
       if (deepAccess(bidParam, 'params.productId')) {
         if (bidParam.params.productId === 'standard') {
-          placementObject.productId = 1
+          placementObject.productId = 1;
         } else if (bidParam.params.productId === 'adhesion') {
-          placementObject.productId = 2
+          placementObject.productId = 2;
         }
       } else {
-        placementObject.productId = 1
+        placementObject.productId = 1;
       }
-      placementObject.gpid = deepAccess(bidParam, 'ortb2Imp.ext.gpid') ? bidParam.ortb2Imp.ext.gpid : undefined
+      placementObject.gpid = deepAccess(bidParam, 'ortb2Imp.ext.gpid') ? bidParam.ortb2Imp.ext.gpid : undefined;
 
       if (_isViewabilityMeasurable(element)) {
         const minSizeObj = {
           w: minSize[0],
           h: minSize[1]
-        }
-        const viewPercentage = Math.round(_getViewability(element, getWindowTop(), minSizeObj))
-        placementObject.viewability = viewPercentage
+        };
+        const viewPercentage = Math.round(_getViewability(element, getWindowTop(), minSizeObj));
+        placementObject.viewability = viewPercentage;
       } else {
-        placementObject.viewability = NON_MEASURABLE
+        placementObject.viewability = NON_MEASURABLE;
       }
 
-      data.placements.push(placementObject)
+      data.placements.push(placementObject);
     });
 
-    data.sid = siteId
+    data.sid = siteId;
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
@@ -177,27 +177,27 @@ export const spec = {
       const syncs = userSyncs.filter(sync => {
         const { type } = sync;
         if (syncOptions.iframeEnabled && type === 'iframe') {
-          return true
+          return true;
         }
         if (syncOptions.pixelEnabled && type === 'image') {
-          return true
+          return true;
         }
         return false;
-      })
+      });
       return syncs;
     }
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    const mids = serverResponse.body.mids
+    const mids = serverResponse.body.mids;
     mids.forEach(mid => {
       const bidParam = bidRequest.bidParams.find((bidParam) => {
         return mid.ad_unit_code === bidParam.adUnitCode;
-      })
+      });
 
       if (!bidParam) {
-        return
+        return;
       }
 
       const bidResponse = {
@@ -232,7 +232,7 @@ export const spec = {
 };
 
 function _getMinSize(bidParamSizes) {
-  return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min)
+  return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
 function _getAdSlotHTMLElement(bidRequest) {
@@ -263,7 +263,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !isIframe() && element !== null
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, {
@@ -275,15 +275,15 @@ function _getViewability(element, topWin, {
       w,
       h
     })
-    : 0
+    : 0;
 }
 
 function makeNotification(bid, mid, bidParam) {
   let url = mid.notification_url;
 
-  const versionIndex = url.indexOf(';version=')
+  const versionIndex = url.indexOf(';version=');
   if (versionIndex + 1) {
-    url = url.substring(0, versionIndex)
+    url = url.substring(0, versionIndex);
   }
 
   url += `;version=${UDM_ADAPTER_VERSION}`;

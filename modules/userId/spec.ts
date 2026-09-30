@@ -1,6 +1,6 @@
 import type { BidderCode, StorageDisclosure } from "../../src/types/common";
 import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts";
-import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { AllConsentData, VENDORLESS_GVLID } from "../../src/consentHandler.ts";
 import type { Ext } from '../../src/types/ortb/common';
 import type { ORTBRequest } from "../../src/types/ortb/request";
 
@@ -91,7 +91,7 @@ export type ProviderResponse = {
    * If provided, will be invoked at a later point.
    */
   callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
-}
+};
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
 
@@ -125,7 +125,7 @@ type EIDConfig<K extends keyof UserId> = {
    * Returns an object to use for eids.uid.ext
    */
   getUidExt?: (id: IdValue<K>) => Ext;
-}
+};
 
 type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[];
 
@@ -138,7 +138,7 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   /**
    * GVL ID to use for TCF. If omitted your module may be excluded when TCF is in scope.
    */
-  gvlid?: number;
+  gvlid?: number | typeof VENDORLESS_GVLID;
   disclosureURL?: string;
   /**
    * Invoked when:
@@ -179,7 +179,7 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   eids?: {
     [K in keyof UserId]?: K extends string ? EIDConfig<K> | EIDFn<K, P> : never;
   }
-}
+};
 
 declare module '../../src/hook' {
   interface Submodules {

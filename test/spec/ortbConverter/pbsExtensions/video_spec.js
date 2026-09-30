@@ -12,7 +12,7 @@ describe('pbjs - ortb videoCacheKey based on ext.prebid', () => {
         }
       }
     }
-  }
+  };
 
   function setCache(bid) {
     const bidResponse = { mediaType: 'video' };
@@ -47,6 +47,6 @@ describe('pbjs - ortb videoCacheKey based on ext.prebid', () => {
     }), {
       vastUrl: 'https://host/path?uuid=id',
       videoCacheKey: 'id'
-    })
+    });
   });
 });

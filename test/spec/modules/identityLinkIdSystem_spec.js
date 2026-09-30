@@ -23,7 +23,6 @@ function setTestEnvelopeCookie () {
 
 describe('IdentityLinkId tests', function () {
   let logErrorStub;
-  let gppConsentDataStub;
 
   beforeEach(function () {
     defaultConfigParams = { params: { pid: pid } };
@@ -165,6 +164,18 @@ describe('IdentityLinkId tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should continue to callback immediately if the LiveRamp request is blocked', function () {
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    const request = server.requests[0];
+
+    expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
+    expect(() => request.error()).to.not.throw();
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledWithExactly()).to.be.true;
+  });
+
   it('should not call the LiveRamp envelope endpoint if cookie _lr_retry_request exist', function () {
     const now = new Date();
     now.setTime(now.getTime() + 3000);
@@ -207,7 +218,7 @@ describe('IdentityLinkId tests', function () {
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(callBackSpy.calledOnce).to.be.true;
-  })
+  });
 
   it('should replace invalid characters if initial atob fails', function () {
     setTestEnvelopeCookie();
@@ -219,7 +230,7 @@ describe('IdentityLinkId tests', function () {
     stubAtob.restore();
     expect(stubAtob.calledTwice).to.be.true;
     expect(envelopeValueFromStorage).to.equal(testEnvelopeValue);
-  })
+  });
 
   it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {
     const envelopeValueFromStorage = getEnvelopeFromStorage();
@@ -234,7 +245,7 @@ describe('IdentityLinkId tests', function () {
     );
     expect(envelopeValueFromStorage).to.be.a('undefined');
     expect(callBackSpy.calledOnce).to.be.true;
-  })
+  });
 
   it('if ats is present on a page, and envelope is generated and stored in storage, call a callback', function () {
     setTestEnvelopeCookie();
@@ -242,15 +253,15 @@ describe('IdentityLinkId tests', function () {
     window.ats = {
       retrieveEnvelope: function() {
       }
-    }
+    };
     // mock ats.retrieveEnvelope to return envelope
-    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage })
+    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage; });
     const callBackSpy = sinon.spy();
     const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(envelopeValueFromStorage).to.be.eq(testEnvelopeValue);
-  })
+  });
 
   describe('eid', () => {
     before(() => {
@@ -267,5 +278,5 @@ describe('IdentityLinkId tests', function () {
         uids: [{ id: 'some-random-id-value', atype: 3 }]
       });
     });
-  })
+  });
 });

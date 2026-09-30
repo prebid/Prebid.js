@@ -371,7 +371,7 @@ const prebidNativeAuction = {
     'size': 'undefinedxundefined',
     'status': 'rendered'
   }
-}
+};
 
 describe('yuktamedia analytics adapter', function () {
   beforeEach(() => {

@@ -213,7 +213,7 @@ describe('FreePass adapter', function () {
       expect(bid).to.be.an('object');
       expect(bid.currency).to.equal('JPY');
       expect(bid.cpm).to.equal(97);
-      expect(bid.ad).to.equal(ad)
+      expect(bid.ad).to.equal(ad);
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
       expect(bid.creativeId).to.equal('creative0');

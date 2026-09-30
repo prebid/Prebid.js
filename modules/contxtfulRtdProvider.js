@@ -452,7 +452,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
               ],
             },
           }
-          ]
+          ];
         }));
   }
 

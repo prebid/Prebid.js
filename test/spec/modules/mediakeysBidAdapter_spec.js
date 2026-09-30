@@ -1,13 +1,11 @@
 import { expect } from 'chai';
 import { spec } from 'modules/mediakeysBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { OUTSTREAM } from '../../../src/video.js';
 
 describe('mediakeysBidAdapter', function () {
-  const adapter = newBidder(spec);
   let utilsMock;
   let sandbox;
 
@@ -187,7 +185,7 @@ describe('mediakeysBidAdapter', function () {
       bidRequests[0].mediaTypes.video = {
         playerSize: [300, 250],
         context: OUTSTREAM
-      }
+      };
 
       bidRequests[0].mediaTypes.native = bidNative.mediaTypes.native;
       bidRequests[0].nativeParams = bidNative.mediaTypes.native;
@@ -257,7 +255,7 @@ describe('mediakeysBidAdapter', function () {
             context: 3,
             plcmttype: 3,
           }
-        }
+        };
         const bidderRequestCopy = utils.deepClone(bidderRequest);
         bidderRequestCopy.bids = bidRequests;
 
@@ -378,7 +376,7 @@ describe('mediakeysBidAdapter', function () {
         bidRequests[0].mediaTypes.video.playbackend = 2;
         bidRequests[0].mediaTypes.video.delivery = 2;
         bidRequests[0].mediaTypes.video.pos = 0;
-        bidRequests[0].mediaTypes.video.companionad = [{ w: 360, h: 80 }]
+        bidRequests[0].mediaTypes.video.companionad = [{ w: 360, h: 80 }];
         bidRequests[0].mediaTypes.video.api = [1];
         bidRequests[0].mediaTypes.video.companiontype = [1];
 
@@ -461,14 +459,10 @@ describe('mediakeysBidAdapter', function () {
     });
 
     it('should get expected properties with coppa', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-
       const bidRequests = [utils.deepClone(bid)];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       const data = request.data;
       expect(data.regs.coppa).to.equal(1);
-
-      config.getConfig.restore();
     });
 
     it('should get expected properties with US privacy', function () {
@@ -502,13 +496,13 @@ describe('mediakeysBidAdapter', function () {
       const getFloorTest = (options) => {
         switch (options.mediaType) {
           case BANNER:
-            return { floor: 1, currency: 'USD' }
+            return { floor: 1, currency: 'USD' };
           case VIDEO:
-            return { floor: 5, currency: 'USD' }
+            return { floor: 5, currency: 'USD' };
           case NATIVE:
-            return { floor: 3, currency: 'USD' }
+            return { floor: 3, currency: 'USD' };
           default:
-            return false
+            return false;
         }
       };
 
@@ -517,7 +511,7 @@ describe('mediakeysBidAdapter', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const data = request.data;
         expect(data.imp[0].banner).to.exist;
-        expect(data.imp[0].bidfloor).to.not.exist
+        expect(data.imp[0].bidfloor).to.not.exist;
       });
 
       it('should not set `imp[]bidfloor` property when priceFloors module returns false', function () {
@@ -672,7 +666,7 @@ describe('mediakeysBidAdapter', function () {
         cur: 'USD',
         ext: { protocol: '5.3' },
       }
-    }
+    };
 
     it('Returns empty array if no bid', function () {
       const bidRequests = [utils.deepClone(bid)];
@@ -808,14 +802,14 @@ describe('mediakeysBidAdapter', function () {
 
         rawServerResponseNative = utils.deepClone(rawServerResponse);
         rawServerResponseNative.body.seatbid[0].bid[0].ext.prebid.type = 'N';
-        rawServerResponseNative.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObject)
+        rawServerResponseNative.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObject);
       });
 
       it('should ignore invalid native response', function() {
         const nativeObjectCopy = utils.deepClone(nativeObject);
         nativeObjectCopy.assets = [];
         const rawServerResponseNativeCopy = utils.deepClone(rawServerResponseNative);
-        rawServerResponseNativeCopy.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObjectCopy)
+        rawServerResponseNativeCopy.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObjectCopy);
         const response = spec.interpretResponse(rawServerResponseNativeCopy, request);
         expect(response.length).to.equal(1);
         expect(response[0].native).to.not.exist;
@@ -853,7 +847,7 @@ describe('mediakeysBidAdapter', function () {
         const response = spec.interpretResponse(rawServerResponseNativeCopy, request);
         expect(response[0].native.impressionTrackers).to.exist;
         expect(response[0].native.impressionTrackers.length).to.equal(0);
-      })
+      });
 
       it('Should handle multiple javascriptTrackers in one single string', () => {
         const rawServerResponseNativeCopy = utils.deepClone(rawServerResponseNative);
@@ -863,7 +857,7 @@ describe('mediakeysBidAdapter', function () {
             event: 1,
             method: 2,
             url: 'https://eventrack-js.me/impression-2'
-          },)
+          },);
         rawServerResponseNativeCopy.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObjectCopy);
         const response = spec.interpretResponse(rawServerResponseNativeCopy, request);
         const expected = '<script async src=\"https://eventrack-js.me/impression-1\"></script>\n<script async src=\"https://eventrack-js.me/impression-2\"></script>';
@@ -885,18 +879,14 @@ describe('mediakeysBidAdapter', function () {
       const result = spec.onBidWon({});
       expect(result).to.be.undefined;
       expect(utils.triggerPixel.callCount).to.equal(0);
-    })
+    });
 
     it('Should trigger pixel if bid.burl exists', function() {
-      const result = spec.onBidWon({
-        cpm: 4.2,
-        burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar'
-      });
-
-      expect(utils.triggerPixel.callCount).to.equal(1)
+      spec.onBidWon({ burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar', cpm: 4.2 });
+      expect(utils.triggerPixel.callCount).to.equal(1);
       expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
         'https://example.com/p=4.2&foo=bar'
       );
-    })
-  })
+    });
+  });
 });

@@ -39,7 +39,7 @@ s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
     [SERVER]: Object.keys(sourceBidders[SERVER]),
     [CLIENT]: Object.keys(sourceBidders[CLIENT])
   };
-}
+};
 
 /**
  * @function calculateBidSources determines the source for each s2s bidder based on bidderControl weightings.  these can be overridden at the adUnit level
@@ -52,7 +52,7 @@ s2sTesting.calculateBidSources = function(s2sConfig = {}) {
   (s2sConfig.bidders || []).forEach((bidder) => {
     s2sTesting.bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
   });
-}
+};
 
 /**
  * @function getSource() gets a random source based on the given sourceWeights (export just for testing)
@@ -75,7 +75,7 @@ s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT
     // choose the first source with an incremental weight > random weight
     if (rndWeight < srcIncWeight[source]) return source;
   }
-}
+};
 
 function doingS2STesting(s2sConfig) {
   return s2sConfig && s2sConfig.enabled && s2sConfig.testing;
@@ -101,7 +101,7 @@ partitionBidders.before(function (next, adUnits, s2sConfigs) {
       s2sTesting.calculateBidSources(s2sConfig);
       const bidderMap = s2sTesting.getSourceBidderMap(adUnits, [...serverBidders]);
       // get all adapters doing client testing
-      bidderMap[CLIENT].forEach((bidder) => s2sTesting.clientTestBidders.add(bidder))
+      bidderMap[CLIENT].forEach((bidder) => s2sTesting.clientTestBidders.add(bidder));
     }
     if (isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig)) {
       logWarn('testServerOnly: True.  All client requests will be suppressed.');

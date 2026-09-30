@@ -12,7 +12,7 @@ describe('ceeIdSystem', () => {
   const consentData = {
     gdprApplies: true,
     consentString: 'abc123=='
-  }
+  };
 
   const MODULE_NAME = 'ceeId';
 

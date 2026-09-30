@@ -34,7 +34,7 @@ describe('ad unit utils', () => {
         adUnitCode: 'au'
       })).to.eql({
         id: 'au'
-      })
-    })
+      });
+    });
   });
 });

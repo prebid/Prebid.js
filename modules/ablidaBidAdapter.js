@@ -42,11 +42,11 @@ export const spec = {
       return [];
     }
     return validBidRequests.map(bidRequest => {
-      let sizes = []
+      let sizes = [];
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       } else if (bidRequest.mediaTypes[VIDEO] && bidRequest.mediaTypes[VIDEO].playerSize) {
-        sizes = bidRequest.mediaTypes[VIDEO].playerSize
+        sizes = bidRequest.mediaTypes[VIDEO].playerSize;
       }
       const jaySupported = 'atob' in window && 'currentScript' in document;
       const device = getDevice();
@@ -83,7 +83,7 @@ export const spec = {
     const response = serverResponse.body;
 
     response.forEach(function(bid) {
-      bid.ttl = 60
+      bid.ttl = 60;
       bidResponses.push(bid);
     });
     return bidResponses;

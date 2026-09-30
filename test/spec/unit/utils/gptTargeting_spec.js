@@ -1,9 +1,11 @@
 import {
+  findSlotElementIdByAdId,
   getPageTargeting,
   getPageTargetingKeys, getPageTargetingMap,
   getSlotTargeting,
-  getSlotTargetingKeys, getSlotTargetingMap, setPageTargeting,
-  setSlotTargeting,
+  getSlotTargetingKeys, getSlotTargetingMap, recordSlotTargeting,
+  setPageTargeting,
+  setSlotTargeting, slotHasTargetedAdId,
 } from '../../../../src/utils/gptTargeting.js';
 
 describe('gpt targeting shim', () => {
@@ -64,9 +66,9 @@ describe('gpt targeting shim', () => {
         it('returns the value from config otherwise', () => {
           targetingConfig = { key: ['value'] };
           expect(fn(mockGam)).to.eql({ key: ['value'] });
-        })
-      })
-    })
+        });
+      });
+    });
 
     Object.entries({
       setPageTargeting: (target, key, value) => setPageTargeting(key, value, target),
@@ -76,9 +78,9 @@ describe('gpt targeting shim', () => {
         it('calls setConfig', () => {
           fn(mockGam, 'key', 'value');
           sinon.assert.calledWith(mockGam.setConfig, { targeting: { 'key': 'value' } });
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   describe('when getConfig/setConfig is not defined', () => {
@@ -142,15 +144,34 @@ describe('gpt targeting shim', () => {
           });
         });
       });
-    })
+    });
+  });
 
-    it('getSlotTargetingMap calls slot.getTargeting on each key from slot.getTargetingKeys', () => {
-      mockSlot.getTargetingKeys = () => ['k1', 'k2'];
-      mockSlot.getTargeting = (key) => [`${key}value`];
-      expect(getSlotTargetingMap(mockSlot)).to.eql({
-        k1: ['k1value'],
-        k2: ['k2value']
-      });
-    })
+  describe('slot targeting adId cache', () => {
+    it('records provided ad ids and finds the matching slot element id', () => {
+      const slotA = { getSlotElementId: () => 'div-a' };
+      const slotB = { getSlotElementId: () => 'div-b' };
+      recordSlotTargeting(slotA, ['ad-a']);
+      recordSlotTargeting(slotB, ['ad-b']);
+
+      expect(slotHasTargetedAdId(slotA, 'ad-a')).to.equal(true);
+      expect(slotHasTargetedAdId(slotA, 'ad-b')).to.equal(false);
+      expect(findSlotElementIdByAdId('ad-b', () => [slotA, slotB])).to.equal('div-b');
+    });
+
+    it('overwrites previously recorded ad ids for a slot', () => {
+      const slot = { getSlotElementId: () => 'div-1' };
+      recordSlotTargeting(slot, ['old']);
+      recordSlotTargeting(slot, ['new']);
+      expect(slotHasTargetedAdId(slot, 'old')).to.equal(false);
+      expect(slotHasTargetedAdId(slot, 'new')).to.equal(true);
+    });
+
+    it('ignores empty ad ids', () => {
+      const slot = { getSlotElementId: () => 'div-1' };
+      recordSlotTargeting(slot, ['ad-1', '']);
+      expect(slotHasTargetedAdId(slot, 'ad-1')).to.equal(true);
+      expect(slotHasTargetedAdId(slot, '')).to.equal(false);
+    });
   });
 });

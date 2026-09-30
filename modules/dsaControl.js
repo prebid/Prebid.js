@@ -46,12 +46,12 @@ function toggleHooks(enabled) {
     expiryHandle = auctionManager.onExpiry(auction => {
       delete dsaAuctions[auction.getAuctionId()];
     });
-    logInfo('dsaControl: DSA bid validation is enabled')
+    logInfo('dsaControl: DSA bid validation is enabled');
   } else if (!enabled && expiryHandle != null) {
     getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
     expiryHandle();
     expiryHandle = null;
-    logInfo('dsaControl: DSA bid validation is disabled')
+    logInfo('dsaControl: DSA bid validation is disabled');
   }
 }
 

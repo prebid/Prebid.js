@@ -7,10 +7,12 @@ import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
 import { interpretResponseUtil } from '../libraries/interpretResponseUtils/index.js';
+import { getBidFloor } from '../libraries/xeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
 const TTL = 360;
+const CURRENCY = 'JPY';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
@@ -62,7 +64,7 @@ export const spec = {
         payload.referrer_detection = refererinfo;
       }
       if (bidRequest.userId) {
-        payload.userId = bidRequest.userId
+        payload.userId = bidRequest.userId;
       }
     }
     const request = formatRequest(payload, bidderRequest);
@@ -116,7 +118,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    currency: 'JPY',
+    currency: CURRENCY,
     width: rtbBid.rtb.banner.width,
     height: rtbBid.rtb.banner.height,
     ad: rtbBid.rtb.banner.content,
@@ -150,6 +152,10 @@ function bidToTag(bid) {
   const keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
   if (keywords.length) {
     tag.keywords = keywords;
+  }
+  const bidfloor = getBidFloor(bid, CURRENCY);
+  if (bidfloor) {
+    tag.bidfloor = bidfloor;
   }
   if (bid.mediaTypes?.banner) {
     tag.ad_types.push(BANNER);

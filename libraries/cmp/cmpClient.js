@@ -110,7 +110,7 @@ export function cmpClient(
 
   function resolveParams(params) {
     params = Object.assign({ version: apiVersion }, params);
-    return apiArgs.map(arg => [arg, params[arg]])
+    return apiArgs.map(arg => [arg, params[arg]]);
   }
 
   function wrapCallback(callback, resolve, reject, preamble) {
@@ -123,7 +123,7 @@ export function cmpClient(
         resolver(haveCb ? undefined : result);
       }
       haveCb && callback.apply(this, arguments);
-    }
+    };
   }
 
   let client;
@@ -154,7 +154,7 @@ export function cmpClient(
           }
         };
 
-        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, (once || params?.callback == null) && (() => { delete cmpCallbacks[callId] }));
+        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, (once || params?.callback == null) && (() => { delete cmpCallbacks[callId]; }));
         cmpFrame.postMessage(msg, '*');
         if (mode === MODE_RETURN) resolve();
       });
@@ -165,5 +165,5 @@ export function cmpClient(
     close() {
       !isDirect && win.removeEventListener('message', handleMessage);
     }
-  })
+  });
 }

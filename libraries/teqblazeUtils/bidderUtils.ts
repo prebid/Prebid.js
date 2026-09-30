@@ -2,7 +2,6 @@ import type { CreativeAttribute } from 'iab-adcom';
 import type { Device } from 'iab-openrtb/v25';
 
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
-import { config } from '../../src/config.js';
 import type {
   BaseBidderRequest,
   BidRequest
@@ -56,7 +55,8 @@ interface Placement {
   bidId: string;
   schain: unknown;
   bidfloor: number | undefined;
-  adFormat?: string;
+  floors?: Record<string, number>;
+  adFormat?: typeof BANNER | typeof VIDEO | typeof NATIVE;
   sizes?: Size | Size[];
   playerSize?: Size | Size[];
   minduration?: number;
@@ -115,29 +115,55 @@ const isBidResponseValid = (bid: any): boolean => {
   }
 };
 
-const getBidFloor = (bid: BidRequest<BidderCode>): number => {
-  try {
-    const bidFloor = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
-    });
+const toArray = (sizes: Size | Size[]): Size[] => {
+  if (Array.isArray(sizes[0])) {
+    return sizes as Size[];
+  }
 
-    return bidFloor?.floor;
-  } catch (err) {
-    return 0;
+  return [sizes as Size];
+};
+
+const getFloors = (bid: BidRequest<BidderCode>, placement: Placement): { bidFloor: number; floors?: Record<string, number> } => {
+  const floors: Record<string, number> = {};
+
+  if (!bid.getFloor) {
+    return { bidFloor: 0 };
+  }
+
+  try {
+    if (placement.adFormat === NATIVE) {
+      const bidFloor = bid.getFloor({ currency: 'USD', mediaType: NATIVE, size: '*' }).floor;
+      return { bidFloor: bidFloor ?? 0 };
+    }
+
+    const sizes: Size[] = toArray(placement.sizes || placement.playerSize);
+
+    for (let i = 0; i < sizes.length; i++) {
+      const size = sizes[i];
+      const floor = bid.getFloor({ currency: 'USD', mediaType: placement.adFormat, size }).floor;
+
+      if (floor) floors[`${size[0]}x${size[1]}`] = floor;
+    }
+
+    const keys = Object.keys(floors);
+
+    return {
+      bidFloor: keys.length ? floors[keys[0]] : 0,
+      floors: keys.length ? floors : undefined
+    };
+  } catch {
+    return { bidFloor: 0 };
   }
 };
 
 const createBasePlacement = (bid: BidRequest<BidderCode>, bidderRequest: BaseBidderRequest<BidderCode>): Placement => {
   const { bidId, mediaTypes, transactionId, userIdAsEids, ortb2Imp } = bid;
   const schain = bidderRequest?.ortb2?.source?.ext?.schain || {};
-  const bidfloor = getBidFloor(bid);
 
   const placement: Placement = {
     bidId,
     schain,
-    bidfloor
+    bidfloor: 0
   };
 
   if (mediaTypes && mediaTypes[BANNER]) {
@@ -166,6 +192,13 @@ const createBasePlacement = (bid: BidRequest<BidderCode>, bidderRequest: BaseBid
   } else if (mediaTypes && mediaTypes[NATIVE]) {
     placement.native = mediaTypes[NATIVE];
     placement.adFormat = NATIVE;
+  }
+
+  const { bidFloor, floors } = getFloors(bid, placement);
+  placement.bidfloor = bidFloor;
+
+  if (floors) {
+    placement.floors = floors;
   }
 
   if (transactionId) {
@@ -206,7 +239,7 @@ const checkIfObjectHasKey = (keys: string[], obj: Record<string, unknown>, mode:
   }
 
   return mode === 'every';
-}
+};
 
 export const isBidRequestValid =
     (keys: string[] = ['placementId', 'endpointId'], mode?: Mode) =>
@@ -309,7 +342,7 @@ export function interpretResponseBuilder({ addtlBidValidation = (_bid: any): boo
     }
 
     return response;
-  }
+  };
 }
 
 export const interpretResponse = interpretResponseBuilder();
@@ -319,7 +352,8 @@ export const getUserSyncs = (syncUrl: string) => (
   _serverResponses: ServerResponse[],
   gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
   uspConsent: null | ConsentData[typeof CONSENT_USP],
-  gppConsent: null | ConsentData[typeof CONSENT_GPP]
+  gppConsent: null | ConsentData[typeof CONSENT_GPP],
+  coppa: boolean
 ): { type: SyncType; url: string }[] => {
   if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
     return [];
@@ -345,8 +379,7 @@ export const getUserSyncs = (syncUrl: string) => (
     url += '&gpp_sid=' + gppConsent.applicableSections.join(',');
   }
 
-  const coppa = config.getConfig('coppa') ? 1 : 0;
-  url += `&coppa=${coppa}`;
+  url += `&coppa=${coppa ? 1 : 0}`;
 
   return [{
     type,

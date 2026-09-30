@@ -25,7 +25,7 @@ const URL = 'https://adapter.bidmatic.io/bdm/auction';
 const BIDDER_CODE = 'bidmatic';
 const SYNCS_DONE = new Set();
 
-const { getPlacementEnv, getPlacementInfo } = getPlacementPositionUtils()
+const { getPlacementEnv, getPlacementInfo } = getPlacementPositionUtils();
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -37,7 +37,7 @@ export const spec = {
     if (bid.params.bidfloor && !isNumber(bid.params.bidfloor)) {
       logWarn('incorrect floor value, should be a number');
     }
-    return isNumber(deepAccess(bid, 'params.source'))
+    return isNumber(deepAccess(bid, 'params.source'));
   },
   getUserSyncs: getUserSyncsFn,
   /**
@@ -46,7 +46,7 @@ export const spec = {
    * @param adapterRequest
    */
   buildRequests: function (bidRequests, adapterRequest) {
-    const adapterSettings = config.getConfig(adapterRequest.bidderCode)
+    const adapterSettings = config.getConfig(adapterRequest.bidderCode);
     const chunkSize = deepAccess(adapterSettings, 'chunkSize', 5);
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
     const bidChunks = chunk(bids, chunkSize);
@@ -58,7 +58,7 @@ export const spec = {
         method: 'POST',
         url: URL
       };
-    })
+    });
   },
 
   /**
@@ -102,7 +102,7 @@ export function getResponseSyncs(syncOptions, bid) {
       url: uri
     });
     return acc;
-  }, [])
+  }, []);
 }
 
 export function getUserSyncsFn(syncOptions, serverResponses) {
@@ -110,15 +110,15 @@ export function getUserSyncsFn(syncOptions, serverResponses) {
   if (!isArray(serverResponses)) return newSyncs;
   if (!syncOptions.pixelEnabled && !syncOptions.iframeEnabled) return;
   serverResponses.forEach((response) => {
-    if (!response.body) return
+    if (!response.body) return;
     if (isArray(response.body)) {
       response.body.forEach(b => {
         newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, b));
-      })
+      });
     } else {
       newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, response.body));
     }
-  })
+  });
 
   return newSyncs;
 }
@@ -154,7 +154,7 @@ export function remapBidRequest(bidRequests, adapterRequest) {
   bidRequestBody.USP = deepAccess(adapterRequest, 'uspConsent');
   bidRequestBody.Coppa = deepAccess(adapterRequest, 'ortb2.regs.coppa') ? 1 : 0;
   bidRequestBody.AgeVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
-  bidRequestBody.GPP = adapterRequest.gppConsent ? adapterRequest.gppConsent.gppString : adapterRequest.ortb2?.regs?.gpp
+  bidRequestBody.GPP = adapterRequest.gppConsent ? adapterRequest.gppConsent.gppString : adapterRequest.ortb2?.regs?.gpp;
   bidRequestBody.GPPSid = adapterRequest.gppConsent ? adapterRequest.gppConsent.applicableSections?.toString() : adapterRequest.ortb2?.regs?.gpp_sid;
   bidRequestBody.Schain = deepAccess(bidRequests[0], 'schain');
   bidRequestBody.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
@@ -201,7 +201,7 @@ const getBidFloor = (bid) => {
  * @returns {object}
  */
 export function prepareBidRequests(bidReq) {
-  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : 'display'
+  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : 'display';
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
   return cleanObj({
     'CallbackId': bidReq.bidId,

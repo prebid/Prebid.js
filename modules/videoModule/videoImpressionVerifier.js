@@ -71,7 +71,7 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     }
 
     return uuid;
-  }
+  };
 
   return verifier;
 }
@@ -112,13 +112,13 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 
     bid.vastXml = vastXml;
     return adIdOverride;
-  }
+  };
 
   verifier.getBidIdentifiers = function (adId, adTagUrl, adWrapperIds) {
     // When the video is cached, the ad tag loaded into the player is a parent wrapper of the cache url.
     // As a result, the ad tag Url cannot include identifiers.
     return superGetBidIdentifiers(adId, null, adWrapperIds);
-  }
+  };
 
   return verifier;
 
@@ -201,5 +201,5 @@ export function tracker() {
   return {
     store,
     remove
-  }
+  };
 }

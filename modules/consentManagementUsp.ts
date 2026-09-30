@@ -13,6 +13,7 @@ import { enrichFPD } from '../src/fpd/enrichment.js';
 import { cmpClient } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
+import type { USPConsentData } from "../src/types/consent/usp.d.ts";
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -22,26 +23,22 @@ export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
 
-type USPConsentData = string;
 type BaseUSPConfig = {
   /**
    * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
    * Default is 50.
    */
   timeout?: number;
-}
+};
 
 type StaticUSPData = {
   getUSPData: {
     uspString: USPConsentData;
   }
-}
+};
 type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
 
 declare module '../src/consentHandler' {
-  interface ConsentData {
-    [CONSENT_USP]: USPConsentData;
-  }
   interface ConsentManagementConfig {
     [CONSENT_USP]?: USPCMConfig;
   }
@@ -74,7 +71,7 @@ function lookupUspConsent({ onSuccess, onError }) {
 
     function afterEach() {
       if (uspResponse.usPrivacy) {
-        processUspData(uspResponse, { onSuccess, onError })
+        processUspData(uspResponse, { onSuccess, onError });
       } else {
         onError('Unable to get USP consent string.');
       }
@@ -140,7 +137,7 @@ function loadConsentData(cb?) {
     isDone = true;
     uspDataHandler.setConsentData(consentData);
     if (cb != null) {
-      cb(errMsg, ...extraArgs)
+      cb(errMsg, ...extraArgs);
     }
   }
 
@@ -154,7 +151,7 @@ function loadConsentData(cb?) {
     onError: function (errMsg, ...extraArgs) {
       done(null, `${errMsg} Resuming auction without consent data as per consentManagement config.`, ...extraArgs);
     }
-  }
+  };
 
   uspCallMap[consentAPI](callbacks);
 
@@ -162,7 +159,7 @@ function loadConsentData(cb?) {
     if (consentTimeout === 0) {
       processUspData(undefined, callbacks);
     } else {
-      timer = setTimeout(callbacks.onError.bind(null, 'USPAPI workflow exceeded timeout threshold.'), consentTimeout)
+      timer = setTimeout(callbacks.onError.bind(null, 'USPAPI workflow exceeded timeout threshold.'), consentTimeout);
     }
   }
 }
@@ -278,10 +275,10 @@ export function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
     const consent = uspDataHandler.getConsentData();
     if (consent) {
-      deepSetValue(ortb2, 'regs.ext.us_privacy', consent)
+      deepSetValue(ortb2, 'regs.ext.us_privacy', consent);
     }
     return ortb2;
-  }))
+  }));
 }
 
 enrichFPD.before(enrichFPDHook);

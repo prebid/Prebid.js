@@ -12,6 +12,7 @@ const ENGINE_VESION = '1.x.x';
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
 const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
+const REQUIRED_TCF_PURPOSES = [1, 2, 3, 4, 7];
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
@@ -143,7 +144,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData })
+      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData });
       return;
     }
     try {
@@ -196,7 +197,7 @@ class NodalsAiRtdProvider {
     }
     try {
       engine.init(config);
-      return engine
+      return engine;
     } catch (error) {
       logError(`Error initialising engine: ${error}`);
       return null;
@@ -256,9 +257,9 @@ class NodalsAiRtdProvider {
       [false, undefined].includes(userConsent.gdpr.vendorData?.vendor?.consents?.[this.gvlid])
     ) {
       return false;
-    } else if (userConsent.gdpr.vendorData?.purpose?.consents[1] === false ||
-      userConsent.gdpr.vendorData?.purpose?.consents[7] === false
-    ) {
+    }
+    const purposeConsents = userConsent.gdpr.vendorData?.purpose?.consents;
+    if (REQUIRED_TCF_PURPOSES.some((purpose) => purposeConsents?.[purpose] === false)) {
       return false;
     }
     return true;
@@ -410,8 +411,7 @@ class NodalsAiRtdProvider {
   }
 
   #loadAdLibraries(deps) {
-    // eslint-disable-next-line no-unused-vars
-    for (const [key, value] of Object.entries(deps)) {
+    for (const value of Object.values(deps)) {
       if (typeof value === 'string') {
         loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
           // noop

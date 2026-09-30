@@ -146,14 +146,14 @@ function getMiscDims_() {
     domain: '',
     device: 'unknown',
     mkeywords: ''
-  }
+  };
   try {
     // TODO: this should pick refererInfo from bidderRequest
     const refererInfo_ = getRefererInfo();
     // TODO: does the fallback make sense here?
-    const url_ = refererInfo_?.page || window.location.href
+    const url_ = refererInfo_?.page || window.location.href;
     ret.pageurl = url_;
-    ret.domain = refererInfo_?.domain || window.location.host
+    ret.domain = refererInfo_?.domain || window.location.host;
     ret.device = getDevice_();
     const keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
@@ -317,11 +317,11 @@ export const spec = {
       if (syncOptions.iframeEnabled) {
         syncs.push(sync.uf ? { url: sync.uf, type: 'iframe' } : { url: sync.up, type: 'image' });
       } else if (syncOptions.pixelEnabled && sync.up) {
-        syncs.push({ url: sync.up, type: 'image' })
+        syncs.push({ url: sync.up, type: 'image' });
       }
-    })
+    });
     return syncs;
   }
-}
+};
 
 registerBidder(spec);

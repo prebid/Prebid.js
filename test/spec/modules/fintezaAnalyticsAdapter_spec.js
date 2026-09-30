@@ -170,7 +170,7 @@ describe('finteza analytics adapter', function () {
           auctionId: pauctionId,
           width: 300,
           height: 250
-        }
+        };
 
         // Emit the events with the "real" arguments
         events.emit(EVENTS.BID_WON, bidWon);
@@ -192,7 +192,7 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(cpm));
         expect(url.search.unit).to.equal('usd');
 
-        sinon.assert.calledWith(fntzAnalyticsAdapter.track, sinon.match({ eventType: EVENTS.BID_WON }))
+        sinon.assert.calledWith(fntzAnalyticsAdapter.track, sinon.match({ eventType: EVENTS.BID_WON }));
       });
     });
 

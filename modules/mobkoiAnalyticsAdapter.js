@@ -451,7 +451,7 @@ function pickKeyFields(objType, eventArgs) {
         reason: eventArgs.reason,
         message: eventArgs.message,
         doc: pick(eventArgs.doc, ['visibilityState', 'readyState', 'hidden']),
-      }
+      };
     }
     case SUB_PAYLOAD_TYPES.BIDDER_ERROR_ARGS: {
       return {
@@ -583,7 +583,7 @@ const mobkoiAnalytics = Object.assign(adapter({ analyticsType }), {
           break;
         };
         case BIDDER_ERROR: {
-          utils.logTrackEvent(eventType, prebidEventArgs)
+          utils.logTrackEvent(eventType, prebidEventArgs);
           const argsType = utils.determineObjType(prebidEventArgs);
           this.localContext.pushEventToAllBidContexts({
             eventType,
@@ -648,7 +648,7 @@ const mobkoiAnalytics = Object.assign(adapter({ analyticsType }), {
           break;
         }
         case BIDDER_DONE: {
-          utils.logTrackEvent(eventType, prebidEventArgs)
+          utils.logTrackEvent(eventType, prebidEventArgs);
           const argsType = utils.determineObjType(prebidEventArgs);
           this.localContext.pushEventToAllBidContexts({
             eventType,
@@ -996,7 +996,7 @@ export const SUB_PAYLOAD_UNIQUE_FIELDS_LOOKUP = {
 const PAYLOAD_REQUIRED_FIELDS = {
   impid: 'string',
   publisherId: 'string',
-}
+};
 
 export const utils = {
   /**

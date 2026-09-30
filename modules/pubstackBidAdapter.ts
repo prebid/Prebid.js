@@ -24,6 +24,7 @@ declare module '../src/adUnits' {
     [BIDDER_CODE]: {
       siteId: string;
       adUnitName: string;
+      stackId?: string;
     };
   }
 }
@@ -36,7 +37,7 @@ type GetUserSyncFn = (
   responses: ServerResponse[],
   gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
   uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
-  gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>) => ({ type: SyncType, url: string })[]
+  gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>) => ({ type: SyncType, url: string })[];
 
 const siteIds: Set<string> = new Set();
 let cntRequest = 0;
@@ -49,6 +50,7 @@ const converter = ortbConverter({
     const placementInfo = getPlacementInfo(bidRequest);
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.adUnitName`, bidRequest.params.adUnitName);
+    if (bidRequest.params.stackId) deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.stackId`, bidRequest.params.stackId);
     deepSetValue(imp, `ext.prebid.placement.code`, bidRequest.adUnitCode);
     deepSetValue(imp, `ext.prebid.placement.auctionsCount`, placementInfo.AuctionsCount);
     if (element) deepSetValue(imp, `ext.prebid.placement.domId`, element?.id);
@@ -60,8 +62,8 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     cntRequest++;
     const placementEnv = getPlacementEnv();
-    const request = buildRequest(imps, bidderRequest, context)
-    const siteId = bidderRequest.bids[0].params.siteId
+    const request = buildRequest(imps, bidderRequest, context);
+    const siteId = bidderRequest.bids[0].params.siteId;
     siteIds.add(siteId);
     deepSetValue(request, 'site.publisher.id', siteId);
     deepSetValue(request, 'test', config.getConfig('debug') ? 1 : 0);
@@ -90,6 +92,10 @@ const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
   }
   if (!bid.params.adUnitName || typeof bid.params.adUnitName !== 'string') {
     logError('bid.params.adUnitName needs to be a string');
+    return false;
+  }
+  if (bid.params.stackId != null && typeof bid.params.stackId !== 'string') {
+    logError('bid.params.stackId needs to be a string');
     return false;
   }
   return true;

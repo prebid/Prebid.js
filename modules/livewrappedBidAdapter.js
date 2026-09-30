@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -94,7 +95,7 @@ export const spec = {
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
-      coppa: getCoppa(),
+      coppa: getCoppa(bidderRequest),
       usPrivacy: bidderRequest.uspConsent,
       cookieSupport: !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
@@ -185,7 +186,7 @@ export const spec = {
 
     return syncList;
   }
-}
+};
 
 function hasUserId(bid) {
   return !!bid.params.userId;
@@ -274,7 +275,7 @@ function sizeToFormat(size) {
   return {
     width: size[0],
     height: size[1]
-  }
+  };
 }
 
 function getBidFloor(bid, currency) {
@@ -340,9 +341,7 @@ function getDeviceHeight() {
   return device.h || getWinDimensions().innerHeight;
 }
 
-function getCoppa() {
-  if (typeof config.getConfig('coppa') === 'boolean') {
-    return config.getConfig('coppa');
-  }
+function getCoppa(bidderRequest) {
+  return bidderRequest?.ortb2?.regs?.coppa === 1 || (coppaDataHandler.getCoppa() ? true : undefined);
 }
 registerBidder(spec);

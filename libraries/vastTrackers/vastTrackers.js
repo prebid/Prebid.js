@@ -50,7 +50,7 @@ export function updateVastHook({ index = auctionManager.index } = {}) {
       }
     }
     next(bidResponse);
-  }
+  };
 }
 
 const addTrackersToResponse = updateVastHook();

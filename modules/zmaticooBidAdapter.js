@@ -36,7 +36,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -138,8 +138,8 @@ export const spec = {
       regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
     };
-    payload.regs.ext = {}
-    payload.user.ext = {}
+    payload.regs.ext = {};
+    payload.user.ext = {};
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest?.refererInfo?.page || window.location.href;
@@ -192,22 +192,22 @@ export const spec = {
             bid.vastXml = zmBid.ext.vast_url;
           }
           if (zmBid.ext && zmBid.ext.prebid) {
-            bid.mediaType = zmBid.ext.prebid.type
+            bid.mediaType = zmBid.ext.prebid.type;
           } else {
-            bid.mediaType = BANNER
+            bid.mediaType = BANNER;
           }
           bidResponses.push(bid);
-        })
-      })
+        });
+      });
     }
     return bidResponses;
   },
   onBidWon: function (bid) {
     if (!bid['nurl']) {
-      return false
+      return false;
     }
-    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
-    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
+    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm;
+    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency;
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       winCpm
@@ -223,11 +223,11 @@ export const spec = {
     ).replace(
       /\$\{AUCTION_ID\}/,
       bid.auctionId
-    )
+    );
     triggerPixel(winUrl);
-    return true
+    return true;
   }
-}
+};
 
 function buildBanner(request) {
   let sizes = request.sizes;

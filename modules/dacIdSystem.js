@@ -12,7 +12,7 @@ import {
 } from '../src/utils.js';
 import {
   ajax
-} from '../src/ajax.js'
+} from '../src/ajax.js';
 import {
   submodule
 } from '../src/hook.js';
@@ -131,7 +131,7 @@ export const dacIdSystemSubmodule = {
           fuuid: id.fuuid,
           id: id.uid
         }
-      }
+      };
     }
   },
 
@@ -144,12 +144,12 @@ export const dacIdSystemSubmodule = {
     const cookie = getCookieId();
 
     if (!cookie.fuuid) {
-      logInfo(LOG_PREFIX + 'There is no fuuid in cookie')
+      logInfo(LOG_PREFIX + 'There is no fuuid in cookie');
       return undefined;
     }
 
     if (cookie.fuuid && cookie.uid) {
-      logInfo(LOG_PREFIX + 'There is fuuid and AoneId in cookie')
+      logInfo(LOG_PREFIX + 'There is fuuid and AoneId in cookie');
       return {
         id: {
           fuuid: cookie.fuuid,

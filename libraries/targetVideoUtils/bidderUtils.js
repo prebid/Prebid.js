@@ -26,7 +26,7 @@ export function formatRequest({ payload, url, bidderRequest, bidId }) {
     options: {
       withCredentials: true,
     }
-  }
+  };
 
   if (bidderRequest) {
     request.bidderRequest = bidderRequest;
@@ -211,5 +211,5 @@ export function getSiteObj() {
     page: refInfo.page,
     ref: refInfo.ref,
     domain: refInfo.domain
-  }
+  };
 }

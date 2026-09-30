@@ -13,7 +13,7 @@ describe('LiveIntent Rtd Provider', function () {
       const value = liveIntentRtdSubmodule.init(config);
       expect(value).to.equal(true);
     });
-  })
+  });
 
   describe('submodule `onBidRequestEvent`', function () {
     const bidRequestExample = {
@@ -34,7 +34,7 @@ describe('LiveIntent Rtd Provider', function () {
           }
         }
       ]
-    }
+    };
 
     it('exists', function () {
       expect(liveIntentRtdSubmodule.onBidRequestEvent).to.be.a('function');
@@ -51,7 +51,7 @@ describe('LiveIntent Rtd Provider', function () {
             ortb2: {}
           }
         ]
-      }
+      };
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
@@ -63,17 +63,17 @@ describe('LiveIntent Rtd Provider', function () {
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
+      const expectedOrtb2 = { user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
     it('extracts segments and move them to the bidRequest.ortb2.user.data when user is undefined', function() {
-      bidRequestExample.bids[0].ortb2 = { source: {} }
+      bidRequestExample.bids[0].ortb2 = { source: {} };
       const bidRequest = utils.deepClone(bidRequestExample);
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
+      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
@@ -81,12 +81,12 @@ describe('LiveIntent Rtd Provider', function () {
       bidRequestExample.bids[0].ortb2 = {
         source: {},
         user: {}
-      }
+      };
       const bidRequest = utils.deepClone(bidRequestExample);
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
+      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
@@ -104,12 +104,12 @@ describe('LiveIntent Rtd Provider', function () {
             }
           ]
         }
-      }
+      };
       const bidRequest = utils.deepClone(bidRequestExample);
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'example.com', segment: [{ id: 'a_1231' }, { id: 'b_4311' }] }, { name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
+      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'example.com', segment: [{ id: 'a_1231' }, { id: 'b_4311' }] }, { name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
   });

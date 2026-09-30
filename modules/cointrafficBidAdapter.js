@@ -1,9 +1,9 @@
 import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js'
-import { config } from '../src/config.js'
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import { getViewportSize } from '../libraries/viewport/viewport.js'
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
 /**
@@ -52,7 +52,7 @@ export const spec = {
         return config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
           getCurrencyFromBidderRequest(bidderRequest) ||
           DEFAULT_CURRENCY;
-      }
+      };
 
       const getLanguage = () => {
         return navigator && navigator.language
@@ -60,7 +60,7 @@ export const spec = {
             ? navigator.language.split('-')[0]
             : navigator.language
           : '';
-      }
+      };
 
       const currency = getCurrency();
 

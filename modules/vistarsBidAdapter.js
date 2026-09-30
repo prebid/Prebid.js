@@ -79,6 +79,6 @@ export const spec = {
   getUserSyncs: getUserSyncs(SYNC_ENDPOINT),
 
   supportedMediaTypes: [BANNER, VIDEO]
-}
+};
 
 registerBidder(spec);

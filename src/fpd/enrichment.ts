@@ -28,7 +28,7 @@ export const dep = {
   getDocument
 };
 
-const oneClient = clientSectionChecker('FPD')
+const oneClient = clientSectionChecker('FPD');
 
 export interface FirstPartyDataConfig {
   /**
@@ -116,7 +116,7 @@ function getSUA() {
 }
 
 function removeUndef(obj) {
-  return getDefinedParams(obj, Object.keys(obj))
+  return getDefinedParams(obj, Object.keys(obj));
 }
 
 const ENRICHMENTS = {
@@ -151,7 +151,7 @@ const ENRICHMENTS = {
       };
 
       return device;
-    })
+    });
   },
   regs() {
     const regs = {} as any;
@@ -191,13 +191,13 @@ export const getJsonLdKeywords = memoize(() => {
       }
     }
     return keywords;
-  })
+  });
 });
 
 export const getMetaTagKeywords = memoize(() => {
   return winFallback((win) => {
     return win.document.querySelector('meta[name="keywords"]')?.content?.split(',').map(k => k.trim());
-  })
+  });
 });
 
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
@@ -217,5 +217,5 @@ function clientEnrichment(ortb2, ri) {
     publisher: removeUndef({
       domain: dep.findRootDomain(domain)
     })
-  })
+  });
 }

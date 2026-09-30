@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/ucfunnelBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { deepClone } from '../../../src/utils.js';
-const URL = 'https://hb.aralego.com/header';
+
 const BIDDER_CODE = 'ucfunnel';
 
 const bidderRequest = {
@@ -23,7 +23,7 @@ const userId = {
   'haloId': {},
   'uid2': { 'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888' },
   'connectid': '4567'
-}
+};
 
 const validBannerBidReq = {
   bidder: BIDDER_CODE,
@@ -160,7 +160,7 @@ describe('ucfunnel Adapter', function () {
     let request;
     before(() => {
       request = spec.buildRequests([validBannerBidReq], bidderRequest);
-    })
+    });
     it('should create a POST request for every bid', function () {
       expect(request[0].method).to.equal('GET');
       expect(request[0].url).to.equal(spec.ENDPOINT);
@@ -186,6 +186,14 @@ describe('ucfunnel Adapter', function () {
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 
+    it('should attach COPPA from the bidder request', function () {
+      const requests = spec.buildRequests([validBannerBidReq], {
+        ...bidderRequest,
+        ortb2: { ...bidderRequest.ortb2, regs: { coppa: 1 } }
+      });
+      expect(requests[0].data.coppa).to.equal(true);
+    });
+
     it('should support multiple size', function () {
       const sizes = [[300, 250], [336, 280]];
       const format = '300,250;336,280';
@@ -203,7 +211,7 @@ describe('ucfunnel Adapter', function () {
         return {
           currency: 'USD',
           floor: 2.02
-        }
+        };
       };
       const requests = spec.buildRequests([bid], bidderRequest);
       const data = requests[0].data;
@@ -224,7 +232,7 @@ describe('ucfunnel Adapter', function () {
         return {
           currency: 'USD',
           floor: 2.02
-        }
+        };
       };
       bid.params.bidfloor = 2.01;
       const requests = spec.buildRequests([bid], bidderRequest);
@@ -262,7 +270,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validBannerBidReq], bidderRequest);
         result = spec.interpretResponse({ body: invalidBannerBidRes }, request[0]);
-      })
+      });
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
@@ -283,7 +291,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validBannerBidReq], bidderRequest);
         result = spec.interpretResponse({ body: invalidBannerBidRes }, request[0]);
-      })
+      });
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
@@ -304,7 +312,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validVideoBidReq], bidderRequest);
         result = spec.interpretResponse({ body: validVideoBidRes }, request[0]);
-      })
+      });
       it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });
@@ -327,7 +335,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validNativeBidReq], bidderRequest);
         result = spec.interpretResponse({ body: validNativeBidRes }, request[0]);
-      })
+      });
       it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });

@@ -160,7 +160,7 @@ function syncId(storedId) {
     error: function () {
       logInfo('KinessoId: Sync error for id : ' + storedId);
     }
-  }
+  };
 }
 
 /**
@@ -194,7 +194,7 @@ function kinessoSyncUrl(accountId, consentData) {
   if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl;
 
   kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`;
-  return kinessoSyncUrl
+  return kinessoSyncUrl;
 }
 
 /** @type {Submodule} */

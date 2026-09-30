@@ -261,7 +261,7 @@ const DIGITAL_SERVICES_ACT_CONFIG = {
       }
     },
   }
-}
+};
 
 const REQPARAMS = {
   json: true,
@@ -615,7 +615,7 @@ describe('yieldlabBidAdapter', () => {
               ]
             },
           },
-        }
+        };
         config.setConfig(GOOGLE_TOPICS_DATA);
         const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA });
         expect(request.url).to.include('segtax=600&segclass=v1&segments=717%2C808');
@@ -766,10 +766,10 @@ describe('yieldlabBidAdapter', () => {
         return asset?.img?.type === 1;
       });
       const bodyAsset = result[0].native.assets.find(asset => 'data' in asset);
-      expect(titleAsset).to.exist.and.to.have.nested.property('id', 1)
-      expect(imageAsset).to.exist.and.to.have.nested.property('id', 2)
-      expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3)
-      expect(iconAsset).to.exist.and.to.have.nested.property('id', 4)
+      expect(titleAsset).to.exist.and.to.have.nested.property('id', 1);
+      expect(imageAsset).to.exist.and.to.have.nested.property('id', 2);
+      expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3);
+      expect(iconAsset).to.exist.and.to.have.nested.property('id', 4);
     });
 
     it('should add adUrl and default native assets when type is Native', () => {

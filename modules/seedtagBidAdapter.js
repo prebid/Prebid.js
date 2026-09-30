@@ -1,6 +1,5 @@
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
@@ -38,15 +37,24 @@ const deviceConnection = {
   UNKNOWN: 'unknown',
 };
 
-export const BIDFLOOR_CURRENCY = 'USD'
+export const BIDFLOOR_CURRENCY = 'USD';
 
 function getBidFloor(bidRequest) {
   let floorInfo = {};
 
+  let mediaType = '*';
+  const hasBanner = hasBannerMediaType(bidRequest);
+  const hasVideo = hasVideoMediaType(bidRequest);
+  if (hasBanner && !hasVideo) {
+    mediaType = BANNER;
+  } else if (hasVideo && !hasBanner) {
+    mediaType = VIDEO;
+  }
+
   if (typeof bidRequest.getFloor === 'function') {
     floorInfo = bidRequest.getFloor({
       currency: BIDFLOOR_CURRENCY,
-      mediaType: '*',
+      mediaType: mediaType,
       size: '*'
     });
   }
@@ -103,7 +111,7 @@ function hasMandatoryVideoParams(bid) {
     isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0;
 
-  return isValid
+  return isValid;
 }
 
 function buildBidRequest(validBidRequest) {
@@ -131,7 +139,7 @@ function buildBidRequest(validBidRequest) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
   }
 
-  const bidFloor = getBidFloor(validBidRequest)
+  const bidFloor = getBidFloor(validBidRequest);
   if (bidFloor) {
     bidRequest.bidFloor = bidFloor;
   }
@@ -327,7 +335,7 @@ export const spec = {
       payload.schain = schain;
     }
 
-    const coppa = config.getConfig('coppa');
+    const coppa = bidderRequest.ortb2?.regs?.coppa;
     if (coppa) {
       payload.coppa = coppa;
     }
@@ -336,43 +344,43 @@ export const spec = {
       payload.gppConsent = {
         gppString: bidderRequest.gppConsent.gppString,
         applicableSections: bidderRequest.gppConsent.applicableSections
-      }
+      };
     } else if (bidderRequest.ortb2?.regs?.gpp) {
       payload.gppConsent = {
         gppString: bidderRequest.ortb2.regs.gpp,
         applicableSections: bidderRequest.ortb2.regs.gpp_sid
-      }
+      };
     }
 
     if (bidderRequest.ortb2?.user?.data) {
-      payload.user.topics = bidderRequest.ortb2.user.data
+      payload.user.topics = bidderRequest.ortb2.user.data;
     }
     if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
-      payload.user.eids = validBidRequests[0].userIdAsEids
+      payload.user.eids = validBidRequests[0].userIdAsEids;
     }
 
     if (bidderRequest.ortb2?.bcat) {
-      payload.bcat = bidderRequest.ortb2?.bcat
+      payload.bcat = bidderRequest.ortb2?.bcat;
     }
 
     if (bidderRequest.ortb2?.badv) {
-      payload.badv = bidderRequest.ortb2?.badv
+      payload.badv = bidderRequest.ortb2?.badv;
     }
 
     if (bidderRequest.ortb2?.device?.sua) {
-      payload.sua = bidderRequest.ortb2.device.sua
+      payload.sua = bidderRequest.ortb2.device.sua;
     }
 
     if (bidderRequest.ortb2?.site?.cat) {
-      payload.site.cat = bidderRequest.ortb2.site.cat
+      payload.site.cat = bidderRequest.ortb2.site.cat;
     }
 
     if (bidderRequest.ortb2?.site?.cattax) {
-      payload.site.cattax = bidderRequest.ortb2.site.cattax
+      payload.site.cattax = bidderRequest.ortb2.site.cattax;
     }
 
     if (bidderRequest.ortb2?.site?.pagecat) {
-      payload.site.pagecat = bidderRequest.ortb2.site.pagecat
+      payload.site.pagecat = bidderRequest.ortb2.site.pagecat;
     }
 
     if (bidderRequest.ortb2) {

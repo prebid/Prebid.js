@@ -8,7 +8,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
-const COOKIE_DEPRECATION_LABEL = 'test';
+
 const CONSENT_STRING = 'AAAAAAAAA==';
 const API_KEY = 'PA-XXXXXX';
 const GPID = '/11223344/AdUnit#300x250';
