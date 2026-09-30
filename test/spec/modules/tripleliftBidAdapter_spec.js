@@ -185,19 +185,101 @@ describe('triplelift oRTB bid adapter', function () {
       expect(spec.isBidRequestValid(nativeBid)).to.equal(false);
     });
 
-    it('should return false when parentId is missing', function () {
+    it('should return true when parentId is missing', function () {
       delete bid.params.parentId;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when parentId is missing - instream', function () {
+    it('should return true when parentId is missing - instream', function () {
       delete instreamBid.params.parentId;
-      expect(spec.isBidRequestValid(instreamBid)).to.equal(false);
+      expect(spec.isBidRequestValid(instreamBid)).to.equal(true);
     });
 
-    it('should return false when parentId is missing - native', function () {
+    it('should return true when parentId is missing - native', function () {
       delete nativeBid.params.parentId;
-      expect(spec.isBidRequestValid(nativeBid)).to.equal(false);
+      expect(spec.isBidRequestValid(nativeBid)).to.equal(true);
+    });
+
+    it('should return true when parentId is present but empty or null', function () {
+      bid.params.parentId = '';
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+      bid.params.parentId = null;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    describe('parentId warning', function () {
+      let logWarnSpy;
+
+      beforeEach(function () {
+        logWarnSpy = sinon.spy(utils, 'logWarn');
+      });
+
+      afterEach(function () {
+        logWarnSpy.restore();
+      });
+
+      // isBidRequestValid is the only thing under test here, so any logWarn
+      // mentioning parentId came from the recommendation notice.
+      function parentIdWarnings() {
+        return logWarnSpy.getCalls().filter(call => /parentId/.test(String(call.args[0])));
+      }
+
+      it('warns exactly once when parentId is missing', function () {
+        delete bid.params.parentId;
+
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+        expect(parentIdWarnings()).to.have.lengthOf(1);
+      });
+
+      it('identifies the offending ad unit and tells the publisher what to do', function () {
+        delete bid.params.parentId;
+        spec.isBidRequestValid(bid);
+
+        const [message] = parentIdWarnings()[0].args;
+        expect(message).to.contain(bid.adUnitCode);
+        expect(message).to.contain('params.parentId');
+        expect(message).to.contain('prebid@triplelift.com');
+      });
+
+      it('warns when parentId is present but falsy', function () {
+        ['', null, undefined, 0].forEach(function (value) {
+          logWarnSpy.resetHistory();
+          bid.params.parentId = value;
+
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+          expect(parentIdWarnings()).to.have.lengthOf(1);
+        });
+      });
+
+      it('warns when parentId is missing - instream', function () {
+        delete instreamBid.params.parentId;
+
+        expect(spec.isBidRequestValid(instreamBid)).to.equal(true);
+        expect(parentIdWarnings()).to.have.lengthOf(1);
+      });
+
+      it('warns when parentId is missing - native', function () {
+        delete nativeBid.params.parentId;
+
+        expect(spec.isBidRequestValid(nativeBid)).to.equal(true);
+        expect(parentIdWarnings()).to.have.lengthOf(1);
+      });
+
+      it('does not warn when parentId is supplied', function () {
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+        expect(parentIdWarnings()).to.be.empty;
+      });
+
+      it('does not warn when the bid is already rejected for a missing inventoryCode', function () {
+        // validation returns early, so the publisher is not told to fix
+        // parentId on a bid that was dropped for a different reason
+        delete bid.params.inventoryCode;
+        delete bid.params.parentId;
+
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+        expect(parentIdWarnings()).to.be.empty;
+      });
     });
 
     it('should return false when params object is missing', function () {
@@ -209,22 +291,14 @@ describe('triplelift oRTB bid adapter', function () {
       expect(spec.isBidRequestValid(undefined)).to.equal(false);
     });
 
-    it('should return false when required params are present but empty', function () {
-      // these are defined, so a `!== undefined` check would wrongly accept them
+    it('should return false when inventoryCode is present but empty', function () {
+      // this is defined, so a `!== undefined` check would wrongly accept it
       bid.params.inventoryCode = '';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-
-      bid.params.inventoryCode = 'inv_code_here';
-      bid.params.parentId = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when required params are null', function () {
+    it('should return false when inventoryCode is null', function () {
       bid.params.inventoryCode = null;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-
-      bid.params.inventoryCode = 'inv_code_here';
-      bid.params.parentId = null;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 

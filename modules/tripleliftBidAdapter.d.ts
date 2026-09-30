@@ -17,9 +17,10 @@ export interface TripleliftBidRequestParams {
   inventoryCode: string;
   /**
    * Identifies the parent account the inventory belongs to.
-   * Required as of Prebid.js 11.37.0 - bids without it fail validation.
+   * Optional, but strongly recommended - supplying it lets Triplelift attribute
+   * the inventory correctly. Contact prebid@triplelift.com if you do not know it.
    */
-  parentId: string;
+  parentId?: string;
   /**
    * Identifies the publisher the inventory belongs to. Recommended.
    */

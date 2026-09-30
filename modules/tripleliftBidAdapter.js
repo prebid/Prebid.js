@@ -119,11 +119,14 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function (bid) {
     const inventoryCode = bid?.params?.inventoryCode;
-    const parentId = bid?.params?.parentId;
 
-    if (!inventoryCode || !parentId) {
-      logError(`Triplelift: bid from ad unit "${bid?.adUnitCode}" is missing required params; both params.inventoryCode and params.parentId must be set.`);
+    if (!inventoryCode) {
+      logError(`Triplelift: bid from ad unit "${bid?.adUnitCode}" is missing required param params.inventoryCode.`);
       return false;
+    }
+
+    if (!bid?.params?.parentId) {
+      logWarn(`Triplelift: bid from ad unit "${bid?.adUnitCode}" is missing params.parentId. It is optional, but supplying it is strongly recommended. Contact prebid@triplelift.com if you do not know your parentId.`);
     }
 
     return true;
