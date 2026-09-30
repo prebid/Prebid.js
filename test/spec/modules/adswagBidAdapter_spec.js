@@ -71,7 +71,7 @@ describe("adswagBidAdapter", () => {
   // disabled-path behavior is covered by the repo-only companion suite
   // (adswagBidAdapter_repo_spec.js), whose stub env reads FEATURES at
   // runtime and can toggle it.
-  const describeIfAudio = FEATURES.AUDIO ? describe : () => {};
+  const describeIfAudio = FEATURES.AUDIO ? describe : (_title, _fn) => {};
 
   function makeAudioBid(audioOverrides = {}, bidOverrides = {}) {
     return makeBid({
