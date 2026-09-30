@@ -1,7 +1,7 @@
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { attributeValue, cdata } from '../../../src/utils/xml.js';
 
-export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
+export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl, bidderVastTrackers) {
   let wrapperBody = getAdSystemNode('Prebid org', getGlobal().version);
 
   if (adTagUrl) {
@@ -12,8 +12,16 @@ export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, er
     wrapperBody += getImpressionNode(impressionUrl, impressionId);
   }
 
+  wrapperBody += (bidderVastTrackers?.impression || []).map(url => getImpressionNode(url)).join('');
+
   if (errorUrl) {
     wrapperBody += getErrorNode(errorUrl);
+  }
+
+  wrapperBody += (bidderVastTrackers?.error || []).map(url => getErrorNode(url)).join('');
+
+  if (bidderVastTrackers?.trackingEvents?.length) {
+    wrapperBody += getLinearTrackingCreativesNode(bidderVastTrackers.trackingEvents);
   }
 
   return getVastNode(getAdNode(getWrapperNode(wrapperBody), adId), '4.2');
@@ -45,6 +53,16 @@ export function getImpressionNode(pingUrl, id) {
 
 export function getErrorNode(pingUrl) {
   return getUrlNode('Error', pingUrl);
+}
+
+export function getLinearTrackingCreativesNode(trackingEvents) {
+  const trackingNodes = trackingEvents.map(({ event, url }) => getTrackingNode(event, url)).join('');
+  const linearNode = getNode('Linear', getNode('TrackingEvents', trackingNodes));
+  return getNode('Creatives', getNode('Creative', linearNode));
+}
+
+export function getTrackingNode(event, url) {
+  return getUrlNode('Tracking', url, { event });
 }
 
 // Helpers
