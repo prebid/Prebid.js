@@ -230,6 +230,99 @@ describe('msftBidAdapter', function () {
       expect(data.user.ext).to.exist;
     });
 
+    it('should parse addtlConsent with ~ separator and set user.ext.addtl_consent', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '1~7.12.35.62.66.70.89.93.108'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.addtl_consent).to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
+    });
+
+    it('should ignore disclosed-vendor identifiers in v2 addtlConsent strings', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '2~1.35.41.101~dv.9.21.81'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.addtl_consent).to.deep.equal([1, 35, 41, 101]);
+    });
+
+    it('should preserve existing user.ext sibling properties when setting addtl_consent', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '1~7.12.35'
+        }
+      });
+      bidderRequest.ortb2.user.ext = {
+        ...bidderRequest.ortb2.user.ext,
+        custom_flag: 'keep-me',
+        consented_providers_settings: {
+          addtl_consent: 'legacy-value'
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.custom_flag).to.equal('keep-me');
+      expect(request.data.user.ext.consented_providers_settings.addtl_consent).to.equal('legacy-value');
+      expect(request.data.user.ext.addtl_consent).to.deep.equal([7, 12, 35]);
+    });
+
+    it('should not set addtl_consent when addtlConsent has no ~ separator', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '7.12.35.62'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.addtl_consent).to.be.undefined;
+    });
+
     if (FEATURES.VIDEO) {
       it('should build a video request', function () {
         const testBidRequests = deepClone(baseBidRequests);

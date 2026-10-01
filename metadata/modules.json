@@ -782,14 +782,14 @@
       "componentType": "bidder",
       "componentName": "adspirit",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 6,
       "disclosureURL": null
     },
     {
       "componentType": "bidder",
       "componentName": "twiago",
       "aliasOf": "adspirit",
-      "gvlid": null,
+      "gvlid": 242,
       "disclosureURL": null
     },
     {
@@ -1460,6 +1460,13 @@
     {
       "componentType": "bidder",
       "componentName": "beyondmedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "biddigi",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -3230,6 +3237,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mcodemedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mediaConsortium",
       "aliasOf": null,
       "gvlid": 1112,
@@ -3503,6 +3517,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "nexbid",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "nextMillennium",
       "aliasOf": null,
       "gvlid": 1060,
@@ -3637,6 +3658,13 @@
     {
       "componentType": "bidder",
       "componentName": "netads",
+      "aliasOf": "nexx360",
+      "gvlid": 965,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "stmbidder",
       "aliasOf": "nexx360",
       "gvlid": 965,
       "disclosureURL": null
@@ -3888,6 +3916,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "peak226",
+      "aliasOf": null,
+      "gvlid": 1202,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "performax",
       "aliasOf": null,
       "gvlid": 732,
@@ -3965,6 +4000,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pmcxchange",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "prebidServer",
       "aliasOf": null,
       "gvlid": null,
@@ -4022,6 +4064,13 @@
     {
       "componentType": "bidder",
       "componentName": "pubcircle",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubfuture",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -4679,7 +4728,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "ppcbuzz",
+      "componentName": "pubsmart",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
@@ -4996,7 +5045,7 @@
       "componentType": "bidder",
       "componentName": "trafficgate",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1272,
       "disclosureURL": null
     },
     {

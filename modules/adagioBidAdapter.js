@@ -14,6 +14,7 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
+  uniques,
 } from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
 import { OUTSTREAM } from '../src/video.js';
@@ -26,6 +27,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
 import { validateOrtbFields } from '../src/prebid.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -146,9 +148,9 @@ function _getGdprConsent(bidderRequest) {
   });
 }
 
-function _getCoppa() {
+function _getCoppa(bidderRequest) {
   return {
-    required: config.getConfig('coppa') === true ? 1 : 0
+    required: (bidderRequest?.ortb2?.regs?.coppa ?? coppaDataHandler.getCoppa()) ? 1 : 0
   };
 }
 
@@ -529,7 +531,7 @@ export const spec = {
     const pageviewId = _internal.getAdagioNs().pageviewId;
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
-    const coppa = _getCoppa();
+    const coppa = _getCoppa(bidderRequest);
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
@@ -716,9 +718,16 @@ export const spec = {
 
     // Build one request per organizationId
     const requests = Object.keys(groupedAdUnits).map(organizationId => {
+      // A single request is built per organizationId, but its ad units may reference several sites.
+      const sites = groupedAdUnits[organizationId]
+        .map(adUnit => adUnit.params.site)
+        .filter(Boolean)
+        .filter(uniques)
+        .map(site => `&site=${encodeURIComponent(site)}`)
+        .join('');
       return {
         method: 'POST',
-        url: `${ENDPOINT}?orgid=${organizationId}`,
+        url: `${ENDPOINT}?orgid=${encodeURIComponent(organizationId)}${sites}`,
         data: {
           organizationId: organizationId,
           hasRtd: _internal.hasRtd() ? 1 : 0,

@@ -4,10 +4,12 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepAccess, mergeDeep } from '../src/utils.js';
 
 const BIDDER_CODE = 'trafficgate';
+const GVLID = 1272;
 const URL = 'https://[HOST].bc-plugin.com/prebidjs';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,

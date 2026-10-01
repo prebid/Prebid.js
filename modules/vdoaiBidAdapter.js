@@ -12,6 +12,7 @@ import { ajax } from '../src/ajax.js';
  */
 
 const BIDDER_CODE = 'vdoai';
+const GVLID = 1561;
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -54,6 +55,7 @@ function getBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
