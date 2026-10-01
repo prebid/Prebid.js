@@ -578,19 +578,22 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         }
 
         if (enableGZipCompression && !debugMode) {
+          const sendUncompressed = () => callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
           isGzipCompressionSupported().then((supported) => {
             if (supported) {
-              compressDataWithGZip(request.data).then(compressedPayload => {
-                const url = new URL(request.url);
-                if (!url.searchParams.has('gzip')) {
-                  url.searchParams.set('gzip', '1');
-                }
-                callAjax({ url: url.href, payload: compressedPayload });
-              });
+              return compressDataWithGZip(request.data)
+                .then(compressedPayload => {
+                  const url = new URL(request.url);
+                  if (!url.searchParams.has('gzip')) {
+                    url.searchParams.set('gzip', '1');
+                  }
+                  callAjax({ url: url.href, payload: compressedPayload });
+                })
+                .catch(sendUncompressed);
             } else {
-              callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
+              sendUncompressed();
             }
-          });
+          }).catch(sendUncompressed);
         } else {
           callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
         }

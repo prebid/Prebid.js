@@ -638,17 +638,20 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
     }
 
     if (enableGZipCompression && !debugMode) {
+      const sendUncompressed = () => callAjax(requestData.requestJson, requestData.endpointUrl);
       isGzipCompressionSupported().then((supported) => {
         if (supported) {
-          compressDataWithGZip(requestData.requestJson).then(compressedPayload => {
-            const url = new URL(requestData.endpointUrl);
-            url.searchParams.set('gzip', '1');
-            callAjax(compressedPayload, url.href);
-          });
+          return compressDataWithGZip(requestData.requestJson)
+            .then(compressedPayload => {
+              const url = new URL(requestData.endpointUrl);
+              url.searchParams.set('gzip', '1');
+              callAjax(compressedPayload, url.href);
+            })
+            .catch(sendUncompressed);
         } else {
-          callAjax(requestData.requestJson, requestData.endpointUrl);
+          sendUncompressed();
         }
-      });
+      }).catch(sendUncompressed);
     } else {
       callAjax(requestData.requestJson, requestData.endpointUrl);
     }

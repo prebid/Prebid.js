@@ -1832,6 +1832,19 @@ describe('bidderFactory', () => {
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data)); // Ensure original data is sent
     });
 
+    it('should send the request normally if gzip compression rejects', async () => {
+      isGzipSupportedStub.resolves(true);
+      gzipStub.rejects(new Error('compression failed'));
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+
+      await runRequest();
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
+      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+    });
+
     it('should send uncompressed data if gzip is supported but disabled in request options', async function () {
       isGzipSupportedStub.resolves(true);
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
