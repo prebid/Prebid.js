@@ -3,6 +3,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { type AnalyticsConfig } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
+import { auctionManager } from '../src/auctionManager.js';
 import { logInfo, logError } from '../src/utils.js';
 import { Nexx360ImpressionAuction, Nexx360ServerAuction } from '../libraries/nexx360Utils/types.js';
 
@@ -133,7 +134,7 @@ interface BidResponseArgs {
   bidderCode?: string;
   bidder?: string;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   cpm: number;
   currency: string;
   width?: number;
@@ -150,7 +151,7 @@ interface BidWonArgs {
   bidderCode?: string;
   bidder?: string;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   cpm: number;
   currency: string;
   width?: number;
@@ -181,7 +182,7 @@ interface AdRenderBid {
   bidder?: string;
   bidderCode?: string;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   adId?: string;
   cpm?: number;
   currency?: string;
@@ -434,6 +435,13 @@ function extractFloorData(floorData?: BidFloorData): FloorDataPayload | undefine
   };
 }
 
+/** Bids carry no ortb2Imp: read the gpid from the bid's request, else from its ad unit. */
+function getBidGpid(requestId?: string, adUnitId?: string): string | undefined {
+  const { index } = auctionManager;
+  return index.getBidRequest({ requestId })?.ortb2Imp?.ext?.gpid ??
+    index.getAdUnit({ adUnitId })?.ortb2Imp?.ext?.gpid;
+}
+
 function createBaseEvent(
   eventType: string,
   auctionId: string,
@@ -460,7 +468,7 @@ interface BidImpressionInput {
   rawBidderCode: string;
   meta?: BidMeta;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   cpm?: number;
   currency?: string;
   width?: number;
@@ -475,7 +483,7 @@ function createBidImpressionEvent(input: BidImpressionInput): BaseBidImpressionE
     clientSsp: input.rawBidderCode,
     fullSsp: resolveBidderCode(input.rawBidderCode, input.meta),
     adUnitCode: input.adUnitCode,
-    gpid: input.ortb2Imp?.ext?.gpid,
+    gpid: getBidGpid(input.requestId, input.adUnitId),
     cpm: input.cpm,
     currency: input.currency,
     size: formatSize(input.width, input.height),
@@ -530,7 +538,7 @@ function buildBidResponseEvent(args: BidResponseArgs): BidResponseEvent {
       rawBidderCode: args.bidderCode || args.bidder || '',
       meta: args.meta,
       adUnitCode: args.adUnitCode,
-      ortb2Imp: args.ortb2Imp,
+      adUnitId: args.adUnitId,
       cpm: args.cpm,
       currency: args.currency,
       width: args.width,
@@ -550,7 +558,7 @@ function buildBidWonEvent(args: BidWonArgs): BidWonEvent {
     rawBidderCode: args.bidderCode || args.bidder || '',
     meta: args.meta,
     adUnitCode: args.adUnitCode,
-    ortb2Imp: args.ortb2Imp,
+    adUnitId: args.adUnitId,
     cpm: args.cpm,
     currency: args.currency,
     width: args.width,
@@ -597,7 +605,7 @@ function buildAdRenderEvent(eventType: string, args: AdRenderArgs): AdRenderEven
       rawBidderCode: bid.bidder || bid.bidderCode || '',
       meta: bid.meta,
       adUnitCode: bid.adUnitCode,
-      ortb2Imp: bid.ortb2Imp,
+      adUnitId: bid.adUnitId,
       cpm: bid.cpm,
       currency: bid.currency,
       width: bid.width,

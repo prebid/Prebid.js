@@ -4,6 +4,8 @@ import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
 import adapterManager from 'src/adapterManager.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import 'modules/nexx360BidAdapter.js';
 
 const events = require('src/events');
@@ -178,6 +180,49 @@ describe('Nexx360 Analytics Adapter', function () {
     expect(posts[0][0].eventType).to.equal('adRenderSucceeded');
     expect(posts[1][0].eventType).to.equal('adRenderFailed');
     expect(posts[1][0].reason).to.equal('no creative');
+  });
+
+  describe('gpid on bid-level events', function () {
+    // Bid responses carry no ortb2Imp; the gpid comes from the bid's request (or its ad unit).
+    let indexStub;
+    beforeEach(function () {
+      indexStub = sinon.stub(auctionManager, 'index').get(() => stubAuctionIndex({
+        bidRequests: [{ bidId: 'req-1', adUnitId: 'au-1', ortb2Imp: { ext: { gpid: '/12345/div-1' } } }],
+        adUnits: [
+          { adUnitId: 'au-1', ortb2Imp: { ext: { gpid: '/12345/div-1-adunit' } } },
+          { adUnitId: 'au-2', ortb2Imp: { ext: { gpid: '/12345/div-2' } } },
+        ],
+      }));
+    });
+
+    afterEach(function () {
+      indexStub.restore();
+    });
+
+    const bid = (extra) => ({ auctionId: 'a-g', bidderCode: 'appnexus', adUnitCode: 'div-1', cpm: 1, currency: 'USD', ...extra });
+
+    it('takes the gpid of the bid request on bidResponse, bidWon and adRenderSucceeded', function () {
+      enable();
+      events.emit(EVENTS.BID_RESPONSE, bid({ requestId: 'req-1', adUnitId: 'au-1' }));
+      events.emit(EVENTS.BID_WON, bid({ requestId: 'req-1', adUnitId: 'au-1' }));
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, { bid: bid({ requestId: 'req-1', adUnitId: 'au-1' }) });
+
+      const sent = eventPosts().flat();
+      expect(sent.map((e) => e.eventType)).to.deep.equal(['bidResponse', 'bidWon', 'adRenderSucceeded']);
+      sent.forEach((e) => expect(e.gpid).to.equal('/12345/div-1'));
+    });
+
+    it('falls back to the ad unit gpid when the request is unknown', function () {
+      enable();
+      events.emit(EVENTS.BID_WON, bid({ requestId: 'req-unknown', adUnitId: 'au-2' }));
+      expect(eventPosts()[0][0].gpid).to.equal('/12345/div-2');
+    });
+
+    it('leaves gpid out when neither the request nor the ad unit is known', function () {
+      enable();
+      events.emit(EVENTS.BID_WON, bid({ requestId: 'req-unknown', adUnitId: 'au-unknown' }));
+      expect(eventPosts()[0][0]).to.not.have.property('gpid');
+    });
   });
 
   it('defers the AUCTION_END flush by one tick', function () {
