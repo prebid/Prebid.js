@@ -46,14 +46,20 @@ const id5Analytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), 
 
   sendEvent: (eventToSend) => {
     const serializedEvent = JSON.stringify(eventToSend);
-    if (!id5Analytics.options.compressionDisabled && isGzipCompressionSupported() && serializedEvent.length > COMPRESSION_THRESHOLD) {
-      compressDataWithGZip(serializedEvent).then(compressedData => {
-        ajax(id5Analytics.options.ingestUrl, null, compressedData, {
-          contentType: 'application/json',
-          customHeaders: {
-            'Content-Encoding': 'gzip'
-          }
-        });
+    if (!id5Analytics.options.compressionDisabled && serializedEvent.length > COMPRESSION_THRESHOLD) {
+      isGzipCompressionSupported().then((supported) => {
+        if (supported) {
+          compressDataWithGZip(serializedEvent).then(compressedData => {
+            ajax(id5Analytics.options.ingestUrl, null, compressedData, {
+              contentType: 'application/json',
+              customHeaders: {
+                'Content-Encoding': 'gzip'
+              }
+            });
+          });
+        } else {
+          ajax(id5Analytics.options.ingestUrl, null, serializedEvent);
+        }
       });
     } else {
       // By giving some content this will be automatically a POST

@@ -106,7 +106,7 @@ export interface AdapterRequest {
   url: string;
   data: any;
   method?: 'GET' | 'POST';
-  options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean };
+  options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean | 'gzip' };
 }
 
 export interface ServerResponse {
@@ -560,7 +560,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         );
         break;
       case 'POST':
-        const enableGZipCompression = request.options?.endpointCompression;
+        const enableGZipCompression = request.options?.endpointCompression === true || request.options?.endpointCompression === 'gzip';
         const callAjax = ({ url, payload }) => {
           doAjax(
             url,
@@ -577,13 +577,19 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
           logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
         }
 
-        if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
-          compressDataWithGZip(request.data).then(compressedPayload => {
-            const url = new URL(request.url);
-            if (!url.searchParams.has('gzip')) {
-              url.searchParams.set('gzip', '1');
+        if (enableGZipCompression && !debugMode) {
+          isGzipCompressionSupported().then((supported) => {
+            if (supported) {
+              compressDataWithGZip(request.data).then(compressedPayload => {
+                const url = new URL(request.url);
+                if (!url.searchParams.has('gzip')) {
+                  url.searchParams.set('gzip', '1');
+                }
+                callAjax({ url: url.href, payload: compressedPayload });
+              });
+            } else {
+              callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
             }
-            callAjax({ url: url.href, payload: compressedPayload });
           });
         } else {
           callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });

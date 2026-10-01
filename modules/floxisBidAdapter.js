@@ -277,7 +277,7 @@ export const spec = {
         options: {
           withCredentials: true,
           contentType: 'text/plain',
-          endpointCompression: true
+          endpointCompression: 'gzip'
         }
       };
     }).filter(Boolean);

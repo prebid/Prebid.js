@@ -1007,7 +1007,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: s2sCfg });
         const req = utils.deepClone(REQUEST);
         req.s2sConfig = s2sCfg;
-        gzipSupportStub.returns(true);
+        gzipSupportStub.resolves(true);
         getParamStub.withArgs(DEBUG_MODE).returns('false');
         debugStub.returns(false);
 
@@ -1026,7 +1026,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: s2sCfg });
         const req = utils.deepClone(REQUEST);
         req.s2sConfig = s2sCfg;
-        gzipSupportStub.returns(true);
+        gzipSupportStub.resolves(true);
         getParamStub.withArgs(DEBUG_MODE).returns('true');
         debugStub.returns(true);
 
