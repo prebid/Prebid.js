@@ -170,6 +170,20 @@ describe('ocmBidAdapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
+      // ORTB Native 1.2 §4.4 allows exactly one content object per asset. Core's if/else chain
+      // validates only the first one it reaches, so an asset declaring several survives into
+      // nativeOrtbRequest and would reach PBS ambiguous about which object to fill.
+      it('rejects a derived ORTB request whose asset carries more than one content object', function () {
+        [
+          { id: 1, img: { type: 3, w: 150, h: 150 }, data: { type: 1 } },
+          { id: 1, title: { len: 80 }, img: { type: 3, w: 150, h: 150 } },
+          { id: 1, title: { len: 80 }, img: { type: 3, w: 150, h: 150 }, data: { type: 1 }, video: { mimes: ['video/mp4'] } }
+        ].forEach((asset) => {
+          const bid = { ...nativeBid, nativeOrtbRequest: { ver: '1.2', assets: [asset] } };
+          expect(spec.isBidRequestValid(bid), JSON.stringify(asset)).to.equal(false);
+        });
+      });
+
       it('accepts assets carrying any one of the four ORTB content objects', function () {
         [
           { id: 1, title: { len: 80 } },

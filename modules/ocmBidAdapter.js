@@ -177,13 +177,14 @@ function isValid(type, bid) {
 }
 
 /**
- * Determines whether a native asset declares one of the four ORTB content objects. Exactly one is
- * required of every asset (ORTB Native 1.2 §4.4); an asset with none is unfillable.
+ * Determines whether a native asset declares exactly one of the four ORTB content objects, as ORTB
+ * Native 1.2 §4.4 requires of every asset: one with none is unfillable, and one with several is
+ * ambiguous about which object the buyer should fill.
  * @param {Object} asset - An asset from the ORTB native request
- * @returns {boolean} True if the asset carries a title, img, data or video object
+ * @returns {boolean} True if the asset carries exactly one of a title, img, data or video object
  */
-function hasAssetContent(asset) {
-  return !!(asset?.title || asset?.img || asset?.data || asset?.video);
+function hasExactlyOneAssetContent(asset) {
+  return [asset?.title, asset?.img, asset?.data, asset?.video].filter(Boolean).length === 1;
 }
 
 /**
@@ -199,10 +200,11 @@ function hasAssetContent(asset) {
  * are therefore not re-validated here — core has already done exactly that (isOpenRTBBidRequestValid
  * in src/native), and a second, drifting copy of those rules is what let the empty imp through.
  *
- * The one rule core does not enforce is that an asset carry any content at all: isOpenRTBAssetValid
- * tests `img`, `title`, `data` and `video` in an if/else chain with no final branch, so an asset
- * declaring none of them (`{id: 1}`) matches nothing, falls through and is accepted. Such an asset
- * reaches PBS with nothing to fill, so it is checked here — the one check that is this adapter's to
+ * The one rule core does not enforce is that an asset carry exactly one content object:
+ * isOpenRTBAssetValid tests `img`, `title`, `data` and `video` in an if/else chain with no final
+ * branch, so an asset declaring none of them (`{id: 1}`) matches nothing, falls through and is
+ * accepted, and an asset declaring several is validated only on whichever the chain reaches first.
+ * Either reaches PBS malformed, so it is checked here — the one check that is this adapter's to
  * make, rather than a copy of core's.
  *
  * A native ad unit core rejected outright is logged, because the failure is otherwise invisible from
@@ -214,11 +216,11 @@ function hasAssetContent(asset) {
  * an ad unit somehow carried a native ORTB request, and the warning below would fire on every
  * native ad unit in a build that was never going to bid on one.
  * @param {BidRequest} bid - The bid request object
- * @returns {boolean} True if core derived a native ORTB request whose assets all carry content
+ * @returns {boolean} True if core derived a native ORTB request whose assets each carry exactly one content object
  */
 function hasNativeAssets(bid) {
   const assets = bid?.nativeOrtbRequest?.assets;
-  if (FEATURES.NATIVE && Array.isArray(assets) && assets.length > 0 && assets.every(hasAssetContent)) {
+  if (FEATURES.NATIVE && Array.isArray(assets) && assets.length > 0 && assets.every(hasExactlyOneAssetContent)) {
     return true;
   }
 
