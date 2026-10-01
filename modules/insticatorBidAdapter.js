@@ -1025,7 +1025,9 @@ export const spec = {
         method: 'POST',
         url: endpointUrl,
         options: {
-          contentType: 'application/json',
+          // The body is JSON; the header is text/plain because it is CORS-safelisted and
+          // application/json is not, so this avoids a preflight before every bid request.
+          contentType: 'text/plain',
           withCredentials: true,
         },
         data: JSON.stringify(ortbRequest),
