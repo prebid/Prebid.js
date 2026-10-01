@@ -1438,4 +1438,34 @@ describe('toOrtbNativeResponse', () => {
       }
     });
   });
+
+  it('should extract vasttag from a legacy video object with content', () => {
+    const vastXml = '<?xml version="1.0" encoding="UTF-8"?><VAST version="3.0"></VAST>';
+    const legacyResponse = {
+      video: { content: vastXml }
+    };
+    const request = toOrtbNativeRequest({
+      video: {
+        required: true,
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    sinon.assert.match(response.assets[0], {
+      video: {
+        vasttag: vastXml
+      }
+    });
+  });
+
+  it('should substitute ##hb_native_video## from a video object with content', () => {
+    const vastXml = '<?xml version="1.0" encoding="UTF-8"?><VAST version="3.0"></VAST>';
+    const data = getNativeRenderingData({
+      native: { video: { content: vastXml } }
+    }, { mediaTypes: { native: {} } });
+    expect(data.assets).to.deep.include({ key: 'video', value: vastXml });
+  });
 });

@@ -505,11 +505,12 @@ export function getAllAssetsMessage(data, adObject) {
 }
 
 /**
- * Native assets can be a string or an object with a url prop. Returns the value
- * appropriate for sending in adserver targeting or placeholder replacement.
+ * Native assets can be a string, an image object with a url, or a video object
+ * with content (e.g. AppNexus). Returns the value appropriate for adserver
+ * targeting or placeholder replacement.
  */
 function getAssetValue(value) {
-  return value?.url || value;
+  return value?.url || value?.content || value;
 }
 /**
  * converts Prebid legacy native assets request to OpenRTB format
@@ -809,8 +810,9 @@ export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbR
         break;
       case 'video':
         useRequestAsset(asset => asset.video != null, videoAsset => {
+          const vasttag = typeof value === 'string' ? value : value?.content;
           videoAsset.video = {
-            vasttag: value
+            vasttag
           };
         });
         break;
