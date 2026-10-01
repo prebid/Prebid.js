@@ -1466,6 +1466,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "biddigi",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "biddo",
       "aliasOf": null,
       "gvlid": null,
@@ -3461,6 +3468,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mycodemedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mytarget",
       "aliasOf": null,
       "gvlid": null,
@@ -3644,6 +3658,13 @@
     {
       "componentType": "bidder",
       "componentName": "netads",
+      "aliasOf": "nexx360",
+      "gvlid": 965,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "stmbidder",
       "aliasOf": "nexx360",
       "gvlid": 965,
       "disclosureURL": null
@@ -3979,6 +4000,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pmcxchange",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "prebidServer",
       "aliasOf": null,
       "gvlid": null,
@@ -4036,6 +4064,13 @@
     {
       "componentType": "bidder",
       "componentName": "pubcircle",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubfuture",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
