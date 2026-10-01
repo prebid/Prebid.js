@@ -25,8 +25,13 @@ Below is Mobian's suggested default for configuration:
 ```js
 pbjs.setConfig({
   realTimeData: {
+    // Maximum time (in milliseconds) Prebid waits for RTD providers.
+    // Use this with waitForIt below when current-auction targeting is needed.
+    auctionDelay: 500,
     dataProviders: [{
       name: 'mobianBrandSafety',
+      // Wait for Mobian before starting the auction.
+      waitForIt: true,
       params: {
         // Prefix for the targeting keys (default: 'mobian')
         prefix: 'mobian',
@@ -55,6 +60,17 @@ pbjs.setConfig({
 - With `advertiserTargeting: true` or `publisherTargeting: true`, add `includeTrafficQuality: true` to the `params` object.
 - With an array, list `tq` in it, e.g. `advertiserTargeting: ['genres', 'tq']`. `includeTrafficQuality` is ignored when the value is an array.
 - With `advertiserTargeting: true`, add `includeViewabilityTargeting: true` and `viewabilityTargetingPlacementSource` to request per-slot viewability targeting. With an array, list `vp` in `advertiserTargeting`; `includeViewabilityTargeting` is ignored.
+
+### Waiting for targeting data
+
+Mobian targeting data is loaded from network requests. To use the configured targeting keys in the current auction, configure both:
+
+- `waitForIt: true` inside the Mobian provider.
+- A positive `realTimeData.auctionDelay`, such as `500` milliseconds.
+
+`auctionDelay` is the maximum time Prebid waits. If a request takes longer or fails, the auction continues without that targeting data. Prebid does not wait forever.
+
+If you leave out either setting, targeting is best effort: a fast request may still finish in time, but the current auction can finish before the data arrives. A later auction may use the cached result.
 
 ## Functionality
 
@@ -232,7 +248,7 @@ Behavior when unavailable: may be returned as an empty array.
 
 ## GAM Targeting:
 
-For viewability, the Mobian RTD module requests and stores the per-ad-unit result during `getBidRequestData`. During `AUCTION_END`, it returns the result through the RTD `getTargetingData` interface as ad-server targeting data. Prebid then applies those values through its normal targeting flow when `pbjs.setTargetingForGPTAsync()` is called.
+For viewability, the Mobian RTD module requests and stores the per-ad-unit result during `getBidRequestData`. During `AUCTION_END`, it returns the result through the RTD `getTargetingData` interface as ad-server targeting data. Prebid then applies those values through its normal targeting flow when `pbjs.setTargetingForGPTAsync()` is called. See [Waiting for targeting data](#waiting-for-targeting-data) to make the values available for the current auction.
 
 "key" and "value" will be replaced with the various classifications as described in the previous section. The publisher should call `pbjs.setTargetingForGPTAsync()` after the relevant GPT slots have been defined and before the ad request is made, which enables the keys and values to be used for targeting or blocking in GAM.
 
