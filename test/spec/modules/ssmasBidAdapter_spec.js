@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, SSMAS_CODE, SSMAS_ENDPOINT, SSMAS_REQUEST_METHOD } from 'modules/ssmasBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 
 describe('ssmasBidAdapter', function () {
@@ -60,6 +61,152 @@ describe('ssmasBidAdapter', function () {
       });
       expect(request[0].data.regs.coppa).to.equal(1);
     });
+
+    it('sends credentials, so that the synced user ids reach the endpoint', function () {
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request[0].options.withCredentials).to.equal(true);
+    });
+
+    describe('user sync request', function () {
+      afterEach(function () {
+        config.resetConfig();
+      });
+
+      const syncsAsked = (userSync, request = bidderRequest) => {
+        config.setConfig({ userSync });
+        return spec.buildRequests([bid], request)[0].data.ext?.ssmas?.usersync;
+      };
+
+      it('asks for images alone with the default settings', function () {
+        expect(syncsAsked({ syncEnabled: true, filterSettings: { image: { bidders: '*', filter: 'include' } } }))
+          .to.deep.equal({ iframe: 0, image: 1 });
+      });
+
+      it('asks for iframes too when the publisher allows them to ssmas', function () {
+        expect(syncsAsked({
+          syncEnabled: true,
+          filterSettings: {
+            iframe: { bidders: ['ssmas'], filter: 'include' },
+            image: { bidders: '*', filter: 'include' }
+          }
+        })).to.deep.equal({ iframe: 1, image: 1 });
+      });
+
+      it('reads the all rule and the include and exclude lists', function () {
+        expect(syncsAsked({ syncEnabled: true, filterSettings: { all: { bidders: '*', filter: 'include' } } }))
+          .to.deep.equal({ iframe: 1, image: 1 });
+        expect(syncsAsked({
+          syncEnabled: true,
+          filterSettings: {
+            iframe: { bidders: ['other'], filter: 'include' },
+            image: { bidders: ['ssmas'], filter: 'exclude' }
+          }
+        })).to.be.undefined;
+      });
+
+      it('keeps Prebid defaults when the publisher only sets filters', function () {
+        config.setConfig({ userSync: { filterSettings: { iframe: { bidders: ['ssmas'], filter: 'include' } } } });
+        expect(spec.buildRequests([bid], bidderRequest)[0].data.ext.ssmas.usersync).to.deep.equal({ iframe: 1, image: 1 });
+      });
+
+      it('does not ask when syncs are off', function () {
+        expect(syncsAsked({ syncEnabled: false, filterSettings: { all: { bidders: '*', filter: 'include' } } })).to.be.undefined;
+      });
+
+      it('does not ask without consent to device access', function () {
+        const gdprConsent = {
+          gdprApplies: true,
+          consentString: 'CONSENT',
+          vendorData: { purpose: { consents: { 1: false } } }
+        };
+        expect(syncsAsked({ syncEnabled: true, filterSettings: { all: { bidders: '*', filter: 'include' } } }, { ...bidderRequest, gdprConsent }))
+          .to.be.undefined;
+      });
+    });
+
+    it('sends no credentials without consent to device access', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'CONSENT',
+        vendorData: { purpose: { consents: { 1: false } } }
+      };
+      const request = spec.buildRequests([bid], { ...bidderRequest, gdprConsent });
+      expect(request[0].options.withCredentials).to.equal(false);
+    });
+
+    it('sends credentials with consent to device access', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'CONSENT',
+        vendorData: { purpose: { consents: { 1: true } } }
+      };
+      const request = spec.buildRequests([bid], { ...bidderRequest, gdprConsent });
+      expect(request[0].options.withCredentials).to.equal(true);
+    });
+
+    it('forwards the consent the consent modules put in ortb2', function () {
+      const request = spec.buildRequests([bid], {
+        ...bidderRequest,
+        gdprConsent: { gdprApplies: true, consentString: 'CONSENT' },
+        uspConsent: '1YNN',
+        ortb2: {
+          ...bidderRequest.ortb2,
+          regs: { ext: { gdpr: 1, us_privacy: '1YNN' }, gpp: 'DBA', gpp_sid: [2] },
+          user: { ext: { consent: 'CONSENT' } }
+        }
+      });
+      const data = request[0].data;
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.regs.ext.us_privacy).to.equal('1YNN');
+      expect(data.regs.gpp).to.equal('DBA');
+      expect(data.user.ext.consent).to.equal('CONSENT');
+    });
+
+    it('sends the placement as the OpenRTB tagid', function () {
+      const request = spec.buildRequests([{ ...bid, params: { placementId: 10 } }], bidderRequest);
+      expect(request[0].data.imp[0].tagid).to.equal('10');
+      expect(request[0].data.imp[0].ext.placementId).to.equal(10);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const serverResponses = [{
+      body: {
+        id: 'auction-1',
+        ext: {
+          usersync: [
+            { bidder: 'partnerA', type: 'iframe', url: 'https://sync.partner-a.example/iframe?gdpr=1&gdpr_consent=CQ' },
+            { bidder: 'partnerB', type: 'image', url: 'https://sync.partner-b.example/pixel?gdpr=1&gdpr_consent=CQ' }
+          ]
+        }
+      }
+    }];
+
+    it('loads the syncs the server lists, as they come', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses);
+      expect(syncs).to.deep.equal([
+        { type: 'iframe', url: 'https://sync.partner-a.example/iframe?gdpr=1&gdpr_consent=CQ' },
+        { type: 'image', url: 'https://sync.partner-b.example/pixel?gdpr=1&gdpr_consent=CQ' }
+      ]);
+    });
+
+    it('drops a kind Prebid does not allow', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses);
+      expect(syncs).to.deep.equal([
+        { type: 'image', url: 'https://sync.partner-b.example/pixel?gdpr=1&gdpr_consent=CQ' }
+      ]);
+    });
+
+    it('syncs each partner once across responses', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [...serverResponses, ...serverResponses]);
+      expect(syncs).to.have.length(2);
+    });
+
+    it('does not sync without syncs in the answer or under COPPA', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])).to.deep.equal([]);
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [{ body: {} }, { body: '' }])).to.deep.equal([]);
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, null, null, null, true)).to.deep.equal([]);
+    });
   });
 
   describe('register adapter functions', () => {
@@ -78,14 +225,14 @@ describe('ssmasBidAdapter', function () {
       // empty bid
       expect(spec.isBidRequestValid({ bidId: '', params: {} })).to.be.false;
 
+      // no params at all
+      expect(spec.isBidRequestValid({ bidder: SSMAS_CODE, bidId: '1231' })).to.be.false;
+
       // empty bidId
-      bid.bidId = '';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(spec.isBidRequestValid({ ...bid, bidId: '' })).to.be.false;
 
       // empty placementId
-      bid.bidId = '1231';
-      bid.params.placementId = '';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(spec.isBidRequestValid({ ...bid, params: { placementId: '' } })).to.be.false;
     });
 
     it('check bid request bidder is Sem Seo & Mas', function() {
