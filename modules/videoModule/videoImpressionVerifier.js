@@ -15,6 +15,7 @@ export const UUID_MARKER = PB_PREFIX + 'uuid';
 /**
  * @function VideoImpressionVerifier#trackBid
  * @param {Object} bid - Bid that should be tracked.
+ * @param {Object} [adUnit] - Ad Unit for which the bid was made; its video.adServer.tracking config is applied when present.
  * @return {String} - Identifier for the bid being tracked.
  */
 
@@ -37,11 +38,11 @@ export const UUID_MARKER = PB_PREFIX + 'uuid';
 /**
  * Factory function for obtaining a Video Impression Verifier.
  * @param {Boolean} isCacheUsed - wether Prebid is configured to use a cache.
+ * @param {Object} bidTracker - Store of tracked bids.
  * @return {VideoImpressionVerifier}
  */
-export function videoImpressionVerifierFactory(isCacheUsed) {
+export function videoImpressionVerifierFactory(isCacheUsed, bidTracker) {
   const vastXmlEditor = vastXmlEditorFactory();
-  const bidTracker = tracker();
   if (isCacheUsed) {
     return cachedVideoImpressionVerifier(vastXmlEditor, bidTracker);
   }
@@ -63,9 +64,7 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     const uuid = superTrackBid(bid);
 
     if (vastUrl) {
-      const url = new URL(vastUrl);
-      url.searchParams.append(UUID_MARKER, uuid);
-      bid.vastUrl = url.toString();
+      bid.vastUrl = appendUuidMarker(vastUrl, uuid);
     } else if (vastXml) {
       bid.vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, uuid);
     }
@@ -82,18 +81,15 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const superGetBidIdentifiers = verifier.getBidIdentifiers;
   const vastXmlEditor = vastXmlEditor_;
 
-  verifier.trackBid = function (bid, globalAdUnits) {
+  verifier.trackBid = function (bid, adUnit) {
     const adIdOverride = superTrackBid(bid);
-    let { vastXml, vastUrl, adId, adUnitCode } = bid;
-    const adUnit = ((globalAdUnits) || []).find(adUnit => adUnitCode === adUnit.code);
-    const videoConfig = adUnit && adUnit.video;
-    const adServerConfig = videoConfig && videoConfig.adServer;
-    const trackingConfig = adServerConfig && adServerConfig.tracking;
+    let { vastXml, vastUrl, adId } = bid;
+    const trackingConfig = adUnit?.video?.adServer?.tracking;
     let impressionUrl;
     let impressionId;
     let errorUrl;
-    const impressionTracking = trackingConfig.impression;
-    const errorTracking = trackingConfig.error;
+    const impressionTracking = trackingConfig?.impression;
+    const errorTracking = trackingConfig?.error;
 
     if (impressionTracking) {
       impressionUrl = getTrackingUrl(impressionTracking.getUrl, bid);
@@ -107,7 +103,8 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     if (vastXml) {
       vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, adIdOverride, impressionUrl, impressionId, errorUrl);
     } else if (vastUrl) {
-      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, vastUrl, impressionUrl, impressionId, errorUrl);
+      bid.vastUrl = appendUuidMarker(vastUrl, adIdOverride);
+      vastXml = vastXmlEditor.buildVastWrapper(adIdOverride, bid.vastUrl, impressionUrl, impressionId, errorUrl, bid.vastTrackers);
     }
 
     bid.vastXml = vastXml;
@@ -129,6 +126,18 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 
     return getUrl(bid);
   }
+}
+
+function appendUuidMarker(vastUrl, uuid) {
+  let url;
+  try {
+    url = new URL(vastUrl);
+  } catch (e) {
+    return vastUrl;
+  }
+
+  url.searchParams.append(UUID_MARKER, uuid);
+  return url.toString();
 }
 
 export function baseImpressionVerifier(bidTracker_) {

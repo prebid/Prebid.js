@@ -1,4 +1,5 @@
-import { baseImpressionVerifier, PB_PREFIX } from 'modules/videoModule/videoImpressionVerifier.js';
+import { baseImpressionVerifier, cachedVideoImpressionVerifier, videoImpressionVerifier, videoImpressionVerifierFactory, PB_PREFIX, UUID_MARKER } from 'modules/videoModule/videoImpressionVerifier.js';
+import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 
 let trackerMock;
 
@@ -50,90 +51,211 @@ describe('Base Impression Verifier', function() {
   });
 });
 
-/*
-const adUnitCode = 'test_ad_unit_code';
-const sampleBid = {
-  adId: 'test_ad_id',
-  adUnitCode,
-  vastUrl: 'test_ad_url'
-};
-const sampleAdUnit = {
-  code: adUnitCode,
-};
+describe('Cached Video Impression Verifier', function () {
+  const adUnitCode = 'test_ad_unit_code';
+  const vastUrl = 'https://vast.example.com/tag';
+  const inlineVastXml = '<VAST version="4.2"><Ad id="bidder_ad_id"><InLine><AdSystem>Test</AdSystem></InLine></Ad></VAST>';
+  const impressionUrl = 'https://tracking.example.com/impression';
+  const errorUrl = 'https://tracking.example.com/error';
+  let verifier;
 
-const expectedImpressionUrl = 'test_impression_url';
-const expectedImpressionId = 'test_impression_id';
-const expectedErrorUrl = 'test_error_url';
-const expectedVastXml = 'test_xml';
+  function parseVast(vastXml) {
+    return new DOMParser().parseFromString(vastXml, 'text/xml');
+  }
 
-it('should not modify the bid\'s adXml when the tracking config is omitted', function () {
-  const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: null } } });
-  const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-  pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+  function adUnitWithTracking(tracking) {
+    return { code: adUnitCode, video: { adServer: { tracking } } };
+  }
 
-  bidAdjustmentCb(sampleBid);
-  // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.false;
-  // expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
+  beforeEach(function () {
+    resetTrackerMock();
+    verifier = cachedVideoImpressionVerifier(vastXmlEditorFactory(), trackerMock);
+  });
+
+  it('should replace the Ad id of the vast xml with the tracking uuid', function () {
+    const bid = { adId: 'a1', adUnitCode, vastXml: inlineVastXml };
+
+    const uuid = verifier.trackBid(bid);
+
+    expect(parseVast(bid.vastXml).querySelector('Ad').getAttribute('id')).to.equal(uuid);
+  });
+
+  it('should replace the Ad id of the vast xml even when the ad unit has no tracking config', function () {
+    const bid = { adId: 'a1', adUnitCode, vastXml: inlineVastXml };
+    const adUnit = { code: adUnitCode, video: {} };
+
+    const uuid = verifier.trackBid(bid, adUnit);
+
+    const vastDoc = parseVast(bid.vastXml);
+    expect(vastDoc.querySelector('Ad').getAttribute('id')).to.equal(uuid);
+    expect(vastDoc.querySelector('Impression')).to.be.null;
+    expect(vastDoc.querySelector('Error')).to.be.null;
+  });
+
+  it('should build a vast wrapper with the tracking uuid as Ad id and in the wrapped vast url', function () {
+    const bid = { adId: 'a1', adUnitCode, vastUrl };
+
+    const uuid = verifier.trackBid(bid);
+
+    const vastDoc = parseVast(bid.vastXml);
+    const expectedVastUrl = `${vastUrl}?${UUID_MARKER}=${uuid}`;
+    expect(vastDoc.querySelector('VAST').getAttribute('version')).to.equal('4.2');
+    expect(vastDoc.querySelector('Ad').getAttribute('id')).to.equal(uuid);
+    expect(vastDoc.querySelector('Wrapper VASTAdTagURI').textContent).to.equal(expectedVastUrl);
+    expect(bid.vastUrl).to.equal(expectedVastUrl);
+  });
+
+  it('should append the uuid marker to a vast url that already has query params', function () {
+    const bid = { adId: 'a1', adUnitCode, vastUrl: `${vastUrl}?foo=bar` };
+
+    const uuid = verifier.trackBid(bid);
+
+    const wrappedUrl = new URL(parseVast(bid.vastXml).querySelector('VASTAdTagURI').textContent);
+    expect(wrappedUrl.searchParams.get('foo')).to.equal('bar');
+    expect(wrappedUrl.searchParams.get(UUID_MARKER)).to.equal(uuid);
+  });
+
+  it('should still build the vast wrapper with the Ad id when the vast url cannot be parsed', function () {
+    const malformedVastUrl = '/relative/tag.xml';
+    const bid = { adId: 'a1', adUnitCode, vastUrl: malformedVastUrl };
+
+    const uuid = verifier.trackBid(bid);
+
+    const vastDoc = parseVast(bid.vastXml);
+    expect(vastDoc.querySelector('Ad').getAttribute('id')).to.equal(uuid);
+    expect(vastDoc.querySelector('VASTAdTagURI').textContent).to.equal(malformedVastUrl);
+    expect(bid.vastUrl).to.equal(malformedVastUrl);
+  });
+
+  it('should keep the bidder vast trackers in the vast wrapper built from the vast url', function () {
+    const bidderImpressionUrl = 'https://bidder.example.com/impression';
+    const bidderErrorUrl = 'https://bidder.example.com/error';
+    const bidderStartUrl = 'https://bidder.example.com/start';
+    const bid = {
+      adId: 'a1',
+      adUnitCode,
+      vastUrl,
+      vastTrackers: {
+        impression: [bidderImpressionUrl],
+        error: [bidderErrorUrl],
+        trackingEvents: [{ event: 'start', url: bidderStartUrl }]
+      }
+    };
+
+    verifier.trackBid(bid);
+
+    const vastDoc = parseVast(bid.vastXml);
+    const impressionUrls = Array.from(vastDoc.querySelectorAll('Wrapper > Impression')).map(node => node.textContent);
+    const errorUrls = Array.from(vastDoc.querySelectorAll('Wrapper > Error')).map(node => node.textContent);
+    const startTracker = vastDoc.querySelector('Wrapper Creatives Creative Linear TrackingEvents Tracking[event="start"]');
+    expect(impressionUrls).to.deep.equal([bidderImpressionUrl]);
+    expect(errorUrls).to.deep.equal([bidderErrorUrl]);
+    expect(startTracker?.textContent).to.equal(bidderStartUrl);
+  });
+
+  it('should append the impression and error trackers from the ad unit tracking config', function () {
+    const bid = { adId: 'a1', adUnitCode, vastXml: inlineVastXml };
+    const adUnit = adUnitWithTracking({
+      impression: { getUrl: () => impressionUrl, id: 'impression_id' },
+      error: { getUrl: () => errorUrl }
+    });
+
+    verifier.trackBid(bid, adUnit);
+
+    const vastDoc = parseVast(bid.vastXml);
+    const impressionNode = vastDoc.querySelector('InLine Impression');
+    expect(impressionNode.textContent).to.equal(impressionUrl);
+    expect(impressionNode.getAttribute('id')).to.equal('impression_id');
+    expect(vastDoc.querySelector('InLine Error').textContent).to.equal(errorUrl);
+  });
+
+  it('should generate the impression id from the bid ad id when not specified in the tracking config', function () {
+    const bid = { adId: 'a1', adUnitCode, vastUrl };
+    const adUnit = adUnitWithTracking({ impression: { getUrl: () => impressionUrl } });
+
+    verifier.trackBid(bid, adUnit);
+
+    expect(parseVast(bid.vastXml).querySelector('Impression').getAttribute('id')).to.equal('a1-impression');
+  });
+
+  it('should match the ad id of the cached vast to the tracked bid', function () {
+    const bid = { adId: 'a1', adUnitCode, vastXml: inlineVastXml };
+    verifier.trackBid(bid);
+    const vastAdId = parseVast(bid.vastXml).querySelector('Ad').getAttribute('id');
+
+    const result = verifier.getBidIdentifiers(vastAdId, 'https://ignored.example.com', []);
+
+    expect(result).to.deep.equal({ adId: 'a1', adUnitCode, requestId: undefined, auctionId: undefined });
+  });
 });
 
-it('should request a vast wrapper when only an ad url is provided', function () {
-  const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: { } } } });
-  const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-  pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+describe('Video Impression Verifier', function () {
+  const vastUrl = 'https://vast.example.com/tag';
+  let verifier;
 
-  bidAdjustmentCb(sampleBid);
-  // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.false;
-  // expect(vastXmlEditorMock.buildVastWrapper.called).to.be.true;
+  beforeEach(function () {
+    resetTrackerMock();
+    verifier = videoImpressionVerifier(vastXmlEditorFactory(), trackerMock);
+  });
+
+  it('should append the uuid marker to the vast url', function () {
+    const bid = { adId: 'a1', vastUrl };
+
+    const uuid = verifier.trackBid(bid);
+
+    expect(bid.vastUrl).to.equal(`${vastUrl}?${UUID_MARKER}=${uuid}`);
+  });
+
+  it('should leave a vast url that cannot be parsed unchanged', function () {
+    const malformedVastUrl = '/relative/tag.xml';
+    const bid = { adId: 'a1', vastUrl: malformedVastUrl };
+
+    verifier.trackBid(bid);
+
+    expect(bid.vastUrl).to.equal(malformedVastUrl);
+  });
+
+  it('should match the bid from the uuid marker of the loaded ad tag url', function () {
+    const bid = { adId: 'a1', vastUrl };
+    verifier.trackBid(bid);
+
+    const result = verifier.getBidIdentifiers(null, bid.vastUrl, []);
+
+    expect(result).to.deep.equal({ adId: 'a1', adUnitCode: undefined, requestId: undefined, auctionId: undefined });
+  });
 });
 
-it('should request the addition of tracking nodes when an ad xml is provided', function () {
-  const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: { } } } });
-  const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-  pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
+describe('Video Impression Verifier Factory', function () {
+  beforeEach(function () {
+    resetTrackerMock();
+  });
 
-  const bid = Object.assign({}, sampleBid, { vastXml: 'test_xml' });
-  bidAdjustmentCb(bid);
-  // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
-  // expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
+  it('should return the cached verifier when cache is used', function () {
+    const verifier = videoImpressionVerifierFactory(true, trackerMock);
+    const bid = { adId: 'a1', vastUrl: 'https://vast.example.com/tag' };
+
+    verifier.trackBid(bid);
+
+    expect(bid.vastXml).to.be.a('string');
+  });
+
+  it('should return the non cached verifier when cache is not used', function () {
+    const verifier = videoImpressionVerifierFactory(false, trackerMock);
+    const bid = { adId: 'a1', vastUrl: 'https://vast.example.com/tag' };
+
+    verifier.trackBid(bid);
+
+    expect(bid.vastXml).to.be.undefined;
+  });
+
+  it('should keep a bid tracked by a previous verifier resolvable when sharing the tracker', function () {
+    const previousVerifier = videoImpressionVerifierFactory(false, trackerMock);
+    const bid = { adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1', vastUrl: 'https://vast.example.com/tag' };
+    const uuid = previousVerifier.trackBid(bid);
+    const nextVerifier = videoImpressionVerifierFactory(true, trackerMock);
+
+    const result = nextVerifier.getBidIdentifiers(uuid);
+
+    expect(result).to.deep.equal({ adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1' });
+  });
 });
-
-it('should pass the tracking information as args to the xml editing function', function () {
-  const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
-    impression: {
-      url: expectedImpressionUrl,
-      id: expectedImpressionId
-    },
-    error: {
-      url: expectedErrorUrl
-    }
-  } } } });
-  const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-  pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
-
-  const bid = Object.assign({}, sampleBid, { vastXml: expectedVastXml });
-  bidAdjustmentCb(bid);
-  // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
-  // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.calledWith(expectedVastXml, expectedImpressionUrl, expectedImpressionId, expectedErrorUrl))
-  // expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
-});
-
-it('should generate the impression id when not specified in config', function () {
-  const adUnit = Object.assign({}, sampleAdUnit, { video: { adServer: { tracking: {
-    impression: {
-      url: expectedImpressionUrl,
-    },
-    error: {
-      url: expectedErrorUrl
-    }
-  } } } });
-  const pbGlobal = Object.assign({}, pbGlobalMock, { adUnits: [ adUnit ] });
-  pbVideoFactory(null, () => ({}), pbGlobal, pbEvents);
-
-  const bid = Object.assign({}, sampleBid, { vastXml: expectedVastXml });
-  bidAdjustmentCb(bid);
-  const expectedGeneratedId = sampleBid.adId + '-impression';
-  // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.called).to.be.true;
-  // expect(vastXmlEditorMock.getVastXmlWithTrackingNodes.calledWith(expectedVastXml, expectedImpressionUrl, expectedGeneratedId, expectedErrorUrl))
-  // expect(vastXmlEditorMock.buildVastWrapper.called).to.be.false;
-});
-*/
