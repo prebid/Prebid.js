@@ -106,7 +106,7 @@ export interface AdapterRequest {
   url: string;
   data: any;
   method?: 'GET' | 'POST';
-  options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean | 'gzip' };
+  options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean };
 }
 
 export interface ServerResponse {
@@ -560,7 +560,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         );
         break;
       case 'POST':
-        const enableGZipCompression = request.options?.endpointCompression === true || request.options?.endpointCompression === 'gzip';
+        const enableGZipCompression = request.options?.endpointCompression;
         const callAjax = ({ url, payload }) => {
           doAjax(
             url,
@@ -578,22 +578,22 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         }
 
         if (enableGZipCompression && !debugMode) {
-          const sendUncompressed = () => callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
-          isGzipCompressionSupported().then((supported) => {
+          const sendUncompressed = wrapCallback(() => callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) }));
+          isGzipCompressionSupported().then(wrapCallback((supported) => {
             if (supported) {
               return compressDataWithGZip(request.data)
-                .then(compressedPayload => {
+                .then(wrapCallback(compressedPayload => {
                   const url = new URL(request.url);
                   if (!url.searchParams.has('gzip')) {
                     url.searchParams.set('gzip', '1');
                   }
                   callAjax({ url: url.href, payload: compressedPayload });
-                })
+                }))
                 .catch(sendUncompressed);
             } else {
               sendUncompressed();
             }
-          }).catch(sendUncompressed);
+          })).catch(sendUncompressed);
         } else {
           callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
         }

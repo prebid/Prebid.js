@@ -1806,21 +1806,6 @@ describe('bidderFactory', () => {
       expect(ajaxStub.firstCall.args[2]).to.equal(compressedPayload); // Ensure compressed data is sent
     });
 
-    it('should send a gzip compressed payload when endpointCompression is "gzip"', async function () {
-      const compressedPayload = 'compressedData';
-      endpointCompression = 'gzip';
-      isGzipSupportedStub.resolves(true);
-      gzipStub.resolves(compressedPayload);
-      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
-      debugTurnedOnStub.returns(false);
-
-      await runRequest();
-
-      expect(gzipStub.calledOnceWith(data)).to.be.true;
-      expect(ajaxStub.firstCall.args[0]).to.include('gzip=1');
-      expect(ajaxStub.firstCall.args[2]).to.equal(compressedPayload);
-    });
-
     it('should send the request normally if gzip is not supported', async () => {
       isGzipSupportedStub.resolves(false);
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
@@ -1830,6 +1815,21 @@ describe('bidderFactory', () => {
       expect(ajaxStub.calledOnce).to.be.true;
       expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1'); // Ensure URL does not have gzip=1
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data)); // Ensure original data is sent
+    });
+
+    it('should preserve bidder context when gzip is not supported', async () => {
+      let bidderAtDispatch;
+      ajaxStub.callsFake(function(url, callbacks) {
+        bidderAtDispatch = config.getCurrentBidder();
+        callbacks.success('response body', { getResponseHeader: sinon.stub().returns('headerContent') });
+      });
+      isGzipSupportedStub.resolves(false);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+
+      await runRequest();
+
+      expect(bidderAtDispatch).to.equal(CODE);
     });
 
     it('should send the request normally if gzip compression rejects', async () => {
