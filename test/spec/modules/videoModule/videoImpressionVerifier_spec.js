@@ -1,4 +1,4 @@
-import { baseImpressionVerifier, cachedVideoImpressionVerifier, videoImpressionVerifier, PB_PREFIX, UUID_MARKER } from 'modules/videoModule/videoImpressionVerifier.js';
+import { baseImpressionVerifier, cachedVideoImpressionVerifier, videoImpressionVerifier, videoImpressionVerifierFactory, PB_PREFIX, UUID_MARKER } from 'modules/videoModule/videoImpressionVerifier.js';
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 
 let trackerMock;
@@ -222,5 +222,40 @@ describe('Video Impression Verifier', function () {
     const result = verifier.getBidIdentifiers(null, bid.vastUrl, []);
 
     expect(result).to.deep.equal({ adId: 'a1', adUnitCode: undefined, requestId: undefined, auctionId: undefined });
+  });
+});
+
+describe('Video Impression Verifier Factory', function () {
+  beforeEach(function () {
+    resetTrackerMock();
+  });
+
+  it('should return the cached verifier when cache is used', function () {
+    const verifier = videoImpressionVerifierFactory(true, trackerMock);
+    const bid = { adId: 'a1', vastUrl: 'https://vast.example.com/tag' };
+
+    verifier.trackBid(bid);
+
+    expect(bid.vastXml).to.be.a('string');
+  });
+
+  it('should return the non cached verifier when cache is not used', function () {
+    const verifier = videoImpressionVerifierFactory(false, trackerMock);
+    const bid = { adId: 'a1', vastUrl: 'https://vast.example.com/tag' };
+
+    verifier.trackBid(bid);
+
+    expect(bid.vastXml).to.be.undefined;
+  });
+
+  it('should keep a bid tracked by a previous verifier resolvable when sharing the tracker', function () {
+    const previousVerifier = videoImpressionVerifierFactory(false, trackerMock);
+    const bid = { adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1', vastUrl: 'https://vast.example.com/tag' };
+    const uuid = previousVerifier.trackBid(bid);
+    const nextVerifier = videoImpressionVerifierFactory(true, trackerMock);
+
+    const result = nextVerifier.getBidIdentifiers(uuid);
+
+    expect(result).to.deep.equal({ adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1' });
   });
 });

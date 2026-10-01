@@ -38,11 +38,11 @@ export const UUID_MARKER = PB_PREFIX + 'uuid';
 /**
  * Factory function for obtaining a Video Impression Verifier.
  * @param {Boolean} isCacheUsed - wether Prebid is configured to use a cache.
+ * @param {Object} bidTracker - Store of tracked bids.
  * @return {VideoImpressionVerifier}
  */
-export function videoImpressionVerifierFactory(isCacheUsed) {
+export function videoImpressionVerifierFactory(isCacheUsed, bidTracker) {
   const vastXmlEditor = vastXmlEditorFactory();
-  const bidTracker = tracker();
   if (isCacheUsed) {
     return cachedVideoImpressionVerifier(vastXmlEditor, bidTracker);
   }
