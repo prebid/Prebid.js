@@ -361,7 +361,7 @@ describe('InsticatorBidAdapter', function () {
 
     it('should return valid options', function () {
       expect(serverRequest.options).to.be.an('object');
-      expect(serverRequest.options.contentType).to.equal('application/json');
+      expect(serverRequest.options.contentType).to.equal('text/plain');
       expect(serverRequest.options.withCredentials).to.be.true;
     });
 
@@ -890,7 +890,7 @@ describe('InsticatorBidAdapter', function () {
       method: 'POST',
       url: 'https://ex.ingage.tech/v1/openrtb',
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: true,
       },
       data: '',
@@ -1095,7 +1095,7 @@ describe('InsticatorBidAdapter', function () {
         method: 'POST',
         url: 'https://ex.ingage.tech/v1/openrtb',
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true,
         },
         data: '',
@@ -1621,7 +1621,7 @@ describe('InsticatorBidAdapter', function () {
       method: 'POST',
       url: 'https://ex.ingage.tech/v1/openrtb',
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: true,
       },
       data: '',
@@ -1704,7 +1704,7 @@ describe('InsticatorBidAdapter', function () {
       method: 'POST',
       url: 'https://ex.ingage.tech/v1/openrtb',
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: true,
       },
       data: '',
