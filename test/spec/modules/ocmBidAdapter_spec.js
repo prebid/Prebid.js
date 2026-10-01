@@ -798,6 +798,21 @@ describe('ocmBidAdapter', function () {
       expect(trackers[0].url).to.not.contain('${AUCTION_PRICE}');
     });
 
+    // A PBS event URL distinct from burl belongs to PBS: its ${AUCTION_BID_ID} is not the DSP's
+    // bid.id, so only the DSP's billing URL may be rewritten.
+    it('does not rewrite a distinct events.imp URL', function () {
+      const burl = 'https://dsp.orangeclickmedia.com/bill?bidid=${AUCTION_BID_ID}&price=${AUCTION_PRICE}';
+      const imp = 'https://pbam.orangeclickmedia.com/event?t=imp&b=${AUCTION_BID_ID}&price=${AUCTION_PRICE}';
+      const response = macroResponse({ burl, events: { imp }, bidId: 'ortb-bid-7' });
+      const bid = interpret(response);
+      const raw = response.body.seatbid[0].bid[0];
+      expect(raw.burl).to.equal(`https://dsp.orangeclickmedia.com/bill?bidid=ortb-bid-7&price=${CONVERTED_PRICE}`);
+      expect(raw.ext.prebid.events.imp).to.equal(imp);
+      const urls = impTrackers(bid).map((t) => t.url);
+      expect(urls).to.include(raw.burl);
+      expect(urls).to.not.include(`https://pbam.orangeclickmedia.com/event?t=imp&b=ortb-bid-7&price=${CONVERTED_PRICE}`);
+    });
+
     it('still registers exactly one impression tracker when burl equals a macro-free events.imp', function () {
       const bid = interpret(macroResponse({ burl: IMP_URL, events: { imp: IMP_URL } }));
       expect(impTrackers(bid)).to.have.lengthOf(1);

@@ -539,15 +539,17 @@ function substituteBillingMacros(ortbResponse) {
         return;
       }
 
-      // Both URLs below become EVENT_TYPE_IMPRESSION trackers, and addPbsEventTrackers de-duplicates
-      // them by string equality. Substituting both here — upstream of either tracker path — keeps
-      // that comparison valid by construction; substituting only one would fire billing twice.
-      if (isStr(bid.burl)) {
-        bid.burl = replaceMacros(bid.burl, subs);
+      if (!isStr(bid.burl)) {
+        return;
       }
-      const impUrl = bid?.ext?.prebid?.events?.imp;
-      if (isStr(impUrl)) {
-        deepSetValue(bid, 'ext.prebid.events.imp', replaceMacros(impUrl, subs));
+      // Both URLs become EVENT_TYPE_IMPRESSION trackers, and addPbsEventTrackers de-duplicates them
+      // by string equality, so when PBS points events.imp at the same URL as burl it must be
+      // rewritten identically or billing would fire twice. A distinct events.imp is a PBS-owned
+      // event URL whose macros (e.g. ${AUCTION_BID_ID}) are not the DSP's to fill, so it is left as is.
+      const original = bid.burl;
+      bid.burl = replaceMacros(original, subs);
+      if (bid?.ext?.prebid?.events?.imp === original) {
+        deepSetValue(bid, 'ext.prebid.events.imp', bid.burl);
       }
     });
   });
