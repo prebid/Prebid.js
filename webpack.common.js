@@ -24,6 +24,11 @@ const browsers = [
   'firefox >= 50',
   'safari >= 10'
 ];
+const legacySyntaxTargets = {
+  chrome: '50',
+  firefox: '50',
+  safari: '10'
+};
 
 module.exports = function (config) {
   config.target = isES5Mode ? ['web', 'es5'] : 'web';
@@ -41,9 +46,7 @@ module.exports = function (config) {
         {
           loader: 'babel-loader',
           options: {
-            // Codex bot: Babel 8 no longer defaults to ES5, so keep the legacy
-            // bundle's syntax targets explicit while selecting polyfills separately.
-            targets: { ie: '11', safari: '11' },
+            targets: legacySyntaxTargets,
             presets: [
               // syntax only - polyfills are handled below
               ['@babel/preset-env', {
