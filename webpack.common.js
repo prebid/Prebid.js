@@ -51,7 +51,12 @@ module.exports = function (config) {
               // syntax only - polyfills are handled below
               ['@babel/preset-env', {
                 useBuiltIns: false,
-                modules: 'commonjs'
+                modules: 'commonjs',
+                // Emit ES5 regardless of the support list. Deriving syntax from
+                // `browsers` would stop producing ES5 the moment the oldest target
+                // supports ES2015 - and without any targets at all, package.json's
+                // `browserslist` ("> 0.25%") would apply instead.
+                forceAllTransforms: true
               }]
             ],
             plugins: [
