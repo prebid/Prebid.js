@@ -635,6 +635,35 @@ describe('User ID', function () {
       sinon.assert.calledOnce(addedSubmodule.getId);
     });
 
+    it('uses a stored ID when a submodule is added without autoRefresh', async function () {
+      const firstSubmodule = createMockIdSubmodule('firstId', { id: { firstId: 'first' } });
+      const addedSubmodule = createMockIdSubmodule('addedId', { id: { addedId: 'fetched' } });
+      sinon.spy(addedSubmodule, 'getId');
+      init(config);
+      setSubmoduleRegistry([firstSubmodule, addedSubmodule]);
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{ name: 'firstId' }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+
+      const expires = new Date(Date.now() + 10000).toUTCString();
+      coreStorage.setCookie('addedId', JSON.stringify({ addedId: 'stored' }), expires);
+      coreStorage.setCookie('addedId_cst', getConsentHash(), expires);
+      config.mergeConfig({
+        userSync: {
+          userIds: [{ name: 'addedId', storage: { name: 'addedId', type: 'cookie' } }]
+        }
+      });
+
+      expect(await getGlobal().getUserIdsAsync()).to.include({ addedId: 'stored' });
+      sinon.assert.notCalled(addedSubmodule.getId);
+      coreStorage.setCookie('addedId', '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('addedId_cst', '', EXPIRED_COOKIE_DATE);
+    });
+
     it('pbjs.getUserIds(Async) should prioritize user ids according to config available to core', () => {
       init(config);
 
@@ -3600,8 +3629,9 @@ describe('User ID', function () {
         [existing, added]
       );
 
-      expect(result.find(item => item.submodule === existing).refreshIds).to.not.be.ok;
-      expect(result.find(item => item.submodule === added).refreshIds).to.be.true;
+      expect(result.find(item => item.submodule === existing).initializeIds).to.be.false;
+      expect(result.find(item => item.submodule === added).initializeIds).to.be.true;
+      expect(result.some(item => item.refreshIds)).to.be.false;
     });
   });
   describe('user id modules - enforceStorageType', () => {
