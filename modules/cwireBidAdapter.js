@@ -13,6 +13,11 @@ import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { sendBeacon } from '../src/ajax.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getConnectionDownLink } from '../libraries/fpdUtils/pageInfo.js';
+
+/**
+ * @typedef {import('./cwireBidAdapter.d.ts').CwireBidderParams} CwireBidderParams
+ */
 
 const BIDDER_CODE = 'cwire';
 const CWID_KEY = 'cw_cwid';
@@ -45,10 +50,6 @@ function getRefGroups() {
 function getFeatureFlags() {
   const ff = getParameterByName('cwfeatures');
   return ff ? ff.split(',') : [];
-}
-
-function getConnectionDownLink(nav) {
-  return nav?.connection?.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
 function getSlotSignals(bidRequest) {
@@ -109,7 +110,7 @@ const converter = ortbConverter({
       ...(cwcreative && { cwcreative }),
       ...(debug && { debug: true }),
       pageViewId: bidderRequest.pageViewId,
-      networkBandwidth: getConnectionDownLink(window.navigator),
+      networkBandwidth: getConnectionDownLink() ?? '',
       sdk: { version: '$prebid.version$' },
     };
 
@@ -127,6 +128,7 @@ const converter = ortbConverter({
   },
 });
 
+/** @type {import('../src/adapters/bidderFactory.js').BidderSpec<'cwire'>} */
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,

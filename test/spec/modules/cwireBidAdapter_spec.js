@@ -240,6 +240,19 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
   });
 
   describe('buildRequests: request.ext.cwire (page-level signals)', function () {
+    [
+      { connection: { downlink: 4.5 }, expected: '4.5' },
+      { connection: { downlink: 0 }, expected: '0' },
+      { connection: { downlink: -1 }, expected: '' },
+      { connection: undefined, expected: '' },
+    ].forEach(({ connection, expected }) => {
+      it(`writes networkBandwidth=${JSON.stringify(expected)} for connection ${JSON.stringify(connection)}`, function () {
+        sandbox.stub(window.navigator, 'connection').value(connection);
+        const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+        expect(req.data.ext.cwire.networkBandwidth).to.equal(expected);
+      });
+    });
+
     it('writes pageViewId and sdk.version', function () {
       const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
       const ext = req.data.ext.cwire;
