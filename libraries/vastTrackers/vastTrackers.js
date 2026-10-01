@@ -69,7 +69,7 @@ export function insertVastTrackers(trackers, vastXml) {
     if (wrappers.length) {
       wrappers.forEach(wrapper => {
         if (isArray(trackers.impression) && trackers.impression.length) {
-          trackers.impression.forEach(trackingUrl => {
+          trackers.impression.filter(trackingUrl => !hasUrlChild(wrapper, 'Impression', trackingUrl)).forEach(trackingUrl => {
             const impression = doc.createElement('Impression');
             impression.appendChild(doc.createCDATASection(trackingUrl));
             wrapper.appendChild(impression);
@@ -77,7 +77,7 @@ export function insertVastTrackers(trackers, vastXml) {
         }
 
         if (isArray(trackers.error) && trackers.error.length) {
-          trackers.error.forEach(trackingUrl => {
+          trackers.error.filter(trackingUrl => !hasUrlChild(wrapper, 'Error', trackingUrl)).forEach(trackingUrl => {
             const errorElement = doc.createElement('Error');
             errorElement.appendChild(doc.createCDATASection(trackingUrl));
             wrapper.appendChild(errorElement);
@@ -140,12 +140,22 @@ function insertLinearTrackingEvents(doc, wrapper, trackers) {
  * @param {Array<{event: string, url: string}>} trackers - Array of tracking event objects
  */
 function appendTrackingElements(doc, trackingEvents, trackers) {
-  trackers.forEach(({ event, url }) => {
+  trackers.filter(({ event, url }) => !hasTrackingEvent(trackingEvents, event, url)).forEach(({ event, url }) => {
     const trackingElement = doc.createElement('Tracking');
     trackingElement.setAttribute('event', event);
     trackingElement.appendChild(doc.createCDATASection(url));
     trackingEvents.appendChild(trackingElement);
   });
+}
+
+function hasUrlChild(parent, tagName, url) {
+  return Array.from(parent.children).some(child => child.tagName === tagName && child.textContent.trim() === url);
+}
+
+function hasTrackingEvent(trackingEvents, event, url) {
+  return Array.from(trackingEvents.children).some(child =>
+    child.tagName === 'Tracking' && child.getAttribute('event') === event && child.textContent.trim() === url
+  );
 }
 
 export function getVastTrackers(bid, { index = auctionManager.index }) {
