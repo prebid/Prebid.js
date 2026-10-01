@@ -46,6 +46,8 @@ declare module '../src/consentHandler' {
 
 let consentData;
 let enabled = false;
+// Codex bot: keep the CMP deletion listener singleton across repeated consent lookups.
+let deletionRequestRegistered = false;
 
 // consent APIs
 const uspCallMap = {
@@ -112,12 +114,16 @@ function lookupUspConsent({ onSuccess, onError }) {
     callback: callbackHandler.consentDataCallback
   });
 
-  cmp({
-    command: 'registerDeletion',
-    callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
-  }).catch(e => {
-    logError('Error invoking CMP `registerDeletion`:', e);
-  });
+  if (!deletionRequestRegistered) {
+    deletionRequestRegistered = true;
+    cmp({
+      command: 'registerDeletion',
+      callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
+    }).catch(e => {
+      deletionRequestRegistered = false;
+      logError('Error invoking CMP `registerDeletion`:', e);
+    });
+  }
 }
 
 /**
@@ -224,6 +230,7 @@ export function resetConsentData() {
   consentTimeout = undefined;
   uspDataHandler.reset();
   enabled = false;
+  deletionRequestRegistered = false;
 }
 
 /**
