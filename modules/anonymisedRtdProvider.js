@@ -23,7 +23,7 @@ export function createRtdProvider(moduleName) {
 
   /**
    * localStorage key holding the SignalLift blob written by the Anonymised Marketing Tag. It carries
-   * several unrelated fields (the CUID, a hashed email); only `iabAudience` is ever read here.
+   * several fields unrelated to this module, the CUID among them; only `iabAudience` is ever read here.
    */
   const SIGNAL_LIFT_STORAGE_KEY = 'anon-sl';
 
@@ -124,8 +124,8 @@ export function createRtdProvider(moduleName) {
     }
 
     // Parsed here rather than through tryParse, which logs the value it failed on. This blob can
-    // hold the CUID and a hashed email, and logError emits an AUCTION_DEBUG event whatever the
-    // debug setting, so a malformed value would carry those identifiers to any subscriber. The
+    // hold the CUID and other unrelated fields, and logError emits an AUCTION_DEBUG event whatever
+    // the debug setting, so a malformed value would carry that data to any subscriber. The
     // thrown error is not logged either: V8 quotes the first ten characters of the input in a
     // SyntaxError message when the text is malformed from the start. Only the error's class name,
     // which cannot contain stored data, is reported.
@@ -146,8 +146,8 @@ export function createRtdProvider(moduleName) {
       return undefined;
     }
 
-    // Deliberately narrow: `anon-sl` also holds the CUID and a hashed email, and neither belongs in
-    // user.data. Only the taxonomy IDs are read, and each one is coerced to the string ORTB expects.
+    // Deliberately narrow: `anon-sl` also holds the CUID and other unrelated fields, and none of
+    // them belongs in user.data. Only the taxonomy IDs are read, and each one is coerced to the string ORTB expects.
     const iabAudience = signalLift.iabAudience;
     if (!isArray(iabAudience)) {
       return undefined;
