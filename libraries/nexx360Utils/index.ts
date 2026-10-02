@@ -193,7 +193,7 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
       demandSource: bid.ext.ssp,
     },
   };
-  if (bid.dealid) response.dealid = bid.dealid;
+  if (bid.dealid) response.dealId = bid.dealid;
 
   if (bid.ext.mediaType === BANNER) response.ad = bid.adm;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm;
