@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getWinDimensions } from '../src/utils.js';
+import { getWinDimensions, isPlainObject } from '../src/utils.js';
 
 const BIDDER_CODE = 'ezoic';
 const GVL_ID = 347;
@@ -279,6 +279,22 @@ function originalBidByRequestId(request) {
   }, {});
 }
 
+function buildBidMeta(rawMeta) {
+  const meta = isPlainObject(rawMeta) ? { ...rawMeta } : {};
+  const rawDomains = rawMeta?.advertiserDomains;
+  if (Array.isArray(rawDomains) && rawDomains.length) {
+    const advertiserDomains = rawDomains.filter((domain) => typeof domain === 'string' && domain);
+    if (advertiserDomains.length) {
+      meta.advertiserDomains = advertiserDomains;
+    } else {
+      delete meta.advertiserDomains;
+    }
+  } else {
+    delete meta.advertiserDomains;
+  }
+  return meta;
+}
+
 function getFallbackSize(sourceBid, isVideo) {
   if (isVideo) {
     const videoSize = getPrimaryVideoSize(sourceBid);
@@ -301,15 +317,17 @@ function normalizeBid(rawBid, sourceBid) {
     return;
   }
 
-  if (rawBid.mediaType === VIDEO && !isVideoBidRequest(sourceBid)) {
-    return;
-  }
-  if (rawBid.mediaType === NATIVE && !isNativeBidRequest(sourceBid)) {
+  const mediaType = rawBid.mediaType;
+  const offered =
+    (mediaType === BANNER && sourceBid.mediaTypes?.banner) ||
+    (mediaType === VIDEO && isVideoBidRequest(sourceBid)) ||
+    (mediaType === NATIVE && isNativeBidRequest(sourceBid));
+  if (!offered) {
     return;
   }
 
-  const isVideo = rawBid.mediaType === VIDEO && isVideoBidRequest(sourceBid);
-  const isNative = rawBid.mediaType === NATIVE && isNativeBidRequest(sourceBid);
+  const isVideo = mediaType === VIDEO;
+  const isNative = mediaType === NATIVE;
 
   // Outstream setup (publisher renderer vs cache/useCacheKey) is validated by
   // core's checkVideoBidSetup hook, which drops invalid bids with a clear
@@ -334,14 +352,8 @@ function normalizeBid(rawBid, sourceBid) {
     creativeId: String(rawBid.creativeId),
     netRevenue: rawBid.netRevenue !== false,
     ttl: rawBid.ttl || DEFAULT_TTL,
-    mediaType: isNative ? NATIVE : (isVideo ? VIDEO : BANNER),
-    // Most reviewers require meta.advertiserDomains to be present on every
-    // bid for block-list enforcement, so default to an empty array when the
-    // server does not send one.
-    meta: {
-      ...(rawBid.meta || {}),
-      advertiserDomains: rawBid.meta?.advertiserDomains || [],
-    },
+    mediaType,
+    meta: buildBidMeta(rawBid.meta),
   };
   if (!isNative || rawBid.width || rawBid.height) {
     bidResponse.width = width;
@@ -364,47 +376,41 @@ function normalizeBid(rawBid, sourceBid) {
   return bidResponse;
 }
 
-function usersyncBiddersFromServerResponses(serverResponses) {
-  const bidders = [];
-  const seen = {};
-  if (!Array.isArray(serverResponses)) {
-    return bidders;
-  }
-  try {
-    for (const response of serverResponses) {
-      const list = response?.body?.usersync?.bidders;
-      if (!Array.isArray(list)) {
-        continue;
-      }
-      for (const entry of list) {
-        if (typeof entry !== 'string') {
-          continue;
-        }
-        const bidder = entry.trim().toLowerCase();
-        if (!/^[a-z0-9_]{1,40}$/.test(bidder) || seen[bidder]) {
-          continue;
-        }
-        seen[bidder] = true;
-        bidders.push(bidder);
-        if (bidders.length >= 10) {
-          return bidders;
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore malformed responses; omit the bidders param rather than throw.
-  }
-  return bidders;
-}
-
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  // All bidder params are optional (see ezoicBidAdapter.md), so every ad
-  // unit routed to this bidder is a valid bid request.
+  // All bidder params are optional (see ezoicBidAdapter.md); no param is
+  // required and an empty params object is valid.
   isBidRequestValid(bid) {
+    if (bid == null || typeof bid !== 'object') {
+      return false;
+    }
+
+    const mediaTypes = bid.mediaTypes;
+    if (mediaTypes == null || typeof mediaTypes !== 'object') {
+      return false;
+    }
+    const hasSupportedMediaType = [BANNER, VIDEO, NATIVE].some((type) => {
+      const value = mediaTypes[type];
+      return value != null && typeof value === 'object';
+    });
+    if (!hasSupportedMediaType) {
+      return false;
+    }
+
+    if (bid.params != null) {
+      if (!isPlainObject(bid.params)) {
+        return false;
+      }
+      if (bid.params.placementId != null) {
+        if (typeof bid.params.placementId !== 'string' || !bid.params.placementId.trim()) {
+          return false;
+        }
+      }
+    }
+
     return true;
   },
 
@@ -470,7 +476,8 @@ export const spec = {
     }
 
     // Cookie storage/reads happen server-side inside the sync frame; no
-    // redirect ("r") param is needed here.
+    // redirect ("r") param is needed here. The sync URL carries consent
+    // signals only and never varies with the auction response.
     const params = new URLSearchParams({
       gdpr: gdprConsent?.gdprApplies ? '1' : '0',
       gdpr_consent: gdprConsent?.consentString || '',
@@ -478,9 +485,6 @@ export const spec = {
       gpp_sid: gppConsent?.applicableSections?.join(',') || '',
       us_privacy: uspConsent || '',
     });
-    const bidders = usersyncBiddersFromServerResponses(serverResponses);
-    if (bidders.length) params.set('bidders', bidders.join(','));
-
     return [{
       type: 'iframe',
       url: `${USER_SYNC_ENDPOINT}?${params.toString()}`,

@@ -209,12 +209,58 @@ describe('Ezoic adapter', function () {
       expect(spec.isBidRequestValid(getBidRequest({ params: {} }))).to.equal(true);
     });
 
+    it('returns true when params is omitted', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ params: undefined }))).to.equal(true);
+    });
+
     it('returns true for a banner request with params', function () {
       expect(spec.isBidRequestValid(getBidRequest())).to.equal(true);
     });
 
-    it('returns true regardless of bid shape', function () {
-      expect(spec.isBidRequestValid({})).to.equal(true);
+    it('returns true for a non-empty placementId', function () {
+      expect(spec.isBidRequestValid(getBidRequest({
+        params: { placementId: 'abc' }
+      }))).to.equal(true);
+    });
+
+    it('returns true for a video-only unit', function () {
+      expect(spec.isBidRequestValid(getVideoBidRequest())).to.equal(true);
+    });
+
+    it('returns true for a native-only unit', function () {
+      expect(spec.isBidRequestValid(getNativeBidRequest())).to.equal(true);
+    });
+
+    it('returns false when mediaTypes is missing', function () {
+      expect(spec.isBidRequestValid({})).to.equal(false);
+    });
+
+    it('returns false when mediaTypes is empty', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ mediaTypes: {} }))).to.equal(false);
+    });
+
+    it('returns false when mediaTypes has only an unsupported type', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ mediaTypes: { audio: {} } }))).to.equal(false);
+    });
+
+    it('returns false when params is an array', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ params: [] }))).to.equal(false);
+    });
+
+    it('returns false when params is a string', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ params: 'x' }))).to.equal(false);
+    });
+
+    it('returns false when placementId is empty', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ params: { placementId: '' } }))).to.equal(false);
+    });
+
+    it('returns false when placementId is whitespace', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ params: { placementId: '   ' } }))).to.equal(false);
+    });
+
+    it('returns false when placementId is a number', function () {
+      expect(spec.isBidRequestValid(getBidRequest({ params: { placementId: 123 } }))).to.equal(false);
     });
   });
 
@@ -506,6 +552,7 @@ describe('Ezoic adapter', function () {
             width: 300,
             height: 250,
             creativeId: 'creative-1',
+            mediaType: 'banner',
             ad: '<div>ad</div>',
             dealId: 'deal-1',
             meta: {
@@ -540,7 +587,7 @@ describe('Ezoic adapter', function () {
       expect(result[0].meta.advertiserDomains).to.deep.equal(['advertiser.example']);
     });
 
-    it('defaults meta.advertiserDomains to an empty array when the server omits meta', function () {
+    it('omits meta.advertiserDomains when the server omits meta', function () {
       const result = spec.interpretResponse({
         body: {
           bids: [{
@@ -550,6 +597,7 @@ describe('Ezoic adapter', function () {
             width: 300,
             height: 250,
             creativeId: 'creative-1',
+            mediaType: 'banner',
             ad: '<div>ad</div>',
           }]
         }
@@ -560,10 +608,10 @@ describe('Ezoic adapter', function () {
       });
 
       expect(result).to.have.lengthOf(1);
-      expect(result[0].meta).to.deep.equal({ advertiserDomains: [] });
+      expect(result[0].meta).to.not.have.property('advertiserDomains');
     });
 
-    it('defaults meta.advertiserDomains to an empty array when the server sends meta without it', function () {
+    it('omits meta.advertiserDomains when the server sends meta without it', function () {
       const result = spec.interpretResponse({
         body: {
           bids: [{
@@ -573,6 +621,7 @@ describe('Ezoic adapter', function () {
             width: 300,
             height: 250,
             creativeId: 'creative-1',
+            mediaType: 'banner',
             ad: '<div>ad</div>',
             meta: {
               mediaType: 'banner'
@@ -586,7 +635,62 @@ describe('Ezoic adapter', function () {
       });
 
       expect(result).to.have.lengthOf(1);
-      expect(result[0].meta).to.deep.equal({ mediaType: 'banner', advertiserDomains: [] });
+      expect(result[0].meta).to.deep.equal({ mediaType: 'banner' });
+      expect(result[0].meta).to.not.have.property('advertiserDomains');
+    });
+
+    it('omits meta.advertiserDomains when the server sends an empty array', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 1.23,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            creativeId: 'creative-1',
+            mediaType: 'banner',
+            ad: '<div>ad</div>',
+            meta: {
+              advertiserDomains: []
+            },
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getBidRequest()]
+        }
+      });
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].meta).to.not.have.property('advertiserDomains');
+    });
+
+    it('filters empty advertiserDomains and keeps non-empty strings', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 1.23,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            creativeId: 'creative-1',
+            mediaType: 'banner',
+            ad: '<div>ad</div>',
+            meta: {
+              advertiserDomains: ['', 'a.example']
+            },
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getBidRequest()]
+        }
+      });
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['a.example']);
     });
 
     it('normalizes explicit video VAST responses into Prebid video bids', function () {
@@ -651,6 +755,97 @@ describe('Ezoic adapter', function () {
       expect(result).to.deep.equal([]);
     });
 
+    it('drops responses that omit mediaType even when width, height, and ad are present', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 1.23,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            creativeId: 'creative-1',
+            ad: '<div>ad</div>'
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getBidRequest()]
+        }
+      });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('drops responses with an unknown mediaType', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 1.23,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            creativeId: 'creative-1',
+            mediaType: 'audio',
+            ad: '<div>ad</div>'
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getBidRequest()]
+        }
+      });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('drops responses with a case-mismatched mediaType', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 1.23,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            creativeId: 'creative-1',
+            mediaType: 'Banner',
+            ad: '<div>ad</div>'
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getBidRequest()]
+        }
+      });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('drops banner responses for video-only requests', function () {
+      const result = spec.interpretResponse({
+        body: {
+          bids: [{
+            requestId: BID_ID,
+            cpm: 1.23,
+            currency: 'USD',
+            width: 300,
+            height: 250,
+            creativeId: 'creative-1',
+            mediaType: 'banner',
+            ad: '<div>ad</div>'
+          }]
+        }
+      }, {
+        bidderRequest: {
+          bids: [getVideoBidRequest()]
+        }
+      });
+
+      expect(result).to.deep.equal([]);
+    });
+
     it('normalizes outstream VAST URL responses (setup validation is left to core)', function () {
       // No renderer here on purpose: core's checkVideoBidSetup owns
       // outstream setup validation (renderer vs useCacheKey/cache config),
@@ -694,6 +889,7 @@ describe('Ezoic adapter', function () {
         width: 300,
         height: 250,
         creativeId: 'creative-1',
+        mediaType: 'banner',
         ad: '<div>ad</div>',
       };
 
@@ -741,6 +937,7 @@ describe('Ezoic adapter', function () {
             cpm: 1.5,
             currency: 'USD',
             creativeId: 'creative-banner',
+            mediaType: 'banner',
             ad: '<div>ad</div>'
           }]
         }
@@ -973,35 +1170,16 @@ describe('Ezoic adapter', function () {
       expect(url.searchParams.has('r')).to.equal(false);
     });
 
-    it('omits the bidders param when the bid response has no usersync hint', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: { nobid: true } }]);
+    it('ignores any bidder list in the response: the sync URL only carries consent signals', function () {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [{ body: { usersync: { bidders: ['rubicon', 'medianet'] } } }]
+      );
 
+      expect(syncs).to.have.lengthOf(1);
       const url = new URL(syncs[0].url);
       expect(url.searchParams.has('bidders')).to.equal(false);
-    });
-
-    it('forwards sanitized usersync bidders from the bid response', function () {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        [{ body: { usersync: { bidders: ['rubicon', 'Medianet', 'bad!', 'rubicon', 12, null] } } }]
-      );
-
-      const url = new URL(syncs[0].url);
-      expect(url.searchParams.get('bidders')).to.equal('rubicon,medianet');
-    });
-
-    it('caps forwarded usersync bidders at 10', function () {
-      const hinted = [];
-      for (let i = 0; i < 12; i++) {
-        hinted.push('bidder' + i);
-      }
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        [{ body: { usersync: { bidders: hinted } } }]
-      );
-
-      const url = new URL(syncs[0].url);
-      expect(url.searchParams.get('bidders')).to.equal(hinted.slice(0, 10).join(','));
+      expect(Array.from(url.searchParams.keys()).sort()).to.deep.equal(['gdpr', 'gdpr_consent', 'gpp', 'gpp_sid', 'us_privacy']);
     });
   });
 });

@@ -18,8 +18,9 @@ unapproved inventory receives no-bid responses. Contact prebid@ezoic.com to get
 set up.
 
 The param contract mirrors the Ezoic Prebid Server adapter: a single optional
-`placementId`. No params are required — every ad unit routed to `ezoic` is a
-valid bid request. Bid floors flow through the standard Prebid floors module;
+`placementId`. No params are required, but the ad unit must declare a supported
+media type and `placementId`, if given, must be a non-empty string. Bid floors
+flow through the standard Prebid floors module;
 the adapter forwards the returned value and currency as `floor` / `floorCur`
 on each impression (including when `getFloor` cannot convert to USD and
 returns the publisher's original currency).
