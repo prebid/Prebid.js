@@ -307,6 +307,7 @@ export function withFailover(ajax, bidderRequest) {
     enabled: params.failoverEnabled,
     defaultDomain: DEFAULT_FAILOVER_DOMAIN,
     userConfiguredDomain: params.failoverDomain,
+    userConfiguredMaxFailureMs: params.failoverMaxFailureMs,
     logPrefix: BIDDER_CODE
   });
 }

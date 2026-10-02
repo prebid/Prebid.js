@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import { DEFAULT_MAX_FAILURE_MS, isHostname, replaceHostname, resetFailoverState, selectFailoverDomain, withAjaxFailover, withDomainFailover } from 'libraries/ttdUtils/ajaxFailover.js';
+import { DEFAULT_MAX_FAILURE_MS, isHostname, replaceHostname, resetFailoverState, selectFailoverDomain, selectMaxFailureMs, withAjaxFailover, withDomainFailover } from 'libraries/ttdUtils/ajaxFailover.js';
 
 describe('ttdUtils ajaxFailover', function () {
   describe('isHostname', function () {
@@ -358,6 +358,35 @@ describe('ttdUtils ajaxFailover', function () {
       });
     });
 
+    describe('selectMaxFailureMs', function () {
+      it('should use DEFAULT_MAX_FAILURE_MS when no value is configured', function () {
+        expect(selectMaxFailureMs(undefined)).to.equal(DEFAULT_MAX_FAILURE_MS);
+        expect(selectMaxFailureMs(null)).to.equal(DEFAULT_MAX_FAILURE_MS);
+        expect(selectMaxFailureMs()).to.equal(DEFAULT_MAX_FAILURE_MS);
+        expect(logWarnStub.called).to.be.false;
+      });
+
+      [1, 50, 100, 250.5, 5000].forEach(function (configured) {
+        it(`should use the configured value ${configured}`, function () {
+          expect(selectMaxFailureMs(configured)).to.equal(configured);
+          expect(logWarnStub.called).to.be.false;
+        });
+      });
+
+      [0, -1, NaN, Infinity, -Infinity, '200', '', true, false, {}, []].forEach(function (configured) {
+        it(`should warn and use DEFAULT_MAX_FAILURE_MS when the configured value is ${typeof configured} "${String(configured)}"`, function () {
+          expect(selectMaxFailureMs(configured, 'myPrefix')).to.equal(DEFAULT_MAX_FAILURE_MS);
+          expect(logWarnStub.calledOnce).to.be.true;
+          expect(logWarnStub.firstCall.args[0]).to.equal(`myPrefix: failoverMaxFailureMs must be a number of milliseconds greater than 0, using ${DEFAULT_MAX_FAILURE_MS}`);
+        });
+      });
+
+      it('should use a default log prefix', function () {
+        selectMaxFailureMs(-1);
+        expect(logWarnStub.firstCall.args[0]).to.match(/^ajaxFailover: /);
+      });
+    });
+
     describe('withDomainFailover', function () {
       function sendToDomain(ajax, domainOptions) {
         const callbacks = { success: sinon.spy(), error: sinon.spy() };
@@ -438,15 +467,39 @@ describe('ttdUtils ajaxFailover', function () {
         expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
       });
 
-      it('should pass maxFailureMs and logPrefix on', function () {
+      it('should use the configured max failure time and the log prefix', function () {
         let ajax = fakeAjax(fail(NETWORK_ERROR, 300), succeed());
-        sendToDomain(ajax, { maxFailureMs: 200 });
+        sendToDomain(ajax, { userConfiguredMaxFailureMs: 200 });
         expect(ajax.calledOnce).to.be.true;
 
         ajax = fakeAjax(fail(NETWORK_ERROR, 300), succeed());
-        sendToDomain(ajax, { maxFailureMs: 300, logPrefix: 'myPrefix' });
+        sendToDomain(ajax, { userConfiguredMaxFailureMs: 300, logPrefix: 'myPrefix' });
         expect(ajax.calledTwice).to.be.true;
         expect(logWarnStub.lastCall.args[0]).to.equal('myPrefix: request failed with a network error after 300ms, retrying on default.example.com');
+      });
+
+      it('should use DEFAULT_MAX_FAILURE_MS when no max failure time is configured', function () {
+        let ajax = fakeAjax(fail(NETWORK_ERROR, DEFAULT_MAX_FAILURE_MS), succeed());
+        sendToDomain(ajax);
+        expect(ajax.calledTwice).to.be.true;
+
+        resetFailoverState();
+        ajax = fakeAjax(fail(NETWORK_ERROR, DEFAULT_MAX_FAILURE_MS + 1));
+        sendToDomain(ajax);
+        expect(ajax.calledOnce).to.be.true;
+      });
+
+      it('should warn and use DEFAULT_MAX_FAILURE_MS when the configured max failure time is invalid', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR, DEFAULT_MAX_FAILURE_MS + 1));
+        sendToDomain(ajax, { userConfiguredMaxFailureMs: -5, logPrefix: 'myPrefix' });
+        expect(ajax.calledOnce).to.be.true;
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.match(/^myPrefix: failoverMaxFailureMs/);
+      });
+
+      it('should not check the configured max failure time when the failover is disabled', function () {
+        withDomainFailover(sinon.stub(), { enabled: false, defaultDomain: 'default.example.com', userConfiguredMaxFailureMs: -5 });
+        expect(logWarnStub.called).to.be.false;
       });
     });
   });

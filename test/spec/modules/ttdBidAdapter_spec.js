@@ -1815,6 +1815,38 @@ describe('ttdBidAdapter', function () {
         expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
       });
 
+      it('should use params.failoverMaxFailureMs when provided', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR, 150), succeed());
+        send(ajax, { failoverMaxFailureMs: 200 });
+        expect(ajax.calledTwice).to.be.true;
+      });
+
+      it('should not retry a failure slower than params.failoverMaxFailureMs', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR, 201));
+        const callbacks = send(ajax, { failoverMaxFailureMs: 200 });
+        expect(ajax.calledOnce).to.be.true;
+        expect(callbacks.error.calledOnce).to.be.true;
+      });
+
+      it('should use the default max failure time when params.failoverMaxFailureMs is not provided', function () {
+        let ajax = fakeAjax(fail(NETWORK_ERROR, 100), succeed());
+        send(ajax);
+        expect(ajax.calledTwice).to.be.true;
+
+        resetFailoverState();
+        ajax = fakeAjax(fail(NETWORK_ERROR, 101));
+        send(ajax);
+        expect(ajax.calledOnce).to.be.true;
+      });
+
+      it('should warn and use the default max failure time when params.failoverMaxFailureMs is invalid', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR, 101));
+        send(ajax, { failoverMaxFailureMs: '200' });
+        expect(ajax.calledOnce).to.be.true;
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.contain('failoverMaxFailureMs');
+      });
+
       it('should retry when a customBidderEndpoint was used and keep its path', function () {
         const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
         send(ajax, { customBidderEndpoint: 'https://custom.example.com/prefix/bid/bidder/' }, 'https://custom.example.com/prefix/bid/bidder/supplier');

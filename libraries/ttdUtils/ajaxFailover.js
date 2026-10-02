@@ -116,6 +116,24 @@ export function selectFailoverDomain(defaultDomain, userConfiguredDomain, logPre
 }
 
 /**
+ * Picks how long a failure may take and still be retried on the failover url.
+ *
+ * @param {*} userConfiguredMs - value configured by the publisher, must be a number of milliseconds greater than 0
+ * @param {string} [logPrefix] - prefix for the warning logged when the configured value is invalid
+ * @returns {number} the configured value, or DEFAULT_MAX_FAILURE_MS if none was configured or it is not valid
+ */
+export function selectMaxFailureMs(userConfiguredMs, logPrefix = 'ajaxFailover') {
+  if (userConfiguredMs === undefined || userConfiguredMs === null) {
+    return DEFAULT_MAX_FAILURE_MS;
+  }
+  if (Number.isFinite(userConfiguredMs) && userConfiguredMs > 0) {
+    return userConfiguredMs;
+  }
+  logWarn(`${logPrefix}: failoverMaxFailureMs must be a number of milliseconds greater than 0, using ${DEFAULT_MAX_FAILURE_MS}`);
+  return DEFAULT_MAX_FAILURE_MS;
+}
+
+/**
  * withAjaxFailover for the common case of failing over to another domain: the request url is kept and only its
  * host is replaced, by the publisher configured domain if there is a valid one and by the default domain otherwise.
  *
@@ -124,17 +142,17 @@ export function selectFailoverDomain(defaultDomain, userConfiguredDomain, logPre
  * @param {boolean} [options.enabled] - the failover is disabled only when this is exactly false
  * @param {string} options.defaultDomain - see selectFailoverDomain
  * @param {*} [options.userConfiguredDomain] - see selectFailoverDomain
+ * @param {*} [options.userConfiguredMaxFailureMs] - see selectMaxFailureMs
  * @param {string} [options.logPrefix] - see withAjaxFailover
- * @param {number} [options.maxFailureMs] - see withAjaxFailover
  * @returns {Function} an ajax function with failover behavior, or the given ajax function if the failover is disabled
  */
-export function withDomainFailover(ajax, { enabled, defaultDomain, userConfiguredDomain, logPrefix, maxFailureMs } = {}) {
+export function withDomainFailover(ajax, { enabled, defaultDomain, userConfiguredDomain, userConfiguredMaxFailureMs, logPrefix } = {}) {
   if (enabled === false) {
     return ajax;
   }
   return withAjaxFailover(ajax, {
     getFailoverUrl: url => replaceHostname(url, selectFailoverDomain(defaultDomain, userConfiguredDomain, logPrefix)),
-    logPrefix,
-    maxFailureMs
+    maxFailureMs: selectMaxFailureMs(userConfiguredMaxFailureMs, logPrefix),
+    logPrefix
   });
 }

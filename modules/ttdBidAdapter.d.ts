@@ -41,6 +41,12 @@ export interface TtdBidderParams {
    * @default 'bid-openpath.ttdcdn.org'
    */
   failoverDomain?: string;
+  /**
+   * How long, in milliseconds, a failed request may take and still be retried on the failover domain.
+   * Slower failures are not retried. Must be greater than 0. An invalid value is ignored.
+   * @default 100
+   */
+  failoverMaxFailureMs?: number;
 }
 
 declare module '../src/adUnits' {
