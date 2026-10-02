@@ -1,17 +1,92 @@
-// this will have all of a copy of the normal fs methods as well
-const fs = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
-const argv = require('yargs').argv;
+const {parseArgs} = require('node:util');
 const MANIFEST = 'package.json';
-const through = require('through2');
+const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
+const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
 
+const BOOLEAN_OPTIONS = [
+  'nolint',
+  'nolintfix',
+  'lintWarnings',
+  'sourceMaps',
+  'manualEnable',
+  'coverage',
+  'https',
+  'local',
+  'fetch',
+  'watch',
+  'browserstack',
+  'notest',
+  'analytics',
+  'ES5',
+  'analyze',
+  'polyfills',
+];
+
+const {values: argv, tokens} = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  tokens: true,
+  options: {
+    // boolean flags
+    ...Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, {type: 'boolean'}])),
+    // string options
+    host: {type: 'string'},
+    file: {type: 'string'},
+    modules: {type: 'string'},
+    browsers: {type: 'string'},
+    disable: {type: 'string'},
+    enable: {type: 'string'},
+    distUrlBase: {type: 'string'},
+    bundleName: {type: 'string'},
+    tag: {type: 'string'},
+  },
+});
+
+// yargs mapped `--no-foo` to `foo: false` and camelized `--foo-bar` to
+// `fooBar`; parseArgs does neither and keeps the literal keys. Replay the
+// boolean option tokens to restore that: each boolean option is recognized
+// under its declared name and its kebab-case form, negated or not, and the
+// occurrence appearing last on the command line wins. Other flags are left
+// exactly as parseArgs parsed them.
+const booleanSpellings = new Map(BOOLEAN_OPTIONS.flatMap((option) => {
+  const kebab = option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+  return [...new Set([option, kebab])].flatMap((name) => [
+    [name, {option, negated: false}],
+    [`no-${name}`, {option, negated: true}],
+  ]);
+}));
+tokens.forEach((token) => {
+  if (token.kind !== 'option') {
+    return;
+  }
+  const match = booleanSpellings.get(token.name);
+  if (!match || (match.negated && token.value !== undefined)) {
+    return;
+  }
+  argv[match.option] = match.negated ? false : (token.value ?? true);
+  if (token.name !== match.option) {
+    delete argv[token.name];
+  }
+});
+
+const PRECOMPILED_PATH = './dist/src';
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
+const SOURCE_FOLDERS = [
+  'src',
+  'creative',
+  'libraries',
+  'modules',
+  'test',
+  'public'
+];
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -25,19 +100,16 @@ function isModuleDirectory(filePath) {
 }
 
 module.exports = {
+  getSourceFolders() {
+    return SOURCE_FOLDERS
+  },
+  getSourcePatterns() {
+    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`, `!./${dir}/**/*.d.ts`])
+  },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
   },
 
-  toCapitalCase: function (str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  },
-
-  jsonifyHTML: function (str) {
-    return str.replace(/\n/g, '')
-      .replace(/<\//g, '<\\/')
-      .replace(/\/>/g, '\\/>');
-  },
   getArgModules() {
     var modules = (argv.modules || '')
       .split(',')
@@ -73,14 +145,26 @@ module.exports = {
     try {
       var absoluteModulePath = path.join(__dirname, MODULE_PATH);
       internalModules = fs.readdirSync(absoluteModulePath)
-        .filter(file => (/^[^\.]+(\.js)?$/).test(file))
+        .filter(file => (/^[^\.]+(\.js|\.tsx?)?$/).test(file))
         .reduce((memo, file) => {
-          var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
+          let moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);
+          let candidates;
           if (fs.lstatSync(modulePath).isDirectory()) {
-            modulePath = path.join(modulePath, 'index.js')
+            candidates = [
+              path.join(modulePath, 'index.js'),
+              path.join(modulePath, 'index.ts')
+            ]
+          } else {
+            candidates = [modulePath]
           }
-          if (fs.existsSync(modulePath)) {
+          const target = candidates.find(name => fs.existsSync(name));
+          if (target) {
+            modulePath = this.getPrecompiledPath(path.relative(__dirname, path.format({
+              ...path.parse(target),
+              base: null,
+              ext: '.js'
+            })));
             memo[modulePath] = moduleName;
           }
           return memo;
@@ -101,9 +185,27 @@ module.exports = {
       return memo;
     }, internalModules));
   }),
-
+  getMetadataEntry(moduleName) {
+    if (fs.existsSync(`./metadata/modules/${moduleName}.json`)) {
+      return `${moduleName}.metadata`;
+    } else {
+      return null;
+    }
+  },
   getBuiltPath(dev, assetPath) {
     return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
+  },
+
+  getPrecompiledPath(filePath) {
+    return path.resolve(filePath ? path.join(PRECOMPILED_PATH, filePath) : PRECOMPILED_PATH)
+  },
+
+  getCreativeRendererPath(renderer) {
+    let path = 'creative-renderers';
+    if (renderer != null) {
+      path = `${path}/${renderer}.js`;
+    }
+    return this.getPrecompiledPath(path);
   },
 
   getBuiltModules: function(dev, externalModules) {
@@ -129,10 +231,13 @@ module.exports = {
 
   nameModules: function(externalModules) {
     var modules = this.getModules(externalModules);
-    return through.obj(function(file, enc, done) {
-      file.named = modules[file.path] ? modules[file.path] : 'prebid';
-      this.push(file);
-      done();
+    return new Transform({
+      objectMode: true,
+      transform(file, enc, done) {
+        file.named = modules[file.path] ? modules[file.path] : 'prebid';
+        this.push(file);
+        done();
+      }
     })
   },
 
@@ -172,9 +277,26 @@ module.exports = {
     return options;
   },
   getDisabledFeatures() {
-    return (argv.disable || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s);
+    function parseFlags(input) {
+      return input
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s);
+    }
+    const disabled = parseFlags(argv.disable || '');
+    const enabled = parseFlags(argv.enable || '');
+    if (!argv.disable) {
+      disabled.push('GREEDY');
+    }
+    return disabled.filter(feature => !enabled.includes(feature));
   },
+  getTestDisableFeatures() {
+    // test with all features disabled with exceptions for logging, as tests often assert logs
+    return require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR')
+  },
+  execaTask(cmd) {
+    return () => execaCmd.shell(cmd, {stdio: 'inherit'});
+  },
+  argv,
+  BOOLEAN_OPTIONS
 };

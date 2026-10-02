@@ -3,7 +3,6 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
-  getDNT,
   inIframe,
   isArray,
   isEmpty,
@@ -17,10 +16,11 @@ import {
   mergeDeep,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -81,7 +81,8 @@ const ORTB_VIDEO_PARAMS = {
   playbackend: value => [1, 2, 3].indexOf(value) !== -1,
   delivery: value => [1, 2, 3].indexOf(value) !== -1,
   pos: value => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)};
+  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)
+};
 
 /**
  * Returns the OpenRtb deviceType id detected from User Agent
@@ -105,12 +106,12 @@ function getDeviceType() {
  * @returns {number}
  */
 function getOS() {
-  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
-  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
-  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
-  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
-  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
-  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
+  if (navigator.userAgent.indexOf('Android') !== -1) return 'Android';
+  if (navigator.userAgent.indexOf('like Mac') !== -1) return 'iOS';
+  if (navigator.userAgent.indexOf('Win') !== -1) return 'Windows';
+  if (navigator.userAgent.indexOf('Mac') !== -1) return 'Macintosh';
+  if (navigator.userAgent.indexOf('Linux') !== -1) return 'Linux';
+  if (navigator.appVersion.indexOf('X11') !== -1) return 'Unix';
   return 'Others';
 }
 
@@ -136,9 +137,9 @@ function getFloor(bid, mediaType, size = '*') {
     currency: DEFAULT_CURRENCY,
     mediaType,
     size
-  })
+  });
 
-  return (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
+  return (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false;
 }
 
 /**
@@ -151,7 +152,7 @@ function getFloor(bid, mediaType, size = '*') {
 function getHighestFloor(bid) {
   const floors = [];
 
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     const floor = getFloor(bid, mediaType);
 
     if (isNumber(floor)) {
@@ -212,7 +213,7 @@ function createOrtbTemplate() {
  * @returns {object}
  */
 function createBannerImp(bid) {
-  let sizes = bid.mediaTypes.banner.sizes;
+  const sizes = bid.mediaTypes.banner.sizes;
   const params = deepAccess(bid, 'params', {});
 
   if (!isArray(sizes) || !sizes.length) {
@@ -226,7 +227,7 @@ function createBannerImp(bid) {
     const format = [];
     sizes.forEach(function (size) {
       if (size.length && size.length > 1) {
-        format.push({w: size[0], h: size[1]});
+        format.push({ w: size[0], h: size[1] });
       }
     });
     banner.format = format;
@@ -247,7 +248,7 @@ function createBannerImp(bid) {
 function createNativeImp(bid) {
   if (!bid.nativeParams) {
     logWarn(`${BIDDER_CODE}: bid.nativeParams object has not been found.`);
-    return
+    return;
   }
 
   const nativeParams = deepClone(bid.nativeParams);
@@ -265,7 +266,7 @@ function createNativeImp(bid) {
     context: 1, // overwrited later if needed
     plcmttype: 1, // overwrited later if needed
     assets: []
-  }
+  };
 
   Object.keys(ORTB_NATIVE_PARAMS).forEach(name => {
     if (extraParams.hasOwnProperty(name)) {
@@ -291,7 +292,7 @@ function createNativeImp(bid) {
     if (!asset.img.h) {
       asset.img.hmin = 0;
     }
-  }
+  };
 
   // Prebid.js "image" type support.
   // Add some defaults to support special type provided by Prebid.js `mediaTypes.native.type: "image"`
@@ -301,7 +302,7 @@ function createNativeImp(bid) {
     nativeParams.title.len = 90;
   }
 
-  for (let key in nativeParams) {
+  for (const key in nativeParams) {
     if (nativeParams.hasOwnProperty(key)) {
       const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.name === key);
       if (!internalNativeAsset) {
@@ -314,7 +315,7 @@ function createNativeImp(bid) {
       const asset = {
         id: internalNativeAsset.id,
         required: param.required ? 1 : 0
-      }
+      };
 
       switch (key) {
         case 'title':
@@ -322,9 +323,9 @@ function createNativeImp(bid) {
             asset.title = {
               len: param.len || param.length,
               ext: param.ext
-            }
+            };
           } else {
-            logWarn(`${BIDDER_CODE}: "title.length" property for native asset is required. Skipped for request.`)
+            logWarn(`${BIDDER_CODE}: "title.length" property for native asset is required. Skipped for request.`);
             continue;
           }
           break;
@@ -334,7 +335,7 @@ function createNativeImp(bid) {
             type: internalNativeAsset.type,
             mimes: param.mimes,
             ext: param.ext,
-          }
+          };
 
           setImageAssetSizes(asset, param);
 
@@ -344,7 +345,7 @@ function createNativeImp(bid) {
             type: internalNativeAsset.type,
             mimes: param.mimes,
             ext: param.ext,
-          }
+          };
 
           setImageAssetSizes(asset, param);
           break;
@@ -366,7 +367,7 @@ function createNativeImp(bid) {
             type: internalNativeAsset.type,
             len: param.len,
             ext: param.ext
-          }
+          };
           break;
       }
 
@@ -377,7 +378,7 @@ function createNativeImp(bid) {
   if (nativeObject.assets.length) {
     return {
       request: nativeObject
-    }
+    };
   }
 }
 
@@ -444,7 +445,7 @@ function createImp(bid) {
   }
 
   // Only supports proper mediaTypes definition…
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     switch (mediaType) {
       case BANNER:
         const banner = createBannerImp(bid);
@@ -509,7 +510,7 @@ function nativeBidResponseHandler(bid) {
     return;
   }
 
-  const native = {}
+  const native = {};
 
   nativeAdm.assets.forEach(asset => {
     if (asset.title) {
@@ -550,7 +551,7 @@ function nativeBidResponseHandler(bid) {
       native.clickUrl = nativeAdm.link.url;
     }
     if (Array.isArray(nativeAdm.link.clicktrackers)) {
-      native.clickTrackers = nativeAdm.link.clicktrackers
+      native.clickTrackers = nativeAdm.link.clicktrackers;
     }
   }
 
@@ -571,7 +572,7 @@ function nativeBidResponseHandler(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          const script = `<script async src=\"${tracker.url}\"></script>`;
+          const script = `<script async src="${tracker.url}"></script>`;
           if (!native.javascriptTrackers) {
             native.javascriptTrackers = script;
           } else {
@@ -610,7 +611,7 @@ export const spec = {
     deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
-      let bid = deepClone(validBid);
+      const bid = deepClone(validBid);
 
       // No additional params atm.
       const imp = createImp(bid);
@@ -618,8 +619,9 @@ export const spec = {
       payload.imp.push(imp);
     });
 
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -631,7 +633,7 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
@@ -644,7 +646,7 @@ export const spec = {
       // TODO: reachedTop is probably not the right check here - it may be false when page is available or vice-versa
       if (bidderRequest.refererInfo.reachedTop) {
         deepSetValue(payload, 'site.page', bidderRequest.refererInfo.page);
-        deepSetValue(payload, 'site.domain', bidderRequest.refererInfo.domain)
+        deepSetValue(payload, 'site.domain', bidderRequest.refererInfo.domain);
         if (bidderRequest.refererInfo.ref) {
           deepSetValue(payload, 'site.ref', bidderRequest.refererInfo.ref);
         }
@@ -667,7 +669,7 @@ export const spec = {
       options: {
         withCredentials: false
       }
-    }
+    };
 
     return request;
   },
@@ -767,6 +769,6 @@ export const spec = {
 
     triggerPixel(url);
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

@@ -6,11 +6,11 @@
  */
 
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'gravitompId';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export const cookieKey = 'gravitompId';
 
@@ -33,8 +33,8 @@ export const gravitoIdSystemSubmodule = {
     }
     const result = {
       gravitompId: newId
-    }
-    return {id: result};
+    };
+    return { id: result };
   },
 
   /**
@@ -47,9 +47,9 @@ export const gravitoIdSystemSubmodule = {
     if (value && typeof value === 'object') {
       var result = {};
       if (value.gravitompId) {
-        result = value.gravitompId
+        result = value.gravitompId;
       }
-      return {gravitompId: result};
+      return { gravitompId: result };
     }
     return undefined;
   },
@@ -59,6 +59,6 @@ export const gravitoIdSystemSubmodule = {
       atype: 1
     },
   }
-}
+};
 
 submodule('userId', gravitoIdSystemSubmodule);

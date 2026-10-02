@@ -1,3 +1,0 @@
-export const iiqServerAddress = (configParams, gdprDetected) => typeof configParams?.iiqServerAddress === 'string' ? configParams.iiqServerAddress : gdprDetected ? 'https://api-gdpr.intentiq.com' : 'https://api.intentiq.com'
-export const iiqPixelServerAddress = (configParams, gdprDetected) => typeof configParams?.iiqPixelServerAddress === 'string' ? configParams.iiqPixelServerAddress : gdprDetected ? 'https://sync-gdpr.intentiq.com' : 'https://sync.intentiq.com'
-export const reportingServerAddress = (configParams, gdprDetected) => typeof configParams?.params?.reportingServerAddress === 'string' ? configParams.params.reportingServerAddress : gdprDetected ? 'https://reports-gdpr.intentiq.com/report' : 'https://reports.intentiq.com/report'

@@ -1,9 +1,10 @@
-import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { deepAccess, getWindowTop, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,7 +12,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
  */
 
 const BIDDER_CODE = 'livewrapped';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const URL = 'https://lwadm.com/ad';
 const VERSION = '1.4';
 
@@ -63,7 +64,7 @@ export const spec = {
     const ifa = ((bidRequests) || []).find(hasIfaParam);
     const bundle = ((bidRequests) || []).find(hasBundleParam);
     const tid = ((bidRequests) || []).find(hasTidParam);
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     let ortb2 = bidderRequest.ortb2;
     const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
@@ -94,9 +95,9 @@ export const spec = {
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
-      coppa: getCoppa(),
+      coppa: getCoppa(bidderRequest),
       usPrivacy: bidderRequest.uspConsent,
-      cookieSupport: !isSafariBrowser() && storage.cookiesAreEnabled(),
+      cookieSupport: !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
       rtbData: ortb2,
@@ -112,7 +113,8 @@ export const spec = {
     return {
       method: 'POST',
       url: bidUrl,
-      data: payloadString};
+      data: payloadString
+    };
   },
 
   /**
@@ -167,24 +169,24 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    if (serverResponses.length == 0) return [];
+    if (serverResponses.length === 0) return [];
 
-    let syncList = [];
-    let userSync = serverResponses[0].body.pixels || [];
+    const syncList = [];
+    const userSync = serverResponses[0].body.pixels || [];
 
     userSync.forEach(function(sync) {
-      if (syncOptions.pixelEnabled && sync.type == 'Redirect') {
-        syncList.push({type: 'image', url: sync.url});
+      if (syncOptions.pixelEnabled && sync.type === 'Redirect') {
+        syncList.push({ type: 'image', url: sync.url });
       }
 
-      if (syncOptions.iframeEnabled && sync.type == 'Iframe') {
-        syncList.push({type: 'iframe', url: sync.url});
+      if (syncOptions.iframeEnabled && sync.type === 'Iframe') {
+        syncList.push({ type: 'iframe', url: sync.url });
       }
     });
 
     return syncList;
   }
-}
+};
 
 function hasUserId(bid) {
   return !!bid.params.userId;
@@ -273,7 +275,7 @@ function sizeToFormat(size) {
   return {
     width: size[0],
     height: size[1]
-  }
+  };
 }
 
 function getBidFloor(bid, currency) {
@@ -287,7 +289,7 @@ function getBidFloor(bid, currency) {
     size: '*'
   });
 
-  return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency == currency
+  return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === currency
     ? floor.floor
     : undefined;
 }
@@ -301,7 +303,7 @@ function getAdblockerRecovered() {
 function handleEids(bidRequests) {
   const bidRequest = bidRequests[0];
   if (bidRequest && bidRequest.userIdAsEids) {
-    return {user: {ext: {eids: bidRequest.userIdAsEids}}};
+    return { user: { ext: { eids: bidRequest.userIdAsEids } } };
   }
 
   return undefined;
@@ -339,9 +341,7 @@ function getDeviceHeight() {
   return device.h || getWinDimensions().innerHeight;
 }
 
-function getCoppa() {
-  if (typeof config.getConfig('coppa') === 'boolean') {
-    return config.getConfig('coppa');
-  }
+function getCoppa(bidderRequest) {
+  return bidderRequest?.ortb2?.regs?.coppa === 1 || (coppaDataHandler.getCoppa() ? true : undefined);
 }
 registerBidder(spec);

@@ -1,14 +1,14 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec as adapter,
   createDomain,
   storage
 } from 'modules/tagorasBidAdapter';
 import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -18,7 +18,9 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -92,7 +94,7 @@ const VIDEO_BID = {
       'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -102,9 +104,9 @@ const ORTB2_DEVICE = {
       'version': ['8', '0', '0']
     },
     'browsers': [
-      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+      { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+      { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+      { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
     ],
     'mobile': 1,
     'model': 'SM-G955U',
@@ -121,7 +123,7 @@ const ORTB2_DEVICE = {
   model: 'iPhone 12 Pro Max',
   os: 'iOS',
   osv: '17.4',
-  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+  ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
 };
 
 const BIDDER_REQUEST = {
@@ -190,6 +192,12 @@ const VIDEO_SERVER_RESPONSE = {
   }
 };
 
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": { "coppa": 0, "gpp": "gpp_string", "gpp_sid": [7] },
+  "site": { "content": { "language": "en" } }
+};
+
 const REQUEST = {
   data: {
     width: 300,
@@ -197,15 +205,6 @@ const REQUEST = {
     bidId: '2d52001cabd527'
   }
 };
-
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
 
 describe('TagorasBidAdapter', function () {
   before(() => config.resetConfig());
@@ -271,7 +270,7 @@ describe('TagorasBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         tagoras: {
           storageAllowed: true
         }
@@ -321,9 +320,9 @@ describe('TagorasBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -356,6 +355,8 @@ describe('TagorasBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: VIDEO_BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           userData: [],
           coppa: 0
         }
@@ -392,9 +393,9 @@ describe('TagorasBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -424,20 +425,33 @@ describe('TagorasBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           userData: [],
           coppa: 0
         }
       });
     });
 
+    it('should build video request with right url domain despite params.host', function () {
+      const videoBidWithHost = VIDEO_BID;
+      videoBidWithHost.params.host = "example7.com";
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
+
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
     });
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -446,7 +460,7 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
@@ -454,7 +468,7 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
@@ -466,7 +480,7 @@ describe('TagorasBidAdapter', function () {
       config.setConfig({
         coppa: 1
       });
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
@@ -482,9 +496,9 @@ describe('TagorasBidAdapter', function () {
       const gppConsent = {
         gppString: 'gpp_string',
         applicableSections: [7]
-      }
+      };
 
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
@@ -500,12 +514,12 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -570,47 +584,20 @@ describe('TagorasBidAdapter', function () {
     });
   });
 
-  describe('user id system', function () {
-    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
-      const id = Date.now().toString();
-      const bid = utils.deepClone(BID);
-
-      const userId = (function () {
-        switch (idSystemProvider) {
-          case 'lipb':
-            return {lipbid: id};
-          case 'id5id':
-            return {uid: id};
-          default:
-            return id;
-        }
-      })();
-
-      bid.userId = {
-        [idSystemProvider]: userId
-      };
-
-      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
-        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
-      });
-    });
-  });
-
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({'c_id': '1'});
-      const pid = extractPID({'p_id': '1'});
-      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cID': '1'});
-      const pid = extractPID({'Pid': '2'});
-      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
+      const cid = extractCID({ 'cID': '1' });
+      const pid = extractPID({ 'Pid': '2' });
+      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -619,20 +606,20 @@ describe('TagorasBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         tagoras: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -648,20 +635,20 @@ describe('TagorasBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
   describe('storage utils', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         tagoras: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();
@@ -670,7 +657,7 @@ describe('TagorasBidAdapter', function () {
         now
       });
       setStorageItem(storage, 'myKey', 2020);
-      const {value, created} = getStorageItem(storage, 'myKey');
+      const { value, created } = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -679,15 +666,15 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 

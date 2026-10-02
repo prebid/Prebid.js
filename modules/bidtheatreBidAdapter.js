@@ -1,4 +1,4 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, logError, replaceAuctionPrice } from '../src/utils.js';
@@ -6,12 +6,12 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 30;
 export const BIDDER_CODE = 'bidtheatre';
-export const ENDPOINT_URL = 'https://prebidjs-bids.bidtheatre.net/prebidjsbid';
+export const ENDPOINT_URL = 'https://client-bids.adsby.bidtheatre.com/prebidjsbid';
 const METHOD = 'POST';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 export const DEFAULT_CURRENCY = 'USD';
 const BIDTHEATRE_COOKIE_NAME = '__kuid';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
   context: {
@@ -29,7 +29,7 @@ export const spec = {
     const isValid = bidRequest &&
                     bidRequest.params &&
                     typeof bidRequest.params.publisherId === 'string' &&
-                    bidRequest.params.publisherId.trim().length === 36
+                    bidRequest.params.publisherId.trim().length === 36;
 
     if (!isValid) {
       logError('Bidtheatre Header Bidding Publisher ID not provided or in incorrect format');
@@ -68,7 +68,7 @@ export const spec = {
     return syncs;
   },
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({bidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests, bidderRequest });
 
     const cookieValue = storage.getCookie(BIDTHEATRE_COOKIE_NAME);
     if (cookieValue) {
@@ -76,7 +76,7 @@ export const spec = {
     }
 
     data.imp.forEach((impObj, index) => {
-      let publisherId = bidRequests[index].params.publisherId;
+      const publisherId = bidRequests[index].params.publisherId;
 
       if (publisherId) {
         deepSetValue(impObj, 'ext.bidder.publisherId', publisherId);
@@ -87,7 +87,7 @@ export const spec = {
       method: METHOD,
       url: ENDPOINT_URL,
       data
-    }]
+    }];
   },
   interpretResponse(response, request) {
     if (!response || !response.body || !response.body.seatbid) {
@@ -104,7 +104,7 @@ export const spec = {
     });
 
     const macroReplacedResponseBody = { ...response.body, seatbid: macroReplacedSeatbid };
-    const bids = converter.fromORTB({response: macroReplacedResponseBody, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: macroReplacedResponseBody, request: request.data }).bids;
     return bids;
   },
   onTimeout: function(timeoutData) {},
@@ -112,6 +112,6 @@ export const spec = {
   onSetTargeting: function(bid) {},
   // onBidderError: function({ error, bidderRequest }) {},
   onAdRenderSucceeded: function(bid) {}
-}
+};
 
 registerBidder(spec);

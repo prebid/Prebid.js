@@ -1,9 +1,9 @@
-import {deepAccess, isPlainObject, logError, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {Renderer} from '../src/Renderer.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import { deepAccess, isPlainObject, logError, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
@@ -87,7 +87,7 @@ function getBidFloor(bid, mediaType, sizes, bidfloor) {
   let floor = bidfloor;
   var size = sizes && sizes.length > 0 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
     if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(bidfloor, parseFloat(floorInfo.floor));
     }
@@ -107,7 +107,7 @@ const isBidResponseValid = bid => {
     default:
       return false;
   }
-}
+};
 
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
@@ -150,6 +150,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       id: bid.params.id,
       adtype: adType,
       auc: bid.adUnitCode,
+      gpid: deepAccess(bid, 'ortb2Imp.ext.gpid') || '',
       w: widths,
       h: heights,
       pos: parseInt(bid.params.position) || 1,
@@ -158,14 +159,14 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      schain: serializeSupplyChainObj(bid.schain) || '',
+      schain: serializeSupplyChainObj(bid?.ortb2?.source?.ext?.schain) || '',
       eids: eids || '',
       bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       // TODO: does the fallback make sense here?
       sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       usp: bidderRequest.uspConsent || '',
-      coppa: !!config.getConfig('coppa'),
+      coppa: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()),
       videoContext: videoContext || '',
       multiBidsSupport: 1,
       bcat: ortb2.bcat || bid.params.bcat || [],
@@ -198,18 +199,18 @@ const render = (bid) => {
     autoPlay: true,
     preload: true,
     mute: true,
-  }
+  };
   window.outstreamPlayer(bid, bid.adUnitCode, obj);
-}
+};
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
-    let responseBodies = serverResponse.body;
+    const responseBodies = serverResponse.body;
     if (!Array.isArray(responseBodies) || responseBodies.length === 0) return;
 
     const bids = [];
 
-    for (let responseBody of responseBodies) {
+    for (const responseBody of responseBodies) {
       if (!responseBody) continue;
       if (responseBody.mediaType === 'video') {
         responseBody.ad = responseBody.vastUrl || responseBody.vastXml;

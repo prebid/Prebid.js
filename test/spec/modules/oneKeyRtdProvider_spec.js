@@ -1,5 +1,5 @@
-import {oneKeyDataSubmodule} from 'modules/oneKeyRtdProvider.js';
-import {getAdUnits} from '../../fixtures/fixtures.js';
+import { oneKeyDataSubmodule } from 'modules/oneKeyRtdProvider.js';
+import { getAdUnits } from '../../fixtures/fixtures.js';
 
 const defaultSeed = {
   version: '0.1',
@@ -91,7 +91,7 @@ describe('oneKeyDataSubmodule', () => {
       rtdConfig: {
         params: {
           proxyHostName: 'host',
-          bidders: [ 'bidder42', 'bidder24' ]
+          bidders: ['bidder42', 'bidder24']
         }
       },
       expectedFragment: {
@@ -134,19 +134,19 @@ const getReqBidsConfig = () => {
       global: {},
       bidder: {}
     }
-  }
-}
+  };
+};
 
 const setUpOneKey = () => {
   window.OneKey.queue = [];
   OneKey.generateSeed = (_transactionIds) => {
     return Promise.resolve(defaultSeed);
   };
-}
+};
 
 const executeOneKeyQueue = () => {
   while (window.OneKey.queue.length > 0) {
     window.OneKey.queue[0]();
     window.OneKey.queue.shift();
   }
-}
+};

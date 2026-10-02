@@ -1,94 +1,27 @@
-import {config} from './config.js';
-import {klona} from 'klona/json';
+import { config } from './config.js';
 
-import {EVENTS} from './constants.js';
-import {PbPromise} from './utils/promise.js';
-import {getGlobal} from './prebidGlobal.js';
-import { default as deepAccess } from 'dlv/index.js';
+import { PbPromise } from './utils/promise.js';
+import deepAccess from 'dlv/index.js';
+import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
+import * as logging from './utils/logging.js';
+import * as debug from './utils/debug.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
+export * from './utils/objects.js';
+export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
 
-var tStr = 'String';
-var tFn = 'Function';
-var tNumb = 'Number';
-var tObject = 'Object';
-var tBoolean = 'Boolean';
-var toString = Object.prototype.toString;
-let consoleExists = Boolean(window.console);
-let consoleLogExists = Boolean(consoleExists && window.console.log);
-let consoleInfoExists = Boolean(consoleExists && window.console.info);
-let consoleWarnExists = Boolean(consoleExists && window.console.warn);
-let consoleErrorExists = Boolean(consoleExists && window.console.error);
-
-let eventEmitter;
-let windowDimensions;
-
-const pbjsInstance = getGlobal();
-
-export function _setEventEmitter(emitFn) {
-  // called from events.js - this hoop is to avoid circular imports
-  eventEmitter = emitFn;
-}
-
-function emitEvent(...args) {
-  if (eventEmitter != null) {
-    eventEmitter(...args);
-  }
-}
-
-export const getWinDimensions = (function() {
-  let lastCheckTimestamp;
-  const CHECK_INTERVAL_MS = 20;
-  return () => {
-    if (!windowDimensions || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-      internal.resetWinDimensions();
-      lastCheckTimestamp = Date.now();
-    }
-    return windowDimensions;
-  }
-})();
-
-export function resetWinDimensions() {
-  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-
-  windowDimensions = {
-    screen: {
-      width: top.screen?.width,
-      height: top.screen?.height,
-      availWidth: top.screen?.availWidth,
-      availHeight: top.screen?.availHeight,
-      colorDepth: top.screen?.colorDepth,
-    },
-    innerHeight: top.innerHeight,
-    innerWidth: top.innerWidth,
-    outerWidth: top.outerWidth,
-    outerHeight: top.outerHeight,
-    visualViewport: {
-      height: top.visualViewport?.height,
-      width: top.visualViewport?.width,
-    },
-    document: {
-      documentElement: {
-        clientWidth: top.document?.documentElement?.clientWidth,
-        clientHeight: top.document?.documentElement?.clientHeight,
-        scrollTop: top.document?.documentElement?.scrollTop,
-        scrollLeft: top.document?.documentElement?.scrollLeft,
-      },
-      body: {
-        scrollTop: document.body?.scrollTop,
-        scrollLeft: document.body?.scrollLeft,
-        clientWidth: document.body?.clientWidth,
-        clientHeight: document.body?.clientHeight,
-      },
-    }
-  };
-}
+// many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
+export const logInfo = logging.logInfo;
+export const logWarn = logging.logWarn;
+export const logError = logging.logError;
+export const logMessage = logging.logMessage;
+export const prefixLog = logging.prefixLog;
+export const debugTurnedOn = debug.debugTurnedOn;
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
-  createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
   canAccessWindowTop,
@@ -104,10 +37,10 @@ export const internal = {
   parseQS,
   formatQS,
   deepEqual,
-  resetWinDimensions
+  runBackgroundTask,
 };
 
-let prebidInternal = {};
+const prebidInternal = {};
 /**
  * Returns object that is used as internal prebid namespace
  */
@@ -126,7 +59,7 @@ var getIncrementalInteger = (function () {
 
 // generate a random string (to be used as a dynamic JSONP callback)
 export function getUniqueIdentifierStr() {
-  return getIncrementalInteger() + Math.random().toString(16).substr(2);
+  return getIncrementalInteger() + Math.random().toString(16).substring(2);
 }
 
 /**
@@ -147,7 +80,7 @@ export function generateUUID(placeholder) {
  */
 function _getRandomData() {
   if (window && window.crypto && window.crypto.getRandomValues) {
-    return crypto.getRandomValues(new Uint8Array(1))[0] % 16;
+    return window.crypto.getRandomValues(new Uint8Array(1))[0] % 16;
   } else {
     return Math.random() * 16;
   }
@@ -190,10 +123,10 @@ export function sizesToSizeTuples(sizes) {
       .split(/\s*,\s*/)
       .map(sz => sz.match(/^(\d+)x(\d+)$/i))
       .filter(match => match)
-      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)]);
   } else if (Array.isArray(sizes)) {
     if (isValidGPTSingleSize(sizes)) {
-      return [sizes]
+      return [sizes];
     }
     return sizes.filter(isValidGPTSingleSize);
   }
@@ -210,7 +143,7 @@ export function parseSizesInput(sizeObj) {
 }
 
 export function sizeTupleToSizeString(size) {
-  return size[0] + 'x' + size[1]
+  return size[0] + 'x' + size[1];
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -222,14 +155,14 @@ export function parseGPTSingleSizeArray(singleSize) {
 }
 
 export function sizeTupleToRtbSize(size) {
-  return {w: size[0], h: size[1]};
+  return { w: size[0], h: size[1] };
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return sizeTupleToRtbSize(singleSize)
+    return sizeTupleToRtbSize(singleSize);
   }
 }
 
@@ -265,75 +198,15 @@ export function canAccessWindowTop() {
 }
 
 /**
- * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
+ * Returns the window to use for fingerprinting reads: win if provided, otherwise top or self.
+ * @param {Window} [win]
+ * @returns {Window}
  */
-export function logMessage() {
-  if (debugTurnedOn() && consoleLogExists) {
-    // eslint-disable-next-line no-console
-    console.log.apply(console, decorateLog(arguments, 'MESSAGE:'));
+export function getFallbackWindow(win) {
+  if (win) {
+    return win;
   }
-}
-
-export function logInfo() {
-  if (debugTurnedOn() && consoleInfoExists) {
-    // eslint-disable-next-line no-console
-    console.info.apply(console, decorateLog(arguments, 'INFO:'));
-  }
-}
-
-export function logWarn() {
-  if (debugTurnedOn() && consoleWarnExists) {
-    // eslint-disable-next-line no-console
-    console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
-}
-
-export function logError() {
-  if (debugTurnedOn() && consoleErrorExists) {
-    // eslint-disable-next-line no-console
-    console.error.apply(console, decorateLog(arguments, 'ERROR:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
-}
-
-export function prefixLog(prefix) {
-  function decorate(fn) {
-    return function (...args) {
-      fn(prefix, ...args);
-    }
-  }
-  return {
-    logError: decorate(logError),
-    logWarn: decorate(logWarn),
-    logMessage: decorate(logMessage),
-    logInfo: decorate(logInfo),
-  }
-}
-
-function decorateLog(args, prefix) {
-  args = [].slice.call(args);
-  let bidder = config.getCurrentBidder();
-
-  prefix && args.unshift(prefix);
-  if (bidder) {
-    args.unshift(label('#aaa'));
-  }
-  args.unshift(label('#3b88c3'));
-  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
-  return args;
-
-  function label(color) {
-    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
-  }
-}
-
-export function hasConsoleLogger() {
-  return consoleLogExists;
-}
-
-export function debugTurnedOn() {
-  return !!config.getConfig('debug');
+  return canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
 }
 
 export const createIframe = (() => {
@@ -346,13 +219,13 @@ export const createIframe = (() => {
     scrolling: 'no',
     frameBorder: '0',
     allowtransparency: 'true'
-  }
+  };
   return (doc, attrs, style = {}) => {
     const f = doc.createElement('iframe');
     Object.assign(f, Object.assign({}, DEFAULTS, attrs));
     Object.assign(f.style, style);
     return f;
-  }
+  };
 })();
 
 export function createInvisibleIframe() {
@@ -375,39 +248,6 @@ export function createInvisibleIframe() {
  */
 export function getParameterByName(name) {
   return parseQS(getWindowLocation().search)[name] || '';
-}
-
-/**
- * Return if the object is of the
- * given type.
- * @param {*} object to test
- * @param {String} _t type string (e.g., Array)
- * @return {Boolean} if object is of type _t
- */
-export function isA(object, _t) {
-  return toString.call(object) === '[object ' + _t + ']';
-}
-
-export function isFn(object) {
-  return isA(object, tFn);
-}
-
-export function isStr(object) {
-  return isA(object, tStr);
-}
-
-export const isArray = Array.isArray.bind(Array);
-
-export function isNumber(object) {
-  return isA(object, tNumb);
-}
-
-export function isPlainObject(object) {
-  return isA(object, tObject);
-}
-
-export function isBoolean(object) {
-  return isA(object, tBoolean);
 }
 
 /**
@@ -458,7 +298,7 @@ export function contains(a, obj) {
  */
 export function _map(object, callback) {
   if (isFn(object?.map)) return object.map(callback);
-  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
+  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object));
 }
 
 /*
@@ -481,7 +321,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
     parentEl = parentEl.length ? parentEl : doc.getElementsByTagName('body');
     if (parentEl.length) {
       parentEl = parentEl[0];
-      let insertBeforeEl = asLastChildChild ? null : parentEl.firstChild;
+      const insertBeforeEl = asLastChildChild ? null : parentEl.firstChild;
       return parentEl.insertBefore(elm, insertBeforeEl);
     }
   } catch (e) {}
@@ -515,17 +355,60 @@ export function waitForElementToLoad(element, timeout) {
 }
 
 /**
- * Inserts an image pixel with the specified `url` for cookie sync
- * @param {string} url URL string of the image pixel to load
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
+ * Fires a fire-and-forget request for `url` on the background task queue (a keepalive fetch, falling
+ * back to an image pixel) for cookie sync and similar best-effort pixels.
+ * @param {string} url URL string to request
+ * @param {string} [credentials='include'] fetch credentials mode (e.g. `'include'`, `'omit'`); pass
+ *   `'omit'` for a cookieless request — the image fallback (which cannot omit cookies) is then skipped.
  */
+
+export function politeTriggerPixel(url, credentials = 'include') {
+  const triggerSync = () => {
+    if (window.fetch && window.Request) {
+      try {
+        const request = new Request(url, {
+          method: 'GET',
+          mode: 'no-cors',
+          credentials,
+          keepalive: true
+        });
+        window.fetch(request).catch(() => { if (credentials !== 'omit') triggerPixel(url); });
+        return;
+      } catch (e) {}
+    }
+    if (credentials !== 'omit') triggerPixel(url);
+  };
+
+  runBackgroundTask(triggerSync);
+}
+
+export function politeInsertUserSyncIframe(url, done, timeout, onCleanup) {
+  runBackgroundTask(() => insertUserSyncIframe(url, done, timeout, onCleanup));
+}
+
 export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
     waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
+}
+
+/**
+ * Run a task at low priority when supported by the browser, or immediately as fallback.
+ * @param {function} task
+ */
+export function runBackgroundTask(task) {
+  const scheduler = window.scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+    return;
+  }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(() => task(), { timeout: 2000 });
+    return;
+  }
+  task();
 }
 
 /**
@@ -548,20 +431,55 @@ export function insertHtmlIntoIframe(htmlCode) {
 }
 
 /**
+ * The sync iframes inserted by this instance, tracked by element reference so that several Prebid
+ * instances running on the same page do not remove each other's. Each iframe may have an associated
+ * callback that releases work owned by its consumer before the iframe is removed.
+ */
+const OWN_SYNC_IFRAMES = new WeakMap();
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
+ * @param  {function} [onCleanup] called when the iframe is removed by `removeUserSyncIframes`
  */
-export function insertUserSyncIframe(url, done, timeout) {
-  let iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
-  let div = document.createElement('div');
-  div.innerHTML = iframeHtml;
-  let iframe = div.firstChild;
+export function insertUserSyncIframe(url, done, timeout, onCleanup) {
+  if (!url) return;
+  const iframe = createIframe(document, {
+    sandbox: 'allow-scripts allow-same-origin',
+    src: url,
+  }, {
+    width: '0px',
+    height: '0px',
+    display: 'none'
+  });
+  OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
+}
+
+/**
+ * Removes the user sync iframes that were inserted by this Prebid instance; iframes belonging to
+ * other instances running on the same page are left alone.
+ * @return {Number} the number of iframes that were removed
+ */
+export function removeUserSyncIframes() {
+  const iframes = Array.from(document.querySelectorAll('iframe'))
+    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe));
+  iframes.forEach(iframe => {
+    const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
+    OWN_SYNC_IFRAMES.delete(iframe);
+    try {
+      onCleanup?.();
+    } catch (error) {
+      logError('Error cleaning up user sync iframe', error);
+    }
+    iframe.parentNode?.removeChild(iframe);
+  });
+  return iframes.length;
 }
 
 /**
@@ -575,51 +493,46 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
     return '';
   }
 
-  let escapedUrl = encode(url);
+  const escapedUrl = encode(url);
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
 };
 
+// The encodeMacroURI implementation below was written by a bot (Claude Code).
+
+// A macro name bypasses encodeURI, since its braces are emitted literally, so it is escaped against
+// this set instead. Of these, only the double quote can close the attribute value that
+// createTrackPixelHtml writes; the rest are escaped because an encoded URL is not guaranteed to end
+// up in a double-quoted attribute - in an unquoted one, whitespace and the backtick end the value
+// and `<` and `>` delimit the tag - and because none of them belong in a URI in the first place.
+// The whitespace is spelled out rather than written `\s`, which also matches non-ASCII whitespace:
+// that is left alone, so a macro name is passed through byte-for-byte where escaping is not needed.
+const HTML_UNSAFE_CHARS = /["<>`\t\n\v\f\r ]/g;
+
+// Characters encodeURI and encodeURIComponent encode differently. A macro name containing any of
+// them is not recognised as a macro, so its braces stay percent-encoded like the rest of the URL.
+// Matched with matchAll, which works on a copy; exec would advance lastIndex on this shared object
+// and carry the offset over into the next call.
+const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
+
 /**
  * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ *
+ * A macro's braces are emitted literally so that downstream substitution can find them. The macro
+ * name is otherwise passed through unchanged, except for the characters in HTML_UNSAFE_CHARS.
  * @param url
  * @return {string}
  */
 export function encodeMacroURI(url) {
-  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
-  return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
-  }, encodeURI(url))
-}
-
-/**
- * Creates a snippet of Iframe HTML that retrieves the specified `url`
- * @param  {string} url plain URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
- * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
- * @return {string}     HTML snippet that contains the iframe src = set to `url`
- */
-export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') {
-  if (!url) {
-    return '';
+  let encoded = '';
+  let from = 0;
+  for (const match of url.matchAll(MACRO)) {
+    encoded += encodeURI(url.slice(from, match.index)) +
+      '${' + match[1].replace(HTML_UNSAFE_CHARS, encodeURIComponent) + '}';
+    from = match.index + match[0].length;
   }
-  if (encodeUri) {
-    url = encodeURI(url);
-  }
-  if (sandbox) {
-    sandbox = `sandbox="${sandbox}"`;
-  }
-
-  return `<iframe ${sandbox} id="${getUniqueIdentifierStr()}"
-      frameborder="0"
-      allowtransparency="true"
-      marginheight="0" marginwidth="0"
-      width="0" hspace="0" vspace="0" height="0"
-      style="height:0px;width:0px;display:none;"
-      scrolling="no"
-      src="${url}">
-    </iframe>`;
+  return encoded + encodeURI(url.slice(from));
 }
 
 export function uniques(value, index, arry) {
@@ -635,14 +548,14 @@ export function getBidRequest(id, bidderRequests) {
     return;
   }
   return bidderRequests.flatMap(br => br.bids)
-    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id))
+    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id));
 }
 
 export function getValue(obj, key) {
   return obj[key];
 }
 
-export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
+export function getBidderCodes(adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
@@ -662,7 +575,7 @@ export function isApnGetTagDefined() {
 
 export const sortByHighestCpm = (a, b) => {
   return b.cpm - a.cpm;
-}
+};
 
 /**
  * Fisher–Yates shuffle
@@ -676,22 +589,18 @@ export function shuffle(array) {
   // while there are elements in the array
   while (counter > 0) {
     // pick a random index
-    let index = Math.floor(Math.random() * counter);
+    const index = Math.floor(Math.random() * counter);
 
     // decrease counter by 1
     counter--;
 
     // and swap the last element with it
-    let temp = array[counter];
+    const temp = array[counter];
     array[counter] = array[index];
     array[index] = temp;
   }
 
   return array;
-}
-
-export function deepClone(obj) {
-  return klona(obj) || {};
 }
 
 export function inIframe() {
@@ -730,7 +639,15 @@ export function getSafeframeGeometry() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+}
+
+export function isFirefoxBrowser() {
+  return /firefox|fxios/i.test(navigator.userAgent);
+}
+
+export function isChromeIOSBrowser() {
+  return /crios|crmo/i.test(navigator.userAgent);
 }
 
 export function replaceMacros(str, subs) {
@@ -741,7 +658,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, {AUCTION_PRICE: cpm})
+  return replaceMacros(str, { AUCTION_PRICE: cpm });
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -762,7 +679,7 @@ export function getPerformanceNow() {
 }
 
 /**
- * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * Returns the difference between `timing.domLoading` and `timing.navigationStart`.
  * This function uses the deprecated `Performance.timing` API and should be removed in future.
  * It has not been updated yet because it is still used in some modules.
  * @deprecated
@@ -828,7 +745,7 @@ export function delayExecution(func, numRequiredCalls) {
     if (numCalls === numRequiredCalls) {
       func.apply(this, arguments);
     }
-  }
+  };
 }
 
 /**
@@ -845,33 +762,13 @@ export function groupBy(xs, key) {
 }
 
 /**
- * Build an object consisting of only defined parameters to avoid creating an
- * object with defined keys and undefined values.
- * @param {Object} object The object to pick defined params out of
- * @param {string[]} params An array of strings representing properties to look for in the object
- * @returns {Object} An object containing all the specified values that are defined
- */
-export function getDefinedParams(object, params) {
-  return params
-    .filter(param => object[param])
-    .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
-}
-
-/**
- * @typedef {Object} MediaTypes
- * @property {Object} banner banner configuration
- * @property {Object} native native configuration
- * @property {Object} video video configuration
- */
-
-/**
  * Validates an adunit's `mediaTypes` parameter
- * @param {MediaTypes} mediaTypes mediaTypes parameter to validate
- * @return {boolean} If object is valid
+ * @param mediaTypes mediaTypes parameter to validate
+ * @return If object is valid
  */
 export function isValidMediaTypes(mediaTypes) {
-  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
-  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream', 'adpod'];
+  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video', 'audio'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
 
   const types = Object.keys(mediaTypes);
 
@@ -901,22 +798,17 @@ export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
     .map((bidderData) => bidderData.params || {});
 }
 
-/**
- * Returns Do Not Track state
- */
-export function getDNT() {
-  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
-}
-
 export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
 
 /**
  * Returns filter function to match adUnitCode in slot
- * @param {Object} slot GoogleTag slot
- * @return {function} filter function
+ * @param slot GoogleTag slot
+ * @return filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
-  return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
+  const customGptSlotMatching = config.getConfig('customGptSlotMatching');
+  const match = isFn(customGptSlotMatching) && customGptSlotMatching(slot);
+  return isFn(match) ? match : (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
 }
 
 /**
@@ -926,7 +818,7 @@ export function isAdUnitCodeMatchingSlot(slot) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' }).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
@@ -936,18 +828,11 @@ export function unsupportedBidderMessage(adUnit, bidder) {
 }
 
 /**
- * Checks input is integer or not
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
- * @param {*} value
- */
-export const isInteger = Number.isInteger.bind(Number);
-
-/**
  * Returns a new object with undefined properties removed from given object
  * @param obj the object to clean
  */
 export function cleanObj(obj) {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'))
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'));
 }
 
 /**
@@ -965,7 +850,7 @@ export function pick(obj, properties) {
     }
 
     let newProp = prop;
-    let match = prop.match(/^(.+?)\sas\s(.+?)$/i);
+    const match = prop.match(/^(.+?)\sas\s(.+?)$/i);
 
     if (match) {
       prop = match[1];
@@ -982,10 +867,6 @@ export function pick(obj, properties) {
 
     return newObj;
   }, {});
-}
-
-export function isArrayOfNums(val, size) {
-  return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
 
 export function parseQS(query) {
@@ -1015,14 +896,14 @@ export function formatQS(query) {
 }
 
 export function parseUrl(url, options) {
-  let parsed = document.createElement('a');
+  const parsed = document.createElement('a');
   if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
     parsed.href = url;
   } else {
     parsed.href = decodeURIComponent(url);
   }
   // in window.location 'search' is string, not object
-  let qsAsString = (options && 'decodeSearchAsString' in options && options.decodeSearchAsString);
+  const qsAsString = (options && 'decodeSearchAsString' in options && options.decodeSearchAsString);
   return {
     href: parsed.href,
     protocol: (parsed.protocol || '').replace(/:$/, ''),
@@ -1129,7 +1010,7 @@ function mergeDeepHelper(target, source) {
     const val = source[key];
 
     if (isPlainObject(val)) {
-      if (!target[key]) {
+      if (!isPlainObject(target[key])) {
         target[key] = {};
       }
       mergeDeepHelper(target[key], val);
@@ -1161,13 +1042,13 @@ function mergeDeepHelper(target, source) {
 export function cyrb53Hash(str, seed = 0) {
   // IE doesn't support imul
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul#Polyfill
-  let imul = function(opA, opB) {
+  const imul = function(opA, opB) {
     if (isFn(Math.imul)) {
       return Math.imul(opA, opB);
     } else {
       opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
       // floating points give us 53 bits of precision to work with plus 1 sign bit
-      // automatically handled for our convienence:
+      // automatically handled for our convenience:
       // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
       //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
       var result = (opA & 0x003fffff) * opB;
@@ -1216,7 +1097,7 @@ export function safeJSONEncode(data) {
  * @param fn
  * @param key cache key generator, invoked with the same arguments passed to `fn`.
  *        By default, the first argument is used as key.
- * @return {function(): any}
+ * @return {*}
  */
 export function memoize(fn, key = function (arg) { return arg; }) {
   const cache = new Map();
@@ -1226,7 +1107,7 @@ export function memoize(fn, key = function (arg) { return arg; }) {
       cache.set(cacheKey, fn.apply(this, arguments));
     }
     return cache.get(cacheKey);
-  }
+  };
   memoized.clear = cache.clear.bind(cache);
   return memoized;
 }
@@ -1242,8 +1123,10 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
   if (acceptableUnits.indexOf(timeUnit) < 0) {
     return Date.now();
   }
-  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
-  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
+  const millisecondsOffset = timeUnit === 'm'
+    ? timeValue * 60 * 1000
+    : timeValue * 24 * 60 * 60 * 1000;
+  return Date.now() + (timeValue && timeValue > 0 ? millisecondsOffset : 0);
 }
 
 /**
@@ -1254,7 +1137,7 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
  */
 export function convertObjectToArray(obj) {
   return Object.keys(obj).map(key => {
-    return {[key]: obj[key]};
+    return { [key]: obj[key] };
   });
 }
 
@@ -1264,7 +1147,7 @@ export function convertObjectToArray(obj) {
  * @param {object} attributes
  */
 export function setScriptAttributes(script, attributes) {
-  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v))
+  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v));
 }
 
 /**
@@ -1316,7 +1199,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
       value instanceof Map ||
       value instanceof Set ||
       value instanceof Date ||
-      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+      (value !== null && type === 'object' && Object.prototype.hasOwnProperty.call(value, 'toJSON'))
     ) {
       return true;
     }
@@ -1354,7 +1237,7 @@ export function setOnAny(collection, key) {
 export function extractDomainFromHost(pageHost) {
   let domain = null;
   try {
-    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    const domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
     if (domains != null && domains.length > 0) {
       domain = domains[0];
       for (let i = 1; i < domains.length; i++) {
@@ -1375,7 +1258,7 @@ export function triggerNurlWithCpm(bid, cpm) {
       /\${AUCTION_PRICE}/,
       cpm
     );
-    triggerPixel(bid.nurl);
+    politeTriggerPixel(bid.nurl);
   }
 }
 

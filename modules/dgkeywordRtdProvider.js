@@ -10,6 +10,8 @@ import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -33,11 +35,11 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
         done = true;
         return cb.apply(this, arguments);
       }
-    }
+    };
   })(callback);
   let isFinish = false;
   logMessage('[dgkeyword sub module]', adUnits, timeout);
-  let setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
+  const setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
   if (setKeywordTargetBidders.length <= 0) {
     logMessage('[dgkeyword sub module] no dgkeyword targets.');
     callback();
@@ -50,7 +52,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
         if (!isFinish) {
           logMessage('[dgkeyword sub module] get targets from profile api end.');
           if (res) {
-            let keywords = {};
+            const keywords = {};
             if (res['s'] != null && res['s'].length > 0) {
               keywords['opeaud'] = res['s'];
             }
@@ -59,7 +61,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
             }
             if (Object.keys(keywords).length > 0) {
               const targetBidKeys = {};
-              for (let bid of setKeywordTargetBidders) {
+              for (const bid of setKeywordTargetBidders) {
                 // set keywords to ortb2Imp
                 deepSetValue(bid, 'ortb2Imp.ext.data.keywords', convertKeywordsToString(keywords));
                 if (!targetBidKeys[bid.bidder]) {
@@ -101,9 +103,7 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
 
 export function readFpidFromLocalStrage() {
   try {
-    // TODO: use storageManager
-    // eslint-disable-next-line no-restricted-properties
-    const fpid = window.localStorage.getItem('ope_fpid');
+    const fpid = storageManager.getDataFromLocalStorage('ope_fpid');
     if (fpid) {
       return fpid;
     }
@@ -118,9 +118,9 @@ export function readFpidFromLocalStrage() {
  * @param {Object} adUnits
  */
 export function getTargetBidderOfDgKeywords(adUnits) {
-  let setKeywordTargetBidders = [];
-  for (let adUnit of adUnits) {
-    for (let bid of adUnit.bids) {
+  const setKeywordTargetBidders = [];
+  for (const adUnit of adUnits) {
+    for (const bid of adUnit.bids) {
       if (bid.params && bid.params['dgkeyword'] === true) {
         delete bid.params['dgkeyword'];
         setKeywordTargetBidders.push(bid);
@@ -146,6 +146,8 @@ export const dgkeywordSubmodule = {
   init: init,
 };
 
+const storageManager = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: dgkeywordSubmodule.name });
+
 function init(moduleConfig) {
   return true;
 }
@@ -161,23 +163,23 @@ export function convertKeywordsToString(keywords) {
     // if 'text' or ''
     if (isStr(keywords[key])) {
       if (keywords[key] !== '') {
-        result += `${key}=${keywords[key]},`
+        result += `${key}=${keywords[key]},`;
       } else {
         result += `${key},`;
       }
     } else if (isArray(keywords[key])) {
-      let isValSet = false
+      let isValSet = false;
       keywords[key].forEach(val => {
         if (isStr(val) && val) {
-          result += `${key}=${val},`
-          isValSet = true
+          result += `${key}=${val},`;
+          isValSet = true;
         }
       });
       if (!isValSet) {
-        result += `${key},`
+        result += `${key},`;
       }
     } else {
-      result += `${key},`
+      result += `${key},`;
     }
   });
 

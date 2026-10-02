@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { _each, isEmpty, parseSizesInput } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,7 +13,7 @@ import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'gnet';
 const ENDPOINT = 'https://service.gnetrtb.com/api';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,

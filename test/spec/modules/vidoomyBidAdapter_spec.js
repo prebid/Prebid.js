@@ -1,14 +1,12 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vidoomyBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { INSTREAM } from '../../../src/video';
+
+import { INSTREAM } from '../../../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
-const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}']
+const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}'];
 
 describe('vidoomyBidAdapter', function() {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     let bid;
     beforeEach(() => {
@@ -44,7 +42,7 @@ describe('vidoomyBidAdapter', function() {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -54,13 +52,13 @@ describe('vidoomyBidAdapter', function() {
         video: {
           context: INSTREAM
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'vidoomy',
         'params': {
@@ -74,32 +72,38 @@ describe('vidoomyBidAdapter', function() {
             'sizes': [[300, 250], [200, 100]]
           }
         },
-        'schain': {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'exchange1.com',
-              'sid': '1234!abcd',
-              'hp': 1,
-              'rid': 'bid-request-1',
-              'name': 'publisher, Inc.',
-              'domain': 'publisher.com'
-            },
-            {
-              'asi': 'exchange2.com',
-              'sid': 'abcd',
-              'hp': 1
-            },
-            {
-              'asi': 'exchange2.com',
-              'sid': 'abcd',
-              'hp': 1,
-              'rid': 'bid-request-2',
-              'name': 'intermediary',
-              'domain': 'intermediary.com'
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'exchange1.com',
+                    'sid': '1234!abcd',
+                    'hp': 1,
+                    'rid': 'bid-request-1',
+                    'name': 'publisher, Inc.',
+                    'domain': 'publisher.com'
+                  },
+                  {
+                    'asi': 'exchange2.com',
+                    'sid': 'abcd',
+                    'hp': 1
+                  },
+                  {
+                    'asi': 'exchange2.com',
+                    'sid': 'abcd',
+                    'hp': 1,
+                    'rid': 'bid-request-2',
+                    'name': 'intermediary',
+                    'domain': 'intermediary.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       },
       {
@@ -118,7 +122,7 @@ describe('vidoomyBidAdapter', function() {
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -159,8 +163,20 @@ describe('vidoomyBidAdapter', function() {
       expect('' + request[1].data.multiBidsSupport).to.equal('1');
     });
 
+    it('should default gpid to empty string when ortb2Imp.ext.gpid is absent', function () {
+      expect(request[0].data.gpid).to.equal('');
+      expect(request[1].data.gpid).to.equal('');
+    });
+
+    it('should send gpid from ortb2Imp.ext.gpid when present', function () {
+      const gpid = 'example.com/vidoomyad/12345';
+      const bidRequest = { ...bidRequests[0], ortb2Imp: { ext: { gpid } } };
+      const req = spec.buildRequests([bidRequest], bidderRequest)[0];
+      expect(req.data.gpid).to.equal(gpid);
+    });
+
     it('should send schain parameter in serialized form', function () {
-      const serializedForm = '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com!exchange2.com,abcd,1,,,!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
+      const serializedForm = '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com!exchange2.com,abcd,1,,,!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com';
       expect(request[0].data).to.include.any.keys('schain');
       expect(request[0].data.schain).to.eq(serializedForm);
     });
@@ -181,15 +197,15 @@ describe('vidoomyBidAdapter', function() {
           id: 'some-random-id-value-2',
           atype: 1
         }]
-      }]
-      bidRequests[0].userIdAsEids = eids
+      }];
+      bidRequests[0].userIdAsEids = eids;
       const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
       expect(bidRequest[0].data).to.include.any.keys('eids');
       expect(JSON.parse(bidRequest[0].data.eids)).to.eql(eids);
     });
 
     it('should set the bidfloor if getFloor module is undefined but static bidfloor is present', function () {
-      const request = { ...bidRequests[0], params: { bidfloor: 2.5 } }
+      const request = { ...bidRequests[0], params: { bidfloor: 2.5 } };
       const req = spec.buildRequests([request], bidderRequest)[0];
       expect(req.data).to.include.any.keys('bidfloor');
       expect(req.data.bidfloor).to.equal(2.5);
@@ -231,7 +247,7 @@ describe('vidoomyBidAdapter', function() {
         bapp: ['app.com'],
         btype: [1, 2, 3],
         battr: [1, 2, 3]
-      }
+      };
       const request = spec.buildRequests(bidRequests, bidderRequestNew);
       it('should have badv, bcat, bapp, btype, battr in request', function () {
         expect(request[0].data).to.include.any.keys('badv');
@@ -239,7 +255,7 @@ describe('vidoomyBidAdapter', function() {
         expect(request[0].data).to.include.any.keys('bapp');
         expect(request[0].data).to.include.any.keys('btype');
         expect(request[0].data).to.include.any.keys('battr');
-      })
+      });
 
       it('should have equal badv, bcat, bapp, btype, battr in request', function () {
         expect(request[0].badv).to.deep.equal(bidderRequest.refererInfo.badv);
@@ -247,8 +263,8 @@ describe('vidoomyBidAdapter', function() {
         expect(request[0].bapp).to.deep.equal(bidderRequest.refererInfo.bapp);
         expect(request[0].btype).to.deep.equal(bidderRequest.refererInfo.btype);
         expect(request[0].battr).to.deep.equal(bidderRequest.refererInfo.battr);
-      })
-    })
+      });
+    });
 
     describe('first party data', function () {
       const bidderRequest2 = {
@@ -260,12 +276,12 @@ describe('vidoomyBidAdapter', function() {
           btype: [1, 2, 3],
           battr: [1, 2, 3]
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, bidderRequest2);
 
       it('should have badv, bcat, bapp, btype, battr in request and equal to bidderRequest.ortb2', function () {
-        expect(request[0].data.bcat).to.deep.equal(bidderRequest2.ortb2.bcat)
-        expect(request[0].data.badv).to.deep.equal(bidderRequest2.ortb2.badv)
+        expect(request[0].data.bcat).to.deep.equal(bidderRequest2.ortb2.bcat);
+        expect(request[0].data.badv).to.deep.equal(bidderRequest2.ortb2.badv);
         expect(request[0].data.bapp).to.deep.equal(bidderRequest2.ortb2.bapp);
         expect(request[0].data.btype).to.deep.equal(bidderRequest2.ortb2.btype);
         expect(request[0].data.battr).to.deep.equal(bidderRequest2.ortb2.battr);
@@ -333,7 +349,7 @@ describe('vidoomyBidAdapter', function() {
           'secondaryCatIds': null
         }
       }]
-    }
+    };
 
     const serverResponseBanner = {
       body: [{
@@ -394,16 +410,16 @@ describe('vidoomyBidAdapter', function() {
         },
         'pixels': PIXELS
       }]
-    }
+    };
 
     it('should get the correct bids responses for outstream video, with renderer, an url in ad, and same requestId', function () {
       const bidRequest = {
         data: {
           videoContext: 'outstream'
         }
-      }
+      };
 
-      let result = spec.interpretResponse(serverResponseVideo, bidRequest);
+      const result = spec.interpretResponse(serverResponseVideo, bidRequest);
 
       expect(result[0].renderer).to.not.be.undefined;
       expect(result[0].ad).to.equal(serverResponseVideo.body[0].vastUrl);
@@ -412,7 +428,7 @@ describe('vidoomyBidAdapter', function() {
 
     it('should get the correct bids responses for banner with same requestId ', function () {
       const bidRequest = {};
-      let result = spec.interpretResponse(serverResponseBanner, bidRequest);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].requestId).to.equal(serverResponseBanner.body[0].requestId);
       expect(result[1].requestId).to.equal(serverResponseBanner.body[1].requestId);
@@ -420,17 +436,17 @@ describe('vidoomyBidAdapter', function() {
 
     it('should get the correct bids responses for banner with same creativeId ', function () {
       const bidRequest = {};
-      let result = spec.interpretResponse(serverResponseBanner, bidRequest);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].creativeId).to.equal(serverResponseBanner.body[0].creativeId);
       expect(result[1].creativeId).to.equal(serverResponseBanner.body[1].creativeId);
     });
 
     it('should sync user cookies', function () {
-      const GDPR_CONSENT = 'GDPR_TEST'
+      const GDPR_CONSENT = 'GDPR_TEST';
       const result = spec.getUserSyncs({
         pixelEnabled: true
-      }, [serverResponseBanner], { consentString: GDPR_CONSENT, gdprApplies: 1 }, null)
+      }, [serverResponseBanner], { consentString: GDPR_CONSENT, gdprApplies: 1 }, null);
       expect(result).to.eql([
         {
           type: 'image',
@@ -440,7 +456,7 @@ describe('vidoomyBidAdapter', function() {
           type: 'image',
           url: `/test2.png?gdpr=1&gdpr_consent=${GDPR_CONSENT}`
         }
-      ])
+      ]);
     });
   });
 });

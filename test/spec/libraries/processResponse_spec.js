@@ -1,5 +1,5 @@
 import { getBidFromResponse } from '../../../libraries/processResponse/index.js';
-import {expect} from 'chai/index.js';
+import { expect } from 'chai/index.js';
 
 describe('processResponse', function () {
   const respItem = {
@@ -54,7 +54,7 @@ describe('processResponse', function () {
     'videoMissing': 'Bid request videoType property is missing - '
   };
   it('returns bid when respItem and LOG_ERROR_MESS is passed', function () {
-    let response = getBidFromResponse(respItem, LOG_ERROR_MESS);
+    const response = getBidFromResponse(respItem, LOG_ERROR_MESS);
     expect(response).not.include.any.keys('emptyResponse', 'hasNoArrayOfBids', 'emptySeatbid');
   });
 });

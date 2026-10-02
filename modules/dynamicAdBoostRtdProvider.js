@@ -4,7 +4,7 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { deepAccess, deepSetValue } from '../src/utils.js';
@@ -27,7 +27,7 @@ let dabStartDate;
 let dabStartTime;
 
 // Array of div IDs to track
-let dynamicAdBoostAdUnits = {};
+const dynamicAdBoostAdUnits = {};
 
 function init() {
   dabStartDate = new Date();
@@ -37,13 +37,13 @@ function init() {
   }
   // Create an Intersection Observer instance
   observer = new IntersectionObserver(dabHandleIntersection, dabOptions);
-  let keyId = 'rtd-' + window.location.hostname;
+  const keyId = 'rtd-' + window.location.hostname;
 
-  let dabInterval = setInterval(function() {
-    let dabDateNow = new Date();
-    let dabTimeNow = dabDateNow.getTime();
-    let dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
-    let elapsedThreshold = 0;
+  const dabInterval = setInterval(function() {
+    const dabDateNow = new Date();
+    const dabTimeNow = dabDateNow.getTime();
+    const dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
+    const elapsedThreshold = 0;
 
     if (dabElapsedSeconds >= elapsedThreshold) {
       clearInterval(dabInterval); // Stop
@@ -65,7 +65,7 @@ function getBidRequestData(reqBidsConfigObj, callback) {
 
   if (Array.isArray(reqAdUnits)) {
     reqAdUnits.forEach(adunit => {
-      let gptCode = deepAccess(adunit, 'code');
+      const gptCode = deepAccess(adunit, 'code');
       if (dynamicAdBoostAdUnits.hasOwnProperty(gptCode)) {
         // AdUnits has reached target viewablity at some point
         deepSetValue(adunit, `ortb2Imp.ext.data.${MODULE_NAME}.${gptCode}`, dynamicAdBoostAdUnits[gptCode]);
@@ -75,18 +75,18 @@ function getBidRequestData(reqBidsConfigObj, callback) {
   callback();
 }
 
-let markViewed = (entry, observer) => {
+const markViewed = (entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
-  }
-}
+  };
+};
 
 // Callback function when an observed element becomes visible
 function dabHandleIntersection(entries) {
   entries.forEach(entry => {
     if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
       dynamicAdBoostAdUnits[entry.target.id] = entry.intersectionRatio;
-      markViewed(entry, observer)
+      markViewed(entry, observer);
     }
   });
 }

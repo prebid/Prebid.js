@@ -1,4 +1,9 @@
-window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
-window.$$PREBID_GLOBAL$$.installedModules = (window.$$PREBID_GLOBAL$$.installedModules || []);
-window.$$PREBID_GLOBAL$$.cmd = window.$$PREBID_GLOBAL$$.cmd || [];
-window.$$PREBID_GLOBAL$$.que = window.$$PREBID_GLOBAL$$.que || [];
+import { getGlobalVarName } from '../../src/buildOptions.js';
+
+const globalVarName = getGlobalVarName();
+const prebidGlobal = window[globalVarName] = (window[globalVarName] || {});
+
+prebidGlobal.version = prebidGlobal.version || 'v$prebid.version$';
+prebidGlobal.installedModules = (prebidGlobal.installedModules || []);
+prebidGlobal.cmd = prebidGlobal.cmd || [];
+prebidGlobal.que = prebidGlobal.que || [];

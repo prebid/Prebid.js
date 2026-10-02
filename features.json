@@ -2,5 +2,8 @@
   "NATIVE",
   "VIDEO",
   "UID2_CSTG",
-  "GREEDY"
+  "GREEDY",
+  "AUDIO",
+  "LOG_NON_ERROR",
+  "LOG_ERROR"
 ]

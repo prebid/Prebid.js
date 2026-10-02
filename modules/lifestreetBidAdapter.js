@@ -23,10 +23,10 @@ function boolToString(value) {
  */
 function template(strings, ...keys) {
   return function(...values) {
-    let dict = values[values.length - 1] || {};
-    let result = [strings[0]];
+    const dict = values[values.length - 1] || {};
+    const result = [strings[0]];
     keys.forEach(function(key, i) {
-      let value = isInteger(key) ? values[key] : dict[key];
+      const value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
@@ -39,8 +39,8 @@ function template(strings, ...keys) {
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
 function formatBidRequest(bid, bidderRequest = {}) {
-  const {params} = bid;
-  const {referer} = (bidderRequest.refererInfo || {});
+  const { params } = bid;
+  const { referer } = (bidderRequest.refererInfo || {});
   let url = urlTemplate({
     adapter: 'prebid',
     slot: params.slot,
@@ -68,7 +68,7 @@ function formatBidRequest(bid, bidderRequest = {}) {
 
   // ccpa support
   if (bidderRequest.uspConsent) {
-    url += `&__us_privacy=${bidderRequest.uspConsent}`
+    url += `&__us_privacy=${bidderRequest.uspConsent}`;
   }
 
   return {
@@ -90,19 +90,19 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid = {}) => {
-    const {params = {}} = bid;
+    const { params = {} } = bid;
     return !!(params.slot && params.adkey && params.ad_size);
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
     return validBidRequests.map(bid => {
-      return formatBidRequest(bid, bidderRequest)
+      return formatBidRequest(bid, bidderRequest);
     });
   },
 
   interpretResponse: (serverResponse, bidRequest) => {
     const bidResponses = [];
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if (!isResponseValid(response)) {
       return bidResponses;
     }

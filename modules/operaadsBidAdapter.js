@@ -2,7 +2,6 @@ import {
   deepAccess,
   deepSetValue,
   generateUUID,
-  getDNT,
   isArray,
   isFn,
   isPlainObject,
@@ -11,12 +10,14 @@ import {
   logWarn,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -28,8 +29,8 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
  */
 const BIDDER_CODE = 'operaads';
 
-const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
-const USER_SYNC_ENDPOINT = 'https://s.adx.opera.com/usersync/page';
+const ENDPOINT = 'https://s.oa.opera.com/ortb/v2/';
+const USER_SYNC_ENDPOINT = 'https://s.oa.opera.com/usersync/page';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -39,7 +40,7 @@ const NET_REVENUE = true;
 
 const BANNER_DEFAULTS = {
   SIZE: [300, 250]
-}
+};
 
 const VIDEO_DEFAULTS = {
   PROTOCOLS: [2, 3, 5, 6],
@@ -48,7 +49,7 @@ const VIDEO_DEFAULTS = {
   DELIVERY: [1],
   API: [1, 2, 5],
   SIZE: [640, 480]
-}
+};
 
 const NATIVE_DEFAULTS = {
   IMAGE_TYPE: {
@@ -74,7 +75,7 @@ const NATIVE_DEFAULTS = {
     SPONSORED: 25,
     CTA: 20
   }
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -97,22 +98,22 @@ export const spec = {
     }
 
     if (!bid.params) {
-      logWarn(BIDDER_CODE, 'bid.params is required.')
+      logWarn(BIDDER_CODE, 'bid.params is required.');
       return false;
     }
 
     if (!bid.params.placementId) {
-      logWarn(BIDDER_CODE, 'bid.params.placementId is required.')
+      logWarn(BIDDER_CODE, 'bid.params.placementId is required.');
       return false;
     }
 
     if (!bid.params.endpointId) {
-      logWarn(BIDDER_CODE, 'bid.params.endpointId is required.')
+      logWarn(BIDDER_CODE, 'bid.params.endpointId is required.');
       return false;
     }
 
     if (!bid.params.publisherId) {
-      logWarn(BIDDER_CODE, 'bid.params.publisherId is required.')
+      logWarn(BIDDER_CODE, 'bid.params.publisherId is required.');
       return false;
     }
 
@@ -130,7 +131,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    return validBidRequests.map(validBidRequest => (buildOpenRtbBidRequest(validBidRequest, bidderRequest)))
+    return validBidRequests.map(validBidRequest => (buildOpenRtbBidRequest(validBidRequest, bidderRequest)));
   },
 
   /**
@@ -169,14 +170,14 @@ export const spec = {
       }];
     }
     if ('pixelEnabled' in syncOptions && syncOptions.pixelEnabled) {
-      const pixels = deepAccess(serverResponses, '0.body.pixels')
+      const pixels = deepAccess(serverResponses, '0.body.pixels');
       if (Array.isArray(pixels)) {
-        const userSyncPixels = []
+        const userSyncPixels = [];
         for (const pixel of pixels) {
           userSyncPixels.push({
             type: 'image',
             url: pixel
-          })
+          });
         }
         return userSyncPixels;
       }
@@ -223,7 +224,7 @@ export const spec = {
    * @param {Bid} bid The bid of which the targeting has been set
    */
   onSetTargeting: function (bid) { }
-}
+};
 
 /**
  * Buid openRtb request from bidRequest and bidderRequest
@@ -244,13 +245,13 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     bcat: getBcat(bidRequest),
     cur: [DEFAULT_CURRENCY],
     regs: {
-      coppa: config.getConfig('coppa') ? 1 : 0,
+      coppa: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
       ext: {}
     },
     user: {
       buyeruid: getUserId(bidRequest)
     }
-  }
+  };
   fulfillInventoryInfo(payload, bidRequest, bidderRequest);
 
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
@@ -282,7 +283,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     },
     // set original bid request, so we can get it from interpretResponse
     originalBidRequest: bidRequest
-  }
+  };
 }
 
 /**
@@ -442,7 +443,7 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
               url: decodeURIComponent(asset.img.url),
               width: asset.img.w,
               height: asset.img.h
-            }
+            };
           }
           break;
         }
@@ -452,7 +453,7 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
               url: decodeURIComponent(asset.img.url),
               width: asset.img.w,
               height: asset.img.h
-            }
+            };
           }
           break;
         }
@@ -590,7 +591,7 @@ function createNativeAssets(params) {
       title: {
         len: params.title.len || NATIVE_DEFAULTS.LENGTH.TITLE
       }
-    })
+    });
   }
 
   if (params.image) {
@@ -598,7 +599,7 @@ function createNativeAssets(params) {
       id: NATIVE_DEFAULTS.ASSET_ID.IMAGE,
       required: params.image.required ? 1 : 0,
       img: mapNativeImage(params.image, NATIVE_DEFAULTS.IMAGE_TYPE.MAIN)
-    })
+    });
   }
 
   if (params.icon) {
@@ -606,7 +607,7 @@ function createNativeAssets(params) {
       id: NATIVE_DEFAULTS.ASSET_ID.ICON,
       required: params.icon.required ? 1 : 0,
       img: mapNativeImage(params.icon, NATIVE_DEFAULTS.IMAGE_TYPE.ICON)
-    })
+    });
   }
 
   if (params.sponsoredBy) {
@@ -617,7 +618,7 @@ function createNativeAssets(params) {
         type: NATIVE_DEFAULTS.DATA_ASSET_TYPE.SPONSORED,
         len: params.sponsoredBy.len | NATIVE_DEFAULTS.LENGTH.SPONSORED
       }
-    })
+    });
   }
 
   if (params.body) {
@@ -628,7 +629,7 @@ function createNativeAssets(params) {
         type: NATIVE_DEFAULTS.DATA_ASSET_TYPE.DESC,
         len: params.body.len || NATIVE_DEFAULTS.LENGTH.BODY
       }
-    })
+    });
   }
 
   if (params.cta) {
@@ -639,7 +640,7 @@ function createNativeAssets(params) {
         type: NATIVE_DEFAULTS.DATA_ASSET_TYPE.CTA_TEXT,
         len: params.cta.len || NATIVE_DEFAULTS.LENGTH.CTA
       }
-    })
+    });
   }
 
   return assets;
@@ -680,18 +681,18 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
-  let operaId = deepAccess(bidRequest, 'userId.operaId');
+  const operaId = deepAccess(bidRequest, 'userId.operaId');
   if (operaId) {
     return operaId;
   }
 
-  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;
   }
 
   for (const idModule of ['pubcid', 'tdid']) {
-    let userId = deepAccess(bidRequest, `userId.${idModule}`);
+    const userId = deepAccess(bidRequest, `userId.${idModule}`);
     if (userId) {
       return userId;
     }
@@ -709,7 +710,7 @@ function getUserId(bidRequest) {
  * @param {*} params.size
  * @returns {Object} floor price
  */
-function getBidFloor(bid, {mediaType = '*', size = '*'}) {
+function getBidFloor(bid, { mediaType = '*', size = '*' }) {
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,
@@ -728,7 +729,7 @@ function getBidFloor(bid, {mediaType = '*', size = '*'}) {
   return {
     currency: DEFAULT_CURRENCY,
     floor: 0.0
-  }
+  };
 }
 
 /**

@@ -43,7 +43,7 @@ The LKQD Bidder Adapter expects Prebid Cache to be enabled so that we can store 
 pbjs.setConfig({
     usePrebidCache: true,
     cache: {
-        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        url: 'https://prebid.example.com/pbc/v1/cache'
     }
 });
 ```

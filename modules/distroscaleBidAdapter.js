@@ -2,26 +2,27 @@ import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deep
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 const BIDDER_CODE = 'distroscale';
 const SHORT_CODE = 'ds';
 const LOG_WARN_PREFIX = 'DistroScale: ';
 const ENDPOINT = 'https://hb.jsrdn.com/hb?from=pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
-const GVLID = 754;
 const UNDEF = undefined;
 
-const SUPPORTED_MEDIATYPES = [ BANNER ];
+const SUPPORTED_MEDIATYPES = [BANNER];
 
 function _getHost(url) {
-  let a = document.createElement('a');
+  const a = document.createElement('a');
   a.href = url;
   return a.hostname;
 }
 
 function _getBidFloor(bid, mType, sz) {
   if (isFn(bid.getFloor)) {
-    let floor = bid.getFloor({
+    const floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType: mType || '*',
       size: sz || '*'
@@ -72,13 +73,13 @@ function _createImpressionObject(bid) {
       addSize(bid.mediaTypes[BANNER].sizes[i]);
     }
   }
-  if (sizesCount == 0) {
+  if (sizesCount === 0) {
     logWarn(LOG_WARN_PREFIX + 'Error: missing sizes: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
   } else {
     // Use the first preferred size
     var keys = Object.keys(sizes);
     keys.sort(function(a, b) {
-      return sizes[a].idx - sizes[b].idx
+      return sizes[a].idx - sizes[b].idx;
     });
     var bannerObj = {
       pos: 0,
@@ -115,7 +116,6 @@ function _createImpressionObject(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIATYPES,
   aliases: [SHORT_CODE],
 
@@ -140,7 +140,7 @@ export const spec = {
         if (win.vx.cs_loaded) {
           dsloaded = 1;
         }
-        if (win != win.parent) {
+        if (win !== win.parent) {
           win = win.parent;
         } else {
           break;
@@ -163,7 +163,7 @@ export const spec = {
         h: screen.height,
         w: screen.width,
         language: (navigator.language && navigator.language.replace(/-.*/, '')) || 'en',
-        dnt: (navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1' || navigator.doNotTrack == 'yes') ? 1 : 0
+        dnt: getDNT() ? 1 : 0
       },
       imp: [],
       user: {},
@@ -180,7 +180,7 @@ export const spec = {
       }
     });
 
-    if (payload.imp.length == 0) {
+    if (payload.imp.length === 0) {
       return;
     }
 
@@ -197,8 +197,9 @@ export const spec = {
     }
 
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params
@@ -213,17 +214,17 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
     // First Party Data
     const commonFpd = bidderRequest.ortb2 || {};
     if (commonFpd.site) {
-      mergeDeep(payload, {site: commonFpd.site});
+      mergeDeep(payload, { site: commonFpd.site });
     }
     if (commonFpd.user) {
-      mergeDeep(payload, {user: commonFpd.user});
+      mergeDeep(payload, { user: commonFpd.user });
     }
 
     // User IDs
@@ -249,7 +250,7 @@ export const spec = {
           seatbidder.bid &&
             isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let newBid = {
+              const newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0),
                 currency: DEFAULT_CURRENCY,

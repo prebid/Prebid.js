@@ -6,15 +6,18 @@ autolabeler:
     title:
       - '/^(?!.*(bug|initial|release|fix)).*$/i'
 categories:
+  - title: '🏛 Core PRs'
+    labels:
+      - 'core'
   - title: '🚀 New Features'
     label: 'feature'
-  - title: '🛠 Maintenance'
-    label: 'maintenance'    
   - title: '🐛 Bug Fixes'
     labels:
       - 'fix'
       - 'bugfix'
-      - 'bug'      
+      - 'bug'
+  - title: '🛠 Maintenance'
+    labels: []
 change-template: '- $TITLE (#$NUMBER)'
 version-resolver:
   major:

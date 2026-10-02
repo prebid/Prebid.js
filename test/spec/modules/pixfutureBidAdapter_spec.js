@@ -1,12 +1,20 @@
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import { spec } from 'modules/pixfutureBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
-import { auctionManager } from 'src/auctionManager.js';
-import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
 
 describe('PixFutureAdapter', function () {
+  describe('getUserSyncs', function () {
+    it('includes COPPA in the sync URL when enabled', function () {
+      const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null, true);
+      expect(sync.url).to.include('&coppa=1');
+    });
+
+    it('does not include COPPA in the sync URL when disabled', function () {
+      const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null, false);
+      expect(sync.url).to.not.include('&coppa=1');
+    });
+  });
+
   it('<description of unit or feature being tested>', function () {
     const adapter = newBidder(spec);
     describe('inherited functions', function () {
@@ -18,7 +26,7 @@ describe('PixFutureAdapter', function () {
     // Test of isBidRequestValid method
 
     describe('isBidRequestValid', function () {
-      let bid = {
+      const bid = {
         'bidder': 'pixfuture',
         'pageUrl': 'https://adinify.com/prebidjs/?pbjs_debug=true',
         'bidId': '236e806f760f0c',
@@ -43,7 +51,7 @@ describe('PixFutureAdapter', function () {
       });
 
       it('should return false when required params are not passed', function () {
-        let invalidBid = Object.assign({}, bid);
+        const invalidBid = Object.assign({}, bid);
         delete invalidBid.params;
         invalidBid.params = {
           'pix_id': 0
@@ -55,7 +63,7 @@ describe('PixFutureAdapter', function () {
     // Test of buildRequest method
 
     describe('Test of buildRequest method', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         'labelAny': ['display'],
         'bidder': 'pixfuture',
         'params': {
@@ -139,7 +147,7 @@ describe('PixFutureAdapter', function () {
         }
       }];
 
-      let bidderRequests =
+      const bidderRequests =
                     {
                       'bidderCode': 'pixfuture',
                       'auctionId': '4cd5684b-ae2a-4d1f-84be-5f1ee66d9ff3',
@@ -243,11 +251,11 @@ describe('PixFutureAdapter', function () {
       // let bidderRequest = Object.assign({}, bidderRequests);
       const request = spec.buildRequests(validBidRequests, bidderRequests);
       // console.log(JSON.stringify(request));
-      let bidRequest = Object.assign({}, request[0]);
+      const bidRequest = Object.assign({}, request[0]);
 
       expect(bidRequest.data).to.exist;
       expect(bidRequest.data.sizes).to.deep.equal([[300, 250]]);
-      expect(bidRequest.data.params).to.deep.equal({'pix_id': '777'});
+      expect(bidRequest.data.params).to.deep.equal({ 'pix_id': '777' });
       expect(bidRequest.data.adUnitCode).to.deep.equal('26335x300x250x14x_ADSLOT88');
     });
   });

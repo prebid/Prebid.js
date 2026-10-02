@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT} from 'modules/taboolaBidAdapter.js';
-import {config} from '../../../src/config'
-import * as utils from '../../../src/utils'
-import {server} from '../../mocks/xhr'
+import { expect } from 'chai';
+import { spec, internal, BANNER_ENDPOINT_URL, NATIVE_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility } from 'modules/taboolaBidAdapter.js';
+import * as utils from '../../../src/utils.js';
+import { server } from '../../mocks/xhr.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Taboola Adapter', function () {
   let sandbox, hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
@@ -19,7 +19,7 @@ describe('Taboola Adapter', function () {
     getDataFromLocalStorage = sandbox.stub(userData.storageManager, 'getDataFromLocalStorage');
     localStorageIsEnabled = sandbox.stub(userData.storageManager, 'localStorageIsEnabled');
     commonBidRequest = createBidRequest();
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       taboola: {
         storageAllowed: true
       }
@@ -28,12 +28,16 @@ describe('Taboola Adapter', function () {
 
   afterEach(() => {
     sandbox.restore();
-    $$PREBID_GLOBAL$$.bidderSettings = {};
-  })
+    getGlobal().bidderSettings = {};
+  });
 
   const displayBidRequestParams = {
-    sizes: [[300, 250], [300, 600]]
-  }
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]]
+      }
+    }
+  };
 
   const createBidRequest = () => ({
     bidder: 'taboola',
@@ -53,9 +57,9 @@ describe('Taboola Adapter', function () {
           publisherId: 'publisherId'
         },
         ...displayBidRequestParams
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should fail when bid is invalid - publisherId isn`t defined', function () {
       const bid = {
@@ -64,9 +68,9 @@ describe('Taboola Adapter', function () {
           tagId: 'below the article'
         },
         ...displayBidRequestParams
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should fail when bid is invalid - sizes isn`t defined', function () {
       const bid = {
@@ -75,9 +79,9 @@ describe('Taboola Adapter', function () {
           publisherId: 'publisherId',
           tagId: 'below the article'
         },
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should succeed when bid contains valid', function () {
       const bid = {
@@ -87,10 +91,10 @@ describe('Taboola Adapter', function () {
           tagId: 'below the article'
         },
         ...displayBidRequestParams,
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+  });
 
   describe('onBidWon', function () {
     it('onBidWon exist as a function', () => {
@@ -111,9 +115,135 @@ describe('Taboola Adapter', function () {
         width: 300,
         height: 250,
         nurl: nurl
-      }
+      };
       spec.onBidWon(bid);
-      expect(server.requests[0].url).to.equals('http://win.example.com/3.4')
+      expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
+    });
+
+    it('should fire nurl as a win notice even when deferBilling is true', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        deferBilling: true
+      };
+      spec.onBidWon(bid);
+      expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
+    });
+
+    it('should not fire burl on bid won', function () {
+      const burl = 'http://billing.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        burl: burl
+      };
+      spec.onBidWon(bid);
+      expect(server.requests.length).to.equal(0);
+    });
+  });
+
+  describe('onBidBillable', function () {
+    it('onBidBillable exist as a function', () => {
+      expect(spec.onBidBillable).to.exist.and.to.be.a('function');
+    });
+
+    it('should fire burl when available', function () {
+      const burl = 'http://billing.example.com/${AUCTION_PRICE}';
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        burl: burl
+      };
+      spec.onBidBillable(bid);
+      expect(server.requests[0].url).to.equals('http://billing.example.com/3.4');
+    });
+
+    it('should not fire nurl when burl is not available', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl
+      };
+      spec.onBidBillable(bid);
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should fire both nurl on bid won and burl on bid billable for the same bid', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const burl = 'http://billing.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        burl: burl
+      };
+      spec.onBidWon(bid);
+      spec.onBidBillable(bid);
+      expect(server.requests.length).to.equal(2);
+      expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
+      expect(server.requests[1].url).to.equals('http://billing.example.com/3.4');
+    });
+
+    it('should not fire anything when neither burl nor nurl is available', function () {
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250
+      };
+      spec.onBidBillable(bid);
+      expect(server.requests.length).to.equal(0);
     });
   });
 
@@ -131,7 +261,7 @@ describe('Taboola Adapter', function () {
         adUnitCode: 'adUnit-code',
         timeout: 3000,
         auctionId: '12a34b56c'
-      }]
+      }];
       spec.onTimeout(timeoutData);
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/timeout');
@@ -153,11 +283,11 @@ describe('Taboola Adapter', function () {
         params: {
           publisherId: 'publisherId'
         }
-      }
-      spec.onBidderError({error, bidderRequest});
+      };
+      spec.onBidderError({ error, bidderRequest });
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/bidError');
-      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal({error, bidderRequest});
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal({ error, bidderRequest });
     });
   });
 
@@ -165,7 +295,7 @@ describe('Taboola Adapter', function () {
     const defaultBidRequest = {
       ...createBidRequest(),
       ...displayBidRequestParams,
-    }
+    };
 
     const commonBidderRequest = {
       bidderRequestId: 'mock-uuid',
@@ -179,60 +309,62 @@ describe('Taboola Adapter', function () {
           ua: navigator.userAgent,
         },
       }
-    }
+    };
 
     it('should build display request', function () {
-      const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
       const expectedData = {
         'imp': [{
           'id': res.data.imp[0].id,
-          'secure': 1,
           'banner': {
+            topframe: 0,
             format: [{
-              w: displayBidRequestParams.sizes[0][0],
-              h: displayBidRequestParams.sizes[0][1]
+              w: displayBidRequestParams.mediaTypes.banner.sizes[0][0],
+              h: displayBidRequestParams.mediaTypes.banner.sizes[0][1]
             },
             {
-              w: displayBidRequestParams.sizes[1][0],
-              h: displayBidRequestParams.sizes[1][1]
+              w: displayBidRequestParams.mediaTypes.banner.sizes[1][0],
+              h: displayBidRequestParams.mediaTypes.banner.sizes[1][1]
             }
             ]
           },
+          'secure': 1,
           'tagid': commonBidRequest.params.tagId,
           'bidfloor': null,
           'bidfloorcur': 'USD',
-          'ext': {}
+          'ext': {
+            'prebid': {
+              'bidId': defaultBidRequest.bidId
+            }
+          }
         }],
-        'device': {'ua': navigator.userAgent},
+        'device': res.data.device,
         'id': 'mock-uuid',
         'test': 0,
         'user': {
           'buyeruid': 0,
           'ext': {},
         },
-        'regs': {'ext': {}, 'coppa': 0},
-        'source': {'fd': 1},
+        'regs': { 'ext': {}, 'coppa': 0 },
+        'source': { 'fd': 1 },
         'site': {
           'id': commonBidRequest.params.publisherId,
           'name': commonBidRequest.params.publisherId,
           'domain': commonBidderRequest.refererInfo.domain,
           'page': commonBidderRequest.refererInfo.page,
           'ref': commonBidderRequest.refererInfo.ref,
-          'publisher': {'id': commonBidRequest.params.publisherId},
-          'content': {'language': navigator.language}
+          'publisher': { 'id': commonBidRequest.params.publisherId },
+          'content': { 'language': navigator.language }
         },
         'bcat': [],
         'badv': [],
         'wlang': [],
-        'ext': {
-          'prebid': {
-            'version': '$prebid.version$'
-          }
-        }
+        'ext': res.data.ext
       };
 
-      expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
+      expect(res.url).to.equal(`${BANNER_ENDPOINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
       expect(JSON.stringify(res.data)).to.deep.equal(JSON.stringify(expectedData));
+      expect(res.data.ext.prebid.version).to.equal('$prebid.version$');
     });
 
     it('should pass optional parameters in request', function () {
@@ -243,10 +375,10 @@ describe('Taboola Adapter', function () {
 
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params, ...optionalParams}
+        params: { ...commonBidRequest.params, ...optionalParams }
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].bidfloor).to.deep.equal(0.25);
       expect(res.data.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
@@ -254,15 +386,15 @@ describe('Taboola Adapter', function () {
     it('should pass bid floor', function () {
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params},
+        params: { ...commonBidRequest.params },
         getFloor: function() {
           return {
             currency: 'USD',
             floor: 2.7,
-          }
+          };
         }
       };
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].bidfloor).to.deep.equal(2.7);
       expect(res.data.imp[0].bidfloorcur).to.deep.equal('USD');
     });
@@ -275,15 +407,15 @@ describe('Taboola Adapter', function () {
 
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params, ...optionalParams},
+        params: { ...commonBidRequest.params, ...optionalParams },
         getFloor: function() {
           return {
             currency: 'USD',
             floor: 2.7,
-          }
+          };
         }
       };
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].bidfloor).to.deep.equal(2.7);
       expect(res.data.imp[0].bidfloorcur).to.deep.equal('USD');
     });
@@ -295,10 +427,10 @@ describe('Taboola Adapter', function () {
 
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params, ...optionalParams}
+        params: { ...commonBidRequest.params, ...optionalParams }
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].banner.pos).to.deep.equal(2);
     });
 
@@ -307,14 +439,14 @@ describe('Taboola Adapter', function () {
         ext: {
           gpid: '/homepage/#1'
         }
-      }
+      };
       const bidRequest = {
         ...defaultBidRequest,
         ortb2Imp: ortb2Imp,
-        params: {...commonBidRequest.params}
+        params: { ...commonBidRequest.params }
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].ext.gpid).to.deep.equal('/homepage/#1');
     });
 
@@ -323,14 +455,14 @@ describe('Taboola Adapter', function () {
         ext: {
           example: 'example'
         }
-      }
+      };
       const bidRequest = {
         ...defaultBidRequest,
         ortb2Imp: ortb2Imp,
-        params: {...commonBidRequest.params}
+        params: { ...commonBidRequest.params }
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].ext.example).to.deep.equal('example');
     });
 
@@ -338,8 +470,8 @@ describe('Taboola Adapter', function () {
       const bidderRequest = {
         ...commonBidderRequest,
         timeout: 500
-      }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      };
+      const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
       expect(res.data.tmax).to.equal(500);
     });
 
@@ -347,8 +479,8 @@ describe('Taboola Adapter', function () {
       const bidderRequest = {
         ...commonBidderRequest,
         timeout: '500'
-      }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      };
+      const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
       expect(res.data.tmax).to.equal(500);
     });
 
@@ -356,8 +488,8 @@ describe('Taboola Adapter', function () {
       const bidderRequest = {
         ...commonBidderRequest,
         timeout: null
-      }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      };
+      const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
       expect(res.data.tmax).to.equal(undefined);
     });
 
@@ -385,13 +517,39 @@ describe('Taboola Adapter', function () {
               osv: '17.4'
             }
           }
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        expect(res.data.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
-        expect(res.data.badv).to.deep.equal(bidderRequest.ortb2.badv)
-        expect(res.data.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
-        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
-        expect(res.data.device).to.deep.equal(bidderRequest.ortb2.device);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.bcat).to.deep.equal(bidderRequest.ortb2.bcat);
+        expect(res.data.badv).to.deep.equal(bidderRequest.ortb2.badv);
+        expect(res.data.wlang).to.deep.equal(bidderRequest.ortb2.wlang);
+        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id);
+        // Device should contain ortb2 device properties plus fraud prevention signals
+        expect(res.data.device.w).to.equal(bidderRequest.ortb2.device.w);
+        expect(res.data.device.h).to.equal(bidderRequest.ortb2.device.h);
+        expect(res.data.device.ua).to.equal(bidderRequest.ortb2.device.ua);
+        expect(res.data.device.ext.bot).to.exist;
+        expect(res.data.device.ext.visibility).to.exist;
+      });
+
+      it('should prioritize site.content.language from ortb2 over navigator.language', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            ...commonBidderRequest.ortb2,
+            site: {
+              content: {
+                language: 'hi'
+              }
+            }
+          }
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.site.content.language).to.equal('hi');
+      });
+
+      it('should fall back to navigator.language when site.content.language is not set in ortb2', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.site.content.language).to.equal(navigator.language);
       });
 
       it('should pass user entities', function () {
@@ -404,11 +562,11 @@ describe('Taboola Adapter', function () {
               yob: 1990
             }
           }
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
-        expect(res.data.user.buyeruid).to.deep.equal(bidderRequest.ortb2.user.buyeruid)
-        expect(res.data.user.yob).to.deep.equal(bidderRequest.ortb2.user.yob)
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id);
+        expect(res.data.user.buyeruid).to.deep.equal(bidderRequest.ortb2.user.buyeruid);
+        expect(res.data.user.yob).to.deep.equal(bidderRequest.ortb2.user.yob);
       });
 
       it('should pass pageType if exists in ortb2', function () {
@@ -421,8 +579,8 @@ describe('Taboola Adapter', function () {
               }
             }
           }
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.ext.pageType).to.deep.equal(bidderRequest.ortb2.ext.data.pageType);
       });
 
@@ -434,8 +592,8 @@ describe('Taboola Adapter', function () {
               example: 'example'
             }
           }
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.ext.example).to.deep.equal(bidderRequest.ortb2.ext.example);
       });
 
@@ -458,8 +616,8 @@ describe('Taboola Adapter', function () {
               }
             }
           }
-        }
-        const res = spec.buildRequests([defaultBidRequest], {...ortb2})
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], { ...ortb2 });
         expect(res.data.user.data).to.deep.equal(ortb2.ortb2.user.data);
       });
     });
@@ -476,9 +634,9 @@ describe('Taboola Adapter', function () {
           }
         };
 
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-        expect(res.data.user.ext.consent).to.equal('consentString')
-        expect(res.data.regs.ext.gdpr).to.equal(1)
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.ext.consent).to.equal('consentString');
+        expect(res.data.regs.ext.gdpr).to.equal(1);
       });
 
       it('should pass GPP consent if exist in ortb2', function () {
@@ -487,11 +645,11 @@ describe('Taboola Adapter', function () {
             gpp: 'testGpp',
             gpp_sid: [1, 2, 3]
           }
-        }
+        };
 
-        const res = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
-        expect(res.data.regs.ext.gpp).to.equal('testGpp')
-        expect(res.data.regs.ext.gpp_sid).to.deep.equal([1, 2, 3])
+        const [res] = spec.buildRequests([defaultBidRequest], { ...commonBidderRequest, ortb2 });
+        expect(res.data.regs.ext.gpp).to.equal('testGpp');
+        expect(res.data.regs.ext.gpp_sid).to.deep.equal([1, 2, 3]);
       });
 
       it('should pass us privacy consent', function () {
@@ -500,20 +658,20 @@ describe('Taboola Adapter', function () {
             referer: 'https://example.com/'
           },
           uspConsent: 'consentString'
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.regs.ext.us_privacy).to.equal('consentString');
       });
 
       it('should pass coppa consent', function () {
-        config.setConfig({coppa: true})
-
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
-        expect(res.data.regs.coppa).to.equal(1)
-
-        config.resetConfig()
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: { regs: { coppa: 1 } }
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.regs.coppa).to.equal(1);
       });
-    })
+    });
 
     describe('handle userid ', function () {
       it('should get user id from local storage', function () {
@@ -524,8 +682,8 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest,
           timeout: 500
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(51525152);
       });
 
@@ -539,7 +697,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('12121212');
       });
 
@@ -560,8 +718,8 @@ describe('Taboola Adapter', function () {
             }
           }
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        expect(res.data.user.id).to.deep.equal('userid')
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.id).to.deep.equal('userid');
         expect(res.data.user.buyeruid).to.equal('12121212');
       });
 
@@ -582,7 +740,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('user:12121212');
       });
 
@@ -600,7 +758,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('user:12121212');
       });
 
@@ -618,7 +776,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('user:tbla:12121212');
       });
 
@@ -645,7 +803,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('cookie:1');
       });
 
@@ -659,7 +817,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
 
         expect(res.data.user.buyeruid).to.equal('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
       });
@@ -675,8 +833,8 @@ describe('Taboola Adapter', function () {
 
         const bidderRequest = {
           ...commonBidderRequest
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(window.TRC.user_id);
 
         delete window.TRC;
@@ -688,20 +846,20 @@ describe('Taboola Adapter', function () {
 
         const bidderRequest = {
           ...commonBidderRequest
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(0);
       });
 
       it('should set buyeruid to be 0 if it`s a new user', function () {
         const bidderRequest = {
           ...commonBidderRequest
-        }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(0);
       });
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     const defaultBidRequest = {
@@ -719,7 +877,7 @@ describe('Taboola Adapter', function () {
     const bidderRequest = {
       ...commonBidderRequest
     };
-    const request = spec.buildRequests([defaultBidRequest], bidderRequest);
+    const [request] = spec.buildRequests([defaultBidRequest], bidderRequest);
 
     const serverResponse = {
       body: {
@@ -798,215 +956,40 @@ describe('Taboola Adapter', function () {
       }
     };
 
-    const serverResponseWithPa = {
-      body: {
-        'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
-                'impid': request.data.imp[0].id,
-                'price': 0.342068,
-                'adid': '2785119545551083381',
-                'adm': '\u003chtml\u003e\n\u003chead\u003e\n\u003cmeta charset\u003d"UTF-8"\u003e\n\u003cmeta http-equiv\u003d"Content-Type" content\u003d"text/html; charset\u003dutf-8"/\u003e\u003c/head\u003e\n\u003cbody style\u003d"margin: 0px; overflow:hidden;"\u003e \n\u003cscript type\u003d"text/javascript"\u003e\nwindow.tbl_trc_domain \u003d \u0027us-trc.taboola.com\u0027;\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({article:\u0027auto\u0027});\n!function (e, f, u, i) {\nif (!document.getElementById(i)){\ne.async \u003d 1;\ne.src \u003d u;\ne.id \u003d i;\nf.parentNode.insertBefore(e, f);\n}\n}(document.createElement(\u0027script\u0027),\ndocument.getElementsByTagName(\u0027script\u0027)[0],\n\u0027//cdn.taboola.com/libtrc/wattpad-placement-255/loader.js\u0027,\n\u0027tb_loader_script\u0027);\nif(window.performance \u0026\u0026 typeof window.performance.mark \u003d\u003d \u0027function\u0027)\n{window.performance.mark(\u0027tbl_ic\u0027);}\n\u003c/script\u003e\n\n\u003cdiv id\u003d"taboola-below-article-thumbnails" style\u003d"height: 250px; width: 300px;"\u003e\u003c/div\u003e\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({\nmode: \u0027Rbox_300x250_1x1\u0027,\ncontainer: \u0027taboola-below-article-thumbnails\u0027,\nplacement: \u0027wattpad.com_P18694_S257846_W300_H250_N1_TB\u0027,\ntarget_type: \u0027mix\u0027,\n"rtb-win":{ \nbi:\u002749ff4d58ef9a163a696d4fad03621b9e036f24f7_15\u0027,\ncu:\u0027USD\u0027,\nwp:\u0027${AUCTION_PRICE:BF}\u0027,\nwcb:\u0027~!audex-display-impression!~\u0027,\nrt:\u00271643227025284\u0027,\nrdc:\u0027us.taboolasyndication.com\u0027,\nti:\u00274212\u0027,\nex:\u0027MagniteSCoD\u0027,\nbs:\u0027xapi:257846:lvvSm6Ak7_wE\u0027,\nbp:\u002718694\u0027,\nbd:\u0027wattpad.com\u0027,\nsi:\u00279964\u0027\n} \n,\nrec: {"trc":{"si":"a69c7df43b2334f0aa337c37e2d80c21","sd":"v2_a69c7df43b2334f0aa337c37e2d80c21_3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD_1643227025_1643227025_CJS1tQEQ5NdWGPLA0d76xo-9ngEgASgEMCY4iegHQIroB0iB09kDUKPPB1gAYABop-G2i_Hl-eVucAA","ui":"3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD","plc":"PHON","wi":"-643136642229425433","cc":"CA","route":"US:US:V","el2r":["bulk-metrics","debug","social","metrics","perf"],"uvpw":"1","pi":"1420260","cpb":"GNO629MGIJz__________wEqGXVzLnRhYm9vbGFzeW5kaWNhdGlvbi5jb20yC3RyYy1zY29kMTI5OIDwmrUMQInoB0iK6AdQgdPZA1ijzwdjCN3__________wEQ3f__________ARgjZGMI3AoQoBAYFmRjCNIDEOAGGAhkYwiWFBCcHBgYZGMI9AUQiwoYC2RjCNkUEPkcGB1kYwj0FBCeHRgfZGorNDlmZjRkNThlZjlhMTYzYTY5NmQ0ZmFkMDM2MjFiOWUwMzZmMjRmN18xNXgCgAHpbIgBrPvTxQE","dcga":{"pubConfigOverride":{"border-color":"black","font-weight":"bold","inherit-title-color":"true","module-name":"cta-lazy-module","enable-call-to-action-creative-component":"true","disable-cta-on-custom-module":"true"}},"tslt":{"p-video-overlay":{"cancel":"סגור","goto":"עבור לדף"},"read-more":{"DEFAULT_CAPTION":"%D7%A7%D7%A8%D7%90%20%D7%A2%D7%95%D7%93"},"next-up":{"BTN_TEXT":"לקריאת התוכן הבא"},"time-ago":{"now":"עכשיו","today":"היום","yesterday":"אתמול","minutes":"לפני {0} דקות","hour":"לפני שעה","hours":"לפני {0} שעות","days":"לפני {0} ימים"},"explore-more":{"TITLE_TEXT":"המשיכו לקרוא","POPUP_TEXT":"אל תפספסו הזדמנות לקרוא עוד תוכן מעולה, רגע לפני שתעזבו"}},"evh":"-1964913910","vl":[{"ri":"185db6d274ce94b27caaabd9eed7915b","uip":"wattpad.com_P18694_S257846_W300_H250_N1_TB","ppb":"COIF","estimation_method":"EcpmEstimationMethodType_ESTIMATION","baseline_variant":"false","original_ecpm":"0.4750949889421463","v":[{"thumbnail":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg","all-thumbnails":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg!-#@1600x1000","origin":"default","thumb-size":"1600x1000","title":"Get Roofing Services At Prices You Can Afford In Edmonton","type":"text","published-date":"1641997069","branding-text":"Roofing Services | Search Ads","url":"https://inneth-conded.xyz/9ad2e613-8777-4fe7-9a52-386c88879289?site\u003dwattpad-placement-255\u0026site_id\u003d1420260\u0026title\u003dGet+Roofing+Services+At+Prices+You+Can+Afford+In+Edmonton\u0026platform\u003dSmartphone\u0026campaign_id\u003d15573949\u0026campaign_item_id\u003d3108610633\u0026thumbnail\u003dhttp%3A%2F%2Fcdn.taboola.com%2Flibtrc%2Fstatic%2Fthumbnails%2Fa2b272be514ca3ebe3f97a4a32a41db5.jpg\u0026cpc\u003d{cpc}\u0026click_id\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1\u0026tblci\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1#tblciGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1","duration":"0","sig":"328243c4127ff16e3fdcd7270bab908f6f3fc5b4c98d","item-id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","uploader":"","is-syndicated":"true","publisher":"search","id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","category":"home","views":"0","itp":[{"u":"https://trc.taboola.com/1326786/log/3/unip?en\u003dclickersusa","t":"c"}],"description":""}]}],"cpcud":{"upc":"0.0","upr":"0.0"}}}\n});\n\u003c/script\u003e\n\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({flush: true});\n\u003c/script\u003e\n\n\u003c/body\u003e\n\u003c/html\u003e',
-                'adomain': [
-                  'example.xyz'
-                ],
-                'cid': '15744349',
-                'crid': '278195503434041083381',
-                'w': 300,
-                'h': 250,
-                'exp': 60,
-                'lurl': 'http://us-trc.taboola.com/sample',
-                'nurl': 'http://win.example.com/',
-
-              }
-            ],
-            'seat': '14204545260'
-          }
-        ],
-        'bidid': 'da43860a-4644-442a-b5e0-93f268cf8d19',
-        'cur': 'USD',
-        'ext': {
-          'igbid': [
-            {
-              'impid': request.data.imp[0].id,
-              'igbuyer': [
-                {
-                  'origin': 'https://pa.taboola.com',
-                  'buyerdata': '{\"seller\":\"pa.taboola.com\",\"resolveToConfig\":false,\"perBuyerSignals\":{\"https://pa.taboola.com\":{\"country\":\"US\",\"route\":\"AM\",\"cct\":[0.02241223,-0.8686833,0.96153843],\"vct\":\"-1967600173\",\"ccv\":null,\"ect\":[-0.13584597,2.5825605],\"ri\":\"100fb73d4064bc\",\"vcv\":\"165229814\",\"ecv\":[-0.39882636,-0.05216012],\"publisher\":\"test-headerbidding\",\"platform\":\"DESK\"}},\"decisionLogicUrl\":\"https://pa.taboola.com/score/decisionLogic.js\",\"sellerTimeout\":100,\"interestGroupBuyers\":[\"https://pa.taboola.com\"],\"perBuyerTimeouts\":{\"*\":50}}'
-                }
-              ]
-            }
-          ]
-        }
-      }
-    };
-
-    const serverResponseWithPartialPa = {
-      body: {
-        'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
-                'impid': request.data.imp[0].id,
-                'price': 0.342068,
-                'adid': '2785119545551083381',
-                'adm': '\u003chtml\u003e\n\u003chead\u003e\n\u003cmeta charset\u003d"UTF-8"\u003e\n\u003cmeta http-equiv\u003d"Content-Type" content\u003d"text/html; charset\u003dutf-8"/\u003e\u003c/head\u003e\n\u003cbody style\u003d"margin: 0px; overflow:hidden;"\u003e \n\u003cscript type\u003d"text/javascript"\u003e\nwindow.tbl_trc_domain \u003d \u0027us-trc.taboola.com\u0027;\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({article:\u0027auto\u0027});\n!function (e, f, u, i) {\nif (!document.getElementById(i)){\ne.async \u003d 1;\ne.src \u003d u;\ne.id \u003d i;\nf.parentNode.insertBefore(e, f);\n}\n}(document.createElement(\u0027script\u0027),\ndocument.getElementsByTagName(\u0027script\u0027)[0],\n\u0027//cdn.taboola.com/libtrc/wattpad-placement-255/loader.js\u0027,\n\u0027tb_loader_script\u0027);\nif(window.performance \u0026\u0026 typeof window.performance.mark \u003d\u003d \u0027function\u0027)\n{window.performance.mark(\u0027tbl_ic\u0027);}\n\u003c/script\u003e\n\n\u003cdiv id\u003d"taboola-below-article-thumbnails" style\u003d"height: 250px; width: 300px;"\u003e\u003c/div\u003e\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({\nmode: \u0027Rbox_300x250_1x1\u0027,\ncontainer: \u0027taboola-below-article-thumbnails\u0027,\nplacement: \u0027wattpad.com_P18694_S257846_W300_H250_N1_TB\u0027,\ntarget_type: \u0027mix\u0027,\n"rtb-win":{ \nbi:\u002749ff4d58ef9a163a696d4fad03621b9e036f24f7_15\u0027,\ncu:\u0027USD\u0027,\nwp:\u0027${AUCTION_PRICE:BF}\u0027,\nwcb:\u0027~!audex-display-impression!~\u0027,\nrt:\u00271643227025284\u0027,\nrdc:\u0027us.taboolasyndication.com\u0027,\nti:\u00274212\u0027,\nex:\u0027MagniteSCoD\u0027,\nbs:\u0027xapi:257846:lvvSm6Ak7_wE\u0027,\nbp:\u002718694\u0027,\nbd:\u0027wattpad.com\u0027,\nsi:\u00279964\u0027\n} \n,\nrec: {"trc":{"si":"a69c7df43b2334f0aa337c37e2d80c21","sd":"v2_a69c7df43b2334f0aa337c37e2d80c21_3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD_1643227025_1643227025_CJS1tQEQ5NdWGPLA0d76xo-9ngEgASgEMCY4iegHQIroB0iB09kDUKPPB1gAYABop-G2i_Hl-eVucAA","ui":"3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD","plc":"PHON","wi":"-643136642229425433","cc":"CA","route":"US:US:V","el2r":["bulk-metrics","debug","social","metrics","perf"],"uvpw":"1","pi":"1420260","cpb":"GNO629MGIJz__________wEqGXVzLnRhYm9vbGFzeW5kaWNhdGlvbi5jb20yC3RyYy1zY29kMTI5OIDwmrUMQInoB0iK6AdQgdPZA1ijzwdjCN3__________wEQ3f__________ARgjZGMI3AoQoBAYFmRjCNIDEOAGGAhkYwiWFBCcHBgYZGMI9AUQiwoYC2RjCNkUEPkcGB1kYwj0FBCeHRgfZGorNDlmZjRkNThlZjlhMTYzYTY5NmQ0ZmFkMDM2MjFiOWUwMzZmMjRmN18xNXgCgAHpbIgBrPvTxQE","dcga":{"pubConfigOverride":{"border-color":"black","font-weight":"bold","inherit-title-color":"true","module-name":"cta-lazy-module","enable-call-to-action-creative-component":"true","disable-cta-on-custom-module":"true"}},"tslt":{"p-video-overlay":{"cancel":"סגור","goto":"עבור לדף"},"read-more":{"DEFAULT_CAPTION":"%D7%A7%D7%A8%D7%90%20%D7%A2%D7%95%D7%93"},"next-up":{"BTN_TEXT":"לקריאת התוכן הבא"},"time-ago":{"now":"עכשיו","today":"היום","yesterday":"אתמול","minutes":"לפני {0} דקות","hour":"לפני שעה","hours":"לפני {0} שעות","days":"לפני {0} ימים"},"explore-more":{"TITLE_TEXT":"המשיכו לקרוא","POPUP_TEXT":"אל תפספסו הזדמנות לקרוא עוד תוכן מעולה, רגע לפני שתעזבו"}},"evh":"-1964913910","vl":[{"ri":"185db6d274ce94b27caaabd9eed7915b","uip":"wattpad.com_P18694_S257846_W300_H250_N1_TB","ppb":"COIF","estimation_method":"EcpmEstimationMethodType_ESTIMATION","baseline_variant":"false","original_ecpm":"0.4750949889421463","v":[{"thumbnail":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg","all-thumbnails":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg!-#@1600x1000","origin":"default","thumb-size":"1600x1000","title":"Get Roofing Services At Prices You Can Afford In Edmonton","type":"text","published-date":"1641997069","branding-text":"Roofing Services | Search Ads","url":"https://inneth-conded.xyz/9ad2e613-8777-4fe7-9a52-386c88879289?site\u003dwattpad-placement-255\u0026site_id\u003d1420260\u0026title\u003dGet+Roofing+Services+At+Prices+You+Can+Afford+In+Edmonton\u0026platform\u003dSmartphone\u0026campaign_id\u003d15573949\u0026campaign_item_id\u003d3108610633\u0026thumbnail\u003dhttp%3A%2F%2Fcdn.taboola.com%2Flibtrc%2Fstatic%2Fthumbnails%2Fa2b272be514ca3ebe3f97a4a32a41db5.jpg\u0026cpc\u003d{cpc}\u0026click_id\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1\u0026tblci\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1#tblciGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1","duration":"0","sig":"328243c4127ff16e3fdcd7270bab908f6f3fc5b4c98d","item-id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","uploader":"","is-syndicated":"true","publisher":"search","id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","category":"home","views":"0","itp":[{"u":"https://trc.taboola.com/1326786/log/3/unip?en\u003dclickersusa","t":"c"}],"description":""}]}],"cpcud":{"upc":"0.0","upr":"0.0"}}}\n});\n\u003c/script\u003e\n\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({flush: true});\n\u003c/script\u003e\n\n\u003c/body\u003e\n\u003c/html\u003e',
-                'adomain': [
-                  'example.xyz'
-                ],
-                'cid': '15744349',
-                'crid': '278195503434041083381',
-                'w': 300,
-                'h': 250,
-                'exp': 60,
-                'lurl': 'http://us-trc.taboola.com/sample',
-                'nurl': 'http://win.example.com/',
-
-              }
-            ],
-            'seat': '14204545260'
-          }
-        ],
-        'bidid': 'da43860a-4644-442a-b5e0-93f268cf8d19',
-        'cur': 'USD',
-        'ext': {
-          'igbid': [
-            {
-              'impid': request.data.imp[0].id,
-              'igbuyer': [
-                {
-                  'origin': 'https://pa.taboola.com',
-                  'buyerdata': '{}'
-                }
-              ]
-            }
-          ]
-        }
-      }
-    };
-
-    const serverResponseWithWrongPa = {
-      body: {
-        'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
-                'impid': request.data.imp[0].id,
-                'price': 0.342068,
-                'adid': '2785119545551083381',
-                'adm': '\u003chtml\u003e\n\u003chead\u003e\n\u003cmeta charset\u003d"UTF-8"\u003e\n\u003cmeta http-equiv\u003d"Content-Type" content\u003d"text/html; charset\u003dutf-8"/\u003e\u003c/head\u003e\n\u003cbody style\u003d"margin: 0px; overflow:hidden;"\u003e \n\u003cscript type\u003d"text/javascript"\u003e\nwindow.tbl_trc_domain \u003d \u0027us-trc.taboola.com\u0027;\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({article:\u0027auto\u0027});\n!function (e, f, u, i) {\nif (!document.getElementById(i)){\ne.async \u003d 1;\ne.src \u003d u;\ne.id \u003d i;\nf.parentNode.insertBefore(e, f);\n}\n}(document.createElement(\u0027script\u0027),\ndocument.getElementsByTagName(\u0027script\u0027)[0],\n\u0027//cdn.taboola.com/libtrc/wattpad-placement-255/loader.js\u0027,\n\u0027tb_loader_script\u0027);\nif(window.performance \u0026\u0026 typeof window.performance.mark \u003d\u003d \u0027function\u0027)\n{window.performance.mark(\u0027tbl_ic\u0027);}\n\u003c/script\u003e\n\n\u003cdiv id\u003d"taboola-below-article-thumbnails" style\u003d"height: 250px; width: 300px;"\u003e\u003c/div\u003e\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({\nmode: \u0027Rbox_300x250_1x1\u0027,\ncontainer: \u0027taboola-below-article-thumbnails\u0027,\nplacement: \u0027wattpad.com_P18694_S257846_W300_H250_N1_TB\u0027,\ntarget_type: \u0027mix\u0027,\n"rtb-win":{ \nbi:\u002749ff4d58ef9a163a696d4fad03621b9e036f24f7_15\u0027,\ncu:\u0027USD\u0027,\nwp:\u0027${AUCTION_PRICE:BF}\u0027,\nwcb:\u0027~!audex-display-impression!~\u0027,\nrt:\u00271643227025284\u0027,\nrdc:\u0027us.taboolasyndication.com\u0027,\nti:\u00274212\u0027,\nex:\u0027MagniteSCoD\u0027,\nbs:\u0027xapi:257846:lvvSm6Ak7_wE\u0027,\nbp:\u002718694\u0027,\nbd:\u0027wattpad.com\u0027,\nsi:\u00279964\u0027\n} \n,\nrec: {"trc":{"si":"a69c7df43b2334f0aa337c37e2d80c21","sd":"v2_a69c7df43b2334f0aa337c37e2d80c21_3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD_1643227025_1643227025_CJS1tQEQ5NdWGPLA0d76xo-9ngEgASgEMCY4iegHQIroB0iB09kDUKPPB1gAYABop-G2i_Hl-eVucAA","ui":"3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD","plc":"PHON","wi":"-643136642229425433","cc":"CA","route":"US:US:V","el2r":["bulk-metrics","debug","social","metrics","perf"],"uvpw":"1","pi":"1420260","cpb":"GNO629MGIJz__________wEqGXVzLnRhYm9vbGFzeW5kaWNhdGlvbi5jb20yC3RyYy1zY29kMTI5OIDwmrUMQInoB0iK6AdQgdPZA1ijzwdjCN3__________wEQ3f__________ARgjZGMI3AoQoBAYFmRjCNIDEOAGGAhkYwiWFBCcHBgYZGMI9AUQiwoYC2RjCNkUEPkcGB1kYwj0FBCeHRgfZGorNDlmZjRkNThlZjlhMTYzYTY5NmQ0ZmFkMDM2MjFiOWUwMzZmMjRmN18xNXgCgAHpbIgBrPvTxQE","dcga":{"pubConfigOverride":{"border-color":"black","font-weight":"bold","inherit-title-color":"true","module-name":"cta-lazy-module","enable-call-to-action-creative-component":"true","disable-cta-on-custom-module":"true"}},"tslt":{"p-video-overlay":{"cancel":"סגור","goto":"עבור לדף"},"read-more":{"DEFAULT_CAPTION":"%D7%A7%D7%A8%D7%90%20%D7%A2%D7%95%D7%93"},"next-up":{"BTN_TEXT":"לקריאת התוכן הבא"},"time-ago":{"now":"עכשיו","today":"היום","yesterday":"אתמול","minutes":"לפני {0} דקות","hour":"לפני שעה","hours":"לפני {0} שעות","days":"לפני {0} ימים"},"explore-more":{"TITLE_TEXT":"המשיכו לקרוא","POPUP_TEXT":"אל תפספסו הזדמנות לקרוא עוד תוכן מעולה, רגע לפני שתעזבו"}},"evh":"-1964913910","vl":[{"ri":"185db6d274ce94b27caaabd9eed7915b","uip":"wattpad.com_P18694_S257846_W300_H250_N1_TB","ppb":"COIF","estimation_method":"EcpmEstimationMethodType_ESTIMATION","baseline_variant":"false","original_ecpm":"0.4750949889421463","v":[{"thumbnail":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg","all-thumbnails":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg!-#@1600x1000","origin":"default","thumb-size":"1600x1000","title":"Get Roofing Services At Prices You Can Afford In Edmonton","type":"text","published-date":"1641997069","branding-text":"Roofing Services | Search Ads","url":"https://inneth-conded.xyz/9ad2e613-8777-4fe7-9a52-386c88879289?site\u003dwattpad-placement-255\u0026site_id\u003d1420260\u0026title\u003dGet+Roofing+Services+At+Prices+You+Can+Afford+In+Edmonton\u0026platform\u003dSmartphone\u0026campaign_id\u003d15573949\u0026campaign_item_id\u003d3108610633\u0026thumbnail\u003dhttp%3A%2F%2Fcdn.taboola.com%2Flibtrc%2Fstatic%2Fthumbnails%2Fa2b272be514ca3ebe3f97a4a32a41db5.jpg\u0026cpc\u003d{cpc}\u0026click_id\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1\u0026tblci\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1#tblciGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1","duration":"0","sig":"328243c4127ff16e3fdcd7270bab908f6f3fc5b4c98d","item-id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","uploader":"","is-syndicated":"true","publisher":"search","id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","category":"home","views":"0","itp":[{"u":"https://trc.taboola.com/1326786/log/3/unip?en\u003dclickersusa","t":"c"}],"description":""}]}],"cpcud":{"upc":"0.0","upr":"0.0"}}}\n});\n\u003c/script\u003e\n\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({flush: true});\n\u003c/script\u003e\n\n\u003c/body\u003e\n\u003c/html\u003e',
-                'adomain': [
-                  'example.xyz'
-                ],
-                'cid': '15744349',
-                'crid': '278195503434041083381',
-                'w': 300,
-                'h': 250,
-                'exp': 60,
-                'lurl': 'http://us-trc.taboola.com/sample',
-                'nurl': 'http://win.example.com/',
-
-              }
-            ],
-            'seat': '14204545260'
-          }
-        ],
-        'bidid': 'da43860a-4644-442a-b5e0-93f268cf8d19',
-        'cur': 'USD',
-        'ext': {
-          'igbid': [
-            {
-              'impid': request.data.imp[0].id,
-              'igbuyer': [
-                {
-                }
-              ]
-            }
-          ]
-        }
-      }
-    };
-
-    const serverResponseWithEmptyIgbidWIthWrongPa = {
-      body: {
-        'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
-                'impid': request.data.imp[0].id,
-                'price': 0.342068,
-                'adid': '2785119545551083381',
-                'adm': '\u003chtml\u003e\n\u003chead\u003e\n\u003cmeta charset\u003d"UTF-8"\u003e\n\u003cmeta http-equiv\u003d"Content-Type" content\u003d"text/html; charset\u003dutf-8"/\u003e\u003c/head\u003e\n\u003cbody style\u003d"margin: 0px; overflow:hidden;"\u003e \n\u003cscript type\u003d"text/javascript"\u003e\nwindow.tbl_trc_domain \u003d \u0027us-trc.taboola.com\u0027;\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({article:\u0027auto\u0027});\n!function (e, f, u, i) {\nif (!document.getElementById(i)){\ne.async \u003d 1;\ne.src \u003d u;\ne.id \u003d i;\nf.parentNode.insertBefore(e, f);\n}\n}(document.createElement(\u0027script\u0027),\ndocument.getElementsByTagName(\u0027script\u0027)[0],\n\u0027//cdn.taboola.com/libtrc/wattpad-placement-255/loader.js\u0027,\n\u0027tb_loader_script\u0027);\nif(window.performance \u0026\u0026 typeof window.performance.mark \u003d\u003d \u0027function\u0027)\n{window.performance.mark(\u0027tbl_ic\u0027);}\n\u003c/script\u003e\n\n\u003cdiv id\u003d"taboola-below-article-thumbnails" style\u003d"height: 250px; width: 300px;"\u003e\u003c/div\u003e\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({\nmode: \u0027Rbox_300x250_1x1\u0027,\ncontainer: \u0027taboola-below-article-thumbnails\u0027,\nplacement: \u0027wattpad.com_P18694_S257846_W300_H250_N1_TB\u0027,\ntarget_type: \u0027mix\u0027,\n"rtb-win":{ \nbi:\u002749ff4d58ef9a163a696d4fad03621b9e036f24f7_15\u0027,\ncu:\u0027USD\u0027,\nwp:\u0027${AUCTION_PRICE:BF}\u0027,\nwcb:\u0027~!audex-display-impression!~\u0027,\nrt:\u00271643227025284\u0027,\nrdc:\u0027us.taboolasyndication.com\u0027,\nti:\u00274212\u0027,\nex:\u0027MagniteSCoD\u0027,\nbs:\u0027xapi:257846:lvvSm6Ak7_wE\u0027,\nbp:\u002718694\u0027,\nbd:\u0027wattpad.com\u0027,\nsi:\u00279964\u0027\n} \n,\nrec: {"trc":{"si":"a69c7df43b2334f0aa337c37e2d80c21","sd":"v2_a69c7df43b2334f0aa337c37e2d80c21_3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD_1643227025_1643227025_CJS1tQEQ5NdWGPLA0d76xo-9ngEgASgEMCY4iegHQIroB0iB09kDUKPPB1gAYABop-G2i_Hl-eVucAA","ui":"3c70f7c7d64a65b15e4a4175c9a2cfa51072f04bMagniteSCoD","plc":"PHON","wi":"-643136642229425433","cc":"CA","route":"US:US:V","el2r":["bulk-metrics","debug","social","metrics","perf"],"uvpw":"1","pi":"1420260","cpb":"GNO629MGIJz__________wEqGXVzLnRhYm9vbGFzeW5kaWNhdGlvbi5jb20yC3RyYy1zY29kMTI5OIDwmrUMQInoB0iK6AdQgdPZA1ijzwdjCN3__________wEQ3f__________ARgjZGMI3AoQoBAYFmRjCNIDEOAGGAhkYwiWFBCcHBgYZGMI9AUQiwoYC2RjCNkUEPkcGB1kYwj0FBCeHRgfZGorNDlmZjRkNThlZjlhMTYzYTY5NmQ0ZmFkMDM2MjFiOWUwMzZmMjRmN18xNXgCgAHpbIgBrPvTxQE","dcga":{"pubConfigOverride":{"border-color":"black","font-weight":"bold","inherit-title-color":"true","module-name":"cta-lazy-module","enable-call-to-action-creative-component":"true","disable-cta-on-custom-module":"true"}},"tslt":{"p-video-overlay":{"cancel":"סגור","goto":"עבור לדף"},"read-more":{"DEFAULT_CAPTION":"%D7%A7%D7%A8%D7%90%20%D7%A2%D7%95%D7%93"},"next-up":{"BTN_TEXT":"לקריאת התוכן הבא"},"time-ago":{"now":"עכשיו","today":"היום","yesterday":"אתמול","minutes":"לפני {0} דקות","hour":"לפני שעה","hours":"לפני {0} שעות","days":"לפני {0} ימים"},"explore-more":{"TITLE_TEXT":"המשיכו לקרוא","POPUP_TEXT":"אל תפספסו הזדמנות לקרוא עוד תוכן מעולה, רגע לפני שתעזבו"}},"evh":"-1964913910","vl":[{"ri":"185db6d274ce94b27caaabd9eed7915b","uip":"wattpad.com_P18694_S257846_W300_H250_N1_TB","ppb":"COIF","estimation_method":"EcpmEstimationMethodType_ESTIMATION","baseline_variant":"false","original_ecpm":"0.4750949889421463","v":[{"thumbnail":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg","all-thumbnails":"https://cdn.taboola.com/libtrc/static/thumbnails/a2b272be514ca3ebe3f97a4a32a41db5.jpg!-#@1600x1000","origin":"default","thumb-size":"1600x1000","title":"Get Roofing Services At Prices You Can Afford In Edmonton","type":"text","published-date":"1641997069","branding-text":"Roofing Services | Search Ads","url":"https://inneth-conded.xyz/9ad2e613-8777-4fe7-9a52-386c88879289?site\u003dwattpad-placement-255\u0026site_id\u003d1420260\u0026title\u003dGet+Roofing+Services+At+Prices+You+Can+Afford+In+Edmonton\u0026platform\u003dSmartphone\u0026campaign_id\u003d15573949\u0026campaign_item_id\u003d3108610633\u0026thumbnail\u003dhttp%3A%2F%2Fcdn.taboola.com%2Flibtrc%2Fstatic%2Fthumbnails%2Fa2b272be514ca3ebe3f97a4a32a41db5.jpg\u0026cpc\u003d{cpc}\u0026click_id\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1\u0026tblci\u003dGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1#tblciGiCIypnAQogsMTFL3e_mPaVM2qLvK3KRU6LWzEMUgeB6piCit1Uox6CNr5v5n-x1","duration":"0","sig":"328243c4127ff16e3fdcd7270bab908f6f3fc5b4c98d","item-id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","uploader":"","is-syndicated":"true","publisher":"search","id":"~~V1~~2785119550041083381~~PnBkfBE9JnQxpahv0adkcuIcmMhroRAHXwLZd-7zhunTxvAnL2wqac4MyzR7uD46gj3kUkbS3FhelBtnsiJV6MhkDZRZzzIqDobN6rWmCPA3hYz5D3PLat6nhIftiT1lwdxwdlxkeV_Mfb3eos_TQavImGhxk0e7psNAZxHJ9RKL2w3lppALGgQJoy2o6lkf-pOqODtX1VkgWpEEM4WsVoWOnUTAwdyGd-8yrze8CWNp752y28hl7lleicyO1vByRdbgwlJdnqyroTPEQNNEn1JRxBOSYSWt-Xm3vkPm-G4","category":"home","views":"0","itp":[{"u":"https://trc.taboola.com/1326786/log/3/unip?en\u003dclickersusa","t":"c"}],"description":""}]}],"cpcud":{"upc":"0.0","upr":"0.0"}}}\n});\n\u003c/script\u003e\n\n\u003cscript type\u003d"text/javascript"\u003e\nwindow._taboola \u003d window._taboola || [];\n_taboola.push({flush: true});\n\u003c/script\u003e\n\n\u003c/body\u003e\n\u003c/html\u003e',
-                'adomain': [
-                  'example.xyz'
-                ],
-                'cid': '15744349',
-                'crid': '278195503434041083381',
-                'w': 300,
-                'h': 250,
-                'exp': 60,
-                'lurl': 'http://us-trc.taboola.com/sample',
-                'nurl': 'http://win.example.com/',
-
-              }
-            ],
-            'seat': '14204545260'
-          }
-        ],
-        'bidid': 'da43860a-4644-442a-b5e0-93f268cf8d19',
-        'cur': 'USD',
-        'ext': {
-          'igbid': [
-            {
-            }
-          ]
-        }
-      }
-    };
-
     it('should return empty array if no valid bids', function () {
-      const res = spec.interpretResponse(serverResponse, [])
-      expect(res).to.be.an('array').that.is.empty
+      const res = spec.interpretResponse(serverResponse, []);
+      expect(res).to.be.an('array').that.is.empty;
     });
 
     it('should return empty array if no server response', function () {
-      const res = spec.interpretResponse({}, request)
-      expect(res).to.be.an('array').that.is.empty
+      const res = spec.interpretResponse({}, request);
+      expect(res).to.be.an('array').that.is.empty;
     });
 
     it('should return empty array if server response without seatbid', function () {
-      const overriddenServerResponse = {...serverResponse};
-      const seatbid = {...serverResponse.body.seatbid[0]};
+      const overriddenServerResponse = { ...serverResponse };
+      const seatbid = { ...serverResponse.body.seatbid[0] };
       overriddenServerResponse.body.seatbid[0] = {};
 
-      const res = spec.interpretResponse(overriddenServerResponse, request)
-      expect(res).to.be.an('array').that.is.empty
+      const res = spec.interpretResponse(overriddenServerResponse, request);
+      expect(res).to.be.an('array').that.is.empty;
 
       overriddenServerResponse.body.seatbid[0] = seatbid;
     });
 
     it('should return empty array if server response without bids', function () {
-      const overriddenServerResponse = {...serverResponse};
+      const overriddenServerResponse = { ...serverResponse };
       const bid = [...serverResponse.body.seatbid[0].bid];
       overriddenServerResponse.body.seatbid[0].bid = {};
 
-      const res = spec.interpretResponse(overriddenServerResponse, request)
-      expect(res).to.be.an('array').that.is.empty
+      const res = spec.interpretResponse(overriddenServerResponse, request);
+      expect(res).to.be.an('array').that.is.empty;
 
       overriddenServerResponse.body.seatbid[0].bid = bid;
     });
 
     it('should interpret multi impression request', function () {
-      const multiRequest = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
+      const [multiRequest] = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
 
       const multiServerResponse = {
         body: {
@@ -1096,10 +1079,10 @@ describe('Taboola Adapter', function () {
             'advertiserDomains': bid.adomain
           },
         }
-      ]
+      ];
 
-      const res = spec.interpretResponse(multiServerResponse, multiRequest)
-      expect(res).to.deep.equal(expectedRes)
+      const res = spec.interpretResponse(multiServerResponse, multiRequest);
+      expect(res).to.deep.equal(expectedRes);
     });
 
     it('should interpret display response', function () {
@@ -1123,10 +1106,10 @@ describe('Taboola Adapter', function () {
             'advertiserDomains': bid.adomain
           },
         }
-      ]
+      ];
 
-      const res = spec.interpretResponse(serverResponse, request)
-      expect(res).to.deep.equal(expectedRes)
+      const res = spec.interpretResponse(serverResponse, request);
+      expect(res).to.deep.equal(expectedRes);
     });
 
     it('should interpret display response with dchain', function () {
@@ -1139,184 +1122,9 @@ describe('Taboola Adapter', function () {
             'bsid': '1495'
           }
         ]
-      }
-      const res = spec.interpretResponse(serverResponseWithDchain, request)
-      expect(res[0].meta.dchain).to.deep.equal(expectedDchainRes)
-    });
-
-    it('should interpret display response with PA', function () {
-      const [bid] = serverResponse.body.seatbid[0].bid;
-
-      const expectedRes = {
-        'bids': [
-          {
-            requestId: request.bids[0].bidId,
-            seatBidId: serverResponse.body.seatbid[0].bid[0].id,
-            cpm: bid.price,
-            creativeId: bid.crid,
-            creative_id: bid.crid,
-            ttl: 60,
-            netRevenue: true,
-            currency: serverResponse.body.cur,
-            mediaType: 'banner',
-            ad: bid.adm,
-            width: bid.w,
-            height: bid.h,
-            nurl: 'http://win.example.com/',
-            meta: {
-              'advertiserDomains': bid.adomain
-            },
-          }
-        ],
-        'paapi': [
-          {
-            'impId': request.bids[0].bidId,
-            'config': {
-              'seller': 'pa.taboola.com',
-              'resolveToConfig': false,
-              'sellerSignals': {},
-              'sellerTimeout': 100,
-              'perBuyerSignals': {
-                'https://pa.taboola.com': {
-                  'country': 'US',
-                  'route': 'AM',
-                  'cct': [
-                    0.02241223,
-                    -0.8686833,
-                    0.96153843
-                  ],
-                  'vct': '-1967600173',
-                  'ccv': null,
-                  'ect': [
-                    -0.13584597,
-                    2.5825605
-                  ],
-                  'ri': '100fb73d4064bc',
-                  'vcv': '165229814',
-                  'ecv': [
-                    -0.39882636,
-                    -0.05216012
-                  ],
-                  'publisher': 'test-headerbidding',
-                  'platform': 'DESK'
-                }
-              },
-              'auctionSignals': {},
-              'decisionLogicUrl': 'https://pa.taboola.com/score/decisionLogic.js',
-              'interestGroupBuyers': [
-                'https://pa.taboola.com'
-              ],
-              'perBuyerTimeouts': {
-                '*': 50
-              }
-            }
-          }
-        ]
-      }
-
-      const res = spec.interpretResponse(serverResponseWithPa, request)
-      expect(res).to.deep.equal(expectedRes)
-    });
-
-    it('should interpret display response with partialPA', function () {
-      const [bid] = serverResponse.body.seatbid[0].bid;
-      const expectedRes = {
-        'bids': [
-          {
-            requestId: request.bids[0].bidId,
-            seatBidId: serverResponse.body.seatbid[0].bid[0].id,
-            cpm: bid.price,
-            creativeId: bid.crid,
-            creative_id: bid.crid,
-            ttl: 60,
-            netRevenue: true,
-            currency: serverResponse.body.cur,
-            mediaType: 'banner',
-            ad: bid.adm,
-            width: bid.w,
-            height: bid.h,
-            nurl: 'http://win.example.com/',
-            meta: {
-              'advertiserDomains': bid.adomain
-            },
-          }
-        ],
-        'paapi': [
-          {
-            'impId': request.bids[0].bidId,
-            'config': {
-              'seller': undefined,
-              'resolveToConfig': undefined,
-              'sellerSignals': {},
-              'sellerTimeout': undefined,
-              'perBuyerSignals': {},
-              'auctionSignals': {},
-              'decisionLogicUrl': undefined,
-              'interestGroupBuyers': undefined,
-              'perBuyerTimeouts': undefined
-            }
-          }
-        ]
-      }
-
-      const res = spec.interpretResponse(serverResponseWithPartialPa, request)
-      expect(res).to.deep.equal(expectedRes)
-    });
-
-    it('should interpret display response with wrong PA', function () {
-      const [bid] = serverResponse.body.seatbid[0].bid;
-
-      const expectedRes = [
-        {
-          requestId: request.bids[0].bidId,
-          seatBidId: serverResponse.body.seatbid[0].bid[0].id,
-          cpm: bid.price,
-          creativeId: bid.crid,
-          creative_id: bid.crid,
-          ttl: 60,
-          netRevenue: true,
-          currency: serverResponse.body.cur,
-          mediaType: 'banner',
-          ad: bid.adm,
-          width: bid.w,
-          height: bid.h,
-          nurl: 'http://win.example.com/',
-          meta: {
-            'advertiserDomains': bid.adomain
-          },
-        }
-      ]
-
-      const res = spec.interpretResponse(serverResponseWithWrongPa, request)
-      expect(res).to.deep.equal(expectedRes)
-    });
-
-    it('should interpret display response with empty igbid wrong PA', function () {
-      const [bid] = serverResponse.body.seatbid[0].bid;
-
-      const expectedRes = [
-        {
-          requestId: request.bids[0].bidId,
-          seatBidId: serverResponse.body.seatbid[0].bid[0].id,
-          cpm: bid.price,
-          creativeId: bid.crid,
-          creative_id: bid.crid,
-          ttl: 60,
-          netRevenue: true,
-          currency: serverResponse.body.cur,
-          mediaType: 'banner',
-          ad: bid.adm,
-          width: bid.w,
-          height: bid.h,
-          nurl: 'http://win.example.com/',
-          meta: {
-            'advertiserDomains': bid.adomain
-          },
-        }
-      ]
-
-      const res = spec.interpretResponse(serverResponseWithEmptyIgbidWIthWrongPa, request)
-      expect(res).to.deep.equal(expectedRes)
+      };
+      const res = spec.interpretResponse(serverResponseWithDchain, request);
+      expect(res[0].meta.dchain).to.deep.equal(expectedDchainRes);
     });
 
     it('should set the correct ttl form the response', function () {
@@ -1348,7 +1156,7 @@ describe('Taboola Adapter', function () {
     });
 
     it('should replace AUCTION_PRICE macro in adm', function () {
-      const multiRequest = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
+      const [multiRequest] = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
       const multiServerResponseWithMacro = {
         body: {
           'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
@@ -1440,53 +1248,53 @@ describe('Taboola Adapter', function () {
       const res = spec.interpretResponse(multiServerResponseWithMacro, multiRequest);
       expect(res).to.deep.equal(expectedRes);
     });
-  })
+  });
 
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://trc.taboola.com/sg/prebidJS/1/cm';
     const iframeUrl = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 
     it('should not return user sync if pixelEnabled is false and iframe disabled', function () {
-      const res = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: false});
+      const res = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false });
       expect(res).to.be.an('array').that.is.empty;
     });
 
     it('should return user sync if pixelEnabled is true', function () {
-      const res = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false});
-      expect(res).to.deep.equal([{type: 'image', url: usersyncUrl}]);
+      const res = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false });
+      expect(res).to.deep.equal([{ type: 'image', url: usersyncUrl }]);
     });
 
     it('should return user sync if iframeEnabled is true', function () {
-      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false});
-      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}]);
+      const res = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false });
+      expect(res).to.deep.equal([{ type: 'iframe', url: iframeUrl }]);
     });
 
     it('should return both user syncs if iframeEnabled is true and pixelEnabled is true', function () {
-      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
-      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}, {type: 'image', url: usersyncUrl}]);
+      const res = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+      expect(res).to.deep.equal([{ type: 'iframe', url: iframeUrl }, { type: 'image', url: usersyncUrl }]);
     });
 
     it('should pass consent tokens values', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'GDPR_CONSENT'}, 'USP_CONSENT')).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'GDPR_CONSENT' }, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=GDPR_CONSENT&us_privacy=USP_CONSENT`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: undefined}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: undefined}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=`
       }]);
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', {gppString: 'GPP_STRING', applicableSections: []})).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', { gppString: 'GPP_STRING', applicableSections: [] })).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', {gppString: 'GPP_STRING', applicableSections: [32, 51]})).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', { gppString: 'GPP_STRING', applicableSections: [32, 51] })).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=32%2C51`
       }]);
     });
-  })
+  });
 
   describe('internal functions', function () {
     describe('getPageUrl', function () {
@@ -1522,5 +1330,769 @@ describe('Taboola Adapter', function () {
         expect(internal.getReferrer(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.ref);
       });
     });
-  })
-})
+
+    describe('detectBot', function () {
+      it('should return detected false for normal browsers', function () {
+        const result = detectBot();
+        expect(result).to.have.property('detected');
+        expect(result.detected).to.be.a('boolean');
+      });
+
+      it('should return object with detected property', function () {
+        const result = detectBot();
+        expect(result).to.be.an('object');
+        expect(result).to.have.property('detected');
+      });
+    });
+
+    describe('getPageVisibility', function () {
+      it('should return visibility state object', function () {
+        const result = getPageVisibility();
+        expect(result).to.be.an('object');
+        expect(result).to.have.property('hidden');
+        expect(result).to.have.property('state');
+        expect(result).to.have.property('hasFocus');
+      });
+
+      it('should return boolean for hidden property', function () {
+        const result = getPageVisibility();
+        expect(result.hidden).to.be.a('boolean');
+      });
+
+      it('should return string for state property', function () {
+        const result = getPageVisibility();
+        expect(result.state).to.be.a('string');
+      });
+
+      it('should return boolean for hasFocus property', function () {
+        const result = getPageVisibility();
+        expect(result.hasFocus).to.be.a('boolean');
+      });
+    });
+
+    describe('fraud signals in buildRequests', function () {
+      const defaultBidRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name'
+        },
+        bidId: 'test-bid-id',
+        auctionId: 'test-auction-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      };
+
+      const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
+        refererInfo: {
+          page: 'https://example.com/ref',
+          ref: 'https://ref',
+          domain: 'example.com',
+        }
+      };
+
+      it('should include bot detection in device.ext', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.ext.bot).to.exist;
+        expect(res.data.device.ext.bot).to.have.property('detected');
+      });
+
+      it('should include visibility in device.ext', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.ext.visibility).to.exist;
+        expect(res.data.device.ext.visibility).to.have.property('hidden');
+        expect(res.data.device.ext.visibility).to.have.property('state');
+        expect(res.data.device.ext.visibility).to.have.property('hasFocus');
+      });
+
+      it('should include scroll position in device.ext', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.ext.scroll).to.exist;
+        expect(res.data.device.ext.scroll).to.have.property('top');
+        expect(res.data.device.ext.scroll).to.have.property('left');
+        expect(res.data.device.ext.scroll.top).to.be.a('number');
+        expect(res.data.device.ext.scroll.left).to.be.a('number');
+      });
+
+      describe('user interaction signals in device.ext.bs', function () {
+        afterEach(function () {
+          delete window.TRC;
+        });
+
+        it('should forward getCtx result verbatim as device.ext.bs', function () {
+          window.TRC = { getCtx: () => ({ lm: 1234, lt: -1 }) };
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext.bs).to.deep.equal({ lm: 1234, lt: -1 });
+        });
+
+        it('should omit bs when window.TRC is not available', function () {
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+        });
+
+        it('should omit bs when getCtx returns undefined', function () {
+          window.TRC = { getCtx: () => undefined };
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+        });
+
+        it('should omit bs when getCtx throws', function () {
+          window.TRC = { getCtx: () => { throw new Error('boom'); } };
+          const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+        });
+
+        it('should strip bs inherited from ortb2 device.ext when no fresh signal is available', function () {
+          const bidderRequest = {
+            ...commonBidderRequest,
+            ortb2: { device: { ext: { bs: { lm: 1, lt: 2 }, other: 'keep' } } }
+          };
+          const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+          expect(res.data.device.ext).to.not.have.property('bs');
+          expect(res.data.device.ext.other).to.equal('keep');
+        });
+
+        it('should override bs inherited from ortb2 device.ext with the fresh signal', function () {
+          window.TRC = { getCtx: () => ({ lm: 10, lt: 20 }) };
+          const bidderRequest = {
+            ...commonBidderRequest,
+            ortb2: { device: { ext: { bs: { lm: 1, lt: 2 } } } }
+          };
+          const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
+          expect(res.data.device.ext.bs).to.deep.equal({ lm: 10, lt: 20 });
+        });
+
+        it('should resolve getCtx at auction time and stop sending bs once it is removed', function () {
+          window.TRC = { getCtx: () => ({ lm: 5, lt: 6 }) };
+          const [first] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(first.data.device.ext.bs).to.deep.equal({ lm: 5, lt: 6 });
+
+          delete window.TRC.getCtx;
+          const [second] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+          expect(second.data.device.ext).to.not.have.property('bs');
+        });
+      });
+
+      it('should include viewability in imp.ext when element exists', function () {
+        const adUnitCode = 'test-viewability-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
+          // Viewability should be a number between 0-100 when element exists
+          expect(res.data.imp[0].ext.viewability).to.be.a('number');
+          expect(res.data.imp[0].ext.viewability).to.be.at.least(0);
+          expect(res.data.imp[0].ext.viewability).to.be.at.most(100);
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should not include viewability when element does not exist', function () {
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: 'non-existent-element-id'
+        };
+        const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.viewability).to.be.undefined;
+      });
+
+      it('should include placement position in imp.ext when element exists', function () {
+        const adUnitCode = 'test-placement-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        testDiv.style.position = 'absolute';
+        testDiv.style.top = '100px';
+        testDiv.style.left = '50px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
+          expect(res.data.imp[0].ext.placement).to.exist;
+          expect(res.data.imp[0].ext.placement).to.have.property('top');
+          expect(res.data.imp[0].ext.placement).to.have.property('left');
+          expect(res.data.imp[0].ext.placement.top).to.be.a('number');
+          expect(res.data.imp[0].ext.placement.left).to.be.a('number');
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should include fold detection in imp.ext when element exists', function () {
+        const adUnitCode = 'test-fold-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
+          expect(res.data.imp[0].ext.fold).to.exist;
+          expect(res.data.imp[0].ext.fold).to.be.oneOf(['above', 'below']);
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should not include placement or fold when element does not exist', function () {
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: 'non-existent-placement-element'
+        };
+        const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.placement).to.be.undefined;
+        expect(res.data.imp[0].ext.fold).to.be.undefined;
+      });
+
+      it('should preserve existing ortb2 device ext properties', function () {
+        const bidderRequestWithDeviceExt = {
+          ...commonBidderRequest,
+          ortb2: {
+            device: {
+              ua: 'test-ua',
+              ext: {
+                existingProp: 'existingValue'
+              }
+            }
+          }
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequestWithDeviceExt);
+        expect(res.data.device.ext.existingProp).to.equal('existingValue');
+        expect(res.data.device.ext.bot).to.exist;
+        expect(res.data.device.ext.visibility).to.exist;
+      });
+
+      it('should include device.js = 1', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.js).to.equal(1);
+      });
+
+      it('should include connectiontype when available', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        // connectiontype is optional - depends on navigator.connection availability
+        if (res.data.device.connectiontype !== undefined) {
+          expect(res.data.device.connectiontype).to.be.a('number');
+          expect(res.data.device.connectiontype).to.be.oneOf([0, 1, 2, 3, 4, 5, 6, 7]);
+        }
+      });
+
+      it('should not override existing ortb2 device properties', function () {
+        const bidderRequestWithDevice = {
+          ...commonBidderRequest,
+          ortb2: {
+            device: {
+              ua: 'custom-ua',
+              w: 1920,
+              h: 1080
+            }
+          }
+        };
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequestWithDevice);
+        expect(res.data.device.ua).to.equal('custom-ua');
+        expect(res.data.device.w).to.equal(1920);
+        expect(res.data.device.h).to.equal(1080);
+        expect(res.data.device.js).to.equal(1);
+      });
+    });
+
+    describe('Prebid IDs in buildRequests', function () {
+      const defaultBidRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name'
+        },
+        bidId: 'test-bid-id-123',
+        auctionId: 'test-auction-id-456',
+        adUnitCode: 'test-ad-unit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      };
+
+      const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
+        auctionId: 'auction-id-789',
+        refererInfo: {
+          page: 'https://example.com/ref',
+          ref: 'https://ref',
+          domain: 'example.com',
+        }
+      };
+
+      it('should include auctionId in ext.prebid', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.ext.prebid.auctionId).to.equal('auction-id-789');
+      });
+
+      it('should include bidId in imp.ext.prebid', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidId).to.equal('test-bid-id-123');
+      });
+
+      it('should include adUnitCode in imp.ext.prebid', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.adUnitCode).to.equal('test-ad-unit-code');
+      });
+
+      it('should include adUnitId in imp.ext.prebid when available', function () {
+        const bidRequestWithAdUnitId = {
+          ...defaultBidRequest,
+          adUnitId: 'test-ad-unit-id'
+        };
+        const [res] = spec.buildRequests([bidRequestWithAdUnitId], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.adUnitId).to.equal('test-ad-unit-id');
+      });
+
+      it('should not include adUnitId when not available', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.adUnitId).to.be.undefined;
+      });
+
+      it('should include all Prebid IDs for multiple impressions', function () {
+        const bidRequest1 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-1',
+          adUnitCode: 'ad-unit-1'
+        };
+        const bidRequest2 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-2',
+          adUnitCode: 'ad-unit-2'
+        };
+        const [res] = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidId).to.equal('bid-id-1');
+        expect(res.data.imp[0].ext.prebid.adUnitCode).to.equal('ad-unit-1');
+        expect(res.data.imp[1].ext.prebid.bidId).to.equal('bid-id-2');
+        expect(res.data.imp[1].ext.prebid.adUnitCode).to.equal('ad-unit-2');
+      });
+    });
+
+    describe('Prebid counters in buildRequests', function () {
+      const defaultBidRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name'
+        },
+        bidId: 'test-bid-id',
+        adUnitCode: 'test-ad-unit',
+        bidRequestsCount: 3,
+        bidderRequestsCount: 2,
+        bidderWinsCount: 1,
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      };
+
+      const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
+        auctionId: 'test-auction-id',
+        refererInfo: {
+          page: 'https://example.com/ref',
+          ref: 'https://ref',
+          domain: 'example.com',
+        }
+      };
+
+      it('should include bidRequestsCount in imp.ext.prebid', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(3);
+      });
+
+      it('should include bidderRequestsCount in imp.ext.prebid', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(2);
+      });
+
+      it('should include bidderWinsCount in imp.ext.prebid', function () {
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidderWinsCount).to.equal(1);
+      });
+
+      it('should include all Prebid counters for multiple impressions', function () {
+        const bidRequest1 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-1',
+          adUnitCode: 'ad-unit-1',
+          bidRequestsCount: 5,
+          bidderRequestsCount: 4,
+          bidderWinsCount: 2
+        };
+        const bidRequest2 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-2',
+          adUnitCode: 'ad-unit-2',
+          bidRequestsCount: 2,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0
+        };
+        const [res] = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
+
+        expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(5);
+        expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(4);
+        expect(res.data.imp[0].ext.prebid.bidderWinsCount).to.equal(2);
+
+        expect(res.data.imp[1].ext.prebid.bidRequestsCount).to.equal(2);
+        expect(res.data.imp[1].ext.prebid.bidderRequestsCount).to.equal(1);
+        expect(res.data.imp[1].ext.prebid.bidderWinsCount).to.equal(0);
+      });
+    });
+  });
+
+  describe('native', function () {
+    const commonBidderRequest = {
+      bidderRequestId: 'mock-uuid',
+      refererInfo: {
+        page: 'https://example.com/ref',
+        ref: 'https://ref',
+        domain: 'example.com',
+      },
+      ortb2: {
+        device: {
+          ua: navigator.userAgent,
+        },
+      }
+    };
+
+    const nativeBidRequestParams = {
+      mediaTypes: {
+        native: {
+          title: { required: true, len: 150 },
+          image: { required: true, sizes: [300, 250] },
+          sponsoredBy: { required: true }
+        }
+      }
+    };
+
+    describe('isBidRequestValid', function () {
+      it('should return true for valid native bid without sizes', function () {
+        const bid = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId',
+            tagId: 'native-placement'
+          },
+          ...nativeBidRequestParams
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+
+      it('should return false for native bid without publisherId', function () {
+        const bid = {
+          bidder: 'taboola',
+          params: {
+            tagId: 'native-placement'
+          },
+          ...nativeBidRequestParams
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false for native bid without tagId', function () {
+        const bid = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId'
+          },
+          ...nativeBidRequestParams
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+    });
+
+    describe('buildRequests', function () {
+      if (FEATURES.NATIVE) {
+        it('should build native request without banner imp', function () {
+          const nativeBidRequest = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } },
+                { id: 3, required: 1, data: { type: 1 } }
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const [res] = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+
+          expect(res.data.imp[0]).to.not.have.property('banner');
+          expect(res.data.imp[0]).to.have.property('native');
+          expect(res.data.imp[0].tagid).to.equal('native-placement');
+        });
+      }
+
+      it('should build banner request without native imp', function () {
+        const bannerBidRequest = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId',
+            tagId: 'banner-placement'
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          bidId: utils.generateUUID(),
+          auctionId: utils.generateUUID(),
+        };
+
+        const [res] = spec.buildRequests([bannerBidRequest], commonBidderRequest);
+
+        expect(res.data.imp[0]).to.have.property('banner');
+        expect(res.data.imp[0]).to.not.have.property('native');
+        expect(res.data.imp[0]).to.not.have.property('native');
+      });
+    });
+
+    describe('interpretResponse', function () {
+      if (FEATURES.NATIVE) {
+        it('should interpret native response correctly', function () {
+          const nativeBidRequest = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const [request] = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+
+          const nativeAdm = {
+            ver: '1.2',
+            assets: [
+              { id: 1, title: { text: 'Native Ad Title' } },
+              { id: 2, img: { url: 'https://example.com/image.jpg', w: 300, h: 250 } }
+            ],
+            link: {
+              url: 'https://example.com/click'
+            }
+          };
+
+          const serverResponse = {
+            body: {
+              id: 'response-id',
+              seatbid: [{
+                bid: [{
+                  id: 'bid-id',
+                  impid: request.data.imp[0].id,
+                  price: 1.5,
+                  adm: JSON.stringify(nativeAdm),
+                  adomain: ['example.com'],
+                  crid: 'creative-id',
+                  exp: 300,
+                  nurl: 'https://example.com/win'
+                }],
+                seat: 'taboola'
+              }],
+              cur: 'USD'
+            }
+          };
+
+          const res = spec.interpretResponse(serverResponse, request);
+
+          expect(res).to.be.an('array').with.lengthOf(1);
+          expect(res[0].mediaType).to.equal('native');
+          expect(res[0].native).to.exist;
+          expect(res[0].native.ortb).to.deep.equal(nativeAdm);
+          expect(res[0]).to.not.have.property('ad');
+        });
+      }
+    });
+
+    if (FEATURES.NATIVE) {
+      describe('multiformat support', function () {
+        it('should split multiformat bid into separate banner and native requests', function () {
+          const multiformatBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'multiformat-placement'
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              },
+              native: {
+                title: { required: true, len: 150 },
+                image: { required: true, sizes: [300, 250] },
+                sponsoredBy: { required: true }
+              }
+            },
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } },
+                { id: 3, required: 1, data: { type: 1 } }
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([multiformatBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(2);
+
+          const bannerReq = requests.find(r => r.url.includes('display'));
+          const nativeReq = requests.find(r => r.url.includes('native'));
+
+          expect(bannerReq).to.exist;
+          expect(nativeReq).to.exist;
+
+          expect(bannerReq.url).to.include(BANNER_ENDPOINT_URL);
+          expect(nativeReq.url).to.include(NATIVE_ENDPOINT_URL);
+
+          expect(bannerReq.data.imp[0]).to.have.property('banner');
+          expect(bannerReq.data.imp[0]).to.not.have.property('native');
+
+          expect(nativeReq.data.imp[0]).to.have.property('native');
+          expect(nativeReq.data.imp[0]).to.not.have.property('banner');
+        });
+
+        it('should send banner-only bids to display endpoint only', function () {
+          const bannerBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'banner-placement'
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([bannerBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(1);
+          expect(requests[0].url).to.include(BANNER_ENDPOINT_URL);
+        });
+
+        it('should send native-only bids to native endpoint only', function () {
+          const nativeBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([nativeBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(1);
+          expect(requests[0].url).to.include(NATIVE_ENDPOINT_URL);
+        });
+
+        it('should group mixed banner and native bids into separate requests', function () {
+          const bannerBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'banner-placement'
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const nativeBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([bannerBid, nativeBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(2);
+
+          const bannerReq = requests.find(r => r.url.includes('display'));
+          const nativeReq = requests.find(r => r.url.includes('native'));
+
+          expect(bannerReq.data.imp).to.have.lengthOf(1);
+          expect(nativeReq.data.imp).to.have.lengthOf(1);
+        });
+      });
+    }
+  });
+});

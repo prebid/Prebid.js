@@ -50,7 +50,7 @@ To use this, you *must* also integrate the [Adloox Analytics Adapter](./adlooxAn
       // handle the bids on the video adUnit
       var videoBids = bids[videoAdUnit.code];
       if (videoBids) {
-        var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+        var videoUrl = pbjs.adServers.gam.buildVideoUrl({
           adUnit: videoAdUnit,
           params: {
             iu: '/19968336/prebid_cache_video_adunit',
@@ -76,8 +76,8 @@ Where:
 
  * **`options`:** configuration object:
      * **`adUnit`:** ad unit that is being filled
-     * **`bid` [optional]:** if you override the hardcoded `pbjs.adServers.dfp.buildVideoUrl(...)` logic that picks the first bid you *must* pass in the `bid` object you select
-     * **`url`:** VAST tag URL, typically the value returned by `pbjs.adServers.dfp.buildVideoUrl(...)`
+    * **`bid` [optional]:** if you override the hardcoded `pbjs.adServers.gam.buildVideoUrl(...)` logic that picks the first bid you *must* pass in the `bid` object you select
+    * **`url`:** VAST tag URL, typically the value returned by `pbjs.adServers.gam.buildVideoUrl(...)`
      * **`wrap`:**
          * **`true` [default]:** VAST tag is be converted to an Adloox VAST wrapped tag
          * **`false`:** VAST tag URL is returned as is

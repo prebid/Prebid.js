@@ -5,8 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as ajax from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -21,14 +22,14 @@ const syncUrl = 'https://idrs.adtelligent.com/get';
 
 function buildUrl(opts) {
   const queryPairs = [];
-  for (let key in opts) {
+  for (const key in opts) {
     queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`);
   }
   return `${syncUrl}?${queryPairs.join('&')}`;
 }
 
 function requestRemoteIdAsync(url, cb) {
-  ajax.ajaxBuilder()(
+  qualifiedAjaxBuilder(MODULE_TYPE_UID, moduleName)(
     url,
     {
       success: response => {
@@ -72,7 +73,7 @@ export const adtelligentIdModule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse}
    */
-  getId(config, {gdpr: consentData} = {}) {
+  getId(config, { gdpr: consentData } = {}) {
     const gdpr = consentData && consentData.gdprApplies ? 1 : 0;
     const gdprConsent = gdpr ? consentData.consentString : '';
     const url = buildUrl({
@@ -81,7 +82,7 @@ export const adtelligentIdModule = {
     });
 
     if (window.adtDmp && window.adtDmp.ready) {
-      return { id: window.adtDmp.getUID() }
+      return { id: window.adtDmp.getUID() };
     }
 
     return {
@@ -91,7 +92,7 @@ export const adtelligentIdModule = {
         });
       }
 
-    }
+    };
   },
   eids: {
     'adtelligentId': {

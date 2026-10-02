@@ -1,0 +1,151 @@
+{
+  "enabled": true,
+  "generateRulesFromBidderConfig": true,
+  "timestamp": "20250131 00:00:00",
+  "ruleSets": [
+    {
+      "stage": "processed-auction-request",
+      "name": "exclude-in-jpn",
+      "version": "1234",
+      "modelGroups": [
+        {
+          "weight": 98,
+          "analyticsKey": "experiment-name",
+          "version": "4567",
+          "schema": [
+            { "function": "deviceCountryIn", "args": [["JPN"]] }
+          ],
+          "default": [],
+          "rules": [
+            {
+              "conditions": ["true"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    { "bidders": ["testBidder"], "seatnonbid": 203, "analyticsValue": "rmjpn" },
+                    { "bidders": ["bidderD"], "seatnonbid": 203, "ifSyncedId": false, "analyticsValue": "rmjpn" }
+                  ]
+                }
+              ]
+            },
+            {
+              "conditions": [],
+              "results": []
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "analyticsKey": "experiment-name-2",
+          "version": "4567",
+          "schema": [
+            { "function": "adUnitCode" }
+          ],
+          "default": [],
+          "rules": [
+            {
+              "conditions": ["adUnit-0000"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    { "bidders": ["testBidder"], "seatnonbid": 203, "analyticsValue": "rmjpn" },
+                    { "bidders": ["bidderD"], "seatnonbid": 203, "ifSyncedId": false, "analyticsValue": "rmjpn" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "processed-auction",
+      "modelGroups": [
+        {
+          "schema": [{ "function": "percent", "args": [5] }],
+          "analyticsKey": "bidderC-testing",
+          "default": [
+            {
+              "function": "logAtag",
+              "args": { "analyticsValue": "default-allow" }
+            }
+          ],
+          "rules": [
+            {
+              "conditions": ["false"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    {
+                      "bidders": ["bidderC"],
+                      "seatnonbid": 203,
+                      "analyticsValue": "excluded"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "processed-auction",
+      "modelGroups": [
+        {
+          "schema": [
+            {
+              "function": "deviceCountry", "args": ["USA"]
+            }
+          ],
+          "rules": [
+            {
+              "conditions": ["true"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    {
+                      "bidders": ["bidderM", "bidderN", "bidderO", "bidderP"],
+                      "seatNonBid": 203
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "processed-auction",
+      "modelGroups": [
+        {
+          "schema": [
+            { "function": "deviceCountryIn", "args": [["USA", "CAN"]] }
+          ],
+          "analyticsKey": "bidder-yaml",
+          "rules": [
+            {
+              "conditions": ["false"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    {
+                      "bidders": ["bidderX"],
+                      "seatNonBid": 203
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

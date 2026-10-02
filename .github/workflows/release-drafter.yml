@@ -5,6 +5,7 @@ on:
     # branches to consider in the event; optional, defaults to all
     branches:
       - master
+      - '*.x-legacy'
 
 permissions:
   contents: read
@@ -17,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Drafts your next Release notes as Pull Requests are merged into "master"
-      - uses: release-drafter/release-drafter@v6
+      - uses: release-drafter/release-drafter@v7
         with:
          config-name: release-drafter.yml         
         env:

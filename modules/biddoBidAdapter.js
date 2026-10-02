@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { buildBannerRequests, interpretBannerResponse } from '../libraries/biddoInvamiaUtils/index.js';
 
 /**

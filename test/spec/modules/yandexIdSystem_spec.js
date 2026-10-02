@@ -11,9 +11,9 @@ import {
   PREBID_STORAGE,
   yandexIdSubmodule,
 } from '../../../modules/yandexIdSystem.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {createSandbox} from 'sinon'
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { createSandbox } from 'sinon';
 import * as utils from '../../../src/utils.js';
 
 /**
@@ -72,7 +72,6 @@ describe('YandexId module', () => {
   /** @type {SinonStub} */
   let randomStub;
   /** @type {SinonStub} */
-  let getCookieStub;
   /** @type {SinonStub} */
   let cookiesAreEnabledStub;
   /** @type {SinonSpy} */
@@ -80,7 +79,7 @@ describe('YandexId module', () => {
 
   beforeEach(() => {
     sandbox = createSandbox();
-    getCookieStub = sandbox.stub(PREBID_STORAGE, 'getCookie').returns(YANDEX_EXT_COOKIE_VALUE);
+    sandbox.stub(PREBID_STORAGE, 'getCookie').returns(YANDEX_EXT_COOKIE_VALUE);
     cookiesAreEnabledStub = sandbox.stub(PREBID_STORAGE, 'cookiesAreEnabled');
     logErrorSpy = sandbox.spy(utils, 'logError');
 
@@ -115,7 +114,7 @@ describe('YandexId module', () => {
       const generatedId = yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG, undefined, storedId)?.id;
 
       expect(generatedId).to.be.equal(storedId);
-    })
+    });
 
     describe('config validation', () => {
       INCORRECT_SUBMODULE_CONFIGS.forEach((config, i) => {
@@ -124,9 +123,9 @@ describe('YandexId module', () => {
 
           expect(generatedId).to.be.undefined;
           expect(logErrorSpy.called).to.be.true;
-        })
-      })
-    })
+        });
+      });
+    });
 
     describe('crypto', () => {
       it('uses Math.random when crypto is not available', () => {

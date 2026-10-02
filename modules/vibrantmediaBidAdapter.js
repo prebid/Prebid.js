@@ -7,10 +7,10 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * Note: Only BANNER and VIDEO are currently supported by the prebid server.
  */
 
-import {getWinDimensions, logError, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {OUTSTREAM} from '../src/video.js';
+import { getWinDimensions, logError, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { OUTSTREAM } from '../src/video.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

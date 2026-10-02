@@ -2,10 +2,10 @@ const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_co
 
 export function collectUtmTagData(storage, getParameterByName, logError, analyticsName) {
   let newUtm = false;
-  let pmUtmTags = {};
+  const pmUtmTags = {};
   try {
     utmTags.forEach(function (utmKey) {
-      let utmValue = getParameterByName(utmKey);
+      const utmValue = getParameterByName(utmKey);
       if (utmValue !== '') {
         newUtm = true;
       }
@@ -13,7 +13,7 @@ export function collectUtmTagData(storage, getParameterByName, logError, analyti
     });
     if (newUtm === false) {
       utmTags.forEach(function (utmKey) {
-        let itemValue = storage.getDataFromLocalStorage(`pm_${utmKey}`);
+        const itemValue = storage.getDataFromLocalStorage(`pm_${utmKey}`);
         if (itemValue && itemValue.length !== 0) {
           pmUtmTags[utmKey] = itemValue;
         }

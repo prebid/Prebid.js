@@ -1,14 +1,11 @@
-import {expect} from 'chai';
-import {spec} from 'modules/wipesBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/wipesBidAdapter.js';
 
 const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
 describe('wipesBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'wipes',
       'params': {
         asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ'
@@ -29,14 +26,14 @@ describe('wipesBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'wipes',
         'params': {
@@ -59,7 +56,7 @@ describe('wipesBidAdapter', function () {
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -87,7 +84,7 @@ describe('wipesBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidRequestVideo = [
+    const bidRequestVideo = [
       {
         'method': 'GET',
         'url': ENDPOINT_URL,
@@ -98,7 +95,7 @@ describe('wipesBidAdapter', function () {
       }
     ];
 
-    let serverResponseVideo = {
+    const serverResponseVideo = {
       body: {
         'uuid': 'a42947f8-f8fd-4cf7-bb72-31a87ab1f6ff',
         'ad_tag': '<!-- adtag -->',
@@ -114,7 +111,7 @@ describe('wipesBidAdapter', function () {
     };
 
     it('should get the correct bid response for video', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 850,
         'width': 300,
@@ -131,23 +128,22 @@ describe('wipesBidAdapter', function () {
           'advertiserDomains': ['wipes.com'],
         },
       }];
-      let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
+      const result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: {
           'uid': 'a42947f8-f8fd-4cf7-bb72-31a87ab1f6ff',
           'height': 0,
           'crid': '',
-          'statusMessage': '',
           'width': 0,
           'cpm': 0
         }
       };
-      let result = spec.interpretResponse(response, bidRequestVideo[0]);
+      const result = spec.interpretResponse(response, bidRequestVideo[0]);
       expect(result.length).to.equal(0);
     });
   });

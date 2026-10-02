@@ -31,7 +31,7 @@ This module is GDPR and CCPA compliant, and no 3rd party userIds are allowed.
 ### Video Bid Params
 | Name          | Scope    | Description                             | Example         | Type      |
 |---------------|----------|-----------------------------------------|-----------------|-----------|
-| `context`     | required | One of instream, outstream, adpod       | `'instream'`    | `String`  |
+| `context`     | required | One of instream, outstream       | `'instream'`    | `String`  |
 | `playerSize`  | required | Width and height of the player          | `'[640, 480]'`  | `Array`   |
 | `maxduration` | required | Maximum video ad duration, in seconds   | `30`            | `Integer` |
 | `minduration` | required | Minimum video ad duration, in seconds   | `5`             | `Integer` |
@@ -183,7 +183,7 @@ gulp test --file "test/spec/modules/aidemBidAdapter_spec.js"
 ```
 
 
-For video: gulp serve --modules=aidemBidAdapter,dfpAdServerVideo
+For video: gulp serve --modules=aidemBidAdapter,gamAdServerVideo
 
 # FAQs
 ### How do I view AIDEM bid request?

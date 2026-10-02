@@ -1,14 +1,14 @@
 import {
   deepAccess,
+  generateUUID,
+  getBidIdParameter,
+  isArray,
+  isGptPubadsDefined,
+  isNumber,
   logWarn,
   parseQueryStringParameters,
-  triggerPixel,
-  generateUUID,
-  isArray,
-  isNumber,
   parseSizesInput,
-  getBidIdParameter,
-  isGptPubadsDefined
+  triggerPixel
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -16,6 +16,7 @@ import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import sha1 from 'crypto-js/sha1';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getPageTargetingMap, getSlotTargetingMap } from '../src/utils/gptTargeting.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
@@ -23,7 +24,7 @@ const ADAPTER_VERSION = '1.2.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {
@@ -138,13 +139,13 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const body = serverResponse.body;
-  if (!body || body.status != 'ok') {
+  if (!body || body.status !== 'ok') {
     return [];
   }
 
   for (const res of body.ads) {
     const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
-    let bidResponse = {
+    const bidResponse = {
       requestId: res.bidId,
       placementId: res.placementId,
       width: res.width,
@@ -195,7 +196,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 }
 
 function onBidWon(bid) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(bid, 'params.0.placementId'),
     creative_id: deepAccess(bid, 'creativeId'),
     price: deepAccess(bid, 'cpm'),
@@ -204,14 +205,14 @@ function onBidWon(bid) {
     ad_id: deepAccess(bid, 'adId'),
     ad_unit_code: deepAccess(bid, 'adUnitCode'),
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(bid, 'params.0.domain') || BIDDER_DOMAIN;
   const burl = `https://${bidDomain}/tr/v1/prebid/win.gif?${query}`;
   triggerPixel(burl);
 }
 
 function onTimeout(data) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(data, '0.params.0.placementId'),
     timeout: deepAccess(data, '0.timeout'),
     auction_id: deepAccess(data, '0.auctionId'),
@@ -219,7 +220,7 @@ function onTimeout(data) {
     ad_unit_code: deepAccess(data, '0.adUnitCode'),
     version: ADAPTER_VERSION,
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
   const timeoutUrl = `https://${bidDomain}/tr/v1/prebid/timeout.gif?${query}`;
   triggerPixel(timeoutUrl);
@@ -290,7 +291,7 @@ function isVideoValid(bid) {
 }
 
 function getUuid() {
-  const id = storage.getCookie(UUID_KEY)
+  const id = storage.getCookie(UUID_KEY);
   if (id) return id;
   const newId = generateUUID();
   storage.setCookie(UUID_KEY, newId);
@@ -327,13 +328,13 @@ function hasVideoMediaType(bid) {
 }
 
 function getValidSizes(sizes) {
-  let result = [];
+  const result = [];
   if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
-      if (isArray(sizes[i]) && sizes[i].length == 2) {
+      if (isArray(sizes[i]) && sizes[i].length === 2) {
         const width = sizes[i][0];
         const height = sizes[i][1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
@@ -342,7 +343,7 @@ function getValidSizes(sizes) {
       } else if (isNumber(sizes[i])) {
         const width = sizes[0];
         const height = sizes[1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
@@ -369,19 +370,11 @@ function getTargeting(bidRequest) {
   const targetings = {};
   const pubads = getPubads();
   if (pubads) {
-    const keys = pubads.getTargetingKeys();
-    for (const key of keys) {
-      const values = pubads.getTargeting(key);
-      targetings[key] = values;
-    }
+    Object.assign(targetings, getPageTargetingMap());
   }
   const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
   if (adUnitSlot) {
-    const keys = adUnitSlot.getTargetingKeys();
-    for (const key of keys) {
-      const values = adUnitSlot.getTargeting(key);
-      targetings[key] = values;
-    }
+    Object.assign(targetings, getSlotTargetingMap(adUnitSlot));
   }
   return targetings;
 }
@@ -412,6 +405,6 @@ export const spec = {
   getUserSyncs: getUserSyncs,
   onBidWon,
   onTimeout
-}
+};
 
 registerBidder(spec);

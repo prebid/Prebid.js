@@ -1,10 +1,9 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {ortbConverter as OrtbConverter} from '../libraries/ortbConverter/converter.js';
-import {Renderer} from '../src/Renderer.js';
-import {deepAccess, deepSetValue} from '../src/utils.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { ortbConverter as OrtbConverter } from '../libraries/ortbConverter/converter.js';
+import { Renderer } from '../src/Renderer.js';
+import { deepAccess, deepSetValue } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -19,16 +18,18 @@ import {config} from '../src/config.js';
 const BIDDER_CODE = 'adverxo';
 
 const ALIASES = [
-  {code: 'adport', skipPbsAliasing: true},
-  {code: 'bidsmind', skipPbsAliasing: true},
-  {code: 'mobupps', skipPbsAliasing: true}
+  { code: 'adport', skipPbsAliasing: true },
+  { code: 'bidsmind', skipPbsAliasing: true },
+  { code: 'harrenmedia', skipPbsAliasing: true },
+  { code: 'alchemyx', skipPbsAliasing: true }
 ];
 
 const AUCTION_URLS = {
   adverxo: 'js.pbsadverxo.com',
-  adport: 'diclotrans.com',
-  bidsmind: 'egrevirda.com',
-  mobupps: 'traffhb.com'
+  adport: 'ayuetina.com',
+  bidsmind: 'arcantila.com',
+  harrenmedia: 'harrenmediaprebid.com',
+  alchemyx: 'alchemyx.one'
 };
 
 const ENDPOINT_URL_AD_UNIT_PLACEHOLDER = '{AD_UNIT}';
@@ -110,7 +111,7 @@ const ortbConverter = OrtbConverter({
 });
 
 const userSyncUtils = {
-  buildUsyncParams: function (gdprConsent, uspConsent, gppConsent) {
+  buildUsyncParams: function (gdprConsent, uspConsent, gppConsent, coppa) {
     const params = [];
 
     if (gdprConsent) {
@@ -118,7 +119,7 @@ const userSyncUtils = {
       params.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       params.push('coppa=1');
     }
 
@@ -159,7 +160,7 @@ const videoUtils = {
 
       win.adxVideoRenderer.renderAd({
         targetId: bid.adUnitCode,
-        adResponse: {content: bid.vastXml}
+        adResponse: { content: bid.vastXml }
       });
     });
   }
@@ -308,14 +309,15 @@ export const spec = {
    * @param {*} gdprConsent
    * @param {*} uspConsent
    * @param {*} gppConsent
+   * @param {boolean} coppa
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent, coppa) => {
     if (!responses || responses.length === 0 || (!syncOptions.pixelEnabled && !syncOptions.iframeEnabled)) {
       return [];
     }
 
-    const privacyParams = userSyncUtils.buildUsyncParams(gdprConsent, uspConsent, gppConsent);
+    const privacyParams = userSyncUtils.buildUsyncParams(gdprConsent, uspConsent, gppConsent, coppa);
     const syncType = syncOptions.iframeEnabled ? USYNC_TYPES.IFRAME : USYNC_TYPES.REDIRECT;
 
     const result = [];
@@ -351,6 +353,6 @@ export const spec = {
 
     return result;
   }
-}
+};
 
 registerBidder(spec);

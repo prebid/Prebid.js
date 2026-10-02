@@ -1,11 +1,12 @@
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as utils from '../../../src/utils.js';
-import * as hook from '../../../src/hook.js'
+import * as adloader from '../../../src/adloader.js';
+import * as hook from '../../../src/hook.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
-import { __TEST__ } from '../../../modules/cleanioRtdProvider.js';
-import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
+import { __CLEANIO_TEST__ } from '../../../modules/cleanioRtdProvider.js';
+import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 
 const {
   readConfig,
@@ -15,7 +16,7 @@ const {
   bidWrapStepAugmentHtml,
   bidWrapStepProtectByWrapping,
   beforeInit,
-} = __TEST__;
+} = __CLEANIO_TEST__;
 
 sinon.assert.expose(chai.assert, { prefix: 'sinon' });
 
@@ -68,7 +69,7 @@ describe('clean.io RTD module', function () {
     });
 
     it('pageInitStepProtectPage() should insert script element', function() {
-      pageInitStepProtectPage(fakeScriptURL);
+      pageInitStepProtectPage(fakeScriptURL, 'clean.io');
 
       sinon.assert.calledOnce(loadExternalScriptStub);
       sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, MODULE_TYPE_RTD, 'clean.io');
@@ -100,15 +101,15 @@ describe('clean.io RTD module', function () {
     });
   });
 
-  describe('Sumbodule execution', function() {
+  describe('Submodule execution', function() {
     let submoduleStub;
-    let insertElementStub;
+    let preloadStub;
     beforeEach(function () {
       submoduleStub = sinon.stub(hook, 'submodule');
-      insertElementStub = sinon.stub(utils, 'insertElement');
+      preloadStub = sinon.stub(adloader, 'preloadExternalScript').callsFake(() => new Promise(() => {}));
     });
     afterEach(function () {
-      utils.insertElement.restore();
+      preloadStub.restore();
       submoduleStub.restore();
     });
 
@@ -150,41 +151,49 @@ describe('clean.io RTD module', function () {
     it('should iniitalize in bids (frame) protection mode', function () {
       const { init, onBidResponseEvent } = getModule();
       expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids' } }, {})).to.equal(true);
-      sinon.assert.calledOnce(insertElementStub);
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'LINK'));
+      sinon.assert.calledOnce(preloadStub);
 
       const fakeBidResponse = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse, {}, {});
       ensureWrapBidResponse(fakeBidResponse, 'https://abc1234567890.cloudfront.net/script.js');
     });
 
-    it('should respect preload status in bids-nowait protection mode', function () {
-      const { init, onBidResponseEvent } = getModule();
-      expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids-nowait' } }, {})).to.equal(true);
-      sinon.assert.calledOnce(insertElementStub);
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'LINK'));
-      const preloadLink = insertElementStub.getCall(0).args[0];
-      expect(preloadLink).to.have.property('onload').which.is.a('function');
-      expect(preloadLink).to.have.property('onerror').which.is.a('function');
+    describe('should respect preload status in bids-nowait protection mode', () => {
+      let success, fail, promise, onBidResponseEvent;
+      beforeEach(() => {
+        preloadStub.callsFake(() => {
+          const inner = new Promise((resolve, reject) => {
+            success = resolve;
+            fail = reject;
+          });
+          promise = inner.then(() => Promise.resolve(), () => Promise.resolve());
+          return inner;
+        });
+        const module = getModule();
+        onBidResponseEvent = module.onBidResponseEvent;
+        expect(module.init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids-nowait' } }, {})).to.equal(true);
+        sinon.assert.calledOnce(preloadStub);
 
-      const fakeBidResponse1 = makeFakeBidResponse();
-      onBidResponseEvent(fakeBidResponse1, {}, {});
-      ensurePrependToBidResponse(fakeBidResponse1);
+        const fakeBidResponse1 = makeFakeBidResponse();
+        onBidResponseEvent(fakeBidResponse1, {}, {});
+        ensurePrependToBidResponse(fakeBidResponse1);
+      });
 
-      // Simulate successful preloading
-      preloadLink.onload();
-
-      const fakeBidResponse2 = makeFakeBidResponse();
-      onBidResponseEvent(fakeBidResponse2, {}, {});
-      ensureWrapBidResponse(fakeBidResponse2, 'https://abc1234567890.cloudfront.net/script.js');
-
-      // Simulate error
-      preloadLink.onerror();
-
-      // Now we should fallback to just prepending
-      const fakeBidResponse3 = makeFakeBidResponse();
-      onBidResponseEvent(fakeBidResponse3, {}, {});
-      ensurePrependToBidResponse(fakeBidResponse3);
+      it('load success', async () => {
+        success();
+        await promise;
+        const fakeBidResponse2 = makeFakeBidResponse();
+        onBidResponseEvent(fakeBidResponse2, {}, {});
+        ensureWrapBidResponse(fakeBidResponse2, 'https://abc1234567890.cloudfront.net/script.js');
+      });
+      it('load fail', async () => {
+        fail();
+        await promise;
+        // Now we should fallback to just prepending
+        const fakeBidResponse3 = makeFakeBidResponse();
+        onBidResponseEvent(fakeBidResponse3, {}, {});
+        ensurePrependToBidResponse(fakeBidResponse3);
+      });
     });
 
     it('should send billable event per bid won event', function () {
@@ -196,7 +205,7 @@ describe('clean.io RTD module', function () {
 
       events.on(EVENTS.BILLABLE_EVENT, (evt) => {
         if (evt.vendor === 'clean.io') {
-          eventCounter.registerCleanioBillingEvent()
+          eventCounter.registerCleanioBillingEvent();
         }
       });
 

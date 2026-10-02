@@ -29,13 +29,13 @@ export const spec = {
   interpretResponse: function(serverResponse, serverRequest) {
     let bidderResponse = {};
     const mType = JSON.parse(serverRequest.data)[0].MediaType;
-    if (mType == BANNER) {
+    if (mType === BANNER) {
       bidderResponse = getBannerResponse(serverResponse, BANNER);
-    } else if (mType == NATIVE) {
+    } else if (mType === NATIVE) {
       bidderResponse = getNativeResponse(serverResponse, serverRequest, NATIVE);
     }
     return bidderResponse;
   }
-}
+};
 
 registerBidder(spec);

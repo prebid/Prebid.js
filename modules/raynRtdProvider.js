@@ -13,7 +13,6 @@ import { deepAccess, deepSetValue, logError, logMessage, mergeDeep } from '../sr
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'rayn';
-const RAYN_TCF_ID = 1220;
 const RAYN_PERSONA_TAXONOMY_ID = 103015;
 const LOG_PREFIX = 'RaynJS: ';
 export const SEGMENTS_RESOLVER = 'rayn.io';
@@ -62,7 +61,7 @@ export function generateOrtbDataObject(segtax, segment, maxTier) {
       if (tier <= maxTier) {
         segmentIds.push(...segment[tier].map((id) => {
           return { id };
-        }))
+        }));
       }
     });
   } catch (error) {
@@ -90,7 +89,7 @@ export function generatePersonaOrtbDataObject(segtax, personaIds) {
   try {
     segmentIds.push(...personaIds.map((id) => {
       return { id };
-    }))
+    }));
   } catch (error) {
     logError(LOG_PREFIX, error);
   }
@@ -225,7 +224,6 @@ export const raynSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getBidRequestData: alterBidRequests,
-  gvlid: RAYN_TCF_ID,
 };
 
 submodule(MODULE_NAME, raynSubmodule);

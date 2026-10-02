@@ -5,7 +5,9 @@
 
 	"build": {
 		"dockerfile": "Dockerfile",		
-		"args": { "VARIANT": "12" }
+		"args": {
+			"VARIANT": "18"
+		}
 	},
 
 	"postCreateCommand": "bash .devcontainer/postCreate.sh",

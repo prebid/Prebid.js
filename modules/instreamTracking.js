@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
-import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js'
+import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -48,7 +48,7 @@ const whitelistedResources = /video|fetch|xmlhttprequest|other/;
  *
  * @return {boolean} returns TRUE if tracking started
  */
-export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidderRequests}) {
+export function trackInstreamDeliveredImpressions({ adUnits, bidsReceived, bidderRequests }) {
   const instreamTrackingConfig = config.getConfig('instreamTracking') || {};
   // check if instreamTracking is enabled and performance api is available
   if (!instreamTrackingConfig.enabled || !window.performance || !window.performance.getEntriesByType) {
@@ -74,7 +74,7 @@ export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidder
   const instreamAdUnitsCount = Object.keys(instreamAdUnitMap).length;
 
   const start = Date.now();
-  const {maxWindow, pollingFreq, urlPattern} = instreamTrackingConfig;
+  const { maxWindow, pollingFreq, urlPattern } = instreamTrackingConfig;
 
   let instreamWinningBidsCount = 0;
   let lastRead = 0; // offset for performance.getEntriesByType
@@ -118,4 +118,4 @@ export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidder
   return true;
 }
 
-events.on(AUCTION_END, trackInstreamDeliveredImpressions)
+events.on(AUCTION_END, trackInstreamDeliveredImpressions);

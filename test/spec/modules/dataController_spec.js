@@ -1,21 +1,16 @@
-import {expect} from 'chai';
-import {config} from 'src/config.js';
-import {filterBidData, init} from 'modules/dataControllerModule/index.js';
-import {startAuction} from 'src/prebid.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { filterBidData, init } from 'modules/dataControllerModule/index.js';
+import { startAuction } from 'src/prebid.js';
 
 describe('data controller', function () {
-  let spyFn;
-
-  beforeEach(function () {
-    spyFn = sinon.spy();
-  });
+  let result;
 
   afterEach(function () {
     config.resetConfig();
   });
 
   describe('data controller', function () {
-    let result;
     let callbackFn;
     let req;
 
@@ -85,17 +80,18 @@ describe('data controller', function () {
 
     afterEach(function () {
       config.resetConfig();
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({ hook: filterBidData }).remove();
     });
 
     it('filterEIDwhenSDA for All SDA ', function () {
-      let dataControllerConfiguration = {
+      const dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['*']
         }
       };
       config.setConfig(dataControllerConfiguration);
       filterBidData(callbackFn, req);
+      expect(result).to.equal(req);
       expect(req.adUnits[0].bids[0].userIdAsEids).that.is.empty;
       expect(req.adUnits[0].bids[0].userId).that.is.empty;
       expect(req.ortb2Fragments.bidder.ix.user.ext.eids).that.is.empty;
@@ -103,7 +99,7 @@ describe('data controller', function () {
     });
 
     it('filterEIDwhenSDA for available SAD permutive.com:4:777777 ', function () {
-      let dataControllerConfiguration = {
+      const dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['permutive.com:4:777777']
         }
@@ -119,7 +115,7 @@ describe('data controller', function () {
     });
 
     it('filterEIDwhenSDA for unavailable SAD test.com:4:9999 ', function () {
-      let dataControllerConfiguration = {
+      const dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['test.com:4:99999']
         }
@@ -131,14 +127,14 @@ describe('data controller', function () {
     });
     // Test for global
     it('filterEIDwhenSDA for available global SAD test.com:4:777777 ', function () {
-      let dataControllerConfiguration = {
+      const dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['test.com:5:11111']
         }
 
       };
       config.setConfig(dataControllerConfiguration);
-      let globalObject = {
+      const globalObject = {
         'ortb2Fragments': {
           'global': {
             'user': {
@@ -165,14 +161,14 @@ describe('data controller', function () {
           }
         }
       };
-      let globalRequest = Object.assign({}, req, globalObject);
+      const globalRequest = Object.assign({}, req, globalObject);
       filterBidData(callbackFn, globalRequest);
       expect(globalRequest.adUnits[0].bids[0].userIdAsEids).that.is.empty;
       expect(globalRequest.adUnits[0].bids[0].userId).that.is.empty;
     });
 
     it('filterSDAwhenEID for id5-sync.com EID ', function () {
-      let dataControllerConfiguration = {
+      const dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['id5-sync.com']
         }
@@ -183,7 +179,7 @@ describe('data controller', function () {
     });
 
     it('filterSDAwhenEID for All EID ', function () {
-      let dataControllerConfiguration = {
+      const dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['*']
         }
@@ -196,7 +192,7 @@ describe('data controller', function () {
     });
 
     it('filterSDAwhenEID for unavailable source test-sync.com EID ', function () {
-      let dataControllerConfiguration = {
+      const dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['test-sync.com']
         }

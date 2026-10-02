@@ -1,0 +1,18 @@
+{
+  "disclosures": [
+    {
+      "identifier": "wurflrtd",
+      "type": "web",
+      "domains": [
+        "*"
+      ],
+      "purposes": []
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "WURFL device detection data is cached in localStorage to reduce latency and API calls"
+    }
+  ]
+}

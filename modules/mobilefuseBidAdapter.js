@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepSetValue} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue } from '../src/utils.js';
 import { config } from '../src/config.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { userSync } from '../src/userSync.js';
 
 const ADAPTER_VERSION = '1.0.0';
@@ -12,7 +12,6 @@ const SYNC_URL = 'https://mfx.mobilefuse.com/usync';
 export const spec = {
   code: 'mobilefuse',
   supportedMediaTypes: [BANNER, VIDEO],
-  gvlid: 909,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
@@ -77,7 +76,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   return {
     method: 'POST',
     url: ENDPOINT_URL,
-    data: converter.toORTB({validBidRequests, bidderRequest}),
+    data: converter.toORTB({ validBidRequests, bidderRequest }),
   };
 }
 
@@ -107,7 +106,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 
     const querystring = params.length ? `?${params.join('&')}` : '';
 
-    return [{type: 'iframe', url: `${SYNC_URL}${querystring}`}];
+    return [{ type: 'iframe', url: `${SYNC_URL}${querystring}` }];
   }
 
   const pixels = [];
@@ -115,7 +114,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   serverResponses.forEach(response => {
     if (response.body.ext && response.body.ext.syncs) {
       response.body.ext.syncs.forEach(url => {
-        pixels.push({type: 'image', url: url});
+        pixels.push({ type: 'image', url: url });
       });
     }
   });
@@ -132,7 +131,7 @@ function getBidfloor(bidRequest) {
     return null;
   }
 
-  let floor = bidRequest.getFloor();
+  const floor = bidRequest.getFloor();
   if (floor.currency === 'USD') {
     return floor.floor;
   }

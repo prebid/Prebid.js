@@ -14,7 +14,7 @@ export class GreedyPromise {
     }
     const result = [];
     const callbacks = [];
-    let [resolve, reject] = [SUCCESS, FAIL].map((type) => {
+    const [resolve, reject] = [SUCCESS, FAIL].map((type) => {
       return function (value) {
         if (type === SUCCESS && typeof value?.then === 'function') {
           value.then(resolve, reject);
@@ -22,7 +22,7 @@ export class GreedyPromise {
           result.push(type, value);
           while (callbacks.length) callbacks.shift()();
         }
-      }
+      };
     });
     try {
       resolver(resolve, reject);
@@ -49,7 +49,7 @@ export class GreedyPromise {
           resolveFn = resolve;
         }
         resolveFn(value);
-      }
+      };
       result.length ? continuation() : this.#callbacks.push(continuation);
     });
   }
@@ -62,7 +62,7 @@ export class GreedyPromise {
     let val;
     return this.then(
       (v) => { val = v; return onFinally(); },
-      (e) => { val = this.constructor.reject(e); return onFinally() }
+      (e) => { val = this.constructor.reject(e); return onFinally(); }
     ).then(() => val);
   }
 
@@ -81,36 +81,44 @@ export class GreedyPromise {
   static race(promises) {
     return new this((resolve, reject) => {
       this.#collect(promises, (success, result) => success ? resolve(result) : reject(result));
-    })
+    });
   }
 
   static all(promises) {
     return new this((resolve, reject) => {
-      let res = [];
-      this.#collect(promises, (success, val, i) => success ? res[i] = val : reject(val), () => resolve(res));
-    })
+      const res = [];
+      this.#collect(promises, (success, val, i) => {
+        if (success) {
+          res[i] = val;
+        } else {
+          reject(val);
+        }
+      }, () => resolve(res));
+    });
   }
 
   static allSettled(promises) {
     return new this((resolve) => {
-      let res = [];
-      this.#collect(promises, (success, val, i) => res[i] = success ? {status: 'fulfilled', value: val} : {status: 'rejected', reason: val}, () => resolve(res))
-    })
+      const res = [];
+      this.#collect(promises, (success, val, i) => {
+        res[i] = success ? { status: 'fulfilled', value: val } : { status: 'rejected', reason: val };
+      }, () => resolve(res));
+    });
   }
 
   static resolve(value) {
-    return new this(resolve => resolve(value))
+    return new this(resolve => resolve(value));
   }
 
   static reject(error) {
-    return new this((resolve, reject) => reject(error))
+    return new this((resolve, reject) => reject(error));
   }
 }
 
 export function greedySetTimeout(fn, delayMs = 0) {
   if (delayMs > 0) {
-    return setTimeout(fn, delayMs)
+    return setTimeout(fn, delayMs);
   } else {
-    fn()
+    fn();
   }
 }

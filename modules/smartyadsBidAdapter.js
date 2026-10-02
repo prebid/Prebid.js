@@ -1,6 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getAdUrlByRegion } from '../libraries/smartyadsUtils/getAdUrlByRegion.js';
 import { interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
@@ -16,31 +15,36 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.sourceid) && !isNaN(bid.params.accountid) && bid.params.host == 'prebid');
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.sourceid) && !isNaN(bid.params.accountid) && bid.params.host === 'prebid');
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let winTop = window;
+    const winTop = window;
     let location;
     location = bidderRequest?.refererInfo ?? null;
-    let placements = [];
-    let request = {
+    const placements = [];
+    const request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'host': location?.domain ?? '',
       'page': location?.page ?? '',
-      'coppa': config.getConfig('coppa') === true ? 1 : 0,
+      'coppa': bidderRequest?.ortb2?.regs?.coppa === 1 ? 1 : 0,
       'placements': placements,
       'eeid': validBidRequests[0]?.userIdAsEids,
       'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
 
+    const schain = bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      request.schain = schain;
+    }
+
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = bidderRequest.gdprConsent;
       }
       if (bidderRequest.gppConsent) {
         request.gpp = bidderRequest.gppConsent;
@@ -51,11 +55,12 @@ export const spec = {
     let adUrl;
 
     for (let i = 0; i < len; i++) {
-      let bid = validBidRequests[i];
+      const bid = validBidRequests[i];
 
       if (i === 0) adUrl = getAdUrlByRegion(bid);
 
-      let traff = bid.params.traffic || BANNER;
+      const traff = bid.params.traffic || BANNER;
+
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,
@@ -63,16 +68,13 @@ export const spec = {
         traffic: traff,
         publisherId: bid.params.accountid
       });
-      if (bid.schain) {
-        placements.schain = bid.schain;
-      }
     }
 
     return {
       method: 'POST',
       url: adUrl,
       data: request
-    }
+    };
   },
 
   interpretResponse,

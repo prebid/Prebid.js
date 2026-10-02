@@ -7,37 +7,18 @@
 
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const nodemailer = require('nodemailer');
-
-async function getAccessToken(clientId, clientSecret, refreshToken) {
-  try {
-    const response = await axios.post('https://oauth2.googleapis.com/token', {
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    });
-    return response.data.access_token;
-  } catch (error) {
-    console.error('Failed to fetch access token:', error.response?.data || error.message);
-    process.exit(1);
-  }
-}
 
 (async () => {
   const configFilePath = path.join(__dirname, 'codepath-notification');
   const repo = process.env.GITHUB_REPOSITORY;
   const prNumber = process.env.GITHUB_PR_NUMBER;
   const token = process.env.GITHUB_TOKEN;
-
-  // Generate OAuth2 access token
-  const clientId = process.env.OAUTH2_CLIENT_ID;
-  const clientSecret = process.env.OAUTH2_CLIENT_SECRET;
-  const refreshToken = process.env.OAUTH2_REFRESH_TOKEN;
+  const sender = process.env.NOTIFICATION_EMAIL;
+  const pass = process.env.NOTIFICATION_PASSWORD;
 
   // validate params
-  if (!repo || !prNumber || !token || !clientId || !clientSecret || !refreshToken) {
+  if (!repo || !prNumber || !token || !sender || !pass) {
     console.error('Missing required environment variables.');
     process.exit(1);
   }
@@ -54,17 +35,28 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
         return { regex: new RegExp(regex), email };
       });
 
-    // Fetch changed files from github
+    // Fetch all changed files from github (paginated)
     const [owner, repoName] = repo.split('/');
-    const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/files`;
-    const response = await axios.get(apiUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    });
+    const changedFiles = [];
+    let url = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/files?per_page=100`;
+    while (url) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`GitHub API request failed: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      changedFiles.push(...data.map(file => file.filename));
 
-    const changedFiles = response.data.map(file => file.filename);
+      // Follow pagination via Link header
+      const link = response.headers.get('link') || '';
+      const next = link.match(/<([^>]+)>;\s*rel="next"/);
+      url = next ? next[1] : null;
+    }
     console.log('Changed files:', changedFiles);
 
     // match file pathnames that are in the config and group them by email address
@@ -88,22 +80,11 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
 
     console.log('Grouped matches by email:', matchesByEmail);
 
-    // get ready to email the changes
-    const accessToken = await getAccessToken(clientId, clientSecret, refreshToken);
-
-    // Configure Nodemailer with OAuth2
-    //  service: 'Gmail',
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
+      service: 'gmail',
       auth: {
-        type: 'OAuth2',
-        user: 'info@prebid.org',
-        clientId: clientId,
-        clientSecret: clientSecret,
-        refreshToken: refreshToken,
-        accessToken: accessToken
+        user: sender,
+        pass
       },
     });
 
@@ -120,7 +101,7 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
 
       try {
         await transporter.sendMail({
-          from: `"Prebid Info" <info@prebid.org>`,
+          from: `"Prebid Notifications" <${sender}>`,
           to: email,
           subject: `Files have been changed in open source ${repo}`,
           html: emailBody,

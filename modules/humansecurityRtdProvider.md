@@ -23,7 +23,7 @@ sent within bid requests, and used for bot detection on the backend.
 * No incremental signals collected beyond existing HUMAN post-bid solution
 * Offsets negative impact from loss of granularity in IP and User Agent at bid time
 * Does not expose collected IVT signal to any party who doesn’t otherwise already have access to the same signal collected post-bid
-* Does not introduce meaningful latency, as demonstrated in the Latency section
+* Does not introduce meaningful latency
 * Comes at no additional cost to collect IVT signal and make it available at bid time
 * Leveraged to differentiate the invalid bid requests at device level, and cannot be used to identify a user or a device, thus preserving privacy.
 
@@ -56,8 +56,8 @@ pbjs.setConfig({
 });
 ```
 
-It can be optionally parameterized, for example, to include client ID obtained from HUMAN,
-should any advanced reporting be needed, or to have verbose output for troubleshooting:
+Other parameters can also be provided. For example, a client ID obtained from HUMAN can
+optionally be provided, or verbose output can be enabled for troubleshooting purposes:
 
 ```javascript
 pbjs.setConfig({
@@ -79,6 +79,7 @@ pbjs.setConfig({
 | :--------------- | :------------ | :------------------------------------------------------------------ |:---------|
 | `clientId`  | String | Should you need advanced reporting, contact [prebid@humansecurity.com](prebid@humansecurity.com) to receive client ID. | No |
 | `verbose`   | Boolean | Only set to `true` if troubleshooting issues. | No |
+| `perBidderOptOut`   | string[] | Pass any bidder alias to opt-out from per-bidder signal generation. | No |
 
 ## Logging, latency and troubleshooting
 
@@ -89,9 +90,6 @@ of type `ERROR`. With `verbose` parameter set to `true`, it may additionally:
 
 * Call `logWarning`, resulting in `auctionDebug` events of type `WARNING`,
 * Call `logInfo` with latency information.
-  * To observe these messages in console, Prebid.js must be run in
-    [debug mode](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#debugging) -
-    either by adding `?pbjs_debug=true` to your page's URL, or by configuring with `pbjs.setConfig({ debug: true });`
 
 Example output of the latency information:
 
@@ -139,6 +137,7 @@ There are a few points that are worth being mentioned separately, to avoid confu
   the ever-evolving nature of the threat landscape without the publishers having to rebuild their Prebid.js frequently.
   * The signal collection script is also obfuscated, as a defense-in-depth measure in order to complicate tampering by
     bad actors, as are all similar scripts in the industry, which is something that cannot be accommodated by Prebid.js itself.
+* The collected signals are encrypted before they are passed to bid adapters and can only be interpreted by HUMAN backend systems.
 
 ## Why is this approach an innovation?
 
@@ -199,10 +198,14 @@ ensuring the value of the inventory.
 
 ## FAQ
 
+### Is partnership with HUMAN required to use the submodule?
+
+No. Using this submodule does not require any prior communication with HUMAN or being a client of HUMAN.
+It is free and usage of the submodule doesn’t automatically make a Publisher HUMAN client. 
+
 ### Is latency an issue?
 
 The HUMAN Security RTD submodule is designed to minimize any latency in the auction within normal SLAs.
-
 ### Do publishers get any insight into how the measurement is judged?
 
 Having the The HUMAN Security RTD submodule be part of the prebid process will allow the publisher to have insight
@@ -211,12 +214,9 @@ inventory to the buyer.
 
 ### How are privacy concerns addressed?
 
-The HUMAN Security RTD submodule seeks to reduce the impacts from signal deprecation that are inevitable without
-compromising privacy by avoiding re-identification. Each bid request is enriched with just enough signal
-to identify if the traffic is invalid or not.
-
-By having the The HUMAN Security RTD submodule operate at the Prebid level, data can be controlled
-and not as freely passed through the bidstream where it may be accessible to various unknown parties.
+The HUMAN Security RTD submodule seeks to reduce the impacts of signal deprecation without compromising privacy.
+Each bid request is enriched with just enough signal to identify if the traffic is invalid or not, and these
+signals are encrypted before being included in bid requests to prevent misuse.
 
 Note: anti-fraud use cases typically have carve outs in laws and regulations to permit data collection
 essential for effective fraud mitigation, but this does not constitute legal advice and you should

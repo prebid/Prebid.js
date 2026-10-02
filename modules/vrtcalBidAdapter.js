@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
-import { config } from '../src/config.js';
-import {deepAccess, isFn, isPlainObject} from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { deepAccess, isFn, isPlainObject } from '../src/utils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const GVLID = 706;
 const VRTCAL_USER_SYNC_URL_IFRAME = `https://usync.vrtcal.com/i?ssp=1804&synctype=iframe`;
@@ -15,12 +15,12 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return true;
   },
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const requests = bidRequests.map(function (bid) {
       let floor = 0;
 
       if (isFn(bid.getFloor)) {
-        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({w, h})) });
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({ w, h })) });
 
         if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
           floor = Math.max(floor, parseFloat(floorInfo.floor));
@@ -31,7 +31,6 @@ export const spec = {
       let gdprConsent = '';
       let ccpa = '';
       let coppa = 0;
-      let tmax = 0;
       let eids = [];
 
       if (bidRequests[0].userIdAsEids && bidRequests[0].userIdAsEids.length > 0) {
@@ -47,11 +46,11 @@ export const spec = {
         ccpa = bid.uspConsent;
       }
 
-      if (config.getConfig('coppa') === true) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         coppa = 1;
       }
 
-      tmax = bid.timeout;
+      const tmax = bid.timeout;
 
       const params = {
         prebidJS: 1,
@@ -104,7 +103,7 @@ export const spec = {
         params.regs.ext.gpp_sid = bid.ortb2.regs.gpp_sid;
       }
 
-      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}};
+      return { method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: { withCredentials: false, crossOrigin: true } };
     });
 
     return requests;
@@ -152,23 +151,22 @@ export const spec = {
     return true;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent = {}, coppa) {
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
     const usPrivacy = `&us_privacy=${encodeURIComponent(uspConsent)}`;
     const gpp = gppConsent.gppString ? gppConsent.gppString : '';
     const gppSid = Array.isArray(gppConsent.applicableSections) ? gppConsent.applicableSections.join(',') : '';
-    let vrtcalSyncURL = ''
 
     if (syncOptions.iframeEnabled) {
-      vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_IFRAME}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
+      const vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_IFRAME}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
       syncs.push({
         type: 'iframe',
         url: vrtcalSyncURL
       });
     } else {
-      vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_REDIRECT}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
+      const vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_REDIRECT}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
       syncs.push({
         type: 'image',
         url: vrtcalSyncURL

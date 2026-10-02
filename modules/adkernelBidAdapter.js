@@ -5,7 +5,6 @@ import {
   deepAccess,
   deepSetValue,
   getDefinedParams,
-  getDNT,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -16,11 +15,12 @@ import {
   parseGPTSingleSizeArrayToRtbSize,
   triggerPixel
 } from '../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
-import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -30,6 +30,7 @@ import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/types/ortb/ext/dsa.d.ts').DSARequest} DSARequest
  */
 
 const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
@@ -65,45 +66,41 @@ export const spec = {
   code: 'adkernel',
   gvlid: GVLID,
   aliases: [
-    {code: 'headbidding'},
-    {code: 'adsolut'},
-    {code: 'oftmediahb'},
-    {code: 'audiencemedia'},
-    {code: 'waardex_ak'},
-    {code: 'roqoon'},
-    {code: 'adbite'},
-    {code: 'houseofpubs'},
-    {code: 'torchad'},
-    {code: 'stringads'},
-    {code: 'bcm'},
-    {code: 'engageadx'},
-    {code: 'converge', gvlid: 248},
-    {code: 'adomega'},
-    {code: 'denakop'},
-    {code: 'rtbanalytica'},
-    {code: 'unibots'},
-    {code: 'ergadx'},
-    {code: 'turktelekom'},
-    {code: 'motionspots'},
-    {code: 'sonic_twist'},
-    {code: 'displayioads'},
-    {code: 'rtbdemand_com'},
-    {code: 'bidbuddy'},
-    {code: 'didnadisplay'},
-    {code: 'qortex'},
-    {code: 'adpluto'},
-    {code: 'headbidder'},
-    {code: 'digiad'},
-    {code: 'monetix'},
-    {code: 'hyperbrainz'},
-    {code: 'voisetech'},
-    {code: 'global_sun'},
-    {code: 'rxnetwork'},
-    {code: 'revbid'},
-    {code: 'spinx', gvlid: 1308},
-    {code: 'oppamedia'},
-    {code: 'pixelpluses', gvlid: 1209},
-    {code: 'urekamedia'}
+    { code: 'headbidding' },
+    { code: 'adsolut' },
+    { code: 'oftmediahb' },
+    { code: 'audiencemedia' },
+    { code: 'waardex_ak' },
+    { code: 'adbite' },
+    { code: 'bcm' },
+    { code: 'engageadx' },
+    { code: 'converge', gvlid: 248 },
+    { code: 'denakop' },
+    { code: 'unibots' },
+    { code: 'ergadx' },
+    { code: 'turktelekom' },
+    { code: 'motionspots' },
+    { code: 'displayioads' },
+    { code: 'rtbdemand_com' },
+    { code: 'didnadisplay' },
+    { code: 'qortex' },
+    { code: 'adpluto' },
+    { code: 'headbidder' },
+    { code: 'digiad' },
+    { code: 'voisetech' },
+    { code: 'global_sun' },
+    { code: 'revbid' },
+    { code: 'spinx', gvlid: 1308 },
+    { code: 'oppamedia' },
+    { code: 'pixelpluses', gvlid: 1209 },
+    { code: 'urekamedia' },
+    { code: 'smartyexchange' },
+    { code: 'infinety' },
+    { code: 'qohere' },
+    { code: 'blutonic' },
+    { code: 'appmonsta', gvlid: 1283 },
+    { code: 'intlscoop' },
+    { code: 'reload' }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -118,9 +115,10 @@ export const spec = {
       'zoneId' in bidRequest.params &&
       !isNaN(Number(bidRequest.params.zoneId)) &&
       bidRequest.params.zoneId > 0 &&
-      bidRequest.mediaTypes &&
-      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video ||
-        (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native))
+      (
+        isPlainObject(bidRequest?.mediaTypes?.banner) ||
+        isPlainObject(bidRequest?.mediaTypes?.video) ||
+        (isPlainObject(bidRequest?.mediaTypes?.native) && validateNativeAdUnit(bidRequest.mediaTypes.native))
       );
   },
 
@@ -131,11 +129,11 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
-    let requests = [];
-    let schain = bidRequests[0].schain;
+    const impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
+    const requests = [];
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     _each(impGroups, impGroup => {
-      let {host, zoneId, imps} = impGroup;
+      const { host, zoneId, imps } = impGroup;
       const request = buildRtbRequest(imps, bidderRequest, schain);
       requests.push({
         method: 'POST',
@@ -153,19 +151,19 @@ export const spec = {
    * @returns {Bid[]}
    */
   interpretResponse: function (serverResponse, serverRequest) {
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if (!response.seatbid) {
       return [];
     }
 
-    let rtbRequest = JSON.parse(serverRequest.data);
-    let rtbBids = response.seatbid
+    const rtbRequest = JSON.parse(serverRequest.data);
+    const rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
-      let imp = ((rtbRequest.imp) || []).find(imp => imp.id === rtbBid.impid);
-      let prBid = {
+      const imp = ((rtbRequest.imp) || []).find(imp => imp.id === rtbBid.impid);
+      const prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
         creativeId: rtbBid.crid,
@@ -218,6 +216,9 @@ export const spec = {
         if (isStr(rtbBid.ext.agency_name)) {
           deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
         }
+        if (isPlainObject(rtbBid.ext.dsa)) {
+          deepSetValue(prBid, 'meta.dsa', rtbBid.ext.dsa);
+        }
       }
 
       return prBid;
@@ -237,7 +238,7 @@ export const spec = {
     return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
-      .map(({url, type}) => ({type: SYNC_TYPES[type], url: url}));
+      .map(({ url, type }) => ({ type: SYNC_TYPES[type], url: url }));
   },
 
   /**
@@ -259,14 +260,14 @@ registerBidder(spec);
  * @param refererInfo {refererInfo}
  */
 function groupImpressionsByHostZone(bidRequests, refererInfo) {
-  let secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
+  const secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
   return Object.values(
     bidRequests.map(bidRequest => buildImps(bidRequest, secure))
       .reduce((acc, curr, index) => {
-        let bidRequest = bidRequests[index];
-        let {zoneId, host} = bidRequest.params;
-        let key = `${host}_${zoneId}`;
-        acc[key] = acc[key] || {host: host, zoneId: zoneId, imps: []};
+        const bidRequest = bidRequests[index];
+        const { zoneId, host } = bidRequest.params;
+        const key = `${host}_${zoneId}`;
+        acc[key] = acc[key] || { host: host, zoneId: zoneId, imps: [] };
         acc[key].imps.push(...curr);
         return acc;
       }, {})
@@ -279,7 +280,7 @@ function groupImpressionsByHostZone(bidRequests, refererInfo) {
  *  @param secure {boolean}
  */
 function buildImps(bidRequest, secure) {
-  let imp = {
+  const imp = {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
   };
@@ -287,20 +288,20 @@ function buildImps(bidRequest, secure) {
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
   var sizes = [];
-  let mediaTypes = bidRequest.mediaTypes;
-  let isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1;
-  let result = [];
+  const mediaTypes = bidRequest.mediaTypes;
+  const isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1;
+  const result = [];
   let typedImp;
 
   if (mediaTypes?.banner) {
     if (isMultiformat) {
-      typedImp = {...imp};
+      typedImp = { ...imp };
       typedImp.id = imp.id + MULTI_FORMAT_SUFFIX_BANNER;
     } else {
       typedImp = imp;
     }
     sizes = getAdUnitSizes(bidRequest);
-    let pbBanner = mediaTypes.banner;
+    const pbBanner = mediaTypes.banner;
     typedImp.banner = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, BANNER_FPD),
       ...getDefinedParamsOrEmpty(pbBanner, BANNER_PARAMS),
@@ -313,12 +314,12 @@ function buildImps(bidRequest, secure) {
 
   if (mediaTypes?.video) {
     if (isMultiformat) {
-      typedImp = {...imp};
+      typedImp = { ...imp };
       typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_VIDEO;
     } else {
       typedImp = imp;
     }
-    let pbVideo = mediaTypes.video;
+    const pbVideo = mediaTypes.video;
     typedImp.video = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, VIDEO_FPD),
       ...getDefinedParamsOrEmpty(pbVideo, VIDEO_PARAMS)
@@ -336,7 +337,7 @@ function buildImps(bidRequest, secure) {
 
   if (mediaTypes?.native) {
     if (isMultiformat) {
-      typedImp = {...imp};
+      typedImp = { ...imp };
       typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_NATIVE;
     } else {
       typedImp = imp;
@@ -352,7 +353,7 @@ function buildImps(bidRequest, secure) {
 }
 
 function initImpBidfloor(imp, bid, sizes, mediaType) {
-  let bidfloor = getBidFloor(bid, mediaType, sizes);
+  const bidfloor = getBidFloor(bid, mediaType, sizes);
   if (bidfloor) {
     imp.bidfloor = bidfloor;
   }
@@ -375,8 +376,8 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
   if (!syncRule) {
     return false;
   }
-  let bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
-  let rule = syncRule.filter === 'include';
+  const bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
+  const rule = syncRule.filter === 'include';
   return contains(bidders, bidderCode) === rule;
 }
 
@@ -389,7 +390,7 @@ function getAllowedSyncMethod(bidderCode) {
   if (!config.getConfig('userSync.syncEnabled')) {
     return;
   }
-  let filterConfig = config.getConfig('userSync.filterSettings');
+  const filterConfig = config.getConfig('userSync.filterSettings');
   if (isSyncMethodAllowed(filterConfig.all, bidderCode) || isSyncMethodAllowed(filterConfig.iframe, bidderCode)) {
     return SYNC_IFRAME;
   } else if (isSyncMethodAllowed(filterConfig.image, bidderCode)) {
@@ -403,17 +404,14 @@ function getAllowedSyncMethod(bidderCode) {
  * @returns {{device: Object}}
  */
 function makeDevice(fpd) {
-  let device = mergeDeep({
+  const device = mergeDeep({
     'ip': 'caller',
     'ipv6': 'caller',
     'ua': 'caller',
     'js': 1,
     'language': getLanguage()
   }, fpd.device || {});
-  if (getDNT()) {
-    device.dnt = 1;
-  }
-  return {device: device};
+  return { device: device };
 }
 
 /**
@@ -423,12 +421,12 @@ function makeDevice(fpd) {
  * @returns {{site: Object}|{app: Object}}
  */
 function makeSiteOrApp(bidderRequest, fpd) {
-  let {refererInfo} = bidderRequest;
-  let appConfig = config.getConfig('app');
+  const { refererInfo } = bidderRequest;
+  const appConfig = config.getConfig('app');
   if (isEmpty(appConfig)) {
-    return {site: createSite(refererInfo, fpd)}
+    return { site: createSite(refererInfo, fpd) };
   } else {
-    return {app: appConfig};
+    return { app: appConfig };
   }
 }
 
@@ -439,17 +437,17 @@ function makeSiteOrApp(bidderRequest, fpd) {
  * @returns {{user: Object} | undefined}
  */
 function makeUser(bidderRequest, fpd) {
-  let {gdprConsent} = bidderRequest;
-  let user = fpd.user || {};
+  const { gdprConsent } = bidderRequest;
+  const user = fpd.user || {};
   if (gdprConsent && gdprConsent.consentString !== undefined) {
     deepSetValue(user, 'ext.consent', gdprConsent.consentString);
   }
-  let eids = getExtendedUserIds(bidderRequest);
+  const eids = getExtendedUserIds(bidderRequest);
   if (eids) {
     deepSetValue(user, 'ext.eids', eids);
   }
   if (!isEmpty(user)) {
-    return {user: user};
+    return { user: user };
   }
 }
 
@@ -459,8 +457,8 @@ function makeUser(bidderRequest, fpd) {
  * @returns {{regs: Object} | undefined}
  */
 function makeRegulations(bidderRequest) {
-  let {gdprConsent, uspConsent, gppConsent} = bidderRequest;
-  let regs = {};
+  const { gdprConsent, uspConsent, gppConsent } = bidderRequest;
+  const regs = {};
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
       deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
@@ -473,7 +471,7 @@ function makeRegulations(bidderRequest) {
   if (uspConsent) {
     deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);
   }
-  if (config.getConfig('coppa')) {
+  if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
     deepSetValue(regs, 'regs.coppa', 1);
   }
   if (!isEmpty(regs)) {
@@ -489,7 +487,7 @@ function makeRegulations(bidderRequest) {
  * @returns
  */
 function makeBaseRequest(bidderRequest, imps, fpd) {
-  let request = {
+  const request = {
     'id': bidderRequest.bidderRequestId,
     'imp': imps,
     'at': 1,
@@ -509,11 +507,47 @@ function makeBaseRequest(bidderRequest, imps, fpd) {
  * @param bidderRequest {BidderRequest}
  */
 function makeSyncInfo(bidderRequest) {
-  let {bidderCode} = bidderRequest;
-  let syncMethod = getAllowedSyncMethod(bidderCode);
+  const { bidderCode } = bidderRequest;
+  const syncMethod = getAllowedSyncMethod(bidderCode);
   if (syncMethod) {
-    let res = {};
+    const res = {};
     deepSetValue(res, 'ext.adk_usersync', syncMethod);
+    return res;
+  }
+}
+
+/**
+ * Initialize DSA request
+ * @param fpd {Object}
+ */
+function makeDSARequest(fpd) {
+  /**
+   * @type {DSARequest}
+   */
+  const pubDsa = fpd?.regs?.ext?.dsa;
+  if (!isPlainObject(pubDsa)) {
+    return;
+  }
+  const dsaObj = {};
+  ['dsarequired', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+    if (isNumber(pubDsa[dsaKey])) {
+      dsaObj[dsaKey] = pubDsa[dsaKey];
+    }
+  });
+  if (isArray(pubDsa.transparency) && pubDsa.transparency.every((v) => isPlainObject(v))) {
+    const tpData = [];
+    pubDsa.transparency.forEach((tpObj) => {
+      if (isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+        tpData.push(tpObj);
+      }
+    });
+    if (tpData.length > 0) {
+      dsaObj.transparency = tpData;
+    }
+  }
+  if (!isEmpty(dsaObj)) {
+    let res = {};
+    deepSetValue(res, 'regs.ext.dsa', dsaObj);
     return res;
   }
 }
@@ -526,15 +560,16 @@ function makeSyncInfo(bidderRequest) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  let fpd = bidderRequest.ortb2 || {};
+  const fpd = bidderRequest.ortb2 || {};
 
-  let req = mergeDeep(
+  const req = mergeDeep(
     makeBaseRequest(bidderRequest, imps, fpd),
     makeDevice(fpd),
     makeSiteOrApp(bidderRequest, fpd),
     makeUser(bidderRequest, fpd),
     makeRegulations(bidderRequest),
-    makeSyncInfo(bidderRequest)
+    makeSyncInfo(bidderRequest),
+    makeDSARequest(fpd)
   );
   if (schain) {
     deepSetValue(req, 'source.ext.schain', schain);
@@ -555,7 +590,7 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo, fpd) {
-  let site = {
+  const site = {
     'domain': refInfo.domain,
     'page': refInfo.page
   };
@@ -569,7 +604,7 @@ function createSite(refInfo, fpd) {
 }
 
 function getExtendedUserIds(bidderRequest) {
-  let eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
   if (isArray(eids)) {
     return eids;
   }

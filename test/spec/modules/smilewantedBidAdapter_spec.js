@@ -116,7 +116,13 @@ const DISPLAY_REQUEST_WITH_SCHAIN = [{
       tid: 'trans_abcd1234',
     }
   },
-  schain: SCHAIN,
+  ortb2: {
+    source: {
+      ext: {
+        schain: SCHAIN
+      }
+    }
+  },
 }];
 
 const BID_RESPONSE_DISPLAY = {
@@ -232,7 +238,6 @@ const NATIVE_REQUEST = [{
   ],
   mediaTypes: {
     native: {
-      sendTargetingKeys: false,
       title: {
         required: true,
         len: 140
@@ -433,12 +438,12 @@ describe('smilewantedBidAdapterTests', function () {
     expect(requestContent).to.have.property('eids');
     expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
     expect(requestContent.eids.length).to.greaterThan(0);
-    for (let index in requestContent.eids) {
-      let eid = requestContent.eids[index];
+    for (const index in requestContent.eids) {
+      const eid = requestContent.eids[index];
       expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
       expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
-      for (let uidsIndex in eid.uids) {
-        let uid = eid.uids[uidsIndex];
+      for (const uidsIndex in eid.uids) {
+        const uid = eid.uids[uidsIndex];
         expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
       }
     }
@@ -513,7 +518,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_DISPLAY, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -536,7 +541,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_VIDEO_INSTREAM, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -559,7 +564,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_VIDEO_OUTSTREAM, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -581,7 +586,7 @@ describe('smilewantedBidAdapterTests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_NATIVE, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -630,14 +635,14 @@ describe('smilewantedBidAdapterTests', function () {
   });
 
   it('SmileWanted - Verify user sync - empty data', function () {
-    let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, null);
+    const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, null);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
     expect(syncs[0].url).to.equal('https://csync.smilewanted.com');
   });
 
   it('SmileWanted - Verify user sync', function () {
-    let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
+    let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
       consentString: 'foo'
     }, '1NYN');
     expect(syncs).to.have.lengthOf(1);

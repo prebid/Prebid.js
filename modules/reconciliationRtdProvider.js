@@ -16,9 +16,10 @@
  * @property {?boolean} allowAccess
  */
 
-import {submodule} from '../src/hook.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { generateUUID, isGptPubadsDefined, logError, timestamp } from '../src/utils.js';
+import { getSlotTargeting } from '../src/utils/gptTargeting.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -27,7 +28,8 @@ import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/util
 /** @type {Object} */
 const MessageType = {
   IMPRESSION_REQUEST: 'rsdk:impression:req',
-  IMPRESSION_RESPONSE: 'rsdk:impression:res'};
+  IMPRESSION_RESPONSE: 'rsdk:impression:res'
+};
 /** @type {ModuleParams} */
 const DEFAULT_PARAMS = {
   initUrl: 'https://confirm.fiduciadlt.com/init',
@@ -43,7 +45,7 @@ let _moduleParams = {};
  * @param {Event} e
  */
 function handleAdMessage(e) {
-  let data = {};
+  let data;
   let adUnitId = '';
   let adDeliveryId = '';
 
@@ -64,7 +66,7 @@ function handleAdMessage(e) {
         // 3. Get AdUnit IDs for the selected slot
         if (adSlot) {
           adUnitId = adSlot.getAdUnitPath();
-          adDeliveryId = adSlot.getTargeting('RSDK_ADID');
+          adDeliveryId = getSlotTargeting(adSlot, 'RSDK_ADID');
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
             : `${timestamp()}-${generateUUID()}`;
@@ -83,7 +85,7 @@ function handleAdMessage(e) {
     track.trackPost(_moduleParams.impressionUrl, args);
 
     // Send response back to the Advertiser tag
-    let response = {
+    const response = {
       type: MessageType.IMPRESSION_RESPONSE,
       id: data.id,
       args: Object.assign(
@@ -151,12 +153,9 @@ function getSlotByCode(code) {
   if (!slots || !slots.length) {
     return null;
   }
-  return (
-    ((
-      slots) || []).find(
-      (s) => s.getSlotElementId() === code || s.getAdUnitPath() === code
-    ) || null
-  );
+  return slots.find(
+    (s) => s.getSlotElementId() === code || s.getAdUnitPath() === code
+  ) || null;
 }
 
 /**
@@ -172,11 +171,11 @@ export function getSlotByWin(win) {
   }
 
   return (
-    ((slots) || []).find((s) => {
-      let slotElement = document.getElementById(s.getSlotElementId());
+    slots.find((s) => {
+      const slotElement = document.getElementById(s.getSlotElementId());
 
       if (slotElement) {
-        let slotIframe = slotElement.querySelector('iframe');
+        const slotIframe = slotElement.querySelector('iframe');
 
         if (slotIframe && slotIframe.contentWindow === win) {
           return true;
@@ -230,7 +229,7 @@ export const track = {
       }
     );
   }
-}
+};
 
 /**
  * Set custom targetings for provided adUnits

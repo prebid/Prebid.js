@@ -139,7 +139,7 @@ const BID_RESPONSE = {
         {
           id: '123456789',
           impid: BID_REQUEST.bidId,
-          price: 0.286000000000000004,
+          price: 0.286,
           adm: '<img src ="//files.prebid.org/creatives/prebid300x250.png" />',
           adomain: [
             'teal.works'
@@ -164,7 +164,7 @@ const BID_RESPONSE = {
                 ]
               }
             },
-            origbidcpm: 0.286000000000000004
+            origbidcpm: 0.286
           }
         }
       ],
@@ -205,7 +205,7 @@ const buildRequest = (params) => {
 
 describe('Teal Bid Adaper', function () {
   describe('buildRequests', () => {
-    const {data, url} = buildRequest();
+    const { data, url } = buildRequest();
     it('should give the correct URL', () => {
       expect(url).equal(`https://${PBS_HOST}/openrtb2/auction`);
     });
@@ -218,11 +218,11 @@ describe('Teal Bid Adaper', function () {
     });
     it('should set tmax to something below the timeout', () => {
       expect(data.tmax).be.greaterThan(0);
-      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout)
+      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout);
     });
   });
   describe('buildRequests with subAccount', () => {
-    const {data} = buildRequest({ subAccount: SUB_ACCOUNT });
+    const { data } = buildRequest({ subAccount: SUB_ACCOUNT });
     it('should set the correct stored request ids', () => {
       expect(data.ext.prebid.storedrequest.id).equal(SUB_ACCOUNT);
     });
@@ -263,6 +263,65 @@ describe('Teal Bid Adaper', function () {
     });
     it('should sync to at least one bidders', () => {
       expect(bidders.split(',').length).be.greaterThan(0);
+    });
+  });
+  describe('getUserSyncs without iframeEnabled', () => {
+    it('should return an empty array', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false }, [{ body: BID_RESPONSE }], null, null, null);
+      expect(syncs).to.deep.equal([]);
+    });
+  });
+  describe('getUserSyncs with no server responses', () => {
+    it('should not return any syncs', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], null, null, null);
+      expect(syncs).to.be.undefined;
+    });
+  });
+  describe('getUserSyncs consent logic', () => {
+    const getParams = (gdprConsent, uspConsent, gppConsent) => {
+      const [{ url }] = spec.getUserSyncs({ iframeEnabled: true }, [{ body: BID_RESPONSE }], gdprConsent, uspConsent, gppConsent);
+      return parseUrl(url).search;
+    };
+    it('should default gdpr to 0 and omit gdpr_consent when no gdprConsent is passed', () => {
+      const params = getParams(null, null, null);
+      expect(params.gdpr).equal('0');
+      expect(params).to.not.have.property('gdpr_consent');
+    });
+    it('should set gdpr to 1 and include gdpr_consent when gdprApplies is true', () => {
+      const gdprConsent = { gdprApplies: true, consentString: 'GDPR_CONSENT_STRING' };
+      const params = getParams(gdprConsent, null, null);
+      expect(params.gdpr).equal('1');
+      expect(params.gdpr_consent).equal('GDPR_CONSENT_STRING');
+    });
+    it('should set gdpr to 0 when gdprApplies is false', () => {
+      const gdprConsent = { gdprApplies: false, consentString: 'GDPR_CONSENT_STRING' };
+      const params = getParams(gdprConsent, null, null);
+      expect(params.gdpr).equal('0');
+      expect(params.gdpr_consent).equal('GDPR_CONSENT_STRING');
+    });
+    it('should include us_privacy when uspConsent is passed', () => {
+      const params = getParams(null, '1YNY', null);
+      expect(params.us_privacy).equal('1YNY');
+    });
+    it('should omit us_privacy when uspConsent is not passed', () => {
+      const params = getParams(null, null, null);
+      expect(params).to.not.have.property('us_privacy');
+    });
+    it('should include gpp and gpp_sid when gppConsent has a gppString', () => {
+      const gppConsent = { gppString: 'GPP_STRING', applicableSections: [7, 8] };
+      const params = getParams(null, null, gppConsent);
+      expect(params.gpp).equal('GPP_STRING');
+      expect(params.gpp_sid).equal('7,8');
+    });
+    it('should omit gpp and gpp_sid when gppConsent has no gppString', () => {
+      const params = getParams(null, null, { gppString: undefined, applicableSections: [7] });
+      expect(params).to.not.have.property('gpp');
+      expect(params).to.not.have.property('gpp_sid');
+    });
+    it('should omit gpp and gpp_sid when gppConsent is not passed', () => {
+      const params = getParams(null, null, null);
+      expect(params).to.not.have.property('gpp');
+      expect(params).to.not.have.property('gpp_sid');
     });
   });
 });

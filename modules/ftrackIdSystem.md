@@ -39,7 +39,7 @@ pbjs.setConfig({
       },
       storage: {
         type: 'html5',           // "html5" is the required storage type
-        name: 'FTrackId',        // "FTrackId" is the required storage name
+        name: 'ftrackId',        // "ftrackId" is the required storage name
         expires: 90,             // storage lasts for 90 days
         refreshInSeconds: 8*3600 // refresh ID every 8 hours to ensure it's fresh
       }
@@ -60,7 +60,7 @@ pbjs.setConfig({
 | params.ids['household id'] | Optional; _Requires pairing with either "device id" or "single device id"_ | Boolean | __1.__ Should ftrack return "household id". Set to `true` to attempt to return it. If set to `undefined` or `false`, ftrack will not return "household id". Default is `false`.  __2.__ _This will only return "household id" if value of this field is `true` **AND** "household id" is defined on the device._ __3.__ _"household id" requires either "device id" or "single device id" to be also set to `true`, otherwise ftrack will not return "household id"._ | `true` |
 | storage | Required | Object | Storage settings for how the User ID module will cache the FTrack ID locally | |
 | storage.type | Required | String | This is where the results of the user ID will be stored. FTrack **requires** `"html5"`. | `"html5"` |
-| storage.name | Required | String | The name of the local storage where the user ID will be stored. FTrack **requires** `"FTrackId"`. | `"FTrackId"` |
+| storage.name | Required | String | The name of the local storage where the user ID will be stored. FTrack **requires** `"ftrackId"`. | `"ftrackId"` |
 | storage.expires | Optional | Integer | How long (in days) the user ID information will be stored. FTrack recommends `90`. | `90` |
 | storage.refreshInSeconds | Optional | Integer | How many seconds until the FTrack ID will be refreshed. FTrack strongly recommends 8 hours between refreshes | `8*3600` |
 

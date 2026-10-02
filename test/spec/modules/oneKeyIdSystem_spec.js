@@ -1,4 +1,4 @@
-import { oneKeyIdSubmodule } from 'modules/oneKeyIdSystem'
+import { oneKeyIdSubmodule } from 'modules/oneKeyIdSystem';
 
 const defaultConf = {
   params: {
@@ -52,7 +52,7 @@ describe('oneKeyData module', () => {
     it(`return a callback that waits for OneKey to be loaded`, () => {
       const moduleIdResponse = oneKeyIdSubmodule.getId(defaultConf);
 
-      moduleIdResponse.callback(function() {})
+      moduleIdResponse.callback(function() {});
 
       expect(window.OneKey.queue.length).to.equal(1);
     });
@@ -97,11 +97,11 @@ const setUpOneKey = () => {
   window.OneKey.getIdsAndPreferences = () => {
     return Promise.resolve(defaultIdsAndPreferencesResult);
   };
-}
+};
 
 const executeOneKeyQueue = () => {
   while (window.OneKey.queue.length > 0) {
     window.OneKey.queue[0]();
     window.OneKey.queue.shift();
   }
-}
+};

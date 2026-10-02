@@ -1,28 +1,34 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {generateUUID, isPlainObject, isArray, logWarn, deepClone} from '../src/utils.js'
-import {Renderer} from '../src/Renderer.js'
-import {OUTSTREAM} from '../src/video.js'
-import {config} from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {
+  generateUUID, isPlainObject, isArray, isStr,
+  isFn,
+  logInfo,
+  logWarn,
+  logError, deepClone
+} from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const BIDDER_CODE = 'mediaConsortium'
+const BIDDER_CODE = 'mediaConsortium';
 
-const PROFILE_API_USAGE_CONFIG_KEY = 'useProfileApi'
-const ONE_PLUS_X_ID_USAGE_CONFIG_KEY = 'readOnePlusXId'
+const PROFILE_API_USAGE_CONFIG_KEY = 'useProfileApi';
+const ONE_PLUS_X_ID_USAGE_CONFIG_KEY = 'readOnePlusXId';
 
-const SYNC_ENDPOINT = 'https://relay.hubvisor.io/v1/sync/big'
-const AUCTION_ENDPOINT = 'https://relay.hubvisor.io/v1/auction/big'
+const SYNC_ENDPOINT = 'https://relay.hubvisor.io/v1/sync/big';
+const AUCTION_ENDPOINT = 'https://relay.hubvisor.io/v1/auction/big';
 
-const XANDR_OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const OUTSTREAM_RENDERER_URL = 'https://cdn.hubvisor.io/big/player.js';
 
-export const OPTIMIZATIONS_STORAGE_KEY = 'media_consortium_optimizations'
+export const OPTIMIZATIONS_STORAGE_KEY = 'media_consortium_optimizations';
 
 const SYNC_TYPES = {
   image: 'image',
   redirect: 'image',
   iframe: 'iframe'
-}
+};
 
 const storageManager = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -32,51 +38,51 @@ export const spec = {
   gvlid: 1112,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid(bid) {
-    return true
+    return true;
   },
   buildRequests(bidRequests, bidderRequest) {
-    const useProfileApi = config.getConfig(PROFILE_API_USAGE_CONFIG_KEY) ?? false
-    const readOnePlusXId = config.getConfig(ONE_PLUS_X_ID_USAGE_CONFIG_KEY) ?? false
+    const useProfileApi = config.getConfig(PROFILE_API_USAGE_CONFIG_KEY) ?? false;
+    const readOnePlusXId = config.getConfig(ONE_PLUS_X_ID_USAGE_CONFIG_KEY) ?? false;
 
     const {
       auctionId,
       bids,
-      gdprConsent: {gdprApplies = false, consentString} = {},
-      ortb2: {device, site}
-    } = bidderRequest
+      gdprConsent: { gdprApplies = false, consentString } = {},
+      ortb2: { device, site }
+    } = bidderRequest;
 
-    const currentTimestamp = Date.now()
-    const optimizations = getOptimizationsFromLocalStorage()
+    const currentTimestamp = Date.now();
+    const optimizations = getOptimizationsFromLocalStorage();
 
     const impressions = bids.reduce((acc, bidRequest) => {
-      const {bidId, adUnitCode, mediaTypes} = bidRequest
-      const optimization = optimizations[adUnitCode]
+      const { bidId, adUnitCode, mediaTypes } = bidRequest;
+      const optimization = optimizations[adUnitCode];
 
       if (optimization) {
-        const {expiresAt, isEnabled} = optimization
+        const { expiresAt, isEnabled } = optimization;
 
         if (expiresAt >= currentTimestamp && !isEnabled) {
-          return acc
+          return acc;
         }
       }
 
-      let finalizedMediatypes = deepClone(mediaTypes)
+      const finalizedMediatypes = deepClone(mediaTypes);
 
       if (mediaTypes.video && mediaTypes.video.context !== OUTSTREAM) {
-        logWarn(`Filtering video request for adUnitCode ${adUnitCode} because context is not ${OUTSTREAM}`)
+        logWarn(`Filtering video request for adUnitCode ${adUnitCode} because context is not ${OUTSTREAM}`);
 
         if (Object.keys(finalizedMediatypes).length > 1) {
-          delete finalizedMediatypes.video
+          delete finalizedMediatypes.video;
         } else {
-          return acc
+          return acc;
         }
       }
 
-      return acc.concat({id: bidId, adUnitCode, mediaTypes: finalizedMediatypes})
-    }, [])
+      return acc.concat({ id: bidId, adUnitCode, mediaTypes: finalizedMediatypes });
+    }, []);
 
     if (!impressions.length) {
-      return
+      return;
     }
 
     const request = {
@@ -97,23 +103,23 @@ export const spec = {
       options: {
         useProfileApi
       }
-    }
+    };
 
     if (readOnePlusXId) {
-      const fpId = getFpIdFromLocalStorage()
+      const fpId = getFpIdFromLocalStorage();
 
       if (fpId) {
-        request.user.ids['1plusX'] = fpId
+        request.user.ids['1plusX'] = fpId;
       }
     }
 
     const syncData = {
       gdpr: gdprApplies,
-      ad_unit_codes: impressions.map(({adUnitCode}) => adUnitCode).join(',')
-    }
+      ad_unit_codes: impressions.map(({ adUnitCode }) => adUnitCode).join(',')
+    };
 
     if (consentString) {
-      syncData.gdpr_consent = consentString
+      syncData.gdpr_consent = consentString;
     }
 
     return [
@@ -125,40 +131,48 @@ export const spec = {
       {
         method: 'POST',
         url: AUCTION_ENDPOINT,
-        data: request
+        data: request,
+        internal: { bidRequests: bidRequests.reduce((acc, bidRequest) => ({ ...acc, [bidRequest.bidId]: bidRequest }), {}) }
       }
-    ]
+    ];
   },
   interpretResponse(serverResponse, params) {
-    if (!isValidResponse(serverResponse)) return []
+    if (!isValidResponse(serverResponse)) return [];
 
-    const {body: {bids, optimizations}} = serverResponse
+    const { body: { bids, optimizations } } = serverResponse;
 
     if (optimizations && isArray(optimizations)) {
-      const currentTimestamp = Date.now()
+      const currentTimestamp = Date.now();
 
       const optimizationsToStore = optimizations.reduce((acc, optimization) => {
-        const {adUnitCode, isEnabled, ttl} = optimization
+        const { adUnitCode, isEnabled, ttl } = optimization;
 
         return {
           ...acc,
-          [adUnitCode]: {isEnabled, expiresAt: currentTimestamp + ttl}
-        }
-      }, getOptimizationsFromLocalStorage())
+          [adUnitCode]: { isEnabled, expiresAt: currentTimestamp + ttl }
+        };
+      }, getOptimizationsFromLocalStorage());
 
-      storageManager.setDataInLocalStorage(OPTIMIZATIONS_STORAGE_KEY, JSON.stringify(optimizationsToStore))
+      storageManager.setDataInLocalStorage(OPTIMIZATIONS_STORAGE_KEY, JSON.stringify(optimizationsToStore));
     }
 
     return bids.map((bid) => {
       const {
+        id: bidId,
         impressionId,
-        price: {cpm, currency},
+        price: { cpm, currency },
         dealId,
         ad: {
-          creative: {id, mediaType, size: {width, height}, markup}
+          creative: {
+            id: creativeId,
+            mediaType,
+            size: { width, height },
+            markup,
+            rendering = {}
+          }
         },
         ttl = 360
-      } = bid
+      } = bid;
 
       const formattedBid = {
         requestId: impressionId,
@@ -167,107 +181,158 @@ export const spec = {
         dealId,
         ttl,
         netRevenue: true,
-        creativeId: id,
+        creativeId,
         mediaType,
         width,
         height,
         ad: markup,
         adUrl: null
-      }
+      };
 
       if (mediaType === VIDEO) {
-        const impressionRequest = params.data.impressions.find(({id}) => id === impressionId)
+        const { data: { impressions: impressionRequests }, internal: { bidRequests } } = params;
+        const impressionRequest = impressionRequests.find(({ id }) => id === impressionId);
+        const bidRequest = bidRequests[impressionId];
 
-        formattedBid.vastXml = markup
+        formattedBid.vastXml = markup;
 
-        if (impressionRequest) {
-          formattedBid.renderer = buildXandrOutstreamRenderer(impressionId, impressionRequest.adUnitCode)
+        if (impressionRequest && bidRequest) {
+          const { adUnitCode } = impressionRequest;
+          const localPlayerConfiguration = bidRequest.params?.video || {};
+
+          formattedBid.renderer = makeOutstreamRenderer(bidId, adUnitCode, localPlayerConfiguration, rendering.video?.player);
         } else {
-          logWarn(`Could not find adUnitCode matching the impressionId ${impressionId} to setup the renderer`)
+          logError(`Could not find adUnitCode or bidRequest matching the impressionId ${impressionId} to setup the renderer`);
         }
       }
 
-      return formattedBid
-    })
+      return formattedBid;
+    });
   },
   getUserSyncs(syncOptions, serverResponses) {
     if (serverResponses.length !== 2) {
-      return
+      return;
     }
 
-    const [sync] = serverResponses
+    const [sync] = serverResponses;
 
-    return sync.body?.bidders?.reduce((acc, {type, url}) => {
-      const syncType = SYNC_TYPES[type]
+    return sync.body?.bidders?.reduce((acc, { type, url }) => {
+      const syncType = SYNC_TYPES[type];
 
       if (!syncType || !url) {
-        return acc
+        return acc;
       }
 
-      return acc.concat({type: syncType, url})
-    }, [])
+      return acc.concat({ type: syncType, url });
+    }, []);
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
 
 export function getOptimizationsFromLocalStorage() {
   try {
-    const storedOptimizations = storageManager.getDataFromLocalStorage(OPTIMIZATIONS_STORAGE_KEY)
+    const storedOptimizations = storageManager.getDataFromLocalStorage(OPTIMIZATIONS_STORAGE_KEY);
 
-    return storedOptimizations ? JSON.parse(storedOptimizations) : {}
+    return storedOptimizations ? JSON.parse(storedOptimizations) : {};
   } catch (err) {
-    return {}
+    return {};
   }
 }
 
 function getFpIdFromLocalStorage() {
   try {
-    return storageManager.getDataFromLocalStorage('ope_fpid')
+    return storageManager.getDataFromLocalStorage('ope_fpid');
   } catch (err) {
-    return null
+    return null;
   }
 }
 
 function isValidResponse(response) {
   return isPlainObject(response) &&
-      isPlainObject(response.body) &&
-      isArray(response.body.bids)
+    isPlainObject(response.body) &&
+    isArray(response.body.bids);
 }
 
-function buildXandrOutstreamRenderer(bidId, adUnitCode) {
+function makeOutstreamRenderer(bidId, adUnitCode, localPlayerConfiguration = {}, remotePlayerConfiguration = {}) {
   const renderer = Renderer.install({
     id: bidId,
-    url: XANDR_OUTSTREAM_RENDERER_URL,
+    url: OUTSTREAM_RENDERER_URL,
     loaded: false,
-    adUnitCode,
-    targetId: adUnitCode
+    config: {
+      selector: formatSelector(adUnitCode),
+      ...remotePlayerConfiguration,
+      ...localPlayerConfiguration
+    },
   });
 
-  try {
-    renderer.setRender(xandrOutstreamRenderer);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
-  }
+  renderer.setRender(render);
 
   return renderer;
 }
 
-function xandrOutstreamRenderer(bid) {
-  const {width, height, adUnitCode, vastXml} = bid
+function render(bid) {
+  const config = bid.renderer.getConfig();
 
   bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
-      sizes: [width, height],
-      targetId: adUnitCode,
-      rendererOptions: {
-        showBigPlayButton: false,
-        showProgressBar: 'bar',
-        content: vastXml,
-        showVolume: false,
-        allowFullscreen: true,
-        skippable: false
-      }
+    const { impressionId, vastXml, vastUrl, width: targetWidth, height: targetHeight } = bid;
+    const { selector } = config;
+
+    const container = getContainer(selector);
+
+    if (!window.HbvPlayer) {
+      return logError("Failed to load player!");
+    }
+
+    window.HbvPlayer.playOutstream(container, {
+      vastXml,
+      vastUrl,
+      targetWidth,
+      targetHeight,
+      ...config,
+      expand: 'when-visible',
+      onEvent: (event) => {
+        switch (event) {
+          case 'impression':
+            logInfo(`Video impression for ad unit ${impressionId}`);
+            break;
+          case 'error':
+            logWarn(`Error while playing video for ad unit ${impressionId}`);
+            break;
+        }
+      },
     });
   });
+}
+
+function formatSelector(adUnitCode) {
+  return window.CSS ? `#${window.CSS.escape(adUnitCode)}` : `#${adUnitCode}`;
+}
+
+function getContainer(containerOrSelector) {
+  if (isStr(containerOrSelector)) {
+    const container = document.querySelector(containerOrSelector);
+
+    if (container) {
+      return container;
+    }
+
+    logError(`Player container not found for selector ${containerOrSelector}`);
+
+    return undefined;
+  }
+
+  if (isFn(containerOrSelector)) {
+    const container = containerOrSelector();
+
+    if (container) {
+      return container;
+    }
+
+    logError("Player container not found for selector function");
+
+    return undefined;
+  }
+
+  return containerOrSelector;
 }

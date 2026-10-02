@@ -1,4 +1,4 @@
-import {auctionManager} from '../../src/auctionManager.js';
+import { auctionManager } from '../../src/auctionManager.js';
 
 export function weakStore(get) {
   const store = new WeakMap();
@@ -12,4 +12,4 @@ export function weakStore(get) {
   };
 }
 
-export const auctionStore = () => weakStore((auctionId) => auctionManager.index.getAuction({auctionId}));
+export const auctionStore = () => weakStore((auctionId) => auctionManager.index.getAuction({ auctionId }));

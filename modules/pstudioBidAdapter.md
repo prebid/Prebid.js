@@ -141,10 +141,21 @@ For video ads, Prebid cache must be enabled, as the demand partner does not supp
 ```js
 pbjs.setConfig({
   cache: {
-    url: 'https://prebid.adnxs.com/pbc/v1/cache',
+    url: 'https://prebid.example.com/pbc/v1/cache',
   },
 });
 ```
 
 Please provide Prebid Cache of your choice. This example uses AppNexus cache, but if you use other cache, change it according to your needs.
 
+# Bidder Settings
+
+The PStudio bid adapter uses local storage to store a user ID for more accurate user profiling with PStudio's partner user identity provider. For this to work, you must enable storage access in your Prebid.js configuration:
+
+```js
+pbjs.bidderSettings = {
+  pstudio: {
+    storageAllowed: true
+  }
+};
+```

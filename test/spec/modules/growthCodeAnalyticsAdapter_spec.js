@@ -22,7 +22,6 @@ describe('growthCode analytics adapter', () => {
           'bidResponse',
           'setTargeting',
           'requestBids',
-          'addAdUnits',
           'noBid',
           'bidWon',
           'bidderDone']
@@ -59,11 +58,11 @@ describe('growthCode analytics adapter', () => {
       }],
     };
     events.emit(EVENTS.AUCTION_END, auction);
-    assert(server.requests.length > 0)
+    assert(server.requests.length > 0);
     const body = JSON.parse(server.requests[0].requestBody);
     var eventTypes = [];
     body.events.forEach(e => eventTypes.push(e.eventType));
-    assert(eventTypes.length > 0)
+    assert(eventTypes.length > 0);
     growthCodeAnalyticsAdapter.disableAnalytics();
   });
 });

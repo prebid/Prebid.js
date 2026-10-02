@@ -12,7 +12,8 @@ from Property prop
 where
   prop.getName() = "contentType" and
   prop.getInit() instanceof StringLiteral and
-  prop.getInit().(StringLiteral).getStringValue() = "application/json"
+  prop.getInit().(StringLiteral).getStringValue() = "application/json" and
+  prop.getFile().getBaseName().matches("%BidAdapter.%")
 select prop,
   "application/json request type triggers preflight requests and may increase bidder timeouts"
 

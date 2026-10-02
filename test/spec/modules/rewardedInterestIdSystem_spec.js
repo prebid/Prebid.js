@@ -1,16 +1,16 @@
 import sinon from 'sinon';
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {attachIdSystem} from 'modules/userId';
-import {createEidsArray} from 'modules/userId/eids';
+import { attachIdSystem } from 'modules/userId/index.js';
+import { createEidsArray } from 'modules/userId/eids';
 import {
-  MODULE_NAME,
-  SOURCE,
-  getRewardedInterestApi,
-  watchRewardedInterestApi,
-  getRewardedInterestId,
   apiNotAvailable,
-  rewardedInterestIdSubmodule
+  getRewardedInterestApi,
+  getRewardedInterestId,
+  MODULE_NAME,
+  rewardedInterestIdSubmodule,
+  SOURCE,
+  watchRewardedInterestApi
 } from 'modules/rewardedInterestIdSystem.js';
 
 describe('rewardedInterestIdSystem', () => {
@@ -121,7 +121,7 @@ describe('rewardedInterestIdSystem', () => {
 
     it('API is set before getId, getIdentityToken return error', async () => {
       const error = Error();
-      window.__riApi = {getIdentityToken: () => Promise.reject(error)};
+      window.__riApi = { getIdentityToken: () => Promise.reject(error) };
       const idResponse = rewardedInterestIdSubmodule.getId();
       idResponse.callback(callbackSpy);
       await window.__riApi.getIdentityToken().catch(() => {});
@@ -134,7 +134,7 @@ describe('rewardedInterestIdSystem', () => {
       mockReadySate = 'loading';
       const idResponse = rewardedInterestIdSubmodule.getId();
       idResponse.callback(callbackSpy);
-      window.__riApi = {getIdentityToken: () => Promise.reject(error)};
+      window.__riApi = { getIdentityToken: () => Promise.reject(error) };
       await window.__riApi.getIdentityToken().catch(() => {});
       expect(callbackSpy.calledOnceWithExactly()).to.be.true;
       expect(logErrorSpy.calledOnceWithExactly(errorIdFetch, error)).to.be.true;

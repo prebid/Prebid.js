@@ -19,7 +19,7 @@ const syncUrl = 'https://ident.mygaru.com/v2/id';
 
 export function buildUrl(opts) {
   const queryPairs = [];
-  for (let key in opts) {
+  for (const key in opts) {
     if (opts[key] !== undefined) {
       queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`);
     }
@@ -89,9 +89,9 @@ export const mygaruIdSubmodule = {
       callback: function (done) {
         return requestRemoteIdAsync(url).then((id) => {
           done({ mygaruId: id });
-        })
+        });
       }
-    }
+    };
   },
   eids: {
     'mygaruId': {

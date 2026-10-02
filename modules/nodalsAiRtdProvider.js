@@ -11,7 +11,8 @@ const GVLID = 1360;
 const ENGINE_VESION = '1.x.x';
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
-const STORAGE_TTL = 3600; // 1 hour in seconds
+const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
+const REQUIRED_TCF_PURPOSES = [1, 2, 3, 4, 7];
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
@@ -55,7 +56,7 @@ class NodalsAiRtdProvider {
     const params = config?.params || {};
     if (
       this.#isValidConfig(params) &&
-      this.#hasRequiredUserConsent(userConsent)
+      this.#hasRequiredUserConsent(userConsent, config)
     ) {
       this.#propertyId = params.propertyId;
       this.#userConsent = userConsent;
@@ -82,7 +83,7 @@ class NodalsAiRtdProvider {
    */
   getTargetingData(adUnitArray, config, userConsent) {
     let targetingData = {};
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return targetingData;
     }
     this.#userConsent = userConsent;
@@ -104,7 +105,7 @@ class NodalsAiRtdProvider {
   }
 
   getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       callback();
       return;
     }
@@ -116,7 +117,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('getBidRequestData', {config, reqBidsConfigObj, callback, userConsent, storedData });
+      this.#addToCommandQueue('getBidRequestData', { config, reqBidsConfigObj, callback, userConsent, storedData });
     } else {
       try {
         engine.getBidRequestData(
@@ -124,7 +125,7 @@ class NodalsAiRtdProvider {
           callback,
           userConsent,
           storedData
-       );
+        );
       } catch (error) {
         logError(`Error getting bid request data: ${error}`);
         callback();
@@ -133,7 +134,7 @@ class NodalsAiRtdProvider {
   }
 
   onBidResponseEvent(bidResponse, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return;
     }
     this.#userConsent = userConsent;
@@ -143,7 +144,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onBidResponseEvent', {config, bidResponse, userConsent, storedData })
+      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData });
       return;
     }
     try {
@@ -154,7 +155,7 @@ class NodalsAiRtdProvider {
   }
 
   onAuctionEndEvent(auctionDetails, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return;
     }
     this.#userConsent = userConsent;
@@ -164,7 +165,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onAuctionEndEvent', {config, auctionDetails, userConsent, storedData });
+      this.#addToCommandQueue('onAuctionEndEvent', { config, auctionDetails, userConsent, storedData });
       return;
     }
     try {
@@ -196,7 +197,7 @@ class NodalsAiRtdProvider {
     }
     try {
       engine.init(config);
-      return engine
+      return engine;
     } catch (error) {
       logError(`Error initialising engine: ${error}`);
       return null;
@@ -204,7 +205,11 @@ class NodalsAiRtdProvider {
   }
 
   #getEngine() {
-    return window?.$nodals?.adTargetingEngine[ENGINE_VESION];
+    try {
+      return window?.$nodals?.adTargetingEngine?.[ENGINE_VESION];
+    } catch (error) {
+      return undefined;
+    }
   }
 
   #setOverrides(params) {
@@ -240,20 +245,21 @@ class NodalsAiRtdProvider {
   /**
    * Checks if the user has provided the required consent.
    * @param {Object} userConsent - User consent object.
+   * @param {Object} config - Configuration object for the module.
    * @returns {boolean} - True if the user consent is valid, false otherwise.
    */
 
-  #hasRequiredUserConsent(userConsent) {
-    if (!userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
+  #hasRequiredUserConsent(userConsent, config) {
+    if (config?.params?.publisherProvidedConsent === true || !userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
       return true;
     }
     if (
       [false, undefined].includes(userConsent.gdpr.vendorData?.vendor?.consents?.[this.gvlid])
     ) {
       return false;
-    } else if (userConsent.gdpr.vendorData?.purpose?.consents[1] === false ||
-      userConsent.gdpr.vendorData?.purpose?.consents[7] === false
-    ) {
+    }
+    const purposeConsents = userConsent.gdpr.vendorData?.purpose?.consents;
+    if (REQUIRED_TCF_PURPOSES.some((purpose) => purposeConsents?.[purpose] === false)) {
       return false;
     }
     return true;
@@ -319,7 +325,7 @@ class NodalsAiRtdProvider {
   #dataIsStale(dataEnvelope) {
     const currentTime = Date.now();
     const dataTime = dataEnvelope.createdAt || 0;
-    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? STORAGE_TTL;
+    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? DEFAULT_STORAGE_TTL;
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
@@ -392,7 +398,9 @@ class NodalsAiRtdProvider {
     try {
       data = JSON.parse(response);
     } catch (error) {
-      throw `Error parsing response: ${error}`;
+      const msg = `Error parsing response: ${error}`;
+      logError(msg);
+      return;
     }
     this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
     this.#loadAdLibraries(data.deps || []);
@@ -403,8 +411,7 @@ class NodalsAiRtdProvider {
   }
 
   #loadAdLibraries(deps) {
-    // eslint-disable-next-line no-unused-vars
-    for (const [key, value] of Object.entries(deps)) {
+    for (const value of Object.values(deps)) {
       if (typeof value === 'string') {
         loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
           // noop

@@ -81,7 +81,7 @@ describe('publirAdapter', function () {
 
     const bidderRequest = {
       bidderCode: 'publir',
-    }
+    };
 
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -186,7 +186,7 @@ describe('publirAdapter', function () {
     });
 
     it('should have us_privacy param if usPrivacy is available in the bidRequest', function () {
-      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const bidderRequestWithUSP = Object.assign({ uspConsent: '1YNN' }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('us_privacy', '1YNN');
@@ -199,7 +199,7 @@ describe('publirAdapter', function () {
     });
 
     it('should not send the gdpr param if gdprApplies is false in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: false}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: false } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gdpr');
@@ -207,7 +207,7 @@ describe('publirAdapter', function () {
     });
 
     it('should send the gdpr param if gdprApplies is true in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: true, consentString: 'test-consent-string' } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gdpr', true);
@@ -215,12 +215,17 @@ describe('publirAdapter', function () {
     });
 
     it('should have schain param if it is available in the bidRequest', () => {
-      const schain = {
-        ver: '1.0',
-        complete: 1,
-        nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
+      bidderRequest.ortb2 = {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
+            }
+          }
+        }
       };
-      bidRequests[0].schain = schain;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
@@ -232,8 +237,8 @@ describe('publirAdapter', function () {
         return {
           currency: 'USD',
           floor: 3.32
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 0.64;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -246,8 +251,8 @@ describe('publirAdapter', function () {
         return {
           currency: 'USD',
           floor: 0.8
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 1.5;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -263,42 +268,42 @@ describe('publirAdapter', function () {
         'browsers': [
           {
             'brand': 'Chromium',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Google Chrome',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Not;A=Brand',
-            'version': [ '99', '0', '0', '0' ]
+            'version': ['99', '0', '0', '0']
           }
         ],
         'mobile': 0,
         'model': '',
         'bitness': '64',
         'architecture': 'x86'
-      }
+      };
       const bid = utils.deepClone(bidRequests[0]);
       bid.ortb2 = {
         'device': {
           'sua': {
             'platform': {
               'brand': 'macOS',
-              'version': [ '12', '4', '0' ]
+              'version': ['12', '4', '0']
             },
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Not;A=Brand',
-                'version': [ '99', '0', '0', '0' ]
+                'version': ['99', '0', '0', '0']
               }
             ],
             'mobile': 0,
@@ -307,7 +312,7 @@ describe('publirAdapter', function () {
             'architecture': 'x86'
           }
         }
-      }
+      };
       const requestWithSua = spec.buildRequests([bid], bidderRequest);
       const data = requestWithSua.data;
       expect(data.bids[0].sua).to.exist;
@@ -378,7 +383,7 @@ describe('publirAdapter', function () {
       const result = spec.interpretResponse({ body: response });
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedBannerResponse));
     });
-  })
+  });
 
   describe('getUserSyncs', function() {
     const imageSyncResponse = {
@@ -460,7 +465,7 @@ describe('publirAdapter', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
-  })
+  });
 
   describe('onBidWon', function() {
     beforeEach(function() {
@@ -482,7 +487,7 @@ describe('publirAdapter', function () {
       };
 
       spec.onBidWon(bid);
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { pubmaticIdSubmodule, storage } from 'modules/pubmaticIdSystem.js';
+import { pubmaticIdSubmodule } from 'modules/pubmaticIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler, gdprDataHandler } from 'src/adapterManager.js';
@@ -52,7 +52,7 @@ describe('pubmaticIdSystem', () => {
 
       const expectedURL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=12345&publisherId=12345&gdpr=0&gdpr_consent=&src=pbjs_uid&ver=1&coppa=0&us_privacy=&gpp=&gpp_sid=';
       expect(request.url).to.equal(expectedURL);
-      expect(completeCallback.calledOnceWithExactly({id: '6C3F0AB9-AE82-45C2-AD6F-9721E542DC4A'})).to.be.true;
+      expect(completeCallback.calledOnceWithExactly({ id: '6C3F0AB9-AE82-45C2-AD6F-9721E542DC4A' })).to.be.true;
     });
 
     it('should log an error if configuration is invalid', () => {

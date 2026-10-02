@@ -1,5 +1,4 @@
-
-let path = require('path');
+const path = require('path');
 
 function useLocal(module) {
   return require.resolve(module, {
@@ -10,25 +9,31 @@ function useLocal(module) {
 }
 
 module.exports = function (options = {}) {
+
   return {
     'presets': [
+      useLocal('@babel/preset-typescript'),
       [
         useLocal('@babel/preset-env'),
         {
           'useBuiltIns': 'entry',
           'corejs': '3.42.0',
-          // a lot of tests use sinon.stub & others that stopped working on ES6 modules with webpack 5
-          'modules': options.test ? 'commonjs' : 'auto',
+          'modules': false,
         }
       ]
     ],
     'plugins': (() => {
       const plugins = [
         [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
+        [path.resolve(__dirname, './plugins/callerContext.js'), options],
+        [path.resolve(__dirname, './plugins/gvlPurposes.js'), options],
         [useLocal('@babel/plugin-transform-runtime')],
       ];
-      if (options.codeCoverage) {
-        plugins.push([useLocal('babel-plugin-istanbul')])
+      if (options.polyfills) {
+        plugins.push([path.resolve(__dirname, './plugins/polyfills.js'), {
+          ...options,
+          output: path.resolve(__dirname, './build/dist/polyfills.json'),
+        }])
       }
       return plugins;
     })(),

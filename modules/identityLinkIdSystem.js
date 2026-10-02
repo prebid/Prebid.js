@@ -5,26 +5,28 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./identityLinkIdSystem.d.ts').IdentityLinkIdSystemModuleName} IdentityLinkIdSystemModuleName
  */
 
 const MODULE_NAME = 'identityLink';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 const liverampEnvelopeName = '_lr_env';
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<IdentityLinkIdSystemModuleName>} */
 export const identityLinkSubmodule = {
   /**
    * used to link submodule with config
@@ -43,7 +45,7 @@ export const identityLinkSubmodule = {
    * @returns {{idl_env:string}}
    */
   decode(value) {
-    return { 'idl_env': value }
+    return { 'idl_env': value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -58,7 +60,7 @@ export const identityLinkSubmodule = {
       utils.logError('identityLink: requires partner id to be defined');
       return;
     }
-    const {gdpr, gpp: gppData} = consentData ?? {};
+    const { gdpr, gpp: gppData } = consentData ?? {};
     const hasGdpr = (gdpr && typeof gdpr.gdprApplies === 'boolean' && gdpr.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? gdpr.consentString : '';
     // use protocol relative urls for http or https
@@ -87,7 +89,7 @@ export const identityLinkSubmodule = {
         });
       } else {
         // try to get envelope directly from storage if ats lib is not present on a page
-        let envelope = getEnvelopeFromStorage();
+        const envelope = getEnvelopeFromStorage();
         if (envelope) {
           utils.logInfo('identityLink: LiveRamp envelope successfully retrieved from storage!');
           callback(JSON.parse(envelope).envelope);
@@ -132,24 +134,24 @@ function getEnvelope(url, callback, configParams) {
     setEnvelopeSource(false);
     ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
   } else {
-    callback()
+    callback();
   }
 }
 
 function setRetryCookie() {
-  let now = new Date();
+  const now = new Date();
   now.setTime(now.getTime() + 3600000);
   storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
 }
 
 function setEnvelopeSource(src) {
-  let now = new Date();
+  const now = new Date();
   now.setTime(now.getTime() + 2592000000);
   storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
 }
 
 export function getEnvelopeFromStorage() {
-  let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
+  const rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
   if (!rawEnvelope) {
     return undefined;
   }

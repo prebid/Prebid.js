@@ -16,14 +16,14 @@ const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-function generateQueryStringParams(config, consentData) {
+function generateQueryStringParams(config) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
   const gdprConsent = gdprDataHandler.getConsentData();
 
   const params = {
-    publisherId: Number(config.params.publisherId),
+    publisherId: String(config.params.publisherId || '').trim(),
     gdpr: (gdprConsent && gdprConsent?.gdprApplies) ? 1 : 0,
     gdpr_consent: gdprConsent && gdprConsent?.consentString ? encodeURIComponent(gdprConsent.consentString) : '',
     src: 'pbjs_uid',
@@ -37,9 +37,9 @@ function generateQueryStringParams(config, consentData) {
   return params;
 }
 
-function buildUrl(config, consentData) {
+function buildUrl(config) {
   let baseUrl = `${API_URL}${config.params.publisherId}`;
-  const params = generateQueryStringParams(config, consentData);
+  const params = generateQueryStringParams(config);
 
   Object.keys(params).forEach((key) => {
     baseUrl += `&${key}=${params[key]}`;
@@ -95,13 +95,13 @@ function hasRequiredConfig(config) {
     return false;
   }
 
-  // convert publisherId to number
+  // convert publisherId to string and trim
   if (config.params.publisherId) {
-    config.params.publisherId = Number(config.params.publisherId);
+    config.params.publisherId = String(config.params.publisherId).trim();
   }
 
   if (!config.params.publisherId) {
-    logError(LOG_PREFIX + 'config.params.publisherId (Number) should be provided.');
+    logError(LOG_PREFIX + 'config.params.publisherId should be provided.');
     return false;
   }
 
@@ -132,14 +132,14 @@ export const pubmaticIdSubmodule = {
     }
     return undefined;
   },
-  getId(config, consentData) {
+  getId(config) {
     if (!hasRequiredConfig(config)) {
       return undefined;
     }
 
     const resp = (callback) => {
       logInfo(LOG_PREFIX + 'requesting an ID from the server');
-      const url = buildUrl(config, consentData);
+      const url = buildUrl(config);
       ajax(url, getSuccessAndErrorHandler(callback), null, {
         method: 'GET',
         withCredentials: true,

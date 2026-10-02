@@ -1,4 +1,4 @@
-import { videoKey } from '../constants/constants.js'
+import { videoKey } from '../constants/constants.js';
 
 export function getExternalVideoEventName(eventName) {
   if (!eventName) {

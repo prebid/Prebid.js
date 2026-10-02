@@ -2,6 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const BIDDER_CODE = 'escalax';
 const ESCALAX_SOURCE_ID_MACRO = '[sourceId]';
@@ -52,8 +53,7 @@ function getSubdomain() {
   };
 
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const region = timezone.split('/')[0];
+    const region = getTimeZone().split('/')[0];
     return regionMap[region] || 'bidder_us';
   } catch (err) {
     return 'bidder_us';

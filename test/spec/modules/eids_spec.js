@@ -1,4 +1,4 @@
-import {createEidsArray} from 'modules/userId/eids.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('eids array generation for known sub-modules', function () {
   it('pubProvidedId', function () {
@@ -50,7 +50,7 @@ describe('Negative case', function () {
 
   it('eids array generation for known sub-module with non-string value', function () {
     // pubCommonId
-    let userId = {
+    const userId = {
       pubcid: undefined
     };
     let newEids = createEidsArray(userId);

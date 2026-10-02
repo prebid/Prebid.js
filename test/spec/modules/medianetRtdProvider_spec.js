@@ -51,7 +51,7 @@ describe('medianet realtime module', function () {
   });
 
   it('auctionInit should pass information to js when loaded', function () {
-    const auctionObject = {adUnits: []};
+    const auctionObject = { adUnits: [] };
     medianetRTD.medianetRtdModule.onAuctionInitEvent(auctionObject);
 
     const command = window.mnjs.que.pop();
@@ -60,7 +60,7 @@ describe('medianet realtime module', function () {
 
     assert.equal(setDataSpy.called, true);
     assert.equal(setDataSpy.args[0][0].name, 'auctionInit');
-    assert.deepEqual(setDataSpy.args[0][0].data, {auction: auctionObject});
+    assert.deepEqual(setDataSpy.args[0][0].data, { auction: auctionObject });
   });
 
   describe('getTargeting should work correctly', function () {
@@ -72,8 +72,8 @@ describe('medianet realtime module', function () {
     it('should return ad unit codes when ad units are present', function () {
       const adUnitCodes = ['code1', 'code2'];
       assert.deepEqual(medianetRTD.medianetRtdModule.getTargetingData(adUnitCodes, {}, {}, {}), {
-        code1: {'mnadc': 'code1'},
-        code2: {'mnadc': 'code2'},
+        code1: { 'mnadc': 'code1' },
+        code2: { 'mnadc': 'code2' },
       });
     });
 
@@ -120,7 +120,7 @@ describe('medianet realtime module', function () {
       const onCompleteSpy = sandbox.spy();
       window.mnjs.onPrebidRequestBid = onPrebidRequestBidSpy = () => {
         onPrebidRequestBidSpy.called = true;
-        return {onComplete: onCompleteSpy};
+        return { onComplete: onCompleteSpy };
       };
       medianetRTD.medianetRtdModule.getBidRequestData(requestBidsProps, callbackSpy, conf.dataProviders[0], {});
 
@@ -136,7 +136,7 @@ describe('medianet realtime module', function () {
       onCompleteSpy.args[0][0]();
       assert.equal(callbackSpy.callCount, 1, 'callback should be called when error callback is triggered');
       onCompleteSpy.args[0][1]({}, {
-        'code1': {ext: {refresh: refreshInformation}}
+        'code1': { ext: { refresh: refreshInformation } }
       });
       assert.equal(callbackSpy.callCount, 2, 'callback should be called when success callback is triggered');
       assert.isObject(requestBidsProps.adUnits[0].ortb2Imp, 'ORTB object should be set');

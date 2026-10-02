@@ -1,9 +1,11 @@
 import { expect } from 'chai';
 import {
-  spec, STORAGE, getNexx360LocalStorage,
+  spec, STORAGE, getNexx360LocalStorage, getGzipSetting,
 } from 'modules/nexx360BidAdapter.js';
 import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils';
+import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
+import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 const sandbox = sinon.createSandbox();
 
 describe('Nexx360 bid adapter tests', () => {
@@ -33,6 +35,82 @@ describe('Nexx360 bid adapter tests', () => {
     },
   };
 
+  describe('aliases gvlid mapping', () => {
+    // prismassp (Prisma Media) and scoremedia (Score Media Group) are white-label
+    // partners with their own GVL registrations, distinct from Nexx360's own
+    // GVL ID (965). Declaring the wrong gvlid on an alias makes Prebid's TCF
+    // consent/activity-control checks evaluate consent for the wrong vendor.
+    it('declares prismassp under Prisma Media\'s own GVL ID, not Nexx360\'s', () => {
+      const alias = spec.aliases.find((a) => a.code === 'prismassp');
+      expect(alias).to.exist;
+      expect(alias.gvlid).to.equal(1185);
+    });
+
+    it('declares scoremedia under Score Media Group\'s own GVL ID, not Nexx360\'s', () => {
+      const alias = spec.aliases.find((a) => a.code === 'scoremedia');
+      expect(alias).to.exist;
+      expect(alias.gvlid).to.equal(1090);
+    });
+
+    // stmbidder is the six-char-unique code for Stailamedia (bidstailamedia collides
+    // with bidstack on "bidsta"); both codes stay declared under Nexx360's GVL ID.
+    it('declares stmbidder alongside bidstailamedia under Nexx360\'s GVL ID', () => {
+      ['stmbidder', 'bidstailamedia'].forEach((code) => {
+        const alias = spec.aliases.find((a) => a.code === code);
+        expect(alias).to.exist;
+        expect(alias.gvlid).to.equal(965);
+      });
+    });
+  });
+
+  describe('getGzipSetting', () => {
+    let getParamStub;
+    beforeEach(() => {
+      config.resetConfig();
+      getParamStub = sandbox.stub(utils, 'getParameterByName').returns('');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('defaults to false when no config and no URL override', () => {
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns false when bidder config gzipEnabled is the string "false"', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'false' } });
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns true when bidder config gzipEnabled is the string "true"', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'true' } });
+      expect(getGzipSetting()).to.equal(true);
+    });
+
+    it('returns true when bidder config gzipEnabled is the boolean true', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: true } });
+      expect(getGzipSetting()).to.equal(true);
+    });
+
+    it('returns false when URL has nexx360_debug=1, even if config would enable gzip', () => {
+      getParamStub.withArgs('nexx360_debug').returns('1');
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'true' } });
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns false (the default) when URL has nexx360_debug with a value other than 1', () => {
+      getParamStub.withArgs('nexx360_debug').returns('0');
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('reads the config of the passed alias bidder code', () => {
+      config.setBidderConfig({ bidders: ['revenuemaker'], config: { gzipEnabled: true } });
+      expect(getGzipSetting('revenuemaker')).to.equal(true);
+      // the nexx360 bucket is untouched, so it falls back to the default
+      expect(getGzipSetting('nexx360')).to.equal(false);
+    });
+  });
+
   describe('isBidRequestValid()', () => {
     let bannerBid;
     beforeEach(() => {
@@ -45,10 +123,10 @@ describe('Nexx360 bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
-    it('We verify isBidRequestValid with unvalid adUnitName', () => {
+    it('We verify isBidRequestValid with invalid adUnitName', () => {
       bannerBid.params = { adUnitName: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -63,17 +141,17 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with unvalid divId', () => {
+    it('We verify isBidRequestValid with invalid divId', () => {
       bannerBid.params = { divId: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid unvalid allBids', () => {
+    it('We verify isBidRequestValid invalid allBids', () => {
       bannerBid.params = { allBids: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with uncorrect tagid', () => {
+    it('We verify isBidRequestValid with incorrect tagid', () => {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -95,12 +173,12 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
-      expect(output).to.be.eql(false);
+      expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
-  })
+  });
 
   describe('getNexx360LocalStorage enabled but nothing', () => {
     before(() => {
@@ -113,9 +191,9 @@ describe('Nexx360 bid adapter tests', () => {
       expect(typeof output.nexx360Id).to.be.eql('string');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
-  })
+  });
 
   describe('getNexx360LocalStorage enabled but wrong payload', () => {
     before(() => {
@@ -125,10 +203,10 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
-      expect(output).to.be.eql(false);
+      expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -143,7 +221,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output.nexx360Id).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -155,10 +233,10 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the amxId', () => {
       const output = getAmxId(STORAGE, 'nexx360');
-      expect(output).to.be.eql(false);
+      expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -173,7 +251,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql('abcdef');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -268,6 +346,12 @@ describe('Nexx360 bid adapter tests', () => {
           consentString: 'CPhdLUAPhdLUAAKAsAENCmCsAP_AAE7AAAqIJFNd_H__bW9r-f5_aft0eY1P9_r37uQzDhfNk-8F3L_W_LwX52E7NF36tq4KmR4ku1LBIUNlHMHUDUmwaokVryHsak2cpzNKJ7BEknMZOydYGF9vmxtj-QKY7_5_d3bx2D-t_9v239z3z81Xn3d53-_03LCdV5_9Dfn9fR_bc9KPt_58v8v8_____3_e__3_7997BIiAaADgAJYBnwEeAJXAXmAwQBj4DtgHcgPBAeKBIgAA.YAAAAAAAAAAA',
         }
       };
+      it('carries the bidderRequest on the request so interpretResponse can report the server auction', () => {
+        const displayBids = structuredClone(sampleBids);
+        displayBids[0].mediaTypes = { banner: { sizes: [[300, 250]] } };
+        const request = spec.buildRequests(displayBids, bidderRequest);
+        expect(request.bidderRequest).to.equal(bidderRequest);
+      });
       it('We perform a test with 2 display adunits', () => {
         const displayBids = structuredClone(sampleBids);
         displayBids[0].mediaTypes = {
@@ -303,6 +387,9 @@ describe('Nexx360 bid adapter tests', () => {
                 },
                 nexx360: {
                   tagId: 'luvxjvgn',
+                  adUnitName: 'header-ad',
+                  adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
+                  divId: 'div-1',
                 },
                 adUnitName: 'header-ad',
                 adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
@@ -324,6 +411,7 @@ describe('Nexx360 bid adapter tests', () => {
                 divId: 'div-2-abcd',
                 nexx360: {
                   placement: 'testPlacement',
+                  divId: 'div-2-abcd',
                   allBids: true,
                 },
               },
@@ -335,8 +423,10 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '6.1',
-            localStorage: { amxId: 'abcdef'}
+            bidderVersion: '8.0',
+            localStorage: { amxId: 'abcdef' },
+            sessionId: requestContent.ext.sessionId,
+            requestCounter: requestContent.ext.requestCounter,
           },
           cur: [
             'USD',
@@ -415,7 +505,7 @@ describe('Nexx360 bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -487,6 +577,40 @@ describe('Nexx360 bid adapter tests', () => {
         ad: '<div>TestAd</div>',
       }];
       expect(output).to.eql(expectedOutput);
+    });
+
+    it('maps the ORTB dealid to the Prebid dealId', () => {
+      const response = {
+        body: {
+          id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
+          cur: 'EUR',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '4427551302944024629',
+                  impid: '226175918ebeda',
+                  price: 4.2,
+                  adomain: ['http://prebid.org'],
+                  crid: '98493581',
+                  dealid: 'deal-123',
+                  h: 250,
+                  w: 300,
+                  adm: '<div>TestAd</div>',
+                  ext: {
+                    mediaType: 'banner',
+                    ssp: 'smartadserver',
+                  },
+                },
+              ],
+              seat: 'smartadserver',
+            },
+          ],
+        },
+      };
+      const [bid] = spec.interpretResponse(response);
+      expect(bid.dealId).to.equal('deal-123');
+      expect(bid).to.not.have.property('dealid');
     });
 
     it('instream responses', () => {
@@ -564,6 +688,7 @@ describe('Nexx360 bid adapter tests', () => {
                     mediaType: 'outstream',
                     ssp: 'appnexus',
                     adUnitCode: 'div-1',
+                    divId: 'div-1',
                   },
                 },
               ],
@@ -585,6 +710,7 @@ describe('Nexx360 bid adapter tests', () => {
         creativeId: '97517771',
         currency: 'USD',
         netRevenue: true,
+        divId: 'div-1',
         ttl: 120,
         mediaType: 'video',
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
@@ -704,7 +830,7 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('Verifies user sync with cookies in bid response', () => {
       response.body.ext = {
-        cookies: [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}]
+        cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
       };
       const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
       const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];
@@ -715,9 +841,9 @@ describe('Nexx360 bid adapter tests', () => {
       expect(syncs).to.eql([]);
     });
     it('Verifies user sync with no bid body response', () => {
-      var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
-      var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
     });
   });

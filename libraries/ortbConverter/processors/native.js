@@ -1,5 +1,6 @@
-import {isPlainObject, logWarn, mergeDeep} from '../../../src/utils.js';
-import {NATIVE} from '../../../src/mediaTypes.js';
+import { isPlainObject, logWarn, mergeDeep } from '../../../src/utils.js';
+import { parseUntrustedJSON } from '../../../src/utils/untrustedJson.js';
+import { NATIVE } from '../../../src/mediaTypes.js';
 
 export function fillNativeImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== NATIVE) return;
@@ -10,9 +11,9 @@ export function fillNativeImp(imp, bidRequest, context) {
       imp.native = mergeDeep({}, {
         request: JSON.stringify(nativeReq),
         ver: nativeReq.ver
-      }, imp.native)
+      }, imp.native);
     } else {
-      logWarn('mediaTypes.native is set, but no assets were specified. Native request skipped.', bidRequest)
+      logWarn('mediaTypes.native is set, but no assets were specified. Native request skipped.', bidRequest);
     }
   }
 }
@@ -21,7 +22,10 @@ export function fillNativeResponse(bidResponse, bid) {
   if (bidResponse.mediaType === NATIVE) {
     let ortb;
     if (typeof bid.adm === 'string') {
-      ortb = JSON.parse(bid.adm);
+      // `adm` travels through the response body as a string, so the guard applied when that body
+      // was parsed could not see inside it. Parsing it produces a second object from the same
+      // untrusted source, which an adapter or a `bidResponse` override may merge.
+      ortb = parseUntrustedJSON(bid.adm);
     } else {
       ortb = bid.adm;
     }
@@ -29,7 +33,7 @@ export function fillNativeResponse(bidResponse, bid) {
     if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
       bidResponse.native = {
         ortb,
-      }
+      };
     } else {
       throw new Error('ORTB native response contained no assets');
     }

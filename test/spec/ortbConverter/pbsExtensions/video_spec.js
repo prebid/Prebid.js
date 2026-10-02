@@ -1,4 +1,4 @@
-import {setBidResponseVideoCache} from '../../../../libraries/pbsExtensions/processors/video.js';
+import { setBidResponseVideoCache } from '../../../../libraries/pbsExtensions/processors/video.js';
 
 describe('pbjs - ortb videoCacheKey based on ext.prebid', () => {
   const EXT_PREBID_CACHE = {
@@ -12,18 +12,18 @@ describe('pbjs - ortb videoCacheKey based on ext.prebid', () => {
         }
       }
     }
-  }
+  };
 
   function setCache(bid) {
-    const bidResponse = {mediaType: 'video'};
+    const bidResponse = { mediaType: 'video' };
     setBidResponseVideoCache(bidResponse, bid);
     return bidResponse;
   }
 
   it('has no effect if mediaType is not video', () => {
-    const resp = {mediaType: 'banner'};
+    const resp = { mediaType: 'banner' };
     setBidResponseVideoCache(resp, EXT_PREBID_CACHE);
-    expect(resp).to.eql({mediaType: 'banner'});
+    expect(resp).to.eql({ mediaType: 'banner' });
   });
 
   it('sets videoCacheKey, vastUrl from ext.prebid.cache.vastXml', () => {
@@ -47,6 +47,6 @@ describe('pbjs - ortb videoCacheKey based on ext.prebid', () => {
     }), {
       vastUrl: 'https://host/path?uuid=id',
       videoCacheKey: 'id'
-    })
+    });
   });
 });

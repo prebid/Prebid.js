@@ -1,6 +1,5 @@
 import { spec } from 'modules/lkqdBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
 import { expect } from 'chai';
 
 describe('lkqdBidAdapter', () => {
@@ -46,7 +45,7 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         wrong: 'missing zone id'
@@ -106,11 +105,7 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('should populate height, width, c1, c20, coppa with 2 imp', () => {
-      sandbox.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-
-      const requests = spec.buildRequests(bidRequests, {});
+      const requests = spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } });
       expect(requests.length).to.equal(1);
 
       const serverRequestObject = requests[0];
@@ -298,15 +293,15 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('safely handles invalid bid response', () => {
-      let invalidServerResponse = {};
+      const invalidServerResponse = {};
       invalidServerResponse.body = '';
 
-      let result = spec.interpretResponse(invalidServerResponse, bidRequest);
+      const result = spec.interpretResponse(invalidServerResponse, bidRequest);
       expect(result.length).to.equal(0);
     });
 
     it('handles nobid responses', () => {
-      let nobidResponse = {};
+      const nobidResponse = {};
       nobidResponse.body = {
         seatbid: [
           {
@@ -315,7 +310,7 @@ describe('lkqdBidAdapter', () => {
         ]
       };
 
-      let result = spec.interpretResponse(nobidResponse, bidRequest);
+      const result = spec.interpretResponse(nobidResponse, bidRequest);
       expect(result.length).to.equal(0);
     });
   });

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/mediasniperBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import * as utils from 'src/utils.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
@@ -8,7 +8,6 @@ const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_BID_TTL = 360;
 
 describe('mediasniperBidAdapter', function () {
-  const adapter = newBidder(spec);
   let utilsMock;
   let sandbox;
 
@@ -343,14 +342,6 @@ describe('mediasniperBidAdapter', function () {
       expect(response06.length).to.equal(0);
     });
 
-    it('Log an error', function () {
-      const request = '';
-      sinon.stub(utils, 'isArray').throws();
-      utilsMock.expects('logError').once();
-      spec.interpretResponse(rawServerResponse, request);
-      utils.isArray.restore();
-    });
-
     describe('Build banner response', function () {
       it('Retrurn successful response', function () {
         const request = '';
@@ -389,7 +380,7 @@ describe('mediasniperBidAdapter', function () {
         });
       });
 
-      it('shoud use adid if no crid', function () {
+      it('should use adid if no crid', function () {
         const raw = {
           body: {
             seatbid: [
@@ -410,7 +401,7 @@ describe('mediasniperBidAdapter', function () {
         );
       });
 
-      it('shoud use id if no crid or adid', function () {
+      it('should use id if no crid or adid', function () {
         const raw = {
           body: {
             seatbid: [
@@ -429,7 +420,7 @@ describe('mediasniperBidAdapter', function () {
         expect(response[0].creativeId).to.equal(raw.body.seatbid[0].bid[0].id);
       });
 
-      it('shoud use 0 if no cpm', function () {
+      it('should use 0 if no cpm', function () {
         const raw = {
           body: {
             seatbid: [
@@ -444,7 +435,7 @@ describe('mediasniperBidAdapter', function () {
         expect(response[0].cpm).to.equal(0);
       });
 
-      it('shoud use dealid if exists', function () {
+      it('should use dealid if exists', function () {
         const raw = {
           body: {
             seatbid: [
@@ -459,7 +450,7 @@ describe('mediasniperBidAdapter', function () {
         expect(response[0].dealId).to.equal(raw.body.seatbid[0].bid[0].dealid);
       });
 
-      it('shoud use DEFAUL_CURRENCY if no cur', function () {
+      it('should use DEFAULT_CURRENCY if no cur', function () {
         const raw = {
           body: {
             seatbid: [
@@ -492,11 +483,7 @@ describe('mediasniperBidAdapter', function () {
     });
 
     it('Should trigger pixel if bid.burl exists', function () {
-      const result = spec.onBidWon({
-        cpm: 4.2,
-        burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar',
-      });
-
+      spec.onBidWon({ burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar', cpm: 4.2 });
       expect(utils.triggerPixel.callCount).to.equal(1);
       expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
         'https://example.com/p=4.2&foo=bar'

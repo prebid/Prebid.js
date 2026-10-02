@@ -1,7 +1,6 @@
 import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import {
   isBidRequestValid,
   buildRequestsBase,
@@ -10,6 +9,7 @@ import {
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'axis';
+const GVLID = 1197;
 const AD_URL = 'https://prebid.axis-marketplace.com/pbjs';
 const SYNC_URL = 'https://cs.axis-marketplace.com';
 
@@ -41,14 +41,15 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(['integration', 'token'], 'every'),
   buildRequests,
   interpretResponse,
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
+    const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -66,14 +67,13 @@ export const spec = {
       syncUrl += '&gpp_sid=' + gppConsent.applicableSections.join(',');
     }
 
-    const coppa = config.getConfig('coppa') ? 1 : 0;
-    syncUrl += `&coppa=${coppa}`;
+    syncUrl += `&coppa=${coppa ? 1 : 0}`;
 
     return [{
       type: syncType,
       url: syncUrl
     }];
   }
-}
+};
 
 registerBidder(spec);

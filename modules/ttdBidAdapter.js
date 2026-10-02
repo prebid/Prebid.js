@@ -1,9 +1,9 @@
 import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -14,12 +14,12 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2025.04.25';
+const BIDADAPTERVERSION = 'TTD-PREBID-2025.07.15';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
-const BIDDER_ENDPOINT_HTTP2 = 'https://d2.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
+const TTL = 360;
 
 const MEDIA_TYPE = {
   BANNER: 1,
@@ -31,14 +31,14 @@ function getExt(firstPartyData) {
     ver: BIDADAPTERVERSION,
     pbjs: '$prebid.version$',
     keywords: firstPartyData.site?.keywords ? firstPartyData.site.keywords.split(',').map(k => k.trim()) : []
-  }
+  };
   return {
     ttdprebid: ext
   };
 }
 
 function getRegs(bidderRequest) {
-  let regs = {};
+  const regs = {};
 
   if (bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
     utils.deepSetValue(regs, 'ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -46,7 +46,7 @@ function getRegs(bidderRequest) {
   if (bidderRequest.uspConsent) {
     utils.deepSetValue(regs, 'ext.us_privacy', bidderRequest.uspConsent);
   }
-  if (config.getConfig('coppa') === true) {
+  if (bidderRequest.ortb2?.regs?.coppa === 1) {
     regs.coppa = 1;
   }
   if (bidderRequest.ortb2?.regs) {
@@ -66,7 +66,7 @@ function getBidFloor(bid) {
     return null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
@@ -78,45 +78,42 @@ function getBidFloor(bid) {
 }
 
 function getSource(validBidRequests, bidderRequest) {
-  let source = {
+  const source = {
     tid: bidderRequest?.ortb2?.source?.tid,
   };
-  if (validBidRequests[0].schain) {
-    utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
+  const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    utils.deepSetValue(source, 'ext.schain', schain);
   }
   return source;
 }
 
 function getDevice(firstPartyData) {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
-  let device = {
+  const device = {
     ua: navigator.userAgent,
-    dnt: utils.getDNT() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     language: language,
     connectiontype: getConnectionType()
   };
 
-  utils.mergeDeep(device, firstPartyData.device)
+  utils.mergeDeep(device, firstPartyData.device);
 
   return device;
 };
 
 function getUser(bidderRequest, firstPartyData) {
-  let user = {};
+  const user = {};
   if (bidderRequest.gdprConsent) {
     utils.deepSetValue(user, 'ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
-  if (utils.isStr(utils.deepAccess(bidderRequest, 'bids.0.userId.tdid'))) {
-    user.buyeruid = bidderRequest.bids[0].userId.tdid;
-  }
-
-  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
+  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
   if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
-  utils.mergeDeep(user, firstPartyData.user)
+  utils.mergeDeep(user, firstPartyData.user);
 
   return user;
 }
@@ -140,11 +137,13 @@ function getSite(bidderRequest, firstPartyData) {
 }
 
 function getImpression(bidRequest) {
-  let impression = {
+  const impression = {
     id: bidRequest.bidId
   };
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const exp = TTL;
+  impression.exp = exp;
   const tagid = gpid || bidRequest.params.placementId;
   if (tagid) {
     impression.tagid = tagid;
@@ -153,7 +152,7 @@ function getImpression(bidRequest) {
   const mediaTypesVideo = utils.deepAccess(bidRequest, 'mediaTypes.video');
   const mediaTypesBanner = utils.deepAccess(bidRequest, 'mediaTypes.banner');
 
-  let mediaTypes = {};
+  const mediaTypes = {};
   if (mediaTypesBanner) {
     mediaTypes[BANNER] = banner(bidRequest);
   }
@@ -163,17 +162,17 @@ function getImpression(bidRequest) {
 
   Object.assign(impression, mediaTypes);
 
-  let bidfloor = getBidFloor(bidRequest);
+  const bidfloor = getBidFloor(bidRequest);
   if (bidfloor) {
     impression.bidfloor = parseFloat(bidfloor);
     impression.bidfloorcur = 'USD';
   }
 
   const secure = utils.deepAccess(bidRequest, 'ortb2Imp.secure');
-  impression.secure = isNumber(secure) ? secure : 1
+  impression.secure = isNumber(secure) ? secure : 1;
 
-  const {video: _, ...ortb2ImpWithoutVideo} = bidRequest.ortb2Imp; // if enabled, video is already assigned above
-  utils.mergeDeep(impression, ortb2ImpWithoutVideo)
+  const { video: _, ...ortb2ImpWithoutVideo } = bidRequest.ortb2Imp; // if enabled, video is already assigned above
+  utils.mergeDeep(impression, ortb2ImpWithoutVideo);
 
   return impression;
 }
@@ -186,7 +185,7 @@ function getSizes(sizes) {
       return {
         width: parseInt(size[0]),
         height: parseInt(size[1]),
-      }
+      };
     });
 
   return sizeStructs;
@@ -197,11 +196,11 @@ function banner(bid) {
     return {
       w: x.width,
       h: x.height,
-    }
+    };
   });
   const pos = parseInt(utils.deepAccess(bid, 'mediaTypes.banner.pos'));
   const expdir = utils.deepAccess(bid, 'params.banner.expdir');
-  let optionalParams = {};
+  const optionalParams = {};
   if (pos) {
     optionalParams.pos = pos;
   }
@@ -281,15 +280,17 @@ function video(bid) {
 }
 
 function selectEndpoint(params) {
-  if (params.useHttp2) {
-    return BIDDER_ENDPOINT_HTTP2;
+  if (params.customBidderEndpoint) {
+    return params.customBidderEndpoint;
   }
+
   return BIDDER_ENDPOINT;
 }
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 21,
+  alwaysHasCapacity: true,
   aliases: [BIDDER_CODE_LONG],
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -335,6 +336,12 @@ export const spec = {
       return false;
     }
 
+    if (bid.params.customBidderEndpoint &&
+        (!bid.params.customBidderEndpoint.startsWith('https://') || !bid.params.customBidderEndpoint.endsWith('/bid/bidder/'))) {
+      utils.logWarn(BIDDER_CODE + ': if params.customBidderEndpoint is provided, it must start with https:// and end with /bid/bidder/');
+      return false;
+    }
+
     const mediaTypesBanner = utils.deepAccess(bid, 'mediaTypes.banner');
     const mediaTypesVideo = utils.deepAccess(bid, 'mediaTypes.video');
 
@@ -375,7 +382,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const firstPartyData = bidderRequest.ortb2 || {};
     const firstPartyImpData = bidderRequest.ortb2Imp || {};
-    let topLevel = {
+    const topLevel = {
       id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
       site: getSite(bidderRequest, firstPartyData),
@@ -387,7 +394,7 @@ export const spec = {
       regs: getRegs(bidderRequest),
       source: getSource(validBidRequests, bidderRequest),
       ext: getExt(firstPartyData)
-    }
+    };
 
     if (firstPartyData && firstPartyData.bcat) {
       topLevel.bcat = firstPartyData.bcat;
@@ -412,9 +419,9 @@ export const spec = {
       });
     }
 
-    let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
+    const url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
 
-    let serverRequest = {
+    const serverRequest = {
       method: 'POST',
       url: url,
       data: topLevel,
@@ -449,27 +456,27 @@ export const spec = {
    * @return {Bid[]} An array of formatted bids.
    */
   interpretResponse: function (response, serverRequest) {
-    let seatBidsInResponse = utils.deepAccess(response, 'body.seatbid');
+    const seatBidsInResponse = utils.deepAccess(response, 'body.seatbid');
     const currency = utils.deepAccess(response, 'body.cur');
     if (!seatBidsInResponse || seatBidsInResponse.length === 0) {
       return [];
     }
-    let bidResponses = [];
-    let requestedImpressions = utils.deepAccess(serverRequest, 'data.imp');
+    const bidResponses = [];
+    const requestedImpressions = utils.deepAccess(serverRequest, 'data.imp');
 
     seatBidsInResponse.forEach(seatBid => {
       seatBid.bid.forEach(bid => {
-        let matchingRequestedImpression = requestedImpressions.find(imp => imp.id === bid.impid);
+        const matchingRequestedImpression = requestedImpressions.find(imp => imp.id === bid.impid);
 
         const cpm = bid.price || 0;
-        let bidResponse = {
+        const bidResponse = {
           requestId: bid.impid,
           cpm: cpm,
           creativeId: bid.crid,
           dealId: bid.dealid || null,
           currency: currency || 'USD',
           netRevenue: true,
-          ttl: bid.ttl || 360,
+          ttl: bid.ttl || TTL,
           meta: {},
         };
 
@@ -522,9 +529,9 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
     const syncs = [];
 
-    let gdprParams = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`;
+    const gdprParams = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`;
 
-    let url = `${USER_SYNC_ENDPOINT}/track/usersync?us_privacy=${encodeURIComponent(uspConsent)}${gdprParams}`;
+    const url = `${USER_SYNC_ENDPOINT}/track/usersync?us_privacy=${encodeURIComponent(uspConsent)}${gdprParams}`;
 
     if (syncOptions.pixelEnabled) {
       syncs.push({
@@ -541,4 +548,4 @@ export const spec = {
   },
 };
 
-registerBidder(spec)
+registerBidder(spec);

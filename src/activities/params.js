@@ -1,5 +1,5 @@
-import {MODULE_TYPE_BIDDER} from './modules.js';
-import {hook} from '../hook.js';
+import { MODULE_TYPE_BIDDER } from './modules.js';
+import { hook } from '../hook.js';
 
 /**
  * Component ID - who is trying to perform the activity?
@@ -24,6 +24,18 @@ export const ACTIVITY_PARAM_ADAPTER_CODE = 'adapterCode';
 export const ACTIVITY_PARAM_STORAGE_TYPE = 'storageType';
 
 /**
+ * Storage key - cookie name or localStorage key.
+ * Relevant for: accessDevice
+ */
+export const ACTIVITY_PARAM_STORAGE_KEY = 'storageKey';
+
+/**
+ * True if attempting to write to device storage; false otherwise (e.g. when reading from or checking availability of storage).
+ * Relevant for: accessDevice
+ */
+export const ACTIVITY_PARAM_STORAGE_WRITE = 'write';
+
+/**
  * s2sConfig[].configName, used to identify a particular s2s instance
  * relevant for: fetchBids, but only when component is 'prebid.pbsBidAdapter'
  */
@@ -32,7 +44,7 @@ export const ACTIVITY_PARAM_S2S_NAME = 'configName';
  * user sync type - 'iframe' or 'pixel'
  * relevant for: syncUser
  */
-export const ACTIVITY_PARAM_SYNC_TYPE = 'syncType'
+export const ACTIVITY_PARAM_SYNC_TYPE = 'syncType';
 /**
  * user sync URL
  * relevant for: syncUser
@@ -58,7 +70,7 @@ export function activityParamsBuilder(resolveAlias) {
       defaults[ACTIVITY_PARAM_ADAPTER_CODE] = resolveAlias(moduleName);
     }
     return buildActivityParams(Object.assign(defaults, params));
-  }
+  };
 }
 
 export const buildActivityParams = hook('sync', params => params);

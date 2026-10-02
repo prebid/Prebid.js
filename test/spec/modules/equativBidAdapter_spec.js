@@ -1,5 +1,7 @@
 import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
+import { Renderer } from 'src/Renderer.js';
 import * as utils from '../../../src/utils.js';
+import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js';
 
 describe('Equativ bid adapter tests', () => {
   let sandBox;
@@ -109,6 +111,7 @@ describe('Equativ bid adapter tests', () => {
     privacy: 1,
     ver: '1.2',
   };
+
   const DEFAULT_NATIVE_BID_REQUESTS = [
     {
       adUnitCode: 'equativ_native_42',
@@ -289,6 +292,47 @@ describe('Equativ bid adapter tests', () => {
       expect(request.data.imp[0].ext.bidder).to.be.undefined;
     });
 
+    it('should add ext.bidder with plcmtuuid to imp object when placementuuid is defined', () => {
+      const bidRequests = [
+        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { ...DEFAULT_BANNER_BID_REQUESTS[0].params, placementuuid: 'abc-123' } },
+      ];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].ext.bidder).to.deep.equal({
+        plcmtuuid: 'abc-123',
+      });
+    });
+
+    it('should forward plcmtuuid alongside deprecated params when all inventory params are provided', () => {
+      const bidRequests = [
+        {
+          ...DEFAULT_BANNER_BID_REQUESTS[0],
+          params: { ...DEFAULT_BANNER_BID_REQUESTS[0].params, placementuuid: 'abc-123', siteId: 123, pageId: 456, formatId: 789 },
+        },
+      ];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].ext.bidder).to.deep.equal({
+        plcmtuuid: 'abc-123',
+        siteId: 123,
+        pageId: 456,
+        formatId: 789,
+      });
+    });
+
+    it('should still add deprecated ext.bidder params when placementuuid is not provided', () => {
+      const bidRequests = [
+        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { ...DEFAULT_BANNER_BID_REQUESTS[0].params, siteId: 123, pageId: 456, formatId: 789 } },
+      ];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].ext.bidder).to.deep.equal({
+        siteId: 123,
+        pageId: 456,
+        formatId: 789,
+      });
+    });
+
     it('should add site.publisher.id param', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
@@ -466,11 +510,56 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       };
-      const request = spec.buildRequests([ DEFAULT_BANNER_BID_REQUESTS[0] ], bidRequest)[0];
+      const request = spec.buildRequests([DEFAULT_BANNER_BID_REQUESTS[0]], bidRequest)[0];
 
       expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
 
       getDataFromLocalStorageStub.restore();
+    });
+
+    it('should pass prebid version as ext.equativprebidjsversion param', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$');
+    });
+
+    it('should default imp.displaymanager and imp.displaymanagerver to Prebid.js and prebid version', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
+    });
+
+    it('should preserve publisher-provided ortb2Imp.displaymanager', () => {
+      const bidRequests = [{
+        ...DEFAULT_BANNER_BID_REQUESTS[0],
+        ortb2Imp: {
+          ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
+          displaymanager: 'Smart RTB+',
+        },
+      }];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Smart RTB+');
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
+    });
+
+    it('should preserve publisher-provided ortb2Imp.displaymanagerver', () => {
+      const bidRequests = [{
+        ...DEFAULT_BANNER_BID_REQUESTS[0],
+        ortb2Imp: {
+          ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
+          displaymanagerver: 'Android SDK7.20.2',
+        },
+      }];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(request.data.imp[0].displaymanagerver).to.equal('Android SDK7.20.2');
     });
 
     it('should build a video request properly under normal circumstances', () => {
@@ -571,15 +660,17 @@ describe('Equativ bid adapter tests', () => {
       }
     });
 
-    it('should warn about missing required properties for video requests', () => {
+    it('should warn about missing required properties for video requests', function() {
+      if (!FEATURES.VIDEO) this.skip();
+
       // ASSEMBLE
-      const missingRequiredVideoRequest = DEFAULT_VIDEO_BID_REQUESTS[0];
+      const missingRequiredVideoRequest = utils.deepClone(DEFAULT_VIDEO_BID_REQUESTS[0]);
 
       // removing required properties
       delete missingRequiredVideoRequest.mediaTypes.video.mimes;
       delete missingRequiredVideoRequest.mediaTypes.video.placement;
 
-      const bidRequests = [ missingRequiredVideoRequest ];
+      const bidRequests = [missingRequiredVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -599,7 +690,7 @@ describe('Equativ bid adapter tests', () => {
           video: {}
         }
       };
-      const bidRequests = [ emptyVideoRequest ];
+      const bidRequests = [emptyVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -641,7 +732,7 @@ describe('Equativ bid adapter tests', () => {
             native: {}
           }
         };
-        const bidRequests = [ emptyNativeRequest ];
+        const bidRequests = [emptyNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT
@@ -661,11 +752,11 @@ describe('Equativ bid adapter tests', () => {
 
         // removing just "assets" for this test
         delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // this value comes from native.js, part of the ortbConverter library
-        const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.'
+        const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.';
 
         // ACT
         spec.buildRequests(bidRequests, bidderRequest);
@@ -686,18 +777,19 @@ describe('Equativ bid adapter tests', () => {
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
 
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT
         spec.buildRequests(bidRequests, bidderRequest);
 
         // ASSERT
-        expect(utils.logWarn.callCount).to.equal(4); // the first message, regarding missing assets, is supplied by the ortbConverter library
+        // 1 warning from the library (no assets) + 1 from the adapter guard (no valid impressions).
+        // Property warnings (privacy, plcmttype, eventtrackers) are skipped because the early
+        // return in the request customizer fires before reaching them when splitImps is empty.
+        expect(utils.logWarn.callCount).to.equal(2);
         expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'));
-        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.privacy" is missing'));
-        expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.plcmttype" is missing'));
-        expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.eventtrackers" is missing'));
+        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('no valid impressions'));
       }
     });
 
@@ -884,111 +976,130 @@ describe('Equativ bid adapter tests', () => {
         price: cpm
       });
     });
+
+    it('should skip invalid bid and log warning when mixed with valid bids', () => {
+      // ASSEMBLE - one valid bid and one with empty video (invalid)
+      const mixedBidRequests = [
+        DEFAULT_BANNER_BID_REQUESTS[0],
+        { ...DEFAULT_BANNER_BID_REQUESTS[0], bidId: 'invalid-bid', mediaTypes: { video: {} } }
+      ];
+
+      // ACT
+      const requests = spec.buildRequests(mixedBidRequests, { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: mixedBidRequests });
+
+      // ASSERT - only the valid bid produces a request; the invalid one is warned about
+      expect(requests).to.have.lengthOf(1);
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('invalid media types'));
+    });
+
+    it('should skip bid and log warning when converter returns null data', () => {
+      // ASSEMBLE
+      sandBox.stub(converter, 'toORTB').returns(null);
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('empty data'));
+    });
+
+    it('should skip bid and log warning when request id is missing', () => {
+      // ASSEMBLE
+      sandBox.stub(converter, 'toORTB').returns({ imp: [{ id: 'abc' }] });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('missing required id'));
+    });
+
+    it('should skip bid and log warning when request id is empty string', () => {
+      // ASSEMBLE
+      sandBox.stub(converter, 'toORTB').returns({ id: '', imp: [{ id: 'abc' }] });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('missing required id'));
+    });
+
+    it('should skip bid and log warning when imp array is empty', () => {
+      // ASSEMBLE
+      sandBox.stub(converter, 'toORTB').returns({ id: 'req-id-123', imp: [] });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('no valid impressions'));
+    });
+
+    it('should skip bid and log warning when imp array is absent', () => {
+      // ASSEMBLE
+      sandBox.stub(converter, 'toORTB').returns({ id: 'req-id-123' });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('no valid impressions'));
+    });
   });
 
   describe('getUserSyncs', () => {
-    let setDataInLocalStorageStub;
+    let handleCookieSyncStub;
 
-    beforeEach(() => setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage'));
-
-    afterEach(() => setDataInLocalStorageStub.restore());
-
-    it('should return empty array if iframe sync not enabled', () => {
-      const syncs = spec.getUserSyncs({}, SAMPLE_RESPONSE);
-      expect(syncs).to.deep.equal([]);
+    beforeEach(() => {
+      handleCookieSyncStub = sinon.stub(equativUtils, 'handleCookieSync');
+    });
+    afterEach(() => {
+      handleCookieSyncStub.restore();
     });
 
-    it('should retrieve and save user pid', (done) => {
-      spec.getUserSyncs(
+    it('should call handleCookieSync with correct parameters and return its result', () => {
+      const expectedResult = [
+        { type: 'iframe', url: 'https://sync.example.com' },
+      ];
+
+      handleCookieSyncStub.returns(expectedResult);
+
+      const result = spec.getUserSyncs({ iframeEnabled: true },
+        SAMPLE_RESPONSE,
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
+
+      sinon.assert.calledWithMatch(
+        handleCookieSyncStub,
         { iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } },
+        sinon.match.number,
+        sinon.match.object
       );
 
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: '7767825890726'
-        },
-        origin: 'https://apps.smartadserver.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.calledOnce).to.be.true;
-        expect(setDataInLocalStorageStub.calledWith('eqt_pid', '7767825890726')).to.be.true;
-        done();
-      });
+      expect(result).to.deep.equal(expectedResult);
     });
 
-    it('should not save user pid coming from incorrect origin', (done) => {
-      spec.getUserSyncs(
-        { iframeEnabled: true },
+    it('should return an empty array if handleCookieSync returns an empty array', () => {
+      handleCookieSyncStub.returns([]);
+
+      const result = spec.getUserSyncs({ iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
-      );
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
 
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: '7767825890726'
-        },
-        origin: 'https://another-origin.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.notCalled).to.be.true;
-        done();
-      });
-    });
-
-    it('should not save empty pid', (done) => {
-      spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
-      );
-
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: ''
-        },
-        origin: 'https://apps.smartadserver.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.notCalled).to.be.true;
-        done();
-      });
-    });
-
-    it('should return array including iframe cookie sync object (gdprApplies=true)', () => {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: true }
-      );
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=1&'
-      });
-    });
-
-    it('should return array including iframe cookie sync object (gdprApplies=false)', () => {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: false }
-      );
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=0&'
-      });
+      expect(result).to.deep.equal([]);
     });
   });
 
@@ -1042,6 +1153,105 @@ describe('Equativ bid adapter tests', () => {
       const result = spec.interpretResponse(response, request);
 
       expect(result.bids[0]).to.have.property('ttl').that.eq(120);
+    });
+
+    describe('outstream', () => {
+      const bidId = 'abcd1234';
+
+      const bidRequests = [{
+        bidId,
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          },
+          video: {
+            context: 'outstream'
+          }
+        },
+        params: {
+          networkId: 111
+        }
+      }];
+
+      it('should add renderer', () => {
+        const request = spec.buildRequests(
+          bidRequests,
+          {
+            bidderCode: 'equativ',
+            bids: bidRequests
+          }
+        )[0];
+
+        const response = {
+          body: {
+            seatbid: [
+              {
+                bid: [{ mtype: 2 }]
+              }
+            ]
+          }
+        };
+
+        const impIdMap = getImpIdMap();
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+        const bid = spec.interpretResponse(response, request).bids[0];
+
+        expect(bid).to.have.property('renderer');
+        expect(bid.renderer).to.be.instanceof(Renderer);
+        expect(bid.renderer.url).eq('https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js');
+      });
+
+      it('should initialize and set renderer', () => {
+        const fakeRenderer = {
+          push: (cb) => cb(),
+          setRender: sinon.stub()
+        };
+
+        const installStub = sandBox.stub(Renderer, 'install').returns(fakeRenderer);
+        const renderAdStub = sandBox.stub();
+
+        window.EquativVideoOutstream = { renderAd: renderAdStub };
+
+        const request = spec.buildRequests(
+          bidRequests,
+          {
+            bidderCode: 'equativ',
+            bids: bidRequests
+          }
+        )[0];
+
+        expect(installStub.notCalled).to.be.true;
+        expect(fakeRenderer.setRender.notCalled).to.be.true;
+
+        const response = {
+          body: {
+            seatbid: [
+              {
+                bid: [{
+                  mtype: 2,
+                  renderer: fakeRenderer
+                }]
+              }
+            ]
+          }
+        };
+
+        const impIdMap = getImpIdMap();
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+
+        const bid = spec.interpretResponse(response, request).bids[0];
+
+        expect(installStub.calledOnce).to.be.true;
+        expect(fakeRenderer.setRender.calledOnce).to.be.true;
+
+        const renderFn = fakeRenderer.setRender.firstCall.args[0];
+
+        renderFn(bid);
+
+        expect(renderAdStub.calledOnce).to.be.true;
+        expect(renderAdStub.firstCall.args[0]).to.have.property('slotId');
+        expect(renderAdStub.firstCall.args[0]).to.have.property('vast');
+      });
     });
   });
 

@@ -17,20 +17,20 @@ Connects to 33Across's exchange for bids.
 ```
 var adUnits = [
 {
-  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID
   mediaTypes: {
-    banner: {  
+    banner: {
       sizes: [
-          [300, 250], 
+          [300, 250],
           [728, 90]
       ]
-    }   
-  } 
+    }
+  }
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',     
-        productId: 'siab'     
+        zoneId: 'sample33xGUID123456789',
+        productId: 'siab'
     }
   }]
 }
@@ -40,14 +40,14 @@ var adUnits = [
 ```
 var adUnits = [
 {
-  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID
   mediaTypes: {
-    video: {  
+    video: {
       playerSize: [300, 250],
       context: 'outstream',
-      placement: 2
-      ... // Aditional ORTB video params
-    }   
+      plcmt: 4 // Video ads that are played without streaming video content
+      ... // Additional ORTB video params
+    }
   },
   renderer: {
     url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
@@ -69,12 +69,12 @@ var adUnits = [
             });
         });
     }
-  }, 
+  },
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',     
-        productId: 'siab'     
+        zoneId: 'sample33xGUID123456789',
+        productId: 'siab'
     }
   }]
 }
@@ -84,20 +84,20 @@ var adUnits = [
 ```
 var adUnits = [
 {
-  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID
   mediaTypes: {
-    banner: {  
+    banner: {
       sizes: [
-          [300, 250], 
+          [300, 250],
           [728, 90]
       ]
     },
-    video: {  
+    video: {
       playerSize: [300, 250],
       context: 'outstream',
-      placement: 2
-      ... // Aditional ORTB video params
-    }   
+      plcmt: 4 // Video ads that are played without streaming video content
+      ... // Additional ORTB video params
+    }
   },
   renderer: {
     url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
@@ -123,8 +123,8 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',     
-        productId: 'siab'     
+        zoneId: 'sample33xGUID123456789',
+        productId: 'siab'
     }
   }]
 }
@@ -134,20 +134,20 @@ var adUnits = [
 ```
 var adUnits = [
 {
-  code: '33across-hb-ad-123456-1', // ad slot HTML element ID  
+  code: '33across-hb-ad-123456-1', // ad slot HTML element ID
   mediaTypes: {
-    video: {  
+    video: {
       playerSize: [300, 250],
       context: 'intstream',
-      placement: 1
-      ... // Aditional ORTB video params
-    }   
-  } 
+      plcmt: 1
+      ... // Additional ORTB video params
+    }
+  }
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',     
-        productId: 'instream'     
+        zoneId: 'sample33xGUID123456789',
+        productId: 'instream'
     }
   }]
 }

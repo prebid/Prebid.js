@@ -1,8 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {logError, logInfo, triggerPixel} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { logError, logInfo, triggerPixel } from '../src/utils.js';
 
 const BIDDER_CODE = 'ampliffy';
-const GVLID = 1258;
 const DEFAULT_ENDPOINT = 'bidder.ampliffy.com';
 const TTL = 600; // Time-to-Live - how long (in seconds) Prebid can use this bid.
 const LOG_PREFIX = 'AmpliffyBidder: ';
@@ -101,7 +100,7 @@ const getCurrentURLEncoded = () => encodeURIComponent(getCurrentURL());
 function getServerURL(server, sizes, iu, queryParams) {
   const random = getCacheBuster();
   const size = sizes[0] + 'x' + sizes[1];
-  let serverURL = '//' + server + '/gampad/ads';
+  const serverURL = '//' + server + '/gampad/ads';
   queryParams.sz = size;
   queryParams.iu = iu;
   queryParams.url = getCurrentURL();
@@ -131,7 +130,7 @@ function interpretResponse(serverResponse, bidRequest) {
   bidResponse.meta = {
     advertiserDomains: [],
   };
-  let xmlStr = serverResponse.body;
+  const xmlStr = serverResponse.body;
   const xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
   const xmlData = parseXML(xml, bidResponse);
   logInfo(LOG_PREFIX + 'Response from: ' + bidRequest.url + ': ' + JSON.stringify(xmlData), bidRequest.bidRequest.adUnitCode);
@@ -148,7 +147,9 @@ function interpretResponse(serverResponse, bidRequest) {
     bidResponse.adUrl = xmlData.creativeURL;
   }
   if (xmlData.trackingUrl) {
-    bidResponse.vastImpUrl = xmlData.trackingUrl;
+    bidResponse.vastTrackers = {
+      impression: [xmlData.trackingUrl]
+    };
     bidResponse.trackingUrl = xmlData.trackingUrl;
   }
   bidResponses.push(bidResponse);
@@ -167,7 +168,7 @@ const replaceMacros = (txt, cpm, bid) => {
   txt = txt.replaceAll('%%SIZES%%', size);
   txt = txt.replaceAll('@@SIZES@@', size);
   return txt;
-}
+};
 const encodePrice = (price) => {
   price = parseFloat(price);
   const s = 116.54;
@@ -190,7 +191,7 @@ function extractCT(xml) {
   let ct = null;
   try {
     try {
-      const vastAdTagURI = xml.getElementsByTagName('VASTAdTagURI')[0]
+      const vastAdTagURI = xml.getElementsByTagName('VASTAdTagURI')[0];
       if (vastAdTagURI) {
         let url = null;
         for (const childNode of vastAdTagURI.childNodes) {
@@ -199,7 +200,7 @@ function extractCT(xml) {
           }
         }
         const urlParams = new URLSearchParams(url);
-        ct = urlParams.get('ct')
+        ct = urlParams.get('ct');
       }
     } catch (e) {
     }
@@ -219,7 +220,7 @@ function extractCT(xml) {
 function extractCPM(htmlContent, ct, cpm) {
   const cpmMapDiv = htmlContent.querySelectorAll('[cpmMap]')[0];
   if (cpmMapDiv) {
-    let cpmMapJSON = JSON.parse(cpmMapDiv.getAttribute('cpmMap'));
+    const cpmMapJSON = JSON.parse(cpmMapDiv.getAttribute('cpmMap'));
     if ((cpmMapJSON)) {
       if (cpmMapJSON[ct]) {
         cpm = cpmMapJSON[ct];
@@ -278,7 +279,7 @@ function extractTrackingURL(htmlContent, ret) {
   const trackingUrlDiv = htmlContent.querySelectorAll('[bidder-tracking-url]')[0];
   if (trackingUrlDiv) {
     const trackingUrl = trackingUrlDiv.getAttribute('bidder-tracking-url');
-    logInfo(LOG_PREFIX + 'parseXML: trackingUrl: ', trackingUrl)
+    logInfo(LOG_PREFIX + 'parseXML: trackingUrl: ', trackingUrl);
     ret.trackingUrl = trackingUrl;
   }
 }
@@ -292,8 +293,18 @@ export function parseXML(xml, bid) {
     if (ct) {
       const companion = xml.getElementsByTagName('Companion')[0];
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-      const htmlContent = document.createElement('html');
-      htmlContent.innerHTML = htmlResource.textContent;
+      // Parse in an inert document. `htmlResource.textContent` is bidder-controlled
+      // and only ever read for attribute values, so it must not be activated:
+      // parsing it into any node owned by the live document compiles its
+      // event-handler attributes into live handlers and starts its image loads.
+      //
+      // `createHTMLDocument` rather than `DOMParser` because this keeps the same
+      // parse algorithm - a fragment parse with `<html>` as context - and so keeps
+      // the same document order. The extractors below all take
+      // `querySelectorAll(...)[0]`, so a parse that surfaces earlier matches
+      // changes which element they read, not just whether they find one.
+      const htmlContent = document.implementation.createHTMLDocument('');
+      htmlContent.documentElement.innerHTML = htmlResource.textContent;
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
       ret.currency = extractCurrency(htmlContent, ret.currency);
@@ -321,19 +332,26 @@ export function isAllowedToBidUp(html, currentURL) {
       }
       domains.forEach((d) => {
         if (currentURL.includes(d) || d === 'all' || d === '*') allowedToPush = true;
-      })
+      });
     } else {
       allowedToPush = true;
     }
     if (allowedToPush) {
       const excludedURL = html.querySelectorAll('[excludedURLs]')[0];
       if (excludedURL) {
+        // TODO: this reads the attribute off `domainsMap`, not off `excludedURL` -
+        // the element `querySelectorAll` just selected for exactly this purpose.
+        // The two are the same element only when the first `[domainMap]` match is
+        // also the first `[excludedURLs]` match, and when they are not, the wrong
+        // exclusion list is applied or the read throws into the catch below. Bids
+        // are both wrongly allowed and wrongly dropped as a result, and the paths
+        // that do not throw leave nothing behind to notice them by.
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
-          let excluded = JSON.parse(excludedURLsString);
+          const excluded = JSON.parse(excludedURLsString);
           excluded.forEach((d) => {
             if (currentURL.includes(d)) allowedToPush = false;
-          })
+          });
         }
       }
     }
@@ -348,9 +366,9 @@ function getSyncData(options, syncs) {
   if (syncs?.length) {
     for (const sync of syncs) {
       if (sync.type === 'syncImage' && options.pixelEnabled) {
-        ret.push({url: sync.url, type: 'image'});
+        ret.push({ url: sync.url, type: 'image' });
       } else if (sync.type === 'syncIframe' && options.iframeEnabled) {
-        ret.push({url: sync.url, type: 'iframe'});
+        ret.push({ url: sync.url, type: 'iframe' });
       }
     }
   }
@@ -400,7 +418,6 @@ function onTimeOut() {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: ['ampliffy', 'amp', 'videoffy', 'publiffy'],
   supportedMediaTypes: ['video', 'banner'],
   isBidRequestValid,

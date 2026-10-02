@@ -30,7 +30,7 @@ describe('adfusionBidAdapter', function () {
     });
 
     it('should return false when params.accountID is missing', function () {
-      let localbid = Object.assign({}, bid);
+      const localbid = Object.assign({}, bid);
       delete localbid.params.accountId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -116,11 +116,11 @@ describe('adfusionBidAdapter', function () {
     });
 
     it('should add bid floor', function () {
-      let bidRequest = Object.assign({}, bannerBidRequest);
+      const bidRequest = Object.assign({}, bannerBidRequest);
       let payload = spec.buildRequests([bidRequest], bidderRequest)[0].data;
       expect(payload.imp[0].bidfloorcur).to.not.exist;
 
-      let getFloorResponse = { currency: 'USD', floor: 3 };
+      const getFloorResponse = { currency: 'USD', floor: 3 };
       bidRequest.getFloor = () => getFloorResponse;
       payload = spec.buildRequests([bidRequest], bidderRequest)[0].data;
       expect(payload.imp[0].bidfloor).to.equal(3);

@@ -1,5 +1,5 @@
-import {getGlobal} from '../../src/prebidGlobal.js';
-import {keyCompare} from '../../src/utils/reducers.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
+import { keyCompare } from '../../src/utils/reducers.js';
 
 /**
  * Attempt to convert `amount` from the currency `fromCur` to the currency `toCur`.
@@ -23,9 +23,9 @@ export function currencyNormalizer(toCurrency = null, bestEffort = true, convert
   return function (amount, currency) {
     if (toCurrency == null) toCurrency = currency;
     return convert(amount, currency, toCurrency, bestEffort);
-  }
+  };
 }
 
 export function currencyCompare(get = (obj) => [obj.cpm, obj.currency], normalize = currencyNormalizer()) {
-  return keyCompare(obj => normalize.apply(null, get(obj)))
+  return keyCompare(obj => normalize.apply(null, get(obj)));
 }
