@@ -251,6 +251,22 @@ describe('Epom Ad Server adapter', function () {
         });
       });
 
+      it('rejects a channel that is not a string', function () {
+        [{}, 42, ['sports'], null].forEach((channel) => {
+          expect(spec.isBidRequestValid(bannerBid({
+            params: { host: HOST, placementKey: PLACEMENT, channel },
+          })), JSON.stringify(channel)).to.equal(false);
+        });
+      });
+
+      it('rejects a bidFloorCur that is not a string', function () {
+        [{}, 978, ['EUR'], null].forEach((bidFloorCur) => {
+          expect(spec.isBidRequestValid(bannerBid({
+            params: { host: HOST, placementKey: PLACEMENT, bidFloor: 1, bidFloorCur },
+          })), JSON.stringify(bidFloorCur)).to.equal(false);
+        });
+      });
+
       // The params schema declares no format for bidFloorCur, so the adapter
       // must not invent one and reject a bid the server would have accepted.
       it('does not police the shape of bidFloorCur', function () {

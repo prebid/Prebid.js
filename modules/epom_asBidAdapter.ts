@@ -88,6 +88,10 @@ function isTargetableScalar(value: unknown): boolean {
   return type === 'string' || type === 'number' || type === 'boolean';
 }
 
+function isOptionalString(value: unknown): boolean {
+  return value === undefined || typeof value === 'string';
+}
+
 /**
  * Stringify every entry — the ad server compares custom parameters as strings, so sending
  * `2` and `"2"` differently would make an otherwise identical campaign match one and not
@@ -141,7 +145,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     }
 
     if (params.channel) {
-      deepSetValue(imp, `ext.${BIDDER_CODE}.channel`, String(params.channel));
+      deepSetValue(imp, `ext.${BIDDER_CODE}.channel`, params.channel);
     }
 
     // Custom parameters go to imp.ext.data, the standard first-party-data home, so
@@ -187,6 +191,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       return false;
     }
     if (typeof params.placementKey !== 'string' || params.placementKey.length === 0) {
+      return false;
+    }
+    if (!isOptionalString(params.channel) || !isOptionalString(params.bidFloorCur)) {
       return false;
     }
     if (params.customParams !== undefined &&
