@@ -1,8 +1,14 @@
 import { canAccessWindowTop, internal as utilsInternals } from '../utils.js';
-import { CachedApiWrapper } from './cachedApiWrapper.js';
+import { CachedApiWrapper, LIVE } from './cachedApiWrapper.js';
 
 const CHECK_INTERVAL_MS = 20;
 
+// scrollTop/scrollLeft change continuously (up to thousands of CSS pixels per second during a
+// fling), unlike the rest of this object (innerHeight, screen.*, clientWidth/Height, ...), which
+// only changes on resize. Caching them behind the same TTL as everything else lets a caller
+// combine a live rect with a stale scroll offset - or vice versa - producing a document-relative
+// coordinate that describes no layout state that ever existed. They're read live instead; see
+// https://github.com/prebid/Prebid.js/issues/15446.
 const winDimensions = new CachedApiWrapper(
   () => canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf(),
   {
@@ -20,12 +26,12 @@ const winDimensions = new CachedApiWrapper(
       documentElement: {
         clientWidth: true,
         clientHeight: true,
-        scrollTop: true,
-        scrollLeft: true
+        scrollTop: LIVE,
+        scrollLeft: LIVE
       },
       body: {
-        scrollTop: true,
-        scrollLeft: true,
+        scrollTop: LIVE,
+        scrollLeft: LIVE,
         clientWidth: true,
         clientHeight: true
       }
