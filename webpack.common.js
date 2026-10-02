@@ -24,6 +24,11 @@ const browsers = [
   'firefox >= 50',
   'safari >= 10'
 ];
+const legacySyntaxTargets = {
+  chrome: '50',
+  firefox: '50',
+  safari: '10'
+};
 
 module.exports = function (config) {
   config.target = isES5Mode ? ['web', 'es5'] : 'web';
@@ -41,6 +46,7 @@ module.exports = function (config) {
         {
           loader: 'babel-loader',
           options: {
+            targets: legacySyntaxTargets,
             presets: [
               // syntax only - polyfills are handled below
               ['@babel/preset-env', {
