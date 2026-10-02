@@ -479,12 +479,18 @@ export const spec = {
     // redirect ("r") param is needed here. The sync URL carries consent
     // signals only and never varies with the auction response.
     const params = new URLSearchParams({
-      gdpr: gdprConsent?.gdprApplies ? '1' : '0',
       gdpr_consent: gdprConsent?.consentString || '',
       gpp: gppConsent?.gppString || '',
       gpp_sid: gppConsent?.applicableSections?.join(',') || '',
       us_privacy: uspConsent || '',
     });
+    // gdprApplies may still be unknown (undefined) when syncs are
+    // requested. Only assert 0/1 when the CMP has actually said so; an
+    // absent gdpr param lets the sync endpoint treat applicability as
+    // undetermined instead of as "does not apply".
+    if (typeof gdprConsent?.gdprApplies === 'boolean') {
+      params.set('gdpr', gdprConsent.gdprApplies ? '1' : '0');
+    }
     return [{
       type: 'iframe',
       url: `${USER_SYNC_ENDPOINT}?${params.toString()}`,

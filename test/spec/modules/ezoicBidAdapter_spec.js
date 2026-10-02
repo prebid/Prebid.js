@@ -1102,7 +1102,7 @@ describe('Ezoic adapter', function () {
       expect(url.searchParams.get('gdpr_consent')).to.equal('CONSENT_STRING');
     });
 
-    it('sends gdpr=0 and an empty gdpr_consent when GDPR does not apply or consent is missing', function () {
+    it('sends gdpr=0 and an empty gdpr_consent when the CMP says GDPR does not apply', function () {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
         [],
@@ -1114,11 +1114,33 @@ describe('Ezoic adapter', function () {
       expect(url.searchParams.get('gdpr_consent')).to.equal('');
     });
 
-    it('sends gdpr=0 and empty consent when gdprConsent is not provided at all', function () {
+    it('omits the gdpr param when gdprApplies is still unknown, but keeps the consent string', function () {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: undefined, consentString: 'CONSENT_STRING' }
+      );
+
+      const url = new URL(syncs[0].url);
+      expect(url.searchParams.has('gdpr')).to.equal(false);
+      expect(url.searchParams.get('gdpr_consent')).to.equal('CONSENT_STRING');
+    });
+
+    it('does not treat a truthy non-boolean gdprApplies as a known value', function () {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: 1 }
+      );
+
+      expect(new URL(syncs[0].url).searchParams.has('gdpr')).to.equal(false);
+    });
+
+    it('omits gdpr and sends empty consent when gdprConsent is not provided at all', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
 
       const url = new URL(syncs[0].url);
-      expect(url.searchParams.get('gdpr')).to.equal('0');
+      expect(url.searchParams.has('gdpr')).to.equal(false);
       expect(url.searchParams.get('gdpr_consent')).to.equal('');
     });
 
@@ -1173,7 +1195,8 @@ describe('Ezoic adapter', function () {
     it('ignores any bidder list in the response: the sync URL only carries consent signals', function () {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
-        [{ body: { usersync: { bidders: ['rubicon', 'medianet'] } } }]
+        [{ body: { usersync: { bidders: ['rubicon', 'medianet'] } } }],
+        { gdprApplies: true, consentString: 'CONSENT_STRING' }
       );
 
       expect(syncs).to.have.lengthOf(1);
