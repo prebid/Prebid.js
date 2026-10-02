@@ -23,7 +23,7 @@ export function createRtdProvider(moduleName) {
 
   /**
    * localStorage key holding the SignalLift blob written by the Anonymised Marketing Tag. It carries
-   * several fields unrelated to this module, the CUID among them; only `iabAudience` is ever read here.
+   * several fields unrelated to this module, the CUID among them; only `settings.ppsEnabled` and `iabAudience` are read here.
    */
   const SIGNAL_LIFT_STORAGE_KEY = 'anon-sl';
 
