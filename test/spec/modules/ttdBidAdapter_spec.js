@@ -3,6 +3,7 @@ import { spec, withFailover } from 'modules/ttdBidAdapter';
 import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
 import adapterManager from 'src/adapterManager.js';
+import { resetFailoverState } from 'libraries/ttdUtils/ajaxFailover.js';
 import { config } from 'src/config';
 import { detectReferer } from 'src/refererDetection.js';
 
@@ -1699,6 +1700,7 @@ describe('ttdBidAdapter', function () {
     let logWarnStub;
 
     beforeEach(function () {
+      resetFailoverState();
       clock = sinon.useFakeTimers();
       logWarnStub = sinon.stub(utils, 'logWarn');
     });
@@ -1706,6 +1708,7 @@ describe('ttdBidAdapter', function () {
     afterEach(function () {
       clock.restore();
       logWarnStub.restore();
+      resetFailoverState();
     });
 
     // a fake ajax whose n-th call runs the n-th behavior
@@ -1933,7 +1936,46 @@ describe('ttdBidAdapter', function () {
             expect(ajax.firstCall.args[0]).to.equal('https://custom.example.com/bid/bidder/supplier');
             expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
           });
+
+          it('should send later auctions straight to the failover domain', function () {
+            callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            const { ajax, addBidResponse, done } = callBids(bidderCode, {}, succeed(bidResponse));
+            expect(ajax.calledOnce).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+            expect(addBidResponse.calledOnce).to.be.true;
+            expect(addBidResponse.firstCall.args[1].cpm).to.equal(1.22);
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should keep sending auctions to the failover domain even if a request to it fails', function () {
+            callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            callBids(bidderCode, {}, fail(NETWORK_ERROR));
+            const { ajax } = callBids(bidderCode, {}, succeed(bidResponse));
+            expect(ajax.calledOnce).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+          });
+
+          it('should not use the remembered failure when failoverEnabled is false', function () {
+            callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            const { ajax } = callBids(bidderCode, { failoverEnabled: false }, succeed(bidResponse));
+            expect(ajax.calledOnce).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+          });
+
+          it('should not remember a timeout or an HTTP error', function () {
+            callBids(bidderCode, {}, fail({ status: 0, timedOut: true }));
+            callBids(bidderCode, {}, fail({ status: 500, timedOut: false }));
+            const { ajax } = callBids(bidderCode, {}, succeed(bidResponse));
+            expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+          });
         });
+      });
+
+      it('should share the remembered failure between ttd and thetradedesk', function () {
+        callBids('ttd', {}, fail(NETWORK_ERROR), succeed(bidResponse));
+        const { ajax } = callBids('thetradedesk', {}, succeed(bidResponse));
+        expect(ajax.calledOnce).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
       });
     });
   });

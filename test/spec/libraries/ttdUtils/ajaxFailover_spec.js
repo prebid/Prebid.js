@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import { DEFAULT_MAX_FAILURE_MS, isHostname, replaceHostname, selectFailoverDomain, withAjaxFailover, withDomainFailover } from 'libraries/ttdUtils/ajaxFailover.js';
+import { DEFAULT_MAX_FAILURE_MS, isHostname, replaceHostname, resetFailoverState, selectFailoverDomain, withAjaxFailover, withDomainFailover } from 'libraries/ttdUtils/ajaxFailover.js';
 
 describe('ttdUtils ajaxFailover', function () {
   describe('isHostname', function () {
@@ -50,17 +50,22 @@ describe('ttdUtils ajaxFailover', function () {
 
     let clock;
     let logWarnStub;
+    let logInfoStub;
     let getFailoverUrl;
 
     beforeEach(function () {
+      resetFailoverState();
       clock = sinon.useFakeTimers();
       logWarnStub = sinon.stub(utils, 'logWarn');
+      logInfoStub = sinon.stub(utils, 'logInfo');
       getFailoverUrl = sinon.stub().returns(FAILOVER_URL);
     });
 
     afterEach(function () {
       clock.restore();
       logWarnStub.restore();
+      logInfoStub.restore();
+      resetFailoverState();
     });
 
     // a fake ajax whose n-th call runs the n-th behavior
@@ -157,14 +162,14 @@ describe('ttdUtils ajaxFailover', function () {
     });
 
     it('should retry a failure that takes exactly the default maximum', function () {
-      expect(DEFAULT_MAX_FAILURE_MS).to.equal(1000);
-      const ajax = fakeAjax(fail(NETWORK_ERROR, 1000), succeed());
+      expect(DEFAULT_MAX_FAILURE_MS).to.equal(100);
+      const ajax = fakeAjax(fail(NETWORK_ERROR, 100), succeed());
       send(ajax);
       expect(ajax.calledTwice).to.be.true;
     });
 
     it('should not retry a failure that takes longer than the default maximum', function () {
-      const ajax = fakeAjax(fail(NETWORK_ERROR, 1001));
+      const ajax = fakeAjax(fail(NETWORK_ERROR, 101));
       const callbacks = send(ajax);
       expect(ajax.calledOnce).to.be.true;
       expect(callbacks.error.calledOnce).to.be.true;
@@ -203,6 +208,126 @@ describe('ttdUtils ajaxFailover', function () {
     it('should return what the wrapped ajax returns', function () {
       const ajax = sinon.stub().returns('result');
       expect(withAjaxFailover(ajax, { getFailoverUrl })(PRIMARY_URL, { success() {}, error() {} })).to.equal('result');
+    });
+
+    describe('remembering the failure', function () {
+      const OTHER_URL = 'https://other.example.com/bid';
+
+      // every request gets its own wrapped ajax, so only the remembered failure can carry over
+      function sendTo(ajax, url = PRIMARY_URL) {
+        const callbacks = { success: sinon.spy(), error: sinon.spy() };
+        withAjaxFailover(ajax, { getFailoverUrl })(url, callbacks, PAYLOAD, OPTIONS);
+        return callbacks;
+      }
+
+      // a first request that fails quickly and is retried on the failover url
+      function failOver() {
+        sendTo(fakeAjax(fail(NETWORK_ERROR), succeed()));
+      }
+
+      it('should send later requests straight to the failover url', function () {
+        failOver();
+        const ajax = fakeAjax(succeed('later response'));
+        const callbacks = sendTo(ajax);
+        expect(ajax.calledOnce).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal(FAILOVER_URL);
+        expect(ajax.firstCall.args[1]).to.equal(callbacks);
+        expect(ajax.firstCall.args[2]).to.equal(PAYLOAD);
+        expect(ajax.firstCall.args[3]).to.equal(OPTIONS);
+        expect(getFailoverUrl.lastCall.args[0]).to.equal(PRIMARY_URL);
+        expect(callbacks.success.calledOnceWith('later response')).to.be.true;
+        expect(callbacks.error.called).to.be.false;
+      });
+
+      it('should keep doing so for every later request', function () {
+        failOver();
+        for (let i = 0; i < 3; i++) {
+          const ajax = fakeAjax(succeed());
+          sendTo(ajax);
+          expect(ajax.calledOnce).to.be.true;
+          expect(ajax.firstCall.args[0]).to.equal(FAILOVER_URL);
+        }
+      });
+
+      it('should apply to every url, not only the one that failed', function () {
+        failOver();
+        const ajax = fakeAjax(succeed());
+        sendTo(ajax, OTHER_URL);
+        expect(ajax.calledOnce).to.be.true;
+        expect(getFailoverUrl.lastCall.args[0]).to.equal(OTHER_URL);
+        expect(ajax.firstCall.args[0]).to.equal(FAILOVER_URL);
+      });
+
+      it('should log that an earlier request failed', function () {
+        failOver();
+        logInfoStub.resetHistory();
+        sendTo(fakeAjax(succeed()));
+        expect(logInfoStub.calledOnce).to.be.true;
+        expect(logInfoStub.firstCall.args[0]).to.equal('ajaxFailover: an earlier request failed with a network error, sending the request to failover.example.com');
+      });
+
+      it('should not retry or forget the failure when a request to the failover url fails', function () {
+        failOver();
+        const failoverError = { status: 0, timedOut: false, reason: 'failover' };
+        const ajax = fakeAjax(fail(failoverError));
+        const callbacks = sendTo(ajax);
+        expect(ajax.calledOnce).to.be.true;
+        expect(callbacks.error.calledOnceWith('error', failoverError)).to.be.true;
+
+        const next = fakeAjax(succeed());
+        sendTo(next);
+        expect(next.firstCall.args[0]).to.equal(FAILOVER_URL);
+      });
+
+      it('should remember the failure even when the retry fails too', function () {
+        sendTo(fakeAjax(fail(NETWORK_ERROR), fail(NETWORK_ERROR)));
+        const ajax = fakeAjax(succeed());
+        sendTo(ajax);
+        expect(ajax.firstCall.args[0]).to.equal(FAILOVER_URL);
+      });
+
+      it('should not remember a failure that was not retried', function () {
+        sendTo(fakeAjax(fail({ status: 0, timedOut: true })));
+        sendTo(fakeAjax(fail({ status: 500, timedOut: false })));
+        sendTo(fakeAjax(fail(NETWORK_ERROR, DEFAULT_MAX_FAILURE_MS + 1)));
+        const ajax = fakeAjax(succeed());
+        sendTo(ajax);
+        expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+      });
+
+      it('should not remember a failure when there is no failover url', function () {
+        getFailoverUrl.returns(null);
+        sendTo(fakeAjax(fail(NETWORK_ERROR)));
+        getFailoverUrl.returns(FAILOVER_URL);
+        const ajax = fakeAjax(succeed());
+        sendTo(ajax);
+        expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+      });
+
+      it('should use the original url when there is no failover url to send to', function () {
+        failOver();
+        getFailoverUrl.returns(null);
+        const ajax = fakeAjax(succeed());
+        sendTo(ajax);
+        expect(ajax.calledOnce).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+      });
+
+      it('should forget the failure when the state is reset', function () {
+        failOver();
+        resetFailoverState();
+        const ajax = fakeAjax(succeed());
+        sendTo(ajax);
+        expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+      });
+
+      it('should still pass requests without an error handler through unchanged', function () {
+        failOver();
+        const ajax = sinon.stub();
+        const callback = sinon.spy();
+        withAjaxFailover(ajax, { getFailoverUrl })(PRIMARY_URL, callback, PAYLOAD, OPTIONS);
+        expect(ajax.calledOnceWithExactly(PRIMARY_URL, callback, PAYLOAD, OPTIONS)).to.be.true;
+      });
     });
 
     describe('selectFailoverDomain', function () {
@@ -295,6 +420,22 @@ describe('ttdUtils ajaxFailover', function () {
         const callbacks = sendToDomain(ajax, { userConfiguredDomain: 'primary.example.com' });
         expect(ajax.calledOnce).to.be.true;
         expect(callbacks.error.calledOnce).to.be.true;
+      });
+
+      it('should send later requests straight to the failover domain after a failover', function () {
+        sendToDomain(fakeAjax(fail(NETWORK_ERROR), succeed()));
+        const ajax = fakeAjax(succeed());
+        sendToDomain(ajax, { userConfiguredDomain: 'bid.example.com' });
+        expect(ajax.calledOnce).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal('https://bid.example.com/bid');
+      });
+
+      it('should ignore a remembered failure when enabled is false', function () {
+        sendToDomain(fakeAjax(fail(NETWORK_ERROR), succeed()));
+        const ajax = fakeAjax(succeed());
+        sendToDomain(ajax, { enabled: false });
+        expect(ajax.calledOnce).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
       });
 
       it('should pass maxFailureMs and logPrefix on', function () {

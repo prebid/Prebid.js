@@ -121,7 +121,9 @@ The Trade Desk bid adapter supports Banner and Video.
 
 # Failover
 
-If a request to the bidder endpoint fails quickly with a network error (for example a DNS resolution failure or a blocked domain), the adapter retries it once on a failover domain. Timeouts and HTTP error responses (any non-2xx status) are never retried. Only failures that occur within one second of sending the request are retried.
+If a request to the bidder endpoint fails quickly with a network error (for example a DNS resolution failure or a blocked domain), the adapter retries it once on a failover domain. Timeouts and HTTP error responses (any non-2xx status) are never retried. Only failures that occur within 100 milliseconds of sending the request are retried.
+
+After a request has been retried, every later request is sent straight to the failover domain, without trying the original host first. This is only remembered in memory, so it lasts until the page is reloaded. Setting `failoverEnabled` to `false` turns this off as well.
 
 The failover is enabled by default and can be configured with the following optional bid params:
 
@@ -130,13 +132,56 @@ The failover is enabled by default and can be configured with the following opti
 | `failoverEnabled` | boolean | `true` | Set to `false` to disable the failover. |
 | `failoverDomain` | string | `bid-openpath.ttdcdn.org` | Hostname (no scheme or path) to retry on. The rest of the request URL is unchanged. An invalid value is ignored and the default is used. |
 
-Note that the failover also applies when `customBidderEndpoint` is set; the retry is sent to `failoverDomain` with the same path.
+## How the retry URL is built
+
+The retry is sent to the same URL as the original request with only the host replaced. The scheme, path and query string are kept, and any port is dropped. The host is `failoverDomain` if you set a valid one, otherwise `bid-openpath.ttdcdn.org`.
+
+This also applies when `customBidderEndpoint` is set. The original request URL is `customBidderEndpoint` followed by `supplySourceId`, and during a failover retry only the domain is replaced. The scheme, path and query string are kept, and any port is dropped.
+
+In the examples below `supplySourceId` is `supplier`:
+
+| `customBidderEndpoint` | `failoverDomain` | Request URL | Retried on |
+|---|---|---|---|
+| not set | not set | `https://direct.adsrvr.org/bid/bidder/supplier` | `https://bid-openpath.ttdcdn.org/bid/bidder/supplier` |
+| not set | `bid.example.com` | `https://direct.adsrvr.org/bid/bidder/supplier` | `https://bid.example.com/bid/bidder/supplier` |
+| `https://proxy.example.com/bid/bidder/` | not set | `https://proxy.example.com/bid/bidder/supplier` | `https://bid-openpath.ttdcdn.org/bid/bidder/supplier` |
+| `https://proxy.example.com/bid/bidder/` | `proxy-backup.example.com` | `https://proxy.example.com/bid/bidder/supplier` | `https://proxy-backup.example.com/bid/bidder/supplier` |
+| `https://proxy.example.com:8443/prefix/bid/bidder/` | `proxy-backup.example.com` | `https://proxy.example.com:8443/prefix/bid/bidder/supplier` | `https://proxy-backup.example.com/prefix/bid/bidder/supplier` |
+
+Other cases where a request is not retried:
+
+- The failover domain is the host that just failed.
+- The request timed out, or the server answered with an HTTP error status (see above).
+- The retry itself fails. The error is reported as usual and the request is not retried again.
+
+### Examples
+
+Use the defaults. Nothing needs to be set:
+
+```js
+params: {
+    supplySourceId: 'supplier',
+    publisherId: '1427ab10f2e448057ed3b422'
+}
+```
+
+Retry on a `failoverDomain` supplied by TTD:
 
 ```js
 params: {
     supplySourceId: 'supplier',
     publisherId: '1427ab10f2e448057ed3b422',
-    failoverEnabled: true,
     failoverDomain: 'bid.example.com'
+}
+```
+
+Custom endpoint with a `failoverDomain` supplied by TTD:
+
+```js
+params: {
+    supplySourceId: 'supplier',
+    publisherId: '1427ab10f2e448057ed3b422',
+    customBidderEndpoint: 'https://proxy.example.com/bid/bidder/',
+    failoverDomain: 'proxy-backup.example.com'
 }
 ```

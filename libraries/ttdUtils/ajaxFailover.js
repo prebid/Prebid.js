@@ -1,6 +1,6 @@
-import { logWarn, timestamp } from '../../src/utils.js';
+import { logInfo, logWarn, timestamp } from '../../src/utils.js';
 
-export const DEFAULT_MAX_FAILURE_MS = 1000;
+export const DEFAULT_MAX_FAILURE_MS = 100;
 
 const HOSTNAME_REGEX = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
 
@@ -33,24 +33,48 @@ export function replaceHostname(url, hostname) {
   }
 }
 
+// Whether the failover is active: a request had to be retried on its failover url, so later requests are sent there
+// directly. Kept in memory only, so it lasts until the page is reloaded.
+let failoverActive = false;
+
+/**
+ * Forgets that a failover has happened, so requests go to their original url again. Meant for tests, nothing
+ * else clears it.
+ */
+export function resetFailoverState() {
+  failoverActive = false;
+}
+
 /**
  * Wraps the ajax function provided by Prebid so that a request which fails quickly with a network error
  * (status 0, not a timeout, e.g. a DNS resolution failure or a blocked domain) is retried once on another url.
  * HTTP error responses and timeouts are never retried. The retry reuses the original payload, options and
  * callbacks, so a second failure is reported as usual and is not retried again.
  *
+ * Once a request has been retried, every later request is sent straight to its failover url, without trying the
+ * original one first. This is remembered in memory, so it lasts until the page is reloaded.
+ *
  * @param {Function} ajax - the ajax function provided by Prebid
  * @param {Object} options
  * @param {function(string): (string|null)} options.getFailoverUrl - given the url that failed, returns the url to retry
- *   on, or null to not retry. Only called when the failure qualifies for a retry.
+ *   on, or null to not retry. Called when a failure qualifies for a retry, and for each request once a failover has
+ *   happened.
  * @param {number} [options.maxFailureMs] - failures slower than this are not retried
- * @param {string} [options.logPrefix] - prefix for the warning logged when a retry is made
+ * @param {string} [options.logPrefix] - prefix for the messages logged when a failover is used
  * @returns {Function} an ajax function with failover behavior
  */
 export function withAjaxFailover(ajax, { getFailoverUrl, maxFailureMs = DEFAULT_MAX_FAILURE_MS, logPrefix = 'ajaxFailover' } = {}) {
   return function (url, callbacks, data, options) {
     if (typeof callbacks?.error !== 'function') {
       return ajax(url, callbacks, data, options);
+    }
+
+    if (failoverActive) {
+      const failoverUrl = getFailoverUrl(url);
+      if (failoverUrl) {
+        logInfo(`${logPrefix}: an earlier request failed with a network error, sending the request to ${new URL(failoverUrl).hostname}`);
+        return ajax(failoverUrl, callbacks, data, options);
+      }
     }
 
     const start = timestamp();
@@ -64,6 +88,7 @@ export function withAjaxFailover(ajax, { getFailoverUrl, maxFailureMs = DEFAULT_
         if (!failoverUrl) {
           return callbacks.error(message, xhr);
         }
+        failoverActive = true;
         logWarn(`${logPrefix}: request failed with a network error after ${elapsed}ms, retrying on ${new URL(failoverUrl).hostname}`);
         ajax(failoverUrl, callbacks, data, options);
       }

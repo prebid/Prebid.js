@@ -294,7 +294,8 @@ function selectEndpoint(params) {
 
 /**
  * Wraps the ajax function handed to the adapter by Prebid so that a request which fails quickly with a network
- * error (e.g. a DNS resolution failure) is retried once on the failover domain. See libraries/ttdUtils/ajaxFailover.js.
+ * error (e.g. a DNS resolution failure) is retried once on the failover domain, and later requests are sent
+ * straight there. See libraries/ttdUtils/ajaxFailover.js.
  *
  * @param {Function} ajax - the ajax function provided by Prebid
  * @param {*} bidderRequest - The current bidder request object
