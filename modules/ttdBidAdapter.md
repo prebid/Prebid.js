@@ -118,3 +118,25 @@ The Trade Desk bid adapter supports Banner and Video.
             }
         ];
 ```
+
+# Failover
+
+If a request to the bidder endpoint fails quickly with a network error (for example a DNS resolution failure or a blocked domain), the adapter retries it once on a failover domain. Timeouts and HTTP error responses (any non-2xx status) are never retried. Only failures that occur within one second of sending the request are retried.
+
+The failover is enabled by default and can be configured with the following optional bid params:
+
+| Param | Type | Default | Description |
+|---|---|---|---|
+| `failoverEnabled` | boolean | `true` | Set to `false` to disable the failover. |
+| `failoverDomain` | string | `bid-openpath.ttdcdn.org` | Hostname (no scheme or path) to retry on. The rest of the request URL is unchanged. An invalid value is ignored and the default is used. |
+
+Note that the failover also applies when `customBidderEndpoint` is set; the retry is sent to `failoverDomain` with the same path.
+
+```js
+params: {
+    supplySourceId: 'supplier',
+    publisherId: '1427ab10f2e448057ed3b422',
+    failoverEnabled: true,
+    failoverDomain: 'bid.example.com'
+}
+```

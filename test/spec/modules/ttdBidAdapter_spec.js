@@ -1,6 +1,8 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ttdBidAdapter';
+import { spec, withFailover } from 'modules/ttdBidAdapter';
+import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
+import adapterManager from 'src/adapterManager.js';
 import { config } from 'src/config';
 import { detectReferer } from 'src/refererDetection.js';
 
@@ -1683,6 +1685,256 @@ describe('ttdBidAdapter', function () {
       const result = spec.interpretResponse(incoming, serverRequest);
       expect(result.length).to.equal(2);
       expect(result).to.deep.equal(expectedBids);
+    });
+  });
+
+  describe('failover', function () {
+    const PRIMARY_URL = 'https://direct.adsrvr.org/bid/bidder/supplier';
+    const DEFAULT_FAILOVER_URL = 'https://bid-openpath.ttdcdn.org/bid/bidder/supplier';
+    const NETWORK_ERROR = { status: 0, timedOut: false };
+    const PAYLOAD = '{"id":"1"}';
+    const OPTIONS = { method: 'POST', contentType: 'text/plain', withCredentials: true };
+
+    let clock;
+    let logWarnStub;
+
+    beforeEach(function () {
+      clock = sinon.useFakeTimers();
+      logWarnStub = sinon.stub(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      clock.restore();
+      logWarnStub.restore();
+    });
+
+    // a fake ajax whose n-th call runs the n-th behavior
+    function fakeAjax(...behaviors) {
+      const ajax = sinon.stub();
+      behaviors.forEach((behavior, i) => ajax.onCall(i).callsFake(behavior));
+      return ajax;
+    }
+
+    // behaviors for the fake ajax: fail after `elapsed` ms, or succeed
+    function fail(xhr, elapsed = 0) {
+      return (url, callbacks) => {
+        clock.tick(elapsed);
+        callbacks.error('error', xhr);
+      };
+    }
+
+    function succeed(body = 'response') {
+      return (url, callbacks) => callbacks.success(body, { status: 200, getResponseHeader: () => null });
+    }
+
+    function makeBidderRequest(params) {
+      return { bids: [{ params: Object.assign({ supplySourceId: 'supplier' }, params) }] };
+    }
+
+    function makeCallbacks() {
+      return { success: sinon.spy(), error: sinon.spy() };
+    }
+
+    function send(ajax, params, url = PRIMARY_URL) {
+      const callbacks = makeCallbacks();
+      withFailover(ajax, makeBidderRequest(params))(url, callbacks, PAYLOAD, OPTIONS);
+      return callbacks;
+    }
+
+    describe('withFailover', function () {
+      it('should retry once on the default failover domain after a network error', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed('failover response'));
+        const callbacks = send(ajax);
+        expect(ajax.calledTwice).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+        expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+        expect(ajax.secondCall.args[2]).to.equal(PAYLOAD);
+        expect(ajax.secondCall.args[3]).to.equal(OPTIONS);
+        expect(callbacks.success.calledOnceWith('failover response')).to.be.true;
+        expect(callbacks.error.called).to.be.false;
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.match(/^ttd: /);
+      });
+
+      it('should use params.failoverDomain when provided', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { failoverDomain: 'bid.example.com' });
+        expect(ajax.secondCall.args[0]).to.equal('https://bid.example.com/bid/bidder/supplier');
+      });
+
+      it('should warn and use the default domain when params.failoverDomain is not a hostname', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { failoverDomain: 'https://bid.example.com/' });
+        expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+        // one warning for the invalid domain and one for the retry itself
+        expect(logWarnStub.calledTwice).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.contain('failoverDomain');
+      });
+
+      it('should not retry when params.failoverEnabled is false', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR));
+        expect(withFailover(ajax, makeBidderRequest({ failoverEnabled: false }))).to.equal(ajax);
+        const callbacks = send(ajax, { failoverEnabled: false });
+        expect(ajax.calledOnce).to.be.true;
+        expect(callbacks.error.calledOnce).to.be.true;
+        expect(logWarnStub.called).to.be.false;
+      });
+
+      it('should retry when params.failoverEnabled is true', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { failoverEnabled: true });
+        expect(ajax.calledTwice).to.be.true;
+      });
+
+      it('should not treat setting params.failoverDomain as the switch that enables failover', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR));
+        const callbacks = send(ajax, { failoverEnabled: false, failoverDomain: 'bid.example.com' });
+        expect(ajax.calledOnce).to.be.true;
+        expect(callbacks.error.calledOnce).to.be.true;
+      });
+
+      it('should read the params of the first bid', function () {
+        const bidderRequest = {
+          bids: [
+            { params: { supplySourceId: 'supplier', failoverDomain: 'first.example.com' } },
+            { params: { supplySourceId: 'supplier', failoverEnabled: false, failoverDomain: 'second.example.com' } }
+          ]
+        };
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        withFailover(ajax, bidderRequest)(PRIMARY_URL, makeCallbacks(), PAYLOAD, OPTIONS);
+        expect(ajax.calledTwice).to.be.true;
+        expect(ajax.secondCall.args[0]).to.equal('https://first.example.com/bid/bidder/supplier');
+      });
+
+      it('should fail over with the default domain when the bidder request has no bids', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        withFailover(ajax, {})(PRIMARY_URL, makeCallbacks(), PAYLOAD, OPTIONS);
+        expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+      });
+
+      it('should retry when a customBidderEndpoint was used and keep its path', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { customBidderEndpoint: 'https://custom.example.com/prefix/bid/bidder/' }, 'https://custom.example.com/prefix/bid/bidder/supplier');
+        expect(ajax.secondCall.args[0]).to.equal('https://bid-openpath.ttdcdn.org/prefix/bid/bidder/supplier');
+      });
+    });
+
+    describe('registration', function () {
+      const BID_ID = '243310435309b5';
+      const testWindow = buildWindowTree(['https://www.example.com/test'], 'https://othersite.com/', 'https://example.com/canonical/page');
+
+      function makeFullBidderRequest(bidderCode, params) {
+        return {
+          bidderCode,
+          bidderRequestId: '18084284054531',
+          auctionId: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+          timeout: 3000,
+          start: 1540945362099,
+          refererInfo: detectReferer(testWindow)(),
+          ortb2: { source: { tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c' } },
+          bids: [{
+            bidder: bidderCode,
+            params: Object.assign({ supplySourceId: 'supplier', publisherId: '13144370', placementId: '1gaa015' }, params),
+            mediaTypes: { banner: { sizes: [[300, 250]] } },
+            ortb2Imp: { ext: { tid: '8651474f-58b1-4368-b812-84f8c937a099' } },
+            adUnitCode: 'div-gpt-ad-1460505748561-0',
+            bidId: BID_ID,
+            bidderRequestId: '18084284054531',
+            auctionId: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+            src: 'client',
+            bidRequestsCount: 1
+          }]
+        };
+      }
+
+      const bidResponse = JSON.stringify({
+        id: '5e5c23a5ba71e78',
+        seatbid: [{
+          bid: [{
+            id: '6vmb3isptf',
+            crid: 'ttdscreative',
+            impid: BID_ID,
+            price: 1.22,
+            adm: '<!-- creative -->',
+            h: 250,
+            w: 300,
+            ext: { mediatype: 1 }
+          }]
+        }],
+        cur: 'USD'
+      });
+
+      // runs the registered adapter exactly as the adapter manager would
+      function callBids(bidderCode, params, ...behaviors) {
+        const ajax = fakeAjax(...behaviors);
+        const addBidResponse = Object.assign(sinon.spy(), { reject: sinon.spy() });
+        const done = sinon.spy();
+        const adapter = adapterManager.getBidAdapter(bidderCode);
+        adapter.callBids(makeFullBidderRequest(bidderCode, params), addBidResponse, done, ajax, sinon.spy(), fn => fn);
+        return { ajax, addBidResponse, done };
+      }
+
+      ['ttd', 'thetradedesk'].forEach(function (bidderCode) {
+        describe(`bidder ${bidderCode}`, function () {
+          it('should be registered', function () {
+            expect(adapterManager.getBidAdapter(bidderCode)).to.exist;
+          });
+
+          it('should retry on the failover domain and still deliver the bid', function () {
+            const { ajax, addBidResponse, done } = callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.calledTwice).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+            expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+            expect(addBidResponse.calledOnce).to.be.true;
+            expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
+            expect(addBidResponse.firstCall.args[1].cpm).to.equal(1.22);
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should send the same request body to the failover domain', function () {
+            const { ajax } = callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.secondCall.args[2]).to.equal(ajax.firstCall.args[2]);
+            expect(ajax.secondCall.args[3]).to.deep.equal(ajax.firstCall.args[3]);
+          });
+
+          it('should use params.failoverDomain', function () {
+            const { ajax } = callBids(bidderCode, { failoverDomain: 'bid.example.com' }, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.secondCall.args[0]).to.equal('https://bid.example.com/bid/bidder/supplier');
+          });
+
+          it('should not retry when failoverEnabled is false', function () {
+            const { ajax, addBidResponse, done } = callBids(bidderCode, { failoverEnabled: false }, fail(NETWORK_ERROR));
+            expect(ajax.calledOnce).to.be.true;
+            expect(addBidResponse.called).to.be.false;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should not retry on a timeout', function () {
+            const { ajax, done } = callBids(bidderCode, {}, fail({ status: 0, timedOut: true }));
+            expect(ajax.calledOnce).to.be.true;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should not retry on an HTTP error', function () {
+            const { ajax, done } = callBids(bidderCode, {}, fail({ status: 500, timedOut: false }));
+            expect(ajax.calledOnce).to.be.true;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should complete the bidder without bids when the failover fails too', function () {
+            const { ajax, addBidResponse, done } = callBids(bidderCode, {}, fail(NETWORK_ERROR), fail(NETWORK_ERROR));
+            expect(ajax.calledTwice).to.be.true;
+            expect(addBidResponse.called).to.be.false;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should retry when a customBidderEndpoint was used', function () {
+            const { ajax } = callBids(bidderCode, { customBidderEndpoint: 'https://custom.example.com/bid/bidder/' }, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.firstCall.args[0]).to.equal('https://custom.example.com/bid/bidder/supplier');
+            expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+          });
+        });
+      });
     });
   });
 });
