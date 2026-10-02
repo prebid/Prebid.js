@@ -4,7 +4,8 @@ import {
   resetConsentData,
   consentAPI,
   consentTimeout,
-  staticConsentData
+  staticConsentData,
+  _internal
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -32,6 +33,7 @@ describe('consentManagement', function () {
 
   afterEach(() => {
     sandbox.restore();
+    _internal.resetDeletionRequestRegistration();
   });
 
   it('should enable itself on requestBids using default values', (done) => {
@@ -506,7 +508,7 @@ describe('consentManagement', function () {
         sinon.assert.calledOnce(adapterManager.callDataDeletionRequest);
       });
 
-      it('registers deletion request event listener only once across consent lookups', () => {
+      it('registers deletion request event listener only once across consent lookups and resets', () => {
         let listener;
         const uspapiStub = sandbox.stub(window, '__uspapi').callsFake((cmd, _, cb) => {
           if (cmd === 'registerDeletion') {
@@ -518,6 +520,8 @@ describe('consentManagement', function () {
 
         setConsentConfig(goodConfig);
         requestBidsHook(() => {}, {});
+        resetConsentData();
+        setConsentConfig(goodConfig);
         requestBidsHook(() => {}, {});
 
         expect(uspapiStub.getCalls().filter(call => call.args[0] === 'registerDeletion')).to.have.length(1);

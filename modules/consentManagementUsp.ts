@@ -49,6 +49,12 @@ let enabled = false;
 // Codex bot: keep the CMP deletion listener singleton across repeated consent lookups.
 let deletionRequestRegistered = false;
 
+export const _internal = {
+  resetDeletionRequestRegistration() {
+    deletionRequestRegistered = false;
+  }
+};
+
 // consent APIs
 const uspCallMap = {
   'iab': lookupUspConsent,
@@ -230,7 +236,6 @@ export function resetConsentData() {
   consentTimeout = undefined;
   uspDataHandler.reset();
   enabled = false;
-  deletionRequestRegistered = false;
 }
 
 /**
