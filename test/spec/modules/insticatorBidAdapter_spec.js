@@ -3,6 +3,8 @@ import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { getWinDimensions } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { config } from '../../../src/config.js';
+import { toLegacyResponse } from '../../../src/native.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -359,7 +361,7 @@ describe('InsticatorBidAdapter', function () {
 
     it('should return valid options', function () {
       expect(serverRequest.options).to.be.an('object');
-      expect(serverRequest.options.contentType).to.equal('application/json');
+      expect(serverRequest.options.contentType).to.equal('text/plain');
       expect(serverRequest.options.withCredentials).to.be.true;
     });
 
@@ -763,6 +765,28 @@ describe('InsticatorBidAdapter', function () {
       expect(data.imp[0].video).to.not.have.property('plcmt');
     });
 
+    it('carries video podseq -1 and drops a value outside the AdCOM list', function () {
+      const podBidRequest = {
+        ...bidRequest,
+        mediaTypes: {
+          ...bidRequest.mediaTypes,
+          video: { ...bidRequest.mediaTypes.video, podseq: -1 },
+        },
+      };
+      const podData = JSON.parse(spec.buildRequests([podBidRequest], bidderRequest)[0].data);
+      expect(podData.imp[0].video.podseq).to.equal(-1);
+
+      const outOfRange = {
+        ...bidRequest,
+        mediaTypes: {
+          ...bidRequest.mediaTypes,
+          video: { ...bidRequest.mediaTypes.video, podseq: 2 },
+        },
+      };
+      const outOfRangeData = JSON.parse(spec.buildRequests([outOfRange], bidderRequest)[0].data);
+      expect(outOfRangeData.imp[0].video).to.not.have.property('podseq');
+    });
+
     it('should have user consent and gdpr string if gdprConsent is passed', function () {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(requests[0].data);
@@ -866,7 +890,7 @@ describe('InsticatorBidAdapter', function () {
       method: 'POST',
       url: 'https://ex.ingage.tech/v1/openrtb',
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: true,
       },
       data: '',
@@ -985,7 +1009,8 @@ describe('InsticatorBidAdapter', function () {
         meta: {
           advertiserDomains: ['test1.com'],
           test: 1,
-          seat: 'some-dsp'
+          seat: 'some-dsp',
+          mediaType: 'banner'
         }
       },
       {
@@ -1002,7 +1027,8 @@ describe('InsticatorBidAdapter', function () {
           advertiserDomains: [
             'test2.com'
           ],
-          seat: 'some-dsp'
+          seat: 'some-dsp',
+          mediaType: 'banner'
         },
         ad: 'adm2',
         adUnitCode: 'adunit-code-2',
@@ -1021,7 +1047,8 @@ describe('InsticatorBidAdapter', function () {
           advertiserDomains: [
             'test3.com'
           ],
-          seat: 'some-dsp'
+          seat: 'some-dsp',
+          mediaType: 'banner'
         },
         ad: 'adm3',
         adUnitCode: 'adunit-code-3',
@@ -1068,7 +1095,7 @@ describe('InsticatorBidAdapter', function () {
         method: 'POST',
         url: 'https://ex.ingage.tech/v1/openrtb',
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true,
         },
         data: '',
@@ -1489,6 +1516,8 @@ describe('InsticatorBidAdapter', function () {
         });
 
         it('should detect video using case-insensitive VAST detection', function () {
+          const videoRequests = utils.deepClone(ortb26BidRequests);
+          videoRequests.bidderRequest.bids[0].mediaTypes.video = { mimes: ['video/mp4'] };
           const response = {
             body: {
               id: '22edbae2733bf6',
@@ -1506,7 +1535,7 @@ describe('InsticatorBidAdapter', function () {
               }]
             }
           };
-          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          const bidResponse = spec.interpretResponse(response, videoRequests)[0];
           expect(bidResponse.mediaType).to.equal('video');
         });
 
@@ -1592,7 +1621,7 @@ describe('InsticatorBidAdapter', function () {
       method: 'POST',
       url: 'https://ex.ingage.tech/v1/openrtb',
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: true,
       },
       data: '',
@@ -1675,7 +1704,7 @@ describe('InsticatorBidAdapter', function () {
       method: 'POST',
       url: 'https://ex.ingage.tech/v1/openrtb',
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: true,
       },
       data: '',
@@ -1769,6 +1798,1815 @@ describe('InsticatorBidAdapter', function () {
       expect(bidResponse.ext.dsa).to.have.property('behalf', 'Advertiser');
       expect(bidResponse.ext.dsa).to.have.property('paid', 'Advertiser');
       expect(bidResponse.ext.dsa).to.have.property('adrender', 1);
+    });
+  });
+});
+
+function decodeVastDataUri(dataUri) {
+  const base64 = dataUri.replace(/^data:text\/xml;charset=utf-8;base64,/, '');
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let idx = 0; idx < binary.length; idx++) {
+    bytes[idx] = binary.charCodeAt(idx);
+  }
+  return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+}
+
+describe('InsticatorBidAdapter — audio', function () {
+  const audioBidRequest = {
+    bidder: 'insticator',
+    adUnitCode: 'audio-adunit',
+    params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+    mediaTypes: {
+      audio: {
+        mimes: ['audio/mp4', 'audio/mpeg'],
+        minduration: 5,
+        maxduration: 30,
+        startdelay: 0,
+        api: [2, 7],
+        delivery: [1, 2],
+        minbitrate: 32,
+        maxbitrate: 320,
+        companiontype: [1, 2],
+        feed: 3,
+        stitched: 1,
+        nvol: 2,
+      },
+    },
+    bidId: 'audio-bid-1',
+  };
+
+  describe('supportedMediaTypes', function () {
+    it('includes audio alongside banner and video', function () {
+      expect(spec.supportedMediaTypes).to.include('audio');
+      expect(spec.supportedMediaTypes).to.include('banner');
+      expect(spec.supportedMediaTypes).to.include('video');
+    });
+  });
+
+  describe('isBidRequestValid', function () {
+    it('accepts an audio-only ad unit', function () {
+      expect(spec.isBidRequestValid(audioBidRequest)).to.be.true;
+    });
+
+    it('accepts audio with no mimes — the exchange defaults them', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { audio: { minduration: 5, maxduration: 30 } } };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+
+    it('warns when audio mimes are absent, without rejecting the bid', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      try {
+        const bid = { ...audioBidRequest, mediaTypes: { audio: { minduration: 5, maxduration: 30 } } };
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+        const messages = logWarnStub.getCalls().map((call) => String(call.args[0]));
+        expect(messages.some((message) => message.includes('audio mimes not specified'))).to.be.true;
+      } finally {
+        logWarnStub.restore();
+      }
+    });
+
+    it('does not warn when mimes arrive through params.audio', function () {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      try {
+        const bid = {
+          ...audioBidRequest,
+          mediaTypes: { audio: { minduration: 5, maxduration: 30 } },
+          params: { ...audioBidRequest.params, audio: { mimes: ['audio/aac'] } },
+        };
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+        const messages = logWarnStub.getCalls().map((call) => String(call.args[0]));
+        expect(messages.some((message) => message.includes('audio mimes not specified'))).to.be.false;
+      } finally {
+        logWarnStub.restore();
+      }
+    });
+
+    it('does not read stringified durations as inverted', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { audio: { mimes: ['audio/mp4'], minduration: '5', maxduration: '30' } } };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+
+    it('rejects audio whose minduration exceeds maxduration', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { audio: { mimes: ['audio/mp4'], minduration: 60, maxduration: 30 } } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('still rejects an ad unit with no banner, video or audio', function () {
+      expect(spec.isBidRequestValid({ ...audioBidRequest, mediaTypes: {} })).to.be.false;
+    });
+
+    it('logs an invalid optional audio param but still accepts the bid', function () {
+      const logErrorStub = sinon.stub(utils, 'logError');
+      try {
+        const bid = {
+          ...audioBidRequest,
+          mediaTypes: { audio: { mimes: ['audio/mp4'], protocols: 'not-an-array' } },
+        };
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+        const messages = logErrorStub.getCalls().map((call) => String(call.args[0]));
+        expect(messages.some((message) => message.includes('audio protocols is invalid'))).to.be.true;
+      } finally {
+        logErrorStub.restore();
+      }
+    });
+  });
+
+  describe('buildRequests', function () {
+    let sandbox;
+    let localStorageIsEnabledStub, cookiesAreEnabledStub, getDataFromLocalStorageStub, getCookieStub;
+
+    beforeEach(function () {
+      getGlobal().bidderSettings = { insticator: { storageAllowed: true } };
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns(USER_ID_DUMMY_VALUE);
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
+      getCookieStub = sinon.stub(storage, 'getCookie').returns(USER_ID_DUMMY_VALUE);
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      getDataFromLocalStorageStub.restore();
+      localStorageIsEnabledStub.restore();
+      getCookieStub.restore();
+      cookiesAreEnabledStub.restore();
+      getGlobal().bidderSettings = {};
+    });
+
+    function firstImp(bid) {
+      const requests = spec.buildRequests([bid], { bidderRequestId: 'req-1', refererInfo: { page: 'https://example.com' } });
+      return JSON.parse(requests[0].data).imp[0];
+    }
+
+    it('builds imp.audio with mimes and the optional params', function () {
+      const imp = firstImp(audioBidRequest);
+      expect(imp.audio).to.exist;
+      expect(imp.audio.mimes).to.deep.equal(['audio/mp4', 'audio/mpeg']);
+      expect(imp.audio.minduration).to.equal(5);
+      expect(imp.audio.maxduration).to.equal(30);
+      expect(imp.audio.startdelay).to.equal(0);
+      expect(imp.audio.api).to.deep.equal([2, 7]);
+      expect(imp.audio.delivery).to.deep.equal([1, 2]);
+      expect(imp.audio.companiontype).to.deep.equal([1, 2]);
+    });
+
+    it('carries the audio-only fields feed, stitched and nvol', function () {
+      const imp = firstImp(audioBidRequest);
+      expect(imp.audio.feed).to.equal(3);
+      expect(imp.audio.stitched).to.equal(1);
+      expect(imp.audio.nvol).to.equal(2);
+    });
+
+    it('emits no banner or video object for an audio-only ad unit', function () {
+      const imp = firstImp(audioBidRequest);
+      expect(imp.audio).to.exist;
+      expect(imp.banner).to.not.exist;
+      expect(imp.video).to.not.exist;
+    });
+
+    it('drops an out-of-range audio param rather than sending it', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { audio: { mimes: ['audio/mp4'], feed: 99, nvol: 42, stitched: 7 } } };
+      const imp = firstImp(bid);
+      expect(imp.audio.feed).to.not.exist;
+      expect(imp.audio.nvol).to.not.exist;
+      expect(imp.audio.stitched).to.not.exist;
+    });
+
+    it('emits no audio object when the ad unit has none', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { banner: { sizes: [[300, 250]] } } };
+      const imp = firstImp(bid);
+      expect(imp.audio).to.not.exist;
+    });
+
+    it('prefers a valid params.audio mimes override over the ad unit value', function () {
+      const bid = {
+        ...audioBidRequest,
+        params: { ...audioBidRequest.params, audio: { mimes: ['audio/aac'] } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.mimes).to.deep.equal(['audio/aac']);
+    });
+
+    it('keeps the ad unit mimes when the params.audio override is malformed', function () {
+      const bid = {
+        ...audioBidRequest,
+        params: { ...audioBidRequest.params, audio: { mimes: 'audio/aac' } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.mimes).to.deep.equal(['audio/mp4', 'audio/mpeg']);
+    });
+
+    it('drops a malformed mimes list rather than sending it', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { audio: { mimes: 'audio/mp4' } } };
+      const imp = firstImp(bid);
+      expect(imp.audio).to.exist;
+      expect(imp.audio.mimes).to.not.exist;
+    });
+
+    it('ignores params.audio keys outside the supported set', function () {
+      const bid = { ...audioBidRequest, params: { ...audioBidRequest.params, audio: { notAnOrtbField: 'nope' } } };
+      const imp = firstImp(bid);
+      expect(imp.audio.notAnOrtbField).to.not.exist;
+    });
+
+    it('applies a valid params.audio override without mutating the bid', function () {
+      const params = { ...audioBidRequest.params, audio: { minduration: 10, feed: 99 } };
+      const bid = { ...audioBidRequest, params };
+      const imp = firstImp(bid);
+      expect(imp.audio.minduration).to.equal(10);
+      expect(imp.audio.feed).to.not.equal(99);
+      expect(imp.audio.feed).to.equal(audioBidRequest.mediaTypes.audio.feed);
+      expect(params.audio.feed).to.equal(99);
+    });
+
+    it('merges ext from the ad unit and params.audio', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, ext: { adUnitKey: 'a' } } },
+        params: { ...audioBidRequest.params, audio: { ext: { bidderKey: 'b' } } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.ext).to.deep.equal({ adUnitKey: 'a', bidderKey: 'b' });
+    });
+
+    it('lets params.audio win on a colliding ext key', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, ext: { shared: 'adUnit', adUnitKey: 'a' } } },
+        params: { ...audioBidRequest.params, audio: { ext: { shared: 'params' } } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.ext).to.deep.equal({ shared: 'params', adUnitKey: 'a' });
+    });
+
+    it('merges nested ext objects without mutating either source', function () {
+      const adUnitExt = { nested: { keep: 1 } };
+      const paramsExt = { nested: { add: 2 } };
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, ext: adUnitExt } },
+        params: { ...audioBidRequest.params, audio: { ext: paramsExt } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.ext.nested).to.deep.equal({ keep: 1, add: 2 });
+      expect(adUnitExt).to.deep.equal({ nested: { keep: 1 } });
+      expect(paramsExt).to.deep.equal({ nested: { add: 2 } });
+    });
+
+    it('keeps a lone ext from either source', function () {
+      const fromAdUnit = firstImp({
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, ext: { adUnitKey: 'a' } } },
+      });
+      expect(fromAdUnit.audio.ext).to.deep.equal({ adUnitKey: 'a' });
+
+      const fromParams = firstImp({
+        ...audioBidRequest,
+        params: { ...audioBidRequest.params, audio: { ext: { bidderKey: 'b' } } },
+      });
+      expect(fromParams.audio.ext).to.deep.equal({ bidderKey: 'b' });
+    });
+
+    it('asks for an audio floor', function () {
+      const seen = [];
+      const bid = {
+        ...audioBidRequest,
+        getFloor: (args) => { seen.push(args); return { currency: 'USD', floor: 1.23 }; },
+      };
+      const imp = firstImp(bid);
+      expect(seen.some((call) => call.mediaType === 'audio')).to.equal(true);
+      expect(imp.bidfloor).to.equal(1.23);
+    });
+
+    it('carries the remaining ORTB audio params', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: {
+            ...audioBidRequest.mediaTypes.audio,
+            protocols: [2, 3, 5, 6],
+            battr: [13, 14],
+            maxextended: 30,
+            rqddurs: [15, 30],
+            sequence: 2,
+          },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.protocols).to.deep.equal([2, 3, 5, 6]);
+      expect(imp.audio.battr).to.deep.equal([13, 14]);
+      expect(imp.audio.maxextended).to.equal(30);
+      expect(imp.audio.rqddurs).to.deep.equal([15, 30]);
+      expect(imp.audio.sequence).to.equal(2);
+    });
+
+    it('carries the audio ad pod params', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: {
+            ...audioBidRequest.mediaTypes.audio,
+            poddur: 120,
+            podid: 'pod-1',
+            podseq: 0,
+            slotinpod: 1,
+            mincpmpersec: 0.05,
+            maxseq: 4,
+          },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.poddur).to.equal(120);
+      expect(imp.audio.podid).to.equal('pod-1');
+      expect(imp.audio.podseq).to.equal(0);
+      expect(imp.audio.slotinpod).to.equal(1);
+      expect(imp.audio.mincpmpersec).to.equal(0.05);
+      expect(imp.audio.maxseq).to.equal(4);
+    });
+
+    it('carries companionad, durfloors and ext', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: {
+            ...audioBidRequest.mediaTypes.audio,
+            companionad: [{ w: 300, h: 250 }],
+            durfloors: [{ mindur: 15, maxdur: 30, bidfloor: 1.5 }],
+            ext: { custom: 'value' },
+          },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.companionad).to.deep.equal([{ w: 300, h: 250 }]);
+      expect(imp.audio.durfloors).to.deep.equal([{ mindur: 15, maxdur: 30, bidfloor: 1.5 }]);
+      expect(imp.audio.ext).to.deep.equal({ custom: 'value' });
+    });
+
+    it('drops companionad and durfloors when the array does not hold objects', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: {
+            ...audioBidRequest.mediaTypes.audio,
+            companionad: ['not-an-object'],
+            durfloors: [1, 2],
+          },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.companionad).to.not.exist;
+      expect(imp.audio.durfloors).to.not.exist;
+    });
+
+    it('carries the bitrate bounds and the delivery context', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: {
+            ...audioBidRequest.mediaTypes.audio,
+            minbitrate: 32,
+            maxbitrate: 320,
+            context: 'instream',
+          },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.minbitrate).to.equal(32);
+      expect(imp.audio.maxbitrate).to.equal(320);
+      expect(imp.audio.context).to.equal('instream');
+    });
+
+    it('keeps the bid but drops a stringified duration', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, minduration: '5', maxduration: '30' } },
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      const imp = firstImp(bid);
+      expect(imp.audio.minduration).to.not.exist;
+      expect(imp.audio.maxduration).to.not.exist;
+    });
+
+    it('rejects the bid when minduration exceeds maxduration as integers', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, minduration: 30, maxduration: 5 } },
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('drops ext when it is not a plain object', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, ext: ['nope'] } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.ext).to.not.exist;
+    });
+
+    it('drops pod params that are out of range', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: {
+            ...audioBidRequest.mediaTypes.audio,
+            poddur: 0,
+            podid: '',
+            podseq: 2,
+            slotinpod: 9,
+            mincpmpersec: 0,
+            maxseq: -2,
+          },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.poddur).to.not.exist;
+      expect(imp.audio.podid).to.not.exist;
+      expect(imp.audio.podseq).to.not.exist;
+      expect(imp.audio.slotinpod).to.not.exist;
+      expect(imp.audio.mincpmpersec).to.not.exist;
+      expect(imp.audio.maxseq).to.not.exist;
+    });
+
+    it('carries podseq -1, the AdCOM value for the last pod in the stream', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: { ...audioBidRequest.mediaTypes.audio, podseq: -1 },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.podseq).to.equal(-1);
+    });
+
+    it('drops rqddurs when any duration is not positive', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, rqddurs: [15, 0, -5] } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.rqddurs).to.not.exist;
+    });
+
+    it('drops protocols, battr and maxextended when malformed', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: {
+          audio: {
+            ...audioBidRequest.mediaTypes.audio,
+            protocols: 'vast',
+            battr: [{}],
+            maxextended: 'thirty',
+          },
+        },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.protocols).to.not.exist;
+      expect(imp.audio.battr).to.not.exist;
+      expect(imp.audio.maxextended).to.not.exist;
+    });
+
+    it('forwards mediaTypes.audio.context', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { ...audioBidRequest.mediaTypes.audio, context: 'instream' } },
+      };
+      expect(firstImp(bid).audio.context).to.equal('instream');
+    });
+
+    it('omits context when the ad unit declares none', function () {
+      expect(firstImp(audioBidRequest).audio.context).to.not.exist;
+    });
+  });
+
+  describe('interpretResponse', function () {
+    const request = {
+      bidderRequest: {
+        bidderRequestId: 'req-1',
+        bids: [{ ...audioBidRequest, adUnitCode: 'audio-adunit' }],
+      },
+    };
+    const vast = '<VAST version="4.1"><Ad id="1"><InLine></InLine></Ad></VAST>';
+
+    function respond(bid) {
+      return spec.interpretResponse({ body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [bid] }] } }, request);
+    }
+
+    it('maps mtype 3 to the audio media type', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3 });
+      expect(response.mediaType).to.equal('audio');
+    });
+
+    it('exposes an audio creative as vastXml', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3 });
+      expect(response.vastXml).to.equal(vast);
+    });
+
+    it('still reports mtype 2 as video', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 2 });
+      expect(response.mediaType).to.equal('video');
+    });
+
+    it('uses the declared media types when VAST arrives with no mtype', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast });
+      expect(response.mediaType).to.equal('audio');
+    });
+
+    it('still reports VAST with no mtype as video when the unit declares video', function () {
+      const videoRequest = {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            ...audioBidRequest,
+            adUnitCode: 'video-adunit',
+            mediaTypes: { video: { context: 'instream', mimes: ['video/mp4'] } },
+          }],
+        },
+      };
+      const [response] = spec.interpretResponse(
+        { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast }] }] } },
+        videoRequest,
+      );
+      expect(response.mediaType).to.equal('video');
+    });
+
+    it('omits width and height when the bid carries no size', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3 });
+      expect(response).to.not.have.property('width');
+      expect(response).to.not.have.property('height');
+    });
+
+    it('keeps width and height when the bid does carry a size', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3, w: 300, h: 250 });
+      expect(response.width).to.equal(300);
+      expect(response.height).to.equal(250);
+    });
+
+    it('survives a bid whose ext.meta is not an object', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3, ext: { meta: 'not an object' } });
+      expect(response.meta.mediaType).to.equal('audio');
+    });
+
+    it('copies ext.meta rather than mutating the bid', function () {
+      const dspExt = { meta: { advertiserDomains: ['advertiser.example'] } };
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3, ext: dspExt });
+      expect(response.meta.advertiserDomains).to.deep.equal(['advertiser.example']);
+      expect(Object.keys(dspExt.meta)).to.deep.equal(['advertiserDomains']);
+    });
+
+    it('mirrors the media type onto meta so bidResponseFilter cannot reject it', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3 });
+      expect(response.meta.mediaType).to.equal('audio');
+    });
+
+    it('mirrors the media type onto meta for every mtype the exchange can send', function () {
+      const cases = [
+        { mtype: 1, adm: '<div>banner</div>', expected: 'banner' },
+        { mtype: 2, adm: vast, expected: 'video' },
+        { mtype: 3, adm: vast, expected: 'audio' },
+      ];
+      cases.forEach(({ mtype, adm, expected }) => {
+        const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm, mtype });
+        expect(response.meta.mediaType).to.equal(expected);
+        expect(response.mediaType).to.equal(expected);
+      });
+    });
+
+    it('derives a vastUrl from the audio vastXml', function () {
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3 });
+      expect(response.vastUrl).to.be.a('string').and.to.contain('data:text/xml');
+    });
+
+    it('lets mtype decide audio on a multi-format unit', function () {
+      const multiFormat = {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            ...audioBidRequest,
+            adUnitCode: 'audio-adunit',
+            mediaTypes: { audio: { mimes: ['audio/mp4'] }, video: { mimes: ['video/mp4'] } },
+          }],
+        },
+      };
+      const [response] = spec.interpretResponse(
+        { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: vast, mtype: 3 }] }] } },
+        multiFormat,
+      );
+      expect(response.mediaType).to.equal('audio');
+    });
+
+    it('encodes a creative carrying characters outside Latin-1', function () {
+      const localisedVast = '<VAST version="4.1"><Ad><InLine><AdTitle>Caf\u00e9 \u2014 Gr\u00fc\u00dfe \u201cx\u201d \u65e5\u672c</AdTitle></InLine></Ad></VAST>';
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: localisedVast, mtype: 3 });
+      expect(response.vastUrl).to.be.a('string').and.to.contain('data:text/xml');
+      expect(response.vastXml).to.equal(localisedVast);
+      expect(decodeVastDataUri(response.vastUrl)).to.equal(localisedVast);
+    });
+
+    it('preserves escaped quotes inside the creative', function () {
+      const embeddedJson = '<VAST version="4.1"><Ad><InLine><Extensions><Extension><![CDATA[{"title":"He said \\"hi\\"","id":7}]]></Extension></Extensions></InLine></Ad></VAST>';
+      const [response] = respond({ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: embeddedJson, mtype: 3 });
+      expect(response.vastXml).to.equal(embeddedJson);
+      expect(decodeVastDataUri(response.vastUrl)).to.equal(embeddedJson);
+    });
+  });
+});
+
+describe('InsticatorBidAdapter — placement identifiers', function () {
+  const baseBid = {
+    bidder: 'insticator',
+    adUnitCode: 'placement-adunit',
+    bidId: 'placement-bid-1',
+    params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+  };
+
+  function firstImp(bid) {
+    const requests = spec.buildRequests([bid], { bidderRequestId: 'req-1', refererInfo: { page: 'https://example.com' } });
+    return JSON.parse(requests[0].data).imp[0];
+  }
+
+  it('forwards ext.data.pbadslot', function () {
+    const imp = firstImp({ ...baseBid, ortb2Imp: { ext: { data: { pbadslot: '/1111/homepage' } } } });
+    expect(imp.ext.data.pbadslot).to.equal('/1111/homepage');
+  });
+
+  it('forwards ext.data.adserver.adslot and name', function () {
+    const imp = firstImp({
+      ...baseBid,
+      ortb2Imp: { ext: { data: { adserver: { name: 'gam', adslot: '/1111/homepage/leaderboard' } } } },
+    });
+    expect(imp.ext.data.adserver.adslot).to.equal('/1111/homepage/leaderboard');
+    expect(imp.ext.data.adserver.name).to.equal('gam');
+  });
+
+  it('forwards all three alongside gpid', function () {
+    const imp = firstImp({
+      ...baseBid,
+      ortb2Imp: { ext: { gpid: '/1111/homepage#1', data: { pbadslot: '/1111/homepage', adserver: { name: 'gam', adslot: '/1111/slot' } } } },
+    });
+    expect(imp.ext.gpid).to.equal('/1111/homepage#1');
+    expect(imp.ext.data.pbadslot).to.equal('/1111/homepage');
+    expect(imp.ext.data.adserver.adslot).to.equal('/1111/slot');
+  });
+
+  it('forwards first-party data keys beyond the slot fields', function () {
+    const imp = firstImp({
+      ...baseBid,
+      ortb2Imp: { ext: { data: { pbadslot: '/1111/homepage', keywords: ['sport'], pageType: 'article' } } },
+    });
+    expect(imp.ext.data.keywords).to.deep.equal(['sport']);
+    expect(imp.ext.data.pageType).to.equal('article');
+  });
+
+  it('leaves ext.data absent when the publisher sets neither', function () {
+    const imp = firstImp({ ...baseBid, ortb2Imp: { ext: { gpid: '/1111/homepage#1' } } });
+    expect(imp.ext).to.not.have.property('data');
+  });
+
+  it('leaves ext.data absent when there is no ortb2Imp at all', function () {
+    const imp = firstImp(baseBid);
+    expect(imp.ext).to.not.have.property('data');
+  });
+});
+
+describe('InsticatorBidAdapter — vastUrl encoding', function () {
+  const videoBidRequest = {
+    bidder: 'insticator',
+    adUnitCode: 'video-adunit',
+    params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+    mediaTypes: { video: { mimes: ['video/mp4'] } },
+    bidId: 'video-bid-1',
+  };
+  const request = { bidderRequest: { bidderRequestId: 'req-1', bids: [videoBidRequest] } };
+
+  function respondVideo(adm) {
+    return spec.interpretResponse(
+      { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'video-bid-1', crid: 'cr1', price: 1.5, adm, mtype: 2 }] }] } },
+      request,
+    )[0];
+  }
+
+  const inLine = (title) => `<VAST version="4.1"><Ad><InLine><AdTitle>${title}</AdTitle></InLine></Ad></VAST>`;
+  const creatives = {
+    'plain ASCII': inLine('Hello'),
+    'Latin-1 characters': inLine('Caf\u00e9 Gr\u00fc\u00dfe se\u00f1or \u00a9 20\u00b0 \u00a35'),
+    'characters beyond Latin-1': inLine('a \u2014 b \u20ac9.99 \u65e5\u672c\u8a9e \u201cx\u201d'),
+    'an emoji': inLine('\u{1F600}'),
+    'escaped quotes in a CDATA payload':
+      '<VAST version="4.1"><Ad><InLine><Extensions><Extension><![CDATA[{"t":"He said \\"hi\\""}]]></Extension></Extensions></InLine></Ad></VAST>',
+  };
+
+  Object.entries(creatives).forEach(([label, creative]) => {
+    it(`round-trips a video creative with ${label}`, function () {
+      const response = respondVideo(creative);
+      expect(response.mediaType).to.equal('video');
+      expect(response.vastXml).to.equal(creative);
+      expect(decodeVastDataUri(response.vastUrl)).to.equal(creative);
+    });
+  });
+
+  it('round-trips a creative longer than the encoder chunk size', function () {
+    const creative = inLine('Caf\u00e9 '.repeat(20000));
+    expect(decodeVastDataUri(respondVideo(creative).vastUrl)).to.equal(creative);
+  });
+
+  it('encodes audio and video creatives identically', function () {
+    const creative = inLine('Caf\u00e9 \u2014 \u65e5\u672c');
+    const audioUrl = spec.interpretResponse(
+      { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'audio-bid-1', crid: 'cr1', price: 1.5, adm: creative, mtype: 3 }] }] } },
+      { bidderRequest: { bidderRequestId: 'req-1', bids: [{ ...videoBidRequest, bidId: 'audio-bid-1', mediaTypes: { audio: { mimes: ['audio/mp4'] } } }] } },
+    )[0].vastUrl;
+    expect(respondVideo(creative).vastUrl).to.equal(audioUrl);
+  });
+});
+
+describe('InsticatorBidAdapter — media type when mtype is absent', function () {
+  const audioVast = '<VAST version="4.1"><Ad><InLine><Creatives><Creative><Linear><MediaFiles>' +
+    '<MediaFile type="audio/mp4"><![CDATA[https://cdn.example/ad.m4a]]></MediaFile>' +
+    '</MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>';
+  const videoVast = audioVast.replace('audio/mp4', 'video/mp4').replace('ad.m4a', 'ad.mp4');
+
+  const resolve = (mediaTypes, adm) => spec.interpretResponse(
+    { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'b1', crid: 'cr1', price: 1.5, adm }] }] } },
+    {
+      bidderRequest: {
+        bidderRequestId: 'req-1',
+        bids: [{
+          bidder: 'insticator',
+          adUnitCode: 'au',
+          params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+          mediaTypes,
+          bidId: 'b1'
+        }]
+      }
+    },
+  )[0]?.mediaType;
+
+  const audio = { audio: { mimes: ['audio/mp4'] } };
+  const video = { video: { mimes: ['video/mp4'] } };
+  const banner = { banner: { sizes: [[300, 250]] } };
+
+  it('resolves audio from an audio-only ad unit', function () {
+    expect(resolve(audio, audioVast)).to.equal('audio');
+  });
+
+  it('resolves video from a video-only ad unit', function () {
+    expect(resolve(video, videoVast)).to.equal('video');
+  });
+
+  it('uses the MediaFile type when the unit declares audio and video', function () {
+    expect(resolve({ ...audio, ...video }, audioVast)).to.equal('audio');
+    expect(resolve({ ...audio, ...video }, videoVast)).to.equal('video');
+  });
+
+  it('reads the MediaFile type through untidy attribute formatting', function () {
+    const untidy = [
+      '<MediaFile type=\'audio/mpeg\'>',
+      '<MediaFile type = "audio/mp4">',
+      '<MediaFile type=audio/aac>',
+      '<MediaFile TYPE="AUDIO/MP4">',
+      '<MediaFile type="  audio/mp4">',
+      '<MediaFile type="audio /mp4">',
+    ];
+    untidy.forEach((mediaFile) => {
+      const adm = `<VAST version="4.1"><Ad><InLine><Creatives><Creative><Linear><MediaFiles>${mediaFile}<![CDATA[https://cdn.example/ad]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>`;
+      expect(resolve({ ...audio, ...video }, adm), mediaFile).to.equal('audio');
+    });
+  });
+
+  it('does not mistake an audio path in a video media file URL', function () {
+    const adm = '<VAST version="4.1"><Ad><InLine><Creatives><Creative><Linear><MediaFiles>' +
+      '<MediaFile type="video/mp4"><![CDATA[https://cdn.example/audio/clip.mp4]]></MediaFile>' +
+      '</MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>';
+    expect(resolve({ ...audio, ...video }, adm)).to.equal('video');
+  });
+
+  it('types VAST markup as video on a banner-only ad unit, as upstream does', function () {
+    expect(resolve(banner, videoVast)).to.equal('video');
+  });
+
+  it('types VAST markup as video when no request bid matches the response', function () {
+    const response = spec.interpretResponse(
+      { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'unmatched', crid: 'cr1', price: 1.5, adm: videoVast }] }] } },
+      {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            bidder: 'insticator',
+            adUnitCode: 'au',
+            params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+            mediaTypes: video,
+            bidId: 'b1'
+          }]
+        }
+      },
+    )[0];
+    expect(response.mediaType).to.equal('video');
+  });
+
+  it('prefers video when the unit declares both and no MediaFile names audio', function () {
+    expect(resolve({ ...audio, ...video }, '<VAST version="4.1"><Ad><InLine></InLine></Ad></VAST>')).to.equal('video');
+  });
+
+  it('still lets mtype win over the markup', function () {
+    const withMtype = spec.interpretResponse(
+      { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'b1', crid: 'cr1', price: 1.5, adm: audioVast, mtype: 2 }] }] } },
+      {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            bidder: 'insticator',
+            adUnitCode: 'au',
+            params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+            mediaTypes: { ...audio, ...video },
+            bidId: 'b1'
+          }]
+        }
+      },
+    )[0];
+    expect(withMtype.mediaType).to.equal('video');
+  });
+});
+
+describe('InsticatorBidAdapter \u2014 publisher ext forwarding', function () {
+  const baseBidRequest = {
+    bidder: 'insticator',
+    adUnitCode: 'ext-adunit',
+    params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+    bidId: 'ext-bid-1',
+  };
+
+  const baseBidderRequest = {
+    bidderRequestId: 'ext-req-1',
+    timeout: 300,
+    refererInfo: { page: 'https://example.com', domain: 'example.com', ref: 'https://referrer.com' },
+  };
+
+  function payload(bidOverrides = {}, bidderOverrides = {}) {
+    const bid = { ...baseBidRequest, ...bidOverrides };
+    const bidderRequest = { ...baseBidderRequest, ...bidderOverrides, bids: [bid] };
+    return JSON.parse(spec.buildRequests([bid], bidderRequest)[0].data);
+  }
+
+  it('forwards ortb2.ext alongside our own', function () {
+    const data = payload({}, { ortb2: { ext: { publisherKey: 'p' } } });
+    expect(data.ext.publisherKey).to.equal('p');
+    expect(data.ext.insticator.adapter.vendor).to.equal('prebid');
+  });
+
+  it('keeps ortb2.ext when insticator params are configured', function () {
+    config.setConfig({ insticator: { params: { customParam: 1 } } });
+    try {
+      const data = payload({}, { ortb2: { ext: { publisherKey: 'p' } } });
+      expect(data.ext.publisherKey).to.equal('p');
+      expect(data.ext.insticator.customParam).to.equal(1);
+    } finally {
+      config.resetConfig();
+    }
+  });
+
+  it('forwards ortb2.source.ext next to schain', function () {
+    const data = payload(
+      { ortb2: { source: { ext: { schain: { complete: 1, nodes: [], ver: '1.0' } } } } },
+      { ortb2: { source: { ext: { sourceKey: 's' } } } },
+    );
+    expect(data.source.ext.sourceKey).to.equal('s');
+  });
+
+  it('forwards ortb2.site.ext and site.publisher.ext', function () {
+    const data = payload({}, { ortb2: { site: { ext: { siteKey: 's' }, publisher: { ext: { pubKey: 'p' } } } } });
+    expect(data.site.ext).to.deep.equal({ siteKey: 's' });
+    expect(data.site.publisher.ext).to.deep.equal({ pubKey: 'p' });
+  });
+
+  it('keeps site.publisher.ext when publisherId is also set', function () {
+    const data = payload(
+      { params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', publisherId: 'pub-1' } },
+      { ortb2: { site: { publisher: { ext: { pubKey: 'p' } } } } },
+    );
+    expect(data.site.publisher.id).to.equal('pub-1');
+    expect(data.site.publisher.ext).to.deep.equal({ pubKey: 'p' });
+  });
+
+  it('forwards ortb2.user.ext without losing it to eids', function () {
+    const bid = {
+      ...baseBidRequest,
+      userIdAsEids: [{ source: 'example.com', uids: [{ id: 'abc' }] }],
+    };
+    const data = payload(bid, { ortb2: { user: { ext: { userKey: 'u' } } } });
+    expect(data.user.ext.userKey).to.equal('u');
+    expect(data.user.ext.eids).to.be.an('array').with.lengthOf(1);
+  });
+
+  it('forwards the site first party data fields it validates', function () {
+    const data = payload({}, {
+      ortb2: {
+        site: {
+          cat: ['IAB1-1'],
+          sectioncat: ['IAB1-2'],
+          pagecat: ['IAB1-3'],
+          search: 'query',
+          mobile: 1,
+          keywords: 'kw1,kw2',
+          content: { title: 'title', genre: 'rock' },
+        },
+      },
+    });
+    expect(data.site.cat).to.deep.equal(['IAB1-1']);
+    expect(data.site.sectioncat).to.deep.equal(['IAB1-2']);
+    expect(data.site.pagecat).to.deep.equal(['IAB1-3']);
+    expect(data.site.search).to.equal('query');
+    expect(data.site.mobile).to.equal(1);
+    expect(data.site.keywords).to.equal('kw1,kw2');
+    expect(data.site.content).to.deep.equal({ title: 'title', genre: 'rock' });
+  });
+
+  it('forwards ortb2.user.data alongside the bidder params', function () {
+    const data = payload(
+      { params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', user: { data: [{ name: 'from-params' }] } } },
+      { ortb2: { user: { data: [{ name: 'from-ortb2' }] } } },
+    );
+    expect(data.user.data).to.deep.equal([{ name: 'from-ortb2' }, { name: 'from-params' }]);
+  });
+
+  it('forwards ortb2.regs.ext alongside the consent signals', function () {
+    const data = payload({}, {
+      ortb2: { regs: { ext: { regsKey: 'r', dsa: { dsarequired: 1 } } } },
+      gdprConsent: { consentString: 'CONSENT', gdprApplies: true },
+    });
+    expect(data.regs.ext.regsKey).to.equal('r');
+    expect(data.regs.ext.dsa).to.deep.equal({ dsarequired: 1 });
+    expect(data.regs.ext.gdpr).to.equal(1);
+    expect(data.regs.ext.gdprConsentString).to.equal('CONSENT');
+  });
+
+  it('keeps our device ext when the publisher sets one', function () {
+    const data = payload({}, { ortb2: { device: { ext: { deviceKey: 'd' } } } });
+    expect(data.device.ext.deviceKey).to.equal('d');
+    expect(data.device.ext).to.have.property('localStorage');
+    expect(data.device.ext).to.have.property('cookies');
+  });
+
+  it('forwards ortb2Imp.rwdd', function () {
+    const data = payload({ ortb2Imp: { rwdd: 1 } });
+    expect(data.imp[0].rwdd).to.equal(1);
+  });
+
+  it('omits rwdd when the publisher has not set it', function () {
+    const data = payload({ ortb2Imp: { ext: { gpid: '/1111/home' } } });
+    expect(data.imp[0]).to.not.have.property('rwdd');
+  });
+
+  it('forwards a rewarded signal set on the media type ext', function () {
+    const data = payload({
+      mediaTypes: { video: { mimes: ['video/mp4'], w: 640, h: 480, ext: { rewarded: 1 } } },
+    });
+    expect(data.imp[0].video.ext.rewarded).to.equal(1);
+  });
+
+  it('forwards the whole ortb2Imp.ext', function () {
+    const data = payload({ ortb2Imp: { ext: { gpid: '/1111/home#lb', impKey: 'i', data: { pbadslot: '/1111/home' } } } });
+    expect(data.imp[0].ext.gpid).to.equal('/1111/home#lb');
+    expect(data.imp[0].ext.impKey).to.equal('i');
+    expect(data.imp[0].ext.data).to.deep.equal({ pbadslot: '/1111/home' });
+    expect(data.imp[0].ext.insticator.adUnitId).to.equal('1a2b3c4d5e6f1a2b3c4d');
+  });
+
+  it('forwards mediaTypes.banner.ext', function () {
+    const data = payload({ mediaTypes: { banner: { sizes: [[300, 250]], ext: { bannerKey: 'b' } } } });
+    expect(data.imp[0].banner.ext).to.deep.equal({ bannerKey: 'b' });
+  });
+
+  it('forwards mediaTypes.video.ext and merges the bidder override', function () {
+    const data = payload({
+      mediaTypes: { video: { mimes: ['video/mp4'], w: 640, h: 480, ext: { adUnitKey: 'a', shared: 'adUnit' } } },
+      params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', video: { ext: { bidderKey: 'b', shared: 'params' } } },
+    });
+    expect(data.imp[0].video.ext).to.deep.equal({ adUnitKey: 'a', shared: 'params', bidderKey: 'b' });
+  });
+
+  it('does not strip invalid params.video entries from the ad unit config', function () {
+    const params = { adUnitId: '1a2b3c4d5e6f1a2b3c4d', video: { minduration: 'not-a-number' } };
+    payload({ mediaTypes: { video: { mimes: ['video/mp4'], w: 640, h: 480 } }, params });
+    expect(params.video.minduration).to.equal('not-a-number');
+  });
+});
+
+describe('InsticatorBidAdapter \u2014 video parameter coverage', function () {
+  const bidderRequest = {
+    bidderRequestId: 'vid-req-1',
+    timeout: 300,
+    refererInfo: { page: 'https://example.com', domain: 'example.com', ref: 'https://referrer.com' },
+  };
+
+  function videoImp(mediaTypesVideo, extra = {}) {
+    const bid = {
+      bidder: 'insticator',
+      adUnitCode: 'video-adunit',
+      params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+      mediaTypes: { video: mediaTypesVideo },
+      bidId: 'vid-bid-1',
+      ...extra,
+    };
+    const data = JSON.parse(spec.buildRequests([bid], { ...bidderRequest, bids: [bid] })[0].data);
+    return data.imp[0];
+  }
+
+  it('forwards every optional video parameter it validates', function () {
+    const imp = videoImp({
+      mimes: ['video/mp4'],
+      w: 640,
+      h: 480,
+      linearity: 1,
+      sequence: 2,
+      maxextended: 30,
+      minbitrate: 300,
+      maxbitrate: 1500,
+      podid: 'pod-1',
+      poddur: 60,
+      slotinpod: 1,
+      mincpmpersec: 0.5,
+      maxseq: 4,
+      rqddurs: [15, 30],
+    });
+    expect(imp.video.linearity).to.equal(1);
+    expect(imp.video.sequence).to.equal(2);
+    expect(imp.video.maxextended).to.equal(30);
+    expect(imp.video.minbitrate).to.equal(300);
+    expect(imp.video.maxbitrate).to.equal(1500);
+    expect(imp.video.podid).to.equal('pod-1');
+    expect(imp.video.poddur).to.equal(60);
+    expect(imp.video.slotinpod).to.equal(1);
+    expect(imp.video.mincpmpersec).to.equal(0.5);
+    expect(imp.video.maxseq).to.equal(4);
+    expect(imp.video.rqddurs).to.deep.equal([15, 30]);
+  });
+
+  it('forwards plcmt and context', function () {
+    const imp = videoImp({ mimes: ['video/mp4'], w: 640, h: 480, plcmt: 1, context: 'instream' });
+    expect(imp.video.plcmt).to.equal(1);
+    expect(imp.video.context).to.equal('instream');
+  });
+
+  it('derives width and height from playerSize when w and h are absent', function () {
+    const imp = videoImp({ mimes: ['video/mp4'], playerSize: [[640, 480]] });
+    expect(imp.video.w).to.equal(640);
+    expect(imp.video.h).to.equal(480);
+  });
+
+  it('drops a params floor that is not priced in USD', function () {
+    const imp = videoImp(
+      { mimes: ['video/mp4'], w: 640, h: 480 },
+      { params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', floor: 2.5, bidfloorcur: 'EUR' } },
+    );
+    expect(imp.bidfloor).to.not.exist;
+    expect(imp.bidfloorcur).to.not.exist;
+  });
+
+  it('keeps a params floor priced in USD', function () {
+    const imp = videoImp(
+      { mimes: ['video/mp4'], w: 640, h: 480 },
+      { params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', floor: 2.5, bidfloorcur: 'USD' } },
+    );
+    expect(imp.bidfloor).to.equal(2.5);
+    expect(imp.bidfloorcur).to.equal('USD');
+  });
+
+  it('survives a getFloor implementation that throws', function () {
+    const imp = videoImp(
+      { mimes: ['video/mp4'], w: 640, h: 480 },
+      { getFloor: () => { throw new Error('boom'); } },
+    );
+    expect(imp.video.mimes).to.deep.equal(['video/mp4']);
+  });
+});
+
+describe('InsticatorBidAdapter — publisher input the adapter must survive', function () {
+  const baseBid = (extra = {}) => Object.assign({
+    bidder: 'insticator',
+    adUnitCode: 'adunit-code',
+    bidId: 'bid-1',
+    params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+    sizes: [[300, 250]],
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+    ortb2Imp: {},
+    ortb2: {},
+  }, extra);
+
+  const baseBidderRequest = (extra = {}) => Object.assign({
+    bidderRequestId: 'br-1',
+    timeout: 3000,
+    refererInfo: { page: 'https://example.com/p', ref: '', domain: 'example.com' },
+    ortb2: {},
+  }, extra);
+
+  const build = (bid, bidderRequest) => JSON.parse(spec.buildRequests([bid], bidderRequest)[0].data);
+
+  describe('user.data that is not an array', function () {
+    [
+      { name: 'a number in params.user.data', bid: { params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', user: { data: 42 } } }, ortb2: {} },
+      { name: 'an object in params.user.data', bid: { params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', user: { data: { seg: 1 } } } }, ortb2: {} },
+      { name: 'a number in ortb2.user.data', bid: {}, ortb2: { user: { data: 7 } } },
+      { name: 'a string in ortb2.user.data', bid: {}, ortb2: { user: { data: 'SEGMENTS' } } },
+    ].forEach(({ name, bid, ortb2 }) => {
+      it(`does not throw on ${name}`, function () {
+        const request = baseBid(Object.assign({ ortb2 }, bid));
+        const bidderRequest = baseBidderRequest({ ortb2 });
+        expect(() => spec.buildRequests([request], bidderRequest)).to.not.throw();
+        const payload = build(request, bidderRequest);
+        expect(payload.imp).to.have.lengthOf(1);
+        if (payload.user && payload.user.data) {
+          expect(payload.user.data).to.be.an('array');
+        }
+      });
+    });
+
+    it('still merges both sources when each is a real array', function () {
+      const ortb2 = { user: { data: [{ name: 'from-ortb2' }] } };
+      const payload = build(
+        baseBid({ ortb2, params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', user: { data: [{ name: 'from-params' }] } } }),
+        baseBidderRequest({ ortb2 }),
+      );
+      expect(payload.user.data.map((entry) => entry.name)).to.deep.equal(['from-ortb2', 'from-params']);
+    });
+  });
+
+  describe('privacy signals a publisher supplies on ortb2.regs.ext', function () {
+    const publisherRegs = { regs: { ext: { gdpr: 0, us_privacy: 'PUB-USP', gpp: 'PUB-GPP', keepMe: 'yes' } } };
+
+    it('are forwarded when the adapter has computed none, as other adapters do', function () {
+      const payload = build(baseBid({ ortb2: publisherRegs }), baseBidderRequest({ ortb2: publisherRegs }));
+      expect(payload.regs.ext.gdpr).to.equal(0);
+      expect(payload.regs.ext.us_privacy).to.equal('PUB-USP');
+      expect(payload.regs.ext.gpp).to.equal('PUB-GPP');
+      expect(payload.regs.ext.keepMe).to.equal('yes');
+    });
+
+    it('are overwritten by a real consent value where one exists', function () {
+      const payload = build(
+        baseBid({ ortb2: publisherRegs }),
+        baseBidderRequest({
+          ortb2: publisherRegs,
+          gdprConsent: { gdprApplies: true, consentString: 'REAL' },
+          uspConsent: 'REAL-USP',
+        }),
+      );
+      expect(payload.regs.ext.gdpr).to.equal(1);
+      expect(payload.regs.ext.gdprConsentString).to.equal('REAL');
+      expect(payload.regs.ext.us_privacy).to.equal('REAL-USP');
+      expect(payload.regs.ext.gpp).to.equal('PUB-GPP');
+      expect(payload.regs.ext.keepMe).to.equal('yes');
+    });
+  });
+
+  describe('a null sitting inside a publisher object', function () {
+    [
+      { name: 'ortb2Imp.ext.prebid', ortb2Imp: { ext: { prebid: null } } },
+      { name: 'ortb2Imp.ext.prebid.bidder', ortb2Imp: { ext: { prebid: { bidder: null } } } },
+      { name: 'ortb2Imp.ext.prebid.bidder.insticator', ortb2Imp: { ext: { prebid: { bidder: { insticator: null } } } } },
+    ].forEach(({ name, ortb2Imp }) => {
+      it(`does not throw on a null at ${name}`, function () {
+        const request = baseBid({ ortb2Imp });
+        expect(() => spec.buildRequests([request], baseBidderRequest())).to.not.throw();
+        const payload = build(request, baseBidderRequest());
+        expect(payload.imp[0].ext.prebid.bidder.insticator.adUnitId).to.equal('1a2b3c4d5e6f1a2b3c4d');
+      });
+    });
+
+    it('does not throw when params.audio is null', function () {
+      const request = baseBid({
+        mediaTypes: { audio: { mimes: ['audio/mp4'] } },
+        params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', audio: null },
+      });
+      expect(spec.isBidRequestValid(request)).to.equal(true);
+      expect(() => spec.buildRequests([request], baseBidderRequest())).to.not.throw();
+      const payload = build(request, baseBidderRequest());
+      expect(payload.imp[0].audio.mimes).to.deep.equal(['audio/mp4']);
+    });
+
+    it('does not throw when params.video is null', function () {
+      const request = baseBid({
+        mediaTypes: { video: { mimes: ['video/mp4'], w: 640, h: 480, placement: 2 } },
+        params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d', video: null },
+      });
+      expect(() => spec.buildRequests([request], baseBidderRequest())).to.not.throw();
+    });
+  });
+
+  it('forwards site.mobile when the publisher sets it to 0', function () {
+    const ortb2 = { site: { mobile: 0 } };
+    const payload = build(baseBid({ ortb2 }), baseBidderRequest({ ortb2 }));
+    expect(payload.site.mobile).to.equal(0);
+  });
+
+  it('does not let a publisher ext pollute Object.prototype', function () {
+    const ortb2 = { ext: JSON.parse('{"__proto__":{"polluted":true},"constructor":"x","keepMe":1}') };
+    build(baseBid({ ortb2 }), baseBidderRequest({ ortb2 }));
+    expect({}.polluted).to.be.undefined;
+  });
+});
+
+describe('InsticatorBidAdapter — native', function () {
+  const nativeOrtb = {
+    assets: [
+      { id: 1, required: 1, title: { len: 90 } },
+      { id: 2, required: 1, img: { type: 3, wmin: 300, hmin: 250 } },
+      { id: 3, required: 0, data: { type: 1, len: 25 } },
+    ],
+    eventtrackers: [{ event: 1, methods: [1, 2] }],
+  };
+
+  // Core copies a valid mediaTypes.native.ortb onto nativeOrtbRequest before the adapter
+  // runs — fixtures mirror that normalized state.
+  const nativeBidRequest = {
+    bidder: 'insticator',
+    adUnitCode: 'native-adunit',
+    params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+    mediaTypes: { native: { ortb: nativeOrtb } },
+    nativeOrtbRequest: nativeOrtb,
+    bidId: 'native-bid-1',
+  };
+
+  const nativeAdm = JSON.stringify({
+    ver: '1.2',
+    assets: [
+      { id: 1, title: { text: 'Meet the new thing' } },
+      { id: 2, img: { type: 3, url: 'https://cdn.example.com/main.jpg', w: 600, h: 500 } },
+      { id: 3, data: { value: 'BrandCo' } },
+    ],
+    link: { url: 'https://example.com/click' },
+    eventtrackers: [{ event: 1, method: 1, url: 'https://tracker.example.com/imp' }],
+  });
+
+  describe('supportedMediaTypes', function () {
+    it('includes native alongside banner, video and audio', function () {
+      expect(spec.supportedMediaTypes).to.include('native');
+      expect(spec.supportedMediaTypes).to.include('audio');
+    });
+  });
+
+  describe('isBidRequestValid', function () {
+    it('accepts a native-only ad unit with ortb assets', function () {
+      expect(spec.isBidRequestValid(nativeBidRequest)).to.be.true;
+    });
+
+    it('accepts a native ad unit normalized by core onto nativeOrtbRequest', function () {
+      const bid = {
+        ...nativeBidRequest,
+        mediaTypes: { native: { title: { required: true } } },
+        nativeOrtbRequest: nativeOrtb,
+      };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+
+    it('rejects native without an ortb request object', function () {
+      const bid = { ...nativeBidRequest, mediaTypes: { native: {} } };
+      delete bid.nativeOrtbRequest;
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('stays valid when another media type is present and only the native config is bad', function () {
+      const bid = {
+        ...nativeBidRequest,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, native: { ortb: nativeOrtb } },
+      };
+      delete bid.nativeOrtbRequest;
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+
+    it('rejects native with an empty assets array', function () {
+      const bid = { ...nativeBidRequest, nativeOrtbRequest: { assets: [] }, mediaTypes: { native: { ortb: { assets: [] } } } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('rejects a config core did not normalize — raw mediaTypes.native.ortb is never a fallback', function () {
+      const coreRejected = { ...nativeBidRequest };
+      delete coreRejected.nativeOrtbRequest;
+      expect(spec.isBidRequestValid(coreRejected)).to.be.false;
+    });
+
+    it('accepts a banner+native multi-format ad unit', function () {
+      const bid = {
+        ...nativeBidRequest,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, native: { ortb: nativeOrtb } },
+        nativeOrtbRequest: nativeOrtb,
+      };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+  });
+
+  describe('buildRequests', function () {
+    let getDataFromLocalStorageStub, localStorageIsEnabledStub, cookiesAreEnabledStub, getCookieStub;
+
+    beforeEach(function () {
+      getGlobal().bidderSettings = { insticator: { storageAllowed: true } };
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns(USER_ID_DUMMY_VALUE);
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled').returns(false);
+      getCookieStub = sinon.stub(storage, 'getCookie').returns(null);
+    });
+
+    afterEach(function () {
+      getDataFromLocalStorageStub.restore();
+      localStorageIsEnabledStub.restore();
+      cookiesAreEnabledStub.restore();
+      getCookieStub.restore();
+      getGlobal().bidderSettings = {};
+    });
+
+    function firstImp(bid) {
+      const requests = spec.buildRequests([bid], { bidderRequestId: 'req-1', refererInfo: { page: 'https://example.com' } });
+      return JSON.parse(requests[0].data).imp[0];
+    }
+
+    it('builds imp.native with a stringified request and ver 1.2', function () {
+      const imp = firstImp(nativeBidRequest);
+      expect(imp.native).to.exist;
+      expect(imp.native.ver).to.equal('1.2');
+      expect(imp.native.request).to.be.a('string');
+    });
+
+    it('round-trips the assets and eventtrackers inside the request string', function () {
+      const imp = firstImp(nativeBidRequest);
+      const innerRequest = JSON.parse(imp.native.request);
+      expect(innerRequest.ver).to.equal('1.2');
+      expect(innerRequest.assets).to.have.length(3);
+      expect(innerRequest.assets[0].title.len).to.equal(90);
+      expect(innerRequest.eventtrackers).to.deep.equal([{ event: 1, methods: [1, 2] }]);
+    });
+
+    it('builds only from the core-normalized nativeOrtbRequest', function () {
+      const normalized = { assets: [{ id: 7, required: 1, title: { len: 25 } }] };
+      const bid = { ...nativeBidRequest, nativeOrtbRequest: normalized };
+      const innerRequest = JSON.parse(firstImp(bid).native.request);
+      expect(innerRequest.assets).to.have.length(1);
+      expect(innerRequest.assets[0].id).to.equal(7);
+    });
+
+    it('skips imp.native when core rejected the config, instead of shipping it raw', function () {
+      const coreRejected = { ...nativeBidRequest };
+      delete coreRejected.nativeOrtbRequest;
+      expect(firstImp(coreRejected).native).to.not.exist;
+    });
+
+    it('passes the config ver through instead of hardcoding 1.2', function () {
+      const bid = { ...nativeBidRequest, nativeOrtbRequest: { ...nativeOrtb, ver: '1.1' } };
+      const imp = firstImp(bid);
+      expect(imp.native.ver).to.equal('1.1');
+      expect(JSON.parse(imp.native.request).ver).to.equal('1.1');
+    });
+
+    it('forwards ext, api and battr the publisher set on mediaTypes.native', function () {
+      const bid = {
+        ...nativeBidRequest,
+        mediaTypes: { native: { ortb: nativeOrtb, ext: { pubKey: 'x' }, api: [3], battr: [1, 2] } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.native.ext).to.deep.equal({ pubKey: 'x' });
+      expect(imp.native.api).to.deep.equal([3]);
+      expect(imp.native.battr).to.deep.equal([1, 2]);
+    });
+
+    it('skips the native imp when the ortb request cannot be serialized', function () {
+      const circular = { assets: [{ id: 1, required: 1, title: { len: 90 } }] };
+      circular.self = circular;
+      expect(firstImp({ ...nativeBidRequest, nativeOrtbRequest: circular }).native).to.not.exist;
+    });
+
+    it('asks the floors module for the cross-type floor on a multi-format unit', function () {
+      const seen = [];
+      const bid = {
+        ...nativeBidRequest,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, native: { ortb: nativeOrtb } },
+        getFloor: (args) => { seen.push(args); return { currency: 'USD', floor: 0.2 }; },
+      };
+      firstImp(bid);
+      expect(seen.some((call) => call.mediaType === '*')).to.equal(true);
+    });
+
+    it('emits no native object when the ad unit has none', function () {
+      const bid = { ...nativeBidRequest, mediaTypes: { banner: { sizes: [[300, 250]] } } };
+      expect(firstImp(bid).native).to.not.exist;
+    });
+
+    it('emits banner and native side by side for a multi-format unit', function () {
+      const bid = {
+        ...nativeBidRequest,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, native: { ortb: nativeOrtb } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.banner).to.exist;
+      expect(imp.native).to.exist;
+    });
+
+    it('asks for a native floor', function () {
+      const seen = [];
+      const bid = {
+        ...nativeBidRequest,
+        getFloor: (args) => { seen.push(args); return { currency: 'USD', floor: 0.45 }; },
+      };
+      const imp = firstImp(bid);
+      expect(seen.some((call) => call.mediaType === 'native' && call.size === '*')).to.equal(true);
+      expect(imp.bidfloor).to.equal(0.45);
+    });
+  });
+
+  describe('interpretResponse', function () {
+    const request = {
+      bidderRequest: {
+        bidderRequestId: 'req-1',
+        bids: [{ ...nativeBidRequest }],
+      },
+    };
+
+    function respond(bid) {
+      return spec.interpretResponse({ body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [bid] }] } }, request);
+    }
+
+    it('maps mtype 4 to the native media type', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm, mtype: 4 });
+      expect(response.mediaType).to.equal('native');
+      expect(response.meta.mediaType).to.equal('native');
+    });
+
+    it('exposes the parsed creative on native.ortb', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm, mtype: 4 });
+      expect(response.native).to.exist;
+      expect(response.native.ortb.assets).to.have.length(3);
+      expect(response.native.ortb.link.url).to.equal('https://example.com/click');
+    });
+
+    it('unwraps a legacy wrapped native response', function () {
+      const wrappedAdm = JSON.stringify({ native: JSON.parse(nativeAdm) });
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: wrappedAdm, mtype: 4 });
+      expect(response.native.ortb.assets).to.have.length(3);
+      expect(response.native.ortb.native).to.not.exist;
+    });
+
+    it('detects native JSON when the bid carries no mtype', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm });
+      expect(response.mediaType).to.equal('native');
+      expect(response.native.ortb.assets).to.have.length(3);
+    });
+
+    it('drops a native bid whose adm is not valid JSON and keeps the rest', function () {
+      const responses = spec.interpretResponse(
+        {
+          body: {
+            id: 'req-1',
+            cur: 'USD',
+            seatbid: [{
+              seat: 's',
+              bid: [
+                { impid: 'native-bid-1', crid: 'cr-bad', price: 2.5, adm: '{broken json', mtype: 4 },
+                { impid: 'native-bid-1', crid: 'cr-good', price: 1.5, adm: nativeAdm, mtype: 4 },
+              ],
+            }],
+          },
+        },
+        request,
+      );
+      expect(responses).to.have.length(1);
+      expect(responses[0].creativeId).to.equal('cr-good');
+    });
+
+    it('passes the exchange-sent width and height through', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm, mtype: 4, w: 300, h: 250 });
+      expect(response.width).to.equal(300);
+      expect(response.height).to.equal(250);
+    });
+
+    it('drops a parseable native adm that carries no assets, and keeps the sibling', function () {
+      const responses = spec.interpretResponse(
+        {
+          body: {
+            id: 'req-1',
+            cur: 'USD',
+            seatbid: [{
+              seat: 's',
+              bid: [
+                { impid: 'native-bid-1', crid: 'cr-no-assets', price: 2.5, adm: '{"link":{"url":"https://e.com"}}', mtype: 4 },
+                { impid: 'native-bid-1', crid: 'cr-good', price: 1.5, adm: nativeAdm, mtype: 4 },
+              ],
+            }],
+          },
+        },
+        request,
+      );
+      expect(responses).to.have.length(1);
+      expect(responses[0].creativeId).to.equal('cr-good');
+    });
+
+    it('accepts an object-typed adm', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: JSON.parse(nativeAdm), mtype: 4 });
+      expect(response.mediaType).to.equal('native');
+      expect(response.native.ortb.assets).to.have.length(3);
+    });
+
+    it('leaves no raw JSON on the ad field of a native bid', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm, mtype: 4 });
+      expect(response.ad).to.not.exist;
+    });
+
+    it('does not trust mtype 4 on a unit that never declared native', function () {
+      const bannerOnlyRequest = {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            bidder: 'insticator',
+            adUnitCode: 'banner-adunit',
+            params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+            mediaTypes: { banner: { sizes: [[300, 250]] } },
+            bidId: 'native-bid-1',
+          }],
+        },
+      };
+      const [response] = spec.interpretResponse(
+        { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: '<div>banner</div>', mtype: 4 }] }] } },
+        bannerOnlyRequest,
+      );
+      expect(response.mediaType).to.equal('banner');
+    });
+
+    it('keeps the size keys on a banner bid so core can recover the ad unit size', function () {
+      const bannerOnlyRequest = {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            bidder: 'insticator',
+            adUnitCode: 'banner-adunit',
+            params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+            mediaTypes: { banner: { sizes: [[300, 250]] } },
+            bidId: 'native-bid-1',
+          }],
+        },
+      };
+      const [response] = spec.interpretResponse(
+        { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: '<div>banner</div>', mtype: 1 }] }] } },
+        bannerOnlyRequest,
+      );
+      // Present but undefined: core treats that as absent and falls back to the ad unit size,
+      // where an omitted key would leave its own default of 0 and be read as a real 0x0.
+      expect(response).to.have.property('width');
+      expect(response).to.have.property('height');
+      expect(response.width).to.equal(undefined);
+    });
+
+    it('omits the size keys on a native bid that carries no dimensions', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm, mtype: 4 });
+      expect(response).to.not.have.property('width');
+      expect(response).to.not.have.property('height');
+    });
+
+    it('does not resolve an inherited property name as a media type', function () {
+      const videoRequest = {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            bidder: 'insticator',
+            adUnitCode: 'video-adunit',
+            params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+            mediaTypes: { video: { mimes: ['video/mp4'] } },
+            bidId: 'native-bid-1',
+          }],
+        },
+      };
+      for (const mtype of ['toString', 'constructor', '4']) {
+        const [response] = spec.interpretResponse(
+          { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [{ impid: 'native-bid-1', crid: 'cr1', price: 1, adm: '<VAST version="4.0"/>', mtype }] }] } },
+          videoRequest,
+        );
+        expect(response.mediaType).to.equal('video');
+      }
+    });
+
+    it('keeps native markup on a banner-only unit as banner, with and without mtype', function () {
+      const bannerOnlyRequest = {
+        bidderRequest: {
+          bidderRequestId: 'req-1',
+          bids: [{
+            bidder: 'insticator',
+            adUnitCode: 'banner-adunit',
+            params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+            mediaTypes: { banner: { sizes: [[300, 250]] } },
+            bidId: 'native-bid-1',
+          }],
+        },
+      };
+      // In-banner native: the markup is a native document, but the unit never asked for
+      // native, so core has no nativeOrtbRequest to validate the bid against.
+      for (const bid of [
+        { impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm, mtype: 4 },
+        { impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm },
+      ]) {
+        const [response] = spec.interpretResponse(
+          { body: { id: 'req-1', cur: 'USD', seatbid: [{ seat: 's', bid: [bid] }] } },
+          bannerOnlyRequest,
+        );
+        expect(response.mediaType).to.equal('banner');
+        expect(response.native).to.not.exist;
+      }
+    });
+
+    it('detects native JSON behind leading whitespace when no mtype is sent', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: '  ' + nativeAdm });
+      expect(response.mediaType).to.equal('native');
+    });
+
+    it('preserves the trackers the exchange injected into the adm', function () {
+      const trackedAdm = JSON.stringify({
+        ver: '1.2',
+        assets: [{ id: 1, title: { text: 'Tracked' } }],
+        link: { url: 'https://example.com/click', clicktrackers: ['https://ssp.example/click?id=abc'] },
+        eventtrackers: [
+          { event: 1, method: 1, url: 'https://ssp.example/imp?id=abc' },
+          { event: 2, method: 1, url: 'https://ssp.example/viewable50?id=abc' },
+          { event: 3, method: 1, url: 'https://ssp.example/viewable100?id=abc' },
+        ],
+      });
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: trackedAdm, mtype: 4 });
+      expect(response.native.ortb.eventtrackers.map((tracker) => tracker.event)).to.deep.equal([1, 2, 3]);
+      expect(response.native.ortb.link.clicktrackers).to.deep.equal(['https://ssp.example/click?id=abc']);
+    });
+
+    it('returns assets core can resolve back to the requested ids', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: nativeAdm, mtype: 4 });
+      const legacy = toLegacyResponse(response.native.ortb, nativeOrtb);
+      expect(legacy.title).to.equal('Meet the new thing');
+      expect(legacy.image.url).to.equal('https://cdn.example.com/main.jpg');
+      expect(legacy.sponsoredBy).to.equal('BrandCo');
+      expect(legacy.clickUrl).to.equal('https://example.com/click');
+    });
+
+    it('resolves banner and native bids in the same response by impid', function () {
+      const bannerBid = {
+        bidder: 'insticator',
+        adUnitCode: 'banner-adunit',
+        params: { adUnitId: '1a2b3c4d5e6f1a2b3c4d' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'banner-bid-1',
+      };
+      const responses = spec.interpretResponse({
+        body: {
+          id: 'req-1',
+          cur: 'USD',
+          seatbid: [{
+            seat: 's',
+            bid: [
+              { impid: 'banner-bid-1', crid: 'cr-b', price: 1.0, adm: '<div>banner</div>', mtype: 1, w: 300, h: 250 },
+              { impid: 'native-bid-1', crid: 'cr-n', price: 2.0, adm: nativeAdm, mtype: 4 },
+            ],
+          }],
+        },
+      }, { bidderRequest: { bidderRequestId: 'req-1', bids: [{ ...nativeBidRequest }, bannerBid] } });
+
+      const banner = responses.find((response) => response.requestId === 'banner-bid-1');
+      const native = responses.find((response) => response.requestId === 'native-bid-1');
+      expect(banner.mediaType).to.equal('banner');
+      expect(banner.ad).to.equal('<div>banner</div>');
+      expect(native.mediaType).to.equal('native');
+      expect(native.native.ortb.assets).to.have.length(3);
+      expect(native.ad).to.not.exist;
+    });
+
+    it('detects an object-typed adm as native when no mtype is sent', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: JSON.parse(nativeAdm) });
+      expect(response.mediaType).to.equal('native');
+      expect(response.native.ortb.assets).to.have.length(3);
+    });
+
+    it('does not treat unparseable JSON as native when no mtype is sent', function () {
+      const [response] = respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: '{not json' });
+      expect(response.mediaType).to.equal('banner');
+    });
+
+    it('drops a native bid whose adm is a JSON array', function () {
+      expect(respond({ impid: 'native-bid-1', crid: 'cr1', price: 1.5, adm: '[]', mtype: 4 })).to.have.length(0);
+    });
+  });
+});
+
+describe('InsticatorBidAdapter — defensive paths', function () {
+  const adUnitId = '1a2b3c4d5e6f1a2b3c4d';
+  const bidderRequestId = 'defensive-req-1';
+  const baseBidderRequest = {
+    bidderRequestId,
+    timeout: 300,
+    refererInfo: { page: 'https://example.com', domain: 'example.com', ref: 'https://referrer.com' },
+  };
+
+  function videoBid(video) {
+    return {
+      bidder: 'insticator',
+      adUnitCode: 'defensive-video-adunit',
+      params: { adUnitId },
+      mediaTypes: { video },
+      bidId: 'defensive-video-1',
+    };
+  }
+
+  const validVideo = { w: 640, h: 480, mimes: ['video/mp4'] };
+
+  function buildData(bid, bidderRequestOverrides = {}) {
+    const request = { ...baseBidderRequest, bids: [bid], ...bidderRequestOverrides };
+    return JSON.parse(spec.buildRequests([bid], request)[0].data);
+  }
+
+  describe('video validation', function () {
+    it('rejects a video ad unit that declares a size but no mimes', function () {
+      expect(spec.isBidRequestValid(videoBid({ w: 640, h: 480 }))).to.be.false;
+    });
+
+    it('rejects a video ad unit whose mimes array is empty', function () {
+      expect(spec.isBidRequestValid(videoBid({ w: 640, h: 480, mimes: [] }))).to.be.false;
+    });
+
+    it('logs an invalid optional video param but still accepts the bid', function () {
+      const logErrorStub = sinon.stub(utils, 'logError');
+      try {
+        const bid = videoBid({ ...validVideo, protocols: 'not-an-array' });
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+        const messages = logErrorStub.getCalls().map((call) => String(call.args[0]));
+        expect(messages.some((message) => message.includes('video protocols is invalid'))).to.be.true;
+      } finally {
+        logErrorStub.restore();
+      }
+    });
+  });
+
+  describe('stored user id', function () {
+    it('discards a stored user id that is not 36 characters long', function () {
+      const localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
+      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns('not-a-uuid');
+      getGlobal().bidderSettings = { insticator: { storageAllowed: true } };
+      try {
+        const data = buildData(videoBid(validVideo));
+        expect(data.user.id).to.not.equal('not-a-uuid');
+        expect(data.user.id).to.have.lengthOf(36);
+      } finally {
+        getDataFromLocalStorageStub.restore();
+        localStorageIsEnabledStub.restore();
+        getGlobal().bidderSettings = {};
+      }
+    });
+  });
+
+  describe('coppa', function () {
+    it('sends an explicit ortb2.regs.coppa of 1', function () {
+      const data = buildData(videoBid(validVideo), { ortb2: { regs: { coppa: 1 } } });
+      expect(data.regs.coppa).to.equal(1);
+    });
+
+    it('keeps an explicit ortb2.regs.coppa of 0 rather than falling back to the global config', function () {
+      config.setConfig({ coppa: true });
+      try {
+        const data = buildData(videoBid(validVideo), { ortb2: { regs: { coppa: 0 } } });
+        expect(data.regs.coppa).to.equal(0);
+      } finally {
+        config.resetConfig();
+      }
+    });
+  });
+
+  describe('interpretResponse', function () {
+    it('returns no bids when the response id matches the request but carries no seatbid', function () {
+      const bid = videoBid(validVideo);
+      const request = { bidderRequest: { bidderRequestId, bids: [bid] } };
+      expect(spec.interpretResponse({ body: { id: bidderRequestId, cur: 'USD' } }, request)).to.have.length(0);
+    });
+  });
+
+  describe('native adm detection', function () {
+    const nativeOrtb = {
+      assets: [{ id: 1, required: 1, title: { len: 90 } }],
+      eventtrackers: [{ event: 1, methods: [1] }],
+    };
+    const nativeBid = {
+      bidder: 'insticator',
+      adUnitCode: 'defensive-native-adunit',
+      params: { adUnitId },
+      mediaTypes: { native: { ortb: nativeOrtb } },
+      nativeOrtbRequest: nativeOrtb,
+      bidId: 'defensive-native-1',
+    };
+
+    // Markup that is neither VAST nor JSON: in-banner native arrives on native ad units.
+    it('does not treat markup that is not JSON as native when no mtype is sent', function () {
+      const request = { bidderRequest: { bidderRequestId, bids: [nativeBid] } };
+      const [response] = spec.interpretResponse({
+        body: {
+          id: bidderRequestId,
+          cur: 'USD',
+          seatbid: [{
+            seat: 'seat-1',
+            bid: [{ impid: 'defensive-native-1', crid: 'cr1', price: 1.5, adm: '<div>in-banner creative</div>' }],
+          }],
+        },
+      }, request);
+      expect(response.mediaType).to.equal('banner');
     });
   });
 });
