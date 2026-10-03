@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import { spec } from 'modules/dspxBidAdapter.js';
+import { spec, createOutstreamEmbedCode, sanitizeOutstreamMarkup } from 'modules/dspxBidAdapter.js';
 
 import { deepClone } from '../../../src/utils.js';
 import { BANNER } from '../../../src/mediaTypes.js';
@@ -801,6 +801,106 @@ describe('dspxAdapter', function () {
     it(`check for zero array when iframeEnabled`, function () {
       expect(spec.getUserSyncs({ pixelEnabled: true })).to.be.an('array');
       expect(spec.getUserSyncs({ pixelEnabled: true }, serverResponses).length).to.be.equal(0);
+    });
+  });
+
+  describe('outstream renderer markup', function () {
+    const SLOT_ID = 'dspx-outstream-test-slot';
+    const FLAG = '__dspxRendererCodeRan';
+
+    const bidRequest = {
+      method: 'GET',
+      url: ENDPOINT_URL,
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+          context: 'outstream'
+        }
+      },
+      data: {
+        bid_id: '30b31c1838de1e'
+      }
+    };
+
+    function responseWithRendererCode(code) {
+      return {
+        body: {
+          cpm: 5000000,
+          crid: 100500,
+          width: '300',
+          height: '250',
+          vastXml: '<VAST version="3.0"></VAST>',
+          requestId: '220ed41385952a',
+          type: 'vast2',
+          currency: 'EUR',
+          ttl: 60,
+          netRevenue: true,
+          zone: '6682',
+          renderer: {
+            id: 1,
+            url: '//player.example.com',
+            options: {
+              slot: SLOT_ID,
+              code: code
+            }
+          }
+        }
+      };
+    }
+
+    let slot;
+
+    beforeEach(function () {
+      slot = document.createElement('div');
+      slot.id = SLOT_ID;
+      document.body.appendChild(slot);
+      delete window[FLAG];
+    });
+
+    afterEach(function () {
+      if (slot && slot.parentNode) {
+        slot.parentNode.removeChild(slot);
+      }
+      delete window[FLAG];
+    });
+
+    it('strips script tags and event handler attributes from response markup', function () {
+      const cleaned = sanitizeOutstreamMarkup(
+        '<div id="ok">ad</div><script src="https://example.invalid/renderer.js"></script><img src="https://example.invalid/pixel.gif" onerror="void(0)">'
+      );
+      expect(cleaned).to.include('id="ok"');
+      expect(cleaned.toLowerCase()).to.not.include('<script');
+      expect(cleaned.toLowerCase()).to.not.include('onerror');
+    });
+
+    it('places sanitized markup in an iframe instead of reconstituting script tags', function () {
+      const fragment = createOutstreamEmbedCode({
+        width: 300,
+        height: 250,
+        renderer: {
+          config: {
+            code: '<div id="creative">ad</div><script>window["' + FLAG + '"] = true;</script>'
+          }
+        }
+      });
+      const iframe = fragment.querySelector('iframe');
+      expect(iframe).to.exist;
+      expect(iframe.srcdoc.toLowerCase()).to.not.include('<script');
+      slot.appendChild(fragment);
+      expect(window[FLAG]).to.equal(undefined);
+      expect(slot.querySelectorAll('script').length).to.equal(0);
+    });
+
+    it('should not run a script supplied by the bid response in the page', function () {
+      const code = '<script>window[\'' + FLAG + '\'] = true;</' + 'script>';
+      const bids = spec.interpretResponse(responseWithRendererCode(code), bidRequest);
+      bids[0].adUnitCode = SLOT_ID;
+
+      expect(bids[0].renderer).to.exist;
+      bids[0].renderer._render(bids[0]);
+
+      expect(window[FLAG]).to.equal(undefined);
+      expect(slot.querySelector('iframe')).to.exist;
     });
   });
 });
