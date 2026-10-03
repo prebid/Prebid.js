@@ -637,12 +637,21 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
       logWarn('Skipping GZIP compression for PBS as debug mode is enabled');
     }
 
-    if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
-      compressDataWithGZip(requestData.requestJson).then(compressedPayload => {
-        const url = new URL(requestData.endpointUrl);
-        url.searchParams.set('gzip', '1');
-        callAjax(compressedPayload, url.href);
-      });
+    if (enableGZipCompression && !debugMode) {
+      const sendUncompressed = () => callAjax(requestData.requestJson, requestData.endpointUrl);
+      isGzipCompressionSupported().then((supported) => {
+        if (supported) {
+          return compressDataWithGZip(requestData.requestJson)
+            .then(compressedPayload => {
+              const url = new URL(requestData.endpointUrl);
+              url.searchParams.set('gzip', '1');
+              callAjax(compressedPayload, url.href);
+            })
+            .catch(sendUncompressed);
+        } else {
+          sendUncompressed();
+        }
+      }).catch(sendUncompressed);
     } else {
       callAjax(requestData.requestJson, requestData.endpointUrl);
     }

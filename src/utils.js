@@ -1265,23 +1265,28 @@ export function triggerNurlWithCpm(bid, cpm) {
 // To ensure that isGzipCompressionSupported() doesn’t become an overhead, we have used memoization to cache the result after the first execution.
 // This way, even if the function is called multiple times, it will only perform the actual check once and return the cached result in subsequent calls.
 export const isGzipCompressionSupported = (function () {
-  let cachedResult; // Store the result
+  let cachedResult; // Store the result promise
 
   return function () {
     if (cachedResult !== undefined) {
       return cachedResult; // Return cached result if already computed
     }
 
-    try {
-      if (typeof window.CompressionStream === 'undefined') {
-        cachedResult = false;
-      } else {
-        (() => new window.CompressionStream('gzip'))();
-        cachedResult = true;
+    cachedResult = (async () => {
+      try {
+        if (typeof window.CompressionStream === 'undefined' || typeof window.DecompressionStream === 'undefined') {
+          return false;
+        }
+        const probe = 'prebid-gzip-probe';
+        const compressed = await compressDataWithGZip(probe);
+        const decompressed = new Blob([compressed])
+          .stream()
+          .pipeThrough(new window.DecompressionStream('gzip'));
+        return await new Response(decompressed).text() === probe;
+      } catch (error) {
+        return false;
       }
-    } catch (error) {
-      cachedResult = false;
-    }
+    })();
 
     return cachedResult;
   };

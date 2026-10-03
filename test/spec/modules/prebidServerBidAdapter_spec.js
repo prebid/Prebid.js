@@ -1007,7 +1007,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: s2sCfg });
         const req = utils.deepClone(REQUEST);
         req.s2sConfig = s2sCfg;
-        gzipSupportStub.returns(true);
+        gzipSupportStub.resolves(true);
         getParamStub.withArgs(DEBUG_MODE).returns('false');
         debugStub.returns(false);
 
@@ -1026,7 +1026,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: s2sCfg });
         const req = utils.deepClone(REQUEST);
         req.s2sConfig = s2sCfg;
-        gzipSupportStub.returns(true);
+        gzipSupportStub.resolves(true);
         getParamStub.withArgs(DEBUG_MODE).returns('true');
         debugStub.returns(true);
 
@@ -1035,6 +1035,25 @@ describe('S2S Adapter', function () {
         setTimeout(() => {
           expect(gzipStub.called).to.be.false;
           expect(server.requests[0].url).to.not.include('gzip=1');
+          done();
+        });
+      });
+
+      it('should send the uncompressed payload when gzip compression rejects', function(done) {
+        const s2sCfg = Object.assign({}, CONFIG, { endpointCompression: true });
+        config.setConfig({ s2sConfig: s2sCfg });
+        const req = utils.deepClone(REQUEST);
+        req.s2sConfig = s2sCfg;
+        gzipSupportStub.resolves(true);
+        gzipStub.rejects(new Error('compression failed'));
+        getParamStub.withArgs(DEBUG_MODE).returns('false');
+        debugStub.returns(false);
+
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+
+        setTimeout(() => {
+          expect(server.requests[0].url).to.not.include('gzip=1');
+          expect(server.requests[0].requestBody).to.be.a('string');
           done();
         });
       });

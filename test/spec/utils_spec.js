@@ -1421,52 +1421,12 @@ describe('Utils', function () {
   });
 
   describe('isGzipCompressionSupported', () => {
-    let sandbox;
-
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(utils, 'isGzipCompressionSupported').callsFake((() => {
-        let cachedResult;
-        return function () {
-          if (cachedResult !== undefined) {
-            return cachedResult;
-          }
-          try {
-            if (typeof window.CompressionStream === 'undefined') {
-              cachedResult = false;
-            } else {
-              (() => new window.CompressionStream('gzip'))();
-              cachedResult = true;
-            }
-          } catch (error) {
-            cachedResult = false;
-          }
-          return cachedResult;
-        };
-      })());
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    it('should return true if CompressionStream is available', () => {
-      window.CompressionStream = class {}; // Mock valid CompressionStream
-      expect(utils.isGzipCompressionSupported()).to.be.true;
-    });
-
-    it('should return false if CompressionStream is undefined', () => {
-      delete window.CompressionStream; // Simulate an unsupported environment
-      expect(utils.isGzipCompressionSupported()).to.be.false;
-    });
-
-    it('should cache the result after first execution', () => {
-      window.CompressionStream = class {}; // Mock valid CompressionStream
-
+    it('should validate a gzip round trip and cache the result', async () => {
       const firstCall = utils.isGzipCompressionSupported();
       const secondCall = utils.isGzipCompressionSupported();
 
-      expect(firstCall).to.equal(secondCall); // Ensure memoization is working
+      expect(firstCall).to.equal(secondCall);
+      expect(await firstCall).to.be.true;
     });
   });
 
