@@ -1,6 +1,9 @@
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, isArray, isEmptyStr, isFn } from '../../src/utils.js';
+import { deepAccess, isArray, isEmptyStr, isFn, logError, logWarn } from '../../src/utils.js';
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
+import { Renderer } from '../../src/Renderer.js';
+
+const RENDERER_URL_PATTERN = /^(https:)?\/\/([\w-]+\.)+(dspx\.tv|adtech\.app)\//i;
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -432,4 +435,44 @@ export function interpretResponse(serverResponse, bidRequest, rendererFunc) {
     bidResponses.push(bidResponse);
   }
   return bidResponses;
+}
+
+/**
+ * @param {object} bidRequest
+ * @param {object} response
+ * @returns {string|null}
+ */
+export function resolveOutstreamRendererUrl(bidRequest, response) {
+  return [bidRequest?.params?.rendererUrl, response?.renderer?.url]
+    .find((url) => RENDERER_URL_PATTERN.test(url)) || null;
+}
+
+/**
+ * @param {object} bidRequest
+ * @param {object} response
+ * @returns {object|undefined}
+ */
+export function createOutstreamRenderer(bidRequest, response) {
+  const url = resolveOutstreamRendererUrl(bidRequest, response);
+  if (!url) {
+    logError('[DSPx] invalid outstream renderer url');
+    return;
+  }
+
+  const renderer = Renderer.install({
+    id: response.renderer.id || response.bid_id,
+    url,
+    config: response.renderer.options || {},
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender((bid) => {
+      const queue = (window.dspxOutstream = window.dspxOutstream || { uq: [] });
+      queue.uq.push(['render', bid]);
+    });
+  } catch (err) {
+    logWarn('[DSPx] Prebid Error calling setRender on renderer', err);
+  }
+  return renderer;
 }

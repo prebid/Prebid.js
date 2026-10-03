@@ -2,7 +2,12 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
-import { fillUsersIds } from 'libraries/dspxUtils/bidderUtils.js';
+import {
+  fillUsersIds,
+  resolveOutstreamRendererUrl,
+  createOutstreamRenderer,
+} from 'libraries/dspxUtils/bidderUtils.js';
+import { Renderer } from 'src/Renderer.js';
 import * as utils from '../../../src/utils.js';
 import { deepClone } from '../../../src/utils.js';
 import { BANNER } from '../../../src/mediaTypes.js';
@@ -548,9 +553,11 @@ describe('dspxAdapter', function () {
         };
         const request = spec.buildRequests([bidRequest], bidderRequestWithoutGdpr)[0];
         const data = decodeURIComponent(normalizeRequestData(request.data));
-        ['mimes', 'minduration', 'skipmin', 'maxextended', 'minbitrate', 'companionad', 'companiontype', 'ext']
+        ['skipmin', 'maxextended', 'minbitrate', 'companionad', 'companiontype', 'ext']
           .forEach(key => expect(data).to.not.contain(`vpl[${key}]`));
         expect(data).to.contain('vpl[protocols]=1,2');
+        expect(data).to.contain('vpl[mimes]=video/mp4,video/webm');
+        expect(data).to.contain('vpl[minduration]=5');
       });
 
       it('should omit empty vpl list fields', function () {
@@ -1376,6 +1383,83 @@ describe('dspxAdapter', function () {
       serverResponse.body.crid = 0;
       const result = spec.interpretResponse(serverResponse, bidRequest);
       expect(result).to.have.lengthOf(0);
+    });
+  });
+
+  describe('outstream renderer', function () {
+    const RENDERER_URL = 'https://cdn.dspx.tv/renderer.js';
+    let sandbox;
+    let fakeRenderer;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      fakeRenderer = { setRender: sandbox.spy() };
+      sandbox.stub(Renderer, 'install').returns(fakeRenderer);
+      delete window.dspxOutstream;
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      delete window.dspxOutstream;
+    });
+
+    describe('resolveOutstreamRendererUrl', function () {
+      it('returns the whitelisted renderer url', function () {
+        expect(resolveOutstreamRendererUrl({}, { renderer: { url: RENDERER_URL } })).to.equal(RENDERER_URL);
+      });
+
+      it('accepts a protocol-relative renderer url', function () {
+        const url = RENDERER_URL.replace('https:', '');
+        expect(resolveOutstreamRendererUrl({}, { renderer: { url } })).to.equal(url);
+      });
+
+      it('returns null for other renderer urls', function () {
+        expect(resolveOutstreamRendererUrl({}, { renderer: { url: 'https://example.com/renderer.js' } })).to.equal(null);
+      });
+    });
+
+    describe('createOutstreamRenderer', function () {
+      it('does not install renderer when url is not whitelisted', function () {
+        sandbox.stub(utils, 'logError');
+        const renderer = createOutstreamRenderer({}, {
+          bid_id: 'bid-1',
+          renderer: { url: 'https://example.com/renderer.js' },
+        });
+
+        expect(renderer).to.be.undefined;
+        sinon.assert.notCalled(Renderer.install);
+        sinon.assert.calledOnce(utils.logError);
+      });
+
+      it('installs the whitelisted renderer url from bid response', function () {
+        const response = {
+          bid_id: 'bid-1',
+          renderer: { id: 'renderer-1', url: RENDERER_URL, options: { slot: 'video1' } },
+        };
+
+        const renderer = createOutstreamRenderer({}, response);
+
+        expect(renderer).to.equal(fakeRenderer);
+        sinon.assert.calledOnce(Renderer.install);
+        const installArgs = Renderer.install.firstCall.args[0];
+        expect(installArgs.url).to.equal(RENDERER_URL);
+        expect(installArgs.config).to.deep.equal({ slot: 'video1' });
+        expect(installArgs.id).to.equal('renderer-1');
+        sinon.assert.calledOnce(fakeRenderer.setRender);
+      });
+
+      it('pushes bid to dspxOutstream queue on render', function () {
+        createOutstreamRenderer({}, {
+          bid_id: 'bid-3',
+          renderer: { url: RENDERER_URL, options: {} },
+        });
+
+        const bid = { adUnitCode: 'video1', vastXml: '<VAST/>' };
+        fakeRenderer.setRender.firstCall.args[0](bid);
+
+        expect(window.dspxOutstream.uq).to.have.length(1);
+        expect(window.dspxOutstream.uq[0]).to.deep.equal(['render', bid]);
+      });
     });
   });
 

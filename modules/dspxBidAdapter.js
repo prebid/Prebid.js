@@ -1,9 +1,6 @@
 import {
   deepAccess,
   logMessage,
-  getBidIdParameter,
-  logError,
-  logWarn,
   isSafeFrameWindow,
   inIframe,
   getWindowSelf
@@ -27,9 +24,9 @@ import {
   siteContentToString,
   assignDefinedValues,
   extractUserSegments,
-  interpretResponse
+  interpretResponse,
+  createOutstreamRenderer
 } from '../libraries/dspxUtils/bidderUtils.js';
-import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -38,8 +35,8 @@ const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 const GVLID = 602;
-const VPL_COMPACT_ARRAY_FIELDS = ['protocols', 'battr', 'playbackmethod', 'delivery', 'api'];
-const VIDEO_ORTB_PARAMS = ['maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'plcmt', 'linearity', 'skip',
+const VPL_COMPACT_ARRAY_FIELDS = ['mimes', 'protocols', 'battr', 'playbackmethod', 'delivery', 'api'];
+const VIDEO_ORTB_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'plcmt', 'linearity', 'skip',
   'skipafter', 'sequence', 'battr', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'api'];
 
 export const spec = {
@@ -212,7 +209,7 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     logMessage('DSPx: serverResponse', serverResponse);
     logMessage('DSPx: bidRequest', bidRequest);
-    const bidResponses = interpretResponse(serverResponse, bidRequest, (bidRequest, response) => newRenderer(bidRequest, response));
+    const bidResponses = interpretResponse(serverResponse, bidRequest, createOutstreamRenderer);
     bidResponses.forEach(bidResponse => {
       if (!bidResponse.mediaType) {
         bidResponse.mediaType = BANNER;
@@ -224,99 +221,5 @@ export const spec = {
     return handleSyncUrls(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, { enforcePurpose1: true });
   }
 };
-
-/**
- * Outstream Render Function
- *
- * @param bid
- */
-function outstreamRender(bid) {
-  logMessage('[DSPx][outstreamRender] bid:', bid);
-  const embedCode = createOutstreamEmbedCode(bid);
-  try {
-    const inIframe = getBidIdParameter('iframe', bid.renderer.config);
-    if (inIframe && window.document.getElementById(inIframe).nodeName === 'IFRAME') {
-      const iframe = window.document.getElementById(inIframe);
-      const framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
-      framedoc.body.appendChild(embedCode);
-      if (typeof window.dspxRender === 'function') {
-        window.dspxRender(bid);
-      } else {
-        logError('[DSPx][outstreamRender] Error: dspxRender function is not found');
-      }
-      return;
-    }
-
-    const slot = getBidIdParameter('slot', bid.renderer.config) || bid.adUnitCode;
-    if (slot && window.document.getElementById(slot)) {
-      window.document.getElementById(slot).appendChild(embedCode);
-      if (typeof window.dspxRender === 'function') {
-        window.dspxRender(bid);
-      } else {
-        logError('[DSPx][outstreamRender] Error: dspxRender function is not found');
-      }
-    } else if (slot) {
-      logError('[DSPx][outstreamRender] Error: slot not found');
-    }
-  } catch (err) {
-    logError('[DSPx][outstreamRender] Error:' + err.message);
-  }
-}
-
-/**
- * create Outstream Embed Code Node
- *
- * @param bid
- * @returns {DocumentFragment}
- */
-function createOutstreamEmbedCode(bid) {
-  const fragment = window.document.createDocumentFragment();
-  const div = window.document.createElement('div');
-  div.innerHTML = deepAccess(bid, 'renderer.config.code', '');
-  fragment.appendChild(div);
-
-  // run scripts
-  var scripts = div.getElementsByTagName('script');
-  var scriptsClone = [];
-  for (var idx = 0; idx < scripts.length; idx++) {
-    scriptsClone.push(scripts[idx]);
-  }
-  for (var i = 0; i < scriptsClone.length; i++) {
-    var currentScript = scriptsClone[i];
-    var s = document.createElement('script');
-    for (var j = 0; j < currentScript.attributes.length; j++) {
-      var a = currentScript.attributes[j];
-      s.setAttribute(a.name, a.value);
-    }
-    s.appendChild(document.createTextNode(currentScript.innerHTML));
-    currentScript.parentNode.replaceChild(s, currentScript);
-  }
-
-  return fragment;
-}
-
-/**
- * Create a new renderer
- *
- * @param bidRequest
- * @param response
- * @returns {Renderer}
- */
-function newRenderer(bidRequest, response) {
-  logMessage('[DSPx] newRenderer', bidRequest, response);
-  const renderer = Renderer.install({
-    id: response.renderer.id || response.bid_id,
-    url: (bidRequest.params && bidRequest.params.rendererUrl) || response.renderer.url,
-    config: response.renderer.options || deepAccess(bidRequest, 'renderer.options'),
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(outstreamRender);
-  } catch (err) {
-    logWarn('[DSPx]Prebid Error calling setRender on renderer', err);
-  }
-  return renderer;
-}
 
 registerBidder(spec);
