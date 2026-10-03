@@ -605,6 +605,65 @@ describe('User ID', function () {
       });
     });
 
+    it('initializes submodules added after initial configuration', async function () {
+      const firstSubmodule = createMockIdSubmodule('firstId', { id: { firstId: 'first' } });
+      const addedSubmodule = createMockIdSubmodule('addedId', { id: { addedId: 'added' } });
+      sinon.spy(firstSubmodule, 'getId');
+      sinon.spy(addedSubmodule, 'getId');
+      init(config);
+      setSubmoduleRegistry([firstSubmodule, addedSubmodule]);
+
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{ name: 'firstId' }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+
+      config.mergeConfig({
+        userSync: {
+          userIds: [{ name: 'addedId' }]
+        }
+      });
+
+      expect(await getGlobal().getUserIdsAsync()).to.deep.equal({
+        firstId: 'first',
+        addedId: 'added'
+      });
+      sinon.assert.calledOnce(firstSubmodule.getId);
+      sinon.assert.calledOnce(addedSubmodule.getId);
+    });
+
+    it('uses a stored ID when a submodule is added without autoRefresh', async function () {
+      const firstSubmodule = createMockIdSubmodule('firstId', { id: { firstId: 'first' } });
+      const addedSubmodule = createMockIdSubmodule('addedId', { id: { addedId: 'fetched' } });
+      sinon.spy(addedSubmodule, 'getId');
+      init(config);
+      setSubmoduleRegistry([firstSubmodule, addedSubmodule]);
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{ name: 'firstId' }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+
+      const expires = new Date(Date.now() + 10000).toUTCString();
+      coreStorage.setCookie('addedId', JSON.stringify({ addedId: 'stored' }), expires);
+      coreStorage.setCookie('addedId_cst', getConsentHash(), expires);
+      config.mergeConfig({
+        userSync: {
+          userIds: [{ name: 'addedId', storage: { name: 'addedId', type: 'cookie' } }]
+        }
+      });
+
+      expect(await getGlobal().getUserIdsAsync()).to.include({ addedId: 'stored' });
+      sinon.assert.notCalled(addedSubmodule.getId);
+      coreStorage.setCookie('addedId', '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('addedId_cst', '', EXPIRED_COOKIE_DATE);
+    });
+
     it('pbjs.getUserIds(Async) should prioritize user ids according to config available to core', () => {
       init(config);
 
@@ -3558,6 +3617,21 @@ describe('User ID', function () {
       const itemsWithRefreshIds = result.filter(item => item.refreshIds);
       const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
       expect(submoduleNames).to.deep.eql(['modified', 'new']);
+    });
+
+    it('should flag new submodules for initialization without autoRefresh', () => {
+      const existing = createMockIdSubmodule('existing', null);
+      const added = createMockIdSubmodule('added', null);
+      const result = generateSubmoduleContainers(
+        {},
+        [{ name: 'existing' }, { name: 'added' }],
+        [{ submodule: existing, config: { name: 'existing' } }],
+        [existing, added]
+      );
+
+      expect(result.find(item => item.submodule === existing).initializeIds).to.be.false;
+      expect(result.find(item => item.submodule === added).initializeIds).to.be.true;
+      expect(result.some(item => item.refreshIds)).to.be.false;
     });
   });
   describe('user id modules - enforceStorageType', () => {
