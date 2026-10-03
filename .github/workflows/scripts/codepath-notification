@@ -17,3 +17,4 @@ pubmatic : header-bidding@pubmatic.com
 openx : prebid@openx.com
 (modules|libraries)/medianet : prebid@media.net
 teads : tech-ssp-video@teads.tv
+adspiro : connect@adspiro.io
