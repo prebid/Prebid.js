@@ -273,7 +273,7 @@ export function handleVideoBidCaching({
     ignoreBidderCacheKey
   } = config.getConfig('cache') || {};
 
-  const shouldUseCache = (useLocal || cacheUrl) && (useCacheKey || context !== OUTSTREAM);
+  const shouldUseCache = videoMediaType?.cache !== false && (useLocal || cacheUrl) && (useCacheKey || context !== OUTSTREAM);
   const shouldStoreBid = !bidResponse.videoCacheKey || ignoreBidderCacheKey;
 
   if (shouldUseCache && shouldStoreBid) {

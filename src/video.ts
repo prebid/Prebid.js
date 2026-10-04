@@ -65,6 +65,11 @@ export type VideoContext = typeof INSTREAM | typeof OUTSTREAM;
 export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<ORTBImp['video']>, (typeof ORTB_PARAMS)[number][0]>> {
   context?: VideoContext;
   playerSize?: Size | Size[];
+  /**
+   * Set to false to skip Prebid Cache for this ad unit's video bids. When omitted,
+   * the global cache configuration and existing outstream rules apply.
+   */
+  cache?: boolean;
 }
 
 export function fillVideoDefaults(adUnit: AdUnitDefinition) {
