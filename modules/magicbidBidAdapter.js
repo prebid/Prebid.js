@@ -50,7 +50,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+    bidResponse(buildBidResponse, bid, context) {
     // Determine media type from mtype field (OpenRTB 2.6) or fall back to imp shape.
     let mediaType;
     if (bid.mtype) {
@@ -60,8 +60,18 @@ const converter = ortbConverter({
       mediaType = bid.ext.mediaType;
     }
     if (!mediaType && context.imp) {
-      if (context.imp.banner) mediaType = BANNER;
-      else if (context.imp.video) mediaType = VIDEO;
+      const hasVideo = Boolean(context.imp.video);
+      const hasBanner = Boolean(context.imp.banner);
+      if (hasVideo && hasBanner) {
+        // Ambiguous multiformat imp: infer from adm content to avoid misclassifying
+        // a VAST response as banner (which would render as broken markup).
+        const adm = bid.adm || '';
+        mediaType = adm.trim().startsWith('<VAST') ? VIDEO : BANNER;
+      } else if (hasBanner) {
+        mediaType = BANNER;
+      } else if (hasVideo) {
+        mediaType = VIDEO;
+      }
     }
     if (mediaType) context.mediaType = mediaType;
     return buildBidResponse(bid, context);
