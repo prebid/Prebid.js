@@ -50,7 +50,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-    bidResponse(buildBidResponse, bid, context) {
+      bidResponse(buildBidResponse, bid, context) {
     // Determine media type from mtype field (OpenRTB 2.6) or fall back to imp shape.
     let mediaType;
     if (bid.mtype) {
