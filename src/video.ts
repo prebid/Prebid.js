@@ -141,7 +141,7 @@ export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, v
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {};
-    if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
+    if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl && videoMediaType.cache !== false) {
       if (allowVastXmlOnly === true) {
         logWarn(`This bid contains only vastXml, and caching is disabled. Proceeding because cache.allowVastXmlOnly is enabled.`);
         return true;
