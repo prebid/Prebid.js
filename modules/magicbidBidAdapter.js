@@ -134,4 +134,101 @@ export const spec = {
   isBidRequestValid(bid) {
     const params = bid.params || {};
 
-    if (!validateStringParam(params, 'host'))
+    if (!validateStringParam(params, 'host')) return false;
+    if (!validateIntParam(params, 'adUnitId')) return false;
+
+    // If adUnitType is explicitly provided, validate it
+    if (params.adUnitType) {
+      const t = params.adUnitType.toLowerCase();
+      if (t !== BANNER && t !== VIDEO) {
+        logWarn('[MagicBid] adUnitType must be "banner" or "video", got: "' + params.adUnitType + '"');
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  // ─── 2. buildRequests ───────────────────────
+  /**
+   * Group valid bid requests by host and send one standard OpenRTB request
+   * per host to the /ortbhb endpoint.
+   */
+  buildRequests(validBidRequests, bidderRequest) {
+    // Group bids by publisher host (each host = one RTB endpoint)
+    const bidsByHost = validBidRequests.reduce((groups, bid) => {
+      const host = bid.params.host;
+      groups[host] = groups[host] || [];
+      groups[host].push(bid);
+      return groups;
+    }, {});
+
+    const enrichedBidderRequest = {
+      ...bidderRequest,
+      ortb2: {
+        ...bidderRequest.ortb2,
+        site: {
+          ...bidderRequest.ortb2?.site,
+          page: bidderRequest.ortb2?.site?.page || deepAccess(bidderRequest, 'refererInfo.page'),
+        },
+      },
+    };
+
+    return Object.entries(bidsByHost).map(([host, bids]) => ({
+      method: 'POST',
+      url: 'https://' + host + '/ortbhb',
+      data: converter.toORTB({ bidRequests: bids, bidderRequest: enrichedBidderRequest }),
+      options: {
+        // text/plain avoids a CORS preflight, reducing latency on the hot path.
+        contentType: 'text/plain',
+        withCredentials: true,
+      },
+    }));
+  },
+
+  // ─── 3. interpretResponse ───────────────────
+  interpretResponse(serverResponse, request) {
+    if (!serverResponse.body) {
+      logWarn('[MagicBid] Empty or missing response body');
+      return [];
+    }
+    return converter
+      .fromORTB({ response: serverResponse.body, request: request.data })
+      .bids.filter(isBidResponseValid);
+  },
+
+  // ─── 4. getUserSyncs ────────────────────────
+  getUserSyncs(syncOptions, serverResponses) {
+    const syncs = [];
+    if (!serverResponses || serverResponses.length === 0) return syncs;
+
+    serverResponses.forEach(function(response) {
+      const syncData = deepAccess(response, 'body.ext.userSyncs');
+      if (!Array.isArray(syncData)) return;
+
+      syncData.forEach(function(sync) {
+        if (sync.type === 'image' && syncOptions.pixelEnabled) {
+          syncs.push({ type: 'image', url: sync.url });
+        } else if (sync.type === 'iframe' && syncOptions.iframeEnabled) {
+          syncs.push({ type: 'iframe', url: sync.url });
+        }
+      });
+    });
+
+    return syncs;
+  },
+
+  // ─── 5. onBidWon ────────────────────────────
+  onBidWon(bid) {
+    if (bid.nurl) {
+      fetch(bid.nurl, { method: 'GET', keepalive: true }).catch(function() {});
+    }
+  },
+
+  // ─── 6. onTimeout ───────────────────────────
+  onTimeout(timeoutData) {
+    logWarn('[MagicBid] Bid timed out:', timeoutData);
+  },
+};
+
+registerBidder(spec);
