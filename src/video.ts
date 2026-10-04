@@ -65,6 +65,11 @@ export type VideoContext = typeof INSTREAM | typeof OUTSTREAM;
 export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<ORTBImp['video']>, (typeof ORTB_PARAMS)[number][0]>> {
   context?: VideoContext;
   playerSize?: Size | Size[];
+  /**
+   * Set to false to skip Prebid Cache for this ad unit's video bids. When omitted,
+   * the global cache configuration and existing outstream rules apply.
+   */
+  cache?: boolean;
 }
 
 export function fillVideoDefaults(adUnit: AdUnitDefinition) {
@@ -136,7 +141,7 @@ export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, v
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {};
-    if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
+    if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl && videoMediaType.cache !== false) {
       if (allowVastXmlOnly === true) {
         logWarn(`This bid contains only vastXml, and caching is disabled. Proceeding because cache.allowVastXmlOnly is enabled.`);
         return true;
