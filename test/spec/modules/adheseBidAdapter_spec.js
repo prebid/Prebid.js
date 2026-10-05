@@ -6,7 +6,7 @@ const BID_ID = 456;
 const TTL = 360;
 const NET_REVENUE = true;
 
-const minimalBid = function() {
+const minimalBid = function () {
   return {
     'bidId': BID_ID,
     'bidder': 'adhese',
@@ -18,7 +18,7 @@ const minimalBid = function() {
   };
 };
 
-const bidWithParams = function(data) {
+const bidWithParams = function (data) {
   const bid = minimalBid();
   bid.params.data = data;
   return bid;
@@ -212,7 +212,7 @@ describe('AdheseAdapter', function () {
             body: '<div style="background-color:red; height:250px; width:300px"></div>',
             tracker: 'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
             impressionCounter: 'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
-            extension: {'prebid': {'cpm': {'amount': '1.000000', 'currency': 'USD'}}, mediaType: 'banner'},
+            extension: { 'prebid': { 'cpm': { 'amount': '1.000000', 'currency': 'USD' } }, mediaType: 'banner' },
             adomain: [
               'www.example.com'
             ]
@@ -307,7 +307,7 @@ describe('AdheseAdapter', function () {
             width: '640',
             height: '350',
             cachedBodyUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
-            extension: {'prebid': {'cpm': {'amount': '2.1', 'currency': 'USD'}}, mediaType: 'video'}
+            extension: { 'prebid': { 'cpm': { 'amount': '2.1', 'currency': 'USD' } }, mediaType: 'video' }
           }
         ]
       };
