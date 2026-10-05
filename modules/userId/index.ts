@@ -1348,15 +1348,15 @@ export function init(config, { mkDelay = delay } = {}) {
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay;
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
-        updateSubmodules({ retainConfig, autoRefresh });
+        updateSubmodules({ retainConfig });
         unregisterEnforceStorageTypeRule?.();
         unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({ config }) => config), enforceStorageType));
         updateIdPriority(userSync.idPriority, submoduleRegistry);
-        initIdSystem({ ready: true });
         const submodulesToRefresh = submodules.filter(item => autoRefresh ? item.dirty : item.new);
         if (submodulesToRefresh.length) {
           initIdSystem({ refresh: true, forceNewModuleRefresh: false, submoduleNames: submodulesToRefresh.map(item => item.submodule.name) });
         }
+        initIdSystem({ ready: true });
       }
     }
   });
