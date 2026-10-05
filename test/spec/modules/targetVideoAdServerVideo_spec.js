@@ -176,4 +176,69 @@ describe('TargetVideo Ad Server Video', function() {
     getWinningBidsStub.restore();
     getAllTargetingDataStub.restore();
   });
+
+  it('should percent-encode cust_params keys and values so reserved characters cannot corrupt the request', () => {
+    const options = {
+      params: {
+        ...unitId,
+        cust_params: {
+          section: 'sports & news',
+          'weird=key': 'a=b'
+        }
+      }
+    };
+
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url = buildVideoUrl(Object.assign(options, { bid, adUnit }));
+
+    // the raw '&' and '=' in keys/values must be encoded, not split the query string
+    expect(url).to.include('cust_params=section%3Dsports%20%26%20news%26weird%3Dkey%3Da%3Db');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
+
+  it('should comma-join array cust_params values, matching the format GAM expects', () => {
+    const options = {
+      params: {
+        ...unitId,
+        cust_params: {
+          bidders_enabled: ['ix', 'rubicon']
+        }
+      }
+    };
+
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url = buildVideoUrl(Object.assign(options, { bid, adUnit }));
+
+    expect(url).to.include('cust_params=bidders_enabled%3Dix%2Crubicon');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
+
+  it('should encode cust_params merged into an existing iu URL', () => {
+    const options = {
+      params: {
+        iu: 'https://example.com/ads/bid?iu=/video&cust_params=page%3Dhome',
+        cust_params: {
+          section: 'sports & news'
+        }
+      }
+    };
+
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url = buildVideoUrl(Object.assign(options, { bid, adUnit }));
+
+    expect(url).to.include('cust_params=page%3Dhome%26section%3Dsports%20%26%20news');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
 });
