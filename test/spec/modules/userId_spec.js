@@ -664,6 +664,40 @@ describe('User ID', function () {
       coreStorage.setCookie('addedId_cst', '', EXPIRED_COOKIE_DATE);
     });
 
+    it('does not refresh submodules retained from an earlier config when a later config adds others', async function () {
+      const retainedSubmodule = createMockIdSubmodule('retainedId', { id: { retainedId: 'retained' } });
+      const addedSubmodule = createMockIdSubmodule('addedId', { id: { addedId: 'added' } });
+      sinon.spy(retainedSubmodule, 'getId');
+      sinon.spy(addedSubmodule, 'getId');
+      init(config);
+      setSubmoduleRegistry([retainedSubmodule, addedSubmodule]);
+
+      config.setConfig({
+        userSync: {
+          autoRefresh: true,
+          auctionDelay: 10,
+          userIds: [{ name: 'retainedId' }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+
+      // retainConfig defaults to true, so 'retainedId' is kept although this config does not list it
+      config.setConfig({
+        userSync: {
+          autoRefresh: true,
+          auctionDelay: 10,
+          userIds: [{ name: 'addedId' }]
+        }
+      });
+
+      expect(await getGlobal().getUserIdsAsync()).to.deep.equal({
+        retainedId: 'retained',
+        addedId: 'added'
+      });
+      sinon.assert.calledOnce(addedSubmodule.getId);
+      sinon.assert.calledOnce(retainedSubmodule.getId);
+    });
+
     it('pbjs.getUserIds(Async) should prioritize user ids according to config available to core', () => {
       init(config);
 
