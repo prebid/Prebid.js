@@ -18,7 +18,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'nativery';
-const BIDDER_ALIAS = ['nat'];
+const BIDDER_ALIAS = [{ code: 'nat', gvlid: 1133 }];
 const ENDPOINT = 'https://hb.nativery.com/openrtb2/auction';
 const EVENT_TRACKER_URL = 'https://hb.nativery.com/openrtb2/track-event';
 // Currently we log every event

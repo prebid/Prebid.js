@@ -114,6 +114,13 @@
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubsmart",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

@@ -1888,7 +1888,7 @@ describe('the rubicon adapter', function () {
             const data = new URLSearchParams(request.data);
 
             expect(typeof data).to.equal('object');
-            expect(data.get('tg_i.dfp_ad_unit_code')).to.but.null;
+            expect(data.get('tg_i.dfp_ad_unit_code')).to.be.null;
           });
 
           it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string and name is gam', function () {

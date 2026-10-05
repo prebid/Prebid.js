@@ -136,13 +136,13 @@ describe('Geoedge RTD module', function () {
         expect(loadExternalScriptCall.calledWithMatch(isClientUrl)).to.equal(true);
       });
       it('should carry the publisher outstream opt-in into the frame', function () {
-        loadClientInIframe(key, true);
+        loadClientInIframe(key, undefined, true);
         // insertElement prepends into <head>, so the newest frame is the FIRST match, not the last
         const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
         expect(grumi.outstream).to.equal(true);
       });
       it('should hand the frame a reference to this prebid instance when outstream is on', function () {
-        loadClientInIframe(key, true);
+        loadClientInIframe(key, undefined, true);
         const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
         expect(grumi.pbjs).to.equal(getGlobal());
       });
@@ -150,6 +150,11 @@ describe('Geoedge RTD module', function () {
         loadClientInIframe(key);
         const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
         expect(grumi.pbjs).to.equal(undefined);
+      });
+      it('should carry the publisher display opt-out into the frame', function () {
+        loadClientInIframe(key, false);
+        const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
+        expect(grumi.display).to.equal(false);
       });
     });
     describe('setWrapper', function () {
@@ -185,6 +190,16 @@ describe('Geoedge RTD module', function () {
         const bidFromB = mockBid('bidderB');
         geoedgeSubmodule.onBidResponseEvent(bidFromB, makeConfig(false));
         expect(bidFromB.ad.indexOf('<wrapper>')).to.equal(-1);
+      });
+      it('should not wrap a display bid when the publisher opted out of display', function () {
+        const bid = mockBid('bidderA');
+        geoedgeSubmodule.onBidResponseEvent(bid, { name: 'geoedge', params: { key, display: false } });
+        expect(bid.ad.indexOf('<wrapper>')).to.equal(-1);
+      });
+      it('should wrap a display bid when display is not configured, since the opt-out defaults to off', function () {
+        const bid = mockBid('bidderA');
+        geoedgeSubmodule.onBidResponseEvent(bid, { name: 'geoedge', params: { key } });
+        expect(bid.ad.indexOf('<wrapper>')).to.equal(0);
       });
       it('should only muatate the bid ad porperty', function () {
         const copy = Object.assign({}, bidFromA);
@@ -264,7 +279,7 @@ describe('Geoedge RTD module', function () {
       beforeEach(function () {
         document.querySelectorAll('#grumiFrame').forEach(el => el.remove());
         // establishes clientFrame; the adloader stub fires the load callback synchronously
-        loadClientInIframe(key, true);
+        loadClientInIframe(key, undefined, true);
         frame = document.querySelector('#grumiFrame');
         delete frame.contentWindow[OUTSTREAM_API];
         resetOutstreamGateStateForTesting();
@@ -488,7 +503,7 @@ describe('Geoedge RTD module', function () {
         beforeEach(function () {
           clock = sinon.useFakeTimers();
           // re-arm the deadline against the fake clock
-          loadClientInIframe(key, true);
+          loadClientInIframe(key, undefined, true);
           frame = document.querySelector('#grumiFrame');
           delete frame.contentWindow[OUTSTREAM_API];
           resetOutstreamGateStateForTesting();

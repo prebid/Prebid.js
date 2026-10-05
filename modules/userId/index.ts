@@ -528,27 +528,71 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     return allConsent.promise.finally(initMetrics.startTiming('userId.init.consent'));
   }
 
-  let done = cancelAndTry(
-    PbPromise.all([hooksReady, startInit.promise])
-      .then(timeConsent)
-      .then(checkRefs(() => {
-        initialized = true;
-        initSubmodules(initModules, allModules);
-      }))
-      .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
-      .then(checkRefs(() => {
-        const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
-        if (modWithCb.length) {
-          return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
-        }
-      }))
-  );
+  // Batches of submodule callbacks that have been discovered but have not finished.
+  // A filtered refresh cancels `done`, but the submodules it did not name may still
+  // be fetching, so its replacement chain waits for them rather than releasing the
+  // auction early. Tracked from discovery rather than from the moment they start,
+  // because with `auctionDelay` = 0 callbacks are held until after the auction ends.
+  const inFlight = new Set<ReturnType<typeof defer<void>>>();
+
+  function trackBatch() {
+    const batch = defer<void>();
+    inFlight.add(batch);
+    return {
+      batch,
+      settle: () => {
+        inFlight.delete(batch);
+        batch.resolve();
+      }
+    };
+  }
+
+  function pendingCallbacks() {
+    return inFlight.size
+      ? PbPromise.all(Array.from(inFlight, (batch) => batch.promise)).then(() => undefined)
+      : null;
+  }
+
+  // An unfiltered refresh replaces everything, including work that may never
+  // finish. Release the markers it supersedes, or a later filtered refresh would
+  // wait on a batch nothing is going to complete.
+  function supersedeAll(except) {
+    Array.from(inFlight).forEach((batch) => {
+      if (batch === except) return;
+      inFlight.delete(batch);
+      batch.resolve();
+    });
+  }
+
+  let settleInitial;
+
+  const initChain = PbPromise.all([hooksReady, startInit.promise])
+    .then(timeConsent)
+    .then(checkRefs(() => {
+      initialized = true;
+      initSubmodules(initModules, allModules);
+      if (initModules.submodules.some(item => isFn(item.callback))) {
+        settleInitial = trackBatch().settle;
+      }
+    }))
+    .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
+    .then(checkRefs(() => {
+      const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
+      if (modWithCb.length) {
+        return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
+      }
+    }));
+
+  // never let the marker outlive the chain that owns it
+  initChain.then(() => settleInitial?.(), () => settleInitial?.());
+
+  let done = cancelAndTry(initChain);
 
   /**
    * with `ready` = true, starts initialization; with `refresh` = true, reinitialize submodules (optionally
    * filtered by `submoduleNames`).
    */
-  return function ({ refresh = false, submoduleNames = null, ready = false } = {}) {
+  return function ({ refresh = false, submoduleNames = null, ready = false, forceNewModuleRefresh = true } = {}) {
     if (ready && !initStarted) {
       initStarted = true;
       startInit.resolve();
@@ -564,23 +608,41 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       }
     }
     if (refresh && initialized) {
+      // Captured before the refresh adds a batch of its own. An unfiltered refresh
+      // supersedes everything, so it keeps escaping a stuck initialization; a
+      // filtered one must not shorten the wait for what it left running.
+      // A filtered refresh waits for what it leaves running; an unfiltered one
+      // supersedes it, but only once the replacement is installed below.
+      const priorCallbacks = submoduleNames == null ? null : pendingCallbacks();
+      // Registered now, not when the chain gets there: a second refresh issued
+      // before this one has run must still see this batch as outstanding.
+      const refreshBatch = trackBatch();
+      const settleRefresh = refreshBatch.settle;
+      const chain = done
+        .catch(() => null)
+        .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
+        .then(checkRefs(() => {
+          const cbModules = initSubmodules(
+            initModules,
+            allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
+            true,
+            forceNewModuleRefresh
+          ).filter((sm) => {
+            return sm.callback != null;
+          });
+          if (cbModules.length) {
+            return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
+          }
+        }));
+      chain.then(settleRefresh, settleRefresh);
       done = cancelAndTry(
-        done
-          .catch(() => null)
-          .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
-          .then(checkRefs(() => {
-            const cbModules = initSubmodules(
-              initModules,
-              allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
-              true
-            ).filter((sm) => {
-              return sm.callback != null;
-            });
-            if (cbModules.length) {
-              return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
-            }
-          }))
+        priorCallbacks == null ? chain : PbPromise.all([priorCallbacks, chain]).then(() => undefined)
       );
+      if (submoduleNames == null) {
+        // After the swap, never before: releasing these first can fulfil the chain
+        // this refresh just replaced, and a caller can take it for the current one.
+        supersedeAll(refreshBatch.batch);
+      }
     }
     return done;
   };
@@ -856,8 +918,10 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, forc
 
     let refreshNeeded = false;
     if (typeof submodule.config.storage.refreshInSeconds === 'number') {
-      const storedDate = new Date(getStoredValue(submodule, 'last'));
-      refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
+      const lastUpdated = new Date(getStoredValue(submodule, 'last')).getTime();
+      // if we have no record of when this ID was last refreshed (e.g. it predates `refreshInSeconds`
+      // being configured), treat it the same as an overdue refresh rather than silently skipping it forever
+      refreshNeeded = isNaN(lastUpdated) || (Date.now() - lastUpdated > submodule.config.storage.refreshInSeconds * 1000);
     }
 
     if (!storedId || refreshNeeded || forceRefresh || consentChanged(submodule)) {
@@ -929,7 +993,7 @@ function hasOptedOut() {
   return false;
 }
 
-function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
+function initSubmodules(priorityMaps, submodules, forceRefresh = false, forceNewModuleRefresh = forceRefresh) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (hasOptedOut()) {
       priorityMaps.reset();
@@ -957,7 +1021,7 @@ function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
     const initialized = submodules.reduce((carry, submodule) => {
       return submoduleMetrics(submodule.submodule.name).measureTime('init', () => {
         try {
-          populateSubmoduleId(submodule, forceRefresh);
+          populateSubmoduleId(submodule, submodule.new ? forceNewModuleRefresh : forceRefresh);
           carry.push(submodule);
         } catch (e) {
           logError(`Error in userID module '${submodule.submodule.name}':`, e);
@@ -1091,25 +1155,27 @@ function updateEIDConfig(submodules) {
 }
 
 export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
-  const { autoRefresh, retainConfig } = options;
+  const { retainConfig } = options;
   return registry
     .reduce((acc, submodule) => {
       const { name, aliasName } = submodule;
       const matchesName = (query) => [name, aliasName].some(value => value?.toLowerCase() === query.toLowerCase());
       const submoduleConfig = configs.find((configItem) => matchesName(configItem.name));
+      const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
 
       if (!submoduleConfig) {
         if (!retainConfig) return acc;
-        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
-        return previousSubmodule ? [...acc, previousSubmodule] : acc;
+        return previousSubmodule ? [...acc, Object.assign(previousSubmodule, { dirty: false, new: false })] : acc;
       }
+
+      const newConfig = {
+        ...submoduleConfig,
+        name: submodule.name
+      };
 
       const newSubmoduleContainer: SubmoduleContainer<UserIdProvider> = {
         submodule,
-        config: {
-          ...submoduleConfig,
-          name: submodule.name
-        },
+        config: newConfig,
         callback: undefined,
         idObj: undefined,
         storageMgr: newStorageManager({
@@ -1118,13 +1184,10 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
           // since this manager is only using keys provided directly by the publisher,
           // turn off storageControl checks
           advertiseKeys: false,
-        })
+        }),
+        dirty: previousSubmodule == null || !deepEqual(newConfig, previousSubmodule.config),
+        new: previousSubmodule == null
       };
-
-      if (autoRefresh) {
-        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
-        newSubmoduleContainer.refreshIds = !previousSubmodule || !deepEqual(newSubmoduleContainer.config, previousSubmodule.config);
-      }
 
       return [...acc, newSubmoduleContainer];
     }, []);
@@ -1137,7 +1200,10 @@ type SubmoduleContainer<P extends UserIdProvider> = {
   callback?: ProviderResponse['callback'];
   idObj;
   storageMgr: StorageManager;
-  refreshIds?: boolean;
+  // true if this module was reconfigured (latest config is different from previous config)
+  dirty: boolean;
+  // true if this module was added (had no previous config)
+  new: boolean;
 };
 
 /**
@@ -1284,15 +1350,15 @@ export function init(config, { mkDelay = delay } = {}) {
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay;
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
-        updateSubmodules({ retainConfig, autoRefresh });
+        updateSubmodules({ retainConfig });
         unregisterEnforceStorageTypeRule?.();
         unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({ config }) => config), enforceStorageType));
         updateIdPriority(userSync.idPriority, submoduleRegistry);
-        initIdSystem({ ready: true });
-        const submodulesToRefresh = submodules.filter(item => item.refreshIds);
+        const submodulesToRefresh = submodules.filter(item => autoRefresh ? item.dirty : item.new);
         if (submodulesToRefresh.length) {
-          refreshUserIds({ submoduleNames: submodulesToRefresh.map(item => item.submodule.name) });
+          initIdSystem({ refresh: true, forceNewModuleRefresh: false, submoduleNames: submodulesToRefresh.map(item => item.submodule.name) });
         }
+        initIdSystem({ ready: true });
       }
     }
   });

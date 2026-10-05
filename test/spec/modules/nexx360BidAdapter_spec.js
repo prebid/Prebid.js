@@ -35,6 +35,34 @@ describe('Nexx360 bid adapter tests', () => {
     },
   };
 
+  describe('aliases gvlid mapping', () => {
+    // prismassp (Prisma Media) and scoremedia (Score Media Group) are white-label
+    // partners with their own GVL registrations, distinct from Nexx360's own
+    // GVL ID (965). Declaring the wrong gvlid on an alias makes Prebid's TCF
+    // consent/activity-control checks evaluate consent for the wrong vendor.
+    it('declares prismassp under Prisma Media\'s own GVL ID, not Nexx360\'s', () => {
+      const alias = spec.aliases.find((a) => a.code === 'prismassp');
+      expect(alias).to.exist;
+      expect(alias.gvlid).to.equal(1185);
+    });
+
+    it('declares scoremedia under Score Media Group\'s own GVL ID, not Nexx360\'s', () => {
+      const alias = spec.aliases.find((a) => a.code === 'scoremedia');
+      expect(alias).to.exist;
+      expect(alias.gvlid).to.equal(1090);
+    });
+
+    // stmbidder is the six-char-unique code for Stailamedia (bidstailamedia collides
+    // with bidstack on "bidsta"); both codes stay declared under Nexx360's GVL ID.
+    it('declares stmbidder alongside bidstailamedia under Nexx360\'s GVL ID', () => {
+      ['stmbidder', 'bidstailamedia'].forEach((code) => {
+        const alias = spec.aliases.find((a) => a.code === code);
+        expect(alias).to.exist;
+        expect(alias.gvlid).to.equal(965);
+      });
+    });
+  });
+
   describe('getGzipSetting', () => {
     let getParamStub;
     beforeEach(() => {
@@ -318,6 +346,12 @@ describe('Nexx360 bid adapter tests', () => {
           consentString: 'CPhdLUAPhdLUAAKAsAENCmCsAP_AAE7AAAqIJFNd_H__bW9r-f5_aft0eY1P9_r37uQzDhfNk-8F3L_W_LwX52E7NF36tq4KmR4ku1LBIUNlHMHUDUmwaokVryHsak2cpzNKJ7BEknMZOydYGF9vmxtj-QKY7_5_d3bx2D-t_9v239z3z81Xn3d53-_03LCdV5_9Dfn9fR_bc9KPt_58v8v8_____3_e__3_7997BIiAaADgAJYBnwEeAJXAXmAwQBj4DtgHcgPBAeKBIgAA.YAAAAAAAAAAA',
         }
       };
+      it('carries the bidderRequest on the request so interpretResponse can report the server auction', () => {
+        const displayBids = structuredClone(sampleBids);
+        displayBids[0].mediaTypes = { banner: { sizes: [[300, 250]] } };
+        const request = spec.buildRequests(displayBids, bidderRequest);
+        expect(request.bidderRequest).to.equal(bidderRequest);
+      });
       it('We perform a test with 2 display adunits', () => {
         const displayBids = structuredClone(sampleBids);
         displayBids[0].mediaTypes = {
@@ -543,6 +577,40 @@ describe('Nexx360 bid adapter tests', () => {
         ad: '<div>TestAd</div>',
       }];
       expect(output).to.eql(expectedOutput);
+    });
+
+    it('maps the ORTB dealid to the Prebid dealId', () => {
+      const response = {
+        body: {
+          id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
+          cur: 'EUR',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '4427551302944024629',
+                  impid: '226175918ebeda',
+                  price: 4.2,
+                  adomain: ['http://prebid.org'],
+                  crid: '98493581',
+                  dealid: 'deal-123',
+                  h: 250,
+                  w: 300,
+                  adm: '<div>TestAd</div>',
+                  ext: {
+                    mediaType: 'banner',
+                    ssp: 'smartadserver',
+                  },
+                },
+              ],
+              seat: 'smartadserver',
+            },
+          ],
+        },
+      };
+      const [bid] = spec.interpretResponse(response);
+      expect(bid.dealId).to.equal('deal-123');
+      expect(bid).to.not.have.property('dealid');
     });
 
     it('instream responses', () => {

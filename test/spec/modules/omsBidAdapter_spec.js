@@ -261,6 +261,125 @@ describe('omsBidAdapter', function () {
       expect(data.regs.us_privacy).to.equal(uspConsent);
     });
 
+    describe('gpp', function () {
+      const gppString = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
+      const refererInfo = {
+        page: 'http://example.com/page.html',
+        domain: 'example.com',
+      };
+
+      it('sends gpp and gpp_sid from gppConsent', function () {
+        const bidderRequest = {
+          gppConsent: {
+            gppString,
+            applicableSections: [7, 8]
+          },
+          refererInfo
+        };
+
+        const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+        expect(data.regs.gpp).to.equal(gppString);
+        expect(data.regs.gpp_sid).to.deep.equal([7, 8]);
+        expect(data.regs.ext).to.be.undefined;
+      });
+
+      it('sends gpp and gpp_sid from ortb2.regs when gppConsent is absent', function () {
+        const bidderRequest = {
+          ortb2: {
+            regs: {
+              gpp: gppString,
+              gpp_sid: [7]
+            }
+          },
+          refererInfo
+        };
+
+        const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+        expect(data.regs.gpp).to.equal(gppString);
+        expect(data.regs.gpp_sid).to.deep.equal([7]);
+      });
+
+      it('prefers gppConsent over ortb2.regs', function () {
+        const bidderRequest = {
+          gppConsent: {
+            gppString,
+            applicableSections: [8]
+          },
+          ortb2: {
+            regs: {
+              gpp: 'ortb2GppString',
+              gpp_sid: [7]
+            }
+          },
+          refererInfo
+        };
+
+        const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+        expect(data.regs.gpp).to.equal(gppString);
+        expect(data.regs.gpp_sid).to.deep.equal([8]);
+      });
+
+      it('sends empty gpp_sid when gpp string has no sections', function () {
+        const bidderRequest = {
+          ortb2: {
+            regs: {
+              gpp: gppString
+            }
+          },
+          refererInfo
+        };
+
+        const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+        expect(data.regs.gpp).to.equal(gppString);
+        expect(data.regs.gpp_sid).to.deep.equal([]);
+      });
+
+      it('does not send gpp_sid when gpp_sid is not an array', function () {
+        const bidderRequest = {
+          ortb2: {
+            regs: {
+              gpp: gppString,
+              gpp_sid: '7'
+            }
+          },
+          refererInfo
+        };
+
+        const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+        expect(data.regs.gpp).to.equal(gppString);
+        expect(data.regs.gpp_sid).to.be.undefined;
+      });
+
+      it('does not send gpp fields when gpp string is missing', function () {
+        const bidderRequest = {
+          gppConsent: {
+            applicableSections: [7]
+          },
+          ortb2: {
+            regs: {
+              gpp_sid: [7]
+            }
+          },
+          refererInfo
+        };
+
+        const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+        expect(data.regs).to.be.undefined;
+      });
+
+      it('does not send regs when no gpp data is present', function () {
+        const data = JSON.parse(spec.buildRequests(bidRequests, { refererInfo }).data);
+
+        expect(data.regs).to.be.undefined;
+      });
+    });
+
     it('sends coppa', function () {
       const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } }).data);
       expect(data.regs).to.not.be.undefined;

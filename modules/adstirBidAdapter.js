@@ -41,6 +41,7 @@ export const spec = {
           usp: (bidderRequest.uspConsent || '1---') !== '1---',
           eids: utils.deepAccess(r, 'userIdAsEids', []),
           schain: serializeSchain(utils.deepAccess(r, 'ortb2.source.ext.schain', null)),
+          floors: getBidFloor(r),
           pbVersion: '$prebid.version$',
         }),
       };
@@ -87,6 +88,29 @@ function serializeSchain(schain) {
 
 function encodeURIComponentForRFC3986(str) {
   return encodeURIComponent(str).replace(/[!'()*]/g, c => `%${c.charCodeAt(0).toString(16)}`);
+}
+
+function getBidFloor(bidRequest) {
+  if (!utils.isFn(bidRequest.getFloor)) {
+    return;
+  }
+  const floor = bidRequest.getFloor(
+    {
+      currency: 'JPY',
+      mediaType: BANNER,
+      size: '*',
+    }
+  );
+  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'JPY') {
+    return {
+      [BANNER]: {
+        '*': {
+          cur: floor.currency,
+          floor: Math.ceil(floor.floor * 1000),
+        },
+      },
+    };
+  }
 }
 
 registerBidder(spec);

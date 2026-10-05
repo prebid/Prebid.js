@@ -187,7 +187,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
           if (modules.hasOwnProperty(type)) {
             gvlid = modules[type];
             if (type !== moduleType) {
-              logWarn(`Multiple GVL IDs found for module '${moduleName}'; using the ${type} module's ID (${gvlid}) instead of the ${moduleType}'s ID (${modules[moduleType]})`);
+              logWarn(`Multiple GVL IDs found for module '${moduleName}'; using the ${type} module's ID (${String(gvlid)}) instead of the ${moduleType}'s ID (${String(modules[moduleType])})`);
             }
             break;
           }
