@@ -281,9 +281,9 @@ describe('adapexBidAdapter', function () {
         sandbox.restore();
       });
 
-      it('mints and persists an id under the Adapex storage key and sends it as user.ext.fpid', function () {
+      it('mints and persists an id under the Adapex storage key and sends it as user.ext.wlid', function () {
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
+        expect(data.user.ext.wlid).to.equal(STUBBED_UUID);
         expect(data.user.ext).to.not.have.property('floxisId');
         expect(stubs.setDataInLocalStorage.calledWith('adpx_uid', STUBBED_UUID)).to.be.true;
         expect(stubs.setCookie.calledWith('adpx_uid', STUBBED_UUID)).to.be.true;
@@ -293,21 +293,21 @@ describe('adapexBidAdapter', function () {
       it('reuses a valid id from localStorage', function () {
         stubs.getDataFromLocalStorage.withArgs('adpx_uid').returns(STORED_UUID);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.fpid).to.equal(STORED_UUID);
+        expect(data.user.ext.wlid).to.equal(STORED_UUID);
         expect(stubs.generateUUID.called).to.be.false;
       });
 
       it('falls back to the cookie', function () {
         stubs.getCookie.withArgs('adpx_uid').returns(STORED_UUID);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.fpid).to.equal(STORED_UUID);
+        expect(data.user.ext.wlid).to.equal(STORED_UUID);
         expect(stubs.generateUUID.called).to.be.false;
       });
 
       it('uses the cookie alone when localStorage is disabled', function () {
         stubs.localStorageIsEnabled.returns(false);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
+        expect(data.user.ext.wlid).to.equal(STUBBED_UUID);
         expect(stubs.setDataInLocalStorage.called).to.be.false;
         expect(stubs.setCookie.calledWith('adpx_uid', STUBBED_UUID)).to.be.true;
       });
@@ -316,14 +316,14 @@ describe('adapexBidAdapter', function () {
         stubs.getDataFromLocalStorage.returns('not-a-uuid');
         stubs.getCookie.returns('also-not-a-uuid');
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
+        expect(data.user.ext.wlid).to.equal(STUBBED_UUID);
       });
 
       it('sends no id when storage is disallowed', function () {
         stubs.localStorageIsEnabled.returns(false);
         stubs.cookiesAreEnabled.returns(false);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user?.ext?.fpid).to.be.undefined;
+        expect(data.user?.ext?.wlid).to.be.undefined;
         expect(stubs.setCookie.called).to.be.false;
       });
 
@@ -331,40 +331,40 @@ describe('adapexBidAdapter', function () {
         stubs.setDataInLocalStorage.callsFake(() => {});
         stubs.setCookie.callsFake(() => {});
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user?.ext?.fpid).to.be.undefined;
+        expect(data.user?.ext?.wlid).to.be.undefined;
       });
 
       it('sends no id when a storage accessor throws', function () {
         stubs.getDataFromLocalStorage.throws(new Error('storage access error'));
         let data;
         expect(() => { data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data; }).to.not.throw();
-        expect(data.user?.ext?.fpid).to.be.undefined;
+        expect(data.user?.ext?.wlid).to.be.undefined;
       });
 
-      it('keeps an existing user.ext.fpid', function () {
-        const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: { fpid: STORED_UUID } } } };
+      it('keeps an existing user.ext.wlid', function () {
+        const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: { wlid: STORED_UUID } } } };
         const data = spec.buildRequests([validBannerBid], req)[0].data;
-        expect(data.user.ext.fpid).to.equal(STORED_UUID);
+        expect(data.user.ext.wlid).to.equal(STORED_UUID);
         expect(stubs.localStorageIsEnabled.called).to.be.false;
       });
 
-      it('still sends fpid when publisher ortb2 carries a floxisId', function () {
+      it('still sends wlid when publisher ortb2 carries a floxisId', function () {
         const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: { floxisId: STORED_UUID } } } };
         const data = spec.buildRequests([validBannerBid], req)[0].data;
-        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
+        expect(data.user.ext.wlid).to.equal(STUBBED_UUID);
       });
 
       it('repairs a non-object user.ext', function () {
         const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: null } } };
         const data = spec.buildRequests([validBannerBid], req)[0].data;
-        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
+        expect(data.user.ext.wlid).to.equal(STUBBED_UUID);
       });
 
       it('resolves the id once per auction across seat groups', function () {
         const seat2 = { ...validBannerBid, bidId: 'bid-9', params: { seat: 'Seat2' } };
         const requests = spec.buildRequests([validBannerBid, seat2], idBidderRequest);
         expect(requests).to.have.lengthOf(2);
-        requests.forEach((r) => expect(r.data.user.ext.fpid).to.equal(STUBBED_UUID));
+        requests.forEach((r) => expect(r.data.user.ext.wlid).to.equal(STUBBED_UUID));
         expect(stubs.localStorageIsEnabled.calledOnce).to.be.true;
       });
     });

@@ -88,7 +88,7 @@ Requests are sent to `https://hb.adapex.io/pbjs?seat=<seat>`; one request is mad
 Floor values from the Prebid.js [Floors Module](https://docs.prebid.org/dev-docs/modules/floors.html) are sent as `imp.bidfloor` and `imp.bidfloorcur`. Without the Floors module in the build, the static `params.bidFloor` (with optional `params.bidFloorCur`) is used instead.
 
 ## First-Party Fallback Id
-In browsers that block third-party cookies (Safari, Firefox), the adapter keeps a random v4 UUID in the publisher's own origin (`localStorage` key and cookie `adpx_uid`, ~30-day cookie) and sends it at `user.ext.fpid`. It is per-publisher, never shared across sites, and only a fallback: the exchange's own cookie takes precedence when present. Storage access goes through Prebid.js core's `storageManager` (`deviceAccess`, GDPR purpose 1 under vendor id 1609), and bidder-level storage must be granted explicitly; without it no id is generated:
+In browsers that block third-party cookies (Safari, Firefox), the adapter keeps a random v4 UUID in the publisher's own origin (`localStorage` key and cookie `adpx_uid`, ~30-day cookie) and sends it at `user.ext.wlid`. It is per-publisher, never shared across sites, and only a fallback: the exchange's own cookie takes precedence when present. Storage access goes through Prebid.js core's `storageManager` (`deviceAccess`, GDPR purpose 1 under vendor id 1609), and bidder-level storage must be granted explicitly; without it no id is generated:
 ```javascript
 pbjs.bidderSettings = {
   adapex: {
