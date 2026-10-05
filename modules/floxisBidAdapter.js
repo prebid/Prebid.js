@@ -18,6 +18,7 @@ export const spec = createFloxisSpec({
   gvlid: GVLID,
   storage,
   storageKey: 'flx_uid',
+  fallbackIdField: 'floxisId',
   resolveRoute: (params) => ({
     region: params.region || DEFAULT_REGION,
     partner: params.partner || BIDDER_CODE
@@ -32,7 +33,9 @@ export const spec = createFloxisSpec({
   // Cookie-sync host is Floxis-operated and region-scoped (px-<region>.floxis.tech), independent of
   // the partner subdomain used for bidding. The trackers /sync endpoint resolves seat -> supply partner.
   getSyncOrigin: (region) => (isValidHostLabel(region) ? `https://px-${region}.floxis.tech` : null),
-  telemetryOrigin: TELEMETRY_ORIGIN
+  telemetryOrigin: TELEMETRY_ORIGIN,
+  // Fallback when the response body carries no ext.sync: the server echoes seat + region in this header.
+  syncHeader: 'x-floxis-sync'
 });
 
 registerBidder(spec);

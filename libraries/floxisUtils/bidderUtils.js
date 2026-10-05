@@ -10,11 +10,6 @@ const TELEMETRY_PATH = '/event';
 const ID_COOKIE_EXP = 2592000000; // 30 days
 const UUID_LENGTH = 36;
 
-// Server-echo user-sync: the /pbjs response carries seat + region in this header (on bid and no-bid
-// alike), so getUserSyncs derives sync targets from serverResponses statelessly — no module state that
-// could leak across concurrent auctions. Absent header (older backend) => no sync, a safe no-op.
-const SYNC_HEADER = 'x-floxis-sync';
-
 // partner/region are interpolated into the request host, so they must be valid DNS labels —
 // otherwise a value with URL delimiters (e.g. 'evil.com/x?') would change the request origin.
 const HOST_LABEL_REGEX = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
@@ -56,7 +51,9 @@ function parseSyncHeader(headerValue) {
 
 // Builds a bidder spec for the Floxis exchange's /pbjs contract; branded modules supply hosts, storage and ids.
 export function createFloxisSpec(config) {
-  const { code, gvlid, storage, storageKey, resolveRoute, getBidHost, getSyncOrigin, telemetryOrigin, pinSyncOrigin } = config;
+  const {
+    code, gvlid, storage, storageKey, fallbackIdField, resolveRoute, getBidHost, getSyncOrigin, telemetryOrigin, pinSyncOrigin, syncHeader
+  } = config;
 
   function normalizeBidParams(params = {}) {
     return { seat: params.seat, ...resolveRoute(params) };
@@ -198,12 +195,11 @@ export function createFloxisSpec(config) {
           }
         }
       });
-      // user.ext.floxisId is the exchange's field name for the fallback id, whichever adapter sends it.
-      if (!req.user?.ext?.floxisId) {
-        const floxisId = context.resolveFallbackId();
-        if (floxisId) {
+      if (!req.user?.ext?.[fallbackIdField]) {
+        const fallbackId = context.resolveFallbackId();
+        if (fallbackId) {
           // mergeDeep, not deepSetValue: it repairs a non-object user/user.ext, which publisher ortb2 can supply
-          mergeDeep(req, { user: { ext: { floxisId } } });
+          mergeDeep(req, { user: { ext: { [fallbackIdField]: fallbackId } } });
         }
       }
       return req;
@@ -300,7 +296,8 @@ export function createFloxisSpec(config) {
           }
           // body carried no entry of an enabled sync type — fall through to the header path below
         }
-        const target = parseSyncHeader(serverResponse?.headers?.get?.(SYNC_HEADER));
+        if (!syncHeader) return;
+        const target = parseSyncHeader(serverResponse?.headers?.get?.(syncHeader));
         if (!target) return;
         const { seat, region } = target;
         const host = getSyncOrigin(region);

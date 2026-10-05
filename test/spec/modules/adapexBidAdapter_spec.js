@@ -281,9 +281,10 @@ describe('adapexBidAdapter', function () {
         sandbox.restore();
       });
 
-      it('mints and persists an id under the Adapex storage key', function () {
+      it('mints and persists an id under the Adapex storage key and sends it as user.ext.fpid', function () {
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
+        expect(data.user.ext).to.not.have.property('floxisId');
         expect(stubs.setDataInLocalStorage.calledWith('adpx_uid', STUBBED_UUID)).to.be.true;
         expect(stubs.setCookie.calledWith('adpx_uid', STUBBED_UUID)).to.be.true;
         expect(stubs.setDataInLocalStorage.calledWith('flx_uid')).to.be.false;
@@ -292,21 +293,21 @@ describe('adapexBidAdapter', function () {
       it('reuses a valid id from localStorage', function () {
         stubs.getDataFromLocalStorage.withArgs('adpx_uid').returns(STORED_UUID);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(data.user.ext.fpid).to.equal(STORED_UUID);
         expect(stubs.generateUUID.called).to.be.false;
       });
 
       it('falls back to the cookie', function () {
         stubs.getCookie.withArgs('adpx_uid').returns(STORED_UUID);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(data.user.ext.fpid).to.equal(STORED_UUID);
         expect(stubs.generateUUID.called).to.be.false;
       });
 
       it('uses the cookie alone when localStorage is disabled', function () {
         stubs.localStorageIsEnabled.returns(false);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
         expect(stubs.setDataInLocalStorage.called).to.be.false;
         expect(stubs.setCookie.calledWith('adpx_uid', STUBBED_UUID)).to.be.true;
       });
@@ -315,14 +316,14 @@ describe('adapexBidAdapter', function () {
         stubs.getDataFromLocalStorage.returns('not-a-uuid');
         stubs.getCookie.returns('also-not-a-uuid');
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
       });
 
       it('sends no id when storage is disallowed', function () {
         stubs.localStorageIsEnabled.returns(false);
         stubs.cookiesAreEnabled.returns(false);
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user?.ext?.floxisId).to.be.undefined;
+        expect(data.user?.ext?.fpid).to.be.undefined;
         expect(stubs.setCookie.called).to.be.false;
       });
 
@@ -330,34 +331,40 @@ describe('adapexBidAdapter', function () {
         stubs.setDataInLocalStorage.callsFake(() => {});
         stubs.setCookie.callsFake(() => {});
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
-        expect(data.user?.ext?.floxisId).to.be.undefined;
+        expect(data.user?.ext?.fpid).to.be.undefined;
       });
 
       it('sends no id when a storage accessor throws', function () {
         stubs.getDataFromLocalStorage.throws(new Error('storage access error'));
         let data;
         expect(() => { data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data; }).to.not.throw();
-        expect(data.user?.ext?.floxisId).to.be.undefined;
+        expect(data.user?.ext?.fpid).to.be.undefined;
       });
 
-      it('keeps an existing user.ext.floxisId', function () {
+      it('keeps an existing user.ext.fpid', function () {
+        const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: { fpid: STORED_UUID } } } };
+        const data = spec.buildRequests([validBannerBid], req)[0].data;
+        expect(data.user.ext.fpid).to.equal(STORED_UUID);
+        expect(stubs.localStorageIsEnabled.called).to.be.false;
+      });
+
+      it('still sends fpid when publisher ortb2 carries a floxisId', function () {
         const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: { floxisId: STORED_UUID } } } };
         const data = spec.buildRequests([validBannerBid], req)[0].data;
-        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
-        expect(stubs.localStorageIsEnabled.called).to.be.false;
+        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
       });
 
       it('repairs a non-object user.ext', function () {
         const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: null } } };
         const data = spec.buildRequests([validBannerBid], req)[0].data;
-        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(data.user.ext.fpid).to.equal(STUBBED_UUID);
       });
 
       it('resolves the id once per auction across seat groups', function () {
         const seat2 = { ...validBannerBid, bidId: 'bid-9', params: { seat: 'Seat2' } };
         const requests = spec.buildRequests([validBannerBid, seat2], idBidderRequest);
         expect(requests).to.have.lengthOf(2);
-        requests.forEach((r) => expect(r.data.user.ext.floxisId).to.equal(STUBBED_UUID));
+        requests.forEach((r) => expect(r.data.user.ext.fpid).to.equal(STUBBED_UUID));
         expect(stubs.localStorageIsEnabled.calledOnce).to.be.true;
       });
     });
@@ -421,63 +428,75 @@ describe('adapexBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    function response({ header = null, sync } = {}) {
+    const SERVER_IFRAME = 'https://px-us-e.floxis.tech/sync?seat=Gmtb&gdpr=1&type=iframe';
+    const SERVER_IMAGE = 'https://px-us-e.floxis.tech/sync?seat=Gmtb&gdpr=1&type=image';
+    const BOTH = [{ type: 'iframe', url: SERVER_IFRAME }, { type: 'image', url: SERVER_IMAGE }];
+    let headerReads;
+
+    beforeEach(function () {
+      headerReads = 0;
+    });
+
+    function response({ sync, header = 'seat=Other&region=us-e' } = {}) {
       return {
         body: sync ? { id: 'r', seatbid: [], ext: { sync } } : '',
-        headers: { get: (name) => (name === 'x-floxis-sync' ? header : null) }
+        headers: { get: () => { headerReads++; return header; } }
       };
     }
-    const HEADER = 'seat=Gmtb&region=us-e';
 
     it('returns nothing when no sync type is enabled or there are no responses', function () {
-      expect(spec.getUserSyncs({}, [response({ header: HEADER })])).to.be.empty;
+      expect(spec.getUserSyncs({}, [response({ sync: BOTH })])).to.be.empty;
       expect(spec.getUserSyncs({ iframeEnabled: true }, [])).to.be.empty;
       expect(spec.getUserSyncs({ iframeEnabled: true }, undefined)).to.be.empty;
     });
 
-    it('builds an iframe sync to sync.adapex.io from the header', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ header: HEADER })]);
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb' }]);
+    it('serves the server-baked iframe sync from sync.adapex.io, keeping path and query', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ sync: BOTH })]);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=iframe' }]);
     });
 
-    it('builds an image sync when only pixels are enabled', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [response({ header: HEADER })]);
-      expect(syncs).to.deep.equal([{ type: 'image', url: 'https://sync.adapex.io/sync?seat=Gmtb' }]);
+    it('picks the image entry when only pixels are enabled', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [response({ sync: BOTH })]);
+      expect(syncs).to.deep.equal([{ type: 'image', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=image' }]);
     });
 
-    it('keeps sync.adapex.io whatever region the server echoes', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [response({ header: 'seat=Gmtb&region=apac-sin' })]);
-      expect(syncs[0].url).to.equal('https://sync.adapex.io/sync?seat=Gmtb');
+    it('falls back to any enabled entry when the preferred type is absent', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ sync: [{ type: 'image', url: SERVER_IMAGE }] })]);
+      expect(syncs).to.deep.equal([{ type: 'image', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=image' }]);
     });
 
-    it('appends consent params to a header sync', function () {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        [response({ header: HEADER })],
-        { gdprApplies: true, consentString: 'CONSENT123' },
-        '1YNN',
-        { gppString: 'GPPSTR', applicableSections: [7, 8] }
-      );
-      expect(syncs[0].url).to.equal('https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&gdpr_consent=CONSENT123&us_privacy=1YNN&gpp=GPPSTR&gpp_sid=7%2C8');
+    it('leaves an already-Adapex URL unchanged', function () {
+      const url = 'https://sync.adapex.io/sync?seat=Gmtb';
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync: [{ type: 'iframe', url }] })])[0].url).to.equal(url);
     });
 
-    it('omits gdpr when gdprApplies is not boolean, and gpp without sections', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [response({ header: HEADER })], { consentString: 'TC' }, '', { gppString: 'G', applicableSections: [] });
-      expect(syncs[0].url).to.equal('https://sync.adapex.io/sync?seat=Gmtb&gdpr_consent=TC');
+    it('never reads the sync header: a no-bid without body sync emits nothing', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [response(), { body: '' }])).to.be.empty;
+      expect(headerReads).to.equal(0);
     });
 
-    it('ignores an absent or malformed header', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [response()])).to.be.empty;
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ header: 'seat=Gmtb&region=evil.com/x' })])).to.be.empty;
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ header: 'region=us-e' })])).to.be.empty;
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: '' }])).to.be.empty;
+    it('emits nothing for a disabled-type, empty or unusable body entry', function () {
+      [
+        [{ type: 'image', url: SERVER_IMAGE }],
+        [],
+        [{ type: 'iframe', url: 'not a url' }],
+        [null, { type: 'iframe', url: '' }]
+      ].forEach((sync) => {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync })])).to.be.empty;
+      });
+      expect(headerReads).to.equal(0);
     });
 
-    it('emits one sync per seat and dedupes repeats', function () {
+    it('syncs on a no-bid that carries ext.sync', function () {
+      const noBid = { body: { id: 'r', seatbid: [], cur: 'USD', ext: { sync: BOTH } } };
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [noBid])).to.have.lengthOf(1);
+    });
+
+    it('emits one sync per seat and dedupes URLs that rewrite to the same Adapex URL', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [
-        response({ header: HEADER }),
-        response({ header: 'seat=Seat2&region=us-e' }),
-        response({ header: HEADER })
+        response({ sync: [{ type: 'iframe', url: 'https://px-us-e.floxis.tech/sync?seat=Gmtb' }] }),
+        response({ sync: [{ type: 'iframe', url: 'https://px-eu.floxis.tech/sync?seat=Gmtb' }] }),
+        response({ sync: [{ type: 'iframe', url: 'https://px-us-e.floxis.tech/sync?seat=Seat2' }] })
       ]);
       expect(syncs.map((s) => s.url)).to.deep.equal([
         'https://sync.adapex.io/sync?seat=Gmtb',
@@ -485,69 +504,9 @@ describe('adapexBidAdapter', function () {
       ]);
     });
 
-    describe('body.ext.sync', function () {
-      const SERVER_IFRAME = 'https://px-us-e.floxis.tech/sync?seat=Gmtb&gdpr=1&type=iframe';
-      const SERVER_IMAGE = 'https://px-us-e.floxis.tech/sync?seat=Gmtb&gdpr=1&type=image';
-
-      it('serves the server-baked sync from sync.adapex.io, keeping path and query', function () {
-        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [response({ sync: [{ type: 'iframe', url: SERVER_IFRAME }, { type: 'image', url: SERVER_IMAGE }] })]);
-        expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=iframe' }]);
-      });
-
-      it('picks the image entry when only pixels are enabled', function () {
-        const syncs = spec.getUserSyncs({ pixelEnabled: true }, [response({ sync: [{ type: 'iframe', url: SERVER_IFRAME }, { type: 'image', url: SERVER_IMAGE }] })]);
-        expect(syncs).to.deep.equal([{ type: 'image', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=image' }]);
-      });
-
-      it('falls back to any enabled entry when the preferred type is absent', function () {
-        const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ sync: [{ type: 'image', url: SERVER_IMAGE }] })]);
-        expect(syncs).to.deep.equal([{ type: 'image', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=image' }]);
-      });
-
-      it('leaves an already-Adapex URL unchanged', function () {
-        const url = 'https://sync.adapex.io/sync?seat=Gmtb';
-        expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync: [{ type: 'iframe', url }] })])[0].url).to.equal(url);
-      });
-
-      it('prefers the body over the header', function () {
-        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [response({ header: 'seat=Other&region=us-e', sync: [{ type: 'iframe', url: SERVER_IFRAME }] })]);
-        expect(syncs).to.have.lengthOf(1);
-        expect(syncs[0].url).to.include('seat=Gmtb');
-      });
-
-      it('falls through to the header for a disabled-type, empty or unparseable body entry', function () {
-        [
-          [{ type: 'image', url: SERVER_IMAGE }],
-          [],
-          [{ type: 'iframe', url: 'not a url' }],
-          [null, { type: 'iframe', url: '' }]
-        ].forEach((sync) => {
-          const syncs = spec.getUserSyncs({ iframeEnabled: true }, [response({ header: HEADER, sync })]);
-          expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb' }]);
-        });
-      });
-
-      it('emits nothing for an unusable body entry and no header', function () {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync: [{ type: 'iframe', url: 'not a url' }] })])).to.be.empty;
-      });
-
-      it('dedupes body syncs that rewrite to the same URL, and a header sync of the same URL', function () {
-        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [
-          response({ sync: [{ type: 'iframe', url: 'https://px-us-e.floxis.tech/sync?seat=Gmtb' }] }),
-          response({ sync: [{ type: 'iframe', url: 'https://px-eu.floxis.tech/sync?seat=Gmtb' }] }),
-          response({ header: HEADER })
-        ]);
-        expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb' }]);
-      });
-
-      it('never emits a floxis.tech sync', function () {
-        const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [
-          response({ sync: [{ type: 'iframe', url: SERVER_IFRAME }] }),
-          response({ header: 'seat=Seat2&region=eu' })
-        ]);
-        expect(syncs).to.have.lengthOf(2);
-        syncs.forEach((s) => expect(s.url).to.not.include('floxis'));
-      });
+    it('never emits a floxis.tech sync', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ sync: BOTH })]);
+      syncs.forEach((s) => expect(s.url).to.not.include('floxis'));
     });
   });
 

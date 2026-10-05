@@ -14,6 +14,7 @@ export const spec = createFloxisSpec({
   gvlid: GVLID,
   storage,
   storageKey: 'adpx_uid',
+  fallbackIdField: 'fpid',
   // Single-region deployment: routing params are not accepted, so every seat shares one host.
   resolveRoute: () => ({ region: 'us-e', partner: BIDDER_CODE }),
   getBidHost: () => BID_HOST,
