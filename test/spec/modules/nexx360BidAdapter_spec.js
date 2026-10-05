@@ -579,6 +579,40 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.eql(expectedOutput);
     });
 
+    it('maps the ORTB dealid to the Prebid dealId', () => {
+      const response = {
+        body: {
+          id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
+          cur: 'EUR',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '4427551302944024629',
+                  impid: '226175918ebeda',
+                  price: 4.2,
+                  adomain: ['http://prebid.org'],
+                  crid: '98493581',
+                  dealid: 'deal-123',
+                  h: 250,
+                  w: 300,
+                  adm: '<div>TestAd</div>',
+                  ext: {
+                    mediaType: 'banner',
+                    ssp: 'smartadserver',
+                  },
+                },
+              ],
+              seat: 'smartadserver',
+            },
+          ],
+        },
+      };
+      const [bid] = spec.interpretResponse(response);
+      expect(bid.dealId).to.equal('deal-123');
+      expect(bid).to.not.have.property('dealid');
+    });
+
     it('instream responses', () => {
       const response = {
         body: {

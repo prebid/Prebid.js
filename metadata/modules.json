@@ -2306,6 +2306,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "ezoic",
+      "aliasOf": null,
+      "gvlid": 347,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "freedomadnetwork",
       "aliasOf": null,
       "gvlid": null,
@@ -5164,7 +5171,7 @@
       "componentType": "bidder",
       "componentName": "vdoai",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1561,
       "disclosureURL": null
     },
     {

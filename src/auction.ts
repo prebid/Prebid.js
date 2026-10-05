@@ -829,7 +829,7 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   if (allowTopWindowRenderers) {
     if (renderer) {
       // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null, requiresVastUrl: renderer.requiresVastUrl });// rename options to config, to make it consistent?
       bid.renderer.setRender(renderer.render);
     }
   } else {

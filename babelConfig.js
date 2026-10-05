@@ -12,12 +12,15 @@ module.exports = function (options = {}) {
 
   return {
     'presets': [
-      useLocal('@babel/preset-typescript'),
+      [
+        useLocal('@babel/preset-typescript'),
+        {
+          'onlyRemoveTypeImports': false,
+        }
+      ],
       [
         useLocal('@babel/preset-env'),
         {
-          'useBuiltIns': 'entry',
-          'corejs': '3.42.0',
           'modules': false,
         }
       ]
