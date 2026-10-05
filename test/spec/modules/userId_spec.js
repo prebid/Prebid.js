@@ -2859,6 +2859,45 @@ describe('User ID', function () {
           });
         });
       });
+
+      it('passes the latest IDs of submodules retained from an earlier config', async function () {
+        let completeCallback, callbackStarted;
+        const started = new Promise((resolve) => { callbackStarted = resolve; });
+        const retainedSubmodule = {
+          ...createMockIdSubmodule('retainedId'),
+          getId() {
+            return {
+              callback(done) {
+                completeCallback = done;
+                callbackStarted();
+              }
+            };
+          },
+          onDataDeletionRequest: sinon.stub()
+        };
+        init(config);
+        setSubmoduleRegistry([retainedSubmodule, createMockIdSubmodule('addedId', { id: { addedId: 'added' } })]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{ name: 'retainedId' }]
+          }
+        });
+        await started;
+
+        // retainConfig defaults to true, so 'retainedId' is kept while its callback is still pending
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{ name: 'addedId' }]
+          }
+        });
+        completeCallback({ retainedId: 'retained' });
+        expect(await getGlobal().getUserIdsAsync()).to.include({ retainedId: 'retained' });
+
+        requestDataDeletion(sinon.stub());
+        sinon.assert.calledWith(retainedSubmodule.onDataDeletionRequest, sinon.match({ name: 'retainedId' }), { retainedId: 'retained' });
+      });
     });
   });
 
