@@ -3598,6 +3598,8 @@ describe('User ID', function () {
       const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[0].new).to.be.true;
+      expect(result[0].dirty).to.be.true;
     });
 
     it('should properly map registry to submodule containers for non-empty previous submodule containers', () => {
@@ -3614,6 +3616,8 @@ describe('User ID', function () {
       const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[0].new).to.be.true;
+      expect(result[0].dirty).to.be.true;
     });
 
     it('should properly map registry to submodule containers for retainConfig flag', () => {
@@ -3628,10 +3632,14 @@ describe('User ID', function () {
       const result = generateSubmoduleContainers({ retainConfig: true }, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(2);
       expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[0].new).to.be.true;
+      expect(result[0].dirty).to.be.true;
       expect(result[1].submodule.name).to.eql('shouldBeKept');
+      expect(result[1].new).to.be.false;
+      expect(result[1].dirty).to.be.false;
     });
 
-    it('should properly map registry to submodule containers for autoRefresh flag', () => {
+    it('should mark modules whose configuration has changed', () => {
       const previousSubmoduleContainers = [
         { submodule: { name: 'modified' }, config: { name: 'modified', auctionDelay: 300 } },
         { submodule: { name: 'unchanged' }, config: { name: 'unchanged', auctionDelay: 300 } },
@@ -3646,26 +3654,22 @@ describe('User ID', function () {
         { name: 'new' },
         { name: 'unchanged', auctionDelay: 300 },
       ];
-      const result = generateSubmoduleContainers({ autoRefresh: true }, configRegistry, previousSubmoduleContainers, submoduleRegistry);
-      expect(result).to.have.lengthOf(3);
-      const itemsWithRefreshIds = result.filter(item => item.refreshIds);
-      const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
-      expect(submoduleNames).to.deep.eql(['modified', 'new']);
-    });
-
-    it('should flag new submodules for initialization without autoRefresh', () => {
-      const existing = createMockIdSubmodule('existing', null);
-      const added = createMockIdSubmodule('added', null);
-      const result = generateSubmoduleContainers(
-        {},
-        [{ name: 'existing' }, { name: 'added' }],
-        [{ submodule: existing, config: { name: 'existing' } }],
-        [existing, added]
+      const result = Object.fromEntries(
+        generateSubmoduleContainers({ autoRefresh: true }, configRegistry, previousSubmoduleContainers, submoduleRegistry)
+          .map(item => [item.submodule.name, item])
       );
-
-      expect(result.find(item => item.submodule === existing).initializeIds).to.be.false;
-      expect(result.find(item => item.submodule === added).initializeIds).to.be.true;
-      expect(result.some(item => item.refreshIds)).to.be.false;
+      sinon.assert.match(result.modified, {
+        dirty: true,
+        new: false,
+      });
+      sinon.assert.match(result.new, {
+        new: true,
+        dirty: true,
+      });
+      sinon.assert.match(result.unchanged, {
+        dirty: false,
+        new: false,
+      });
     });
   });
   describe('user id modules - enforceStorageType', () => {

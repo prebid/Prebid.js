@@ -592,7 +592,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
    * with `ready` = true, starts initialization; with `refresh` = true, reinitialize submodules (optionally
    * filtered by `submoduleNames`).
    */
-  return function ({ refresh = false, submoduleNames = null, ready = false, forceRefresh = true } = {}) {
+  return function ({ refresh = false, submoduleNames = null, ready = false, forceNewModuleRefresh = true } = {}) {
     if (ready && !initStarted) {
       initStarted = true;
       startInit.resolve();
@@ -625,7 +625,8 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
           const cbModules = initSubmodules(
             initModules,
             allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
-            forceRefresh
+            true,
+            forceNewModuleRefresh
           ).filter((sm) => {
             return sm.callback != null;
           });
@@ -992,7 +993,7 @@ function hasOptedOut() {
   return false;
 }
 
-function initSubmodules(priorityMaps, submodules, forceRefresh: boolean | ((submodule: SubmoduleContainer<UserIdProvider>) => boolean) = false) {
+function initSubmodules(priorityMaps, submodules, forceRefresh = false, forceNewModuleRefresh = forceRefresh) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (hasOptedOut()) {
       priorityMaps.reset();
@@ -1020,7 +1021,7 @@ function initSubmodules(priorityMaps, submodules, forceRefresh: boolean | ((subm
     const initialized = submodules.reduce((carry, submodule) => {
       return submoduleMetrics(submodule.submodule.name).measureTime('init', () => {
         try {
-          populateSubmoduleId(submodule, typeof forceRefresh === 'function' ? forceRefresh(submodule) : forceRefresh);
+          populateSubmoduleId(submodule, submodule.new ? forceNewModuleRefresh : forceRefresh);
           carry.push(submodule);
         } catch (e) {
           logError(`Error in userID module '${submodule.submodule.name}':`, e);
@@ -1154,25 +1155,27 @@ function updateEIDConfig(submodules) {
 }
 
 export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
-  const { autoRefresh, retainConfig } = options;
+  const { retainConfig } = options;
   return registry
     .reduce((acc, submodule) => {
       const { name, aliasName } = submodule;
       const matchesName = (query) => [name, aliasName].some(value => value?.toLowerCase() === query.toLowerCase());
       const submoduleConfig = configs.find((configItem) => matchesName(configItem.name));
+      const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
 
       if (!submoduleConfig) {
         if (!retainConfig) return acc;
-        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
-        return previousSubmodule ? [...acc, previousSubmodule] : acc;
+        return previousSubmodule ? [...acc, { ...previousSubmodule, dirty: false, new: false }] : acc;
       }
+
+      const newConfig = {
+        ...submoduleConfig,
+        name: submodule.name
+      };
 
       const newSubmoduleContainer: SubmoduleContainer<UserIdProvider> = {
         submodule,
-        config: {
-          ...submoduleConfig,
-          name: submodule.name
-        },
+        config: newConfig,
         callback: undefined,
         idObj: undefined,
         storageMgr: newStorageManager({
@@ -1181,12 +1184,10 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
           // since this manager is only using keys provided directly by the publisher,
           // turn off storageControl checks
           advertiseKeys: false,
-        })
+        }),
+        dirty: previousSubmodule == null || !deepEqual(newConfig, previousSubmodule.config),
+        new: previousSubmodule == null
       };
-
-      const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
-      newSubmoduleContainer.initializeIds = !previousSubmodule;
-      newSubmoduleContainer.refreshIds = autoRefresh && (!previousSubmodule || !deepEqual(newSubmoduleContainer.config, previousSubmodule.config));
 
       return [...acc, newSubmoduleContainer];
     }, []);
@@ -1199,8 +1200,8 @@ type SubmoduleContainer<P extends UserIdProvider> = {
   callback?: ProviderResponse['callback'];
   idObj;
   storageMgr: StorageManager;
-  initializeIds?: boolean;
-  refreshIds?: boolean;
+  dirty: boolean;
+  new: boolean;
 };
 
 /**
@@ -1351,16 +1352,11 @@ export function init(config, { mkDelay = delay } = {}) {
         unregisterEnforceStorageTypeRule?.();
         unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({ config }) => config), enforceStorageType));
         updateIdPriority(userSync.idPriority, submoduleRegistry);
-        const submodulesToInitialize = submodules.filter(item => item.initializeIds || item.refreshIds);
-        if (submodulesToInitialize.length) {
-          const refreshNames = new Set(submodules.filter(item => item.refreshIds).map(item => item.submodule.name));
-          initIdSystem({
-            refresh: true,
-            submoduleNames: submodulesToInitialize.map(item => item.submodule.name),
-            forceRefresh: item => refreshNames.has(item.submodule.name)
-          });
-        }
         initIdSystem({ ready: true });
+        const submodulesToRefresh = submodules.filter(item => autoRefresh ? item.dirty : item.new);
+        if (submodulesToRefresh.length) {
+          initIdSystem({ refresh: true, forceNewModuleRefresh: false, submoduleNames: submodulesToRefresh.map(item => item.submodule.name) });
+        }
       }
     }
   });
