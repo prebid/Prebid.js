@@ -23,7 +23,7 @@ exports.config = {
       }
     },
     {
-      browserName: 'safari technology preview'
+      browserName: 'safari'
     }
   ].filter((cap) => cap.browserName === (process.env.BROWSER ?? 'chrome')),
   maxInstancesPerCapability: 1
