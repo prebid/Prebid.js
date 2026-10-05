@@ -1165,7 +1165,7 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
 
       if (!submoduleConfig) {
         if (!retainConfig) return acc;
-        return previousSubmodule ? [...acc, { ...previousSubmodule, dirty: false, new: false }] : acc;
+        return previousSubmodule ? [...acc, Object.assign(previousSubmodule, { dirty: false, new: false })] : acc;
       }
 
       const newConfig = {
@@ -1200,7 +1200,9 @@ type SubmoduleContainer<P extends UserIdProvider> = {
   callback?: ProviderResponse['callback'];
   idObj;
   storageMgr: StorageManager;
+  // true if this module was reconfigured (latest config is different from previous config)
   dirty: boolean;
+  // true if this module was added (had no previous config)
   new: boolean;
 };
 
