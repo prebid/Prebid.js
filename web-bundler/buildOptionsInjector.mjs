@@ -13,7 +13,7 @@ import { types as t } from '@babel/core';
 export function injector(buildOptionsSource) {
   const tree = parse(buildOptionsSource);
   let found = false;
-  traverse.default(tree, {
+  traverse(tree, {
     Program(path) {
       assert.equal(path.node.body.length, 1);
       assert.ok(t.isExpressionStatement(path.node.body[0]));
