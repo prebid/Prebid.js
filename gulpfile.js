@@ -549,7 +549,9 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeV
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
 gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'));
 gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})));
-gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
+// the build logic suite has nothing to do with the spec selected by --file; leave it out so that it
+// neither slows down iterating on that spec nor stops it when one of its own tests fails
+gulp.task('test-only', gulp.series(...(argv.file == null ? ['test-build-logic'] : []), 'precompile', test));
 
 gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
 gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
