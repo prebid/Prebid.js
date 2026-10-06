@@ -42,7 +42,7 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'ext': (value) => isPlainObject(value),
 };
 
-export const OPTIONAL_AUDIO_PARAMS = {
+export const ORTB_AUDIO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every((mime) => typeof mime === 'string' && mime.length > 0),
   'minduration': (value) => isInteger(value),
   'maxduration': (value) => isInteger(value),
@@ -205,11 +205,11 @@ function buildAudio(bidRequest) {
 
   const optionalParams = {};
   const audioParamOverrides = {};
-  for (const param in OPTIONAL_AUDIO_PARAMS) {
-    if (bidRequestAudio[param] != null && OPTIONAL_AUDIO_PARAMS[param](bidRequestAudio[param])) {
+  for (const param in ORTB_AUDIO_PARAMS) {
+    if (bidRequestAudio[param] != null && ORTB_AUDIO_PARAMS[param](bidRequestAudio[param])) {
       optionalParams[param] = bidRequestAudio[param];
     }
-    if (audioBidderParams[param] != null && OPTIONAL_AUDIO_PARAMS[param](audioBidderParams[param])) {
+    if (audioBidderParams[param] != null && ORTB_AUDIO_PARAMS[param](audioBidderParams[param])) {
       audioParamOverrides[param] = audioBidderParams[param];
     }
   }
@@ -316,7 +316,10 @@ function buildImpression(bidRequest) {
   }
 
   if (deepAccess(bidRequest, 'mediaTypes.audio')) {
-    imp.audio = buildAudio(bidRequest);
+    const audioObj = buildAudio(bidRequest);
+    if (audioObj.mimes) {
+      imp.audio = audioObj;
+    }
   }
 
   if (deepAccess(bidRequest, 'mediaTypes.native')) {
@@ -922,13 +925,18 @@ function validateAudio(bid) {
     return true;
   }
 
-  if (!audio.mimes) {
-    logWarn('insticator: audio mimes not specified. Setting mediaTypes.audio.mimes is recommended.');
+  const hasValidMimes = ORTB_AUDIO_PARAMS.mimes(audioBidderParams?.mimes) || ORTB_AUDIO_PARAMS.mimes(audioParams?.mimes);
+  if (!hasValidMimes) {
+    if (Object.keys(deepAccess(bid, 'mediaTypes') || {}).length === 1) {
+      logError('insticator: audio mimes missing or invalid; rejecting the audio-only bid');
+      return false;
+    }
+    logWarn('insticator: audio mimes missing or invalid; leaving audio out of the request');
   }
 
-  for (const param in OPTIONAL_AUDIO_PARAMS) {
+  for (const param in ORTB_AUDIO_PARAMS) {
     if (audio[param]) {
-      if (!OPTIONAL_AUDIO_PARAMS[param](audio[param])) {
+      if (!ORTB_AUDIO_PARAMS[param](audio[param])) {
         logError(`insticator: audio ${param} is invalid or not supported by insticator`);
       }
     }

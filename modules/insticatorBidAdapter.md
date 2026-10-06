@@ -59,9 +59,15 @@ Supplied under `params.video`, and taking precedence over the same field on
 ### Audio
 
 Supplied under `params.audio`, and taking precedence over the same field on
-`mediaTypes.audio`. Every key is optional and is dropped if it fails validation.
+`mediaTypes.audio`.
 
-`mimes`, `minduration`, `maxduration`, `poddur`, `protocols`, `startdelay`,
+`mimes` is required by OpenRTB and must be a non-empty array of strings, on either
+`mediaTypes.audio` or `params.audio`. Without it an audio-only ad unit is rejected, and on a
+multi-format ad unit the audio is left out while the other media types still bid.
+
+Every other key is optional and is dropped if it fails validation.
+
+`minduration`, `maxduration`, `poddur`, `protocols`, `startdelay`,
 `rqddurs`, `podid`, `podseq`, `sequence`, `slotinpod`, `mincpmpersec`, `battr`,
 `maxextended`, `minbitrate`, `maxbitrate`, `delivery`, `companionad`, `api`,
 `companiontype`, `maxseq`, `feed`, `stitched`, `nvol`, `durfloors`, `ext`

@@ -1849,18 +1849,28 @@ describe('InsticatorBidAdapter — audio', function () {
       expect(spec.isBidRequestValid(audioBidRequest)).to.be.true;
     });
 
-    it('accepts audio with no mimes — the exchange defaults them', function () {
+    it('rejects an audio-only ad unit with no mimes', function () {
       const bid = { ...audioBidRequest, mediaTypes: { audio: { minduration: 5, maxduration: 30 } } };
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('warns when audio mimes are absent, without rejecting the bid', function () {
+    it('rejects an audio-only ad unit whose mimes list is empty', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { audio: { mimes: [], minduration: 5, maxduration: 30 } } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('rejects an audio-only ad unit whose mimes are not a list', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { audio: { mimes: {}, minduration: 5, maxduration: 30 } } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('accepts a multi-format ad unit whose audio has no mimes, and warns', function () {
       const logWarnStub = sinon.stub(utils, 'logWarn');
       try {
-        const bid = { ...audioBidRequest, mediaTypes: { audio: { minduration: 5, maxduration: 30 } } };
+        const bid = { ...audioBidRequest, mediaTypes: { banner: { sizes: [[300, 250]] }, audio: { minduration: 5, maxduration: 30 } } };
         expect(spec.isBidRequestValid(bid)).to.be.true;
         const messages = logWarnStub.getCalls().map((call) => String(call.args[0]));
-        expect(messages.some((message) => message.includes('audio mimes not specified'))).to.be.true;
+        expect(messages.some((message) => message.includes('leaving audio out'))).to.be.true;
       } finally {
         logWarnStub.restore();
       }
@@ -1876,7 +1886,7 @@ describe('InsticatorBidAdapter — audio', function () {
         };
         expect(spec.isBidRequestValid(bid)).to.be.true;
         const messages = logWarnStub.getCalls().map((call) => String(call.args[0]));
-        expect(messages.some((message) => message.includes('audio mimes not specified'))).to.be.false;
+        expect(messages.some((message) => message.includes('audio mimes missing'))).to.be.false;
       } finally {
         logWarnStub.restore();
       }
@@ -1997,11 +2007,27 @@ describe('InsticatorBidAdapter — audio', function () {
       expect(imp.audio.mimes).to.deep.equal(['audio/mp4', 'audio/mpeg']);
     });
 
-    it('drops a malformed mimes list rather than sending it', function () {
+    it('leaves audio off the imp when the mimes list is malformed', function () {
       const bid = { ...audioBidRequest, mediaTypes: { audio: { mimes: 'audio/mp4' } } };
       const imp = firstImp(bid);
-      expect(imp.audio).to.exist;
-      expect(imp.audio.mimes).to.not.exist;
+      expect(imp.audio).to.not.exist;
+    });
+
+    it('sends the banner and leaves audio out when audio has no mimes', function () {
+      const bid = { ...audioBidRequest, mediaTypes: { banner: { sizes: [[300, 250]] }, audio: { minduration: 5, maxduration: 30 } } };
+      const imp = firstImp(bid);
+      expect(imp.banner).to.exist;
+      expect(imp.audio).to.not.exist;
+    });
+
+    it('keeps audio on the imp when only params.audio supplies the mimes', function () {
+      const bid = {
+        ...audioBidRequest,
+        mediaTypes: { audio: { minduration: 5, maxduration: 30 } },
+        params: { ...audioBidRequest.params, audio: { mimes: ['audio/aac'] } },
+      };
+      const imp = firstImp(bid);
+      expect(imp.audio.mimes).to.deep.equal(['audio/aac']);
     });
 
     it('ignores params.audio keys outside the supported set', function () {
