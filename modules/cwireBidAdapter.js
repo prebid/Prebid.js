@@ -91,7 +91,7 @@ const converter = ortbConverter({
     };
     imp.ext = imp.ext || {};
     imp.ext.cwire = cwireExt;
-    if (!imp.ext.data?.pbadslot && !imp.tagid && !imp.ext.data?.adslot?.[0] && !imp.ext.gpid && !imp.ext.bidder?.adslot) {
+    if (!imp.ext.bidder?.adslot) {
       imp.ext.bidder = { ...imp.ext.bidder, adslot: bidRequest.adUnitCode };
     }
 
