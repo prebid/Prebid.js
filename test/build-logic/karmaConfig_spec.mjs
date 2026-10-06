@@ -11,10 +11,12 @@ describe('Karma configuration', function () {
       return karmaConfMaker(false, false, watchMode, ['test/spec/a_spec.js'], null, 1, true).webpack.watchOptions;
     }
 
-    it('ignores source map changes in watch mode', function () {
-      const { ignored } = watchOptions(true);
-      expect(ignored.test('/repo/dist/src/modules/a.js.map')).to.be.true;
-      expect(ignored.test('/repo/dist/src/modules/a.js')).to.be.false;
+    it('waits for a module and its source map to both land before rebuilding in watch mode', function () {
+      const options = watchOptions(true);
+      // webpack's default (20ms) is shorter than the gap between a precompile writing a `.js` and its `.map`
+      expect(options.aggregateTimeout).to.be.at.least(1000);
+      // source maps stay watched, so a late one still updates the bundle rather than going stale
+      expect(options.ignored).to.equal(undefined);
     });
 
     it('leaves watch options alone in single run mode', function () {
