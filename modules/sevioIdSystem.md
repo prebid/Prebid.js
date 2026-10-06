@@ -10,7 +10,7 @@ The Sevio User ID submodule provides the Sevio ID, an opaque identifier issued b
 service, to bid adapters through `bidRequest.userId.sevioId` and as an OpenRTB Extended ID under the
 source `adx.ws`.
 
-The ID is fetched from Sevio's Identity service (`https://id.sevio.com/identity/resolve`) and then
+The ID is fetched from Sevio's Identity service (`https://id.adx.ws/identity/resolve`) and then
 kept in first-party storage by Prebid's `userId` module. The submodule never reads or writes storage
 itself. A request is made only when no valid ID is stored, when `storage.refreshInSeconds` elapses, or
 when the consent state changes. A refresh presents the stored ID to the Identity service, which
@@ -96,7 +96,7 @@ ID.
 
 - The submodule declares GVL ID `1393`. When `tcfControl` is enabled, Prebid's TCF enforcement
   requires Purpose 1 consent and vendor consent for GVL ID `1393` before the ID can be stored or read.
-- The request is a `POST` to `https://id.sevio.com/identity/resolve` with a JSON body, sent with
+- The request is a `POST` to `https://id.adx.ws/identity/resolve` with a JSON body, sent with
   credentials. The body carries `params.clientId` as `client_id`, the stored ID and
   `params.emailHash` when present, and the consent signals present on the page in a `privacy` object: `gdpr`, `gdpr_consent`,
   `us_privacy`, `gpp` and `gpp_sid`.

@@ -16,7 +16,7 @@ import type { IdProviderSpec } from './userId/spec.ts';
 
 const MODULE_NAME = 'sevioId' as const;
 const GVLID = 1393;
-export const ID_ENDPOINT = 'https://id.sevio.com/identity/resolve';
+export const ID_ENDPOINT = 'https://id.adx.ws/identity/resolve';
 const EID_SOURCE = 'adx.ws';
 const LOG_PREFIX = 'sevioId: ';
 const RECOMMENDED_STORAGE_TYPES = ['cookie', 'html5'];
