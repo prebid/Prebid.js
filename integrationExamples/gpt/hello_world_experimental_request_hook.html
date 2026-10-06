@@ -1,5 +1,5 @@
 <!--
-  This example uses GPT's registerRequestHook to trigger a Prebid auction on slot refresh.
+  This example uses GPT's (still experimental) `registerRequestHook` to trigger a Prebid auction on slot refresh.
 -->
 
 <html>
@@ -66,7 +66,7 @@
               timeout: PREBID_TIMEOUT
             });
             pbjs.setTargetingForGPTAsync(adUnitCodes);
-          }, 'request-bids-v4.2');
+          }, 'request-hook-example');
           googletag.pubads().refresh();
         });
 
