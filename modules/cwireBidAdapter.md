@@ -12,6 +12,8 @@ Prebid.js Adapter for C-Wire. Uses native OpenRTB 2.x request/response handling 
 
 Bid requests are POSTed as OpenRTB 2.x JSON to `https://prebid2.cwi.re/v1/bid`. Bidder params and cwire-specific signals are carried under `imp[].ext.bidder` and `request.ext.cwire` / `imp[].ext.cwire`.
 
+When no non-empty `bidder.adslot` is supplied, the adapter sends the ad unit code as `imp[].ext.bidder.adslot` for inventory matching, even when other slot identifiers are present. `imp[].id` remains the bid ID for response correlation.
+
 ## Configuration
 
 Below, the list of C-WIRE params and where they can be set.
