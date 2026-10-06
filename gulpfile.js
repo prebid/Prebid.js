@@ -601,7 +601,9 @@ gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'))
 // so `**/*` would load test/build-logic/fixtures/**.ts as if they were specs.
 gulp.task('test-build-logic', execaTask('npx mocha \"./test/build-logic/**/*_spec.@(js|mjs)\"'));
 gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})));
-gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
+// the build logic suite has nothing to do with the spec selected by --file; leave it out so that it
+// neither slows down iterating on that spec nor stops it when one of its own tests fails
+gulp.task('test-only', gulp.series(...(argv.file ? [] : ['test-build-logic']), 'precompile', test));
 
 gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
 gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
