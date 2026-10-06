@@ -2,7 +2,7 @@ import { consentConfig, gdprScope, resetConsentData, setConsentConfig, tcfCmpEve
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import 'src/prebid.js';
+import pbjs from 'src/prebid.js';
 
 const expect = require('chai').expect;
 
@@ -403,6 +403,29 @@ describe('consentManagement', function () {
       it('should not trip when adUnits have no size', async () => {
         await setConsentConfig(staticConfig);
         expect(await runHook({ adUnits: [{ code: 'test', mediaTypes: { video: {} } }] })).to.be.true;
+      });
+
+      describe('when the auction is canceled, the promise returned by requestBids', () => {
+        function settlement(promise, ms = 100) {
+          return Promise.race([
+            promise.then(() => 'resolved', () => 'rejected'),
+            new Promise(resolve => setTimeout(() => resolve('pending'), ms))
+          ]);
+        }
+
+        const adUnits = [{ code: 'au', mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [] }];
+
+        Object.entries({
+          'CMP is not found': goodConfig,
+          'static config has no consentData': { cmpApi: 'static' },
+        }).forEach(([t, cmConfig]) => {
+          it(`resolves when ${t}`, async () => {
+            await setConsentConfig(cmConfig);
+            const bidsBackHandler = sinon.stub();
+            expect(await settlement(pbjs.requestBids({ adUnits, bidsBackHandler }))).to.equal('resolved');
+            sinon.assert.calledOnce(bidsBackHandler);
+          });
+        });
       });
 
       it('should continue the auction immediately, without consent data, if timeout is 0', async () => {
