@@ -71,7 +71,7 @@ module.exports = function (api, options) {
                   const callers = getCallers(relFilename, message);
                   if (callers != null) {
                     const repl = getFreeName(path, `__${specifier.imported.name}`);
-                    const node = api.parse(`const ${specifier.local.name} = ${repl}.withCallers(${JSON.stringify(callers)})`).program.body[0];
+                    const node = api.parseSync(`const ${specifier.local.name} = ${repl}.withCallers(${JSON.stringify(callers)})`).program.body[0];
                     path.insertAfter(node);
                     specifier.local.name = repl;
                   }

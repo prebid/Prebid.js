@@ -28,7 +28,7 @@ import { type Metrics, useMetrics } from './utils/perfMetrics.js';
 import { adjustCpm } from './utils/cpm.js';
 import { getGlobal } from './prebidGlobal.js';
 import { ttlCollection } from './utils/ttlCollection.js';
-import { getEffectiveMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
+import { getEffectiveMinBidCacheTTL } from './bidTTL.js';
 import type { Bid, BidResponse } from "./bidfactory.ts";
 import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
 import type { TargetingMap } from "./targeting.ts";
@@ -151,6 +151,33 @@ export interface AuctionOptionsConfig {
   legacyRender?: boolean;
 
   /**
+   * How viewability is measured when it is included in bid requests. The two options trade processing
+   * work against how much the auction can be held up by the rest of the page.
+   *
+   * `'observer'` takes the measurement from an intersection observer. It is much the cheaper of the
+   * two: reading it is a property access on a figure the browser has already worked out, so it costs
+   * no layout at all, and it correctly accounts for everything that clips the ad, including the
+   * bounds of a cross origin iframe. The cost is that the auction cannot start until the observer has
+   * reported, which requires yielding the main thread. On a page that keeps the main thread busy with
+   * long tasks, that yield is only taken once the longest of them has finished, and the auction is
+   * held up for that whole time.
+   *
+   * `'boundingBox'` computes the measurement from the ad element's bounding rect. Nothing is waited
+   * for, so the auction never queues behind the rest of the page. In exchange every measurement
+   * forces a layout, which is orders of magnitude dearer than reading an observer entry and on a page
+   * with complex CSS can run into milliseconds; and inside a cross origin iframe it can only measure
+   * against the frame's own viewport, so an ad scrolled well off the page can still read as fully in
+   * view.
+   *
+   * So: `'observer'` to do less work, `'boundingBox'` to keep the auction off the critical path of
+   * whatever else the page is doing.
+   *
+   * Defaults to `'observer'`, or to `'boundingBox'` when main thread yielding is turned off with
+   * `pbjs.yield = false`.
+   */
+  viewabilityMeasurement?: 'observer' | 'boundingBox';
+
+  /**
    * When true, reject bids without a response `mediaType` when the ad unit has an explicit mediaTypes list.
    * Default is false to preserve legacy behavior for responses that omit mediaType.
    */
@@ -216,13 +243,11 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
   let _auctionStatus: AuctionStatus;
   let _nonBids = [];
 
-  onMinBidCacheTTLChange(() => _bidsReceived.refresh());
-
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
   function addBidReceived(bid) { _bidsReceived.add(bid); }
   function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
-  function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
+  function addSeatNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
 
   function getProperties() {
     return {
@@ -446,16 +471,11 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     _bidsReceived.refresh();
   }
 
-  events.on(EVENTS.PBS_ANALYTICS, (event) => {
-    if (event.auctionId === _auctionId && event.seatnonbid != null) {
-      addNonBids(event.seatnonbid);
-    }
-  });
-
   return {
     addBidReceived,
     addBidRejected,
     addNoBid,
+    addSeatNonBids,
     callBids,
     addWinningBid,
     setBidTargeting,
@@ -473,6 +493,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     getNonBids: () => _nonBids,
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
+    refreshBidTTLs: () => _bidsReceived.refresh(),
     end: done.promise,
     requestsDone: requestsDone.promise,
     getProperties
@@ -808,7 +829,7 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   if (allowTopWindowRenderers) {
     if (renderer) {
       // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null, requiresVastUrl: renderer.requiresVastUrl });// rename options to config, to make it consistent?
       bid.renderer.setRender(renderer.render);
     }
   } else {

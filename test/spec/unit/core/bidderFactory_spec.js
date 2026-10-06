@@ -1,4 +1,4 @@
-import { isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import { guardTids, isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -563,6 +563,55 @@ describe('bidderFactory', () => {
         ).to.length(2);
 
         eventEmitterSpy.restore();
+      });
+    });
+
+    describe('parsing an untrusted response body', function () {
+      let ajaxStub, responseBody;
+
+      function parsedBody() {
+        const bidder = newBidder(spec);
+        spec.isBidRequestValid.returns(true);
+        spec.buildRequests.returns({ method: 'POST', url: 'test.url.com', data: {} });
+        spec.getUserSyncs.returns([]);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        expect(spec.interpretResponse.calledOnce).to.equal(true);
+        return spec.interpretResponse.firstCall.args[0].body;
+      }
+
+      beforeEach(function () {
+        responseBody = null;
+        ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
+          callbacks.success(responseBody, { getResponseHeader: sinon.stub() });
+        });
+      });
+
+      afterEach(function () {
+        ajaxStub.restore();
+        delete Object.prototype.polluted;
+      });
+
+      // What the guard removes, and that it leaves data alone, is covered where it is defined,
+      // in test/spec/unit/utils/untrustedJson_spec.js. Only the first case below detects the
+      // guard's absence; the other two hold with a plain JSON.parse too, and are here to pin the
+      // way this call site would fail if the guard ever threw - the assignment would not complete
+      // and the adapter would be handed the raw body as text.
+      it('routes the response body through the guard', function () {
+        responseBody = '{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}';
+
+        expect(Object.keys(parsedBody().seatbid[0].bid[0])).to.deep.equal(['impid']);
+      });
+
+      it('hands a hostile response to the adapter parsed, not as raw text', function () {
+        responseBody = '{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}';
+
+        expect(parsedBody()).to.be.an('object');
+      });
+
+      it('leaves a body that is not JSON alone', function () {
+        responseBody = 'not json at all';
+
+        expect(parsedBody()).to.equal('not json at all');
       });
     });
 
@@ -1816,6 +1865,26 @@ describe('bidderFactory', () => {
       expect(recorded['adapter.client.net']).to.eql([0]);
       // `total` spans compression, so it is the timer that should account for the delay.
       expect(recorded['adapter.client.total']).to.equal(COMPRESSION_MS);
+    });
+  });
+
+  describe('guardTids', () => {
+    it('returns the same guard for the same bidderRequest across calls', () => {
+      const bidderRequest = { bidderCode: 'mockBidder', bids: [] };
+      expect(guardTids(bidderRequest)).to.equal(guardTids(bidderRequest));
+    });
+
+    it('returns independent guards for different bidderRequests', () => {
+      const request1 = { bidderCode: 'mockBidder', bids: [] };
+      const request2 = { bidderCode: 'mockBidder', bids: [] };
+      const guard1 = guardTids(request1);
+      const guard2 = guardTids(request2);
+      expect(guard1).to.not.equal(guard2);
+      // bidRequest is memoized per guard (keyed by bidId): the same guard
+      // returns the same proxy for the same bid, different guards do not.
+      const bid = { bidId: 'bid-1' };
+      expect(guard1.bidRequest(bid)).to.equal(guard1.bidRequest(bid));
+      expect(guard1.bidRequest(bid)).to.not.equal(guard2.bidRequest(bid));
     });
   });
 });

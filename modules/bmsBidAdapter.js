@@ -54,7 +54,7 @@ export const spec = {
       response.bid.forEach((bid) => {
         const baseBid = buildBidObjectBase(bid, serverResponse.body, BIDDER_CODE, DEFAULT_CURRENCY);
         const bmsSpecific = {
-          creativeId: bid.ext.bms.adId,
+          creativeId: bid.ext?.bms?.adId || bid.adid,
           ttl: typeof bid.exp === 'number' ? bid.exp : DEFAULT_BID_TTL,
           nurl: bid.nurl || null,
           burl: bid.burl || null,

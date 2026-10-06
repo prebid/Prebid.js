@@ -25,7 +25,7 @@ runs:
     - name: Download artifact
       id: download
       continue-on-error: true
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         path: '${{ runner.temp }}'
         name: '${{ inputs.name }}'
@@ -35,7 +35,7 @@ runs:
       run: sleep 10
     - name: Retry downloading artifact
       if: steps.download.outcome != 'success'
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         path: '${{ runner.temp }}'
         name: '${{ inputs.name }}'
