@@ -106,6 +106,36 @@ export function getConsent(consentData, type, purposeNo, gvlId) {
   };
 }
 
+let lastAddtlConsent: string;
+let lastAddtlConsentIds = new Set<number>();
+
+/**
+ * Parse a Google Additional Consent string into the set of provider IDs the user consented to.
+ * Format is `1~<ids>` (v1) or `2~<ids>~dv.<ids>` (v2), where `<ids>` is a dot-separated list;
+ * the `dv.` section lists providers that were disclosed but not consented to, and is ignored here.
+ *
+ * @see https://support.google.com/admanager/answer/9681920
+ */
+export function parseAddtlConsent(addtlConsent: unknown): Set<number> {
+  if (addtlConsent !== lastAddtlConsent) {
+    lastAddtlConsent = addtlConsent as string;
+    const [version, consented] = typeof addtlConsent === 'string' ? addtlConsent.split('~') : [];
+    lastAddtlConsentIds = new Set(
+      ['1', '2'].includes(version) && consented
+        ? consented.split('.').map(Number).filter(id => Number.isInteger(id) && id > 0)
+        : []
+    );
+  }
+  return lastAddtlConsentIds;
+}
+
+/**
+ * Check whether the user consented to a Google Additional Consent provider.
+ */
+export function hasAddtlConsent(consentData: TCFConsentData | null | undefined, acpId: number): boolean {
+  return parseAddtlConsent(consentData?.addtlConsent).has(acpId);
+}
+
 export function hasVendorPurposeConsent(
   consentData: TCFConsentData | null | undefined,
   purposeNo: number,

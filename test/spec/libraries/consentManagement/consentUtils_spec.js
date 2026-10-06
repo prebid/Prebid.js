@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { hasVendorPurposeConsent } from '../../../../libraries/consentManagement/consentUtils.js';
+import { hasAddtlConsent, hasVendorPurposeConsent, parseAddtlConsent } from '../../../../libraries/consentManagement/consentUtils.js';
 
 describe('consentUtils', function () {
   const HOST_GVLID = '52';
@@ -38,6 +38,43 @@ describe('consentUtils', function () {
 
     it('returns true when gdpr does not apply', function () {
       expect(hasVendorPurposeConsent(mockConsent({ gdprApplies: false, vendorConsent: false }), 1, HOST_GVLID)).to.be.true;
+    });
+  });
+
+  describe('parseAddtlConsent', () => {
+    Object.entries({
+      'v2 string': ['2~1.35.41~dv.9.21', [1, 35, 41]],
+      'v2 string without disclosed section': ['2~1.35~', [1, 35]],
+      'v2 string with no consent': ['2~~dv.9.21', []],
+      'v1 string': ['1~1.35.41', [1, 35, 41]],
+      'unknown version': ['3~1.35', []],
+      'malformed IDs': ['2~1.x.-3.4.5~dv.', [1, 4, 5]],
+      'empty string': ['', []],
+      'undefined': [undefined, []],
+      'non-string': [123, []],
+    }).forEach(([t, [input, expected]]) => {
+      it(`parses ${t}`, () => {
+        expect(Array.from(parseAddtlConsent(input))).to.eql(expected);
+      });
+    });
+
+    it('re-parses when the string changes', () => {
+      expect(parseAddtlConsent('2~1~dv.').has(1)).to.be.true;
+      expect(parseAddtlConsent('2~2~dv.').has(1)).to.be.false;
+    });
+  });
+
+  describe('hasAddtlConsent', () => {
+    it('returns true for consented providers', () => {
+      expect(hasAddtlConsent({ addtlConsent: '2~1.35~dv.9' }, 35)).to.be.true;
+    });
+
+    it('returns false for disclosed-only providers', () => {
+      expect(hasAddtlConsent({ addtlConsent: '2~1.35~dv.9' }, 9)).to.be.false;
+    });
+
+    it('returns false without consent data', () => {
+      expect(hasAddtlConsent(null, 35)).to.be.false;
     });
   });
 });

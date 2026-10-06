@@ -1115,6 +1115,15 @@ describe('bidderFactory', () => {
       expect(registerBidAdapterStub.getCall(3).args[0].getSpec().gvlid).to.equal(undefined);
     });
 
+    it('should register alias with their acpId', function() {
+      const thisSpec = Object.assign(newEmptySpec(), { acpId: 1, aliases: [{ code: 'foo', acpId: 2 }, 'bar'] });
+      registerBidder(thisSpec);
+
+      expect(registerBidAdapterStub.getCall(0).args[0].getSpec().acpId).to.equal(1);
+      expect(registerBidAdapterStub.getCall(1).args[0].getSpec().acpId).to.equal(2);
+      expect(registerBidAdapterStub.getCall(2).args[0].getSpec().acpId).to.equal(undefined);
+    });
+
     it('should register alias with skipPbsAliasing', function() {
       const aliases = [
         {
