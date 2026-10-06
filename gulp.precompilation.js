@@ -170,15 +170,11 @@ function generateMetadataModules() {
 /**
  * Whether `dest` already holds exactly `contents`.
  *
- * Steps that regenerate the same output on every precompile check this before writing, because
- * `serve*` and `watch` precompile again on every source change, and every write into `dist/src` is
- * seen by two watchers. Karma's webpack re-runs the tests on any `.js` it depends on, so rewriting
- * one that has not changed runs the suite against whatever else is not yet rebuilt - the previous
- * version of the edited file, if the write lands before babel's. And the `dist/src/**\/*.js` watch in
- * `watchTaskMaker` (chokidar) answers a write to a file outside its pattern, such as a `.d.ts`, by
- * re-reading that file's whole directory; rewriting every declaration on each change rescans large
- * directories like `dist/src/modules` many times over, which stalls the gulp process and grows its
- * heap with each edit until it runs out.
+ * A watch task precompiles again on every source change, and anything watching `dist/src` reacts
+ * to a write whether or not the bytes changed. Rewriting a file that a test build imports re-runs
+ * the tests before the files that did change have been rebuilt, so they run the previous version;
+ * rewriting many files at once costs a watcher an event each. The steps below whose output is
+ * usually identical from one precompile to the next check this, and leave such a file alone.
  */
 function isUpToDate(dest, contents) {
   try {
@@ -413,8 +409,8 @@ function generateCreativeRenderers() {
     .pipe(tap((file) => {
       file.contents = Buffer.from(tpl({contents: file.contents}));
     }))
-    // `buildCreative` re-emits every renderer on each run, whether or not its sources changed,
-    // so `since` above lets them all through
+    // a renderer in `build/creative` being newer than the last run does not mean its contents
+    // changed, so `since` alone does not tell which ones need writing
     .pipe(new Transform({
       objectMode: true,
       transform(file, enc, cb) {
