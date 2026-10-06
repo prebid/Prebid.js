@@ -1,79 +1,57 @@
 # Overview
 
 ```
-Module Name: MyCodeMedia Bidder Adapter
-Module Type: MyCodeMedia Bidder Adapter
-Maintainer: support-platform@mycodemedia.com
+Module Name:  MyCodeMedia Bid Adapter
+Module Type:  Bidder Adapter
+Maintainer: gabriel@nexx360.io
 ```
 
 # Description
 
-Connects to MyCodeMedia exchange for bids.
-MyCodeMedia bid adapter supports Banner, Video (instream and outstream) and Native.
+Connects to MyCodeMedia network for bids.
+
+To use us as a bidder you must have an account and an active "tagId" or "placement" from us.
 
 # Test Parameters
+
+## Web
+
+### Display
 ```
-    var adUnits = [
-                // Will return static test banner
-                {
-                    code: 'adunit1',
-                    mediaTypes: {
-                        banner: {
-                            sizes: [ [300, 250], [320, 50] ],
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'mycodemedia',
-                            params: {
-                                placementId: 'testBanner',
-                            }
-                        }
-                    ]
-                },
-                {
-                    code: 'addunit2',
-                    mediaTypes: {
-                        video: {
-                            playerSize: [ [640, 480] ],
-                            context: 'instream',
-                            minduration: 5,
-                            maxduration: 60,
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'mycodemedia',
-                            params: {
-                                placementId: 'testVideo',
-                            }
-                        }
-                    ]
-                },
-                {
-                    code: 'addunit3',
-                    mediaTypes: {
-                        native: {
-                            title: {
-                                required: true
-                            },
-                            body: {
-                                required: true
-                            },
-                            icon: {
-                                required: true,
-                                size: [64, 64]
-                            }
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'mycodemedia',
-                            params: {
-                                placementId: 'testNative',
-                            }
-                        }
-                    ]
-                }
-            ];
+var adUnits = [
+   // Banner adUnit
+   {
+      code: 'banner-div',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300,600]]
+        }
+      },
+      bids: [{
+         bidder: 'mycodemedia',
+         params: {
+            tagId: 'testnexx'
+         }
+       }]
+   },
+];
+```
+
+### Video Instream
+```
+    var videoAdUnit = {
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                playerSize: [640, 480],
+                context: 'instream'
+            }
+        },
+        bids: [{
+            bidder: 'mycodemedia',
+            params: {
+              placement: 'TEST_PLACEMENT'
+            }
+        }]
+    };
 ```

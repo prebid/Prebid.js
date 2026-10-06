@@ -1751,6 +1751,22 @@ describe('user sync iframes', () => {
     expect(newIframes().length).to.equal(0);
   });
 
+  it('notifies a sync iframe consumer before removing its iframe', () => {
+    let wasAttachedDuringCleanup;
+    let iframe;
+    const onCleanup = sinon.spy(() => {
+      wasAttachedDuringCleanup = iframe.parentNode != null;
+    });
+    utils.insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+    iframe = newIframes()[0];
+
+    expect(utils.removeUserSyncIframes()).to.equal(1);
+
+    expect(onCleanup.calledOnce).to.equal(true);
+    expect(wasAttachedDuringCleanup).to.equal(true);
+    expect(iframe.parentNode).to.equal(null);
+  });
+
   it('leaves iframes it did not insert alone', () => {
     const foreign = document.createElement('iframe');
     document.body.appendChild(foreign);

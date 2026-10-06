@@ -35,30 +35,47 @@ function responseWith(serverAuction, { bidCount = 1 } = {}) {
   return { body };
 }
 
+// interpretResponse receives back the request built by buildRequests, which carries the bidderRequest.
+function requestFor(bidderRequest) {
+  return { method: 'POST', url: 'https://fast.nexx360.io/booster', data: {}, bidderRequest };
+}
+
 describe('nexx360Utils server auction extraction', () => {
-  it('attaches ext.serverAuction to every produced bid response', () => {
-    const responses = interpretResponse(responseWith(SERVER_AUCTION, { bidCount: 2 }));
+  it('stores ext.serverAuction on the bidderRequest carried by the request', () => {
+    const bidderRequest = {};
+    const responses = interpretResponse(responseWith(SERVER_AUCTION, { bidCount: 2 }), requestFor(bidderRequest));
     expect(responses).to.have.length(2);
-    responses.forEach((response) => {
-      expect(response.serverAuctionData).to.deep.equal(SERVER_AUCTION);
-    });
+    expect(bidderRequest.serverAuctionData).to.deep.equal(SERVER_AUCTION);
   });
 
-  it('attaches nothing when ext.serverAuction is absent', () => {
-    const responses = interpretResponse(responseWith(null));
+  it('stores ext.serverAuction even when the response has no seatbid', () => {
+    const bidderRequest = {};
+    const responses = interpretResponse(responseWith(SERVER_AUCTION, { bidCount: 0 }), requestFor(bidderRequest));
+    expect(responses).to.deep.equal([]);
+    expect(bidderRequest.serverAuctionData).to.deep.equal(SERVER_AUCTION);
+  });
+
+  it('does not attach the server auction to bid responses', () => {
+    const responses = interpretResponse(responseWith(SERVER_AUCTION), requestFor({}));
     expect(responses).to.have.length(1);
     expect(responses[0]).to.not.have.property('serverAuctionData');
+  });
+
+  it('stores nothing when ext.serverAuction is absent', () => {
+    const bidderRequest = {};
+    interpretResponse(responseWith(null), requestFor(bidderRequest));
+    expect(bidderRequest).to.not.have.property('serverAuctionData');
   });
 
   it('ignores ext.serverAuction that has no auctionId', () => {
-    const responses = interpretResponse(responseWith({ timestamp: 1 }));
-    expect(responses).to.have.length(1);
-    expect(responses[0]).to.not.have.property('serverAuctionData');
+    const bidderRequest = {};
+    interpretResponse(responseWith({ timestamp: 1 }), requestFor(bidderRequest));
+    expect(bidderRequest).to.not.have.property('serverAuctionData');
   });
 
-  it('returns [] when the response has no seatbid', () => {
-    const responses = interpretResponse(responseWith(SERVER_AUCTION, { bidCount: 0 }));
-    expect(responses).to.deep.equal([]);
+  it('still interprets bids when called without a request (adapters sharing interpretResponse)', () => {
+    expect(interpretResponse(responseWith(SERVER_AUCTION))).to.have.length(1);
+    expect(interpretResponse(responseWith(SERVER_AUCTION), { method: 'POST', url: 'u', data: {} })).to.have.length(1);
   });
 
   it('returns [] when the response body is missing', () => {

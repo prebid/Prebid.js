@@ -313,7 +313,7 @@ describe('ShinezRtbBidAdapter', function () {
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWinDimensions().screen.width}x${getWinDimensions().screen.height}`,
           schain: VIDEO_BID.schain,
           sizes: ['545x307'],
           sua: {

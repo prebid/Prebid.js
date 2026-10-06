@@ -13,10 +13,12 @@
         // Delegate-CH must be written before the script tag below, so that the
         // high-entropy client hints are delegated to whichever origin is in
         // play. A static meta would pin this to one deployment.
-        document.write('<meta http-equiv="Delegate-CH" content="' +
-            ['sec-ch-ua-full-version-list', 'sec-ch-ua-model', 'sec-ch-ua-platform', 'sec-ch-ua-platform-version']
-                .map(function (h) { return h + ' ' + CLOUD_ORIGIN; }).join('; ') +
-            '">');
+        var delegateChContent = ['sec-ch-ua-full-version-list', 'sec-ch-ua-model', 'sec-ch-ua-platform', 'sec-ch-ua-platform-version']
+            .map(function (h) { return h + ' ' + CLOUD_ORIGIN; }).join('; ');
+        var delegateChMeta = document.createElement('meta');
+        delegateChMeta.setAttribute('http-equiv', 'Delegate-CH');
+        delegateChMeta.setAttribute('content', delegateChContent);
+        (document.head || document.getElementsByTagName('head')[0]).appendChild(delegateChMeta);
 
         // PMP localStorage contract, mirroring resolveIdUsage() in
         // modules/51DegreesRtdProvider.js. The page owns this read because in
@@ -66,7 +68,10 @@
             if (ID_USAGE) {
                 scriptURL += '?id.usage=' + encodeURIComponent(ID_USAGE);
             }
-            document.write('<script src="' + scriptURL + '"><\/script>');
+            var externalScript = document.createElement('script');
+            externalScript.src = scriptURL;
+            externalScript.async = false;
+            (document.head || document.getElementsByTagName('head')[0]).appendChild(externalScript);
         }
 
         // A reload alone answers to the new preference only if the script is

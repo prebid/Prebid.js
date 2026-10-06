@@ -16,6 +16,7 @@ The Floxis Bid Adapter enables integration with the Floxis programmatic advertis
 - Privacy signal forwarding (GDPR/TCF, USP, GPP, COPPA) via Prebid.js core
 - User identity (User ID / `eids`) and supply chain (`schain`) passthrough
 - First-party fallback id for cookieless browsers (`user.ext.floxisId`)
+- Placement identity: `imp.tagid` is set from the ad unit code unless the publisher supplies `ortb2Imp.tagid`
 - Prebid.js Floors Module support (plus a static `bidFloor` param fallback)
 - User sync (iframe and pixel cookie matching)
 
@@ -126,4 +127,4 @@ pbjs.setConfig({
 The adapter reports client-observed auction timeouts and bidder transport errors to Floxis as cookieless operational telemetry. Each beacon is a `keepalive` fetch sent with credentials omitted (no cookies) and scheduled off the auction's critical path, so it carries only the seat, region, event type, and relevant operational dimensions (HTTP status, timeout flag, duration, auction ID, publisher domain) — no user or device identifier is included. Consent signals are forwarded as opaque pass-through parameters where available. Each beacon fires at most once per distinct seat+region pair per event, and telemetry failures are silently suppressed so they never affect the auction lifecycle.
 
 ## Testing
-Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building (params, host-label safety, floors, FPD/consent passthrough, first-party fallback id), response interpretation and meta mapping, user syncs, billing notifications, and error/timeout telemetry callbacks.
+Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building (params, host-label safety, floors, placement `tagid`, FPD/consent passthrough, first-party fallback id), response interpretation and meta mapping, user syncs, billing notifications, and error/timeout telemetry callbacks.

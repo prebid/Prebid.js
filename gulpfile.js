@@ -2,7 +2,7 @@
 'use strict';
 
 var _ = require('lodash');
-var argv = require('yargs').argv;
+var argv = require('./gulpHelpers.js').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
 // gulplog available transitively via gulp-cli
@@ -13,6 +13,7 @@ var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
 var webpackConfig = require('./webpack.conf.js');
 const standaloneConfig = require('./webpack.standalone.js');
+const {bundler: makeBundlerConfig, manifest: makeManifestConfig} = require('./web-bundler/webpack.bundler.js');
 var helpers = require('./gulpHelpers.js');
 const execaTask = helpers.execaTask;
 var concat = require('gulp-concat');
@@ -26,6 +27,9 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const rename = require('gulp-rename');
 const merge = require('merge-stream');
+const { resolveDependencies } = require('./web-bundler/dependencies.mjs');
+const { getChecksum, getManifest } = require('./web-bundler/manifest.mjs');
+const { injector } = require('./web-bundler/buildOptionsInjector.mjs');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -50,12 +54,33 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['.cache', 'build', 'dist'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
     .pipe(gulpClean());
 }
+
+/**
+ * Clear the build caches under `.cache`. Nothing in a normal workflow needs this - they are keyed
+ * on file contents and on build configuration, so ordinary edits invalidate them on their own,
+ * and `clean` deliberately leaves them alone.
+ *
+ * It is for changes to the build system itself: the babel plugins under `plugins/`,
+ * `babelConfig.js`, a `@babel/*` bump. Those change the output without changing anything the
+ * caches can see. See the header of gulp.precompilation.js for what forgetting looks like.
+ *
+ * `build-release` and `prepare-release` run it first, so a published build never depends on the
+ * cache key being complete.
+ */
+function cleanCache() {
+  return gulp.src(['.cache'], {
+    read: false,
+    allowEmpty: true
+  })
+    .pipe(gulpClean());
+}
+cleanCache.displayName = 'clean-cache';
 
 function requireNodeVersion(version) {
   return (done) => {
@@ -88,6 +113,17 @@ function lint(done) {
   if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
     args.push('--quiet')
   }
+  // Lint a subset: `gulp lint --files src/utils.js,modules/xBidAdapter.js`. Comma separated, the
+  // same shape as `--modules`.
+  //
+  // Calling eslint directly is fine, but do it with `--cache --cache-strategy content` as this
+  // task does: eslint *deletes* .eslintcache when run without `--cache`, and rebuilding it costs a
+  // full pass over the repo. Going through here is the difference between a second and a minute.
+  // (CI deliberately runs bare `npx eslint` instead - it has no cache to lose, and it keeps this
+  // task from becoming the place lint configuration accumulates instead of eslint.config.js.)
+  // String() because a bare `--files` with no value arrives as `true`
+  const files = String(argv.files ?? '').split(',').map(f => f.trim()).filter(f => f && f !== 'true');
+  args.push(...files.map(f => JSON.stringify(f)));
   return execaTask(args.join(' '))().then(() => {
     done();
   }, (err) => {
@@ -261,12 +297,9 @@ function disclosureSummary(modules, summaryFileName) {
   return stream;
 }
 
-const MODULES_REQUIRING_METADATA = ['storageControl'];
-
-function bundle(dev, moduleArr) {
+function getFilesToBundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
-  const sm = dev || argv.sourceMaps;
 
   if (modules.length === 0) {
     modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
@@ -276,21 +309,16 @@ function bundle(dev, moduleArr) {
       throw new PluginError('bundle', 'invalid modules: ' + diff.join(', ') + '. Check your modules list.');
     }
   }
+  const chunks = resolveDependencies(modules, require(helpers.getBuiltPath(dev, 'dependencies.json')), (module) => helpers.getMetadataEntry(module) != null);
+  return {
+    modules,
+    files: chunks.map((file) => helpers.getBuiltPath(dev, file))
+  }
+}
 
-  const metadataModules = modules.find(module => MODULES_REQUIRING_METADATA.includes(module))
-    ? modules.concat(['prebid-core']).map(helpers.getMetadataEntry).filter(name => name != null)
-    : [];
-
-  const coreFile = helpers.getBuiltPrebidCoreFile(dev);
-  const moduleFiles = helpers.getBuiltModules(dev, modules)
-    .concat(metadataModules.map(mod => helpers.getBuiltPath(dev, `${mod}.js`)));
-  const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
-  const dependencies = new Set();
-  [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
-    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
-  });
-  const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
-
+function bundle(dev, moduleArr) {
+  const sm = dev || argv.sourceMaps;
+  const {files: entries, modules} = getFilesToBundle(dev, moduleArr);
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
   // change output filename if argument --tag given
@@ -312,10 +340,20 @@ function bundle(dev, moduleArr) {
 }
 
 function setupDist() {
+  function matches(names) {
+    const hits = names.flatMap(name => [name, `${name}.map`]);
+    return function(path) {
+      return path.dirname === '.' && hits.includes(path.basename + path.extname);
+    }
+  }
+  const isNotForProd = matches(['prebid.js', 'prebid.web.js']);
+  const isWebBundler = matches(['bundle.js']);
   return gulp.src(['build/dist/**/*'])
     .pipe(rename(function (path) {
-      if (path.dirname === '.' && path.basename === 'prebid') {
+      if (isNotForProd(path)) {
         path.dirname = '../not-for-prod';
+      } else if (isWebBundler(path)) {
+        path.dirname = '..';
       }
     }))
     .pipe(gulp.dest('dist/chunks'))
@@ -466,6 +504,7 @@ function startLocalServer(options = {}) {
       return [
         function (req, res, next) {
           res.setHeader('Ad-Auction-Allowed', 'True');
+          res.setHeader('Access-Control-Allow-Origin', '*');
           next();
         }
       ];
@@ -495,25 +534,72 @@ function watchTaskMaker(options = {}) {
 const watch = watchTaskMaker({task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev-no-precomp', test))});
 const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp.series('build-bundle-dev-no-precomp')});
 
+
+function buildManifest(dev) {
+
+  function writeJSON(name, json) {
+    return fs.promises.writeFile(helpers.getBuiltPath(dev, name), JSON.stringify(json, null, 2));
+  }
+
+  return function(done) {
+    getManifest(require(helpers.getBuiltPath(dev, 'dependencies.json')), getFilesToBundle(dev).files)
+      .then(manifest => {
+        return Promise.all([
+          writeJSON('checksums.json', manifest.checksums),
+          writeJSON('manifest.json', manifest),
+        ])
+      }).then(() => done(), done);
+  }
+}
+
+function buildManifestChecksums(dev) {
+  return function (done) {
+    Promise.all(
+      ['manifest.js', 'manifest.json']
+        .map(file =>
+          getChecksum(helpers.getBuiltPath(dev, file))
+            .then(digest => fs.promises.writeFile(helpers.getBuiltPath(dev, `${file}.checksum`), digest))
+        )
+    ).then(() => done(), done);
+  };
+}
+
+function buildOptionsInjector(dev) {
+  return function (done) {
+    fs.promises.readFile(helpers.getBuiltPath(dev, 'buildOptions.js'))
+      .then((contents) => injector(contents.toString()))
+      .then((tpl) => fs.promises.writeFile(helpers.getBuiltPath(dev, 'injectBuildOptions.mjs'), tpl))
+      .then(() => done(), done);
+  }
+}
+
+
 // support tasks
 gulp.task(lint);
 gulp.task(watch);
 
 gulp.task(clean);
 
+gulp.task(cleanCache);
+
 gulp.task(escapePostbidConfig);
 
 
-gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
+gulp.task('build-web-bundler-prod', gulp.series(buildManifest(false), makeWebpackPkg(makeManifestConfig(false)), gulp.parallel(buildManifestChecksums(false), buildOptionsInjector(false)), makeWebpackPkg(makeBundlerConfig(false))));
+gulp.task('build-web-bundler-dev', gulp.series(buildManifest(true), makeDevpackPkg(makeManifestConfig(true)), gulp.parallel(buildManifestChecksums(true), buildOptionsInjector(true)), makeDevpackPkg(makeBundlerConfig(true))));
+gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneConfig), makeDevpackPkg(), gulp.parallel('build-web-bundler-dev', gulpBundle.bind(null, true))));
 gulp.task('build-bundle-dev', gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp'));
-gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneConfig), makeWebpackPkg(), gulp.parallel('build-web-bundler-prod', gulpBundle.bind(null, false))));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeVerbose(standaloneConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
-gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'));
+// match spec files only: a bare directory arg makes mocha filter by --extension and stay
+// non-recursive, but a glob is taken "as is without extensions" (see mocha's lookup-files),
+// so `**/*` would load test/build-logic/fixtures/**.ts as if they were specs.
+gulp.task('test-build-logic', execaTask('npx mocha \"./test/build-logic/**/*_spec.@(js|mjs)\"'));
 gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})));
 gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
@@ -534,9 +620,15 @@ gulp.task('update-codeql', function (done) {
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$/\\/dist\\/src\\/test/g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
-gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
+// `clean-cache` first, as belt and braces rather than to fix a known gap: the key covers file
+// contents, the build configuration, `package.json` and `metadata/modules/*.json`, but not the
+// build system itself - `babelConfig.js`, the plugins under `plugins/`, a `@babel/*` bump - and
+// not whatever a future change starts reading. A release is the build where a stale artifact is
+// least acceptable and where starting cold costs the least, so it does not rely on the key being
+// complete.
+gulp.task('build-release', gulp.series('clean-cache', 'update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
 // prepare NPM release - 'build' to generate files in dist/; 'setup-npmignore' to make sure 'dist' is published in NPM
-gulp.task('prepare-release', gulp.series('build', 'setup-npmignore'));
+gulp.task('prepare-release', gulp.series('clean-cache', 'build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));

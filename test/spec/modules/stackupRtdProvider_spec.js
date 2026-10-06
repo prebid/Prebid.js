@@ -30,7 +30,14 @@ const VALID_API_RESPONSE = {
       data: [
         {
           name: "data.stackup-ai.com",
-          ext: { segtax: 502 },
+          ext: {
+            segtax: 502,
+            stackup: {
+              taxonomy_version: "1.0",
+              dimension: "content",
+              source_tier: "enrichment",
+            },
+          },
           segment: [
             { id: "113", name: "Security", ext: { confidence: 0.95 } },
             { id: "79", name: "Mobile Devices", ext: { confidence: 0.9 } },
@@ -53,6 +60,64 @@ const VALID_API_RESPONSE = {
         name: "data.stackup-ai.com",
         ext: { segtax: 501 },
         segment: [{ id: "1", name: "25-34", ext: { confidence: 0.85 } }],
+      },
+    ],
+  },
+};
+
+const DUAL_TAXONOMY_API_RESPONSE = {
+  site: {
+    cattax: 2,
+    pagecat: ["IAB19-6"],
+    content: {
+      title: "Dual Taxonomy Article",
+      data: [
+        {
+          name: "data.stackup-ai.com",
+          ext: { segtax: 6 },
+          segment: [{ id: "324" }, { id: "328" }],
+        },
+        {
+          name: "data.stackup-ai.com",
+          ext: { segtax: 9 },
+          segment: [{ id: "602" }, { id: "607" }],
+        },
+        {
+          name: "data.stackup-ai.com",
+          segment: [{ id: "stackup:content:smartwatches" }],
+        },
+        {
+          name: "example.com",
+          ext: { segtax: 600 },
+          segment: [{ id: "cpm_tier" }],
+        },
+      ],
+      ext: {
+        stackup: {
+          content_suitability: {
+            framework: "garm",
+            floor_violation: 0,
+            risk: "low",
+          },
+        },
+      },
+    },
+  },
+  user: {
+    data: [
+      {
+        name: "data.stackup-ai.com",
+        ext: { segtax: 4 },
+        segment: [{ id: "aud-1" }, { id: "aud-2" }],
+      },
+      {
+        name: "data.stackup-ai.com",
+        ext: { segtax: 501 },
+        segment: [{ id: "stackup:interests:technology" }],
+      },
+      {
+        name: "data.stackup-ai.com",
+        segment: [{ id: "stackup:purchase_intent:smartwatch_researchers" }],
       },
     ],
   },
@@ -624,9 +689,41 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site).to.be.undefined;
     });
 
-    it("should reject content segments with segtax !== 502", async function () {
+    it("should reject content segments with an unsupported segtax", async function () {
       const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
       bad.site.content.data[0].ext.segtax = 999;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    });
+
+    it("should accept dual taxonomy, standard audience, publisher FPD, GARM, and untagged data", async function () {
+      const req = await runAndGetReq(DUAL_TAXONOMY_API_RESPONSE);
+      expect(req.ortb2Fragments.global.site.cattax).to.equal(2);
+      expect(req.ortb2Fragments.global.site.pagecat).to.deep.equal([
+        "IAB19-6",
+      ]);
+      expect(
+        req.ortb2Fragments.global.site.content.data.map(
+          (block) => block.ext?.segtax
+        )
+      ).to.deep.equal([6, 9, undefined, 600]);
+      expect(
+        req.ortb2Fragments.global.user.data.map(
+          (block) => block.ext?.segtax
+        )
+      ).to.deep.equal([4, 501, undefined]);
+      expect(
+        req.ortb2Fragments.global.site.content.ext.stackup.content_suitability
+      ).to.deep.equal({
+        framework: "garm",
+        floor_violation: 0,
+        risk: "low",
+      });
+    });
+
+    it("should reject user data with an unsupported segtax", async function () {
+      const bad = JSON.parse(JSON.stringify(DUAL_TAXONOMY_API_RESPONSE));
+      bad.user.data[0].ext.segtax = 999;
       const req = await runAndGetReq(bad);
       expect(req.ortb2Fragments.global.site).to.be.undefined;
     });
@@ -652,13 +749,11 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.user.data).to.deep.equal([]); // empty normalised
     });
 
-    it("should fall back to articleId when API omits site.content.id", async function () {
+    it("should not create site.content.id from the resolved path", async function () {
       const noId = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
       delete noId.site.content.id;
       const req = await runAndGetReq(noId);
-      expect(req.ortb2Fragments.global.site.content.id).to.equal(
-        "test-article-001"
-      );
+      expect(req.ortb2Fragments.global.site.content.id).to.be.undefined;
     });
   });
 
@@ -669,6 +764,108 @@ describe("StackUp RTD Provider", function () {
       subModuleObj.init(VALID_CONFIG, {});
       respond200(VALID_API_RESPONSE);
       await flushMicrotasks();
+    });
+
+    async function loadResponse(responseBody) {
+      _resetStateForTesting();
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(responseBody);
+      await flushMicrotasks();
+    }
+
+    async function loadDualTaxonomyResponse() {
+      await loadResponse(DUAL_TAXONOMY_API_RESPONSE);
+    }
+
+    function dualTaxonomyResponseWithout(...fields) {
+      const response = JSON.parse(JSON.stringify(DUAL_TAXONOMY_API_RESPONSE));
+      for (const field of fields) delete response.site[field];
+      return response;
+    }
+
+    it("should not add StackUp page categories to a publisher cattax", async function () {
+      await loadDualTaxonomyResponse();
+      const req = {
+        ortb2Fragments: { global: { site: { cattax: 1, content: { data: [] } } } },
+      };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      expect(req.ortb2Fragments.global.site.cattax).to.equal(1);
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
+    });
+
+    it("should not add a StackUp cattax to publisher page categories", async function () {
+      await loadDualTaxonomyResponse();
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: { pagecat: ["IAB-publisher"], content: { data: [] } },
+          },
+        },
+      };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.pagecat).to.deep.equal([
+        "IAB-publisher",
+      ]);
+    });
+
+    it("should not add StackUp categories to a publisher site.cat", async function () {
+      await loadDualTaxonomyResponse();
+      const req = {
+        ortb2Fragments: {
+          global: { site: { cat: ["IAB1-1"], content: { data: [] } } },
+        },
+      };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      // site.cattax governs cat[] too, so adopting it here would relabel the
+      // publisher's ids under StackUp's taxonomy.
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.cat).to.deep.equal(["IAB1-1"]);
+    });
+
+    it("should not add StackUp categories to a publisher site.sectioncat", async function () {
+      await loadDualTaxonomyResponse();
+      const req = {
+        ortb2Fragments: {
+          global: { site: { sectioncat: ["IAB1-2"], content: { data: [] } } },
+        },
+      };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.sectioncat).to.deep.equal([
+        "IAB1-2",
+      ]);
+    });
+
+    it("should not copy page categories when the response omits cattax", async function () {
+      await loadResponse(dualTaxonomyResponseWithout("cattax"));
+      const req = { ortb2Fragments: { global: {} } };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      // Unpaired pagecat would be read under the default taxonomy (1).
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+    });
+
+    it("should not copy a cattax when the response omits pagecat", async function () {
+      await loadResponse(dualTaxonomyResponseWithout("pagecat"));
+      const req = { ortb2Fragments: { global: {} } };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      expect(req.ortb2Fragments.global.site.cattax).to.be.undefined;
+      expect(req.ortb2Fragments.global.site.pagecat).to.be.undefined;
     });
 
     it("should not overwrite a publisher-supplied content id", function () {
@@ -705,7 +902,7 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site.content.data).to.have.length(2);
     });
 
-    it("should replace an existing provider block (same name)", function () {
+    it("should preserve non-conflicting ext metadata in a matching provider block", function () {
       const req = {
         ortb2Fragments: {
           global: {
@@ -714,7 +911,7 @@ describe("StackUp RTD Provider", function () {
                 data: [
                   {
                     name: "data.stackup-ai.com",
-                    ext: { segtax: 502 },
+                    ext: { segtax: 502, stackup: { dimension: "content" } },
                     segment: [{ id: "old", name: "Old Segment" }],
                   },
                 ],
@@ -726,7 +923,107 @@ describe("StackUp RTD Provider", function () {
       subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
       const data = req.ortb2Fragments.global.site.content.data;
       expect(data).to.have.length(1);
-      expect(data[0].segment[0].id).to.equal("113"); // new enrichment wins
+      expect(data[0].segment.map((segment) => segment.id)).to.deep.equal([
+        "old",
+        "113",
+        "79",
+      ]);
+      expect(data[0].ext).to.deep.equal({
+        segtax: 502,
+        stackup: {
+          taxonomy_version: "1.0",
+          dimension: "content",
+          source_tier: "enrichment",
+        },
+      });
+    });
+
+    it("should merge by name plus segtax while preserving publisher-owned fields", async function () {
+      _resetStateForTesting();
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(DUAL_TAXONOMY_API_RESPONSE);
+      await flushMicrotasks();
+
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: {
+              cattax: 1,
+              pagecat: ["IAB-publisher"],
+              content: {
+                data: [
+                  {
+                    name: "data.stackup-ai.com",
+                    ext: { segtax: 6 },
+                    segment: [{ id: "324", value: "publisher-value" }],
+                  },
+                  {
+                    name: "data.stackup-ai.com",
+                    ext: { segtax: 9 },
+                    segment: [{ id: "publisher-9" }],
+                  },
+                ],
+                ext: {
+                  stackup: { emotion: { tone: "publisher-tone" } },
+                },
+              },
+            },
+            user: {
+              data: [
+                {
+                  name: "data.stackup-ai.com",
+                  ext: { segtax: 4 },
+                  segment: [{ id: "aud-1", value: "publisher-value" }],
+                },
+              ],
+            },
+          },
+        },
+      };
+
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+
+      const global = req.ortb2Fragments.global;
+      expect(global.site.cattax).to.equal(1);
+      expect(global.site.pagecat).to.deep.equal(["IAB-publisher"]);
+      expect(global.site.content.id).to.be.undefined;
+      expect(global.site.content.data).to.have.length(4);
+      const content6 = global.site.content.data.find(
+        (block) => block.ext?.segtax === 6
+      );
+      const content9 = global.site.content.data.find(
+        (block) => block.ext?.segtax === 9
+      );
+      expect(content6.segment.map((segment) => segment.id)).to.deep.equal([
+        "324",
+        "328",
+      ]);
+      expect(content6.segment[0].value).to.equal("publisher-value");
+      expect(content9.segment.map((segment) => segment.id)).to.deep.equal([
+        "publisher-9",
+        "602",
+        "607",
+      ]);
+      expect(
+        global.site.content.ext.stackup.content_suitability
+      ).to.deep.equal({
+        framework: "garm",
+        floor_violation: 0,
+        risk: "low",
+      });
+      expect(global.site.content.ext.stackup.emotion).to.deep.equal({
+        tone: "publisher-tone",
+      });
+
+      expect(global.user.data).to.have.length(3);
+      const audience4 = global.user.data.find(
+        (block) => block.ext?.segtax === 4
+      );
+      expect(audience4.segment.map((segment) => segment.id)).to.deep.equal([
+        "aud-1",
+        "aud-2",
+      ]);
+      expect(audience4.segment[0].value).to.equal("publisher-value");
     });
 
     it("should not overwrite publisher brand_safety ext", function () {
@@ -805,7 +1102,7 @@ describe("StackUp RTD Provider", function () {
 
     it("should not make an XHR request on a valid cache hit", async function () {
       storageGetStub.returns(
-        JSON.stringify({ v: 1, t: Date.now(), d: cachedSnapshot })
+        JSON.stringify({ v: 2, t: Date.now(), d: cachedSnapshot })
       );
       subModuleObj.init(VALID_CONFIG, {});
       expect(server.requests.length).to.equal(0);
@@ -819,9 +1116,9 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site.content.data).to.have.length(1);
     });
 
-    it("should make an XHR request when cached schema version is wrong", function () {
+    it("should ignore cache entries from the legacy schema version", function () {
       storageGetStub.returns(
-        JSON.stringify({ v: 999, t: Date.now(), d: cachedSnapshot })
+        JSON.stringify({ v: 1, t: Date.now(), d: cachedSnapshot })
       );
       subModuleObj.init(VALID_CONFIG, {});
       expect(server.requests.length).to.equal(1);
@@ -829,7 +1126,7 @@ describe("StackUp RTD Provider", function () {
 
     it("should make an XHR request when cached entry is expired (default TTL 1 h)", function () {
       storageGetStub.returns(
-        JSON.stringify({ v: 1, t: Date.now() - 7200 * 1000, d: cachedSnapshot })
+        JSON.stringify({ v: 2, t: Date.now() - 7200 * 1000, d: cachedSnapshot })
       );
       subModuleObj.init(VALID_CONFIG, {});
       expect(server.requests.length).to.equal(1);
@@ -846,7 +1143,7 @@ describe("StackUp RTD Provider", function () {
       expect(key).to.include("stackup:enrich:v1:path_");
 
       const stored = JSON.parse(value);
-      expect(stored.v).to.equal(1);
+      expect(stored.v).to.equal(2);
       expect(stored.d.articleId).to.equal("test-article-001");
       expect(stored.d.source).to.equal("api");
     });
@@ -868,7 +1165,7 @@ describe("StackUp RTD Provider", function () {
         },
       };
       storageGetStub.returns(
-        JSON.stringify({ v: 1, t: Date.now(), d: cachedSnapshot })
+        JSON.stringify({ v: 2, t: Date.now(), d: cachedSnapshot })
       );
 
       subModuleObj.init(noCacheConfig, {});
@@ -933,7 +1230,7 @@ describe("StackUp RTD Provider", function () {
 
     it("should mark cached snapshots with source 'cache'", async function () {
       storageGetStub.returns(
-        JSON.stringify({ v: 1, t: Date.now(), d: cachedSnapshot })
+        JSON.stringify({ v: 2, t: Date.now(), d: cachedSnapshot })
       );
       subModuleObj.init(VALID_CONFIG, {});
       await flushMicrotasks();

@@ -45,8 +45,8 @@ module.exports = function(api, options) {
         if (modName != null) {
           // append "registration" of module file to getGlobal().installedModules
           const registerName = getFreeName(path, '__r');
-          path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
-          path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
+          path.node.body.unshift(...api.parseSync(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
+          path.node.body.push(...api.parseSync(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
       },
       ImportDeclaration: translateToJs,

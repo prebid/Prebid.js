@@ -116,7 +116,7 @@ export const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [BIDDER_SHORT_CODE],
+  aliases: [{ code: BIDDER_SHORT_CODE, gvlid: GVLID }],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
