@@ -857,9 +857,11 @@ export const requestBids = (function() {
     return req.defer.promise
       .catch((e) => {
         if (typeof options.bidsBackHandler === 'function') {
-          options.bidsBackHandler();
-        } else {
-          logError('Error executing bidsBackHandler');
+          try {
+            options.bidsBackHandler();
+          } catch (e) {
+            logError('Error executing bidsBackHandler', e);
+          }
         }
         throw e;
       });
