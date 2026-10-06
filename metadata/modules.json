@@ -677,7 +677,7 @@
       "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
-      "gvlid": 1210,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -1615,14 +1615,14 @@
       "componentType": "bidder",
       "componentName": "blue",
       "aliasOf": null,
-      "gvlid": 620,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
       "componentType": "bidder",
       "componentName": "bms",
       "aliasOf": null,
-      "gvlid": 1105,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -1902,7 +1902,7 @@
       "componentType": "bidder",
       "componentName": "contentexchange",
       "aliasOf": null,
-      "gvlid": 864,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2105,7 +2105,7 @@
       "componentType": "bidder",
       "componentName": "distroscale",
       "aliasOf": null,
-      "gvlid": 754,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
