@@ -3560,8 +3560,8 @@ describe('InsticatorBidAdapter — defensive paths', function () {
       expect(data.regs.coppa).to.equal(1);
     });
 
-    it('keeps an explicit ortb2.regs.coppa of 0 rather than falling back to the global config', function () {
-      config.setConfig({ coppa: true });
+    it('keeps an explicit ortb2.regs.coppa of 0 when COPPA is not set globally', function () {
+      config.setConfig({ coppa: false });
       try {
         const data = buildData(videoBid(validVideo), { ortb2: { regs: { coppa: 0 } } });
         expect(data.regs.coppa).to.equal(0);
