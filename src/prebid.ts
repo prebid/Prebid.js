@@ -816,6 +816,9 @@ export const requestBids = (function() {
     enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
       return startAuction({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer });
+    }).catch((e) => {
+      defer.reject(e);
+      throw e;
     });
   }, 'requestBids');
 
@@ -851,7 +854,15 @@ export const requestBids = (function() {
       defer: defer({ promiseFactory: (r) => new Promise(r) })
     });
     delegate.call(this, req);
-    return req.defer.promise;
+    return req.defer.promise
+      .catch((e) => {
+        if (typeof options.bidsBackHandler === 'function') {
+          options.bidsBackHandler();
+        } else {
+          logError('Error executing bidsBackHandler');
+        }
+        throw e;
+      });
   })));
 })();
 

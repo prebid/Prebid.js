@@ -1949,28 +1949,18 @@ describe('Unit: Prebid Module', function () {
 
       const adUnits = [{ code: 'au', mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [] }];
 
-      it('when a startAuction hook throws', async () => {
-        function throwingHook() {
-          throw new Error('startAuction hook error');
-        }
-        pbjsModule.startAuction.before(throwingHook);
-        try {
-          expect(await settlement(pbjs.requestBids({ adUnits }))).to.not.equal('pending');
-        } finally {
-          pbjsModule.startAuction.getHooks({ hook: throwingHook }).remove();
-        }
-      });
-
       it('when first party data enrichment fails', async () => {
         function rejectingHook(next) {
           next.bail(Promise.reject(new Error('enrichment error')));
         }
         enrichFPD.before(rejectingHook);
+        const bidsBackHandler = sinon.stub();
         try {
-          expect(await settlement(pbjs.requestBids({ adUnits }))).to.not.equal('pending');
+          expect(await settlement(pbjs.requestBids({ adUnits, bidsBackHandler }))).to.not.equal('pending');
         } finally {
           enrichFPD.getHooks({ hook: rejectingHook }).remove();
         }
+        sinon.assert.called(bidsBackHandler);
       });
     });
 

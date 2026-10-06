@@ -376,8 +376,7 @@ describe('consentManagement', function () {
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.false;
         const consent = gdprDataHandler.getConsentData();
-        // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
-        sinon.assert.calledTwice(utils.logError);
+        sinon.assert.calledOnce(utils.logError);
         expect(consent).to.be.null;
         expect(gdprDataHandler.ready).to.be.true;
       });
@@ -419,10 +418,10 @@ describe('consentManagement', function () {
           'CMP is not found': goodConfig,
           'static config has no consentData': { cmpApi: 'static' },
         }).forEach(([t, cmConfig]) => {
-          it(`resolves when ${t}`, async () => {
+          it(`rejectgs when ${t}`, async () => {
             await setConsentConfig(cmConfig);
             const bidsBackHandler = sinon.stub();
-            expect(await settlement(pbjs.requestBids({ adUnits, bidsBackHandler }))).to.equal('resolved');
+            expect(await settlement(pbjs.requestBids({ adUnits, bidsBackHandler }))).to.equal('rejected');
             sinon.assert.calledOnce(bidsBackHandler);
           });
         });
@@ -678,7 +677,6 @@ describe('consentManagement', function () {
 
         it('throws an error when processCmpData check fails + does not call requestBids callback', async function () {
           const testConsentData = {};
-          let bidsBackHandlerReturn = false;
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData);
@@ -690,13 +688,13 @@ describe('consentManagement', function () {
           sinon.assert.notCalled(utils.logError);
 
           [utils.logWarn, utils.logError].forEach((stub) => stub.resetHistory());
-
-          expect(await runHook({ bidsBackHandler: () => bidsBackHandlerReturn = true })).to.be.false;
+          const reject = sinon.stub();
+          expect(await runHook({ defer: { reject } })).to.be.false;
           const consent = gdprDataHandler.getConsentData();
 
           sinon.assert.calledOnce(utils.logError);
           sinon.assert.notCalled(utils.logWarn);
-          expect(bidsBackHandlerReturn).to.be.true;
+          sinon.assert.called(reject);
           expect(consent).to.be.null;
           expect(gdprDataHandler.ready).to.be.true;
         });
