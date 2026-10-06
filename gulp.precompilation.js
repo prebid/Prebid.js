@@ -40,6 +40,7 @@ const path = require('path');
 const tap = require('gulp-tap');
 const _ = require('lodash');
 const fs = require('fs');
+const {Transform} = require('node:stream');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
@@ -166,6 +167,27 @@ function generateMetadataModules() {
     .pipe(gulp.dest(helpers.getPrecompiledPath('metadata/modules')));
 }
 
+/**
+ * Whether `dest` already holds exactly `contents`.
+ *
+ * Steps that regenerate the same output on every precompile check this before writing, because
+ * `serve*` and `watch` precompile again on every source change, and every write into `dist/src` is
+ * seen by two watchers. Karma's webpack re-runs the tests on any `.js` it depends on, so rewriting
+ * one that has not changed runs the suite against whatever else is not yet rebuilt - the previous
+ * version of the edited file, if the write lands before babel's. And the `dist/src/**\/*.js` watch in
+ * `watchTaskMaker` (chokidar) answers a write to a file outside its pattern, such as a `.d.ts`, by
+ * re-reading that file's whole directory; rewriting every declaration on each change rescans large
+ * directories like `dist/src/modules` many times over, which stalls the gulp process and grows its
+ * heap with each edit until it runs out.
+ */
+function isUpToDate(dest, contents) {
+  try {
+    return fs.readFileSync(dest).equals(Buffer.from(contents));
+  } catch {
+    return false;
+  }
+}
+
 const TS_OUT = path.resolve('.cache/ts/out');
 
 /**
@@ -193,6 +215,9 @@ function copyDeclarations() {
         return;
       }
       const dest = helpers.getPrecompiledPath(relative);
+      if (isUpToDate(dest, fs.readFileSync(file))) {
+        return;
+      }
       fs.mkdirSync(path.dirname(dest), {recursive: true});
       fs.copyFileSync(file, dest);
     });
@@ -352,10 +377,15 @@ function generateBuildOptions(options = {}) {
     options = buildOptions(getDefaults(options));
     import('./customize/buildOptions.mjs').then(({getBuildOptionsModule}) => {
       const dest = getBuildOptionsModule();
+      const contents = `export default ${JSON.stringify(options, null, 2)}`;
+      if (isUpToDate(dest, contents)) {
+        done();
+        return;
+      }
       if (!fs.existsSync(path.dirname(dest))) {
         fs.mkdirSync(path.dirname(dest), {recursive: true});
       }
-      fs.writeFile(dest, `export default ${JSON.stringify(options, null, 2)}`, done);
+      fs.writeFile(dest, contents, done);
     })
   }
 
@@ -382,6 +412,14 @@ function generateCreativeRenderers() {
   return gulp.src(['build/creative/renderers/**/*.js'], {since: gulp.lastRun(generateCreativeRenderers)})
     .pipe(tap((file) => {
       file.contents = Buffer.from(tpl({contents: file.contents}));
+    }))
+    // `buildCreative` re-emits every renderer on each run, whether or not its sources changed,
+    // so `since` above lets them all through
+    .pipe(new Transform({
+      objectMode: true,
+      transform(file, enc, cb) {
+        cb(null, isUpToDate(path.join(helpers.getCreativeRendererPath(), file.relative), file.contents) ? undefined : file);
+      }
     }))
     .pipe(gulp.dest(helpers.getCreativeRendererPath()))
 }
