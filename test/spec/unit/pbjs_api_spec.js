@@ -1939,6 +1939,41 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
+    describe('returns a promise that settles when the auction cannot start', () => {
+      function settlement(promise, ms = 100) {
+        return Promise.race([
+          promise.then(() => 'resolved', () => 'rejected'),
+          new Promise(resolve => setTimeout(() => resolve('pending'), ms))
+        ]);
+      }
+
+      const adUnits = [{ code: 'au', mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [] }];
+
+      it('when a startAuction hook throws', async () => {
+        function throwingHook() {
+          throw new Error('startAuction hook error');
+        }
+        pbjsModule.startAuction.before(throwingHook);
+        try {
+          expect(await settlement(pbjs.requestBids({ adUnits }))).to.not.equal('pending');
+        } finally {
+          pbjsModule.startAuction.getHooks({ hook: throwingHook }).remove();
+        }
+      });
+
+      it('when first party data enrichment fails', async () => {
+        function rejectingHook(next) {
+          next.bail(Promise.reject(new Error('enrichment error')));
+        }
+        enrichFPD.before(rejectingHook);
+        try {
+          expect(await settlement(pbjs.requestBids({ adUnits }))).to.not.equal('pending');
+        } finally {
+          enrichFPD.getHooks({ hook: rejectingHook }).remove();
+        }
+      });
+    });
+
     describe('starts auction', () => {
       let startAuctionStub, auctionStarted, __started;
       function saHook(fn, ...args) {
