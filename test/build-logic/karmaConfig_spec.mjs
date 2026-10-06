@@ -14,7 +14,8 @@ describe('Karma configuration', function () {
     it('waits for a module and its source map to both land before rebuilding in watch mode', function () {
       const options = watchOptions(true);
       // webpack's default (20ms) is shorter than the gap between a precompile writing a `.js` and its `.map`
-      expect(options.aggregateTimeout).to.be.at.least(1000);
+      // and every watch run waits this long after the last write, so it is no longer than that needs
+      expect(options.aggregateTimeout).to.equal(1000);
       // source maps stay watched, so a late one still updates the bundle rather than going stale
       expect(options.ignored).to.equal(undefined);
     });
