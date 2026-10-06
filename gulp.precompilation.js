@@ -173,8 +173,9 @@ function generateMetadataModules() {
  * A watch task precompiles again on every source change, and anything watching `dist/src` reacts
  * to a write whether or not the bytes changed. Rewriting a file that a test build imports re-runs
  * the tests before the files that did change have been rebuilt, so they run the previous version;
- * rewriting many files at once costs a watcher an event each. The steps below whose output is
- * usually identical from one precompile to the next check this, and leave such a file alone.
+ * rewriting many files at once costs a watcher an event each. `copyDeclarations`,
+ * `generateBuildOptions` and `generateCreativeRenderers`, whose output is usually identical from one
+ * precompile to the next, check this and leave such a file alone.
  */
 function isUpToDate(dest, contents) {
   try {
