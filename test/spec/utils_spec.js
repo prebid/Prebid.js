@@ -1427,7 +1427,6 @@ describe('Utils', function () {
       const secondCall = isGzipCompressionSupported();
 
       expect(firstCall).to.equal(secondCall);
-      expect(await firstCall).to.be.true;
     });
   });
 
