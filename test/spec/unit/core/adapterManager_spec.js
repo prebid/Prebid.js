@@ -1196,6 +1196,17 @@ describe('adapterManager tests', function () {
         delete adapterManager.bidderRegistry['adequant'];
       });
     });
+
+    it('calls a later s2sConfig when no bidder from an earlier one is in the auction', () => {
+      const adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder === 'pubmatic');
+        return adUnit;
+      }).filter(adUnit => adUnit.bids.length > 0);
+      const bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+      expect(prebidServerAdapterMock.callBids.firstCall.args[0].s2sConfig.accountId).to.equal(CONFIG2.accountId);
+    });
   }); // end multiple s2s tests
 
   describe('s2sTesting', function () {
