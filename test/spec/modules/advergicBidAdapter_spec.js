@@ -137,7 +137,7 @@ describe('Advergic adapter', () => {
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://pbs.avads.live/rtb/bid');
       expect(request.options).to.deep.equal({
-        contentType: 'application/json',
+        contentType: 'text/plain;charset=UTF-8',
         withCredentials: true
       });
       expect(request.data).to.be.an('object');
@@ -548,11 +548,46 @@ describe('Advergic adapter', () => {
         { gppString: 'GPP', applicableSections: [2, 6] }
       );
 
-      expect(sync.url).to.equal(
-        'https://sync.example/iframe&gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2%2C6'
+      const parsedUrl = new URL(sync.url);
+
+      expect(parsedUrl.origin + parsedUrl.pathname).to.equal(
+        'https://sync.example/iframe'
       );
+
+      expect(parsedUrl.searchParams.get('gdpr')).to.equal('1');
+      expect(parsedUrl.searchParams.get('gdpr_consent')).to.equal('CONSENT');
+      expect(parsedUrl.searchParams.get('us_privacy')).to.equal('1YNN');
+      expect(parsedUrl.searchParams.get('gpp')).to.equal('GPP');
+      expect(parsedUrl.searchParams.get('gpp_sid')).to.equal('2,6');
     });
 
+    it('should append privacy parameters using & when sync URL already has query parameters', () => {
+      const serverResponses = [{
+        body: {
+          ext: {
+            sync: {
+              iframe: ['https://sync.example/iframe?bidder=advergic']
+            }
+          }
+        }
+      }];
+
+      const [sync] = spec.getUserSyncs(
+        { iframeEnabled: true, pixelEnabled: false },
+        serverResponses,
+        { gdprApplies: true, consentString: 'CONSENT' }
+      );
+
+      const parsedUrl = new URL(sync.url);
+
+      expect(parsedUrl.origin + parsedUrl.pathname).to.equal(
+        'https://sync.example/iframe'
+      );
+
+      expect(parsedUrl.searchParams.get('bidder')).to.equal('advergic');
+      expect(parsedUrl.searchParams.get('gdpr')).to.equal('1');
+      expect(parsedUrl.searchParams.get('gdpr_consent')).to.equal('CONSENT');
+    });
     it('should use the iframe fallback endpoint when no server sync is available', () => {
       const [sync] = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
       expect(sync).to.deep.equal({
@@ -625,6 +660,7 @@ describe('Advergic adapter', () => {
       const imageUrls = [];
       const imageStub = sinon.stub(window, 'Image').callsFake(function() {
         const image = {};
+
         Object.defineProperty(image, 'src', {
           configurable: true,
           get() {
@@ -634,11 +670,12 @@ describe('Advergic adapter', () => {
             imageUrls.push(url);
           }
         });
+
         return image;
       });
 
       try {
-        spec.onBidWon({
+        const bid = {
           requestId: 'bid-001',
           auctionId: 'auction-001',
           adId: 'ad-001',
@@ -648,15 +685,21 @@ describe('Advergic adapter', () => {
           width: 300,
           height: 250,
           burl: 'https://tracking.example/win?price=${AUCTION_PRICE}'
-        });
+        };
+
+        // Billing notification is handled separately from onBidWon.
+        spec.onBidBillable(bid);
 
         expect(imageUrls).to.deep.equal([
           'https://tracking.example/win?price=2'
         ]);
 
+        spec.onBidWon(bid);
+
         const winRequests = server.requests.filter(
           (req) => req.url === 'https://pbs.avads.live/rtb/win'
         );
+
         expect(winRequests).to.have.length(1);
       } finally {
         imageStub.restore();
@@ -667,6 +710,7 @@ describe('Advergic adapter', () => {
       const imageUrls = [];
       const imageStub = sinon.stub(window, 'Image').callsFake(function() {
         const image = {};
+
         Object.defineProperty(image, 'src', {
           configurable: true,
           get() {
@@ -686,22 +730,29 @@ describe('Advergic adapter', () => {
           }
         });
 
-        spec.onBidWon({
+        const bid = {
           requestId: 'bid-001',
           cpm: 2,
           currency: 'USD',
           creativeId: 'creative-1',
           burl: 'https://tracking.example/win?price=${AUCTION_PRICE}'
-        });
+        };
+
+        // burl must still fire even when optional event tracking is disabled.
+        spec.onBidBillable(bid);
+
+        expect(imageUrls).to.deep.equal([
+          'https://tracking.example/win?price=2'
+        ]);
+
+        // Optional win analytics must be disabled.
+        spec.onBidWon(bid);
 
         const winRequests = server.requests.filter(
           (req) => req.url === 'https://pbs.avads.live/rtb/win'
         );
 
         expect(winRequests).to.have.length(0);
-        expect(imageUrls).to.deep.equal([
-          'https://tracking.example/win?price=2'
-        ]);
       } finally {
         imageStub.restore();
       }

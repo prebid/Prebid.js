@@ -322,8 +322,8 @@ function replaceBidMacros(url: string, bid: any): string {
     .replace(/\${AUCTION_PRICE}/g, bid.cpm)
     .replace(/\${AUCTION_CURRENCY}/g, bid.currency || 'USD')
     .replace(/\${AUCTION_ID}/g, bid.auctionId)
-    .replace(/\${AUCTION_BID_ID}/g, bid.requestId)
-    .replace(/\${AUCTION_IMP_ID}/g, bid.adId)
+    .replace(/\${AUCTION_BID_ID}/g, bid.bidId)
+    .replace(/\${AUCTION_IMP_ID}/g, (bid.impId || bid.requestId))
     .replace(/\${AUCTION_AD_ID}/g, bid.creativeId);
 }
 
@@ -562,7 +562,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       url: ENDPOINT_URL,
       data: ortbRequest,
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain;charset=UTF-8',
         withCredentials: true
       }
     } as any;
@@ -698,7 +698,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       queryParams.push(`gpp_sid=${encodeURIComponent(gppConsent.applicableSections?.join(',') || '')}`);
     }
 
-    const queryString = queryParams.length > 0 ? '&' + queryParams.join('&') : '';
+    const queryString = queryParams.join('&');
+
+    const appendQueryParams = (url: string): string => {
+      if (!queryString) return url;
+
+      return url + (url.includes('?') ? '&' : '?') + queryString;
+    };
 
     // Check if server returned user sync URLs
     if (serverResponses && serverResponses.length > 0) {
@@ -710,7 +716,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
             syncUrls.iframe.forEach((url: string) => {
               syncs.push({
                 type: 'iframe',
-                url: url + queryString
+                url: appendQueryParams(url)
               });
             });
           }
@@ -719,7 +725,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
             syncUrls.image.forEach((url: string) => {
               syncs.push({
                 type: 'image',
-                url: url + queryString
+                url: appendQueryParams(url)
               });
             });
           }
@@ -733,12 +739,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       if (syncOptions.iframeEnabled) {
         syncs.push({
           type: 'iframe',
-          url: SYNC_URL + queryString + '&f=i'
+          url: appendQueryParams(`${SYNC_URL}&f=i`)
         });
       } else if (syncOptions.pixelEnabled) {
         syncs.push({
           type: 'image',
-          url: SYNC_URL + queryString + '&f=b'
+          url: appendQueryParams(`${SYNC_URL}&f=b`)
         });
       }
     }
@@ -746,11 +752,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     return syncs;
   },
 
-  /**
-   * Handle win notification
-   * @param bid The bid that won the auction
-   */
-  onBidWon: function(bid) {
+  onBidBillable(bid) {
     // Fire OpenRTB billing notification URL (burl). This is part of the
     // standard bid response and is intentionally not disabled by the optional
     // analytics tracking switch.
@@ -758,7 +760,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       const burlWithMacros = replaceBidMacros(bid.burl, bid);
       triggerPixel(burlWithMacros);
     }
+  },
 
+  /**
+   * Handle win notification
+   * @param bid The bid that won the auction
+   */
+  onBidWon: function(bid) {
     if (isEventTrackingDisabled()) return;
 
     // Send win notification to Advergic for analytics
@@ -782,7 +790,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 
     ajax(WIN_URL, null, JSON.stringify(winData), {
       method: 'POST',
-      contentType: 'application/json',
+      contentType: 'text/plain;charset=UTF-8',
       withCredentials: true
     });
   },
@@ -804,7 +812,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 
     ajax(TIMEOUT_URL, null, JSON.stringify(timeoutPayload), {
       method: 'POST',
-      contentType: 'application/json',
+      contentType: 'text/plain;charset=UTF-8',
       withCredentials: true
     });
   },
@@ -830,7 +838,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 
     ajax(ERROR_URL, null, JSON.stringify(errorData), {
       method: 'POST',
-      contentType: 'application/json',
+      contentType: 'text/plain;charset=UTF-8',
       withCredentials: true
     });
   }
