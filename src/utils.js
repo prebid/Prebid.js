@@ -1262,4 +1262,3 @@ export function triggerNurlWithCpm(bid, cpm) {
     politeTriggerPixel(bid.nurl);
   }
 }
-

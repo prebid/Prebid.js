@@ -577,7 +577,6 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
           logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
         }
 
-
         const sendUncompressed = wrapCallback(() => callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) }));
 
         if (enableGZipCompression && !debugMode) {
