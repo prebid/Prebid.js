@@ -637,8 +637,9 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
       logWarn('Skipping GZIP compression for PBS as debug mode is enabled');
     }
 
+    const sendUncompressed = () => callAjax(requestData.requestJson, requestData.endpointUrl);
+
     if (enableGZipCompression && !debugMode) {
-      const sendUncompressed = () => callAjax(requestData.requestJson, requestData.endpointUrl);
       isGzipCompressionSupported().then((supported) => {
         if (supported) {
           return compressDataWithGZip(requestData.requestJson)
@@ -653,7 +654,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
         }
       }).catch(sendUncompressed);
     } else {
-      callAjax(requestData.requestJson, requestData.endpointUrl);
+      sendUncompressed();
     }
   } else {
     logError('PBS request not made.  Check endpoints.');

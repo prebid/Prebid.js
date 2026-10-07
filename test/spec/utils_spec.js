@@ -13,6 +13,7 @@ import {
 } from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
+import { compressDataWithGZip, isGzipCompressionSupported } from '../../src/utils/gzip.js';
 
 var assert = require('assert');
 
@@ -1422,8 +1423,8 @@ describe('Utils', function () {
 
   describe('isGzipCompressionSupported', () => {
     it('should validate a gzip round trip and cache the result', async () => {
-      const firstCall = utils.isGzipCompressionSupported();
-      const secondCall = utils.isGzipCompressionSupported();
+      const firstCall = isGzipCompressionSupported();
+      const secondCall = isGzipCompressionSupported();
 
       expect(firstCall).to.equal(secondCall);
       expect(await firstCall).to.be.true;
@@ -1461,7 +1462,7 @@ describe('Utils', function () {
 
     it('should compress data correctly when CompressionStream is available', async () => {
       const data = JSON.stringify({ test: 'data' });
-      const compressedData = await utils.compressDataWithGZip(data);
+      const compressedData = await compressDataWithGZip(data);
 
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
@@ -1470,7 +1471,7 @@ describe('Utils', function () {
 
     it('should handle non-string input by stringifying it', async () => {
       const nonStringData = { test: 'data' };
-      const compressedData = await utils.compressDataWithGZip(nonStringData);
+      const compressedData = await compressDataWithGZip(nonStringData);
 
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);

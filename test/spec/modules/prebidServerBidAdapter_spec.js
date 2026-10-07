@@ -7,6 +7,7 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, { PBS_ADAPTER_NAME } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
+import * as gzip from 'src/utils/gzip.js';
 import { deepAccess, deepClone, getWinDimensions } from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
@@ -989,8 +990,8 @@ describe('S2S Adapter', function () {
     describe('gzip compression', function () {
       let gzipStub, gzipSupportStub, getParamStub, debugStub;
       beforeEach(function() {
-        gzipStub = sinon.stub(utils, 'compressDataWithGZip').resolves('compressed');
-        gzipSupportStub = sinon.stub(utils, 'isGzipCompressionSupported');
+        gzipStub = sinon.stub(gzip, 'compressDataWithGZip').resolves('compressed');
+        gzipSupportStub = sinon.stub(gzip, 'isGzipCompressionSupported');
         getParamStub = sinon.stub(utils, 'getParameterByName');
         debugStub = sinon.stub(utils, 'debugTurnedOn');
       });

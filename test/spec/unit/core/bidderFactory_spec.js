@@ -4,6 +4,7 @@ import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
 import { userSync } from 'src/userSync.js';
 import * as utils from 'src/utils.js';
+import * as gzip from 'src/utils/gzip.js';
 import { config } from 'src/config.js';
 import { EVENTS, DEBUG_MODE } from 'src/constants.js';
 import * as events from 'src/events.js';
@@ -1743,8 +1744,8 @@ describe('bidderFactory', () => {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      isGzipSupportedStub = sandbox.stub(utils, 'isGzipCompressionSupported');
-      gzipStub = sandbox.stub(utils, 'compressDataWithGZip');
+      isGzipSupportedStub = sandbox.stub(gzip, 'isGzipCompressionSupported');
+      gzipStub = sandbox.stub(gzip, 'compressDataWithGZip');
       spec = {
         code: CODE,
         isBidRequestValid: sinon.stub(),

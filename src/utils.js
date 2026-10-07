@@ -2,7 +2,7 @@ import { config } from './config.js';
 
 import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
-import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
+import { isArray, isFn, isPlainObject, isStr } from './utils/objects.js';
 import * as logging from './utils/logging.js';
 import * as debug from './utils/debug.js';
 
@@ -10,6 +10,7 @@ export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js';
 export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
+export { compressDataWithGZip, isGzipCompressionSupported } from './utils/gzip.js';
 
 // many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
 export const logInfo = logging.logInfo;
@@ -1262,49 +1263,3 @@ export function triggerNurlWithCpm(bid, cpm) {
   }
 }
 
-// To ensure that isGzipCompressionSupported() doesn’t become an overhead, we have used memoization to cache the result after the first execution.
-// This way, even if the function is called multiple times, it will only perform the actual check once and return the cached result in subsequent calls.
-export const isGzipCompressionSupported = (function () {
-  let cachedResult; // Store the result promise
-
-  return function () {
-    if (cachedResult !== undefined) {
-      return cachedResult; // Return cached result if already computed
-    }
-
-    cachedResult = (async () => {
-      try {
-        if (typeof window.CompressionStream === 'undefined' || typeof window.DecompressionStream === 'undefined') {
-          return false;
-        }
-        const probe = 'prebid-gzip-probe';
-        const compressed = await compressDataWithGZip(probe);
-        const decompressed = new Blob([compressed])
-          .stream()
-          .pipeThrough(new window.DecompressionStream('gzip'));
-        return await new Response(decompressed).text() === probe;
-      } catch (error) {
-        return false;
-      }
-    })();
-
-    return cachedResult;
-  };
-})();
-
-// Make sure to use isGzipCompressionSupported before calling this function
-export async function compressDataWithGZip(data) {
-  if (typeof data !== 'string') { // TextEncoder (below) expects a string
-    data = JSON.stringify(data);
-  }
-
-  const encoder = new TextEncoder();
-  const encodedData = encoder.encode(data);
-  const compressedStream = new Blob([encodedData])
-    .stream()
-    .pipeThrough(new window.CompressionStream('gzip'));
-
-  const compressedBlob = await new Response(compressedStream).blob();
-  const compressedArrayBuffer = await compressedBlob.arrayBuffer();
-  return new Uint8Array(compressedArrayBuffer);
-}
