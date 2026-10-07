@@ -744,7 +744,8 @@ const adapterManager = {
       }
     });
 
-    const s2sAdapterCalls = _s2sConfigs.map((s2sConfig, counter) => () => {
+    let counter = 0;
+    const s2sAdapterCalls = _s2sConfigs.map((s2sConfig) => () => {
       if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
         // s2s should get the same client side timeout as other client side requests.
         const s2sAjax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, requestBidsTimeout, requestCallbacks ? {
@@ -792,6 +793,7 @@ const adapterManager = {
         } else {
           logError('missing ' + s2sConfig.adapter);
         }
+        counter++;
       }
     });
 
