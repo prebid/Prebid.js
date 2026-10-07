@@ -1082,7 +1082,7 @@ describe('adqueryBidAdapter', function () {
         expect(req.data.bidQid).to.equal('qd_adquery-id');
       });
 
-      it('should fall back to first EID when no adquery.io EID available', function () {
+      it('should fall back to an EID from another source when adquery.io EID is missing', function () {
         const bid = Object.assign({}, bidRequest, {
           userIdAsEids: [
             { source: 'other.com', uids: [{ id: 'fallback-id' }] }
@@ -1092,9 +1092,81 @@ describe('adqueryBidAdapter', function () {
         expect(req.data.bidQid).to.equal('fallback-id');
       });
 
-      it('should generate qd_ prefixed userId when no userIdAsEids present', function () {
+      it('should pick the fallback EID by source, not by position in userIdAsEids', function () {
+        const eids = [
+          { source: 'pubcid.org', uids: [{ id: 'pubcid-id' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] },
+          { source: 'criteo.com', uids: [{ id: 'criteo-id' }] }
+        ];
+        const forward = spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: eids })], { refererInfo: {} })[0];
+        const reversed = spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: [...eids].reverse() })], { refererInfo: {} })[0];
+        expect(forward.data.bidQid).to.equal('criteo-id');
+        expect(reversed.data.bidQid).to.equal('criteo-id');
+      });
+
+      it('should skip fallback EIDs without a usable uid', function () {
+        const bid = Object.assign({}, bidRequest, {
+          userIdAsEids: [
+            { source: 'aaa.com', uids: [] },
+            { source: 'bbb.com', uids: [{ id: '' }] },
+            { uids: [{ id: 'no-source-id' }] },
+            { source: 'ccc.com', uids: [{ id: 'ccc-id' }] }
+          ]
+        });
+        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
+        expect(req.data.bidQid).to.equal('ccc-id');
+      });
+
+      it('should not modify userIdAsEids order', function () {
+        const eids = [
+          { source: 'zzz.com', uids: [{ id: 'zzz-id' }] },
+          { source: 'aaa.com', uids: [{ id: 'aaa-id' }] }
+        ];
+        spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: eids })], { refererInfo: {} });
+        expect(eids.map(eid => eid.source)).to.deep.equal(['zzz.com', 'aaa.com']);
+      });
+
+      it('should send empty bidQid when no userIdAsEids present', function () {
         const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.match(/^qd_/);
+        expect(req.data.bidQid).to.equal('');
+      });
+
+      it('should not generate a random userId per request', function () {
+        const first = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
+        const second = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
+        expect(first.data.bidQid).to.equal(second.data.bidQid);
+      });
+
+      it('should skip empty adquery.io uids', function () {
+        const bid = Object.assign({}, bidRequest, {
+          userIdAsEids: [
+            { source: 'adquery.io', uids: [{ id: '' }, { id: 'second-uid' }] }
+          ]
+        });
+        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
+        expect(req.data.bidQid).to.equal('second-uid');
+      });
+
+      it('should fall back to another EID when adquery.io EID has no uid', function () {
+        const bid = Object.assign({}, bidRequest, {
+          userIdAsEids: [
+            { source: 'adquery.io', uids: [] },
+            { source: 'other.com', uids: [{ id: 'other-id' }] }
+          ]
+        });
+        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
+        expect(req.data.bidQid).to.equal('other-id');
+      });
+
+      it('should send empty bidQid when no EID has a usable uid', function () {
+        const bid = Object.assign({}, bidRequest, {
+          userIdAsEids: [
+            { source: 'adquery.io', uids: [] },
+            { source: 'other.com', uids: [{ id: '' }] }
+          ]
+        });
+        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
+        expect(req.data.bidQid).to.equal('');
       });
     });
   });
