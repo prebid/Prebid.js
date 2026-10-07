@@ -65,7 +65,7 @@ function attachProperties(config, useDefaultValues = true) {
   } : {};
 
   const validateauctionOptions = (() => {
-    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
+    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes', 'yield'];
     const arrKeys = ['secondaryBidders'];
     const enumKeys = { viewabilityMeasurement: ['observer', 'boundingBox'] };
     const allKeys = [].concat(boolKeys).concat(arrKeys).concat(Object.keys(enumKeys));
