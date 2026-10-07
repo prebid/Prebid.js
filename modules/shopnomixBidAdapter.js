@@ -55,6 +55,8 @@ const converter = ortbConverter({
     // viewable" from "never measured" rather than reading both as zero. A string
     // rather than a flag: a publisher's own check is invisible to us here, and
     // this adapter can't gain a field later without every publisher rebuilding.
+    // bidViewabilityIO also calls onBidViewable, but only for banner, so it
+    // never sees a native bid. Revisit this line if it gains native support.
     request.ext = {
       ...request.ext,
       shopnomix: { viewability: config.getConfig('bidViewability')?.enabled ? 'module' : 'none' }
