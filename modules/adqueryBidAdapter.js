@@ -295,16 +295,24 @@ function getFirstUid(eid) {
 // adquery.io EID first; otherwise the EID of another source chosen by source name,
 // so the same set of EIDs always yields the same user id regardless of module order.
 function getUserIdFromEids(bid) {
-  const eids = (Array.isArray(bid.userIdAsEids) ? bid.userIdAsEids : [])
-    .filter(eid => typeof eid?.source === 'string' && getFirstUid(eid));
-
-  const adqueryEid = eids.find(eid => eid.source === 'adquery.io');
-  if (adqueryEid) {
-    return getFirstUid(adqueryEid);
+  if (!Array.isArray(bid.userIdAsEids)) {
+    return '';
   }
 
-  const [fallbackEid] = [...eids].sort((a, b) => a.source.localeCompare(b.source));
-  return fallbackEid ? getFirstUid(fallbackEid) : '';
+  let fallback = null;
+  for (const eid of bid.userIdAsEids) {
+    const id = getFirstUid(eid);
+    if (!id || typeof eid?.source !== 'string') {
+      continue;
+    }
+    if (eid.source === 'adquery.io') {
+      return id;
+    }
+    if (!fallback || eid.source.localeCompare(fallback.source) < 0) {
+      fallback = { source: eid.source, id };
+    }
+  }
+  return fallback ? fallback.id : '';
 }
 
 function buildRequest(bid, bidderRequest, isVideo = false) {
