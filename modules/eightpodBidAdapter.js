@@ -5,7 +5,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_BIDDER } from '../src/activities/modules.js';
-import { config } from '../src/config.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 export const BIDDER_CODE = 'eightpod';
 export const GVLID = 1497;
@@ -326,7 +326,7 @@ export function applyPrivacyConsent(data, bidderRequest) {
     }
   }
 
-  if (config.getConfig('coppa') === true) {
+  if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
     utils.deepSetValue(data, 'regs.coppa', 1);
   }
 }

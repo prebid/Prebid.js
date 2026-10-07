@@ -15,7 +15,7 @@ By leveraging the Intent IQ identity graph, our module helps publishers, SSPs, a
 ## Registration
 
 Navigate to [our portal](https://www.intentiq.com/) and contact our team for partner ID.
-check our [documentation](https://pbmodule.documents.intentiq.com/) to get more information about our solution and how to utilze it's full potential
+check our [documentation](https://be.documents.intentiq.com/intent-iq-prebid-module) to get more information about our solution and how to utilze it's full potential
 
 ## Integration
 
