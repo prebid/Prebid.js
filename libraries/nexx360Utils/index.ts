@@ -7,7 +7,8 @@ import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
 import { StorageManager } from '../../src/storageManager.js';
 import { BidRequest, ORTBImp, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
-import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { AdapterRequest, AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { ClientBidderRequest } from '../../src/adapterManager.js';
 import { Nexx360ServerAuction } from './types.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
@@ -192,7 +193,7 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
       demandSource: bid.ext.ssp,
     },
   };
-  if (bid.dealid) response.dealid = bid.dealid;
+  if (bid.dealid) response.dealId = bid.dealid;
 
   if (bid.ext.mediaType === BANNER) response.ad = bid.adm;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm;
@@ -223,10 +224,13 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 // --- Server auction data extraction ---
 
 /**
- * Bid response carrying the server-side auction data from the response `ext`,
- * for consumption by the Nexx360 analytics adapter on the `bidResponse` event.
+ * Bidder request carrying the server-side auction data from the response `ext`,
+ * for consumption by the Nexx360 analytics adapter on the `bidderDone` event.
  */
-export type Nexx360BidResponse = BidResponse & { serverAuctionData?: Nexx360ServerAuction };
+export type Nexx360BidderRequest = ClientBidderRequest<string> & { serverAuctionData?: Nexx360ServerAuction };
+
+/** Request built by `buildRequests`, handed back to `interpretResponse` with its bidder request. */
+export type Nexx360AdapterRequest = AdapterRequest & { bidderRequest?: Nexx360BidderRequest };
 
 function getServerAuction(responseBody: any): Nexx360ServerAuction | null {
   const serverAuction = deepAccess(responseBody, 'ext.serverAuction');
@@ -236,29 +240,29 @@ function getServerAuction(responseBody: any): Nexx360ServerAuction | null {
   return null;
 }
 
-export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
+export const interpretResponse = (serverResponse: ServerResponse, request?: Nexx360AdapterRequest): AdapterResponse => {
   if (!serverResponse.body) return [];
   const respBody = serverResponse.body as ORTBResponse;
+
+  // Store server-auction data on the bidder request, which Prebid emits on `bidderDone`,
+  // rather than on the bids: a response without bids still reports its server auction,
+  // and the data cannot leak into an unrelated auction. Other adapters share this function
+  // and may call it without a request.
+  const serverAuctionData = getServerAuction(respBody);
+  if (serverAuctionData && request?.bidderRequest) {
+    request.bidderRequest.serverAuctionData = serverAuctionData;
+  }
 
   if (!respBody.seatbid || respBody.seatbid.length === 0) {
     return [];
   }
 
-  // Attach server-auction data to every bid response (rather than holding it in
-  // module state) so it reaches the analytics adapter with the bid that produced
-  // it, and cannot leak into an unrelated auction if a bid is rejected by core.
-  const serverAuctionData = getServerAuction(respBody);
-
-  const responses: Nexx360BidResponse[] = [];
+  const responses: BidResponse[] = [];
   for (let i = 0; i < respBody.seatbid.length; i++) {
     const seatbid = respBody.seatbid[i];
     for (let j = 0; j < seatbid.bid.length; j++) {
       const bid = seatbid.bid[j];
-      const response:Nexx360BidResponse = createResponse(bid, respBody);
-      if (serverAuctionData) {
-        response.serverAuctionData = serverAuctionData;
-      }
-      responses.push(response);
+      responses.push(createResponse(bid, respBody));
     }
   }
   return responses;

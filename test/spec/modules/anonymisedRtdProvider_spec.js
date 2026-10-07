@@ -555,7 +555,7 @@ describe('anonymisedRtdProvider', function() {
     });
 
     it('never logs the stored value, or an error quoting it, when parsing fails', function() {
-      // anon-sl can hold the CUID and a hashed email, and logError/logWarn emit an AUCTION_DEBUG
+      // anon-sl can hold the CUID and other unrelated fields, and logError/logWarn emit an AUCTION_DEBUG
       // event whatever the debug setting - so anything passed to them is readable by any
       // subscriber. A value malformed from the first character is the dangerous shape: V8 quotes
       // the opening characters of the input in the SyntaxError message, so logging the caught
@@ -563,7 +563,7 @@ describe('anonymisedRtdProvider', function() {
       const logErrorSpy = sinon.spy(require('src/utils.js'), 'logError');
       const logWarnSpy = sinon.spy(require('src/utils.js'), 'logWarn');
       const logMessageSpy = sinon.spy(require('src/utils.js'), 'logMessage');
-      const secret = 'SECRETCUID-and-a-hashed-email';
+      const secret = 'SECRETCUID-and-other-stored-data';
 
       try {
         getDataFromLocalStorageStub.withArgs('anon-sl').returns(secret);
@@ -601,15 +601,15 @@ describe('anonymisedRtdProvider', function() {
       ]);
     });
 
-    it('never copies the CUID or hashed email out of anon-sl', function() {
+    it('never copies the CUID or other unrelated fields out of anon-sl', function() {
       getDataFromLocalStorageStub.withArgs('anon-sl')
-        .returns(signalLift({ cuid: 'a-cuid-value', hem: 'a-hashed-email' }));
+        .returns(signalLift({ cuid: 'a-cuid-value', other: 'an-unrelated-value' }));
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
 
       const serialised = JSON.stringify(bidConfig.ortb2Fragments.global);
       expect(serialised).to.not.contain('a-cuid-value');
-      expect(serialised).to.not.contain('a-hashed-email');
+      expect(serialised).to.not.contain('an-unrelated-value');
       expect(bidConfig.ortb2Fragments.global.user.data).to.deep.equal([ppsUserObj]);
     });
 

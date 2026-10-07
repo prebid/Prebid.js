@@ -4,6 +4,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
@@ -313,6 +314,7 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
+      autoplay: isAutoplayEnabled(),
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),
