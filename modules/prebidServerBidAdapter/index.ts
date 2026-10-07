@@ -647,8 +647,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
               const url = new URL(requestData.endpointUrl);
               url.searchParams.set('gzip', '1');
               callAjax(compressedPayload, url.href);
-            })
-            .catch(sendUncompressed);
+            });
         } else {
           sendUncompressed();
         }

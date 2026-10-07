@@ -590,8 +590,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
                     url.searchParams.set('gzip', '1');
                   }
                   callAjax({ url: url.href, payload: compressedPayload });
-                }))
-                .catch(sendUncompressed);
+                }));
             } else {
               sendUncompressed();
             }
