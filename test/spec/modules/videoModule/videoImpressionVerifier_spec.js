@@ -48,6 +48,67 @@ describe('Base Impression Verifier', function() {
       expect(trackerMock.remove.calledWith(uuid)).to.be.true;
       expect(result).to.deep.equal({ adId: 'a2', adUnitCode: 'u2', requestId: undefined, auctionId: undefined });
     });
+
+    it('should match the uuid marker of an absolute ad tag url', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const uuid = baseVerifier.trackBid({ adId: 'a3', adUnitCode: 'u3' });
+      const adTagUrl = `https://vast.example.com/tag?${UUID_MARKER}=${uuid}`;
+
+      const result = baseVerifier.getBidIdentifiers(null, adTagUrl, []);
+
+      expect(result).to.deep.equal({ adId: 'a3', adUnitCode: 'u3', requestId: undefined, auctionId: undefined });
+    });
+
+    it('should match the uuid marker of a relative ad tag url', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const uuid = baseVerifier.trackBid({ adId: 'a3', adUnitCode: 'u3' });
+      const adTagUrl = `/relative/tag.xml?${UUID_MARKER}=${uuid}`;
+
+      const result = baseVerifier.getBidIdentifiers(null, adTagUrl, []);
+
+      expect(result).to.deep.equal({ adId: 'a3', adUnitCode: 'u3', requestId: undefined, auctionId: undefined });
+    });
+
+    it('should match the uuid marker that follows other query params and precedes a fragment', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const uuid = baseVerifier.trackBid({ adId: 'a3', adUnitCode: 'u3' });
+      const adTagUrl = `https://vast.example.com/tag?cb=%%CACHEBUSTER%%&${UUID_MARKER}=${uuid}&foo=bar#section`;
+
+      const result = baseVerifier.getBidIdentifiers(null, adTagUrl, []);
+
+      expect(result).to.deep.equal({ adId: 'a3', adUnitCode: 'u3', requestId: undefined, auctionId: undefined });
+    });
+
+    it('should not match the uuid marker of an ad tag url nested in an encoded query param', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const uuid = baseVerifier.trackBid({ adId: 'a3', adUnitCode: 'u3' });
+      const nestedUrl = encodeURIComponent(`https://vast.example.com/tag?${UUID_MARKER}=${uuid}`);
+      const adTagUrl = `https://adserver.example.com/ads?description_url=${nestedUrl}`;
+
+      const result = baseVerifier.getBidIdentifiers(null, adTagUrl, []);
+
+      expect(result).to.be.undefined;
+    });
+
+    it('should not match an ad tag url without the uuid marker', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      baseVerifier.trackBid({ adId: 'a3', adUnitCode: 'u3' });
+
+      const result = baseVerifier.getBidIdentifiers(null, 'https://vast.example.com/tag?foo=bar', []);
+
+      expect(result).to.be.undefined;
+    });
+
+    [undefined, null, '', 'not a url', '%%%', 123, {}, []].forEach(adTagUrl => {
+      it(`should not throw nor match when the ad tag url is ${JSON.stringify(adTagUrl)}`, function () {
+        const baseVerifier = baseImpressionVerifier(trackerMock);
+        baseVerifier.trackBid({ adId: 'a3', adUnitCode: 'u3' });
+
+        const result = baseVerifier.getBidIdentifiers(null, adTagUrl, []);
+
+        expect(result).to.be.undefined;
+      });
+    });
   });
 });
 
@@ -115,16 +176,28 @@ describe('Cached Video Impression Verifier', function () {
     expect(wrappedUrl.searchParams.get(UUID_MARKER)).to.equal(uuid);
   });
 
-  it('should still build the vast wrapper with the Ad id when the vast url cannot be parsed', function () {
-    const malformedVastUrl = '/relative/tag.xml';
-    const bid = { adId: 'a1', adUnitCode, vastUrl: malformedVastUrl };
+  it('should preserve the original query of the vast url when appending the uuid marker', function () {
+    const vastUrlWithMacro = `${vastUrl}?cb=%%CACHEBUSTER%%&q=a%20b+c`;
+    const bid = { adId: 'a1', adUnitCode, vastUrl: vastUrlWithMacro };
+
+    const uuid = verifier.trackBid(bid);
+
+    const expectedVastUrl = `${vastUrlWithMacro}&${UUID_MARKER}=${uuid}`;
+    expect(parseVast(bid.vastXml).querySelector('VASTAdTagURI').textContent).to.equal(expectedVastUrl);
+    expect(bid.vastUrl).to.equal(expectedVastUrl);
+  });
+
+  it('should append the uuid marker to a relative vast url', function () {
+    const relativeVastUrl = '/relative/tag.xml';
+    const bid = { adId: 'a1', adUnitCode, vastUrl: relativeVastUrl };
 
     const uuid = verifier.trackBid(bid);
 
     const vastDoc = parseVast(bid.vastXml);
+    const expectedVastUrl = `${relativeVastUrl}?${UUID_MARKER}=${uuid}`;
     expect(vastDoc.querySelector('Ad').getAttribute('id')).to.equal(uuid);
-    expect(vastDoc.querySelector('VASTAdTagURI').textContent).to.equal(malformedVastUrl);
-    expect(bid.vastUrl).to.equal(malformedVastUrl);
+    expect(vastDoc.querySelector('VASTAdTagURI').textContent).to.equal(expectedVastUrl);
+    expect(bid.vastUrl).to.equal(expectedVastUrl);
   });
 
   it('should keep the bidder vast trackers in the vast wrapper built from the vast url', function () {
@@ -183,7 +256,16 @@ describe('Cached Video Impression Verifier', function () {
     verifier.trackBid(bid);
     const vastAdId = parseVast(bid.vastXml).querySelector('Ad').getAttribute('id');
 
-    const result = verifier.getBidIdentifiers(vastAdId, 'https://ignored.example.com', []);
+    const result = verifier.getBidIdentifiers(vastAdId, 'https://adserver.example.com/tag', []);
+
+    expect(result).to.deep.equal({ adId: 'a1', adUnitCode, requestId: undefined, auctionId: undefined });
+  });
+
+  it('should match the bid from the uuid marker of the loaded ad tag url', function () {
+    const bid = { adId: 'a1', adUnitCode, vastUrl };
+    verifier.trackBid(bid);
+
+    const result = verifier.getBidIdentifiers('bidder_ad_id', bid.vastUrl, []);
 
     expect(result).to.deep.equal({ adId: 'a1', adUnitCode, requestId: undefined, auctionId: undefined });
   });
@@ -206,13 +288,38 @@ describe('Video Impression Verifier', function () {
     expect(bid.vastUrl).to.equal(`${vastUrl}?${UUID_MARKER}=${uuid}`);
   });
 
-  it('should leave a vast url that cannot be parsed unchanged', function () {
-    const malformedVastUrl = '/relative/tag.xml';
-    const bid = { adId: 'a1', vastUrl: malformedVastUrl };
+  it('should preserve the original query of the vast url when appending the uuid marker', function () {
+    const vastUrlWithMacro = `${vastUrl}?cb=%%CACHEBUSTER%%`;
+    const bid = { adId: 'a1', vastUrl: vastUrlWithMacro };
 
-    verifier.trackBid(bid);
+    const uuid = verifier.trackBid(bid);
 
-    expect(bid.vastUrl).to.equal(malformedVastUrl);
+    expect(bid.vastUrl).to.equal(`${vastUrlWithMacro}&${UUID_MARKER}=${uuid}`);
+  });
+
+  it('should not add a separator when the vast url query already ends with one', function () {
+    const bid = { adId: 'a1', vastUrl: `${vastUrl}?foo=bar&` };
+
+    const uuid = verifier.trackBid(bid);
+
+    expect(bid.vastUrl).to.equal(`${vastUrl}?foo=bar&${UUID_MARKER}=${uuid}`);
+  });
+
+  it('should append the uuid marker before the fragment of the vast url', function () {
+    const bid = { adId: 'a1', vastUrl: `${vastUrl}?foo=bar#section` };
+
+    const uuid = verifier.trackBid(bid);
+
+    expect(bid.vastUrl).to.equal(`${vastUrl}?foo=bar&${UUID_MARKER}=${uuid}#section`);
+  });
+
+  it('should append the uuid marker to a relative vast url', function () {
+    const relativeVastUrl = '/relative/tag.xml';
+    const bid = { adId: 'a1', vastUrl: relativeVastUrl };
+
+    const uuid = verifier.trackBid(bid);
+
+    expect(bid.vastUrl).to.equal(`${relativeVastUrl}?${UUID_MARKER}=${uuid}`);
   });
 
   it('should match the bid from the uuid marker of the loaded ad tag url', function () {
@@ -255,6 +362,17 @@ describe('Video Impression Verifier Factory', function () {
     const nextVerifier = videoImpressionVerifierFactory(true, trackerMock);
 
     const result = nextVerifier.getBidIdentifiers(uuid);
+
+    expect(result).to.deep.equal({ adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1' });
+  });
+
+  it('should match a bid tracked before switching to the cached verifier from the loaded ad tag url', function () {
+    const previousVerifier = videoImpressionVerifierFactory(false, trackerMock);
+    const bid = { adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1', vastUrl: 'https://vast.example.com/tag' };
+    previousVerifier.trackBid(bid);
+    const nextVerifier = videoImpressionVerifierFactory(true, trackerMock);
+
+    const result = nextVerifier.getBidIdentifiers('bidder_ad_id', bid.vastUrl, []);
 
     expect(result).to.deep.equal({ adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1' });
   });
