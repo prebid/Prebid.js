@@ -24,6 +24,12 @@ var plugins = [
           .filter(chunk => chunk.name !== name)
           .flatMap(chunk => [...chunk.files])
           .filter(Boolean);
+        const parent = helpers.getParentModule(name.replace(/\.js$/, ''));
+        if (parent != null) {
+          // include parent module as a dependency so that the web bundler doesn't need
+          // to worry about .submodules.json
+          files.push(parent + '.js');
+        }
         return name && files.length ? {...acc, [`${name}.js`]: files} : acc
       }, seed)
     }
@@ -100,6 +106,9 @@ module.exports = addCommonConfig({
   output: {
     chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
     chunkLoading: 'jsonp',
+    // install the chunkLoadingGlobal in currentScript.__pbjsScope if it exists (set up by web-bundler/out/bundler.js and web-bundler/load.mjs)
+    // this is to allow multiple instances of bundle to load without interfering with each other
+    globalObject: "('undefined' != typeof document && document.currentScript && document.currentScript.__pbjsScope || self)",
   },
   optimization: {
     usedExports: true,
@@ -143,6 +152,13 @@ module.exports = addCommonConfig({
         const precompiled = helpers.getPrecompiledPath();
 
         return Object.assign(libraries, renderers,{
+          buildOptions: {
+            // isolate build options so that the web bundler can easily swap them out
+            name: 'buildOptions',
+            test: (module) => {
+              return module.resource === helpers.getPrecompiledPath('buildOptions.mjs');
+            }
+          },
           corejs: {
             name: 'corejs',
             test: (module) => {
@@ -161,7 +177,7 @@ module.exports = addCommonConfig({
                 }
                 return resource.startsWith(core);
               }
-            }
+            },
           },
         }, {
           default: false,

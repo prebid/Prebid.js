@@ -445,8 +445,7 @@ describe('consentManagementGpp', function () {
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.false;
         const consent = gppDataHandler.getConsentData();
-        // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
-        sinon.assert.calledTwice(utils.logError);
+        sinon.assert.calledOnce(utils.logError);
         expect(consent).to.be.null;
         expect(gppDataHandler.ready).to.be.true;
       });

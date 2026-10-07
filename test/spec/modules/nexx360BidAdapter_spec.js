@@ -346,6 +346,12 @@ describe('Nexx360 bid adapter tests', () => {
           consentString: 'CPhdLUAPhdLUAAKAsAENCmCsAP_AAE7AAAqIJFNd_H__bW9r-f5_aft0eY1P9_r37uQzDhfNk-8F3L_W_LwX52E7NF36tq4KmR4ku1LBIUNlHMHUDUmwaokVryHsak2cpzNKJ7BEknMZOydYGF9vmxtj-QKY7_5_d3bx2D-t_9v239z3z81Xn3d53-_03LCdV5_9Dfn9fR_bc9KPt_58v8v8_____3_e__3_7997BIiAaADgAJYBnwEeAJXAXmAwQBj4DtgHcgPBAeKBIgAA.YAAAAAAAAAAA',
         }
       };
+      it('carries the bidderRequest on the request so interpretResponse can report the server auction', () => {
+        const displayBids = structuredClone(sampleBids);
+        displayBids[0].mediaTypes = { banner: { sizes: [[300, 250]] } };
+        const request = spec.buildRequests(displayBids, bidderRequest);
+        expect(request.bidderRequest).to.equal(bidderRequest);
+      });
       it('We perform a test with 2 display adunits', () => {
         const displayBids = structuredClone(sampleBids);
         displayBids[0].mediaTypes = {
@@ -571,6 +577,40 @@ describe('Nexx360 bid adapter tests', () => {
         ad: '<div>TestAd</div>',
       }];
       expect(output).to.eql(expectedOutput);
+    });
+
+    it('maps the ORTB dealid to the Prebid dealId', () => {
+      const response = {
+        body: {
+          id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
+          cur: 'EUR',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '4427551302944024629',
+                  impid: '226175918ebeda',
+                  price: 4.2,
+                  adomain: ['http://prebid.org'],
+                  crid: '98493581',
+                  dealid: 'deal-123',
+                  h: 250,
+                  w: 300,
+                  adm: '<div>TestAd</div>',
+                  ext: {
+                    mediaType: 'banner',
+                    ssp: 'smartadserver',
+                  },
+                },
+              ],
+              seat: 'smartadserver',
+            },
+          ],
+        },
+      };
+      const [bid] = spec.interpretResponse(response);
+      expect(bid.dealId).to.equal('deal-123');
+      expect(bid).to.not.have.property('dealid');
     });
 
     it('instream responses', () => {
