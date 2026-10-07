@@ -3,6 +3,7 @@ import { generateUUID } from '../../src/utils.js';
 
 export const PB_PREFIX = 'pb_';
 export const UUID_MARKER = PB_PREFIX + 'uuid';
+const UUID_MARKER_PATTERN = new RegExp(`[?&]${UUID_MARKER}=([^&#]*)`);
 
 /**
  * Video Impression Verifier interface. All implementations of a Video Impression Verifier must comply with this interface.
@@ -78,7 +79,6 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const verifier = baseImpressionVerifier(bidTracker_);
   const superTrackBid = verifier.trackBid;
-  const superGetBidIdentifiers = verifier.getBidIdentifiers;
   const vastXmlEditor = vastXmlEditor_;
 
   verifier.trackBid = function (bid, adUnit) {
@@ -111,12 +111,6 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
     return adIdOverride;
   };
 
-  verifier.getBidIdentifiers = function (adId, adTagUrl, adWrapperIds) {
-    // When the video is cached, the ad tag loaded into the player is a parent wrapper of the cache url.
-    // As a result, the ad tag Url cannot include identifiers.
-    return superGetBidIdentifiers(adId, null, adWrapperIds);
-  };
-
   return verifier;
 
   function getTrackingUrl(getUrl, bid) {
@@ -129,15 +123,19 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 }
 
 function appendUuidMarker(vastUrl, uuid) {
-  let url;
-  try {
-    url = new URL(vastUrl);
-  } catch (e) {
-    return vastUrl;
+  const fragmentIndex = vastUrl.indexOf('#');
+  const urlWithoutFragment = fragmentIndex === -1 ? vastUrl : vastUrl.slice(0, fragmentIndex);
+  const fragment = fragmentIndex === -1 ? '' : vastUrl.slice(fragmentIndex);
+  const marker = `${UUID_MARKER}=${encodeURIComponent(uuid)}`;
+  return `${urlWithoutFragment}${getQuerySeparator(urlWithoutFragment)}${marker}${fragment}`;
+}
+
+function getQuerySeparator(url) {
+  if (!url.includes('?')) {
+    return '?';
   }
 
-  url.searchParams.append(UUID_MARKER, uuid);
-  return url.toString();
+  return /[?&]$/.test(url) ? '' : '&';
 }
 
 export function baseImpressionVerifier(bidTracker_) {
@@ -160,19 +158,11 @@ export function baseImpressionVerifier(bidTracker_) {
   };
 
   function getBidForAdTagUrl(adTagUrl) {
-    if (!adTagUrl) {
+    if (typeof adTagUrl !== 'string') {
       return;
     }
 
-    let url;
-    try {
-      url = new URL(adTagUrl);
-    } catch (e) {
-      return;
-    }
-
-    const queryParams = url.searchParams;
-    const uuid = queryParams.get(UUID_MARKER);
+    const uuid = adTagUrl.match(UUID_MARKER_PATTERN)?.[1];
     return uuid && bidTracker.remove(uuid);
   }
 
