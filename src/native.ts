@@ -71,10 +71,10 @@ type LegacyAssetRequest = {
 };
 
 type LegacyVideoAssetRequest = LegacyAssetRequest & {
-  mimes?: string[];
-  protocols?: number[];
-  minduration?: number;
-  maxduration?: number;
+  mimes: string[];
+  protocols: number[];
+  minduration: number;
+  maxduration: number;
 };
 
 export type LegacyNativeRequest = {
