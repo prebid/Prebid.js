@@ -1144,6 +1144,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "srchbid",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "ssp_geniee",
       "aliasOf": null,
       "gvlid": null,
@@ -1743,6 +1750,13 @@
       "aliasOf": null,
       "gvlid": 1497,
       "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "epom_as",
+      "aliasOf": null,
+      "gvlid": 849,
+      "disclosureURL": "https://epom.com/deviceStorage.json"
     },
     {
       "componentType": "bidder",
@@ -5851,8 +5865,8 @@
     {
       "componentType": "rtd",
       "componentName": "wurfl",
-      "gvlid": null,
-      "disclosureURL": "local://modules/wurflRtdProvider.json"
+      "gvlid": 1655,
+      "disclosureURL": null
     },
     {
       "componentType": "rtd",
