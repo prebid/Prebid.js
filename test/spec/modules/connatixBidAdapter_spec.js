@@ -363,6 +363,24 @@ describe('connatixBidAdapter', function () {
       bid.ortb2Imp = { ext: {} };
       expect(_getBidRequests([bid])[0]).to.not.have.property('gpid');
     });
+
+    it('should not include gpid when ortb2Imp.ext.gpid is null', function () {
+      bid = mockBidRequest();
+      bid.ortb2Imp = { ext: { gpid: null } };
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.not.have.property('gpid');
+    });
+
+    it('should not include gpid when ortb2Imp has no ext', function () {
+      bid = mockBidRequest();
+      bid.ortb2Imp = {};
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.not.have.property('gpid');
+    });
   });
 
   describe('onTimeout', function () {
