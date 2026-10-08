@@ -213,7 +213,8 @@ export const gdprDataHandler = consentHandler({
       };
     }
   },
-  hashFields: ['gdprApplies', 'consentString']
+  // addtlConsent can change while the TC string stays the same, and affects enforcement for Additional Consent providers
+  hashFields: ['gdprApplies', 'consentString', 'addtlConsent']
 });
 
 export const gppDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GPP>, DefaultConsentMeta>({

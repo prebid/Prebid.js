@@ -106,25 +106,27 @@ export function getConsent(consentData, type, purposeNo, gvlId) {
   };
 }
 
-let lastAddtlConsent: string;
+// Google Additional Consent grammar: `1~<ids>` (v1) or `2~<ids>~dv.<ids>` (v2),
+// where `<ids>` is a possibly empty, dot-separated list of decimal provider IDs
+const AC_IDS = '(?:\\d+(?:\\.\\d+)*)?';
+const AC_PATTERN = new RegExp(`^(?:1~(${AC_IDS})|2~(${AC_IDS})~dv\\.${AC_IDS})$`);
+
+let lastAddtlConsent: unknown;
 let lastAddtlConsentIds = new Set<number>();
 
 /**
  * Parse a Google Additional Consent string into the set of provider IDs the user consented to.
- * Format is `1~<ids>` (v1) or `2~<ids>~dv.<ids>` (v2), where `<ids>` is a dot-separated list;
- * the `dv.` section lists providers that were disclosed but not consented to, and is ignored here.
+ * The `dv.` section of v2 strings lists providers that were disclosed but not consented to, and is ignored here.
+ * Malformed strings yield no consent at all, rather than being partially parsed.
  *
  * @see https://support.google.com/admanager/answer/9681920
  */
 export function parseAddtlConsent(addtlConsent: unknown): Set<number> {
   if (addtlConsent !== lastAddtlConsent) {
-    lastAddtlConsent = addtlConsent as string;
-    const [version, consented] = typeof addtlConsent === 'string' ? addtlConsent.split('~') : [];
-    lastAddtlConsentIds = new Set(
-      ['1', '2'].includes(version) && consented
-        ? consented.split('.').map(Number).filter(id => Number.isInteger(id) && id > 0)
-        : []
-    );
+    lastAddtlConsent = addtlConsent;
+    const match = typeof addtlConsent === 'string' ? AC_PATTERN.exec(addtlConsent) : null;
+    const consented = match?.[1] ?? match?.[2];
+    lastAddtlConsentIds = new Set(consented ? consented.split('.').map(Number) : []);
   }
   return lastAddtlConsentIds;
 }
