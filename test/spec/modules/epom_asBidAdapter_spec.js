@@ -17,6 +17,8 @@ const HOST = 'ads.example.com';
 const OTHER_HOST = 'ads.other-network.com';
 const PLACEMENT = 'a4f21c9e7b';
 const ENDPOINT = `https://${HOST}/hb/bid`;
+const NETWORK = 'n2494';
+const NETWORK_ENDPOINT = `https://${NETWORK}.eashb.com/hb/bid`;
 
 function bannerBid(overrides = {}) {
   return {
@@ -114,6 +116,34 @@ describe('Epom Ad Server adapter', function () {
 
     it('rejects a bid with no params at all', function () {
       expect(spec.isBidRequestValid({ bidder: 'epom_as' })).to.equal(false);
+    });
+
+    it('accepts a bid carrying only networkId and placementKey', function () {
+      expect(spec.isBidRequestValid(bannerBid({ params: { networkId: NETWORK, placementKey: PLACEMENT } }))).to.equal(true);
+    });
+
+    it('accepts networkId and host together, the way the ad server prints them', function () {
+      expect(spec.isBidRequestValid(bannerBid({
+        params: { networkId: NETWORK, host: HOST, placementKey: PLACEMENT },
+      }))).to.equal(true);
+    });
+
+    it('rejects a bid that names neither a network nor a host', function () {
+      expect(spec.isBidRequestValid(bannerBid({ params: { placementKey: PLACEMENT } }))).to.equal(false);
+    });
+
+    // The network id becomes a hostname label, so anything beyond `n` and digits could steer the
+    // request off eashb.com.
+    it('rejects a networkId that is not n followed by digits', function () {
+      ['2494', 'N2494', 'n', 'n24a94', 'n2494.evil.com', 'n2494/x', '', 2494, null].forEach((networkId) => {
+        expect(spec.isBidRequestValid(bannerBid({ params: { networkId, placementKey: PLACEMENT } })), String(networkId)).to.equal(false);
+      });
+    });
+
+    it('rejects a valid networkId paired with an unusable host', function () {
+      expect(spec.isBidRequestValid(bannerBid({
+        params: { networkId: NETWORK, host: 'https://ads.example.com', placementKey: PLACEMENT },
+      }))).to.equal(false);
     });
 
     it('rejects a missing or non-string host', function () {
@@ -292,6 +322,34 @@ describe('Epom Ad Server adapter', function () {
       // CORS preflight; credentials carry an existing Epom identity.
       expect(requests[0].options.contentType).to.equal('text/plain');
       expect(requests[0].options.withCredentials).to.equal(true);
+    });
+
+    it('POSTs to the network\'s eashb.com address when only networkId is given', async function () {
+      const requests = await buildOne([bannerBid({ params: { networkId: NETWORK, placementKey: PLACEMENT } })]);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].url).to.equal(NETWORK_ENDPOINT);
+      expect(requests[0].options.withCredentials).to.equal(true);
+    });
+
+    // The network's own domain is where its identity cookie lives, so it wins when the page names it.
+    it('prefers the host over the network address when both are given', async function () {
+      const requests = await buildOne([bannerBid({ params: { networkId: NETWORK, host: HOST, placementKey: PLACEMENT } })]);
+
+      expect(requests[0].url).to.equal(ENDPOINT);
+    });
+
+    it('packs the ad units of one network into a single request', async function () {
+      const requests = await buildOne([
+        bannerBid({ params: { networkId: NETWORK, placementKey: PLACEMENT } }),
+        bannerBid({ bidId: 'bid-2', adUnitCode: 'div-sidebar', params: { networkId: NETWORK, placementKey: '6d0e83b415' } }),
+        bannerBid({ bidId: 'bid-3', params: { networkId: 'n100', placementKey: 'ff0011aa22' } }),
+      ]);
+
+      expect(requests).to.have.lengthOf(2);
+      const byUrl = Object.fromEntries(requests.map((r) => [r.url, r.data.imp.map((i) => i.id)]));
+      expect(byUrl[NETWORK_ENDPOINT]).to.deep.equal(['bid-1', 'bid-2']);
+      expect(byUrl['https://n100.eashb.com/hb/bid']).to.deep.equal(['bid-3']);
     });
 
     it('packs every ad unit of one host into a single request, one imp each', async function () {

@@ -9,9 +9,13 @@ import { deepSetValue, isPlainObject } from '../src/utils.js';
  * platform, where a publisher's own direct campaigns live.
  *
  * Epom is white-label: every network runs its own deployment under its own
- * domain, so the serving host is a per-bid parameter (`params.host`) rather
- * than a module constant. Only the host varies — the path is fixed, so a
- * page config can never redirect the auction payload to an arbitrary URL.
+ * domain. A bid names its network (`params.networkId`, e.g. `n2494`) and goes
+ * to that network's address on Epom's header-bidding domain,
+ * `https://n2494.eashb.com/hb/bid` — the same address the Prebid Server
+ * adapter uses, with the same params. `params.host` optionally sends it to the
+ * network's own serving domain instead, which is where the network's identity
+ * cookie lives. Only a hostname ever varies; the path is fixed, so a page
+ * config can never redirect the auction payload to an arbitrary URL.
  *
  * Not to be confused with `epom_dsp`, which is the demand side: it buys
  * impressions. This adapter sells a publisher's inventory.
@@ -20,6 +24,10 @@ import { deepSetValue, isPlainObject } from '../src/utils.js';
 const BIDDER_CODE = 'epom_as';
 const GVLID = 849;
 const BID_PATH = '/hb/bid';
+/** Epom's header-bidding domain: every network answers at `<networkId>.eashb.com`. */
+const HB_DOMAIN = 'eashb.com';
+/** An Epom network id as the ad server prints it on the Code face: `n` and the network number. */
+const NETWORK_ID_PATTERN = /^n\d+$/;
 const DEFAULT_CURRENCY = 'USD';
 /**
  * A bid cached longer than the ad server accepts its impression beacon renders without being
@@ -56,9 +64,19 @@ function isUsableHost(host: unknown): boolean {
   return port === undefined || (Number(port) >= 1 && Number(port) <= MAX_PORT);
 }
 
+function isNetworkId(networkId: unknown): boolean {
+  return typeof networkId === 'string' && NETWORK_ID_PATTERN.test(networkId);
+}
+
 export type EpomAsBidParams = {
-  /** Serving host of the publisher's Epom deployment, e.g. `ads.example.com`. */
-  host: string;
+  /** The Epom network, e.g. `n2494`; the bid goes to `https://n2494.eashb.com/hb/bid`. */
+  networkId?: string;
+  /**
+   * The network's own serving domain, e.g. `ads.example.com`. When given, the bid goes there
+   * instead, so the network's identity cookie reaches the auction. Prebid Server ignores it: a
+   * request from a server carries no browser cookie.
+   */
+  host?: string;
   /** Opaque placement identifier from the Epom invocation-code tab. */
   placementKey: string;
   /** Epom channel — a traffic-slice label used for targeting and reporting. */
@@ -114,6 +132,11 @@ function sanitiseCustomParams(
     out[key] = String(raw[key]);
   });
   return out;
+}
+
+/** The network's own domain when the page names it, its eashb.com address otherwise. */
+function destinationHost(params: EpomAsBidParams): string {
+  return params.host !== undefined ? params.host : `${params.networkId}.${HB_DOMAIN}`;
 }
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
@@ -187,7 +210,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    */
   isBidRequestValid(bid) {
     const params = bid?.params;
-    if (!isUsableHost(params?.host)) {
+    if (params?.networkId === undefined && params?.host === undefined) {
+      return false;
+    }
+    if (params.networkId !== undefined && !isNetworkId(params.networkId)) {
+      return false;
+    }
+    if (params.host !== undefined && !isUsableHost(params.host)) {
       return false;
     }
     if (typeof params.placementKey !== 'string' || params.placementKey.length === 0) {
@@ -208,7 +237,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   /**
-   * One request per host, carrying every impression that belongs to it.
+   * One request per destination host, carrying every impression that belongs to it.
    *
    * Prebid runs a single auction for the whole page, so `validBidRequests`
    * arrives with one entry per ad unit. Batching them into one OpenRTB
@@ -228,11 +257,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 
     const byHost = new Map<string, (typeof validBidRequests)[number][]>();
     validBidRequests.forEach((bid) => {
-      const group = byHost.get(bid.params.host);
+      const host = destinationHost(bid.params);
+      const group = byHost.get(host);
       if (group) {
         group.push(bid);
       } else {
-        byHost.set(bid.params.host, [bid]);
+        byHost.set(host, [bid]);
       }
     });
 

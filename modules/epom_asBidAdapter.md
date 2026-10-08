@@ -12,7 +12,7 @@ Prebid.js adapter for the **Epom Ad Server** — the sell-side product of the Ep
 
 This is a different product from `epom_dsp`, which is the buy side. `epom_dsp` buys impressions on the open market; `epom_as` sells a publisher's own inventory.
 
-Epom Ad Server is white-label: each network runs its own deployment on its own domain, so the serving host is supplied per ad unit via `params.host`. Only the host is configurable — the request path is fixed by the adapter, so a page configuration cannot redirect the auction payload to an arbitrary URL. A page may mix several deployments; the adapter groups impressions by host and sends one request to each.
+Epom Ad Server is white-label: each network runs its own deployment. A bid names its network with `params.networkId` (for example `n2494`) and is sent to that network's address on Epom's header-bidding domain, `https://n2494.eashb.com/hb/bid` — the address the Prebid Server adapter uses too, with the same parameters. `params.host` optionally sends the bid to the network's own serving domain instead; that is where the network's identity cookie lives, so frequency capping and cookie targeting keep working across its regular ad tags and header bidding. Only a hostname is configurable — the request path is fixed by the adapter, so a page configuration cannot redirect the auction payload to an arbitrary URL. A page may mix several networks; the adapter groups impressions by destination host and sends one request to each.
 
 All ad units on the page are auctioned in a **single request** with one `imp` per ad unit. The ad server resolves the page as a unit, so its roadblock and one-campaign-per-page rules require every slot to be decided together.
 
@@ -42,7 +42,7 @@ pbjs.setConfig({ cache: { url: '…' } });                // Prebid Cache — re
 both do. A hosted Prebid Cache is only required when the ad server is rendered through Google Ad
 Manager, which builds its VAST tag around `hb_uuid`.
 
-The same parameters are accepted by the Prebid Server adapter, which posts to `https://{{.Host}}/hb/bid` on the host the PBS host company configures.
+The same parameters are accepted by the Prebid Server adapter, which posts to `https://{networkId}.eashb.com/hb/bid`. It ignores `host`: a request from a server carries no browser cookie, so there is nothing to gain from the network's own domain.
 
 ## Bid TTL
 
@@ -54,7 +54,7 @@ The ad server stamps `dealid` on the bids it returns for a deal-backed line item
 
 ## Advertiser domains
 
-Epom Ad Server does not currently populate `seatbid[].bid[].adomain`, so `bid.meta.advertiserDomains` is left unset rather than filled with a placeholder. Brand-safety line items and analytics that key on advertiser domain will not match Epom bids until the ad server starts sending it; the adapter forwards the field unchanged as soon as it does.
+The ad server sends `seatbid[].bid[].adomain` when the advertiser behind the bid has a domain set, and the adapter forwards it as `bid.meta.advertiserDomains`. A bid whose advertiser has none is left without the field rather than given a placeholder, so brand-safety line items and analytics that key on advertiser domain will not match that bid.
 
 ## Device storage
 
@@ -64,12 +64,15 @@ The adapter uses no storage manager and writes nothing to cookies or `localStora
 
 | Name           | Scope    | Description                                                                                                                   | Example                | Type     |
 |----------------|----------|-------------------------------------------------------------------------------------------------------------------------------|------------------------|----------|
-| `host`         | required | Serving host of the publisher's Epom Ad Server deployment, as a bare hostname with an optional port — no scheme, path or query. The adapter POSTs to `https://{host}/hb/bid`. | `'ads.example.com'`    | `string` |
+| `networkId`    | required¹ | The Epom network, as `n` followed by the network number — printed on the network's header-bidding Code tab. The adapter POSTs to `https://{networkId}.eashb.com/hb/bid`. | `'n2494'`              | `string` |
+| `host`         | optional¹ | The network's own serving domain, as a bare hostname with an optional port — no scheme, path or query. When given, the adapter POSTs to `https://{host}/hb/bid` instead, so the network's identity cookie reaches the auction. | `'ads.example.com'`    | `string` |
 | `placementKey` | required | Placement identifier, copied from the placement's invocation-code tab in the Epom UI. Sent as `imp.tagid`.                     | `'a4f21c9e7b'`         | `string` |
 | `channel`      | optional | Epom channel — a publisher traffic-slice label used for channel targeting and reporting. Sent as `imp.ext.epom_as.channel`. An empty value is ignored. | `'sports-uk'`        | `string` |
 | `customParams` | optional | Epom custom parameters, for custom targeting and creative macros. Values must be strings, numbers or booleans; they are stringified and merged into `imp.ext.data`, where keys already on the impression win. The ad server applies its own ingest limits on top (at most 32 keys, keys to 128 and values to 512 characters) and ignores anything beyond them. | `{section: 'sport'}` | `object` |
 | `bidFloor`     | optional | CPM floor for this impression, applied only when no floor has already been resolved — a value from the Price Floors module always wins. `0` means no floor. | `0.50`                 | `number` |
 | `bidFloorCur`  | optional | Currency of `bidFloor`, as an ISO-4217 code. Defaults to `USD`.                                                                | `'EUR'`                | `string` |
+
+¹ A bid needs at least one of `networkId` and `host`. Give `networkId` always — the Prebid Server adapter requires it — and add `host` when the network asks you to; the Code tab prints both.
 
 A bid whose parameters violate the table above is rejected by `isBidRequestValid` and never leaves the page — the same input the Prebid Server params schema rejects.
 
@@ -92,7 +95,7 @@ const adUnits = [
       {
         bidder: "epom_as",
         params: {
-          host: "aj2494.online",
+          networkId: "n2494",
           placementKey: "63bad7a99f270394e7b4b370952cbff2"
         }
       }
@@ -112,7 +115,7 @@ const adUnits = [
       {
         bidder: "epom_as",
         params: {
-          host: "aj2494.online",
+          networkId: "n2494",
           placementKey: "7659fd47e17263ba6ae1de3c9e137c74"
         }
       }
@@ -136,7 +139,7 @@ const adUnits = [
       {
         bidder: "epom_as",
         params: {
-          host: "aj2494.online",
+          networkId: "n2494",
           placementKey: "f4dd0f413d5c4f8d8c515f8a999e038f"
         }
       }
@@ -148,9 +151,9 @@ const adUnits = [
 The video unit needs one of the cache settings above, or Prebid discards the bid before it reaches
 `bidsBackHandler`.
 
-The optional parameters, on a deployment of your own. `host` is a bare hostname —
-the adapter posts to `https://{host}/hb/bid` — and every ad unit naming the same
-host travels in one request:
+The optional parameters, on a network of your own. With `host` set the adapter posts to
+`https://{host}/hb/bid` rather than to the network's eashb.com address, and every ad unit naming
+the same host travels in one request:
 
 ```js
 const adUnits = [
@@ -160,6 +163,7 @@ const adUnits = [
     bids: [{
       bidder: "epom_as",
       params: {
+        networkId: "n3057",
         host: "ads.example.com",
         placementKey: "a4f21c9e7b",
         channel: "sports-uk",
@@ -173,6 +177,7 @@ const adUnits = [
     bids: [{
       bidder: "epom_as",
       params: {
+        networkId: "n3057",
         host: "ads.example.com",
         placementKey: "6d0e83b415",
         bidFloor: 0.50,
@@ -185,7 +190,7 @@ const adUnits = [
 
 # Multiple Deployments
 
-A publisher whose inventory is sold by two Epom networks can run both in the same auction. Each host receives its own request containing only the impressions addressed to it.
+A publisher whose inventory is sold by two Epom networks can run both in the same auction. Each network receives its own request containing only the impressions addressed to it.
 
 ```js
 pbjs.addAdUnits([
@@ -194,7 +199,7 @@ pbjs.addAdUnits([
     mediaTypes: { banner: { sizes: [[300, 250]] } },
     bids: [{
       bidder: "epom_as",
-      params: { host: "ads.network-one.com", placementKey: "a4f21c9e7b" }
+      params: { networkId: "n3057", placementKey: "a4f21c9e7b" }
     }]
   },
   {
@@ -202,7 +207,7 @@ pbjs.addAdUnits([
     mediaTypes: { banner: { sizes: [[728, 90]] } },
     bids: [{
       bidder: "epom_as",
-      params: { host: "ads.network-two.com", placementKey: "6d0e83b415" }
+      params: { networkId: "n4120", placementKey: "6d0e83b415" }
     }]
   }
 ]);
