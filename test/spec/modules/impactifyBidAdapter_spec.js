@@ -1,9 +1,11 @@
 import { expect } from 'chai';
-import { spec, STORAGE } from 'modules/impactifyBidAdapter.js';
+import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as percentInView from 'libraries/percentInView/percentInView.js';
 import sinon from 'sinon';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { config } from '../../../src/config.js';
+import { server } from '../../mocks/xhr.js';
 
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
@@ -42,6 +44,7 @@ describe('ImpactifyAdapter', function () {
       {
         bidder: 'impactify',
         params: {
+          accountId: 'publisher-123',
           appId: 'example.com',
           format: 'screen',
           style: 'inline'
@@ -50,6 +53,7 @@ describe('ImpactifyAdapter', function () {
       {
         bidder: 'impactify',
         params: {
+          accountId: 'publisher-123',
           appId: 'example.com',
           format: 'display',
           style: 'static'
@@ -74,16 +78,12 @@ describe('ImpactifyAdapter', function () {
       expect(spec.isBidRequestValid(bid2)).to.equal(false);
     });
 
-    it('should return false when format is not equals to screen or display', () => {
+    it('should accept the player format for an instream placement', function () {
       const bid = utils.deepClone(validBids[0]);
-      if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      }
+      bid.params.format = 'player';
+      bid.mediaTypes = { video: { context: 'instream', playerSize: [[854, 480]], mimes: ['video/mp4'] } };
 
-      const bid2 = utils.deepClone(validBids[1]);
-      if (bid2.params.format !== 'screen' && bid2.params.format !== 'display') {
-        expect(spec.isBidRequestValid(bid2)).to.equal(false);
-      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when style is missing', () => {
@@ -114,6 +114,7 @@ describe('ImpactifyAdapter', function () {
       {
         bidder: 'impactify',
         params: {
+          accountId: 'publisher-123',
           appId: '1',
           format: 'screen',
           style: 'inline'
@@ -184,6 +185,46 @@ describe('ImpactifyAdapter', function () {
       expect(resData.imp[0].bidfloor).to.equal(1.23);
     });
 
+    [0, 0.75, 2.5].forEach((floor) => {
+      it(`should use the floors module's USD floor of ${floor} instead of the legacy bidder floor`, function () {
+        const bid = videoBidRequests[0];
+        bid.params.bidfloor = 1.5;
+        bid.getFloor = sandbox.stub().returns({ currency: 'USD', floor });
+
+        expect(buildImpression().bidfloor).to.equal(floor);
+        sinon.assert.calledOnce(bid.getFloor);
+        expect(bid.getFloor.firstCall.args[0].currency).to.equal('USD');
+      });
+    });
+
+    [
+      { name: 'no matching rule', result: {} },
+      { name: 'an unconvertible currency', result: { currency: 'EUR', floor: 3 } }
+    ].forEach(({ name, result }) => {
+      it(`should retain the bidder floor when the floors module returns ${name}`, function () {
+        videoBidRequests[0].params.bidfloor = 1.5;
+        videoBidRequests[0].getFloor = sandbox.stub().returns(result);
+
+        expect(buildImpression().bidfloor).to.equal(1.5);
+      });
+    });
+
+    it('should still request all slots when one floor lookup throws', function () {
+      const firstBid = videoBidRequests[0];
+      firstBid.params.bidfloor = 1.5;
+      firstBid.getFloor = sandbox.stub().throws(new Error('Floor provider unavailable'));
+      const secondBid = utils.deepClone(defaultVideoBidRequests[0]);
+      secondBid.bidId = 'second-bid';
+      secondBid.getFloor = sandbox.stub().returns({ currency: 'USD', floor: 2.5 });
+
+      const { imp } = JSON.parse(spec.buildRequests([firstBid, secondBid], videoBidderRequest).data);
+
+      expect(imp.map(({ id, bidfloor }) => ({ id, bidfloor }))).to.deep.equal([
+        { id: firstBid.bidId, bidfloor: 1.5 },
+        { id: secondBid.bidId, bidfloor: 2.5 }
+      ]);
+    });
+
     it('sends video bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
 
@@ -219,6 +260,57 @@ describe('ImpactifyAdapter', function () {
       expect(payload.imp[0].video.context).to.equal('instream');
       expect(payload.imp[0].video.playerSize).to.deep.equal([DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]);
       expect(payload.imp[0]).to.not.have.property('banner');
+    });
+
+    it('should preserve a nested player size supplied by Prebid instead of substituting default dimensions', function () {
+      // Prebid accepts both forms; fillVideoDefaults also produces the nested form from w/h.
+      videoBidRequests[0].params.format = 'player';
+      videoBidRequests[0].mediaTypes.video = {
+        context: 'instream', playerSize: [[854, 480]], w: 854, h: 480, mimes: ['video/mp4']
+      };
+      videoBidRequests[0].sizes = [[854, 480]];
+
+      const imp = buildImpression();
+
+      expect(imp.video.playerSize).to.deep.equal([854, 480]);
+      expect(imp.video.context).to.equal('instream');
+      expect(imp.video.mimes).to.deep.equal(['video/mp4']);
+    });
+
+    it('should not change publisher inputs when building multiple impressions', function () {
+      const secondBid = utils.deepClone(videoBidRequests[0]);
+      secondBid.bidId = 'banner-bid';
+      secondBid.params.format = 'screen';
+      secondBid.mediaTypes = { banner: { sizes: [[300, 250]] } };
+      videoBidRequests.push(secondBid);
+      const bidsBefore = utils.deepClone(videoBidRequests);
+      const requestBefore = utils.deepClone(videoBidderRequest);
+
+      spec.buildRequests(videoBidRequests, videoBidderRequest);
+
+      expect(videoBidRequests).to.deep.equal(bidsBefore);
+      expect(videoBidderRequest).to.deep.equal(requestBefore);
+    });
+
+    it('should send the permitted stored identifier', function () {
+      STORAGE.localStorageIsEnabled.returns(true);
+      STORAGE.getDataFromLocalStorage.returns('impactify-user-123');
+
+      const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+      expect(request.ext.impactify.storage).to.equal('impactify-user-123');
+      sinon.assert.calledOnce(STORAGE.getDataFromLocalStorage);
+      expect(STORAGE.getDataFromLocalStorage.firstCall.args[0]).to.equal(STORAGE_KEY);
+    });
+
+    it('should still bid without reading an identifier when storage access is denied', function () {
+      STORAGE.localStorageIsEnabled.returns(false);
+
+      const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+      expect(request.imp).to.have.length(1);
+      expect(request.ext.impactify.storage).to.be.oneOf(['', undefined]);
+      sinon.assert.notCalled(STORAGE.getDataFromLocalStorage);
     });
 
     [
@@ -522,8 +614,166 @@ describe('ImpactifyAdapter', function () {
       expect(request.regs.ext.gdpr).to.equal(1);
       expect(request.regs.ext.us_privacy).to.equal('1YNN');
     });
+
+    [true, false].forEach((gdprApplies) => {
+      it(`should preserve the CMP's explicit gdprApplies=${gdprApplies} signal`, function () {
+        videoBidderRequest.gdprConsent = { gdprApplies, consentString: gdprData.consentString };
+
+        const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+        expect(request.regs.ext.gdpr).to.equal(Number(gdprApplies));
+        expect(request.user.ext.consent).to.equal(gdprData.consentString);
+      });
+    });
+
+    [undefined, { consentString: gdprData.consentString }].forEach((gdprConsent) => {
+      it(`should not declare GDPR inapplicable when ${gdprConsent ? 'the CMP has not determined applicability' : 'no CMP data is available'}`, function () {
+        videoBidderRequest.gdprConsent = gdprConsent;
+
+        const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+        // OpenRTB: omission means unknown; zero explicitly means GDPR does not apply.
+        expect(request.regs?.ext || {}).to.not.have.property('gdpr');
+      });
+    });
+
+    it('should forward COPPA when enabled by the publisher', function () {
+      const previousCoppa = config.getConfig('coppa');
+      try {
+        config.setConfig({ coppa: true });
+
+        const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+        expect(request.regs.coppa).to.equal(1);
+      } finally {
+        config.setConfig({ coppa: previousCoppa });
+      }
+    });
   });
   describe('interpretResponse', function () {
+    describe('responses to production-shaped requests', function () {
+      let bannerBid;
+      let videoBid;
+      let bidRequest;
+      const vastXml = '<VAST version="3.0"><Ad id="creative-video"><Wrapper>' +
+        '<AdSystem>Impactify</AdSystem><VASTAdTagURI><![CDATA[https://ads.example.com/vast.xml]]></VASTAdTagURI>' +
+        '<Impression><![CDATA[https://ads.example.com/impression]]></Impression>' +
+        '<Creatives><Creative><Linear/></Creative></Creatives></Wrapper></Ad></VAST>';
+
+      beforeEach(function () {
+        bannerBid = {
+          bidder: 'impactify',
+          bidId: 'banner-slot',
+          adUnitCode: 'sidebar',
+          params: { accountId: 'publisher-123', appId: 'example.com', format: 'screen', style: 'static' },
+          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } }
+        };
+        videoBid = {
+          bidder: 'impactify',
+          bidId: 'video-slot',
+          adUnitCode: 'article-player',
+          params: { accountId: 'publisher-123', appId: 'example.com', format: 'player', style: 'inline' },
+          mediaTypes: {
+            video: { context: 'instream', playerSize: [[854, 480]], mimes: ['video/mp4'], protocols: [2, 3] }
+          }
+        };
+        bidRequest = spec.buildRequests([bannerBid, videoBid], {
+          bidderRequestId: 'request-123', timeout: 1000, refererInfo: { page: 'https://example.com/article' }
+        });
+      });
+
+      [
+        { name: 'VAST XML', creative: { adm: vastXml }, field: 'vastXml', value: vastXml },
+        {
+          name: 'a VAST URL',
+          creative: { ext: { vast_url: 'https://ads.example.com/vast.xml' } },
+          field: 'vastUrl',
+          value: 'https://ads.example.com/vast.xml'
+        }
+      ].forEach(({ name, creative, field, value }) => {
+        it(`should return renderable instream video when the player response contains only ${name}`, function () {
+          const result = spec.interpretResponse({
+            body: {
+              cur: 'USD',
+              seatbid: [{ bid: [{ id: 'video-bid', impid: videoBid.bidId, price: 2.5, mtype: 2, crid: 'video-creative', ...creative }] }]
+            }
+          }, bidRequest);
+
+          expect(result).to.have.length(1);
+          expect(result[0]).to.include({ requestId: videoBid.bidId, mediaType: 'video', cpm: 2.5, [field]: value });
+          expect(result[0]).to.not.have.property('ad');
+        });
+      });
+
+      it('should keep each creative with its slot across multiple seats, reversed responses and a no-bid', function () {
+        const result = spec.interpretResponse({
+          body: {
+            cur: 'EUR',
+            seatbid: [
+              { bid: [] },
+              { bid: [{ id: 'video-bid', impid: videoBid.bidId, price: 2.5, mtype: 2, adm: vastXml, crid: 'video-creative' }] },
+              {
+                bid: [
+                  { id: 'no-bid', impid: bannerBid.bidId, price: 0 },
+                  {
+                    id: 'banner-bid',
+                    impid: bannerBid.bidId,
+                    price: 1.2,
+                    mtype: 1,
+                    adm: '<div>Sidebar advertisement</div>',
+                    w: 300,
+                    h: 250,
+                    crid: 'banner-creative'
+                  }
+                ]
+              }
+            ]
+          }
+        }, bidRequest);
+
+        expect(result).to.have.length(2);
+        expect(result.find((bid) => bid.requestId === videoBid.bidId)).to.include({
+          mediaType: 'video', vastXml, currency: 'EUR', cpm: 2.5, creativeId: 'video-creative'
+        });
+        expect(result.find((bid) => bid.requestId === bannerBid.bidId)).to.include({
+          mediaType: 'banner',
+          ad: '<div>Sidebar advertisement</div>',
+          currency: 'EUR',
+          cpm: 1.2,
+          width: 300,
+          height: 250,
+          creativeId: 'banner-creative'
+        });
+      });
+
+      it('should honor a banner response to a multiformat slot instead of inferring video from the request', function () {
+        bannerBid.mediaTypes.video = utils.deepClone(videoBid.mediaTypes.video);
+        bannerBid.mediaTypes.video.context = 'outstream';
+        const request = spec.buildRequests([bannerBid], { bidderRequestId: 'multiformat-request' });
+        const result = spec.interpretResponse({
+          body: {
+            seatbid: [{
+              bid: [{
+                id: 'banner-bid',
+                impid: bannerBid.bidId,
+                price: 1.2,
+                mtype: 1,
+                adm: '<div>Banner advertisement</div>',
+                w: 300,
+                h: 250,
+                crid: 'banner-creative'
+              }]
+            }]
+          }
+        }, request);
+
+        expect(result).to.have.length(1);
+        expect(result[0]).to.include({ mediaType: 'banner', ad: '<div>Banner advertisement</div>', width: 300, height: 250 });
+        expect(result[0]).to.not.have.property('vastXml');
+        expect(result[0]).to.not.have.property('vastUrl');
+      });
+    });
+
     it('should get correct bid response', function () {
       const response = {
         id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
@@ -879,27 +1129,92 @@ describe('ImpactifyAdapter', function () {
       expect(result).to.be.empty;
     });
     it('should append the various values if they exist', function () {
-      const result = spec.getUserSyncs({ iframeEnabled: true }, validResponse, gdprData);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [{ body: validResponse }], gdprData);
       expect(result[0].url).to.include('gdpr=1');
       expect(result[0].url).to.include('gdpr_consent=BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');
+    });
+
+    it('should not schedule an iframe when the publisher allows only image syncs', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{ body: validResponse }], gdprData)).to.deep.equal([]);
+    });
+
+    it('should synchronize after a no-bid response when iframe syncs are permitted', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [{ body: { seatbid: [] } }]);
+
+      expect(result).to.have.length(1);
+      expect(result[0]).to.deep.equal({ type: 'iframe', url: ORIGIN + '/static/cookie_sync.html' });
+    });
+
+    it('should preserve a known non-GDPR scope when the CMP supplies no consent string', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [{ body: validResponse }], { gdprApplies: false });
+
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(url.searchParams.get('gdpr')).to.equal('0');
+      expect(url.searchParams.get('gdpr_consent')).to.be.oneOf([null, '']);
+    });
+
+    it('should preserve GDPR and US privacy signals together in the sync URL', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [{ body: validResponse }], gdprData, '1YNN');
+
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(url.searchParams.get('gdpr')).to.equal('1');
+      expect(url.searchParams.get('gdpr_consent')).to.equal(gdprData.consentString);
+      expect(url.searchParams.get('us_privacy')).to.equal('1YNN');
+    });
+
+    it('should send US privacy when no GDPR consent data is available', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [{ body: validResponse }], undefined, '1YNN');
+
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(url.searchParams.get('us_privacy')).to.equal('1YNN');
+      expect(url.searchParams.has('gdpr')).to.equal(false);
     });
   });
 
   describe('On winning bid', function () {
-    const bid = {
-      ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
-      cpm: '2'
-    };
-    const result = spec.onBidWon(bid);
-    assert.ok(result);
+    it('should report the winning bid without credentials', function () {
+      const bid = {
+        bidder: 'impactify',
+        requestId: 'banner-slot',
+        adUnitCode: 'sidebar',
+        ad: '<div>Advertisement</div>',
+        cpm: 2,
+        currency: 'USD'
+      };
+
+      spec.onBidWon(bid);
+
+      expect(server.requests).to.have.length(1);
+      const request = server.requests[0];
+      expect(request.url).to.equal('https://logger.impactify.media/prebid/won');
+      expect(request.method).to.equal('POST');
+      expect(JSON.parse(request.requestBody)).to.deep.equal(bid);
+      expect(request.withCredentials).to.equal(false);
+    });
   });
 
   describe('On bid Time out', function () {
-    const bid = {
-      ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
-      cpm: '2'
-    };
-    const result = spec.onTimeout(bid);
-    assert.ok(result);
+    it('should report an actual timed-out bid request without credentials', function () {
+      const bid = {
+        bidder: 'impactify',
+        bidId: 'banner-slot',
+        adUnitCode: 'sidebar',
+        auctionId: 'auction-123',
+        timeout: 1000,
+        params: { accountId: 'publisher-123', appId: 'example.com', format: 'screen', style: 'static' }
+      };
+
+      spec.onTimeout([bid]);
+
+      expect(server.requests).to.have.length(1);
+      const request = server.requests[0];
+      expect(request.url).to.equal('https://logger.impactify.media/prebid/timeout');
+      expect(request.method).to.equal('POST');
+      expect(JSON.parse(request.requestBody)).to.deep.equal(bid);
+      expect(request.withCredentials).to.equal(false);
+    });
   });
 });
