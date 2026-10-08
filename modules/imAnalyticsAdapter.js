@@ -314,7 +314,8 @@ imAnalyticsAdapter.disableAnalytics = function() {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: imAnalyticsAdapter,
-  code: 'imAnalytics'
+  code: 'imAnalytics',
+  acpId: 2279 // Google Additional Consent provider ID
 });
 
 export default imAnalyticsAdapter;

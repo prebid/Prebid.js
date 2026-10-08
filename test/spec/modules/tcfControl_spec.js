@@ -6,6 +6,7 @@ import {
   enrichEidsRule,
   fetchBidsRule,
   getAcceptableFlags,
+  getAcpId,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
   getPurposeDeclarations,
@@ -32,7 +33,7 @@ import * as events from 'src/events.js';
 import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
 import { requestBids } from 'src/prebid.js';
 import { hook } from '../../../src/hook.js';
-import { GDPR_GVLIDS, GVL_PURPOSES, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS, GVL_PURPOSES, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
 import { activityParams } from '../../../src/activities/activityParams.js';
 
 describe('gdpr enforcement', function () {
@@ -111,7 +112,7 @@ describe('gdpr enforcement', function () {
       }
     }
   };
-  let gvlids, sandbox;
+  let gvlids, acpids, sandbox;
 
   function setupConsentData({ gdprApplies = true, apiVersion = 2, tcDataMutator } = {}) {
     const cd = utils.deepClone(staticConfig);
@@ -146,7 +147,9 @@ describe('gdpr enforcement', function () {
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     gvlids = {};
+    acpids = {};
     sandbox.stub(GDPR_GVLIDS, 'get').callsFake((name) => ({ gvlid: gvlids[name], modules: {} }));
+    sandbox.stub(GDPR_ACPIDS, 'get').callsFake((name) => ({ gvlid: acpids[name], modules: {} }));
   });
 
   afterEach(() => {
@@ -1390,6 +1393,124 @@ describe('gdpr enforcement', function () {
 
       // Assertions
       sinon.assert.calledWith(events.emit.getCall(1), 'tcf2Enforcement', sinon.match.object);
+    });
+  });
+
+  describe('Google Additional Consent providers', () => {
+    const BIDDER = 'acpBidder';
+    const ACP_ID = 2343;
+    let cd;
+
+    beforeEach(() => {
+      setEnforcementConfig({});
+      cd = setupConsentData();
+      cd.vendorData.vendor.consents = {};
+      cd.vendorData.vendor.legitimateInterests = {};
+      cd.addtlConsent = `2~1.${ACP_ID}.3~dv.4.5`;
+      acpids[BIDDER] = ACP_ID;
+    });
+
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    function runFetchBids(bidder = BIDDER) {
+      return fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder));
+    }
+
+    it('should allow a module without GVL ID that has Additional Consent', () => {
+      expectAllow(true, runFetchBids());
+    });
+
+    it('should accept v1 Additional Consent strings', () => {
+      cd.addtlConsent = `1~${ACP_ID}`;
+      expectAllow(true, runFetchBids());
+    });
+
+    Object.entries({
+      'the provider is not in the consent string': '2~1.3~dv.4.5',
+      'the provider was only disclosed': `2~1.3~dv.4.${ACP_ID}`,
+      'nothing was consented to': `2~~dv.${ACP_ID}`,
+      'the version is unknown': `3~${ACP_ID}`,
+      'there is no consent string': undefined,
+    }).forEach(([t, addtlConsent]) => {
+      it(`should block a module without GVL ID when ${t}`, () => {
+        cd.addtlConsent = addtlConsent;
+        expectAllow(false, runFetchBids());
+      });
+    });
+
+    it('should block a module without GVL ID or Additional Consent provider ID', () => {
+      delete acpids[BIDDER];
+      expectAllow(false, runFetchBids());
+    });
+
+    it('should still require purpose consent', () => {
+      cd.vendorData.purpose.consents['2'] = false;
+      cd.vendorData.purpose.legitimateInterests['2'] = false;
+      expectAllow(false, runFetchBids());
+    });
+
+    it('should not use Additional Consent for modules that have a GVL ID', () => {
+      gvlids[BIDDER] = ACP_ID;
+      expectAllow(false, runFetchBids());
+    });
+
+    it('should use acpMapping', () => {
+      delete acpids[BIDDER];
+      config.setConfig({ acpMapping: { [BIDDER]: ACP_ID } });
+      expectAllow(true, runFetchBids());
+    });
+
+    it('should apply to other rules', () => {
+      cd.vendorData.specialFeatureOptins['1'] = true;
+      expectAllow(true, syncUserRule(activityParams(MODULE_TYPE_BIDDER, BIDDER)));
+      expectAllow(true, transmitPreciseGeoRule(activityParams(MODULE_TYPE_BIDDER, BIDDER)));
+    });
+
+    describe('transmitEidsRule', () => {
+      function runRule() {
+        return transmitEidsRule(activityParams(MODULE_TYPE_BIDDER, BIDDER));
+      }
+
+      it('should allow with Additional Consent and consent for any purpose 2-10', () => {
+        cd.vendorData.purpose.consents = { 7: true };
+        cd.vendorData.purpose.legitimateInterests = {};
+        expectAllow(true, runRule());
+      });
+
+      it('should deny without Additional Consent', () => {
+        cd.addtlConsent = '2~1~dv.';
+        expectAllow(false, runRule());
+      });
+    });
+
+    describe('getAcpId', () => {
+      it('should return null without a module name', () => {
+        expect(getAcpId()).to.equal(null);
+      });
+
+      it('should return null for core modules', () => {
+        expect(getAcpId(MODULE_TYPE_PREBID, BIDDER)).to.equal(null);
+      });
+
+      it('should return null if no ID was registered', () => {
+        expect(getAcpId(MODULE_TYPE_BIDDER, 'other')).to.equal(null);
+      });
+
+      it('should return the registered ID', () => {
+        expect(getAcpId(MODULE_TYPE_BIDDER, BIDDER)).to.equal(ACP_ID);
+      });
+
+      it('should prefer acpMapping over the registered ID', () => {
+        config.setConfig({ acpMapping: { [BIDDER]: 1 } });
+        expect(getAcpId(MODULE_TYPE_BIDDER, BIDDER)).to.equal(1);
+      });
+
+      it('should use the bidder\'s ID when multiple modules declare different IDs', () => {
+        GDPR_ACPIDS.get.callsFake(() => ({ modules: { [MODULE_TYPE_BIDDER]: 123, [MODULE_TYPE_UID]: 321 } }));
+        expect(getAcpId(MODULE_TYPE_UID, BIDDER)).to.equal(123);
+      });
     });
   });
 

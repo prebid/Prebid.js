@@ -45,13 +45,13 @@ describe('consent management utils', () => {
         afterEach(() => {
           checkLogs(utils.logError);
         });
-        it('should log an error and run bidsBackHandler', async () => {
-          const bidsBackHandler = sinon.stub();
-          cmHook(next, { bidsBackHandler });
+        it('should log an error and reject the auction promise', async () => {
+          const reject = sinon.stub();
+          cmHook(next, { defer: { reject } });
           await loadResult.catch(() => null);
           sinon.assert.calledWith(utils.logError, sinon.match('Canceling auction'));
           sinon.assert.notCalled(next);
-          sinon.assert.called(bidsBackHandler);
+          sinon.assert.called(reject);
         });
         it('should not choke when bidsBackHandler is not present', async () => {
           cmHook(next, {});

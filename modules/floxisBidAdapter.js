@@ -276,7 +276,8 @@ export const spec = {
         data: CONVERTER.toORTB({ bidRequests: groupedBidRequests, bidderRequest, context: { resolveFloxisId } }),
         options: {
           withCredentials: true,
-          contentType: 'text/plain'
+          contentType: 'text/plain',
+          endpointCompression: true
         }
       };
     }).filter(Boolean);

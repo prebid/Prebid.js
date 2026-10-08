@@ -13,6 +13,7 @@ import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
  */
 
 const BIDDER_CODE = 'aja';
+const ACP_ID = 550; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 const SDK_TYPE = 5;
 
@@ -69,6 +70,7 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
 
   /**

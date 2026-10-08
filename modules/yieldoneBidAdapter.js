@@ -18,6 +18,7 @@ import { BOL_LIKE_USER_AGENTS } from '../libraries/userAgentUtils/constants.js';
  */
 
 const BIDDER_CODE = 'yieldone';
+const ACP_ID = 385; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
@@ -29,7 +30,8 @@ const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['y1'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'y1', acpId: ACP_ID }],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.

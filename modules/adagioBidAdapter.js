@@ -14,6 +14,7 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
+  uniques,
 } from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
 import { OUTSTREAM } from '../src/video.js';
@@ -717,9 +718,16 @@ export const spec = {
 
     // Build one request per organizationId
     const requests = Object.keys(groupedAdUnits).map(organizationId => {
+      // A single request is built per organizationId, but its ad units may reference several sites.
+      const sites = groupedAdUnits[organizationId]
+        .map(adUnit => adUnit.params.site)
+        .filter(Boolean)
+        .filter(uniques)
+        .map(site => `&site=${encodeURIComponent(site)}`)
+        .join('');
       return {
         method: 'POST',
-        url: `${ENDPOINT}?orgid=${organizationId}`,
+        url: `${ENDPOINT}?orgid=${encodeURIComponent(organizationId)}${sites}`,
         data: {
           organizationId: organizationId,
           hasRtd: _internal.hasRtd() ? 1 : 0,
