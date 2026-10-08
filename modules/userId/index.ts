@@ -38,7 +38,7 @@ import { getPPID as coreGetPPID } from '../../src/adserver.js';
 import { defer, delay, PbPromise } from '../../src/utils/promise.js';
 import { newMetrics, timedAuctionHook, useMetrics } from '../../src/utils/perfMetrics.js';
 import { findRootDomain } from '../../src/fpd/rootDomain.js';
-import { allConsent, GDPR_GVLIDS } from '../../src/consentHandler.js';
+import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS } from '../../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
 import { isActivityAllowed, registerActivityControl } from '../../src/activities/rules.js';
 import { ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS } from '../../src/activities/activities.js';
@@ -1272,6 +1272,7 @@ export function attachIdSystem(submodule: IdProviderSpec<UserIdProvider>) {
   if (!(submoduleRegistry || []).find(i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid);
+    GDPR_ACPIDS.register(MODULE_TYPE_UID, submodule.name, submodule.acpId);
     updateSubmodules();
     // TODO: a test case wants this to work even if called after init (the setConfig({userId}))
     // so we trigger a refresh. But is that even possible outside of tests?

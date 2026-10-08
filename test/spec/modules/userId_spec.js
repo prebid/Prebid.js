@@ -36,7 +36,7 @@ import { hook } from '../../../src/hook.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import { getPPID } from '../../../src/adserver.js';
 import { uninstall as uninstallTcfControl } from 'modules/tcfControl.js';
-import { allConsent, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHandler.js';
+import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
@@ -209,6 +209,16 @@ describe('User ID', function () {
     it('are registered when ID submodule is registered', () => {
       attachIdSystem({ name: 'gvlidMock', gvlid: 123 });
       sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
+    });
+
+    it('registers Additional Consent provider IDs', () => {
+      sinon.stub(GDPR_ACPIDS, 'register');
+      try {
+        attachIdSystem({ name: 'acpIdMock', acpId: 321 });
+        sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_UID, 'acpIdMock', 321);
+      } finally {
+        GDPR_ACPIDS.register.restore();
+      }
     });
   });
 
