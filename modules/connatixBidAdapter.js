@@ -195,7 +195,7 @@ export function _getBidRequests(validBidRequests) {
     };
 
     const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
-    if (isStr(gpid) && gpid) {
+    if (gpid && isStr(gpid)) {
       bidRequest.gpid = gpid;
     }
 
@@ -389,7 +389,7 @@ export const spec = {
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
     const { UserSyncEndpoint, PixelSyncEndpoint } = serverResponses[0].body || {};
 
-    if (syncOptions.iframeEnabled && isStr(UserSyncEndpoint) && UserSyncEndpoint) {
+    if (syncOptions.iframeEnabled && UserSyncEndpoint && isStr(UserSyncEndpoint)) {
       window.addEventListener('message', function handler(event) {
         if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
           return;
@@ -415,7 +415,7 @@ export const spec = {
       }];
     }
 
-    if (syncOptions.pixelEnabled && isStr(PixelSyncEndpoint) && PixelSyncEndpoint) {
+    if (syncOptions.pixelEnabled && PixelSyncEndpoint && isStr(PixelSyncEndpoint)) {
       return [{
         type: 'image',
         url: _appendQueryParams(PixelSyncEndpoint, queryParams)
