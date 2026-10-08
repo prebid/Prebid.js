@@ -577,16 +577,25 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
           logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
         }
 
-        if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
-          compressDataWithGZip(request.data).then(compressedPayload => {
-            const url = new URL(request.url);
-            if (!url.searchParams.has('gzip')) {
-              url.searchParams.set('gzip', '1');
+        const sendUncompressed = wrapCallback(() => callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) }));
+
+        if (enableGZipCompression && !debugMode) {
+          isGzipCompressionSupported().then(wrapCallback((supported) => {
+            if (supported) {
+              return compressDataWithGZip(request.data)
+                .then(wrapCallback(compressedPayload => {
+                  const url = new URL(request.url);
+                  if (!url.searchParams.has('gzip')) {
+                    url.searchParams.set('gzip', '1');
+                  }
+                  callAjax({ url: url.href, payload: compressedPayload });
+                }));
+            } else {
+              sendUncompressed();
             }
-            callAjax({ url: url.href, payload: compressedPayload });
-          });
+          })).catch(sendUncompressed);
         } else {
-          callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
+          sendUncompressed();
         }
         break;
       default:
