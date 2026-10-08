@@ -69,6 +69,7 @@ import type {
   SomeAnalyticsConfig,
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { getGlobal } from "./prebidGlobal.ts";
+import { browserSupportsYield, yieldAll } from "./utils/yield.ts";
 
 export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler } from './consentHandler.js';
 
@@ -744,8 +745,7 @@ const adapterManager = {
     });
 
     let counter = 0;
-
-    _s2sConfigs.forEach((s2sConfig) => {
+    const s2sAdapterCalls = _s2sConfigs.map((s2sConfig) => () => {
       if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
         // s2s should get the same client side timeout as other client side requests.
         const s2sAjax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, requestBidsTimeout, requestCallbacks ? {
@@ -797,8 +797,7 @@ const adapterManager = {
       }
     });
 
-    // handle client adapter requests
-    clientBidderRequests.forEach(bidderRequest => {
+    const clientAdapterCalls = clientBidderRequests.map(bidderRequest => () => {
       bidderRequest.start = timestamp();
       const adapter = _bidderRegistry[bidderRequest.bidderCode];
       config.runWithBidder(bidderRequest.bidderCode, () => {
@@ -828,6 +827,11 @@ const adapterManager = {
         adapterDone();
       }
     });
+
+    yieldAll(
+      () => browserSupportsYield() && config.getConfig('auctionOptions.yield'),
+      s2sAdapterCalls.concat(clientAdapterCalls)
+    );
   },
   videoAdapters: [],
   registerBidAdapter(bidAdapter, bidderCode, { supportedMediaTypes = [] } = {}) {
