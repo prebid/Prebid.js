@@ -188,6 +188,13 @@ export interface AuctionOptionsConfig {
    * Default is true; set to false to keep mismatched mediaType responses.
    */
   rejectInvalidMediaTypes?: boolean;
+
+  /**
+   * If true, and the browser supports [`scheduler.yield`](https://developer.mozilla.org/en-US/docs/Web/API/Scheduler/yield),
+   * auctions yield the main thread after calling each bid adapter.
+   * Default is false.
+   */
+  yield?: boolean
 }
 
 export interface PriceBucketConfig {
@@ -829,7 +836,7 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   if (allowTopWindowRenderers) {
     if (renderer) {
       // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null, requiresVastUrl: renderer.requiresVastUrl });// rename options to config, to make it consistent?
       bid.renderer.setRender(renderer.render);
     }
   } else {

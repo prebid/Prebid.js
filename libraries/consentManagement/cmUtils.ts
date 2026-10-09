@@ -17,11 +17,7 @@ export function consentManagementHook(name, loadConsentData) {
     }).catch((error) => {
       logError(`${error?.message} Canceling auction as per consentManagement config.`, ...(error?.args || []));
       fn.stopTiming();
-      if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
-        reqBidsConfigObj.bidsBackHandler();
-      } else {
-        logError('Error executing bidsBackHandler');
-      }
+      reqBidsConfigObj.defer.reject(error);
     });
   });
 }

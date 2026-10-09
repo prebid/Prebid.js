@@ -2,7 +2,7 @@ import { consentConfig, gdprScope, resetConsentData, setConsentConfig, tcfCmpEve
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import 'src/prebid.js';
+import pbjs from 'src/prebid.js';
 
 const expect = require('chai').expect;
 
@@ -376,8 +376,7 @@ describe('consentManagement', function () {
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.false;
         const consent = gdprDataHandler.getConsentData();
-        // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
-        sinon.assert.calledTwice(utils.logError);
+        sinon.assert.calledOnce(utils.logError);
         expect(consent).to.be.null;
         expect(gdprDataHandler.ready).to.be.true;
       });
@@ -403,6 +402,29 @@ describe('consentManagement', function () {
       it('should not trip when adUnits have no size', async () => {
         await setConsentConfig(staticConfig);
         expect(await runHook({ adUnits: [{ code: 'test', mediaTypes: { video: {} } }] })).to.be.true;
+      });
+
+      describe('when the auction is canceled, the promise returned by requestBids', () => {
+        function settlement(promise, ms = 100) {
+          return Promise.race([
+            promise.then(() => 'resolved', () => 'rejected'),
+            new Promise(resolve => setTimeout(() => resolve('pending'), ms))
+          ]);
+        }
+
+        const adUnits = [{ code: 'au', mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [] }];
+
+        Object.entries({
+          'CMP is not found': goodConfig,
+          'static config has no consentData': { cmpApi: 'static' },
+        }).forEach(([t, cmConfig]) => {
+          it(`rejectgs when ${t}`, async () => {
+            await setConsentConfig(cmConfig);
+            const bidsBackHandler = sinon.stub();
+            expect(await settlement(pbjs.requestBids({ adUnits, bidsBackHandler }))).to.equal('rejected');
+            sinon.assert.calledOnce(bidsBackHandler);
+          });
+        });
       });
 
       it('should continue the auction immediately, without consent data, if timeout is 0', async () => {
@@ -655,7 +677,6 @@ describe('consentManagement', function () {
 
         it('throws an error when processCmpData check fails + does not call requestBids callback', async function () {
           const testConsentData = {};
-          let bidsBackHandlerReturn = false;
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData);
@@ -667,13 +688,13 @@ describe('consentManagement', function () {
           sinon.assert.notCalled(utils.logError);
 
           [utils.logWarn, utils.logError].forEach((stub) => stub.resetHistory());
-
-          expect(await runHook({ bidsBackHandler: () => bidsBackHandlerReturn = true })).to.be.false;
+          const reject = sinon.stub();
+          expect(await runHook({ defer: { reject } })).to.be.false;
           const consent = gdprDataHandler.getConsentData();
 
           sinon.assert.calledOnce(utils.logError);
           sinon.assert.notCalled(utils.logWarn);
-          expect(bidsBackHandlerReturn).to.be.true;
+          sinon.assert.called(reject);
           expect(consent).to.be.null;
           expect(gdprDataHandler.ready).to.be.true;
         });

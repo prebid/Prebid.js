@@ -22,7 +22,7 @@ import type { DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty } 
 import type { BidderCode } from "./types/common.d.ts";
 import type { GptSlot } from "./types/gpt.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
-import { Bid } from './bidfactory.ts';
+import type { Bid } from './bidfactory.ts';
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
@@ -65,7 +65,7 @@ function attachProperties(config, useDefaultValues = true) {
   } : {};
 
   const validateauctionOptions = (() => {
-    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
+    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes', 'yield'];
     const arrKeys = ['secondaryBidders'];
     const enumKeys = { viewabilityMeasurement: ['observer', 'boundingBox'] };
     const allKeys = [].concat(boolKeys).concat(arrKeys).concat(Object.keys(enumKeys));

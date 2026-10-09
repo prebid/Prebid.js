@@ -151,6 +151,36 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
   });
 
   describe('buildRequests: imp shape', function () {
+    [undefined, { ext: { data: { pbadslot: '', content_url: 'https://example.com' } } }, { ext: { bidder: { adslot: '' } } }].forEach((ortb2Imp) => {
+      it(`falls back to the ad unit code when slot identifiers are absent: ${JSON.stringify(ortb2Imp)}`, function () {
+        const bids = [makeBannerBid({ ortb2Imp }), makeBannerBid({ adUnitCode: 'second-slot', bidId: 'second-bid', ortb2Imp })];
+        const imps = spec.buildRequests(bids, makeBidderRequest()).data.imp;
+        imps.forEach((imp, index) => {
+          expect(imp.ext.bidder.adslot).to.equal(bids[index].adUnitCode);
+          expect(imp.id).to.equal(bids[index].bidId);
+          expect(imp.ext.data?.pbadslot).to.equal(ortb2Imp?.ext.data?.pbadslot);
+          expect(imp.ext.data?.content_url).to.equal(ortb2Imp?.ext.data?.content_url);
+        });
+        expect(ortb2Imp?.ext.data?.pbadslot).to.equal(ortb2Imp?.ext.data ? '' : undefined);
+      });
+    });
+
+    [
+      { ext: { data: { pbadslot: 'publisher-slot' } } },
+      { tagid: 'publisher-tag' },
+      { ext: { data: { adslot: ['publisher-slot'] } } },
+      { ext: { gpid: 'publisher-gpid' } },
+      { ext: { bidder: { adslot: 'publisher-slot' } } },
+    ].forEach((ortb2Imp) => {
+      it(`preserves explicit slot identifiers: ${JSON.stringify(ortb2Imp)}`, function () {
+        const imp = spec.buildRequests([makeBannerBid({ ortb2Imp })], makeBidderRequest()).data.imp[0];
+        expect(imp.ext.bidder.adslot).to.equal(ortb2Imp.ext?.bidder?.adslot || 'adunit-code');
+        expect(imp.tagid).to.equal(ortb2Imp.tagid);
+        expect(imp.ext.data).to.deep.equal(ortb2Imp.ext?.data);
+        expect(imp.ext.gpid).to.equal(ortb2Imp.ext?.gpid);
+      });
+    });
+
     it('places bidder params under imp.ext.bidder', function () {
       const bid = makeBannerBid({ params: { domainId: 1422, placementId: 2211521 } });
       const req = spec.buildRequests([bid], makeBidderRequest());
@@ -179,6 +209,7 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
         const req = spec.buildRequests([makeVideoBid()], makeBidderRequest());
         const imp = req.data.imp[0];
         expect(imp.video).to.exist;
+        expect(imp.ext.bidder.adslot).to.equal('video-adunit');
         expect(imp.banner).to.not.exist;
       });
 
