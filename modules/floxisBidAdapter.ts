@@ -1,6 +1,18 @@
+import type { FloxisBaseBidParams } from '../libraries/floxisUtils/bidderUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { createFloxisSpec, isValidHostLabel } from '../libraries/floxisUtils/bidderUtils.js';
+
+export interface FloxisBidParams extends FloxisBaseBidParams {
+  region?: string;
+  partner?: string;
+}
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    floxis: FloxisBidParams;
+  }
+}
 
 const BIDDER_CODE = 'floxis';
 const GVLID = 1609;

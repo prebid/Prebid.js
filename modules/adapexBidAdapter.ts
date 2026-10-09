@@ -1,6 +1,26 @@
+import { config } from '../src/config.js';
+import type { FloxisBaseBidParams } from '../libraries/floxisUtils/bidderUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { createFloxisSpec } from '../libraries/floxisUtils/bidderUtils.js';
+
+export type AdapexBidParams = FloxisBaseBidParams;
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    adapex: AdapexBidParams;
+  }
+}
+
+export interface AdapexConfig {
+  enableTelemetry?: boolean;
+}
+
+declare module '../src/config' {
+  interface Config {
+    adapex?: AdapexConfig;
+  }
+}
 
 const BIDDER_CODE = 'adapex';
 const GVLID = 1609;
@@ -20,6 +40,7 @@ export const spec = createFloxisSpec({
   getBidHost: () => BID_HOST,
   getSyncOrigin: () => SYNC_ORIGIN,
   telemetryOrigin: SYNC_ORIGIN,
+  isTelemetryEnabled: () => config.getConfig('adapex')?.enableTelemetry === true,
   pinSyncOrigin: true
 });
 

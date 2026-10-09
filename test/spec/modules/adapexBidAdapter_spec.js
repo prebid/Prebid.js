@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { config } from 'src/config.js';
 import { spec, storage } from 'modules/adapexBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
@@ -207,6 +208,20 @@ describe('adapexBidAdapter', function () {
         expect(spec.buildRequests([broken], bidderRequest)[0].data.imp[0].bidfloor).to.be.undefined;
       });
 
+      it('does not replace a Floors module decision with a static floor', function () {
+        [() => ({ floor: 0, currency: 'USD' }), () => ({}), () => { throw new Error('floor error'); }].forEach((getFloor) => {
+          const bid = { ...validBannerBid, params: { seat: 'Gmtb', bidFloor: 5 }, getFloor };
+          expect(spec.buildRequests([bid], bidderRequest)[0].data.imp[0].bidfloor).to.be.undefined;
+        });
+      });
+
+      it('preserves an explicit zero floor from ortb2Imp', function () {
+        const bid = { ...validBannerBid, params: { seat: 'Gmtb', bidFloor: 5 }, ortb2Imp: { bidfloor: 0, bidfloorcur: 'EUR' } };
+        const imp = spec.buildRequests([bid], bidderRequest)[0].data.imp[0];
+        expect(imp.bidfloor).to.equal(0);
+        expect(imp.bidfloorcur).to.equal('EUR');
+      });
+
       it('falls back to params.bidFloor and bidFloorCur', function () {
         const bid = { ...validBannerBid, params: { seat: 'Gmtb', bidFloor: 1.75, bidFloorCur: 'EUR' } };
         const imp = spec.buildRequests([bid], bidderRequest)[0].data.imp[0];
@@ -242,6 +257,18 @@ describe('adapexBidAdapter', function () {
         expect(data.regs.gpp).to.equal('DBACNYA~xxx');
         expect(data.regs.gpp_sid).to.deep.equal([7]);
         expect(data.user.ext.consent).to.equal('consent-string-123');
+      });
+
+      it('forwards publisher first-party data and impression deal definitions', function () {
+        const site = { domain: 'publisher.example', content: { language: 'en' } };
+        const userData = [{ name: 'publisher.example', segment: [{ id: 'sports' }] }];
+        const pmp = { private_auction: 1, deals: [{ id: 'deal-1', bidfloor: 0.5, bidfloorcur: 'USD' }] };
+        const bid = { ...validBannerBid, ortb2Imp: { pmp } };
+        const request = { ...bidderRequest, ortb2: { site, user: { data: userData } } };
+        const data = spec.buildRequests([bid], request)[0].data;
+        expect(data.site).to.deep.include(site);
+        expect(data.user.data).to.deep.equal(userData);
+        expect(data.imp[0].pmp).to.deep.equal(pmp);
       });
 
       it('forwards eids and schain', function () {
@@ -315,6 +342,13 @@ describe('adapexBidAdapter', function () {
       it('regenerates a malformed stored id', function () {
         stubs.getDataFromLocalStorage.returns('not-a-uuid');
         stubs.getCookie.returns('also-not-a-uuid');
+        const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
+        expect(data.user.ext.wlid).to.equal(STUBBED_UUID);
+      });
+
+      it('replaces a 36-character value that is not a UUID', function () {
+        stubs.getDataFromLocalStorage.returns('x'.repeat(36));
+        stubs.getCookie.returns('x'.repeat(36));
         const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
         expect(data.user.ext.wlid).to.equal(STUBBED_UUID);
       });
@@ -412,6 +446,12 @@ describe('adapexBidAdapter', function () {
       expect(spec.interpretResponse(bannerResponse({ mtype: undefined }), request)).to.be.empty;
     });
 
+    it('preserves deal IDs on returned bids', function () {
+      const request = spec.buildRequests([validBannerBid], bidderRequest)[0];
+      const bids = spec.interpretResponse(bannerResponse({ dealid: 'deal-1' }), request);
+      expect(bids[0].dealId).to.equal('deal-1');
+    });
+
     it('maps DSP ext fields into meta', function () {
       const request = spec.buildRequests([validBannerBid], bidderRequest)[0];
       const bids = spec.interpretResponse(bannerResponse({ ext: { dspid: 42, advertiser_name: 'AdvCo', agency_name: 'AgCo', agency_id: 'ag-7' } }), request);
@@ -487,6 +527,19 @@ describe('adapexBidAdapter', function () {
       expect(headerReads).to.equal(0);
     });
 
+    it('rejects non-HTTPS sync URLs before pinning the origin', function () {
+      ['javascript:alert(1)', 'data:text/plain,hello', 'http://px-us-e.floxis.tech/sync'].forEach((url) => {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync: [{ type: 'iframe', url }] })])).to.be.empty;
+      });
+    });
+
+    it('uses the next usable sync when the preferred entry has an invalid URL', function () {
+      const sync = [{ type: 'iframe', url: 'not a url' }, ...BOTH];
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync })])).to.deep.equal([
+        { type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=iframe' }
+      ]);
+    });
+
     it('syncs on a no-bid that carries ext.sync', function () {
       const noBid = { body: { id: 'r', seatbid: [], cur: 'USD', ext: { sync: BOTH } } };
       expect(spec.getUserSyncs({ iframeEnabled: true }, [noBid])).to.have.lengthOf(1);
@@ -542,10 +595,27 @@ describe('adapexBidAdapter', function () {
 
     beforeEach(function () {
       politeStub = sinon.stub(utils, 'politeTriggerPixel');
+      config.setConfig({ adapex: { enableTelemetry: true } });
     });
 
     afterEach(function () {
       politeStub.restore();
+      config.resetConfig();
+    });
+
+    it('sends no telemetry when the publisher disables it', function () {
+      config.setConfig({ adapex: { enableTelemetry: false } });
+      spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
+      spec.onBidderError({ error: { status: 500 }, bidderRequest: { bids: [validBannerBid] } });
+      expect(politeStub.called).to.be.false;
+      expect(spec.buildRequests([validBannerBid], bidderRequest)).to.have.lengthOf(1);
+    });
+
+    it('sends no telemetry without explicit publisher opt-in', function () {
+      config.resetConfig();
+      spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
+      spec.onBidderError({ error: { status: 500 }, bidderRequest: { bids: [validBannerBid] } });
+      expect(politeStub.called).to.be.false;
     });
 
     describe('onTimeout', function () {
