@@ -6,7 +6,7 @@ const BID_ID = 456;
 const TTL = 360;
 const NET_REVENUE = true;
 
-const minimalBid = function() {
+const minimalBid = function () {
   return {
     'bidId': BID_ID,
     'bidder': 'adhese',
@@ -18,7 +18,7 @@ const minimalBid = function() {
   };
 };
 
-const bidWithParams = function(data) {
+const bidWithParams = function (data) {
   const bid = minimalBid();
   bid.params.data = data;
   return bid;
@@ -163,7 +163,7 @@ describe('AdheseAdapter', function () {
     it('should request the json endpoint', function () {
       const req = spec.buildRequests([minimalBid()], bidderRequest);
 
-      expect(req.url).to.equal('https://ads-demo.adhese.com/json');
+      expect(req.url).to.equal('https://demo.ads.adhese.eu/json');
     });
 
     it('should include params specified in the config', function () {
@@ -210,8 +210,8 @@ describe('AdheseAdapter', function () {
             width: '728',
             height: '90',
             body: '<div style="background-color:red; height:250px; width:300px"></div>',
-            tracker: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
-            impressionCounter: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
+            tracker: 'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
+            impressionCounter: 'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
             extension: { 'prebid': { 'cpm': { 'amount': '1.000000', 'currency': 'USD' } }, mediaType: 'banner' },
             adomain: [
               'www.example.com'
@@ -222,7 +222,7 @@ describe('AdheseAdapter', function () {
 
       const expectedResponse = [{
         requestId: BID_ID,
-        ad: '<div style="background-color:red; height:250px; width:300px"></div><img src=\'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
+        ad: '<div style="background-color:red; height:250px; width:300px"></div><img src=\'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
         cpm: 1,
         currency: 'USD',
         creativeId: '60613369',
@@ -306,7 +306,7 @@ describe('AdheseAdapter', function () {
             adType: 'leaderboard',
             width: '640',
             height: '350',
-            cachedBodyUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+            cachedBodyUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
             extension: { 'prebid': { 'cpm': { 'amount': '2.1', 'currency': 'USD' } }, mediaType: 'video' }
           }
         ]
@@ -314,7 +314,7 @@ describe('AdheseAdapter', function () {
 
       const expectedResponse = [{
         requestId: BID_ID,
-        vastUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+        vastUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
         cpm: 2.1,
         currency: 'USD',
         creativeId: 'RUBICON',
@@ -347,23 +347,23 @@ describe('AdheseAdapter', function () {
             adspaceId: '162363',
             body: '<script id="body" type="text/javascript"></script>',
             tag: '<script id="tag" type="text/javascript"></script>',
-            tracker: 'https://hosts-demo.adhese.com/track/tracker',
+            tracker: 'https://demo.hosts.adhese.eu/track/tracker',
             altText: '<ADHESE_ALT_TEXT>',
             height: '150',
             width: '840',
-            tagUrl: 'https://pool-demo.adhese.com/pool/lib/90511.js',
+            tagUrl: 'https://demo.pool.adhese.eu/pool/lib/90511.js',
             libId: '90511',
             id: '742898',
             advertiserId: '2081',
             ext: 'js',
-            url: 'https://hosts-demo.adhese.com/raylene/url',
-            clickTag: 'https://hosts-demo.adhese.com/raylene/clickTag',
-            poolPath: 'https://hosts-demo.adhese.com/pool/lib/',
+            url: 'https://demo.hosts.adhese.eu/raylene/url',
+            clickTag: 'https://demo.hosts.adhese.eu/raylene/clickTag',
+            poolPath: 'https://demo.hosts.adhese.eu/pool/lib/',
             orderName: 'Luminus boiler comodity-Pareto -201812',
             creativeName: 'nl_demo _network_ron_dlbd_840x150_fix_dir_asv_std_dis_brd_nrt_na_red',
             slotName: '_main_page_-leaderboard',
             slotID: '29306',
-            impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
+            impressionCounter: 'https://demo.hosts.adhese.eu/track/742898',
             origin: 'JERLICIA',
             originData: {},
             auctionable: true,
@@ -382,7 +382,7 @@ describe('AdheseAdapter', function () {
 
       const expectedResponse = [{
         requestId: BID_ID,
-        ad: '<script id="body" type="text/javascript"></script><img src=\'https://hosts-demo.adhese.com/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
+        ad: '<script id="body" type="text/javascript"></script><img src=\'https://demo.hosts.adhese.eu/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
         adhese: {
           origin: '',
           originInstance: '',
@@ -436,7 +436,7 @@ describe('AdheseAdapter', function () {
             creativeName: 'PREROLL',
             slotName: '_main_page_-leaderboard',
             slotID: '41711',
-            impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
+            impressionCounter: 'https://demo.hosts.adhese.eu/track/742898',
             origin: 'JERLICIA',
             originData: {},
             auctionable: true,
@@ -497,7 +497,7 @@ describe('AdheseAdapter', function () {
             extension: {
               mediaType: 'video'
             },
-            cachedBodyUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+            cachedBodyUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
             libId: '89860',
             id: '742470',
             advertiserId: '2263',
@@ -506,7 +506,7 @@ describe('AdheseAdapter', function () {
             creativeName: 'PREROLL',
             slotName: '_main_page_-leaderboard',
             slotID: '41711',
-            impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
+            impressionCounter: 'https://demo.hosts.adhese.eu/track/742898',
             origin: 'JERLICIA',
             originData: {},
             auctionable: true
@@ -516,7 +516,7 @@ describe('AdheseAdapter', function () {
 
       const expectedResponse = [{
         requestId: BID_ID,
-        vastUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+        vastUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
         adhese: {
           origin: '',
           originInstance: '',
