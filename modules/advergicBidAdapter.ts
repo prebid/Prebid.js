@@ -387,7 +387,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         ...ortb2Imp,
         id: bidRequest.bidId,
         tagid: bidRequest.params.endpointId || bidRequest.adUnitCode,
-        secure: window.location.protocol === 'https:' ? 1 : 0,
+        secure: 1, // https://github.com/prebid/Prebid.js/pull/15651#discussion_r4223126465
         ext: {
           ...ortb2Imp.ext,
           accountId: bidRequest.params.accountId,
