@@ -1,13 +1,16 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { config } from 'src/config.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { isValid, newBidder } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import { hook } from 'src/hook.js';
+import { registerActivityControl } from 'src/activities/rules.js';
+import { ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD, ACTIVITY_TRANSMIT_TID } from 'src/activities/activities.js';
 import { spec, storage } from 'modules/adapexBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
-import 'modules/priceFloors.js';
+import { continueAuction, handleSetFloorsConfig } from 'modules/priceFloors.js';
+import { stubAuctionIndex } from '../../helpers/indexStub.js';
 
 describe('adapexBidAdapter', function () {
   before(() => hook.ready());
@@ -40,13 +43,18 @@ describe('adapexBidAdapter', function () {
     bidId: 'bid-3',
     bidder: 'adapex',
     adUnitCode: 'adunit-native',
+    adUnitId: 'native-unit',
     mediaTypes: {
       native: {
         image: { required: true, sizes: [150, 50] },
         title: { required: true, len: 80 }
       }
     },
-    params: { seat: 'Gmtb' }
+    params: { seat: 'Gmtb' },
+    nativeOrtbRequest: {
+      ver: '1.2',
+      assets: [{ id: 1, required: 1, title: { len: 80 } }, { id: 2, required: 1, img: { type: 3, w: 150, h: 50 } }]
+    }
   };
 
   const bidderRequest = {
@@ -172,6 +180,27 @@ describe('adapexBidAdapter', function () {
       expect(spec.buildRequests([bid], bidderRequest)[0].data.imp[0].tagid).to.be.undefined;
     });
 
+    it('preserves all enabled formats on one multiformat impression', function () {
+      const bid = {
+        ...validBannerBid,
+        mediaTypes: { banner: validBannerBid.mediaTypes.banner, video: validVideoBid.mediaTypes.video, native: validNativeBid.mediaTypes.native },
+        nativeOrtbRequest: validNativeBid.nativeOrtbRequest
+      };
+      const imps = spec.buildRequests([bid], bidderRequest)[0].data.imp;
+      expect(imps).to.have.lengthOf(1);
+      expect(imps[0].banner.format).to.have.lengthOf(2);
+      if (FEATURES.VIDEO) {
+        expect(imps[0].video.mimes).to.deep.equal(['video/mp4']);
+      } else {
+        expect(imps[0].video).to.be.undefined;
+      }
+      if (FEATURES.NATIVE) {
+        expect(JSON.parse(imps[0].native.request).assets).to.deep.equal(validNativeBid.nativeOrtbRequest.assets);
+      } else {
+        expect(imps[0].native).to.be.undefined;
+      }
+    });
+
     if (FEATURES.VIDEO) {
       it('builds a video imp', function () {
         const imp = spec.buildRequests([validVideoBid], bidderRequest)[0].data.imp[0];
@@ -191,6 +220,31 @@ describe('adapexBidAdapter', function () {
     }
 
     describe('floors', function () {
+      it('honors floors and suppression from the real Floors auction hook', function () {
+        const data = { currency: 'USD', schema: { fields: ['mediaType'] }, values: { '*': 2.5 } };
+        const scenarios = [
+          { data, expected: 2.5 },
+          { data, enforcement: { noFloorSignalBidders: ['adapex'] } },
+          { data, skipRate: 100 },
+          { expected: 5 }
+        ];
+        try {
+          scenarios.forEach(({ expected, ...floors }, i) => {
+            handleSetFloorsConfig({ enabled: true, enforcement: { bidAdjustment: false }, ...floors });
+            const bid = { ...validBannerBid, params: { seat: 'Gmtb', bidFloor: 5 } };
+            const adUnits = [{ code: bid.adUnitCode, mediaTypes: bid.mediaTypes, bids: [bid] }];
+            const nextFn = sinon.stub();
+            const auctionId = `adapex-floors-${i}`;
+            continueAuction({ reqBidsConfigObj: { auctionId, adUnits }, nextFn });
+            expect(nextFn.calledOnce).to.be.true;
+            const imp = spec.buildRequests([bid], { ...bidderRequest, auctionId })[0].data.imp[0];
+            expect(imp.bidfloor).to.equal(expected);
+          });
+        } finally {
+          handleSetFloorsConfig({ enabled: false });
+        }
+      });
+
       it('leaves the wildcard floor lookup to the core processor', function () {
         const getFloor = sinon.stub().returns({ floor: 0, currency: 'USD' });
         const bid = { ...validBannerBid, getFloor };
@@ -409,6 +463,54 @@ describe('adapexBidAdapter', function () {
         expect(stubs.localStorageIsEnabled.called).to.be.false;
       });
 
+      [ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD].forEach((activity) => {
+        it(`does not resolve or transmit a fallback id when ${activity} is denied`, function () {
+          const unregister = registerActivityControl(activity, 'adapex test', (params) => {
+            if (params.componentName === 'adapex') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], idBidderRequest)[0].data;
+            expect(data.user?.ext?.wlid).to.be.undefined;
+            expect(stubs.localStorageIsEnabled.called).to.be.false;
+            expect(stubs.cookiesAreEnabled.called).to.be.false;
+            expect(stubs.generateUUID.called).to.be.false;
+          } finally {
+            unregister();
+          }
+          expect(spec.buildRequests([validBannerBid], idBidderRequest)[0].data.user.ext.wlid).to.equal(STUBBED_UUID);
+        });
+
+        it(`removes a publisher id when ${activity} is denied and restores it when allowed`, function () {
+          const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: { wlid: STORED_UUID, floxisId: STORED_UUID, consent: 'consent' } } } };
+          const unregister = registerActivityControl(activity, 'adapex test', (params) => {
+            if (params.componentName === 'adapex') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], req)[0].data;
+            expect(data.user.ext).to.deep.equal({ consent: 'consent' });
+            expect(stubs.localStorageIsEnabled.called).to.be.false;
+            expect(stubs.generateUUID.called).to.be.false;
+          } finally {
+            unregister();
+          }
+          expect(spec.buildRequests([validBannerBid], req)[0].data.user.ext.wlid).to.equal(STORED_UUID);
+        });
+
+        it(`uses the alias identity for ${activity} controls`, function () {
+          const unregister = registerActivityControl(activity, 'adapex alias test', (params) => {
+            if (params.componentName === 'adapex_alias') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], { ...idBidderRequest, bidderCode: 'adapex_alias' })[0].data;
+            expect(data.user?.ext?.wlid).to.be.undefined;
+            expect(stubs.localStorageIsEnabled.called).to.be.false;
+            expect(spec.buildRequests([validBannerBid], idBidderRequest)[0].data.user.ext.wlid).to.equal(STUBBED_UUID);
+          } finally {
+            unregister();
+          }
+        });
+      });
+
       it('still sends wlid when publisher ortb2 carries a floxisId', function () {
         const req = { ...idBidderRequest, ortb2: { ...idBidderRequest.ortb2, user: { ext: { floxisId: STORED_UUID } } } };
         const data = spec.buildRequests([validBannerBid], req)[0].data;
@@ -460,13 +562,67 @@ describe('adapexBidAdapter', function () {
     if (FEATURES.NATIVE) {
       it('parses a native bid', function () {
         const request = spec.buildRequests([validNativeBid], bidderRequest)[0];
-        const adm = JSON.stringify({ ver: '1.2', link: { url: 'https://example.com/click' }, assets: [{ id: 1, title: { text: 'T' } }] });
+        const native = { ver: '1.2', link: { url: 'https://example.com/click' }, assets: [{ id: 1, title: { text: 'T' } }, { id: 2, img: { url: 'https://example.com/image.jpg', w: 150, h: 50 } }] };
+        const adm = JSON.stringify(native);
         const response = { body: { seatbid: [{ bid: [{ impid: 'bid-3', price: 2.75, crid: 'n1', adm, mtype: 4 }] }] } };
         const bids = spec.interpretResponse(response, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(NATIVE);
+        expect(JSON.parse(request.data.imp[0].native.request).assets).to.deep.equal(validNativeBid.nativeOrtbRequest.assets);
+        expect(bids[0].native.ortb).to.deep.equal(native);
+        const bid = { ...bids[0], adUnitId: validNativeBid.adUnitId };
+        const index = stubAuctionIndex({ bidRequests: [validNativeBid], adUnits: [{ ...validNativeBid }] });
+        expect(isValid(validNativeBid.adUnitCode, bid, { index })).to.be.true;
+        const incomplete = { ...bid, native: { ortb: { ...native, assets: [native.assets[0]] } } };
+        expect(isValid(validNativeBid.adUnitCode, incomplete, { index })).to.be.false;
       });
     }
+
+    it('retains a valid banner among unsupported, unknown and malformed responses', function () {
+      const request = spec.buildRequests([validBannerBid, validNativeBid], bidderRequest)[0];
+      const good = { impid: validBannerBid.bidId, price: 1.23, w: 300, h: 250, crid: 'good', adm: '<div>ad</div>', mtype: 1 };
+      const invalid = [{ ...good, impid: 'unknown' }, { ...good, mtype: 3 }];
+      if (FEATURES.NATIVE) invalid.push({ ...good, impid: validNativeBid.bidId, mtype: 4, adm: 'not JSON' });
+      const response = { body: { seatbid: [{ bid: [good, ...invalid] }] } };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0]).to.include({ requestId: validBannerBid.bidId, creativeId: 'good', mediaType: BANNER });
+    });
+
+    it('keeps split requests from concurrent auctions independent when responses arrive out of order', function () {
+      const compression = sinon.stub(utils, 'isGzipCompressionSupported').returns(false);
+      const pending = [];
+      const ajax = (url, callbacks, payload) => pending.push({ url, callbacks, payload: JSON.parse(payload) });
+      const received = [sinon.stub(), sinon.stub()];
+      const completed = [sinon.stub(), sinon.stub()];
+      const snapshots = [];
+      try {
+        for (let i = 0; i < 2; i++) {
+          const bids = [0, 1].map((seat) => ({ ...validBannerBid, bidId: `auction-${i}-bid-${seat}`, adUnitCode: `auction-${i}-unit-${seat}`, params: { seat: `Seat${seat}` } }));
+          const request = { ...bidderRequest, auctionId: `auction-${i}`, bids };
+          snapshots.push(JSON.stringify(request));
+          newBidder(spec).callBids(request, received[i], completed[i], ajax, sinon.stub(), config.callbackWithBidder('adapex'));
+          expect(JSON.stringify(request)).to.equal(snapshots[i]);
+        }
+        expect(pending).to.have.lengthOf(4);
+        expect(completed.every((done) => !done.called)).to.be.true;
+        [3, 0, 2, 1].forEach((i) => {
+          const { callbacks, payload } = pending[i];
+          callbacks.success(JSON.stringify({ seatbid: [{ bid: [{ impid: payload.imp[0].id, price: i + 1, w: 300, h: 250, crid: `creative-${i}`, adm: '<div>ad</div>', mtype: 1 }] }] }), { getResponseHeader: () => null });
+        });
+        completed.forEach((done) => expect(done.calledOnce).to.be.true);
+        received.forEach((addBid, auction) => {
+          expect(addBid.callCount).to.equal(2);
+          addBid.getCalls().forEach(({ args: [adUnitCode, bid] }) => {
+            expect(adUnitCode).to.match(new RegExp(`^auction-${auction}-unit-`));
+            expect(bid.requestId).to.match(new RegExp(`^auction-${auction}-bid-`));
+            expect(bid.originalCpm).to.equal(bid.cpm);
+          });
+        });
+      } finally {
+        compression.restore();
+      }
+    });
 
     it('drops a bid without mtype', function () {
       const request = spec.buildRequests([validBannerBid], bidderRequest)[0];
@@ -645,12 +801,53 @@ describe('adapexBidAdapter', function () {
       expect(politeStub.called).to.be.false;
     });
 
+    [false, true].forEach((enableTIDs) => {
+      ['timeout', 'error'].forEach((event) => {
+        it(`keeps raw auction ids out of core ${event} hooks with enableTIDs=${enableTIDs}`, function () {
+          config.setConfig({ enableTIDs });
+          const unregister = registerActivityControl(ACTIVITY_TRANSMIT_TID, 'adapex test', () => ({ allow: false }));
+          const rawId = 'private-auction-id';
+          try {
+            if (event === 'timeout') {
+              adapterManager.callTimedOutBidders([{ code: validBannerBid.adUnitCode, bids: [{ bidder: 'adapex', params: validBannerBid.params }] }],
+                [{ bidder: 'adapex', adUnitCode: validBannerBid.adUnitCode, auctionId: rawId }], 2000);
+            } else {
+              adapterManager.callBidderError('adapex', { status: 500 }, { auctionId: rawId, bids: [validBannerBid] });
+            }
+            expect(politeStub.calledOnce).to.be.true;
+            expect(politeStub.firstCall.args[0]).not.to.include(rawId);
+            expect(politeStub.firstCall.args[0]).not.to.match(/[?&]auctionId=/);
+          } finally {
+            unregister();
+          }
+        });
+      });
+    });
+
     describe('onTimeout', function () {
+      it('reports each timed-out seat from core ad unit params once across ad units', function () {
+        const adUnits = [
+          { code: 'timeout-unit-1', bids: [
+            { bidder: 'adapex', params: { seat: 'Gmtb' } },
+            { bidder: 'adapex', params: { seat: 'Gmtb' } },
+            { bidder: 'adapex', params: { seat: 'Seat2' } },
+            { bidder: 'adapex', params: {} },
+            { bidder: 'other', params: { seat: 'unrelated' } }
+          ] },
+          { code: 'timeout-unit-2', bids: [{ bidder: 'adapex', params: { seat: 'Seat2' } }] }
+        ];
+        adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'adapex', adUnitCode: code, auctionId: 'private-auction' })), 2000);
+        expect(politeStub.getCalls().map(({ args }) => args)).to.deep.equal([
+          ['https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000', 'omit'],
+          ['https://sync.adapex.io/event?event=timeout&seat=Seat2&region=us-e&duration=2000', 'omit']
+        ]);
+      });
+
       it('beacons cookieless to sync.adapex.io', function () {
         spec.onTimeout([{ params: { seat: 'Gmtb', region: 'eu' }, timeout: 2000, auctionId: 'a1' }]);
         expect(politeStub.calledOnce).to.be.true;
         expect(politeStub.firstCall.args).to.deep.equal([
-          'https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000&auctionId=a1',
+          'https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000',
           'omit'
         ]);
       });
@@ -740,7 +937,7 @@ describe('adapexBidAdapter', function () {
       it('beacons cookieless to sync.adapex.io with status, timeout flag and publisher domain', function () {
         spec.onBidderError({ error: { status: 500, timedOut: false }, bidderRequest: bidderRequest() });
         expect(politeStub.firstCall.args).to.deep.equal([
-          'https://sync.adapex.io/event?event=bidder-error&seat=Gmtb&region=us-e&status=500&timedout=0&auctionId=a1&puburl=pub.example.com',
+          'https://sync.adapex.io/event?event=bidder-error&seat=Gmtb&region=us-e&status=500&timedout=0&puburl=pub.example.com',
           'omit'
         ]);
       });

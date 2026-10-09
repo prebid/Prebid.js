@@ -104,6 +104,8 @@ pbjs.bidderSettings = {
 };
 ```
 
+The fallback identifier is sent only when both `transmitEids` and `transmitUfpd` activity controls allow it. If either is denied, the adapter omits both custom identifiers (`user.ext.wlid` and `user.ext.floxisId`), including publisher-supplied values, and does not access fallback storage or generate an identifier. Storage permission alone does not enable transmission.
+
 ## Privacy
 GDPR/TCF, US Privacy, GPP and COPPA signals are handled by Prebid.js core and included in the OpenRTB request; server-provided user-sync URLs carry the applicable consent signals. The adapter declares IAB Europe TCF Vendor ID **1609** via its `gvlid`.
 
@@ -129,7 +131,7 @@ Telemetry is disabled by default. Publishers can opt in to reporting client-obse
 pbjs.setConfig({ adapex: { enableTelemetry: true } });
 ```
 
-Set `enableTelemetry` to `false` to disable these requests; bidding and user sync continue to work. Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, auction id, publisher domain) and no user or device identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
+Set `enableTelemetry` to `false` to disable these requests; bidding and user sync continue to work. Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, publisher domain) and no user, device or auction identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
 
 For split requests, transport errors are reported only for the seat identified by the failed response URL. If a network failure provides no URL and multiple seats were requested, the error beacon is omitted to avoid attributing the failure to healthy seats.
 

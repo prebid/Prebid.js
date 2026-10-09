@@ -9,6 +9,10 @@ import type { GPPConsentData } from '../../src/types/consent/gpp.d.ts';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { ortbConverter } from '../ortbConverter/converter.js';
 import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID, deepAccess } from '../../src/utils.js';
+import { isActivityAllowed } from '../../src/activities/rules.js';
+import { activityParams } from '../../src/activities/activityParams.js';
+import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
+import { ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD } from '../../src/activities/activities.js';
 
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -217,7 +221,14 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
           }
         }
       });
-      if (!req.user?.ext?.[fallbackIdField]) {
+      const identityParams = activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode || code);
+      const canTransmitId = isActivityAllowed(ACTIVITY_TRANSMIT_EIDS, identityParams) &&
+        isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, identityParams);
+      // Core redaction does not cover these exchange-specific ID fields.
+      if (!canTransmitId) {
+        delete req.user?.ext?.wlid;
+        delete req.user?.ext?.floxisId;
+      } else if (!req.user?.ext?.[fallbackIdField]) {
         const fallbackId = (context.resolveFallbackId as () => string | null)();
         if (fallbackId) {
           // mergeDeep, not deepSetValue: it repairs a non-object user/user.ext, which publisher ortb2 can supply
@@ -348,17 +359,21 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
         if (!isTelemetryEnabled() || !Array.isArray(timeoutData)) return;
         const seen = {};
         timeoutData.forEach((entry) => {
-          const { seat, region } = normalizeBidParams(entry.params);
-          if (!seat) return;
-          const key = `${seat}|${region}`;
-          if (seen[key]) return;
-          seen[key] = true;
-          const extras = {
-            ...(entry.timeout != null ? { duration: entry.timeout } : {}),
-            ...(entry.auctionId != null ? { auctionId: entry.auctionId } : {})
-          };
-          // 'omit' keeps this beacon cookieless — the sync cookie never rides along.
-          politeTriggerPixel(buildEventUrl('timeout', { seat, region }, extras, ''), 'omit');
+          if (!entry) return;
+          const bidParams = Array.isArray(entry.params) ? entry.params : [entry.params];
+          bidParams.forEach((params) => {
+            if (!params) return;
+            const { seat, region } = normalizeBidParams(params);
+            if (!seat) return;
+            const key = `${seat}|${region}`;
+            if (seen[key]) return;
+            seen[key] = true;
+            const extras = {
+              ...(entry.timeout != null ? { duration: entry.timeout } : {})
+            };
+            // 'omit' keeps this beacon cookieless — the sync cookie never rides along.
+            politeTriggerPixel(buildEventUrl('timeout', { seat, region }, extras, ''), 'omit');
+          });
         });
       } catch (e) { }
     },
@@ -372,7 +387,6 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
         if (!Array.isArray(bids)) return;
         const status = error?.status != null ? error.status : undefined;
         const timedout = error?.timedOut ? 1 : 0;
-        const auctionId = bidderRequest?.auctionId;
         // domain (not page): refererInfo.page carries the location query string, which can hold
         // identifiers — the domain is enough to know which publisher errored and keeps the beacon identifier-free.
         const puburl = bidderRequest?.refererInfo?.domain;
@@ -402,7 +416,6 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
           const extras = {
             ...(status != null ? { status } : {}),
             timedout,
-            ...(auctionId != null ? { auctionId } : {}),
             ...(puburl ? { puburl } : {})
           };
           politeTriggerPixel(buildEventUrl('bidder-error', { seat, region }, extras, consentSuffix), 'omit');
