@@ -18,7 +18,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9
 // partner/region are interpolated into the request host, so they must be valid DNS labels —
 // otherwise a value with URL delimiters (e.g. 'evil.com/x?') would change the request origin.
 const HOST_LABEL_REGEX = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
-export function isValidHostLabel(label: unknown): label is string {
+export function isValidHostLabel(label: string): boolean {
   return typeof label === 'string' && HOST_LABEL_REGEX.test(label);
 }
 
@@ -54,7 +54,7 @@ function parseSyncHeader(headerValue: unknown): ({ seat: string; region: string 
   const params = new URLSearchParams(headerValue);
   const seat = params.get('seat');
   const region = params.get('region');
-  if (!seat || !isValidHostLabel(region)) return null;
+  if (!seat || !region || !isValidHostLabel(region)) return null;
   return { seat, region };
 }
 
