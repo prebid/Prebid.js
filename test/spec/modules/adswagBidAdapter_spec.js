@@ -71,7 +71,7 @@ describe("adswagBidAdapter", () => {
   // disabled-path behavior is covered by the repo-only companion suite
   // (adswagBidAdapter_repo_spec.js), whose stub env reads FEATURES at
   // runtime and can toggle it.
-  const describeIfAudio = FEATURES.AUDIO ? describe : (_title, _fn) => {};
+  const describeIfAudio = FEATURES.AUDIO ? describe : () => {};
 
   function makeAudioBid(audioOverrides = {}, bidOverrides = {}) {
     return makeBid({
@@ -987,6 +987,231 @@ describe("adswagBidAdapter", () => {
           expect(body.imp).to.have.lengthOf(1);
         },
       );
+    });
+  });
+
+  // --- publisher key/values (design §4.10 / bid-edge decision record #22) ------
+
+  describe("publisher key/values", () => {
+    it("maps params.kv into imp.ext.data alongside adunitcode/pbadslot", () => {
+      const bid = makeBid({
+        ortb2Imp: {
+          ext: {
+            gpid: "/pub/slot",
+            data: { pbadslot: "/1/top", section: "from-ortb2" },
+          },
+        },
+        params: {
+          publisherId: "pub-nl-news-1",
+          kv: { slot: ["mid", "x"], year: 2026, tags: ["a", "b"] },
+        },
+      });
+      const data = parseRequest(spec.buildRequests([bid], makeBidderRequest())).imp[0]
+        .ext.data;
+      expect(data.adunitcode).to.equal("div-ad-300x250-2");
+      expect(data.pbadslot).to.equal("/1/top");
+      expect(data.section).to.equal("from-ortb2");
+      expect(data.slot).to.deep.equal(["mid", "x"]);
+      expect(data.year).to.equal(2026);
+      expect(data.tags).to.deep.equal(["a", "b"]);
+    });
+
+    it("forwards ortb2Imp.ext.data whole before params.kv; ortb2Imp wins on clash", () => {
+      const bid = makeBid({
+        ortb2Imp: {
+          ext: {
+            gpid: "/pub/slot",
+            data: { pbadslot: "/1/top", section: "sport", slot: "from-ortb2" },
+          },
+        },
+        params: {
+          publisherId: "pub-nl-news-1",
+          kv: { section: "news", show: "morning" },
+        },
+      });
+      const data = parseRequest(spec.buildRequests([bid], makeBidderRequest())).imp[0]
+        .ext.data;
+      expect(data.section).to.equal("sport");
+      expect(data.slot).to.equal("from-ortb2");
+      expect(data.show).to.equal("morning");
+    });
+
+    it("never overwrites reserved names from params.kv or ortb2Imp.ext.data", () => {
+      const bid = makeBid({
+        ortb2Imp: {
+          ext: {
+            gpid: "/pub/slot",
+            data: {
+              pbadslot: "/1/top",
+              adunitcode: "evil-from-ortb2",
+              gpid: "evil-gpid",
+              tid: "evil-tid",
+              adserver: { name: "gam" },
+              adswag: "x",
+              kv: "x",
+              ukv: "x",
+              section: "sport",
+            },
+          },
+        },
+        params: {
+          publisherId: "pub-nl-news-1",
+          kv: {
+            adunitcode: "evil-from-kv",
+            pbadslot: "/evil",
+            gpid: "evil",
+            section: "news",
+          },
+        },
+      });
+      const data = parseRequest(spec.buildRequests([bid], makeBidderRequest())).imp[0]
+        .ext.data;
+      expect(data.adunitcode).to.equal("div-ad-300x250-2");
+      expect(data.pbadslot).to.equal("/1/top");
+      expect(data.section).to.equal("sport");
+      expect(data).to.not.have.property("gpid");
+      expect(data).to.not.have.property("tid");
+      expect(data).to.not.have.property("adserver");
+      expect(data).to.not.have.property("adswag");
+      expect(data).to.not.have.property("kv");
+      expect(data).to.not.have.property("ukv");
+    });
+
+    it("caps imp.ext.data at 32 keys (ortb2Imp first, then params.kv; surplus dropped)", () => {
+      const ortb2Data = { pbadslot: "/1/top" };
+      for (let i = 0; i < 40; i++) ortb2Data[`o${i}`] = `v${i}`;
+      const kv = {};
+      for (let i = 0; i < 40; i++) kv[`k${i}`] = `w${i}`;
+      const bid = makeBid({
+        ortb2Imp: { ext: { gpid: "/pub/slot", data: ortb2Data } },
+        params: { publisherId: "pub-nl-news-1", kv },
+      });
+      const data = parseRequest(spec.buildRequests([bid], makeBidderRequest())).imp[0]
+        .ext.data;
+      expect(Object.keys(data)).to.have.lengthOf(32);
+      expect(data.adunitcode).to.equal("div-ad-300x250-2");
+      expect(data.pbadslot).to.equal("/1/top");
+      // 2 reserved + 30 from ortb2Imp (o0..o29); params.kv never reaches the wire.
+      expect(data.o0).to.equal("v0");
+      expect(data.o29).to.equal("v29");
+      expect(data).to.not.have.property("o30");
+      expect(data).to.not.have.property("k0");
+    });
+
+    it("keeps site.ext.data and site.content.data flowing via the site spread", () => {
+      const bidderRequest = makeBidderRequest({
+        ortb2: {
+          site: {
+            ext: { data: { section: "sport", tags: ["a", 3] } },
+            content: {
+              data: [
+                {
+                  name: "example.nl",
+                  ext: { segtax: 7 },
+                  segment: [{ id: "IAB1" }],
+                },
+              ],
+            },
+          },
+        },
+      });
+      const body = parseRequest(spec.buildRequests([makeBid()], bidderRequest));
+      expect(body.site.ext.data).to.deep.equal({ section: "sport", tags: ["a", 3] });
+      expect(body.site.content.data[0].ext.segtax).to.equal(7);
+      expect(body.site.content.data[0].segment[0].id).to.equal("IAB1");
+    });
+
+    it("forwards ortb2.user.data and user.ext.data only when perms.identity holds", () => {
+      const userFpd = {
+        data: [
+          {
+            name: "example.nl",
+            ext: { segtax: 4 },
+            segment: [{ id: "412" }],
+          },
+        ],
+        ext: { data: { ppid: "c0ffee42" } },
+      };
+      const consented = parseRequest(
+        spec.buildRequests(
+          [makeBid()],
+          makeBidderRequest({
+            gdprConsent: fullConsent(),
+            ortb2: { user: userFpd },
+          }),
+        ),
+      );
+      expect(consented.user.data).to.deep.equal(userFpd.data);
+      expect(consented.user.ext.data).to.deep.equal(userFpd.ext.data);
+
+      const denied = parseRequest(
+        spec.buildRequests(
+          [makeBid()],
+          makeBidderRequest({
+            gdprConsent: fullConsent({ vendor: { consents: { 1417: false } } }),
+            ortb2: { user: userFpd },
+          }),
+        ),
+      );
+      expect(denied.user).to.not.have.property("data");
+      expect(denied.user.ext).to.not.have.property("data");
+    });
+
+    it("omits user key/value surfaces entirely when identity is denied (not emptied)", () => {
+      const body = parseRequest(
+        spec.buildRequests(
+          [makeBid()],
+          makeBidderRequest({
+            gdprConsent: fullConsent(null),
+            ortb2: {
+              user: {
+                data: [{ segment: [{ id: "1" }] }],
+                ext: { data: { sda: "1" } },
+              },
+            },
+          }),
+        ),
+      );
+      expect(body.user.data).to.be.undefined;
+      expect(body.user.ext && body.user.ext.data).to.be.undefined;
+    });
+
+    it("fail-open: poison params.kv still bids contextual-only (no throw, no skip)", () => {
+      const poison = {};
+      Object.defineProperty(poison, "section", {
+        enumerable: true,
+        get() {
+          throw new Error("kv boom");
+        },
+      });
+      const cyclic = {};
+      cyclic.self = cyclic;
+      const throwingBid = makeBid({
+        ortb2Imp: {
+          ext: { gpid: "/pub/slot", data: { pbadslot: "/1/top" } },
+        },
+        params: { publisherId: "pub-nl-news-1", kv: poison },
+      });
+      const cyclicBid = makeBid({
+        bidId: "bid-2",
+        params: { publisherId: "pub-nl-news-1", kv: { section: cyclic } },
+      });
+      const reqs = spec.buildRequests(
+        [throwingBid, cyclicBid],
+        makeBidderRequest(),
+      );
+      expect(reqs).to.have.lengthOf(1);
+      const body = parseRequest(reqs);
+      expect(body.imp).to.have.lengthOf(2);
+      expect(body.imp[0].ext.data).to.deep.equal({
+        adunitcode: "div-ad-300x250-2",
+        pbadslot: "/1/top",
+      });
+      // Cyclic object is not a wire value shape — dropped, placement keys kept.
+      expect(body.imp[1].ext.data).to.deep.equal({
+        adunitcode: "div-ad-300x250-2",
+      });
+      expect(body.imp[1].ext.data).to.not.have.property("section");
     });
   });
 

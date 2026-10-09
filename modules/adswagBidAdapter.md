@@ -27,11 +27,38 @@ clean no-bid and never blocks the page or the auction.
 | `placementId` | optional | String | Explicit placement override. Omit to let Adswag discover the placement from GPID/adUnitCode.  | `"plc-homepage-mrec"` |
 | `bidFloor`    | optional | Number | Static floor (EUR) used only when the Prebid Price Floors module is not configured.           | `0.50`                |
 | `video`       | optional | Object | Overrides for `mediaTypes.video` ad-unit params (Prebid video-params convention).             | `{ maxduration: 15 }` |
+| `kv`          | optional | Object | Impression-scoped publisher key/values (string, number, or array of those per key). Mapped into `imp.ext.data`. Keys must be declared in the publisher's key-space registry; undeclared keys are dropped at the edge as `kv.undeclared`. | `{ section: "sport" }` |
 | `endpoint`    | optional | String | Endpoint override for Adswag-operated test/staging environments — see the constraint below.  | `"https://bid.dev.adswag.ai/prebid/bid"` |
 
 Placement identity is publisher-id-only by design: supply the standardized
 GPID (`ortb2Imp.ext.gpid`) or rely on the `adUnitCode`, and Adswag discovers
 and curates the placement. Hand-maintained placement ids are not required.
+
+# Publisher key/values
+
+Publishers can send declared first-party key/values on every auction:
+
+- **Page / content (contextual):** set Prebid first-party data on
+  `ortb2.site.ext.data`, `ortb2.app.ext.data`, and `ortb2.site.content.data[]`
+  (including `ext.segtax`). The adapter forwards these with the site/app
+  object.
+- **Impression (contextual):** set `ortb2Imp.ext.data.<key>`, and/or
+  `params.kv`. The adapter merges them into `imp.ext.data` (existing
+  `ortb2Imp.ext.data` first, then `params.kv`, insertion order, capped at 32
+  keys). Reserved names (`adunitcode`, `pbadslot`, `adserver`, `gpid`,
+  `tid`, `adswag`, `kv`, `ukv`) are never overwritten.
+- **User (personal):** set `ortb2.user.data[]` and/or `ortb2.user.ext.data`.
+  Forwarded only when identity consent permits (the same gate as eids);
+  otherwise omitted entirely.
+
+**Declaration required.** Every key must be declared in the publisher's
+key-space registry before it is admitted. Undeclared keys are dropped at
+the edge with a `kv.undeclared` observation; the auction still bids. Values
+are tokens (`[A-Za-z0-9._:/~-]`), not free text.
+
+The adapter is fail-open on this path: a malformed `params.kv` yields a
+contextual-only request (placement keys kept, publisher key/values dropped)
+and never blocks the bid.
 
 The `endpoint` override (per-bid `params.endpoint`, or globally via
 `pbjs.setConfig({ adswag: { endpoint } })`) exists for Adswag-operated
