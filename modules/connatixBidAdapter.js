@@ -183,7 +183,7 @@ export function _getBidRequests(validBidRequests) {
     if (isNumber(detectedViewabilityPercentage)) {
       detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
     }
-    return {
+    const bidRequest = {
       bidId,
       mediaTypes,
       sizes,
@@ -193,6 +193,13 @@ export function _getBidRequests(validBidRequests) {
       declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
       detectedViewabilityPercentage,
     };
+
+    const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+    if (gpid && isStr(gpid)) {
+      bidRequest.gpid = gpid;
+    }
+
+    return bidRequest;
   });
 }
 
@@ -213,6 +220,13 @@ export function hasQueryParams(url) {
   } catch (e) {
     return false;
   }
+}
+
+function _appendQueryParams(url, queryParams) {
+  if (!queryParams) {
+    return url;
+  }
+  return url + (hasQueryParams(url) ? `&${queryParams}` : `?${queryParams}`);
 }
 
 export function saveInLocalStorage(name, value) {
@@ -331,11 +345,13 @@ export const spec = {
 
   /*
    * Determine the user sync type (either 'iframe' or 'image') based on syncOptions.
+   * The iframe sync (UserSyncEndpoint) is preferred because it returns identity data via postMessage;
+   * the image sync (PixelSyncEndpoint, may be null) is used only when iframe syncs are not allowed.
    * Construct the sync URL by appending required query parameters such as gdpr, ccpa, and coppa consents.
    * Return an array containing an object with the sync type and the constructed URL.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
-    if (!syncOptions.iframeEnabled) {
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
 
@@ -370,37 +386,43 @@ export const spec = {
       params['coppa'] = 1;
     }
 
-    window.addEventListener('message', function handler(event) {
-      if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
-        return;
-      }
-
-      const { message, data } = event.data.cnx;
-
-      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
-        this.removeEventListener('message', handler);
-        event.stopImmediatePropagation();
-      }
-
-      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
-        if (data) {
-          saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
-        }
-      }
-    }, true);
-
-    const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
+    const { UserSyncEndpoint, PixelSyncEndpoint } = serverResponses[0].body || {};
 
-    let url = syncUrl;
-    if (queryParams) {
-      url += hasQueryParams(syncUrl) ? `&${queryParams}` : `?${queryParams}`;
+    if (syncOptions.iframeEnabled && UserSyncEndpoint && isStr(UserSyncEndpoint)) {
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
+          return;
+        }
+
+        const { message, data } = event.data.cnx;
+
+        if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
+          this.removeEventListener('message', handler);
+          event.stopImmediatePropagation();
+        }
+
+        if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
+          if (data) {
+            saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
+          }
+        }
+      }, true);
+
+      return [{
+        type: 'iframe',
+        url: _appendQueryParams(UserSyncEndpoint, queryParams)
+      }];
     }
 
-    return [{
-      type: 'iframe',
-      url
-    }];
+    if (syncOptions.pixelEnabled && PixelSyncEndpoint && isStr(PixelSyncEndpoint)) {
+      return [{
+        type: 'image',
+        url: _appendQueryParams(PixelSyncEndpoint, queryParams)
+      }];
+    }
+
+    return [];
   },
 
   isConnatix: (aliasName) => {
