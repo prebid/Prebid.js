@@ -35,7 +35,7 @@ Send first-party data the standard Prebid way and the adapter forwards it:
 
 - **Page and content:** `ortb2.site.ext.data` and `ortb2.site.content.data[]`.
 - **Ad unit:** `ortb2Imp.ext.data`, or the `kv` bid param. Both are sent as
-  `imp.ext.data`, 32 keys max.
+  `imp.ext.data`, 32 keys max; `kv` wins when a key is in both.
 - **User:** `ortb2.user.data[]` and `ortb2.user.ext.data`, forwarded with
   identity consent, like eids.
 
