@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
 import { spec } from 'modules/pigeoonBidAdapter.js';
-import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 const ENDPOINT_URL = 'https://pbjs.pigeoon.com/bid';
 const SYNC_URL = 'https://pbjs.pigeoon.com/sync';
@@ -23,7 +22,7 @@ function makeBidRequest(overrides = {}) {
   }, overrides);
 }
 
-function makeBidderRequest(bidRequests, ortb2 = {}) {
+function makeBidderRequest(bidRequests, ortb2) {
   return {
     bidderCode: 'pigeoon',
     bidderRequestId: 'bidder-request-1',
@@ -32,12 +31,12 @@ function makeBidderRequest(bidRequests, ortb2 = {}) {
     refererInfo: {
       page: 'https://example.com/news/article'
     },
-    ortb2: Object.assign({
+    ortb2: ortb2 || {
       site: {
         page: 'https://example.com/news/article',
         domain: 'example.com'
       }
-    }, ortb2),
+    },
     bids: bidRequests
   };
 }
@@ -82,11 +81,19 @@ describe('pigeoonBidAdapter', function () {
       expect(request.data.imp[0].tagid).to.equal('12345678');
     });
 
-    it('should set site.publisher.id from networkId', function () {
+    it('should set site.publisher.id from networkId for web inventory', function () {
       const bids = [makeBidRequest()];
       const request = spec.buildRequests(bids, makeBidderRequest(bids));
 
       expect(request.data.site.publisher.id).to.equal('net_ABC123');
+    });
+
+    it('should set app.publisher.id and not create a site section for app inventory', function () {
+      const bids = [makeBidRequest()];
+      const request = spec.buildRequests(bids, makeBidderRequest(bids, { app: { bundle: 'com.example.app' } }));
+
+      expect(request.data.app.publisher.id).to.equal('net_ABC123');
+      expect(request.data.site).to.equal(undefined);
     });
 
     it('should keep first-party site data', function () {
@@ -136,7 +143,11 @@ describe('pigeoonBidAdapter', function () {
     it('should pass user ids (eids) from first-party data', function () {
       const eids = [{ source: 'pubcid.org', uids: [{ id: 'shared-id-1', atype: 1 }] }];
       const bids = [makeBidRequest()];
-      const request = spec.buildRequests(bids, makeBidderRequest(bids, { user: { ext: { eids } } }));
+      const ortb2 = {
+        site: { page: 'https://example.com/news/article', domain: 'example.com' },
+        user: { ext: { eids } }
+      };
+      const request = spec.buildRequests(bids, makeBidderRequest(bids, ortb2));
 
       expect(request.data.user.ext.eids).to.deep.equal(eids);
     });
@@ -150,13 +161,13 @@ describe('pigeoonBidAdapter', function () {
 
     const renderUrl = 'https://pbjs.pigeoon.com/render?type=display&w=300&h=250&lineItemId=7454993267&placementId=12345678&bidId=11111111-1111-1111-1111-111111111111';
 
-    function serverResponse() {
+    function serverResponse(bidOverrides = {}) {
       return {
         body: {
           id: 'response-1',
           cur: 'TRY',
           seatbid: [{
-            bid: [{
+            bid: [Object.assign({
               id: '11111111-1111-1111-1111-111111111111',
               impid: 'bid-1',
               price: 27.5,
@@ -165,7 +176,7 @@ describe('pigeoonBidAdapter', function () {
               adm: renderUrl,
               w: 300,
               h: 250
-            }]
+            }, bidOverrides)]
           }]
         }
       };
@@ -185,6 +196,18 @@ describe('pigeoonBidAdapter', function () {
       expect(bids[0].ttl).to.equal(300);
       expect(bids[0].creativeId).to.equal('7454993267');
       expect(bids[0].adUrl).to.equal(renderUrl);
+    });
+
+    it('should prefer adid over crid for creativeId', function () {
+      const bids = spec.interpretResponse(serverResponse({ crid: 'other-creative' }), buildRequest());
+
+      expect(bids[0].creativeId).to.equal('7454993267');
+    });
+
+    it('should fall back to crid when adid is missing', function () {
+      const bids = spec.interpretResponse(serverResponse({ adid: undefined, crid: 'creative-1' }), buildRequest());
+
+      expect(bids[0].creativeId).to.equal('creative-1');
     });
 
     it('should not render markup or attach nurl as a tracking pixel', function () {
@@ -224,49 +247,30 @@ describe('pigeoonBidAdapter', function () {
     it('should add encoded GDPR params when GDPR applies', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], { gdprApplies: true, consentString: 'a b+c' });
 
-      expect(syncs[0].url).to.equal(`${SYNC_URL}?gdpr=1&gdpr_consent=a+b%2Bc`);
+      expect(syncs[0].url).to.equal(`${SYNC_URL}?gdpr=1&gdpr_consent=a%20b%2Bc`);
     });
   });
 
   describe('bid events', function () {
-    let triggerPixelStub;
-
-    beforeEach(function () {
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
-    });
-
-    afterEach(function () {
-      triggerPixelStub.restore();
-    });
+    const renderUrl = 'https://pbjs.pigeoon.com/render?type=display&w=300&h=250&lineItemId=7454993267&placementId=12345678&bidId=11111111-1111-1111-1111-111111111111';
 
     const wonBid = {
       creativeId: '7454993267',
-      adUrl: 'https://pbjs.pigeoon.com/render?type=display&w=300&h=250&lineItemId=7454993267&placementId=12345678&bidId=11111111-1111-1111-1111-111111111111',
+      adUrl: renderUrl,
       params: [{ networkId: 'net_ABC123', placementId: '12345678' }]
     };
 
-    it('onTimeout should fire a timeout pixel per timed out bid', function () {
-      spec.onTimeout([
-        { bidder: 'pigeoon', params: [{ networkId: 'net_ABC123', placementId: '12345678' }] },
-        { bidder: 'pigeoon', params: { networkId: 'net_ABC123', placementId: '87654321' } }
-      ]);
-
-      expect(triggerPixelStub.callCount).to.equal(2);
-      expect(triggerPixelStub.firstCall.args[0]).to.equal('https://pbjs.pigeoon.com/timeout?pid=12345678');
-      expect(triggerPixelStub.secondCall.args[0]).to.equal('https://pbjs.pigeoon.com/timeout?pid=87654321');
-    });
-
-    it('onTimeout should not fire without a placementId', function () {
-      spec.onTimeout([{ bidder: 'pigeoon', params: [{ networkId: 'net_ABC123' }] }]);
-
-      expect(triggerPixelStub.called).to.equal(false);
-    });
-
-    it('onBidWon should fire a prebidwon pixel with bid details', function () {
+    it('should send notifications as GET requests', function () {
       spec.onBidWon(wonBid);
 
-      expect(triggerPixelStub.calledOnce).to.equal(true);
-      const url = triggerPixelStub.firstCall.args[0];
+      expect(server.requests).to.have.length(1);
+      expect(server.requests[0].method).to.equal('GET');
+    });
+
+    it('onBidWon should notify prebidwon with bid details', function () {
+      spec.onBidWon(wonBid);
+
+      const url = server.requests[0].url;
       expect(url).to.contain('https://pbjs.pigeoon.com/prebidwon?');
       expect(url).to.contain('bidId=11111111-1111-1111-1111-111111111111');
       expect(url).to.contain('nid=net_ABC123');
@@ -274,17 +278,77 @@ describe('pigeoonBidAdapter', function () {
       expect(url).to.contain('li=7454993267');
     });
 
-    it('onBidViewable should fire a viewable pixel with bid details', function () {
+    it('onBidViewable should notify viewable', function () {
       spec.onBidViewable(wonBid);
 
-      expect(triggerPixelStub.calledOnce).to.equal(true);
-      expect(triggerPixelStub.firstCall.args[0]).to.contain('https://pbjs.pigeoon.com/viewable?');
+      expect(server.requests).to.have.length(1);
+      expect(server.requests[0].url).to.contain('https://pbjs.pigeoon.com/viewable?');
     });
 
-    it('should not fire bid event pixels when the render url has no bid id', function () {
+    it('should use the config that matches the rendered placement when the ad unit has several Pigeoon configs', function () {
+      spec.onBidWon(Object.assign({}, wonBid, {
+        params: [
+          { networkId: 'net_FIRST', placementId: '11111111' },
+          { networkId: 'net_SECOND', placementId: '12345678' }
+        ]
+      }));
+
+      const url = server.requests[0].url;
+      expect(url).to.contain('nid=net_SECOND');
+      expect(url).to.contain('pid=12345678');
+    });
+
+    it('should not notify when no config matches the rendered placement', function () {
+      spec.onBidWon(Object.assign({}, wonBid, {
+        params: [{ networkId: 'net_ABC123', placementId: '99999999' }]
+      }));
+
+      expect(server.requests).to.have.length(0);
+    });
+
+    it('should not notify when the render url has no bid id', function () {
       spec.onBidWon(Object.assign({}, wonBid, { adUrl: 'https://pbjs.pigeoon.com/render' }));
 
-      expect(triggerPixelStub.called).to.equal(false);
+      expect(server.requests).to.have.length(0);
+    });
+
+    it('onTimeout should report the placement remembered for the timed out bid', function () {
+      const bids = [
+        makeBidRequest({ bidId: 'bid-a', params: { networkId: 'net_ABC123', placementId: '11111111' } }),
+        makeBidRequest({ bidId: 'bid-b', params: { networkId: 'net_ABC123', placementId: '22222222' } })
+      ];
+      spec.buildRequests(bids, makeBidderRequest(bids));
+
+      spec.onTimeout([{
+        bidder: 'pigeoon',
+        bidId: 'bid-b',
+        params: [
+          { networkId: 'net_ABC123', placementId: '11111111' },
+          { networkId: 'net_ABC123', placementId: '22222222' }
+        ]
+      }]);
+
+      expect(server.requests).to.have.length(1);
+      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=22222222');
+    });
+
+    it('onTimeout should fall back to a single configured placement', function () {
+      spec.onTimeout([{ bidder: 'pigeoon', bidId: 'unknown-bid', params: { networkId: 'net_ABC123', placementId: '87654321' } }]);
+
+      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=87654321');
+    });
+
+    it('onTimeout should not guess when several configs exist and the bid is unknown', function () {
+      spec.onTimeout([{
+        bidder: 'pigeoon',
+        bidId: 'unknown-bid',
+        params: [
+          { networkId: 'net_ABC123', placementId: '11111111' },
+          { networkId: 'net_ABC123', placementId: '22222222' }
+        ]
+      }]);
+
+      expect(server.requests).to.have.length(0);
     });
   });
 });
