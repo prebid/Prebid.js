@@ -314,6 +314,10 @@ describe('wurflRtdProvider', function () {
       });
     });
 
+    it('declares its GVL ID', function () {
+      expect(wurflSubmodule.gvlid).to.equal(1655);
+    });
+
     it('initialises the WURFL RTD provider', function () {
       expect(wurflSubmodule.init()).to.be.true;
     });
