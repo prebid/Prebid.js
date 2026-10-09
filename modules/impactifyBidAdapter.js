@@ -182,7 +182,9 @@ const helpers = {
     const video = deepAccess(bid, 'mediaTypes.video');
     if (!video) return;
 
-    const playerSize = video.playerSize || bid.sizes?.[0];
+    const playerSize = Array.isArray(video.playerSize?.[0])
+      ? video.playerSize[0]
+      : video.playerSize || bid.sizes?.[0];
     const resolvedPlayerSize = playerSize && playerSize.length === 2
       ? playerSize
       : [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT];
