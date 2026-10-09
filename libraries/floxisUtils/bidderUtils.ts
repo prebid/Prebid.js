@@ -1,11 +1,14 @@
 import type { BidderSpec, AdapterRequest, ExtendedResponse } from '../../src/adapters/bidderFactory.js';
-import type { BidRequest, ClientBidderRequest } from '../../src/adapterManager.js';
+import type { BidRequest } from '../../src/adapterManager.js';
 import type { StorageManager } from '../../src/storageManager.js';
 import type { UserSync } from '../../src/userSync.js';
 import type { Currency } from '../../src/types/common.d.ts';
+import type { TCFConsentData } from '../../src/types/consent/tcf.d.ts';
+import type { USPConsentData } from '../../src/types/consent/usp.d.ts';
+import type { GPPConsentData } from '../../src/types/consent/gpp.d.ts';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { ortbConverter } from '../ortbConverter/converter.js';
-import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID } from '../../src/utils.js';
+import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID, deepAccess } from '../../src/utils.js';
 
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -23,10 +26,10 @@ export function isValidHostLabel(label: string): boolean {
 }
 
 // IAB consent query params for the trackers /sync endpoint.
-export function buildConsentQuery(
-  gdprConsent?: Parameters<NonNullable<BidderSpec<'floxis'>['getUserSyncs']>>[2],
-  uspConsent?: Parameters<NonNullable<BidderSpec<'floxis'>['getUserSyncs']>>[3],
-  gppConsent?: Parameters<NonNullable<BidderSpec<'floxis'>['getUserSyncs']>>[4]
+function buildConsentQuery(
+  gdprConsent?: TCFConsentData | null,
+  uspConsent?: USPConsentData | null,
+  gppConsent?: GPPConsentData | null
 ): string[] {
   const query: string[] = [];
   if (gdprConsent) {
@@ -59,8 +62,11 @@ function parseSyncHeader(headerValue: unknown): ({ seat: string; region: string 
 }
 
 export interface FloxisBaseBidParams {
+  /** Seat identifier issued by the exchange. */
   seat: string;
+  /** Static CPM floor when no Floors API applies and floor signaling is not suppressed. */
   bidFloor?: number;
+  /** Currency of the static floor; defaults to USD. */
   bidFloorCur?: Currency;
 }
 
@@ -98,8 +104,6 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     return host ? `https://${host}/pbjs?seat=${encodeURIComponent(seat)}` : null;
   }
 
-  // Assemble an event-beacon URL. consentSuffix is a pre-built '&k=v&...' string (may be empty).
-  // extras is a plain object of optional dimension key→value pairs; falsy values are omitted.
   function buildEventUrl(eventType: string, { seat, region }: { seat: string; region: string }, extras: Record<string, string | number>, consentSuffix: string) {
     const base = `${telemetryOrigin}${TELEMETRY_PATH}?event=${encodeURIComponent(eventType)}&seat=${encodeURIComponent(seat)}&region=${encodeURIComponent(region)}`;
     const extraParams = Object.entries(extras)
@@ -123,7 +127,7 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     }
   }
 
-  function isValidStoredId(id: unknown): id is string {
+  function isValidStoredId(id: string | null): boolean {
     return typeof id === 'string' && UUID_REGEX.test(id);
   }
 
@@ -182,34 +186,19 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     },
     imp(buildImp, bidRequest, context) {
       const imp = buildImp(bidRequest, context);
-      imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
 
       // Placement identity for SSP-side reporting; ortb2Imp.tagid (already merged in by buildImp) wins.
       if (!imp.tagid && bidRequest.adUnitCode) {
         imp.tagid = bidRequest.adUnitCode;
       }
 
-      // Conventional ORTB floors and the Floors module take precedence over static params.
-      if (imp.bidfloor == null) {
-        let floor;
-        let floorCur: Currency = DEFAULT_CURRENCY;
-        if (typeof bidRequest.getFloor === 'function') {
-          try {
-            const floorInfo = bidRequest.getFloor({ currency: DEFAULT_CURRENCY, mediaType: '*', size: '*' });
-            if (floorInfo && typeof floorInfo.floor === 'number' && floorInfo.floor > 0) {
-              floor = floorInfo.floor;
-              floorCur = floorInfo.currency || DEFAULT_CURRENCY;
-            }
-          } catch (e) { }
-        }
-        if (typeof bidRequest.getFloor !== 'function' && bidRequest.params?.bidFloor > 0) {
-          floor = parseFloat(bidRequest.params.bidFloor);
-          floorCur = bidRequest.params.bidFloorCur || DEFAULT_CURRENCY;
-        }
-        if (floor !== undefined) {
-          imp.bidfloor = floor;
-          imp.bidfloorcur = floorCur;
-        }
+      // buildImp handles the Floors API; a skipped or suppressed floor must stay unsignaled.
+      const floorData = deepAccess(bidRequest, 'floorData');
+      const floorSuppressed = floorData?.noFloorSignaled || (floorData?.skipped && floorData.skippedReason !== 'not_found');
+      if (imp.bidfloor == null && typeof bidRequest.getFloor !== 'function' &&
+          !floorSuppressed && bidRequest.params?.bidFloor > 0) {
+        imp.bidfloor = parseFloat(bidRequest.params.bidFloor);
+        imp.bidfloorcur = bidRequest.params.bidFloorCur || DEFAULT_CURRENCY;
       }
 
       return imp;
@@ -260,7 +249,7 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
       return typeof seat === 'string' && seat.length > 0;
     },
 
-    buildRequests(validBidRequests = [], bidderRequest = {} as ClientBidderRequest<B>) {
+    buildRequests(validBidRequests = [], bidderRequest) {
       if (!validBidRequests.length) return [];
       const bidRequestsByParams = validBidRequests.reduce<Record<string, (BidRequest<B> & { params: FloxisBaseBidParams & FloxisRoute })[]>>((groups, bidRequest) => {
         const { seat, region, partner } = normalizeBidParams(bidRequest.params);
@@ -310,8 +299,6 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
       // Only honor a body sync whose type is enabled here — core userSync drops a disabled-type sync.
       const isEnabledSync = (e) => e && typeof e.url === 'string' && e.url && bodySyncUrl(e.url) &&
         ((e.type === 'iframe' && syncOptions.iframeEnabled) || (e.type === 'image' && syncOptions.pixelEnabled));
-      const query = buildConsentQuery(gdprConsent, uspConsent, gppConsent);
-      const consentSuffix = query.length ? '&' + query.join('&') : '';
       const seen = {};
       const syncs: UserSync[] = [];
       serverResponses.forEach((serverResponse) => {
@@ -335,6 +322,8 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
         const { seat, region } = target;
         const host = getSyncOrigin(region);
         if (!host) return;
+        const query = buildConsentQuery(gdprConsent, uspConsent, gppConsent);
+        const consentSuffix = query.length ? '&' + query.join('&') : '';
         // Dedupe on the final URL so a header sync collapses with a same-URL body.ext.sync entry in a mixed rollout.
         const url = `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`;
         if (seen[url]) return;
@@ -393,13 +382,23 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
           bidderRequest?.gppConsent
         );
         const consentSuffix = consentQuery.length ? '&' + consentQuery.join('&') : '';
-        const seen = {};
+        const targets = new Map<string, { seat: string; region: string; partner: string }>();
         bids.forEach((bid) => {
-          const { seat, region } = normalizeBidParams(bid.params);
-          if (!seat) return;
-          const key = `${seat}|${region}`;
-          if (seen[key]) return;
-          seen[key] = true;
+          const { seat, region, partner } = normalizeBidParams(bid?.params);
+          if (typeof seat !== 'string' || !seat) return;
+          const url = getEndpointUrl(seat, region, partner);
+          if (url) targets.set(url, { seat, region, partner });
+        });
+        let failedTargets = Array.from(targets.values());
+        // Core passes the whole auction to this hook, even when just one split request failed.
+        if (failedTargets.length > 1) {
+          if (!error?.responseURL) return;
+          const url = new URL(error.responseURL);
+          failedTargets = failedTargets.filter(({ seat, region, partner }) =>
+            url.protocol === 'https:' && url.host === getBidHost(region, partner)?.toLowerCase() &&
+            url.pathname === '/pbjs' && url.searchParams.get('seat') === seat);
+        }
+        failedTargets.forEach(({ seat, region }) => {
           const extras = {
             ...(status != null ? { status } : {}),
             timedout,

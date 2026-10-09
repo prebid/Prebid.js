@@ -1,12 +1,16 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { config } from 'src/config.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import adapterManager from 'src/adapterManager.js';
+import { hook } from 'src/hook.js';
 import { spec, storage } from 'modules/adapexBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
 import 'modules/priceFloors.js';
 
 describe('adapexBidAdapter', function () {
+  before(() => hook.ready());
   const ENDPOINT = 'https://hb.adapex.io/pbjs?seat=Gmtb';
 
   const validBannerBid = {
@@ -187,6 +191,29 @@ describe('adapexBidAdapter', function () {
     }
 
     describe('floors', function () {
+      it('leaves the wildcard floor lookup to the core processor', function () {
+        const getFloor = sinon.stub().returns({ floor: 0, currency: 'USD' });
+        const bid = { ...validBannerBid, getFloor };
+        spec.buildRequests([bid], bidderRequest);
+        expect(getFloor.withArgs({ currency: 'USD', mediaType: '*', size: '*' }).callCount).to.equal(1);
+      });
+
+      it('does not signal a static floor when the Floors module suppresses it', function () {
+        [{ noFloorSignaled: true }, { skipped: true, skippedReason: 'random' }].forEach((floorData) => {
+          const bid = { ...validBannerBid, params: { seat: 'Gmtb', bidFloor: 5 }, floorData };
+          expect(spec.buildRequests([bid], bidderRequest)[0].data.imp[0].bidfloor).to.be.undefined;
+        });
+      });
+
+      it('keeps the static fallback when Floors data is unavailable', function () {
+        const bid = {
+          ...validBannerBid,
+          params: { seat: 'Gmtb', bidFloor: 5 },
+          floorData: { skipped: true, skippedReason: 'not_found' }
+        };
+        expect(spec.buildRequests([bid], bidderRequest)[0].data.imp[0].bidfloor).to.equal(5);
+      });
+
       it('uses getFloor', function () {
         const bid = { ...validBannerBid, getFloor: () => ({ floor: 2.5, currency: 'EUR' }) };
         const imp = spec.buildRequests([bid], bidderRequest)[0].data.imp[0];
@@ -194,11 +221,11 @@ describe('adapexBidAdapter', function () {
         expect(imp.bidfloorcur).to.equal('EUR');
       });
 
-      it('defaults the floor currency to USD', function () {
+      it('leaves a floor without currency unsignaled, as core requires', function () {
         const bid = { ...validBannerBid, getFloor: () => ({ floor: 1.5 }) };
         const imp = spec.buildRequests([bid], bidderRequest)[0].data.imp[0];
-        expect(imp.bidfloor).to.equal(1.5);
-        expect(imp.bidfloorcur).to.equal('USD');
+        expect(imp.bidfloor).to.be.undefined;
+        expect(imp.bidfloorcur).to.be.undefined;
       });
 
       it('ignores a zero or throwing getFloor', function () {
@@ -659,6 +686,57 @@ describe('adapexBidAdapter', function () {
         ...overrides
       });
 
+      it('reports only the failing seat when another seat request succeeds', function () {
+        const request = bidderRequest({ bids: [validBannerBid, { ...validVideoBid, params: { seat: 'Seat2' } }] });
+        const bridge = sinon.stub(adapterManager, 'callBidderError').callsFake((code, error, bidderRequest) => spec.onBidderError({ error, bidderRequest }));
+        const compression = sinon.stub(utils, 'isGzipCompressionSupported').returns(false);
+        const ajax = sinon.stub().callsFake((url, callbacks) => {
+          if (url === ENDPOINT) {
+            callbacks.error('server error', { status: 500, responseURL: url });
+          } else {
+            callbacks.success('{"seatbid":[]}', { getResponseHeader: () => null });
+          }
+        });
+        const done = sinon.stub();
+        try {
+          newBidder(spec).callBids(request, sinon.stub(), done, ajax, sinon.stub(), config.callbackWithBidder('adapex'));
+          expect(ajax.callCount).to.equal(2);
+          expect(done.calledOnce).to.be.true;
+          expect(politeStub.callCount).to.equal(1);
+          expect(politeStub.firstCall.args[0]).to.include('seat=Gmtb&');
+        } finally {
+          compression.restore();
+          bridge.restore();
+        }
+      });
+
+      it('does not attribute an unidentified split-request error to healthy seats', function () {
+        spec.onBidderError({
+          error: { status: 0 },
+          bidderRequest: bidderRequest({ bids: [validBannerBid, { ...validVideoBid, params: { seat: 'Seat2' } }] })
+        });
+        expect(politeStub.called).to.be.false;
+      });
+
+      it('identifies compressed requests with encoded seats', function () {
+        spec.onBidderError({
+          error: { status: 503, responseURL: 'https://hb.adapex.io/pbjs?seat=a+b%26c&gzip=1' },
+          bidderRequest: bidderRequest({ bids: [validBannerBid, { ...validVideoBid, params: { seat: 'a b&c' } }] })
+        });
+        expect(politeStub.calledOnce).to.be.true;
+        expect(politeStub.firstCall.args[0]).to.include('seat=a%20b%26c&');
+      });
+
+      it('does not report split errors for an unrecognized or malformed URL', function () {
+        ['not a URL', 'https://other.example/pbjs?seat=Gmtb', 'https://hb.adapex.io/other?seat=Gmtb'].forEach((responseURL) => {
+          spec.onBidderError({
+            error: { status: 500, responseURL },
+            bidderRequest: bidderRequest({ bids: [validBannerBid, { ...validVideoBid, params: { seat: 'Seat2' } }] })
+          });
+        });
+        expect(politeStub.called).to.be.false;
+      });
+
       it('beacons cookieless to sync.adapex.io with status, timeout flag and publisher domain', function () {
         spec.onBidderError({ error: { status: 500, timedOut: false }, bidderRequest: bidderRequest() });
         expect(politeStub.firstCall.args).to.deep.equal([
@@ -683,9 +761,9 @@ describe('adapexBidAdapter', function () {
       it('dedupes per seat and skips bids without a seat', function () {
         spec.onBidderError({
           error: {},
-          bidderRequest: bidderRequest({ bids: [{ params: { seat: 'Gmtb' } }, { params: { seat: 'Gmtb' } }, { params: { seat: 'Seat2' } }, { params: {} }] })
+          bidderRequest: bidderRequest({ bids: [{ params: { seat: 'Gmtb' } }, { params: { seat: 'Gmtb' } }, { params: {} }] })
         });
-        expect(politeStub.callCount).to.equal(2);
+        expect(politeStub.callCount).to.equal(1);
       });
 
       it('tolerates a missing bidder request or bids', function () {

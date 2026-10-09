@@ -165,6 +165,11 @@ describe('floxisBidAdapter', function () {
       expect(requests).to.be.an('array').that.is.empty;
     });
 
+    it('rejects a combined partner-region host label longer than 63 characters', function () {
+      const bid = { ...validBannerBid, params: { seat: 'Gmtb', partner: 'p'.repeat(32), region: 'r'.repeat(32) } };
+      expect(spec.buildRequests([bid], bidderRequest)).to.be.empty;
+    });
+
     it('should default region to us-e when missing', function () {
       const bidWithoutRegion = {
         ...validBannerBid,
@@ -344,7 +349,7 @@ describe('floxisBidAdapter', function () {
         expect(imp.bidfloorcur).to.equal('USD');
       });
 
-      it('should set bidfloor from getFloor and default bidfloorcur when currency is absent', function () {
+      it('should leave a floor without currency unsignaled, as core requires', function () {
         const bidNoCurrencyFloor = {
           ...validBannerBid,
           getFloor: function () {
@@ -353,8 +358,8 @@ describe('floxisBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidNoCurrencyFloor], bidderRequest);
         const imp = requests[0].data.imp[0];
-        expect(imp.bidfloor).to.equal(1.5);
-        expect(imp.bidfloorcur).to.equal('USD');
+        expect(imp.bidfloor).to.be.undefined;
+        expect(imp.bidfloorcur).to.be.undefined;
       });
     });
 
@@ -942,6 +947,11 @@ describe('floxisBidAdapter', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [malformed])).to.be.an('array').that.is.empty;
     });
 
+    it('rejects a sync host whose px-region label exceeds 63 characters', function () {
+      const response = syncResponse(`seat=Gmtb&region=${'r'.repeat(61)}`);
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [response])).to.be.empty;
+    });
+
     it('should emit an iframe sync to the region trackers host for the seat', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, RESPONSES);
       expect(syncs).to.have.lengthOf(1);
@@ -1289,7 +1299,7 @@ describe('floxisBidAdapter', function () {
       expect(politeStub.callCount).to.equal(1);
     });
 
-    it('should emit one beacon per distinct seat+region pair', function () {
+    it('should omit a split-request error without an identifiable target', function () {
       spec.onBidderError({
         error: { status: 503, timedOut: false },
         bidderRequest: {
@@ -1300,7 +1310,21 @@ describe('floxisBidAdapter', function () {
           ]
         }
       });
-      expect(politeStub.callCount).to.equal(2);
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('matches the normalized response hostname for uppercase routing labels', function () {
+      spec.onBidderError({
+        error: { status: 503, responseURL: 'https://foo-us-e.floxis.tech/pbjs?seat=Gmtb&gzip=1' },
+        bidderRequest: makeBidderRequest({
+          bids: [
+            { params: { seat: 'Gmtb', region: 'US-E', partner: 'Foo' } },
+            { params: { seat: 'Seat2', region: 'us-e' } }
+          ]
+        })
+      });
+      expect(politeStub.calledOnce).to.be.true;
+      expect(beaconUrl()).to.include('seat=Gmtb&region=US-E');
     });
 
     it('should not throw when bidderRequest is missing', function () {

@@ -13,6 +13,7 @@ declare module '../src/adUnits' {
 }
 
 export interface AdapexConfig {
+  /** Opt in to timeout/error beacons; disabled by default. */
   enableTelemetry?: boolean;
 }
 

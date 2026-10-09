@@ -4,7 +4,9 @@ import { getStorageManager } from '../src/storageManager.js';
 import { createFloxisSpec, isValidHostLabel } from '../libraries/floxisUtils/bidderUtils.js';
 
 export interface FloxisBidParams extends FloxisBaseBidParams {
+  /** Exchange region; defaults to us-e. */
   region?: string;
+  /** Regional host prefix; defaults to floxis. */
   partner?: string;
 }
 
@@ -20,9 +22,7 @@ const DEFAULT_REGION = 'us-e';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
-// Telemetry event host is pinned to px-us-e regardless of bid region. Only us-e is provisioned;
-// a beacon to an unprovisioned host would lose the very signal meant to catch misconfiguration.
-// SHIPPING-INTENT: switch to region-derived host (px-<region>) when px-eu and px-apac are provisioned.
+// Only the us-e trackers host is provisioned for telemetry.
 const TELEMETRY_ORIGIN = 'https://px-us-e.floxis.tech';
 
 export const spec = createFloxisSpec({
@@ -38,13 +38,12 @@ export const spec = createFloxisSpec({
   // Bidding host: the supply partner's regional subdomain (floxis itself has no partner prefix).
   getBidHost(region, partner) {
     if (!isValidHostLabel(region) || !isValidHostLabel(partner)) return null;
-    return partner === BIDDER_CODE
-      ? `${region}.floxis.tech`
-      : `${partner}-${region}.floxis.tech`;
+    const label = partner === BIDDER_CODE ? region : `${partner}-${region}`;
+    return isValidHostLabel(label) ? `${label}.floxis.tech` : null;
   },
   // Cookie-sync host is Floxis-operated and region-scoped (px-<region>.floxis.tech), independent of
   // the partner subdomain used for bidding. The trackers /sync endpoint resolves seat -> supply partner.
-  getSyncOrigin: (region) => (isValidHostLabel(region) ? `https://px-${region}.floxis.tech` : null),
+  getSyncOrigin: (region) => (isValidHostLabel(region) && isValidHostLabel(`px-${region}`) ? `https://px-${region}.floxis.tech` : null),
   telemetryOrigin: TELEMETRY_ORIGIN,
   // Fallback when the response body carries no ext.sync: the server echoes seat + region in this header.
   syncHeader: 'x-floxis-sync'

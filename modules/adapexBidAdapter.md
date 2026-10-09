@@ -85,13 +85,13 @@ pbjs.addAdUnits([
 | Name | Scope | Description | Example | Type |
 | --- | --- | --- | --- | --- |
 | `seat` | required | Seat identifier issued by Adapex | `'testSeat'` | `string` |
-| `bidFloor` | optional | Static bid floor (CPM) used only when the Floors module is absent | `0.5` | `number` |
+| `bidFloor` | optional | Static bid floor (CPM) when no Floors API applies and floor signaling is not suppressed | `0.5` | `number` |
 | `bidFloorCur` | optional | Currency for `bidFloor` (defaults to `USD`) | `'USD'` | `string` |
 
 Requests are sent to `https://hb.adapex.io/pbjs?seat=<seat>`; one request is made per distinct seat.
 
 ## Floors Module Support
-Floor values from the Prebid.js [Floors Module](https://docs.prebid.org/dev-docs/modules/floors.html) are sent as `imp.bidfloor` and `imp.bidfloorcur`. Without the Floors module in the build, the static `params.bidFloor` (with optional `params.bidFloorCur`) is used instead.
+Floor values from the Prebid.js [Floors Module](https://docs.prebid.org/dev-docs/modules/floors.html) are sent as `imp.bidfloor` and `imp.bidfloorcur` through the core OpenRTB converter. Static `params.bidFloor` applies only when no Floors API applies and `ortb2Imp` supplies no floor, including when floor data is unavailable. It is not sent for an intentionally skipped Floors auction or a bidder in `noFloorSignalBidders`.
 
 ## First-Party Fallback Id
 In browsers that block third-party cookies (Safari, Firefox), the adapter keeps a random v4 UUID in the publisher's own origin (`localStorage` key and cookie `adpx_uid`, ~30-day cookie) and sends it at `user.ext.wlid`. It is per-publisher, never shared across sites, and only a fallback: the exchange's own cookie takes precedence when present. Storage access goes through Prebid.js core's `storageManager` (`deviceAccess`, GDPR purpose 1 under vendor id 1609), and bidder-level storage must be granted explicitly; without it no id is generated:
@@ -130,6 +130,8 @@ pbjs.setConfig({ adapex: { enableTelemetry: true } });
 ```
 
 Set `enableTelemetry` to `false` to disable these requests; bidding and user sync continue to work. Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, auction id, publisher domain) and no user or device identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
+
+For split requests, transport errors are reported only for the seat identified by the failed response URL. If a network failure provides no URL and multiple seats were requested, the error beacon is omitted to avoid attributing the failure to healthy seats.
 
 ## Testing
 Publisher-facing parameter and configuration types are exported from `prebid.js/modules/adapexBidAdapter`.
