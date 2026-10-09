@@ -539,9 +539,12 @@ function isKvWireValue(v: unknown): boolean {
 
 // placementImpData seeds the reserved placement-identity keys the edge
 // has always read. Isolated so the fail-open path can rebuild them after
-// a poison params.kv without re-entering the merge.
+// a poison params.kv without re-entering the merge. Null-prototype so a
+// publisher key named like an Object.prototype member (`__proto__`,
+// `constructor`) is stored as an ordinary own property instead of hitting
+// an inherited setter.
 function placementImpData(bid): Record<string, any> {
-  const data: Record<string, any> = {};
+  const data: Record<string, any> = Object.create(null);
   if (isNonEmptyStr(bid.adUnitCode)) data.adunitcode = bid.adUnitCode;
   const pbadslot = deepAccess(bid, "ortb2Imp.ext.data.pbadslot");
   if (isNonEmptyStr(pbadslot)) data.pbadslot = pbadslot;
@@ -549,8 +552,8 @@ function placementImpData(bid): Record<string, any> {
 }
 
 // mergeImpDataKeys copies eligible keys from `src` into `data` until the
-// 32-key bound, skipping reserved names and keys already present
-// (ortb2Imp.ext.data wins over params.kv by call order).
+// 32-key bound, skipping reserved names and keys already present. Sources
+// are merged in precedence order, so the first source wins a collision.
 function mergeImpDataKeys(data: Record<string, any>, src: unknown) {
   if (!isPlainObject(src)) return;
   const obj = src as Record<string, unknown>;
@@ -564,15 +567,17 @@ function mergeImpDataKeys(data: Record<string, any>, src: unknown) {
   }
 }
 
-// buildImpData merges ortb2Imp.ext.data (whole, non-reserved) then
-// params.kv into imp.ext.data, bounded to 32 keys, never overwriting
-// reserved placement/platform names. Fail-open: any exception yields
+// buildImpData merges params.kv then ortb2Imp.ext.data (non-reserved)
+// into imp.ext.data, bounded to 32 keys, never overwriting reserved
+// placement/platform names. The bidder param is the override (Prebid
+// convention: params only override what the request already carries), so
+// on a key collision params.kv wins. Fail-open: any exception yields
 // placement keys only (contextual-only), never a thrown error.
 function buildImpData(bid): Record<string, any> | undefined {
   try {
     const data = placementImpData(bid);
-    mergeImpDataKeys(data, deepAccess(bid, "ortb2Imp.ext.data"));
     mergeImpDataKeys(data, deepAccess(bid, "params.kv"));
+    mergeImpDataKeys(data, deepAccess(bid, "ortb2Imp.ext.data"));
     return Object.keys(data).length ? data : undefined;
   } catch (e) {
     logWarn("adswag: imp key/value merge failed, sending contextual-only", e);
@@ -817,17 +822,25 @@ function applyIdentity(request, validBidRequests, ortb2, perms) {
 // applyUserKeyValues forwards ortb2.user.data[] and ortb2.user.ext.data
 // ONLY when perms.identity holds (the same gate that attaches eids —
 // design §4.10). Consentless traffic omits both surfaces entirely (not
-// emptied). Fail-open: any exception leaves the request without user KV.
+// emptied). Both surfaces are reduced to their JSON wire form here, inside
+// the try, so a cycle, a BigInt or a throwing getter in publisher FPD is
+// caught now rather than at the final JSON.stringify of the request (which
+// would drop every bid). Fail-open: any exception leaves the request
+// without user KV, and neither surface is attached unless both serialize.
 function applyUserKeyValues(request, ortb2, perms) {
   try {
     if (!perms.identity) return;
     const userData = deepAccess(ortb2, "user.data");
-    if (isArray(userData)) {
-      deepSetValue(request, "user.data", userData);
-    }
     const userExtData = deepAccess(ortb2, "user.ext.data");
-    if (isPlainObject(userExtData)) {
-      deepSetValue(request, "user.ext.data", userExtData);
+    const wireData = isArray(userData) ? JSON.parse(JSON.stringify(userData)) : undefined;
+    const wireExtData = isPlainObject(userExtData)
+      ? JSON.parse(JSON.stringify(userExtData))
+      : undefined;
+    if (wireData !== undefined) {
+      deepSetValue(request, "user.data", wireData);
+    }
+    if (wireExtData !== undefined) {
+      deepSetValue(request, "user.ext.data", wireExtData);
     }
   } catch (e) {
     logWarn("adswag: user key/value forward failed, sending contextual-only", e);

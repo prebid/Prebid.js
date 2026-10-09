@@ -1016,7 +1016,7 @@ describe("adswagBidAdapter", () => {
       expect(data.tags).to.deep.equal(["a", "b"]);
     });
 
-    it("forwards ortb2Imp.ext.data whole before params.kv; ortb2Imp wins on clash", () => {
+    it("merges ortb2Imp.ext.data and params.kv; the bidder param wins on clash", () => {
       const bid = makeBid({
         ortb2Imp: {
           ext: {
@@ -1031,7 +1031,7 @@ describe("adswagBidAdapter", () => {
       });
       const data = parseRequest(spec.buildRequests([bid], makeBidderRequest())).imp[0]
         .ext.data;
-      expect(data.section).to.equal("sport");
+      expect(data.section).to.equal("news");
       expect(data.slot).to.equal("from-ortb2");
       expect(data.show).to.equal("morning");
     });
@@ -1068,7 +1068,8 @@ describe("adswagBidAdapter", () => {
         .ext.data;
       expect(data.adunitcode).to.equal("div-ad-300x250-2");
       expect(data.pbadslot).to.equal("/1/top");
-      expect(data.section).to.equal("sport");
+      // params.kv is the override: it wins the `section` collision.
+      expect(data.section).to.equal("news");
       expect(data).to.not.have.property("gpid");
       expect(data).to.not.have.property("tid");
       expect(data).to.not.have.property("adserver");
@@ -1077,7 +1078,7 @@ describe("adswagBidAdapter", () => {
       expect(data).to.not.have.property("ukv");
     });
 
-    it("caps imp.ext.data at 32 keys (ortb2Imp first, then params.kv; surplus dropped)", () => {
+    it("caps imp.ext.data at 32 keys (params.kv first, then ortb2Imp; surplus dropped)", () => {
       const ortb2Data = { pbadslot: "/1/top" };
       for (let i = 0; i < 40; i++) ortb2Data[`o${i}`] = `v${i}`;
       const kv = {};
@@ -1091,11 +1092,39 @@ describe("adswagBidAdapter", () => {
       expect(Object.keys(data)).to.have.lengthOf(32);
       expect(data.adunitcode).to.equal("div-ad-300x250-2");
       expect(data.pbadslot).to.equal("/1/top");
-      // 2 reserved + 30 from ortb2Imp (o0..o29); params.kv never reaches the wire.
-      expect(data.o0).to.equal("v0");
-      expect(data.o29).to.equal("v29");
-      expect(data).to.not.have.property("o30");
-      expect(data).to.not.have.property("k0");
+      // 2 reserved + 30 from params.kv (k0..k29); ortb2Imp keys do not fit.
+      expect(data.k0).to.equal("w0");
+      expect(data.k29).to.equal("w29");
+      expect(data).to.not.have.property("k30");
+      expect(data).to.not.have.property("o0");
+    });
+
+    it("stores a publisher key named __proto__ as an ordinary own key", () => {
+      // An object literal `{ __proto__: [...] }` would set the prototype, so
+      // the own key is produced the way a publisher's JSON config would.
+      const kv = JSON.parse('{"__proto__": ["x"], "section": "sport"}');
+      const bid = makeBid({ params: { publisherId: "pub-nl-news-1", kv } });
+      const raw = spec.buildRequests([bid], makeBidderRequest());
+      const data = JSON.parse(raw[0].data).imp[0].ext.data;
+      const protoKey = ["__", "proto", "__"].join("");
+      expect(Object.prototype.hasOwnProperty.call(data, protoKey)).to.equal(true);
+      expect(Object.getOwnPropertyDescriptor(data, protoKey).value).to.deep.equal(["x"]);
+      expect(data.section).to.equal("sport");
+      expect(Object.getPrototypeOf(data)).to.equal(Object.prototype);
+    });
+
+    it("omits user FPD that cannot serialize instead of dropping the bid", () => {
+      const cyclic = { name: "example.nl", segment: [{ id: "a" }] };
+      cyclic.self = cyclic;
+      const bidderRequest = makeBidderRequest({
+        ortb2: { user: { data: [cyclic], ext: { data: { tier: "gold" } } } },
+      });
+      const requests = spec.buildRequests([makeBid()], bidderRequest);
+      expect(requests).to.have.lengthOf(1);
+      const body = parseRequest(requests);
+      expect(body.imp).to.have.lengthOf(1);
+      expect(body.user && body.user.data).to.be.undefined;
+      expect(body.user && body.user.ext && body.user.ext.data).to.be.undefined;
     });
 
     it("keeps site.ext.data and site.content.data flowing via the site spread", () => {
