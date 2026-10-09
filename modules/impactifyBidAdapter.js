@@ -313,7 +313,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
 
     if (typeof bid.getFloor === 'function') {
       const floor = helpers.getFloor(bid);
-      if (floor) {
+      if (floor !== null) {
         imp.bidfloor = floor;
       }
     }
