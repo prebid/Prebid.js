@@ -44,6 +44,16 @@ const converter = ortbConverter({
     }
     return imp;
   },
+  bidResponse(buildBidResponse, bid, context) {
+    const result = buildBidResponse(bid, context);
+    let billable = true;
+    const adhouse = bid && bid.ext && bid.ext.adhouse;
+    if (adhouse && adhouse.billable === false) {
+      billable = false;
+    }
+    result.meta = Object.assign({}, result.meta, { adhouseBillable: billable });
+    return result;
+  },
 });
 
 function getFloor(bidRequest) {

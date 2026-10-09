@@ -105,11 +105,13 @@ describe('adhouseBidAdapter', function () {
       expect(r.data.imp[0].banner).to.be.an('object');
     });
 
-    (FEATURES.VIDEO ? it : it.skip)('includes a video object and the videoType hint', function () {
-      const imp = spec.buildRequests([videoBid], bidderRequest)[0].data.imp[0];
-      expect(imp.video).to.be.an('object');
-      expect(imp.ext.adhouse.videoType).to.equal('standart_video');
-    });
+    if (FEATURES.VIDEO) {
+      it('includes a video object and the videoType hint', function () {
+        const imp = spec.buildRequests([videoBid], bidderRequest)[0].data.imp[0];
+        expect(imp.video).to.be.an('object');
+        expect(imp.ext.adhouse.videoType).to.equal('standart_video');
+      });
+    }
   });
 
   describe('interpretResponse', function () {
@@ -153,11 +155,11 @@ describe('adhouseBidAdapter', function () {
       expect(bids[0].ad).to.equal('<div>ad</div>');
       expect(bids[0].mediaType).to.equal(BANNER);
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['brand.com']);
+      expect(bids[0].meta.adhouseBillable).to.equal(true);
     });
 
-    (FEATURES.VIDEO ? it : it.skip)('parses a video seatbid into a VAST bid', function () {
-      const request = buildRequestData(videoBid);
-      const vast = '<VAST version="3.0"></VAST>';
+    it('flags a non-billable (house) bid in meta', function () {
+      const request = buildRequestData(bannerBid);
       const response = {
         body: {
           id: 'auc-1',
@@ -165,25 +167,57 @@ describe('adhouseBidAdapter', function () {
           seatbid: [{
             seat: 'adhouse',
             bid: [{
-              id: 'b2',
+              id: 'b3',
               impid: request.data.imp[0].id,
-              price: 9,
-              adm: vast,
-              crid: '77',
-              w: 640,
-              h: 360,
-              mtype: 2,
-              adomain: ['brand.com']
+              price: 0.5,
+              adm: '<div>house</div>',
+              crid: '100',
+              w: 300,
+              h: 250,
+              mtype: 1,
+              adomain: ['brand.com'],
+              ext: { adhouse: { billable: false } }
             }]
           }]
         }
       };
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
-      expect(bids[0].mediaType).to.equal(VIDEO);
-      expect(bids[0].vastXml).to.equal(vast);
-      expect(bids[0].currency).to.equal('USD');
+      expect(bids[0].meta.adhouseBillable).to.equal(false);
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['brand.com']);
     });
+
+    if (FEATURES.VIDEO) {
+      it('parses a video seatbid into a VAST bid', function () {
+        const request = buildRequestData(videoBid);
+        const vast = '<VAST version="3.0"></VAST>';
+        const response = {
+          body: {
+            id: 'auc-1',
+            cur: 'USD',
+            seatbid: [{
+              seat: 'adhouse',
+              bid: [{
+                id: 'b2',
+                impid: request.data.imp[0].id,
+                price: 9,
+                adm: vast,
+                crid: '77',
+                w: 640,
+                h: 360,
+                mtype: 2,
+                adomain: ['brand.com']
+              }]
+            }]
+          }
+        };
+        const bids = spec.interpretResponse(response, request);
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+        expect(bids[0].vastXml).to.equal(vast);
+        expect(bids[0].currency).to.equal('USD');
+      });
+    }
   });
 
   describe('getUserSyncs', function () {
