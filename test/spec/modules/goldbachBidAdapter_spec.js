@@ -5,6 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { OUTSTREAM } from 'src/video.js';
+import { clearSlotInfoCache } from 'libraries/gptUtils/gptUtils.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 const BIDDER_NAME = 'goldbach';
@@ -343,7 +344,7 @@ describe('GoldbachBidAdapter', function () {
       const bidRequests = deepClone(validBidRequests);
       const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request.ortbRequest || request.data;
 
       expect(payload.imp).to.exist;
       expect(Array.isArray(payload.imp)).to.be.true;
@@ -359,7 +360,7 @@ describe('GoldbachBidAdapter', function () {
         const bidRequests = deepClone(validBidRequests);
         const bidderRequest = deepClone(validBidderRequest);
         const request = spec.buildRequests([bidRequests[1]], await addFPDToBidderRequest(bidderRequest));
-        const payload = request.data;
+        const payload = request.ortbRequest || request.data;
 
         expect(payload.imp.length).to.equal(1);
         expect(payload.imp[0][VIDEO]).to.exist;
@@ -368,11 +369,22 @@ describe('GoldbachBidAdapter', function () {
       });
     }
 
+    it('should enable endpoint compression while keeping the request CORS-simple on the full route', function () {
+      const bidRequests = deepClone(validBidRequests);
+      bidRequests[0].params.auctionType = 'full';
+      const bidderRequest = deepClone(validBidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.options.endpointCompression).to.equal(true);
+      expect(request.options.contentType).to.equal('text/plain');
+      expect(request.options.withCredentials).to.equal(true);
+    });
+
     it('should set custom config on request', function () {
       const bidRequests = deepClone(validBidRequests);
       const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request.ortbRequest || request.data;
 
       expect(payload.ext.goldbach.publisherId).to.equal(bidRequests[0].params.publisherId);
     });
@@ -383,7 +395,7 @@ describe('GoldbachBidAdapter', function () {
       const before = Date.now();
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const after = Date.now();
-      const payload = request.data;
+      const payload = request.ortbRequest || request.data;
 
       expect(payload.ext.goldbach.auctionStartTime).to.be.a('number');
       expect(payload.ext.goldbach.auctionStartTime).to.be.at.least(before);
@@ -394,7 +406,7 @@ describe('GoldbachBidAdapter', function () {
       const bidRequests = deepClone(validBidRequests);
       const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request.ortbRequest || request.data;
 
       expect(!!payload.regs.ext.gdpr).to.equal(bidderRequest.gdprConsent.gdprApplies);
       expect(payload.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
@@ -405,7 +417,7 @@ describe('GoldbachBidAdapter', function () {
       const bidderRequest = deepClone(validBidderRequest);
       delete bidderRequest.gdprConsent;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request.ortbRequest || request.data;
 
       expect(payload.ext.goldbach.publisherId).to.exist;
       expect(payload.regs?.ext?.gdpr).to.not.exist;
@@ -415,10 +427,81 @@ describe('GoldbachBidAdapter', function () {
       const bidRequests = deepClone(validBidRequests);
       const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request.ortbRequest || request.data;
 
       expect(payload.imp[0].ext.goldbach.targetings).to.exist;
       expect(payload.imp[0].ext.goldbach.targetings).to.deep.equal(bidRequests[0].params.customTargeting);
+    });
+  });
+
+  describe('buildRequests fast auction route', function () {
+    const decodeBase64Url = (value) => {
+      const base64 = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
+      const binary = atob(base64);
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    };
+
+    const createFastBidRequests = () => {
+      const bidRequests = deepClone(validBidRequests);
+      bidRequests[0].params.auctionType = 'fast';
+      return bidRequests;
+    };
+
+    it('should send the auction as a GET with the payload base64url-encoded in ?b= when auctionType is fast', function () {
+      const request = spec.buildRequests(createFastBidRequests(), deepClone(validBidderRequest));
+
+      expect(request.method).to.equal('GET');
+      expect(request.url).to.equal(ENDPOINT);
+      expect(Object.keys(request.data)).to.deep.equal(['b']);
+      expect(request.data.b).to.match(/^[A-Za-z0-9_-]+$/);
+      expect(request.options.withCredentials).to.equal(true);
+    });
+
+    it('should default to the POST route when auctionType is not set', function () {
+      const request = spec.buildRequests(deepClone(validBidRequests), deepClone(validBidderRequest));
+
+      expect(request.method).to.equal('POST');
+      expect(request.data.imp).to.exist;
+      expect(request.ortbRequest).to.not.exist;
+    });
+
+    it('should encode the exact OpenRTB request the POST route would send', function () {
+      const request = spec.buildRequests(createFastBidRequests(), deepClone(validBidderRequest));
+      const decoded = JSON.parse(decodeBase64Url(request.data.b));
+
+      expect(decoded).to.deep.equal(JSON.parse(JSON.stringify(request.ortbRequest)));
+      expect(decoded.ext.goldbach.publisherId).to.equal(validBidRequests[0].params.publisherId);
+      expect(decoded.imp.length).to.equal(validBidRequests.length);
+    });
+
+    it('should map responses to bids on the fast route via the retained converter request', function () {
+      const request = spec.buildRequests(createFastBidRequests(), deepClone(validBidderRequest));
+      const bidResponse = deepClone({ body: validOrtbBidResponse });
+      const response = spec.interpretResponse(bidResponse, request);
+
+      expect(response.length).to.equal(3);
+      expect(response.filter(bid => bid.requestId === validBidRequests[0].bidId).length).to.equal(1);
+    });
+
+    it('should fall back to the POST route when the encoded payload exceeds the GET budget', function () {
+      const bidRequests = createFastBidRequests();
+      bidRequests[0].params.customTargeting = { oversize: 'x'.repeat(12 * 1024) };
+      const request = spec.buildRequests(bidRequests, deepClone(validBidderRequest));
+
+      expect(request.method).to.equal('POST');
+      expect(request.data.imp).to.exist;
+      expect(request.options.endpointCompression).to.equal(true);
+    });
+
+    it('should use only the POST route when auctionType is full', function () {
+      const bidRequests = deepClone(validBidRequests);
+      bidRequests[0].params.auctionType = 'full';
+      const request = spec.buildRequests(bidRequests, deepClone(validBidderRequest));
+
+      expect(request.method).to.equal('POST');
+      expect(request.data.imp).to.exist;
+      expect(request.ortbRequest).to.not.exist;
     });
   });
 
@@ -550,10 +633,19 @@ describe('GoldbachBidAdapter', function () {
         };
       }
 
-      function runRenderer({ adUnitCode = 'au-2', playerSize = [[640, 480]], doc }) {
+      function runRenderer({ adUnitCode = 'au-2', playerSize = [[640, 480]], playbackmethod, doc, creativeDoc = null, params, ortb2Imp }) {
         const bidRequests = deepClone(validBidRequests);
         bidRequests[1].adUnitCode = adUnitCode;
         bidRequests[1].mediaTypes.video.playerSize = playerSize;
+        if (playbackmethod !== undefined) {
+          bidRequests[1].mediaTypes.video.playbackmethod = playbackmethod;
+        }
+        if (params) {
+          Object.assign(bidRequests[1].params, params);
+        }
+        if (ortb2Imp) {
+          bidRequests[1].ortb2Imp = ortb2Imp;
+        }
         const bidderRequest = deepClone(validBidderRequest);
         bidderRequest.bids = bidRequests;
 
@@ -565,7 +657,9 @@ describe('GoldbachBidAdapter', function () {
         const response = spec.interpretResponse(bidResponse, request);
         const videoBid = response.find(b => !!b.renderer);
         videoBid.adUnitCode = adUnitCode;
-        videoBid.renderer._render(videoBid, doc);
+        // mimic core executeRenderer(): resolve the mount document, then render into it
+        const resolvedDoc = videoBid.renderer.config.documentResolver(videoBid, doc, creativeDoc) || doc;
+        videoBid.renderer._render(videoBid, resolvedDoc);
         videoBid.renderer.process();
         return videoBid;
       }
@@ -584,16 +678,15 @@ describe('GoldbachBidAdapter', function () {
         expect(goldPlayerOptions.divContainerElement).to.equal(slotDiv);
       });
 
-      it('passes null divContainerElement when no DOM element matches adUnitCode', function () {
+      it('does not start the player when no visible container can be resolved', function () {
         const doc = buildFakeDoc({});
         runRenderer({ adUnitCode: 'missing-slot', doc });
 
-        expect(goldPlayerSpy.calledOnce).to.be.true;
-        expect(goldPlayerOptions.divContainerElement).to.equal(null);
+        expect(goldPlayerSpy.called).to.be.false;
       });
 
       it('reads width/height from playerSize[0] tuple', function () {
-        const doc = buildFakeDoc({});
+        const doc = buildFakeDoc({ 'au-2': { id: 'au-2' } });
         runRenderer({ playerSize: [[640, 360]], doc });
 
         expect(goldPlayerOptions.publisherProvidedWidth).to.equal(640);
@@ -601,7 +694,7 @@ describe('GoldbachBidAdapter', function () {
       });
 
       it('reads width/height from a flat playerSize tuple [w, h]', function () {
-        const doc = buildFakeDoc({});
+        const doc = buildFakeDoc({ 'au-2': { id: 'au-2' } });
         runRenderer({ playerSize: [640, 360], doc });
 
         expect(goldPlayerOptions.publisherProvidedWidth).to.equal(640);
@@ -609,12 +702,155 @@ describe('GoldbachBidAdapter', function () {
       });
 
       it('leaves width/height undefined when playerSize is missing/invalid', function () {
-        const doc = buildFakeDoc({});
+        const doc = buildFakeDoc({ 'au-2': { id: 'au-2' } });
         // null bypasses runRenderer's default-arg fallback so the renderer sees a falsy playerSize.
         runRenderer({ playerSize: null, doc });
 
         expect(goldPlayerOptions.publisherProvidedWidth).to.be.undefined;
         expect(goldPlayerOptions.publisherProvidedHeight).to.be.undefined;
+      });
+
+      it('normalizes an ORTB playbackmethod array into autoplay/muted flags', function () {
+        const doc = buildFakeDoc({ 'au-2': { id: 'au-2' } });
+        runRenderer({ playbackmethod: [2], doc });
+
+        expect(goldPlayerOptions.autoplay).to.be.true;
+        expect(goldPlayerOptions.muted).to.be.true;
+      });
+
+      it('maps a GAM ad unit path adUnitCode to the GPT slot element', function () {
+        const slotDiv = { id: 'div-gpt-1', tagName: 'DIV' };
+        const doc = buildFakeDoc({ 'div-gpt-1': slotDiv });
+        const previousGoogletag = window.googletag;
+        window.googletag = {
+          apiReady: true,
+          pubads: () => ({
+            getSlots: () => [{
+              getSlotElementId: () => 'div-gpt-1',
+              getAdUnitPath: () => '/123/site.com/slot'
+            }]
+          })
+        };
+        try {
+          runRenderer({ adUnitCode: '/123/site.com/slot', doc });
+
+          expect(goldPlayerSpy.calledOnce).to.be.true;
+          expect(goldPlayerOptions.divContainerElement).to.equal(slotDiv);
+        } finally {
+          window.googletag = previousGoogletag;
+          clearSlotInfoCache();
+        }
+      });
+
+      it('mounts into the element named by params.divId before any other strategy', function () {
+        const target = { id: 'video-slot-1', tagName: 'DIV' };
+        const other = { id: 'au-2', tagName: 'DIV' };
+        const doc = buildFakeDoc({ 'video-slot-1': target, 'au-2': other });
+        runRenderer({ doc, params: { divId: 'video-slot-1' } });
+
+        expect(goldPlayerSpy.calledOnce).to.be.true;
+        expect(goldPlayerOptions.divContainerElement).to.equal(target);
+      });
+
+      it('mounts into the element named by ortb2Imp.ext.data.divId', function () {
+        const target = { id: 'fpd-slot', tagName: 'DIV' };
+        const doc = buildFakeDoc({ 'fpd-slot': target });
+        runRenderer({ adUnitCode: 'missing-slot', doc, ortb2Imp: { ext: { data: { divId: 'fpd-slot' } } } });
+
+        expect(goldPlayerSpy.calledOnce).to.be.true;
+        expect(goldPlayerOptions.divContainerElement).to.equal(target);
+      });
+
+      it('climbs from the GAM creative iframe to the page slot div (PUC flow)', function () {
+        const slotDiv = document.createElement('div');
+        slotDiv.id = 'page-slot';
+        const wrapper = document.createElement('div');
+        wrapper.id = 'google_ads_iframe_/123/site.com/slot_0__container__';
+        const iframe = document.createElement('iframe');
+        wrapper.appendChild(iframe);
+        slotDiv.appendChild(wrapper);
+        document.body.appendChild(slotDiv);
+        window.GoldPlayer = function GoldPlayer(opts) {
+          goldPlayerOptions = opts;
+          goldPlayerSpy(opts);
+          this.play = sinon.stub();
+        };
+        try {
+          runRenderer({ adUnitCode: '/123/site.com/slot', doc: document, creativeDoc: iframe.contentDocument });
+
+          expect(goldPlayerSpy.calledOnce).to.be.true;
+          expect(goldPlayerOptions.divContainerElement).to.equal(slotDiv);
+          expect(wrapper.style.display).to.equal('none');
+        } finally {
+          delete window.GoldPlayer;
+          document.body.removeChild(slotDiv);
+        }
+      });
+
+      it('falls back to rendering inside a sized same-origin creative iframe', function () {
+        const iframe = document.createElement('iframe');
+        iframe.width = '640';
+        iframe.height = '360';
+        document.body.appendChild(iframe);
+        iframe.contentWindow.GoldPlayer = function GoldPlayer(opts) {
+          goldPlayerOptions = opts;
+          goldPlayerSpy(opts);
+          this.play = sinon.stub();
+        };
+        try {
+          runRenderer({ adUnitCode: 'missing-slot', doc: buildFakeDoc({}), creativeDoc: iframe.contentDocument });
+
+          expect(goldPlayerSpy.calledOnce).to.be.true;
+          expect(goldPlayerOptions.divContainerElement).to.equal(iframe.contentDocument.body);
+        } finally {
+          document.body.removeChild(iframe);
+        }
+      });
+
+      it('survives a cross-origin page document and still falls back to the creative iframe', function () {
+        // Reaching into a foreign-origin page document throws; the resolver must treat
+        // that as "not found" and keep trying, not let the throw abort the render.
+        const crossOriginDoc = {
+          getElementById: sinon.spy(() => { throw new Error('SecurityError: Blocked a frame with origin'); }),
+          defaultView: {}
+        };
+        const iframe = document.createElement('iframe');
+        iframe.width = '640';
+        iframe.height = '360';
+        document.body.appendChild(iframe);
+        iframe.contentWindow.GoldPlayer = function GoldPlayer(opts) {
+          goldPlayerOptions = opts;
+          goldPlayerSpy(opts);
+          this.play = sinon.stub();
+        };
+        try {
+          expect(() => runRenderer({
+            adUnitCode: 'missing-slot',
+            doc: crossOriginDoc,
+            creativeDoc: iframe.contentDocument
+          })).to.not.throw();
+
+          expect(crossOriginDoc.getElementById.called).to.be.true;
+          expect(goldPlayerSpy.calledOnce).to.be.true;
+          expect(goldPlayerOptions.divContainerElement).to.equal(iframe.contentDocument.body);
+        } finally {
+          document.body.removeChild(iframe);
+        }
+      });
+
+      it('refuses to render into a collapsed (1x1) creative iframe instead of playing invisibly', function () {
+        const iframe = document.createElement('iframe');
+        iframe.width = '1';
+        iframe.height = '1';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+        try {
+          runRenderer({ adUnitCode: 'missing-slot', doc: buildFakeDoc({}), creativeDoc: iframe.contentDocument });
+
+          expect(goldPlayerSpy.called).to.be.false;
+        } finally {
+          document.body.removeChild(iframe);
+        }
       });
 
       it('resolves a GAM-style adUnitCode (slashes and dots) via getElementById without throwing', function () {
@@ -625,6 +861,95 @@ describe('GoldbachBidAdapter', function () {
         expect(() => runRenderer({ adUnitCode: gamId, doc })).to.not.throw();
         expect(goldPlayerOptions.divContainerElement).to.equal(slotDiv);
         expect(doc.getElementById.calledWith(gamId)).to.be.true;
+      });
+
+      function interpretVideoResponse(bidRequests) {
+        const bidderRequest = deepClone(validBidderRequest);
+        bidderRequest.bids = bidRequests;
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bidResponse = deepClone({ body: validOrtbBidResponse });
+        bidResponse.body.seatbid[0].bid[1].adm =
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><VAST version="4.0"></VAST>';
+        bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
+        return spec.interpretResponse(bidResponse, request);
+      }
+
+      it('keeps its own renderer when the publisher renderer is backupOnly', function () {
+        const bidRequests = deepClone(validBidRequests);
+        bidRequests[1].renderer = { url: 'https://publisher.example/player.js', render: () => {}, backupOnly: true };
+        const response = interpretVideoResponse(bidRequests);
+
+        expect(response.filter(bid => !!bid.renderer).length).to.equal(1);
+      });
+
+      it('defers to a publisher renderer that is not backupOnly', function () {
+        const bidRequests = deepClone(validBidRequests);
+        bidRequests[1].renderer = { url: 'https://publisher.example/player.js', render: () => {} };
+        const response = interpretVideoResponse(bidRequests);
+
+        expect(response.filter(bid => !!bid.renderer).length).to.equal(0);
+      });
+
+      it('collapses the leftover ad server frame when exactly one is present', function () {
+        const slotDiv = document.createElement('div');
+        slotDiv.id = 'out-slot-single';
+        const wrapper = document.createElement('div');
+        wrapper.id = 'google_ads_iframe_/123/out_0__container__';
+        wrapper.appendChild(document.createElement('iframe'));
+        slotDiv.appendChild(wrapper);
+        document.body.appendChild(slotDiv);
+        window.GoldPlayer = function GoldPlayer(opts) {
+          goldPlayerOptions = opts;
+          goldPlayerSpy(opts);
+          this.play = sinon.stub();
+        };
+        try {
+          runRenderer({ adUnitCode: 'out-slot-single', doc: document });
+
+          expect(goldPlayerSpy.calledOnce).to.be.true;
+          expect(goldPlayerOptions.divContainerElement).to.equal(slotDiv);
+          expect(wrapper.style.display).to.equal('none');
+        } finally {
+          delete window.GoldPlayer;
+          document.body.removeChild(slotDiv);
+        }
+      });
+
+      it('hides nothing when several ad server frames could be the leftover', function () {
+        const slotDiv = document.createElement('div');
+        slotDiv.id = 'out-slot-crowded';
+        const firstWrapper = document.createElement('div');
+        firstWrapper.id = 'google_ads_iframe_/123/other_0__container__';
+        const secondWrapper = document.createElement('div');
+        secondWrapper.id = 'google_ads_iframe_/123/out_0__container__';
+        slotDiv.appendChild(firstWrapper);
+        slotDiv.appendChild(secondWrapper);
+        document.body.appendChild(slotDiv);
+        window.GoldPlayer = function GoldPlayer(opts) {
+          goldPlayerOptions = opts;
+          goldPlayerSpy(opts);
+          this.play = sinon.stub();
+        };
+        try {
+          runRenderer({ adUnitCode: 'out-slot-crowded', doc: document });
+
+          expect(goldPlayerSpy.calledOnce).to.be.true;
+          expect(firstWrapper.style.display).to.not.equal('none');
+          expect(secondWrapper.style.display).to.not.equal('none');
+        } finally {
+          delete window.GoldPlayer;
+          document.body.removeChild(slotDiv);
+        }
+      });
+
+      it('reports a render failure metric when the player script fails to load', function () {
+        const videoBid = interpretVideoResponse(deepClone(validBidRequests)).find(bid => !!bid.renderer);
+
+        videoBid.renderer.callback.error(new Error('blocked'));
+
+        const metricsCall = ajaxStub.getCalls().find((call) => String(call.args[2]).includes('creative_render_failed'));
+        expect(metricsCall).to.exist;
+        expect(String(metricsCall.args[2])).to.include('player script failed to load');
       });
     });
   }

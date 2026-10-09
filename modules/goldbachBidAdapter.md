@@ -20,6 +20,8 @@ Connects publishers to the Goldbach SSP. Supported media types: **banner**, **vi
 | `publisherId`     | required | string  | Non-empty publisher identifier provisioned by Goldbach.                | `'de-publisher.ch-ios'`       |
 | `slotId`          | optional | string  | Publisher-defined slot identifier. Falls back to `adUnit.code`.        | `'/123/example.com/slot/key'` |
 | `customTargeting` | optional | object  | Free-form key/value targeting forwarded to the Goldbach auction.       | `{ language: 'de' }`          |
+| `auctionType`     | optional | string  | `'full'` (default) or `'fast'`, provisioned by Goldbach per publisher. | `'fast'`                      |
+| `divId`           | optional | string  | Outstream container element id, when `adUnit.code` cannot resolve it.  | `'video-slot-1'`              |
 
 ## Disclosures
 
