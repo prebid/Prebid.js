@@ -1219,13 +1219,16 @@ describe('floxisBidAdapter', function () {
 
     it('reports each timed-out seat from core ad unit params once across ad units', function () {
       const adUnits = [
-        { code: 'timeout-unit-1', bids: [
-          { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
-          { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
-          { bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } },
-          { bidder: 'floxis', params: {} },
-          { bidder: 'other', params: { seat: 'unrelated' } }
-        ] },
+        {
+          code: 'timeout-unit-1',
+          bids: [
+            { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
+            { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
+            { bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } },
+            { bidder: 'floxis', params: {} },
+            { bidder: 'other', params: { seat: 'unrelated' } }
+          ]
+        },
         { code: 'timeout-unit-2', bids: [{ bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } }] }
       ];
       adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'floxis', adUnitCode: code, auctionId: 'private-auction' })), 2000);

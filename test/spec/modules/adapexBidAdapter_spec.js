@@ -827,13 +827,16 @@ describe('adapexBidAdapter', function () {
     describe('onTimeout', function () {
       it('reports each timed-out seat from core ad unit params once across ad units', function () {
         const adUnits = [
-          { code: 'timeout-unit-1', bids: [
-            { bidder: 'adapex', params: { seat: 'Gmtb' } },
-            { bidder: 'adapex', params: { seat: 'Gmtb' } },
-            { bidder: 'adapex', params: { seat: 'Seat2' } },
-            { bidder: 'adapex', params: {} },
-            { bidder: 'other', params: { seat: 'unrelated' } }
-          ] },
+          {
+            code: 'timeout-unit-1',
+            bids: [
+              { bidder: 'adapex', params: { seat: 'Gmtb' } },
+              { bidder: 'adapex', params: { seat: 'Gmtb' } },
+              { bidder: 'adapex', params: { seat: 'Seat2' } },
+              { bidder: 'adapex', params: {} },
+              { bidder: 'other', params: { seat: 'unrelated' } }
+            ]
+          },
           { code: 'timeout-unit-2', bids: [{ bidder: 'adapex', params: { seat: 'Seat2' } }] }
         ];
         adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'adapex', adUnitCode: code, auctionId: 'private-auction' })), 2000);
