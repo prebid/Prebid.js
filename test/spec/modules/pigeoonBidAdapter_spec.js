@@ -260,6 +260,10 @@ describe('pigeoonBidAdapter', function () {
       params: [{ networkId: 'net_ABC123', placementId: '12345678' }]
     };
 
+    it('should not define onBidViewable (viewability is measured in the render page)', function () {
+      expect(spec.onBidViewable).to.equal(undefined);
+    });
+
     it('should send notifications as GET requests', function () {
       spec.onBidWon(wonBid);
 
@@ -276,13 +280,6 @@ describe('pigeoonBidAdapter', function () {
       expect(url).to.contain('nid=net_ABC123');
       expect(url).to.contain('pid=12345678');
       expect(url).to.contain('li=7454993267');
-    });
-
-    it('onBidViewable should notify viewable', function () {
-      spec.onBidViewable(wonBid);
-
-      expect(server.requests).to.have.length(1);
-      expect(server.requests[0].url).to.contain('https://pbjs.pigeoon.com/viewable?');
     });
 
     it('should use the config that matches the rendered placement when the ad unit has several Pigeoon configs', function () {

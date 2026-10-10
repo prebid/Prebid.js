@@ -247,18 +247,11 @@ export const spec = {
 
   /**
    * Our bid also won in the publisher's ad server.
+   * Viewability is measured inside the Pigeoon render page, so no onBidViewable handler is needed.
    * @param {object} bid
    */
   onBidWon: function (bid) {
     notifyBidEvent('prebidwon', bid);
-  },
-
-  /**
-   * Our impression became viewable (requires the bidViewability module).
-   * @param {object} bid
-   */
-  onBidViewable: function (bid) {
-    notifyBidEvent('viewable', bid);
   }
 };
 
