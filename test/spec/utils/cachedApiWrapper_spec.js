@@ -1,4 +1,4 @@
-import { CachedApiWrapper } from '../../../src/utils/cachedApiWrapper.js';
+import { CachedApiWrapper, LIVE } from '../../../src/utils/cachedApiWrapper.js';
 
 describe('cachedApiWrapper', () => {
   let target, child, grandchild, wrapper;
@@ -12,6 +12,7 @@ describe('cachedApiWrapper', () => {
     };
     wrapper = new CachedApiWrapper(() => target, {
       prop1: true,
+      liveProp: LIVE,
       child: {
         prop2: true,
         grandchild: {
@@ -53,5 +54,22 @@ describe('cachedApiWrapper', () => {
     wrapper.reset();
     child.prop2 = 'newValue';
     expect(wrapper.obj.child.prop2).to.eql('newValue');
+  });
+
+  describe('LIVE properties', () => {
+    it('should not cache the result', () => {
+      target.liveProp = 'value';
+      expect(wrapper.obj.liveProp).to.eql('value');
+      target.liveProp = 'newValue';
+      expect(wrapper.obj.liveProp).to.eql('newValue');
+    });
+
+    it('should stay live across reset()', () => {
+      target.liveProp = 'value';
+      expect(wrapper.obj.liveProp).to.eql('value');
+      wrapper.reset();
+      target.liveProp = 'newValue';
+      expect(wrapper.obj.liveProp).to.eql('newValue');
+    });
   });
 });
