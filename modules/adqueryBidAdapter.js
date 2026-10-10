@@ -288,25 +288,35 @@ export const spec = {
   }
 };
 
-function buildRequest(bid, bidderRequest, isVideo = false) {
-  let userId = null;
+function getFirstUid(eid) {
+  return Array.isArray(eid?.uids) ? eid.uids.find(uid => uid?.id)?.id || '' : '';
+}
 
-  const eids = bid.userIdAsEids;
-  if (Array.isArray(eids)) {
-    const adqueryEid = eids.find(eid => eid.source === 'adquery.io');
-    userId = adqueryEid?.uids?.[0]?.id;
+// adquery.io EID first; otherwise the EID of another source chosen by source name,
+// so the same set of EIDs always yields the same user id regardless of module order.
+function getUserIdFromEids(bid) {
+  if (!Array.isArray(bid.userIdAsEids)) {
+    return '';
+  }
 
-    if (!userId) {
-      userId = eids[0]?.uids?.[0]?.id;
+  let fallback = null;
+  for (const eid of bid.userIdAsEids) {
+    const id = getFirstUid(eid);
+    if (!id || typeof eid?.source !== 'string') {
+      continue;
+    }
+    if (eid.source === 'adquery.io') {
+      return id;
+    }
+    if (!fallback || eid.source.localeCompare(fallback.source) < 0) {
+      fallback = { source: eid.source, id };
     }
   }
+  return fallback ? fallback.id : '';
+}
 
-  if (!userId) {
-    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    const randomPart = randomValues.map(val => val.toString(36)).join('').substring(0, 26);
-    userId = `qd_${randomPart}`;
-    logMessage('generated onetime User ID: ', userId);
-  }
+function buildRequest(bid, bidderRequest, isVideo = false) {
+  const userId = getUserIdFromEids(bid);
 
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {
