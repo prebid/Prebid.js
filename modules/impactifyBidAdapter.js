@@ -473,12 +473,11 @@ export const spec = {
     }
 
     let params = '';
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        params += `?gdpr_consent=${gdprConsent.consentString}`;
-      }
+    if (typeof gdprConsent?.gdprApplies === 'boolean') {
+      params += `?gdpr=${Number(gdprConsent.gdprApplies)}`;
+    }
+    if (typeof gdprConsent?.consentString === 'string') {
+      params += `${params ? '&' : '?'}gdpr_consent=${gdprConsent.consentString}`;
     }
 
     if (uspConsent) {
