@@ -1,5 +1,10 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import adapterManager from 'src/adapterManager.js';
+import { registerActivityControl } from 'src/activities/rules.js';
+import { ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD } from 'src/activities/activities.js';
+import { isValid } from 'src/adapters/bidderFactory.js';
+import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { spec, storage } from 'modules/floxisBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
@@ -35,13 +40,15 @@ describe('floxisBidAdapter', function () {
     bidId: 'bid-3',
     bidder: 'floxis',
     adUnitCode: 'adunit-native',
+    adUnitId: 'native-unit',
     mediaTypes: {
       native: {
         image: { required: true, sizes: [150, 50] },
         title: { required: true, len: 80 }
       }
     },
-    params: { ...DEFAULT_PARAMS }
+    params: { ...DEFAULT_PARAMS },
+    nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }, { id: 2, required: 1, img: { type: 3, w: 150, h: 50 } }] }
   };
 
   describe('isBidRequestValid', function () {
@@ -163,6 +170,11 @@ describe('floxisBidAdapter', function () {
       };
       const requests = spec.buildRequests([bidWithBadRegion], bidderRequest);
       expect(requests).to.be.an('array').that.is.empty;
+    });
+
+    it('rejects a combined partner-region host label longer than 63 characters', function () {
+      const bid = { ...validBannerBid, params: { seat: 'Gmtb', partner: 'p'.repeat(32), region: 'r'.repeat(32) } };
+      expect(spec.buildRequests([bid], bidderRequest)).to.be.empty;
     });
 
     it('should default region to us-e when missing', function () {
@@ -344,7 +356,7 @@ describe('floxisBidAdapter', function () {
         expect(imp.bidfloorcur).to.equal('USD');
       });
 
-      it('should set bidfloor from getFloor and default bidfloorcur when currency is absent', function () {
+      it('should leave a floor without currency unsignaled, as core requires', function () {
         const bidNoCurrencyFloor = {
           ...validBannerBid,
           getFloor: function () {
@@ -353,8 +365,8 @@ describe('floxisBidAdapter', function () {
         };
         const requests = spec.buildRequests([bidNoCurrencyFloor], bidderRequest);
         const imp = requests[0].data.imp[0];
-        expect(imp.bidfloor).to.equal(1.5);
-        expect(imp.bidfloorcur).to.equal('USD');
+        expect(imp.bidfloor).to.be.undefined;
+        expect(imp.bidfloorcur).to.be.undefined;
       });
     });
 
@@ -577,6 +589,62 @@ describe('floxisBidAdapter', function () {
 
         expect(data.user.ext.floxisId).to.equal(STORED_UUID);
         expect(generateUUIDStub.called).to.be.false;
+      });
+
+      [ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD].forEach((activity) => {
+        it(`does not resolve or transmit a fallback id when ${activity} is denied`, function () {
+          localStorageIsEnabledStub.returns(true);
+          cookiesAreEnabledStub.returns(true);
+          getDataFromLocalStorageStub.returns(null);
+          getCookieStub.returns(null);
+          const unregister = registerActivityControl(activity, 'floxis test', (params) => {
+            if (params.componentName === 'floxis') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+            expect(data.user?.ext?.floxisId).to.be.undefined;
+            expect(localStorageIsEnabledStub.called).to.be.false;
+            expect(cookiesAreEnabledStub.called).to.be.false;
+            expect(generateUUIDStub.called).to.be.false;
+          } finally {
+            unregister();
+          }
+          expect(spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        });
+
+        it(`removes a publisher id when ${activity} is denied and restores it when allowed`, function () {
+          const req = { ...floxisIdBidderRequest, ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: { floxisId: STORED_UUID, wlid: STORED_UUID, consent: 'consent' } } } };
+          const unregister = registerActivityControl(activity, 'floxis test', (params) => {
+            if (params.componentName === 'floxis') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], req)[0].data;
+            expect(data.user.ext).to.deep.equal({ consent: 'consent' });
+            expect(localStorageIsEnabledStub.called).to.be.false;
+            expect(generateUUIDStub.called).to.be.false;
+          } finally {
+            unregister();
+          }
+          expect(spec.buildRequests([validBannerBid], req)[0].data.user.ext.floxisId).to.equal(STORED_UUID);
+        });
+
+        it(`uses the alias identity for ${activity} controls`, function () {
+          localStorageIsEnabledStub.returns(true);
+          cookiesAreEnabledStub.returns(true);
+          getDataFromLocalStorageStub.returns(null);
+          getCookieStub.returns(null);
+          const unregister = registerActivityControl(activity, 'floxis alias test', (params) => {
+            if (params.componentName === 'floxis_alias') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], { ...floxisIdBidderRequest, bidderCode: 'floxis_alias' })[0].data;
+            expect(data.user?.ext?.floxisId).to.be.undefined;
+            expect(localStorageIsEnabledStub.called).to.be.false;
+            expect(spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data.user.ext.floxisId).to.equal(STUBBED_UUID);
+          } finally {
+            unregister();
+          }
+        });
       });
 
       it('still sets the id when publisher ortb2 supplies a non-object user', function () {
@@ -876,6 +944,14 @@ describe('floxisBidAdapter', function () {
         expect(bids[0].mediaType).to.equal(NATIVE);
         expect(bids[0].cpm).to.equal(2.75);
         expect(bids[0].burl).to.equal(BURL);
+        expect(JSON.parse(request.data.imp[0].native.request).assets).to.deep.equal(validNativeBid.nativeOrtbRequest.assets);
+        const native = JSON.parse(nativeAdm);
+        expect(bids[0].native.ortb).to.deep.equal(native);
+        const bid = { ...bids[0], adUnitId: validNativeBid.adUnitId };
+        const index = stubAuctionIndex({ bidRequests: [validNativeBid], adUnits: [{ ...validNativeBid }] });
+        expect(isValid(validNativeBid.adUnitCode, bid, { index })).to.be.true;
+        const incomplete = { ...bid, native: { ortb: { ...native, assets: [native.assets[0]] } } };
+        expect(isValid(validNativeBid.adUnitCode, incomplete, { index })).to.be.false;
       });
     }
 
@@ -940,6 +1016,11 @@ describe('floxisBidAdapter', function () {
     it('should ignore a malformed sync header that lacks a valid region', function () {
       const malformed = syncResponse('seat=Gmtb&region=evil.com/x');
       expect(spec.getUserSyncs({ iframeEnabled: true }, [malformed])).to.be.an('array').that.is.empty;
+    });
+
+    it('rejects a sync host whose px-region label exceeds 63 characters', function () {
+      const response = syncResponse(`seat=Gmtb&region=${'r'.repeat(61)}`);
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [response])).to.be.empty;
     });
 
     it('should emit an iframe sync to the region trackers host for the seat', function () {
@@ -1136,6 +1217,27 @@ describe('floxisBidAdapter', function () {
 
     const beaconUrl = (i = 0) => politeStub.getCall(i).args[0];
 
+    it('reports each timed-out seat from core ad unit params once across ad units', function () {
+      const adUnits = [
+        {
+          code: 'timeout-unit-1',
+          bids: [
+            { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
+            { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
+            { bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } },
+            { bidder: 'floxis', params: {} },
+            { bidder: 'other', params: { seat: 'unrelated' } }
+          ]
+        },
+        { code: 'timeout-unit-2', bids: [{ bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } }] }
+      ];
+      adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'floxis', adUnitCode: code, auctionId: 'private-auction' })), 2000);
+      expect(politeStub.getCalls().map(({ args }) => args)).to.deep.equal([
+        ['https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000', 'omit'],
+        ['https://px-us-e.floxis.tech/event?event=timeout&seat=Seat2&region=eu&duration=2000', 'omit']
+      ]);
+    });
+
     it('should fire a timeout event beacon to the pinned us-e host', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
       expect(politeStub.calledOnce).to.be.true;
@@ -1145,7 +1247,7 @@ describe('floxisBidAdapter', function () {
       expect(url).to.include('seat=Gmtb');
       expect(url).to.include('region=us-e');
       expect(url).to.include('duration=2000');
-      expect(url).to.include('auctionId=a1');
+      expect(url).not.to.match(/[?&]auctionId=/);
     });
 
     it('should send the beacon cookieless via politeTriggerPixel (credentials omitted)', function () {
@@ -1236,7 +1338,7 @@ describe('floxisBidAdapter', function () {
       expect(url).to.include('region=us-e');
       expect(url).to.include('status=500');
       expect(url).to.include('timedout=0');
-      expect(url).to.include('auctionId=a1');
+      expect(url).not.to.match(/[?&]auctionId=/);
     });
 
     it('should send the beacon cookieless via politeTriggerPixel (credentials omitted)', function () {
@@ -1289,7 +1391,7 @@ describe('floxisBidAdapter', function () {
       expect(politeStub.callCount).to.equal(1);
     });
 
-    it('should emit one beacon per distinct seat+region pair', function () {
+    it('should omit a split-request error without an identifiable target', function () {
       spec.onBidderError({
         error: { status: 503, timedOut: false },
         bidderRequest: {
@@ -1300,7 +1402,21 @@ describe('floxisBidAdapter', function () {
           ]
         }
       });
-      expect(politeStub.callCount).to.equal(2);
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('matches the normalized response hostname for uppercase routing labels', function () {
+      spec.onBidderError({
+        error: { status: 503, responseURL: 'https://foo-us-e.floxis.tech/pbjs?seat=Gmtb&gzip=1' },
+        bidderRequest: makeBidderRequest({
+          bids: [
+            { params: { seat: 'Gmtb', region: 'US-E', partner: 'Foo' } },
+            { params: { seat: 'Seat2', region: 'us-e' } }
+          ]
+        })
+      });
+      expect(politeStub.calledOnce).to.be.true;
+      expect(beaconUrl()).to.include('seat=Gmtb&region=US-E');
     });
 
     it('should not throw when bidderRequest is missing', function () {
