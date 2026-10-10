@@ -8,6 +8,8 @@ import {
 } from 'libraries/vastTrackers/vastTrackers.js';
 import { MODULE_TYPE_ANALYTICS } from '../../../src/activities/modules.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
+import { cachedVideoImpressionVerifier, tracker as bidTracker } from 'modules/videoModule/videoImpressionVerifier.js';
+import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 
 // Helper functions to reduce code duplication
 function createPlaybackTracker() {
@@ -391,6 +393,76 @@ describe('vast trackers', () => {
       expect(trackers.impression).to.have.lengthOf(1);
       expect(trackers.error).to.be.an('array').that.is.empty;
       expect(trackers.trackingEvents).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('trackers already in the vastXml', () => {
+    const existingUrl = 'https://bidder.com/existing';
+    const newUrl = 'https://bidder.com/new';
+
+    function parse(vastXml) {
+      return new DOMParser().parseFromString(vastXml, 'text/xml');
+    }
+
+    function textsOf(doc, selector) {
+      return Array.from(doc.querySelectorAll(selector)).map(node => node.textContent);
+    }
+
+    it('should not insert an impression url the wrapper already has', function () {
+      const vastXml = `<VAST><Ad><Wrapper><Impression><![CDATA[${existingUrl}]]></Impression></Wrapper></Ad></VAST>`;
+
+      const result = insertVastTrackers({ impression: [existingUrl, newUrl], error: [], trackingEvents: [] }, vastXml);
+
+      expect(textsOf(parse(result), 'Wrapper > Impression')).to.deep.equal([existingUrl, newUrl]);
+    });
+
+    it('should not insert an error url the wrapper already has', function () {
+      const vastXml = `<VAST><Ad><Wrapper><Error><![CDATA[${existingUrl}]]></Error></Wrapper></Ad></VAST>`;
+
+      const result = insertVastTrackers({ impression: [], error: [existingUrl, newUrl], trackingEvents: [] }, vastXml);
+
+      expect(textsOf(parse(result), 'Wrapper > Error')).to.deep.equal([existingUrl, newUrl]);
+    });
+
+    it('should not insert a tracking event the linear element already has', function () {
+      const vastXml = `<VAST><Ad><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[${existingUrl}]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>`;
+
+      const result = insertVastTrackers({ impression: [], error: [], trackingEvents: [{ event: 'start', url: existingUrl }] }, vastXml);
+
+      expect(textsOf(parse(result), 'Tracking[event="start"]')).to.deep.equal([existingUrl]);
+    });
+
+    it('should not duplicate the bidder vast trackers already in the wrapper built by the video module', function () {
+      const bidderImpressionUrl = 'https://bidder.com/impression';
+      const bidderErrorUrl = 'https://bidder.com/error';
+      const bidderStartUrl = 'https://bidder.com/start';
+      const videoBid = {
+        ...bid,
+        adId: 'a1',
+        vastUrl: 'https://vast.example.com/tag',
+        vastTrackers: {
+          impression: [bidderImpressionUrl],
+          error: [bidderErrorUrl],
+          trackingEvents: [{ event: 'start', url: bidderStartUrl }]
+        }
+      };
+      cachedVideoImpressionVerifier(vastXmlEditorFactory(), bidTracker()).trackBid(videoBid);
+
+      updateVastHook({ index })(sinon.stub(), videoBid);
+
+      const doc = parse(videoBid.vastXml);
+      const countOf = (selector, url) => textsOf(doc, selector).filter(text => text === url).length;
+      expect(countOf('Wrapper > Impression', bidderImpressionUrl)).to.equal(1);
+      expect(countOf('Wrapper > Error', bidderErrorUrl)).to.equal(1);
+      expect(countOf('Tracking[event="start"]', bidderStartUrl)).to.equal(1);
+    });
+
+    it('should insert a tracking event whose url exists under a different event', function () {
+      const vastXml = `<VAST><Ad><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[${existingUrl}]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>`;
+
+      const result = insertVastTrackers({ impression: [], error: [], trackingEvents: [{ event: 'complete', url: existingUrl }] }, vastXml);
+
+      expect(textsOf(parse(result), 'Tracking[event="complete"]')).to.deep.equal([existingUrl]);
     });
   });
 
