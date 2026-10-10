@@ -277,12 +277,12 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   deepSetValue(request, 'site.publisher.id', accountId);
 
   // Handle privacy settings for GDPR/CCPA/COPPA
-  let gdprApplies = 0;
   if (bidderRequest?.gdprConsent) {
-    if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    }
     deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
-  deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
   if (GET_CONFIG('coppa') === true) deepSetValue(request, 'regs.coppa', 1);
 
