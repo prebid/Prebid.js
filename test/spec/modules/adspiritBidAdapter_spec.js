@@ -1342,7 +1342,10 @@ describe('Adspirit Bidder Spec', function () {
         expect(result).to.have.lengthOf(2);
         expect(result[0]).to.deep.include({
           requestId: 'banner-request-001',
-          cpm: 0.7, creativeId: 'creative-1', currency: 'USD', ttl: 300
+          cpm: 0.7,
+          creativeId: 'creative-1',
+          currency: 'USD',
+          ttl: 300
         });
         expect(result[0].meta.advertiserDomains).to.deep.equal(['brand.example']);
         expect(result[1]).to.deep.include({ cpm: 1.3, creativeId: 'imp-2', ttl: 45 });
@@ -1351,9 +1354,9 @@ describe('Adspirit Bidder Spec', function () {
 
       it('retains non-native seatbid markup as a non-native bid, without interpreting JSON', function () {
         const result = spec.interpretResponse({
-          body: { seatbid: [{ bid: [{
-            impid: 'imp-1', price: 1, adm: '  <div>Banner</div>'
-          }] }] }
+          body: {
+            seatbid: [{ bid: [{ impid: 'imp-1', price: 1, adm: '  <div>Banner</div>' }] }]
+          }
         }, makeBannerRequest());
         expect(result).to.have.lengthOf(1);
         expect(result[0]).to.not.have.property('native');
@@ -1484,20 +1487,24 @@ describe('Adspirit Bidder Spec', function () {
         });
 
         it('uses empty fallbacks for matched title, data and image properties', function () {
-          const ortb = { assets: [
-            { id: 1, title: {} },
-            { id: 2, img: {} },
-            { id: 3, data: {} }
-          ] };
+          const ortb = {
+            assets: [
+              { id: 1, title: {} },
+              { id: 2, img: {} },
+              { id: 3, data: {} }
+            ]
+          };
           const result = spec.interpretResponse({
             body: { seatbid: [{ bid: [{ price: 1, impid: 'imp-1', adm: { native: ortb } }] }] }
           }, {
             ...makeBannerRequest(),
-            nativeOrtbRequest: { assets: [
-              { id: 1, title: { len: 50 } },
-              { id: 2, img: { type: 1 } },
-              { id: 3, data: { type: 12 } }
-            ] }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 1, title: { len: 50 } },
+                { id: 2, img: { type: 1 } },
+                { id: 3, data: { type: 12 } }
+              ]
+            }
           });
           expect(result[0].native.title).to.equal('');
           expect(result[0].native.icon).to.deep.equal({ url: '', width: null, height: null });
@@ -1505,42 +1512,54 @@ describe('Adspirit Bidder Spec', function () {
         });
 
         it('stores unknown and duplicate native asset types in extra fields', function () {
-          const ortb = { assets: [
-            { id: 1, title: { text: 'Main title' } },
-            { id: 2, title: { text: 'Second title' } },
-            { id: 3, data: { value: 'Custom type' } },
-            { id: 4, img: { url: 'https://cdn.example/img.png', w: 80, h: 60 } },
-            { id: 4, img: { url: 'https://cdn.example/extra.png' } }
-          ] };
+          const ortb = {
+            assets: [
+              { id: 1, title: { text: 'Main title' } },
+              { id: 2, title: { text: 'Second title' } },
+              { id: 3, data: { value: 'Custom type' } },
+              { id: 4, img: { url: 'https://cdn.example/img.png', w: 80, h: 60 } },
+              { id: 4, img: { url: 'https://cdn.example/extra.png' } }
+            ]
+          };
           const result = spec.interpretResponse({
             body: { seatbid: [{ bid: [{ price: 1, impid: 'imp-1', adm: { native: ortb } }] }] }
           }, {
             ...makeBannerRequest(),
-            nativeOrtbRequest: { assets: [
-              { id: 1, title: { len: 50 } },
-              { id: 2, title: { len: 30 } },
-              { id: 3, data: { type: 99 } },
-              { id: 4, img: { type: 3 } }
-            ] }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 1, title: { len: 50 } },
+                { id: 2, title: { len: 30 } },
+                { id: 3, data: { type: 99 } },
+                { id: 4, img: { type: 3 } }
+              ]
+            }
           });
           const native = result[0].native;
           expect(native.title).to.equal('Main title');
           expect(native.data_2_extra0).to.equal('Second title');
           expect(native.data_3_extra0).to.equal('Custom type');
           expect(native.image).to.deep.equal({
-            url: 'https://cdn.example/img.png', width: 80, height: 60
+            url: 'https://cdn.example/img.png',
+            width: 80,
+            height: 60
           });
           expect(native.image_4_extra1).to.deep.equal({
-            url: 'https://cdn.example/extra.png', width: null, height: null
+            url: 'https://cdn.example/extra.png',
+            width: null,
+            height: null
           });
         });
 
         it('skips unexpected native bids but continues processing other seats', function () {
           const result = spec.interpretResponse({
-            body: { seatbid: [{ bid: [
-              { price: 1, impid: 'native-imp', adm: { native: { assets: [{ id: 1, title: { text: 'Ignored' } }] } } },
-              { price: 2, impid: 'other-imp', adm: '<div>Regular markup</div>' }
-            ] }] }
+            body: {
+              seatbid: [{
+                bid: [
+                  { price: 1, impid: 'native-imp', adm: { native: { assets: [{ id: 1, title: { text: 'Ignored' } }] } } },
+                  { price: 2, impid: 'other-imp', adm: '<div>Regular markup</div>' }
+                ]
+              }]
+            }
           }, makeBannerRequest());
           expect(result).to.have.lengthOf(1);
           expect(result[0].cpm).to.equal(2);
@@ -1550,5 +1569,4 @@ describe('Adspirit Bidder Spec', function () {
       }
     });
   });
-
 });
