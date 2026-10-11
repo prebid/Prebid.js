@@ -278,7 +278,7 @@ export function handleVideoBidCaching({
     : bidResponse.renderer?.requiresVastUrl;
   const rendererNeedsVastUrl = bidResponse.mediaType === 'video' && context === OUTSTREAM &&
     activeRendererRequiresVastUrl === true && !bidResponse.vastUrl;
-  const cacheDisabled = videoMediaType?.cache === false;
+  const cacheDisabled = bidResponse.mediaType === 'video' && videoMediaType?.cache === false;
   if (rendererNeedsVastUrl && (!bidResponse.vastXml || cacheDisabled || (!useLocal && !cacheUrl))) {
     logError('Video renderer requires vastUrl, but this bid has no VAST XML or video cache is disabled');
     afterBidAdded();

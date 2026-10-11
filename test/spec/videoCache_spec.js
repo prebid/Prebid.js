@@ -629,6 +629,7 @@ describe('The video cache', function () {
       const addBidReceived = sinon.stub();
       const afterBidAdded = sinon.stub();
       const bidResponse = {
+        mediaType: 'video',
         vastUrl: 'https://bidder.example/vast',
         vastXml: '<VAST version="3.0"></VAST>'
       };
@@ -653,8 +654,8 @@ describe('The video cache', function () {
       const storeStub = sandbox.stub(_internal, 'store').callsFake((bids, done) => {
         finishStore = done;
       });
-      const cachedBid = { vastXml: '<VAST version="3.0"></VAST>' };
-      const cachelessBid = { vastUrl: 'https://bidder.example/vast' };
+      const cachedBid = { mediaType: 'video', vastXml: '<VAST version="3.0"></VAST>' };
+      const cachelessBid = { mediaType: 'video', vastUrl: 'https://bidder.example/vast' };
       const cachedAuction = { addBidReceived: sinon.stub() };
       const cachelessAuction = { addBidReceived: sinon.stub() };
       const cachedDone = sinon.stub();
@@ -690,7 +691,7 @@ describe('The video cache', function () {
     it('lets video.cache false override useCacheKey for outstream', function () {
       config.setConfig({ cache: { url: 'https://test.cache.url/endpoint' } });
       const storeStub = sandbox.stub(_internal, 'store');
-      const bidResponse = { vastUrl: 'https://bidder.example/vast' };
+      const bidResponse = { mediaType: 'video', vastUrl: 'https://bidder.example/vast' };
       const addBidReceived = sinon.stub();
 
       handleVideoBidCaching({
