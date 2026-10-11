@@ -216,6 +216,22 @@ describe('pigeoonBidAdapter', function () {
       expect(bids[0].ad).to.equal(undefined);
     });
 
+    it('should render creative markup directly when adm is HTML', function () {
+      const markup = '<div><img src="https://cdn.example.com/ad.png"></div>';
+      const bids = spec.interpretResponse(serverResponse({ adm: markup }), buildRequest());
+
+      expect(bids[0].ad).to.equal(markup);
+      expect(bids[0].adUrl).to.equal(undefined);
+    });
+
+    it('should treat adm with leading whitespace before markup as markup', function () {
+      const markup = '  \n<div>ad</div>';
+      const bids = spec.interpretResponse(serverResponse({ adm: markup }), buildRequest());
+
+      expect(bids[0].ad).to.equal(markup);
+      expect(bids[0].adUrl).to.equal(undefined);
+    });
+
     it('should return an empty array for an empty response', function () {
       expect(spec.interpretResponse({ body: {} }, buildRequest())).to.deep.equal([]);
     });
@@ -260,7 +276,7 @@ describe('pigeoonBidAdapter', function () {
       params: [{ networkId: 'net_ABC123', placementId: '12345678' }]
     };
 
-    it('should not define onBidViewable (viewability is measured in the render page)', function () {
+    it('should not define onBidViewable (viewability is measured in the rendered creative)', function () {
       expect(spec.onBidViewable).to.equal(undefined);
     });
 
@@ -305,6 +321,16 @@ describe('pigeoonBidAdapter', function () {
 
     it('should not notify when the render url has no bid id', function () {
       spec.onBidWon(Object.assign({}, wonBid, { adUrl: 'https://pbjs.pigeoon.com/render' }));
+
+      expect(server.requests).to.have.length(0);
+    });
+
+    it('should not notify for a markup bid, whose creative reports its own events', function () {
+      spec.onBidWon({
+        creativeId: '7454993267',
+        ad: '<div>ad</div>',
+        params: [{ networkId: 'net_ABC123', placementId: '12345678' }]
+      });
 
       expect(server.requests).to.have.length(0);
     });

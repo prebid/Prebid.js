@@ -99,6 +99,7 @@ function notify(path, params) {
 /**
  * Placement and line item come from the render URL of this exact bid, so the
  * event is attributed correctly even if the ad unit has several Pigeoon configs.
+ * Bids that carry creative markup have no render URL; their markup reports its own events.
  * @param {string} path
  * @param {object} bid
  */
@@ -119,6 +120,15 @@ function notifyBidEvent(path, bid) {
     pid: placementId,
     li: String(lineItemId)
   });
+}
+
+/**
+ * True when adm holds creative markup rather than a render URL.
+ * @param {*} adm
+ * @returns {boolean}
+ */
+function isMarkup(adm) {
+  return typeof adm === 'string' && adm.trim().charAt(0) === '<';
 }
 
 /**
@@ -155,9 +165,11 @@ const converter = ortbConverter({
     context.mediaType = BANNER;
     // nurl is not used: impressions are counted server-side only when the creative actually renders.
     const bidResponse = buildBidResponse({ ...bid, nurl: undefined }, context);
-    // adm carries the render URL, not markup.
-    bidResponse.adUrl = bid.adm;
-    delete bidResponse.ad;
+    // adm carries either a render URL (opened in an iframe) or the creative markup (rendered as is).
+    if (!isMarkup(bid.adm)) {
+      bidResponse.adUrl = bid.adm;
+      delete bidResponse.ad;
+    }
     // Pigeoon returns its line item id in adid; crid is only a fallback.
     bidResponse.creativeId = bid.adid || bid.crid;
     return bidResponse;
@@ -247,7 +259,7 @@ export const spec = {
 
   /**
    * Our bid also won in the publisher's ad server.
-   * Viewability is measured inside the Pigeoon render page, so no onBidViewable handler is needed.
+   * Viewability is measured inside the rendered creative, so no onBidViewable handler is needed.
    * @param {object} bid
    */
   onBidWon: function (bid) {
