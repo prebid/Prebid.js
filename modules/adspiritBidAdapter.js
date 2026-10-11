@@ -272,8 +272,8 @@ export const spec = {
           advertiserDomains: adData.adomain || []
         }
       };
-	  // Allows our ad script to render into the surrounding page instead of
-// staying inside the iframe (special ad formats). Publisher opt-out.
+      // Allows our ad script to render into the surrounding page instead of
+      // staying inside the iframe (special ad formats). Publisher opt-out.
       const breakoutParam = bidObj.params?.allowIframeBreakout;
       const allowIframeBreakout = !(
         breakoutParam === false ||
@@ -347,8 +347,6 @@ export const spec = {
 
     return bidResponses;
   },
-
-
 
   getBidderHost: function (bid) {
     if (bid.bidder === 'adspirit') {
