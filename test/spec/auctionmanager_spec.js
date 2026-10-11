@@ -12,7 +12,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import { _internal as store, updateVast } from 'src/videoCache.js';
+import { _internal as store, updateVast, vastLocalCache } from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
 import { hook } from '../../src/hook.js';
@@ -2322,6 +2322,60 @@ describe('auctionmanager.js', function () {
           assert.equal(doneSpy.callCount, 1);
         });
       }
+
+      Object.entries({ audio: FEATURES.AUDIO, video: FEATURES.VIDEO }).forEach(([mediaType, enabled]) => {
+        if (!enabled) return;
+        [false, true].forEach(useLocal => {
+          it(`keeps ${mediaType} caching independent of the video opt-out with ${useLocal ? 'local' : 'remote'} cache`, async () => {
+            config.setConfig({ cache: useLocal ? { useLocal: true } : { url: 'https://test.cache.url/endpoint' } });
+            const bid = {
+              ...mockBid(),
+              mediaType,
+              vastXml: '<VAST version="3.0"></VAST>'
+            };
+            bidRequests = [mockBidRequest(bid, {
+              mediaType: {
+                audio: {},
+                video: { context: 'instream', cache: false }
+              }
+            })];
+            auction.addBidReceived = sinon.spy();
+            const cbs = auctionCallbacks(doneSpy, auction);
+            try {
+              cbs.addBidResponse(ADUNIT_CODE, bid);
+              cbs.adapterDone.call(bidRequests[0]);
+              await ready;
+
+              if (mediaType === 'audio' && !useLocal) {
+                expect(server.requests).to.have.lengthOf(1);
+                sinon.assert.notCalled(auction.addBidReceived);
+                sinon.assert.notCalled(doneSpy);
+                server.requests[0].respond(200, { 'Content-Type': 'application/json' },
+                  JSON.stringify({ responses: [{ uuid: 'audio-cache-key' }] }));
+              } else {
+                expect(server.requests).to.have.lengthOf(0);
+              }
+              sinon.assert.calledOnce(auction.addBidReceived);
+              sinon.assert.calledOnce(doneSpy);
+              const accepted = auction.addBidReceived.firstCall.args[0];
+              if (mediaType === 'audio') {
+                expect(accepted.videoCacheKey).to.be.a('string').and.not.be.empty;
+                expect(accepted.vastUrl).to.include(useLocal ? 'blob:' : 'https://test.cache.url/endpoint');
+              } else {
+                expect(accepted.videoCacheKey).to.not.exist;
+                expect(accepted.vastUrl).to.not.exist;
+              }
+            } finally {
+              const accepted = auction.addBidReceived.firstCall?.args[0];
+              const localUrl = vastLocalCache.get(accepted?.videoCacheKey);
+              if (localUrl) {
+                URL.revokeObjectURL(localUrl);
+                vastLocalCache.delete(accepted.videoCacheKey);
+              }
+            }
+          });
+        });
+      });
 
       it('should convert cpm to number', () => {
         auction.addBidReceived = sinon.spy();
