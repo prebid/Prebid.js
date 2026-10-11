@@ -497,9 +497,11 @@ describe('Adspirit Bidder Spec', function () {
     const validBidRequestMock = {
       bidRequest: {
         bidId: '123456',
+        adspiritConId: 'adspirit12345',
         bidder: 'adspirit',
         params: {
           placementId: '57',
+          host: 'test.adspirit.de',
           adomain: ['test.adspirit.de']
         }
       }
@@ -540,8 +542,9 @@ describe('Adspirit Bidder Spec', function () {
       });
 
       expect(bid).to.have.property('mediaType', 'banner');
-      expect(bid.ad).to.include('<script>window.inDapIF=false</script>');
-      expect(bid.ad).to.include('<div>Banner Ad Content</div>');
+      expect(bid.ad).to.include('<script>window.inDapIF=true;</script>');
+      expect(bid.ad).to.include('var id="adspirit12345";');
+      expect(bid.ad).to.include('\\u003cdiv>Banner Ad Content\\u003c/div>');
     });
 
     it('should return empty array if banner ad response has missing CPM', function () {
@@ -1029,4 +1032,523 @@ describe('Adspirit Bidder Spec', function () {
       });
     }
   });
+
+  // Additional branch and regression coverage for the current adapter.
+  // Keep the fixtures local: there is no network traffic or dependency on live bidders.
+  describe('additional regression coverage', function () {
+    const makeBid = (options = {}) => {
+      const { params = {}, mediaTypes, ...other } = options;
+      return {
+        bidId: 'bid-test-001',
+        bidder: 'adspirit',
+        adUnitCode: 'unit-test-div',
+        params: {
+          placementId: '99',
+          host: 'ads.example.test',
+          ...params
+        },
+        mediaTypes: mediaTypes === undefined
+          ? { banner: { sizes: [[300, 250]] } }
+          : mediaTypes,
+        ...other
+      };
+    };
+
+    const makeAuction = (options = {}) => ({
+      auctionId: 'auction-test-001',
+      refererInfo: { topmostLocation: 'https://publisher.example/page?a=1' },
+      ...options
+    });
+
+    const makeBannerRequest = (params = {}) => ({
+      bidRequest: {
+        bidId: 'banner-request-001',
+        bidder: 'adspirit',
+        adspiritConId: 'adspirit12345',
+        params: {
+          placementId: '99',
+          host: 'ads.example.test',
+          ...params
+        }
+      }
+    });
+
+    const makeBannerResponse = (body = {}) => ({
+      body: {
+        cpm: 1.5,
+        w: 300,
+        h: 250,
+        adm: '<div>Example</div>',
+        ...body
+      }
+    });
+
+    describe('metadata and validation', function () {
+      it('declares both supported media types', function () {
+        expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'native']);
+      });
+
+      it('accepts Twiago with placementId and no explicit host', function () {
+        expect(spec.isBidRequestValid({
+          bidder: 'twiago',
+          params: { placementId: '9128' }
+        })).to.be.true;
+      });
+
+      it('rejects AdSpirit without a host, even if placementId exists', function () {
+        expect(spec.isBidRequestValid({
+          bidder: 'adspirit',
+          params: { placementId: '99' }
+        })).to.be.false;
+      });
+
+      it('rejects Twiago without a placementId', function () {
+        expect(spec.isBidRequestValid({
+          bidder: 'twiago',
+          params: {}
+        })).to.be.false;
+      });
+
+      it('rejects an unsupported bidder even if its params are filled', function () {
+        expect(spec.isBidRequestValid({
+          bidder: 'other',
+          params: { placementId: '99', host: 'ads.example.test' }
+        })).to.be.false;
+      });
+
+      it('generates a bidder-prefixed connection ID', function () {
+        const id = spec.genAdConId({ bidder: 'twiago' });
+        expect(id).to.match(/^twiago\d{1,6}$/);
+        const numericPart = Number(id.slice('twiago'.length));
+        expect(numericPart).to.be.at.least(0);
+        expect(numericPart).to.be.at.most(100000);
+      });
+    });
+
+    describe('buildRequests details', function () {
+      it('returns no POST requests when there are no bids', function () {
+        expect(spec.buildRequests([], makeAuction())).to.deep.equal([]);
+      });
+
+      it('creates the full banner POST payload and retains the connection ID', function () {
+        const bid = makeBid();
+        const [request] = spec.buildRequests([bid], makeAuction());
+        const payload = JSON.parse(request.data);
+        const dimensions = getWinDimensions();
+
+        expect(request.method).to.equal('POST');
+        expect(request.headers).to.deep.equal({ 'Content-Type': 'application/json' });
+        expect(request.bidRequest).to.equal(bid);
+        expect(request.nativeOrtbRequest).to.be.undefined;
+        expect(bid.adspiritConId).to.match(/^adspirit\d+$/);
+        expect(request.url).to.include(`&async=${bid.adspiritConId}`);
+        expect(request.url).to.include('//ads.example.test/rtb/getbid.php?rtbprovider=prebid');
+        expect(request.url).to.include('&pid=99');
+        expect(request.url).to.include('&ref=' + encodeURIComponent('https://publisher.example/page?a=1'));
+        expect(request.url).to.include(`&scx=${dimensions.screen?.width || 0}`);
+        expect(request.url).to.include(`&scy=${dimensions.screen?.height || 0}`);
+        expect(request.url).to.match(/&t=\d+$/);
+
+        expect(payload.id).to.equal('auction-test-001');
+        expect(payload.at).to.equal(1);
+        expect(payload.cur).to.deep.equal(['EUR']);
+        expect(payload.imp).to.have.lengthOf(1);
+        expect(payload.imp[0]).to.deep.include({
+          id: 'bid-test-001',
+          bidfloor: 0,
+          bidfloorcur: 'EUR',
+          secure: 1
+        });
+        expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+        expect(payload.imp[0].ext.placementId).to.equal('99');
+        expect(payload.imp[0]).to.not.have.property('native');
+        expect(payload.site.domain).to.equal('publisher.example');
+        expect(payload.site.page).to.equal('https://publisher.example/page?a=1');
+        expect(payload.ext.oat).to.equal(1);
+        expect(payload.ext.adUnitCode.code).to.equal('unit-test-div');
+        expect(payload.ext.adUnitCode.mediaTypes).to.deep.equal(bid.mediaTypes);
+        expect(payload.ext.prebidVersion).to.equal(payload.ext.adUnitCode.prebidVersion);
+      });
+
+      it('constructs multiple independent requests with their own placement IDs', function () {
+        const bids = [
+          makeBid({ bidId: 'bid-one', params: { placementId: '101' } }),
+          makeBid({ bidId: 'bid-two', params: { placementId: '102' } })
+        ];
+        const requests = spec.buildRequests(bids, makeAuction());
+        expect(requests).to.have.lengthOf(2);
+        expect(requests[0].url).to.include('&pid=101');
+        expect(requests[1].url).to.include('&pid=102');
+        expect(JSON.parse(requests[0].data).imp[0].id).to.equal('bid-one');
+        expect(JSON.parse(requests[1].data).imp[0].id).to.equal('bid-two');
+        expect(requests[0].bidRequest).to.equal(bids[0]);
+        expect(requests[1].bidRequest).to.equal(bids[1]);
+      });
+
+      it('sends Twiago bids to the fixed Twiago host without requiring params.host', function () {
+        const bid = makeBid({
+          bidder: 'twiago',
+          params: { placementId: '9128', host: undefined }
+        });
+        const [request] = spec.buildRequests([bid], makeAuction());
+        expect(request.url).to.include('//a.twiago.com/rtb/getbid.php?rtbprovider=prebid');
+        expect(request.url).to.include('&pid=9128');
+        expect(bid.adspiritConId).to.match(/^twiago\d+$/);
+      });
+
+      it('serializes all banner sizes and leaves native absent', function () {
+        const bid = makeBid({ mediaTypes: { banner: { sizes: [[300, 250], [728, 90], [320, 50]] } } });
+        const payload = JSON.parse(spec.buildRequests([bid], makeAuction())[0].data);
+        expect(payload.imp[0].banner.format).to.deep.equal([
+          { w: 300, h: 250 },
+          { w: 728, h: 90 },
+          { w: 320, h: 50 }
+        ]);
+        expect(payload.imp[0]).to.not.have.property('native');
+      });
+
+      it('omits banner when the sizes array is empty', function () {
+        const bid = makeBid({ mediaTypes: { banner: { sizes: [] } } });
+        const payload = JSON.parse(spec.buildRequests([bid], makeAuction())[0].data);
+        expect(payload.imp[0]).to.not.have.property('banner');
+      });
+
+      it('omits URL GDPR flags when no consent object exists but sets OpenRTB defaults', function () {
+        const [request] = spec.buildRequests([makeBid()], makeAuction());
+        const payload = JSON.parse(request.data);
+        expect(request.url).to.not.include('&gdpr=');
+        expect(request.url).to.not.include('&gdpr_consent=');
+        expect(payload.regs.ext).to.deep.equal({ gdpr: 0, gdpr_consent: '' });
+        expect(payload.user.ext.consent).to.equal('');
+      });
+
+      it('percent-encodes a supplied consent string in the URL and repeats it in ORTB', function () {
+        const consentString = 'test+/= &';
+        const [request] = spec.buildRequests([makeBid()], makeAuction({
+          gdprConsent: { gdprApplies: true, consentString }
+        }));
+        const payload = JSON.parse(request.data);
+        expect(request.url).to.include('&gdpr=1&gdpr_consent=' + encodeURIComponent(consentString));
+        expect(payload.regs.ext.gdpr).to.equal(1);
+        expect(payload.regs.ext.gdpr_consent).to.equal(consentString);
+        expect(payload.user.ext.consent).to.equal(consentString);
+      });
+
+      it('uses GDPR=0 and an empty string when a consent object has missing fields', function () {
+        const [request] = spec.buildRequests([makeBid()], makeAuction({ gdprConsent: {} }));
+        const payload = JSON.parse(request.data);
+        expect(request.url).to.include('&gdpr=0&gdpr_consent=');
+        expect(payload.regs.ext).to.deep.equal({ gdpr: 0, gdpr_consent: '' });
+      });
+
+      it('uses empty publisher/user/geo defaults and excludes missing schain', function () {
+        const payload = JSON.parse(spec.buildRequests([makeBid()], makeAuction())[0].data);
+        expect(payload.site.id).to.equal('');
+        expect(payload.site.publisher).to.deep.equal({ id: '', name: '' });
+        expect(payload.user.data).to.deep.equal([]);
+        expect(payload.user.ext.eids).to.deep.equal([]);
+        expect(payload.device.geo).to.deep.equal({ lat: 0, lon: 0, country: '' });
+        expect(payload.device.ua).to.equal(navigator.userAgent);
+        expect(payload.device.language).to.equal((navigator.language || '').split('-')[0]);
+        expect(payload).to.not.have.property('source');
+      });
+
+      it('includes publisher fields, user data, EIDs and explicit geo coordinates', function () {
+        const bid = makeBid({
+          params: { siteId: 'site-1', publisherId: 'pub-1', publisherName: 'Publisher 1' },
+          userData: [{ name: 'audience', segment: [{ id: 'segment-1' }] }],
+          userIdAsEids: [{ source: 'example.test', uids: [{ id: 'user-1' }] }]
+        });
+        const payload = JSON.parse(spec.buildRequests([bid], makeAuction({
+          geo: { lat: 52.5, lon: 13.4, country: 'DE' }
+        }))[0].data);
+        expect(payload.site.id).to.equal('site-1');
+        expect(payload.site.publisher).to.deep.equal({ id: 'pub-1', name: 'Publisher 1' });
+        expect(payload.user.data).to.deep.equal(bid.userData);
+        expect(payload.user.ext.eids).to.deep.equal(bid.userIdAsEids);
+        expect(payload.device.geo).to.deep.equal({ lat: 52.5, lon: 13.4, country: 'DE' });
+      });
+
+      if (FEATURES.NATIVE) {
+        it('builds native-only bids from the normalized Prebid nativeOrtbRequest', function () {
+          const nativeOrtbRequest = {
+            ver: '1.2',
+            assets: [
+              { id: 1, required: 1, title: { len: 100 } },
+              { id: 2, required: 1, img: { type: 3, wmin: 300, hmin: 250 } }
+            ]
+          };
+          const bid = makeBid({
+            mediaTypes: { native: { ortb: nativeOrtbRequest } },
+            nativeOrtbRequest
+          });
+          const [request] = spec.buildRequests([bid], makeAuction());
+          const payload = JSON.parse(request.data);
+          expect(payload.imp[0]).to.not.have.property('banner');
+          expect(payload.imp[0].native.ver).to.equal('1.2');
+          expect(JSON.parse(payload.imp[0].native.request)).to.deep.equal(nativeOrtbRequest);
+          expect(request.nativeOrtbRequest).to.equal(nativeOrtbRequest);
+        });
+
+        it('does not request native if Prebid did not supply nativeOrtbRequest', function () {
+          const bid = makeBid({
+            mediaTypes: { native: { ortb: { assets: [{ id: 1, title: { len: 50 } }] } } }
+          });
+          const [request] = spec.buildRequests([bid], makeAuction());
+          const payload = JSON.parse(request.data);
+          expect(payload.imp[0]).to.not.have.property('native');
+          expect(request.nativeOrtbRequest).to.be.undefined;
+          // Incomplete native must not be constructed directly from mediaTypes.native.
+          expect(payload.ext.adUnitCode.mediaTypes.native).to.deep.equal(bid.mediaTypes.native);
+        });
+
+        it('retains the native request configuration without mutating input assets or trackers', function () {
+          const nativeOrtbRequest = {
+            ver: '1.2',
+            assets: [{ id: 1, title: { len: 50 } }],
+            eventtrackers: [{ event: 2, methods: [1] }]
+          };
+          const bid = makeBid({
+            mediaTypes: { native: { ortb: nativeOrtbRequest } },
+            nativeOrtbRequest
+          });
+          const [request] = spec.buildRequests([bid], makeAuction());
+          const payload = JSON.parse(request.data);
+          expect(request.nativeOrtbRequest).to.equal(nativeOrtbRequest);
+          expect(payload.ext.adUnitCode.mediaTypes.native.ortb.eventtrackers).to.deep.equal(
+            nativeOrtbRequest.eventtrackers
+          );
+          expect(nativeOrtbRequest.assets).to.deep.equal([{ id: 1, title: { len: 50 } }]);
+        });
+      }
+    });
+
+    describe('interpretResponse edge cases', function () {
+      it('handles an empty seatbid list without producing bids', function () {
+        const result = spec.interpretResponse({ body: { seatbid: [] } }, makeBannerRequest());
+        expect(result).to.deep.equal([]);
+      });
+
+      it('flattens bids from multiple seats and keeps response-specific metadata', function () {
+        const result = spec.interpretResponse({
+          body: {
+            cur: 'USD',
+            seatbid: [
+              { bid: [{ impid: 'imp-1', price: 0.7, crid: 'creative-1', adomain: ['brand.example'] }] },
+              { bid: [{ impid: 'imp-2', price: 1.3, exp: 45 }] }
+            ]
+          }
+        }, makeBannerRequest());
+        expect(result).to.have.lengthOf(2);
+        expect(result[0]).to.deep.include({
+          requestId: 'banner-request-001',
+          cpm: 0.7, creativeId: 'creative-1', currency: 'USD', ttl: 300
+        });
+        expect(result[0].meta.advertiserDomains).to.deep.equal(['brand.example']);
+        expect(result[1]).to.deep.include({ cpm: 1.3, creativeId: 'imp-2', ttl: 45 });
+        expect(result[1].meta.advertiserDomains).to.deep.equal([]);
+      });
+
+      it('retains non-native seatbid markup as a non-native bid, without interpreting JSON', function () {
+        const result = spec.interpretResponse({
+          body: { seatbid: [{ bid: [{
+            impid: 'imp-1', price: 1, adm: '  <div>Banner</div>'
+          }] }] }
+        }, makeBannerRequest());
+        expect(result).to.have.lengthOf(1);
+        expect(result[0]).to.not.have.property('native');
+        expect(result[0]).to.not.have.property('mediaType');
+      });
+
+      it('maps a traditional banner response with optional advertiser domains', function () {
+        const result = spec.interpretResponse(makeBannerResponse({ adomain: ['advertiser.example'] }), makeBannerRequest());
+        expect(result).to.have.lengthOf(1);
+        expect(result[0].meta.advertiserDomains).to.deep.equal(['advertiser.example']);
+        expect(result[0].creativeId).to.equal('99');
+        expect(result[0].mediaType).to.equal('banner');
+      });
+
+      it('uses the connection ID produced by buildRequests in the banner renderer', function () {
+        const bid = makeBid();
+        const [request] = spec.buildRequests([bid], makeAuction());
+        const [result] = spec.interpretResponse(makeBannerResponse(), request);
+        expect(result.ad).to.include('var id=' + JSON.stringify(bid.adspiritConId) + ';');
+        expect(request.bidRequest.adspiritConId).to.equal(bid.adspiritConId);
+      });
+
+      it('returns no traditional banner bid when CPM is zero', function () {
+        expect(spec.interpretResponse(makeBannerResponse({ cpm: 0 }), makeBannerRequest())).to.deep.equal([]);
+      });
+
+      it('defaults iframe breakout to true and uses the correct host, id and renderer', function () {
+        const [bid] = spec.interpretResponse(makeBannerResponse(), makeBannerRequest());
+        expect(bid.ad).to.include('<script>window.inDapIF=true;</script>');
+        expect(bid.ad).to.include('<script src="//ads.example.test/adasync.min.js"></script>');
+        expect(bid.ad).to.include('var id="adspirit12345";');
+        expect(bid.ad).to.include('var scriptUrl="//ads.example.test/adasync.min.js";');
+        expect(bid.ad).to.include('renderer.write(id,markup);');
+        expect(bid.ad).to.include('var container=asm.inswrapper');
+        expect(bid.ad).to.include('asm.doc.addEventListener("DOMContentLoaded",start,{once:true})');
+      });
+
+      [false, 'false', 0, '0'].forEach(value => {
+        it('disables iframe breakout for allowIframeBreakout=' + JSON.stringify(value), function () {
+          const [bid] = spec.interpretResponse(makeBannerResponse(), makeBannerRequest({ allowIframeBreakout: value }));
+          expect(bid.ad).to.include('<script>window.inDapIF=false;</script>');
+        });
+      });
+
+      [true, 'true', 1, '1'].forEach(value => {
+        it('allows iframe breakout for allowIframeBreakout=' + JSON.stringify(value), function () {
+          const [bid] = spec.interpretResponse(makeBannerResponse(), makeBannerRequest({ allowIframeBreakout: value }));
+          expect(bid.ad).to.include('<script>window.inDapIF=true;</script>');
+        });
+      });
+
+      it('escapes < characters in the banner markup before embedding it into a script', function () {
+        const hostileMarkup = '</script><script>alert("x")</script><div>Safe</div>';
+        const [bid] = spec.interpretResponse(makeBannerResponse({ adm: hostileMarkup }), makeBannerRequest());
+        expect(bid.ad).to.include('\\u003c/script>');
+        expect(bid.ad).to.include('\\u003cscript>');
+        expect(bid.ad).to.include('\\u003cdiv>Safe\\u003c/div>');
+        expect(bid.ad).to.not.include(hostileMarkup);
+        expect(bid.ad).to.include('var markup=');
+      });
+
+      it('keeps a Twiago renderer on the Twiago host', function () {
+        const request = makeBannerRequest();
+        request.bidRequest.bidder = 'twiago';
+        delete request.bidRequest.params.host;
+        const [bid] = spec.interpretResponse(makeBannerResponse(), request);
+        expect(bid.ad).to.include('<script src="//a.twiago.com/adasync.min.js"></script>');
+        expect(bid.ad).to.include('var scriptUrl="//a.twiago.com/adasync.min.js";');
+      });
+
+      if (FEATURES.NATIVE) {
+        it('accepts a native ADM object directly and keeps all OpenRTB event trackers', function () {
+          const ortb = {
+            assets: [{ id: 1, title: { text: 'Native title' } }],
+            link: { url: 'https://click.example.test/' },
+            imptrackers: ['https://track.example.test/impression'],
+            eventtrackers: [{ event: 2, method: 1, url: 'https://track.example.test/view' }]
+          };
+          const result = spec.interpretResponse({
+            body: { seatbid: [{ bid: [{ price: 2.1, impid: 'imp-1', adm: { native: ortb } }] }] }
+          }, {
+            ...makeBannerRequest(),
+            nativeOrtbRequest: { assets: [{ id: 1, title: { len: 40 } }] }
+          });
+          expect(result).to.have.lengthOf(1);
+          expect(result[0].mediaType).to.equal('native');
+          expect(result[0].native.title).to.equal('Native title');
+          expect(result[0].native.clickUrl).to.equal('https://click.example.test/');
+          expect(result[0].native.impressionTrackers).to.deep.equal(['https://track.example.test/impression']);
+          expect(result[0].native.ortb.eventtrackers).to.deep.equal(ortb.eventtrackers);
+        });
+
+        it('normalizes a JSON native ADM string with leading whitespace', function () {
+          const ortb = { assets: [{ id: 1, title: { text: 'Whitespace title' } }] };
+          const result = spec.interpretResponse({
+            body: { seatbid: [{ bid: [{ price: 1, impid: 'imp-1', adm: '  ' + JSON.stringify({ native: ortb }) }] }] }
+          }, {
+            ...makeBannerRequest(),
+            nativeOrtbRequest: { assets: [{ id: 1, title: { len: 40 } }] }
+          });
+          expect(result[0].native.title).to.equal('Whitespace title');
+          expect(result[0].native.ortb).to.deep.equal(ortb);
+        });
+
+        it('does not treat a native ADM without assets as a usable native bid', function () {
+          const result = spec.interpretResponse({
+            body: { seatbid: [{ bid: [{ price: 1, impid: 'imp-1', adm: { native: { link: { url: 'https://click.example' } } } }] }] }
+          }, {
+            ...makeBannerRequest(),
+            nativeOrtbRequest: { assets: [{ id: 1, title: { len: 40 } }] }
+          });
+          expect(result).to.have.lengthOf(1);
+          expect(result[0]).to.not.have.property('native');
+        });
+
+        it('uses defaults when native imptrackers is not an array and link is absent', function () {
+          const ortb = {
+            assets: [],
+            imptrackers: 'https://track.example.test/wrong-format'
+          };
+          const result = spec.interpretResponse({
+            body: { seatbid: [{ bid: [{ price: 1, impid: 'imp-1', adm: { native: ortb } }] }] }
+          }, { ...makeBannerRequest(), nativeOrtbRequest: { assets: [] } });
+          expect(result).to.have.lengthOf(1);
+          expect(result[0].native.clickUrl).to.equal('');
+          expect(result[0].native.impressionTrackers).to.deep.equal([]);
+          expect(result[0].native.ortb).to.equal(ortb);
+        });
+
+        it('uses empty fallbacks for matched title, data and image properties', function () {
+          const ortb = { assets: [
+            { id: 1, title: {} },
+            { id: 2, img: {} },
+            { id: 3, data: {} }
+          ] };
+          const result = spec.interpretResponse({
+            body: { seatbid: [{ bid: [{ price: 1, impid: 'imp-1', adm: { native: ortb } }] }] }
+          }, {
+            ...makeBannerRequest(),
+            nativeOrtbRequest: { assets: [
+              { id: 1, title: { len: 50 } },
+              { id: 2, img: { type: 1 } },
+              { id: 3, data: { type: 12 } }
+            ] }
+          });
+          expect(result[0].native.title).to.equal('');
+          expect(result[0].native.icon).to.deep.equal({ url: '', width: null, height: null });
+          expect(result[0].native.cta).to.equal('');
+        });
+
+        it('stores unknown and duplicate native asset types in extra fields', function () {
+          const ortb = { assets: [
+            { id: 1, title: { text: 'Main title' } },
+            { id: 2, title: { text: 'Second title' } },
+            { id: 3, data: { value: 'Custom type' } },
+            { id: 4, img: { url: 'https://cdn.example/img.png', w: 80, h: 60 } },
+            { id: 4, img: { url: 'https://cdn.example/extra.png' } }
+          ] };
+          const result = spec.interpretResponse({
+            body: { seatbid: [{ bid: [{ price: 1, impid: 'imp-1', adm: { native: ortb } }] }] }
+          }, {
+            ...makeBannerRequest(),
+            nativeOrtbRequest: { assets: [
+              { id: 1, title: { len: 50 } },
+              { id: 2, title: { len: 30 } },
+              { id: 3, data: { type: 99 } },
+              { id: 4, img: { type: 3 } }
+            ] }
+          });
+          const native = result[0].native;
+          expect(native.title).to.equal('Main title');
+          expect(native.data_2_extra0).to.equal('Second title');
+          expect(native.data_3_extra0).to.equal('Custom type');
+          expect(native.image).to.deep.equal({
+            url: 'https://cdn.example/img.png', width: 80, height: 60
+          });
+          expect(native.image_4_extra1).to.deep.equal({
+            url: 'https://cdn.example/extra.png', width: null, height: null
+          });
+        });
+
+        it('skips unexpected native bids but continues processing other seats', function () {
+          const result = spec.interpretResponse({
+            body: { seatbid: [{ bid: [
+              { price: 1, impid: 'native-imp', adm: { native: { assets: [{ id: 1, title: { text: 'Ignored' } }] } } },
+              { price: 2, impid: 'other-imp', adm: '<div>Regular markup</div>' }
+            ] }] }
+          }, makeBannerRequest());
+          expect(result).to.have.lengthOf(1);
+          expect(result[0].cpm).to.equal(2);
+          expect(result[0].creativeId).to.equal('other-imp');
+          expect(result[0]).to.not.have.property('native');
+        });
+      }
+    });
+  });
+
 });
