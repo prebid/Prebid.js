@@ -2321,6 +2321,29 @@ describe('auctionmanager.js', function () {
           server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
           assert.equal(doneSpy.callCount, 1);
         });
+
+        it('preserves a supplied video cache URL and key when opting out despite ignoreBidderCacheKey', async () => {
+          config.setConfig({ cache: { url: 'https://test.cache.url/endpoint', ignoreBidderCacheKey: true } });
+          const vastUrl = 'https://bidder.example/cache?uuid=supplied-key';
+          const videoCacheKey = 'supplied-key';
+          const bid = { ...mockBid(), mediaType: 'video', vastUrl, videoCacheKey };
+          bidRequests = [mockBidRequest(bid, {
+            mediaType: { video: { context: 'instream', cache: false } }
+          })];
+          auction.addBidReceived = sinon.spy();
+          const cbs = auctionCallbacks(doneSpy, auction);
+
+          cbs.addBidResponse(ADUNIT_CODE, bid);
+          cbs.adapterDone.call(bidRequests[0]);
+          await ready;
+
+          expect(server.requests).to.have.lengthOf(0);
+          sinon.assert.calledOnce(auction.addBidReceived);
+          sinon.assert.calledOnce(doneSpy);
+          const accepted = auction.addBidReceived.firstCall.args[0];
+          expect(accepted.vastUrl).to.equal(vastUrl);
+          expect(accepted.videoCacheKey).to.equal(videoCacheKey);
+        });
       }
 
       Object.entries({ audio: FEATURES.AUDIO, video: FEATURES.VIDEO }).forEach(([mediaType, enabled]) => {

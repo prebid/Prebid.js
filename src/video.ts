@@ -66,8 +66,10 @@ export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<
   context?: VideoContext;
   playerSize?: Size | Size[];
   /**
-   * Set to false to skip Prebid Cache for this ad unit's video bids. When omitted,
-   * the global cache configuration and existing outstream rules apply.
+   * Set to false to skip remote and local caching by Prebid.js for this ad unit's
+   * video bids. Omitted or true uses the global configuration and existing outstream rules.
+   * This does not control caching by Prebid Server or bidders, or remove supplied
+   * VAST URLs and cache keys.
    */
   cache?: boolean;
 }
