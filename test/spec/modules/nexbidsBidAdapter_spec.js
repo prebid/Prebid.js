@@ -196,25 +196,22 @@ describe('NexBids bid adapter', function () {
       expect(requests[0].url.indexOf(TEST_HOST + '/openrtb2/auction?')).to.equal(0);
     });
 
-    it('honours an explicit endpoint origin override, stripping trailing slashes', function () {
-      config.setConfig({ nexbids: { env: 'test', endpoint: 'http://localhost:8082/' } });
-      const bids = [makeBid()];
-      const requests = spec.buildRequests(bids, makeBidderRequest(bids));
-      expect(requests[0].url).to.equal('http://localhost:8082/openrtb2/auction?publisherId=Pub-aaaaaaaaaaaaaaaa');
-    });
-
-    it('ignores an endpoint override that is not an http(s) origin', function () {
-      config.setConfig({ nexbids: { endpoint: 'localhost:8082' } });
-      const bids = [makeBid()];
-      const requests = spec.buildRequests(bids, makeBidderRequest(bids));
-      expect(requests[0].url.indexOf(PROD_HOST)).to.equal(0);
+    it('keeps the gateway domain fixed even if an unsupported endpoint setting is supplied', function () {
+      ['http://localhost:8082', 'https://other.example'].forEach((endpoint) => {
+        config.setConfig({ nexbids: { env: 'test', endpoint } });
+        const bids = [makeBid()];
+        const requests = spec.buildRequests(bids, makeBidderRequest(bids));
+        expect(requests[0].url).to.equal(TEST_HOST + '/openrtb2/auction?publisherId=Pub-aaaaaaaaaaaaaaaa');
+      });
     });
 
     it('falls back to production for an unknown env', function () {
-      config.setConfig({ nexbids: { env: 'nowhere' } });
-      const bids = [makeBid()];
-      const requests = spec.buildRequests(bids, makeBidderRequest(bids));
-      expect(requests[0].url.indexOf(PROD_HOST)).to.equal(0);
+      ['nowhere', '__proto__', 'constructor', 'toString'].forEach((env) => {
+        config.setConfig({ nexbids: { env } });
+        const bids = [makeBid()];
+        const requests = spec.buildRequests(bids, makeBidderRequest(bids));
+        expect(requests[0].url).to.equal(PROD_HOST + '/openrtb2/auction?publisherId=Pub-aaaaaaaaaaaaaaaa');
+      });
     });
 
     it('groups ad units by publisherId, one request per publisher, keeping first-seen order', function () {
@@ -233,6 +230,49 @@ describe('NexBids bid adapter', function () {
       expect(requests[1].data.imp.map((imp) => imp.id)).to.deep.equal(['bid-2']);
     });
 
+    it('keeps numeric publisher IDs in first-seen order and handles object property names', function () {
+      const ids = ['10', '2', '__proto__', 'constructor', '__proto__'];
+      const bids = ids.map((publisherId, index) => makeBid({
+        bidId: 'bid-' + index,
+        params: { publisherId, adUnitCode: 'Unit-' + index }
+      }));
+      const requests = spec.buildRequests(bids, makeBidderRequest(bids));
+
+      expect(requests.map((req) => req.url)).to.deep.equal([
+        PROD_HOST + '/openrtb2/auction?publisherId=10',
+        PROD_HOST + '/openrtb2/auction?publisherId=2',
+        PROD_HOST + '/openrtb2/auction?publisherId=__proto__',
+        PROD_HOST + '/openrtb2/auction?publisherId=constructor'
+      ]);
+      expect(requests[2].data.imp.map((imp) => imp.id)).to.deep.equal(['bid-2', 'bid-4']);
+    });
+
+    it('returns no requests when there are no valid bids', function () {
+      expect(spec.buildRequests([], makeBidderRequest([]))).to.deep.equal([]);
+    });
+
+    if (!FEATURES.VIDEO && !FEATURES.NATIVE) {
+      it('keeps banner bidding usable when video and native are disabled', function () {
+        const bid = makeNativeBid({
+          mediaTypes: {
+            banner: { sizes: [[320, 50]] },
+            video: { context: 'instream', playerSize: [[640, 360]] },
+            native: { ortb: NATIVE_REQUEST }
+          }
+        });
+        const request = requestFor(bid);
+        const imp = request.data.imp[0];
+
+        expect(imp.banner.format).to.deep.equal([{ w: 320, h: 50 }]);
+        expect(imp.video).to.be.undefined;
+        expect(imp.native).to.be.undefined;
+        const [response] = spec.interpretResponse({ body: makeOrtbResponse() }, request);
+        expect(response.mediaType).to.equal('banner');
+        expect(response.ad).to.equal('<div>ad</div>');
+        expect(response.burl).to.equal(PROD_HOST + '/openrtb2/track/pixel?t=token-imp');
+      });
+    }
+
     it('builds imp with bidId, tagid, banner format from sizes, secure and default mimes', function () {
       const bids = [makeBid()];
       const { data } = spec.buildRequests(bids, makeBidderRequest(bids))[0];
@@ -248,26 +288,30 @@ describe('NexBids bid adapter', function () {
       expect(imp.native).to.be.undefined;
     });
 
-    it('builds a video imp from mediaTypes.video without banner mimes', function () {
-      const bids = [makeVideoBid()];
-      const imp = spec.buildRequests(bids, makeBidderRequest(bids))[0].data.imp[0];
+    if (FEATURES.VIDEO) {
+      it('builds a video imp from mediaTypes.video without banner mimes', function () {
+        const bids = [makeVideoBid()];
+        const imp = spec.buildRequests(bids, makeBidderRequest(bids))[0].data.imp[0];
 
-      expect(imp.tagid).to.equal('Unit-1111111111111111');
-      expect(imp.video).to.include({ w: 640, h: 360, plcmt: 1, minduration: 5, maxduration: 30 });
-      expect(imp.video.mimes).to.deep.equal(['video/mp4']);
-      expect(imp.video.protocols).to.deep.equal([2, 3, 5, 6]);
-      expect(imp.video.context).to.be.undefined;
-      expect(imp.banner).to.be.undefined;
-    });
+        expect(imp.tagid).to.equal('Unit-1111111111111111');
+        expect(imp.video).to.include({ w: 640, h: 360, plcmt: 1, minduration: 5, maxduration: 30 });
+        expect(imp.video.mimes).to.deep.equal(['video/mp4']);
+        expect(imp.video.protocols).to.deep.equal([2, 3, 5, 6]);
+        expect(imp.video.context).to.be.undefined;
+        expect(imp.banner).to.be.undefined;
+      });
+    }
 
-    it('builds a native imp from the ORTB native request', function () {
-      const bids = [makeNativeBid()];
-      const imp = spec.buildRequests(bids, makeBidderRequest(bids))[0].data.imp[0];
+    if (FEATURES.NATIVE) {
+      it('builds a native imp from the ORTB native request', function () {
+        const bids = [makeNativeBid()];
+        const imp = spec.buildRequests(bids, makeBidderRequest(bids))[0].data.imp[0];
 
-      expect(imp.native.ver).to.equal('1.2');
-      expect(JSON.parse(imp.native.request).assets).to.deep.equal(NATIVE_REQUEST.assets);
-      expect(imp.banner).to.be.undefined;
-    });
+        expect(imp.native.ver).to.equal('1.2');
+        expect(JSON.parse(imp.native.request).assets).to.deep.equal(NATIVE_REQUEST.assets);
+        expect(imp.banner).to.be.undefined;
+      });
+    }
 
     it('keeps publisher-provided banner mimes from ortb2Imp', function () {
       const bids = [makeBid({ ortb2Imp: { banner: { mimes: ['image/png'] } } })];
@@ -377,59 +421,76 @@ describe('NexBids bid adapter', function () {
       expect(bids[0].burl).to.be.undefined;
     });
 
-    it('uses the gateway mtype for a video bid and exposes the VAST as vastXml', function () {
-      const videoRequest = requestFor(makeVideoBid());
-      const [bid] = spec.interpretResponse({ body: makeOrtbResponse({ mtype: 2, adm: VAST }) }, videoRequest);
+    if (FEATURES.VIDEO) {
+      it('uses the gateway mtype for a video bid and exposes the VAST as vastXml', function () {
+        const videoRequest = requestFor(makeVideoBid());
+        const [bid] = spec.interpretResponse({ body: makeOrtbResponse({ mtype: 2, adm: VAST }) }, videoRequest);
 
-      expect(bid.mediaType).to.equal('video');
-      expect(bid.vastXml).to.equal(VAST);
-      expect(bid.playerWidth).to.equal(640);
-      expect(bid.playerHeight).to.equal(360);
-      expect(bid.burl).to.equal(PROD_HOST + '/openrtb2/track/pixel?t=token-imp');
-    });
+        expect(bid.mediaType).to.equal('video');
+        expect(bid.vastXml).to.equal(VAST);
+        expect(bid.playerWidth).to.equal(640);
+        expect(bid.playerHeight).to.equal(360);
+        expect(bid.burl).to.equal(PROD_HOST + '/openrtb2/track/pixel?t=token-imp');
+      });
+    }
 
-    it('infers video from the imp when mtype is missing', function () {
-      const [bid] = spec.interpretResponse({ body: makeOrtbResponse({ adm: VAST }) }, requestFor(makeVideoBid()));
-      expect(bid.mediaType).to.equal('video');
-    });
+    if (FEATURES.VIDEO) {
+      it('infers video from the imp when mtype is missing', function () {
+        const [bid] = spec.interpretResponse({ body: makeOrtbResponse({ adm: VAST }) }, requestFor(makeVideoBid()));
+        expect(bid.mediaType).to.equal('video');
+      });
+    }
 
-    it('sniffs the creative on a multi-format imp when mtype is missing', function () {
-      const multi = requestFor(makeVideoBid({
-        mediaTypes: { banner: { sizes: [[320, 50]] }, video: { context: 'instream', playerSize: [[640, 360]] } }
-      }));
-      expect(spec.interpretResponse({ body: makeOrtbResponse({ adm: '<?xml version="1.0"?>\n' + VAST }) }, multi)[0].mediaType).to.equal('video');
-      expect(spec.interpretResponse({ body: makeOrtbResponse({ adm: '<div>ad</div>' }) }, multi)[0].mediaType).to.equal('banner');
-      const bannerNative = requestFor(makeNativeBid({
-        mediaTypes: { banner: { sizes: [[320, 50]] }, native: { ortb: NATIVE_REQUEST } }
-      }));
-      expect(spec.interpretResponse({ body: makeOrtbResponse({ adm: JSON.stringify(NATIVE_RESPONSE) }) }, bannerNative)[0].mediaType).to.equal('native');
-    });
+    if (FEATURES.VIDEO) {
+      it('sniffs VAST on a banner/video imp when mtype is missing', function () {
+        const multi = requestFor(makeVideoBid({
+          mediaTypes: { banner: { sizes: [[320, 50]] }, video: { context: 'instream', playerSize: [[640, 360]] } }
+        }));
+        expect(spec.interpretResponse({ body: makeOrtbResponse({ adm: '<?xml version="1.0"?>\n' + VAST }) }, multi)[0].mediaType).to.equal('video');
+        expect(spec.interpretResponse({ body: makeOrtbResponse({ adm: '<div>ad</div>' }) }, multi)[0].mediaType).to.equal('banner');
+      });
+    }
 
-    it('maps a native bid onto native.ortb and adds the absolute click beacon to link.clicktrackers', function () {
-      const adm = JSON.stringify(Object.assign({}, NATIVE_RESPONSE, { link: { url: 'https://landing.example', clicktrackers: ['https://dsp.example/c'] } }));
-      const [bid] = spec.interpretResponse({ body: makeOrtbResponse({ mtype: 4, adm }) }, requestFor(makeNativeBid()));
+    if (FEATURES.NATIVE) {
+      it('sniffs native JSON on a banner/native imp when mtype is missing', function () {
+        const multi = requestFor(makeNativeBid({
+          mediaTypes: { banner: { sizes: [[320, 50]] }, native: { ortb: NATIVE_REQUEST } }
+        }));
+        expect(spec.interpretResponse({ body: makeOrtbResponse({ adm: JSON.stringify(NATIVE_RESPONSE) }) }, multi)[0].mediaType).to.equal('native');
+      });
+    }
 
-      expect(bid.mediaType).to.equal('native');
-      expect(bid.native.ortb.assets).to.deep.equal(NATIVE_RESPONSE.assets);
-      expect(bid.native.ortb.link.clicktrackers).to.deep.equal([
-        'https://dsp.example/c',
-        PROD_HOST + '/openrtb2/track/click?t=token-click'
-      ]);
-    });
+    if (FEATURES.NATIVE) {
+      it('maps a native bid onto native.ortb and adds the absolute click beacon to link.clicktrackers', function () {
+        const adm = JSON.stringify(Object.assign({}, NATIVE_RESPONSE, { link: { url: 'https://landing.example', clicktrackers: ['https://dsp.example/c'] } }));
+        const [bid] = spec.interpretResponse({ body: makeOrtbResponse({ mtype: 4, adm }) }, requestFor(makeNativeBid()));
 
-    it('adds link.clicktrackers when the native link has none', function () {
-      const [bid] = spec.interpretResponse({
-        body: makeOrtbResponse({ adm: JSON.stringify(NATIVE_RESPONSE) })
-      }, requestFor(makeNativeBid()));
-      expect(bid.mediaType).to.equal('native');
-      expect(bid.native.ortb.link.clicktrackers).to.deep.equal([PROD_HOST + '/openrtb2/track/click?t=token-click']);
-    });
+        expect(bid.mediaType).to.equal('native');
+        expect(bid.native.ortb.assets).to.deep.equal(NATIVE_RESPONSE.assets);
+        expect(bid.native.ortb.link.clicktrackers).to.deep.equal([
+          'https://dsp.example/c',
+          PROD_HOST + '/openrtb2/track/click?t=token-click'
+        ]);
+      });
+    }
+
+    if (FEATURES.NATIVE) {
+      it('adds link.clicktrackers when the native link has none', function () {
+        const [bid] = spec.interpretResponse({
+          body: makeOrtbResponse({ adm: JSON.stringify(NATIVE_RESPONSE) })
+        }, requestFor(makeNativeBid()));
+        expect(bid.mediaType).to.equal('native');
+        expect(bid.native.ortb.link.clicktrackers).to.deep.equal([PROD_HOST + '/openrtb2/track/click?t=token-click']);
+      });
+    }
 
     it('does not add click trackers to banner or video bids', function () {
       const [banner] = spec.interpretResponse({ body: makeOrtbResponse() }, request);
       expect(banner.native).to.be.undefined;
-      const [video] = spec.interpretResponse({ body: makeOrtbResponse({ mtype: 2, adm: VAST }) }, requestFor(makeVideoBid()));
-      expect(video.native).to.be.undefined;
+      if (FEATURES.VIDEO) {
+        const [video] = spec.interpretResponse({ body: makeOrtbResponse({ mtype: 2, adm: VAST }) }, requestFor(makeVideoBid()));
+        expect(video.native).to.be.undefined;
+      }
     });
 
     it('leaves a protocol-relative billing pixel untouched', function () {

@@ -44,18 +44,22 @@ gateway de-duplicates it.
 ```javascript
 pbjs.setConfig({
   nexbids: {
-    env: 'test',                     // 'prod' (default) or 'test' (NexBids staging gateway)
-    endpoint: 'https://test.ssp.nexbids.com' // optional origin override for a gateway you run locally; wins over env
+    env: 'test' // 'prod' (default) or 'test' (NexBids staging gateway)
   }
 });
 ```
+
+The adapter uses fixed HTTPS endpoints: `https://us.nexbids.com` for production and
+`https://test.ssp.nexbids.com` for staging. Arbitrary endpoint overrides are not supported.
 
 # Test Parameters
 
 All test ad units are registered on the NexBids staging gateway under one test publisher, so set
 `env: 'test'` first. The staging gateway accepts pages served from `localhost`, so the parameters
 below can be run from a local Prebid.js build. The exchange paces demand, so an individual request
-may come back with no bid; refresh a few times if that happens.
+may come back with no bid. Before requesting a review, the test publisher must have active test
+demand for all three ad units, including traffic from the reviewer's region. Use the complete
+`Unit-...` ad unit code shown below.
 
 ```javascript
 pbjs.setConfig({ nexbids: { env: 'test' } });

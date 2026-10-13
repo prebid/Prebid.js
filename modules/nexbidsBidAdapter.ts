@@ -40,11 +40,6 @@ export interface NexbidsConfig {
    * NexBids staging gateway for integration testing.
    */
   env?: 'prod' | 'test';
-  /**
-   * Gateway origin override (scheme + host, e.g. `http://localhost:8082`) for local
-   * integration testing against a gateway or mock you run yourself. Takes precedence over `env`.
-   */
-  endpoint?: string;
 }
 
 declare module '../src/config' {
@@ -72,10 +67,8 @@ const DEFAULT_BANNER_MIMES = ['text/html', 'text/javascript', 'image/jpeg', 'ima
 
 function gatewayHost(): string {
   const cfg: NexbidsConfig = config.getConfig('nexbids') || {};
-  if (isStr(cfg.endpoint) && /^https?:\/\//.test(cfg.endpoint)) {
-    return cfg.endpoint.replace(/\/+$/, '');
-  }
-  return GATEWAY_HOSTS[cfg.env] || GATEWAY_HOSTS.prod;
+  // Prebid requires fixed endpoint domains and HTTPS, including integration tests.
+  return cfg.env === 'test' ? GATEWAY_HOSTS.test : GATEWAY_HOSTS.prod;
 }
 
 function originOf(url: string): string {
@@ -195,18 +188,20 @@ function buildRequests(
   const host = gatewayHost();
   // One request per publisher: the gateway authenticates each request by its `publisherId`.
   // Insertion order is kept so the first ad unit's publisher goes first.
-  const groups = new Map<string, BidRequest<typeof BIDDER_CODE>[]>();
+  const groups: Record<string, BidRequest<typeof BIDDER_CODE>[]> = Object.create(null);
+  const publisherIds: string[] = [];
   validBidRequests.forEach((bid) => {
     const key = bid.params.publisherId;
-    if (!groups.has(key)) {
-      groups.set(key, []);
+    if (!groups[key]) {
+      groups[key] = [];
+      publisherIds.push(key);
     }
-    groups.get(key).push(bid);
+    groups[key].push(bid);
   });
-  return Array.from(groups.entries()).map(([publisherId, bidRequests]) => ({
+  return publisherIds.map((publisherId) => ({
     method: 'POST' as const,
     url: `${host}${AUCTION_PATH}?publisherId=${encodeURIComponent(publisherId)}`,
-    data: converter.toORTB({ bidRequests, bidderRequest }),
+    data: converter.toORTB({ bidRequests: groups[publisherId], bidderRequest }),
     // Keep this a CORS "simple request": text/plain body (Prebid's default), no credentials and
     // the publisher id on the query string instead of a custom header, so there is no preflight.
     options: { withCredentials: false }
