@@ -315,6 +315,34 @@ describe('MagicBid Bid Adapter', function() {
       const bids = spec.interpretResponse(makeBannerResponse(), bannerRequest);
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiser.com']);
     });
+
+    it('should classify as video when adm starts with XML declaration before VAST', function() {
+      if (FEATURES.VIDEO) {
+        const xmlVastRequest = spec.buildRequests([VALID_VIDEO_BID], BIDDER_REQUEST)[0];
+        const xmlVastResponse = {
+          body: {
+            id: 'auction-001',
+            seatbid: [{
+              bid: [{
+                id: 'resp-003',
+                impid: xmlVastRequest.data.imp[0].id,
+                price: 2.0,
+                adm: '<?xml version="1.0"?><VAST version="4.0"></VAST>',
+                crid: 'cr-003',
+                w: 640,
+                h: 480,
+                mtype: 2,
+              }],
+              seat: 'magicbid',
+            }],
+            cur: 'USD',
+          },
+        };
+        const bids = spec.interpretResponse(xmlVastResponse, xmlVastRequest);
+        expect(bids).to.have.length(1);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+      }
+    });
   });
 
   describe('getUserSyncs', function() {
