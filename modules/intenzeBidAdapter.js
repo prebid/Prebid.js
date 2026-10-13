@@ -2,6 +2,7 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 import { BANNER, NATIVE, VIDEO } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
+import { logError, logWarn } from "../src/utils.js";
 import { getTimeZone } from "../libraries/timezone/timezone.js";
 
 const BIDDER_CODE = "intenze";
@@ -25,7 +26,6 @@ const sspSubdomainsRegions = {
  * @returns { string }
  */
 const buildEndpointURL = (params) => {
-  let endpoint = "";
   const timezone = getTimeZone() || "";
   const region = timezone.split("/")[0] || DEFAULT_REGION;
 
@@ -33,20 +33,23 @@ const buildEndpointURL = (params) => {
     const subdomain =
       exchangeSubdomainsRegions[region] ||
       exchangeSubdomainsRegions[DEFAULT_REGION];
-    endpoint = `https://${subdomain}.intenze.co/?pass=${params.accountId}&integration=prebidjs`;
-  } else if (params?.placementId) {
-    const subdomain =
-      sspSubdomainsRegions[region] || sspSubdomainsRegions[DEFAULT_REGION];
-    endpoint = `https://${subdomain}.intenze.co/pbjs-serve?placementId=${params.placementId}`;
+    return `https://${subdomain}.intenze.co/?pass=${encodeURIComponent(params.accountId)}&integration=prebidjs`;
   }
 
-  return endpoint;
+  if (params?.placementId) {
+    const subdomain =
+      sspSubdomainsRegions[region] || sspSubdomainsRegions[DEFAULT_REGION];
+    return `https://${subdomain}.intenze.co/pbjs-serve?placementId=${encodeURIComponent(params.placementId)}`;
+  }
+
+  return "";
 };
 
 const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 20,
+    currency: DEFAULT_CURRENCY,
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
@@ -76,11 +79,6 @@ const converter = ortbConverter({
     if (!request.cur) request.cur = [bid.params.currency || DEFAULT_CURRENCY];
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
-    const bidResponse = buildBidResponse(bid, context);
-    bidResponse.cur = bid.cur || DEFAULT_CURRENCY;
-    return bidResponse;
-  },
 });
 
 export const spec = {
@@ -88,42 +86,66 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.params?.accountId) || Boolean(bid.params?.placementId);
+    const { accountId, placementId } = bid?.params || {};
+
+    if (accountId && placementId) {
+      logWarn(
+        `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: accountId and placementId cannot be used together`,
+      );
+      return false;
+    }
+
+    if (!accountId && !placementId) {
+      logWarn(
+        `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: either accountId or placementId expected`,
+      );
+      return false;
+    }
+
+    return true;
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    if (validBidRequests && validBidRequests.length === 0) return [];
+    if (!validBidRequests?.length) return [];
 
-    const endpointURL = buildEndpointURL(validBidRequests[0].params);
-    if (!endpointURL) return [];
+    const bidsByURL = new Map();
+    validBidRequests.forEach((bid) => {
+      const url = buildEndpointURL(bid.params);
+      if (!url) return;
+      if (!bidsByURL.has(url)) bidsByURL.set(url, []);
+      bidsByURL.get(url).push(bid);
+    });
 
-    try {
-      const request = converter.toORTB({
-        bidRequests: validBidRequests,
-        bidderRequest,
-      });
+    const requests = [];
+    bidsByURL.forEach((bids, url) => {
+      try {
+        requests.push({
+          method: "POST",
+          url,
+          data: converter.toORTB({ bidRequests: bids, bidderRequest }),
+        });
+      } catch (err) {
+        logError(`${BIDDER_CODE}: failed to build request for ${url}`, err);
+      }
+    });
 
-      return {
-        method: "POST",
-        url: endpointURL,
-        data: request,
-      };
-    } catch (error) {
-      return [];
-    }
+    return requests;
   },
 
   interpretResponse: (response, request) => {
-    if (response?.body) {
-      try {
-        const bids = converter.fromORTB({
+    if (!response?.body) return [];
+
+    try {
+      return (
+        converter.fromORTB({
           response: response.body,
           request: request.data,
-        })?.bids;
-        return bids;
-      } catch (err) {}
+        })?.bids || []
+      );
+    } catch (err) {
+      logError(`${BIDDER_CODE}: failed to interpret response`, err);
+      return [];
     }
-    return [];
   },
 };
 
