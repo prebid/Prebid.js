@@ -5,6 +5,9 @@ import {
   getBidRequestData,
   getTargetingData,
   optableSubmodule,
+  readCachedTargeting,
+  storage,
+  OPTABLE_RESOLVED_KEY,
 } from 'modules/optableRtdProvider';
 
 describe('Optable RTD Submodule', function () {
@@ -119,6 +122,69 @@ describe('Optable RTD Submodule', function () {
     });
   });
 
+  describe('defaultHandleRtd before the bundle loads', function () {
+    let sandbox, reqBidsConfigObj, mergeFn;
+    const cachedOrtb2 = { user: { eids: [{ source: 'optable.co', uids: [{ id: 'abc' }] }] } };
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      reqBidsConfigObj = { ortb2Fragments: { global: {} } };
+      mergeFn = sinon.spy();
+      sandbox.stub(window, 'optable').value({ cmd: [] });
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('delegates to the bundle handleRtd when it is available', async function () {
+      const bundleHandleRtd = sinon.stub().resolves();
+      window.optable.rtd = { handleRtd: bundleHandleRtd };
+      const extra = { email: 'hash' };
+
+      await defaultHandleRtd(reqBidsConfigObj, extra, mergeFn);
+
+      expect(bundleHandleRtd.calledOnceWithExactly(reqBidsConfigObj, extra, mergeFn)).to.be.true;
+    });
+
+    it('merges cached targeting data right away when the bundle is not loaded', async function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ ortb2: cachedOrtb2 }));
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+
+      expect(mergeFn.calledOnceWith(reqBidsConfigObj.ortb2Fragments.global, cachedOrtb2)).to.be.true;
+      expect(window.optable.cmd.length).to.equal(0);
+    });
+
+    it('waits for the bundle when nothing is cached, then uses its handleRtd', async function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      const bundleHandleRtd = sinon.stub().resolves();
+
+      const pending = defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+      expect(window.optable.cmd.length).to.equal(1);
+
+      // Simulate the bundle loading and processing the queue
+      window.optable.rtd = { handleRtd: bundleHandleRtd };
+      window.optable.cmd[0]();
+      await pending;
+
+      expect(bundleHandleRtd.calledOnce).to.be.true;
+      expect(mergeFn.called).to.be.false;
+    });
+
+    it('ignores a cache entry without EIDs', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .returns(JSON.stringify({ ortb2: { user: { eids: [] } } }));
+      expect(readCachedTargeting()).to.be.null;
+    });
+
+    it('ignores an unreadable cache entry', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('{not json');
+      expect(readCachedTargeting()).to.be.null;
+    });
+  });
+
   describe('mergeOptableData', function () {
     let sandbox, mergeFn, handleRtdFn, reqBidsConfigObj;
 
@@ -185,8 +251,8 @@ describe('Optable RTD Submodule', function () {
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
-      // Check that the function is queued
-      expect(window.optable.cmd.length).to.equal(1);
+      // The bundle is loaded, so the default handler runs right away
+      expect(window.optable.cmd.length).to.equal(0);
 
       // Dispatch the event after a short delay
       setTimeout(() => {
@@ -196,13 +262,36 @@ describe('Optable RTD Submodule', function () {
         window.dispatchEvent(event);
       }, 10);
 
-      // Manually trigger the queued function
-      window.optable.cmd[0]();
-
       setTimeout(() => {
         expect(callback.calledOnce).to.be.true;
         done();
       }, 100);
+    });
+
+    it('keeps a custom handleRtd queued until the bundle loads', function () {
+      moduleConfig.params.bundleUrl = null;
+      moduleConfig.params.handleRtd = sinon.spy();
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(moduleConfig.params.handleRtd.called).to.be.false;
+      expect(window.optable.cmd.length).to.equal(1);
+    });
+
+    it('calls back right away with cached data when the bundle is not loaded', function (done) {
+      moduleConfig.params.bundleUrl = null;
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({
+        ortb2: { user: { eids: [{ source: 'optable.co', uids: [{ id: 'abc' }] }] } }
+      }));
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(window.optable.cmd.length).to.equal(0);
+      setTimeout(() => {
+        expect(callback.calledOnce).to.be.true;
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.eids).to.have.length(1);
+        done();
+      }, 20);
     });
 
     it('mergeOptableData catches error and executes callback when something goes wrong', function (done) {
@@ -232,7 +321,7 @@ describe('Optable RTD Submodule', function () {
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
-      expect(window.optable.cmd.length).to.equal(1);
+      expect(window.optable.cmd.length).to.equal(0);
 
       // Dispatch event after a short delay
       setTimeout(() => {
@@ -241,9 +330,6 @@ describe('Optable RTD Submodule', function () {
         });
         window.dispatchEvent(event);
       }, 10);
-
-      // Execute the queued command
-      window.optable.cmd[0]();
 
       setTimeout(() => {
         expect(callback.calledOnce).to.be.true;

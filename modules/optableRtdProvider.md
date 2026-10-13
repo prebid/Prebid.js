@@ -63,7 +63,20 @@ pbjs.setConfig({
 | params                   | Object   |                                                                                                                                                                                                                                                                 |                            |          |
 | params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`                     | Optional |
 | params.instance          | Object   | Optable SDK instance to use for targeting data.                                                                                                                                                                                                                 | `window.optable.rtd.instance`  | Optional |
-| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module will do a default call to Optable bundle. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`                     | Optional |
+| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module uses its default handler (see [Default handler](#default-handler)). A custom function runs once the Optable bundle has loaded. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`                     | Optional |
+
+## Default handler
+
+When `handleRtd` is not provided, the module enriches each auction as soon as it starts:
+
+1. If the Optable bundle has loaded and exposes `window.optable.rtd.handleRtd`, the module calls it. Bundles can
+   override that function to change how data is merged.
+2. If the bundle has not loaded yet, the module merges the targeting data the bundle cached on a previous page
+   (`localStorage` key `OPTABLE_RESOLVED`, read through Prebid's storage manager), without waiting.
+3. If nothing is cached, the module waits for the bundle to load (up to `auctionDelay` when `waitForIt` is `true`),
+   then continues as in step 1.
+
+Most publishers should not need a custom `handleRtd`.
 
 ## Publisher Customized RTD Handler Function
 
