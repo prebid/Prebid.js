@@ -72,12 +72,16 @@ describe('adferryBidAdapter', function () {
       expect(req.data.imp[0].tagid).to.equal('adferryprebidtest1');
     });
 
-    it('reads video params from mediaTypes.video', function () {
-      const [req] = spec.buildRequests([validBid], bidderRequest);
-      expect(req.data.imp[0].video.w).to.equal(640);
-      expect(req.data.imp[0].video.h).to.equal(480);
-      expect(req.data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
-    });
+    // The converter only builds imp.video when the VIDEO feature is compiled
+    // in; CI's all-features-disabled variant omits it.
+    if (FEATURES.VIDEO) {
+      it('reads video params from mediaTypes.video', function () {
+        const [req] = spec.buildRequests([validBid], bidderRequest);
+        expect(req.data.imp[0].video.w).to.equal(640);
+        expect(req.data.imp[0].video.h).to.equal(480);
+        expect(req.data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
+      });
+    }
 
     it('builds a banner imp with every size in format', function () {
       const bid = { ...validBid, mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } } };
@@ -86,13 +90,15 @@ describe('adferryBidAdapter', function () {
       expect(req.data.imp[0].video).to.equal(undefined);
     });
 
-    it('builds an audio imp from mediaTypes.audio', function () {
-      const bid = { ...validBid, mediaTypes: { audio: { mimes: ['audio/mp4'], protocols: [9, 10] } } };
-      const [req] = spec.buildRequests([bid], bidderRequest);
-      expect(req.data.imp[0].audio.mimes).to.deep.equal(['audio/mp4']);
-      expect(req.data.imp[0].video).to.equal(undefined);
-      expect(req.data.imp[0].banner).to.equal(undefined);
-    });
+    if (FEATURES.AUDIO) {
+      it('builds an audio imp from mediaTypes.audio', function () {
+        const bid = { ...validBid, mediaTypes: { audio: { mimes: ['audio/mp4'], protocols: [9, 10] } } };
+        const [req] = spec.buildRequests([bid], bidderRequest);
+        expect(req.data.imp[0].audio.mimes).to.deep.equal(['audio/mp4']);
+        expect(req.data.imp[0].video).to.equal(undefined);
+        expect(req.data.imp[0].banner).to.equal(undefined);
+      });
+    }
 
     it('falls back to the bidFloor param when the floors module is absent', function () {
       const bid = { ...validBid, params: { placementId: 'adferryprebidtest1', bidFloor: 2.5 } };
@@ -155,24 +161,28 @@ describe('adferryBidAdapter', function () {
       };
     }
 
-    it('maps a video bid', function () {
-      const [req] = spec.buildRequests([validBid], bidderRequest);
-      const [bid] = spec.interpretResponse(respond(req, {
-        price: 4.5,
-        adm: '<VAST version="4.2"></VAST>',
-        crid: 'af_1a2b3c4d',
-        w: 640,
-        h: 480,
-        mtype: 2,
-        adomain: ['brand.com'],
-      }), req);
-      expect(bid.cpm).to.equal(4.5);
-      expect(bid.currency).to.equal('USD');
-      expect(bid.vastXml).to.contain('VAST');
-      expect(bid.mediaType).to.equal('video');
-      expect(bid.creativeId).to.equal('af_1a2b3c4d');
-      expect(bid.meta.advertiserDomains).to.deep.equal(['brand.com']);
-    });
+    // vastXml is filled by the converter's VIDEO response processor, compiled
+    // out of CI's all-features-disabled build.
+    if (FEATURES.VIDEO) {
+      it('maps a video bid', function () {
+        const [req] = spec.buildRequests([validBid], bidderRequest);
+        const [bid] = spec.interpretResponse(respond(req, {
+          price: 4.5,
+          adm: '<VAST version="4.2"></VAST>',
+          crid: 'af_1a2b3c4d',
+          w: 640,
+          h: 480,
+          mtype: 2,
+          adomain: ['brand.com'],
+        }), req);
+        expect(bid.cpm).to.equal(4.5);
+        expect(bid.currency).to.equal('USD');
+        expect(bid.vastXml).to.contain('VAST');
+        expect(bid.mediaType).to.equal('video');
+        expect(bid.creativeId).to.equal('af_1a2b3c4d');
+        expect(bid.meta.advertiserDomains).to.deep.equal(['brand.com']);
+      });
+    }
 
     it('maps a banner bid', function () {
       const bannerBid = { ...validBid, mediaTypes: { banner: { sizes: [[300, 250]] } } };
@@ -192,20 +202,22 @@ describe('adferryBidAdapter', function () {
       expect(bid.height).to.equal(250);
     });
 
-    it('maps an audio bid', function () {
-      const audioBid = { ...validBid, mediaTypes: { audio: { mimes: ['audio/mp4'] } } };
-      const [req] = spec.buildRequests([audioBid], bidderRequest);
-      const [bid] = spec.interpretResponse(respond(req, {
-        price: 2.2,
-        adm: '<VAST version="4.2"></VAST>',
-        crid: 'af_1a2b3c4d',
-        mtype: 3,
-        adomain: ['brand.com'],
-      }), req);
-      expect(bid.mediaType).to.equal('audio');
-      expect(bid.vastXml).to.contain('VAST');
-      expect(bid.meta.advertiserDomains).to.deep.equal(['brand.com']);
-    });
+    if (FEATURES.AUDIO) {
+      it('maps an audio bid', function () {
+        const audioBid = { ...validBid, mediaTypes: { audio: { mimes: ['audio/mp4'] } } };
+        const [req] = spec.buildRequests([audioBid], bidderRequest);
+        const [bid] = spec.interpretResponse(respond(req, {
+          price: 2.2,
+          adm: '<VAST version="4.2"></VAST>',
+          crid: 'af_1a2b3c4d',
+          mtype: 3,
+          adomain: ['brand.com'],
+        }), req);
+        expect(bid.mediaType).to.equal('audio');
+        expect(bid.vastXml).to.contain('VAST');
+        expect(bid.meta.advertiserDomains).to.deep.equal(['brand.com']);
+      });
+    }
 
     it('defaults the currency to USD when the response omits cur', function () {
       // oRTB's protocol default is USD; without a context currency the bid
