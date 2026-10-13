@@ -5,7 +5,7 @@ import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
 import adapterManager, { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../src/adapterManager.js';
 import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
-import { GDPR_GVLIDS } from '../../src/consentHandler.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../src/consentHandler.js';
 import { MODULE_TYPE_RTD } from '../../src/activities/modules.js';
 import { guardOrtb2Fragments } from '../../libraries/objectGuard/ortbGuard.js';
 import { activityParamsBuilder } from '../../src/activities/params.js';
@@ -37,6 +37,7 @@ let _userConsent;
  * @param {Object} submodule The RTD submodule to register.
  * @param {string} submodule.name The name of the RTD submodule.
  * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
+ * @param {number} [submodule.acpId] The Google Additional Consent provider ID of the RTD submodule.
  */
 export function attachRealTimeDataProvider(submodule) {
   if (registeredSubModules.some((sm) => sm.name === submodule.name)) {
@@ -45,6 +46,7 @@ export function attachRealTimeDataProvider(submodule) {
   }
   registeredSubModules.push(submodule);
   GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
+  GDPR_ACPIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.acpId);
   // providers may be loaded after the module was configured (and therefore already initialized);
   // pick them up now, since `realTimeData` configuration is accepted only once.
   initSubModules();
