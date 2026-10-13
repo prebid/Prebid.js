@@ -125,13 +125,13 @@ pbjs.setConfig({
 If you already use `filterSettings.all`, iframe syncs are enabled and the block above must not be added (Prebid.js core treats `all` and `iframe` as mutually exclusive).
 
 ## Error & Timeout Telemetry
-Telemetry is disabled by default. Publishers can opt in to reporting client-observed auction timeouts and bidder transport errors:
+Client-observed auction timeouts and bidder transport errors are reported by default. Publishers can disable these requests; bidding and user sync continue to work:
 
 ```javascript
-pbjs.setConfig({ adapex: { enableTelemetry: true } });
+pbjs.setConfig({ adapex: { enableTelemetry: false } });
 ```
 
-Set `enableTelemetry` to `false` to disable these requests; bidding and user sync continue to work. Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, publisher domain) and no user, device or auction identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
+Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, publisher domain) and no user, device or auction identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
 
 For split requests, transport errors are reported only for the seat identified by the failed response URL. If a network failure provides no URL and multiple seats were requested, the error beacon is omitted to avoid attributing the failure to healthy seats.
 

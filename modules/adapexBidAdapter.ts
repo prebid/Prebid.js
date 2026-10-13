@@ -13,7 +13,7 @@ declare module '../src/adUnits' {
 }
 
 export interface AdapexConfig {
-  /** Opt in to timeout/error beacons; disabled by default. */
+  /** Set to false to disable timeout/error beacons; enabled by default. */
   enableTelemetry?: boolean;
 }
 
@@ -41,7 +41,7 @@ export const spec = createFloxisSpec({
   getBidHost: () => BID_HOST,
   getSyncOrigin: () => SYNC_ORIGIN,
   telemetryOrigin: SYNC_ORIGIN,
-  isTelemetryEnabled: () => config.getConfig('adapex')?.enableTelemetry === true,
+  isTelemetryEnabled: () => config.getConfig('adapex')?.enableTelemetry !== false,
   pinSyncOrigin: true
 });
 

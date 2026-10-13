@@ -778,7 +778,6 @@ describe('adapexBidAdapter', function () {
 
     beforeEach(function () {
       politeStub = sinon.stub(utils, 'politeTriggerPixel');
-      config.setConfig({ adapex: { enableTelemetry: true } });
     });
 
     afterEach(function () {
@@ -794,11 +793,17 @@ describe('adapexBidAdapter', function () {
       expect(spec.buildRequests([validBannerBid], bidderRequest)).to.have.lengthOf(1);
     });
 
-    it('sends no telemetry without explicit publisher opt-in', function () {
-      config.resetConfig();
+    it('sends telemetry by default', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
       spec.onBidderError({ error: { status: 500 }, bidderRequest: { bids: [validBannerBid] } });
-      expect(politeStub.called).to.be.false;
+      expect(politeStub.calledTwice).to.be.true;
+      expect(politeStub.firstCall.args[0]).to.include('https://sync.adapex.io/event?event=timeout');
+    });
+
+    it('sends telemetry when the publisher enables it explicitly', function () {
+      config.setConfig({ adapex: { enableTelemetry: true } });
+      spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
+      expect(politeStub.calledOnce).to.be.true;
     });
 
     [false, true].forEach((enableTIDs) => {
