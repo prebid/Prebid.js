@@ -66,7 +66,7 @@ const converter = ortbConverter({
         // Ambiguous multiformat imp: infer from adm content to avoid
         // misclassifying a VAST response as banner markup.
         const adm = bid.adm || '';
-        mediaType = adm.trim().startsWith('<VAST') ? VIDEO : BANNER;
+        mediaType = /<VAST[\s>]/i.test(adm) ? VIDEO : BANNER;
       } else if (hasBanner) {
         mediaType = BANNER;
       } else if (hasVideo) {
