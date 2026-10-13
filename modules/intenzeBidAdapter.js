@@ -49,7 +49,6 @@ const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 20,
-    currency: DEFAULT_CURRENCY,
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
@@ -78,6 +77,13 @@ const converter = ortbConverter({
     request.test = config.getConfig("debug") ? 1 : 0;
     if (!request.cur) request.cur = [bid.params.currency || DEFAULT_CURRENCY];
     return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    if (!bidResponse.currency) {
+      bidResponse.currency = context.ortbRequest?.cur?.[0] || DEFAULT_CURRENCY;
+    }
+    return bidResponse;
   },
 });
 
