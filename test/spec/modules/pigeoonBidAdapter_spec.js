@@ -352,13 +352,38 @@ describe('pigeoonBidAdapter', function () {
       }]);
 
       expect(server.requests).to.have.length(1);
-      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=22222222');
+      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=22222222&bid=bid-b');
     });
 
     it('onTimeout should fall back to a single configured placement', function () {
       spec.onTimeout([{ bidder: 'pigeoon', bidId: 'unknown-bid', params: { networkId: 'net_ABC123', placementId: '87654321' } }]);
 
-      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=87654321');
+      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=87654321&bid=unknown-bid');
+    });
+
+    it('onTimeout should include the auction id and the auction timeout', function () {
+      spec.onTimeout([{
+        bidder: 'pigeoon',
+        bidId: 'bid-c',
+        auctionId: 'auction-9',
+        timeout: 650,
+        params: { networkId: 'net_ABC123', placementId: '87654321' }
+      }]);
+
+      expect(server.requests).to.have.length(1);
+      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=87654321&bid=bid-c&aid=auction-9&to=650');
+    });
+
+    it('onTimeout should leave out an invalid auction timeout', function () {
+      spec.onTimeout([{
+        bidder: 'pigeoon',
+        bidId: 'bid-d',
+        auctionId: 'auction-9',
+        timeout: 'soon',
+        params: { networkId: 'net_ABC123', placementId: '87654321' }
+      }]);
+
+      expect(server.requests[0].url).to.equal('https://pbjs.pigeoon.com/timeout?pid=87654321&bid=bid-d&aid=auction-9');
     });
 
     it('onTimeout should not guess when several configs exist and the bid is unknown', function () {

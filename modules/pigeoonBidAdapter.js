@@ -242,6 +242,8 @@ export const spec = {
 
   /**
    * Our bid did not reach the auction in time.
+   * Reported per ad unit (bid request); the auction's timeout setting is included so that timeouts caused by
+   * very short auction timeouts on the publisher side can be told apart from slow responses.
    * @param {object[]} timeoutData
    */
   onTimeout: function (timeoutData) {
@@ -251,9 +253,13 @@ export const spec = {
 
       const params = getParamsList(t);
       const pid = remembered || (params.length === 1 ? params[0]?.placementId : null);
-      if (pid) {
-        notify('timeout', { pid: String(pid) });
-      }
+      if (!pid) return;
+
+      const query = { pid: String(pid) };
+      if (t?.bidId) query.bid = String(t.bidId);
+      if (t?.auctionId) query.aid = String(t.auctionId);
+      if (typeof t?.timeout === 'number' && t.timeout > 0) query.to = String(Math.round(t.timeout));
+      notify('timeout', query);
     });
   },
 
