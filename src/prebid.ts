@@ -1142,8 +1142,7 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
 
 /**
- * Return the most desirable eligible bid for the given ad unit, or across all ad units.
- * Added by Codex.
+ * Return the most desirable eligible bid for the given ad unit, or across all ad units
  * @param adUnitCode - optional ad unit code
  */
 function getMostDesirableBid(adUnitCode?: AdUnitCode): Bid | null {
