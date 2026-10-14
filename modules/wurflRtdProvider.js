@@ -18,7 +18,7 @@ export const dep = {
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.11.0';
+const MODULE_VERSION = '2.12.0';
 // WURFL_GVLID is ScientiaMobile's IAB TCF Global Vendor List ID
 const WURFL_GVLID = 1655;
 
