@@ -3,6 +3,7 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { config } from "../src/config.js";
 import { BANNER, NATIVE, VIDEO } from "../src/mediaTypes.js";
 import { getTimeZone } from "../libraries/timezone/timezone.js";
+import { logError, logWarn } from "../src/utils.js";
 
 const BIDDER_CODE = "escalax";
 
@@ -54,7 +55,10 @@ function createRequest(buildRequest, imps, bidderRequest, context) {
 
 function createBidResponse(buildBidResponse, bid, context) {
   const bidResponse = buildBidResponse(bid, context);
-  bidResponse.cur = "USD";
+  if (!bidResponse.currency) {
+    bidResponse.currency =
+      context.ortbRequest?.cur?.[0] || ESCALAX_DEFAULT_CURRENCY;
+  }
   return bidResponse;
 }
 
@@ -102,6 +106,28 @@ function getSspSubdomain() {
   }
 }
 
+function buildEndpointURL(bid) {
+  if (isSspBid(bid)) {
+    return ESCALAX_SSP_URL.replace(
+      ESCALAX_SUBDOMAIN_MACRO,
+      getSspSubdomain(),
+    ).replace(
+      ESCALAX_SUPPLY_PLACEMENT_ID_MACRO,
+      encodeURIComponent(bid.params.supplyPlacementId),
+    );
+  }
+
+  return ESCALAX_EXCHANGE_URL.replace(
+    ESCALAX_SUBDOMAIN_MACRO,
+    getExchangeSubdomain(),
+  )
+    .replace(ESCALAX_SOURCE_ID_MACRO, encodeURIComponent(bid.params.sourceId))
+    .replace(
+      ESCALAX_ACCOUNT_ID_MACRO,
+      encodeURIComponent(bid.params.accountId),
+    );
+}
+
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -117,59 +143,68 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    const hasExchangeParams =
-      Boolean(bid.params.sourceId) && Boolean(bid.params.accountId);
-    const hasSspParams = Boolean(bid.params.supplyPlacementId);
+    const { sourceId, accountId, supplyPlacementId } = bid?.params || {};
+    const hasAnyExchangeParam = Boolean(sourceId) || Boolean(accountId);
+    const hasExchangeParams = Boolean(sourceId) && Boolean(accountId);
+    const hasSspParams = Boolean(supplyPlacementId);
 
-    if (hasExchangeParams && hasSspParams) return false;
-    return hasExchangeParams || hasSspParams;
+    if (hasAnyExchangeParam && hasSspParams) {
+      logWarn(
+        `${BIDDER_CODE}: adUnit ${bid?.adUnitCode}: provide either accountId and sourceId, or supplyPlacementId, not both`,
+      );
+      return false;
+    }
+
+    if (hasExchangeParams || hasSspParams) return true;
+
+    logWarn(
+      hasAnyExchangeParam
+        ? `${BIDDER_CODE}: adUnit ${bid?.adUnitCode}: accountId and sourceId must be provided together`
+        : `${BIDDER_CODE}: adUnit ${bid?.adUnitCode}: either accountId and sourceId, or supplyPlacementId is required`,
+    );
+    return false;
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    if (validBidRequests && validBidRequests.length === 0) return [];
+    if (!validBidRequests?.length) return [];
 
-    const firstBid = validBidRequests[0];
-    let endpointURL;
-
-    if (isSspBid(firstBid)) {
-      const subdomain = getSspSubdomain();
-      endpointURL = ESCALAX_SSP_URL.replace(
-        ESCALAX_SUBDOMAIN_MACRO,
-        subdomain || ESCALAX_DEFAULT_SSP_SUBDOMAIN,
-      ).replace(
-        ESCALAX_SUPPLY_PLACEMENT_ID_MACRO,
-        firstBid.params.supplyPlacementId,
-      );
-    } else {
-      const subdomain = getExchangeSubdomain();
-      endpointURL = ESCALAX_EXCHANGE_URL.replace(
-        ESCALAX_SUBDOMAIN_MACRO,
-        subdomain || ESCALAX_DEFAULT_EXCHANGE_SUBDOMAIN,
-      )
-        .replace(ESCALAX_SOURCE_ID_MACRO, firstBid.params.sourceId)
-        .replace(ESCALAX_ACCOUNT_ID_MACRO, firstBid.params.accountId);
-    }
-
-    const request = converter.toORTB({
-      bidRequests: validBidRequests,
-      bidderRequest,
+    const bidsByURL = new Map();
+    validBidRequests.forEach((bid) => {
+      const url = buildEndpointURL(bid);
+      if (!bidsByURL.has(url)) bidsByURL.set(url, []);
+      bidsByURL.get(url).push(bid);
     });
-    return {
-      method: "POST",
-      url: endpointURL,
-      data: request,
-    };
+
+    const requests = [];
+    bidsByURL.forEach((bids, url) => {
+      try {
+        requests.push({
+          method: "POST",
+          url,
+          data: converter.toORTB({ bidRequests: bids, bidderRequest }),
+        });
+      } catch (err) {
+        logError(`${BIDDER_CODE}: failed to build request for ${url}`, err);
+      }
+    });
+
+    return requests;
   },
 
   interpretResponse: (response, request) => {
-    if (response?.body) {
-      const bids = converter.fromORTB({
-        response: response.body,
-        request: request.data,
-      }).bids;
-      return bids;
+    if (!response?.body) return [];
+
+    try {
+      return (
+        converter.fromORTB({
+          response: response.body,
+          request: request.data,
+        })?.bids || []
+      );
+    } catch (err) {
+      logError(`${BIDDER_CODE}: failed to interpret response`, err);
+      return [];
     }
-    return [];
   },
 };
 
