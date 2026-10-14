@@ -33,9 +33,10 @@ const MTYPE_MAP = { 1: BANNER, 2: VIDEO };
 
 const converter = ortbConverter({
   context: {
-    netRevenue: DEFAULT_NET_REVENUE,
-    ttl: DEFAULT_TTL,
-  },
+  netRevenue: DEFAULT_NET_REVENUE,
+  ttl: DEFAULT_TTL,
+  currency: 'USD',
+},
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
@@ -51,6 +52,11 @@ const converter = ortbConverter({
   },
 
   bidResponse(buildBidResponse, bid, context) {
+    // crid fallback: if server omits crid, use adid or bid id so
+    // isBidResponseValid does not discard an otherwise valid bid.
+    if (!bid.crid) {
+      bid = { ...bid, crid: bid.adid || bid.id };
+    }
     // Determine media type from mtype field (OpenRTB 2.6) or fall back to imp shape.
     let mediaType;
     if (bid.mtype) {
