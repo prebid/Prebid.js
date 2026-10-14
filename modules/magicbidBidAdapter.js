@@ -33,10 +33,10 @@ const MTYPE_MAP = { 1: BANNER, 2: VIDEO };
 
 const converter = ortbConverter({
 context: {
-netRevenue: DEFAULT_NET_REVENUE,
-ttl: DEFAULT_TTL,
-currency: 'USD',
-},
+    netRevenue: DEFAULT_NET_REVENUE,
+    ttl: DEFAULT_TTL,
+    currency: 'USD',
+  },
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
