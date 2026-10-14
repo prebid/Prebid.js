@@ -32,10 +32,10 @@ const MTYPE_MAP = { 1: BANNER, 2: VIDEO };
 // Mirrors the pattern used by the Limelight adapter (which also targets /ortbhb).
 
 const converter = ortbConverter({
-  context: {
-  netRevenue: DEFAULT_NET_REVENUE,
-  ttl: DEFAULT_TTL,
-  currency: 'USD',
+context: {
+netRevenue: DEFAULT_NET_REVENUE,
+ttl: DEFAULT_TTL,
+currency: 'USD',
 },
 
   imp(buildImp, bidRequest, context) {
