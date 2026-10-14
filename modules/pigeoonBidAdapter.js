@@ -1,8 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { deepSetValue } from '../src/utils.js';
+import { deepSetValue, getWinDimensions } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'pigeoon';
 const BASE_URL = 'https://pbjs.pigeoon.com';
@@ -123,6 +124,27 @@ function notifyBidEvent(path, bid) {
 }
 
 /**
+ * Position of the ad slot relative to the viewport at request time, used server-side to skip
+ * impressions that are unlikely to be seen: y = distance of the slot's top from the top of the viewport
+ * (negative when scrolled past), h = slot height, vh = viewport height.
+ * Undefined when the slot element cannot be found or the viewport size is unknown.
+ * @param {string} adUnitCode
+ * @returns {{y: number, h: number, vh: number}|undefined}
+ */
+function getSlotPosition(adUnitCode) {
+  try {
+    const element = document.getElementById(adUnitCode);
+    if (!element) return undefined;
+    const rect = getBoundingClientRect(element);
+    const vh = getWinDimensions().innerHeight;
+    if (!vh) return undefined;
+    return { y: Math.round(rect.top), h: Math.round(rect.height), vh: Math.round(vh) };
+  } catch (e) {
+    return undefined;
+  }
+}
+
+/**
  * True when adm holds creative markup rather than a render URL.
  * @param {*} adm
  * @returns {boolean}
@@ -147,6 +169,10 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     imp.tagid = String(bidRequest.params.placementId);
     rememberPlacement(bidRequest.bidId, imp.tagid);
+    const position = getSlotPosition(bidRequest.adUnitCode);
+    if (position) {
+      deepSetValue(imp, 'ext.pigeoon.pos', position);
+    }
     return imp;
   },
 
@@ -157,6 +183,10 @@ const converter = ortbConverter({
       // Write to whichever client section Prebid kept (site, app or dooh).
       const section = ['site', 'app', 'dooh'].find(function (s) { return request[s]; }) || 'site';
       deepSetValue(request, `${section}.publisher.id`, String(networkId));
+    }
+    // Page visibility at request time (visible / hidden / prerender): impressions in a background tab are not seen.
+    if (typeof document.visibilityState === 'string') {
+      deepSetValue(request, 'ext.pigeoon.vis', document.visibilityState);
     }
     return request;
   },

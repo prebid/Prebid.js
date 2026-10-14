@@ -151,6 +151,39 @@ describe('pigeoonBidAdapter', function () {
 
       expect(request.data.user.ext.eids).to.deep.equal(eids);
     });
+
+    it('should send the page visibility state', function () {
+      const bids = [makeBidRequest()];
+      const request = spec.buildRequests(bids, makeBidderRequest(bids));
+
+      expect(request.data.ext.pigeoon.vis).to.equal(document.visibilityState);
+    });
+
+    it('should send the slot position when the ad unit element exists', function () {
+      const div = document.createElement('div');
+      div.id = 'div-pigeoon-position';
+      div.style.width = '300px';
+      div.style.height = '250px';
+      document.body.appendChild(div);
+      try {
+        const bids = [makeBidRequest({ adUnitCode: 'div-pigeoon-position' })];
+        const request = spec.buildRequests(bids, makeBidderRequest(bids));
+        const position = request.data.imp[0].ext.pigeoon.pos;
+
+        expect(position.h).to.equal(250);
+        expect(position.vh).to.be.above(0);
+        expect(position.y).to.be.a('number');
+      } finally {
+        document.body.removeChild(div);
+      }
+    });
+
+    it('should not send a slot position when the ad unit element is missing', function () {
+      const bids = [makeBidRequest({ adUnitCode: 'div-pigeoon-missing' })];
+      const request = spec.buildRequests(bids, makeBidderRequest(bids));
+
+      expect(request.data.imp[0].ext?.pigeoon?.pos).to.equal(undefined);
+    });
   });
 
   describe('interpretResponse', function () {
