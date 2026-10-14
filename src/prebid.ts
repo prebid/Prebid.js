@@ -49,7 +49,7 @@ import {
   renderAdDirect,
   renderIfDeferred
 } from './adRendering.js';
-import { getHighestCpm } from './utils/reducers.js';
+import { getHighestCpm, getHighestDesirability } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { AUDIO, BANNER, VIDEO } from './mediaTypes.js';
@@ -484,6 +484,7 @@ declare module './prebidGlobal' {
     getAllWinningBids: typeof getAllWinningBids;
     getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
     getHighestCpmBids: typeof getHighestCpmBids;
+    getMostDesirableBid: typeof getMostDesirableBid;
     clearAllAuctions: typeof clearAllAuctions;
     getBidResponseByAdId: typeof getBidResponseByAdId;
     markWinningBidAsUsed: typeof markWinningBidAsUsed;
@@ -1139,6 +1140,18 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
 }
 
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
+
+/**
+ * Return the most desirable eligible bid for the given ad unit, or across all ad units.
+ * Added by Codex.
+ * @param adUnitCode - optional ad unit code
+ */
+function getMostDesirableBid(adUnitCode?: AdUnitCode): Bid | null {
+  const bids = targeting.getWinningBids(adUnitCode, undefined, getHighestDesirability);
+  return bids.length ? bids.reduce(getHighestDesirability) : null;
+}
+
+addApiMethod('getMostDesirableBid', getMostDesirableBid);
 
 /**
  * Clear all auctions (and their bids) from the bid cache.

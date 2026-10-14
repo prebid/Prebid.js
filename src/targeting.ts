@@ -322,15 +322,16 @@ export function newTargeting(auctionManager) {
     getWinningBids(adUnitCode: AdUnitCode | AdUnitCode[], bids?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestDesirability): Bid[] {
       const bidsReceived = bids || getBidsReceived(winReducer, winSorter);
       const adUnitCodes = getAdUnitCodes(adUnitCode);
-
-      return bidsReceived
+      const eligibleBids = bidsReceived
         .filter(bid => adUnitCodes.includes(bid.adUnitCode))
-        .filter(bid => (bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true) ? bid.cpm >= 0 : bid.cpm > 0)
+        .filter(bid => (bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true) ? bid.cpm >= 0 : bid.cpm > 0);
+
+      return eligibleBids
         .map(bid => bid.adUnitCode)
         .filter(uniques)
-        .map(adUnitCode => bidsReceived
-          .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-          .reduce(getHighestCpm));
+        .map(adUnitCode => eligibleBids
+          .filter(bid => bid.adUnitCode === adUnitCode)
+          .reduce(winReducer));
     },
 
     /**
