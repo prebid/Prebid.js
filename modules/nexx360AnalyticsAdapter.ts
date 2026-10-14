@@ -3,11 +3,13 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { type AnalyticsConfig } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
+import { auctionManager } from '../src/auctionManager.js';
 import { logInfo, logError } from '../src/utils.js';
 import { Nexx360ImpressionAuction, Nexx360ServerAuction } from '../libraries/nexx360Utils/types.js';
 
 const analyticsType = 'endpoint';
 const ANALYTICS_CODE = 'nexx360';
+const NEXX360_BIDDER_CODE = 'nexx360';
 const GVLID = 965;
 const DEFAULT_ENDPOINT = 'https://monitoring.nexx360.io';
 
@@ -18,6 +20,7 @@ const {
   BID_RESPONSE,
   BID_WON,
   BID_TIMEOUT,
+  BIDDER_DONE,
   AD_RENDER_SUCCEEDED,
   AD_RENDER_FAILED,
 } = EVENTS;
@@ -131,7 +134,7 @@ interface BidResponseArgs {
   bidderCode?: string;
   bidder?: string;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   cpm: number;
   currency: string;
   width?: number;
@@ -141,7 +144,6 @@ interface BidResponseArgs {
   statusMessage: string;
   meta?: BidMeta;
   floorData?: BidFloorData;
-  serverAuctionData?: Nexx360ServerAuction;
 }
 
 interface BidWonArgs {
@@ -149,7 +151,7 @@ interface BidWonArgs {
   bidderCode?: string;
   bidder?: string;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   cpm: number;
   currency: string;
   width?: number;
@@ -157,6 +159,13 @@ interface BidWonArgs {
   requestId: string;
   meta?: BidMeta;
   floorData?: BidFloorData;
+}
+
+/** The bidder request emitted on BIDDER_DONE; nexx360Utils' interpretResponse stores the server auction on it. */
+interface BidderDoneArgs {
+  auctionId: string;
+  bidderCode?: string;
+  serverAuctionData?: Nexx360ServerAuction;
 }
 
 interface BidTimeoutBid {
@@ -173,7 +182,7 @@ interface AdRenderBid {
   bidder?: string;
   bidderCode?: string;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   adId?: string;
   cpm?: number;
   currency?: string;
@@ -344,14 +353,9 @@ type TrackArgs =
   | BidResponseArgs
   | BidWonArgs
   | BidTimeoutBid[]
+  | BidderDoneArgs
   | AdRenderArgs
   | { auctionId: string };
-
-interface AuctionCacheEntry {
-  events: AnalyticsEvent[];
-  sent: boolean;
-  serverAuctionSent: boolean;
-}
 
 // --- State ---
 
@@ -361,7 +365,8 @@ let analyticsOptions: AnalyticsOptions = {
   abTestLabel: undefined,
 };
 
-let auctionCache: Record<string, AuctionCacheEntry> = {};
+// Events of auctions that have not been flushed yet, by auctionId.
+let auctionCache: Record<string, AnalyticsEvent[]> = {};
 let auctionCount = 0;
 
 // --- Helpers ---
@@ -380,23 +385,17 @@ function formatSizes(sizes?: [number, number] | [number, number][]): string[] {
   return (sizes as [number, number][]).map(s => `${s[0]}x${s[1]}`);
 }
 
-function getAuctionCache(auctionId: string): AuctionCacheEntry {
-  if (!auctionCache[auctionId]) {
-    auctionCache[auctionId] = {
-      events: [],
-      sent: false,
-      serverAuctionSent: false,
-    };
-  }
-  return auctionCache[auctionId];
+/** True for the nexx360 bidder and its aliases, built-in or added by the publisher with `aliasBidder`. */
+function isNexx360(bidderCode?: string): boolean {
+  return !!bidderCode && adapterManager.resolveAlias(bidderCode) === NEXX360_BIDDER_CODE;
 }
 
 function getConnectionType(bidderCode?: string): ConnectionType {
-  return bidderCode === 'nexx360' ? 'nexx360' : 'client';
+  return isNexx360(bidderCode) ? 'nexx360' : 'client';
 }
 
 function resolveBidderCode(bidderCode?: string, meta?: BidMeta): string {
-  if (bidderCode === 'nexx360' && meta?.demandSource) {
+  if (isNexx360(bidderCode) && meta?.demandSource) {
     return meta.demandSource;
   }
   return bidderCode || '';
@@ -436,6 +435,13 @@ function extractFloorData(floorData?: BidFloorData): FloorDataPayload | undefine
   };
 }
 
+/** Bids carry no ortb2Imp: read the gpid from the bid's request, else from its ad unit. */
+function getBidGpid(requestId?: string, adUnitId?: string): string | undefined {
+  const { index } = auctionManager;
+  return index.getBidRequest({ requestId })?.ortb2Imp?.ext?.gpid ??
+    index.getAdUnit({ adUnitId })?.ortb2Imp?.ext?.gpid;
+}
+
 function createBaseEvent(
   eventType: string,
   auctionId: string,
@@ -462,7 +468,7 @@ interface BidImpressionInput {
   rawBidderCode: string;
   meta?: BidMeta;
   adUnitCode: string;
-  ortb2Imp?: Ortb2Imp;
+  adUnitId?: string;
   cpm?: number;
   currency?: string;
   width?: number;
@@ -477,7 +483,7 @@ function createBidImpressionEvent(input: BidImpressionInput): BaseBidImpressionE
     clientSsp: input.rawBidderCode,
     fullSsp: resolveBidderCode(input.rawBidderCode, input.meta),
     adUnitCode: input.adUnitCode,
-    gpid: input.ortb2Imp?.ext?.gpid,
+    gpid: getBidGpid(input.requestId, input.adUnitId),
     cpm: input.cpm,
     currency: input.currency,
     size: formatSize(input.width, input.height),
@@ -532,7 +538,7 @@ function buildBidResponseEvent(args: BidResponseArgs): BidResponseEvent {
       rawBidderCode: args.bidderCode || args.bidder || '',
       meta: args.meta,
       adUnitCode: args.adUnitCode,
-      ortb2Imp: args.ortb2Imp,
+      adUnitId: args.adUnitId,
       cpm: args.cpm,
       currency: args.currency,
       width: args.width,
@@ -552,7 +558,7 @@ function buildBidWonEvent(args: BidWonArgs): BidWonEvent {
     rawBidderCode: args.bidderCode || args.bidder || '',
     meta: args.meta,
     adUnitCode: args.adUnitCode,
-    ortb2Imp: args.ortb2Imp,
+    adUnitId: args.adUnitId,
     cpm: args.cpm,
     currency: args.currency,
     width: args.width,
@@ -599,7 +605,7 @@ function buildAdRenderEvent(eventType: string, args: AdRenderArgs): AdRenderEven
       rawBidderCode: bid.bidder || bid.bidderCode || '',
       meta: bid.meta,
       adUnitCode: bid.adUnitCode,
-      ortb2Imp: bid.ortb2Imp,
+      adUnitId: bid.adUnitId,
       cpm: bid.cpm,
       currency: bid.currency,
       width: bid.width,
@@ -669,17 +675,20 @@ function sendSingleEvent(event: AnalyticsEvent): void {
   sendEvents([event]);
 }
 
-function flushAuctionEvents(auctionId: string): void {
-  const cache = getAuctionCache(auctionId);
-  if (cache.sent || cache.events.length === 0) {
-    return;
+/** Buffers an event until its auction is flushed; once flushed (or never seen), sends it on its own. */
+function bufferEvent(auctionId: string, event: AnalyticsEvent): void {
+  const events = auctionCache[auctionId];
+  if (events) {
+    events.push(event);
+  } else {
+    sendSingleEvent(event);
   }
-  cache.sent = true;
-  sendEvents(cache.events);
-  // Clean up cache after a delay to allow post-auction events
-  setTimeout(() => {
-    delete auctionCache[auctionId];
-  }, 30000);
+}
+
+function flushAuctionEvents(auctionId: string): void {
+  const events = auctionCache[auctionId];
+  delete auctionCache[auctionId];
+  sendEvents(events);
 }
 
 // --- Adapter ---
@@ -692,46 +701,45 @@ export const nexx360AnalyticsAdapter = Object.assign(adapter({ analyticsType }),
 
     try {
       switch (eventType) {
-        // --- Auction-scoped events: buffered, flushed on AUCTION_END ---
+        // --- Auction-scoped events: buffered, flushed after AUCTION_END; sent on their own if later ---
 
         case AUCTION_INIT: {
           const initArgs = args as AuctionInitArgs;
-          const cache = getAuctionCache(initArgs.auctionId);
-          cache.events.push(buildAuctionInitEvent(initArgs));
+          auctionCache[initArgs.auctionId] = [buildAuctionInitEvent(initArgs)];
           break;
         }
 
         case BID_REQUESTED: {
           const reqArgs = args as BidRequestedArgs;
-          const cache = getAuctionCache(reqArgs.auctionId);
-          cache.events.push(buildBidRequestedEvent(reqArgs));
+          bufferEvent(reqArgs.auctionId, buildBidRequestedEvent(reqArgs));
           break;
         }
 
         case BID_RESPONSE: {
           const respArgs = args as BidResponseArgs;
-          const cache = getAuctionCache(respArgs.auctionId);
-          cache.events.push(buildBidResponseEvent(respArgs));
-          const bidderCode = respArgs.bidderCode || respArgs.bidder || '';
-          if (bidderCode === 'nexx360' && !cache.serverAuctionSent && respArgs.serverAuctionData) {
-            cache.events.push(buildServerAuctionEvent(respArgs.auctionId, respArgs.serverAuctionData));
-            cache.serverAuctionSent = true;
+          bufferEvent(respArgs.auctionId, buildBidResponseEvent(respArgs));
+          break;
+        }
+
+        case BIDDER_DONE: {
+          const doneArgs = args as BidderDoneArgs;
+          if (doneArgs.serverAuctionData) {
+            bufferEvent(doneArgs.auctionId, buildServerAuctionEvent(doneArgs.auctionId, doneArgs.serverAuctionData));
           }
           break;
         }
 
         case BID_TIMEOUT: {
           const events = buildBidTimeoutEvent(args as BidTimeoutBid[]);
-          events.forEach((event: BidTimeoutEvent) => {
-            const cache = getAuctionCache(event.auctionId);
-            cache.events.push(event);
-          });
+          events.forEach((event: BidTimeoutEvent) => bufferEvent(event.auctionId, event));
           break;
         }
 
         case AUCTION_END: {
+          // Prebid emits the last bidder's BIDDER_DONE after the done() call that ends the
+          // auction, so it reaches us after AUCTION_END in the same tick: flush on the next one.
           const endArgs = args as { auctionId: string };
-          flushAuctionEvents(endArgs.auctionId);
+          setTimeout(() => flushAuctionEvents(endArgs.auctionId), 0);
           break;
         }
 

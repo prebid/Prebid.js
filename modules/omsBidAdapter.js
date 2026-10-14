@@ -135,9 +135,12 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'regs.us_privacy', bidderRequest.uspConsent);
     }
 
-    const gpp = _getGpp(bidderRequest);
-    if (gpp) {
-      deepSetValue(payload, 'regs.ext.gpp', gpp);
+    const gppData = _getGpp(bidderRequest);
+    if (gppData.gpp) {
+      deepSetValue(payload, 'regs.gpp', gppData.gpp);
+      if (Array.isArray(gppData.gppSID)) {
+        deepSetValue(payload, 'regs.gpp_sid', gppData.gppSID);
+      }
     }
 
     if (bidderRequest?.ortb2?.regs?.coppa) {
@@ -277,13 +280,10 @@ function _trackEvent(endpoint, data) {
 }
 
 function _getGpp(bidderRequest) {
-  if (bidderRequest?.gppConsent != null) {
-    return bidderRequest.gppConsent;
-  }
+  const gpp = deepAccess(bidderRequest, 'gppConsent.gppString') ?? deepAccess(bidderRequest, 'ortb2.regs.gpp', '');
+  const gppSID = deepAccess(bidderRequest, 'gppConsent.applicableSections') ?? deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', []);
 
-  return (
-    bidderRequest?.ortb2?.regs?.gpp ?? { gppString: '', applicableSections: '' }
-  );
+  return { gpp, gppSID };
 }
 
 function _extractGpidData(bid) {

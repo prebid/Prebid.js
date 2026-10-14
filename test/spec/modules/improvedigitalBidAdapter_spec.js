@@ -199,7 +199,12 @@ describe('Improve Digital Adapter Tests', function () {
     let getConfigStub = null;
     let getGlobalStub = null;
 
+    beforeEach(function () {
+      config.setConfig({ coppa: false });
+    });
+
     afterEach(function () {
+      config.setConfig({ coppa: false });
       if (getConfigStub) {
         getConfigStub.restore();
         getConfigStub = null;
@@ -223,7 +228,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload).to.be.an('object');
       expect(payload.id).to.be.a('string');
       expect(payload.tmax).not.to.exist;
-      expect(payload.regs).to.not.exist;
+      expect(payload.regs).to.deep.equal({ coppa: 0 });
       expect(payload.schain).to.not.exist;
       sinon.assert.match(payload.source, { tid: 'mock-tid' });
       expect(payload.device).to.be.an('object');
@@ -428,14 +433,17 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add COPPA flag', async function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('coppa').returns(true);
       let bidRequest = Object.assign({}, simpleBidRequest);
-      let payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      let payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest({
+        ...bidderRequestGdpr,
+        ortb2: { regs: { coppa: 1 } }
+      }))[0].data);
       expect(payload.regs.coppa).to.equal(1);
-      getConfigStub.withArgs('coppa').returns(false);
       bidRequest = Object.assign({}, simpleBidRequest);
-      payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest({
+        ...bidderRequestGdpr,
+        ortb2: { regs: { coppa: 0 } }
+      }))[0].data);
       expect(payload.regs.coppa).to.equal(0);
     });
 
@@ -1258,9 +1266,7 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should return no syncs for COPPA users', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('coppa').returns(true);
-      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, undefined, undefined, undefined, true);
       expect(syncs).to.deep.equal([]);
     });
 

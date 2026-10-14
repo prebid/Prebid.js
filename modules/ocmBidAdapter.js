@@ -1,19 +1,23 @@
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
-import { toOrtbNativeRequest } from '../src/native.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { BID_RESPONSE } from '../src/pbjsORTB.js';
-import { deepSetValue, deepAccess, mergeDeep, getUniqueIdentifierStr, isPlainObject, isStr, logMessage, logWarn, logError } from '../src/utils.js';
+import { deepSetValue, deepAccess, mergeDeep, getUniqueIdentifierStr, isPlainObject, isStr, logMessage, logWarn, logError, replaceMacros } from '../src/utils.js';
 import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    // Default the native request version. `fillNativeImp` merges context.nativeRequest under the ad
+    // unit's own request, so a publisher who sets `mediaTypes.native.ortb.ver` still wins; this only
+    // keeps `imp.native.ver` from being absent when they do not (the legacy native path already gets
+    // 1.2 from core's toOrtbNativeRequest, the ORTB path got nothing).
+    nativeRequest: { ver: '1.2' }
   },
   processors: pbsExtensions,
   overrides: {
@@ -145,68 +149,6 @@ function hasTypeVideo(bid) {
 }
 
 /**
- * Determines if the native request uses ORTB (OpenRTB) format
- * @param {BidRequest} bidRequest - The bid request to check
- * @returns {boolean} True if using ORTB native format, false otherwise
- */
-function isNativeOrtbVersion(bidRequest) {
-  return bidRequest.mediaTypes.native.ortb && typeof bidRequest.mediaTypes.native.ortb === 'object';
-}
-
-/**
- * Validates a native asset object according to ORTB native spec
- * Checks for required fields: id, content (title/img/data/video), and type-specific requirements
- * @param {Object} asset - The native asset to validate
- * @returns {boolean} True if the asset is valid, false otherwise
- */
-function isValidAsset(asset) {
-  // Asset must have a valid integer ID
-  if (!asset.hasOwnProperty('id') || !Number.isInteger(asset.id)) {
-    return false;
-  }
-
-  // Asset must contain at least one content type
-  const hasValidContent = asset.title || asset.img || asset.data || asset.video;
-  if (!hasValidContent) {
-    return false;
-  }
-
-  // Title assets must have a valid length
-  if (asset.title && (!asset.title.len || !Number.isInteger(asset.title.len))) {
-    return false;
-  }
-
-  // Data assets must have a valid type
-  if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) {
-    return false;
-  }
-
-  // Video assets must have required fields: mimes, duration constraints, and protocols.
-  // Duration bounds are checked with Number.isInteger so a legitimate minduration/maxduration of 0
-  // is not mistakenly rejected as falsy.
-  if (asset.video && (!asset.video.mimes || !Number.isInteger(asset.video.minduration) || !Number.isInteger(asset.video.maxduration) || !asset.video.protocols)) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Validates a native event tracker object according to ORTB native spec
- * Checks for required event type and tracking methods
- * @param {Object} et - The event tracker to validate
- * @returns {boolean} True if the event tracker is valid, false otherwise
- */
-function isValidEventTracker(et) {
-  // Event tracker must have a valid event type (integer) and at least one method
-  if (!et.event || !Number.isInteger(et.event) || !Array.isArray(et.methods) || et.methods.length === 0) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
  * Validates a bid request for a specific media type
  * @param {string} type - The media type to validate (BANNER, VIDEO, or NATIVE)
  * @param {BidRequest} bid - The bid request to validate
@@ -226,46 +168,65 @@ function isValid(type, bid) {
     }
   }
 
-  // Native bids must have valid assets and optionally valid event trackers
+  // Native bids are valid only when the converter will actually be able to build imp.native
   if (type === NATIVE) {
-    // Read mediaTypes.native defensively: isValid(NATIVE, ...) is evaluated for every bid (see
-    // isBidRequestValid), including banner/video bids or malformed bids with no mediaTypes at all, so
-    // the presence check must not assume mediaTypes exists (mirrors hasBannerSizes / hasTypeVideo).
-    const native = bid?.mediaTypes?.native;
-    if (typeof native !== 'object' || native === null) {
-      return false;
-    }
-
-    // Handle legacy native params by converting to ORTB format
-    if (!isNativeOrtbVersion(bid)) {
-      if (bid.nativeParams === undefined) return false;
-      const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
-      return ortbConversion && ortbConversion.assets &&
-        Array.isArray(ortbConversion.assets) && ortbConversion.assets.length > 0 &&
-        ortbConversion.assets.every(asset => isValidAsset(asset));
-    }
-
-    // Validate ORTB native format
-    let isValidAssets = false;
-    let isValidEventTrackers;
-
-    const assets = bid.mediaTypes.native?.ortb?.assets;
-    const eventTrackers = bid.mediaTypes.native?.ortb?.eventtrackers;
-
-    // At least one valid asset is required
-    if (assets && Array.isArray(assets) && assets.length > 0 && assets.every(asset => isValidAsset(asset))) {
-      isValidAssets = true;
-    }
-
-    // Event trackers are optional, but if present must be valid
-    if (eventTrackers && Array.isArray(eventTrackers) && eventTrackers.length > 0) {
-      isValidEventTrackers = eventTrackers.every(eventTracker => isValidEventTracker(eventTracker));
-    } else {
-      isValidEventTrackers = true;
-    }
-    return isValidAssets && isValidEventTrackers;
+    return hasNativeAssets(bid);
   }
 
+  return false;
+}
+
+/**
+ * Determines whether a native asset declares exactly one of the four ORTB content objects, as ORTB
+ * Native 1.2 §4.4 requires of every asset: one with none is unfillable, and one with several is
+ * ambiguous about which object the buyer should fill.
+ * @param {Object} asset - An asset from the ORTB native request
+ * @returns {boolean} True if the asset carries exactly one of a title, img, data or video object
+ */
+function hasExactlyOneAssetContent(asset) {
+  return [asset?.title, asset?.img, asset?.data, asset?.video].filter(Boolean).length === 1;
+}
+
+/**
+ * Determines whether a native bid will produce a usable `imp.native`.
+ *
+ * The single source of truth is `bidRequest.nativeOrtbRequest` — the ORTB native request Prebid core
+ * derives from the ad unit (from `mediaTypes.native.ortb`, or from legacy `mediaTypes.native` params
+ * via toOrtbNativeRequest) and copies onto every bid. It is also the only field the converter's native
+ * imp processor reads, so "core produced a native request" and "this adapter can send one" are the
+ * same condition, and validating anything else lets through bids whose imp carries no `native` object
+ * at all: core drops the derived request when its own asset validation fails (an `img` asset with no
+ * `w`/`wmin` or `h`/`hmin`, say), while leaving `mediaTypes.native` in place. Per-type asset shapes
+ * are therefore not re-validated here — core has already done exactly that (isOpenRTBBidRequestValid
+ * in src/native), and a second, drifting copy of those rules is what let the empty imp through.
+ *
+ * The one rule core does not enforce is that an asset carry exactly one content object:
+ * isOpenRTBAssetValid tests `img`, `title`, `data` and `video` in an if/else chain with no final
+ * branch, so an asset declaring none of them (`{id: 1}`) matches nothing, falls through and is
+ * accepted, and an asset declaring several is validated only on whichever the chain reaches first.
+ * Either reaches PBS malformed, so it is checked here — the one check that is this adapter's to
+ * make, rather than a copy of core's.
+ *
+ * A native ad unit core rejected outright is logged, because the failure is otherwise invisible from
+ * the page: core deletes `mediaTypes.native` when the ad unit is malformed (most often ORTB assets
+ * with no integer `id`), leaving an ad unit whose `mediaTypes` is `{}` and no native bid at all.
+ *
+ * `FEATURES.NATIVE` gates both conditions rather than returning early, because a build without
+ * native compiles out the converter's native imp processor: there would be nothing to send even if
+ * an ad unit somehow carried a native ORTB request, and the warning below would fire on every
+ * native ad unit in a build that was never going to bid on one.
+ * @param {BidRequest} bid - The bid request object
+ * @returns {boolean} True if core derived a native ORTB request whose assets each carry exactly one content object
+ */
+function hasNativeAssets(bid) {
+  const assets = bid?.nativeOrtbRequest?.assets;
+  if (FEATURES.NATIVE && Array.isArray(assets) && assets.length > 0 && assets.every(hasExactlyOneAssetContent)) {
+    return true;
+  }
+
+  if (FEATURES.NATIVE && bid?.mediaTypes?.native) {
+    logWarn(`${BIDDER_CODE}: mediaTypes.native is set but no usable native ORTB request was derived from it; the native request is skipped. Check mediaTypes.native.ortb assets (each needs an integer id and exactly one of title/img/data/video, and img assets need w/wmin and h/hmin).`, bid);
+  }
   return false;
 }
 
@@ -492,7 +453,68 @@ function buildRequests(bidRequests, bidderRequest) {
     method: 'POST',
     url: ENDPOINT,
     data: ortbRequest,
+    // Let Prebid core gzip the ORTB body (CompressionStream) and append `?gzip=1` so PBS knows to
+    // inflate it. Cuts request bandwidth to pbam roughly 5-10x. Core skips this in debug mode or on
+    // browsers without CompressionStream and falls back to plain JSON, so nothing else changes here.
+    options: { endpointCompression: true },
   };
+}
+
+/**
+ * Resolves the billing macros the OCM DSP emits in its notification URLs, on the raw ORTB bid.
+ *
+ * `${AUCTION_PRICE}` is filled from `bid.price` — the clearing price in the response currency
+ * (`BidResponse.cur`). That is what the DSP's `/bill` endpoint expects: it stamps the auction
+ * currency into the signed `cur` query parameter at bid time and converts the reported price to
+ * the campaign currency itself. Substituting the bidder's own pre-conversion bid
+ * (`ext.origbidcpm`/`ext.origbidcur`, which PBS leaves on the bid after converting `price`) would
+ * be mis-billed by exactly the FX rate, and would also be measured against the DSP's signed
+ * `maxprice` ceiling — which is likewise the converted `bid.price`.
+ *
+ * `${AUCTION_BID_ID}` is filled from the ORTB `bid.id` — the identifier the bidder itself minted
+ * and the only one it can correlate against its own records. It is deliberately NOT
+ * `bid.ext.prebid.bidid`, which is a PBS-generated per-bid UUID the bidder has never seen: that
+ * value matches the `b=` parameter in PBS's own event URLs and is the right key for OCM analytics,
+ * but substituting it into the *bidder's* URL would hand the DSP an id it cannot resolve. Nor is it
+ * top-level `BidResponse.bidid`, which OpenRTB nominally specifies but OCM's PBS does not populate.
+ *
+ * A macro whose source field is absent is left untouched rather than replaced with an empty string,
+ * so a malformed value never silently becomes a well-formed request carrying no price. (Note
+ * `replaceMacros` maps a falsy substitution to `''`, hence the explicit presence checks and the
+ * stringified price, which keeps a legitimate `0` from being blanked.)
+ *
+ * @param {Object} ortbResponse - The raw ORTB bid response body, mutated in place
+ * @returns {Object} The same response object, for convenient chaining
+ */
+function substituteBillingMacros(ortbResponse) {
+  (ortbResponse?.seatbid || []).forEach((seatbid) => {
+    (seatbid?.bid || []).forEach((bid) => {
+      const subs = {};
+      if (typeof bid?.price === 'number' && Number.isFinite(bid.price)) {
+        subs.AUCTION_PRICE = String(bid.price);
+      }
+      if (isStr(bid?.id) && bid.id !== '') {
+        subs.AUCTION_BID_ID = bid.id;
+      }
+      if (Object.keys(subs).length === 0) {
+        return;
+      }
+
+      if (!isStr(bid.burl)) {
+        return;
+      }
+      // Both URLs become EVENT_TYPE_IMPRESSION trackers, and addPbsEventTrackers de-duplicates them
+      // by string equality, so when PBS points events.imp at the same URL as burl it must be
+      // rewritten identically or billing would fire twice. A distinct events.imp is a PBS-owned
+      // event URL whose macros (e.g. ${AUCTION_BID_ID}) are not the DSP's to fill, so it is left as is.
+      const original = bid.burl;
+      bid.burl = replaceMacros(original, subs);
+      if (bid?.ext?.prebid?.events?.imp === original) {
+        deepSetValue(bid, 'ext.prebid.events.imp', bid.burl);
+      }
+    });
+  });
+  return ortbResponse;
 }
 
 /**
@@ -507,7 +529,12 @@ function interpretResponse(response, request) {
   // as a BidderAuctionResponse when its keys are limited to bids/paapi, so returning the array is
   // the robust, conventional contract. Attribution to OCM is handled inside the converter by the
   // `bidderCode` bidResponse override, not here.
-  const { bids = [] } = converter.fromORTB({ request: request.data, response: response.body });
+  // Resolve billing macros on the raw ORTB response BEFORE the converter runs, so both the shared
+  // pbsExtensions `burl` processor and addPbsEventTrackers observe an already-substituted URL and
+  // core keeps ownership of when the tracker fires (adapterManager.triggerBilling, once, at billing
+  // time — including deferred billing). It is also the only layer where the DSP's own bid price is
+  // still reachable; see substituteBillingMacros.
+  const { bids = [] } = converter.fromORTB({ request: request.data, response: substituteBillingMacros(response.body) });
   return bids;
 }
 
@@ -637,8 +664,8 @@ function buildSyncFilterSettings(syncOptions) {
  * @param {Object} [gdprConsent] - GDPR consent data
  * @returns {boolean} True if syncing may proceed
  */
-function syncsAllowedByPrivacy(gdprConsent) {
-  if (config.getConfig('coppa') === true) {
+function syncsAllowedByPrivacy(gdprConsent, coppa) {
+  if (coppa) {
     logWarn(`${BIDDER_CODE}: user syncing skipped because COPPA is enabled`);
     return false;
   }
@@ -674,7 +701,7 @@ function syncsAllowedByPrivacy(gdprConsent) {
  * @returns {Array<{type: string, url: string}>} A single sync, or empty if syncing is disabled,
  *   disallowed by COPPA/GDPR, or the auction response named no bidders
  */
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
   const iframeEnabled = !!syncOptions?.iframeEnabled;
   const pixelEnabled = !!syncOptions?.pixelEnabled;
 
@@ -683,7 +710,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [];
   }
 
-  if (!syncsAllowedByPrivacy(gdprConsent)) {
+  if (!syncsAllowedByPrivacy(gdprConsent, coppa)) {
     return [];
   }
 
