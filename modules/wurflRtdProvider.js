@@ -1198,6 +1198,15 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   // A/B test: Skip enrichment for control group
   if (ABTestManager.isInControlGroup()) {
     logger.logMessage('A/B test control group: skipping enrichment');
+
+    // Keep the WURFL.js cache lifecycle independent of the A/B variant: a control auction
+    // must still populate a missing cache and refresh an expired one, otherwise a later
+    // treatment auction for the same user falls back to LCE.
+    const isExpired = cachedWurflData?.expire_at && Date.now() > cachedWurflData.expire_at;
+    if (!cachedWurflData || isExpired) {
+      loadWurflJsAsync(config, bidders);
+    }
+
     const controlEnrichment = cachedWurflData ? ENRICHMENT_TYPE.NONE : ENRICHMENT_TYPE.NONE_LCE;
     enrichmentType = controlEnrichment;
     bidders.forEach(bidder => bidderEnrichment.set(bidder, controlEnrichment));

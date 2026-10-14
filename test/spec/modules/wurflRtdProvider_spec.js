@@ -677,6 +677,86 @@ describe('wurflRtdProvider', function () {
           wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
         });
 
+        describe('control group WURFL.js cache lifecycle', () => {
+          // A dedicated host isolates this auction's WURFL.js loads from async loads still
+          // pending from earlier tests, which also land on the shared loadExternalScriptStub.
+          const controlHost = 'https://control.wurfl.test';
+          const controlConfig = { params: { abTest: true, abName: 'test_cache', abSplit: 0.5, altHost: controlHost } };
+          const controlLoads = () => loadExternalScriptStub.getCalls()
+            .filter(call => new URL(call.args[0]).origin === controlHost);
+
+          beforeEach(() => {
+            sandbox.stub(Math, 'random').returns(0.75); // Control group
+            wurflSubmodule.init(controlConfig);
+            sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+            sandbox.stub(storage, 'hasLocalStorage').returns(true);
+            reqBidsConfigObj.ortb2Fragments.global.device = {};
+            reqBidsConfigObj.ortb2Fragments.bidder = {};
+          });
+
+          afterEach(() => {
+            __testing__.setSuaPromise(null);
+          });
+
+          const expectNotEnriched = () => {
+            expect(reqBidsConfigObj.ortb2Fragments.global.device).to.deep.equal({});
+            expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.equal({});
+          };
+
+          it('should load WURFL.js and write the cache when no cache is present', (done) => {
+            __testing__.setSuaPromise(Promise.resolve(null));
+            sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+            const setDataStub = sandbox.stub(storage, 'setDataInLocalStorage');
+
+            wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+              expectNotEnriched();
+              // loadWurflJsAsync chains on suaPromise and WURFLPromises; wait for them to flush.
+              setTimeout(() => {
+                expect(controlLoads()).to.have.lengthOf(1);
+                expect(setDataStub.calledWith('wurflrtd')).to.be.true;
+                // The control auction must stay unenriched even after the cache is written
+                expectNotEnriched();
+                done();
+              }, 0);
+            }, controlConfig, {});
+          });
+
+          it('should refresh WURFL.js when the cache is expired', (done) => {
+            __testing__.setSuaPromise(Promise.resolve(null));
+            const cachedData = {
+              WURFL,
+              wurfl_pbjs: { ...wurfl_pbjs, ttl: 2592000 },
+              expire_at: Date.now() - 1000,
+            };
+            sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+
+            wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+              expectNotEnriched();
+              setTimeout(() => {
+                expect(controlLoads()).to.have.lengthOf(1);
+                done();
+              }, 0);
+            }, controlConfig, {});
+          });
+
+          it('should not load WURFL.js when the cache is valid', (done) => {
+            const cachedData = {
+              WURFL,
+              wurfl_pbjs: { ...wurfl_pbjs, ttl: 2592000 },
+              expire_at: Date.now() + 1000000,
+            };
+            sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+
+            wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+              expectNotEnriched();
+              setTimeout(() => {
+                expect(controlLoads()).to.be.empty;
+                done();
+              }, 0);
+            }, controlConfig, {});
+          });
+        });
+
         it('should enrich with LCE for treatment group without cache', (done) => {
           sandbox.stub(Math, 'random').returns(0.25); // Treatment group
           const config = { params: { abTest: true, abName: 'test_lce_treatment', abSplit: 0.5 } };
