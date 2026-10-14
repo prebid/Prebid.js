@@ -15,15 +15,16 @@ import { parseDomain } from '../src/refererDetection.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
+const ACP_ID = 1329; // Google Additional Consent provider ID
 const ENDPOINT = 'hb-pub.ssp.cadent.com';
 const RENDERER_URL = 'https://js.ssp.cadent.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 const ALIASES = [
-  { code: 'emx_digital' },
-  { code: 'cadent' },
-  { code: 'emxdigital' },
-  { code: 'cadentaperturemx' },
+  { code: 'emx_digital', acpId: ACP_ID },
+  { code: 'cadent', acpId: ACP_ID },
+  { code: 'emxdigital', acpId: ACP_ID },
+  { code: 'cadentaperturemx', acpId: ACP_ID },
 ];
 
 const EIDS_SUPPORTED = [
@@ -224,6 +225,7 @@ export const cadentAdapter = {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {

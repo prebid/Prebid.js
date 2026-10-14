@@ -176,4 +176,36 @@ describe('TargetVideo Ad Server Video', function() {
     getWinningBidsStub.restore();
     getAllTargetingDataStub.restore();
   });
+
+  it('should not throw when no bid is given and there is no winning bid for the ad unit', () => {
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns({ [adUnit.code]: allTargeting });
+
+    const urlFromIu = buildVideoUrl({ params: { ...unitId }, adUnit });
+    const urlFromUrl = buildVideoUrl({ params: { ...unitUrl }, adUnit });
+
+    expect(urlFromIu).to.include('https://vid.tvserve.io/ads/bid?iu=/video');
+    expect(urlFromIu).to.include('hb_bidder=testBidder2');
+    expect(urlFromUrl).to.include('https://example.com/ads/bid?iu=/video');
+    expect(urlFromUrl).to.include('hb_bidder=testBidder2');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
+
+  it('should keep cust_params from the iu URL when params.cust_params is not set', () => {
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url = buildVideoUrl({
+      params: { iu: 'https://example.com/ads/bid?iu=/video&cust_params=targeting_1%3Dbaz' },
+      bid,
+      adUnit
+    });
+
+    expect(url).to.include('cust_params=targeting_1%3Dbaz');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
 });

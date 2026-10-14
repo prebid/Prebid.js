@@ -1,9 +1,11 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import adapterManager from '../src/adapterManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { withDomainFailover } from '../libraries/ttdUtils/ajaxFailover.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -12,6 +14,8 @@ import { getDNT } from '../libraries/dnt/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('./ttdBidAdapter.d.ts').TtdBidderParams} TtdBidderParams
+ * @typedef {BidRequest & { params: TtdBidderParams }} TtdBidRequest
  */
 
 const BIDADAPTERVERSION = 'TTD-PREBID-2025.07.15';
@@ -19,6 +23,7 @@ const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
+const DEFAULT_FAILOVER_DOMAIN = 'bid-openpath.ttdcdn.org';
 const TTL = 360;
 
 const MEDIA_TYPE = {
@@ -287,6 +292,44 @@ function selectEndpoint(params) {
   return BIDDER_ENDPOINT;
 }
 
+/**
+ * Wraps the ajax function handed to the adapter by Prebid so that a request which fails quickly with a network
+ * error (e.g. a DNS resolution failure) is retried once on the failover domain, and later requests are sent
+ * straight there. See libraries/ttdUtils/ajaxFailover.js.
+ *
+ * @param {Function} ajax - the ajax function provided by Prebid
+ * @param {*} bidderRequest - The current bidder request object
+ * @returns {Function} - an ajax function with failover behavior
+ */
+export function withFailover(ajax, bidderRequest) {
+  const params = bidderRequest?.bids?.[0]?.params || {};
+  return withDomainFailover(ajax, {
+    enabled: params.failoverEnabled,
+    defaultDomain: DEFAULT_FAILOVER_DOMAIN,
+    userConfiguredDomain: params.failoverDomain,
+    userConfiguredMaxFailureMs: params.failoverMaxFailureMs,
+    logPrefix: BIDDER_CODE
+  });
+}
+
+function enableFailover(bidderCodes) {
+  bidderCodes.forEach(code => {
+    const bidder = adapterManager.getBidAdapter(code);
+    if (!bidder || typeof bidder.callBids !== 'function') {
+      utils.logWarn(`${BIDDER_CODE}: unable to enable failover for ${code}`);
+      return;
+    }
+    const callBids = bidder.callBids;
+    try {
+      bidder.callBids = function (bidderRequest, addBidResponse, done, ajax, ...rest) {
+        return callBids.call(this, bidderRequest, addBidResponse, done, withFailover(ajax, bidderRequest), ...rest);
+      };
+    } catch (e) {
+      utils.logWarn(`${BIDDER_CODE}: unable to enable failover for ${code}`, e);
+    }
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 21,
@@ -297,7 +340,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {TtdBidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -549,3 +592,4 @@ export const spec = {
 };
 
 registerBidder(spec);
+enableFailover([BIDDER_CODE, BIDDER_CODE_LONG]);

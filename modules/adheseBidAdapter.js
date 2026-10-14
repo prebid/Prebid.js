@@ -49,7 +49,7 @@ export const spec = {
     };
 
     const account = getAccount(validBidRequests);
-    const uri = 'https://ads-' + account + '.adhese.com/json';
+    const uri = 'https://' + account + '.ads.adhese.eu/json';
 
     return {
       method: 'POST',

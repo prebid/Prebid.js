@@ -78,6 +78,7 @@ module.exports = [
       'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
+      'web-bundler'
     ],
   },
   jsdoc.configs['flat/recommended'],

@@ -18,7 +18,9 @@ export const dep = {
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.10.0';
+const MODULE_VERSION = '2.11.0';
+// WURFL_GVLID is ScientiaMobile's IAB TCF Global Vendor List ID
+const WURFL_GVLID = 1655;
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -1474,7 +1476,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 // The WURFL submodule
 export const wurflSubmodule = {
   name: MODULE_NAME,
-  disclosureURL: 'local://modules/wurflRtdProvider.json',
+  gvlid: WURFL_GVLID,
   init,
   getBidRequestData,
   onAuctionEndEvent,

@@ -1,14 +1,17 @@
-import { deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn } from '../src/utils.js';
+import { logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { parseDomain } from '../src/refererDetection.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').Bids} Bids
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('./zeta_global_sspBidAdapter.d.ts').ZetaGlobalSspBidderParams} ZetaGlobalSspBidderParams
+ * @typedef {BidRequest & { params: ZetaGlobalSspBidderParams }} ZetaBidRequest
  */
 
 const BIDDER_CODE = 'zeta_global_ssp';
@@ -19,31 +22,69 @@ const DEFAULT_CUR = 'USD';
 const TTL = 300;
 const NET_REV = true;
 
-const DATA_TYPES = {
-  'NUMBER': 'number',
-  'STRING': 'string',
-  'BOOLEAN': 'boolean',
-  'ARRAY': 'array',
-  'OBJECT': 'object'
-};
-const VIDEO_CUSTOM_PARAMS = {
-  'mimes': DATA_TYPES.ARRAY,
-  'minduration': DATA_TYPES.NUMBER,
-  'maxduration': DATA_TYPES.NUMBER,
-  'startdelay': DATA_TYPES.NUMBER,
-  'playbackmethod': DATA_TYPES.ARRAY,
-  'api': DATA_TYPES.ARRAY,
-  'protocols': DATA_TYPES.ARRAY,
-  'w': DATA_TYPES.NUMBER,
-  'h': DATA_TYPES.NUMBER,
-  'battr': DATA_TYPES.ARRAY,
-  'linearity': DATA_TYPES.NUMBER,
-  'placement': DATA_TYPES.NUMBER,
-  'plcmt': DATA_TYPES.NUMBER,
-  'minbitrate': DATA_TYPES.NUMBER,
-  'maxbitrate': DATA_TYPES.NUMBER,
-  'skip': DATA_TYPES.NUMBER
-};
+export const converter = ortbConverter({
+  context: {
+    netRevenue: NET_REV,
+    ttl: TTL,
+  },
+
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    const tagid = bidRequest.params?.tagid;
+    if (tagid) {
+      imp.tagid = tagid;
+    }
+
+    // Zeta's endpoint expects the primary size on imp.banner.w/h; keep imp.banner.format
+    // only when more than one size was requested.
+    if (imp.banner?.format?.length) {
+      imp.banner.w = imp.banner.format[0].w;
+      imp.banner.h = imp.banner.format[0].h;
+      if (imp.banner.format.length === 1) {
+        delete imp.banner.format;
+      }
+    }
+
+    return imp;
+  },
+
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    const params = context.bidRequests?.[0]?.params ?? {};
+
+    request.cur = request.cur ?? [DEFAULT_CUR];
+
+    // Zeta-specific extensions.
+    request.ext = request.ext ?? {};
+    request.ext.tags = params.tags ? params.tags : {};
+    request.ext.sid = params.sid ? params.sid : undefined;
+
+    const rInfo = bidderRequest.refererInfo;
+    if (rInfo) {
+      request.site = request.site ?? {};
+      request.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
+      request.site.domain = parseDomain(request.site.page, { noLeadingWww: true });
+    }
+
+    if (params.test) {
+      request.test = params.test;
+    }
+
+    return clearEmpties(request);
+  },
+
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    const seat = context.seatbid?.seat;
+    if (seat) {
+      bidResponse.dspId = seat;
+    }
+
+    return bidResponse;
+  },
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -53,7 +94,7 @@ export const spec = {
   /**
    * Determines whether the given bid request is valid.
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {ZetaBidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -71,151 +112,17 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {Bids[]} validBidRequests - an array of bidRequest objects
+   * @param {BidRequest[]} validBidRequests - an array of bidRequest objects
    * @param {BidderRequest} bidderRequest - master bidRequest object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const secure = 1; // treat all requests as secure
-    const params = validBidRequests[0].params;
-    const imps = validBidRequests.map(request => {
-      const impData = {
-        id: request.bidId,
-        secure: secure
-      };
-      const tagid = request.params?.tagid;
-      if (tagid) {
-        impData.tagid = tagid;
-      }
-      if (request.mediaTypes) {
-        for (const mediaType in request.mediaTypes) {
-          switch (mediaType) {
-            case BANNER:
-              impData.banner = buildBanner(request);
-              break;
-            case VIDEO:
-              impData.video = buildVideo(request);
-              break;
-          }
-        }
-      }
-      if (!impData.banner && !impData.video) {
-        impData.banner = buildBanner(request);
-      }
-
-      if (typeof request.getFloor === 'function') {
-        const floorInfo = request.getFloor({
-          currency: 'USD',
-          mediaType: impData.video ? 'video' : 'banner',
-          size: [impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h]
-        });
-        if (floorInfo && floorInfo.floor) {
-          impData.bidfloor = floorInfo.floor;
-        }
-      }
-      if (!impData.bidfloor) {
-        const bidfloor = request.params?.bidfloor;
-        if (bidfloor) {
-          impData.bidfloor = bidfloor;
-        }
-      }
-
-      return impData;
-    });
-
-    const payload = {
-      id: bidderRequest.bidderRequestId,
-      cur: [DEFAULT_CUR],
-      imp: imps,
-      site: { ...bidderRequest?.ortb2?.site, ...params?.site },
-      device: { ...bidderRequest?.ortb2?.device, ...params?.device },
-      user: params.user ? params.user : {},
-      app: params.app ? params.app : {},
-      ext: {
-        tags: params.tags ? params.tags : {},
-        sid: params.sid ? params.sid : undefined
-      }
-    };
-    const rInfo = bidderRequest.refererInfo;
-    if (rInfo) {
-      payload.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
-      payload.site.domain = parseDomain(payload.site.page, { noLeadingWww: true });
-    }
-
-    payload.device.ua = navigator.userAgent;
-    payload.device.language = navigator.language;
-    payload.device.w = screen.width;
-    payload.device.h = screen.height;
-
-    if (bidderRequest.ortb2?.user?.geo && bidderRequest.ortb2?.device?.geo) {
-      payload.device.geo = { ...payload.device.geo, ...bidderRequest.ortb2?.device.geo };
-      payload.user.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
-    } else {
-      if (bidderRequest.ortb2?.user?.geo) {
-        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
-      }
-      if (bidderRequest.ortb2?.device?.geo) {
-        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.device.geo };
-      }
-    }
-
-    if (bidderRequest?.ortb2?.device?.sua) {
-      payload.device.sua = bidderRequest.ortb2.device.sua;
-    }
-
-    if (params.test) {
-      payload.test = params.test;
-    }
-
-    // Attaching GDPR Consent Params
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
-    }
-
-    // CCPA
-    if (bidderRequest && bidderRequest.uspConsent) {
-      deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    }
-
-    // Attaching GPP Consent Params
-    if (bidderRequest?.gppConsent?.gppString) {
-      deepSetValue(payload, 'regs.gpp', bidderRequest.gppConsent.gppString);
-      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
-    } else if (bidderRequest?.ortb2?.regs?.gpp) {
-      deepSetValue(payload, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
-    }
-
-    // schain - check for schain in the new location
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      payload.source = {
-        ext: {
-          schain: schain
-        }
-      };
-    }
-
-    if (bidderRequest?.timeout) {
-      payload.tmax = bidderRequest.timeout;
-    }
-
-    if (bidderRequest?.ortb2?.bcat) {
-      payload.bcat = bidderRequest.ortb2.bcat;
-    }
-
-    if (bidderRequest?.ortb2?.badv) {
-      payload.badv = bidderRequest.ortb2.badv;
-    }
-
-    provideEids(validBidRequests[0], payload);
-    provideSegments(bidderRequest, payload);
-    const url = params.sid ? ENDPOINT_URL.concat('?sid=', params.sid) : ENDPOINT_URL;
+    const sid = validBidRequests[0]?.params?.sid;
+    const url = sid ? ENDPOINT_URL.concat('?sid=', sid) : ENDPOINT_URL;
     return {
       method: 'POST',
       url: url,
-      data: JSON.stringify(clearEmpties(payload)),
+      data: converter.toORTB({ bidRequests: validBidRequests, bidderRequest }),
     };
   },
 
@@ -223,44 +130,14 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param bidRequest The payload from the server's response.
+   * @param {ServerRequest} request The payload from the server's response.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
-    const response = (serverResponse || {}).body;
-    if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
-      response.seatbid.forEach(zetaSeatbid => {
-        const seat = zetaSeatbid.seat;
-        zetaSeatbid.bid.forEach(zetaBid => {
-          const bid = {
-            requestId: zetaBid.impid,
-            cpm: zetaBid.price,
-            currency: response.cur,
-            width: zetaBid.w,
-            height: zetaBid.h,
-            ad: zetaBid.adm,
-            ttl: TTL,
-            creativeId: zetaBid.crid,
-            netRevenue: NET_REV,
-          };
-          if (zetaBid.adomain && zetaBid.adomain.length) {
-            bid.meta = {
-              advertiserDomains: zetaBid.adomain
-            };
-          }
-          provideMediaType(zetaBid, bid, bidRequest.data);
-          if (bid.mediaType === VIDEO) {
-            bid.vastXml = bid.ad;
-          }
-          if (seat) {
-            bid.dspId = seat;
-          }
-          bidResponses.push(bid);
-        });
-      });
+  interpretResponse: function (serverResponse, request) {
+    if (!serverResponse?.body) {
+      return [];
     }
-    return bidResponses;
+    return converter.fromORTB({ response: serverResponse.body, request: request.data }).bids;
   },
 
   /**
@@ -286,7 +163,7 @@ export const spec = {
       syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
-    // COPPA is supplied by core's COPPA handler (updated by the Codex bot).
+    // COPPA flag is supplied by core's COPPA handler.
     if (coppa) {
       syncurl += '&coppa=1';
     }
@@ -304,109 +181,6 @@ export const spec = {
     }
   }
 };
-
-function buildBanner(request) {
-  let sizes = request.sizes;
-  if (request.mediaTypes &&
-    request.mediaTypes.banner &&
-    request.mediaTypes.banner.sizes) {
-    sizes = request.mediaTypes.banner.sizes;
-  }
-  if (sizes.length > 1) {
-    const format = sizes.map(s => {
-      return {
-        w: s[0],
-        h: s[1]
-      };
-    });
-    return {
-      w: sizes[0][0],
-      h: sizes[0][1],
-      format: format
-    };
-  } else {
-    return {
-      w: sizes[0][0],
-      h: sizes[0][1]
-    };
-  }
-}
-
-function buildVideo(request) {
-  const video = {};
-  const videoParams = deepAccess(request, 'mediaTypes.video', {});
-  for (const key in VIDEO_CUSTOM_PARAMS) {
-    if (videoParams.hasOwnProperty(key)) {
-      video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
-    }
-  }
-  if (videoParams.playerSize) {
-    if (isArray(videoParams.playerSize[0])) {
-      video.w = parseInt(videoParams.playerSize[0][0], 10);
-      video.h = parseInt(videoParams.playerSize[0][1], 10);
-    } else if (isNumber(videoParams.playerSize[0])) {
-      video.w = parseInt(videoParams.playerSize[0], 10);
-      video.h = parseInt(videoParams.playerSize[1], 10);
-    }
-  }
-  return video;
-}
-
-function checkParamDataType(key, value, datatype) {
-  let functionToExecute;
-  switch (datatype) {
-    case DATA_TYPES.BOOLEAN:
-      functionToExecute = isBoolean;
-      break;
-    case DATA_TYPES.NUMBER:
-      functionToExecute = isNumber;
-      break;
-    case DATA_TYPES.STRING:
-      functionToExecute = isStr;
-      break;
-    case DATA_TYPES.ARRAY:
-      functionToExecute = isArray;
-      break;
-  }
-  if (functionToExecute(value)) {
-    return value;
-  }
-  logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
-  return undefined;
-}
-
-function provideEids(request, payload) {
-  if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
-    deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
-  }
-}
-
-function provideSegments(bidderRequest, payload) {
-  const data = bidderRequest.ortb2?.user?.data;
-  if (isArray(data)) {
-    const segments = data.filter(d => d?.segment).map(d => d.segment).filter(s => isArray(s)).flatMap(s => s).filter(s => s?.id);
-    if (segments.length > 0) {
-      if (!payload.user) {
-        payload.user = {};
-      }
-      if (!isArray(payload.user.data)) {
-        payload.user.data = [];
-      }
-      const payloadData = {
-        segment: segments
-      };
-      payload.user.data.push(payloadData);
-    }
-  }
-}
-
-function provideMediaType(zetaBid, bid, bidRequest) {
-  if (zetaBid.ext && zetaBid.ext.prebid && zetaBid.ext.prebid.type) {
-    bid.mediaType = zetaBid.ext.prebid.type === VIDEO ? VIDEO : BANNER;
-  } else {
-    bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
-  }
-}
 
 function cropPage(page) {
   if (page) {
