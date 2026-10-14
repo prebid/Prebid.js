@@ -3,6 +3,7 @@ import { BANNER, NATIVE, VIDEO } from "../src/mediaTypes.js";
 import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 import { getTimeZone } from "../libraries/timezone/timezone.js";
 import { config } from "../src/config.js";
+import { logError, logWarn } from "../src/utils.js";
 
 const DEFAULT_CURRENCY = "USD";
 const BIDDER_CODE = "screencore";
@@ -54,7 +55,7 @@ export const createEndpoint = (params) => {
   if (!params?.sspPlacementId) return undefined;
 
   const subdomain = getRegionSubdomainSuffix();
-  return `https://${subdomain}.screencore.io/pbjs-bid?pId=${params.sspPlacementId}`;
+  return `https://${subdomain}.screencore.io/pbjs-bid?pId=${encodeURIComponent(params.sspPlacementId)}`;
 };
 
 const sspConverter = ortbConverter({
@@ -84,7 +85,9 @@ const sspConverter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
-    bidResponse.cur = bid.cur || DEFAULT_CURRENCY;
+    if (!bidResponse.currency) {
+      bidResponse.currency = context.ortbRequest?.cur?.[0] || DEFAULT_CURRENCY;
+    }
     return bidResponse;
   },
 });
@@ -95,24 +98,41 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: (bid) => Boolean(bid?.params?.sspPlacementId),
+  isBidRequestValid: (bid) => {
+    if (!bid?.params?.sspPlacementId) {
+      logWarn(
+        `${BIDDER_CODE}: adUnit ${bid?.adUnitCode}: sspPlacementId is required`,
+      );
+      return false;
+    }
+    return true;
+  },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     if (!validBidRequests.length) return [];
 
-    const endpoint = createEndpoint(validBidRequests[0].params);
-    if (!endpoint) return [];
-
-    const request = sspConverter.toORTB({
-      bidRequests: validBidRequests,
-      bidderRequest,
+    const bidsByURL = new Map();
+    validBidRequests.forEach((bid) => {
+      const url = createEndpoint(bid.params);
+      if (!url) return;
+      if (!bidsByURL.has(url)) bidsByURL.set(url, []);
+      bidsByURL.get(url).push(bid);
     });
 
-    return {
-      method: "POST",
-      url: endpoint,
-      data: request,
-    };
+    const requests = [];
+    bidsByURL.forEach((bids, url) => {
+      try {
+        requests.push({
+          method: "POST",
+          url,
+          data: sspConverter.toORTB({ bidRequests: bids, bidderRequest }),
+        });
+      } catch (err) {
+        logError(`${BIDDER_CODE}: failed to build request for ${url}`, err);
+      }
+    });
+
+    return requests;
   },
 
   interpretResponse: (response, request) => {
@@ -126,6 +146,7 @@ export const spec = {
         })?.bids || []
       );
     } catch (err) {
+      logError(`${BIDDER_CODE}: failed to interpret response`, err);
       return [];
     }
   },

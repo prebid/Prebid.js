@@ -4,6 +4,7 @@ import {
   spec as adapter,
 } from "modules/screencoreBidAdapter.js";
 import { config } from "src/config.js";
+import { setConfig as setCurrencyConfig } from "modules/currency.js";
 import { BANNER, VIDEO, NATIVE } from "src/mediaTypes.js";
 import sinon from "sinon";
 
@@ -62,6 +63,14 @@ const VIDEO_BID_TO_SSP = {
   },
 };
 
+const NATIVE_ORTB_REQUEST = {
+  ver: "1.2",
+  assets: [
+    { id: 1, required: 1, title: { len: 80 } },
+    { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } },
+  ],
+};
+
 const NATIVE_BID_TO_SSP = {
   bidId: "010jd19n0ij119",
   bidder: "screencore",
@@ -71,12 +80,9 @@ const NATIVE_BID_TO_SSP = {
     sspPlacementId: "890",
   },
   mediaTypes: {
-    native: {
-      title: { required: true },
-      image: { required: true },
-      sponsoredBy: { required: false },
-    },
+    native: { ortb: NATIVE_ORTB_REQUEST },
   },
+  nativeOrtbRequest: NATIVE_ORTB_REQUEST,
 };
 
 const BIDDER_REQUEST = {
@@ -143,9 +149,50 @@ const SSP_VIDEO_ORTB_RESPONSE = {
   },
 };
 
+const SSP_NATIVE_ORTB_RESPONSE = {
+  body: {
+    id: "test-request-id",
+    cur: "USD",
+    seatbid: [
+      {
+        seat: "screencore",
+        bid: [
+          {
+            id: "3",
+            impid: "010jd19n0ij119",
+            price: 1.2,
+            adm: JSON.stringify({
+              assets: [
+                { id: 1, title: { text: "dummyText" } },
+                {
+                  id: 2,
+                  img: { url: "https://example.com/image", w: 300, h: 250 },
+                },
+              ],
+              link: { url: "https://example.com" },
+            }),
+            crid: "12610997325162499419",
+            mtype: 4,
+            adomain: ["screencore.io"],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 const SSP_US_ENDPOINT = "https://ssp-us.screencore.io/pbjs-bid?pId=123";
 const SSP_EU_ENDPOINT = "https://ssp-eu.screencore.io/pbjs-bid?pId=123";
 const SSP_APAC_ENDPOINT = "https://ssp-asia.screencore.io/pbjs-bid?pId=123";
+
+const copyBid = (bid, bidId, sspPlacementId) => ({
+  ...bid,
+  bidId,
+  adUnitCode: `adunit-${bidId}`,
+  params: { ...bid.params, sspPlacementId },
+});
+
+const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
 
 describe("screencore bid adapter", function () {
   before(() => config.resetConfig());
@@ -199,6 +246,15 @@ describe("screencore bid adapter", function () {
       expect(isValid).to.be.false;
     });
 
+    it("should return false when sspPlacementId is an empty string", function () {
+      const isValid = adapter.isBidRequestValid({
+        bidId: "123",
+        params: { sspPlacementId: "" },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+      });
+      expect(isValid).to.be.false;
+    });
+
     it("should return false when params is missing entirely", function () {
       const isValid = adapter.isBidRequestValid({
         bidId: "123",
@@ -243,11 +299,15 @@ describe("screencore bid adapter", function () {
 
     it("should build banner request", function () {
       const requests = adapter.buildRequests([BID_TO_SSP], BIDDER_REQUEST);
-      expect(requests).to.exist;
-      expect(requests.method).to.equal("POST");
-      expect(requests.url).to.include("screencore.io/pbjs-bid");
-      expect(requests.url).to.include("pId=123");
-      expect(requests.data).to.exist;
+      expect(requests).to.be.an("array").with.lengthOf(1);
+      expect(requests[0].method).to.equal("POST");
+      expect(requests[0].url).to.include("screencore.io/pbjs-bid");
+      expect(requests[0].url).to.include("pId=123");
+      expect(requests[0].data.imp).to.have.lengthOf(1);
+      expect(requests[0].data.imp[0].banner).to.exist;
+      expect(requests[0].data.imp[0].ext.screencore).to.deep.equal({
+        sspPlacementId: "123",
+      });
     });
 
     it("should build video request", function () {
@@ -255,19 +315,154 @@ describe("screencore bid adapter", function () {
         [VIDEO_BID_TO_SSP],
         BIDDER_REQUEST,
       );
-      expect(requests).to.exist;
-      expect(requests.method).to.equal("POST");
-      expect(requests.url).to.include("pId=392");
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal("POST");
+      expect(requests[0].url).to.include("pId=392");
     });
+
+    if (FEATURES.VIDEO) {
+      it("should build a video imp", function () {
+        const requests = adapter.buildRequests(
+          [VIDEO_BID_TO_SSP],
+          BIDDER_REQUEST,
+        );
+        expect(requests[0].data.imp[0].video).to.exist;
+      });
+    }
 
     it("should build native request", function () {
       const requests = adapter.buildRequests(
         [NATIVE_BID_TO_SSP],
         BIDDER_REQUEST,
       );
-      expect(requests).to.exist;
-      expect(requests.method).to.equal("POST");
-      expect(requests.url).to.include("pId=890");
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal("POST");
+      expect(requests[0].url).to.include("pId=890");
+    });
+
+    if (FEATURES.NATIVE) {
+      it("should build a native imp", function () {
+        const requests = adapter.buildRequests(
+          [NATIVE_BID_TO_SSP],
+          BIDDER_REQUEST,
+        );
+        expect(requests[0].data.imp[0].native).to.exist;
+      });
+    }
+
+    it("should set default currency and test flag", function () {
+      const requests = adapter.buildRequests([BID_TO_SSP], BIDDER_REQUEST);
+      expect(requests[0].data.cur).to.deep.equal(["USD"]);
+      expect(requests[0].data.test).to.equal(0);
+    });
+
+    it("should use currency from params when provided", function () {
+      const bid = {
+        ...BID_TO_SSP,
+        params: { ...BID_TO_SSP.params, currency: "EUR" },
+      };
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data.cur).to.deep.equal(["EUR"]);
+    });
+
+    describe("with currency module enabled", function () {
+      beforeEach(function () {
+        setCurrencyConfig({
+          adServerCurrency: "EUR",
+          rates: { USD: { EUR: 0.9 } },
+        });
+      });
+      afterEach(function () {
+        setCurrencyConfig({});
+      });
+
+      it("should keep the ad server currency in request.cur", function () {
+        const requests = adapter.buildRequests([BID_TO_SSP], BIDDER_REQUEST);
+        expect(requests[0].data.cur).to.deep.equal(["EUR"]);
+      });
+    });
+
+    describe("with debug config", function () {
+      beforeEach(function () {
+        sinon
+          .stub(config, "getConfig")
+          .callsFake((key) => (key === "debug" ? true : undefined));
+      });
+      afterEach(function () {
+        config.getConfig.restore();
+      });
+
+      it("should set test flag to 1", function () {
+        const requests = adapter.buildRequests([BID_TO_SSP], BIDDER_REQUEST);
+        expect(requests[0].data.test).to.equal(1);
+      });
+    });
+
+    describe("multiple bids", function () {
+      it("should group bids with the same sspPlacementId into one request", function () {
+        const requests = adapter.buildRequests(
+          [
+            copyBid(BID_TO_SSP, "bid-1", "123"),
+            copyBid(BID_TO_SSP, "bid-2", "123"),
+          ],
+          BIDDER_REQUEST,
+        );
+
+        expect(requests).to.have.lengthOf(1);
+        expect(requests[0].url).to.include("pId=123");
+        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
+          "bid-1",
+          "bid-2",
+        ]);
+      });
+
+      it("should split bids with different sspPlacementIds into separate requests", function () {
+        const requests = adapter.buildRequests(
+          [
+            copyBid(BID_TO_SSP, "bid-1", "123"),
+            copyBid(BID_TO_SSP, "bid-2", "456"),
+          ],
+          BIDDER_REQUEST,
+        );
+
+        expect(requests).to.have.lengthOf(2);
+
+        expect(requests[0].url).to.include("pId=123");
+        expect(requests[0].data.imp).to.have.lengthOf(1);
+        expect(requests[0].data.imp[0].id).to.equal("bid-1");
+        expect(requests[0].data.imp[0].ext.screencore.sspPlacementId).to.equal(
+          "123",
+        );
+
+        expect(requests[1].url).to.include("pId=456");
+        expect(requests[1].data.imp).to.have.lengthOf(1);
+        expect(requests[1].data.imp[0].id).to.equal("bid-2");
+        expect(requests[1].data.imp[0].ext.screencore.sspPlacementId).to.equal(
+          "456",
+        );
+      });
+
+      it("should keep grouped bids together when placements repeat out of order", function () {
+        const requests = adapter.buildRequests(
+          [
+            copyBid(BID_TO_SSP, "bid-1", "123"),
+            copyBid(BID_TO_SSP, "bid-2", "456"),
+            copyBid(BID_TO_SSP, "bid-3", "123"),
+          ],
+          BIDDER_REQUEST,
+        );
+
+        expect(requests).to.have.lengthOf(2);
+        expect(requests[0].url).to.include("pId=123");
+        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
+          "bid-1",
+          "bid-3",
+        ]);
+        expect(requests[1].url).to.include("pId=456");
+        expect(requests[1].data.imp.map((imp) => imp.id)).to.deep.equal([
+          "bid-2",
+        ]);
+      });
     });
   });
 
@@ -284,8 +479,15 @@ describe("screencore bid adapter", function () {
       expect(responses).to.be.empty;
     });
 
+    it("should return empty array when the request was not built by buildRequests", function () {
+      const responses = adapter.interpretResponse(SSP_ORTB_RESPONSE, {
+        data: { id: "x", imp: [{ id: "4s14670csep132" }] },
+      });
+      expect(responses).to.be.an("array").that.is.empty;
+    });
+
     it("should interpret a banner ORTB response", function () {
-      const request = adapter.buildRequests([BID_TO_SSP], BIDDER_REQUEST);
+      const [request] = adapter.buildRequests([BID_TO_SSP], BIDDER_REQUEST);
       const responses = adapter.interpretResponse(SSP_ORTB_RESPONSE, request);
       expect(responses).to.have.length(1);
       expect(responses[0].requestId).to.equal("4s14670csep132");
@@ -294,18 +496,86 @@ describe("screencore bid adapter", function () {
       expect(responses[0].height).to.equal(250);
       expect(responses[0].mediaType).to.equal(BANNER);
       expect(responses[0].currency).to.equal("USD");
+      expect(responses[0].netRevenue).to.equal(true);
+      expect(responses[0].ttl).to.equal(20);
     });
 
-    it("should interpret a video ORTB response", function () {
-      const request = adapter.buildRequests([VIDEO_BID_TO_SSP], BIDDER_REQUEST);
-      const responses = adapter.interpretResponse(
-        SSP_VIDEO_ORTB_RESPONSE,
-        request,
-      );
+    it("should fall back to the requested currency when the response has no cur", function () {
+      const bid = {
+        ...BID_TO_SSP,
+        params: { ...BID_TO_SSP.params, currency: "EUR" },
+      };
+      const [request] = adapter.buildRequests([bid], BIDDER_REQUEST);
+      const response = deepCopy(SSP_ORTB_RESPONSE);
+      delete response.body.cur;
+
+      const responses = adapter.interpretResponse(response, request);
       expect(responses).to.have.length(1);
-      expect(responses[0].requestId).to.equal("kxm1ox1oij10j0");
-      expect(responses[0].cpm).to.equal(2);
-      expect(responses[0].mediaType).to.equal(VIDEO);
+      expect(responses[0].currency).to.equal("EUR");
+    });
+
+    if (FEATURES.VIDEO) {
+      it("should interpret a video ORTB response", function () {
+        const [request] = adapter.buildRequests(
+          [VIDEO_BID_TO_SSP],
+          BIDDER_REQUEST,
+        );
+        const responses = adapter.interpretResponse(
+          SSP_VIDEO_ORTB_RESPONSE,
+          request,
+        );
+        expect(responses).to.have.length(1);
+        expect(responses[0].requestId).to.equal("kxm1ox1oij10j0");
+        expect(responses[0].cpm).to.equal(2);
+        expect(responses[0].mediaType).to.equal(VIDEO);
+        expect(responses[0].vastXml).to.equal('<VAST version="3.0"></VAST>');
+      });
+    }
+
+    if (FEATURES.NATIVE) {
+      it("should interpret a native ORTB response", function () {
+        const [request] = adapter.buildRequests(
+          [NATIVE_BID_TO_SSP],
+          BIDDER_REQUEST,
+        );
+        const responses = adapter.interpretResponse(
+          SSP_NATIVE_ORTB_RESPONSE,
+          request,
+        );
+        expect(responses).to.have.length(1);
+        expect(responses[0].requestId).to.equal("010jd19n0ij119");
+        expect(responses[0].mediaType).to.equal(NATIVE);
+        expect(responses[0].native.ortb.assets).to.have.lengthOf(2);
+      });
+    }
+
+    it("should interpret each response of a split request against its own request", function () {
+      const requests = adapter.buildRequests(
+        [
+          copyBid(BID_TO_SSP, "bid-1", "123"),
+          copyBid(BID_TO_SSP, "bid-2", "456"),
+        ],
+        BIDDER_REQUEST,
+      );
+
+      const firstResponse = deepCopy(SSP_ORTB_RESPONSE);
+      firstResponse.body.seatbid[0].bid[0].impid = "bid-1";
+      firstResponse.body.seatbid[0].bid[0].price = 0.8;
+
+      const secondResponse = deepCopy(SSP_ORTB_RESPONSE);
+      secondResponse.body.seatbid[0].bid[0].impid = "bid-2";
+      secondResponse.body.seatbid[0].bid[0].price = 1.5;
+
+      const firstBids = adapter.interpretResponse(firstResponse, requests[0]);
+      const secondBids = adapter.interpretResponse(secondResponse, requests[1]);
+
+      expect(firstBids).to.have.lengthOf(1);
+      expect(firstBids[0].requestId).to.equal("bid-1");
+      expect(firstBids[0].cpm).to.equal(0.8);
+
+      expect(secondBids).to.have.lengthOf(1);
+      expect(secondBids[0].requestId).to.equal("bid-2");
+      expect(secondBids[0].cpm).to.equal(1.5);
     });
   });
 
@@ -380,6 +650,12 @@ describe("screencore bid adapter", function () {
       );
 
       stub.restore();
+    });
+
+    it("should URL-encode sspPlacementId", function () {
+      expect(createEndpoint({ sspPlacementId: "a b&c" })).to.include(
+        "pId=a%20b%26c",
+      );
     });
 
     it("should return undefined when sspPlacementId is missing", function () {
