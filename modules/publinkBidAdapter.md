@@ -75,5 +75,11 @@ var adUnits = [
   advertised TCF-EU support; publishers must configure traffic accordingly.
 - The gateway's win-notice URL is not used as a VAST document URL. Inline VAST
   contains the rendering trackers.
-- No storage, cookies, user syncs, external scripts or custom tracking hooks
+- Video/audio win notices are sent once through a low-priority keepalive GET
+  when Prebid reports the winning bid; banner notices use core rendering.
+- No storage, cookies, user syncs or external scripts
   are registered by the adapter.
+
+When a custom player selects a winning video/audio bid, report the win through
+Prebid, for example `pbjs.markWinningBidAsUsed({ adId: bid.adId, events: true })`.
+This triggers the win-notice lifecycle separately from VAST render events.

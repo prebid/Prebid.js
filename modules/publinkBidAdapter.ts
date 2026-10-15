@@ -1,13 +1,16 @@
 import { type BidderSpec, type ExtendedResponse, registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { AUDIO, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue } from '../src/utils.js';
+import { deepAccess, deepSetValue, logWarn, runBackgroundTask } from '../src/utils.js';
 import type { BidRequest } from '../src/adapterManager.js';
 
 const BIDDER_CODE = 'publink';
 const ENDPOINT = 'https://ortb.publink.io/api/ortb/prebid';
 const DEFAULT_CURRENCY = 'USD';
 const MEDIA_TYPES = { 1: BANNER, 2: VIDEO, 3: AUDIO } as const;
+
+export const dep = { ajax, runBackgroundTask };
 
 export type PublinkBidParams = {
   /** Overrides ortb2Imp.tagid with the tag ID issued by Publink. */
@@ -81,6 +84,14 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     // Inline VAST carries the render trackers; do not offer that pixel to a player.
     const creativeBid = mediaType === BANNER ? bid : { ...bid, nurl: undefined };
     const response = buildBidResponse(creativeBid, { ...context, mediaType });
+    if (mediaType !== BANNER && typeof bid.nurl === 'string' && bid.nurl.trim()) {
+      Object.assign(response, {
+        publinkWinNotice: {
+          url: bid.nurl.replace(/\$\{AUCTION_PRICE\}/g, String(bid.price)),
+          sent: false,
+        }
+      });
+    }
     response.meta = { ...response.meta, advertiserDomains: bid.adomain || [] };
     return response;
   },
@@ -109,6 +120,20 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     })).filter(request => request.data.imp.some(imp => imp.banner || imp.video || imp.audio));
   },
 
+  onBidWon(bid) {
+    const notice = (bid as typeof bid & { publinkWinNotice?: { url: string; sent: boolean } }).publinkWinNotice;
+    if (!notice || notice.sent) return;
+    // Keep state per response: core's shallow bid copies share this notice.
+    notice.sent = true;
+    dep.runBackgroundTask(() => {
+      try {
+        dep.ajax(notice.url, undefined, undefined, { method: 'GET', keepalive: true, withCredentials: false });
+      } catch (error) {
+        logWarn('publink: win notice failed', error);
+      }
+    });
+  },
+
   interpretResponse(serverResponse, request) {
     const body = serverResponse?.body;
     if (!Array.isArray(body?.seatbid)) return [];
@@ -122,5 +147,5 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 };
 
-// No storage, user syncs, external code, or additional network/event hooks.
+// No storage or user syncs. Non-banner wins use a keepalive notice; banner notices use core rendering.
 registerBidder(spec);

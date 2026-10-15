@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 // The module is TypeScript (publinkBidAdapter.ts); Prebid's build resolves
 // the .js specifier to it, same as every core import.
-import { spec } from 'modules/publinkBidAdapter.js';
+import { dep, spec } from 'modules/publinkBidAdapter.js';
+import sinon from 'sinon';
 import 'modules/priceFloors.js';
 
 describe('publinkBidAdapter', function () {
@@ -84,6 +85,91 @@ describe('publinkBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
       const [req] = spec.buildRequests([bid], bidderRequest);
       expect(req.data.imp[0].tagid).to.equal('standard-tag');
+    });
+  });
+
+  function respond(request, bid) {
+    return {
+      body: {
+        id: request.data.id,
+        cur: 'USD',
+        seatbid: [{
+          seat: 'af_1a2b3c4d',
+          bid: [{ impid: request.data.imp[0].id, ...bid }],
+        }],
+      },
+    };
+  }
+
+  describe('onBidWon', function () {
+    let ajax, background;
+    beforeEach(function () {
+      ajax = sinon.stub(dep, 'ajax');
+      background = sinon.stub(dep, 'runBackgroundTask').callsFake(task => task());
+    });
+    afterEach(function () { ajax.restore(); background.restore(); });
+
+    [['video', 2, FEATURES.VIDEO], ['audio', 3, FEATURES.AUDIO]].forEach(([format, mtype, enabled]) => {
+      if (!enabled) return;
+      it(`sends a winning ${format} notice once, separately from the VAST URL`, function () {
+        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]] } } : { audio: { mimes: ['audio/mpeg'] } };
+        const [req] = spec.buildRequests([{ ...validBid, mediaTypes }], bidderRequest);
+        const nurl = `https://ortb.publink.io/notice/win?format=${format}`;
+        const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST/>', crid: 'test', mtype, nurl }), req);
+        expect(bid.publinkWinNotice.url).to.equal(nurl);
+        expect(bid.vastUrl).to.equal(undefined);
+        expect(ajax.called).to.equal(false);
+        spec.onBidWon(bid);
+        spec.onBidWon({ ...bid });
+        expect(ajax.calledOnce).to.equal(true);
+        expect(background.calledOnce).to.equal(true);
+        expect(ajax.firstCall.args).to.deep.equal([nurl, undefined, undefined, { method: 'GET', keepalive: true, withCredentials: false }]);
+      });
+    });
+
+    it('leaves banner notices on the core render path', function () {
+      const [req] = spec.buildRequests([validBid], bidderRequest);
+      const nurl = 'https://ortb.publink.io/notice/banner';
+      const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<div/>', mtype: 1, nurl }), req);
+      expect(bid.ad).to.contain(nurl);
+      expect(bid.publinkWinNotice).to.equal(undefined);
+      spec.onBidWon(bid);
+      expect(ajax.called).to.equal(false);
+    });
+
+    if (FEATURES.VIDEO || FEATURES.AUDIO) {
+      it('resolves all win-price macros using the original endpoint price', function () {
+        const format = FEATURES.VIDEO ? 'video' : 'audio';
+        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]] } } : { audio: { mimes: ['audio/mpeg'] } };
+        const [req] = spec.buildRequests([{ ...validBid, mediaTypes }], bidderRequest);
+        const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST/>', mtype: format === 'video' ? 2 : 3, nurl: `https://ortb.publink.io/notice/win?p=\${AUCTION_PRICE}&again=\${AUCTION_PRICE}` }), req);
+        bid.cpm = 1.25; // Publisher adjustment must not change the endpoint's USD price.
+        spec.onBidWon(bid);
+        expect(ajax.firstCall.args[0]).to.equal('https://ortb.publink.io/notice/win?p=5&again=5');
+      });
+    }
+
+    it('does nothing for a bid without a notice', function () {
+      spec.onBidWon({ mediaType: 'video' });
+      spec.onBidWon({ mediaType: 'audio' });
+      expect(ajax.called).to.equal(false);
+    });
+
+    it('does not retry a synchronously failing transport', function () {
+      ajax.throws(new Error('Transport unavailable'));
+      const bid = { publinkWinNotice: { url: 'https://ortb.publink.io/notice/win', sent: false } };
+      expect(() => spec.onBidWon(bid)).not.to.throw();
+      spec.onBidWon({ ...bid });
+      expect(ajax.calledOnce).to.equal(true);
+    });
+
+    it('does not share notice state between separate bids', function () {
+      const a = { publinkWinNotice: { url: 'https://ortb.publink.io/notice/a', sent: false } };
+      const b = { publinkWinNotice: { url: 'https://ortb.publink.io/notice/b', sent: false } };
+      spec.onBidWon(a);
+      spec.onBidWon(b);
+      spec.onBidWon(a);
+      expect(ajax.callCount).to.equal(2);
     });
   });
 
@@ -245,19 +331,6 @@ describe('publinkBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    function respond(request, bid) {
-      return {
-        body: {
-          id: request.data.id,
-          cur: 'USD',
-          seatbid: [{
-            seat: 'af_1a2b3c4d',
-            bid: [{ impid: request.data.imp[0].id, ...bid }],
-          }],
-        },
-      };
-    }
-
     // vastXml is filled by the converter's VIDEO response processor, compiled
     // out of CI's all-features-disabled build.
     if (FEATURES.VIDEO) {
@@ -385,6 +458,7 @@ describe('publinkBidAdapter', function () {
         const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST version="3.0"/>', crid: 'test', mtype: format === 'video' ? 2 : 3, nurl: 'https://ortb.publink.io/notice/win' }), req);
         expect(bid.vastXml).to.contain('VAST');
         expect(bid.vastUrl).to.equal(undefined);
+        expect(bid.publinkWinNotice.url).to.equal('https://ortb.publink.io/notice/win');
       });
     }
 
