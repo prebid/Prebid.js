@@ -17,6 +17,9 @@ This module connects publishers to Insticator exchange of demand sources through
 | Type | Support
 | --- | ---
 | Banner | Fully supported for all approved sizes.
+| Video | Fully supported.
+| Audio | Fully supported.
+| Native | Fully supported via the ORTB config (`mediaTypes.native.ortb`, Prebid.js 8.0+). Publisher-set `ext`, `api` and `battr` on `mediaTypes.native` are forwarded on `imp.native`.
 
 # Bid Parameters
 
@@ -29,8 +32,56 @@ object are detailed here.
 | --- | --- | --- | ---
 | adUnitId | Required | String | The ad unit ID provided by Insticator. 
 
+### User
+
+Supplied under `params.user`. First party data set through `ortb2.user` is also
+forwarded, and where both name the same field the `ortb2` value is used.
+
+| Key | Scope | Type | Description
+| --- | --- | --- | ---
+| yob | Optional | Integer | Year of birth.
+| gender | Optional | String | `M`, `F` or `O`.
+| keywords | Optional | String | Comma separated keywords.
+| data | Optional | Array | OpenRTB `user.data` segments. Concatenated after any set on `ortb2.user.data`.
+| ext | Optional | Object | Merged under `user.ext`.
+
+### Video
+
+Supplied under `params.video`, and taking precedence over the same field on
+`mediaTypes.video`. Every key is optional and is dropped if it fails validation.
+
+`minduration`, `maxduration`, `protocols`, `startdelay`, `linearity`, `skip`,
+`skipmin`, `skipafter`, `sequence`, `battr`, `maxextended`, `minbitrate`,
+`maxbitrate`, `playbackmethod`, `playbackend`, `delivery`, `pos`, `api`,
+`podid`, `podseq`, `poddur`, `slotinpod`, `mincpmpersec`, `maxseq`, `rqddurs`,
+`ext`
+
+### Audio
+
+Supplied under `params.audio`, and taking precedence over the same field on
+`mediaTypes.audio`.
+
+`mimes` is required by OpenRTB and must be a non-empty array of strings, on either
+`mediaTypes.audio` or `params.audio`. Without it an audio-only ad unit is rejected, and on a
+multi-format ad unit the audio is left out while the other media types still bid.
+
+Every other key is optional and is dropped if it fails validation.
+
+`minduration`, `maxduration`, `poddur`, `protocols`, `startdelay`,
+`rqddurs`, `podid`, `podseq`, `sequence`, `slotinpod`, `mincpmpersec`, `battr`,
+`maxextended`, `minbitrate`, `maxbitrate`, `delivery`, `companionad`, `api`,
+`companiontype`, `maxseq`, `feed`, `stitched`, `nvol`, `durfloors`, `ext`
+
+
+### Native
+
+Declared via the ORTB-style config on `mediaTypes.native.ortb` per the OpenRTB Dynamic
+Native Ads 1.2 spec. Prebid core validates and normalizes the config; the winning bid
+returns the native response object on `bid.native.ortb`.
 
 # Test Parameters
+
+### Banner
 ```
     var adUnits = [
            {
@@ -38,6 +89,91 @@ object are detailed here.
                mediaTypes: {
                    banner: {
                        sizes: [[300, 250], [300, 600]]
+                   }
+               },
+               bids: [
+                   {
+                       bidder: 'insticator',
+                       params: {
+                           adUnitId: 'test'
+                       }
+                   }
+               ]
+           }
+	]
+```
+
+### Video
+```
+    var adUnits = [
+           {
+               code: 'test-video-div',
+               mediaTypes: {
+                   video: {
+                       playerSize: [[640, 480]],
+                       mimes: ['video/mp4'],
+                       plcmt: 1,
+                       minduration: 1,
+                       maxduration: 30
+                   }
+               },
+               bids: [
+                   {
+                       bidder: 'insticator',
+                       params: {
+                           adUnitId: 'test'
+                       }
+                   }
+               ]
+           }
+	]
+```
+
+### Audio
+```
+    var adUnits = [
+           {
+               code: 'test-audio-div',
+               mediaTypes: {
+                   audio: {
+                       mimes: ['audio/mp4', 'audio/mpeg'],
+                       minduration: 5,
+                       maxduration: 30,
+                       feed: 3,
+                       stitched: 0,
+                       nvol: 1
+                   }
+               },
+               bids: [
+                   {
+                       bidder: 'insticator',
+                       params: {
+                           adUnitId: 'test'
+                       }
+                   }
+               ]
+           }
+	]
+```
+
+### Native
+```
+    var adUnits = [
+           {
+               code: 'test-native-div',
+               mediaTypes: {
+                   native: {
+                       ortb: {
+                           assets: [
+                               { id: 1, required: 1, title: { len: 90 } },
+                               { id: 2, required: 1, img: { type: 3, wmin: 300, hmin: 250 } },
+                               { id: 3, required: 0, data: { type: 1, len: 25 } },
+                               { id: 4, required: 0, data: { type: 12, len: 15 } }
+                           ],
+                           eventtrackers: [
+                               { event: 1, methods: [1, 2] }
+                           ]
+                       }
                    }
                },
                bids: [

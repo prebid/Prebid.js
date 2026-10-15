@@ -235,6 +235,12 @@ describe('vdoaiBidAdapter', function () {
     }
   };
 
+  describe('spec', function () {
+    it('should expose the vdo.ai gvlid', function () {
+      expect(spec.gvlid).to.equal(1561);
+    });
+  });
+
   describe('buildRequests', function () {
     const bidderRequest = {
       ortb2: {

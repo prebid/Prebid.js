@@ -9,6 +9,7 @@ Maintainer: publishers@bidscube.com
 # Description
 
 Module that connects to TrafficGate demand sources
+TrafficGate is operated by BidsCube and uses the BidsCube IAB GVL vendor ID (1272).
 
 # Test Parameters
 ```

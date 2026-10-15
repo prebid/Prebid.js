@@ -117,7 +117,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "ppcbuzz",
+      "componentName": "pubsmart",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
