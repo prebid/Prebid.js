@@ -484,7 +484,7 @@ declare module './prebidGlobal' {
     getAllWinningBids: typeof getAllWinningBids;
     getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
     getHighestCpmBids: typeof getHighestCpmBids;
-    getMostDesirableBid: typeof getMostDesirableBid;
+    getBestBids: typeof getBestBids;
     clearAllAuctions: typeof clearAllAuctions;
     getBidResponseByAdId: typeof getBidResponseByAdId;
     markWinningBidAsUsed: typeof markWinningBidAsUsed;
@@ -1142,15 +1142,14 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
 
 /**
- * Return the most desirable eligible bid for the given ad unit, or across all ad units
- * @param adUnitCode - optional ad unit code
+ * Get the most desirable bids for all adUnits, or the most desirable bid object for the given adUnit
+ * @param adUnitCode - ad unit code
  */
-function getMostDesirableBid(adUnitCode?: AdUnitCode): Bid | null {
-  const bids = targeting.getWinningBids(adUnitCode, undefined, getHighestDesirability);
-  return bids.length ? bids.reduce(getHighestDesirability) : null;
+function getBestBids(adUnitCode?: string): Bid[] {
+  return targeting.getWinningBids(adUnitCode, undefined, getHighestDesirability);
 }
 
-addApiMethod('getMostDesirableBid', getMostDesirableBid);
+addApiMethod('getBestBids', getBestBids);
 
 /**
  * Clear all auctions (and their bids) from the bid cache.
