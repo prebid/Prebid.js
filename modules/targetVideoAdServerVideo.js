@@ -3,6 +3,20 @@ import { targeting } from '../src/targeting.js';
 import { buildUrl, isEmpty, isPlainObject, logError, parseUrl } from '../src/utils.js';
 
 /**
+ * Encode publisher cust_params as a GAM-compatible pre-encoded query string.
+ * Keys and values are percent-encoded so reserved characters (e.g. `&`, `=`)
+ * cannot corrupt the request; array values are comma-joined first, matching
+ * the multi-value format GAM expects.
+ * @param {Object} custParams - publisher-supplied key/value pairs.
+ * @returns {string} The encoded `key%3Dvalue%26...` string.
+ */
+function encodeCustParams(custParams) {
+  return Object.entries(custParams)
+    .map(([key, value]) => `${encodeURIComponent(key)}%3D${encodeURIComponent(Array.isArray(value) ? value.join(',') : value)}`)
+    .join('%26');
+}
+
+/**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
  * @param {Object} options - The options object.
  * @param {Object} options.params - params property.
@@ -50,14 +64,14 @@ export function buildVideoUrl(options) {
     if (urlComponents.search.cust_params) {
       const existingKeys = urlComponents.search.cust_params.split('%26').map((pair) => pair.split('%3D')[0]);
       for (const [key, value] of Object.entries(custParams)) {
-        if (!existingKeys.includes(key)) {
-          urlComponents.search.cust_params += '%26' + key + '%3D' + value;
+        if (!existingKeys.includes(encodeURIComponent(key))) {
+          urlComponents.search.cust_params += '%26' + encodeCustParams({ [key]: value });
         }
       }
     }
 
     if (!isEmpty(custParams) && !urlComponents.search.cust_params) {
-      urlComponents.search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26');
+      urlComponents.search.cust_params = encodeCustParams(custParams);
     }
 
     return buildUrl(urlComponents);
@@ -71,7 +85,7 @@ export function buildVideoUrl(options) {
   };
 
   if (!isEmpty(custParams)) {
-    search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26');
+    search.cust_params = encodeCustParams(custParams);
   }
 
   return buildUrl({
