@@ -124,6 +124,10 @@ privacy signals), any stored ID is revoked: Prebid replaces it in both stores wi
 `{"revoked":true}`, and no Sevio ID or EID is provided until the next request. A failed request (a
 network or HTTP error, or a malformed answer) keeps the stored ID.
 
+Only a Sevio envelope (66 base64url characters) is a valid ID. An answer carrying anything else is
+treated as malformed, and a stored value of any other shape (for example a truncated cookie) is not
+provided to bidders; it is replaced on the next request.
+
 # Consent
 
 - The submodule declares GVL ID `1393`. When `tcfControl` is enabled, Prebid's TCF enforcement

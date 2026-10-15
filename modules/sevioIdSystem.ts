@@ -24,8 +24,8 @@ export const ID_ENDPOINT = 'https://id.adx.ws/identity/resolve';
 const EID_SOURCE = 'adx.ws';
 const LOG_PREFIX = 'sevioId: ';
 const RECOMMENDED_STORAGE_TYPES = ['cookie', 'html5'];
-// A Sevio envelope: 66 base64url characters, no padding. The Identity service refuses a request
-// carrying a malformed one, so a stored ID of any other shape is not sent.
+// A Sevio envelope: 66 base64url characters, no padding. Only an envelope is a valid ID: anything else
+// is neither stored from a response, nor provided to bidders, nor sent back to the Identity service.
 const ENVELOPE_PATTERN = /^[A-Za-z0-9_-]{66}$/;
 const EMAIL_HASH_PATTERN = /^[0-9a-f]{64}$/;
 // Stored in place of the ID when the Identity service refuses a request. The userId core ignores an
@@ -83,9 +83,13 @@ function buildPrivacy(consentData: Partial<AllConsentData> | undefined) {
   return privacy;
 }
 
+function isEnvelope(value): value is string {
+  return typeof value === 'string' && ENVELOPE_PATTERN.test(value);
+}
+
 function buildIds(storedId, emailHash: string | undefined) {
   const ids: string[] = [];
-  if (typeof storedId === 'string' && ENVELOPE_PATTERN.test(storedId)) {
+  if (isEnvelope(storedId)) {
     ids.push(`sevio:${storedId}`);
   }
   if (emailHash != null) {
@@ -138,7 +142,7 @@ function fetchId(callback: (id?: string | typeof REVOKED) => void, params: Sevio
         return;
       }
       const id = parsed?.sevio_id;
-      if (typeof id === 'string' && id !== '') {
+      if (isEnvelope(id)) {
         callback(id);
         fireSyncs(parsed.syncs);
       } else if (id === null) {
@@ -146,7 +150,7 @@ function fetchId(callback: (id?: string | typeof REVOKED) => void, params: Sevio
         logInfo(`${LOG_PREFIX}the Identity service provided no ID for this request; revoking any stored ID`);
         callback(REVOKED);
       } else {
-        logError(`${LOG_PREFIX}the ID response has no 'sevio_id'`, response);
+        logError(`${LOG_PREFIX}the ID response has no valid 'sevio_id'`, response);
         callback();
       }
     },
@@ -170,7 +174,7 @@ export const sevioIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
       logInfo(`${LOG_PREFIX}IDs are not provided for COPPA requests`);
       return undefined;
     }
-    return typeof value === 'string' && value !== '' ? { sevioId: value } : undefined;
+    return isEnvelope(value) ? { sevioId: value } : undefined;
   },
   getId(config, consentData, storedId) {
     if (consentData?.coppa) {

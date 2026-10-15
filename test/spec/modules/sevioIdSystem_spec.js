@@ -71,26 +71,33 @@ describe('Sevio ID System', function () {
   });
 
   describe('decode', function () {
-    it('returns the ID for a non-empty string', function () {
-      expect(sevioIdSubmodule.decode('abc')).to.deep.equal({ sevioId: 'abc' });
+    it('returns the ID for an envelope', function () {
+      expect(sevioIdSubmodule.decode(ENVELOPE)).to.deep.equal({ sevioId: ENVELOPE });
     });
 
     it('returns undefined for anything else', function () {
       expect(sevioIdSubmodule.decode(undefined)).to.be.undefined;
       expect(sevioIdSubmodule.decode('')).to.be.undefined;
       expect(sevioIdSubmodule.decode({})).to.be.undefined;
+      expect(sevioIdSubmodule.decode({ revoked: true })).to.be.undefined;
+    });
+
+    ['abc', ENVELOPE.slice(0, 40), `${ENVELOPE}=`, `${ENVELOPE.slice(1)}+`].forEach(value => {
+      it(`returns undefined for a string that is not an envelope: ${value}`, function () {
+        expect(sevioIdSubmodule.decode(value)).to.be.undefined;
+      });
     });
 
     it('returns undefined under COPPA', function () {
       config.setConfig({ coppa: true });
-      expect(sevioIdSubmodule.decode('abc')).to.be.undefined;
+      expect(sevioIdSubmodule.decode(ENVELOPE)).to.be.undefined;
     });
   });
 
   describe('eids', function () {
     it('produces an adx.ws EID with atype 1', function () {
-      const eids = createEidsArray(sevioIdSubmodule.decode('abc'), new Map(Object.entries(sevioIdSubmodule.eids)));
-      expect(eids).to.deep.equal([{ source: 'adx.ws', uids: [{ id: 'abc', atype: 1 }] }]);
+      const eids = createEidsArray(sevioIdSubmodule.decode(ENVELOPE), new Map(Object.entries(sevioIdSubmodule.eids)));
+      expect(eids).to.deep.equal([{ source: 'adx.ws', uids: [{ id: ENVELOPE, atype: 1 }] }]);
     });
   });
 
@@ -288,6 +295,11 @@ describe('Sevio ID System', function () {
         sinon.assert.notCalled(utils.politeTriggerPixel);
       });
 
+      it('fires no sync when the sevio_id is not an envelope', function () {
+        resolveWith({ sevio_id: 'not-an-envelope', syncs: [{ url: SYNC_URL }] });
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
       it('skips entries without an https url, with a warning', function () {
         resolveWith({
           sevio_id: NEW_ENVELOPE,
@@ -318,6 +330,7 @@ describe('Sevio ID System', function () {
       ['a missing sevio_id', {}],
       ['an empty sevio_id', { sevio_id: '' }],
       ['a non-string sevio_id', { sevio_id: 123 }],
+      ['a sevio_id that is not an envelope', { sevio_id: 'not-an-envelope' }],
       ['invalid JSON', 'not json']
     ].forEach(([desc, body]) => {
       it(`passes nothing and logs an error for ${desc}`, function () {
@@ -401,23 +414,23 @@ describe('Sevio ID System', function () {
     });
 
     it('uses the cookie ID over localStorage and leaves localStorage untouched', async function () {
-      seedCookie('id-cookie');
-      seedLocalStorage('id-ls');
+      seedCookie(ENVELOPE);
+      seedLocalStorage(NEW_ENVELOPE);
       startUserId();
       await getGlobal().getUserIdsAsync();
 
-      expect(getGlobal().getUserIds().sevioId).to.equal('id-cookie');
-      expect(sevioEids()).to.deep.equal([{ source: 'adx.ws', uids: [{ id: 'id-cookie', atype: 1 }] }]);
-      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal('id-ls');
+      expect(getGlobal().getUserIds().sevioId).to.equal(ENVELOPE);
+      expect(sevioEids()).to.deep.equal([{ source: 'adx.ws', uids: [{ id: ENVELOPE, atype: 1 }] }]);
+      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
       expect(server.requests.length).to.equal(0);
     });
 
     it('uses the localStorage ID when the cookie is missing, without a request or a cookie write', async function () {
-      seedLocalStorage('id-ls');
+      seedLocalStorage(NEW_ENVELOPE);
       startUserId();
       await getGlobal().getUserIdsAsync();
 
-      expect(getGlobal().getUserIds().sevioId).to.equal('id-ls');
+      expect(getGlobal().getUserIds().sevioId).to.equal(NEW_ENVELOPE);
       expect(server.requests.length).to.equal(0);
       expect(coreStorage.getCookie(STORAGE_NAME)).to.not.be.ok;
     });
@@ -479,10 +492,19 @@ describe('Sevio ID System', function () {
       expect(server.requests.length).to.equal(1);
     });
 
+    it('provides no ID and no EID for a stored value that is not an envelope', async function () {
+      seedCookie(ENVELOPE.slice(0, 40));
+      startUserId();
+      await getGlobal().getUserIdsAsync();
+
+      expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
+      expect(sevioEids()).to.deep.equal([]);
+    });
+
     it('provides no ID, no EID and makes no request under COPPA, even with a stored ID', async function () {
       config.setConfig({ coppa: true });
-      seedCookie('id-cookie');
-      seedLocalStorage('id-cookie');
+      seedCookie(ENVELOPE);
+      seedLocalStorage(ENVELOPE);
       startUserId();
       await getGlobal().getUserIdsAsync();
 
