@@ -746,6 +746,29 @@ describe('adapexBidAdapter', function () {
     });
   });
 
+  describe('onDataDeletionRequest', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('removes both copies of the fallback id when core forwards a CMP deletion request', function () {
+      const removeLocal = sandbox.stub(storage, 'removeDataFromLocalStorage');
+      const setCookie = sandbox.stub(storage, 'setCookie');
+      adapterManager.callDataDeletionRequest({});
+      expect(removeLocal.calledOnceWith('adpx_uid')).to.be.true;
+      expect(setCookie.calledOnce).to.be.true;
+      const [name, value, expires] = setCookie.firstCall.args;
+      expect([name, value]).to.deep.equal(['adpx_uid', '']);
+      expect(new Date(expires).getTime()).to.be.below(Date.now());
+    });
+  });
+
   describe('onBidBillable', function () {
     let triggerPixelStub;
 

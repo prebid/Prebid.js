@@ -344,6 +344,11 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
       return syncs;
     },
 
+    onDataDeletionRequest() {
+      storage.removeDataFromLocalStorage(storageKey);
+      storage.setCookie(storageKey, '', 'Thu, 01 Jan 1970 00:00:01 GMT');
+    },
+
     onBidBillable(bid) {
       // Fire the DSP billing notice on billing (which respects bidViewability's deferral), substituting
       // the cleared price into the ${AUCTION_PRICE} macro. originalCpm is pre-currency-conversion.
