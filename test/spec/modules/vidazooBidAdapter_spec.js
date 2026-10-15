@@ -874,13 +874,32 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should return an array of interpreted native responses', function () {
-      const responses = adapter.interpretResponse(NATIVE_SERVER_RESPONSE, REQUEST);
+      const request = adapter.buildRequests([NATIVE_BID], BIDDER_REQUEST)[0];
+      const responses = adapter.interpretResponse(NATIVE_SERVER_RESPONSE, request);
       expect(responses).to.have.length(1);
       expect(responses[0].mediaType).to.equal(NATIVE);
       expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
       expect(responses[0].cpm).to.equal(1.5);
+      expect(responses[0].requestId).to.equal(NATIVE_BID.bidId);
       expect(responses[0].vastXml).to.be.undefined;
       expect(responses[0].ad).to.be.undefined;
+    });
+
+    it('should not send nativeOrtbRequest when mediaTypes was narrowed and native is no longer active', function () {
+      const narrowedBid = {
+        ...NATIVE_BID,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 480]] } }
+      };
+      const requests = adapter.buildRequests([narrowedBid], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].data).to.not.have.property('nativeOrtbRequest');
+      expect(requests[0].data.mediaTypes).to.not.have.property('native');
+    });
+
+    it('should skip a native result when the request has no nativeOrtbRequest (malformed mediaTypes.native)', function () {
+      const request = adapter.buildRequests([{ ...NATIVE_BID, nativeOrtbRequest: undefined }], BIDDER_REQUEST)[0];
+      expect(request.data).to.not.have.property('nativeOrtbRequest');
+      expect(adapter.interpretResponse(NATIVE_SERVER_RESPONSE, request)).to.be.empty;
     });
 
     it('should populate requestId from response in case of singleRequest true', function () {

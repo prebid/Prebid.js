@@ -476,6 +476,8 @@ describe('adnimationBidAdapter', function () {
       ortb2Imp: { ext: { tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf' } }
     };
 
+    const buildNativeRequest = (bid = NATIVE_BID) => adapter.buildRequests([bid], BIDDER_REQUEST)[0];
+
     it('should build a native request with mediaTypes.native and nativeOrtbRequest', function () {
       config.setConfig({ bidderTimeout: 3000 });
       const requests = adapter.buildRequests([NATIVE_BID], BIDDER_REQUEST);
@@ -504,14 +506,43 @@ describe('adnimationBidAdapter', function () {
           }]
         }
       };
-      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      const responses = adapter.interpretResponse(serverResponse, buildNativeRequest());
       expect(responses).to.have.length(1);
       expect(responses[0].mediaType).to.equal(NATIVE);
       expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
       expect(responses[0].cpm).to.equal(1.5);
-      expect(responses[0].requestId).to.equal(REQUEST.data.bidId);
+      expect(responses[0].requestId).to.equal(NATIVE_BID.bidId);
       expect(responses[0].ad).to.be.undefined;
       expect(responses[0].vastXml).to.be.undefined;
+    });
+
+    it('should not send nativeOrtbRequest when mediaTypes was narrowed and native is no longer active', function () {
+      const narrowedBid = {
+        ...NATIVE_BID,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 480]] } }
+      };
+      const requests = adapter.buildRequests([narrowedBid], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].data).to.not.have.property('nativeOrtbRequest');
+      expect(requests[0].data.mediaTypes).to.not.have.property('native');
+    });
+
+    it('should skip a native result when the request has no nativeOrtbRequest (malformed mediaTypes.native)', function () {
+      const malformedBid = { ...NATIVE_BID, nativeOrtbRequest: undefined };
+      const request = buildNativeRequest(malformedBid);
+      expect(request.data).to.not.have.property('nativeOrtbRequest');
+      const nativeResponse = {
+        body: {
+          cid: '59db6b3b4ffaa70004f45cdc',
+          results: [{
+            ad: JSON.stringify({ native: NATIVE_ORTB_RESPONSE }),
+            mediaType: 'native',
+            creativeId: '12610997325162499419',
+            price: 1.5
+          }]
+        }
+      };
+      expect(adapter.interpretResponse(nativeResponse, request)).to.be.empty;
     });
 
     it('should skip a native result whose ad is not valid native markup', function () {
@@ -525,7 +556,7 @@ describe('adnimationBidAdapter', function () {
           }]
         }
       };
-      expect(adapter.interpretResponse(serverResponse, REQUEST)).to.be.empty;
+      expect(adapter.interpretResponse(serverResponse, buildNativeRequest())).to.be.empty;
     });
   });
 

@@ -331,7 +331,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestId,
     bidRequestsCount,
     bidderRequestsCount,
-    bidderWinsCount
+    bidderWinsCount,
+    nativeOrtbRequest,
   } = bid;
   const { ext } = params;
   let { bidFloor } = params;
@@ -402,8 +403,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     device,
     ...uniqueRequestData
   };
-  if (bid.nativeOrtbRequest) {
-    data.nativeOrtbRequest = bid.nativeOrtbRequest;
+  // copy nativeOrtbRequest only if media types has 'native' in it
+  if (nativeOrtbRequest && hasMediaType(bid, NATIVE)) {
+    data.nativeOrtbRequest = nativeOrtbRequest;
   }
   if (bidFloor) {
     data.bidFloor = bidFloor;
@@ -513,6 +515,22 @@ function parseNativeOrtb(result) {
   return ortb;
 }
 
+/**
+ * Returns the request payload (of the bid request) that a given response result belongs to:
+ * the payload itself for per-bid requests, or the matching entry for batched `{bids: [...]}` payloads.
+ */
+function getMatchedRequestData(request, bidId) {
+  const data = request?.data;
+  if (isArray(data?.bids)) {
+    return data.bids.find(bid => bid.bidId === bidId);
+  }
+  return data;
+}
+
+function hasNativeOrtbRequest(requestData) {
+  return isArray(requestData?.nativeOrtbRequest?.assets);
+}
+
 export function createInterpretResponseFn(bidderCode, allowSingleRequest, options = {}) {
   const supportNative = !!options.supportNative;
   return function interpretResponse(serverResponse, request) {
@@ -552,12 +570,17 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest, option
 
         const isNative = supportNative && mediaType === NATIVE;
         if (isNative) {
+          const requestId = (singleRequestMode && bidId) ? bidId : reqBidId;
+          // validation if request included native ad type
+          if (!hasNativeOrtbRequest(getMatchedRequestData(request, requestId))) {
+            return;
+          }
           const ortb = parseNativeOrtb(result);
           if (!ortb) {
             return;
           }
           output.push(buildBidResponse({
-            requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
+            requestId,
             price,
             width,
             height,
