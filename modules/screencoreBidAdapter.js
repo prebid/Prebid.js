@@ -5,6 +5,10 @@ import { getTimeZone } from "../libraries/timezone/timezone.js";
 import { config } from "../src/config.js";
 import { logError, logWarn } from "../src/utils.js";
 
+/**
+ * @typedef {import('./screencoreBidAdapter.d.ts').ScreencoreBidderParams} ScreencoreBidderParams
+ */
+
 const DEFAULT_CURRENCY = "USD";
 const BIDDER_CODE = "screencore";
 const GVLID = 1473;
@@ -48,7 +52,7 @@ function getRegionSubdomainSuffix() {
 }
 
 /**
- * @param { { sspPlacementId?: string; placementId?: string; endpointId?: string } } params
+ * @param { ScreencoreBidderParams } params
  * @returns { string | undefined }
  */
 export const getSspPlacementId = (params) =>
@@ -58,8 +62,8 @@ export const getSspPlacementId = (params) =>
   undefined;
 
 /**
- * @param { { sspPlacementId?: string; placementId?: string; endpointId?: string } } params
- * @param { string } [subdomain]
+ * @param { ScreencoreBidderParams } params
+ * @param { string } [subdomain] region subdomain; resolved from the timezone when omitted
  * @returns { string | undefined }
  */
 export const createEndpoint = (
