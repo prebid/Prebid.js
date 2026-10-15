@@ -5,9 +5,10 @@
  * @requires module:modules/userId
  */
 
-import { logError, logInfo, logWarn, politeTriggerPixel } from '../src/utils.js';
+import { isPlainObject, logError, logInfo, logWarn, politeTriggerPixel } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { qualifiedAjaxBuilder } from '../src/ajax.js';
+import { browserSupportsUserSyncCookies } from '../src/userSync.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { isActivityAllowed } from '../src/activities/rules.js';
@@ -87,6 +88,10 @@ function isEnvelope(value): value is string {
   return typeof value === 'string' && ENVELOPE_PATTERN.test(value);
 }
 
+function isRevoked(value) {
+  return isPlainObject(value) && value.revoked === true;
+}
+
 function buildIds(storedId, emailHash: string | undefined) {
   const ids: string[] = [];
   if (isEnvelope(storedId)) {
@@ -108,7 +113,8 @@ function buildIds(storedId, emailHash: string | undefined) {
  * so TCF, `userSync.syncEnabled` and activity controls apply; `userSync.filterSettings` only covers bidders.
  */
 function fireSyncs(syncs) {
-  if (!Array.isArray(syncs)) return;
+  // Same browser gate as Prebid's own user syncs (Safari, Firefox, Chrome iOS, cookies disabled).
+  if (!Array.isArray(syncs) || !browserSupportsUserSyncCookies()) return;
   syncs.forEach(sync => {
     const url = sync?.url;
     if (typeof url !== 'string' || !url.startsWith('https://')) {
@@ -194,6 +200,13 @@ export const sevioIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
       logWarn(`${LOG_PREFIX}storage type '${config.storage.type}' is not recommended; use 'cookie&html5'`);
     }
     return { callback: (cb) => fetchId(cb, params, consentData, storedId) };
+  },
+  extendId(config, consentData, storedId) {
+    // The core calls getId only when nothing is stored or a refresh is due. A stored value that is
+    // neither an envelope nor the revocation marker (e.g. a truncated cookie) would otherwise leave
+    // the user without an ID until then, so fetch a fresh one now.
+    if (isEnvelope(storedId) || isRevoked(storedId)) return;
+    return sevioIdSubmodule.getId(config, consentData, storedId);
   },
   eids: {
     sevioId: (values) => ({

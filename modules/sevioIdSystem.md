@@ -79,7 +79,9 @@ falls back to an image pixel. Syncs are only fired with an issued ID and only wh
 
 Each sync must pass Prebid's `syncUser` activity check for the `sevioId` user ID module, so TCF
 enforcement (Purpose 1 and vendor consent for GVL ID `1393`), `userSync.syncEnabled` and activity
-controls apply. `userSync.filterSettings` does **not** apply, because it only covers bid adapters.
+controls apply. Like Prebid's own user syncs, they are not fired in browsers that do not support
+user-sync cookies (Safari, Firefox, Chrome on iOS, or when cookies are disabled).
+`userSync.filterSettings` does **not** apply, because it only covers bid adapters.
 To block these syncs, set `userSync.syncEnabled: false` (which blocks every user sync), or include the
 `allowActivities` module and deny `syncUser` for this submodule only:
 
@@ -126,7 +128,8 @@ network or HTTP error, or a malformed answer) keeps the stored ID.
 
 Only a Sevio envelope (66 base64url characters) is a valid ID. An answer carrying anything else is
 treated as malformed, and a stored value of any other shape (for example a truncated cookie) is not
-provided to bidders; it is replaced on the next request.
+provided to bidders. Instead, the submodule requests a fresh ID on that page view, and the answer
+replaces the bad value in both stores.
 
 # Consent
 

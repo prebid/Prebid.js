@@ -1,4 +1,5 @@
 import * as utils from '../../../src/utils.js';
+import * as userSync from '../../../src/userSync.js';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { hook } from '../../../src/hook.js';
@@ -64,9 +65,28 @@ describe('Sevio ID System', function () {
       expect(sevioIdSubmodule.name).to.equal('sevioId');
       expect(sevioIdSubmodule.gvlid).to.equal(1393);
     });
+  });
 
-    it('does not define extendId', function () {
-      expect(sevioIdSubmodule.extendId).to.be.undefined;
+  describe('extendId', function () {
+    [['an envelope', ENVELOPE], ['the revocation marker', { revoked: true }]].forEach(([desc, storedId]) => {
+      it(`does nothing for ${desc}`, function () {
+        expect(sevioIdSubmodule.extendId(validConfig, {}, storedId)).to.be.undefined;
+        expect(server.requests.length).to.equal(0);
+      });
+    });
+
+    it('fetches a fresh ID when the stored value is not an envelope', function () {
+      const result = sevioIdSubmodule.extendId(validConfig, {}, ENVELOPE.slice(0, 40));
+      expect(server.requests.length).to.equal(0);
+      result.callback(sinon.spy());
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal(ID_ENDPOINT);
+      expect(requestBody(server.requests[0])).to.not.have.property('ids');
+    });
+
+    it('does not fetch under COPPA', function () {
+      expect(sevioIdSubmodule.extendId(validConfig, { coppa: true }, 'malformed')).to.be.undefined;
+      expect(server.requests.length).to.equal(0);
     });
   });
 
@@ -251,6 +271,7 @@ describe('Sevio ID System', function () {
 
       beforeEach(function () {
         sandbox.stub(utils, 'politeTriggerPixel');
+        sandbox.stub(userSync, 'browserSupportsUserSyncCookies').returns(true);
       });
 
       afterEach(function () {
@@ -282,6 +303,12 @@ describe('Sevio ID System', function () {
           [ACTIVITY_PARAM_SYNC_URL]: SYNC_URL
         });
         expect(server.requests.length).to.equal(1);
+      });
+
+      it('fires no sync where the browser does not support user-sync cookies', function () {
+        userSync.browserSupportsUserSyncCookies.returns(false);
+        resolveWith({ sevio_id: NEW_ENVELOPE, syncs: [{ url: SYNC_URL }] });
+        sinon.assert.notCalled(utils.politeTriggerPixel);
       });
 
       it('fires no sync when the syncUser activity is denied', function () {
@@ -492,13 +519,23 @@ describe('Sevio ID System', function () {
       expect(server.requests.length).to.equal(1);
     });
 
-    it('provides no ID and no EID for a stored value that is not an envelope', async function () {
+    it('replaces a stored value that is not an envelope without exposing it', async function () {
       seedCookie(ENVELOPE.slice(0, 40));
+      seedLocalStorage(ENVELOPE);
       startUserId();
-      await getGlobal().getUserIdsAsync();
+      const ids = getGlobal().getUserIdsAsync();
+      await waitForRequest();
 
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
       expect(sevioEids()).to.deep.equal([]);
+      expect(server.requests.length).to.equal(1);
+      expect(requestBody(server.requests[0])).to.not.have.property('ids');
+      respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, changed: true });
+      await ids;
+
+      expect(getGlobal().getUserIds().sevioId).to.equal(NEW_ENVELOPE);
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
+      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
     });
 
     it('provides no ID, no EID and makes no request under COPPA, even with a stored ID', async function () {
