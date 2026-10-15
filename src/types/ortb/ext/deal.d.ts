@@ -9,13 +9,21 @@ export type DealExt = Partial<{
    */
   type: number;
   /**
-   * Unadjusted contractual or nominal deal CPM, in the response currency.
+   * Unadjusted contractual or nominal deal CPM, in `cpm_cur`.
    */
   cpm: number;
   /**
-   * CPM-equivalent value after applying the current pacing or delivery adjustment, in the response currency.
+   * ISO-4217 currency of `cpm`; defaults to the response currency.
+   */
+  cpm_cur: string;
+  /**
+   * CPM-equivalent value after applying the current pacing or delivery adjustment, in `pacing_adjusted_cpm_cur`.
    */
   pacing_adjusted_cpm: number;
+  /**
+   * ISO-4217 currency of `pacing_adjusted_cpm`; defaults to the response currency.
+   */
+  pacing_adjusted_cpm_cur: string;
   /**
    * Delivery relative to schedule; e.g. 0.5 means half of the expected impressions have been served.
    */

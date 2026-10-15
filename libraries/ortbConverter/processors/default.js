@@ -116,7 +116,7 @@ export const DEFAULT_PROCESSORS = {
         if (bid.cattax) {
           bidResponse.meta.cattax = bid.cattax;
         }
-        const dealMeta = getDealMeta(bid);
+        const dealMeta = getDealMeta(bid, bidResponse.currency);
         if (dealMeta) {
           bidResponse.meta.deal = dealMeta;
         }
