@@ -177,6 +177,52 @@ describe('TargetVideo Ad Server Video', function() {
     getAllTargetingDataStub.restore();
   });
 
+  it('should only skip params.cust_params keys that exactly match a key already in the iu URL', () => {
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url = buildVideoUrl({
+      params: {
+        iu: 'https://example.com/ads/bid?iu=/video&cust_params=page%3Dhome%26section%3Dsports',
+        cust_params: {
+          age: '25',
+          sport: 'tennis',
+          section: 'news'
+        }
+      },
+      bid,
+      adUnit
+    });
+
+    expect(url).to.include('cust_params=page%3Dhome%26section%3Dsports%26age%3D25%26sport%3Dtennis');
+    expect(url).to.not.include('section%3Dnews');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
+
+  it('should not re-append a cust_params key that is already in the iu URL in encoded form', () => {
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url = buildVideoUrl({
+      params: {
+        iu: 'https://example.com/ads/bid?iu=/video&cust_params=my%20key%3Dold',
+        cust_params: {
+          'my key': 'new'
+        }
+      },
+      bid,
+      adUnit
+    });
+
+    expect(url).to.include('cust_params=my%20key%3Dold');
+    expect(url).to.not.include('my%20key%3Dnew');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
+
   it('should percent-encode cust_params keys and values so reserved characters cannot corrupt the request', () => {
     const options = {
       params: {

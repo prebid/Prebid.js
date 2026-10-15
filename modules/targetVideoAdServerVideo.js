@@ -62,8 +62,9 @@ export function buildVideoUrl(options) {
     }
 
     if (urlComponents.search.cust_params) {
+      const existingKeys = urlComponents.search.cust_params.split('%26').map((pair) => pair.split('%3D')[0]);
       for (const [key, value] of Object.entries(custParams)) {
-        if (!urlComponents.search.cust_params.includes(key)) {
+        if (!existingKeys.includes(encodeURIComponent(key))) {
           urlComponents.search.cust_params += '%26' + encodeCustParams({ [key]: value });
         }
       }
