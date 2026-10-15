@@ -33,6 +33,11 @@ const EMAIL_HASH_PATTERN = /^[0-9a-f]{64}$/;
 // empty callback, which would leave a previously stored ID in place; `decode` maps this to no ID.
 const REVOKED = { revoked: true };
 
+// Generation of the most recent ID request. The core starts a new request when consent changes
+// without cancelling one in flight, and stores whatever any of them answers; only the latest
+// request reflects the current consent, so an answer to an older one is ignored.
+let latestRequest = 0;
+
 export type SevioIdParams = {
   /**
    * The client ID Sevio assigned to the integration.
@@ -133,8 +138,17 @@ function fetchId(callback: (id?: string | typeof REVOKED) => void, params: Sevio
     ...(ids.length ? { ids } : {}),
     privacy: buildPrivacy(consentData)
   };
+  const generation = ++latestRequest;
+  const isSuperseded = () => {
+    if (generation === latestRequest) return false;
+    logInfo(`${LOG_PREFIX}ignoring the answer to a superseded ID request`);
+    // An empty callback lets the core finish this request without storing anything.
+    callback();
+    return true;
+  };
   const callbacks = {
     success(response) {
+      if (isSuperseded()) return;
       let parsed;
       try {
         parsed = JSON.parse(response);
@@ -157,6 +171,7 @@ function fetchId(callback: (id?: string | typeof REVOKED) => void, params: Sevio
       }
     },
     error(error) {
+      if (isSuperseded()) return;
       logError(`${LOG_PREFIX}the ID request failed`, error);
       callback();
     }

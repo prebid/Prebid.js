@@ -324,6 +324,51 @@ describe('Sevio ID System', function () {
       });
     });
 
+    describe('overlapping requests', function () {
+      beforeEach(function () {
+        sandbox.stub(utils, 'politeTriggerPixel');
+        sandbox.stub(userSync, 'browserSupportsUserSyncCookies').returns(true);
+      });
+
+      function startTwo() {
+        const older = sinon.spy();
+        const newer = sinon.spy();
+        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(older);
+        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(newer);
+        expect(server.requests.length).to.equal(2);
+        return { older, newer };
+      }
+
+      it('ignores an older answer that arrives after the newer one', function () {
+        const { older, newer } = startTwo();
+        respondWith(server.requests[1], { sevio_id: null, changed: false });
+        respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, syncs: [{ url: 'https://partner.example/sync' }] });
+
+        sinon.assert.calledOnceWithExactly(newer, { revoked: true });
+        sinon.assert.calledOnceWithExactly(older);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
+      it('ignores an older answer that arrives first', function () {
+        const { older, newer } = startTwo();
+        respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE });
+        respondWith(server.requests[1], { sevio_id: ENVELOPE });
+
+        sinon.assert.calledOnceWithExactly(older);
+        sinon.assert.calledOnceWithExactly(newer, ENVELOPE);
+      });
+
+      it('ignores an older request that fails, without logging an error', function () {
+        const { older, newer } = startTwo();
+        server.requests[0].respond(500, {}, '');
+        respondWith(server.requests[1], { sevio_id: NEW_ENVELOPE });
+
+        sinon.assert.calledOnceWithExactly(older);
+        sinon.assert.calledOnceWithExactly(newer, NEW_ENVELOPE);
+        sinon.assert.notCalled(utils.logError);
+      });
+    });
+
     it('passes the revocation marker and logs no error when the Identity service answers a null sevio_id', function () {
       const callback = sinon.spy();
       sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(callback);
@@ -525,6 +570,26 @@ describe('Sevio ID System', function () {
       expect(getGlobal().getUserIds().sevioId).to.equal(NEW_ENVELOPE);
       expect(coreStorage.getCookie(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
       expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
+    });
+
+    it('keeps the revocation when an older request answers after an overlapping refresh', async function () {
+      startUserId();
+      const first = getGlobal().getUserIdsAsync();
+      await waitForRequest();
+      // An unfiltered refresh is what a consent change triggers (allConsent.onChange).
+      const refreshed = getGlobal().refreshUserIds();
+      for (let i = 0; i < 20 && server.requests.length < 2; i++) {
+        await new Promise(resolve => setTimeout(resolve));
+      }
+      expect(server.requests.length).to.equal(2);
+
+      respondWith(server.requests[1], { sevio_id: null, changed: false });
+      respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, changed: true });
+      await Promise.allSettled([first, refreshed]);
+
+      expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
+      expect(sevioEids()).to.deep.equal([]);
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal('{"revoked":true}');
     });
 
     it('provides no ID, no EID and makes no request under COPPA, even with a stored ID', async function () {
