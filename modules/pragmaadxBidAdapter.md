@@ -8,7 +8,7 @@ Maintainer: mike@pragma-crm.com
 
 # Description
 
-Module that connects to Pragma Adx's video and banner demand. `pragmaAdx`
+Module that connects to Pragma Adx's video and banner demand. `pragmaadx`
 only ever answers with a bid when a real external DSP has cleared a genuine
 price for the impression through Pragma's own `run_auction()`; house
 creatives and self-serve customer campaigns intentionally return no bid on
@@ -30,7 +30,7 @@ header auction.
             },
             bids: [
                 {
-                    bidder: 'pragmaAdx',
+                    bidder: 'pragmaadx',
                     params: {
                         apiKey: 'adx_pub_test_key',
                         adUnitId: 1,
@@ -48,7 +48,7 @@ header auction.
             },
             bids: [
                 {
-                    bidder: 'pragmaAdx',
+                    bidder: 'pragmaadx',
                     params: {
                         apiKey: 'adx_pub_test_key',
                         adUnitId: 2,

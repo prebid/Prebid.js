@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/pragmaAdxBidAdapter.js';
+import { spec } from '../../../modules/pragmaadxBidAdapter.js';
 
 describe('Pragma Adx Bid Adapter', function () {
   const validBidRequest = {
-    bidder: 'pragmaAdx',
+    bidder: 'pragmaadx',
     bidId: '2f6g8h1',
     params: {
       apiKey: 'adx_pub_test_key',
@@ -20,7 +20,7 @@ describe('Pragma Adx Bid Adapter', function () {
   };
 
   const validBannerBidRequest = {
-    bidder: 'pragmaAdx',
+    bidder: 'pragmaadx',
     bidId: '3h9j2k4',
     params: {
       apiKey: 'adx_pub_test_key',
