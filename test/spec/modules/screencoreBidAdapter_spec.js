@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import {
   createEndpoint,
+  getSspPlacementId,
   spec as adapter,
 } from "modules/screencoreBidAdapter.js";
 import { config } from "src/config.js";
@@ -291,6 +292,77 @@ describe("screencore bid adapter", function () {
     });
   });
 
+  describe("deprecated params (backward compatibility)", function () {
+    const withParams = (params) => ({ ...BID_TO_SSP, params });
+
+    it("should accept the deprecated placementId", function () {
+      expect(adapter.isBidRequestValid(withParams({ placementId: "123" }))).to
+        .be.true;
+    });
+
+    it("should accept the deprecated endpointId", function () {
+      expect(adapter.isBidRequestValid(withParams({ endpointId: "123" }))).to.be
+        .true;
+    });
+
+    it("should reject empty deprecated params", function () {
+      expect(
+        adapter.isBidRequestValid(
+          withParams({ placementId: "", endpointId: "" }),
+        ),
+      ).to.be.false;
+    });
+
+    it("should prefer sspPlacementId over the deprecated params", function () {
+      expect(
+        getSspPlacementId({
+          sspPlacementId: "new",
+          placementId: "old",
+          endpointId: "older",
+        }),
+      ).to.equal("new");
+    });
+
+    it("should prefer placementId over endpointId", function () {
+      expect(
+        getSspPlacementId({ placementId: "old", endpointId: "older" }),
+      ).to.equal("old");
+    });
+
+    it("should return undefined when no placement param is set", function () {
+      expect(getSspPlacementId({})).to.be.undefined;
+      expect(getSspPlacementId(undefined)).to.be.undefined;
+    });
+
+    it("should translate placementId into the endpoint and imp.ext", function () {
+      const [request] = adapter.buildRequests(
+        [withParams({ placementId: "123" })],
+        BIDDER_REQUEST,
+      );
+      expect(request.url).to.include("pId=123");
+      expect(request.data.imp[0].ext.screencore).to.deep.equal({
+        sspPlacementId: "123",
+      });
+    });
+
+    it("should translate endpointId into the endpoint and imp.ext", function () {
+      const [request] = adapter.buildRequests(
+        [withParams({ endpointId: "456" })],
+        BIDDER_REQUEST,
+      );
+      expect(request.url).to.include("pId=456");
+      expect(request.data.imp[0].ext.screencore).to.deep.equal({
+        sspPlacementId: "456",
+      });
+    });
+
+    it("should build the endpoint from a deprecated param", function () {
+      expect(createEndpoint({ placementId: "123" }, "ssp-eu")).to.equal(
+        SSP_EU_ENDPOINT,
+      );
+    });
+  });
+
   describe("build requests", function () {
     it("should return [] when there are no valid bid requests", function () {
       const requests = adapter.buildRequests([], BIDDER_REQUEST);
@@ -399,7 +471,7 @@ describe("screencore bid adapter", function () {
     });
 
     describe("multiple bids", function () {
-      it("should group bids with the same sspPlacementId into one request", function () {
+      it("should send one request per bid even with the same sspPlacementId", function () {
         const requests = adapter.buildRequests(
           [
             copyBid(BID_TO_SSP, "bid-1", "123"),
@@ -408,15 +480,15 @@ describe("screencore bid adapter", function () {
           BIDDER_REQUEST,
         );
 
-        expect(requests).to.have.lengthOf(1);
-        expect(requests[0].url).to.include("pId=123");
-        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-1",
-          "bid-2",
-        ]);
+        expect(requests).to.have.lengthOf(2);
+        requests.forEach((request, i) => {
+          expect(request.url).to.include("pId=123");
+          expect(request.data.imp).to.have.lengthOf(1);
+          expect(request.data.imp[0].id).to.equal(`bid-${i + 1}`);
+        });
       });
 
-      it("should split bids with different sspPlacementIds into separate requests", function () {
+      it("should send distinct placements to their own pId", function () {
         const requests = adapter.buildRequests(
           [
             copyBid(BID_TO_SSP, "bid-1", "123"),
@@ -442,7 +514,7 @@ describe("screencore bid adapter", function () {
         );
       });
 
-      it("should keep grouped bids together when placements repeat out of order", function () {
+      it("should keep bid order when placements repeat", function () {
         const requests = adapter.buildRequests(
           [
             copyBid(BID_TO_SSP, "bid-1", "123"),
@@ -452,17 +524,60 @@ describe("screencore bid adapter", function () {
           BIDDER_REQUEST,
         );
 
-        expect(requests).to.have.lengthOf(2);
-        expect(requests[0].url).to.include("pId=123");
-        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
+        expect(requests).to.have.lengthOf(3);
+        expect(requests.map((r) => r.data.imp[0].id)).to.deep.equal([
           "bid-1",
+          "bid-2",
           "bid-3",
         ]);
+        expect(requests[0].url).to.include("pId=123");
         expect(requests[1].url).to.include("pId=456");
-        expect(requests[1].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-2",
-        ]);
+        expect(requests[2].url).to.include("pId=123");
       });
+    });
+
+    it("should keep existing imp.ext fields such as gpid and data", function () {
+      const bid = {
+        ...BID_TO_SSP,
+        ortb2Imp: {
+          ext: {
+            gpid: "/1234/home#div-1",
+            data: { pbadslot: "/1234/home#div-1" },
+          },
+        },
+      };
+      const [request] = adapter.buildRequests([bid], BIDDER_REQUEST);
+
+      const impExt = request.data.imp[0].ext;
+      expect(impExt.gpid).to.equal("/1234/home#div-1");
+      expect(impExt.data).to.deep.equal({ pbadslot: "/1234/home#div-1" });
+      expect(impExt.screencore).to.deep.equal({ sspPlacementId: "123" });
+    });
+
+    it("should send params.bidfloor with its currency", function () {
+      const bid = {
+        ...BID_TO_SSP,
+        params: { ...BID_TO_SSP.params, bidfloor: 0.5 },
+      };
+      const [request] = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(request.data.imp[0].bidfloor).to.equal(0.5);
+      expect(request.data.imp[0].bidfloorcur).to.equal("USD");
+    });
+
+    it("should use params.currency as the floor currency", function () {
+      const bid = {
+        ...BID_TO_SSP,
+        params: { ...BID_TO_SSP.params, bidfloor: 0.5, currency: "EUR" },
+      };
+      const [request] = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(request.data.imp[0].bidfloor).to.equal(0.5);
+      expect(request.data.imp[0].bidfloorcur).to.equal("EUR");
+    });
+
+    it("should not set a floor when params.bidfloor is missing", function () {
+      const [request] = adapter.buildRequests([BID_TO_SSP], BIDDER_REQUEST);
+      expect(request.data.imp[0].bidfloor).to.not.exist;
+      expect(request.data.imp[0].bidfloorcur).to.not.exist;
     });
   });
 
@@ -650,6 +765,12 @@ describe("screencore bid adapter", function () {
       );
 
       stub.restore();
+    });
+
+    it("should use the subdomain passed in instead of the timezone", function () {
+      expect(createEndpoint({ sspPlacementId: "123" }, "ssp-eu")).to.equal(
+        SSP_EU_ENDPOINT,
+      );
     });
 
     it("should URL-encode sspPlacementId", function () {

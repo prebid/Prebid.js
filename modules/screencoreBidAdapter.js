@@ -48,14 +48,28 @@ function getRegionSubdomainSuffix() {
 }
 
 /**
- * @param { { sspPlacementId?: string; } } params
+ * @param { { sspPlacementId?: string; placementId?: string; endpointId?: string } } params
  * @returns { string | undefined }
  */
-export const createEndpoint = (params) => {
-  if (!params?.sspPlacementId) return undefined;
+export const getSspPlacementId = (params) =>
+  params?.sspPlacementId ||
+  params?.placementId ||
+  params?.endpointId ||
+  undefined;
 
-  const subdomain = getRegionSubdomainSuffix();
-  return `https://${subdomain}.screencore.io/pbjs-bid?pId=${encodeURIComponent(params.sspPlacementId)}`;
+/**
+ * @param { { sspPlacementId?: string; placementId?: string; endpointId?: string } } params
+ * @param { string } [subdomain]
+ * @returns { string | undefined }
+ */
+export const createEndpoint = (
+  params,
+  subdomain = getRegionSubdomainSuffix(),
+) => {
+  const sspPlacementId = getSspPlacementId(params);
+  if (!sspPlacementId) return undefined;
+
+  return `https://${subdomain}.screencore.io/pbjs-bid?pId=${encodeURIComponent(sspPlacementId)}`;
 };
 
 const sspConverter = ortbConverter({
@@ -65,13 +79,16 @@ const sspConverter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    if (!imp.bidfloor) {
-      imp.bidfloor = bidRequest.params.bidfloor || 0;
+
+    if (!imp.bidfloor && bidRequest.params.bidfloor) {
+      imp.bidfloor = bidRequest.params.bidfloor;
+      imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY;
     }
 
     imp.ext = {
+      ...imp.ext,
       [BIDDER_CODE]: {
-        sspPlacementId: bidRequest.params.sspPlacementId,
+        sspPlacementId: getSspPlacementId(bidRequest.params),
       },
     };
     return imp;
@@ -99,11 +116,18 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    if (!bid?.params?.sspPlacementId) {
+    if (!getSspPlacementId(bid?.params)) {
       logWarn(
         `${BIDDER_CODE}: adUnit ${bid?.adUnitCode}: sspPlacementId is required`,
       );
       return false;
+    }
+
+    if (!bid.params.sspPlacementId) {
+      const oldParam = bid.params.placementId ? "placementId" : "endpointId";
+      logWarn(
+        `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: "${oldParam}" is deprecated, use "sspPlacementId" instead`,
+      );
     }
     return true;
   },
@@ -111,24 +135,23 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     if (!validBidRequests.length) return [];
 
-    const bidsByURL = new Map();
-    validBidRequests.forEach((bid) => {
-      const url = createEndpoint(bid.params);
-      if (!url) return;
-      if (!bidsByURL.has(url)) bidsByURL.set(url, []);
-      bidsByURL.get(url).push(bid);
-    });
+    const subdomain = getRegionSubdomainSuffix();
 
     const requests = [];
-    bidsByURL.forEach((bids, url) => {
+    validBidRequests.forEach((bid) => {
+      const url = createEndpoint(bid.params, subdomain);
+      if (!url) return;
       try {
         requests.push({
           method: "POST",
           url,
-          data: sspConverter.toORTB({ bidRequests: bids, bidderRequest }),
+          data: sspConverter.toORTB({ bidRequests: [bid], bidderRequest }),
         });
       } catch (err) {
-        logError(`${BIDDER_CODE}: failed to build request for ${url}`, err);
+        logError(
+          `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: failed to build request for ${url}`,
+          err,
+        );
       }
     });
 

@@ -16,11 +16,17 @@ The SSP region (US, EU or APAC) is selected automatically from the browser's tim
 
 # Bid Parameters
 
-| Name             | Scope    | Description                                                             | Example | Type     |
-| ---------------- | -------- | ----------------------------------------------------------------------- | ------- | -------- |
-| `sspPlacementId` | required | Screencore SSP placement ID                                             | `'123'` | `string` |
-| `bidfloor`       | optional | Bid floor, used when the Price Floors module is not set                 | `0.5`   | `number` |
-| `currency`       | optional | Request currency when the Currency module is not set, defaults to `USD` | `'USD'` | `string` |
+| Name             | Scope      | Description                                                                                         | Example | Type     |
+| ---------------- | ---------- | --------------------------------------------------------------------------------------------------- | ------- | -------- |
+| `sspPlacementId` | required   | Screencore SSP placement ID                                                                         | `'123'` | `string` |
+| `placementId`    | deprecated | Older name for the placement ID, used as `sspPlacementId` when that is not set                      | `'123'` | `string` |
+| `endpointId`     | deprecated | Older name for the placement ID, used as `sspPlacementId` when neither it nor `placementId` is set  | `'123'` | `string` |
+| `bidfloor`       | optional   | Bid floor, used when the Price Floors module sets none; its currency is `currency` (USD by default) | `0.5`   | `number` |
+| `currency`       | optional   | Request currency when the Currency module is not set, defaults to `USD`                             | `'USD'` | `string` |
+
+`placementId` and `endpointId` are still accepted so that existing configurations keep working,
+but they are deprecated: use `sspPlacementId` for new setups. If several are set, `sspPlacementId`
+takes precedence, then `placementId`, then `endpointId`.
 
 # Test Parameters
 
