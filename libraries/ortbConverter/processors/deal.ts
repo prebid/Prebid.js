@@ -1,25 +1,24 @@
 import { isPlainObject } from '../../../src/utils.js';
+import type { DealMeta } from '../../../src/bidfactory.ts';
+import type { ORTBBid } from '../../../src/types/ortb/response.d.ts';
 
-// ORTB `ext.prebid.deal.type` values, indexed by their numeric code
-export const DEAL_TYPES = ['unknown', 'sponsorship', 'reservation', 'non-reservation', 'house'];
-
-function isNonNegativeNumber(value) {
+function isNonNegativeNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
 /**
  * Normalize ORTB `bid.ext.prebid.deal` into the shape used for `bidResponse.meta.deal`.
  * Only known, correctly typed fields are copied. Deal metadata is ignored unless the bid has a `dealid`.
- * @param {Object} bid - ORTB bid object.
- * @returns {Object|undefined} the normalized deal metadata, or undefined if there is none.
+ * @param bid - ORTB bid object.
+ * @returns the normalized deal metadata, or undefined if there is none.
  */
-export function getDealMeta(bid) {
+export function getDealMeta(bid: ORTBBid): DealMeta | undefined {
   const deal = bid.ext?.prebid?.deal;
   if (!bid.dealid || !isPlainObject(deal)) {
     return;
   }
-  const dealMeta = {
-    type: (Number.isInteger(deal.type) && DEAL_TYPES[deal.type]) || 'unknown'
+  const dealMeta: DealMeta = {
+    type: Number.isInteger(deal.type) ? deal.type : 0
   };
   if (isNonNegativeNumber(deal.cpm)) {
     dealMeta.cpm = deal.cpm;

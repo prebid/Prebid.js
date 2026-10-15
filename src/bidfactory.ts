@@ -21,9 +21,10 @@ type BidIdentifiers = ContextIdentifiers & {
  */
 export interface DealMeta {
   /**
-   * Deal classification (ORTB `type`: 1 sponsorship, 2 reservation, 3 non-reservation, 4 house, 0 or unrecognized: unknown).
+   * Deal classification: 0 unknown, 1 sponsorship, 2 reservation, 3 non-reservation, 4 house.
+   * Defaults to 0 when the ORTB `type` is missing or not an integer.
    */
-  type: 'unknown' | 'sponsorship' | 'reservation' | 'non-reservation' | 'house';
+  type: number;
   /**
    * Unadjusted contractual or nominal deal CPM, in the bid's currency.
    */

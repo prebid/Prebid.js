@@ -53,21 +53,19 @@ describe('common processors', () => {
               deal: { type: 2, cpm: 5, pacing_adjusted_cpm: 10, on_schedule: 0.8, priority: 3 }
             }
           }
-        })).to.eql({ type: 'reservation', cpm: 5, pacingAdjustedCpm: 10, onSchedule: 0.8, priority: 3 });
+        })).to.eql({ type: 2, cpm: 5, pacingAdjustedCpm: 10, onSchedule: 0.8, priority: 3 });
       });
 
       [
-        [0, 'unknown'],
-        [1, 'sponsorship'],
-        [2, 'reservation'],
-        [3, 'non-reservation'],
-        [4, 'house'],
-        [5, 'unknown'],
-        ['1', 'unknown'],
-        [1.5, 'unknown'],
-        [undefined, 'unknown']
+        [0, 0],
+        [1, 1],
+        [4, 4],
+        [5, 5],
+        ['1', 0],
+        [1.5, 0],
+        [undefined, 0]
       ].forEach(([type, expected]) => {
-        it(`maps type ${JSON.stringify(type)} to '${expected}'`, () => {
+        it(`sets type ${expected} when ext.prebid.deal.type is ${JSON.stringify(type)}`, () => {
           expect(dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: { type } } } }).type).to.equal(expected);
         });
       });
@@ -80,7 +78,7 @@ describe('common processors', () => {
               deal: { type: 1, cpm: -1, pacing_adjusted_cpm: Infinity, on_schedule: '0.5', priority: 1.5, extra: 'ignored' }
             }
           }
-        })).to.eql({ type: 'sponsorship' });
+        })).to.eql({ type: 1 });
       });
 
       it('allows negative integer priority', () => {
