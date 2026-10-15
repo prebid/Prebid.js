@@ -304,11 +304,12 @@ describe('Sevio ID System', function () {
       });
     });
 
-    it('passes nothing and logs no error when the Identity service answers a null sevio_id', function () {
+    it('passes the revocation marker and logs no error when the Identity service answers a null sevio_id', function () {
       const callback = sinon.spy();
-      sevioIdSubmodule.getId(validConfig, consentData).callback(callback);
+      sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(callback);
       respondWith(server.requests[0], { sevio_id: null, changed: false });
-      sinon.assert.calledOnceWithExactly(callback);
+      sinon.assert.calledOnceWithExactly(callback, { revoked: true });
+      expect(sevioIdSubmodule.decode(callback.firstCall.args[0])).to.be.undefined;
       sinon.assert.notCalled(utils.logError);
       sinon.assert.calledOnce(utils.logInfo);
     });
@@ -452,6 +453,30 @@ describe('Sevio ID System', function () {
       expect(getGlobal().getUserIds().sevioId).to.equal(NEW_ENVELOPE);
       expect(coreStorage.getCookie(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
       expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
+    });
+
+    it('revokes the stored ID when a refresh is answered with a null sevio_id', async function () {
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toUTCString();
+      const refreshingConfig = { ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } };
+      seedCookie(ENVELOPE, twoDaysAgo);
+      seedLocalStorage(ENVELOPE, twoDaysAgo);
+      startUserId(refreshingConfig);
+      const ids = getGlobal().getUserIdsAsync();
+      await waitForRequest();
+
+      respondWith(server.requests[0], { sevio_id: null, changed: false });
+      await ids;
+
+      expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
+      expect(sevioEids()).to.deep.equal([]);
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal('{"revoked":true}');
+      expect(decodeURIComponent(coreStorage.getDataFromLocalStorage(STORAGE_NAME))).to.equal('{"revoked":true}');
+
+      // The next page view decodes the marker without calling the service again.
+      startUserId(refreshingConfig);
+      await getGlobal().getUserIdsAsync();
+      expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
+      expect(server.requests.length).to.equal(1);
     });
 
     it('provides no ID, no EID and makes no request under COPPA, even with a stored ID', async function () {

@@ -28,6 +28,9 @@ const RECOMMENDED_STORAGE_TYPES = ['cookie', 'html5'];
 // carrying a malformed one, so a stored ID of any other shape is not sent.
 const ENVELOPE_PATTERN = /^[A-Za-z0-9_-]{66}$/;
 const EMAIL_HASH_PATTERN = /^[0-9a-f]{64}$/;
+// Stored in place of the ID when the Identity service refuses a request. The userId core ignores an
+// empty callback, which would leave a previously stored ID in place; `decode` maps this to no ID.
+const REVOKED = { revoked: true };
 
 export type SevioIdParams = {
   /**
@@ -117,7 +120,7 @@ function fireSyncs(syncs) {
   });
 }
 
-function fetchId(callback: (id?: string) => void, params: SevioIdParams, consentData, storedId) {
+function fetchId(callback: (id?: string | typeof REVOKED) => void, params: SevioIdParams, consentData, storedId) {
   const ids = buildIds(storedId, params.emailHash);
   const body = {
     client_id: params.clientId,
@@ -140,8 +143,8 @@ function fetchId(callback: (id?: string) => void, params: SevioIdParams, consent
         fireSyncs(parsed.syncs);
       } else if (id === null) {
         // The Identity service answers null when the privacy signals or its agent check refuse the call.
-        logInfo(`${LOG_PREFIX}the Identity service provided no ID for this request`);
-        callback();
+        logInfo(`${LOG_PREFIX}the Identity service provided no ID for this request; revoking any stored ID`);
+        callback(REVOKED);
       } else {
         logError(`${LOG_PREFIX}the ID response has no 'sevio_id'`, response);
         callback();

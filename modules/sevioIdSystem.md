@@ -119,6 +119,11 @@ The `_last` keys are written only when `storage.refreshInSeconds` is set.
 Without a `storage` object the module is inactive: it logs an error, makes no request and provides no
 ID.
 
+When the Identity service refuses a request (it answers `sevio_id: null`, for example because of the
+privacy signals), any stored ID is revoked: Prebid replaces it in both stores with the marker
+`{"revoked":true}`, and no Sevio ID or EID is provided until the next request. A failed request (a
+network or HTTP error, or a malformed answer) keeps the stored ID.
+
 # Consent
 
 - The submodule declares GVL ID `1393`. When `tcfControl` is enabled, Prebid's TCF enforcement
