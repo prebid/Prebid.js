@@ -55,7 +55,7 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
-    if (!imp.bidfloor && bidRequest.params.bidfloor) {
+    if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {
       imp.bidfloor = bidRequest.params.bidfloor;
       imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY;
     }
