@@ -414,6 +414,59 @@ describe("escalaxAdapter", function () {
       expect(request.data.imp[0].banner.format[0].h).to.be.an("number");
     });
 
+    it("should keep existing imp.ext fields such as gpid and data", async function () {
+      const [request] = await buildRequests([
+        {
+          ...BANNER_BID_REQUEST,
+          ortb2Imp: {
+            ext: {
+              gpid: "/1234/home#div-1",
+              data: { pbadslot: "/1234/home#div-1" },
+            },
+          },
+        },
+      ]);
+
+      const impExt = request.data.imp[0].ext;
+      expect(impExt.gpid).to.equal("/1234/home#div-1");
+      expect(impExt.data).to.deep.equal({ pbadslot: "/1234/home#div-1" });
+      expect(impExt.escalax).to.deep.equal({
+        sourceId: "sourceId",
+        accountId: "accountId",
+      });
+    });
+
+    it("should send params.bidfloor with its currency", async function () {
+      const [request] = await buildRequests([
+        withParams(BANNER_BID_REQUEST, "bid-1", {
+          sourceId: "sourceId",
+          accountId: "accountId",
+          bidfloor: 0.5,
+        }),
+      ]);
+      expect(request.data.imp[0].bidfloor).to.equal(0.5);
+      expect(request.data.imp[0].bidfloorcur).to.equal("USD");
+    });
+
+    it("should use params.currency as the floor currency", async function () {
+      const [request] = await buildRequests([
+        withParams(BANNER_BID_REQUEST, "bid-1", {
+          sourceId: "sourceId",
+          accountId: "accountId",
+          bidfloor: 0.5,
+          currency: "EUR",
+        }),
+      ]);
+      expect(request.data.imp[0].bidfloor).to.equal(0.5);
+      expect(request.data.imp[0].bidfloorcur).to.equal("EUR");
+    });
+
+    it("should not set a floor when params.bidfloor is missing", async function () {
+      const [request] = await buildRequests([BANNER_BID_REQUEST]);
+      expect(request.data.imp[0].bidfloor).to.not.exist;
+      expect(request.data.imp[0].bidfloorcur).to.not.exist;
+    });
+
     it("should URL-encode params in the endpoint", async function () {
       const [request] = await buildRequests([
         withParams(SSP_BANNER_BID_REQUEST, "bid-1", {
@@ -458,24 +511,24 @@ describe("escalaxAdapter", function () {
     });
 
     describe("multiple bids", function () {
-      it("should group bids with the same params into one request", async function () {
+      it("should send one request per bid even when params are the same", async function () {
         const params = { sourceId: "sourceId", accountId: "accountId" };
         const requests = await buildRequests([
           withParams(BANNER_BID_REQUEST, "bid-1", params),
           withParams(BANNER_BID_REQUEST, "bid-2", params),
         ]);
 
-        expect(requests).to.have.lengthOf(1);
-        expect(requests[0].url).to.match(
-          EXCHANGE_URL_PATTERN("sourceId", "accountId"),
-        );
-        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-1",
-          "bid-2",
-        ]);
+        expect(requests).to.have.lengthOf(2);
+        requests.forEach((request, i) => {
+          expect(request.url).to.match(
+            EXCHANGE_URL_PATTERN("sourceId", "accountId"),
+          );
+          expect(request.data.imp).to.have.lengthOf(1);
+          expect(request.data.imp[0].id).to.equal(`bid-${i + 1}`);
+        });
       });
 
-      it("should split exchange and ssp bids into separate requests", async function () {
+      it("should route exchange and ssp bids in a mixed auction to their own endpoints", async function () {
         const requests = await buildRequests([
           withParams(BANNER_BID_REQUEST, "bid-1", {
             sourceId: "sourceId",
@@ -506,7 +559,27 @@ describe("escalaxAdapter", function () {
         });
       });
 
-      it("should split bids with different supplyPlacementIds into separate requests", async function () {
+      it("should route a mixed auction correctly when the ssp bid comes first", async function () {
+        const requests = await buildRequests([
+          withParams(SSP_BANNER_BID_REQUEST, "bid-1", {
+            supplyPlacementId: "sp1",
+          }),
+          withParams(BANNER_BID_REQUEST, "bid-2", {
+            sourceId: "sourceId",
+            accountId: "accountId",
+          }),
+        ]);
+
+        expect(requests).to.have.lengthOf(2);
+        expect(requests[0].url).to.match(SSP_URL_PATTERN("sp1"));
+        expect(requests[0].data.imp[0].id).to.equal("bid-1");
+        expect(requests[1].url).to.match(
+          EXCHANGE_URL_PATTERN("sourceId", "accountId"),
+        );
+        expect(requests[1].data.imp[0].id).to.equal("bid-2");
+      });
+
+      it("should send distinct ssp placements to their own placementId", async function () {
         const requests = await buildRequests([
           withParams(SSP_BANNER_BID_REQUEST, "bid-1", {
             supplyPlacementId: "sp1",
@@ -519,36 +592,14 @@ describe("escalaxAdapter", function () {
         expect(requests).to.have.lengthOf(2);
         expect(requests[0].url).to.match(SSP_URL_PATTERN("sp1"));
         expect(requests[0].data.imp[0].id).to.equal("bid-1");
+        expect(requests[0].data.imp[0].ext.escalax.supplyPlacementId).to.equal(
+          "sp1",
+        );
         expect(requests[1].url).to.match(SSP_URL_PATTERN("sp2"));
         expect(requests[1].data.imp[0].id).to.equal("bid-2");
-      });
-
-      it("should keep grouped bids together when params repeat out of order", async function () {
-        const requests = await buildRequests([
-          withParams(SSP_BANNER_BID_REQUEST, "bid-1", {
-            supplyPlacementId: "sp1",
-          }),
-          withParams(BANNER_BID_REQUEST, "bid-2", {
-            sourceId: "sourceId",
-            accountId: "accountId",
-          }),
-          withParams(SSP_BANNER_BID_REQUEST, "bid-3", {
-            supplyPlacementId: "sp1",
-          }),
-        ]);
-
-        expect(requests).to.have.lengthOf(2);
-        expect(requests[0].url).to.match(SSP_URL_PATTERN("sp1"));
-        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-1",
-          "bid-3",
-        ]);
-        expect(requests[1].url).to.match(
-          EXCHANGE_URL_PATTERN("sourceId", "accountId"),
+        expect(requests[1].data.imp[0].ext.escalax.supplyPlacementId).to.equal(
+          "sp2",
         );
-        expect(requests[1].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-2",
-        ]);
       });
     });
   });

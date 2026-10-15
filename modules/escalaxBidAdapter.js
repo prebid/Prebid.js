@@ -6,6 +6,7 @@ import { getTimeZone } from "../libraries/timezone/timezone.js";
 import { logError, logWarn } from "../src/utils.js";
 
 const BIDDER_CODE = "escalax";
+const GVLID = 1435;
 
 const ESCALAX_SOURCE_ID_MACRO = "[sourceId]";
 const ESCALAX_ACCOUNT_ID_MACRO = "[accountId]";
@@ -16,8 +17,35 @@ const ESCALAX_SUPPLY_PLACEMENT_ID_MACRO = "[supplyPlacementId]";
 const ESCALAX_SSP_URL = `https://${ESCALAX_SUBDOMAIN_MACRO}.escalax.io/pbb?placementId=${ESCALAX_SUPPLY_PLACEMENT_ID_MACRO}`;
 
 const ESCALAX_DEFAULT_CURRENCY = "USD";
-const ESCALAX_DEFAULT_EXCHANGE_SUBDOMAIN = "bidder_us";
-const ESCALAX_DEFAULT_SSP_SUBDOMAIN = "s-us";
+
+const REGION_SUBDOMAINS = {
+  US: { exchange: "bidder_us", ssp: "s-us" },
+  EU: { exchange: "bidder_eu", ssp: "s-eu" },
+  APAC: { exchange: "bidder_apac", ssp: "s-as" },
+};
+const DEFAULT_REGION = "US";
+
+const TIMEZONE_REGIONS = {
+  America: "US",
+  Europe: "EU",
+  Africa: "EU",
+  Atlantic: "EU",
+  Arctic: "EU",
+  Asia: "APAC",
+  Australia: "APAC",
+  Antarctica: "APAC",
+  Pacific: "APAC",
+  Indian: "APAC",
+};
+
+function getRegionSubdomains() {
+  try {
+    const region = TIMEZONE_REGIONS[getTimeZone().split("/")[0]];
+    return REGION_SUBDOMAINS[region] || REGION_SUBDOMAINS[DEFAULT_REGION];
+  } catch (err) {
+    return REGION_SUBDOMAINS[DEFAULT_REGION];
+  }
+}
 
 function isSspBid(bid) {
   return Boolean(bid.params.supplyPlacementId);
@@ -26,20 +54,20 @@ function isSspBid(bid) {
 function createImp(buildImp, bidRequest, context) {
   const imp = buildImp(bidRequest, context);
 
-  imp.ext = isSspBid(bidRequest)
-    ? {
-        [BIDDER_CODE]: {
-          supplyPlacementId: bidRequest.params.supplyPlacementId,
-        },
-      }
+  const bidderParams = isSspBid(bidRequest)
+    ? { supplyPlacementId: bidRequest.params.supplyPlacementId }
     : {
-        [BIDDER_CODE]: {
-          sourceId: bidRequest.params.sourceId,
-          accountId: bidRequest.params.accountId,
-        },
+        sourceId: bidRequest.params.sourceId,
+        accountId: bidRequest.params.accountId,
       };
 
-  if (!imp.bidfloor) imp.bidfloor = bidRequest.params.bidfloor;
+  imp.ext = { ...imp.ext, [BIDDER_CODE]: bidderParams };
+
+  if (!imp.bidfloor && bidRequest.params.bidfloor) {
+    imp.bidfloor = bidRequest.params.bidfloor;
+    imp.bidfloorcur = bidRequest.params.currency || ESCALAX_DEFAULT_CURRENCY;
+  }
+
   return imp;
 }
 
@@ -62,55 +90,11 @@ function createBidResponse(buildBidResponse, bid, context) {
   return bidResponse;
 }
 
-function getExchangeSubdomain() {
-  const regionMap = {
-    Europe: "bidder_eu",
-    Africa: "bidder_eu",
-    Atlantic: "bidder_eu",
-    Arctic: "bidder_eu",
-    Asia: "bidder_apac",
-    Australia: "bidder_apac",
-    Antarctica: "bidder_apac",
-    Pacific: "bidder_apac",
-    Indian: "bidder_apac",
-    America: "bidder_us",
-  };
-
-  try {
-    const region = getTimeZone().split("/")[0];
-    return regionMap[region] || ESCALAX_DEFAULT_EXCHANGE_SUBDOMAIN;
-  } catch (err) {
-    return ESCALAX_DEFAULT_EXCHANGE_SUBDOMAIN;
-  }
-}
-
-function getSspSubdomain() {
-  const regionMap = {
-    Europe: "s-eu",
-    Africa: "s-eu",
-    Atlantic: "s-eu",
-    Arctic: "s-eu",
-    Asia: "s-as",
-    Australia: "s-as",
-    Antarctica: "s-as",
-    Pacific: "s-as",
-    Indian: "s-as",
-    America: "s-us",
-  };
-
-  try {
-    const region = getTimeZone().split("/")[0];
-    return regionMap[region] || ESCALAX_DEFAULT_SSP_SUBDOMAIN;
-  } catch (err) {
-    return ESCALAX_DEFAULT_SSP_SUBDOMAIN;
-  }
-}
-
-function buildEndpointURL(bid) {
+function buildEndpointURL(bid, subdomains) {
   if (isSspBid(bid)) {
     return ESCALAX_SSP_URL.replace(
       ESCALAX_SUBDOMAIN_MACRO,
-      getSspSubdomain(),
+      subdomains.ssp,
     ).replace(
       ESCALAX_SUPPLY_PLACEMENT_ID_MACRO,
       encodeURIComponent(bid.params.supplyPlacementId),
@@ -119,7 +103,7 @@ function buildEndpointURL(bid) {
 
   return ESCALAX_EXCHANGE_URL.replace(
     ESCALAX_SUBDOMAIN_MACRO,
-    getExchangeSubdomain(),
+    subdomains.exchange,
   )
     .replace(ESCALAX_SOURCE_ID_MACRO, encodeURIComponent(bid.params.sourceId))
     .replace(
@@ -141,6 +125,7 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
     const { sourceId, accountId, supplyPlacementId } = bid?.params || {};
@@ -168,23 +153,22 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     if (!validBidRequests?.length) return [];
 
-    const bidsByURL = new Map();
-    validBidRequests.forEach((bid) => {
-      const url = buildEndpointURL(bid);
-      if (!bidsByURL.has(url)) bidsByURL.set(url, []);
-      bidsByURL.get(url).push(bid);
-    });
+    const subdomains = getRegionSubdomains();
 
     const requests = [];
-    bidsByURL.forEach((bids, url) => {
+    validBidRequests.forEach((bid) => {
+      const url = buildEndpointURL(bid, subdomains);
       try {
         requests.push({
           method: "POST",
           url,
-          data: converter.toORTB({ bidRequests: bids, bidderRequest }),
+          data: converter.toORTB({ bidRequests: [bid], bidderRequest }),
         });
       } catch (err) {
-        logError(`${BIDDER_CODE}: failed to build request for ${url}`, err);
+        logError(
+          `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: failed to build request for ${url}`,
+          err,
+        );
       }
     });
 

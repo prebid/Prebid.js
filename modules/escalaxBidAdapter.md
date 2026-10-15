@@ -20,13 +20,13 @@ The adapter supports two integrations. Each bid must use exactly one of them:
 either `accountId` and `sourceId` together (exchange), or `supplyPlacementId` (SSP).
 Bids that mix params from both integrations, or set only one of `accountId` / `sourceId`, are rejected.
 
-| Name                | Scope                 | Description                                                             | Example      | Type     |
-| ------------------- | --------------------- | ----------------------------------------------------------------------- | ------------ | -------- |
-| `accountId`         | required for exchange | Account ID, used together with `sourceId`                               | `'hash'`     | `string` |
-| `sourceId`          | required for exchange | Source ID, used together with `accountId`                               | `'sourceId'` | `string` |
-| `supplyPlacementId` | required for SSP      | Supply placement ID                                                     | `'hash'`     | `string` |
-| `bidfloor`          | optional              | Bid floor, used when the Price Floors module is not set                 | `0.5`        | `number` |
-| `currency`          | optional              | Request currency when the Currency module is not set, defaults to `USD` | `'USD'`      | `string` |
+| Name                | Scope                 | Description                                                                                         | Example      | Type     |
+| ------------------- | --------------------- | --------------------------------------------------------------------------------------------------- | ------------ | -------- |
+| `accountId`         | required for exchange | Account ID, used together with `sourceId`                                                           | `'hash'`     | `string` |
+| `sourceId`          | required for exchange | Source ID, used together with `accountId`                                                           | `'sourceId'` | `string` |
+| `supplyPlacementId` | required for SSP      | Supply placement ID                                                                                 | `'hash'`     | `string` |
+| `bidfloor`          | optional              | Bid floor, used when the Price Floors module sets none; its currency is `currency` (USD by default) | `0.5`        | `number` |
+| `currency`          | optional              | Request currency when the Currency module is not set, defaults to `USD`                             | `'USD'`      | `string` |
 
 # Test Parameters
 
