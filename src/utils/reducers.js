@@ -43,6 +43,21 @@ export const getHighestDesirability = maximum(
   tiebreakCompare(bidDesirabilityCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond)))
 );
 
+// Bids without a size (e.g. most video and native bids) rank as largest.
+const bidAreaCompare = keyCompare((bid) => bid.width > 0 && bid.height > 0 ? bid.width * bid.height : Infinity);
+const dealCompare = keyCompare((bid) => bid.dealId ? 1 : 0);
+
+// This function will get the highest bid by `.desirability`, like {@link getHighestDesirability};
+// ties prefer the smaller creative, then a deal, then the lowest `timeToRespond`.
+export const getBestBid = maximum(
+  tiebreakCompare(
+    bidDesirabilityCompare,
+    reverseCompare(bidAreaCompare),
+    dealCompare,
+    reverseCompare(keyCompare((bid) => bid.timeToRespond))
+  )
+);
+
 // This function will get the oldest highest cpm value bid, in case of tie it will return the bid which came in first
 // Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
 export const getOldestHighestCpmBid = maximum(tiebreakCompare(cpmCompare, reverseCompare(timestampCompare)));

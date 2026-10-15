@@ -1,17 +1,21 @@
 <!--
-  This page runs an auction for 2 adunits, simply displaying the most desirable
-  bid for each (see pbjs.getBestBids) rather than the highest CPM bid, and
-  without sending targeting to an ad server.
+  Ad server first: this page runs an auction for 2 adunits in which the ad
+  server bids into Prebid like any other bidder, instead of Prebid setting
+  targeting (e.g. setTargetingForGPTAsync) and handing the decision to the
+  ad server. Once bids are back, the page renders the most desirable bid for
+  each adunit (see pbjs.getBestBids) directly.
 
   Notes:
 
+  - add your ad server's bid adapter to each adunit's bids so it competes in
+  the auction; the appnexus bids below are placeholders.
   - this approach assumes that the adunit.code is the div name. There
   are many other ways to match the adunit to the div.
   - this approach won't work for refreshed adunits. For that scenario
   you'll need to be more surgical about what's passed into the bidsbackhandler.
-  - there's not a separate failsafe timeout here. Since there's no call to
-  an ad server waiting impatiently, Prebid's the only ad game in town and its
-  timeout is sufficient.
+  - there's not a separate failsafe timeout here. Since the ad server competes
+  inside the Prebid auction rather than waiting on it, Prebid's timeout is
+  sufficient.
 -->
 
 <html>
@@ -62,6 +66,8 @@
         pbjs.addAdUnits(adUnits);
     });
 
+    // no targeting is set and no ad server call is made here: the ad server
+    // already bid into the auction, so render the best bid for each adunit.
     // you could instead pass an array of adUnits
     // to getBestBids() if desired
     function renderAllAdUnits() {
@@ -98,7 +104,7 @@
 </head>
 
 <body>
-<h2>Ad Serverless Test Page</h2>
+<h2>Ad Server First Test Page</h2>
 
 <div id='test-div'></div>
 <br/>

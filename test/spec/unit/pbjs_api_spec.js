@@ -3932,6 +3932,13 @@ describe('Unit: Prebid Module', function () {
       expect(pbjs.getBestBids()).to.have.members([bids[1], bids[3]]);
     });
 
+    it('breaks desirability ties across bidders in favor of the smaller creative', () => {
+      Object.assign(bids[1], { width: 728, height: 90, timeToRespond: 50 });
+      Object.assign(bids[2], { desirability: 25, width: 300, height: 50, timeToRespond: 500 });
+
+      expect(pbjs.getBestBids(adUnitCode)).to.deep.equal([bids[2]]);
+    });
+
     it('filters ineligible bids before choosing among bids from the same bidder', () => {
       bids.splice(2);
       bids[1].cpm = 0;
