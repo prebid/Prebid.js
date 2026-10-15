@@ -144,6 +144,13 @@ bound how long such a value can leave the user without an ID.
   scope, because no TCF consent management is configured, the module sends `gdpr: 0`, meaning GDPR
   does not apply. Publishers with EU traffic must therefore include `consentManagementTcf`, and
   should include the other consent management modules that apply to their traffic.
+- When the consent signals change, Prebid asks the Identity service again, but the ID stored under the
+  previous signals stays available to bidders until the service answers. If that request fails, the
+  previous ID stays in use until a later request succeeds (the next refresh, expiry or consent
+  change). The submodule does not itself withhold a stored ID on an opt-out; it relies on the
+  Identity service and on Prebid's activity controls. To stop IDs reaching bidders as soon as a user
+  opts out, include `gppControl_usnat` or `gppControl_usstates` (which deny `enrichEids` and
+  `transmitEids` on a GPP opt-out), or deny those activities with `allowActivities` rules.
 - No ID is provided under COPPA. When COPPA applies, the module makes no request, and an ID that is
   already stored is not passed to bidders either.
 - **`userSync.enforceStorageType` caveat:** Prebid currently compares each storage write's single
