@@ -4,6 +4,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepSetValue, getWinDimensions } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'pigeoon';
 const BASE_URL = 'https://pbjs.pigeoon.com';
@@ -19,9 +20,7 @@ const placementByBidId = new Map();
 const MAX_TRACKED_BIDS = 500;
 
 /**
- * @typedef {object} BidParams
- * @property {string} networkId - Publisher network ID provided by Pigeoon
- * @property {string} placementId - Placement ID provided by Pigeoon
+ * @typedef {import('./pigeoonBidAdapter.d.ts').PigeoonBidderParams} PigeoonBidderParams
  */
 
 /**
@@ -128,12 +127,12 @@ function notifyBidEvent(path, bid) {
  * impressions that are unlikely to be seen: y = distance of the slot's top from the top of the viewport
  * (negative when scrolled past), h = slot height, vh = viewport height.
  * Undefined when the slot element cannot be found or the viewport size is unknown.
- * @param {string} adUnitCode
+ * @param {object} bidRequest
  * @returns {{y: number, h: number, vh: number}|undefined}
  */
-function getSlotPosition(adUnitCode) {
+function getSlotPosition(bidRequest) {
   try {
-    const element = document.getElementById(adUnitCode);
+    const element = getAdUnitElement(bidRequest);
     if (!element) return undefined;
     const rect = getBoundingClientRect(element);
     const vh = getWinDimensions().innerHeight;
@@ -162,14 +161,15 @@ const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 300,
-    currency: 'TRY'
+    currency: 'TRY',
+    mediaType: BANNER
   },
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = String(bidRequest.params.placementId);
     rememberPlacement(bidRequest.bidId, imp.tagid);
-    const position = getSlotPosition(bidRequest.adUnitCode);
+    const position = getSlotPosition(bidRequest);
     if (position) {
       deepSetValue(imp, 'ext.pigeoon.pos', position);
     }

@@ -178,6 +178,36 @@ describe('pigeoonBidAdapter', function () {
       }
     });
 
+    it('should resolve the slot through adUnit.element when the code is not an element id', function () {
+      const div = document.createElement('div');
+      div.style.width = '320px';
+      div.style.height = '100px';
+      document.body.appendChild(div);
+      try {
+        const bids = [makeBidRequest({ adUnitCode: 'not-an-element-id', element: div })];
+        const request = spec.buildRequests(bids, makeBidderRequest(bids));
+
+        expect(request.data.imp[0].ext.pigeoon.pos.h).to.equal(100);
+      } finally {
+        document.body.removeChild(div);
+      }
+    });
+
+    it('should only build banner imps for multi-format ad units', function () {
+      const bids = [makeBidRequest({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] },
+          native: { image: { required: true } }
+        }
+      })];
+      const request = spec.buildRequests(bids, makeBidderRequest(bids));
+
+      expect(request.data.imp[0].banner).to.be.an('object');
+      expect(request.data.imp[0].video).to.equal(undefined);
+      expect(request.data.imp[0].native).to.equal(undefined);
+    });
+
     it('should not send a slot position when the ad unit element is missing', function () {
       const bids = [makeBidRequest({ adUnitCode: 'div-pigeoon-missing' })];
       const request = spec.buildRequests(bids, makeBidderRequest(bids));
