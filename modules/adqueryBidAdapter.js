@@ -29,6 +29,7 @@ const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN;
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
+const ADQUERY_EID_SOURCE = 'adquery.io';
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -288,31 +289,46 @@ export const spec = {
   }
 };
 
-function getFirstUid(eid) {
-  return Array.isArray(eid?.uids) ? eid.uids.find(uid => uid?.id)?.id || '' : '';
+// Orders candidates by: adquery.io first, then source, then id (plain code-unit comparison,
+// not localeCompare, so the result does not depend on the browser locale).
+function isBetterCandidate(candidate, best) {
+  if (!best) {
+    return true;
+  }
+  const candidateIsAdquery = candidate.source === ADQUERY_EID_SOURCE;
+  const bestIsAdquery = best.source === ADQUERY_EID_SOURCE;
+  if (candidateIsAdquery !== bestIsAdquery) {
+    return candidateIsAdquery;
+  }
+  if (candidate.source !== best.source) {
+    return candidate.source < best.source;
+  }
+  return candidate.id < best.id;
 }
 
-// adquery.io EID first; otherwise the EID of another source chosen by source name,
-// so the same set of EIDs always yields the same user id regardless of module order.
+// Picks one uid across all EIDs and their uids deterministically, so the same set of EIDs
+// always yields the same user id regardless of module order or how same-source uids were merged.
 function getUserIdFromEids(bid) {
   if (!Array.isArray(bid.userIdAsEids)) {
     return '';
   }
 
-  let fallback = null;
+  let best = null;
   for (const eid of bid.userIdAsEids) {
-    const id = getFirstUid(eid);
-    if (!id || typeof eid?.source !== 'string') {
+    if (typeof eid?.source !== 'string' || !Array.isArray(eid.uids)) {
       continue;
     }
-    if (eid.source === 'adquery.io') {
-      return id;
-    }
-    if (!fallback || eid.source.localeCompare(fallback.source) < 0) {
-      fallback = { source: eid.source, id };
+    for (const uid of eid.uids) {
+      if (!uid?.id) {
+        continue;
+      }
+      const candidate = { source: eid.source, id: String(uid.id) };
+      if (isBetterCandidate(candidate, best)) {
+        best = candidate;
+      }
     }
   }
-  return fallback ? fallback.id : '';
+  return best ? best.id : '';
 }
 
 function buildRequest(bid, bidderRequest, isVideo = false) {

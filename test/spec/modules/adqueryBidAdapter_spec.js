@@ -1104,6 +1104,53 @@ describe('adqueryBidAdapter', function () {
         expect(reversed.data.bidQid).to.equal('criteo-id');
       });
 
+      it('should break ties between EIDs with the same source by uid, not by position', function () {
+        const eids = [
+          { source: 'criteo.com', uids: [{ id: 'criteo-b' }] },
+          { source: 'criteo.com', uids: [{ id: 'criteo-a' }] },
+          { source: 'pubcid.org', uids: [{ id: 'pubcid-id' }] }
+        ];
+        const forward = spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: eids })], { refererInfo: {} })[0];
+        const reversed = spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: [...eids].reverse() })], { refererInfo: {} })[0];
+        expect(forward.data.bidQid).to.equal('criteo-a');
+        expect(reversed.data.bidQid).to.equal('criteo-a');
+      });
+
+      it('should pick the same uid regardless of uid order within a merged EID', function () {
+        const uids = [{ id: 'uid-b' }, { id: 'uid-a' }, { id: 'uid-c' }];
+        const forward = spec.buildRequests([Object.assign({}, bidRequest, {
+          userIdAsEids: [{ source: 'other.com', uids }]
+        })], { refererInfo: {} })[0];
+        const reversed = spec.buildRequests([Object.assign({}, bidRequest, {
+          userIdAsEids: [{ source: 'other.com', uids: [...uids].reverse() }]
+        })], { refererInfo: {} })[0];
+        expect(forward.data.bidQid).to.equal('uid-a');
+        expect(reversed.data.bidQid).to.equal('uid-a');
+      });
+
+      it('should pick the same adquery.io uid regardless of duplicate adquery.io EID order', function () {
+        const eids = [
+          { source: 'aaa.com', uids: [{ id: 'aaa-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_b' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_a' }] }
+        ];
+        const forward = spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: eids })], { refererInfo: {} })[0];
+        const reversed = spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: [...eids].reverse() })], { refererInfo: {} })[0];
+        expect(forward.data.bidQid).to.equal('qd_a');
+        expect(reversed.data.bidQid).to.equal('qd_a');
+      });
+
+      it('should skip EIDs whose uids is not an array', function () {
+        const bid = Object.assign({}, bidRequest, {
+          userIdAsEids: [
+            { source: 'aaa.com', uids: { id: 'not-an-array' } },
+            { source: 'bbb.com', uids: [{ id: 'bbb-id' }] }
+          ]
+        });
+        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
+        expect(req.data.bidQid).to.equal('bbb-id');
+      });
+
       it('should skip fallback EIDs without a usable uid', function () {
         const bid = Object.assign({}, bidRequest, {
           userIdAsEids: [
