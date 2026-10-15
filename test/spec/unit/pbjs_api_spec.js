@@ -3932,6 +3932,14 @@ describe('Unit: Prebid Module', function () {
       expect(pbjs.getMostDesirableBid()).to.equal(bids[3]);
     });
 
+    it('filters ineligible bids before choosing among bids from the same bidder', () => {
+      bids.splice(2);
+      bids[1].cpm = 0;
+      bids[1].desirability = 100;
+
+      expect(pbjs.getMostDesirableBid(adUnitCode)).to.equal(bids[0]);
+    });
+
     it('excludes unusable and zero CPM bids and returns null when no bid qualifies', () => {
       bids[1].status = BID_STATUS.RENDERED;
       bids.push({ ...bids[2], adId: 'zero-cpm', bidderCode: 'zero-cpm', cpm: 0, desirability: 100 });
