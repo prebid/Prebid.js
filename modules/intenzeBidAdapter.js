@@ -6,6 +6,7 @@ import { logError, logWarn } from "../src/utils.js";
 import { getTimeZone } from "../libraries/timezone/timezone.js";
 
 const BIDDER_CODE = "intenze";
+const GVLID = 1457;
 const DEFAULT_CURRENCY = "USD";
 const DEFAULT_REGION = "America";
 
@@ -20,15 +21,16 @@ const sspSubdomainsRegions = {
   Asia: "apac-ssp",
 };
 
-/**
- * @param { { accountId?: string; placementId?: string } } params
- *
- * @returns { string }
- */
-const buildEndpointURL = (params) => {
-  const timezone = getTimeZone() || "";
-  const region = timezone.split("/")[0] || DEFAULT_REGION;
+const getRegion = () => {
+  try {
+    const region = (getTimeZone() || "").split("/")[0];
+    return exchangeSubdomainsRegions[region] ? region : DEFAULT_REGION;
+  } catch (err) {
+    return DEFAULT_REGION;
+  }
+};
 
+export const buildEndpointURL = (params, region = getRegion()) => {
   if (params?.accountId) {
     const subdomain =
       exchangeSubdomainsRegions[region] ||
@@ -52,21 +54,22 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    if (!imp.bidfloor) {
-      imp.bidfloor = bidRequest.params.bidfloor || 0;
+
+    if (!imp.bidfloor && bidRequest.params.bidfloor) {
+      imp.bidfloor = bidRequest.params.bidfloor;
+      imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY;
     }
 
     const bidderParams = {};
-
-    if (bidRequest?.params?.accountId) {
+    if (bidRequest.params.accountId) {
       bidderParams.accountId = bidRequest.params.accountId;
     }
-
-    if (bidRequest?.params?.placementId) {
+    if (bidRequest.params.placementId) {
       bidderParams.placementId = bidRequest.params.placementId;
     }
 
     imp.ext = {
+      ...imp.ext,
       [BIDDER_CODE]: bidderParams,
     };
     return imp;
@@ -89,6 +92,7 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
@@ -103,7 +107,7 @@ export const spec = {
 
     if (!accountId && !placementId) {
       logWarn(
-        `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: either accountId or placementId expected`,
+        `${BIDDER_CODE}: adUnit ${bid?.adUnitCode}: either accountId or placementId expected`,
       );
       return false;
     }
@@ -114,24 +118,23 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     if (!validBidRequests?.length) return [];
 
-    const bidsByURL = new Map();
-    validBidRequests.forEach((bid) => {
-      const url = buildEndpointURL(bid.params);
-      if (!url) return;
-      if (!bidsByURL.has(url)) bidsByURL.set(url, []);
-      bidsByURL.get(url).push(bid);
-    });
-
+    const region = getRegion();
     const requests = [];
-    bidsByURL.forEach((bids, url) => {
+
+    validBidRequests.forEach((bid) => {
+      const url = buildEndpointURL(bid.params, region);
+      if (!url) return;
       try {
         requests.push({
           method: "POST",
           url,
-          data: converter.toORTB({ bidRequests: bids, bidderRequest }),
+          data: converter.toORTB({ bidRequests: [bid], bidderRequest }),
         });
       } catch (err) {
-        logError(`${BIDDER_CODE}: failed to build request for ${url}`, err);
+        logError(
+          `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: failed to build request for ${url}`,
+          err,
+        );
       }
     });
 

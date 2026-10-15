@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { spec } from "modules/intenzeBidAdapter";
+import { spec, buildEndpointURL } from "modules/intenzeBidAdapter";
 import { config } from "src/config.js";
+import { setConfig as setCurrencyConfig } from "modules/currency.js";
 
 const EXCHANGE_URL_PATTERN = (accountId) =>
   new RegExp(
@@ -112,6 +113,10 @@ const makeResponse = (
 });
 
 describe("IntenzeAdapter", function () {
+  it("has gvlid", function () {
+    expect(spec.gvlid).to.equal(1457);
+  });
+
   describe("isBidRequestValid", function () {
     it("returns true when only placementId is provided", function () {
       const bid = makeBid({ bidId: "1", params: { placementId: "25" } });
@@ -264,22 +269,41 @@ describe("IntenzeAdapter", function () {
       expect(requests[0].data.cur).to.deep.equal(["EUR"]);
     });
 
+    describe("with currency module enabled", function () {
+      beforeEach(function () {
+        setCurrencyConfig({
+          adServerCurrency: "EUR",
+          rates: { USD: { EUR: 0.9 } },
+        });
+      });
+      afterEach(function () {
+        setCurrencyConfig({});
+      });
+
+      it("keeps the ad server currency in request.cur", function () {
+        const requests = buildRequests([
+          makeBid({ bidId: "bid-1", params: { placementId: "25" } }),
+        ]);
+        expect(requests[0].data.cur).to.deep.equal(["EUR"]);
+      });
+    });
+
     describe("multiple bids", function () {
-      it("groups bids with the same params into one request", function () {
+      it("sends one request per bid even when params are the same", function () {
         const requests = buildRequests([
           makeBid({ bidId: "bid-1", params: { accountId: "test-account" } }),
           makeBid({ bidId: "bid-2", params: { accountId: "test-account" } }),
         ]);
 
-        expect(requests).to.have.lengthOf(1);
-        expect(requests[0].url).to.match(EXCHANGE_URL_PATTERN("test-account"));
-        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-1",
-          "bid-2",
-        ]);
+        expect(requests).to.have.lengthOf(2);
+        requests.forEach((request, i) => {
+          expect(request.url).to.match(EXCHANGE_URL_PATTERN("test-account"));
+          expect(request.data.imp).to.have.lengthOf(1);
+          expect(request.data.imp[0].id).to.equal(`bid-${i + 1}`);
+        });
       });
 
-      it("splits bids with accountId and placementId into exchange and SSP requests", function () {
+      it("routes exchange and SSP bids in a mixed auction to their own endpoints", function () {
         const requests = buildRequests([
           makeBid({ bidId: "bid-1", params: { accountId: "test-account" } }),
           makeBid({ bidId: "bid-2", params: { placementId: "25" } }),
@@ -290,13 +314,32 @@ describe("IntenzeAdapter", function () {
         expect(requests[0].url).to.match(EXCHANGE_URL_PATTERN("test-account"));
         expect(requests[0].data.imp).to.have.lengthOf(1);
         expect(requests[0].data.imp[0].id).to.equal("bid-1");
+        expect(requests[0].data.imp[0].ext.intenze).to.deep.equal({
+          accountId: "test-account",
+        });
 
         expect(requests[1].url).to.match(SSP_URL_PATTERN("25"));
         expect(requests[1].data.imp).to.have.lengthOf(1);
         expect(requests[1].data.imp[0].id).to.equal("bid-2");
+        expect(requests[1].data.imp[0].ext.intenze).to.deep.equal({
+          placementId: "25",
+        });
       });
 
-      it("splits bids with different placementIds into separate SSP requests", function () {
+      it("routes a mixed auction correctly when the SSP bid comes first", function () {
+        const requests = buildRequests([
+          makeBid({ bidId: "bid-1", params: { placementId: "25" } }),
+          makeBid({ bidId: "bid-2", params: { accountId: "test-account" } }),
+        ]);
+
+        expect(requests).to.have.lengthOf(2);
+        expect(requests[0].url).to.match(SSP_URL_PATTERN("25"));
+        expect(requests[0].data.imp[0].id).to.equal("bid-1");
+        expect(requests[1].url).to.match(EXCHANGE_URL_PATTERN("test-account"));
+        expect(requests[1].data.imp[0].id).to.equal("bid-2");
+      });
+
+      it("sends distinct SSP placements to their own placementId", function () {
         const requests = buildRequests([
           makeBid({ bidId: "bid-1", params: { placementId: "25" } }),
           makeBid({ bidId: "bid-2", params: { placementId: "26" } }),
@@ -308,24 +351,81 @@ describe("IntenzeAdapter", function () {
         expect(requests[1].url).to.match(SSP_URL_PATTERN("26"));
         expect(requests[1].data.imp[0].id).to.equal("bid-2");
       });
+    });
 
-      it("keeps grouped bids together when params repeat out of order", function () {
-        const requests = buildRequests([
-          makeBid({ bidId: "bid-1", params: { placementId: "25" } }),
-          makeBid({ bidId: "bid-2", params: { accountId: "test-account" } }),
-          makeBid({ bidId: "bid-3", params: { placementId: "25" } }),
-        ]);
+    it("keeps existing imp.ext fields such as gpid and data", function () {
+      const requests = buildRequests([
+        makeBid({
+          bidId: "bid-1",
+          params: { placementId: "25" },
+          extra: {
+            ortb2Imp: {
+              ext: {
+                gpid: "/1234/home#div-1",
+                data: { pbadslot: "/1234/home#div-1" },
+              },
+            },
+          },
+        }),
+      ]);
 
-        expect(requests).to.have.lengthOf(2);
-        expect(requests[0].url).to.match(SSP_URL_PATTERN("25"));
-        expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-1",
-          "bid-3",
-        ]);
-        expect(requests[1].url).to.match(EXCHANGE_URL_PATTERN("test-account"));
-        expect(requests[1].data.imp.map((imp) => imp.id)).to.deep.equal([
-          "bid-2",
-        ]);
+      const impExt = requests[0].data.imp[0].ext;
+      expect(impExt.gpid).to.equal("/1234/home#div-1");
+      expect(impExt.data).to.deep.equal({ pbadslot: "/1234/home#div-1" });
+      expect(impExt.intenze).to.deep.equal({ placementId: "25" });
+    });
+
+    it("sends params.bidfloor with its currency", function () {
+      const requests = buildRequests([
+        makeBid({
+          bidId: "bid-1",
+          params: { placementId: "25", bidfloor: 0.5 },
+        }),
+      ]);
+      expect(requests[0].data.imp[0].bidfloor).to.equal(0.5);
+      expect(requests[0].data.imp[0].bidfloorcur).to.equal("USD");
+    });
+
+    it("uses params.currency as the floor currency", function () {
+      const requests = buildRequests([
+        makeBid({
+          bidId: "bid-1",
+          params: { placementId: "25", bidfloor: 0.5, currency: "EUR" },
+        }),
+      ]);
+      expect(requests[0].data.imp[0].bidfloor).to.equal(0.5);
+      expect(requests[0].data.imp[0].bidfloorcur).to.equal("EUR");
+    });
+
+    it("does not set a floor when params.bidfloor is missing", function () {
+      const requests = buildRequests([
+        makeBid({ bidId: "bid-1", params: { placementId: "25" } }),
+      ]);
+      expect(requests[0].data.imp[0].bidfloor).to.not.exist;
+      expect(requests[0].data.imp[0].bidfloorcur).to.not.exist;
+    });
+
+    describe("buildEndpointURL", function () {
+      it("uses the exchange subdomain for the region passed in", function () {
+        expect(buildEndpointURL({ accountId: "acc" }, "Europe")).to.equal(
+          "https://n2.intenze.co/?pass=acc&integration=prebidjs",
+        );
+      });
+
+      it("uses the SSP subdomain for the region passed in", function () {
+        expect(buildEndpointURL({ placementId: "25" }, "Europe")).to.equal(
+          "https://eu-ssp.intenze.co/pbjs-serve?placementId=25",
+        );
+      });
+
+      it("falls back to the US subdomains for an unknown region", function () {
+        expect(buildEndpointURL({ placementId: "25" }, "Mars")).to.equal(
+          "https://us-east-ssp.intenze.co/pbjs-serve?placementId=25",
+        );
+      });
+
+      it("returns an empty string without accountId or placementId", function () {
+        expect(buildEndpointURL({}, "Europe")).to.equal("");
       });
     });
 
@@ -438,6 +538,22 @@ describe("IntenzeAdapter", function () {
         expect(bids[0].native.ortb.assets).to.have.lengthOf(2);
       });
     }
+
+    it("falls back to the requested currency when the response has no cur", function () {
+      const [request] = buildRequests([
+        makeBid({
+          bidId: "bid-1",
+          params: { placementId: "25", currency: "EUR" },
+        }),
+      ]);
+
+      const body = makeResponse("bid-1");
+      delete body.cur;
+      const bids = spec.interpretResponse({ body }, request);
+
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].currency).to.equal("EUR");
+    });
 
     it("interprets each response of a split request against its own request", function () {
       const requests = buildRequests([
