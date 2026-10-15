@@ -70,6 +70,33 @@ config and call `pbjs.refreshUserIds({ submoduleNames: ['sevioId'] })` to send i
 Identity service matches hashes exactly, so normalise the address the same way on every site (for
 example trimmed and lowercased) before hashing it. The hash is never stored by the submodule.
 
+## User syncs
+
+When the Identity service issues an ID, its answer can list partner sync URLs (for example
+BidSwitch). The submodule fires each `https` URL in the background, with a `keepalive` request that
+falls back to an image pixel. Syncs are only fired with an issued ID and only when a request is made
+(see the Description), so at most once per `storage.refreshInSeconds`.
+
+Each sync must pass Prebid's `syncUser` activity check for the `sevioId` user ID module, so TCF
+enforcement (Purpose 1 and vendor consent for GVL ID `1393`), `userSync.syncEnabled` and activity
+controls apply. `userSync.filterSettings` does **not** apply, because it only covers bid adapters.
+To block these syncs, set `userSync.syncEnabled: false` (which blocks every user sync), or include the
+`allowActivities` module and deny `syncUser` for this submodule only:
+
+```javascript
+pbjs.setConfig({
+    allowActivities: {
+        syncUser: {
+            rules: [{
+                condition: ({ componentType, componentName }) =>
+                    componentType === 'userId' && componentName === 'sevioId',
+                allow: false
+            }]
+        }
+    }
+});
+```
+
 # Storage
 
 With `storage.type: 'cookie&html5'`, Prebid writes the ID to both a first-party cookie and
@@ -100,9 +127,10 @@ ID.
   credentials. The body carries `params.clientId` as `client_id`, the stored ID and
   `params.emailHash` when present, and the consent signals present on the page in a `privacy` object: `gdpr`, `gdpr_consent`,
   `us_privacy`, `gpp` and `gpp_sid`.
-- The Identity service provides no ID when the privacy signals refuse it, and also when the page
-  carries no consent signal at all. Include the consent management modules that apply to your
-  traffic.
+- The Identity service provides no ID when the privacy signals refuse it. When Prebid has no GDPR
+  scope, because no TCF consent management is configured, the module sends `gdpr: 0`, meaning GDPR
+  does not apply. Publishers with EU traffic must therefore include `consentManagementTcf`, and
+  should include the other consent management modules that apply to their traffic.
 - No ID is provided under COPPA. When COPPA applies, the module makes no request, and an ID that is
   already stored is not passed to bidders either.
 - **`userSync.enforceStorageType` caveat:** Prebid currently compares each storage write's single

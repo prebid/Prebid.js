@@ -6,6 +6,14 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 import { allConsent } from '../../../src/consentHandler.js';
 import { ID_ENDPOINT, sevioIdSubmodule } from 'modules/sevioIdSystem.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_SYNC_USER } from '../../../src/activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_SYNC_TYPE,
+  ACTIVITY_PARAM_SYNC_URL
+} from '../../../src/activities/params.js';
 import {
   COOKIE_SUFFIXES,
   coreStorage,
@@ -170,13 +178,18 @@ describe('Sevio ID System', function () {
     ].forEach(([desc, applicableSections]) => {
       it(`leaves out gpp_sid when the GPP CMP ${desc}`, function () {
         sevioIdSubmodule.getId(validConfig, { gpp: { gppString: 'GPPSTRING', applicableSections } }).callback(sinon.spy());
-        expect(requestBody(server.requests[0]).privacy).to.deep.equal({ gpp: 'GPPSTRING' });
+        expect(requestBody(server.requests[0]).privacy).to.deep.equal({ gdpr: 0, gpp: 'GPPSTRING' });
       });
     });
 
-    it('sends an empty privacy object when there is no consent data', function () {
+    it('sends gdpr 0 when there is no consent data', function () {
       sevioIdSubmodule.getId(validConfig, undefined).callback(sinon.spy());
-      expect(requestBody(server.requests[0])).to.deep.equal({ client_id: CLIENT_ID, privacy: {} });
+      expect(requestBody(server.requests[0])).to.deep.equal({ client_id: CLIENT_ID, privacy: { gdpr: 0 } });
+    });
+
+    it('sends gdpr 0 when the GDPR consent data has no gdprApplies', function () {
+      sevioIdSubmodule.getId(validConfig, { gdpr: { consentString: 'CONSENT' } }).callback(sinon.spy());
+      expect(requestBody(server.requests[0]).privacy).to.deep.equal({ gdpr: 0, gdpr_consent: 'CONSENT' });
     });
 
     it('presents the stored envelope in ids', function () {
@@ -215,17 +228,80 @@ describe('Sevio ID System', function () {
       });
     });
 
-    it('passes the sevio_id from a successful response and ignores syncs', function () {
+    it('passes the sevio_id from a successful response', function () {
       const callback = sinon.spy();
       sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(callback);
-      respondWith(server.requests[0], {
-        sevio_id: NEW_ENVELOPE,
-        changed: false,
-        syncs: [{ partner: 'bidswitch', ttl: 604800, url: `https://x.bidswitch.net/sync?dsp_id=sevio&user_id=${NEW_ENVELOPE}` }]
-      });
+      respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, changed: false });
       sinon.assert.calledOnceWithExactly(callback, NEW_ENVELOPE);
       sinon.assert.notCalled(utils.logError);
       expect(server.requests.length).to.equal(1);
+    });
+
+    describe('syncs', function () {
+      const SYNC_URL = `https://x.bidswitch.net/sync?dsp_id=sevio&user_id=${NEW_ENVELOPE}`;
+      const OTHER_SYNC_URL = 'https://partner.example/sync?uid=abc';
+      let unregisterRule;
+
+      beforeEach(function () {
+        sandbox.stub(utils, 'politeTriggerPixel');
+      });
+
+      afterEach(function () {
+        unregisterRule?.();
+        unregisterRule = undefined;
+      });
+
+      function resolveWith(body) {
+        sevioIdSubmodule.getId(validConfig, consentData).callback(sinon.spy());
+        respondWith(server.requests[0], body);
+      }
+
+      it('fires each https sync that passes the syncUser check', function () {
+        const rule = sinon.stub().returns(undefined);
+        unregisterRule = registerActivityControl(ACTIVITY_SYNC_USER, 'test', rule);
+        resolveWith({
+          sevio_id: NEW_ENVELOPE,
+          changed: false,
+          syncs: [{ partner: 'bidswitch', ttl: 604800, url: SYNC_URL }, { url: OTHER_SYNC_URL }]
+        });
+        sinon.assert.calledTwice(utils.politeTriggerPixel);
+        sinon.assert.calledWithExactly(utils.politeTriggerPixel, SYNC_URL);
+        sinon.assert.calledWithExactly(utils.politeTriggerPixel, OTHER_SYNC_URL);
+        sinon.assert.calledTwice(rule);
+        expect(rule.firstCall.args[0]).to.include({
+          [ACTIVITY_PARAM_COMPONENT_TYPE]: 'userId',
+          [ACTIVITY_PARAM_COMPONENT_NAME]: 'sevioId',
+          [ACTIVITY_PARAM_SYNC_TYPE]: 'image',
+          [ACTIVITY_PARAM_SYNC_URL]: SYNC_URL
+        });
+        expect(server.requests.length).to.equal(1);
+      });
+
+      it('fires no sync when the syncUser activity is denied', function () {
+        unregisterRule = registerActivityControl(ACTIVITY_SYNC_USER, 'test', () => ({ allow: false }));
+        resolveWith({ sevio_id: NEW_ENVELOPE, syncs: [{ url: SYNC_URL }] });
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
+      it('fires no sync when the Identity service answers a null sevio_id', function () {
+        resolveWith({ sevio_id: null, syncs: [{ url: SYNC_URL }] });
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
+      it('skips entries without an https url, with a warning', function () {
+        resolveWith({
+          sevio_id: NEW_ENVELOPE,
+          syncs: [{ url: 'http://partner.example/sync' }, { url: 123 }, {}, null, { url: SYNC_URL }]
+        });
+        sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, SYNC_URL);
+        sinon.assert.callCount(utils.logWarn, 4);
+      });
+
+      it('ignores syncs that are not an array', function () {
+        resolveWith({ sevio_id: NEW_ENVELOPE, syncs: { url: SYNC_URL } });
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+        sinon.assert.notCalled(utils.logWarn);
+      });
     });
 
     it('passes nothing and logs no error when the Identity service answers a null sevio_id', function () {

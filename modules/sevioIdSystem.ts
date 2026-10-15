@@ -5,11 +5,15 @@
  * @requires module:modules/userId
  */
 
-import { logError, logInfo, logWarn } from '../src/utils.js';
+import { logError, logInfo, logWarn, politeTriggerPixel } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { isActivityAllowed } from '../src/activities/rules.js';
+import { activityParams } from '../src/activities/activityParams.js';
+import { ACTIVITY_SYNC_USER } from '../src/activities/activities.js';
+import { ACTIVITY_PARAM_SYNC_TYPE, ACTIVITY_PARAM_SYNC_URL } from '../src/activities/params.js';
 
 import type { AllConsentData } from '../src/consentHandler.ts';
 import type { IdProviderSpec } from './userId/spec.ts';
@@ -57,9 +61,8 @@ function isRecommendedStorageType(type: string) {
 function buildPrivacy(consentData: Partial<AllConsentData> | undefined) {
   const privacy: Record<string, unknown> = {};
   const { gdpr, usp, gpp } = consentData ?? {};
-  if (typeof gdpr?.gdprApplies === 'boolean') {
-    privacy.gdpr = Number(gdpr.gdprApplies);
-  }
+  // Without a gdprApplies from Prebid (no TCF consent management), GDPR is treated as not applying.
+  privacy.gdpr = typeof gdpr?.gdprApplies === 'boolean' ? Number(gdpr.gdprApplies) : 0;
   if (typeof gdpr?.consentString === 'string') {
     privacy.gdpr_consent = gdpr.consentString;
   }
@@ -93,6 +96,27 @@ function buildIds(storedId, emailHash: string | undefined) {
   return ids;
 }
 
+/**
+ * Fires the partner sync URLs from a resolve response. Each one must pass Prebid's `syncUser` check,
+ * so TCF, `userSync.syncEnabled` and activity controls apply; `userSync.filterSettings` only covers bidders.
+ */
+function fireSyncs(syncs) {
+  if (!Array.isArray(syncs)) return;
+  syncs.forEach(sync => {
+    const url = sync?.url;
+    if (typeof url !== 'string' || !url.startsWith('https://')) {
+      logWarn(`${LOG_PREFIX}skipping a sync without an https url`, sync);
+      return;
+    }
+    if (isActivityAllowed(ACTIVITY_SYNC_USER, activityParams(MODULE_TYPE_UID, MODULE_NAME, {
+      [ACTIVITY_PARAM_SYNC_TYPE]: 'image',
+      [ACTIVITY_PARAM_SYNC_URL]: url
+    }))) {
+      politeTriggerPixel(url);
+    }
+  });
+}
+
 function fetchId(callback: (id?: string) => void, params: SevioIdParams, consentData, storedId) {
   const ids = buildIds(storedId, params.emailHash);
   const body = {
@@ -102,16 +126,18 @@ function fetchId(callback: (id?: string) => void, params: SevioIdParams, consent
   };
   const callbacks = {
     success(response) {
-      let id;
+      let parsed;
       try {
-        id = JSON.parse(response)?.sevio_id;
+        parsed = JSON.parse(response);
       } catch (e) {
         logError(`${LOG_PREFIX}could not parse the ID response`, e);
         callback();
         return;
       }
+      const id = parsed?.sevio_id;
       if (typeof id === 'string' && id !== '') {
         callback(id);
+        fireSyncs(parsed.syncs);
       } else if (id === null) {
         // The Identity service answers null when the privacy signals or its agent check refuse the call.
         logInfo(`${LOG_PREFIX}the Identity service provided no ID for this request`);
