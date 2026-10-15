@@ -178,7 +178,8 @@ yieldoneAnalytics.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: yieldoneAnalytics,
-  code: ANALYTICS_CODE
+  code: ANALYTICS_CODE,
+  acpId: 385 // Google Additional Consent provider ID
 });
 
 export default yieldoneAnalytics;

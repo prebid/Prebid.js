@@ -16,6 +16,7 @@ const adgLogger = prefixLog('Adgeneration: ');
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
+const ACP_ID = 2567; // Google Additional Consent provider ID
 const ADGENE_PREBID_VERSION = '1.6.6';
 const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid';
 const URL = 'https://d.socdm.com/adgen/prebid';
@@ -43,7 +44,8 @@ const converter = ortbConverter({
 
 export const spec = {
   code: ADG_BIDDER_CODE,
-  aliases: ['adg'], // short code
+  acpId: ACP_ID,
+  aliases: [{ code: 'adg', acpId: ACP_ID }], // short code
   supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
