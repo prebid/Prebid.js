@@ -72,13 +72,14 @@
  * more. See POST /api/adx/prebid in app/main.py for the full reasoning.
  */
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'pragmaadx';
+const BIDDER_CODE = 'pragmaadx' as const;
 const ENDPOINT_URL = 'https://apps.pragma-crm.com/api/adx/prebid';
 const DEFAULT_PLAYER_SIZE: [number, number] = [640, 360];
 const DEFAULT_BANNER_SIZE: [number, number] = [300, 250];
+const SUPPORTED_MEDIA_TYPES = [VIDEO, BANNER] as const;
 
 /** Bid params as configured by the publisher on each ad unit. */
 interface PragmaAdxParams {
@@ -158,9 +159,9 @@ function resolveBannerSize(bidRequest: any): [number, number] {
   return DEFAULT_BANNER_SIZE;
 }
 
-export const spec = {
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   /**
    * Pragma needs an api_key + ad_unit_id (both issued when a publisher
