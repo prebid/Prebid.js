@@ -91,6 +91,7 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
 
 ## Review guidelines
 - Use the guidelines at PR_REVIEW.md when doing PR reviews. Make all your comments and code suggestions on the PR itself instead of in linked tasks when commenting in a PR review.
+- If a module change requires a new parameter or invalidates previously valid parameter values, label the PR `major` and hold it for a major release version.
 - Use the module rules at https://docs.prebid.org/dev-docs/module-rules.html
 - Discourage application/json calls, they cause preflight options calls with induced delays over text/plain
 - Make sure people are importing from libraries and our methods whenever possible, eg on viewability or accessing navigator
