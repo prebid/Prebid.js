@@ -358,6 +358,27 @@ describe('Sevio ID System', function () {
         sinon.assert.calledOnceWithExactly(newer, ENVELOPE);
       });
 
+      it('ignores an in-flight answer once getId runs under COPPA', function () {
+        const inFlight = sinon.spy();
+        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(inFlight);
+        expect(sevioIdSubmodule.getId(validConfig, { ...consentData, coppa: true }, ENVELOPE)).to.be.undefined;
+        respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, syncs: [{ url: 'https://partner.example/sync' }] });
+
+        sinon.assert.calledOnceWithExactly(inFlight);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+        expect(server.requests.length).to.equal(1);
+      });
+
+      it('ignores an in-flight answer when COPPA is turned on before the refresh reaches getId', function () {
+        const inFlight = sinon.spy();
+        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(inFlight);
+        config.setConfig({ coppa: true });
+        respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, syncs: [{ url: 'https://partner.example/sync' }] });
+
+        sinon.assert.calledOnceWithExactly(inFlight);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
       it('ignores an older request that fails, without logging an error', function () {
         const { older, newer } = startTwo();
         server.requests[0].respond(500, {}, '');
@@ -590,6 +611,23 @@ describe('Sevio ID System', function () {
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
       expect(sevioEids()).to.deep.equal([]);
       expect(coreStorage.getCookie(STORAGE_NAME)).to.equal('{"revoked":true}');
+    });
+
+    it('stores nothing when COPPA is turned on while a request is in flight', async function () {
+      startUserId();
+      const ids = getGlobal().getUserIdsAsync();
+      await waitForRequest();
+      config.setConfig({ coppa: true });
+      // let the refresh triggered by the consent change run
+      await new Promise(resolve => setTimeout(resolve));
+
+      respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, changed: true });
+      await Promise.allSettled([ids, getGlobal().getUserIdsAsync()]);
+
+      expect(server.requests.length).to.equal(1);
+      expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.not.be.ok;
+      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.not.be.ok;
     });
 
     it('provides no ID, no EID and makes no request under COPPA, even with a stored ID', async function () {

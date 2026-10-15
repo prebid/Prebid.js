@@ -140,7 +140,9 @@ function fetchId(callback: (id?: string | typeof REVOKED) => void, params: Sevio
   };
   const generation = ++latestRequest;
   const isSuperseded = () => {
-    if (generation === latestRequest) return false;
+    // COPPA can also be turned on while the request is in flight, before the refresh it triggers
+    // reaches getId; an answer that arrives then must not be stored or synced either.
+    if (generation === latestRequest && !coppaDataHandler.getCoppa()) return false;
     logInfo(`${LOG_PREFIX}ignoring the answer to a superseded ID request`);
     // An empty callback lets the core finish this request without storing anything.
     callback();
@@ -196,6 +198,8 @@ export const sevioIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
   getId(config, consentData, storedId) {
     if (consentData?.coppa) {
       logInfo(`${LOG_PREFIX}IDs are not provided for COPPA requests`);
+      // Supersede any request still in flight: no new request will replace it.
+      latestRequest++;
       return;
     }
     const params = config?.params;
