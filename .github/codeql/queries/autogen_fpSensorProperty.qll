@@ -6,7 +6,7 @@ class SensorProperty extends string {
   
   SensorProperty() {
       
-      ( this = "start"  and weight = 117.18 )
+      ( this = "start"  and weight = 137.16 )
   }  
 
   float getWeight() {

@@ -213,7 +213,8 @@ export const gdprDataHandler = consentHandler({
       };
     }
   },
-  hashFields: ['gdprApplies', 'consentString']
+  // addtlConsent can change while the TC string stays the same, and affects enforcement for Additional Consent providers
+  hashFields: ['gdprApplies', 'consentString', 'addtlConsent']
 });
 
 export const gppDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GPP>, DefaultConsentMeta>({
@@ -241,20 +242,20 @@ export const coppaDataHandler = (() => {
 })();
 
 export type GVLID = number | typeof VENDORLESS_GVLID;
-type GVLIDResult = {
+type GVLIDResult<T = GVLID> = {
   /**
    * A map from module type to that module's GVL ID.
    */
   modules: {
-    [moduleType: string]: GVLID;
+    [moduleType: string]: T;
   };
   /**
    * The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
    */
-  gvlid?: GVLID;
+  gvlid?: T;
 };
 
-export function gvlidRegistry() {
+export function gvlidRegistry<T = GVLID>() {
   const registry = {};
   const flat = {};
   const none = {};
@@ -265,7 +266,7 @@ export function gvlidRegistry() {
      * @param moduleName
      * @param gvlid
      */
-    register(moduleType: ModuleType, moduleName: string, gvlid: GVLID) {
+    register(moduleType: ModuleType, moduleName: string, gvlid: T) {
       if (gvlid) {
         (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
         if (flat.hasOwnProperty(moduleName)) {
@@ -285,7 +286,7 @@ export function gvlidRegistry() {
      *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
     get(moduleName: string) {
-      const result: GVLIDResult = { modules: registry[moduleName] || {} };
+      const result: GVLIDResult<T> = { modules: registry[moduleName] || {} };
       if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
         result.gvlid = flat[moduleName];
       }
@@ -304,6 +305,13 @@ declare module './config' {
 }
 
 export const GDPR_GVLIDS = gvlidRegistry();
+
+/**
+ * Registry of Google Additional Consent provider IDs.
+ * These are a separate ID space from GVL IDs (the same number may identify different vendors in each list).
+ * @see https://support.google.com/admanager/answer/9681920
+ */
+export const GDPR_ACPIDS = gvlidRegistry<number>();
 
 const ALL_HANDLERS = {
   [CONSENT_GDPR]: gdprDataHandler,

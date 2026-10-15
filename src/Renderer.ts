@@ -41,6 +41,8 @@ export interface RendererOptions {
    * True to render without waiting for the external script.
    */
   renderNow?: boolean;
+  /** Whether this renderer requires a VAST URL instead of inline XML. */
+  requiresVastUrl?: boolean;
 }
 
 type RenderFn = (...args: any[]) => void;
@@ -56,6 +58,7 @@ export class Renderer {
   handlers: { [eventName: string]: () => void };
   id: RendererOptions['id'];
   renderNow: RendererOptions['renderNow'];
+  requiresVastUrl: RendererOptions['requiresVastUrl'];
   adUnitCode: RendererOptions['adUnitCode'];
   loaded: RendererOptions['loaded'];
   cmd: (() => void)[];
@@ -72,12 +75,13 @@ export class Renderer {
   _render: RenderFn | undefined;
 
   constructor(options: RendererOptions) {
-    const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
+    const { url, config, id, callback, loaded, adUnitCode, renderNow, requiresVastUrl } = options;
     this.url = url;
     this.config = config;
     this.handlers = {};
     this.id = id;
     this.renderNow = renderNow;
+    this.requiresVastUrl = requiresVastUrl;
     this.adUnitCode = adUnitCode;
 
     // a renderer may push to the command queue to delay rendering until the
@@ -122,8 +126,8 @@ export class Renderer {
   }
 
   static install(options: RendererOptions): Renderer {
-    const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
-    return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow });
+    const { url, config, id, callback, loaded, adUnitCode, renderNow, requiresVastUrl } = options;
+    return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow, requiresVastUrl });
   }
 
   getConfig(): RendererConfig | undefined {
