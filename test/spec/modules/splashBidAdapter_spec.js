@@ -343,6 +343,53 @@ describe('splashBidAdapter', () => {
       expect(dooh.dooh).to.deep.equal({ venuetype: ['transit'], publisher: { id: '725' }, id: '100021' });
     });
 
+    [
+      ['site when app is empty', {
+        app: {},
+        site: { id: 'fpd-site', page: PAGE, publisher: { id: 'fpd-publisher', name: 'TCPIP' }, ext: { data: { section: 'news' } } },
+      }, 'site'],
+      ['site when dooh is empty', {
+        dooh: {},
+        site: { page: PAGE },
+      }, 'site'],
+      ['dooh when app and site are empty', {
+        app: {},
+        dooh: { venuetype: ['transit'], publisher: { id: 'fpd-publisher', name: 'TCPIP' } },
+        site: {},
+      }, 'dooh'],
+      ['app when dooh and site are empty', {
+        dooh: {},
+        app: { bundle: 'pl.tcpip.app' },
+        site: {},
+      }, 'app'],
+      ['dooh ahead of populated app and site', {
+        app: { id: 'fpd-app', bundle: 'pl.tcpip.app' },
+        site: { id: 'fpd-site', page: PAGE },
+        dooh: { id: 'fpd-dooh', venuetype: ['transit'] },
+      }, 'dooh'],
+      ['app ahead of site when dooh is empty', {
+        site: { page: PAGE },
+        app: { id: 'fpd-app', bundle: 'pl.tcpip.app' },
+        dooh: {},
+      }, 'app'],
+      ['site as a fallback when every client section is empty', { app: {}, dooh: {}, site: {} }, 'site'],
+    ].forEach(([title, ortb2, client]) => {
+      it(`identifies the publisher only on ${title} without mutating FPD`, () => {
+        sandbox.stub(utils, 'logWarn');
+        const bidderRequest = makeBidderRequest({ ortb2 });
+        const before = utils.deepClone(bidderRequest);
+        const original = before.ortb2[client];
+        const { data } = buildRequest(makeBid(), bidderRequest);
+        expect(['dooh', 'app', 'site'].filter(section => data[section] && Object.keys(data[section]).length > 0)).to.deep.equal([client]);
+        expect(data[client]).to.deep.equal({
+          ...original,
+          id: original.id || '100021',
+          publisher: { ...original.publisher, id: '725' },
+        });
+        expect(bidderRequest).to.deep.equal(before);
+      });
+    });
+
     it('forwards filtered first-party, privacy and supply chain data unchanged', () => {
       const ortb2 = {
         site: {
@@ -771,6 +818,56 @@ describe('splashBidAdapter', () => {
         expect(document.querySelectorAll('#splash-parallax-style')).to.have.length(1);
       });
 
+      it('keeps the aperture within a padded, offset slot without shifting the viewport creative', () => {
+        root.style.cssText = 'width:280px;margin-left:80px;padding:24px;box-sizing:border-box';
+        const before = document.documentElement.scrollWidth;
+        const { frame } = render();
+        const slotRect = slot.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        const creativeRect = frame.querySelector('iframe').getBoundingClientRect();
+        expect(slotRect.left).to.be.greaterThan(0);
+        expect(frameRect.left).to.equal(slotRect.left);
+        expect(frameRect.right).to.equal(slotRect.right);
+        expect(frameRect.width).to.equal(slotRect.width);
+        expect(creativeRect.left).to.equal(0);
+        expect(document.documentElement.scrollWidth).to.be.at.most(before);
+      });
+
+      it('gives an auto-width inline-block slot an intrinsic width limited to its container', async () => {
+        root.style.cssText = 'width:280px;margin-left:80px;padding:24px;box-sizing:border-box';
+        slot.style.display = 'inline-block';
+        const { frame } = render();
+        expect(frame.getBoundingClientRect().width).to.equal(232);
+        expect(slot.getBoundingClientRect().width).to.equal(232);
+        root.style.width = '240px';
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+        expect(frame.getBoundingClientRect().width).to.equal(192);
+        expect(slot.getBoundingClientRect().right).to.be.at.most(root.getBoundingClientRect().right - 24);
+      });
+
+      it('sizes an intrinsic slot without ResizeObserver and updates it on viewport changes', () => {
+        sandbox.stub(window, 'ResizeObserver').value(undefined);
+        root.style.cssText = 'width:280px;padding:24px;box-sizing:border-box';
+        slot.style.display = 'inline-block';
+        const { frame } = render();
+        expect(frame.getBoundingClientRect().width).to.equal(232);
+        root.style.width = '240px';
+        window.dispatchEvent(new Event('resize'));
+        expect(frame.getBoundingClientRect().width).to.equal(192);
+      });
+
+      it('disconnects its sizing observer when initialization fails', () => {
+        const disconnect = sandbox.spy();
+        sandbox.stub(window, 'ResizeObserver').callsFake(() => ({ observe() { throw new Error('resize observer unavailable'); }, disconnect }));
+        sandbox.stub(utils, 'logError');
+        const add = sandbox.spy(window, 'addEventListener');
+        expect(() => render()).to.throw('resize observer unavailable');
+        sinon.assert.calledOnce(disconnect);
+        expect(add.calledWith('resize')).to.equal(false);
+        expect(slot.childElementCount).to.equal(0);
+      });
+
       it('finds the slot by ad unit code and throws a logged error when it is missing', () => {
         const bid = parallaxBid();
         delete bid.element;
@@ -947,49 +1044,118 @@ describe('splashBidAdapter', () => {
           utils.isSafariBrowser.returns(true);
         });
 
-        function move(target, offsetX, offsetY) {
-          const rect = target.getBoundingClientRect();
-          // With view set, every engine derives offsetX/offsetY from the client point, also on a scrolled page.
-          target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, view: window, clientX: rect.left + offsetX, clientY: rect.top + offsetY }));
-        }
-
-        it('enables creative pointer events only over the visible frame outside the safe zone', async () => {
+        it('physically clips an absolute creative while keeping its viewport alignment', async () => {
           const matchMedia = sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          root.style.cssText = 'width:280px;margin-left:80px;padding:24px;box-sizing:border-box';
+          const addWindow = sandbox.spy(window, 'addEventListener');
           const { frame } = render();
-          const stage = frame.querySelector('.sp-stage');
+          const iframe = frame.querySelector('iframe');
           sinon.assert.calledWith(matchMedia, '(pointer: fine) and (hover: hover)');
           expect(frame.classList.contains('sp-pointer-guarded')).to.equal(true);
-          const width = frame.clientWidth;
-          const height = frame.clientHeight;
-          const active = () => frame.classList.contains('sp-hover-active');
-          [
-            [stage, width / 2, height / 2, true], [stage, 20, 20, true], [stage, width - 20, height - 20, true],
-            [stage, 10, height / 2, false], [stage, width - 10, height / 2, false],
-            [stage, width / 2, 10, false], [stage, width / 2, height - 10, false], [frame, width / 2, height / 2, true],
-          ].forEach(([target, x, y, expected]) => {
-            move(target, x, y);
-            expect(active(), `${target.className} ${x},${y}`).to.equal(expected);
-          });
+          expect(getComputedStyle(iframe).position).to.equal('absolute');
+          expect(getComputedStyle(iframe).pointerEvents).to.equal('auto');
+          expect(getComputedStyle(frame).overflow).to.equal('hidden');
+          expect(Math.abs(iframe.getBoundingClientRect().left)).to.be.lessThan(1);
+          expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
+          expect(addWindow.calledWith('mousemove')).to.equal(false);
+          expect(addWindow.calledWith('scroll')).to.equal(false);
 
-          // Page content never enables the creative, including content covering the frame area.
-          move(otherSlot, 1, 1);
-          expect(active()).to.equal(false);
-          slot.style.position = 'relative';
-          const cover = slot.appendChild(document.createElement('div'));
-          cover.style.cssText = 'position:absolute;top:0;left:0;width:200px;height:200px;z-index:2';
-          move(stage, width / 2, height / 2);
-          expect(active()).to.equal(true);
-          move(cover, 100, 100);
-          expect(active()).to.equal(false);
-          move(stage, width / 2, height / 2);
-          frame.dispatchEvent(new Event('mouseleave'));
-          expect(active()).to.equal(false);
-
-          const removeWindow = sandbox.spy(window, 'removeEventListener');
+          const cancel = sandbox.spy(window, 'cancelAnimationFrame');
           frame.remove();
           await tick();
           expect(frame.classList.contains('sp-pointer-guarded')).to.equal(false);
-          sinon.assert.calledWith(removeWindow, 'mousemove', sinon.match.func);
+          sinon.assert.calledOnce(cancel);
+          expect(iframe.style.left).to.equal('');
+          expect(iframe.style.top).to.equal('');
+        });
+
+        it('hit-tests the creative only within the aperture and respects publisher controls above it', () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          root.style.cssText = 'position:absolute;left:80px;top:80px;width:280px;padding:24px;box-sizing:border-box';
+          const { frame } = render();
+          frame.style.maxHeight = '200px';
+          const rect = frame.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          expect(document.elementFromPoint(x, y)).to.equal(frame.querySelector('iframe'));
+          const publisherControl = root.appendChild(document.createElement('button'));
+          publisherControl.style.cssText = 'position:fixed;width:10px;height:10px;margin:0;padding:0;z-index:0';
+          [
+            [rect.left - 8, y], [rect.right + 8, y], [x, rect.top - 8], [x, rect.bottom + 8],
+          ].forEach(([left, top]) => {
+            publisherControl.style.left = left - 5 + 'px';
+            publisherControl.style.top = top - 5 + 'px';
+            expect(document.elementFromPoint(left, top), `${left},${top}`).to.equal(publisherControl);
+          });
+          publisherControl.style.zIndex = '2';
+          publisherControl.style.left = x - 5 + 'px';
+          publisherControl.style.top = y - 5 + 'px';
+          expect(document.elementFromPoint(x, y)).to.equal(publisherControl);
+        });
+
+        it('follows live geometry without parent pointer, scroll or resize events', () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(123);
+          const { frame } = render();
+          const iframe = frame.querySelector('iframe');
+          const rect = sandbox.stub(frame, 'getClientRects').returns([{ left: 90, top: -130 }]);
+          sinon.assert.calledOnce(raf);
+          sinon.assert.notCalled(rect);
+          raf.firstCall.args[0]();
+          expect([iframe.style.left, iframe.style.top]).to.deep.equal(['-90px', '130px']);
+          rect.returns([{ left: 120, top: 200 }]);
+          sinon.assert.calledTwice(raf);
+          raf.secondCall.args[0]();
+          expect([iframe.style.left, iframe.style.top]).to.deep.equal(['-120px', '-200px']);
+          sinon.assert.calledThrice(raf);
+        });
+
+        it('waits for a visible aperture when the slot starts hidden', () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(124);
+          slot.style.display = 'none';
+          const { frame } = render();
+          const iframe = frame.querySelector('iframe');
+          expect([iframe.style.left, iframe.style.top]).to.deep.equal(['', '']);
+          slot.style.display = '';
+          raf.firstCall.args[0]();
+          expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
+        });
+
+        it('realigns after a layout shift and slot reparenting without publisher events', async () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(126);
+          const { frame } = render();
+          const iframe = frame.querySelector('iframe');
+          root.style.marginTop = '100px';
+          raf.firstCall.args[0]();
+          expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
+          const parent = root.appendChild(document.createElement('div'));
+          parent.style.cssText = 'padding-left:80px;padding-top:30px';
+          parent.appendChild(slot);
+          await tick();
+          raf.secondCall.args[0]();
+          expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
+          expect(Math.abs(iframe.getBoundingClientRect().left)).to.be.lessThan(1);
+          expect(frame.isConnected).to.equal(true);
+        });
+
+        it('cancels pending alignment and removes listeners on refresh and removal', async () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(125);
+          const cancel = sandbox.spy(window, 'cancelAnimationFrame');
+          const remove = sandbox.spy(window, 'removeEventListener');
+          const first = render().frame;
+          sinon.assert.calledOnce(raf);
+          const second = render().frame;
+          sinon.assert.calledWith(cancel, 125);
+          expect(first.classList.contains('sp-pointer-guarded')).to.equal(false);
+          sinon.assert.calledTwice(raf);
+          second.remove();
+          await tick();
+          sinon.assert.calledTwice(cancel);
+          ['resize', 'orientationchange'].forEach(type => expect(remove.getCalls().filter(call => call.args[0] === type)).to.have.length(2));
+          sinon.assert.calledTwice(raf);
         });
 
         [
@@ -1002,7 +1168,8 @@ describe('splashBidAdapter', () => {
             const add = sandbox.spy(window, 'addEventListener');
             const { frame } = render();
             expect(frame.classList.contains('sp-pointer-guarded')).to.equal(false);
-            expect(add.calledWith('mousemove')).to.equal(false);
+            expect(add.calledWith('scroll')).to.equal(false);
+            expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('fixed');
           });
         });
       });
@@ -1028,7 +1195,7 @@ describe('splashBidAdapter', () => {
         const bid = parallaxBid();
         expect(() => bid.renderer.render(bid, document)).to.throw('observer unavailable');
         sinon.assert.calledOnce(disconnect);
-        ['resize', 'orientationchange', 'mousemove'].forEach(type => sinon.assert.calledWith(remove, type, sinon.match.func));
+        ['resize', 'orientationchange'].forEach(type => sinon.assert.calledWith(remove, type, sinon.match.func));
         expect(slot.childElementCount).to.equal(0);
       });
     });
@@ -1108,6 +1275,89 @@ describe('splashBidAdapter', () => {
             expect(document.activeElement).to.equal(hidden ? iframe : close);
           });
         });
+      });
+
+      it('keeps a visible, working host close button after a head script throws before ready controls', function (done) {
+        this.timeout(4000);
+        const failing = '<!doctype html><html><head><script>' +
+          'window.bridgeReadyBeforeFailure = window.__splashPrebidInterstitialBridge === true;' +
+          'throw new Error("head creative failure");' +
+          '</script></head><body>' + CONTROLS + '</body></html>';
+        const { overlay: element, iframe, close } = render({ adm: failing });
+        const creativeWindow = iframe.contentWindow;
+        let loaded = false;
+        let reportedError = false;
+
+        // The error message and iframe load can reach the host in either order.
+        function assertClose() {
+          if (!loaded || !reportedError) return;
+          try {
+            expect(iframe.contentDocument.querySelector('[data-froc-interstitial-controls-ready="1"] .froc-display-close')).not.to.equal(null);
+            expect(element.isConnected).to.equal(true);
+            expect(close.textContent).to.equal('Close ad');
+            expect(close.hidden).to.equal(false);
+            expect(close.disabled).to.equal(false);
+            expect(getComputedStyle(close).display).not.to.equal('none');
+            expect(close.getBoundingClientRect().width).to.be.greaterThan(0);
+            expect(close.getBoundingClientRect().height).to.be.greaterThan(0);
+            close.click();
+            expect(element.isConnected).to.equal(false);
+            expect(scrollLock()).to.equal(null);
+            done();
+          } catch (error) {
+            done(error);
+          }
+        }
+
+        listen(event => {
+          if (event.source !== creativeWindow || !event.data || event.data.source !== 'froc-display' || event.data.type !== 'render-error') return;
+          reportedError = true;
+          assertClose();
+        });
+        iframe.addEventListener('load', () => {
+          try {
+            expect(creativeWindow.bridgeReadyBeforeFailure).to.equal(true);
+            loaded = true;
+            assertClose();
+          } catch (error) {
+            done(error);
+          }
+        }, { once: true });
+      });
+
+      it('uses a full creative document\'s working controls without showing an additional Close ad button', function (done) {
+        this.timeout(4000);
+        const adm = '<!doctype html><html><head><script>' +
+          'document.addEventListener("DOMContentLoaded", function () {' +
+          'document.querySelector(".froc-display-close").addEventListener("click", function () {' +
+          'parent.postMessage({ source: "froc-display", type: "close" }, "*");' +
+          '});});</script></head><body>' + CONTROLS + '</body></html>';
+        const { overlay: element, iframe, close } = render({ adm });
+        const creativeWindow = iframe.contentWindow;
+        listen(event => {
+          if (event.source !== creativeWindow || !event.data || event.data.source !== 'froc-display' || event.data.type !== 'close') return;
+          try {
+            expect(element.isConnected).to.equal(false);
+            expect(scrollLock()).to.equal(null);
+            done();
+          } catch (error) {
+            done(error);
+          }
+        });
+        iframe.addEventListener('load', () => {
+          try {
+            const creativeClose = iframe.contentDocument.querySelector('[data-froc-interstitial-controls-ready="1"] .froc-display-close');
+            expect(creativeClose).not.to.equal(null);
+            expect(creativeClose.disabled).to.equal(false);
+            expect(creativeWindow.getComputedStyle(creativeClose).display).not.to.equal('none');
+            expect(close.hidden).to.equal(true);
+            expect(getComputedStyle(close).display).to.equal('none');
+            expect(document.activeElement).to.equal(iframe);
+            creativeClose.click();
+          } catch (error) {
+            done(error);
+          }
+        }, { once: true });
       });
 
       it('shows the host close button again when the creative reports an error, without moving focus', function (done) {
@@ -1482,21 +1732,24 @@ describe('splashBidAdapter', () => {
           expect(bridgeScripts(doc)[0].parentNode).to.equal(doc.head);
         });
 
-        it('injects into the head of full documents without touching creative scripts', () => {
+        it('injects the bridge before the head scripts of full documents without touching creative scripts', () => {
           const script = 'function frameDocument(bridge, media) { return "<!doctype html><html><head>" + bridge + "</head><body>" + media + "</body></html>"; }';
-          const creative = `<!DOCTYPE html><html lang="pl"><head><title>Ad</title><script>${script}</script></head><body><div id="creative-root"></div></body></html>`;
+          const secondScript = 'window.creativeReady = true;';
+          const creative = `<!DOCTYPE html><html lang="pl"><head><title>Ad</title><script>${script}</script><script>${secondScript}</script></head><body><div id="creative-root"></div></body></html>`;
           const html = srcdocFor(creative);
           expect(html.startsWith('<!doctype html><html lang="pl"><head>')).to.equal(true);
           const doc = parse(html);
-          expect(Array.from(doc.head.children).map(child => child.tagName)).to.deep.equal(['TITLE', 'SCRIPT', 'STYLE', 'SCRIPT']);
-          expect(doc.head.children[1].textContent).to.equal(script);
           expect(doc.querySelectorAll(`#${FRAME_STYLE_ID}`)).to.have.length(1);
           expect(bridgeScripts(doc)).to.have.length(1);
+          const [bridge] = bridgeScripts(doc);
+          expect(bridge.parentNode).to.equal(doc.head);
+          expect(Array.from(doc.head.querySelectorAll('script')).map(script => script.textContent)).to.deep.equal([bridge.textContent, script, secondScript]);
+          expect(doc.head.querySelector('title').textContent).to.equal('Ad');
           expect(doc.body.innerHTML).to.equal('<div id="creative-root"></div>');
         });
 
         it('adds a doctype to documents without one', () => {
-          expect(srcdocFor('<html><body><p>creative</p></body></html>').startsWith('<!doctype html><html><head><style')).to.equal(true);
+          expect(srcdocFor('<html><body><p>creative</p></body></html>').startsWith('<!doctype html><html><head><script')).to.equal(true);
         });
 
         it('injects the bridge only once', () => {

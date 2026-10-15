@@ -4,6 +4,7 @@ import type { AdapterRequest, BidderSpec, ExtendedResponse } from '../src/adapte
 import type { BidRequest } from '../src/adapterManager.js';
 import { config } from '../src/config.js';
 import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
+import { CLIENT_SECTIONS, hasSection } from '../src/fpd/oneClient.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
@@ -85,7 +86,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     const request = buildRequest(imps, bidderRequest, context);
     const { params } = context.bidRequests[0];
     request.cur = [CURRENCY];
-    const client = request.app ? 'app' : request.dooh ? 'dooh' : 'site';
+    const client = CLIENT_SECTIONS.find(section => hasSection(request, section)) || 'site';
     deepSetValue(request, `${client}.publisher.id`, params.publisherId);
     // The Splash auction requires a client ID; the placement ID is used when FPD provides none.
     if (!request[client].id) request[client].id = params.placementId;
@@ -394,7 +395,7 @@ function buildInterstitialDocument(html: string): string {
       const script = parsed.createElement('script');
       script.text = FRAME_BRIDGE;
       parsed.head.appendChild(style);
-      parsed.head.appendChild(script);
+      parsed.head.insertBefore(script, parsed.head.firstChild);
       return '<!doctype ' + (parsed.doctype ? parsed.doctype.name : 'html') + '>' + parsed.documentElement.outerHTML;
     } catch (e) {
       logWarn(`${BIDDER_CODE}: could not prepare the interstitial document`, e);
@@ -531,16 +532,14 @@ type ParallaxSizes = { slotHeight: number, creativeHeight: number };
 
 const PARALLAX_STYLE_ID = 'splash-parallax-style';
 const PARALLAX_CSS = `
-.sp-frame.splitboard[data-splash-renderer="parallax"]{position:relative;z-index:1;width:100vw;max-width:none;overflow:hidden;box-sizing:border-box;background:transparent;touch-action:pan-y pinch-zoom}
+.sp-frame.splitboard[data-splash-renderer="parallax"]{position:relative;z-index:1;width:100%;max-width:100%;overflow:hidden;box-sizing:border-box;background:transparent;touch-action:pan-y pinch-zoom}
 .sp-frame[data-splash-renderer="parallax"] *{box-sizing:border-box}
 .sp-frame[data-splash-renderer="parallax"] .sp-stage.splitboard-content{position:relative;width:100%;height:100%}
 .sp-frame[data-splash-renderer="parallax"] .sp-creative{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;border:0;background:transparent;pointer-events:auto}
 .sp-clip-svg[data-splash-renderer="parallax"]{position:absolute;width:0;height:0;overflow:hidden}
-.sp-frame.sp-pointer-guarded[data-splash-renderer="parallax"] .sp-creative{pointer-events:none}
-.sp-frame.sp-pointer-guarded.sp-hover-active[data-splash-renderer="parallax"] .sp-creative{pointer-events:auto}
+.sp-frame.sp-pointer-guarded[data-splash-renderer="parallax"] .sp-creative{position:absolute}
 `;
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const POINTER_SAFE_ZONE = 15;
 
 function createClipSvg(doc: Document, clipId: string): SVGSVGElement {
   const svg = doc.createElementNS(SVG_NS, 'svg');
@@ -602,7 +601,7 @@ function renderParallax(bid, sizes: ParallaxSizes) {
   try {
     iframe.srcdoc = unwrapCreativeHtml(creativeMarkup(bid));
     cleanups.push(installParallaxSizing(frame, stage, sizes));
-    const removePointerGuard = installSafariPointerGuard(frame, stage);
+    const removePointerGuard = installSafariPointerGuard(frame, iframe);
     if (removePointerGuard) cleanups.push(removePointerGuard);
     const removalObserver = observeRemoval(frame, destroy);
     if (removalObserver) cleanups.push(() => removalObserver.disconnect());
@@ -614,6 +613,8 @@ function renderParallax(bid, sizes: ParallaxSizes) {
 
 function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHeight, creativeHeight }: ParallaxSizes): () => void {
   const win = frame.ownerDocument.defaultView || window;
+  const container = frame.parentElement.parentElement;
+  let intrinsicWidth = false;
   function computeHeight() {
     const dims = getWinDimensions();
     const viewport = dims.innerHeight || deepAccess(dims, 'document.documentElement.clientHeight') || 0;
@@ -621,52 +622,78 @@ function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHei
     if (!slotHeight || (creativeHeight > 0 && Math.abs(slotHeight - creativeHeight) <= 1)) return viewport;
     return viewport > 0 ? Math.min(slotHeight, viewport) : slotHeight;
   }
-  function applyHeight() {
+  function applySize() {
     const height = computeHeight();
-    if (height <= 0) return;
-    frame.style.height = height + 'px';
-    stage.style.height = height + 'px';
+    if (height > 0) {
+      frame.style.height = height + 'px';
+      stage.style.height = height + 'px';
+    }
+    // An auto-width inline-block slot has no intrinsic width from the out-of-flow iframe.
+    const rect = frame.getClientRects()[0];
+    if (rect && (!rect.width || intrinsicWidth) && container) {
+      const bounds = container.getClientRects()[0];
+      if (bounds) {
+        const css = win.getComputedStyle(container);
+        const right = Math.min(frame.ownerDocument.documentElement.clientWidth,
+          bounds.right - parseFloat(css.paddingRight) - parseFloat(css.borderRightWidth));
+        const width = Math.max(0, right - rect.left) + 'px';
+        if (frame.style.minWidth !== width) frame.style.minWidth = width;
+        intrinsicWidth = true;
+      }
+    }
   }
   function onViewportChange() {
     // Window dimensions are cached briefly; a viewport change must read the new height.
     resetWinDimensions();
-    applyHeight();
+    applySize();
   }
-  applyHeight();
+  applySize();
+  const observer = typeof ResizeObserver === 'function' && container ? new ResizeObserver(applySize) : null;
+  if (observer) {
+    try {
+      observer.observe(container);
+    } catch (error) {
+      observer.disconnect();
+      throw error;
+    }
+  }
   win.addEventListener('resize', onViewportChange, { passive: true });
   win.addEventListener('orientationchange', onViewportChange, { passive: true });
   return () => {
     win.removeEventListener('resize', onViewportChange);
     win.removeEventListener('orientationchange', onViewportChange);
+    if (observer) observer.disconnect();
   };
 }
 
 /**
- * Desktop Safari routes pointer events to the fixed creative frame outside its clipped area.
- * Creative pointer events are enabled only while the pointer is inside the visible frame.
+ * Safari can hit-test fixed descendants outside the aperture. An absolutely positioned iframe
+ * stays physically clipped while scroll offsets keep the creative aligned to the viewport.
  */
-function installSafariPointerGuard(frame: HTMLElement, stage: HTMLElement): (() => void) | null {
+function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement): (() => void) | null {
   if (!isSafariBrowser()) return null;
   const win = frame.ownerDocument.defaultView || window;
   const query = win.matchMedia && win.matchMedia('(pointer: fine) and (hover: hover)');
   if (!query || !query.matches) return null;
   frame.classList.add('sp-pointer-guarded');
-  function onMove(event: MouseEvent) {
-    // While the creative ignores pointer events, the visible frame area targets the wrapper itself.
-    const overFrame = event.target === frame || event.target === stage;
-    const inside = overFrame &&
-      event.offsetX >= POINTER_SAFE_ZONE && event.offsetX <= frame.clientWidth - POINTER_SAFE_ZONE &&
-      event.offsetY >= POINTER_SAFE_ZONE && event.offsetY <= frame.clientHeight - POINTER_SAFE_ZONE;
-    frame.classList.toggle('sp-hover-active', inside);
+  let animationFrame: number;
+  function alignCreative() {
+    // Auction-cached rectangles become stale on scroll; read only this owned element's live rect.
+    const rect = frame.getClientRects()[0];
+    if (rect) {
+      const left = -rect.left + 'px';
+      const top = -rect.top + 'px';
+      if (iframe.style.left !== left) iframe.style.left = left;
+      if (iframe.style.top !== top) iframe.style.top = top;
+    }
+    // Layout shifts and slot reparenting need alignment even without a scroll/resize event.
+    animationFrame = win.requestAnimationFrame(alignCreative);
   }
-  function onLeave() {
-    frame.classList.remove('sp-hover-active');
-  }
-  win.addEventListener('mousemove', onMove, { passive: true });
-  frame.addEventListener('mouseleave', onLeave);
+  alignCreative();
   return () => {
-    win.removeEventListener('mousemove', onMove);
-    frame.removeEventListener('mouseleave', onLeave);
-    frame.classList.remove('sp-pointer-guarded', 'sp-hover-active');
+    win.cancelAnimationFrame(animationFrame);
+    frame.classList.remove('sp-pointer-guarded');
+    iframe.style.removeProperty('left');
+    iframe.style.removeProperty('top');
   };
 }
