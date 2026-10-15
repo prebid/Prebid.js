@@ -163,18 +163,16 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
 };
 
 /**
- * Get data from Optable and merge it into the global ORTB2 object
+ * Get data from Optable and merge it into the global ORTB2 object.
+ * Always waits for the handler: checking for a native AsyncFunction fails once
+ * the build transpiles async functions (e.g. `gulp build --ES5`).
  * @param {OptableHandleRtd} handleRtdFn Function to handle RTD data
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {OptableRtdConfig} optableExtraData Additional data to be used by the Optable SDK
  * @param {OptableMergeFn} mergeFn Function to merge data
  */
 export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn) => {
-  if (handleRtdFn.constructor.name === 'AsyncFunction') {
-    await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
-  } else {
-    handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
-  }
+  await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
 };
 
 /**

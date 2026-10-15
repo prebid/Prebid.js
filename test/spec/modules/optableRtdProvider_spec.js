@@ -209,6 +209,20 @@ describe('Optable RTD Submodule', function () {
       await mergeOptableData(handleRtdFn, reqBidsConfigObj, {}, mergeFn);
       expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn)).to.be.true;
     });
+
+    it('waits for a promise returned by a non-async function (e.g. a transpiled async function)', async function () {
+      let resolveHandler;
+      handleRtdFn = function () {
+        return new Promise((resolve) => { resolveHandler = resolve; });
+      };
+      let done = false;
+      const result = mergeOptableData(handleRtdFn, reqBidsConfigObj, {}, mergeFn).then(() => { done = true; });
+      await Promise.resolve();
+      expect(done).to.be.false;
+      resolveHandler();
+      await result;
+      expect(done).to.be.true;
+    });
   });
 
   describe('getBidRequestData', function () {

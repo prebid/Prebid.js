@@ -93,8 +93,8 @@ await new Promise((resolve) => {
 });
 ```
 
-The module only waits for an `async` function. Keep the handler a native `async` function (not transpiled) if it waits
-for the bundle or anything else.
+The module waits for the handler to finish: if it returns a promise (for example an `async` function), the auction
+waits for that promise to settle, within the RTD `auctionDelay`.
 It will also receive the `optableExtraData` object, which can contain the extra data required for the enrichment and
 shouldn't be shared with other RTD providers/bidders.
 `mergeFn` parameter taken by `handleRtd` is a standard Prebid.js utility function that take an object to be enriched and
