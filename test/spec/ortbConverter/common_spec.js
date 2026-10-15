@@ -25,6 +25,68 @@ describe('common processors', () => {
         expect(resp.meta.dsa).to.eql(MOCK_DSA);
       });
     });
+
+    describe('meta.deal', () => {
+      function dealMetaFor(bid) {
+        const resp = {};
+        responseProps(resp, bid, context);
+        return resp.meta.deal;
+      }
+
+      it('is not set if bid has no ext.prebid.deal', () => {
+        expect(dealMetaFor({ dealid: 'deal-1' })).to.not.exist;
+      });
+
+      it('is not set if bid has no dealid', () => {
+        expect(dealMetaFor({ ext: { prebid: { deal: { type: 1, cpm: 5 } } } })).to.not.exist;
+      });
+
+      it('is not set if ext.prebid.deal is not an object', () => {
+        expect(dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: 'sponsorship' } } })).to.not.exist;
+      });
+
+      it('is normalized from ext.prebid.deal', () => {
+        expect(dealMetaFor({
+          dealid: 'deal-1',
+          ext: {
+            prebid: {
+              deal: { type: 2, cpm: 5, pacing_adjusted_cpm: 10, on_schedule: 0.8, priority: 3 }
+            }
+          }
+        })).to.eql({ type: 'reservation', cpm: 5, pacingAdjustedCpm: 10, onSchedule: 0.8, priority: 3 });
+      });
+
+      [
+        [0, 'unknown'],
+        [1, 'sponsorship'],
+        [2, 'reservation'],
+        [3, 'non-reservation'],
+        [4, 'house'],
+        [5, 'unknown'],
+        ['1', 'unknown'],
+        [1.5, 'unknown'],
+        [undefined, 'unknown']
+      ].forEach(([type, expected]) => {
+        it(`maps type ${JSON.stringify(type)} to '${expected}'`, () => {
+          expect(dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: { type } } } }).type).to.equal(expected);
+        });
+      });
+
+      it('drops fields that are not correctly typed', () => {
+        expect(dealMetaFor({
+          dealid: 'deal-1',
+          ext: {
+            prebid: {
+              deal: { type: 1, cpm: -1, pacing_adjusted_cpm: Infinity, on_schedule: '0.5', priority: 1.5, extra: 'ignored' }
+            }
+          }
+        })).to.eql({ type: 'sponsorship' });
+      });
+
+      it('allows negative integer priority', () => {
+        expect(dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: { type: 4, priority: -1 } } } }).priority).to.equal(-1);
+      });
+    });
   });
   describe('bid imp fpd', () => {
     const impFpd = DEFAULT_PROCESSORS[IMP].secure.fn;
