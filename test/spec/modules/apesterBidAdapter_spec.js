@@ -7,7 +7,7 @@ import {
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import {
   hashCode,
@@ -229,8 +229,8 @@ describe('apesterBidAdapter', function () {
     });
 
     it('exists and contains media types', function () {
-      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
-      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(3);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO, NATIVE]);
     });
   });
 
@@ -436,6 +436,99 @@ describe('apesterBidAdapter', function () {
       sandbox.restore();
     });
   });
+  describe('native support', function () {
+    const NATIVE_ORTB = {
+      ver: '1.2',
+      assets: [
+        { id: 1, required: 1, title: { len: 80 } },
+        { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+        { id: 3, required: 1, data: { type: 1 } }
+      ]
+    };
+
+    const NATIVE_ORTB_RESPONSE = {
+      ver: '1.2',
+      assets: [
+        { id: 1, title: { text: 'Native title' } },
+        { id: 2, img: { url: 'https://cdn.example/img.jpg', w: 1200, h: 627 } },
+        { id: 3, data: { value: 'Advertiser' } }
+      ],
+      link: { url: 'https://advertiser.example/click' },
+      eventtrackers: [{ event: 1, method: 1, url: 'https://tracker.example/imp' }]
+    };
+
+    const NATIVE_BID = {
+      bidId: 'native-bid-1',
+      adUnitCode: 'div-native-1',
+      bidderRequestId: '1fdb5ff1b6eaa7',
+      params: {
+        subDomain: SUB_DOMAIN,
+        cId: '59db6b3b4ffaa70004f45cdc',
+        pId: '59ac17c192832d0011283fe3'
+      },
+      sizes: [],
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0,
+      schain: 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+      mediaTypes: { native: { ortb: NATIVE_ORTB } },
+      nativeOrtbRequest: NATIVE_ORTB,
+      ortb2Imp: { ext: { tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf' } }
+    };
+
+    it('should build a native request with mediaTypes.native and nativeOrtbRequest', function () {
+      config.setConfig({ bidderTimeout: 3000 });
+      const requests = adapter.buildRequests([NATIVE_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
+      expect(requests[0].data.mediaTypes).to.deep.equal(NATIVE_BID.mediaTypes);
+      expect(requests[0].data.nativeOrtbRequest).to.deep.equal(NATIVE_ORTB);
+      expect(requests[0].data.bidId).to.equal(NATIVE_BID.bidId);
+    });
+
+    it('should interpret a native response into bid.native.ortb', function () {
+      const serverResponse = {
+        body: {
+          cid: '59db6b3b4ffaa70004f45cdc',
+          results: [{
+            ad: JSON.stringify({ native: NATIVE_ORTB_RESPONSE }),
+            advertiserDomains: ['example.com'],
+            exp: 60,
+            width: 1,
+            height: 1,
+            mediaType: 'native',
+            creativeId: '12610997325162499419',
+            price: 1.5,
+            cookies: []
+          }]
+        }
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0].mediaType).to.equal(NATIVE);
+      expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
+      expect(responses[0].cpm).to.equal(1.5);
+      expect(responses[0].requestId).to.equal(REQUEST.data.bidId);
+      expect(responses[0].ad).to.be.undefined;
+      expect(responses[0].vastXml).to.be.undefined;
+    });
+
+    it('should skip a native result whose ad is not valid native markup', function () {
+      const serverResponse = {
+        body: {
+          results: [{
+            ad: 'not-json',
+            mediaType: 'native',
+            creativeId: 'cr-native',
+            price: 1.5
+          }]
+        }
+      };
+      expect(adapter.interpretResponse(serverResponse, REQUEST)).to.be.empty;
+    });
+  });
+
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
