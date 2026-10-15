@@ -63,7 +63,7 @@ pbjs.setConfig({
 | params                   | Object   |                                                                                                                                                                                                                                                                 |                            |          |
 | params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`                     | Optional |
 | params.instance          | Object   | Optable SDK instance to use for targeting data.                                                                                                                                                                                                                 | `window.optable.rtd.instance`  | Optional |
-| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module uses its default handler (see [Default handler](#default-handler)). A custom function runs once the Optable bundle has loaded. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`                     | Optional |
+| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module uses its default handler (see [Default handler](#default-handler)). A custom function is called as soon as the auction starts, whether or not the Optable bundle has loaded (see [Publisher Customized RTD Handler Function](#publisher-customized-rtd-handler-function)). The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`                     | Optional |
 
 ## Default handler
 
@@ -83,6 +83,18 @@ Most publishers should not need a custom `handleRtd`.
 When there is more pre-processing or post-processing needed prior/post calling Optable bundle - a custom `handleRtd`
 function can be supplied to do that.
 This function will also be responsible for the `reqBidsConfigObj` enrichment.
+The module calls it as soon as the auction starts, so the Optable bundle may not have loaded yet. A handler that needs
+the bundle should wait for it first:
+
+```javascript
+await new Promise((resolve) => {
+  window.optable = window.optable || { cmd: [] };
+  window.optable.cmd.push(resolve);
+});
+```
+
+The module only waits for an `async` function. Keep the handler a native `async` function (not transpiled) if it waits
+for the bundle or anything else.
 It will also receive the `optableExtraData` object, which can contain the extra data required for the enrichment and
 shouldn't be shared with other RTD providers/bidders.
 `mergeFn` parameter taken by `handleRtd` is a standard Prebid.js utility function that take an object to be enriched and

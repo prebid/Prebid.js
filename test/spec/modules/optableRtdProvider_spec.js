@@ -268,14 +268,23 @@ describe('Optable RTD Submodule', function () {
       }, 100);
     });
 
-    it('keeps a custom handleRtd queued until the bundle loads', function () {
+    it('calls a custom handleRtd right away, before the bundle loads', function () {
       moduleConfig.params.bundleUrl = null;
       moduleConfig.params.handleRtd = sinon.spy();
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
-      expect(moduleConfig.params.handleRtd.called).to.be.false;
-      expect(window.optable.cmd.length).to.equal(1);
+      expect(moduleConfig.params.handleRtd.calledOnce).to.be.true;
+      expect(window.optable.cmd.length).to.equal(0);
+    });
+
+    it('calls a custom handleRtd right away when bundleUrl is provided', function () {
+      moduleConfig.params.handleRtd = sinon.spy();
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(window.document.createElement.called).to.be.true;
+      expect(moduleConfig.params.handleRtd.calledOnce).to.be.true;
     });
 
     it('calls back right away with cached data when the bundle is not loaded', function (done) {
@@ -299,9 +308,6 @@ describe('Optable RTD Submodule', function () {
       moduleConfig.params.handleRtd = () => { throw new Error('Test error'); };
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
-
-      expect(window.optable.cmd.length).to.equal(1);
-      window.optable.cmd[0]();
 
       setTimeout(() => {
         expect(callback.calledOnce).to.be.true;

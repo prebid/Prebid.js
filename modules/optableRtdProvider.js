@@ -190,37 +190,17 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
-    if (!handleRtd) {
-      // The default handler copes with the bundle not being loaded yet,
-      // so call it right away and load the bundle in parallel if needed
-      if (bundleUrl) {
-        logMessage('Custom bundle URL found in config: ', bundleUrl);
-        loadExternalScript(bundleUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
-          logMessage('Successfully loaded Optable JS bundle');
-        }, document);
-      }
-      mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
-    } else if (bundleUrl) {
-      // If bundleUrl is present, load the Optable JS bundle
-      // by using the loadExternalScript function
+    if (bundleUrl) {
+      // Load the Optable JS bundle in parallel; the handler does not wait for it
       logMessage('Custom bundle URL found in config: ', bundleUrl);
-
-      // Load Optable JS bundle and merge the data
       loadExternalScript(bundleUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
         logMessage('Successfully loaded Optable JS bundle');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
       }, document);
-    } else {
-      // A custom handleRtd may rely on the Optable JS bundle being loaded,
-      // so it runs once the bundle processes the optable.cmd queue.
-      logMessage('Custom bundle URL not found in config. ' +
-        'Assuming Optable JS bundle is already present on the page');
-      window.optable = window.optable || { cmd: [] };
-      window.optable.cmd.push(() => {
-        logMessage('Optable JS bundle found on the page');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
-      });
     }
+
+    // Call the handler right away. The default handler copes with the bundle
+    // not being loaded yet; a custom handler decides for itself whether to wait.
+    mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
   } catch (error) {
     // If an error occurs, log it and call the callback
     // to continue with the auction
