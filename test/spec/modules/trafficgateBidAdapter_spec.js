@@ -81,6 +81,12 @@ describe('TrafficgateOpenxRtbAdapter', function () {
     });
   });
 
+  describe('gvlid', function () {
+    it('should declare the TrafficGate GVL ID', function () {
+      expect(spec.gvlid).to.equal(1272);
+    });
+  });
+
   describe('isBidRequestValid()', function () {
     describe('when request is for a banner ad', function () {
       let bannerBid;

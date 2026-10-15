@@ -285,6 +285,11 @@ describe('floxisBidAdapter', function () {
       expect(requests[0].options.withCredentials).to.be.true;
     });
 
+    it('should enable endpoint compression', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      expect(requests[0].options.endpointCompression).to.be.true;
+    });
+
     describe('Floors Module support', function () {
       it('should set bidfloor from getFloor', function () {
         const bidWithFloor = {

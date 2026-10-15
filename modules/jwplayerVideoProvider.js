@@ -702,12 +702,6 @@ export const utils = {
       case DESTROYED:
         return 'remove';
 
-      case AD_STARTED:
-        return AD_IMPRESSION;
-
-      case AD_IMPRESSION:
-        return 'adViewableImpression';
-
       case PLAYBACK_REQUEST:
         return 'playAttempt';
 

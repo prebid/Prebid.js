@@ -239,7 +239,7 @@ describe('MediaSquare bid adapter tests', function () {
 
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.equal('msq');
+    expect(spec.aliases[0]).to.eql({ code: 'msq', gvlid: 791 });
   });
   it('Verifies if bid request valid', function () {
     expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);

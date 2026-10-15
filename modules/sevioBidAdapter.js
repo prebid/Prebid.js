@@ -1,9 +1,11 @@
 import * as utils from "../src/utils.js";
 import { detectWalletsPresence } from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { parseDomain } from "../src/refererDetection.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
 import { getDomComplexity, getPageDescription, getPageTitle } from "../libraries/fpdUtils/pageInfo.js";
+import { getBrowserLanguage } from "../libraries/fpdUtils/deviceInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
@@ -23,6 +25,66 @@ const detectAdType = (bid) =>
 
 const getReferrerInfo = (bidderRequest) => {
   return bidderRequest?.refererInfo?.page ?? '';
+};
+
+const isUsablePageUrl = (url) => typeof url === 'string' && /^https?:\/\//i.test(url);
+
+const getTopWindowUrl = () => {
+  try {
+    return utils.canAccessWindowTop() ? utils.getWindowTop().location.href : '';
+  } catch {
+    return '';
+  }
+};
+
+const getPageUrl = (bidderRequest) => {
+  const page = bidderRequest?.refererInfo?.page;
+
+  if (isUsablePageUrl(page)) {
+    return page;
+  }
+
+  const topWindowUrl = getTopWindowUrl();
+
+  return isUsablePageUrl(topWindowUrl) ? topWindowUrl : '';
+};
+
+const isUsableDimension = (value) => typeof value === 'number' && isFinite(value) && value > 0;
+
+const getScreenDimensions = (bidderRequest) => {
+  const device = bidderRequest?.ortb2?.device;
+
+  if (isUsableDimension(device?.w) && isUsableDimension(device?.h)) {
+    return { width: device.w, height: device.h };
+  }
+
+  const { width, height } = utils.getWinDimensions().screen;
+
+  return { width, height };
+};
+
+const getPageReferrer = (bidderRequest) => bidderRequest?.refererInfo?.ref ?? '';
+
+const getPageDomain = (bidderRequest, pageUrl) => {
+  return bidderRequest?.refererInfo?.domain || parseDomain(pageUrl) || '';
+};
+
+const isUsableLanguage = (value) => typeof value === 'string' && value.trim() !== '';
+
+const getUserLanguage = (bidderRequest) => {
+  const device = bidderRequest?.ortb2?.device;
+
+  if (isUsableLanguage(device?.langb)) {
+    return device.langb;
+  }
+
+  if (isUsableLanguage(device?.language)) {
+    return device.language;
+  }
+
+  const browserLanguage = getBrowserLanguage();
+
+  return isUsableLanguage(browserLanguage) ? browserLanguage : '';
 };
 
 const normalizeKeywords = (input) => {
@@ -226,6 +288,11 @@ export const spec = {
       };
     })();
     const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
+    const pageUrl = getPageUrl(bidderRequest);
+    const pageDomain = getPageDomain(bidderRequest, pageUrl);
+    const userLanguage = getUserLanguage(bidderRequest);
+    const screenDimensions = getScreenDimensions(bidderRequest);
+    const pageReferer = getPageReferrer(bidderRequest);
 
     if (bidRequests.length === 0) {
       return [];
@@ -262,9 +329,9 @@ export const spec = {
       });
 
       const payload = {
-        userLanguage: navigator.language,
-        pageUrl: bidRequest?.refererInfo?.page,
-        pageDomain: bidRequest?.refererInfo?.referer,
+        userLanguage,
+        pageUrl,
+        pageDomain,
         userId: bidRequest.userId,
         eids: (bidRequest.userIdAsEids || []).map(eid => ({
           source: eid.source,
@@ -291,12 +358,12 @@ export const spec = {
           tcfeu: gdpr?.consentString || "",
           usp: usp?.uspString || "",
         },
-        xPageUrl: window.location.href,
+        xPageUrl: pageUrl,
         wdb: hasWallet,
         externalRef: bidRequest.bidId,
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
         referer: getReferrerInfo(bidderRequest),
-        pageReferer: document.referrer,
+        pageReferer,
         context: [{
           source: "title",
           text: getPageTitle().slice(0, 300)
@@ -306,8 +373,8 @@ export const spec = {
         }],
         domComplexity: getDomComplexity(document),
         device: bidderRequest?.ortb2?.device || {},
-        deviceWidth: screen.width,
-        deviceHeight: screen.height,
+        deviceWidth: screenDimensions.width,
+        deviceHeight: screenDimensions.height,
         timeout: bidderRequest?.timeout,
         viewportHeight: utils.getWinDimensions().visualViewport.height,
         viewportWidth: utils.getWinDimensions().visualViewport.width,

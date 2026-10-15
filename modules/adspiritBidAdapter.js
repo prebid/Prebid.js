@@ -5,11 +5,14 @@ import { getGlobal } from '../src/prebidGlobal.js';
 const { getWinDimensions } = utils;
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
+const ADSPIRIT_GVLID = 6;
+const TWIAGO_GVLID = 242;
 
 export const spec = {
 
   code: 'adspirit',
-  aliases: ['twiago'],
+  gvlid: ADSPIRIT_GVLID,
+  aliases: [{ code: 'twiago', gvlid: TWIAGO_GVLID }],
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {

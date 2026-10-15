@@ -3,6 +3,10 @@ import {
   spec,
   BANNER_ENDPOINT,
   buildExtuidQuery,
+  getUidFromEids,
+  getExtuidIds,
+  EID_SOURCE_IMUID,
+  EID_SOURCE_ID5,
 } from 'modules/ssp_genieeBidAdapter.js';
 import { config } from 'src/config.js';
 
@@ -435,6 +439,69 @@ describe('ssp_genieeBidAdapter', function () {
       it('should not include the extuid query when both id5 and imuid are missing', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('extuid');
+      });
+
+      describe('extuid from userIdAsEids (Prebid 10)', function () {
+        const IMUID = 'b.a4ad1d3eeb51e600';
+        const ID5 = 'ID5*abc';
+        const EID_IMUID = { source: 'intimatemerger.com', uids: [{ id: IMUID, atype: 1 }] };
+        const EID_IMPPID = { source: 'ppid.intimatemerger.com', uids: [{ id: 'ppid-xyz', atype: 1 }] };
+        const EID_ID5 = { source: 'id5-sync.com', uids: [{ id: ID5, atype: 1, ext: { linkType: 2 } }] };
+        const EID_PUBCID = { source: 'pubcid.org', uids: [{ id: 'pubcid-1', atype: 1 }] };
+
+        it('should build extuid from userIdAsEids when bid.userId is absent', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [EID_PUBCID, EID_ID5, EID_IMUID, EID_IMPPID] }]);
+          expect(request[0].data.extuid).to.equal(`id5:${ID5}\tim:${IMUID}`);
+        });
+
+        it('should build extuid from bid.ortb2.user.ext.eids when userIdAsEids is absent', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, ortb2: { user: { ext: { eids: [EID_ID5, EID_IMUID] } } } }]);
+          expect(request[0].data.extuid).to.equal(`id5:${ID5}\tim:${IMUID}`);
+        });
+
+        it('should include only imuid when eids has imuid but no id5 (ppid source must be ignored)', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [EID_IMPPID, EID_IMUID] }]);
+          expect(request[0].data.extuid).to.equal(`im:${IMUID}`);
+        });
+
+        it('should prefer userIdAsEids over legacy bid.userId when both exist', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid: 'legacy-imuid' }, userIdAsEids: [EID_IMUID] }]);
+          expect(request[0].data.extuid).to.equal(`im:${IMUID}`);
+        });
+
+        it('should fall back to legacy bid.userId when userIdAsEids has no usable source', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid: 'legacy-imuid' }, userIdAsEids: [EID_PUBCID] }]);
+          expect(request[0].data.extuid).to.equal('im:legacy-imuid');
+        });
+
+        it('should not include extuid when userIdAsEids has no id5/imuid source or is malformed', function () {
+          expect(spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [EID_PUBCID, EID_IMPPID] }])[0].data).to.not.have.property('extuid');
+          expect(spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [null, { source: 'intimatemerger.com', uids: [] }, { source: 'intimatemerger.com', uids: [{ id: '' }] }] }])[0].data).to.not.have.property('extuid');
+        });
+      });
+
+      describe('getUidFromEids / getExtuidIds', function () {
+        it('should match source exactly and ignore malformed input', function () {
+          const eids = [{ source: 'ppid.intimatemerger.com', uids: [{ id: 'ppid' }] }, { source: EID_SOURCE_IMUID, uids: [{ id: '' }, { id: 'imu-1' }] }];
+          expect(getUidFromEids(eids, EID_SOURCE_IMUID)).to.equal('imu-1');
+          expect(getUidFromEids(eids, EID_SOURCE_ID5)).to.be.undefined;
+          expect(getUidFromEids(undefined, EID_SOURCE_IMUID)).to.be.undefined;
+          expect(getUidFromEids([{ source: EID_SOURCE_IMUID, uids: [{ id: 123 }] }], EID_SOURCE_IMUID)).to.be.undefined;
+        });
+
+        it('should read eids first and fall back to bid.userId per id', function () {
+          const bid = { userId: { imuid: 'legacy-imu', id5id: { uid: 'legacy-id5' } }, userIdAsEids: [{ source: EID_SOURCE_IMUID, uids: [{ id: 'eid-imu' }] }] };
+          expect(getExtuidIds(bid)).to.deep.equal({ id5: 'legacy-id5', imuId: 'eid-imu' });
+          expect(getExtuidIds({})).to.deep.equal({ id5: undefined, imuId: undefined });
+        });
+
+        it('should read eids from bid.ortb2.user.ext.eids before the userIdAsEids alias', function () {
+          const bid = {
+            ortb2: { user: { ext: { eids: [{ source: EID_SOURCE_IMUID, uids: [{ id: 'ortb2-imu' }] }] } } },
+            userIdAsEids: [{ source: EID_SOURCE_IMUID, uids: [{ id: 'alias-imu' }] }],
+          };
+          expect(getExtuidIds(bid)).to.deep.equal({ id5: undefined, imuId: 'ortb2-imu' });
+        });
       });
 
       it('should include schain in data when schain exists', function () {

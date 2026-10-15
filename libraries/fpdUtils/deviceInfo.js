@@ -49,6 +49,17 @@ export function getDevice() {
 }
 
 /**
+ * get the browser's preferred language, as a BCP-47 tag
+ *
+ * @param {Window} [win]
+ * @returns {string} eg: "en-US", or '' when the browser does not report one
+ */
+export function getBrowserLanguage(win = window) {
+  const nav = win.navigator || {};
+  return nav.language || '';
+}
+
+/**
  * get screen size
  *
  * @returns {Array} eg: "['widthxheight']"
