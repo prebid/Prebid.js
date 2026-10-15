@@ -87,3 +87,6 @@ typings/
 # Webpack cache
 .cache/
 .eslintcache
+
+# Claude Code personal settings (.claude is a symlink to .agents)
+.agents/settings.local.json
