@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { isPlainObject, logError, logInfo, logWarn, politeTriggerPixel } from '../src/utils.js';
+import { logError, logInfo, logWarn, politeTriggerPixel } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { browserSupportsUserSyncCookies } from '../src/userSync.js';
@@ -86,10 +86,6 @@ function buildPrivacy(consentData: Partial<AllConsentData> | undefined) {
 
 function isEnvelope(value): value is string {
   return typeof value === 'string' && ENVELOPE_PATTERN.test(value);
-}
-
-function isRevoked(value) {
-  return isPlainObject(value) && value.revoked === true;
 }
 
 function buildIds(storedId, emailHash: string | undefined) {
@@ -200,13 +196,6 @@ export const sevioIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
       logWarn(`${LOG_PREFIX}storage type '${config.storage.type}' is not recommended; use 'cookie&html5'`);
     }
     return { callback: (cb) => fetchId(cb, params, consentData, storedId) };
-  },
-  extendId(config, consentData, storedId) {
-    // The core calls getId only when nothing is stored or a refresh is due. A stored value that is
-    // neither an envelope nor the revocation marker (e.g. a truncated cookie) would otherwise leave
-    // the user without an ID until then, so fetch a fresh one now.
-    if (isEnvelope(storedId) || isRevoked(storedId)) return;
-    return sevioIdSubmodule.getId(config, consentData, storedId);
   },
   eids: {
     sevioId: (values) => ({

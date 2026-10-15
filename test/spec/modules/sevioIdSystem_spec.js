@@ -65,28 +65,9 @@ describe('Sevio ID System', function () {
       expect(sevioIdSubmodule.name).to.equal('sevioId');
       expect(sevioIdSubmodule.gvlid).to.equal(1393);
     });
-  });
 
-  describe('extendId', function () {
-    [['an envelope', ENVELOPE], ['the revocation marker', { revoked: true }]].forEach(([desc, storedId]) => {
-      it(`does nothing for ${desc}`, function () {
-        expect(sevioIdSubmodule.extendId(validConfig, {}, storedId)).to.be.undefined;
-        expect(server.requests.length).to.equal(0);
-      });
-    });
-
-    it('fetches a fresh ID when the stored value is not an envelope', function () {
-      const result = sevioIdSubmodule.extendId(validConfig, {}, ENVELOPE.slice(0, 40));
-      expect(server.requests.length).to.equal(0);
-      result.callback(sinon.spy());
-      expect(server.requests.length).to.equal(1);
-      expect(server.requests[0].url).to.equal(ID_ENDPOINT);
-      expect(requestBody(server.requests[0])).to.not.have.property('ids');
-    });
-
-    it('does not fetch under COPPA', function () {
-      expect(sevioIdSubmodule.extendId(validConfig, { coppa: true }, 'malformed')).to.be.undefined;
-      expect(server.requests.length).to.equal(0);
+    it('does not define extendId', function () {
+      expect(sevioIdSubmodule.extendId).to.be.undefined;
     });
   });
 
@@ -519,15 +500,23 @@ describe('Sevio ID System', function () {
       expect(server.requests.length).to.equal(1);
     });
 
-    it('replaces a stored value that is not an envelope without exposing it', async function () {
-      seedCookie(ENVELOPE.slice(0, 40));
-      seedLocalStorage(ENVELOPE);
-      startUserId();
-      const ids = getGlobal().getUserIdsAsync();
-      await waitForRequest();
+    it('provides no ID and makes no request for a stored value that is not an envelope until a refresh is due', async function () {
+      seedCookie(ENVELOPE.slice(0, 40), new Date().toUTCString());
+      startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
+      await getGlobal().getUserIdsAsync();
 
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
       expect(sevioEids()).to.deep.equal([]);
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('replaces a stored value that is not an envelope once a refresh is due', async function () {
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toUTCString();
+      seedCookie(ENVELOPE.slice(0, 40), twoDaysAgo);
+      startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
+      const ids = getGlobal().getUserIdsAsync();
+      await waitForRequest();
+
       expect(server.requests.length).to.equal(1);
       expect(requestBody(server.requests[0])).to.not.have.property('ids');
       respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, changed: true });

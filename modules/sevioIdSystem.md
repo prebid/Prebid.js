@@ -57,7 +57,7 @@ pbjs.setConfig({
 | `params.emailHash` | Optional | String | SHA-256 hash of the user's email address, as 64 hex characters. Sent to the Identity service with the next request, so that the user is recognised across sites. A value of any other shape logs a warning and is not sent. | `'a1b2c3…'` |
 | `storage` | Required | Object | Prebid-managed storage for the ID. Without it the module logs an error and provides no ID. | |
 | `storage.type` | Required | String | Must be `cookie&html5`. Other values log a warning; the module still works, but without the cookie-first, `localStorage`-fallback behaviour described below. | `'cookie&html5'` |
-| `storage.name` | Required | String | Name of the cookie and `localStorage` key. `_sevioId` is recommended, because it is the name Sevio's storage disclosure lists. | `'_sevioId'` |
+| `storage.name` | Required | String | Name of the cookie and `localStorage` key. `_sevioId` is recommended. | `'_sevioId'` |
 | `storage.expires` | Required | Number | Days the stored ID is kept. Without it the cookie is session-only and the `localStorage` copy is ignored, so the ID is fetched again on every visit. | `30` |
 | `storage.refreshInSeconds` | Recommended | Number | Seconds after which the stored ID is presented to the Identity service again and both stores are rewritten with the answer. Without it the ID is refreshed only when it expires or consent changes. | `86400` |
 | `bidders` | Optional | Array of strings | Restricts which bidders receive the ID. | `['sevio']` |
@@ -128,8 +128,9 @@ network or HTTP error, or a malformed answer) keeps the stored ID.
 
 Only a Sevio envelope (66 base64url characters) is a valid ID. An answer carrying anything else is
 treated as malformed, and a stored value of any other shape (for example a truncated cookie) is not
-provided to bidders. Instead, the submodule requests a fresh ID on that page view, and the answer
-replaces the bad value in both stores.
+provided to bidders. It is replaced by the next request: when `storage.refreshInSeconds` elapses,
+when it expires, or when consent changes. Set `storage.refreshInSeconds` (for example `86400`) to
+bound how long such a value can leave the user without an ID.
 
 # Consent
 
