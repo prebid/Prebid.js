@@ -77,6 +77,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'pragmaadx' as const;
 const ENDPOINT_URL = 'https://apps.pragma-crm.com/api/adx/prebid';
+const SYNC_URL = 'https://apps.pragma-crm.com/api/adx/sync';
 const DEFAULT_PLAYER_SIZE: [number, number] = [640, 360];
 const DEFAULT_BANNER_SIZE: [number, number] = [300, 250];
 const SUPPORTED_MEDIA_TYPES = [VIDEO, BANNER] as const;
@@ -105,6 +106,7 @@ interface PragmaAdxPayload {
   us_privacy?: string;
   gpp?: string;
   gpp_sid?: number[];
+  schain?: object;
 }
 
 /** Shape of one bid inside the server's response body. */
@@ -238,6 +240,14 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
             payload.gpp_sid = gpp.applicableSections;
           }
         }
+
+        // Supply Chain: forward the publisher's upstream schain so Pragma
+        // can append its own seller node before the outbound DSP call.
+        // Prebid exposes it on bidderRequest; we prefer that over bid-level.
+        const schain = bidderRequest.schain;
+        if (schain && typeof schain === 'object') {
+          payload.schain = schain;
+        }
       }
 
       return {
@@ -306,19 +316,45 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       });
   }
 
+  /**
+   * Cookie-sync pixel (image only; no iframe sync endpoint exists yet).
+   * Pragma does not operate its own user-ID graph, so this pixel does
+   * nothing except let DSP partners see that this browser visited a
+   * Pragma-monetised page. Consent strings are forwarded as query params
+   * so a future downstream sync redirect can honour them.
+   */
+  getUserSyncs(
+    syncOptions: { pixelEnabled?: boolean },
+    _serverResponses: any[],
+    gdprConsent: any,
+    uspConsent: string,
+    gppConsent: any
+  ): Array<{ type: string; url: string }> {
+    if (!syncOptions.pixelEnabled) {
+      return [];
+    }
+    const params = new URLSearchParams();
+    if (gdprConsent?.gdprApplies !== false && gdprConsent?.consentString) {
+      params.set('gdpr', '1');
+      params.set('gdpr_consent', gdprConsent.consentString);
+    }
+    if (uspConsent) {
+      params.set('us_privacy', String(uspConsent));
+    }
+    if (gppConsent?.gppString) {
+      params.set('gpp', gppConsent.gppString);
+    }
+    const qs = params.toString();
+    return [{ type: 'image', url: SYNC_URL + (qs ? '?' + qs : '') }];
+  },
+
   // Deliberately NOT implemented, rather than stubbed:
   //
-  // getUserSyncs — Pragma runs no cookie-sync or pixel-sync endpoint, so
-  //   there is no real URL to return. An adapter that returns a fake or
-  //   empty-but-present sync does nothing except add a request.
   // onBidWon / onTimeout — Pragma's win/impression accounting already
   //   happens server-side off the VAST tracking beacons baked into the
   //   returned document (GET /api/adx/track/{bid_log_id}/...), which fire
   //   from the actual player on actual playback. A client-side onBidWon
   //   ping would double-count renders that never happened.
-  //
-  // Both become worth adding the moment there is real infrastructure
-  // behind them; see docs/ADX_RUNBOOK.md's "Not yet built".
 };
 
 registerBidder(spec);

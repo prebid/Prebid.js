@@ -299,4 +299,49 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(spec.interpretResponse({})).to.deep.equal([]);
     });
   });
+
+  describe('getUserSyncs', function () {
+    it('returns a pixel sync URL when pixelEnabled is true', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal('https://apps.pragma-crm.com/api/adx/sync');
+    });
+
+    it('returns no syncs when pixelEnabled is false', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [], null, null, null);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('appends gdpr_consent when GDPR applies', function () {
+      const gdpr = { gdprApplies: true, consentString: 'CONSENT_STRING' };
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], gdpr, null, null);
+      expect(syncs[0].url).to.include('gdpr=1');
+      expect(syncs[0].url).to.include('gdpr_consent=CONSENT_STRING');
+    });
+
+    it('omits gdpr_consent when gdprApplies is false', function () {
+      const gdpr = { gdprApplies: false, consentString: 'CONSENT_STRING' };
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], gdpr, null, null);
+      expect(syncs[0].url).to.not.include('gdpr_consent');
+    });
+
+    it('appends us_privacy when supplied', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, '1YNN', null);
+      expect(syncs[0].url).to.include('us_privacy=1YNN');
+    });
+  });
+
+  describe('buildRequests — schain', function () {
+    it('forwards schain from bidderRequest to the payload', function () {
+      const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'publisher.com', sid: 'pub-1', hp: 1 }] };
+      const requests = spec.buildRequests([validBidRequest], { schain });
+      expect(requests[0].data.schain).to.deep.equal(schain);
+    });
+
+    it('omits schain when bidderRequest has none', function () {
+      const requests = spec.buildRequests([validBidRequest], {});
+      expect(requests[0].data.schain).to.be.undefined;
+    });
+  });
 });
