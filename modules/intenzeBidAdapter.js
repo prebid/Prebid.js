@@ -2,9 +2,11 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 import { BANNER, NATIVE, VIDEO } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
+import { logError, logWarn } from "../src/utils.js";
 import { getTimeZone } from "../libraries/timezone/timezone.js";
 
 const BIDDER_CODE = "intenze";
+const GVLID = 1457;
 const DEFAULT_CURRENCY = "USD";
 const DEFAULT_REGION = "America";
 
@@ -19,28 +21,30 @@ const sspSubdomainsRegions = {
   Asia: "apac-ssp",
 };
 
-/**
- * @param { { accountId?: string; placementId?: string } } params
- *
- * @returns { string }
- */
-const buildEndpointURL = (params) => {
-  let endpoint = "";
-  const timezone = getTimeZone() || "";
-  const region = timezone.split("/")[0] || DEFAULT_REGION;
+const getRegion = () => {
+  try {
+    const region = (getTimeZone() || "").split("/")[0];
+    return exchangeSubdomainsRegions[region] ? region : DEFAULT_REGION;
+  } catch (err) {
+    return DEFAULT_REGION;
+  }
+};
 
+export const buildEndpointURL = (params, region = getRegion()) => {
   if (params?.accountId) {
     const subdomain =
       exchangeSubdomainsRegions[region] ||
       exchangeSubdomainsRegions[DEFAULT_REGION];
-    endpoint = `https://${subdomain}.intenze.co/?pass=${params.accountId}&integration=prebidjs`;
-  } else if (params?.placementId) {
-    const subdomain =
-      sspSubdomainsRegions[region] || sspSubdomainsRegions[DEFAULT_REGION];
-    endpoint = `https://${subdomain}.intenze.co/pbjs-serve?placementId=${params.placementId}`;
+    return `https://${subdomain}.intenze.co/?pass=${encodeURIComponent(params.accountId)}&integration=prebidjs`;
   }
 
-  return endpoint;
+  if (params?.placementId) {
+    const subdomain =
+      sspSubdomainsRegions[region] || sspSubdomainsRegions[DEFAULT_REGION];
+    return `https://${subdomain}.intenze.co/pbjs-serve?placementId=${encodeURIComponent(params.placementId)}`;
+  }
+
+  return "";
 };
 
 const converter = ortbConverter({
@@ -50,21 +54,22 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    if (!imp.bidfloor) {
-      imp.bidfloor = bidRequest.params.bidfloor || 0;
+
+    if (!imp.bidfloor && bidRequest.params.bidfloor) {
+      imp.bidfloor = bidRequest.params.bidfloor;
+      imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY;
     }
 
     const bidderParams = {};
-
-    if (bidRequest?.params?.accountId) {
+    if (bidRequest.params.accountId) {
       bidderParams.accountId = bidRequest.params.accountId;
     }
-
-    if (bidRequest?.params?.placementId) {
+    if (bidRequest.params.placementId) {
       bidderParams.placementId = bidRequest.params.placementId;
     }
 
     imp.ext = {
+      ...imp.ext,
       [BIDDER_CODE]: bidderParams,
     };
     return imp;
@@ -78,52 +83,78 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
-    bidResponse.cur = bid.cur || DEFAULT_CURRENCY;
+    if (!bidResponse.currency) {
+      bidResponse.currency = context.ortbRequest?.cur?.[0] || DEFAULT_CURRENCY;
+    }
     return bidResponse;
   },
 });
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.params?.accountId) || Boolean(bid.params?.placementId);
+    const { accountId, placementId } = bid?.params || {};
+
+    if (accountId && placementId) {
+      logWarn(
+        `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: accountId and placementId cannot be used together`,
+      );
+      return false;
+    }
+
+    if (!accountId && !placementId) {
+      logWarn(
+        `${BIDDER_CODE}: adUnit ${bid?.adUnitCode}: either accountId or placementId expected`,
+      );
+      return false;
+    }
+
+    return true;
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    if (validBidRequests && validBidRequests.length === 0) return [];
+    if (!validBidRequests?.length) return [];
 
-    const endpointURL = buildEndpointURL(validBidRequests[0].params);
-    if (!endpointURL) return [];
+    const region = getRegion();
+    const requests = [];
 
-    try {
-      const request = converter.toORTB({
-        bidRequests: validBidRequests,
-        bidderRequest,
-      });
+    validBidRequests.forEach((bid) => {
+      const url = buildEndpointURL(bid.params, region);
+      if (!url) return;
+      try {
+        requests.push({
+          method: "POST",
+          url,
+          data: converter.toORTB({ bidRequests: [bid], bidderRequest }),
+        });
+      } catch (err) {
+        logError(
+          `${BIDDER_CODE}: adUnit ${bid.adUnitCode}: failed to build request for ${url}`,
+          err,
+        );
+      }
+    });
 
-      return {
-        method: "POST",
-        url: endpointURL,
-        data: request,
-      };
-    } catch (error) {
-      return [];
-    }
+    return requests;
   },
 
   interpretResponse: (response, request) => {
-    if (response?.body) {
-      try {
-        const bids = converter.fromORTB({
+    if (!response?.body) return [];
+
+    try {
+      return (
+        converter.fromORTB({
           response: response.body,
           request: request.data,
-        })?.bids;
-        return bids;
-      } catch (err) {}
+        })?.bids || []
+      );
+    } catch (err) {
+      logError(`${BIDDER_CODE}: failed to interpret response`, err);
+      return [];
     }
-    return [];
   },
 };
 
