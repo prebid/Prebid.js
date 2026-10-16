@@ -21,6 +21,7 @@ const LOG_PREFIX = '[ROOCKMOBILE]: ';
 
 const converter = ortbConverter({
   context: {
+    currency: 'USD',
     netRevenue: true,
     ttl: 300,
     nativeRequest: { ver: '1.2' }
@@ -40,9 +41,9 @@ const converter = ortbConverter({
     // otherwise infer the type from the markup and the matched impression.
     context.mediaType = getMediaType(bid, context.imp);
     const bidResponse = buildBidResponse(bid, context);
-    // nurl is an OpenRTB win-notice URL, not a VAST document URL. When adm contains
-    // VAST XML, do not expose nurl as vastUrl to an instream player.
-    if (bid.nurl) bidResponse.nurl = bid.nurl;
+    // Banner rendering already owns its nurl; other formats fire it from onBidWon.
+    if (bid.nurl && context.mediaType !== BANNER) bidResponse.nurl = bid.nurl;
+    // A video nurl is a win notice, not a VAST document URL.
     if (context.mediaType === VIDEO && bid.adm) {
       delete bidResponse.vastUrl;
     }

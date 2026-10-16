@@ -96,10 +96,13 @@ describe('Roockmobile bid adapter', () => {
 
   it('interprets an OpenRTB banner bid', () => {
     const request = spec.buildRequests([bid], bidderRequest)[0];
+    const nurl = 'https://win.example.test/banner';
     const bids = spec.interpretResponse({
-      body: { seatbid: [{ bid: [{ impid: 'bid-id', price: 1.25, cur: 'USD', w: 300, h: 250, crid: 'creative', adm: '<div>ad</div>' }] }] }
+      body: { seatbid: [{ bid: [{ impid: 'bid-id', price: 1.25, w: 300, h: 250, crid: 'creative', adm: '<div>ad</div>', nurl }] }] }
     }, request);
-    expect(bids[0]).to.include({ requestId: 'bid-id', cpm: 1.25, width: 300, height: 250, creativeId: 'creative' });
+    expect(bids[0]).to.include({ requestId: 'bid-id', cpm: 1.25, currency: 'USD', width: 300, height: 250, creativeId: 'creative' });
+    expect(bids[0].ad).to.include(nurl);
+    expect(bids[0].nurl).to.equal(undefined);
   });
 
   if (FEATURES.VIDEO) {
