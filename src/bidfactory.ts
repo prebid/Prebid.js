@@ -16,6 +16,42 @@ type BidIdentifiers = ContextIdentifiers & {
 };
 
 /**
+ * Deal metadata (corresponds to ORTB `bid.ext.prebid.deal`).
+ * @see https://github.com/prebid/Prebid.js/issues/15602
+ */
+export interface DealMeta {
+  /**
+   * Deal classification: 0 unknown, 1 sponsorship, 2 reservation, 3 non-reservation, 4 house.
+   * Defaults to 0 when the ORTB `type` is missing or not an integer.
+   */
+  type: number;
+  /**
+   * Unadjusted contractual or nominal deal CPM, in `cpmCurrency`.
+   */
+  cpm?: number;
+  /**
+   * Currency of `cpm`. Unlike the bid's own `currency`, this is not changed by currency conversion.
+   */
+  cpmCurrency?: Currency;
+  /**
+   * CPM-equivalent value after applying the current pacing or delivery adjustment, in `pacingAdjustedCpmCurrency`.
+   */
+  pacingAdjustedCpm?: number;
+  /**
+   * Currency of `pacingAdjustedCpm`. Unlike the bid's own `currency`, this is not changed by currency conversion.
+   */
+  pacingAdjustedCpmCurrency?: Currency;
+  /**
+   * Delivery relative to schedule; e.g. 0.5 means half of the expected impressions have been served.
+   */
+  onSchedule?: number;
+  /**
+   * Relative precedence among deals.
+   */
+  priority?: number;
+}
+
+/**
  * Bid metadata.
  */
 export interface BidMeta {
@@ -52,6 +88,10 @@ export interface BidMeta {
    * DSP network ID.
    */
   networkId?: string | number;
+  /**
+   * Deal metadata, set only for bids with a `dealId`.
+   */
+  deal?: DealMeta;
 }
 
 /**
