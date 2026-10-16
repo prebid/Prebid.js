@@ -206,6 +206,20 @@ const REQUEST = {
 };
 
 describe('KueezRtbBidAdapter', function () {
+  let originalConfig;
+
+  before(function () {
+    originalConfig = config.getConfig();
+  });
+
+  beforeEach(function () {
+    config.setConfig(originalConfig || {});
+  });
+
+  after(function () {
+    config.setConfig(originalConfig || {});
+  });
+
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
