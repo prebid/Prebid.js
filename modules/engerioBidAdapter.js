@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, generateUUID, logWarn, mergeDeep } from '../src/utils.js';
+import { deepAccess, generateUUID, logInfo, logWarn, mergeDeep } from '../src/utils.js';
 
 const BIDDER_CODE = 'engerio';
 const ENDPOINT_URL = 'https://api.engerio.sk/api/v1/adserver/prebid/auction/';
@@ -28,6 +29,27 @@ const TTL = 300; // seconds a cached bid is valid
  */
 function getAdUnitCode(bid) {
   return bid.params?.adUnitCode || bid.adUnitCode;
+}
+
+/**
+ * Whether this page will actually report viewability for our bids.
+ *
+ * Both modules are publisher-side opt-ins that must be in the Prebid.js build *and* enabled
+ * via setConfig, and both expose their own enabled state for exactly this purpose. Engerio
+ * uses the answer to tell "measured, not viewed" apart from "never measured" — without it,
+ * every publisher who has not switched a module on would report 0% viewability rather than
+ * no data.
+ *
+ * `bidViewability` needs GAM/GPT; `bidViewabilityIO` uses IntersectionObserver and needs no
+ * ad server. Either is enough.
+ *
+ * @returns {boolean}
+ */
+function isViewabilityMeasured() {
+  return (
+    config.getConfig('bidViewability')?.enabled === true ||
+    config.getConfig('bidViewabilityIO')?.enabled === true
+  );
 }
 
 /**
@@ -77,17 +99,27 @@ export const spec = {
   buildRequests(validBidRequests, bidderRequest) {
     const imps = validBidRequests.map(bid => {
       const adUnitCode = getAdUnitCode(bid);
-      const imp = {
+      // Ad-unit-level first-party data first, so our own fields below win any collision.
+      // Page- and user-level FPD already reaches the backend through the `ortb2` merge lower
+      // down; this is the per-ad-unit half (`adUnit.ortb2Imp`), which Prebid keeps on each
+      // bid request and which that merge does not see. Same order the canonical ortbConverter
+      // uses (libraries/ortbConverter/processors/default.js).
+      const imp = mergeDeep({}, bid.ortb2Imp || {}, {
         id: bid.bidId,
         ext: {
           adUnitCode,
+          viewabilityMeasured: isViewabilityMeasured(),
         },
-      };
+      });
 
       const bannerMediaType = deepAccess(bid, 'mediaTypes.banner');
       if (bannerMediaType) {
         const sizes = bannerMediaType.sizes || [];
+        // `mediaTypes.banner.sizes` is authoritative over anything ortb2Imp carried: Prebid
+        // has already reconciled the two onto it (`src/prebid.ts` syncs mediaTypes with
+        // ortb2Imp), and it is the list the publisher's ad unit actually auctions.
         imp.banner = {
+          ...(imp.banner || {}),
           format: sizes.map(([w, h]) => ({ w, h })),
         };
         if (sizes.length > 0) {
@@ -157,6 +189,13 @@ export const spec = {
     const body = serverResponse.body;
 
     if (!body || !Array.isArray(body.seatbid) || body.seatbid.length === 0) {
+      // Not an error: an empty seatbid is a normal no-bid. Engerio explains why in `nbr` (an
+      // OpenRTB no-bid reason code) and `ext.nobid`, which is there to make our own testing
+      // and debugging cheaper — surfaced here so whoever is checking a slot sees it in the
+      // console instead of needing server log access.
+      if (body?.nbr || body?.ext?.nobid) {
+        logInfo(`${BIDDER_CODE}: no bid`, body.ext?.nobid || body.nbr);
+      }
       return bids;
     }
 
@@ -164,7 +203,12 @@ export const spec = {
 
     body.seatbid.forEach(seatbid => {
       (seatbid.bid || []).forEach(bid => {
-        if (!bid.adm || bid.price <= 0) return;
+        // A bid we cannot render is a response-shape problem worth surfacing, unlike the
+        // no-bid above — it means the two ends disagree about what a valid bid looks like.
+        if (!bid.adm || bid.price <= 0) {
+          logWarn(`${BIDDER_CODE}: discarding a bid with no markup or a non-positive price`, bid);
+          return;
+        }
 
         const prebidBid = {
           requestId: bid.impid,
@@ -180,6 +224,17 @@ export const spec = {
 
         if (bid.nurl) {
           prebidBid.nurl = bid.nurl;
+        }
+
+        // Viewability, by two independent routes that fail independently. `vurl` is fired by
+        // our own onBidViewable below; `eventtrackers` is fired by Prebid itself
+        // (libraries/bidViewabilityPixels) and works even where our handler does not run.
+        // Both hit the same idempotent endpoint, so a double fire is harmless.
+        if (bid.vurl) {
+          prebidBid.vurl = bid.vurl;
+        }
+        if (Array.isArray(bid.eventtrackers) && bid.eventtrackers.length > 0) {
+          prebidBid.eventtrackers = bid.eventtrackers;
         }
 
         if (bid.adomain && bid.adomain.length > 0) {
@@ -202,6 +257,22 @@ export const spec = {
   onBidWon(bid) {
     if (bid.nurl) {
       ajax(bid.nurl, null, undefined, { method: 'GET', keepalive: true });
+    }
+  },
+
+  /**
+   * Fires the viewability notice when Prebid.js declares the bid viewable.
+   *
+   * Dispatched by `bidViewability` (GAM Active View) or `bidViewabilityIO` (IntersectionObserver
+   * at the IAB threshold — 50% of pixels for one continuous second, 30% above 242,000px²).
+   * Neither is present unless the publisher included and enabled it, which is why
+   * `isViewabilityMeasured` reports that state on the way in.
+   *
+   * @param {Bid} bid
+   */
+  onBidViewable(bid) {
+    if (bid.vurl) {
+      ajax(bid.vurl, null, undefined, { method: 'GET', keepalive: true });
     }
   },
 };
