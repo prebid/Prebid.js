@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prebid Best Practices"
+  short_description: "Audit GPID, consent modules, and floors via DevTools MCP"
+  default_prompt: "Use $prebid-best-practices to audit this Prebid.js page for GPID, relevant consent modules, and active bid floors."

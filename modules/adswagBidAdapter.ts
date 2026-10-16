@@ -53,8 +53,8 @@ export interface AdswagBidParams {
   /** Static floor (EUR), used only when the floors module isn't configured. */
   bidFloor?: number;
   /**
-   * Adswag bid endpoint URL (in-repo/self-distributed builds; the upstream
-   * variant hardcodes the production endpoint — see resolveEndpoint).
+   * Adswag bid endpoint override, for Adswag-operated test/staging hosts.
+   * Honored only for hosts on the `adswag.ai` domain — see resolveEndpoint.
    */
   endpoint?: string;
   /** Overrides for mediaTypes.video ad-unit params. */
@@ -68,7 +68,7 @@ export interface AdswagConfig {
   /**
    * Adswag bid endpoint URL, applied to every Adswag ad unit on the page
    * (a per-bid `params.endpoint` wins over it). Honored only for hosts on
-   * the `adswag.ai` domain in the upstream build — see resolveEndpoint.
+   * the `adswag.ai` domain — see resolveEndpoint.
    */
   endpoint?: string;
 }
@@ -403,28 +403,15 @@ function buildAudio(audio) {
   return out;
 }
 
-// DEFAULT_ENDPOINT differs between the two distributions of this module:
-//   - self-distributed (authoritative source): null — no dev-host fallback,
-//     an unconfigured adapter fails open to a no-bid rather than silently
-//     phoning home to a host the publisher never opted into.
-//   - upstream prebid/Prebid.js artifact: the production endpoint constant.
-//     Publishers installing from the Prebid download page opt into the
-//     Adswag production host by including the adapter (Prebid convention),
-//     and Module Rules require a working default. The endpoint is frozen.
-// The Adswag release tooling swaps exactly the marked line below; both
-// variants share every other line of this file.
-// UPSTREAM-ENDPOINT (do not edit this marker; the export script matches it)
-const DEFAULT_ENDPOINT: string | null = "https://bid.adswag.ai/prebid/bid";
+// Production endpoint. Publishers opt into the Adswag host by including the
+// adapter, and Module Rules require a working default.
+const DEFAULT_ENDPOINT = "https://bid.adswag.ai/prebid/bid";
 
 // isPermittedEndpoint enforces the review-checklist rule that endpoint
-// domains cannot be fully variable: in the upstream distribution (which has
-// a built-in default) an override is honored only for Adswag-operated hosts
-// (our dev/staging test integrations); anything else is ignored and the
-// request goes to the production endpoint. The self-distributed in-repo
-// build has no default to protect — the endpoint is always an explicit,
-// deliberate configuration — so any host is accepted there.
+// domains cannot be fully variable: an override is honored only for
+// Adswag-operated hosts (dev/staging test integrations); anything else is
+// ignored and the request goes to the production endpoint.
 function isPermittedEndpoint(url: string): boolean {
-  if (DEFAULT_ENDPOINT === null) return true;
   try {
     const host = new URL(url).hostname;
     return host === "adswag.ai" || host.endsWith(".adswag.ai");
@@ -435,9 +422,8 @@ function isPermittedEndpoint(url: string): boolean {
 
 // resolveEndpoint: per-bid params.endpoint, then global config
 // (config.setConfig({ adswag: { endpoint } })), then DEFAULT_ENDPOINT —
-// overrides subject to isPermittedEndpoint. Returns null when nothing is
-// configured — callers treat that as a no-bid.
-function resolveEndpoint(bid): string | null {
+// overrides subject to isPermittedEndpoint.
+function resolveEndpoint(bid): string {
   const paramEndpoint = deepAccess(bid, "params.endpoint");
   if (isNonEmptyStr(paramEndpoint) && isPermittedEndpoint(paramEndpoint)) {
     return paramEndpoint;
@@ -951,25 +937,11 @@ interface BidGroup {
 // multi-publisher property, or a site handing sections to different sellers),
 // and folding them into one request would attribute — and pay out — every
 // impression under whichever account happened to come first.
-//
-// A bid whose endpoint does not resolve is dropped from the batch on its own;
-// sibling groups still bid (publisher-side fail-open is per ad unit, never
-// "one misconfigured unit silences the page").
 function groupBids(bids): BidGroup[] {
   const groups: BidGroup[] = [];
   const byKey = new Map<string, BidGroup>();
   for (const bid of bids) {
-    // No dev-default fallback (publisher-side fail-open: an unconfigured
-    // adapter must no-bid, never silently phone home to a hard-coded host
-    // the publisher never opted into).
     const endpoint = resolveEndpoint(bid);
-    if (!isNonEmptyStr(endpoint)) {
-      logWarn(
-        "adswag: no endpoint configured (params.endpoint or adswag.endpoint), no-bid for",
-        bid && bid.adUnitCode,
-      );
-      continue;
-    }
     const publisherId = deepAccess(bid, "params.publisherId");
     const key = `${endpoint}\u0000${publisherId}`;
     let group = byKey.get(key);
