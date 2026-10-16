@@ -8,7 +8,34 @@ Maintainer: prebid@silvermob.com
 
 # Description
 
-Module that connects to SilverMob platform
+Module that connects to the SilverMob platform. Supports banner, video and native ad units,
+user syncing (iframe or pixel), GDPR / USP / GPP consent forwarding and price floors.
+
+# Bid Params
+
+| Name       | Scope    | Description                                        | Example  | Type     |
+|------------|----------|----------------------------------------------------|----------|----------|
+| `zoneid`   | required | Placement id                                       | `'3011'` | `string` |
+| `host`     | optional | Data center: `us` (default), `eu`, `ru` or `apac`  | `'eu'`   | `string` |
+| `bidfloor` | optional | Floor price in `currency`, used when no floor module value | `0.5` | `number` |
+| `currency` | optional | Request currency, `USD` by default                 | `'EUR'`  | `string` |
+
+Ad units on different zones (or data centers) are sent as separate requests.
+
+# User Sync
+
+The adapter registers one sync per data center used in the auction. Enable iframe syncs to let
+SilverMob sync with its demand partners in one hop:
+
+```
+pbjs.setConfig({
+  userSync: {
+    filterSettings: {
+      iframe: { bidders: ['silvermob'], filter: 'include' }
+    }
+  }
+});
+```
 
 # Test Parameters
 ```
