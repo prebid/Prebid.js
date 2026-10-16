@@ -303,6 +303,18 @@ describe('video.js', function () {
       expect(valid).to.equal(true);
     });
 
+    it('validates vastXml-only bids when the ad unit opts out of caching', function () {
+      utilsMock.expects('logWarn').never();
+      utilsMock.expects('logError').never();
+      const adUnits = [{
+        adUnitId: 'au',
+        mediaTypes: { video: { context: 'instream', cache: false } },
+      }];
+
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(true);
+    });
+
     it('validates valid outstream bids', function () {
       const bid = {
         adUnitId: 'au',
