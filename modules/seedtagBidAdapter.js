@@ -395,6 +395,9 @@ export const spec = {
       method: 'POST',
       url: SEEDTAG_SSP_ENDPOINT,
       data: payloadString,
+      options: {
+        contentType: 'application/json',
+      },
     };
   },
 

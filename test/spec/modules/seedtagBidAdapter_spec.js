@@ -253,6 +253,11 @@ describe('Seedtag Adapter', function () {
       expect(request.url).to.equal('https://s.seedtag.com/c/hb/bid');
     });
 
+    it('should declare the payload as JSON', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.options.contentType).to.equal('application/json');
+    });
+
     it('Common data request should be correct', function () {
       const now = Date.now();
       const request = spec.buildRequests(validBidRequests, bidderRequest);
