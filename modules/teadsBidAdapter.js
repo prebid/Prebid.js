@@ -22,7 +22,6 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 
-const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
 const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -85,8 +84,7 @@ export const spec = {
       timeout: bidderRequest?.timeout,
       eids: getUserIdAsEids(validBidRequests),
       ...getSharedViewerIdParameters(validBidRequests),
-      outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
-      ...getFirstPartyTeadsIdParameter(validBidRequests)
+      outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY)
     };
 
     const firstBidRequest = validBidRequests[0];
@@ -339,29 +337,6 @@ function concatSizes(bid) {
 
 function _validateId(id) {
   return (parseInt(id) > 0);
-}
-
-/**
- * Get the first-party cookie Teads ID parameter to be sent in bid request.
- * @param validBidRequests an array of bids
- * @returns `{} | {firstPartyCookieTeadsId: string}`
- */
-function getFirstPartyTeadsIdParameter(validBidRequests) {
-  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userIdAsEids?.find(eid => eid.source === 'teads.com')?.uids?.[0].id;
-
-  if (firstPartyTeadsIdFromUserIdModule) {
-    return { firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule };
-  }
-
-  if (storage.cookiesAreEnabled(null)) {
-    const firstPartyTeadsIdFromCookie = storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null);
-
-    if (firstPartyTeadsIdFromCookie) {
-      return { firstPartyCookieTeadsId: firstPartyTeadsIdFromCookie };
-    }
-  }
-
-  return {};
 }
 
 registerBidder(spec);
