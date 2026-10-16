@@ -27,15 +27,25 @@ const GVLID: number | undefined = undefined; // TODO: Register with IAB Global V
  * Bid params accepted by the Advergic adapter (`bids[].params`).
  */
 export type AdvergicBidParams = {
-  // Advergic account identifier (required)
+  /**
+   * Advergic account identifier (required).
+   */
   accountId: string;
-  // Optional endpoint identifier; used as `imp.tagid`, falls back to the ad unit code
+  /**
+   * Optional endpoint identifier; used as `imp.tagid`, falls back to the ad unit code.
+   */
   endpointId?: string;
-  // Optional publisher identifier; used as `site.publisher.id`
+  /**
+   * Optional publisher identifier; overrides `publisher.id` in the active site, app, or DOOH context.
+   */
   publisherId?: string;
-  // Banner position (OpenRTB `banner.pos`). Defaults to 0
+  /**
+   * Banner position (OpenRTB `banner.pos`). Defaults to 0.
+   */
   position?: number;
-  // Arbitrary custom data forwarded in `imp.ext.advergic.custom`
+  /**
+   * Arbitrary custom data forwarded in `imp.ext.advergic.custom`.
+   */
   custom?: Record<string, unknown>;
 };
 declare module '../src/adapters/bidderFactory.js' {
@@ -43,9 +53,13 @@ declare module '../src/adapters/bidderFactory.js' {
     [BIDDER_CODE]: AdvergicBidParams;
   }
 }
-// Publisher-level configuration read via `pbjs.setConfig({ advergic: {...} })`
+/**
+ * Publisher-level configuration read via `pbjs.setConfig({ advergic: {...} })`.
+ */
 export type AdvergicConfig = {
-  // When true, disables optional win/timeout/error analytics requests
+  /**
+   * When true, disables optional win/timeout/error analytics requests.
+   */
   disableEventTracking?: boolean;
 };
 declare module '../src/config.js' {
@@ -57,6 +71,8 @@ declare module '../src/config.js' {
 /*                             Internal type helpers                          */
 /* -------------------------------------------------------------------------- */
 type FirstPartyData = {
+  /** Preserve every publisher/core-provided root-level ORTB2 field. */
+  [key: string]: any;
   site: Record<string, any>;
   user: Record<string, any>;
   device: Record<string, any>;
@@ -131,7 +147,6 @@ type AdvergicBidResponse = {
   advergicOriginalCpm?: number;
   advergicOriginalCurrency?: string;
   advergicAdId?: string;
-  adId?: string;
 };
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
@@ -182,16 +197,15 @@ function getCoppa(bidderRequest: any): number {
 /**
  * Read normalized ORTB2 data provided by Prebid core.
  * @param bidderRequest Prebid's bidder request
- * @returns Site, user, device, regulatory, and source data
+ * @returns All ORTB2 fields, with commonly used nested sections normalized
  */
 function getFirstPartyData(bidderRequest: any): FirstPartyData {
   const ortb2 = asRecord(bidderRequest?.ortb2);
-
   return {
-    // Preserve every root-level ORTB2 field.
+    // Keep the complete ORTB2 object, including root-level fields such as
+    // bcat, badv, bapp, wlang, and any future publisher/core extensions.
     ...ortb2,
-
-    // Normalize commonly used nested sections.
+    // Normalize the commonly consumed nested sections for safe adapter access.
     site: asRecord(ortb2.site),
     user: asRecord(ortb2.user),
     device: asRecord(ortb2.device),
@@ -226,7 +240,7 @@ function replaceBidMacros(url: string, bid: any): string {
     .replace(/\$\{AUCTION_ID\}/g, String(auctionId))
     .replace(/\$\{AUCTION_BID_ID\}/g, String(originalBid.id ?? bid.bidId ?? ''))
     .replace(/\$\{AUCTION_IMP_ID\}/g, String(originalBid.impid ?? bid.impId ?? bid.requestId ?? ''))
-    .replace(/\$\{AUCTION_AD_ID\}/g, String(originalBid.adid ?? bid.advergicAdId ?? bid.adId ?? ''));
+    .replace(/\$\{AUCTION_AD_ID\}/g, String(originalBid.adid ?? bid.advergicAdId ?? ''));
 }
 /* -------------------------------------------------------------------------- */
 /*                                Bidder spec                                 */
@@ -347,7 +361,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     const ortbRegsExt = asRecord(ortbRegs.ext);
     const ortbSource = fpd.source;
     const ortbSourceExt = asRecord(ortbSource.ext);
-    const sitePublisher = asRecord(fpd.site.publisher);
+    const publisherId = (validBidRequests[0]?.params as AdvergicBidParams | undefined)?.publisherId;
 
     const ortbRequest: Record<string, any> = {
       // Start with all request-level ORTB2 fields so bcat, badv, bapp, wlang,
@@ -357,13 +371,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       at: 1,
       tmax: bidderRequest.timeout,
       cur: ['USD'],
-      site: {
-        ...fpd.site,
-        publisher: {
-          ...sitePublisher,
-          id: (validBidRequests[0]?.params as AdvergicBidParams | undefined)?.publisherId || sitePublisher.id || ''
-        }
-      },
       // Device signals are taken from Prebid's normalized ORTB2 object only.
       device: { ...fpd.device },
       // Do not create a separate adapter-specific user identifier.
@@ -393,6 +400,30 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         }
       }
     };
+
+    // OpenRTB allows only one client context. Mirror Prebid core's priority:
+    // DOOH, then app, then site. Do not synthesize a site for app/DOOH traffic.
+    const activeClientSection = ['dooh', 'app', 'site'].find((section) =>
+      Object.keys(asRecord(ortb2[section])).length > 0
+    );
+    (['site', 'app', 'dooh'] as const).forEach((section) => {
+      if (section !== activeClientSection) {
+        delete ortbRequest[section];
+      }
+    });
+
+    // Apply the adapter's optional publisher ID only within the active client
+    // context, without adding a conflicting Site object to app/DOOH requests.
+    if (activeClientSection && publisherId) {
+      const activeClient = asRecord(ortbRequest[activeClientSection]);
+      ortbRequest[activeClientSection] = {
+        ...activeClient,
+        publisher: {
+          ...asRecord(activeClient.publisher),
+          id: publisherId
+        }
+      };
+    }
 
     // Add GDPR consent without discarding other publisher-provided user.ext fields.
     if (bidderRequest.gdprConsent) {
@@ -485,8 +516,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           advergicAuctionId: outboundAuctionId,
           advergicOriginalCpm: bid.price,
           advergicOriginalCurrency: response.cur || 'USD',
+          // Keep the server creative ID separate from Prebid's core-generated adId.
           advergicAdId: bid.adid || '',
-          adId: bid.adid || '',
           width: bid.w,
           height: bid.h,
           creativeId: bid.crid || bid.id,
@@ -602,8 +633,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         }
       });
     }
-    // Fallback to default sync endpoint if no URLs in response
-    // This triggers PBS cookie sync to establish \_advid cookie
+    // If no server-provided sync URL was accepted, use the documented Advergic
+    // setuid fallback to establish or refresh the _advid identifier.
     if (syncs.length === 0) {
       if (syncOptions.iframeEnabled) {
         syncs.push({
@@ -617,6 +648,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         });
       }
     }
+
     return syncs;
   },
   onBidBillable(bid) {
@@ -637,13 +669,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @param bid The bid that won the auction
    */
   onBidWon: function (bid) {
-    if (isEventTrackingDisabled()) { return; }
+    if (isEventTrackingDisabled()) return;
     // Send win notification to Advergic for analytics
     const b = bid as any;
     const winData = {
       requestId: b.requestId,
       auctionId: b.auctionId,
-      adId: b.adId,
+      adId: b.advergicAdId,
       bidId: b.bidId, // Backend's BidID for tracking
       impId: b.impId, // Impression ID
       campaignId: b.campaignId, // Campaign ID

@@ -263,6 +263,44 @@ describe('Advergic adapter', () => {
       expect(request.data.ext.advergic.integration_type).to.equal('prebid');
     });
 
+    it('should preserve app context without synthesizing a conflicting site object', () => {
+      const bidderRequest = clone(BASE_BIDDER_REQUEST);
+      delete bidderRequest.ortb2.site;
+      bidderRequest.ortb2.app = {
+        id: 'app-123',
+        name: 'Example App',
+        publisher: { id: 'original-app-publisher' },
+        ext: { appField: 'preserved' }
+      };
+
+      const request = buildRequest(BASE_BID, bidderRequest);
+
+      expect(request.data.app.id).to.equal('app-123');
+      expect(request.data.app.publisher.id).to.equal('publisher-456');
+      expect(request.data.app.ext.appField).to.equal('preserved');
+      expect(request.data.site).to.be.undefined;
+      expect(request.data.dooh).to.be.undefined;
+    });
+
+    it('should preserve DOOH context without synthesizing a conflicting site object', () => {
+      const bidderRequest = clone(BASE_BIDDER_REQUEST);
+      delete bidderRequest.ortb2.site;
+      bidderRequest.ortb2.dooh = {
+        id: 'screen-123',
+        domain: 'screens.example',
+        publisher: { id: 'original-dooh-publisher' },
+        ext: { doohField: 'preserved' }
+      };
+
+      const request = buildRequest(BASE_BID, bidderRequest);
+
+      expect(request.data.dooh.id).to.equal('screen-123');
+      expect(request.data.dooh.publisher.id).to.equal('publisher-456');
+      expect(request.data.dooh.ext.doohField).to.equal('preserved');
+      expect(request.data.site).to.be.undefined;
+      expect(request.data.app).to.be.undefined;
+    });
+
     it('should preserve banner restrictions from ortb2Imp.banner and mediaTypes.banner', () => {
       const bid = clone(BASE_BID);
       bid.ortb2Imp = {
@@ -462,7 +500,7 @@ describe('Advergic adapter', () => {
       expect(bid.meta.secondaryCatIds).to.deep.equal(['IAB12-1']);
     });
 
-    it('should use the server-provided expiry and retain the server ad ID', () => {
+    it('should use the server-provided expiry and keep its ad ID separate from Prebid adId', () => {
       const response = {
         body: {
           cur: 'USD',
@@ -482,7 +520,7 @@ describe('Advergic adapter', () => {
       const [bid] = spec.interpretResponse(response, request);
 
       expect(bid.ttl).to.equal(3600);
-      expect(bid.adId).to.equal('server-ad-123');
+      expect(bid).to.not.have.property('adId');
       expect(bid.advergicAdId).to.equal('server-ad-123');
     });
 
@@ -702,20 +740,42 @@ describe('Advergic adapter', () => {
       expect(syncs).to.deep.equal([]);
     });
 
-    it('should use the iframe fallback endpoint when no server sync is available', () => {
-      const [sync] = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
-      expect(sync).to.deep.equal({
+    it('should use the documented iframe setuid fallback when no server sync URL is accepted', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
+
+      expect(syncs).to.deep.equal([{
         type: 'iframe',
         url: 'https://pbs.avads.live/id/setuid?bidder=advergic&f=i'
-      });
+      }]);
     });
 
-    it('should use the image fallback endpoint when iframe sync is disabled', () => {
-      const [sync] = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, []);
-      expect(sync).to.deep.equal({
+    it('should use the documented image setuid fallback when iframe sync is disabled', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, []);
+
+      expect(syncs).to.deep.equal([{
         type: 'image',
         url: 'https://pbs.avads.live/id/setuid?bidder=advergic&f=b'
-      });
+      }]);
+    });
+
+    it('should append privacy parameters to the fallback setuid URL', () => {
+      const [sync] = spec.getUserSyncs(
+        { iframeEnabled: true, pixelEnabled: true },
+        [],
+        { gdprApplies: true, consentString: 'CONSENT' },
+        '1YNN',
+        { gppString: 'GPP', applicableSections: [2, 6] }
+      );
+
+      const parsedUrl = new URL(sync.url);
+      expect(parsedUrl.origin + parsedUrl.pathname).to.equal('https://pbs.avads.live/id/setuid');
+      expect(parsedUrl.searchParams.get('bidder')).to.equal('advergic');
+      expect(parsedUrl.searchParams.get('f')).to.equal('i');
+      expect(parsedUrl.searchParams.get('gdpr')).to.equal('1');
+      expect(parsedUrl.searchParams.get('gdpr_consent')).to.equal('CONSENT');
+      expect(parsedUrl.searchParams.get('us_privacy')).to.equal('1YNN');
+      expect(parsedUrl.searchParams.get('gpp')).to.equal('GPP');
+      expect(parsedUrl.searchParams.get('gpp_sid')).to.equal('2,6');
     });
 
     it('should return no sync when both sync types are disabled', () => {
@@ -733,7 +793,8 @@ describe('Advergic adapter', () => {
       spec.onBidWon({
         requestId: 'bid-001',
         auctionId: 'auction-001',
-        adId: 'ad-001',
+        adId: 'prebid-generated-ad-id',
+        advergicAdId: 'server-ad-001',
         bidId: 'server-bid-1',
         impId: 'bid-001',
         campaignId: 'campaign-1',
@@ -758,6 +819,7 @@ describe('Advergic adapter', () => {
       const body = JSON.parse(winRequests[0].fetch.requestBody);
       expect(body).to.include({
         requestId: 'bid-001',
+        adId: 'server-ad-001',
         bidId: 'server-bid-1',
         campaignId: 'campaign-1'
       });
