@@ -53,3 +53,4 @@ describe('topics', () => {
       expectWarning();
     });
   });
+});
