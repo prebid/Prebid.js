@@ -8,45 +8,50 @@ Maintainer: prebid@adswag.ai
 
 # Description
 
-Module that connects a Prebid.js auction to the Adswag bid endpoint — directly
-integrated European (EU-hosted, TCF vendor 1417) supply. Supports **banner**,
+Connects a Prebid.js auction to the Adswag bid endpoint: directly integrated
+European supply, hosted in the EU, IAB TCF vendor 1417. Supports **banner**,
 **video** (instream, and outstream with a bundled renderer) and **audio**
 (`mediaTypes.audio`, or `ortb2Imp.audio` on a video-typed unit), including
-mixed-format ad units.
-
-TCF and GPP consent strings are forwarded to the endpoint; consentless
-traffic is served contextually (no identifier is read, written, or
-forwarded). The adapter is fail-open in every path: any error degrades to a
-clean no-bid and never blocks the page or the auction.
+mixed-format ad units. TCF and GPP consent strings are forwarded. Bids are
+in EUR.
 
 # Bid Parameters
 
 | Name          | Scope    | Type   | Description                                                                                   | Example               |
 |---------------|----------|--------|-----------------------------------------------------------------------------------------------|-----------------------|
-| `publisherId` | required | String | Adswag publisher id (issued at onboarding). Resolves the canonical publisher at the edge.     | `"pub-nl-news-1"`     |
-| `placementId` | optional | String | Explicit placement override. Omit to let Adswag discover the placement from GPID/adUnitCode.  | `"plc-homepage-mrec"` |
-| `bidFloor`    | optional | Number | Static floor (EUR) used only when the Prebid Price Floors module is not configured.           | `0.50`                |
-| `video`       | optional | Object | Overrides for `mediaTypes.video` ad-unit params (Prebid video-params convention).             | `{ maxduration: 15 }` |
-| `endpoint`    | optional | String | Endpoint override for Adswag-operated test/staging environments — see the constraint below.  | `"https://bid.dev.adswag.ai/prebid/bid"` |
+| `publisherId` | required | String | Your Adswag publisher id.                                                                     | `"pub-nl-news-1"`     |
+| `placementId` | optional | String | Names the placement. Omit it and the placement is discovered from GPID or the ad unit code.   | `"plc-homepage-mrec"` |
+| `bidFloor`    | optional | Number | Floor in EUR, used when the Prebid Price Floors module is not configured.                     | `0.50`                |
+| `video`       | optional | Object | Overrides for `mediaTypes.video` params.                                                      | `{ maxduration: 15 }` |
+| `kv`          | optional | Object | Key/values for this ad unit, sent as `imp.ext.data`. Values are strings, numbers, or arrays of those. | `{ section: "sport" }` |
+| `endpoint`    | optional | String | Endpoint override for Adswag test environments. Honored for `adswag.ai` hosts only.          | `"https://bid.dev.adswag.ai/prebid/bid"` |
 
-Placement identity is publisher-id-only by design: supply the standardized
-GPID (`ortb2Imp.ext.gpid`) or rely on the `adUnitCode`, and Adswag discovers
-and curates the placement. Hand-maintained placement ids are not required.
+Set a GPID (`ortb2Imp.ext.gpid`) on your ad units where you can. It names
+the placement reliably across ad unit renames.
 
-The `endpoint` override (per-bid `params.endpoint`, or globally via
-`pbjs.setConfig({ adswag: { endpoint } })`) exists for Adswag-operated
-test/staging environments only. It is honored **only** for hosts on the
-`adswag.ai` domain (`adswag.ai` or `*.adswag.ai`); any other host is ignored
-and the request goes to the built-in production endpoint. Publishers never
-need to set it.
+# Key/values
+
+Send first-party data the standard Prebid way and the adapter forwards it:
+
+- **Page and content:** `ortb2.site.ext.data` and `ortb2.site.content.data[]`.
+- **Ad unit:** `ortb2Imp.ext.data`, or the `kv` bid param. Both are sent as
+  `imp.ext.data`, 32 keys max; `kv` wins when a key is in both.
+- **User:** `ortb2.user.data[]` and `ortb2.user.ext.data`, forwarded with
+  identity consent, like eids.
+
+Declare each key in your Adswag account before you send it.
+
+# Endpoint override
+
+`params.endpoint`, or `pbjs.setConfig({ adswag: { endpoint } })`, points
+the adapter at an Adswag test environment. It is honored for hosts on the
+`adswag.ai` domain only; other hosts fall back to the production endpoint.
 
 # Test Parameters
 
-The `prebid-test` publisher is a permanent test identity: its placements
-consistently return test creatives (banner 300x250, 20s instream video,
-30s audio). Test bids are returned in **EUR** like all Adswag bids; no
-currency configuration is needed to receive them (include the Prebid
-currency module if your ad-server currency is not EUR).
+The `prebid-test` publisher always returns test creatives: a 300x250
+banner, a 20 s instream video and a 30 s audio spot. Test bids are in
+EUR.
 
 ```javascript
 var adUnits = [
@@ -111,17 +116,15 @@ var adUnits = [
 
 # Outstream Video
 
-Ad units declaring `mediaTypes.video.context: "outstream"` get an Adswag
-renderer attached to the winning bid automatically — no configuration, and
-nothing is downloaded unless an Adswag outstream bid actually wins. The
-renderer script is served from `player.adswag.ai`; it plays the returned VAST
-in the ad unit's div, starts muted with a click-to-unmute control, and
-collapses the slot when the ad completes, errors, or no ad is available.
+Ad units with `mediaTypes.video.context: "outstream"` get the Adswag
+renderer attached to the winning bid. It loads from `player.adswag.ai` when
+an Adswag bid wins, plays the returned VAST in the ad unit's div, starts
+muted with a click-to-unmute control, and collapses the slot when the ad
+ends.
 
-To use your own player instead, supply a renderer on the ad unit
-(`renderer: { url, render }`) or on `mediaTypes.video.renderer` as usual —
-the adapter then attaches nothing. A publisher renderer marked
-`backupOnly: true` keeps the Adswag renderer, per Prebid convention.
+To use your own player, set a `renderer` on the ad unit or on
+`mediaTypes.video.renderer`. A renderer marked `backupOnly: true` keeps the
+Adswag renderer.
 
 ```javascript
 {
@@ -148,10 +151,9 @@ the adapter then attaches nothing. A publisher renderer marked
 
 # User Syncs
 
-User syncs are registered via `getUserSyncs` only (one iframe or image sync
-per auction, on `ev.adswag.ai`), honoring the publisher `userSync`
-configuration and GDPR/GPP/USP consent. No sync is registered for
-consentless traffic. Enable iframe syncing for improved match rates:
+The adapter registers one iframe or image sync per auction on
+`ev.adswag.ai`, following your `userSync` configuration and consent. Enable
+iframe syncing for better match rates:
 
 ```javascript
 pbjs.setConfig({
@@ -168,11 +170,8 @@ pbjs.setConfig({
 
 # GDPR / TCF
 
-Adswag is IAB Europe GVL vendor **1417** (`gvlid: 1417` is declared in the
-adapter). Ensure your CMP includes vendor 1417; when GDPR applies without
-vendor-1417 consent, traffic is served contextually. With consent, the
-adapter forwards eids from Prebid userId modules and maintains an Adswag
+Adswag is IAB Europe GVL vendor **1417**; add it to your CMP. With consent,
+the adapter forwards eids from Prebid userId modules and keeps an Adswag
 first-party id (`adswag_uuid`, eid source `adswag.ai`) through Prebid's
-StorageManager — respecting `deviceAccess` and TCF purpose-1 enforcement.
-Storage use is declared in the IAB GVL device-storage disclosure for
-vendor 1417.
+StorageManager, respecting `deviceAccess` and TCF Purpose 1. Without
+consent, traffic is served contextually.
