@@ -1,6 +1,6 @@
 'use strict';
 
-import { logWarn } from '../src/utils.js';
+import { logWarn, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -8,12 +8,8 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {object} RoockmobileParams
- * @property {string} mid Roockmobile channel identifier.
- * @property {string} token Roockmobile authentication token.
- * @property {string} tagid Roockmobile placement identifier.
- * @property {number} [test] Set to 1 to send the OpenRTB test flag.
- * @property {string} [domain] Overrides the HTTPS origin under a Roockmobile-controlled domain; request paths remain fixed.
+ * @typedef {import('./roockmobileBidAdapter.d.ts').RoockmobileBidderParams} RoockmobileBidderParams
+ * @typedef {BidRequest & { params: RoockmobileBidderParams }} RoockmobileBidRequest
  */
 
 const BIDDER_CODE = 'roockmobile';
@@ -46,9 +42,9 @@ const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     // nurl is an OpenRTB win-notice URL, not a VAST document URL. When adm contains
     // VAST XML, do not expose nurl as vastUrl to an instream player.
+    if (bid.nurl) bidResponse.nurl = bid.nurl;
     if (context.mediaType === VIDEO && bid.adm) {
       delete bidResponse.vastUrl;
-      bidResponse.nurl = bid.nurl;
     }
     return bidResponse;
   }
@@ -58,14 +54,15 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  /** @param {BidRequest} bid */
+  /** @param {RoockmobileBidRequest} bid */
   isBidRequestValid(bid) {
     const params = bid.params || {};
-    const valid = ['mid', 'token', 'tagid'].every(param => typeof params[param] === 'string' && params[param].trim() !== '');
+    const valid = [params.mid, params.token, params.tagid].every(value => typeof value === 'string' && value.trim() !== '');
     if (!valid) logWarn(LOG_PREFIX, 'The mid, token, and tagid parameters are required.');
     return valid;
   },
 
+  /** @param {RoockmobileBidRequest[]} validBidRequests */
   buildRequests(validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
@@ -86,7 +83,7 @@ export const spec = {
   },
 
   onBidWon(bid) {
-    if (bid.nurl) ajax(bid.nurl, undefined, undefined, { method: 'GET', keepalive: true });
+    if (bid.nurl) ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm), undefined, undefined, { method: 'GET', keepalive: true });
   },
 
   getUserSyncs(syncOptions, serverResponses = []) {

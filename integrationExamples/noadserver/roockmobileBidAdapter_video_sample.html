@@ -86,6 +86,7 @@
             return;
           }
           window.currentVideoBid = bid;
+          pbjs.markWinningBidAsUsed({ adId: bid.adId, events: true });
           status.textContent = `Video bid received: ${bid.cpm} ${bid.currency}; VAST ${bid.vastXml ? 'XML' : 'URL'} returned.`;
           vast.textContent = bid.vastXml || bid.vastUrl || '';
           if (bid.vastXml) {

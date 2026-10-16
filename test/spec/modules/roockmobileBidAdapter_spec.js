@@ -91,109 +91,115 @@ describe('Roockmobile bid adapter', () => {
     expect(bids[0]).to.include({ requestId: 'bid-id', cpm: 1.25, width: 300, height: 250, creativeId: 'creative' });
   });
 
-  it('builds an OpenRTB video impression and reads a VAST response', () => {
-    const videoBid = {
-      ...bid,
-      mediaTypes: { video: { mimes: ['video/mp4'], playerSize: [[640, 360]], minduration: 5, maxduration: 30, protocols: [2, 3] } }
-    };
-    const request = spec.buildRequests([videoBid], bidderRequest)[0];
-    const payload = request.data;
-    expect(payload.imp[0].video).to.deep.include({ w: 640, h: 360, minduration: 5, maxduration: 30 });
-    const bids = spec.interpretResponse({
-      body: { seatbid: [{ bid: [{ impid: 'bid-id', price: 1, w: 640, h: 360, crid: 'video', adm: '<VAST />', nurl: 'https://win.example.test' }] }] }
-    }, request);
-    expect(bids[0]).to.include({ mediaType: 'video', vastXml: '<VAST />', nurl: 'https://win.example.test' });
-    expect(bids[0].vastUrl).to.equal(undefined);
-  });
+  if (FEATURES.VIDEO) {
+    it('builds an OpenRTB video impression and reads a VAST response', () => {
+      const videoBid = {
+        ...bid,
+        mediaTypes: { video: { mimes: ['video/mp4'], playerSize: [[640, 360]], minduration: 5, maxduration: 30, protocols: [2, 3] } }
+      };
+      const request = spec.buildRequests([videoBid], bidderRequest)[0];
+      const payload = request.data;
+      expect(payload.imp[0].video).to.deep.include({ w: 640, h: 360, minduration: 5, maxduration: 30 });
+      const bids = spec.interpretResponse({
+        body: { seatbid: [{ bid: [{ impid: 'bid-id', price: 1, w: 640, h: 360, crid: 'video', adm: '<VAST />', nurl: 'https://win.example.test' }] }] }
+      }, request);
+      expect(bids[0]).to.include({ mediaType: 'video', vastXml: '<VAST />', nurl: 'https://win.example.test' });
+      expect(bids[0].vastUrl).to.equal(undefined);
+    });
+  }
 
-  it('calls the OpenRTB win-notice URL when the bid wins', () => {
-    const nurl = 'https://win.example.test/notice';
-    spec.onBidWon({ nurl });
-    const winRequests = server.requests.filter(request => request.url === nurl);
+  it('calls the OpenRTB win-notice URL with its auction price macro resolved', () => {
+    const nurl = 'https://win.example.test/notice?price=${AUCTION_PRICE}';
+    const resolvedNurl = 'https://win.example.test/notice?price=1.25';
+    spec.onBidWon({ nurl, originalCpm: 1.25, cpm: 2 });
+    const winRequests = server.requests.filter(request => request.url === resolvedNurl);
     expect(winRequests).to.have.length(1);
     expect(winRequests[0].method).to.equal('GET');
     expect(winRequests[0].fetch.request.keepalive).to.equal(true);
   });
 
-  it('builds and interprets an OpenRTB native request', () => {
-    const nativeBid = {
-      ...bid,
-      mediaTypes: { native: { title: { required: true } } },
-      nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] }
-    };
-    const request = spec.buildRequests([nativeBid], bidderRequest)[0];
-    expect(JSON.parse(request.data.imp[0].native.request).assets[0].title.len).to.equal(80);
-    const bids = spec.interpretResponse({
-      body: {
-        seatbid: [{
-          bid: [{
-            impid: 'bid-id',
-            price: 1,
-            w: 300,
-            h: 250,
-            crid: 'native',
-            adm: JSON.stringify({
-              assets: [
-                { id: 1, title: { text: 'Native title' } },
-                { id: 2, img: { url: 'https://cdn.example.test/native.jpg', w: 300, h: 250 } },
-                { id: 3, data: { value: 'Sponsored' } }
-              ],
-              link: { url: 'https://advertiser.example.test', clicktrackers: ['https://click.example.test'] },
-              imptrackers: ['https://impression.example.test']
-            })
+  if (FEATURES.NATIVE) {
+    it('builds and interprets an OpenRTB native request', () => {
+      const nativeBid = {
+        ...bid,
+        mediaTypes: { native: { title: { required: true } } },
+        nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] }
+      };
+      const request = spec.buildRequests([nativeBid], bidderRequest)[0];
+      expect(JSON.parse(request.data.imp[0].native.request).assets[0].title.len).to.equal(80);
+      const bids = spec.interpretResponse({
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-id',
+              price: 1,
+              w: 300,
+              h: 250,
+              crid: 'native',
+              nurl: 'https://win.example.test/native',
+              adm: JSON.stringify({
+                assets: [
+                  { id: 1, title: { text: 'Native title' } },
+                  { id: 2, img: { url: 'https://cdn.example.test/native.jpg', w: 300, h: 250 } },
+                  { id: 3, data: { value: 'Sponsored' } }
+                ],
+                link: { url: 'https://advertiser.example.test', clicktrackers: ['https://click.example.test'] },
+                imptrackers: ['https://impression.example.test']
+              })
+            }]
           }]
-        }]
-      }
-    }, request);
-    expect(bids[0]).to.include({ mediaType: 'native' });
-    expect(bids[0].native.ortb).to.deep.include({
-      link: { url: 'https://advertiser.example.test', clicktrackers: ['https://click.example.test'] },
-      imptrackers: ['https://impression.example.test']
+        }
+      }, request);
+      expect(bids[0]).to.include({ mediaType: 'native', nurl: 'https://win.example.test/native' });
+      expect(bids[0].native.ortb).to.deep.include({
+        link: { url: 'https://advertiser.example.test', clicktrackers: ['https://click.example.test'] },
+        imptrackers: ['https://impression.example.test']
+      });
+      expect(bids[0].native.ortb.assets).to.deep.equal([
+        { id: 1, title: { text: 'Native title' } },
+        { id: 2, img: { url: 'https://cdn.example.test/native.jpg', w: 300, h: 250 } },
+        { id: 3, data: { value: 'Sponsored' } }
+      ]);
     });
-    expect(bids[0].native.ortb.assets).to.deep.equal([
-      { id: 1, title: { text: 'Native title' } },
-      { id: 2, img: { url: 'https://cdn.example.test/native.jpg', w: 300, h: 250 } },
-      { id: 3, data: { value: 'Sponsored' } }
-    ]);
-  });
 
-  it('uses response markup to identify the winning format on a multiformat impression', () => {
-    const multiformatBid = {
-      ...bid,
-      mediaTypes: {
-        banner: { sizes: [[300, 250]] },
-        native: { title: { required: true } }
-      },
-      nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, title: { len: 80 } }] }
-    };
-    const request = spec.buildRequests([multiformatBid], bidderRequest)[0];
-    const bids = spec.interpretResponse({
-      body: {
-        seatbid: [{
-          bid: [{
-            impid: 'bid-id',
-            price: 1,
-            crid: 'native',
-            adm: '{"assets":[{"id":1,"title":{"text":"Native title"}}]}'
+    it('uses response markup to identify the winning format on a multiformat impression', () => {
+      const multiformatBid = {
+        ...bid,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          native: { title: { required: true } }
+        },
+        nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, title: { len: 80 } }] }
+      };
+      const request = spec.buildRequests([multiformatBid], bidderRequest)[0];
+      const bids = spec.interpretResponse({
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-id',
+              price: 1,
+              crid: 'native',
+              adm: '{"assets":[{"id":1,"title":{"text":"Native title"}}]}'
+            }]
           }]
-        }]
-      }
-    }, request);
-    expect(bids[0].mediaType).to.equal('native');
+        }
+      }, request);
+      expect(bids[0].mediaType).to.equal('native');
 
-    const bannerBids = spec.interpretResponse({
-      body: {
-        seatbid: [{
-          bid: [{
-            impid: 'bid-id',
-            price: 1,
-            crid: 'banner',
-            adm: '<div>Banner</div>',
-            ext: { mtype: 'banner' }
+      const bannerBids = spec.interpretResponse({
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-id',
+              price: 1,
+              crid: 'banner',
+              adm: '<div>Banner</div>',
+              ext: { mtype: 'banner' }
+            }]
           }]
-        }]
-      }
-    }, request);
-    expect(bannerBids[0].mediaType).to.equal('banner');
-  });
+        }
+      }, request);
+      expect(bannerBids[0].mediaType).to.equal('banner');
+    });
+  }
 });
