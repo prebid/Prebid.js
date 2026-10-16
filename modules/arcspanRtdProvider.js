@@ -25,9 +25,9 @@ function init(config, userConsent) {
   if (typeof window.arcobj2 === 'undefined') {
     var scriptUrl;
     if (config.params.silo === 'test') {
-      scriptUrl = 'https://localhost:8080/as.js';
+      scriptUrl = 'https://localhost:8080/l.js';
     } else {
-      scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
+      scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/l.js';
     }
     loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME);
   }

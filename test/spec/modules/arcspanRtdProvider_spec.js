@@ -12,7 +12,7 @@ describe('arcspanRtdProvider', function () {
     it('successfully initializes with a valid silo ID', function () {
       expect(arcspanSubmodule.init(getGoodConfig())).to.equal(true);
       expect(loadExternalScriptStub.called).to.be.ok;
-      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://silo13.p7cloud.net/as.js');
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://silo13.p7cloud.net/l.js');
       loadExternalScriptStub.resetHistory();
     });
 
@@ -25,7 +25,7 @@ describe('arcspanRtdProvider', function () {
     it('drops localhost script for test silo', function () {
       expect(arcspanSubmodule.init(getTestConfig())).to.equal(true);
       expect(loadExternalScriptStub.called).to.be.ok;
-      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://localhost:8080/as.js');
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://localhost:8080/l.js');
       loadExternalScriptStub.resetHistory();
     });
   });
