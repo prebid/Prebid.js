@@ -42,6 +42,7 @@ const BASE_BIDDER_REQUEST = {
     site: {
       domain: 'example.com',
       page: 'https://example.com/page',
+      ref: 'https://referrer.example/',
       publisher: { id: 'ortb-publisher' }
     },
     user: {
@@ -203,9 +204,12 @@ describe('Advergic adapter', () => {
       expect(request.data.site.domain).to.equal('example.com');
       expect(request.data.site.page).to.equal('https://example.com/page');
       expect(request.data.site.ref).to.equal('https://referrer.example/');
-      expect(request.data.site.ext.metadata).to.be.an('object');
+      // The adapter must not scrape DOM metadata; only publisher/core FPD is forwarded.
+      expect(request.data.site.ext).to.be.undefined;
+      expect(request.data.device.ua).to.be.undefined;
 
       expect(request.data.user.ext.data).to.deep.equal({ segment: ['one', 'two'] });
+      expect(request.data.user.id).to.be.undefined; // No adapter-generated persistent identifier.
       expect(request.data.device.language).to.equal('en');
       expect(request.data.source.tid).to.equal('source-tid');
       expect(request.data.source.ext.foo).to.equal('source-ext');
@@ -213,24 +217,78 @@ describe('Advergic adapter', () => {
       expect(request.data.regs.ext.custom_reg).to.equal(1);
     });
 
-    it('should prefer Prebid refererInfo while retaining ORTB2 site fallbacks', () => {
+    it('should use publisher/core ORTB2 site data without scraping or overriding it from the DOM', () => {
       const bidderRequest = clone(BASE_BIDDER_REQUEST);
       bidderRequest.refererInfo = {
-        page: 'https://preferred.example/article',
-        ref: 'https://preferred.example/ref',
-        domain: 'preferred.example'
+        page: 'https://referer-info.example/article',
+        ref: 'https://referer-info.example/ref',
+        domain: 'referer-info.example'
       };
       bidderRequest.ortb2.site = {
-        domain: 'fallback.example',
-        page: 'https://fallback.example/article',
-        ref: 'https://fallback.example/ref'
+        domain: 'fpd.example',
+        page: 'https://fpd.example/article',
+        ref: 'https://fpd.example/ref',
+        ext: { publisherField: 'preserved' }
       };
 
       const request = buildRequest(BASE_BID, bidderRequest);
 
-      expect(request.data.site.domain).to.equal('preferred.example');
-      expect(request.data.site.page).to.equal('https://preferred.example/article');
-      expect(request.data.site.ref).to.equal('https://preferred.example/ref');
+      expect(request.data.site.domain).to.equal('fpd.example');
+      expect(request.data.site.page).to.equal('https://fpd.example/article');
+      expect(request.data.site.ref).to.equal('https://fpd.example/ref');
+      expect(request.data.site.ext.publisherField).to.equal('preserved');
+      expect(request.data.site.ext.metadata).to.be.undefined;
+    });
+
+    it('should preserve all root-level ORTB2 fields, including publisher exclusions', () => {
+      const bidderRequest = clone(BASE_BIDDER_REQUEST);
+      bidderRequest.ortb2.bcat = ['IAB1-1', 'IAB2-3'];
+      bidderRequest.ortb2.badv = ['blocked-advertiser.example'];
+      bidderRequest.ortb2.bapp = ['blocked-app'];
+      bidderRequest.ortb2.wlang = ['en', 'fr'];
+      bidderRequest.ortb2.ext = {
+        publisherField: { enabled: true },
+        advergic: { publisherFlag: 'keep-me' }
+      };
+
+      const request = buildRequest(BASE_BID, bidderRequest);
+
+      expect(request.data.bcat).to.deep.equal(['IAB1-1', 'IAB2-3']);
+      expect(request.data.badv).to.deep.equal(['blocked-advertiser.example']);
+      expect(request.data.bapp).to.deep.equal(['blocked-app']);
+      expect(request.data.wlang).to.deep.equal(['en', 'fr']);
+      expect(request.data.ext.publisherField).to.deep.equal({ enabled: true });
+      expect(request.data.ext.advergic.publisherFlag).to.equal('keep-me');
+      expect(request.data.ext.advergic.adapter_version).to.be.a('string');
+      expect(request.data.ext.advergic.integration_type).to.equal('prebid');
+    });
+
+    it('should preserve banner restrictions from ortb2Imp.banner and mediaTypes.banner', () => {
+      const bid = clone(BASE_BID);
+      bid.ortb2Imp = {
+        banner: {
+          battr: [1, 3],
+          mimes: ['image/png'],
+          w: 320,
+          h: 50
+        }
+      };
+      bid.mediaTypes.banner.btype = [2];
+      bid.mediaTypes.banner.api = [3];
+      bid.mediaTypes.banner.topframe = 1;
+
+      const request = buildRequest(bid);
+      const banner = request.data.imp[0].banner;
+
+      // Explicit ORTB2 impression fields take precedence over normalized fields.
+      expect(banner.battr).to.deep.equal([1, 3]);
+      expect(banner.mimes).to.deep.equal(['image/png']);
+      // Missing restriction fields are filled from mediaTypes.banner.
+      expect(banner.btype).to.deep.equal([2]);
+      expect(banner.api).to.deep.equal([3]);
+      expect(banner.topframe).to.equal(1);
+      expect(banner.w).to.equal(320);
+      expect(banner.h).to.equal(50);
     });
 
     it('should preserve an explicit ORTB2 device dnt value', () => {
@@ -402,6 +460,30 @@ describe('Advergic adapter', () => {
       expect(bid.meta.brandName).to.equal('Brand');
       expect(bid.meta.primaryCatId).to.equal('IAB12');
       expect(bid.meta.secondaryCatIds).to.deep.equal(['IAB12-1']);
+    });
+
+    it('should use the server-provided expiry and retain the server ad ID', () => {
+      const response = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'server-bid-expiring',
+              impid: 'bid-001',
+              price: 0.75,
+              adid: 'server-ad-123',
+              exp: 3600,
+              adm: '<div>Ad</div>'
+            }]
+          }]
+        }
+      };
+
+      const [bid] = spec.interpretResponse(response, request);
+
+      expect(bid.ttl).to.equal(3600);
+      expect(bid.adId).to.equal('server-ad-123');
+      expect(bid.advergicAdId).to.equal('server-ad-123');
     });
 
     it('should expose DSA transparency data when returned', () => {
@@ -588,6 +670,38 @@ describe('Advergic adapter', () => {
       expect(parsedUrl.searchParams.get('gdpr')).to.equal('1');
       expect(parsedUrl.searchParams.get('gdpr_consent')).to.equal('CONSENT');
     });
+    it('should suppress user syncs when the COPPA argument is true', () => {
+      const serverResponses = [{
+        body: {
+          ext: {
+            sync: { iframe: ['https://sync.example/iframe'] }
+          }
+        }
+      }];
+
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true, pixelEnabled: true },
+        serverResponses,
+        undefined,
+        undefined,
+        undefined,
+        true
+      );
+
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should suppress fallback user syncs when the COPPA config is enabled', () => {
+      config.setConfig({ coppa: true });
+
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true, pixelEnabled: true },
+        []
+      );
+
+      expect(syncs).to.deep.equal([]);
+    });
+
     it('should use the iframe fallback endpoint when no server sync is available', () => {
       const [sync] = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
       expect(sync).to.deep.equal({
@@ -639,6 +753,7 @@ describe('Advergic adapter', () => {
 
       expect(winRequests).to.have.length(1);
       expect(winRequests[0].method).to.equal('POST');
+      expect(winRequests[0].fetch.request.keepalive).to.equal(true);
 
       const body = JSON.parse(winRequests[0].fetch.requestBody);
       expect(body).to.include({
@@ -656,106 +771,66 @@ describe('Advergic adapter', () => {
       expect(request.data.regs.coppa).to.equal(1);
     });
 
-    it('should fire burl separately from optional analytics tracking', () => {
-      const imageUrls = [];
-      const imageStub = sinon.stub(window, 'Image').callsFake(function() {
-        const image = {};
+    it('should send burl with original OpenRTB macro values using keepalive AJAX', () => {
+      const request = buildRequest();
+      const response = {
+        body: {
+          id: 'response-id',
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'server-bid-1',
+              impid: 'bid-001',
+              price: 2.5,
+              adid: 'server-ad-1',
+              adm: '<div>Ad</div>',
+              burl: 'https://tracking.example/bill?price=${AUCTION_PRICE}&currency=${AUCTION_CURRENCY}&auction=${AUCTION_ID}&bid=${AUCTION_BID_ID}&imp=${AUCTION_IMP_ID}&ad=${AUCTION_AD_ID}'
+            }]
+          }]
+        }
+      };
+      const [bid] = spec.interpretResponse(response, request);
 
-        Object.defineProperty(image, 'src', {
-          configurable: true,
-          get() {
-            return imageUrls[imageUrls.length - 1];
-          },
-          set(url) {
-            imageUrls.push(url);
-          }
-        });
+      spec.onBidBillable(bid);
 
-        return image;
-      });
+      const billingRequests = server.requests.filter(
+        (req) => req.url.startsWith('https://tracking.example/bill?')
+      );
 
-      try {
-        const bid = {
-          requestId: 'bid-001',
-          auctionId: 'auction-001',
-          adId: 'ad-001',
-          cpm: 2,
-          currency: 'USD',
-          creativeId: 'creative-1',
-          width: 300,
-          height: 250,
-          burl: 'https://tracking.example/win?price=${AUCTION_PRICE}'
-        };
-
-        // Billing notification is handled separately from onBidWon.
-        spec.onBidBillable(bid);
-
-        expect(imageUrls).to.deep.equal([
-          'https://tracking.example/win?price=2'
-        ]);
-
-        spec.onBidWon(bid);
-
-        const winRequests = server.requests.filter(
-          (req) => req.url === 'https://pbs.avads.live/rtb/win'
-        );
-
-        expect(winRequests).to.have.length(1);
-      } finally {
-        imageStub.restore();
-      }
+      expect(billingRequests).to.have.length(1);
+      expect(billingRequests[0].method).to.equal('GET');
+      expect(billingRequests[0].url).to.equal(
+        'https://tracking.example/bill?price=2.5&currency=USD&auction=bidder-request-001&bid=server-bid-1&imp=bid-001&ad=server-ad-1'
+      );
+      expect(billingRequests[0].fetch.request.keepalive).to.equal(true);
     });
 
-    it('should disable optional event tracking without disabling burl', () => {
-      const imageUrls = [];
-      const imageStub = sinon.stub(window, 'Image').callsFake(function() {
-        const image = {};
-
-        Object.defineProperty(image, 'src', {
-          configurable: true,
-          get() {
-            return imageUrls[imageUrls.length - 1];
-          },
-          set(url) {
-            imageUrls.push(url);
-          }
-        });
-        return image;
+    it('should disable optional analytics without disabling burl', () => {
+      config.setConfig({
+        advergic: {
+          disableEventTracking: true
+        }
       });
 
-      try {
-        config.setConfig({
-          advergic: {
-            disableEventTracking: true
-          }
-        });
+      const bid = {
+        requestId: 'bid-001',
+        cpm: 2,
+        currency: 'USD',
+        creativeId: 'creative-1',
+        burl: 'https://tracking.example/bill?price=${AUCTION_PRICE}'
+      };
 
-        const bid = {
-          requestId: 'bid-001',
-          cpm: 2,
-          currency: 'USD',
-          creativeId: 'creative-1',
-          burl: 'https://tracking.example/win?price=${AUCTION_PRICE}'
-        };
+      // Billing notices remain independent from optional analytics.
+      spec.onBidBillable(bid);
+      expect(server.requests.filter(
+        (req) => req.url === 'https://tracking.example/bill?price=2'
+      )).to.have.length(1);
 
-        // burl must still fire even when optional event tracking is disabled.
-        spec.onBidBillable(bid);
-
-        expect(imageUrls).to.deep.equal([
-          'https://tracking.example/win?price=2'
-        ]);
-
-        // Optional win analytics must be disabled.
-        spec.onBidWon(bid);
-
-        const winRequests = server.requests.filter(
-          (req) => req.url === 'https://pbs.avads.live/rtb/win'
-        );
-
-        expect(winRequests).to.have.length(0);
-      } finally {
-        imageStub.restore();
-      }
+      // Optional win analytics must be disabled.
+      spec.onBidWon(bid);
+      expect(server.requests.filter(
+        (req) => req.url === 'https://pbs.avads.live/rtb/win'
+      )).to.have.length(0);
     });
 
     it('should send timeout analytics to the existing endpoint', () => {
@@ -773,6 +848,7 @@ describe('Advergic adapter', () => {
 
       expect(timeoutRequests).to.have.length(1);
       expect(timeoutRequests[0].method).to.equal('POST');
+      expect(timeoutRequests[0].fetch.request.keepalive).to.equal(true);
 
       const body = JSON.parse(timeoutRequests[0].fetch.requestBody);
       expect(body).to.deep.equal([{
@@ -799,6 +875,7 @@ describe('Advergic adapter', () => {
 
       expect(errorRequests).to.have.length(1);
       expect(errorRequests[0].method).to.equal('POST');
+      expect(errorRequests[0].fetch.request.keepalive).to.equal(true);
 
       const body = JSON.parse(errorRequests[0].fetch.requestBody);
       expect(body).to.deep.include({

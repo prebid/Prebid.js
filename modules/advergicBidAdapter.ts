@@ -186,7 +186,12 @@ function getCoppa(bidderRequest: any): number {
  */
 function getFirstPartyData(bidderRequest: any): FirstPartyData {
   const ortb2 = asRecord(bidderRequest?.ortb2);
+
   return {
+    // Preserve every root-level ORTB2 field.
+    ...ortb2,
+
+    // Normalize commonly used nested sections.
     site: asRecord(ortb2.site),
     user: asRecord(ortb2.user),
     device: asRecord(ortb2.device),
@@ -605,8 +610,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           type: 'iframe',
           url: appendQueryParams(`${SYNC_URL}&f=i`)
         });
-      }
-      else if (syncOptions.pixelEnabled) {
+      } else if (syncOptions.pixelEnabled) {
         syncs.push({
           type: 'image',
           url: appendQueryParams(`${SYNC_URL}&f=b`)
@@ -633,8 +637,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @param bid The bid that won the auction
    */
   onBidWon: function (bid) {
-    if (isEventTrackingDisabled())
-      return;
+    if (isEventTrackingDisabled()) { return; }
     // Send win notification to Advergic for analytics
     const b = bid as any;
     const winData = {
@@ -665,8 +668,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @param timeoutData List of bids that timed out
    */
   onTimeout: function (timeoutData) {
-    if (isEventTrackingDisabled() || !timeoutData || timeoutData.length === 0)
-      return;
+    if (isEventTrackingDisabled() || !timeoutData || timeoutData.length === 0) { return; }
     const timeoutPayload = (timeoutData as any[]).map((bid: any) => ({
       bidId: bid.bidId,
       auctionId: bid.auctionId,
@@ -689,8 +691,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    */
   onBidderError: function ({ error, bidderRequest } = {} as any) {
     logError('Advergic: Bidder error', error);
-    if (isEventTrackingDisabled())
-      return;
+    if (isEventTrackingDisabled()) { return; }
     // Send error notification for monitoring
     const errorData = {
       error: (error as any)?.message || 'Unknown error',
