@@ -24,7 +24,7 @@ export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
 let waitForCmp = false;
 
-type BaseUSPConfig = {
+export type BaseUSPConfig = {
   /**
    * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
    * Default is 50.
@@ -42,7 +42,7 @@ type StaticUSPData = {
     uspString: USPConsentData;
   }
 };
-type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
+export type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
 
 declare module '../src/consentHandler' {
   interface ConsentManagementConfig {
@@ -157,6 +157,9 @@ function loadConsentData(cb?) {
   let isDone = false;
 
   function done(consentData, errMsg, ...extraArgs) {
+    if (isDone) {
+      return;
+    }
     if (timer != null) {
       clearTimeout(timer);
     }
