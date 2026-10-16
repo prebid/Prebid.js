@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roockmobile Prebid request demo</title>
+  <!-- Build first: npx gulp build --modules=roockmobileBidAdapter -->
+  <script async src="../../build/dist/prebid.js"></script>
+  <script>
+    const pbjs = window.pbjs = window.pbjs || {};
+    pbjs.que = pbjs.que || [];
+    const adUnitCode = 'roockmobile-banner';
+    const adUnits = [{
+      code: adUnitCode,
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      bids: [{
+        bidder: 'roockmobile',
+        params: {
+          mid: '2299',
+          token: 'd8b92f59d593c760edba95de3ee35e30',
+          tagid: '210091',
+          test: 1,
+          // domain: 'https://staging.rmcdnnode.com'
+        }
+      }]
+    }];
+
+    function requestBids() {
+      pbjs.requestBids({
+        adUnitCodes: [adUnitCode],
+        timeout: 2500,
+        bidsBackHandler() {
+          const bid = pbjs.getHighestCpmBids(adUnitCode)[0];
+          document.querySelector('#status').textContent = bid ? `Bid received: ${bid.cpm} ${bid.currency}` : 'Request sent. No bid was returned.';
+          if (bid) pbjs.renderAd(document.querySelector('#ad').contentWindow.document, bid.adId);
+        }
+      });
+    }
+
+    pbjs.que.push(() => {
+      pbjs.setConfig({
+        userSync: {
+          filterSettings: {
+            iframe: { bidders: ['roockmobile'], filter: 'include' }
+          }
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+      requestBids();
+    });
+  </script>
+</head>
+<body>
+  <h1>Roockmobile request demo</h1>
+  <p>This demo uses the Roockmobile review credentials and sends OpenRTB <code>test: 1</code> to request a guaranteed test creative. Inspect the Network panel for the POST request to <code>/pbjs</code>.</p>
+  <button onclick="requestBids()">Send bid request</button>
+  <p id="status">Waiting for Prebid.js…</p>
+  <iframe id="ad" title="Roockmobile ad" width="300" height="250" frameborder="0"></iframe>
+</body>
+</html>
