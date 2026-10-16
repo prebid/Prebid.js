@@ -1,12 +1,9 @@
 import {
-  getCachedTopics,
   getTopics,
   getTopicsData,
-  loadTopicsForBidders,
   processFpd,
   receiveMessage,
   reset,
-  storeInLocalStorage,
   topicStorageName
 } from '../../../modules/topicsFpdModule.js';
 import * as utils from '../../../src/utils.js';
