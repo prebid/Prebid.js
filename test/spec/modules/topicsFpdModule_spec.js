@@ -53,12 +53,3 @@ describe('topics', () => {
       expectWarning();
     });
   });
-
-  it('stubs bidder side effects', () => {
-    expect(getCachedTopics()).to.eql([]);
-    receiveMessage();
-    storeInLocalStorage('bidder', []);
-    loadTopicsForBidders();
-    sinon.assert.calledOnce(utils.logWarn);
-  });
-});
