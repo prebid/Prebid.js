@@ -29,6 +29,7 @@ const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN;
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
+const ADQUERY_EID_SOURCE = 'adquery.io';
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -288,25 +289,50 @@ export const spec = {
   }
 };
 
-function buildRequest(bid, bidderRequest, isVideo = false) {
-  let userId = null;
+// Orders candidates by: adquery.io first, then source, then id (plain code-unit comparison,
+// not localeCompare, so the result does not depend on the browser locale).
+function isBetterCandidate(candidate, best) {
+  if (!best) {
+    return true;
+  }
+  const candidateIsAdquery = candidate.source === ADQUERY_EID_SOURCE;
+  const bestIsAdquery = best.source === ADQUERY_EID_SOURCE;
+  if (candidateIsAdquery !== bestIsAdquery) {
+    return candidateIsAdquery;
+  }
+  if (candidate.source !== best.source) {
+    return candidate.source < best.source;
+  }
+  return candidate.id < best.id;
+}
 
-  const eids = bid.userIdAsEids;
-  if (Array.isArray(eids)) {
-    const adqueryEid = eids.find(eid => eid.source === 'adquery.io');
-    userId = adqueryEid?.uids?.[0]?.id;
+// Picks one uid across all EIDs and their uids deterministically, so the same set of EIDs
+// always yields the same user id regardless of module order or how same-source uids were merged.
+function getUserIdFromEids(bid) {
+  if (!Array.isArray(bid.userIdAsEids)) {
+    return '';
+  }
 
-    if (!userId) {
-      userId = eids[0]?.uids?.[0]?.id;
+  let best = null;
+  for (const eid of bid.userIdAsEids) {
+    if (typeof eid?.source !== 'string' || !Array.isArray(eid.uids)) {
+      continue;
+    }
+    for (const uid of eid.uids) {
+      if (!uid?.id) {
+        continue;
+      }
+      const candidate = { source: eid.source, id: String(uid.id) };
+      if (isBetterCandidate(candidate, best)) {
+        best = candidate;
+      }
     }
   }
+  return best ? best.id : '';
+}
 
-  if (!userId) {
-    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    const randomPart = randomValues.map(val => val.toString(36)).join('').substring(0, 26);
-    userId = `qd_${randomPart}`;
-    logMessage('generated onetime User ID: ', userId);
-  }
+function buildRequest(bid, bidderRequest, isVideo = false) {
+  const userId = getUserIdFromEids(bid);
 
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {
