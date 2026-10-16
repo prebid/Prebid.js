@@ -2,7 +2,6 @@ import {
   getTopics,
   getTopicsData,
   processFpd,
-  receiveMessage,
   reset,
   topicStorageName
 } from '../../../modules/topicsFpdModule.js';
