@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   createBuildRequestsFn,
@@ -25,9 +25,10 @@ export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.programmaticx.ai`;
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, null, storage, BIDDER_CODE, BIDDER_VERSION, false);
+const NATIVE_OPTIONS = { supportNative: true };
+const buildRequests = createBuildRequestsFn(createDomain, null, storage, BIDDER_CODE, BIDDER_VERSION, false, NATIVE_OPTIONS);
 
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false);
+const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false, NATIVE_OPTIONS);
 
 const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.programmaticx.ai/api/sync/iframe',
@@ -38,7 +39,7 @@ export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
