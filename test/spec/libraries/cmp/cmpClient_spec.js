@@ -1,6 +1,20 @@
-import { cmpClient, MODE_CALLBACK, MODE_RETURN } from '../../../../libraries/cmp/cmpClient.js';
+import { cmpClient, MODE_CALLBACK, MODE_RETURN, pollForCmp } from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
+  describe('pollForCmp', () => {
+    afterEach(() => delete window.__pollCmp);
+
+    it('resolves when a CMP appears during the polling window', async () => {
+      const result = pollForCmp({ apiName: '__pollCmp' }, 200);
+      setTimeout(() => { window.__pollCmp = sinon.stub(); }, 10);
+      expect(await result).to.have.property('isDirect', true);
+    });
+
+    it('resolves undefined after the polling window', async () => {
+      expect(await pollForCmp({ apiName: '__pollCmp' }, 0)).to.be.undefined;
+    });
+  });
+
   function mockWindow(props = {}) {
     let listeners = [];
     const win = {
