@@ -15,13 +15,17 @@ describe('Roockmobile bid adapter', () => {
     refererInfo: { page: 'https://example.test/page' }
   };
 
-  it('requires mid, token, and tagid', () => {
+  it('requires mid, token, and a tagid from params or ortb2Imp', () => {
     expect(spec.isBidRequestValid(bid)).to.equal(true);
-    ['mid', 'token', 'tagid'].forEach(param => {
+    ['mid', 'token'].forEach(param => {
       const invalidBid = { ...bid, params: { ...bid.params } };
       delete invalidBid.params[param];
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
+    const bidWithoutTagid = { ...bid, params: { ...bid.params } };
+    delete bidWithoutTagid.params.tagid;
+    expect(spec.isBidRequestValid(bidWithoutTagid)).to.equal(false);
+    expect(spec.isBidRequestValid({ ...bidWithoutTagid, ortb2Imp: { tagid: 'standard-placement' } })).to.equal(true);
   });
 
   it('sends mid and token in the URL and tagid in the impression', () => {
@@ -32,6 +36,13 @@ describe('Roockmobile bid adapter', () => {
     expect(payload.imp).to.have.length(1);
     expect(payload.imp[0]).to.include({ id: 'bid-id', tagid: 'placement-1', secure: 1 });
     expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 320, h: 50 }]);
+  });
+
+  it('preserves ortb2Imp.tagid unless params.tagid overrides it', () => {
+    const standardBid = { ...bid, params: { mid: '2294', token: 'token value' }, ortb2Imp: { tagid: 'standard-placement' } };
+    expect(spec.buildRequests([standardBid], bidderRequest)[0].data.imp[0].tagid).to.equal('standard-placement');
+    const overrideBid = { ...bid, ortb2Imp: { tagid: 'standard-placement' } };
+    expect(spec.buildRequests([overrideBid], bidderRequest)[0].data.imp[0].tagid).to.equal('placement-1');
   });
 
   it('sends the OpenRTB test flag only when requested', () => {

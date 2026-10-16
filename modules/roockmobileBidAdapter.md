@@ -20,7 +20,7 @@ The adapter supports multiformat ad units. Roockmobile responses may identify th
 | --- | --- | --- | --- |
 | `mid` | string | Yes | Roockmobile channel identifier assigned to the publisher; sent in the request URL. |
 | `token` | string | Yes | Roockmobile authentication token; sent in the request URL. |
-| `tagid` | string | Yes | Roockmobile placement identifier; sent in `imp[].tagid`. |
+| `tagid` | string | No | Overrides the standard placement identifier from `ortb2Imp.tagid`; sent in `imp[].tagid`. One of these locations must provide a value. |
 | `test` | number | No | Set to numeric `1` for testing and review. This sends OpenRTB root field `test: 1` so the test endpoint configuration returns a test creative. Do not enable it in production. |
 | `domain` | string | No | HTTPS origin override under a Roockmobile-controlled domain. The adapter always uses `/pbjs` for bids and `/usersync` for user sync. |
 

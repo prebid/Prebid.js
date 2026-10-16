@@ -27,7 +27,7 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    if (imp) imp.tagid = bidRequest.params.tagid;
+    if (imp && bidRequest.params.tagid) imp.tagid = bidRequest.params.tagid;
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -57,8 +57,10 @@ export const spec = {
   /** @param {RoockmobileBidRequest} bid */
   isBidRequestValid(bid) {
     const params = bid.params || {};
-    const valid = [params.mid, params.token, params.tagid].every(value => typeof value === 'string' && value.trim() !== '');
-    if (!valid) logWarn(LOG_PREFIX, 'The mid, token, and tagid parameters are required.');
+    const credentialsValid = [params.mid, params.token].every(value => typeof value === 'string' && value.trim() !== '');
+    const tagid = params.tagid || bid.ortb2Imp?.tagid;
+    const valid = credentialsValid && typeof tagid === 'string' && tagid.trim() !== '';
+    if (!valid) logWarn(LOG_PREFIX, 'The mid and token parameters and an impression tagid are required.');
     return valid;
   },
 
