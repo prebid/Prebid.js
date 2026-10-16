@@ -272,7 +272,73 @@ export const spec = {
           advertiserDomains: adData.adomain || []
         }
       };
-      const adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
+      // Allows our ad script to render into the surrounding page instead of
+      // staying inside the iframe (special ad formats). Publisher opt-out.
+      const breakoutParam = bidObj.params?.allowIframeBreakout;
+      const allowIframeBreakout = !(
+        breakoutParam === false ||
+        breakoutParam === 'false' ||
+        breakoutParam === 0 ||
+        breakoutParam === '0'
+      );
+
+      const scriptValue = value =>
+        JSON.stringify(value).replace(/</g, '\\u003c');
+
+      const renderScript =
+        '<script>(function(){' +
+        'var asm=window.asm_async_data;' +
+        'var id=' + scriptValue(bidObj.adspiritConId) + ';' +
+        'var markup=' + scriptValue(adData.adm) + ';' +
+        'var scriptUrl=' + scriptValue('//' + host + SCRIPT_URL) + ';' +
+
+        'function start(){' +
+        'var target=asm.doc.createElement("ins");' +
+        'target.id=id;' +
+
+        'var container=asm.inswrapper' +
+        '?asm.doc.getElementById(asm.inswrapper)' +
+        ':asm.doc.body;' +
+        'container.appendChild(target);' +
+
+        'function render(){' +
+        'var renderer=asm.win.asm_async_data;' +
+        'if(!renderer || renderer.doc!==target.ownerDocument){' +
+        'throw new Error("Ad renderer and target document do not match");' +
+        '}' +
+        'renderer.write(id,markup);' +
+        '}' +
+
+        'if(asm.win===window){' +
+        'render();' +
+        '}else{' +
+        'var parentAsm=asm.win.asm_async_data;' +
+        'if(parentAsm && parentAsm.doc===target.ownerDocument){' +
+        'render();' +
+        '}else{' +
+        'var loader=asm.doc.createElement("script");' +
+        'loader.src=scriptUrl;' +
+        'loader.onload=render;' +
+        'loader.onerror=function(){' +
+        'console.error("Could not load parent ad renderer");' +
+        '};' +
+        'container.appendChild(loader);' +
+        '}' +
+        '}' +
+        '}' +
+
+        'if(!asm.inswrapper && !asm.doc.body){' +
+        'asm.doc.addEventListener("DOMContentLoaded",start,{once:true});' +
+        '}else{' +
+        'start();' +
+        '}' +
+        '})();</script>';
+
+      const adm =
+        '<script>window.inDapIF=' + allowIframeBreakout + ';</script>' +
+        '<script src="//' + host + SCRIPT_URL + '"></script>' +
+        renderScript;
+
       bidResponse.ad = adm;
       bidResponse.mediaType = BANNER;
 
@@ -281,6 +347,7 @@ export const spec = {
 
     return bidResponses;
   },
+
   getBidderHost: function (bid) {
     if (bid.bidder === 'adspirit') {
       return utils.getBidIdParameter('host', bid.params);
