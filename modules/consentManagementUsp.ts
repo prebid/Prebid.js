@@ -10,7 +10,7 @@ import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';
 import { getHook } from '../src/hook.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
 import type { USPConsentData } from "../src/types/consent/usp.d.ts";
@@ -22,6 +22,7 @@ const USPAPI_VERSION = 1;
 export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
+let waitForCmp = false;
 
 type BaseUSPConfig = {
   /**
@@ -29,6 +30,11 @@ type BaseUSPConfig = {
    * Default is 50.
    */
   timeout?: number;
+  /**
+   * Wait for a CMP API that is not present when consent lookup begins.
+   * This supports non-compliant integrations that load the CMP stub late and defaults to false.
+   */
+  waitForCmp?: boolean;
 };
 
 type StaticUSPData = {
@@ -95,41 +101,49 @@ function lookupUspConsent({ onSuccess, onError }) {
     };
   }
 
-  const callbackHandler = handleUspApiResponseCallbacks();
-
-  const cmp = cmpClient({
+  const apiConfig = {
     apiName: '__uspapi',
     apiVersion: USPAPI_VERSION,
     apiArgs: ['command', 'version', 'callback'],
-  }) as any;
+  };
+
+  function subscribe(cmp) {
+    const callbackHandler = handleUspApiResponseCallbacks();
+    if (cmp.isDirect) {
+      logInfo('Detected USP CMP is directly accessible, calling it now...');
+    } else {
+      logInfo(
+        'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
+      );
+    }
+
+    cmp({
+      command: 'getUSPData',
+      callback: callbackHandler.consentDataCallback
+    });
+
+    if (!deletionRequestRegistered) {
+      deletionRequestRegistered = true;
+      cmp({
+        command: 'registerDeletion',
+        callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
+      }).catch(e => {
+        deletionRequestRegistered = false;
+        logError('Error invoking CMP `registerDeletion`:', e);
+      });
+    }
+  }
+
+  const cmp = cmpClient(apiConfig) as any;
 
   if (!cmp) {
+    if (waitForCmp) {
+      pollForCmp(apiConfig, consentTimeout).then(cmp => cmp ? subscribe(cmp) : onError('USP CMP not found.'));
+      return;
+    }
     return onError('USP CMP not found.');
   }
-
-  if (cmp.isDirect) {
-    logInfo('Detected USP CMP is directly accessible, calling it now...');
-  } else {
-    logInfo(
-      'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
-    );
-  }
-
-  cmp({
-    command: 'getUSPData',
-    callback: callbackHandler.consentDataCallback
-  });
-
-  if (!deletionRequestRegistered) {
-    deletionRequestRegistered = true;
-    cmp({
-      command: 'registerDeletion',
-      callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
-    }).catch(e => {
-      deletionRequestRegistered = false;
-      logError('Error invoking CMP `registerDeletion`:', e);
-    });
-  }
+  subscribe(cmp);
 }
 
 /**
@@ -236,6 +250,7 @@ export function resetConsentData() {
   consentTimeout = undefined;
   uspDataHandler.reset();
   enabled = false;
+  waitForCmp = false;
 }
 
 /**
@@ -260,6 +275,7 @@ export function setConsentConfig(config) {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
+  waitForCmp = config?.waitForCmp === true;
   if (consentAPI === 'static') {
     if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {
       if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };

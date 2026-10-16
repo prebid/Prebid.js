@@ -236,6 +236,37 @@ describe('consentManagement', function () {
       });
     });
 
+    describe('waitForCmp:', function () {
+      afterEach(function () {
+        config.resetConfig();
+        requestBids.removeAll();
+        delete window.__uspapi;
+        resetConsentData();
+      });
+
+      it('should wait for a late CMP only when configured', (done) => {
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 500, waitForCmp: true } });
+        setTimeout(() => {
+          window.__uspapi = (...args) => args[2]({ uspString: '1YYY' }, true);
+        }, 10);
+        requestBidsHook(() => {
+          expect(uspDataHandler.getConsentData()).to.equal('1YYY');
+          done();
+        }, {});
+      });
+
+      it('should not wait for a late CMP by default', (done) => {
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 20 } });
+        setTimeout(() => {
+          window.__uspapi = (...args) => args[2]({ uspString: '1YYY' }, true);
+        }, 10);
+        requestBidsHook(() => {
+          expect(uspDataHandler.getConsentData()).to.equal(null);
+          done();
+        }, {});
+      });
+    });
+
     describe('already known consentData:', function () {
       let uspStub = sinon.stub();
       let ifr = null;
