@@ -270,16 +270,18 @@ function createCreativeFrame(doc: Document, className: string, title: string): H
   return iframe;
 }
 
-function observeRemoval(element: Element, destroy: () => void): MutationObserver | null {
+function observeRemoval(element: Element, destroy: () => void, onReparent?: () => void): MutationObserver | null {
   if (typeof MutationObserver === 'undefined' || !element.parentNode) return null;
   let parents: Node[] = [];
   function observeParents() {
     const nextParents: Node[] = [];
     for (let parent = element.parentNode; parent; parent = parent.parentNode) nextParents.push(parent);
     if (nextParents.length === parents.length && nextParents.every((parent, index) => parent === parents[index])) return;
-    if (parents.length) observer.disconnect();
+    const reparented = parents.length > 0;
+    if (reparented) observer.disconnect();
     nextParents.forEach(parent => observer.observe(parent, { childList: true }));
     parents = nextParents;
+    if (reparented && onReparent) onReparent();
   }
   const observer = new MutationObserver(() => {
     if (!element.isConnected) {
@@ -600,10 +602,11 @@ function renderParallax(bid, sizes: ParallaxSizes) {
   destroyers.set(frame, destroy);
   try {
     iframe.srcdoc = unwrapCreativeHtml(creativeMarkup(bid));
-    cleanups.push(installParallaxSizing(frame, stage, sizes));
+    const sizing = installParallaxSizing(frame, stage, sizes);
+    cleanups.push(sizing.destroy);
     const removePointerGuard = installSafariPointerGuard(frame, iframe);
     if (removePointerGuard) cleanups.push(removePointerGuard);
-    const removalObserver = observeRemoval(frame, destroy);
+    const removalObserver = observeRemoval(frame, destroy, sizing.refresh);
     if (removalObserver) cleanups.push(() => removalObserver.disconnect());
   } catch (error) {
     destroy();
@@ -611,10 +614,65 @@ function renderParallax(bid, sizes: ParallaxSizes) {
   }
 }
 
-function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHeight, creativeHeight }: ParallaxSizes): () => void {
+function fitIntrinsicParallaxWidth(frame: HTMLElement, win: Window): boolean {
+  // Remove our previous contribution before measuring shrink-to-fit ancestors again.
+  frame.style.removeProperty('min-width');
+  const rect = frame.getClientRects()[0];
+  if (!rect || rect.width > 0) return false;
+  const viewportWidth = frame.ownerDocument.documentElement.clientWidth;
+  let width = viewportWidth;
+  let reserved = 0;
+  const limits: Array<{ element: HTMLElement, left: number, right: number }> = [];
+  const pixels = (value: string) => parseFloat(value) || 0;
+  for (let element = frame.parentElement; element; element = element.parentElement) {
+    const bounds = element.getClientRects()[0];
+    if (!bounds) continue;
+    const css = win.getComputedStyle(element);
+    const left = pixels(css.paddingLeft) + pixels(css.borderLeftWidth);
+    const right = pixels(css.paddingRight) + pixels(css.borderRightWidth);
+    const contentWidth = bounds.width - left - right;
+    if (contentWidth > reserved) {
+      width = Math.min(width, contentWidth - reserved);
+      limits.push({ element, left, right });
+    }
+    reserved += left + right + pixels(css.marginLeft) + pixels(css.marginRight);
+  }
+  // Measure native flex/grid/RTL positioning, including ancestors with only intrinsic padding.
+  function fitsWidth(value: number): boolean {
+    frame.style.minWidth = value + 'px';
+    const placed = frame.getClientRects()[0];
+    let left = 0;
+    let right = viewportWidth;
+    limits.forEach(limit => {
+      const bounds = limit.element.getClientRects()[0];
+      if (bounds) {
+        left = Math.max(left, bounds.left + limit.left);
+        right = Math.min(right, bounds.right - limit.right);
+      }
+    });
+    return placed.left >= left - 0.25 && placed.right <= right + 0.25;
+  }
+  if (!fitsWidth(width)) {
+    // Only offset layouts need this search; each measurement accounts for moving centered edges.
+    let lower = 0;
+    let upper = width;
+    while (upper - lower > 0.25) {
+      const candidate = (lower + upper) / 2;
+      if (fitsWidth(candidate)) lower = candidate;
+      else upper = candidate;
+    }
+    width = lower;
+  }
+  frame.style.minWidth = width + 'px';
+  return true;
+}
+
+function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHeight, creativeHeight }: ParallaxSizes): { refresh: () => void, destroy: () => void } {
   const win = frame.ownerDocument.defaultView || window;
-  const container = frame.parentElement.parentElement;
   let intrinsicWidth = false;
+  let destroyed = false;
+  let targets: HTMLElement[] = [];
+  let animationFrame: number | null = null;
   function computeHeight() {
     const dims = getWinDimensions();
     const viewport = dims.innerHeight || deepAccess(dims, 'document.documentElement.clientHeight') || 0;
@@ -623,47 +681,58 @@ function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHei
     return viewport > 0 ? Math.min(slotHeight, viewport) : slotHeight;
   }
   function applySize() {
+    if (destroyed) return;
     const height = computeHeight();
     if (height > 0) {
       frame.style.height = height + 'px';
       stage.style.height = height + 'px';
     }
-    // An auto-width inline-block slot has no intrinsic width from the out-of-flow iframe.
     const rect = frame.getClientRects()[0];
-    if (rect && (!rect.width || intrinsicWidth) && container) {
-      const bounds = container.getClientRects()[0];
-      if (bounds) {
-        const css = win.getComputedStyle(container);
-        const right = Math.min(frame.ownerDocument.documentElement.clientWidth,
-          bounds.right - parseFloat(css.paddingRight) - parseFloat(css.borderRightWidth));
-        const width = Math.max(0, right - rect.left) + 'px';
-        if (frame.style.minWidth !== width) frame.style.minWidth = width;
-        intrinsicWidth = true;
-      }
-    }
+    if (rect && (!rect.width || intrinsicWidth)) intrinsicWidth = fitIntrinsicParallaxWidth(frame, win);
   }
   function onViewportChange() {
     // Window dimensions are cached briefly; a viewport change must read the new height.
     resetWinDimensions();
     applySize();
   }
-  applySize();
-  const observer = typeof ResizeObserver === 'function' && container ? new ResizeObserver(applySize) : null;
-  if (observer) {
-    try {
-      observer.observe(container);
-    } catch (error) {
-      observer.disconnect();
-      throw error;
+  function scheduleSize() {
+    if (destroyed || animationFrame != null) return;
+    // Defer writes outside ResizeObserver delivery to avoid resize feedback-loop errors.
+    animationFrame = win.requestAnimationFrame(() => {
+      animationFrame = null;
+      applySize();
+    });
+  }
+  const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(scheduleSize) : null;
+  function refresh() {
+    if (destroyed) return;
+    const next: HTMLElement[] = [];
+    for (let element = frame; element; element = element.parentElement) next.push(element);
+    if (observer && (next.length !== targets.length || next.some((element, index) => element !== targets[index]))) {
+      if (targets.length) observer.disconnect();
+      next.forEach(element => observer.observe(element));
     }
+    targets = next;
+    applySize();
+  }
+  try {
+    refresh();
+  } catch (error) {
+    if (observer) observer.disconnect();
+    throw error;
   }
   win.addEventListener('resize', onViewportChange, { passive: true });
   win.addEventListener('orientationchange', onViewportChange, { passive: true });
-  return () => {
+  function destroy() {
+    if (destroyed) return;
+    destroyed = true;
     win.removeEventListener('resize', onViewportChange);
     win.removeEventListener('orientationchange', onViewportChange);
+    if (animationFrame != null) win.cancelAnimationFrame(animationFrame);
     if (observer) observer.disconnect();
-  };
+    targets = [];
+  }
+  return { refresh, destroy };
 }
 
 /**
@@ -675,8 +744,12 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
   const win = frame.ownerDocument.defaultView || window;
   const query = win.matchMedia && win.matchMedia('(pointer: fine) and (hover: hover)');
   if (!query || !query.matches) return null;
+  const doc = frame.ownerDocument;
   frame.classList.add('sp-pointer-guarded');
-  let animationFrame: number;
+  let animationFrame: number | null = null;
+  let observer: IntersectionObserver | null = null;
+  let visible = typeof IntersectionObserver !== 'function';
+  let destroyed = false;
   function alignCreative() {
     // Auction-cached rectangles become stale on scroll; read only this owned element's live rect.
     const rect = frame.getClientRects()[0];
@@ -686,14 +759,47 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
       if (iframe.style.left !== left) iframe.style.left = left;
       if (iframe.style.top !== top) iframe.style.top = top;
     }
-    // Layout shifts and slot reparenting need alignment even without a scroll/resize event.
-    animationFrame = win.requestAnimationFrame(alignCreative);
   }
-  alignCreative();
-  return () => {
-    win.cancelAnimationFrame(animationFrame);
+  function animate() {
+    animationFrame = null;
+    if (destroyed || !visible || doc.hidden) return;
+    alignCreative();
+    animationFrame = win.requestAnimationFrame(animate);
+  }
+  function syncVisibility() {
+    if (destroyed) return;
+    if (!visible || doc.hidden) {
+      if (animationFrame != null) win.cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    } else if (animationFrame == null) {
+      alignCreative();
+      animationFrame = win.requestAnimationFrame(animate);
+    }
+  }
+  function destroy() {
+    if (destroyed) return;
+    destroyed = true;
+    if (animationFrame != null) win.cancelAnimationFrame(animationFrame);
+    if (observer) observer.disconnect();
+    doc.removeEventListener('visibilitychange', syncVisibility);
     frame.classList.remove('sp-pointer-guarded');
     iframe.style.removeProperty('left');
     iframe.style.removeProperty('top');
-  };
+  }
+  try {
+    alignCreative();
+    if (typeof IntersectionObserver === 'function') {
+      observer = new IntersectionObserver(entries => {
+        visible = entries.some(entry => entry.target === frame && entry.isIntersecting);
+        syncVisibility();
+      }, { rootMargin: '100px 0px' });
+      observer.observe(frame);
+    }
+    doc.addEventListener('visibilitychange', syncVisibility);
+    syncVisibility();
+  } catch (error) {
+    destroy();
+    throw error;
+  }
+  return destroy;
 }

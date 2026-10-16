@@ -840,8 +840,7 @@ describe('splashBidAdapter', () => {
         expect(frame.getBoundingClientRect().width).to.equal(232);
         expect(slot.getBoundingClientRect().width).to.equal(232);
         root.style.width = '240px';
-        await new Promise(requestAnimationFrame);
-        await new Promise(requestAnimationFrame);
+        await settleLayout();
         expect(frame.getBoundingClientRect().width).to.equal(192);
         expect(slot.getBoundingClientRect().right).to.be.at.most(root.getBoundingClientRect().right - 24);
       });
@@ -857,6 +856,132 @@ describe('splashBidAdapter', () => {
         expect(frame.getBoundingClientRect().width).to.equal(192);
       });
 
+      async function settleLayout() {
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+      }
+
+      [
+        ['centered flex row', 'display:flex;justify-content:center', ''],
+        ['centered flex column', 'display:flex;flex-direction:column;align-items:center', ''],
+        ['centered grid', 'display:grid;justify-items:center', ''],
+        ['inline-block wrapper', '', 'display:inline-block'],
+        ['padded float', '', 'float:left;padding:10px'],
+        ['absolute left wrapper', 'position:relative;height:700px', 'position:absolute;left:30px'],
+        ['absolute right wrapper', 'position:relative;height:700px', 'position:absolute;right:30px'],
+        ['RTL inline-block wrapper', 'direction:rtl', 'display:inline-block;padding:10px'],
+      ].forEach(([title, layoutStyle, wrapperStyle]) => {
+        it(`keeps a positive, bounded aperture in a ${title}`, () => {
+          root.style.cssText = 'width:640px;max-width:calc(100vw - 32px)';
+          const layout = root.appendChild(document.createElement('div'));
+          layout.style.cssText = layoutStyle;
+          const wrapper = layout.appendChild(document.createElement('div'));
+          wrapper.style.cssText = wrapperStyle;
+          wrapper.appendChild(slot);
+          const before = document.documentElement.scrollWidth;
+          const { frame } = render();
+          const rect = frame.getBoundingClientRect();
+          const bounds = layout.getBoundingClientRect();
+          expect(rect.width).to.be.greaterThan(1);
+          expect(rect.left).to.be.at.least(bounds.left - 1);
+          expect(rect.right).to.be.at.most(bounds.right + 1);
+          expect(rect.right).to.be.at.most(document.documentElement.clientWidth + 1);
+          expect(document.documentElement.scrollWidth).to.be.at.most(before);
+        });
+      });
+
+      it('resizes an intrinsic slot after reparenting and follows its new container', async () => {
+        const first = root.appendChild(document.createElement('div'));
+        const second = root.appendChild(document.createElement('div'));
+        first.style.width = '300px';
+        second.style.width = '600px';
+        slot.style.display = 'inline-block';
+        first.appendChild(slot);
+        const { frame } = render();
+        expect(frame.getBoundingClientRect().width).to.equal(300);
+        second.appendChild(slot);
+        await settleLayout();
+        expect(frame.getBoundingClientRect().width).to.equal(600);
+        second.style.width = '400px';
+        await settleLayout();
+        expect(frame.getBoundingClientRect().width).to.equal(400);
+      });
+
+      it('sizes a revealed intrinsic slot without resizing or scrolling its fixed-size container', async () => {
+        root.style.cssText = 'width:600px;height:700px';
+        slot.style.display = 'none';
+        const { frame } = render();
+        await settleLayout();
+        slot.style.display = 'inline-block';
+        await settleLayout();
+        expect(frame.getBoundingClientRect().width).to.equal(600);
+      });
+
+      it('respects a publisher width added after intrinsic sizing', async () => {
+        root.style.width = '600px';
+        slot.style.display = 'inline-block';
+        const { frame } = render();
+        expect(frame.getBoundingClientRect().width).to.equal(600);
+        slot.style.width = '120px';
+        await settleLayout();
+        expect(frame.getBoundingClientRect().width).to.equal(120);
+        expect(frame.style.minWidth).to.equal('');
+      });
+
+      it('limits intrinsic width to the viewport even when an ancestor extends beyond it', () => {
+        root.style.cssText = 'position:absolute;left:calc(100vw - 120px);width:500px';
+        slot.style.display = 'inline-block';
+        const { frame } = render();
+        const rect = frame.getBoundingClientRect();
+        expect(rect.width).to.be.greaterThan(1);
+        expect(rect.right).to.be.at.most(document.documentElement.clientWidth + 1);
+      });
+
+      it('does not mistake slot padding for the width of an intrinsic ancestor', () => {
+        root.style.width = '600px';
+        const wrapper = root.appendChild(document.createElement('div'));
+        wrapper.style.display = 'inline-block';
+        slot.style.padding = '10px';
+        wrapper.appendChild(slot);
+        const { frame } = render();
+        expect(frame.getBoundingClientRect().width).to.equal(580);
+        expect(wrapper.getBoundingClientRect().width).to.equal(600);
+      });
+
+      it('fits a centered intrinsic slot when its container extends past the viewport', () => {
+        root.style.cssText = 'position:absolute;left:calc(100vw - 400px);width:600px;display:flex;justify-content:center';
+        const { frame } = render();
+        const rect = frame.getBoundingClientRect();
+        expect(rect.width).to.be.greaterThan(100);
+        expect(rect.right).to.be.at.most(document.documentElement.clientWidth + 1);
+      });
+
+      it('disconnects sizing observations on removal and ignores stale callbacks', async () => {
+        let observer;
+        const raf = sandbox.stub(window, 'requestAnimationFrame').returns(129);
+        const cancel = sandbox.spy(window, 'cancelAnimationFrame');
+        sandbox.stub(window, 'ResizeObserver').callsFake(callback => {
+          observer = { callback, observe: sandbox.spy(), disconnect: sandbox.spy() };
+          return observer;
+        });
+        const { frame } = render();
+        sinon.assert.calledWith(observer.observe, frame);
+        sinon.assert.calledWith(observer.observe, slot);
+        observer.callback([]);
+        observer.callback([]);
+        sinon.assert.calledOnce(raf);
+        const before = frame.style.cssText;
+        slot.remove();
+        await tick();
+        sinon.assert.calledOnce(observer.disconnect);
+        sinon.assert.calledOnceWithExactly(cancel, 129);
+        viewport = { innerHeight: 100 };
+        observer.callback([]);
+        sinon.assert.calledOnce(raf);
+        expect(frame.style.cssText).to.equal(before);
+      });
+
       it('disconnects its sizing observer when initialization fails', () => {
         const disconnect = sandbox.spy();
         sandbox.stub(window, 'ResizeObserver').callsFake(() => ({ observe() { throw new Error('resize observer unavailable'); }, disconnect }));
@@ -866,6 +991,20 @@ describe('splashBidAdapter', () => {
         sinon.assert.calledOnce(disconnect);
         expect(add.calledWith('resize')).to.equal(false);
         expect(slot.childElementCount).to.equal(0);
+      });
+
+      it('cleans up when sizing observations cannot follow a moved slot', async () => {
+        const observer = { observe: sandbox.spy(), disconnect: sandbox.spy() };
+        sandbox.stub(window, 'ResizeObserver').returns(observer);
+        const warn = sandbox.stub(utils, 'logWarn');
+        const { frame } = render();
+        observer.observe = sandbox.stub().throws(new Error('cannot observe new parent'));
+        const parent = root.appendChild(document.createElement('div'));
+        parent.appendChild(slot);
+        await tick();
+        expect(frame.isConnected).to.equal(false);
+        sinon.assert.calledTwice(observer.disconnect);
+        sinon.assert.calledWith(warn, 'splash: removal observer failed', sinon.match.instanceOf(Error));
       });
 
       it('finds the slot by ad unit code and throws a logged error when it is missing', () => {
@@ -1040,15 +1179,32 @@ describe('splashBidAdapter', () => {
       });
 
       describe('desktop Safari pointer guard', () => {
+        let intersectionObservers;
+
         beforeEach(() => {
           utils.isSafariBrowser.returns(true);
+          sandbox.stub(window, 'ResizeObserver').returns({ observe: sandbox.spy(), disconnect: sandbox.spy() });
+          intersectionObservers = [];
+          sandbox.stub(window, 'IntersectionObserver').callsFake(callback => {
+            const observer = { callback, observe: sandbox.spy(), disconnect: sandbox.spy() };
+            intersectionObservers.push(observer);
+            return observer;
+          });
         });
+
+        function intersect(frame, isIntersecting = true) {
+          const observer = intersectionObservers[intersectionObservers.length - 1];
+          expect(observer, 'Safari visibility observer').not.to.equal(undefined);
+          observer.callback([{ target: frame, isIntersecting }]);
+          return observer;
+        }
 
         it('physically clips an absolute creative while keeping its viewport alignment', async () => {
           const matchMedia = sandbox.stub(window, 'matchMedia').returns({ matches: true });
           root.style.cssText = 'width:280px;margin-left:80px;padding:24px;box-sizing:border-box';
           const addWindow = sandbox.spy(window, 'addEventListener');
           const { frame } = render();
+          intersect(frame);
           const iframe = frame.querySelector('iframe');
           sinon.assert.calledWith(matchMedia, '(pointer: fine) and (hover: hover)');
           expect(frame.classList.contains('sp-pointer-guarded')).to.equal(true);
@@ -1074,6 +1230,9 @@ describe('splashBidAdapter', () => {
           root.style.cssText = 'position:absolute;left:80px;top:80px;width:280px;padding:24px;box-sizing:border-box';
           const { frame } = render();
           frame.style.maxHeight = '200px';
+          // Simulate Safari ignoring the ancestor clip-path; overflow must still bound hit testing.
+          frame.style.clipPath = 'none';
+          frame.style.setProperty('-webkit-clip-path', 'none');
           const rect = frame.getBoundingClientRect();
           const x = rect.left + rect.width / 2;
           const y = rect.top + rect.height / 2;
@@ -1097,6 +1256,7 @@ describe('splashBidAdapter', () => {
           sandbox.stub(window, 'matchMedia').returns({ matches: true });
           const raf = sandbox.stub(window, 'requestAnimationFrame').returns(123);
           const { frame } = render();
+          intersect(frame);
           const iframe = frame.querySelector('iframe');
           const rect = sandbox.stub(frame, 'getClientRects').returns([{ left: 90, top: -130 }]);
           sinon.assert.calledOnce(raf);
@@ -1118,7 +1278,8 @@ describe('splashBidAdapter', () => {
           const iframe = frame.querySelector('iframe');
           expect([iframe.style.left, iframe.style.top]).to.deep.equal(['', '']);
           slot.style.display = '';
-          raf.firstCall.args[0]();
+          intersect(frame);
+          sinon.assert.calledOnce(raf);
           expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
         });
 
@@ -1126,6 +1287,7 @@ describe('splashBidAdapter', () => {
           sandbox.stub(window, 'matchMedia').returns({ matches: true });
           const raf = sandbox.stub(window, 'requestAnimationFrame').returns(126);
           const { frame } = render();
+          intersect(frame);
           const iframe = frame.querySelector('iframe');
           root.style.marginTop = '100px';
           raf.firstCall.args[0]();
@@ -1146,8 +1308,10 @@ describe('splashBidAdapter', () => {
           const cancel = sandbox.spy(window, 'cancelAnimationFrame');
           const remove = sandbox.spy(window, 'removeEventListener');
           const first = render().frame;
+          intersect(first);
           sinon.assert.calledOnce(raf);
           const second = render().frame;
+          intersect(second);
           sinon.assert.calledWith(cancel, 125);
           expect(first.classList.contains('sp-pointer-guarded')).to.equal(false);
           sinon.assert.calledTwice(raf);
@@ -1156,6 +1320,87 @@ describe('splashBidAdapter', () => {
           sinon.assert.calledTwice(cancel);
           ['resize', 'orientationchange'].forEach(type => expect(remove.getCalls().filter(call => call.args[0] === type)).to.have.length(2));
           sinon.assert.calledTwice(raf);
+        });
+
+        it('sleeps offscreen and in a hidden tab, then resumes without duplicate animation frames', async () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(127);
+          const cancel = sandbox.spy(window, 'cancelAnimationFrame');
+          const removeDocument = sandbox.spy(document, 'removeEventListener');
+          let hidden = false;
+          sandbox.stub(document, 'hidden').get(() => hidden);
+          const { frame } = render();
+          sinon.assert.notCalled(raf);
+          const observer = intersect(frame);
+          sinon.assert.calledOnce(raf);
+          intersect(frame);
+          sinon.assert.calledOnce(raf);
+          intersect(frame, false);
+          sinon.assert.calledOnce(cancel);
+          intersect(frame, false);
+          sinon.assert.calledOnce(cancel);
+          intersect(frame);
+          sinon.assert.calledTwice(raf);
+          hidden = true;
+          document.dispatchEvent(new Event('visibilitychange'));
+          sinon.assert.calledTwice(cancel);
+          hidden = false;
+          document.dispatchEvent(new Event('visibilitychange'));
+          sinon.assert.calledThrice(raf);
+          frame.remove();
+          await tick();
+          sinon.assert.calledOnce(observer.disconnect);
+          sinon.assert.calledThrice(cancel);
+          sinon.assert.calledWith(removeDocument, 'visibilitychange', sinon.match.func);
+          observer.callback([{ target: frame, isIntersecting: true }]);
+          raf.thirdCall.args[0]();
+          document.dispatchEvent(new Event('visibilitychange'));
+          sinon.assert.calledThrice(raf);
+        });
+
+        it('suspends one instance without stopping another visible creative', () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame');
+          raf.onCall(0).returns(130);
+          raf.onCall(1).returns(131);
+          const cancel = sandbox.spy(window, 'cancelAnimationFrame');
+          const first = render().frame;
+          const firstObserver = intersect(first);
+          const bid = parallaxBid();
+          bid.element = otherSlot;
+          bid.renderer.render(bid, document);
+          const second = ownFrame(otherSlot);
+          intersect(second);
+          sinon.assert.calledTwice(raf);
+          firstObserver.callback([{ target: first, isIntersecting: false }]);
+          sinon.assert.calledOnceWithExactly(cancel, 130);
+          expect(second.isConnected).to.equal(true);
+          raf.secondCall.args[0]();
+          sinon.assert.calledThrice(raf);
+        });
+
+        it('retains alignment and cleanup when IntersectionObserver is unavailable', async () => {
+          window.IntersectionObserver.restore();
+          sandbox.stub(window, 'IntersectionObserver').value(undefined);
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(128);
+          const cancel = sandbox.spy(window, 'cancelAnimationFrame');
+          const { frame } = render();
+          sinon.assert.calledOnce(raf);
+          expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('absolute');
+          frame.remove();
+          await tick();
+          sinon.assert.calledOnce(cancel);
+        });
+
+        it('rolls back visibility observations if they cannot start', () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const disconnect = sandbox.spy();
+          window.IntersectionObserver.callsFake(() => ({ observe() { throw new Error('visibility observer unavailable'); }, disconnect }));
+          sandbox.stub(utils, 'logError');
+          expect(() => render()).to.throw('visibility observer unavailable');
+          sinon.assert.calledOnce(disconnect);
+          expect(slot.childElementCount).to.equal(0);
         });
 
         [
