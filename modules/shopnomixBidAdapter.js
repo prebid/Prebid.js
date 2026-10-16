@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE } from '../src/mediaTypes.js';
-import { politeTriggerPixel } from '../src/utils.js';
+import { logWarn, politeTriggerPixel } from '../src/utils.js';
 
 export const ENDPOINT = 'https://api.prnmx.com/api/v1/openrtb/prebid';
 const ID_BODY = '[0-7][0-9a-hjkmnp-tv-z]{25}';
@@ -44,7 +44,15 @@ const converter = ortbConverter({
         (imp.bidfloor != null && (!Number.isFinite(imp.bidfloor) || imp.bidfloor < 0))) {
       throw new Error('Shopnomix requires a non-negative USD floor');
     }
-    imp.tagid = bidRequest.params.placementId;
+    // Only ever a Shopnomix placement ID, so one that does not resolve is a
+    // mistake rather than a slot name the exchange has to work out.
+    if (bidRequest.params.placementId) imp.tagid = bidRequest.params.placementId;
+    // Sent whether or not a placement ID is, so a slot stays identifiable when a
+    // publisher moves between configured and detected placements. The spread
+    // keeps ext.gpid, which the converter merges in from ortb2Imp.
+    if (bidRequest.adUnitCode) {
+      imp.ext = { ...imp.ext, adunitcode: bidRequest.adUnitCode };
+    }
     imp.bidfloorcur = 'USD';
     return imp;
   },
@@ -171,9 +179,21 @@ export const spec = {
     const allowsImpressionPixel = trackers == null || (Array.isArray(trackers) &&
       trackers.some(tracker => tracker?.event === 1 &&
         Array.isArray(tracker.methods) && tracker.methods.includes(1)));
-    return Boolean(bid?.mediaTypes?.native && allowsImpressionPixel &&
-      typeof bid.params?.publisherId === 'string' && PUBLISHER_ID.test(bid.params.publisherId) &&
-      typeof bid.params?.placementId === 'string' && PLACEMENT_ID.test(bid.params.placementId));
+    // Optional: publishers given a placement ID send one, and the rest are
+    // matched by the exchange on the site and the ad unit code. Still checked
+    // when supplied, so a typo drops the slot instead of becoming a placement
+    // of its own.
+    const { placementId } = bid?.params || {};
+    const placementIdOk = placementId == null ||
+      (typeof placementId === 'string' && PLACEMENT_ID.test(placementId));
+    const valid = Boolean(bid?.mediaTypes?.native && allowsImpressionPixel && placementIdOk &&
+      typeof bid.params?.publisherId === 'string' && PUBLISHER_ID.test(bid.params.publisherId));
+    // Only for a bid we would otherwise send, so an ad unit rejected on its
+    // media type is not also told about its slot.
+    if (valid && placementId == null && !bid?.adUnitCode) {
+      logWarn('Shopnomix: ad unit has no code and no placementId, so its slot cannot be identified');
+    }
+    return valid;
   },
 
   buildRequests(bidRequests, bidderRequest) {

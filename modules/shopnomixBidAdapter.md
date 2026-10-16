@@ -28,10 +28,14 @@ the publisher's own check or the `bidViewability` module.
 
 # Bidder Parameters
 
-| Name          | Scope    | Description                   | Example                            | Type     |
-|---------------|----------|-------------------------------|------------------------------------|----------|
-| `publisherId` | required | Shopnomix publisher ID        | `'pub_01h2xcejqtf2nbrexx3vqjhp41'` | `string` |
-| `placementId` | required | Shopnomix native placement ID | `'plc_01h2xcejqtf2nbrexx3vqjhp41'` | `string` |
+| Name          | Scope     | Description                   | Example                            | Type     |
+|---------------|-----------|-------------------------------|------------------------------------|----------|
+| `publisherId` | required  | Shopnomix publisher ID        | `'pub_01h2xcejqtf2nbrexx3vqjhp41'` | `string` |
+| `placementId` | optional* | Shopnomix native placement ID | `'plc_01h2xcejqtf2nbrexx3vqjhp41'` | `string` |
+
+*`placementId` is required unless your Shopnomix account is set up to detect
+placements, in which case the slot is matched on the site and the ad unit code.
+Ask your Shopnomix contact which applies to you before leaving it out.
 
 Both are `pub_` or `plc_` followed by 26 characters. A malformed ID is dropped
 before the request is built, so that slot does not bid.

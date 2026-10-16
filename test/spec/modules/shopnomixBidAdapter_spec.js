@@ -119,6 +119,25 @@ describe('shopnomixBidAdapter', function () {
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
 
+    it('accepts a bid with no placement ID', function () {
+      const detected = bid();
+      delete detected.params.placementId;
+      expect(spec.isBidRequestValid(detected)).to.equal(true);
+    });
+
+    it('warns when nothing on the ad unit identifies its slot', function () {
+      const warn = sinon.stub(utils, 'logWarn');
+      const unidentifiable = bid();
+      delete unidentifiable.params.placementId;
+      delete unidentifiable.adUnitCode;
+      try {
+        expect(spec.isBidRequestValid(unidentifiable)).to.equal(true);
+        sinon.assert.calledOnce(warn);
+      } finally {
+        warn.restore();
+      }
+    });
+
     // We bill from an image impression tracker. An ad unit that refuses one
     // would render without ever billing, so there is no point bidding on it.
     it('rejects an ad unit that allows no image impression tracker', function () {
@@ -145,6 +164,34 @@ describe('shopnomixBidAdapter', function () {
       expect(request.data.imp[0].tagid).to.equal(placementId);
       expect(request.data.imp[0].bidfloorcur).to.equal('USD');
       expect(request.data.cur).to.deep.equal(['USD']);
+    });
+
+    it('leaves tagid off a slot with no placement ID', function () {
+      const detected = bid();
+      delete detected.params.placementId;
+      const [request] = spec.buildRequests([detected], bidderRequest([detected]));
+      expect(request.data.imp[0]).to.not.have.property('tagid');
+    });
+
+    it('sends the ad unit code whether or not a placement ID is set', function () {
+      const configured = bid('slot-1');
+      const [withId] = spec.buildRequests([configured], bidderRequest([configured]));
+      expect(withId.data.imp[0].ext.adunitcode).to.equal('slot-1');
+
+      const detected = bid('slot-2');
+      delete detected.params.placementId;
+      const [withoutId] = spec.buildRequests([detected], bidderRequest([detected]));
+      expect(withoutId.data.imp[0].ext.adunitcode).to.equal('slot-2');
+    });
+
+    // Set by the gptPreAuction module, not by us. Asserted so a change to the
+    // converter's ortb2Imp handling cannot drop it silently.
+    it('keeps a GPID the page already supplied', function () {
+      const gpt = bid();
+      gpt.ortb2Imp = { ...gpt.ortb2Imp, ext: { gpid: '/19968336/native#1' } };
+      const [request] = spec.buildRequests([gpt], bidderRequest([gpt]));
+      expect(request.data.imp[0].ext.gpid).to.equal('/19968336/native#1');
+      expect(request.data.imp[0].ext.adunitcode).to.equal('slot-1');
     });
 
     it('adds the publisher ID while keeping the publisher\'s own site fields', function () {
@@ -291,6 +338,12 @@ describe('shopnomixBidAdapter', function () {
       const [request] = spec.buildRequests([bid()], bidderRequest());
       expect(spec.interpretResponse({ body: {} }, request)).to.have.lengthOf(0);
     });
+
+    it('returns nothing when the response cannot be read against the request', function () {
+      const noImps = { data: { id: 'auction-1' } };
+      const response = { body: { id: 'auction-1', seatbid: [{ bid: [{ impid: '1' }] }] } };
+      expect(spec.interpretResponse(response, noImps)).to.have.lengthOf(0);
+    });
   });
 
   describe('notices', function () {
@@ -321,6 +374,12 @@ describe('shopnomixBidAdapter', function () {
     it('does nothing when there is no win notice', function () {
       expect(() => spec.onBidWon({ adId: 'nothing' })).to.not.throw();
       sinon.assert.notCalled(pixel);
+    });
+
+    it('bills with the notice URL unchanged when it cannot be parsed', function () {
+      spec.onBidBillable({ shopnomixBillingUrl: 'not-a-url' });
+      sinon.assert.calledOnce(pixel);
+      expect(pixel.firstCall.args[0]).to.equal('not-a-url');
     });
 
     it('bills once, tagged as a render when billing was not deferred', function () {
