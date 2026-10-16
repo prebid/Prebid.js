@@ -20,7 +20,7 @@ import {
 } from './constants.js';
 import { bidderSettings } from '../../src/bidderSettings.js';
 import { config } from '../../src/config.js';
-import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 
 function sendTrackingPing(url) {
   ajax(url, null, undefined, { method: 'GET', keepalive: true });
@@ -331,7 +331,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestId,
     bidRequestsCount,
     bidderRequestsCount,
-    bidderWinsCount
+    bidderWinsCount,
+    nativeOrtbRequest,
   } = bid;
   const { ext } = params;
   let { bidFloor } = params;
@@ -402,6 +403,10 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     device,
     ...uniqueRequestData
   };
+  // copy nativeOrtbRequest only if media types has 'native' in it
+  if (nativeOrtbRequest && hasMediaType(bid, NATIVE)) {
+    data.nativeOrtbRequest = nativeOrtbRequest;
+  }
   if (bidFloor) {
     data.bidFloor = bidFloor;
   }
@@ -483,7 +488,51 @@ function getScreenResolution() {
   }
 }
 
-export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
+function parseNativeOrtb(result) {
+  if (result?.native?.ortb && isArray(result.native.ortb.assets)) {
+    return result.native.ortb;
+  }
+  if (result?.native && isArray(result.native.assets)) {
+    return result.native;
+  }
+
+  let parsed = result?.ad;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch (e) {
+      return null;
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    return null;
+  }
+
+  const ortb = parsed.native ?? parsed;
+  if (!ortb || !isArray(ortb.assets)) {
+    return null;
+  }
+  return ortb;
+}
+
+/**
+ * Returns the request payload (of the bid request) that a given response result belongs to:
+ * the payload itself for per-bid requests, or the matching entry for batched `{bids: [...]}` payloads.
+ */
+function getMatchedRequestData(request, bidId) {
+  const data = request?.data;
+  if (isArray(data?.bids)) {
+    return data.bids.find(bid => bid.bidId === bidId);
+  }
+  return data;
+}
+
+function hasNativeOrtbRequest(requestData) {
+  return isArray(requestData?.nativeOrtbRequest?.assets);
+}
+
+export function createInterpretResponseFn(bidderCode, allowSingleRequest, options = {}) {
+  const supportNative = !!options.supportNative;
   return function interpretResponse(serverResponse, request) {
     if (!serverResponse || !serverResponse.body) {
       return [];
@@ -497,7 +546,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
     const output = [];
 
     try {
-      results.forEach((result, i) => {
+      results.forEach((result) => {
         const {
           creativeId,
           ad,
@@ -515,55 +564,66 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
           viewableUrl,
           renderSuccessUrl,
         } = result;
-        if (!ad || !price) {
+        if (!price) {
           return;
         }
 
-        const response = {
+        const isNative = supportNative && mediaType === NATIVE;
+        if (isNative) {
+          const requestId = (singleRequestMode && bidId) ? bidId : reqBidId;
+          // validation if request included native ad type
+          if (!hasNativeOrtbRequest(getMatchedRequestData(request, requestId))) {
+            return;
+          }
+          const ortb = parseNativeOrtb(result);
+          if (!ortb) {
+            return;
+          }
+          output.push(buildBidResponse({
+            requestId,
+            price,
+            width,
+            height,
+            creativeId,
+            currency,
+            exp,
+            nurl,
+            burl,
+            viewableUrl,
+            renderSuccessUrl,
+            metaData,
+            advertiserDomains,
+            mediaType: NATIVE,
+            native: { ortb },
+          }));
+          return;
+        }
+
+        if (!ad) {
+          return;
+        }
+
+        const response = buildBidResponse({
           requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
-          cpm: price,
-          width: width,
-          height: height,
-          creativeId: creativeId,
-          currency: currency || CURRENCY,
-          netRevenue: true,
-          ttl: exp || TTL_SECONDS,
-        };
-
-        if (nurl) {
-          response.nurl = nurl;
-        }
-        if (burl) {
-          response.burl = burl;
-        }
-        if (viewableUrl) {
-          response.viewableUrl = viewableUrl;
-        }
-        if (renderSuccessUrl) {
-          response.renderSuccessUrl = renderSuccessUrl;
-        }
-
-        if (metaData) {
-          Object.assign(response, {
-            meta: metaData
-          });
-        } else {
-          Object.assign(response, {
-            meta: {
-              advertiserDomains: advertiserDomains || []
-            }
-          });
-        }
+          price,
+          width,
+          height,
+          creativeId,
+          currency,
+          exp,
+          nurl,
+          burl,
+          viewableUrl,
+          renderSuccessUrl,
+          metaData,
+          advertiserDomains,
+        });
 
         if (mediaType === BANNER) {
-          Object.assign(response, {
-            ad: ad,
-          });
+          response.ad = ad;
         } else {
-          Object.assign(response, {
-            vastXml: ad,
-            mediaType: VIDEO
-          });
+          response.vastXml = ad;
+          response.mediaType = VIDEO;
         }
         output.push(response);
       });
@@ -575,7 +635,70 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
   };
 }
 
-export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
+function buildBidResponse({
+  requestId,
+  price,
+  width,
+  height,
+  creativeId,
+  currency,
+  exp,
+  nurl,
+  burl,
+  viewableUrl,
+  renderSuccessUrl,
+  metaData,
+  advertiserDomains,
+  mediaType,
+  native,
+}) {
+  const response = {
+    requestId,
+    cpm: price,
+    width,
+    height,
+    creativeId,
+    currency: currency || CURRENCY,
+    netRevenue: true,
+    ttl: exp || TTL_SECONDS,
+  };
+
+  if (nurl) {
+    response.nurl = nurl;
+  }
+  if (burl) {
+    response.burl = burl;
+  }
+  if (viewableUrl) {
+    response.viewableUrl = viewableUrl;
+  }
+  if (renderSuccessUrl) {
+    response.renderSuccessUrl = renderSuccessUrl;
+  }
+  if (mediaType) {
+    response.mediaType = mediaType;
+  }
+  if (native) {
+    response.native = native;
+  }
+
+  if (metaData) {
+    response.meta = metaData;
+  } else {
+    response.meta = {
+      advertiserDomains: advertiserDomains || []
+    };
+  }
+
+  return response;
+}
+
+function hasMediaType(bid, mediaType) {
+  return isArray(bid.mediaTypes) ? bid.mediaTypes.includes(mediaType) : bid.mediaTypes?.[mediaType] !== undefined;
+}
+
+export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest, options = {}) {
+  const supportNative = !!options.supportNative;
   function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     const { params } = bid;
     const cId = extractCID(params);
@@ -652,12 +775,21 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
       }
 
       // video bids are sent as a single request for each bid
-      const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
+      const videoBidRequests = validBidRequests.filter(bid => hasMediaType(bid, VIDEO));
       videoBidRequests.forEach(validBidRequest => {
         const sizes = parseSizesInput(validBidRequest.sizes);
         const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
         requests.push(request);
       });
+
+      if (supportNative) {
+        const nativeBidRequests = validBidRequests.filter(bid => hasMediaType(bid, NATIVE) && !hasMediaType(bid, BANNER) && !hasMediaType(bid, VIDEO));
+        nativeBidRequests.forEach(validBidRequest => {
+          const sizes = parseSizesInput(validBidRequest.sizes);
+          const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+          requests.push(request);
+        });
+      }
     } else {
       // bulk bids request
       validBidRequests.forEach(validBidRequest => {

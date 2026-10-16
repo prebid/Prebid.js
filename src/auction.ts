@@ -188,6 +188,13 @@ export interface AuctionOptionsConfig {
    * Default is true; set to false to keep mismatched mediaType responses.
    */
   rejectInvalidMediaTypes?: boolean;
+
+  /**
+   * If true, and the browser supports [`scheduler.yield`](https://developer.mozilla.org/en-US/docs/Web/API/Scheduler/yield),
+   * auctions yield the main thread after calling each bid adapter.
+   * Default is false.
+   */
+  yield?: boolean
 }
 
 export interface PriceBucketConfig {
