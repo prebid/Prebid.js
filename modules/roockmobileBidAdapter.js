@@ -4,7 +4,9 @@ import { logWarn, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -37,16 +39,20 @@ const converter = ortbConverter({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    // OpenRTB 2.5 does not define bid.mtype. Prefer the Roockmobile extension and
-    // otherwise infer the type from the markup and the matched impression.
+    // Prefer standard OpenRTB 2.6 bid.mtype, then the Roockmobile extension, and
+    // otherwise infer the type from the markup and matched impression.
     context.mediaType = getMediaType(bid, context.imp);
+    if (context.mediaType === NATIVE) {
+      const nativeMarkup = getNativeMarkup(bid.adm);
+      if (Array.isArray(nativeMarkup?.native?.assets)) {
+        bid = { ...bid, adm: JSON.stringify(nativeMarkup.native) };
+      }
+    }
     const bidResponse = buildBidResponse(bid, context);
     // Banner rendering already owns its nurl; other formats fire it from onBidWon.
     if (bid.nurl && context.mediaType !== BANNER) bidResponse.nurl = bid.nurl;
     // A video nurl is a win notice, not a VAST document URL.
-    if (context.mediaType === VIDEO && bid.adm) {
-      delete bidResponse.vastUrl;
-    }
+    if (context.mediaType === VIDEO) delete bidResponse.vastUrl;
     return bidResponse;
   }
 });
@@ -90,10 +96,11 @@ export const spec = {
   },
 
   getUserSyncs(syncOptions, serverResponses = []) {
-    const userSyncUrl = serverResponses.find(response => response.roockmobileUserSyncUrl)?.roockmobileUserSyncUrl || USER_SYNC_ENDPOINT;
-    if (syncOptions.iframeEnabled) return [{ type: 'iframe', url: userSyncUrl }];
-    if (syncOptions.pixelEnabled) return [{ type: 'image', url: userSyncUrl }];
-    return [];
+    const type = syncOptions.iframeEnabled ? 'iframe' : (syncOptions.pixelEnabled ? 'image' : null);
+    if (!type) return [];
+    const responseUrls = serverResponses.map(response => response.roockmobileUserSyncUrl).filter(Boolean);
+    const userSyncUrls = responseUrls.length ? [...new Set(responseUrls)] : [USER_SYNC_ENDPOINT];
+    return userSyncUrls.map(url => ({ type, url }));
   }
 };
 
@@ -111,6 +118,7 @@ function getDomain(value) {
 }
 
 function getMediaType(bid, imp) {
+  if (ORTB_MTYPES[bid.mtype]) return ORTB_MTYPES[bid.mtype];
   if ([BANNER, VIDEO, NATIVE].includes(bid.ext?.mtype)) return bid.ext.mtype;
   if (imp.video && typeof bid.adm === 'string' && /<VAST(?:\s|>)/i.test(bid.adm)) return VIDEO;
   if (imp.native && isNativeMarkup(bid.adm)) return NATIVE;
@@ -120,11 +128,15 @@ function getMediaType(bid, imp) {
 }
 
 function isNativeMarkup(adm) {
+  const markup = getNativeMarkup(adm);
+  return Array.isArray((markup?.native || markup)?.assets);
+}
+
+function getNativeMarkup(adm) {
   try {
-    const markup = typeof adm === 'string' ? JSON.parse(adm) : adm;
-    return Array.isArray((markup?.native || markup)?.assets);
+    return typeof adm === 'string' ? parseUntrustedJSON(adm) : adm;
   } catch (e) {
-    return false;
+    return undefined;
   }
 }
 

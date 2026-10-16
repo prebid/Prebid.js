@@ -94,6 +94,18 @@ describe('Roockmobile bid adapter', () => {
     expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })).to.deep.equal([]);
   });
 
+  it('returns one user sync for each distinct response origin', () => {
+    const serverResponses = [
+      { roockmobileUserSyncUrl: 'https://a.rmcdnnode.com/usersync' },
+      { roockmobileUserSyncUrl: 'https://b.roockmobile.com/usersync' },
+      { roockmobileUserSyncUrl: 'https://a.rmcdnnode.com/usersync' }
+    ];
+    expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses)).to.deep.equal([
+      { type: 'iframe', url: 'https://a.rmcdnnode.com/usersync' },
+      { type: 'iframe', url: 'https://b.roockmobile.com/usersync' }
+    ]);
+  });
+
   it('interprets an OpenRTB banner bid', () => {
     const request = spec.buildRequests([bid], bidderRequest)[0];
     const nurl = 'https://win.example.test/banner';
@@ -118,6 +130,22 @@ describe('Roockmobile bid adapter', () => {
         body: { seatbid: [{ bid: [{ impid: 'bid-id', price: 1, w: 640, h: 360, crid: 'video', adm: '<VAST />', nurl: 'https://win.example.test' }] }] }
       }, request);
       expect(bids[0]).to.include({ mediaType: 'video', vastXml: '<VAST />', nurl: 'https://win.example.test' });
+      expect(bids[0].vastUrl).to.equal(undefined);
+    });
+
+    it('uses standard mtype and does not treat a video nurl as a VAST URL', () => {
+      const multiformatBid = {
+        ...bid,
+        mediaTypes: {
+          banner: { sizes: [[640, 360]] },
+          video: { mimes: ['video/mp4'], playerSize: [[640, 360]], minduration: 5, maxduration: 30, protocols: [2, 3] }
+        }
+      };
+      const request = spec.buildRequests([multiformatBid], bidderRequest)[0];
+      const bids = spec.interpretResponse({
+        body: { seatbid: [{ bid: [{ impid: 'bid-id', price: 1, crid: 'video', mtype: 2, nurl: 'https://win.example.test/video' }] }] }
+      }, request);
+      expect(bids[0]).to.include({ mediaType: 'video', nurl: 'https://win.example.test/video' });
       expect(bids[0].vastUrl).to.equal(undefined);
     });
   }
@@ -193,12 +221,13 @@ describe('Roockmobile bid adapter', () => {
               impid: 'bid-id',
               price: 1,
               crid: 'native',
-              adm: '{"assets":[{"id":1,"title":{"text":"Native title"}}]}'
+              adm: '{"native":{"assets":[{"id":1,"title":{"text":"Native title"}}]}}'
             }]
           }]
         }
       }, request);
       expect(bids[0].mediaType).to.equal('native');
+      expect(bids[0].native.ortb.assets[0].title.text).to.equal('Native title');
 
       const bannerBids = spec.interpretResponse({
         body: {
