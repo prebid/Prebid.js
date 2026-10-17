@@ -49,7 +49,7 @@ import {
   renderAdDirect,
   renderIfDeferred
 } from './adRendering.js';
-import { getHighestCpm } from './utils/reducers.js';
+import { getBestBid, getHighestCpm } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { AUDIO, BANNER, VIDEO } from './mediaTypes.js';
@@ -484,6 +484,7 @@ declare module './prebidGlobal' {
     getAllWinningBids: typeof getAllWinningBids;
     getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
     getHighestCpmBids: typeof getHighestCpmBids;
+    getBestBids: typeof getBestBids;
     clearAllAuctions: typeof clearAllAuctions;
     getBidResponseByAdId: typeof getBidResponseByAdId;
     markWinningBidAsUsed: typeof markWinningBidAsUsed;
@@ -1139,6 +1140,17 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
 }
 
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
+
+/**
+ * Get the most desirable bids for all adUnits, or the most desirable bid object for the given adUnit.
+ * Desirability ties prefer the smaller creative, then a deal, then the fastest response.
+ * @param adUnitCode - ad unit code
+ */
+function getBestBids(adUnitCode?: string): Bid[] {
+  return targeting.getWinningBids(adUnitCode, undefined, getBestBid);
+}
+
+addApiMethod('getBestBids', getBestBids);
 
 /**
  * Clear all auctions (and their bids) from the bid cache.
