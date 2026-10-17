@@ -1,4 +1,4 @@
-import { checkCookieSupport, hasDeviceAccess, logError, memoize, timestamp } from './utils.js';
+import { checkCookieSupport, getWindowLocation, hasDeviceAccess, logError, memoize, timestamp } from './utils.js';
 import { bidderSettings } from './bidderSettings.js';
 import { MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, type ModuleType } from './activities/modules.js';
 import { isActivityAllowed, registerActivityControl } from './activities/rules.js';
@@ -266,8 +266,11 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
       window.localStorage.removeItem(deletionKey);
     } catch (e) { }
     try {
-      const secure = /^__(Secure|Host)-/i.test(deletionKey) ? '; Secure' : '';
-      document.cookie = `${deletionKey}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/${secure}`;
+      // Cross-site frames reject expiry writes without SameSite=None, which also requires Secure.
+      const isHttps = getWindowLocation().protocol === 'https:';
+      const sameSite = isHttps ? '; SameSite=None' : '';
+      const secure = isHttps || /^__(Secure|Host)-/i.test(deletionKey) ? '; Secure' : '';
+      document.cookie = `${deletionKey}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/${sameSite}${secure}`;
     } catch (e) { }
   };
 
