@@ -113,6 +113,24 @@ describe('storage manager', function() {
       expect(storage.getCookie(key)).to.be.null;
     });
 
+    ['__Secure-', '__Host-', '__secure-', '__host-'].forEach((prefix) => {
+      it(`includes Secure when expiring a ${prefix} cookie after access withdrawal`, function () {
+        const deletionKey = `${prefix}${key}`;
+        const prefixedStorage = newStorageManager({ moduleName: 'deletionTest', moduleType: MODULE_TYPE_PREBID, deletionKey });
+        const writeCookie = sinon.spy();
+        const cookie = sinon.stub(document, 'cookie').set(writeCookie);
+        try {
+          config.setConfig({ deviceAccess: false });
+          prefixedStorage.deleteConfiguredData();
+
+          expect(writeCookie.calledOnce).to.be.true;
+          expect(writeCookie.firstCall.args[0]).to.equal(`${deletionKey}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/; Secure`);
+        } finally {
+          cookie.restore();
+        }
+      });
+    });
+
     it('does not expose deletion on an ordinary storage manager', function () {
       const ordinary = getCoreStorageManager('ordinary');
       ordinary.setDataInLocalStorage(unrelatedKey, 'keep');
