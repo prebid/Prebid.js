@@ -1,6 +1,6 @@
 import type { BidderSpec, AdapterRequest, ExtendedResponse } from '../../src/adapters/bidderFactory.js';
 import type { BidRequest } from '../../src/adapterManager.js';
-import type { DeletingStorageManager } from '../../src/storageManager.js';
+import type { StorageManager } from '../../src/storageManager.js';
 import type { UserSync } from '../../src/userSync.js';
 import type { Currency } from '../../src/types/common.d.ts';
 import type { TCFConsentData } from '../../src/types/consent/tcf.d.ts';
@@ -82,7 +82,7 @@ export interface FloxisRoute {
 export interface FloxisSpecConfig<B extends 'floxis' | 'adapex'> {
   code: B;
   gvlid: number;
-  storage: DeletingStorageManager;
+  storage: StorageManager;
   storageKey: string;
   fallbackIdField: string;
   resolveRoute(params: Partial<FloxisBaseBidParams & FloxisRoute>): FloxisRoute;
@@ -345,7 +345,8 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     },
 
     onDataDeletionRequest() {
-      storage.deleteConfiguredData();
+      storage.removeDataFromLocalStorage(storageKey);
+      storage.setCookie(storageKey, '', 'Thu, 01 Jan 1970 00:00:01 GMT');
     },
 
     onBidBillable(bid) {

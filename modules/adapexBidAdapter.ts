@@ -24,18 +24,17 @@ declare module '../src/config' {
 }
 
 const BIDDER_CODE = 'adapex';
-const STORAGE_KEY = 'adpx_uid';
 const GVLID = 1609;
 const BID_HOST = 'hb.adapex.io';
 const SYNC_ORIGIN = 'https://sync.adapex.io';
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE, deletionKey: STORAGE_KEY });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = createFloxisSpec({
   code: BIDDER_CODE,
   gvlid: GVLID,
   storage,
-  storageKey: STORAGE_KEY,
+  storageKey: 'adpx_uid',
   fallbackIdField: 'wlid',
   // Single-region deployment: routing params are not accepted, so every seat shares one host.
   resolveRoute: () => ({ region: 'us-e', partner: BIDDER_CODE }),

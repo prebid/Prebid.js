@@ -54,26 +54,17 @@ export type StorageManager = {
   findSimilarCookies: AcceptsCallback<(contains: string) => string[]>
 };
 
-/** A manager that can delete one key fixed when the manager is created. */
-export type DeletingStorageManager = StorageManager & { deleteConfiguredData: () => void };
-
-type StorageManagerOptions = {
-  moduleName: string;
-  moduleType: ModuleType;
-  /** If false, omit the storage key from activity checks. */
-  advertiseKeys?: boolean;
-  /** Key that may be deleted even after accessDevice permission is withdrawn. */
-  deletionKey?: string;
-};
-
-type StorageManagerControls = { isAllowed?: (activity: string, params: Record<string, unknown>) => boolean };
-
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
-export function newStorageManager(options: StorageManagerOptions & { deletionKey: string }, controls?: StorageManagerControls): DeletingStorageManager;
-export function newStorageManager(options?: StorageManagerOptions, controls?: StorageManagerControls): StorageManager;
-export function newStorageManager({ moduleName, moduleType, advertiseKeys = true, deletionKey }: StorageManagerOptions = {} as any, { isAllowed = isActivityAllowed } = {}) {
+export function newStorageManager({ moduleName, moduleType, advertiseKeys = true }: {
+  moduleName: string;
+  moduleType: ModuleType;
+  /**
+   * If false, do not pass the 'storageKey' to activity checks - turning off storageControl for this manager.
+   */
+  advertiseKeys?: boolean;
+} = {} as any, { isAllowed = isActivityAllowed } = {}) {
   function isValid(cb, storageType, storageKey, isWrite) {
     let mod = moduleName;
     const curBidder = config.getCurrentBidder();
@@ -254,19 +245,7 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
     return schedule(cb, STORAGE_TYPE_COOKIES, keyLike, false, done);
   };
 
-  // Deletion must remain available after consent withdrawal. Each operation is independent:
-  // localStorage may be disabled while cookies are still available, or vice versa.
-  const deleteConfiguredData = function () {
-    try {
-      window.localStorage.removeItem(deletionKey);
-    } catch (e) { }
-    try {
-      document.cookie = `${deletionKey}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`;
-    } catch (e) { }
-  };
-
   return {
-    ...(deletionKey != null ? { deleteConfiguredData } : {}),
     setCookie,
     getCookie,
     cookiesAreEnabled,
@@ -283,16 +262,11 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
  *  for `{moduleType: 'bidder', moduleName: bidderCode}`.
  *
  */
-type StorageManagerLookup = {
+export function getStorageManager({ moduleType, moduleName, bidderCode }: {
   moduleType?: ModuleType;
   moduleName?: string;
   bidderCode?: BidderCode;
-  deletionKey?: string;
-};
-
-export function getStorageManager(options: StorageManagerLookup & { deletionKey: string }): DeletingStorageManager;
-export function getStorageManager(options?: StorageManagerLookup): StorageManager;
-export function getStorageManager({ moduleType, moduleName, bidderCode, deletionKey }: StorageManagerLookup = {}) {
+} = {}) {
   function err() {
     throw new Error(`Invalid invocation for getStorageManager: must set either bidderCode, or moduleType + moduleName`);
   }
@@ -303,7 +277,7 @@ export function getStorageManager({ moduleType, moduleName, bidderCode, deletion
   } else if (!moduleName || !moduleType) {
     err();
   }
-  return newStorageManager({ moduleType, moduleName, deletionKey });
+  return newStorageManager({ moduleType, moduleName });
 }
 
 /**
