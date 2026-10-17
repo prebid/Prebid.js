@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { config } from 'src/config.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 import { isValid, newBidder } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import { hook } from 'src/hook.js';
@@ -750,24 +751,36 @@ describe('adapexBidAdapter', function () {
 
   describe('onDataDeletionRequest', function () {
     let sandbox;
+    let previousBidderSettings;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
+      previousBidderSettings = getGlobal().bidderSettings;
+      getGlobal().bidderSettings = { ...previousBidderSettings, adapex: { storageAllowed: true } };
     });
 
     afterEach(function () {
+      config.resetConfig();
+      getGlobal().bidderSettings = previousBidderSettings;
+      window.localStorage.removeItem('adpx_uid');
+      document.cookie = 'adpx_uid=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/';
       sandbox.restore();
     });
 
-    it('removes both copies of the fallback id when core forwards a CMP deletion request', function () {
-      const removeLocal = sandbox.stub(storage, 'removeDataFromLocalStorage');
-      const setCookie = sandbox.stub(storage, 'setCookie');
+    it('removes both stored copies after device access and bidder storage permission are withdrawn', function () {
+      storage.setDataInLocalStorage('adpx_uid', 'stored-id');
+      storage.setCookie('adpx_uid', 'stored-id');
+      expect(storage.getDataFromLocalStorage('adpx_uid')).to.equal('stored-id');
+      expect(storage.getCookie('adpx_uid')).to.equal('stored-id');
+
+      getGlobal().bidderSettings.adapex.storageAllowed = false;
+      config.setConfig({ deviceAccess: false });
       adapterManager.callDataDeletionRequest({});
-      expect(removeLocal.calledOnceWith('adpx_uid')).to.be.true;
-      expect(setCookie.calledOnce).to.be.true;
-      const [name, value, expires] = setCookie.firstCall.args;
-      expect([name, value]).to.deep.equal(['adpx_uid', '']);
-      expect(new Date(expires).getTime()).to.be.below(Date.now());
+
+      config.setConfig({ deviceAccess: true });
+      getGlobal().bidderSettings.adapex.storageAllowed = true;
+      expect(storage.getDataFromLocalStorage('adpx_uid')).to.be.null;
+      expect(storage.getCookie('adpx_uid')).to.be.null;
     });
   });
 

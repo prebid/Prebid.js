@@ -73,6 +73,40 @@ describe('storage manager', function() {
     deviceAccessSpy.restore();
   });
 
+  describe('deleteData', function () {
+    const key = 'prebid.deletionTest';
+    const storage = getCoreStorageManager('deletionTest');
+
+    afterEach(function () {
+      window.localStorage.removeItem(key);
+      document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`;
+    });
+
+    it('deletes existing data after device access is withdrawn', function () {
+      storage.setDataInLocalStorage(key, 'value');
+      storage.setCookie(key, 'value');
+      expect(storage.getDataFromLocalStorage(key)).to.equal('value');
+      expect(storage.getCookie(key)).to.equal('value');
+
+      config.setConfig({ deviceAccess: false });
+      storage.deleteData(key);
+      config.setConfig({ deviceAccess: true });
+
+      expect(storage.getDataFromLocalStorage(key)).to.be.null;
+      expect(storage.getCookie(key)).to.be.null;
+    });
+
+    it('still expires the cookie if localStorage removal throws', function () {
+      storage.setCookie(key, 'value');
+      const removeItem = sinon.stub(window.localStorage, 'removeItem').throws(new Error('storage blocked'));
+
+      storage.deleteData(key);
+      removeItem.restore();
+
+      expect(storage.getCookie(key)).to.be.null;
+    });
+  });
+
   describe(`accessDevice activity check`, () => {
     let isAllowed;
 

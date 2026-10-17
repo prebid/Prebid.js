@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import adapterManager from 'src/adapterManager.js';
+import { config } from 'src/config.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 import { registerActivityControl } from 'src/activities/rules.js';
 import { ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD } from 'src/activities/activities.js';
 import { isValid } from 'src/adapters/bidderFactory.js';
@@ -1178,24 +1180,36 @@ describe('floxisBidAdapter', function () {
 
   describe('onDataDeletionRequest', function () {
     let sandbox;
+    let previousBidderSettings;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
+      previousBidderSettings = getGlobal().bidderSettings;
+      getGlobal().bidderSettings = { ...previousBidderSettings, floxis: { storageAllowed: true } };
     });
 
     afterEach(function () {
+      config.resetConfig();
+      getGlobal().bidderSettings = previousBidderSettings;
+      window.localStorage.removeItem('flx_uid');
+      document.cookie = 'flx_uid=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/';
       sandbox.restore();
     });
 
-    it('removes both copies of the fallback id when core forwards a CMP deletion request', function () {
-      const removeLocal = sandbox.stub(storage, 'removeDataFromLocalStorage');
-      const setCookie = sandbox.stub(storage, 'setCookie');
+    it('removes both stored copies after device access and bidder storage permission are withdrawn', function () {
+      storage.setDataInLocalStorage('flx_uid', 'stored-id');
+      storage.setCookie('flx_uid', 'stored-id');
+      expect(storage.getDataFromLocalStorage('flx_uid')).to.equal('stored-id');
+      expect(storage.getCookie('flx_uid')).to.equal('stored-id');
+
+      getGlobal().bidderSettings.floxis.storageAllowed = false;
+      config.setConfig({ deviceAccess: false });
       adapterManager.callDataDeletionRequest({});
-      expect(removeLocal.calledOnceWith('flx_uid')).to.be.true;
-      expect(setCookie.calledOnce).to.be.true;
-      const [name, value, expires] = setCookie.firstCall.args;
-      expect([name, value]).to.deep.equal(['flx_uid', '']);
-      expect(new Date(expires).getTime()).to.be.below(Date.now());
+
+      config.setConfig({ deviceAccess: true });
+      getGlobal().bidderSettings.floxis.storageAllowed = true;
+      expect(storage.getDataFromLocalStorage('flx_uid')).to.be.null;
+      expect(storage.getCookie('flx_uid')).to.be.null;
     });
   });
 

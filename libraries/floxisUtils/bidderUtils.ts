@@ -345,8 +345,7 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     },
 
     onDataDeletionRequest() {
-      storage.removeDataFromLocalStorage(storageKey);
-      storage.setCookie(storageKey, '', 'Thu, 01 Jan 1970 00:00:01 GMT');
+      storage.deleteData(storageKey);
     },
 
     onBidBillable(bid) {

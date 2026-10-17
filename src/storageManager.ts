@@ -52,6 +52,8 @@ export type StorageManager = {
   getCookie: AcceptsCallback<(name: string) => string>;
   cookiesAreEnabled: AcceptsCallback<() => boolean>;
   findSimilarCookies: AcceptsCallback<(contains: string) => string[]>
+  /** Remove existing data after accessDevice or bidder storage permission has been withdrawn. */
+  deleteData: (key: string) => void;
 };
 
 /*
@@ -245,7 +247,19 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
     return schedule(cb, STORAGE_TYPE_COOKIES, keyLike, false, done);
   };
 
+  // Deletion must remain available after consent withdrawal. Each operation is independent:
+  // localStorage may be disabled while cookies are still available, or vice versa.
+  const deleteData = function (key: string) {
+    try {
+      window.localStorage.removeItem(key);
+    } catch (e) { }
+    try {
+      document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`;
+    } catch (e) { }
+  };
+
   return {
+    deleteData,
     setCookie,
     getCookie,
     cookiesAreEnabled,
