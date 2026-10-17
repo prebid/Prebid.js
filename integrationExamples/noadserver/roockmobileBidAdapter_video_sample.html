@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roockmobile Prebid video request demo</title>
+  <!-- Build first: npx gulp build --modules=roockmobileBidAdapter -->
+  <script async src="../../build/dist/prebid.js"></script>
+  <script>
+    const pbjs = window.pbjs = window.pbjs || {};
+    pbjs.que = pbjs.que || [];
+    const adUnitCode = 'roockmobile-video';
+    const adUnits = [{
+      code: adUnitCode,
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          mimes: ['video/mp4'],
+          playerSize: [[640, 360]],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [2, 3, 5, 6],
+          playbackmethod: [2],
+          api: [2],
+          linearity: 1
+        }
+      },
+      bids: [{
+        bidder: 'roockmobile',
+        params: {
+          mid: '2299',
+          token: 'd8b92f59d593c760edba95de3ee35e30',
+          tagid: '210091',
+          test: 1
+        }
+      }]
+    }];
+
+    function text(node, selector) {
+      return node.querySelector(selector)?.textContent?.trim() || '';
+    }
+
+    function inspectAndPlayVast(vastXml) {
+      const status = document.querySelector('#status');
+      const diagnostics = document.querySelector('#diagnostics');
+      const player = document.querySelector('#player');
+      const clickThrough = document.querySelector('#click-through');
+      const xml = new DOMParser().parseFromString(vastXml, 'application/xml');
+      const parseError = xml.querySelector('parsererror');
+      if (parseError) throw new Error(`Invalid VAST XML: ${parseError.textContent}`);
+
+      const mediaFiles = [...xml.querySelectorAll('MediaFile')];
+      const media = mediaFiles.find(node => node.getAttribute('type') === 'video/mp4') || mediaFiles[0];
+      const mediaUrl = media?.textContent?.trim();
+      if (!mediaUrl) throw new Error('The VAST response does not contain a MediaFile URL.');
+
+      const warnings = [];
+      const duration = text(xml, 'Duration');
+      if (!duration || duration === '00:00:00') warnings.push('VAST Duration is zero or missing; a production VAST player may reject this creative.');
+      if (location.protocol === 'https:' && mediaUrl.startsWith('http:')) warnings.push('The HTTP MediaFile is blocked as mixed content on an HTTPS page.');
+      const bidSize = `${window.currentVideoBid.width || '?'}x${window.currentVideoBid.height || '?'}`;
+      const playerSize = `${window.currentVideoBid.playerWidth || 640}x${window.currentVideoBid.playerHeight || 360}`;
+      if (bidSize !== playerSize) warnings.push(`OpenRTB bid size ${bidSize} does not match the requested player size ${playerSize}.`);
+      diagnostics.textContent = warnings.length ? warnings.join('\n') : 'No obvious VAST validation problems found.';
+
+      player.src = mediaUrl;
+      player.hidden = false;
+      const destination = text(xml, 'ClickThrough');
+      clickThrough.href = destination || '#';
+      clickThrough.hidden = !destination;
+      status.textContent += ' The first MP4 MediaFile is loaded below; press Play if autoplay is blocked.';
+      player.play().catch(() => {});
+    }
+
+    function requestBids() {
+      pbjs.requestBids({
+        adUnitCodes: [adUnitCode],
+        timeout: 5000,
+        bidsBackHandler() {
+          const bid = pbjs.getHighestCpmBids(adUnitCode)[0];
+          const status = document.querySelector('#status');
+          const vast = document.querySelector('#vast');
+          if (!bid) {
+            status.textContent = 'Request sent. No video bid was returned.';
+            vast.textContent = '';
+            return;
+          }
+          window.currentVideoBid = bid;
+          pbjs.markWinningBidAsUsed({ adId: bid.adId, events: true });
+          status.textContent = `Video bid received: ${bid.cpm} ${bid.currency}; VAST ${bid.vastXml ? 'XML' : 'URL'} returned.`;
+          vast.textContent = bid.vastXml || bid.vastUrl || '';
+          if (bid.vastXml) {
+            try {
+              inspectAndPlayVast(bid.vastXml);
+            } catch (error) {
+              status.textContent += ` Playback setup failed: ${error.message}`;
+            }
+          } else {
+            status.textContent += ' This demo cannot safely use the returned URL without fetching VAST XML; check CORS and use a VAST player.';
+          }
+        }
+      });
+    }
+
+    pbjs.que.push(() => {
+      pbjs.setConfig({
+        cache: { allowVastXmlOnly: true },
+        userSync: {
+          filterSettings: {
+            iframe: { bidders: ['roockmobile'], filter: 'include' }
+          }
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+      requestBids();
+    });
+  </script>
+</head>
+<body>
+  <h1>Roockmobile video request demo</h1>
+  <p>This page uses the Roockmobile review credentials and sends OpenRTB <code>test: 1</code>. It verifies the <code>imp.video</code> request and plays the first MP4 in an inline VAST response. It is a protocol test, not a production VAST player.</p>
+  <button onclick="requestBids()">Send video bid request</button>
+  <p id="status">Waiting for Prebid.js…</p>
+  <video id="player" width="640" height="360" controls muted playsinline hidden></video>
+  <p><a id="click-through" href="#" target="_blank" rel="noopener" hidden>Open advertiser landing page</a></p>
+  <h2>Diagnostics</h2>
+  <pre id="diagnostics">Waiting for a VAST response…</pre>
+  <details>
+    <summary>Returned VAST</summary>
+    <pre id="vast"></pre>
+  </details>
+</body>
+</html>

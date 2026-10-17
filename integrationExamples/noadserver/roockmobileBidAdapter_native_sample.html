@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roockmobile Prebid native request demo</title>
+  <!-- Build first: npx gulp build --modules=roockmobileBidAdapter,nativeRendering -->
+  <script async src="../../build/dist/prebid.js"></script>
+  <script>
+    const pbjs = window.pbjs = window.pbjs || {};
+    pbjs.que = pbjs.que || [];
+    const adUnitCode = 'roockmobile-native';
+    const adUnits = [{
+      code: adUnitCode,
+      mediaTypes: {
+        native: {
+          ortb: {
+            ver: '1.2',
+            assets: [
+              { id: 1, required: 1, title: { len: 80 } },
+              { id: 2, required: 1, img: { type: 3, wmin: 300, hmin: 250 } },
+              { id: 3, required: 0, data: { type: 1, len: 40 } }
+            ]
+          }
+        }
+      },
+      bids: [{
+        bidder: 'roockmobile',
+        params: {
+          mid: '2299',
+          token: 'd8b92f59d593c760edba95de3ee35e30',
+          tagid: '210091',
+          test: 1
+        }
+      }]
+    }];
+
+    function requestBids() {
+      document.querySelector('#creative').replaceChildren();
+      pbjs.requestBids({
+        adUnitCodes: [adUnitCode],
+        timeout: 5000,
+        bidsBackHandler() {
+          const bid = pbjs.getHighestCpmBids(adUnitCode)[0];
+          const status = document.querySelector('#status');
+          const response = document.querySelector('#response');
+          if (!bid) {
+            status.textContent = 'Request sent. No native bid was returned.';
+            response.textContent = '';
+            return;
+          }
+
+          status.textContent = `Native bid received: ${bid.cpm} ${bid.currency}`;
+          response.textContent = JSON.stringify(bid.native, null, 2);
+          const iframe = document.createElement('iframe');
+          iframe.width = '320';
+          iframe.height = '300';
+          iframe.setAttribute('frameborder', '0');
+          iframe.srcdoc = document.querySelector('#native-template').innerHTML;
+          document.querySelector('#creative').appendChild(iframe);
+          iframe.onload = () => pbjs.renderAd(iframe.contentDocument, bid.adId);
+        }
+      });
+    }
+
+    pbjs.que.push(() => {
+      pbjs.setConfig({
+        userSync: {
+          filterSettings: {
+            iframe: { bidders: ['roockmobile'], filter: 'include' }
+          }
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+      requestBids();
+    });
+  </script>
+</head>
+<body>
+  <template id="native-template">
+    <style>
+      body { margin: 0; font: 14px Arial, sans-serif; }
+      .card { width: 300px; min-height: 250px; padding: 10px; background: #f5f5f5; }
+      img { display: block; width: 300px; height: 250px; object-fit: cover; }
+      a { color: #222; text-decoration: none; }
+      .sponsor { color: #666; }
+    </style>
+    <article class="card">
+      <a href="##hb_native_linkurl##" target="_blank" rel="noopener">
+        <img src="##hb_native_asset_id_2##" alt="">
+        <h2>##hb_native_asset_id_1##</h2>
+      </a>
+      <p class="sponsor">##hb_native_asset_id_3##</p>
+    </article>
+  </template>
+
+  <h1>Roockmobile native request demo</h1>
+  <p>This demo uses the Roockmobile review credentials and sends OpenRTB <code>test: 1</code> to request a guaranteed native test creative.</p>
+  <button onclick="requestBids()">Send native bid request</button>
+  <p id="status">Waiting for Prebid.js…</p>
+  <div id="creative"></div>
+  <details>
+    <summary>Parsed native response</summary>
+    <pre id="response"></pre>
+  </details>
+</body>
+</html>
