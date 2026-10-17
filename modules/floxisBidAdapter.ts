@@ -17,10 +17,11 @@ declare module '../src/adUnits' {
 }
 
 const BIDDER_CODE = 'floxis';
+const STORAGE_KEY = 'flx_uid';
 const GVLID = 1609;
 const DEFAULT_REGION = 'us-e';
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE, deletionKey: STORAGE_KEY });
 
 // Only the us-e trackers host is provisioned for telemetry.
 const TELEMETRY_ORIGIN = 'https://px-us-e.floxis.tech';
@@ -29,7 +30,7 @@ export const spec = createFloxisSpec({
   code: BIDDER_CODE,
   gvlid: GVLID,
   storage,
-  storageKey: 'flx_uid',
+  storageKey: STORAGE_KEY,
   fallbackIdField: 'floxisId',
   resolveRoute: (params) => ({
     region: params.region || DEFAULT_REGION,

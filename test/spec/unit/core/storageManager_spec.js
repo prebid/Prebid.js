@@ -73,37 +73,54 @@ describe('storage manager', function() {
     deviceAccessSpy.restore();
   });
 
-  describe('deleteData', function () {
+  describe('deleteConfiguredData', function () {
     const key = 'prebid.deletionTest';
-    const storage = getCoreStorageManager('deletionTest');
+    const unrelatedKey = 'prebid.unrelatedDeletionTest';
+    const storage = newStorageManager({ moduleName: 'deletionTest', moduleType: MODULE_TYPE_PREBID, deletionKey: key });
 
     afterEach(function () {
       window.localStorage.removeItem(key);
+      window.localStorage.removeItem(unrelatedKey);
       document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`;
+      document.cookie = `${unrelatedKey}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`;
     });
 
     it('deletes existing data after device access is withdrawn', function () {
       storage.setDataInLocalStorage(key, 'value');
       storage.setCookie(key, 'value');
+      storage.setDataInLocalStorage(unrelatedKey, 'keep');
+      storage.setCookie(unrelatedKey, 'keep');
       expect(storage.getDataFromLocalStorage(key)).to.equal('value');
       expect(storage.getCookie(key)).to.equal('value');
 
       config.setConfig({ deviceAccess: false });
-      storage.deleteData(key);
+      storage.deleteConfiguredData();
       config.setConfig({ deviceAccess: true });
 
       expect(storage.getDataFromLocalStorage(key)).to.be.null;
       expect(storage.getCookie(key)).to.be.null;
+      expect(storage.getDataFromLocalStorage(unrelatedKey)).to.equal('keep');
+      expect(storage.getCookie(unrelatedKey)).to.equal('keep');
     });
 
     it('still expires the cookie if localStorage removal throws', function () {
       storage.setCookie(key, 'value');
       const removeItem = sinon.stub(window.localStorage, 'removeItem').throws(new Error('storage blocked'));
 
-      storage.deleteData(key);
+      storage.deleteConfiguredData();
       removeItem.restore();
 
       expect(storage.getCookie(key)).to.be.null;
+    });
+
+    it('does not expose deletion on an ordinary storage manager', function () {
+      const ordinary = getCoreStorageManager('ordinary');
+      ordinary.setDataInLocalStorage(unrelatedKey, 'keep');
+      ordinary.setCookie(unrelatedKey, 'keep');
+
+      expect(ordinary).not.to.have.property('deleteConfiguredData');
+      expect(ordinary.getDataFromLocalStorage(unrelatedKey)).to.equal('keep');
+      expect(ordinary.getCookie(unrelatedKey)).to.equal('keep');
     });
   });
 
