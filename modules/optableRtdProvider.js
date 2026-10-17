@@ -2,6 +2,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, mergeDeep, prefixLog } from '../src/utils.js';
 
 /**
@@ -16,6 +17,11 @@ const MODULE_NAME = 'optable';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD]:`;
 const optableLog = prefixLog(LOG_PREFIX);
 const { logMessage, logWarn, logError } = optableLog;
+
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
+
+/** localStorage key where the Optable bundle caches resolved targeting data */
+export const OPTABLE_RESOLVED_KEY = 'OPTABLE_RESOLVED';
 
 /**
  * Extracts the parameters for Optable RTD module from the config object passed at instantiation
@@ -81,12 +87,42 @@ const waitForOptableEvent = (eventName) => {
 };
 
 /**
- * Default function to handle/enrich RTD data
+ * Whether the Optable bundle has loaded on the page
+ * @returns {boolean}
+ */
+const isBundleLoaded = () => {
+  const optableBundle = /** @type {Object} */ (window.optable);
+  return typeof optableBundle?.rtd?.handleRtd === 'function' || !!optableBundle?.instance;
+};
+
+/**
+ * Read targeting data cached by the Optable bundle on a previous page
+ * @returns {Object|null} Cached ORTB2 object with at least one EID, or null
+ */
+export const readCachedTargeting = () => {
+  try {
+    const ortb2 = JSON.parse(storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY) || 'null')?.ortb2;
+    return ortb2?.user?.eids?.length ? ortb2 : null;
+  } catch (error) {
+    logWarn('Could not read cached targeting data', error);
+    return null;
+  }
+};
+
+/**
+ * Enrich the request once the Optable bundle has loaded: use the bundle's own
+ * handler if it exposes one, otherwise wait for its targeting data
  * @type {OptableHandleRtd}
  */
-export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
+const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
+  const bundleHandleRtd = window.optable?.rtd?.handleRtd;
+  if (typeof bundleHandleRtd === 'function') {
+    logMessage('Using the Optable bundle handleRtd');
+    return bundleHandleRtd(reqBidsConfigObj, optableExtraData, mergeFn);
+  }
+
   // Wait for the Optable SDK to dispatch targeting data via event
-  let targetingData = await waitForOptableEvent('optable-targeting:change');
+  const targetingData = await waitForOptableEvent('optable-targeting:change');
 
   if (!targetingData || !targetingData.ortb2) {
     logWarn('No targeting data found');
@@ -101,18 +137,42 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
 };
 
 /**
- * Get data from Optable and merge it into the global ORTB2 object
+ * Default function to handle/enrich RTD data. Called without waiting for the
+ * Optable bundle, so auctions that start before it loads can still use data
+ * cached on a previous page.
+ * @type {OptableHandleRtd}
+ */
+export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
+  if (isBundleLoaded()) {
+    return handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn);
+  }
+
+  // Bundle not loaded yet: use data cached on a previous page, without waiting
+  const cachedOrtb2 = readCachedTargeting();
+  if (cachedOrtb2) {
+    logMessage('Optable bundle not loaded yet, using cached targeting data');
+    mergeFn(reqBidsConfigObj.ortb2Fragments.global, cachedOrtb2);
+    return;
+  }
+
+  // Nothing cached: wait for the bundle to load
+  logMessage('Optable bundle not loaded yet and no cached data, waiting for the bundle');
+  window.optable = window.optable || { cmd: [] };
+  await new Promise((resolve) => window.optable.cmd.push(resolve));
+  return handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn);
+};
+
+/**
+ * Get data from Optable and merge it into the global ORTB2 object.
+ * Always waits for the handler: checking for a native AsyncFunction fails once
+ * the build transpiles async functions (e.g. `gulp build --ES5`).
  * @param {OptableHandleRtd} handleRtdFn Function to handle RTD data
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {OptableRtdConfig} optableExtraData Additional data to be used by the Optable SDK
  * @param {OptableMergeFn} mergeFn Function to merge data
  */
 export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn) => {
-  if (handleRtdFn.constructor.name === 'AsyncFunction') {
-    await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
-  } else {
-    handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
-  }
+  await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
 };
 
 /**
@@ -129,27 +189,16 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
     if (bundleUrl) {
-      // If bundleUrl is present, load the Optable JS bundle
-      // by using the loadExternalScript function
+      // Load the Optable JS bundle in parallel; the handler does not wait for it
       logMessage('Custom bundle URL found in config: ', bundleUrl);
-
-      // Load Optable JS bundle and merge the data
       loadExternalScript(bundleUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
         logMessage('Successfully loaded Optable JS bundle');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
       }, document);
-    } else {
-      // At this point, we assume that the Optable JS bundle is already
-      // present on the page. If it is, we can directly merge the data
-      // by passing the callback to the optable.cmd.push function.
-      logMessage('Custom bundle URL not found in config. ' +
-        'Assuming Optable JS bundle is already present on the page');
-      window.optable = window.optable || { cmd: [] };
-      window.optable.cmd.push(() => {
-        logMessage('Optable JS bundle found on the page');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
-      });
     }
+
+    // Call the handler right away. The default handler copes with the bundle
+    // not being loaded yet; a custom handler decides for itself whether to wait.
+    mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
   } catch (error) {
     // If an error occurs, log it and call the callback
     // to continue with the auction

@@ -152,6 +152,12 @@
                                 //     console.warn('optableExtraData', optableExtraData);
                                 //     console.warn('mergeFn', mergeFn);
                                 //
+                                //     // The module calls this right away, so wait for the Optable bundle to load
+                                //     await new Promise((resolve) => {
+                                //         window.optable = window.optable || { cmd: [] };
+                                //         window.optable.cmd.push(resolve);
+                                //     });
+                                //
                                 //     // Call Optable DCN for targeting data and return the ORTB2 object
                                 //     const targetingData = await optableBundle.instance.targeting();
                                 //
