@@ -5,6 +5,11 @@ import { BANNER, NATIVE, VIDEO } from "../src/mediaTypes.js";
 import { getTimeZone } from "../libraries/timezone/timezone.js";
 import { logError, logWarn } from "../src/utils.js";
 
+/**
+ * @typedef {import('./escalaxBidAdapter.d.ts').EscalaxBidderParams} EscalaxBidderParams
+ * @typedef {{ exchange: string, ssp: string }} EscalaxSubdomains
+ */
+
 const BIDDER_CODE = "escalax";
 const GVLID = 1435;
 
@@ -38,6 +43,9 @@ const TIMEZONE_REGIONS = {
   Indian: "APAC",
 };
 
+/**
+ * @returns {EscalaxSubdomains}
+ */
 function getRegionSubdomains() {
   try {
     const region = TIMEZONE_REGIONS[getTimeZone().split("/")[0]];
@@ -47,6 +55,10 @@ function getRegionSubdomains() {
   }
 }
 
+/**
+ * @param {{ params: EscalaxBidderParams }} bid
+ * @returns {boolean}
+ */
 function isSspBid(bid) {
   return Boolean(bid.params.supplyPlacementId);
 }
@@ -90,6 +102,11 @@ function createBidResponse(buildBidResponse, bid, context) {
   return bidResponse;
 }
 
+/**
+ * @param {{ params: EscalaxBidderParams }} bid
+ * @param {EscalaxSubdomains} subdomains
+ * @returns {string}
+ */
 function buildEndpointURL(bid, subdomains) {
   if (isSspBid(bid)) {
     return ESCALAX_SSP_URL.replace(
@@ -106,10 +123,7 @@ function buildEndpointURL(bid, subdomains) {
     subdomains.exchange,
   )
     .replace(ESCALAX_SOURCE_ID_MACRO, encodeURIComponent(bid.params.sourceId))
-    .replace(
-      ESCALAX_ACCOUNT_ID_MACRO,
-      encodeURIComponent(bid.params.accountId),
-    );
+    .replace(ESCALAX_ACCOUNT_ID_MACRO, encodeURIComponent(bid.params.accountId));
 }
 
 const converter = ortbConverter({
@@ -124,8 +138,8 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   gvlid: GVLID,
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
     const { sourceId, accountId, supplyPlacementId } = bid?.params || {};

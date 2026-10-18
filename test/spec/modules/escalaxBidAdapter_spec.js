@@ -242,6 +242,10 @@ describe("escalaxAdapter", function () {
     });
   });
 
+  it("should have gvlid", function () {
+    expect(spec.gvlid).to.equal(1435);
+  });
+
   describe("with user privacy regulations", function () {
     it('should send the Coppa "required" flag set to "1" in the request', async function () {
       sinon.stub(config, "getConfig").withArgs("coppa").returns(true);
