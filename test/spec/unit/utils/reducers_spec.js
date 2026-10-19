@@ -6,7 +6,6 @@ import {
   maximum,
   getHighestCpm,
   getHighestDesirability,
-  getBestBid,
   getOldestHighestCpmBid, getLatestHighestCpmBid, reverseCompare
 } from '../../../../src/utils/reducers.js';
 
@@ -147,37 +146,6 @@ describe('reducers', () => {
       };
       expect(getHighestDesirability(boosted, plain)).to.eql(boosted);
       expect(getHighestDesirability(plain, boosted)).to.eql(boosted);
-    });
-  });
-
-  describe('getBestBid', function () {
-    function bid(props) {
-      return { cpm: 1, desirability: 1, width: 300, height: 250, timeToRespond: 100, ...props };
-    }
-
-    function expectWinner(winner, loser) {
-      expect(getBestBid(winner, loser)).to.equal(winner);
-      expect(getBestBid(loser, winner)).to.equal(winner);
-    }
-
-    it('prefers higher `.desirability` over size and deals', function () {
-      expectWinner(bid({ desirability: 2, width: 970, height: 250 }), bid({ width: 300, height: 50, dealId: 'deal' }));
-    });
-
-    it('prefers the smaller creative on a desirability tie', function () {
-      expectWinner(bid({ width: 300, height: 250 }), bid({ width: 970, height: 250 }));
-    });
-
-    it('ranks bids without a size as largest', function () {
-      expectWinner(bid({ width: 970, height: 250 }), bid({ width: undefined, height: undefined }));
-    });
-
-    it('prefers a deal on a desirability and size tie, before response time', function () {
-      expectWinner(bid({ dealId: 'deal', timeToRespond: 500 }), bid({ timeToRespond: 50 }));
-    });
-
-    it('falls back to the lowest timeToRespond', function () {
-      expectWinner(bid({ timeToRespond: 50 }), bid({ timeToRespond: 100 }));
     });
   });
 

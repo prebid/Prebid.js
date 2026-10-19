@@ -49,7 +49,7 @@ import {
   renderAdDirect,
   renderIfDeferred
 } from './adRendering.js';
-import { getBestBid, getHighestCpm } from './utils/reducers.js';
+import { getHighestCpm, getHighestDesirability } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { AUDIO, BANNER, VIDEO } from './mediaTypes.js';
@@ -1142,12 +1142,11 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
 
 /**
- * Get the most desirable bids for all adUnits, or the most desirable bid object for the given adUnit.
- * Desirability ties prefer the smaller creative, then a deal, then the fastest response.
+ * Get the most desirable bids for all adUnits, or the most desirable bid object for the given adUnit
  * @param adUnitCode - ad unit code
  */
 function getBestBids(adUnitCode?: string): Bid[] {
-  return targeting.getWinningBids(adUnitCode, undefined, getBestBid);
+  return targeting.getWinningBids(adUnitCode, undefined, getHighestDesirability);
 }
 
 addApiMethod('getBestBids', getBestBids);
