@@ -154,6 +154,15 @@ describe('desirability utils', function () {
       ]);
     });
 
+    it('compares desirability when set 0', () => {
+      expect(
+        sortByHighestDesirability(
+          { cpm: 5, desirability: 0 },
+          { cpm: 5, desirability: 2 },
+        ),
+      ).to.equal(2);
+    });
+
     it('compares `.desirability` only — raw cpm ties need explicit scores', function () {
       expect(
         sortByHighestDesirability(

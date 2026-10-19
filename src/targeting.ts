@@ -482,8 +482,8 @@ export function newTargeting(auctionManager) {
     return targetedAdIdsByAdUnit;
   }
 
-  function getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes) {
-    const winners = targeting.getWinningBids(adUnitCodes, bidsSorted);
+  function getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes, winReducer, winSorter) {
+    const winners = targeting.getWinningBids(adUnitCodes, bidsSorted, winReducer, winSorter);
     const includedBids = getBidsIncludedInBidderTargeting(bidsSorted);
     const targetedAdIdsByAdUnit = collectTargetedAdIdsByAdUnit(winners.concat(includedBids));
 
@@ -520,7 +520,7 @@ export function newTargeting(auctionManager) {
     const adUnitBidLimit = getAdUnitBidLimitMap(adUnitCodes, bidLimit);
     const { customKeysByUnit, filteredBids } = getfilteredBidsAndCustomKeys(adUnitCodes, bidsReceived);
     const bidsSorted = getHighestCpmBidsFromBidPool(filteredBids, winReducer, adUnitBidLimit, undefined, winSorter);
-    let { targeting, targetedAdIdsByAdUnit } = getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes);
+    let { targeting, targetedAdIdsByAdUnit } = getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes, winReducer, winSorter);
 
     const defaultKeys = Object.keys(Object.assign({}, DEFAULT_TARGETING_KEYS));
     let allowedKeys = config.getConfig(CFG_ALLOW_TARGETING_KEYS);
