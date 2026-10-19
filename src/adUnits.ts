@@ -11,6 +11,8 @@ export interface SafeRendererConfig {
   url: string;
   config?: any; // set by the bidder adapter
   getConfig?(bidResponse: Bid): any; // set by the publisher
+  /** Cache XML-only outstream bids so this renderer receives a VAST URL. */
+  requiresVastUrl?: boolean;
 }
 
 export interface RendererConfig {
@@ -28,6 +30,9 @@ export interface RendererConfig {
    * if set to true, this renderer config will be used only when the bid adapter doesn't provide its own renderer.
    */
   backupOnly?: boolean;
+
+  /** Cache XML-only outstream bids so this renderer receives a VAST URL. */
+  requiresVastUrl?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

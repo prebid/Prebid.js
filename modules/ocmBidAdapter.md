@@ -136,6 +136,27 @@ var adUnits = [
 ];
 ```
 
+### Native requirements
+
+The native request the adapter sends is the ORTB one Prebid core derives from the ad unit
+(`bid.nativeOrtbRequest`), so the ad unit has to satisfy core's own native validation or nothing
+native is sent at all:
+
+- every asset needs exactly one of `title`, `img`, `data` or `video`. Core does not enforce this one
+  (its `isOpenRTBAssetValid` accepts an asset that declares none), so the adapter checks it and skips
+  the bid rather than sending PBS an asset it cannot fill.
+- every asset needs an integer `id`, unique within the ad unit. Core removes `mediaTypes.native`
+  entirely when an id is missing or is not a non-negative integer, which leaves the ad unit with
+  `mediaTypes: {}` and no native bid request. Look for
+  `Removing native request from ad unit` in the Prebid debug log.
+- an `img` asset needs `w`/`h` (or `wmin`/`hmin`), a `title` asset needs `len`, a `data` asset needs
+  `type`, and a `video` asset needs `mimes`, `protocols`, `minduration` and `maxduration`. Core keeps
+  `mediaTypes.native` when one of these fails but derives no native request from it; the adapter then
+  logs a warning and skips the bid rather than sending an impression with no `native` object.
+
+`ver` is optional: the adapter defaults the native request to `1.2` when the ad unit does not set
+`mediaTypes.native.ortb.ver`.
+
 ## Multi-Format Ad Unit
 
 ```javascript

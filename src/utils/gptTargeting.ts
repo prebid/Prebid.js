@@ -2,6 +2,26 @@
 
 import type { GptApi, GptSlot } from '../types/gpt.d.ts';
 
+const targetedAdIdsBySlot = new WeakMap<GptSlot, Set<string>>();
+
+export function recordSlotTargeting(slot: GptSlot, adIds: Iterable<string> = []): void {
+  const recorded = new Set<string>();
+  Array.from(adIds).forEach((adId) => {
+    if (adId) recorded.add(String(adId));
+  });
+  targetedAdIdsBySlot.set(slot, recorded);
+}
+
+export function slotHasTargetedAdId(slot: GptSlot, adId: string): boolean {
+  return targetedAdIdsBySlot.get(slot)?.has(adId) ?? false;
+}
+
+export function findSlotElementIdByAdId(adId: string, getSlots: () => GptSlot[] = () => (window as any).googletag.pubads().getSlots()): string | null {
+  if (adId == null) return null;
+  const slot = getSlots().find((s) => slotHasTargetedAdId(s, adId));
+  return (slot as any)?.getSlotElementId?.() ?? null;
+}
+
 /**
  * The new config API on gpt and Slot we assume with the hasConfigApi typeguard.
  */

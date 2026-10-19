@@ -139,6 +139,13 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
    * GVL ID to use for TCF. If omitted your module may be excluded when TCF is in scope.
    */
   gvlid?: number | typeof VENDORLESS_GVLID;
+  /**
+   * Google Additional Consent provider ID, for vendors that are not on the GVL.
+   * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
+   * when the module has no GVL ID. This is a different ID space from GVL IDs.
+   * @see https://support.google.com/admanager/answer/9681920
+   */
+  acpId?: number;
   disclosureURL?: string;
   /**
    * Invoked when:

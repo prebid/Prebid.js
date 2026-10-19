@@ -23,7 +23,7 @@ export function createRtdProvider(moduleName) {
 
   /**
    * localStorage key holding the SignalLift blob written by the Anonymised Marketing Tag. It carries
-   * several unrelated fields (the CUID, a hashed email); only `iabAudience` is ever read here.
+   * several fields unrelated to this module, the PPID among them; only `settings.ppsEnabled` and `iabAudience` are read here.
    */
   const SIGNAL_LIFT_STORAGE_KEY = 'anon-sl';
 
@@ -88,7 +88,7 @@ export function createRtdProvider(moduleName) {
    * This tab's own session assignment wins. The persisted copy is shared by every tab on the origin
    * and only records whichever tag run wrote last, so once this tab has been assigned a group,
    * preferring the persisted copy would let a sibling tab overwrite it: two tabs can hold different
-   * assignments whenever they resolved different user identifiers (an anonymous feId in one, a CUID
+   * assignments whenever they resolved different user identifiers (an anonymous feId in one, a PPID
    * in the other after a sign-in elsewhere), and a treatment tab writing 't' would otherwise mask
    * this tab's own 'h'.
    *
@@ -124,8 +124,8 @@ export function createRtdProvider(moduleName) {
     }
 
     // Parsed here rather than through tryParse, which logs the value it failed on. This blob can
-    // hold the CUID and a hashed email, and logError emits an AUCTION_DEBUG event whatever the
-    // debug setting, so a malformed value would carry those identifiers to any subscriber. The
+    // hold the PPID and other unrelated fields, and logError emits an AUCTION_DEBUG event whatever
+    // the debug setting, so a malformed value would carry that data to any subscriber. The
     // thrown error is not logged either: V8 quotes the first ten characters of the input in a
     // SyntaxError message when the text is malformed from the start. Only the error's class name,
     // which cannot contain stored data, is reported.
@@ -146,8 +146,8 @@ export function createRtdProvider(moduleName) {
       return undefined;
     }
 
-    // Deliberately narrow: `anon-sl` also holds the CUID and a hashed email, and neither belongs in
-    // user.data. Only the taxonomy IDs are read, and each one is coerced to the string ORTB expects.
+    // Deliberately narrow: `anon-sl` also holds the PPID and other unrelated fields, and none of
+    // them belongs in user.data. Only the taxonomy IDs are read, and each one is coerced to the string ORTB expects.
     const iabAudience = signalLift.iabAudience;
     if (!isArray(iabAudience)) {
       return undefined;

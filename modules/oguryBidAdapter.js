@@ -15,7 +15,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.1.1';
+const ADAPTER_VERSION = '2.1.2';
 
 export const ortbConverterProps = {
   context: {
@@ -32,6 +32,10 @@ export const ortbConverterProps = {
       adapterversion: ADAPTER_VERSION,
       prebidversion: '$prebid.version$'
     });
+
+    const page = deepAccess(req, 'site.page');
+    const resolvedPage = resolveSitePage(page, deepAccess(bidderRequest, 'refererInfo.page'));
+    if (resolvedPage !== page) deepSetValue(req, 'site.page', resolvedPage);
 
     const bidWithAssetKey = bidderRequest.bids.find(bid => Boolean(deepAccess(bid, 'params.assetKey', false)));
     if (bidWithAssetKey) deepSetValue(req, 'site.id', bidWithAssetKey.params.assetKey);
@@ -151,6 +155,11 @@ function getFloor(bid) {
   return (isPlainObject(result) && result.currency === 'USD') ? result.floor : 0;
 }
 
+// a site.page without a scheme is not a usable URL: no resolvable origin, no page path
+function resolveSitePage(page, refererPage) {
+  return page && !/^https?:\/\//i.test(page) && refererPage ? refererPage : page;
+}
+
 function getWindowContext() {
   try {
     return getWindowTop();
@@ -172,10 +181,10 @@ function onBidWon(bid) {
 }
 
 function onTimeout(timeoutData) {
-  // report the same page as the bid request: site.page comes from the bid's ortb2, which the
-  // core already enriched with refererInfo and let the publisher override. Fall back to
-  // refererInfo when a timeout event carries no ortb2 (bids dropped before FPD is attached).
-  const page = deepAccess(timeoutData[0], 'ortb2.site.page') || getRefererInfo().page || window.location.href;
+  // timeout monitoring has to report the page request() sent, so it resolves it the same way
+  const refererPage = getRefererInfo().page;
+  const ortb2Page = deepAccess(timeoutData[0], 'ortb2.site.page');
+  const page = resolveSitePage(ortb2Page, refererPage) || refererPage || window.location.href;
   ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: page }), {
     method: 'POST',
     contentType: 'application/json'

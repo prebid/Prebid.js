@@ -10,6 +10,10 @@ Maintainer: prebid@dspx.tv
 
 DSPx adapter for Prebid.
 
+Consent signals are forwarded when available: TCF (GDPR), US Privacy and GPP.
+
+Interstitial inventory is taken from `ortb2Imp.instl`, no bidder param needed.
+
 # Test Parameters
 ```
     var adUnits = [
