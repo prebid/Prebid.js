@@ -262,6 +262,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "advergic",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adyoulike",
       "aliasOf": null,
       "gvlid": 259,
@@ -850,13 +857,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "magicbid",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "malltv",
       "aliasOf": null,
       "gvlid": null,
@@ -1193,6 +1193,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "tpmn",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "truereach",
       "aliasOf": null,
       "gvlid": null,
@@ -1403,6 +1410,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "ad_spiro",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adelerate",
       "aliasOf": null,
       "gvlid": null,
@@ -1427,6 +1441,13 @@
       "componentName": "adform",
       "aliasOf": "adf",
       "gvlid": 50,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adferry",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -1760,13 +1781,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "floxis",
-      "aliasOf": null,
-      "gvlid": 1609,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "freepass",
       "aliasOf": null,
       "gvlid": null,
@@ -1777,13 +1791,6 @@
       "componentName": "goadserver",
       "aliasOf": null,
       "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "goldbach",
-      "aliasOf": null,
-      "gvlid": 580,
       "disclosureURL": null
     },
     {
@@ -2013,6 +2020,13 @@
     {
       "componentType": "bidder",
       "componentName": "madsense",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "magicbid",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -2313,13 +2327,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "tpmn",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "trafficgate",
       "aliasOf": null,
       "gvlid": 1272,
@@ -2456,6 +2463,13 @@
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "goldbach",
+      "aliasOf": null,
+      "gvlid": 580,
       "disclosureURL": null
     },
     {
@@ -3104,6 +3118,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adapex",
+      "aliasOf": null,
+      "gvlid": 1609,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "floxis",
+      "aliasOf": null,
+      "gvlid": 1609,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adbro",
       "aliasOf": null,
       "gvlid": 1316,
@@ -3470,7 +3498,7 @@
       "componentType": "bidder",
       "componentName": "intenze",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1457,
       "disclosureURL": null
     },
     {
@@ -6291,6 +6319,13 @@
       "componentType": "userId",
       "componentName": "rewardedInterestId",
       "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "sevioId",
+      "gvlid": 1393,
       "disclosureURL": null,
       "aliasOf": null
     },

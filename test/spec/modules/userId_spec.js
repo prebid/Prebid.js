@@ -38,9 +38,15 @@ import { getPPID } from '../../../src/adserver.js';
 import { uninstall as uninstallTcfControl } from 'modules/tcfControl.js';
 import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
-import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
-import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
-import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE,
+  ACTIVITY_PARAM_STORAGE_WRITE
+} from '../../../src/activities/params.js';
+import { isActivityAllowed, registerActivityControl } from '../../../src/activities/rules.js';
+import { activityParams } from '../../../src/activities/activityParams.js';
 import {
   discloseStorageUse,
   getCoreStorageManager,
@@ -3725,6 +3731,7 @@ describe('User ID', function () {
     let warnLogSpy;
     const UID_MODULE_NAME = 'userIdModule';
     const cookieName = 'testCookie';
+    const localStorageKey = 'testLocalStorageKey';
     const userSync = {
       userIds: [
         {
@@ -3750,6 +3757,7 @@ describe('User ID', function () {
     afterEach(() => {
       warnLogSpy.restore();
       getCoreStorageManager('test').setCookie(cookieName, '', EXPIRED_COOKIE_DATE);
+      getCoreStorageManager('test').removeDataFromLocalStorage(localStorageKey);
     });
 
     it('should not warn when reading', () => {
@@ -3777,6 +3785,46 @@ describe('User ID', function () {
       const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME });
       storage.setCookie(cookieName, 'value', 20000);
       expect(storage.getCookie(cookieName)).to.not.exist;
+    });
+
+    [
+      `${STORAGE_TYPE_COOKIES}&${STORAGE_TYPE_LOCALSTORAGE}`,
+      `${STORAGE_TYPE_LOCALSTORAGE}&${STORAGE_TYPE_COOKIES}`
+    ].forEach(storageType => {
+      describe(`with storage type '${storageType}'`, () => {
+        const userIds = [
+          {
+            name: UID_MODULE_NAME,
+            storage: {
+              type: storageType,
+              name: 'storageName'
+            }
+          }
+        ];
+
+        Object.entries({
+          'unset': {},
+          'set to true': { enforceStorageType: true }
+        }).forEach(([desc, enforceConfig]) => {
+          it(`should allow userId module to store data in cookies and local storage without warning for enforceStorageType ${desc}`, () => {
+            config.setConfig({ userSync: { ...enforceConfig, userIds } });
+            const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME });
+            storage.setCookie(cookieName, 'value', 20000);
+            storage.setDataInLocalStorage(localStorageKey, 'value');
+            expect(storage.getCookie(cookieName)).to.eql('value');
+            expect(storage.getDataFromLocalStorage(localStorageKey)).to.eql('value');
+            sinon.assert.notCalled(warnLogSpy);
+          });
+        });
+
+        it('should not allow userId module to store data in a storage type that is not listed for enforceStorageType set to true', () => {
+          config.setConfig({ userSync: { enforceStorageType: true, userIds } });
+          expect(isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_UID, UID_MODULE_NAME, {
+            [ACTIVITY_PARAM_STORAGE_TYPE]: 'unlisted',
+            [ACTIVITY_PARAM_STORAGE_WRITE]: true
+          }))).to.be.false;
+        });
+      });
     });
   });
 });

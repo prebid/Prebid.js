@@ -39,6 +39,10 @@ export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
   key => TARGETING_KEYS[key]
 );
 
+function isCpmEligible(bid: Bid): boolean {
+  return bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true ? bid.cpm >= 0 : bid.cpm > 0;
+}
+
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
 // If adUnitBidLimit is set above 0 return top N number of bids
@@ -320,17 +324,18 @@ export function newTargeting(auctionManager) {
      * @return An array of winning bids.
      */
     getWinningBids(adUnitCode: AdUnitCode | AdUnitCode[], bids?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestDesirability): Bid[] {
-      const bidsReceived = bids || getBidsReceived(winReducer, winSorter);
+      const bidsReceived = bids || getBidsReceived(winReducer, winSorter, isCpmEligible);
       const adUnitCodes = getAdUnitCodes(adUnitCode);
-
-      return bidsReceived
+      const eligibleBids = bidsReceived
         .filter(bid => adUnitCodes.includes(bid.adUnitCode))
-        .filter(bid => (bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true) ? bid.cpm >= 0 : bid.cpm > 0)
+        .filter(isCpmEligible);
+
+      return eligibleBids
         .map(bid => bid.adUnitCode)
         .filter(uniques)
-        .map(adUnitCode => bidsReceived
-          .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-          .reduce(getHighestCpm));
+        .map(adUnitCode => eligibleBids
+          .filter(bid => bid.adUnitCode === adUnitCode)
+          .reduce(winReducer));
     },
 
     /**
@@ -564,7 +569,7 @@ export function newTargeting(auctionManager) {
 
     const initiallyFilteredBids = bidsReceived.filter(bid => {
       const adUnitIsEligible = adUnitCodes.includes(bid.adUnitCode);
-      const cpmAllowed = bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true ? bid.cpm >= 0 : bid.cpm > 0;
+      const cpmAllowed = isCpmEligible(bid);
       const isPreferredDeal = alwaysIncludeDeals && bid.dealId;
       return adUnitIsEligible && (isPreferredDeal || cpmAllowed);
     });
@@ -716,7 +721,7 @@ export function newTargeting(auctionManager) {
     return auctionManager.getAdUnitCodes() || [];
   }
 
-  function getBidsReceived(winReducer = getOldestHighestCpmBid, winSorter = undefined) {
+  function getBidsReceived(winReducer = getOldestHighestCpmBid, winSorter = undefined, bidEligibility: (bid: Bid) => boolean = () => true) {
     const bidsReceived = auctionManager.getBidsReceived().reduce((bids, bid) => {
       const bidCacheEnabled = config.getConfig('useBidCache');
       const filterFunction = config.getConfig('bidCacheFilterFunction');
@@ -725,7 +730,7 @@ export function newTargeting(auctionManager) {
       const cacheFilter = bidCacheEnabled || isBidFromLastAuction;
       const bidFilter = cacheFilter && filterFunctionResult;
 
-      if (bidFilter && isBidUsable(bid)) {
+      if (bidFilter && isBidUsable(bid) && bidEligibility(bid)) {
         bid.latestTargetedAuctionId = latestAuctionForAdUnit[bid.adUnitCode];
         bids.push(bid);
       }
