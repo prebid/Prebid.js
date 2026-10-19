@@ -8,7 +8,7 @@ import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
-  const ADGENE_PREBID_VERSION = '1.6.6';
+  const ADGENE_PREBID_VERSION = '1.7.0';
   const ENDPOINT_STG = 'https://api-test.scaleout.jp/adgen/prebid';
   const ENDPOINT_RELEASE = 'https://d.socdm.com/adgen/prebid';
 
@@ -1249,7 +1249,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.native.sponsoredBy).to.equal(bidResponses.normal.native.native.sponsoredBy);
       expect(result.native.body).to.equal(bidResponses.normal.native.native.body);
       expect(result.native.cta).to.equal(bidResponses.normal.native.native.cta);
-      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.normal.native.native.privacyLink);
+      expect(result.native.privacyLink).to.equal(bidResponses.normal.native.native.privacyLink);
       expect(result.native.clickUrl).to.equal(bidResponses.normal.native.native.clickUrl);
       expect(result.native.impressionTrackers[0]).to.equal(bidResponses.normal.native.native.impressionTrackers[0]);
       expect(result.native.clickTrackers[0]).to.equal(bidResponses.normal.native.native.clickTrackers[0]);
@@ -1296,7 +1296,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.native.sponsoredBy).to.equal(bidResponses.normal.native.native.sponsoredBy);
       expect(result.native.body).to.equal(bidResponses.normal.native.native.body);
       expect(result.native.cta).to.equal(bidResponses.normal.native.native.cta);
-      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.normal.native.native.privacyLink);
+      expect(result.native.privacyLink).to.equal(bidResponses.normal.native.native.privacyLink);
       expect(result.native.clickUrl).to.equal(bidResponses.normal.native.native.clickUrl);
       expect(result.native.impressionTrackers[0]).to.equal(bidResponses.normal.native.native.impressionTrackers[0]);
       expect(result.native.clickTrackers[0]).to.equal(bidResponses.normal.native.native.clickTrackers[0]);
