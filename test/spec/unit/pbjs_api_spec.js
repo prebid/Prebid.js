@@ -1599,6 +1599,7 @@ describe('Unit: Prebid Module', function () {
         let spec, indexStub, auction, completeAuction, auctionStarted;
 
         beforeEach(function () {
+          clock = sinon.useFakeTimers();
           logMessageSpy = sinon.spy(utils, 'logMessage');
           makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
           makeRequestsStub.returns(bidRequests);
