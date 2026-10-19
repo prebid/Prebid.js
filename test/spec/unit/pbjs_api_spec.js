@@ -1554,10 +1554,10 @@ describe('Unit: Prebid Module', function () {
         let makeRequestsStub;
         let adUnits;
         let clock;
-        before(function () {
+        beforeEach(function () {
           clock = sinon.useFakeTimers();
         });
-        after(function () {
+        afterEach(function () {
           clock.restore();
         });
 
