@@ -25,7 +25,7 @@ declare module '../src/adUnits' {
   }
 }
 
-const BIDDER_CODE = 'adspiro';
+const BIDDER_CODE = 'ad_spiro';
 const AUCTION_URL = 'https://rtb.adspiro.io/pbjs';
 const IFRAME_SYNC_URL = 'https://rtb.adspiro.io/u/iframe';
 const IMAGE_SYNC_URL = 'https://rtb.adspiro.io/u/sync';

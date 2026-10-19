@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/adspiroBidAdapter.ts';
+import { spec } from '../../../modules/ad_spiroBidAdapter.ts';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import '../../../modules/priceFloors.js';
 import { dep } from '../../../src/ajax.js';
@@ -23,7 +23,7 @@ const NATIVE_REQUEST = {
 
 function makeBid(overrides = {}) {
   return {
-    bidder: 'adspiro',
+    bidder: 'ad_spiro',
     bidId: 'bid-1',
     adUnitCode: 'div-1',
     auctionId: 'auction-1',
@@ -36,7 +36,7 @@ function makeBid(overrides = {}) {
 
 function buildRequests(bids, bidderRequestOverrides = {}) {
   return spec.buildRequests(bids, {
-    bidderCode: 'adspiro',
+    bidderCode: 'ad_spiro',
     auctionId: 'auction-1',
     bidderRequestId: 'bidder-request-1',
     timeout: 1500,
@@ -50,7 +50,7 @@ function ortbResponse(bids, extra = { cur: 'USD' }) {
   return { body: { id: 'response-1', ...extra, seatbid: [{ seat: 'adspiro', bid: bids }] } };
 }
 
-describe('adspiroBidAdapter', function () {
+describe('ad_spiroBidAdapter', function () {
   let sandbox;
 
   beforeEach(function () {
@@ -62,8 +62,8 @@ describe('adspiroBidAdapter', function () {
   });
 
   describe('spec', function () {
-    it('registers the adspiro bidder for every media type, without a GVL ID or aliases', function () {
-      expect(spec.code).to.equal('adspiro');
+    it('registers the ad_spiro bidder for every media type, without a GVL ID or aliases', function () {
+      expect(spec.code).to.equal('ad_spiro');
       expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video', 'native', 'audio']);
       expect(spec).to.not.have.property('gvlid');
       expect(spec).to.not.have.property('aliases');

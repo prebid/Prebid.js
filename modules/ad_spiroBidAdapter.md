@@ -46,7 +46,7 @@ pbjs.setConfig({
   userSync: {
     filterSettings: {
       iframe: {
-        bidders: ['adspiro'],
+        bidders: ['ad_spiro'],
         filter: 'include'
       }
     }
@@ -70,7 +70,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'adspiro',
+      bidder: 'ad_spiro',
       params: {
         publisherId: 'test'
       }
@@ -89,7 +89,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'adspiro',
+      bidder: 'ad_spiro',
       params: {
         publisherId: 'test'
       }
@@ -126,7 +126,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'adspiro',
+      bidder: 'ad_spiro',
       params: {
         publisherId: 'test'
       }
@@ -149,7 +149,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'adspiro',
+      bidder: 'ad_spiro',
       params: {
         publisherId: 'test'
       }
@@ -168,7 +168,7 @@ var adUnits = [
       }
     },
     bids: [{
-      bidder: 'adspiro',
+      bidder: 'ad_spiro',
       params: {
         publisherId: 'test'
       }
