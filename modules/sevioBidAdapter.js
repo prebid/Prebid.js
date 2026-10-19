@@ -17,6 +17,17 @@ const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
 const ENDPOINT_URL = "https://req.adx.ws/prebid";
 const ACTION_METHOD = "POST";
+const ADSHIELD_HEADER = "X-Adshield";
+
+// getResponseHeader returns null for an absent header and "" for one sent without a value,
+// so presence must be tested against null rather than by truthiness.
+const hasResponseHeader = (serverResponse, name) => {
+  try {
+    return serverResponse?.headers?.get?.(name) != null;
+  } catch (e) {
+    return false;
+  }
+};
 
 const detectAdType = (bid) =>
   (
@@ -413,10 +424,12 @@ export const spec = {
     }
 
     const bids = serverResponse.body.bids;
+    const adshield = hasResponseHeader(serverResponse, ADSHIELD_HEADER) ? 1 : 0;
 
     bids.forEach((bid) => {
       if (bid && typeof bid === "object") {
         bid.bidder = BIDDER_CODE;
+        bid.meta = { ...bid.meta, adshield };
         if ((bid.mediaType || '').toLowerCase() === 'native') {
           const native = parseNativeAd(bid);
           if (native) {
