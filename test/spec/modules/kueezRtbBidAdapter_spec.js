@@ -206,7 +206,13 @@ const REQUEST = {
 };
 
 describe('KueezRtbBidAdapter', function () {
+  after(function () {
+    config.resetConfig();
+  });
   describe('validtae spec', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -234,6 +240,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('validate bid requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -264,6 +273,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('build requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     let sandbox;
 
     before(function () {
@@ -561,6 +573,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
@@ -599,6 +614,9 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should generate url with consent data', function () {
+      config.setConfig({
+        coppa: 1
+      });
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'consent_string'
@@ -617,8 +635,10 @@ describe('KueezRtbBidAdapter', function () {
       }]);
     });
   });
-
   describe('interpret response', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
@@ -696,6 +716,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('alternate param names extractors', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return undefined when param not supported', function () {
       const cid = extractCID({ 'c_id': '1' });
       const pid = extractPID({ 'p_id': '1' });
@@ -716,6 +739,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
@@ -751,6 +777,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('storage utils', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
@@ -798,6 +827,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('First party data', () => {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
