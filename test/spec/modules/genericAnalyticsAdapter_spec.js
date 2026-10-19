@@ -1,8 +1,18 @@
 import { defaultHandler, GenericAnalytics } from '../../../modules/genericAnalyticsAdapter.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
+import { submodule } from 'src/hook.js';
 
-const { AUCTION_INIT, BID_RESPONSE } = EVENTS;
+const { AUCTION_INIT, AUCTION_END, BID_RESPONSE } = EVENTS;
+
+submodule('genericAnalytics', 'mockPreset', {
+  auctionInit(auction) {
+    return { preset: 'auctionInit', i: auction.i };
+  },
+  bidResponse(bid) {
+    return { preset: 'bidResponse', i: bid.i };
+  }
+});
 
 describe('Generic analytics', () => {
   describe('adapter', () => {
@@ -59,6 +69,24 @@ describe('Generic analytics', () => {
             options: {
               url: 'mock',
               method: 'PATCH'
+            }
+          });
+        });
+
+        it('preset is not a string', () => {
+          adapter.enableAnalytics({
+            options: {
+              url: 'mock',
+              preset: 123
+            }
+          });
+        });
+
+        it('preset is not available', () => {
+          adapter.enableAnalytics({
+            options: {
+              url: 'mock',
+              preset: 'missing'
             }
           });
         });
@@ -244,6 +272,94 @@ describe('Generic analytics', () => {
           events.emit(BID_RESPONSE, { i: 1 });
           sinon.assert.calledOnce(handler);
           sinon.assert.calledWith(handler, sinon.match(data => sinon.match({ i: 0 }).test(data[0])));
+        });
+      });
+
+      describe('and options.preset is specified', () => {
+        it('accepts an available preset', () => {
+          adapter.enableAnalytics({
+            options: {
+              handler,
+              preset: 'mockPreset'
+            }
+          });
+          expect(adapter.enabled).to.be.true;
+        });
+
+        it('formats event data using the preset', () => {
+          adapter.enableAnalytics({
+            options: {
+              handler,
+              batchSize: 2,
+              preset: 'mockPreset'
+            }
+          });
+          events.emit(AUCTION_INIT, { i: 0, extra: 'data' });
+          events.emit(BID_RESPONSE, { i: 1, extra: 'data' });
+          sinon.assert.calledOnce(handler);
+          sinon.assert.calledWith(handler, [
+            { preset: 'auctionInit', i: 0 },
+            { preset: 'bidResponse', i: 1 }
+          ]);
+        });
+
+        it('filters out events not in the preset', () => {
+          adapter.enableAnalytics({
+            options: {
+              handler,
+              preset: 'mockPreset'
+            }
+          });
+          events.emit(AUCTION_END, {});
+          clock.runAll();
+          sinon.assert.notCalled(handler);
+        });
+
+        it('lets options.events override and extend the preset', () => {
+          adapter.enableAnalytics({
+            options: {
+              handler,
+              batchSize: 3,
+              preset: 'mockPreset',
+              events: {
+                bidResponse(bid) {
+                  return { custom: 'bidResponse', i: bid.i };
+                },
+                auctionEnd(auction) {
+                  return { custom: 'auctionEnd', i: auction.i };
+                }
+              }
+            }
+          });
+          events.emit(AUCTION_INIT, { i: 0 });
+          events.emit(BID_RESPONSE, { i: 1 });
+          events.emit(AUCTION_END, { i: 2 });
+          sinon.assert.calledWith(handler, [
+            { preset: 'auctionInit', i: 0 },
+            { custom: 'bidResponse', i: 1 },
+            { custom: 'auctionEnd', i: 2 }
+          ]);
+        });
+
+        it('does not modify the preset when options.events overrides it', () => {
+          adapter.enableAnalytics({
+            options: {
+              handler,
+              preset: 'mockPreset',
+              events: {
+                bidResponse(bid) {}
+              }
+            }
+          });
+          adapter.disableAnalytics();
+          adapter.enableAnalytics({
+            options: {
+              handler,
+              preset: 'mockPreset'
+            }
+          });
+          events.emit(BID_RESPONSE, { i: 0 });
+          sinon.assert.calledWith(handler, [{ preset: 'bidResponse', i: 0 }]);
         });
       });
     });
