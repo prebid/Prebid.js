@@ -34,6 +34,9 @@ const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+/* Capping state written by the Missena renderer on the publisher's page, one key per api key.
+   It is sent back as the `local` field of the bid request so the bid endpoint can apply the capping. */
+const LOCAL_STORAGE_KEY_PREFIX = 'msna-local.';
 window.msna_ik = window.msna_ik || generateUUID();
 
 /* Get Floor price information */
@@ -76,6 +79,14 @@ function toPayload(bidRequest, bidderRequest) {
   payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
   payload.viewport = getViewportSize();
   payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
+  const local = safeJSONParse(
+    storage.getDataFromLocalStorage(
+      LOCAL_STORAGE_KEY_PREFIX + bidRequest.params.apiKey,
+    ),
+  );
+  if (local) {
+    payload.local = local;
+  }
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   payload.ortb2 = {
@@ -117,18 +128,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
-    const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
-    const referer = bidderRequest?.refererInfo?.topmostLocation;
-    if (
-      typeof capping?.expiry === 'number' &&
-      new Date().getTime() < capping?.expiry &&
-      (!capping?.referer || capping?.referer === referer)
-    ) {
-      logInfo('Missena - Capped');
-      return [];
-    }
-
     this.msnaApiKey = validBidRequests[0]?.params.apiKey;
 
     return validBidRequests.map((bidRequest) =>
