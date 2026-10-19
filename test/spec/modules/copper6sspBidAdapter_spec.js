@@ -212,6 +212,9 @@ describe('copper6sspBidAdapter', function () {
   after(() => config.resetConfig());
 
   describe('validate spec', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -239,6 +242,9 @@ describe('copper6sspBidAdapter', function () {
   });
 
   describe('validate bid requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -297,6 +303,9 @@ describe('copper6sspBidAdapter', function () {
   });
 
   describe('param shapes', function () {
+    after(function () {
+      config.resetConfig();
+    });
     const commonParams = {
       bidFloor: 0.1,
       subDomain: SUB_DOMAIN,
@@ -307,6 +316,9 @@ describe('copper6sspBidAdapter', function () {
     };
 
     describe('modern params (cId/pId)', function () {
+      after(function () {
+        config.resetConfig();
+      });
       it('should validate with only cId and pId', function () {
         expect(adapter.isBidRequestValid({
           params: {
@@ -337,6 +349,9 @@ describe('copper6sspBidAdapter', function () {
     });
 
     describe('legacy params (placementId/endpointId)', function () {
+      after(function () {
+        config.resetConfig();
+      });
       it('should validate string placementId and endpointId without cId/pId', function () {
         expect(adapter.isBidRequestValid({
           params: {
@@ -375,6 +390,9 @@ describe('copper6sspBidAdapter', function () {
   });
 
   describe('build requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     let sandbox;
     before(function () {
       getGlobal().bidderSettings = {
@@ -547,6 +565,9 @@ describe('copper6sspBidAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
@@ -605,6 +626,9 @@ describe('copper6sspBidAdapter', function () {
   });
 
   describe('interpret response', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
@@ -682,6 +706,9 @@ describe('copper6sspBidAdapter', function () {
   });
 
   describe('alternate param names extractors', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return undefined when param not supported', function () {
       const cid = extractCID({ 'c_id': '1' });
       const pid = extractPID({ 'p_id': '1' });
@@ -702,6 +729,9 @@ describe('copper6sspBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         copper6ssp: {
@@ -737,6 +767,9 @@ describe('copper6sspBidAdapter', function () {
   });
 
   describe('storage utils', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         copper6ssp: {
@@ -866,6 +899,9 @@ const LEGACY_VIDEO_BID = {
 };
 
 describe('build requests for legacy adapter calls', function () {
+  after(function () {
+    config.resetConfig();
+  });
   let sandbox;
   before(function () {
     getGlobal().bidderSettings = {
