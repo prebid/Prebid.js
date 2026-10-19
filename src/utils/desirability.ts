@@ -37,11 +37,3 @@ export function adjustDesirability(
     return adjustedCpm;
   }
 }
-
-/** Compare bids that already carry `.desirability` (e.g. after `adjustBids` in the auction). Higher wins. */
-export function sortByHighestDesirability(a: Bid, b: Bid): number {
-  if (b.desirability != null && a.desirability != null) {
-    return b.desirability - a.desirability;
-  }
-  return b.cpm - a.cpm;
-}

@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
-import { adjustDesirability, sortByHighestDesirability } from '../../../../src/utils/desirability.js';
+import { adjustDesirability } from '../../../../src/utils/desirability.js';
+import { highestDesirabilityFirst } from '../../../../src/utils/reducers.js';
 
 describe('desirability utils', function () {
   let sandbox;
@@ -106,7 +107,7 @@ describe('desirability utils', function () {
     });
   });
 
-  describe('sortByHighestDesirability', function () {
+  describe('highestDesirabilityFirst', function () {
     it('orders by hydrated .desirability when bidDesirabilityAdjustment throws on one bidder', function () {
       const logStub = sinon.stub(utils, 'logError');
       const okBid = {
@@ -123,7 +124,7 @@ describe('desirability utils', function () {
       expect(
         [okBid, badBid].map((b) =>
           hydrateBidScores(b, bidderSettingsMixedAdjustment)
-        ).sort(sortByHighestDesirability).map((b) => b.bidderCode)
+        ).sort(highestDesirabilityFirst).map((b) => b.bidderCode)
       ).to.eql(['ok-adjust', 'bad-adjust']);
       sinon.assert.called(logStub);
       logStub.restore();
@@ -135,7 +136,7 @@ describe('desirability utils', function () {
         { cpm: 5, bidderCode: 'bidder-b', bidder: 'bidder-b' },
         { cpm: 3, bidderCode: 'bidder-c', bidder: 'bidder-c' },
       ].map((b) => hydrateBidScores(b, bidderSettingsNoAdjustment));
-      const sorted = bids.slice().sort(sortByHighestDesirability);
+      const sorted = bids.slice().sort(highestDesirabilityFirst);
       expect(sorted.map((x) => x.cpm)).to.eql([5, 3, 1]);
     });
 
@@ -146,7 +147,7 @@ describe('desirability utils', function () {
         { cpm: 40, duration: 8, bidderCode: 'bidder-c', bidder: 'bidder-c' },
         { cpm: 10, duration: 2, bidderCode: 'bidder-a', bidder: 'bidder-a' },
       ].map((b) => hydrateBidScores(b, bidderSettingsPerBidderAdjustment));
-      const sorted = bids.slice().sort(sortByHighestDesirability);
+      const sorted = bids.slice().sort(highestDesirabilityFirst);
       expect(sorted.map((b) => b.bidderCode)).to.eql([
         'bidder-a',
         'bidder-c',
@@ -156,20 +157,20 @@ describe('desirability utils', function () {
 
     it('compares desirability when set 0', () => {
       expect(
-        sortByHighestDesirability(
+        highestDesirabilityFirst(
           { cpm: 5, desirability: 0 },
           { cpm: 5, desirability: 2 },
         ),
-      ).to.equal(2);
+      ).to.be.greaterThan(0);
     });
 
     it('compares `.desirability` only — raw cpm ties need explicit scores', function () {
       expect(
-        sortByHighestDesirability(
+        highestDesirabilityFirst(
           { cpm: 5, desirability: 1 },
           { cpm: 5, desirability: 2 },
         ),
-      ).to.equal(1);
+      ).to.be.greaterThan(0);
     });
   });
 });
