@@ -1,7 +1,6 @@
-import type { FloxisBaseBidParams } from '../libraries/floxisUtils/bidderUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { createFloxisSpec, isValidHostLabel } from '../libraries/floxisUtils/bidderUtils.js';
+import { createFloxisSpec, isValidHostLabel, type FloxisBaseBidParams } from '../libraries/floxisUtils/bidderUtils.js';
 
 export interface FloxisBidParams extends FloxisBaseBidParams {
   /** Exchange region; defaults to us-e. */

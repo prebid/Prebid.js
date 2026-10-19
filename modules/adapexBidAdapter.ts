@@ -1,8 +1,7 @@
 import { config } from '../src/config.js';
-import type { FloxisBaseBidParams } from '../libraries/floxisUtils/bidderUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { createFloxisSpec } from '../libraries/floxisUtils/bidderUtils.js';
+import { createFloxisSpec, type FloxisBaseBidParams } from '../libraries/floxisUtils/bidderUtils.js';
 
 export type AdapexBidParams = FloxisBaseBidParams;
 
