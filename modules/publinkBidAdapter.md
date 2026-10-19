@@ -8,6 +8,9 @@ Maintainer: hello@publink.io
 
 # Description
 
+Publink is an independent ad-server company and platform. It is not affiliated
+with Epsilon or Epsilon's Publisher Link product.
+
 Connects to the Publink OpenRTB endpoint for banner, instream video and audio.
 The adapter uses Prebid's ORTB converter and sends one request per placement.
 Native and adapter-provided outstream rendering are not supported.
@@ -15,7 +18,7 @@ Native and adapter-provided outstream rendering are not supported.
 # Bid Parameters
 
 | Name | Scope | Description | Type |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `placementId` | optional* | Overrides standard `ortb2Imp.tagid` with the Publink placement ID. | `string` |
 | `bidFloor` | optional | Nonnegative fallback CPM; standard impression/floors values take precedence. | `number` |
 | `currency` | optional | Fallback floor currency; only `USD` is supported. | `string` |
