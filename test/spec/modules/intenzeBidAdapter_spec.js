@@ -397,6 +397,17 @@ describe("IntenzeAdapter", function () {
       expect(requests[0].data.imp[0].bidfloorcur).to.equal("EUR");
     });
 
+    it("sends a zero params.bidfloor", function () {
+      const requests = buildRequests([
+        makeBid({
+          bidId: "bid-1",
+          params: { placementId: "25", bidfloor: 0 },
+        }),
+      ]);
+      expect(requests[0].data.imp[0].bidfloor).to.equal(0);
+      expect(requests[0].data.imp[0].bidfloorcur).to.equal("USD");
+    });
+
     it("does not set a floor when params.bidfloor is missing", function () {
       const requests = buildRequests([
         makeBid({ bidId: "bid-1", params: { placementId: "25" } }),

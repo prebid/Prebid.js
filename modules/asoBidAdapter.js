@@ -8,7 +8,7 @@ const BIDDER_GVLID = 1621;
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
 const DEFAULT_SERVER_PATH = '/prebid/bidder';
 const DEFAULT_CURRENCY = 'USD';
-const VERSION = '$prebid.version$_2.0';
+const VERSION = '$prebid.version$_2.1';
 const TTL = 300;
 
 export const spec = {
@@ -29,22 +29,23 @@ export const spec = {
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const requests = [];
-
+    // one multi-imp request per endpoint, i.e. per zone (and custom server)
+    const groups = {};
     bidRequests.forEach(bid => {
-      const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
-      requests.push({
-        method: 'POST',
-        url: getEndpoint(bid),
-        data,
-        options: {
-          withCredentials: true,
-          crossOrigin: true
-        },
-        bidderRequest
-      });
+      const url = getEndpoint(bid);
+      (groups[url] = groups[url] || []).push(bid);
     });
-    return requests;
+
+    return Object.keys(groups).map(url => ({
+      method: 'POST',
+      url,
+      data: converter.toORTB({ bidRequests: groups[url], bidderRequest }),
+      options: {
+        withCredentials: true,
+        crossOrigin: true
+      },
+      bidderRequest
+    }));
   },
 
   interpretResponse: (response, request) => {
@@ -89,7 +90,6 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
 
     imp.tagid = bidRequest.adUnitCode;
-    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     return imp;
   },
 

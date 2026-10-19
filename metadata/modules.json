@@ -262,6 +262,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "advergic",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adyoulike",
       "aliasOf": null,
       "gvlid": 259,
@@ -850,13 +857,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "magicbid",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "malltv",
       "aliasOf": null,
       "gvlid": null,
@@ -1431,6 +1431,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adferry",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adfusion",
       "aliasOf": null,
       "gvlid": 844,
@@ -1781,13 +1788,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "goldbach",
-      "aliasOf": null,
-      "gvlid": 580,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "hubvisor",
       "aliasOf": null,
       "gvlid": 1112,
@@ -2013,6 +2013,13 @@
     {
       "componentType": "bidder",
       "componentName": "madsense",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "magicbid",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -2456,6 +2463,13 @@
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "goldbach",
+      "aliasOf": null,
+      "gvlid": 580,
       "disclosureURL": null
     },
     {
@@ -3470,7 +3484,7 @@
       "componentType": "bidder",
       "componentName": "intenze",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1457,
       "disclosureURL": null
     },
     {
@@ -6291,6 +6305,13 @@
       "componentType": "userId",
       "componentName": "rewardedInterestId",
       "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "sevioId",
+      "gvlid": 1393,
       "disclosureURL": null,
       "aliasOf": null
     },
