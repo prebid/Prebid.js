@@ -183,6 +183,15 @@ describe('Optable RTD Submodule', function () {
       sandbox.stub(storage, 'getDataFromLocalStorage').returns('{not json');
       expect(readCachedTargeting()).to.be.null;
     });
+
+    it('strips cache-only _ref metadata from cached EIDs', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({
+        ortb2: { user: { eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }], _ref: { refreshToken: 'secret' } }] } }
+      }));
+      expect(readCachedTargeting()).to.deep.equal({
+        user: { eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }] }] }
+      });
+    });
   });
 
   describe('mergeOptableData', function () {

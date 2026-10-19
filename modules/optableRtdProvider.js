@@ -96,13 +96,23 @@ const isBundleLoaded = () => {
 };
 
 /**
- * Read targeting data cached by the Optable bundle on a previous page
+ * Read targeting data cached by the Optable bundle on a previous page.
+ * Strips cache-only `_ref` metadata (UID2 refresh material written by older
+ * bundles) from EIDs so it never reaches bid requests.
  * @returns {Object|null} Cached ORTB2 object with at least one EID, or null
  */
 export const readCachedTargeting = () => {
   try {
     const ortb2 = JSON.parse(storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY) || 'null')?.ortb2;
-    return ortb2?.user?.eids?.length ? ortb2 : null;
+    if (!ortb2?.user?.eids?.length) {
+      return null;
+    }
+    const eids = ortb2.user.eids.map((eid) => {
+      const clean = { ...eid };
+      delete clean._ref;
+      return clean;
+    });
+    return { ...ortb2, user: { ...ortb2.user, eids } };
   } catch (error) {
     logWarn('Could not read cached targeting data', error);
     return null;
