@@ -320,7 +320,7 @@ describe('VidazooBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
-  describe('validtae spec', function () {
+  describe('validate spec', function () {
     after(function () {
       config.resetConfig();
     });
