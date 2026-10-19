@@ -1232,6 +1232,7 @@ describe('targeting tests', function () {
 
       afterEach(function () {
         enableSendAllBids = false;
+        config.resetConfig();
       });
 
       it('sets the winning keys to the most desirable bid rather than the highest CPM', function () {
@@ -1260,6 +1261,18 @@ describe('targeting tests', function () {
         highCpmUndesirable.desirability = highCpmUndesirable.cpm;
         const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
         expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-b');
+      });
+
+      it('does not let a zero desirability outrank a positive one under bidLimit and dealPrioritization', function () {
+        enableSendAllBids = true;
+        sandbox.stub(auctionManager, 'getAdUnits').returns([{ code: adUnitCode }]);
+        config.setConfig({ sendBidsControl: { bidLimit: 1, dealPrioritization: true } });
+        lowCpmDesirable.desirability = 2;
+        highCpmUndesirable.desirability = 0;
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderA`]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderB`]).to.not.exist;
       });
     });
   }); // end getAllTargeting tests
@@ -1704,6 +1717,20 @@ describe('targeting tests', function () {
       expect(bids[3].adserverTargeting.hb_adid).to.equal('def');
       expect(bids[4].adserverTargeting.hb_adid).to.equal('pqr');
       expect(bids[5].adserverTargeting.hb_adid).to.equal('mno');
+    });
+
+    it('compares desirability when set to 0', function () {
+      const bids = [{
+        cpm: 3,
+        desirability: 0,
+        adserverTargeting: { hb_adid: 'zero' }
+      }, {
+        cpm: 2,
+        desirability: 2,
+        adserverTargeting: { hb_adid: 'positive' }
+      }];
+      bids.sort(sortByDealAndPriceBucketOrDesirability(true));
+      expect(bids.map(bid => bid.adserverTargeting.hb_adid)).to.eql(['positive', 'zero']);
     });
   });
 
