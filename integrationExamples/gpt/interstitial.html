@@ -6,124 +6,6 @@ A basic example of how to use GPT interstitials with Prebid.
 <head>
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
-    <script>
-      window.pbjs = window.pbjs || {};
-      pbjs.que = pbjs.que || [];
-
-      window.googletag = window.googletag || {};
-      googletag.cmd = googletag.cmd || [];
-
-      const FAILSAFE_TIMEOUT = 3000;
-      const PREBID_TIMEOUT = 1000;
-      const ADUNIT_PATH = '/19968336/header-bid-tag-0';
-
-      const adUnits = [{
-        // interstitials do not have a DOM element initially, so code must match the GPT ad unit path
-        // (or use customGptSlotMatching: https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#custom-gpt-slot-matching)
-        code: ADUNIT_PATH,
-        // GPT renders the slot regardless of when or whether the interstitial is shown, which would cause
-        // impression pixels to fire prematurely.
-        // deferBilling defers triggering pixels until triggerBilling is called below.
-        deferBilling: true,
-        mediaTypes: {
-          banner: {
-            sizes: [[400, 600]],
-          }
-        },
-        ortb2Imp: {
-          instl: 1
-        },
-        bids: [{
-          bidder: 'appnexus',
-          params: {
-            placementId: 1234
-          }
-        }]
-      }];
-
-      pbjs.que.push(function () {
-        pbjs.setConfig({
-          debug: true,
-          debugging: {
-            enabled: true,
-            intercept: [
-              {
-                when: {}
-              }
-            ]
-          }
-        });
-        pbjs.addAdUnits(adUnits);
-        pbjs.requestBids({
-          bidsBackHandler: sendAdserverRequest,
-          timeout: PREBID_TIMEOUT
-        });
-      });
-
-      function sendAdserverRequest() {
-        if (pbjs.adserverRequestSent) return;
-        pbjs.adserverRequestSent = true;
-        googletag.cmd.push(function () {
-          pbjs.que.push(function () {
-            pbjs.setTargetingForGPTAsync();
-            googletag.pubads().refresh();
-          });
-        });
-      }
-
-      setTimeout(function () {
-        sendAdserverRequest();
-      }, FAILSAFE_TIMEOUT);
-
-      googletag.cmd.push(function () {
-        googletag.setConfig({
-          disableInitialLoad: true,
-          singleRequest: true
-        })
-
-        const anchorSlot = googletag.defineOutOfPageSlot(
-          ADUNIT_PATH, googletag.enums.OutOfPageFormat.INTERSTITIAL,
-        );
-
-        // Slot returns null if the page or device does not support interstitials.
-        if (anchorSlot) {
-          // Enable optional interstitial triggers and register the slot.
-          anchorSlot.addService(googletag.pubads()).setConfig({
-            interstitial: {
-              triggers: {
-                navBar: true,
-                unhideWindow: true,
-              },
-            },
-          });
-
-
-          document.getElementById('status').textContent = 'Interstitial is loading...';
-
-          // when the interstitial is show, trigger billing pixels - or trigger the rendering itself,
-          // if the bidder cannot separate the two
-          googletag.pubads().addEventListener('slotVisibilityChanged', (event) => {
-            if (event.slot === anchorSlot && event.inViewPercentage > 0) {
-              pbjs.triggerBilling({adUnitCode: ADUNIT_PATH});
-            }
-          });
-
-          // Add event listener to enable navigation once the interstitial loads.
-          // If this event doesn't fire, try clearing local storage and refreshing
-          // the page.
-          googletag.pubads().addEventListener('slotOnload', (event) => {
-            if (anchorSlot === event.slot) {
-              document.getElementById('link').style.display = 'block';
-              document.getElementById('status').textContent = 'Interstitial is loaded.';
-            }
-          });
-
-        }
-
-        googletag.enableServices();
-        googletag.display(anchorSlot);
-      });
-    </script>
     <style>
         #link {
             display: none;
@@ -144,5 +26,127 @@ A basic example of how to use GPT interstitials with Prebid.
         <a id="link" href="https://www.prebid.org/">TRIGGER INTERSTITIAL</a>
     </p>
 </div>
+<script>
+  window.pbjs = window.pbjs || {};
+  pbjs.que = pbjs.que || [];
+
+  window.googletag = window.googletag || {};
+  googletag.cmd = googletag.cmd || [];
+
+  const FAILSAFE_TIMEOUT = 3000;
+  const PREBID_TIMEOUT = 1000;
+  const ADUNIT_PATH = '/19968336/header-bid-tag-0';
+
+  const adUnits = [{
+    // interstitials do not have a DOM element initially, so code must match the GPT ad unit path
+    // (or use customGptSlotMatching: https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#custom-gpt-slot-matching)
+    code: ADUNIT_PATH,
+    // GPT renders the slot regardless of when or whether the interstitial is shown, which would cause
+    // impression pixels to fire prematurely.
+    // deferBilling defers triggering pixels until triggerBilling is called below.
+    deferBilling: true,
+    mediaTypes: {
+      banner: {
+        sizes: [[400, 600]],
+      }
+    },
+    ortb2Imp: {
+      instl: 1
+    },
+    bids: [{
+      bidder: 'appnexus',
+      params: {
+        placementId: 1234
+      }
+    }]
+  }];
+
+  pbjs.que.push(function () {
+    pbjs.setConfig({
+      debug: true,
+      debugging: {
+        enabled: true,
+        intercept: [
+          {
+            when: {}
+          }
+        ]
+      }
+    });
+    pbjs.addAdUnits(adUnits);
+    pbjs.requestBids({
+      bidsBackHandler: sendAdserverRequest,
+      timeout: PREBID_TIMEOUT
+    });
+  });
+
+  function sendAdserverRequest() {
+    if (pbjs.adserverRequestSent) return;
+    pbjs.adserverRequestSent = true;
+    googletag.cmd.push(function () {
+      if (pbjs.libLoaded) {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      } else {
+        googletag.pubads().refresh();
+      }
+    });
+  }
+
+  setTimeout(function () {
+    sendAdserverRequest();
+  }, FAILSAFE_TIMEOUT);
+
+  googletag.cmd.push(function () {
+    googletag.setConfig({
+      disableInitialLoad: true,
+      singleRequest: true
+    });
+
+    const anchorSlot = googletag.defineOutOfPageSlot(
+      ADUNIT_PATH, googletag.enums.OutOfPageFormat.INTERSTITIAL,
+    );
+
+    // Slot returns null if the page or device does not support interstitials.
+    if (anchorSlot) {
+      // Enable optional interstitial triggers and register the slot.
+      anchorSlot.addService(googletag.pubads()).setConfig({
+        interstitial: {
+          triggers: {
+            navBar: true,
+            unhideWindow: true,
+          },
+        },
+      });
+
+
+      document.getElementById('status').textContent = 'Interstitial is loading...';
+
+      // when the interstitial is show, trigger billing pixels - or trigger the rendering itself,
+      // if the bidder cannot separate the two
+      googletag.pubads().addEventListener('slotVisibilityChanged', (event) => {
+        if (event.slot === anchorSlot && event.inViewPercentage > 0) {
+          pbjs.triggerBilling({ adUnitCode: ADUNIT_PATH });
+        }
+      });
+
+      // Add event listener to enable navigation once the interstitial loads.
+      // If this event doesn't fire, try clearing local storage and refreshing
+      // the page.
+      googletag.pubads().addEventListener('slotOnload', (event) => {
+        if (anchorSlot === event.slot) {
+          document.getElementById('link').style.display = 'block';
+          document.getElementById('status').textContent = 'Interstitial is loaded.';
+        }
+      });
+
+    }
+
+    googletag.enableServices();
+    googletag.display(anchorSlot);
+  });
+</script>
 </body>
 </html>
