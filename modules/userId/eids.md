@@ -389,6 +389,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+    {
+        source: 'adx.ws',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```

@@ -12,6 +12,10 @@ Connects to Missena for bids.
 
 **Note:** this adapter doesn't support SafeFrame.
 
+## Storage
+
+The adapter reads the `msna-local.<apiKey>` localStorage key (one per Missena api key) and sends its content to the bid endpoint as the `local` field of the bid request. The key holds the capping state written on the page by the Missena renderer (for example when the user closed an ad), which the bid endpoint takes into account when answering. The key is disclosed in the Missena device storage disclosure referenced from the Global Vendor List (GVL id 687).
+
 Useful resources:
 
 - [README](../README.md#Build)
