@@ -26,21 +26,15 @@ export interface DealMeta {
    */
   type: number;
   /**
-   * Unadjusted contractual or nominal deal CPM, in `cpmCurrency`.
+   * Unadjusted contractual or nominal deal CPM, in the bid's currency.
+   * The currency module converts it along with the bid's own `cpm`.
    */
   cpm?: number;
   /**
-   * Currency of `cpm`. Unlike the bid's own `currency`, this is not changed by currency conversion.
-   */
-  cpmCurrency?: Currency;
-  /**
-   * CPM-equivalent value after applying the current pacing or delivery adjustment, in `pacingAdjustedCpmCurrency`.
+   * CPM-equivalent value after applying the current pacing or delivery adjustment, in the bid's currency.
+   * The currency module converts it along with the bid's own `cpm`.
    */
   pacingAdjustedCpm?: number;
-  /**
-   * Currency of `pacingAdjustedCpm`. Unlike the bid's own `currency`, this is not changed by currency conversion.
-   */
-  pacingAdjustedCpmCurrency?: Currency;
   /**
    * Delivery relative to schedule; e.g. 0.5 means half of the expected impressions have been served.
    */

@@ -551,6 +551,31 @@ describe('currency', function () {
       expect(innerBid.cpm).to.equal('0.0623');
       expect(innerBid.currency).to.equal('CNY');
     });
+
+    it('should convert meta.deal amounts at the same rate as cpm', function () {
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig({ 'adServerCurrency': 'GBP' });
+      fakeCurrencyFileServer.respond();
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD', meta: { deal: { type: 2, cpm: 2, pacingAdjustedCpm: 4, onSchedule: 0.5, priority: 1 } } });
+      var innerBid;
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
+      expect(innerBid.cpm).to.equal('0.7798');
+      expect(innerBid.meta.deal.cpm).to.be.closeTo(1.5596, 0.0001);
+      expect(innerBid.meta.deal.pacingAdjustedCpm).to.be.closeTo(3.1192, 0.0001);
+      expect(innerBid.meta.deal).to.include({ type: 2, onSchedule: 0.5, priority: 1 });
+    });
+
+    it('should leave meta.deal amounts unchanged when no conversion is needed', function () {
+      setConfig({ 'adServerCurrency': 'USD' });
+      var bid = makeBid({ 'cpm': 1, 'currency': 'USD', meta: { deal: { type: 2, cpm: 2, pacingAdjustedCpm: 4 } } });
+      var innerBid;
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
+      expect(innerBid.meta.deal).to.eql({ type: 2, cpm: 2, pacingAdjustedCpm: 4 });
+    });
   });
 
   describe('enrichFpd', function() {

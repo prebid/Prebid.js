@@ -81,49 +81,6 @@ describe('common processors', () => {
         })).to.eql({ type: 1 });
       });
 
-      describe('CPM currencies', () => {
-        function dealWith(deal) {
-          return { dealid: 'deal-1', ext: { prebid: { deal: { type: 2, ...deal } } } };
-        }
-
-        it('keeps explicit cpm_cur and pacing_adjusted_cpm_cur', () => {
-          context.ortbResponse.cur = 'USD';
-          expect(dealMetaFor(dealWith({ cpm: 5, cpm_cur: 'EUR', pacing_adjusted_cpm: 10, pacing_adjusted_cpm_cur: 'GBP' }))).to.include({
-            cpmCurrency: 'EUR',
-            pacingAdjustedCpmCurrency: 'GBP'
-          });
-        });
-
-        it('defaults to the response currency', () => {
-          context.ortbResponse.cur = 'JPY';
-          expect(dealMetaFor(dealWith({ cpm: 500, pacing_adjusted_cpm: 1000 }))).to.include({
-            cpmCurrency: 'JPY',
-            pacingAdjustedCpmCurrency: 'JPY'
-          });
-        });
-
-        it('falls back to the response currency when a currency is not a valid code', () => {
-          context.ortbResponse.cur = 'USD';
-          expect(dealMetaFor(dealWith({ cpm: 5, cpm_cur: 'eur', pacing_adjusted_cpm: 10, pacing_adjusted_cpm_cur: 978 }))).to.include({
-            cpmCurrency: 'USD',
-            pacingAdjustedCpmCurrency: 'USD'
-          });
-        });
-
-        it('is not set when the corresponding CPM is missing or invalid', () => {
-          context.ortbResponse.cur = 'USD';
-          const dealMeta = dealMetaFor(dealWith({ cpm: -1, cpm_cur: 'EUR', pacing_adjusted_cpm_cur: 'GBP' }));
-          expect(dealMeta).to.not.have.property('cpmCurrency');
-          expect(dealMeta).to.not.have.property('pacingAdjustedCpmCurrency');
-        });
-
-        it('is not set when there is no currency at all', () => {
-          const dealMeta = dealMetaFor(dealWith({ cpm: 5 }));
-          expect(dealMeta.cpm).to.equal(5);
-          expect(dealMeta).to.not.have.property('cpmCurrency');
-        });
-      });
-
       it('allows negative integer priority', () => {
         expect(dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: { type: 4, priority: -1 } } } }).priority).to.equal(-1);
       });

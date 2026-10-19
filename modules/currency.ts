@@ -302,6 +302,16 @@ function rejectOnAuctionTimeout({ auctionId }) {
   });
 }
 
+// meta.deal amounts are in the bid's currency, so they are scaled along with bid.cpm
+function convertDealMeta(deal, conversion) {
+  if (deal == null) return;
+  ['cpm', 'pacingAdjustedCpm'].forEach(key => {
+    if (typeof deal[key] === 'number') {
+      deal[key] = deal[key] * conversion;
+    }
+  });
+}
+
 function processBidResponseQueue() {
   while (bidResponseQueue.length > 0) {
     const [fn, ctx, adUnitCode, bid, reject] = bidResponseQueue.shift();
@@ -312,6 +322,7 @@ function processBidResponseQueue() {
         if (conversion !== 1) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
+          convertDealMeta(bid.meta?.deal, conversion);
         }
       } catch (e) {
         logWarn('getCurrencyConversion threw error: ', e);
