@@ -28,6 +28,8 @@ describe('CriteoId module', function () {
   let getLocalStorageStub;
   let setLocalStorageStub;
   let removeFromLocalStorageStub;
+  let cookiesAreEnabledStub;
+  let localStorageIsEnabledStub;
   let timeStampStub;
   let parseUrlStub;
   let triggerPixelStub;
@@ -41,6 +43,9 @@ describe('CriteoId module', function () {
     getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+    // This bot-authored test keeps storage capability checks independent of browser state.
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+    localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     parseUrlStub = sinon.stub(utils, 'parseUrl').returns({ protocol: 'https', hostname: 'testdev.com' });
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
@@ -56,6 +61,8 @@ describe('CriteoId module', function () {
     getLocalStorageStub.restore();
     setLocalStorageStub.restore();
     removeFromLocalStorageStub.restore();
+    cookiesAreEnabledStub.restore();
+    localStorageIsEnabledStub.restore();
     timeStampStub.restore();
     triggerPixelStub.restore();
     parseUrlStub.restore();
