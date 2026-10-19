@@ -1306,6 +1306,14 @@ describe('AdgenerationAdapter', function () {
       expect(result).to.not.have.any.keys('advertiserDomains');
     });
 
+    it('returns privacyLink as-is without URL-encoding', function () {
+      const optoutUrl = 'https://example.com/optout/?a=1&b=2#top';
+      const body = JSON.parse(JSON.stringify(serverResponse.normal.native));
+      body.results[0].native.assets.find(asset => asset.id === 502).data.value = optoutUrl;
+      const result = spec.interpretResponse({ body }, bidRequests.native)[0];
+      expect(result.native.privacyLink).to.equal(optoutUrl);
+    });
+
     describe('currency handling', function () {
       const bidRequest = {
         method: 'POST',
