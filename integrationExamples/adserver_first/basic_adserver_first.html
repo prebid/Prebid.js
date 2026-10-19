@@ -11,8 +11,6 @@
   the auction; the appnexus bids below are placeholders.
   - this approach assumes that the adunit.code is the div name. There
   are many other ways to match the adunit to the div.
-  - this approach won't work for refreshed adunits. For that scenario
-  you'll need to be more surgical about what's passed into the bidsbackhandler.
   - there's not a separate failsafe timeout here. Since the ad server competes
   inside the Prebid auction rather than waiting on it, Prebid's timeout is
   sufficient.
@@ -20,87 +18,95 @@
 
 <html>
 <head>
-<script>
-    var adUnits = [
-           {
-               code: 'test-div',
-                mediaTypes: {
-                    banner: {
-                        sizes: [[300,250]]
-                    }
-               },
-               bids: [
-                   {
-                       bidder: 'appnexus',
-                       params: {
-                           placementId: 13144370
-                       }
-                   }
-               ]
-           },
-           {
-               code: 'test-div2',
-                mediaTypes: {
-                    banner: {
-                        sizes: [[728,90]]
-                    }
-               },
-               bids: [
-                   {
-                       bidder: 'appnexus',
-                       params: {
-                           placementId: 13144370
-                       }
-                   }
-               ]
-           }
-       ];
-
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
-  </script>
-  <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
-
-  <script>
-    pbjs.que.push(function() {
-        pbjs.addAdUnits(adUnits);
-    });
-
-    // no targeting is set and no ad server call is made here: the ad server
-    // already bid into the auction, so render the best bid for each adunit.
-    // you could instead pass an array of adUnits
-    // to getBestBids() if desired
-    function renderAllAdUnits() {
-        var winners=pbjs.getBestBids();
-	for (var i = 0; i < winners.length; i++) {
-	  renderOne(winners[i]);
+    <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
+    <script>
+      const adUnits = [
+        {
+          code: 'test-div',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          bids: [
+            {
+              bidder: 'appnexus',
+              params: {
+                placementId: 13144370
+              }
+            }
+          ]
+        },
+        {
+          code: 'test-div2',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          bids: [
+            {
+              bidder: 'appnexus',
+              params: {
+                placementId: 13144370
+              }
+            }
+          ]
         }
-    }
+      ];
 
-    function renderOne(winningBid) {
-	if (winningBid && winningBid.adId) {
-	    var div = document.getElementById(winningBid.adUnitCode);
-	    if (div) {
-	      let iframe = document.createElement('iframe');
-	      iframe.frameBorder = '0';
-	      div.appendChild(iframe);
-	      var iframeDoc = iframe.contentWindow.document;
-	      pbjs.renderAd(iframeDoc, winningBid.adId);
-	    }
-	}
+      window.pbjs = window.pbjs || {};
+      pbjs.que = pbjs.que || [];
 
-    }
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          debugging: {
+            enabled: true,
+            intercept: [{when: {}}]
+          }
+        })
+        pbjs.addAdUnits(adUnits);
+      });
 
-  </script>
+      // no targeting is set and no ad server call is made here: the ad server
+      // already bid into the auction, so render the best bid for each adunit.
+      // you could instead pass an array of adUnits
+      // to getBestBids() if desired
+      function renderAllAdUnits() {
+        pbjs.getBestBids()
+          .forEach(renderOne);
+      }
 
-<script>
-	pbjs.que.push(function() {
-          pbjs.requestBids({
-	    timeout: 2000,
-            bidsBackHandler: renderAllAdUnits
-          });
-	});
-</script>
+      function renderOne(winningBid) {
+        if (winningBid && winningBid.adId) {
+          var div = document.getElementById(winningBid.adUnitCode);
+          div.innerHTML = '';
+          if (div) {
+            let iframe = document.createElement('iframe');
+            Object.assign(iframe, {
+              frameBorder: 0,
+              scrolling: 'no',
+              marginHeight: 0,
+              marginWidth: 0,
+              topMargin: 0,
+              leftMargin: 0,
+              allowTransparency: 'true'
+            })
+            div.appendChild(iframe);
+            const iframeDoc = iframe.contentWindow.document;
+            pbjs.renderAd(iframeDoc, winningBid.adId);
+          }
+        }
+
+      }
+
+      pbjs.que.push(function () {
+        pbjs.requestBids({
+          timeout: 2000,
+          bidsBackHandler: renderAllAdUnits
+        });
+      });
+    </script>
 </head>
 
 <body>
