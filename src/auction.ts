@@ -98,7 +98,7 @@ declare module './events' {
      */
     [EVENTS.AUCTION_TIMEOUT]: [AuctionProperties];
     /**
-     * Fired when an auction times out.
+     * Fired when a bid times out.
      */
     [EVENTS.BID_TIMEOUT]: [BidRequest<BidderCode>[]];
     /**
