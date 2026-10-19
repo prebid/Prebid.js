@@ -236,6 +236,7 @@ export function resetCurrency() {
     needToCallForCurrencyFile = true;
     shouldUseDefaults = true;
     currencyRates = {};
+    defaultRates = {};
     bidderCurrencyDefault = {};
     responseReady = defer();
   }
