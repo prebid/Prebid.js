@@ -43,7 +43,6 @@ describe('CriteoId module', function () {
     getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
-    // This bot-authored test keeps storage capability checks independent of browser state.
     cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
     localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
