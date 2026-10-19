@@ -255,6 +255,10 @@ declare module '../src/bidfactory' {
   }
 }
 
+function roundCpm(value) {
+  return Number(parseFloat(value).toFixed(4));
+}
+
 export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   if (!bid) {
     return fn.call(this, adUnitCode, bid, reject); // if no bid, call original and let it display warnings
@@ -307,7 +311,7 @@ function convertDealMeta(deal, conversion) {
   if (deal == null) return;
   ['cpm', 'pacingAdjustedCpm'].forEach(key => {
     if (typeof deal[key] === 'number') {
-      deal[key] = deal[key] * conversion;
+      deal[key] = roundCpm(deal[key] * conversion);
     }
   });
 }
@@ -320,7 +324,7 @@ function processBidResponseQueue() {
       try {
         const conversion = getCurrencyConversion(fromCurrency);
         if (conversion !== 1) {
-          bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
+          bid.cpm = roundCpm(parseFloat(bid.cpm) * conversion);
           bid.currency = adServerCurrency;
           convertDealMeta(bid.meta?.deal, conversion);
         }
