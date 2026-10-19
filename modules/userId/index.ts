@@ -1309,7 +1309,7 @@ const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
 
     if (!submoduleConfig || !submoduleConfig.storage) return;
 
-    if (params[ACTIVITY_PARAM_STORAGE_TYPE] !== submoduleConfig.storage.type) {
+    if (!getConfiguredStorageTypes(submoduleConfig).includes(params[ACTIVITY_PARAM_STORAGE_TYPE])) {
       const reason = `${submoduleConfig.name} attempts to store data in ${params[ACTIVITY_PARAM_STORAGE_TYPE]} while configuration allows ${submoduleConfig.storage.type}.`;
       if (enforceStorageType) {
         return { allow: false, reason };
