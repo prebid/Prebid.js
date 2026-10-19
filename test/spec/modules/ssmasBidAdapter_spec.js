@@ -176,6 +176,17 @@ describe('ssmasBidAdapter', function () {
         ext: {
           usersync: [
             { bidder: 'partnerA', type: 'iframe', url: 'https://sync.partner-a.example/iframe?gdpr=1&gdpr_consent=CQ' },
+            { bidder: 'ssmas', type: 'iframe', url: 'https://ads.ssmas.com/usersync?bidders=partnerB&gdpr=1&gdpr_consent=CQ' }
+          ]
+        }
+      }
+    }];
+
+    const imageResponses = [{
+      body: {
+        id: 'auction-2',
+        ext: {
+          usersync: [
             { bidder: 'partnerB', type: 'image', url: 'https://sync.partner-b.example/pixel?gdpr=1&gdpr_consent=CQ' }
           ]
         }
@@ -186,15 +197,20 @@ describe('ssmasBidAdapter', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses);
       expect(syncs).to.deep.equal([
         { type: 'iframe', url: 'https://sync.partner-a.example/iframe?gdpr=1&gdpr_consent=CQ' },
+        { type: 'iframe', url: 'https://ads.ssmas.com/usersync?bidders=partnerB&gdpr=1&gdpr_consent=CQ' }
+      ]);
+    });
+
+    it('loads image syncs when images are the kind allowed', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, imageResponses);
+      expect(syncs).to.deep.equal([
         { type: 'image', url: 'https://sync.partner-b.example/pixel?gdpr=1&gdpr_consent=CQ' }
       ]);
     });
 
     it('drops a kind Prebid does not allow', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses);
-      expect(syncs).to.deep.equal([
-        { type: 'image', url: 'https://sync.partner-b.example/pixel?gdpr=1&gdpr_consent=CQ' }
-      ]);
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses)).to.deep.equal([]);
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, imageResponses)).to.deep.equal([]);
     });
 
     it('syncs each partner once across responses', function () {
