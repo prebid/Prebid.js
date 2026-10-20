@@ -3,6 +3,7 @@ import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE } from '../src/mediaTypes.js';
 import { logWarn, politeTriggerPixel } from '../src/utils.js';
+import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 
 export const ENDPOINT = 'https://api.prnmx.com/api/v1/openrtb/prebid';
 const ID_BODY = '[0-7][0-9a-hjkmnp-tv-z]{25}';
@@ -89,7 +90,7 @@ const converter = ortbConverter({
     }
 
     // The exchange returns the Native 1.2 wrapper. The converter expects its contents.
-    const adm = typeof bid.adm === 'string' ? JSON.parse(bid.adm) : bid.adm;
+    const adm = typeof bid.adm === 'string' ? parseUntrustedJSON(bid.adm) : bid.adm;
     const native = adm?.native || adm;
     const billingUrl = noticeUrl(bid.burl, bid.price);
     if (!native?.link?.url || !Array.isArray(native.assets) || !native.assets.length ||

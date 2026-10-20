@@ -334,6 +334,27 @@ describe('shopnomixBidAdapter', function () {
       expect(spec.interpretResponse(noAssets, request)).to.have.lengthOf(0);
     });
 
+    // We unwrap the native adm ourselves, so the converter sees an object and
+    // its own guarded parse never runs. Parsing with the guard here is what
+    // keeps prototype gadget keys out of what we hand on.
+    it('strips prototype gadget keys from the native markup', function () {
+      // The second spec run compiles NATIVE out, so there is no parsed markup.
+      if (!FEATURES.NATIVE) this.skip();
+      const [request] = spec.buildRequests([bid()], bidderRequest());
+      const gadgets = '"__proto__":{"polluted":true},"constructor":{"prototype":{"polluted":true}},';
+      const response = serverResponse(request.data);
+      response.body.seatbid[0].bid[0].adm =
+        nativeAdm('1').replace('{"native":{', '{"native":{' + gadgets);
+
+      const [parsed] = spec.interpretResponse(response, request);
+      const ortb = parsed.native.ortb;
+      expect(Object.prototype.hasOwnProperty.call(ortb, '__proto__')).to.equal(false);
+      expect(Object.prototype.hasOwnProperty.call(ortb, 'constructor')).to.equal(false);
+      expect(({}).polluted).to.equal(undefined);
+      // The bid itself still comes through intact.
+      expect(ortb.assets).to.have.lengthOf(3);
+    });
+
     it('returns nothing for an empty response', function () {
       const [request] = spec.buildRequests([bid()], bidderRequest());
       expect(spec.interpretResponse({ body: {} }, request)).to.have.lengthOf(0);
