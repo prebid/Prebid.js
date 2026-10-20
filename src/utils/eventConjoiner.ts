@@ -11,9 +11,13 @@ export function eventConjoiner<T>(size: number) {
     }
   }
 
-  function fire(event: T) {
+  function cancel(event: T) {
     clearTimer(event);
     active.delete(event);
+  }
+
+  function fire(event: T) {
+    cancel(event);
     callbacks.forEach(cb => cb(event));
   }
 
@@ -29,6 +33,7 @@ export function eventConjoiner<T>(size: number) {
 
   return {
     fire,
+    cancel,
     collect,
     collectWithin(timeout: number, channel: number, event: T) {
       clearTimer(event);

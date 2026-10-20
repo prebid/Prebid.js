@@ -55,6 +55,17 @@ describe('eventConjoiner', () => {
           sinon.assert.calledOnce(cb);
         });
 
+        it('does not fire after partial collection was canceled', () => {
+          const cb = sinon.stub();
+          joiner.on(cb);
+          joiner.collect(0, 'event');
+          joiner.cancel('event');
+          for (let i = 1; i < size; i++) {
+            joiner.collect(i, 'event');
+          }
+          sinon.assert.notCalled(cb);
+        });
+
         describe('collectWithin', () => {
           let clock;
           beforeEach(() => {

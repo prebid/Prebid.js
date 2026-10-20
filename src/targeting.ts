@@ -273,8 +273,9 @@ export function newTargeting(auctionManager) {
 
     updateGPTTargeting(targeting: ByAdUnit<GPTTargetingValues>, operation: string, postUpdate?: (targeting: GPTTargetingValues) => void, targetedAdIdsByAdUnit: ByAdUnit<Set<string>> = {}) {
       const resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
+      const adUnits = Object.keys(targeting);
 
-      Object.entries(getGPTSlotsForAdUnits(Object.keys(targeting))).forEach(([targetId, slots]) => {
+      Object.entries(getGPTSlotsForAdUnits(adUnits)).forEach(([targetId, slots]) => {
         slots.forEach(slot => {
           // now set new targeting keys
           Object.keys(targeting[targetId]).forEach(key => {
@@ -288,6 +289,7 @@ export function newTargeting(auctionManager) {
           logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
           updateSlotTargetingFromMap(slot, Object.assign({}, resetMap, targeting[targetId]));
           if (operation === 'set') {
+            adUnits.forEach(renderedAndWon.cancel);
             gptRendered.enable();
             recordSlotTargeting(slot, targetedAdIdsByAdUnit[targetId] ?? []);
           }
