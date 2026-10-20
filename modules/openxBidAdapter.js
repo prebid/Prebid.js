@@ -153,7 +153,12 @@ function buildRequests(bidRequests, bidderRequest) {
   return [{
     method: 'POST',
     url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
-    data: converter.toORTB({ bidRequests, bidderRequest })
+    data: converter.toORTB({ bidRequests, bidderRequest }),
+    // Prebid core gzips the body and appends `gzip=1` to the URL; it falls back to an
+    // uncompressed request in debug mode or when the browser lacks CompressionStream.
+    options: {
+      endpointCompression: true
+    }
   }];
 }
 

@@ -29,6 +29,7 @@ const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN;
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
+const ADQUERY_EID_SOURCE = 'adquery.io';
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -288,25 +289,32 @@ export const spec = {
   }
 };
 
-function buildRequest(bid, bidderRequest, isVideo = false) {
-  let userId = null;
+// Only the adquery.io EID is used. Other vendors' ids are never sent as bidQid; without an
+// adquery.io uid bidQid stays empty and the adQuery bidder assigns its own user id.
+// Among several adquery.io uids the lowest id wins (plain code-unit comparison, not
+// localeCompare), so the result does not depend on EID/uid order or the browser locale.
+function getUserIdFromEids(bid) {
+  if (!Array.isArray(bid.userIdAsEids)) {
+    return '';
+  }
 
-  const eids = bid.userIdAsEids;
-  if (Array.isArray(eids)) {
-    const adqueryEid = eids.find(eid => eid.source === 'adquery.io');
-    userId = adqueryEid?.uids?.[0]?.id;
-
-    if (!userId) {
-      userId = eids[0]?.uids?.[0]?.id;
+  let best = '';
+  for (const eid of bid.userIdAsEids) {
+    if (eid?.source !== ADQUERY_EID_SOURCE || !Array.isArray(eid.uids)) {
+      continue;
+    }
+    for (const uid of eid.uids) {
+      const id = uid?.id ? String(uid.id) : '';
+      if (id && (!best || id < best)) {
+        best = id;
+      }
     }
   }
+  return best;
+}
 
-  if (!userId) {
-    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    const randomPart = randomValues.map(val => val.toString(36)).join('').substring(0, 26);
-    userId = `qd_${randomPart}`;
-    logMessage('generated onetime User ID: ', userId);
-  }
+function buildRequest(bid, bidderRequest, isVideo = false) {
+  const userId = getUserIdFromEids(bid);
 
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {

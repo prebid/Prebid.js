@@ -1,4 +1,4 @@
-import { consentHandler, coppaDataHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
+import { consentHandler, coppaDataHandler, gdprDataHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
 import { config } from 'src/config.js';
 
 describe('Consent data handler', () => {
@@ -134,6 +134,29 @@ describe('Consent data handler', () => {
       handler.setConsentData({ field: 'value', enabled: true, other: 'data' });
       expect(handler.hash).to.eql(h1);
     });
+  });
+});
+
+describe('gdprDataHandler', () => {
+  const consent = { gdprApplies: true, consentString: 'tcString', addtlConsent: '2~1.2~dv.' };
+
+  beforeEach(() => {
+    gdprDataHandler.reset();
+    gdprDataHandler.enable();
+    gdprDataHandler.setConsentData(consent);
+  });
+
+  afterEach(() => {
+    gdprDataHandler.reset();
+  });
+
+  it('should detect changes to addtlConsent alone', () => {
+    const h1 = gdprDataHandler.hash;
+    const listener = sinon.stub();
+    gdprDataHandler.onChange(listener);
+    gdprDataHandler.setConsentData({ ...consent, addtlConsent: '2~1~dv.2' });
+    sinon.assert.calledOnce(listener);
+    expect(gdprDataHandler.hash).to.not.eql(h1);
   });
 });
 

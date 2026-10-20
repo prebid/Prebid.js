@@ -9,7 +9,7 @@ import {
   validateMultibid
 } from 'modules/multibid/index.js';
 import { config } from 'src/config.js';
-import { getHighestCpm } from '../../../src/utils/reducers.js';
+import { getHighestCpm, getHighestDesirability } from '../../../src/utils/reducers.js';
 
 describe('multibid adapter', function () {
   const bidArray = [{
@@ -683,6 +683,19 @@ describe('multibid adapter', function () {
       expect(result.adUnitBidLimit).to.equal(0);
       expect(result.hasModified).to.not.equal(null);
       expect(result.hasModified).to.equal(true);
+    });
+
+    it('does not let a zero desirability outrank a positive one under bid limit and dealPrioritization', function () {
+      config.setConfig({
+        multibid: [{ bidder: 'bidderA', maxBids: 2 }],
+        sendBidsControl: { dealPrioritization: true }
+      });
+      const zero = { bidderCode: 'bidderA', bidder: 'bidderA', adUnitCode: 'test.div', cpm: 3, desirability: 0, adserverTargeting: {} };
+      const positive = { bidderCode: 'bidderB', bidder: 'bidderB', adUnitCode: 'test.div', cpm: 2, desirability: 2, adserverTargeting: {} };
+
+      targetBidPoolHook(callbackFn, [zero, positive], getHighestDesirability, 1);
+
+      expect(result.bidsReceived).to.deep.equal([positive]);
     });
   });
 

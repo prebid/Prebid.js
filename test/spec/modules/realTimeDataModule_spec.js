@@ -7,7 +7,7 @@ import 'src/prebid.js';
 import { attachRealTimeDataProvider, detachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
 import { submodule } from 'src/hook.js';
 import * as utils from 'src/utils.js';
-import { GDPR_GVLIDS } from '../../../src/consentHandler.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD, ACTIVITY_TRANSMIT_EIDS } from '../../../src/activities/activities.js';
@@ -109,6 +109,18 @@ describe('Real time module', function () {
         attachRealTimeDataProvider(mod);
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
       } finally {
+        detachRealTimeDataProvider(mod);
+      }
+    });
+
+    it('registers Additional Consent provider IDs', () => {
+      const mod = { name: 'mockAcpRtd', acpId: 321 };
+      sinon.stub(GDPR_ACPIDS, 'register');
+      try {
+        attachRealTimeDataProvider(mod);
+        sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_RTD, 'mockAcpRtd', 321);
+      } finally {
+        GDPR_ACPIDS.register.restore();
         detachRealTimeDataProvider(mod);
       }
     });

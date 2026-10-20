@@ -174,6 +174,14 @@ export const enrichRequest = (
   return request;
 };
 
+const MAX_TTL = 120;
+
+// ORTB bid.exp is the buyer's expiry in seconds: honor it, but never hold a bid longer than MAX_TTL.
+const getTtl = (exp:unknown): number => {
+  if (typeof exp !== 'number' || !Number.isFinite(exp) || exp < 1) return MAX_TTL;
+  return Math.min(Math.floor(exp), MAX_TTL);
+};
+
 export function createResponse(bid:any, ortbResponse:any): BidResponse {
   let mediaType: MediaType = BANNER;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) mediaType = VIDEO;
@@ -186,7 +194,7 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
     creativeId: bid.crid,
     currency: ortbResponse.cur,
     netRevenue: true,
-    ttl: 120,
+    ttl: getTtl(bid.exp),
     mediaType,
     meta: {
       advertiserDomains: bid.adomain,

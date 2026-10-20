@@ -273,7 +273,18 @@ export function handleVideoBidCaching({
     ignoreBidderCacheKey
   } = config.getConfig('cache') || {};
 
-  const shouldUseCache = (useLocal || cacheUrl) && (useCacheKey || context !== OUTSTREAM);
+  const activeRendererRequiresVastUrl = bidResponse.safeRenderer?.url
+    ? bidResponse.safeRenderer.requiresVastUrl
+    : bidResponse.renderer?.requiresVastUrl;
+  const rendererNeedsVastUrl = bidResponse.mediaType === 'video' && context === OUTSTREAM &&
+    activeRendererRequiresVastUrl === true && !bidResponse.vastUrl;
+  if (rendererNeedsVastUrl && (!bidResponse.vastXml || (!useLocal && !cacheUrl))) {
+    logError('Video renderer requires vastUrl, but this bid has no VAST XML or video cache is disabled');
+    afterBidAdded();
+    return;
+  }
+
+  const shouldUseCache = (useLocal || cacheUrl) && (useCacheKey || context !== OUTSTREAM || rendererNeedsVastUrl);
   const shouldStoreBid = !bidResponse.videoCacheKey || ignoreBidderCacheKey;
 
   if (shouldUseCache && shouldStoreBid) {
@@ -282,6 +293,7 @@ export function handleVideoBidCaching({
   }
   if (shouldUseCache && !shouldStoreBid && !bidResponse.vastUrl) {
     logError('videoCacheKey specified but not required vastUrl for video bid');
+    afterBidAdded();
     return;
   }
   addBidToAuction(auctionInstance, bidResponse);

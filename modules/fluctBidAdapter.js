@@ -11,6 +11,7 @@ import { coppaDataHandler } from '../src/consentHandler.js';
  */
 
 const BIDDER_CODE = 'fluct';
+const ACP_ID = 2328; // Google Additional Consent provider ID
 const END_POINT = 'https://hb.adingo.jp/prebid/';
 const VERSION = '1.8';
 const NET_REVENUE = true;
@@ -92,7 +93,8 @@ function getHighestBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['adingo'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'adingo', acpId: ACP_ID }],
 
   /**
    * Determines whether or not the given bid request is valid.

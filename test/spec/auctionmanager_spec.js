@@ -1358,6 +1358,11 @@ describe('auctionmanager.js', function () {
             expect(getBid().renderer.url).to.eql('renderer.js');
           });
 
+          it(`preserves requiresVastUrl ${t}`, () => {
+            renderer.requiresVastUrl = true;
+            expect(getBid().renderer.requiresVastUrl).to.be.true;
+          });
+
           it('allows renderers without URL', () => {
             delete renderer.url;
             expect(getBid().renderer.renderNow).to.be.true;
@@ -1443,6 +1448,7 @@ describe('auctionmanager.js', function () {
         const renderer = {
           url: 'videoRenderer.js',
           backupOnly: true,
+          requiresVastUrl: true,
           render: (bid) => bid
         };
         const myBid = mockBid();
@@ -1462,6 +1468,7 @@ describe('auctionmanager.js', function () {
         myBid.mediaType = 'video';
         myBid.renderer = {
           url: 'renderer.js',
+          requiresVastUrl: false,
           render: sinon.spy()
         };
         spec.interpretResponse.returns(myBid);
@@ -1469,6 +1476,7 @@ describe('auctionmanager.js', function () {
 
         const addedBid = auction.getBidsReceived().pop();
         assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
+        assert.strictEqual(addedBid.renderer.requiresVastUrl, false);
       });
 
       describe('bid for a regular unit and a video unit', () => {

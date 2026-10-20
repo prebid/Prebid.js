@@ -17,6 +17,7 @@ import {
   isEmpty
 } from '../src/utils.js';
 const BIDDER_CODE = 'bms';
+const ACP_ID = 3303; // Google Additional Consent provider ID
 const ENDPOINT_URL =
   'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';
 const DEFAULT_CURRENCY = 'USD';
@@ -28,6 +29,7 @@ const converter = createOrtbConverter(ortbConverter, BANNER, DEFAULT_CURRENCY, o
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
 
   // Validate bid request
