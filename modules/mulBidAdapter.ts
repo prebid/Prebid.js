@@ -1,12 +1,12 @@
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'monetiseup';
+const BIDDER_CODE = 'mul';
 // Production endpoint
 const ENDPOINT_URL = 'https://bid5up.monetiseup.com/api/bid';
 const USER_SYNC_URL = 'https://bid5up.monetiseup.com/api/usersync';
 
-export interface MonetiseUpBidParams {
+export interface MulBidParams {
   placementId?: string;
   placement?: string;
   zoneId?: string;
@@ -15,7 +15,7 @@ export interface MonetiseUpBidParams {
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    [BIDDER_CODE]: MonetiseUpBidParams;
+    [BIDDER_CODE]: MulBidParams;
   }
 }
 
@@ -26,7 +26,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   /**
    * Validates whether or not the bid request has required publisher params.
    */
-  isBidRequestValid: function (bid: { params?: MonetiseUpBidParams }): boolean {
+  isBidRequestValid: function (bid: { params?: MulBidParams }): boolean {
     return !!(bid && bid.params && (bid.params.placement || bid.params.placementId || bid.params.zoneId));
   },
 
@@ -115,7 +115,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   /**
    * Registers user sync pixels (cookies) after the auction completes.
    */
-  getUserSyncs: function (syncOptions: any, serverResponses: any, gdprConsent: any, uspConsent: string, gppConsent: any) {
+  getUserSyncs: function (syncOptions: any, serverResponses: any, gdprConsent: any, uspConsent: string, gppConsent: any, coppa: boolean) {
+    if (coppa) {
+      return [];
+    }
+
     const syncs = [];
     let query = '';
 

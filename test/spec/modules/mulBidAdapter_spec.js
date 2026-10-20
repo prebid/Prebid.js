@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/monetiseupBidAdapter.js';
+import { spec } from 'modules/mulBidAdapter.js';
 
-describe('monetiseupBidAdapter', function () {
+describe('mulBidAdapter', function () {
   const bid = {
-    bidder: 'monetiseup',
+    bidder: 'mul',
     params: {
       placementId: 'test-placement-123'
     },
@@ -110,7 +110,7 @@ describe('monetiseupBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return iframe sync when iframeEnabled is true', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], { gdprApplies: true, consentString: 'consent_123' }, '1---');
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], { gdprApplies: true, consentString: 'consent_123' }, '1---', null, false);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.contain('gdpr=1');
@@ -119,14 +119,19 @@ describe('monetiseupBidAdapter', function () {
     });
 
     it('should return image sync when pixelEnabled is true', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, '');
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, '', null, false);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.contain('/api/usersync');
     });
 
     it('should return empty array when syncing is disabled', function () {
-      const syncs = spec.getUserSyncs({}, [], null, '');
+      const syncs = spec.getUserSyncs({}, [], null, '', null, false);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should suppress user sync when coppa is true', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], null, '', null, true);
       expect(syncs).to.deep.equal([]);
     });
   });

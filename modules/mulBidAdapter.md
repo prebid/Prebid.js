@@ -1,14 +1,14 @@
 # Overview
 
 ```markdown
-Module Name: MonetiseUp Bidder Adapter
+Module Name: Mul Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: business@responsiq.com
 ```
 
 # Description
 
-The MonetiseUp bidder adapter connects publishers directly to MonetiseUp's header bidding marketplace, aggregating demand from top programmatic SSPs and DSPs including Adagio, PubMatic, OpenX, 152Media, Nobid, OnlineMediaSolutions, Scalibur, TripleLift, Eskimi, and Equativ.
+The Mul (MonetiseUp) bidder adapter connects publishers directly to MonetiseUp's header bidding marketplace, aggregating demand from top programmatic SSPs and DSPs including Adagio, PubMatic, OpenX, 152Media, Nobid, OnlineMediaSolutions, Scalibur, TripleLift, Eskimi, and Equativ.
 
 # Test Parameters
 
@@ -23,7 +23,7 @@ var adUnits = [
     },
     bids: [
       {
-        bidder: 'monetiseup',
+        bidder: 'mul',
         params: {
           placementId: 'test-placement-123'
         }
