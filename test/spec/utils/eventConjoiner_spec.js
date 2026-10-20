@@ -1,7 +1,6 @@
-import { conjoinWithTimeout, eventConjoiner } from '../../../src/utils/eventConjoiner.js';
+import { eventConjoiner } from '../../../src/utils/eventConjoiner.js';
 
 describe('eventConjoiner', () => {
-
   function collector(joiner, size) {
     return function (event) {
       for (let i = 0; i < size; i++) {
@@ -56,7 +55,7 @@ describe('eventConjoiner', () => {
           sinon.assert.calledOnce(cb);
         });
 
-        describe('collectWith', () => {
+        describe('collectWithin', () => {
           let clock;
           beforeEach(() => {
             clock = sinon.useFakeTimers();
@@ -80,6 +79,18 @@ describe('eventConjoiner', () => {
             for (let i = 1; i < size; i++) {
               joiner.collect(i, 'event');
             }
+            sinon.assert.calledOnce(cb);
+          });
+
+          it('fires once when collectWithin is repeated for the same event and collection completes', () => {
+            const cb = sinon.stub();
+            joiner.on(cb);
+            joiner.collectWithin(100, 0, 'event');
+            joiner.collectWithin(100, 0, 'event');
+            for (let i = 1; i < size; i++) {
+              joiner.collect(i, 'event');
+            }
+            clock.tick(100);
             sinon.assert.calledOnce(cb);
           });
 
