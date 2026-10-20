@@ -15,7 +15,8 @@ import {
   getUniqueDealId,
   getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import { deepClone, getWinDimensions } from 'src/utils.js';
+import { deepClone } from 'src/utils.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
@@ -280,7 +281,7 @@ describe('ShinezRtbBidAdapter', function () {
       config.resetConfig();
     });
     let sandbox;
-    before(function () {
+    beforeEach(function () {
       getGlobal().bidderSettings = {
         shinezRtb: {
           storageAllowed: true
@@ -288,6 +289,9 @@ describe('ShinezRtbBidAdapter', function () {
       };
       sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        screen: { width: 1280, height: 720 }
+      });
     });
 
     it('should build video request', function () {
@@ -322,7 +326,7 @@ describe('ShinezRtbBidAdapter', function () {
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
-          res: `${getWinDimensions().screen.width}x${getWinDimensions().screen.height}`,
+          res: '1280x720',
           schain: VIDEO_BID.schain,
           sizes: ['545x307'],
           sua: {
@@ -427,7 +431,7 @@ describe('ShinezRtbBidAdapter', function () {
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
-          res: `${getWinDimensions().screen.width}x${getWinDimensions().screen.height}`,
+          res: '1280x720',
           mediaTypes: [BANNER],
           gpid: '0123456789',
           uqs: getTopWindowQueryParams(),
@@ -457,7 +461,7 @@ describe('ShinezRtbBidAdapter', function () {
       expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
     });
 
-    after(function () {
+    afterEach(function () {
       getGlobal().bidderSettings = {};
       sandbox.restore();
     });
