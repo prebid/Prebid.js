@@ -161,24 +161,30 @@ export const spec = {
    * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
-    if (timeoutData == null) {
+    if (timeoutData == null || (Array.isArray(timeoutData) && timeoutData.length === 0)) {
       return;
     }
     logInfo('onTimeout ', timeoutData);
-    const params = {
-      bidder: timeoutData.bidder,
-      bId: timeoutData.bidId,
-      adUnitCode: timeoutData.adUnitCode,
-      timeout: timeoutData.timeout,
-      auctionId: timeoutData.auctionId,
-    };
-    const adqueryRequestUrl = buildUrl({
-      protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
-      hostname: ADQUERY_BIDDER_DOMAIN,
-      pathname: '/prebid/eventTimeout',
-      search: params
+    const timedOutBids = Array.isArray(timeoutData) ? timeoutData : [timeoutData];
+    timedOutBids.forEach((timedOutBid) => {
+      if (!timedOutBid) {
+        return;
+      }
+      const params = {
+        bidder: timedOutBid.bidder,
+        bId: timedOutBid.bidId,
+        adUnitCode: timedOutBid.adUnitCode,
+        timeout: timedOutBid.timeout,
+        auctionId: timedOutBid.auctionId,
+      };
+      const adqueryRequestUrl = buildUrl({
+        protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
+        hostname: ADQUERY_BIDDER_DOMAIN,
+        pathname: '/prebid/eventTimeout',
+        search: params
+      });
+      triggerPixel(adqueryRequestUrl);
     });
-    triggerPixel(adqueryRequestUrl);
   },
 
   /**
