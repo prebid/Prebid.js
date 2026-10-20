@@ -1,4 +1,7 @@
-// join
+/**
+ * Runs callbacks registered with `on` after `.collect(i, event)` was called with the same `event` for each 0 <= i < size.
+ * @param size
+ */
 export function eventConjoiner<T>(size: number) {
   const callbacks = [];
   const active = new Map();

@@ -389,6 +389,10 @@ export function newTargeting(auctionManager) {
     },
   };
 
+  // reset GPT targeting after bidWon and:
+  // - slotRenderEnded fired for the same ad unit, or
+  // - 100ms have passed.
+
   const renderedAndWon = eventConjoiner<string>(2);
   renderedAndWon.on(adUnitCode => {
     setTimeout(() => targeting.presetGPTTargeting([adUnitCode]));
