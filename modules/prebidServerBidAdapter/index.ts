@@ -36,8 +36,7 @@ import type { Identifier, BidderCode } from '../../src/types/common.d.ts';
 import type { Metrics } from "../../src/utils/perfMetrics.ts";
 import type { ORTBResponse } from "../../src/types/ortb/response.d.ts";
 import type { NativeRequest } from '../../src/types/ortb/native.d.ts';
-import { browserSupportsUserSyncCookies } from "../../src/userSync.ts";
-import type { SyncType } from "../../src/userSync.ts";
+import { browserSupportsUserSyncCookies, type SyncType } from "../../src/userSync.ts";
 
 const getConfig = config.getConfig;
 
@@ -637,14 +636,23 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
       logWarn('Skipping GZIP compression for PBS as debug mode is enabled');
     }
 
-    if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
-      compressDataWithGZip(requestData.requestJson).then(compressedPayload => {
-        const url = new URL(requestData.endpointUrl);
-        url.searchParams.set('gzip', '1');
-        callAjax(compressedPayload, url.href);
-      });
+    const sendUncompressed = () => callAjax(requestData.requestJson, requestData.endpointUrl);
+
+    if (enableGZipCompression && !debugMode) {
+      isGzipCompressionSupported().then((supported) => {
+        if (supported) {
+          return compressDataWithGZip(requestData.requestJson)
+            .then(compressedPayload => {
+              const url = new URL(requestData.endpointUrl);
+              url.searchParams.set('gzip', '1');
+              callAjax(compressedPayload, url.href);
+            });
+        } else {
+          sendUncompressed();
+        }
+      }).catch(sendUncompressed);
     } else {
-      callAjax(requestData.requestJson, requestData.endpointUrl);
+      sendUncompressed();
     }
   } else {
     logError('PBS request not made.  Check endpoints.');

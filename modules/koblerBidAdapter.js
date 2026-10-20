@@ -25,6 +25,7 @@ export function getAdditionalData(obj, key) {
 }
 
 const BIDDER_CODE = 'kobler';
+const ACP_ID = 2575; // Google Additional Consent provider ID
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
 const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_call';
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
@@ -289,6 +290,7 @@ function buildPmpObject(validBidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

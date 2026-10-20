@@ -118,6 +118,7 @@ export const NATIVE_KEYS = {
   phone: 'hb_native_phone',
   price: 'hb_native_price',
   salePrice: 'hb_native_saleprice',
+  video: 'hb_native_video',
   rendererUrl: 'hb_renderer_url',
   adTemplate: 'hb_adTemplate'
 };

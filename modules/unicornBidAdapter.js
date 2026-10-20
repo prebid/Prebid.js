@@ -13,6 +13,7 @@ import { getBoundingBox, getViewportOffset, getViewability } from '../libraries/
 
 const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://rtbf.uncn.jp/pb/0/bid.json';
+const ACP_ID = 2416; // Google Additional Consent provider ID
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
 const UNICORN_PB_VERSION = '1.1';
@@ -309,7 +310,8 @@ const makeFormat = arr => arr.map((s) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['uncn'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'uncn', acpId: ACP_ID }],
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

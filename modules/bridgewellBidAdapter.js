@@ -9,11 +9,13 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  */
 
 const BIDDER_CODE = 'bridgewell';
+const ACP_ID = 1166; // Google Additional Consent provider ID
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
 const BIDDER_VERSION = '1.1.0';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, NATIVE],
 
   /**

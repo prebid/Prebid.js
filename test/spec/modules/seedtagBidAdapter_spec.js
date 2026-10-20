@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { getTimeoutUrl, spec, BIDFLOOR_CURRENCY } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as adUnits from 'src/utils/adUnits';
 
@@ -813,6 +814,26 @@ describe('Seedtag Adapter', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.ortb).to.be.undefined;
+      });
+    });
+
+    describe('autoplay param', function () {
+      let isAutoplayEnabledStub;
+
+      afterEach(function () {
+        isAutoplayEnabledStub.restore();
+      });
+
+      it('should send autoplay = true when autoplay is not forbidden', function () {
+        isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled').returns(true);
+        const data = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        expect(data.autoplay).to.equal(true);
+      });
+
+      it('should send autoplay = false when autoplay is forbidden', function () {
+        isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled').returns(false);
+        const data = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        expect(data.autoplay).to.equal(false);
       });
     });
   });

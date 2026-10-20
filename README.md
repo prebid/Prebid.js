@@ -405,7 +405,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](https:/
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not dead. 11.22+ adds not ios_saf 11.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not dead. 11.21+ adds not ios_saf 11; 11.21 through 11.30 omitted not dead, which 11.31 restored. See `browserslist` in [package.json](package.json) for the current target.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

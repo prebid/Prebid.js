@@ -137,7 +137,14 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
    * @see https://iabeurope.eu/tcf-for-vendors/
    */
   gvlid?: number;
-  aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];
+  /**
+   * Google Additional Consent provider ID, for vendors that are not on the GVL.
+   * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
+   * when the module has no GVL ID. This is a different ID space from GVL IDs.
+   * @see https://support.google.com/admanager/answer/9681920
+   */
+  acpId?: number;
+  aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, acpId?: number, skipPbsAliasing?: boolean })[];
   isBidRequestValid(request: BidRequest<BIDDER>): boolean;
   buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
   interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
@@ -188,14 +195,16 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
     spec.aliases.forEach(alias => {
       let aliasCode: string = alias as any;
       let gvlid;
+      let acpId;
       let skipPbsAliasing;
       if (isPlainObject(alias)) {
         aliasCode = alias.code as string;
         gvlid = alias.gvlid;
+        acpId = alias.acpId;
         skipPbsAliasing = alias.skipPbsAliasing;
       }
       adapterManager.aliasRegistry[aliasCode] = spec.code;
-      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, skipPbsAliasing }));
+      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, acpId, skipPbsAliasing }));
     });
   }
 }
@@ -577,16 +586,25 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
           logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
         }
 
-        if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
-          compressDataWithGZip(request.data).then(compressedPayload => {
-            const url = new URL(request.url);
-            if (!url.searchParams.has('gzip')) {
-              url.searchParams.set('gzip', '1');
+        const sendUncompressed = wrapCallback(() => callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) }));
+
+        if (enableGZipCompression && !debugMode) {
+          isGzipCompressionSupported().then(wrapCallback((supported) => {
+            if (supported) {
+              return compressDataWithGZip(request.data)
+                .then(wrapCallback(compressedPayload => {
+                  const url = new URL(request.url);
+                  if (!url.searchParams.has('gzip')) {
+                    url.searchParams.set('gzip', '1');
+                  }
+                  callAjax({ url: url.href, payload: compressedPayload });
+                }));
+            } else {
+              sendUncompressed();
             }
-            callAjax({ url: url.href, payload: compressedPayload });
-          });
+          })).catch(sendUncompressed);
         } else {
-          callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
+          sendUncompressed();
         }
         break;
       default:

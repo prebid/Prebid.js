@@ -143,6 +143,52 @@ describe('sevioBidAdapter', function () {
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
+    describe('X-Adshield response header', function () {
+      const responseWithHeaders = (headers) => ({
+        body: { bids: [{ requestId: 'r1', cpm: 1, meta: { advertiserDomains: ['none.com'] } }] },
+        headers: { get: (name) => (name in headers ? headers[name] : null) }
+      });
+
+      it('sets meta.adshield to 1 when the header is present without a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 1 when the header carries a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': 'anything' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 0 when the header is absent', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({}));
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('keeps the existing meta fields', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta).to.deep.equal({ advertiserDomains: ['none.com'], adshield: 1 });
+      });
+
+      it('creates meta when the bid has none', function () {
+        const response = responseWithHeaders({});
+        delete response.body.bids[0].meta;
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta).to.deep.equal({ adshield: 0 });
+      });
+
+      it('sets meta.adshield to 0 when the response has no headers accessor', function () {
+        const [bid] = spec.interpretResponse({ body: { bids: [{ requestId: 'r1' }] } });
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('sets meta.adshield to 0 when reading headers throws', function () {
+        const response = responseWithHeaders({});
+        response.headers.get = () => { throw new Error('unreadable'); };
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta.adshield).to.equal(0);
+      });
+    });
+
     it('should get the correct bid response for the native case', function () {
       let expectedResponseNative = [{
         requestId: '36e835f6cbfca38',

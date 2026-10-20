@@ -571,6 +571,19 @@ describe('The video cache', function () {
         sinon.assert.calledWith(addBidReceived, bidResponse);
         sinon.assert.called(afterBidAdded);
       });
+      it('provides a local VAST URL to an outstream renderer that requires one', function () {
+        bidResponse.mediaType = 'video';
+        bidResponse.renderer = { requiresVastUrl: true };
+        handleVideoBidCaching({
+          bidResponse,
+          auctionInstance: { addBidReceived },
+          afterBidAdded,
+          videoMediaType: { context: 'outstream' }
+        });
+        expect(bidResponse.vastUrl.startsWith('blob:http://')).to.be.true;
+        sinon.assert.calledWith(addBidReceived, bidResponse);
+        sinon.assert.calledOnce(afterBidAdded);
+      });
       describe('when prebid cache hooks are set up', () => {
         let cacheHook;
         before(() => {
@@ -610,6 +623,129 @@ describe('The video cache', function () {
       sinon.assert.calledOnce(storeStub);
     });
 
+    it('caches an XML-only outstream bid when its renderer requires a VAST URL', function () {
+      config.setConfig({ cache: { url: 'https://test.cache.url/endpoint' } });
+      const storeStub = sandbox.stub(_internal, 'store').callsFake(() => {});
+
+      handleVideoBidCaching({
+        bidResponse: {
+          mediaType: 'video',
+          vastXml: '<VAST version="3.0"></VAST>',
+          renderer: { requiresVastUrl: true }
+        },
+        auctionInstance: {},
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'outstream' }
+      });
+
+      sinon.assert.calledOnce(storeStub);
+    });
+
+    it('uses the selected safe renderer requirement when both renderer types are present', function () {
+      config.setConfig({ cache: { url: 'https://test.cache.url/endpoint' } });
+      const storeStub = sandbox.stub(_internal, 'store').callsFake(() => {});
+      const bidResponse = {
+        mediaType: 'video',
+        vastXml: '<VAST version="3.0"></VAST>',
+        renderer: { requiresVastUrl: false },
+        safeRenderer: { url: 'https://player.example/safe.js', requiresVastUrl: true }
+      };
+
+      handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: {},
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'outstream' }
+      });
+
+      sinon.assert.calledOnce(storeStub);
+    });
+
+    it('does not follow an overridden top window renderer requirement', function () {
+      config.setConfig({ cache: { url: 'https://test.cache.url/endpoint' } });
+      const storeStub = sandbox.stub(_internal, 'store');
+      const addBidReceived = sinon.stub();
+      const bidResponse = {
+        mediaType: 'video',
+        vastXml: '<VAST version="3.0"></VAST>',
+        renderer: { requiresVastUrl: true },
+        safeRenderer: { url: 'https://player.example/safe.js', requiresVastUrl: false }
+      };
+
+      handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: { addBidReceived },
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'outstream' }
+      });
+
+      sinon.assert.notCalled(storeStub);
+      sinon.assert.calledWith(addBidReceived, bidResponse);
+    });
+
+    it('does not cache outstream bids when the renderer already has a VAST URL', function () {
+      config.setConfig({ cache: { url: 'https://test.cache.url/endpoint' } });
+      const storeStub = sandbox.stub(_internal, 'store');
+      const addBidReceived = sinon.stub();
+      const bidResponse = {
+        mediaType: 'video',
+        vastUrl: 'https://bidder.example/vast',
+        renderer: { requiresVastUrl: true }
+      };
+
+      handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: { addBidReceived },
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'outstream' }
+      });
+
+      sinon.assert.notCalled(storeStub);
+      sinon.assert.calledWith(addBidReceived, bidResponse);
+    });
+
+    it('does not cache XML-only outstream bids for renderers that accept inline XML', function () {
+      config.setConfig({ cache: { url: 'https://test.cache.url/endpoint' } });
+      const storeStub = sandbox.stub(_internal, 'store');
+      const addBidReceived = sinon.stub();
+      const bidResponse = {
+        mediaType: 'video',
+        vastXml: '<VAST version="3.0"></VAST>',
+        renderer: { requiresVastUrl: false }
+      };
+
+      handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: { addBidReceived },
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'outstream' }
+      });
+
+      sinon.assert.notCalled(storeStub);
+      sinon.assert.calledWith(addBidReceived, bidResponse);
+    });
+
+    it('discards XML-only outstream bids when the renderer requires a URL and caching is disabled', function () {
+      const logErrorStub = sandbox.stub(utils, 'logError');
+      const addBidReceived = sinon.stub();
+      const afterBidAdded = sinon.stub();
+
+      handleVideoBidCaching({
+        bidResponse: {
+          mediaType: 'video',
+          vastXml: '<VAST version="3.0"></VAST>',
+          renderer: { requiresVastUrl: true }
+        },
+        auctionInstance: { addBidReceived },
+        afterBidAdded,
+        videoMediaType: { context: 'outstream' }
+      });
+
+      sinon.assert.calledOnce(logErrorStub);
+      sinon.assert.notCalled(addBidReceived);
+      sinon.assert.calledOnce(afterBidAdded);
+    });
+
     it('logs error when bid has videoCacheKey but no vastUrl', function () {
       config.setConfig({
         cache: {
@@ -620,15 +756,17 @@ describe('The video cache', function () {
       const bidResponse = {
         videoCacheKey: 'existing-cache-key'
       };
+      const afterBidAdded = sinon.stub();
 
       handleVideoBidCaching({
         bidResponse,
         auctionInstance: {},
-        afterBidAdded: sinon.stub(),
+        afterBidAdded,
         videoMediaType: { context: 'instream' }
       });
 
       sinon.assert.calledOnce(logErrorStub);
+      sinon.assert.calledOnce(afterBidAdded);
     });
 
     it('adds bids to auction otherwise', () => {

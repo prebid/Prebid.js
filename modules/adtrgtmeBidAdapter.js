@@ -17,6 +17,7 @@ import { resolveResponseMediaType } from '../libraries/ortb2Utils/mediaType.js';
 const BIDDER_CODE = 'adtrgtme';
 const BIDDER_VERSION = '1.0.8';
 const BIDDER_URL = 'https://rtb.cdn.adtarget.market/ssp?prebid&s=';
+const ACP_ID = 931; // Google Additional Consent provider ID
 const PREBIDJS_VERSION = '$prebid.version$';
 const DEFAULT_TTL = 300;
 const DEFAULT_CUR = 'USD';
@@ -173,6 +174,7 @@ function buildServerRequest(data, options, bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
