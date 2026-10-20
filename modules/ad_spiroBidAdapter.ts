@@ -32,7 +32,6 @@ const IMAGE_SYNC_URL = 'https://rtb.adspiro.io/u/sync';
 const DATA_DELETION_URL = 'https://rtb.adspiro.io/u/delete';
 const CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
-const MTYPE_AUDIO = 3;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE, AUDIO] as const;
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
@@ -67,13 +66,6 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     const request = buildRequest(imps, bidderRequest, context);
     request.cur = [CURRENCY];
     return request;
-  },
-  bidResponse(buildBidResponse, bid, context) {
-    // ortbConverter maps mtype 1, 2 and 4 only
-    if (bid.mtype === MTYPE_AUDIO) {
-      return buildBidResponse(bid, { ...context, mediaType: AUDIO });
-    }
-    return buildBidResponse(bid, context);
   },
 });
 

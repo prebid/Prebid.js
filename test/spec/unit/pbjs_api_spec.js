@@ -3906,6 +3906,49 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('getBestBids', () => {
+    const adUnitCode = '/19968336/header-bid-tag-0';
+    const otherAdUnitCode = '/19968336/header-bid-tag1';
+    let bids;
+
+    beforeEach(() => {
+      const responses = getBidResponses();
+      bids = [
+        { ...responses[1], cpm: 10, desirability: 10 },
+        { ...responses[1], adId: 'boosted', cpm: 2, desirability: 25 },
+        { ...responses[0], cpm: 8, desirability: 20 },
+        { ...responses[2], cpm: 9, desirability: 30 }
+      ];
+      sandbox.stub(auctionManager, 'getBidsReceived').returns(bids);
+      sandbox.stub(auctionManager, 'getAdUnitCodes').returns([adUnitCode, otherAdUnitCode]);
+    });
+
+    it('selects the highest desirability bid for an ad unit without changing CPM selection', () => {
+      expect(pbjs.getBestBids(adUnitCode)).to.deep.equal([bids[1]]);
+      expect(pbjs.getHighestCpmBids(adUnitCode)).to.deep.equal([bids[0]]);
+    });
+
+    it('returns the most desirable bid for each ad unit when no code is given', () => {
+      expect(pbjs.getBestBids()).to.have.members([bids[1], bids[3]]);
+    });
+
+    it('filters ineligible bids before choosing among bids from the same bidder', () => {
+      bids.splice(2);
+      bids[1].cpm = 0;
+      bids[1].desirability = 100;
+
+      expect(pbjs.getBestBids(adUnitCode)).to.deep.equal([bids[0]]);
+    });
+
+    it('excludes unusable and zero CPM bids and returns an empty array when no bid qualifies', () => {
+      bids[1].status = BID_STATUS.RENDERED;
+      bids.push({ ...bids[2], adId: 'zero-cpm', bidderCode: 'zero-cpm', cpm: 0, desirability: 100 });
+
+      expect(pbjs.getBestBids(adUnitCode)).to.deep.equal([bids[2]]);
+      expect(pbjs.getBestBids('missing-ad-unit')).to.deep.equal([]);
+    });
+  });
+
   if (FEATURES.VIDEO) {
     describe('markWinningBidAsUsed', function () {
       const adUnitCode = '/19968336/header-bid-tag-0';

@@ -102,17 +102,8 @@ const converter = ortbConverter({
     return request;
   },
 
-  bidResponse(buildBidResponse: any, bid: any, context: any) {
-    // The endpoint always sets oRTB 2.6 mtype. The core converter maps
-    // 1/2/4 but not audio (3), so name that one - on a per-bid COPY of the
-    // context, never the shared one. ortbConverter reuses a single
-    // per-impression context across every bid for that imp, so mutating
-    // context.mediaType would push a later banner/video bid for the same
-    // imp through the audio type. A missing mtype is left to the core
-    // converter rather than guessed from the markup (audio adm is VAST
-    // too, and a video guess is rejected on an audio-only ad unit).
-    const bidContext = bid.mtype === 3 ? { ...context, mediaType: AUDIO } : context;
-    const bidResponse = buildBidResponse(bid, bidContext);
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
     // Required on every bid response - Prebid reviews for it and publisher
     // brand-safety tooling blocks on it.
     bidResponse.meta = Object.assign({}, bidResponse.meta, {
