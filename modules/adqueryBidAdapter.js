@@ -289,46 +289,28 @@ export const spec = {
   }
 };
 
-// Orders candidates by: adquery.io first, then source, then id (plain code-unit comparison,
-// not localeCompare, so the result does not depend on the browser locale).
-function isBetterCandidate(candidate, best) {
-  if (!best) {
-    return true;
-  }
-  const candidateIsAdquery = candidate.source === ADQUERY_EID_SOURCE;
-  const bestIsAdquery = best.source === ADQUERY_EID_SOURCE;
-  if (candidateIsAdquery !== bestIsAdquery) {
-    return candidateIsAdquery;
-  }
-  if (candidate.source !== best.source) {
-    return candidate.source < best.source;
-  }
-  return candidate.id < best.id;
-}
-
-// Picks one uid across all EIDs and their uids deterministically, so the same set of EIDs
-// always yields the same user id regardless of module order or how same-source uids were merged.
+// Only the adquery.io EID is used. Other vendors' ids are never sent as bidQid; without an
+// adquery.io uid bidQid stays empty and the adQuery bidder assigns its own user id.
+// Among several adquery.io uids the lowest id wins (plain code-unit comparison, not
+// localeCompare), so the result does not depend on EID/uid order or the browser locale.
 function getUserIdFromEids(bid) {
   if (!Array.isArray(bid.userIdAsEids)) {
     return '';
   }
 
-  let best = null;
+  let best = '';
   for (const eid of bid.userIdAsEids) {
-    if (typeof eid?.source !== 'string' || !Array.isArray(eid.uids)) {
+    if (eid?.source !== ADQUERY_EID_SOURCE || !Array.isArray(eid.uids)) {
       continue;
     }
     for (const uid of eid.uids) {
-      if (!uid?.id) {
-        continue;
-      }
-      const candidate = { source: eid.source, id: String(uid.id) };
-      if (isBetterCandidate(candidate, best)) {
-        best = candidate;
+      const id = uid?.id ? String(uid.id) : '';
+      if (id && (!best || id < best)) {
+        best = id;
       }
     }
   }
-  return best ? best.id : '';
+  return best;
 }
 
 function buildRequest(bid, bidderRequest, isVideo = false) {
