@@ -29,7 +29,14 @@ import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
 import { isBidUsable } from './targeting/filters.ts';
-import { recordSlotTargeting, slotHasTargetedAdId, updateSlotTargetingFromMap } from "./utils/gptTargeting.ts";
+import {
+  getTargetedAdIdsForSlot,
+  recordSlotTargeting,
+  slotHasTargetedAdId,
+  updateSlotTargetingFromMap
+} from "./utils/gptTargeting.ts";
+import { eventConjoiner } from "./utils/eventConjoiner.ts";
+import { gptEventHandler } from "./utils/gptEvents.ts";
 
 var pbTargetingKeys = [];
 
@@ -281,6 +288,7 @@ export function newTargeting(auctionManager) {
           logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
           updateSlotTargetingFromMap(slot, Object.assign({}, resetMap, targeting[targetId]));
           if (operation === 'set') {
+            gptRendered.enable();
             recordSlotTargeting(slot, targetedAdIdsByAdUnit[targetId] ?? []);
           }
           if (postUpdate != null) postUpdate(targeting[targetId]);
@@ -379,15 +387,26 @@ export function newTargeting(auctionManager) {
     },
   };
 
+  const renderedAndWon = eventConjoiner(2);
+  renderedAndWon.on(adId => {
+    const bid = auctionManager.findBidByAdId(adId);
+    if (bid) {
+      setTimeout(() => targeting.presetGPTTargeting([bid.adUnitCode]));
+    }
+  });
+  const gptRendered = gptEventHandler('slotRenderEnded', ({ slot }) => {
+    getTargetedAdIdsForSlot(slot)?.forEach(adId => renderedAndWon.collect(0, adId));
+  });
+
   events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
     targeting.presetGPTTargeting(adUnitCodes);
   });
 
   events.on(EVENTS.BID_WON, (bid) => {
+    renderedAndWon.collectWithin(100, 1, bid.adId);
     const slots = getBidSlots(bid);
     if (slots.length > 0) {
       slots.forEach(slot => lock.unlock(slot));
-      targeting.presetGPTTargeting([bid.adUnitCode]);
     }
   });
 
