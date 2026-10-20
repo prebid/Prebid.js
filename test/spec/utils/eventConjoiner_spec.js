@@ -74,6 +74,15 @@ describe('eventConjoiner', () => {
           afterEach(() => {
             clock.restore();
           });
+          it('does not fire after timeout if canceled', () => {
+            const cb = sinon.stub();
+            joiner.on(cb);
+            joiner.collectWithin(100, 0, 'event');
+            joiner.cancel('event');
+            clock.tick(200);
+            sinon.assert.notCalled(cb);
+          });
+
           it('fires after timeout on partial collection', () => {
             const cb = sinon.stub();
             joiner.on(cb);

@@ -1989,6 +1989,28 @@ describe('targeting tests', function () {
         sinon.assert.notCalled(presetStub);
       });
 
+      it('does not reset for a pending BID_WON once the ad unit is targeted again', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        clock.tick(50);
+        setTargeting(olderAdId);
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('keeps waiting on a pending BID_WON when a different ad unit is targeted', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        slots.push({
+          getAdUnitPath: sinon.stub().returns('/slot/path2'),
+          getSlotElementId: sinon.stub().returns('div-2'),
+          updateTargetingFromMap: sinon.stub()
+        });
+        instance.updateGPTTargeting({ 'div-2': { hb_adid: 'other-ad' } }, 'set', null, { 'div-2': new Set(['other-ad']) });
+        clock.tick(102);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
       it('does not let a render without a win complete the next win', () => {
         // e.g. a non-Prebid line item served on the first refresh
         setTargeting(olderAdId);
