@@ -1648,8 +1648,8 @@ describe('adqueryBidAdapter', function () {
         {}
       );
       expect(sync.length).to.equal(1);
-      expect(sync[0].type === 'iframe');
-      expect(typeof sync[0].url === 'string');
+      expect(sync[0].type).to.equal('iframe');
+      expect(sync[0].url).to.be.a('string');
     });
     it('should return image sync', function () {
       const sync = spec.getUserSyncs(
@@ -1662,8 +1662,8 @@ describe('adqueryBidAdapter', function () {
         {}
       );
       expect(sync.length).to.equal(1);
-      expect(sync[0].type === 'image');
-      expect(typeof sync[0].url === 'string');
+      expect(sync[0].type).to.equal('image');
+      expect(sync[0].url).to.be.a('string');
     });
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
