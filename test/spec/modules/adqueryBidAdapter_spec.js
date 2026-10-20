@@ -1497,6 +1497,26 @@ describe('adqueryBidAdapter', function () {
         expect(withOther.data.user).to.deep.equal({ id: 'u' });
       });
 
+      it('should use ortb2.user.ext.eids when userIdAsEids is not set (no userId module)', function () {
+        const eids = [
+          { source: 'pubcid.org', uids: [{ id: 'pubcid-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_adquery-id-1234567' }] }
+        ];
+        const sorted = [eids[1], eids[0]];
+        const banner = spec.buildRequests([Object.assign({}, bidRequest, { ortb2: { user: { ext: { eids } } } })], { refererInfo: {} })[0];
+        expect(banner.data.eids).to.deep.equal(sorted);
+        expect(banner.data.bidQid).to.equal('qd_adquery-id-1234567');
+        const videoBid = videoBidWith({ ortb2: { user: { ext: { eids } } } });
+        delete videoBid.userIdAsEids;
+        const video = spec.buildRequests([videoBid], { refererInfo: {} })[0];
+        expect(video.data.user.ext.eids).to.deep.equal(sorted);
+      });
+
+      it('should ignore a non-array ortb2.user.ext.eids', function () {
+        const req = spec.buildRequests([Object.assign({}, bidRequest, { ortb2: { user: { ext: { eids: 'x' } } } })], { refererInfo: {} })[0];
+        expect(req.data).to.not.have.property('eids');
+      });
+
       it('should not copy uncleaned user.eids into video requests', function () {
         const eids = [{ source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }];
         const req = spec.buildRequests([videoBidWith({

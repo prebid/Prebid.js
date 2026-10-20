@@ -435,11 +435,22 @@ function getEids(eids) {
   return sortUnique(capped, compareEids);
 }
 
+// The EIDs of the bid: userIdAsEids when the userId module is in the build (it is an alias of
+// ortb2.user.ext.eids), otherwise the normalized ortb2.user.ext.eids, so EIDs passed through ORTB2
+// first party data are not lost in builds without the userId module.
+function getBidEids(bid) {
+  if (Array.isArray(bid?.userIdAsEids)) {
+    return bid.userIdAsEids;
+  }
+  const ortb2Eids = bid?.ortb2?.user?.ext?.eids;
+  return Array.isArray(ortb2Eids) ? ortb2Eids : [];
+}
+
 // bidQid comes only from the adquery.io EID: after sorting, the lowest adquery.io uid is the very
 // first uid of eids. Other vendors' ids are never sent as bidQid; without an adquery.io uid
 // bidQid stays empty and the adQuery bidder assigns its own user id.
 function getUserIds(bid) {
-  const eids = getEids(Array.isArray(bid?.userIdAsEids) ? bid.userIdAsEids : []);
+  const eids = getEids(getBidEids(bid));
   const bidQid = eids[0]?.source === ADQUERY_EID_SOURCE ? eids[0].uids[0].id : '';
   return { bidQid, eids };
 }
