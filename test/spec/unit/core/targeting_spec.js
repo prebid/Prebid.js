@@ -2011,6 +2011,32 @@ describe('targeting tests', function () {
         sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
       });
 
+      it('does not reset targeting installed in the same tick as the join completing', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        bidWon(targetedAdId);
+        setTargeting(olderAdId);
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not reset targeting installed in the same tick as BID_WON', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        setTargeting(olderAdId);
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not let a render from the same tick as a retarget complete the next win', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        setTargeting(olderAdId);
+        bidWon(olderAdId);
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+      });
+
       it('does not let a render without a win complete the next win', () => {
         // e.g. a non-Prebid line item served on the first refresh
         setTargeting(olderAdId);
