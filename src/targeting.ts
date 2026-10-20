@@ -387,15 +387,17 @@ export function newTargeting(auctionManager) {
     },
   };
 
-  const renderedAndWon = eventConjoiner(2);
-  renderedAndWon.on(adId => {
-    const bid = auctionManager.findBidByAdId(adId);
-    if (bid) {
-      setTimeout(() => targeting.presetGPTTargeting([bid.adUnitCode]));
-    }
+  const renderedAndWon = eventConjoiner<string>(2);
+  renderedAndWon.on(adUnitCode => {
+    setTimeout(() => targeting.presetGPTTargeting([adUnitCode]));
   });
   const gptRendered = gptEventHandler('slotRenderEnded', ({ slot }) => {
-    getTargetedAdIdsForSlot(slot)?.forEach(adId => renderedAndWon.collect(0, adId));
+    getTargetedAdIdsForSlot(slot)?.forEach(adId => {
+      const bid = auctionManager.findBidByAdId(adId);
+      if (bid) {
+        renderedAndWon.collect(0, bid.adUnitCode);
+      }
+    });
   });
 
   events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
@@ -403,9 +405,9 @@ export function newTargeting(auctionManager) {
   });
 
   events.on(EVENTS.BID_WON, (bid) => {
-    renderedAndWon.collectWithin(100, 1, bid.adId);
     const slots = getBidSlots(bid);
     if (slots.length > 0) {
+      renderedAndWon.collectWithin(100, 1, bid.adUnitCode);
       slots.forEach(slot => lock.unlock(slot));
     }
   });

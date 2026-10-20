@@ -4,11 +4,15 @@ export function eventConjoiner<T>(size: number) {
   const active = new Map();
   const timers = new Map();
 
-  function fire(event: T) {
+  function clearTimer(event) {
     if (timers.has(event)) {
       clearTimeout(timers.get(event));
       timers.delete(event);
     }
+  }
+
+  function fire(event: T) {
+    clearTimer(event);
     active.delete(event);
     callbacks.forEach(cb => cb(event));
   }
@@ -27,6 +31,7 @@ export function eventConjoiner<T>(size: number) {
     fire,
     collect,
     collectWithin(timeout: number, channel: number, event: T) {
+      clearTimer(event);
       timers.set(event, setTimeout(() => fire(event), timeout));
       collect(channel, event);
     },
