@@ -20,7 +20,7 @@ export type VisionforgexBidParams = {
    * The placement ID from VisionForgeX, e.g. 'vfx7q2m9k4d1x'.
    * 'vfx-test-banner' and 'vfx-test-video' always answer with a test ad.
    */
-placementId: string | number;
+  placementId: string | number;
 };
 
 declare module '../src/adUnits' {
