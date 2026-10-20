@@ -1553,13 +1553,6 @@ describe('Unit: Prebid Module', function () {
         let logMessageSpy;
         let makeRequestsStub;
         let adUnits;
-        let clock;
-        beforeEach(function () {
-          clock = sinon.useFakeTimers();
-        });
-        afterEach(function () {
-          clock.restore();
-        });
 
         const BIDDER_CODE = 'sampleBidder';
         const bids = [{
@@ -1599,7 +1592,6 @@ describe('Unit: Prebid Module', function () {
         let spec, indexStub, auction, completeAuction, auctionStarted;
 
         beforeEach(function () {
-          clock = sinon.useFakeTimers();
           logMessageSpy = sinon.spy(utils, 'logMessage');
           makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
           makeRequestsStub.returns(bidRequests);
@@ -1650,7 +1642,6 @@ describe('Unit: Prebid Module', function () {
         });
 
         afterEach(function () {
-          clock.restore();
           adapterManager.makeBidRequests.restore();
           adapterManager.callBids.restore();
           indexStub.restore();
@@ -1665,24 +1656,29 @@ describe('Unit: Prebid Module', function () {
         }
 
         it('should execute callback after timeout', async function () {
-          const requestObj = {
-            bidsBackHandler: sinon.stub(),
-            timeout: 2000,
-            adUnits: adUnits
-          };
-          await runAuction(requestObj);
+          const clock = sinon.useFakeTimers();
+          try {
+            const requestObj = {
+              bidsBackHandler: sinon.stub(),
+              timeout: 2000,
+              adUnits: adUnits
+            };
+            await runAuction(requestObj);
 
-          const re = new RegExp('^Auction [a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12} timedOut$');
-          await clock.tick(requestObj.timeout - 1);
-          assert.ok(logMessageSpy.neverCalledWith(sinon.match(re)), 'executeCallback not called');
+            const re = new RegExp('^Auction [a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12} timedOut$');
+            await clock.tick(requestObj.timeout - 1);
+            assert.ok(logMessageSpy.neverCalledWith(sinon.match(re)), 'executeCallback not called');
 
-          await clock.tick(1);
-          assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
+            await clock.tick(1);
+            assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
 
-          expect(requestObj.bidsBackHandler.getCall(0).args[1]).to.equal(true,
-            'bidsBackHandler should be called with timedOut=true');
+            expect(requestObj.bidsBackHandler.getCall(0).args[1]).to.equal(true,
+              'bidsBackHandler should be called with timedOut=true');
 
-          sinon.assert.called(spec.onTimeout);
+            sinon.assert.called(spec.onTimeout);
+          } finally {
+            clock.restore();
+          }
         });
 
         describe('requestBids event', () => {
@@ -1884,7 +1880,6 @@ describe('Unit: Prebid Module', function () {
                   expect(auctionId).to.eql('mock-auctionId');
                   done();
                 });
-                clock.tick(12);
               });
 
               it('with auction result', (done) => {
