@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adyoulikeowBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { server } from 'test/mocks/xhr.js';
 
-const PLACEMENT_ID = '354f787b85c829fb83g2cdaf1ae64435';
+const PLACEMENT_ID = '194f787b85c829fb8822cdaf1ae64435';
 
 describe('AdyoulikeOW Bid Adapter', function () {
   const adapter = newBidder(spec);
@@ -38,7 +39,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
   describe('buildRequests', function () {
     const bidRequests = [
       {
-        bidder: 'adyoulikeow',
+        bidder: 'adyoulikeOW',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -74,6 +75,84 @@ describe('AdyoulikeOW Bid Adapter', function () {
       expect(payload.user.gdpr).to.equal(1);
       expect(payload.user.gdprConsentString).to.equal('consentXYZ');
       expect(payload.user.usPrivacy).to.equal('1YNN');
+    });
+
+    it('uses text/plain content type to keep this a CORS simple request (no preflight)', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.options.contentType).to.equal('text/plain');
+    });
+
+    it('still serializes a valid JSON body despite the text/plain content type', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(() => JSON.parse(request.data)).to.not.throw();
+      const payload = JSON.parse(request.data);
+      expect(payload.imp).to.have.lengthOf(1);
+    });
+  });
+
+  describe('buildRequests -- bid floor precedence', function () {
+    const bidderRequest = {
+      bidderRequestId: 'req1',
+      refererInfo: { page: 'https://example.com', domain: 'example.com' }
+    };
+
+    it('uses the static params.bidFloor when getFloor is not a function', function () {
+      const bidRequests = [{
+        bidder: 'adyoulikeOW',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID, bidFloor: 1.5 },
+        mediaTypes: { banner: { sizes: [[300, 250]] } }
+      }];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].bidfloor).to.equal(1.5);
+    });
+
+    it('prefers the floors-module getFloor() result over the static param', function () {
+      const bidRequests = [{
+        bidder: 'adyoulikeOW',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID, bidFloor: 1.5 },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        getFloor: () => ({ currency: 'USD', floor: 3.25 })
+      }];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].bidfloor).to.equal(3.25);
+    });
+
+    it('calls getFloor with the impression\'s real mediaType and size, not placeholders', function () {
+      let receivedArgs;
+      const bidRequests = [{
+        bidder: 'adyoulikeOW',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        mediaTypes: { video: { playerSize: [[640, 480]] } },
+        getFloor: (args) => {
+          receivedArgs = args;
+          return { currency: 'USD', floor: 4 };
+        }
+      }];
+
+      spec.buildRequests(bidRequests, bidderRequest);
+      expect(receivedArgs.mediaType).to.equal('video');
+      expect(receivedArgs.size).to.deep.equal([640, 480]);
+    });
+
+    it('falls back to the static param when getFloor returns no usable floor', function () {
+      const bidRequests = [{
+        bidder: 'adyoulikeOW',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID, bidFloor: 0.75 },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        getFloor: () => ({})
+      }];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].bidfloor).to.equal(0.75);
     });
   });
 
@@ -132,11 +211,224 @@ describe('AdyoulikeOW Bid Adapter', function () {
       const serverResponse = { body: { seatbid: [{ bid: [{ impid: 'bid1', price: 0 }] }] } };
       expect(spec.interpretResponse(serverResponse, request)).to.have.lengthOf(0);
     });
+
+    it('carries the win-notice nurl from the server bid onto the bid response', function () {
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              impid: 'bid1',
+              price: 1.25,
+              w: 300,
+              h: 250,
+              crid: 'creative1',
+              adm: '<div>ad</div>',
+              nurl: 'https://win.example.com/notice?price=${AUCTION_PRICE}'
+            }]
+          }]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponse, request);
+      expect(result[0].nurl).to.equal('https://win.example.com/notice?price=${AUCTION_PRICE}');
+    });
+
+    it('leaves nurl undefined when the server bid does not include one', function () {
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{ impid: 'bid1', price: 1.25, w: 300, h: 250, crid: 'creative1', adm: '<div>ad</div>' }]
+          }]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponse, request);
+      expect(result[0].nurl).to.be.undefined;
+    });
   });
 
   describe('onBidWon', function () {
     it('does not throw when nurl is absent', function () {
       expect(() => spec.onBidWon({})).to.not.throw();
+    });
+
+    it('sends the win notice via a keepalive GET when interpretResponse has populated nurl', function () {
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              impid: 'bid1',
+              price: 1.25,
+              w: 300,
+              h: 250,
+              crid: 'creative1',
+              adm: '<div>ad</div>',
+              nurl: 'https://win.example.com/notice'
+            }]
+          }]
+        }
+      };
+
+      const [wonBid] = spec.interpretResponse(serverResponse, request);
+      // interpretResponse must actually set nurl, or the request below would
+      // never be made.
+      expect(wonBid.nurl).to.equal('https://win.example.com/notice');
+
+      spec.onBidWon(wonBid);
+
+      expect(server.requests).to.have.lengthOf(1);
+      const [noticeRequest] = server.requests;
+      expect(noticeRequest.method).to.equal('GET');
+      expect(noticeRequest.url).to.equal('https://win.example.com/notice');
+      if (typeof Request !== 'undefined' && 'keepalive' in Request.prototype) {
+        expect(noticeRequest.fetch.request.keepalive).to.equal(true);
+      }
+    });
+
+    it('does not send a win notice when nurl is missing', function () {
+      spec.onBidWon({});
+      expect(server.requests).to.have.lengthOf(0);
+    });
+  });
+
+  describe('multiformat ad units (banner + video on the same bid)', function () {
+    const bidderRequest = {
+      bidderRequestId: 'req1',
+      refererInfo: { page: 'https://example.com', domain: 'example.com' }
+    };
+
+    const multiformatBid = {
+      bidder: 'adyoulikeOW',
+      bidId: 'bid1',
+      params: { placementId: PLACEMENT_ID },
+      mediaTypes: {
+        banner: { sizes: [[300, 250]] },
+        video: { playerSize: [[640, 480]] }
+      }
+    };
+
+    it('builds both imp.banner and imp.video, each with its own sizes', function () {
+      const request = spec.buildRequests([multiformatBid], bidderRequest);
+      const imp = JSON.parse(request.data).imp[0];
+      expect(imp.banner).to.deep.include({ w: 300, h: 250 });
+      expect(imp.video).to.include({ w: 640, h: 480 });
+    });
+
+    it('does not let the video branch overwrite banner with video dimensions', function () {
+      const request = spec.buildRequests([multiformatBid], bidderRequest);
+      const imp = JSON.parse(request.data).imp[0];
+      expect(imp.banner.w).to.equal(300);
+      expect(imp.banner.h).to.equal(250);
+    });
+
+    it('asks the floors module for the wildcard floor exactly once, not a per-format min/max', function () {
+      const calls = [];
+      const bid = {
+        ...multiformatBid,
+        getFloor: (args) => {
+          calls.push(args);
+          return { currency: 'USD', floor: 3.5 };
+        }
+      };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const imp = JSON.parse(request.data).imp[0];
+
+      expect(calls).to.have.lengthOf(1);
+      expect(calls[0]).to.deep.include({ mediaType: '*', size: '*' });
+      expect(imp.bidfloor).to.equal(3.5);
+    });
+
+    it('still asks per-format when only one media type is declared', function () {
+      const bannerOnly = {
+        bidder: 'adyoulikeOW',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        getFloor: (args) => ({ currency: 'USD', floor: args.mediaType === 'banner' ? 2 : 99 })
+      };
+      const request = spec.buildRequests([bannerOnly], bidderRequest);
+      const imp = JSON.parse(request.data).imp[0];
+      expect(imp.bidfloor).to.equal(2);
+    });
+
+    it('classifies the response by bid.mtype rather than by request shape', function () {
+      const request = { bids: [multiformatBid] };
+
+      const videoResponse = spec.interpretResponse({
+        body: { seatbid: [{ bid: [{ impid: 'bid1', price: 1, mtype: 2, adm: '<VAST/>' }] }] }
+      }, request);
+      expect(videoResponse[0].mediaType).to.equal('video');
+      expect(videoResponse[0].width).to.equal(640);
+      expect(videoResponse[0].height).to.equal(480);
+
+      const bannerResponse = spec.interpretResponse({
+        body: { seatbid: [{ bid: [{ impid: 'bid1', price: 1, mtype: 1, adm: '<div>ad</div>' }] }] }
+      }, request);
+      expect(bannerResponse[0].mediaType).to.equal('banner');
+      expect(bannerResponse[0].width).to.equal(300);
+      expect(bannerResponse[0].height).to.equal(250);
+    });
+
+    it('falls back to sniffing VAST markup when the backend omits mtype', function () {
+      const request = { bids: [multiformatBid] };
+      const response = spec.interpretResponse({
+        body: { seatbid: [{ bid: [{ impid: 'bid1', price: 1, adm: '<VAST version="3.0"></VAST>' }] }] }
+      }, request);
+      expect(response[0].mediaType).to.equal('video');
+    });
+  });
+
+  describe('supply chain (schain)', function () {
+    const bidRequests = [{
+      bidder: 'adyoulikeOW',
+      bidId: 'bid1',
+      params: { placementId: PLACEMENT_ID },
+      mediaTypes: { banner: { sizes: [[300, 250]] } }
+    }];
+    const baseBidderRequest = {
+      refererInfo: { page: 'https://example.com', domain: 'example.com' }
+    };
+
+    it('picks up the legacy bidRequest.schain and serializes it under source.ext, not ext', function () {
+      const bids = [{ ...bidRequests[0], schain: { ver: '1.0', nodes: [{ asi: 'legacy.com' }] } }];
+      const request = spec.buildRequests(bids, baseBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.source).to.deep.equal({ ext: { schain: { ver: '1.0', nodes: [{ asi: 'legacy.com' }] } } });
+      expect(payload.ext).to.be.undefined;
+    });
+
+    it('picks up schain from bidderRequest.ortb2.source.ext.schain when the legacy field is absent', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: { source: { ext: { schain: { ver: '1.0', nodes: [{ asi: 'ortb2.com' }] } } } }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.source.ext.schain.nodes[0].asi).to.equal('ortb2.com');
+    });
+
+    it('prefers the ORTB2 location when both are present', function () {
+      const bids = [{ ...bidRequests[0], schain: { ver: '1.0', nodes: [{ asi: 'legacy.com' }] } }];
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: { source: { ext: { schain: { ver: '1.0', nodes: [{ asi: 'ortb2.com' }] } } } }
+      };
+      const request = spec.buildRequests(bids, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.source.ext.schain.nodes[0].asi).to.equal('ortb2.com');
+    });
+
+    it('omits the source key entirely when no schain is present anywhere', function () {
+      const request = spec.buildRequests(bidRequests, baseBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload).to.not.have.property('source');
     });
   });
 });

@@ -1,52 +1,94 @@
-import { deepAccess, isNumber, isArray, generateUUID } from '../../src/utils.js';
+import { deepAccess, isNumber, isArray, isFn, generateUUID } from '../../src/utils.js';
 import { config } from '../../src/config.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 
 // Shared OneBid Tech backend config. All partner-branded adapters that hit
-// this backend use the same currency default, TTL, and revenue model -- routing to the right partner
-// happens via the placementId hash substituted into the URL, not via any
-// per-bidder constant here.
+// this backend use the same currency default, TTL, and revenue model --
+// routing to the right partner happens via the placementId hash substituted
+// into the URL, not via any per-bidder constant here. The endpoint itself is
+// passed into buildRequests() by the calling adapter.
 const DEFAULT_CUR = 'USD';
 const TIME_TO_LIVE = 1200;
 const NET_REVENUE = true;
+const MTYPE_BANNER = 1;
+const MTYPE_VIDEO = 2;
 
-function getSizes(bidRequest) {
-  const bannerSizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
-  if (isArray(bannerSizes) && bannerSizes.length) {
-    return bannerSizes;
+function getBannerSizes(bidRequest) {
+  const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+  return (isArray(sizes) && sizes.length) ? sizes : [];
+}
+
+function getVideoSizes(bidRequest) {
+  const sizes = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+  if (!isArray(sizes) || !sizes.length) {
+    return [];
   }
-  const videoSizes = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-  if (isArray(videoSizes) && videoSizes.length) {
-    return isArray(videoSizes[0]) ? videoSizes : [videoSizes];
-  }
+  return isArray(sizes[0]) ? sizes : [sizes];
+}
+
+function getLegacySizes(bidRequest) {
   return isArray(bidRequest.sizes) ? bidRequest.sizes : [];
+}
+
+function resolveDeclaredSizes(bidRequest) {
+  const videoSizes = getVideoSizes(bidRequest);
+  let bannerSizes = getBannerSizes(bidRequest);
+  if (!bannerSizes.length && !videoSizes.length) {
+    bannerSizes = getLegacySizes(bidRequest);
+  }
+  return { bannerSizes, videoSizes };
+}
+
+function getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSizes) {
+  const params = bidRequest.params || {};
+  const staticFloor = isNumber(params.bidFloor) ? params.bidFloor : 0;
+
+  if (!isFn(bidRequest.getFloor)) {
+    return staticFloor;
+  }
+
+  let floorArgs;
+  if (hasBanner && hasVideo) {
+    floorArgs = { currency: cur, mediaType: '*', size: '*' };
+  } else if (hasVideo) {
+    floorArgs = { currency: cur, mediaType: VIDEO, size: videoSizes[0] || [] };
+  } else {
+    floorArgs = { currency: cur, mediaType: BANNER, size: bannerSizes[0] || [] };
+  }
+
+  const info = bidRequest.getFloor(floorArgs);
+  return (info && isNumber(info.floor)) ? info.floor : staticFloor;
 }
 
 function buildImpression(bidRequest) {
   const params = bidRequest.params || {};
-  const sizes = getSizes(bidRequest);
-  const isVideo = !!deepAccess(bidRequest, 'mediaTypes.video');
+  const cur = params.currency || DEFAULT_CUR;
+  const { bannerSizes, videoSizes } = resolveDeclaredSizes(bidRequest);
+  const hasBanner = bannerSizes.length > 0;
+  const hasVideo = videoSizes.length > 0;
 
   const imp = {
     id: bidRequest.bidId,
-    bidfloor: isNumber(params.bidFloor) ? params.bidFloor : 0,
-    bidfloorcur: params.currency || DEFAULT_CUR,
+    bidfloor: getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSizes),
+    bidfloorcur: cur,
     secure: 1
   };
 
-  if (isVideo) {
+  if (hasBanner) {
+    imp.banner = {
+      w: bannerSizes[0][0],
+      h: bannerSizes[0][1],
+      format: bannerSizes.map(([w, h]) => ({ w, h }))
+    };
+  }
+
+  if (hasVideo) {
     imp.video = {
-      w: sizes[0] ? sizes[0][0] : undefined,
-      h: sizes[0] ? sizes[0][1] : undefined,
+      w: videoSizes[0][0],
+      h: videoSizes[0][1],
       mimes: deepAccess(bidRequest, 'mediaTypes.video.mimes') || ['video/mp4'],
       protocols: deepAccess(bidRequest, 'mediaTypes.video.protocols'),
       placement: deepAccess(bidRequest, 'mediaTypes.video.placement')
-    };
-  } else {
-    imp.banner = {
-      w: sizes[0] ? sizes[0][0] : undefined,
-      h: sizes[0] ? sizes[0][1] : undefined,
-      format: sizes.map(([w, h]) => ({ w, h }))
     };
   }
 
@@ -78,9 +120,18 @@ function buildConsentBlock(bidderRequest) {
   return consent;
 }
 
+function resolveSchain(validBidRequests, bidderRequest) {
+  const fromOrtb2 = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
+  if (fromOrtb2) {
+    return fromOrtb2;
+  }
+  return deepAccess(validBidRequests[0], 'schain');
+}
+
 export function buildRequests(validBidRequests, bidderRequest, endpointUrl) {
   const placementId = validBidRequests[0].params.placementId;
   const imps = validBidRequests.map(buildImpression);
+  const schain = resolveSchain(validBidRequests, bidderRequest);
 
   const payload = {
     id: bidderRequest.bidderRequestId || generateUUID(),
@@ -90,18 +141,19 @@ export function buildRequests(validBidRequests, bidderRequest, endpointUrl) {
       page: bidderRequest.refererInfo && bidderRequest.refererInfo.page,
       domain: bidderRequest.refererInfo && bidderRequest.refererInfo.domain
     },
-    user: buildConsentBlock(bidderRequest),
-    ext: {
-      schain: deepAccess(validBidRequests[0], 'schain')
-    }
+    user: buildConsentBlock(bidderRequest)
   };
+
+  if (schain) {
+    payload.source = { ext: { schain } };
+  }
 
   return {
     method: 'POST',
     url: endpointUrl.replace('placement', placementId),
     data: JSON.stringify(payload),
     options: {
-      contentType: 'application/json',
+      contentType: 'text/plain',
       withCredentials: true
     },
     bids: validBidRequests
@@ -123,14 +175,32 @@ export function interpretResponse(serverResponse, request) {
       }
 
       const matchedRequest = (request.bids || []).find((b) => b.bidId === serverBid.impid);
+      const { bannerSizes, videoSizes } = matchedRequest
+        ? resolveDeclaredSizes(matchedRequest)
+        : { bannerSizes: [], videoSizes: [] };
+      const isMultiformat = bannerSizes.length > 0 && videoSizes.length > 0;
+
+      let isVideo;
+      if (serverBid.mtype === MTYPE_VIDEO) {
+        isVideo = true;
+      } else if (serverBid.mtype === MTYPE_BANNER) {
+        isVideo = false;
+      } else if (isMultiformat) {
+        isVideo = typeof serverBid.adm === 'string' && /<VAST/i.test(serverBid.adm);
+      } else {
+        isVideo = videoSizes.length > 0;
+      }
+
+      const sizeSource = isVideo ? videoSizes : bannerSizes;
 
       const bidResponse = {
         requestId: serverBid.impid,
         cpm: serverBid.price,
         currency: body.cur || DEFAULT_CUR,
-        width: serverBid.w || (matchedRequest && getSizes(matchedRequest)[0] && getSizes(matchedRequest)[0][0]),
-        height: serverBid.h || (matchedRequest && getSizes(matchedRequest)[0] && getSizes(matchedRequest)[0][1]),
+        width: serverBid.w || (sizeSource[0] && sizeSource[0][0]),
+        height: serverBid.h || (sizeSource[0] && sizeSource[0][1]),
         creativeId: serverBid.crid || serverBid.id,
+        nurl: serverBid.nurl,
         netRevenue: NET_REVENUE,
         ttl: TIME_TO_LIVE,
         meta: {
@@ -138,7 +208,7 @@ export function interpretResponse(serverResponse, request) {
         }
       };
 
-      if (serverBid.adm && matchedRequest && deepAccess(matchedRequest, 'mediaTypes.video')) {
+      if (isVideo) {
         bidResponse.vastXml = serverBid.adm;
         bidResponse.mediaType = VIDEO;
       } else {
