@@ -228,7 +228,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     id: bidderRequest?.bidderRequestId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
-    tmax: Math.max(bidderRequest?.timeout || 400, 400),
+    tmax: bidderRequest?.timeout > 0 ? bidderRequest.timeout : 400,
     imp: [],
     source: { tid: bidderRequest?.ortb2?.source?.tid },
     ext: {

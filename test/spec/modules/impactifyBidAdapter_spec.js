@@ -234,8 +234,11 @@ describe('ImpactifyAdapter', function () {
 
     [
       { timeout: undefined, expected: 400 },
+      { timeout: null, expected: 400 },
       { timeout: 0, expected: 400 },
-      { timeout: 200, expected: 400 },
+      { timeout: -100, expected: 400 },
+      { timeout: NaN, expected: 400 },
+      { timeout: 200, expected: 200 },
       { timeout: 400, expected: 400 },
       { timeout: 500, expected: 500 },
       { timeout: 2500, expected: 2500 }
