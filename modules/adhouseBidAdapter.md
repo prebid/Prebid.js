@@ -19,7 +19,13 @@ currency module if the ad server currency is not USD.
 
 First-party data, the supply chain, COPPA and the US Privacy string are taken
 from `bidderRequest.ortb2` by ortbConverter. There is no GVL ID, so this adapter
-does not participate in TCF auctions in the EU. There is no user-sync pixel.
+does not participate in TCF auctions in the EU. There is no user-sync pixel,
+and bid requests are sent without credentials: the adapter neither reads nor
+sets cookies or other device storage.
+
+Only instream video is supported. A video-only ad unit with
+`context: 'outstream'` is skipped. A mixed banner and outstream unit still
+receives banner bids; its video part is not sent.
 
 A hosted MP4 is returned as an InLine VAST document. A third-party VAST tag is
 returned as a VAST Wrapper. Native is not offered by this adapter.

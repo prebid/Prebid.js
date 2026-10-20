@@ -63,6 +63,25 @@ describe('adhouseBidAdapter', function () {
     it('rejects an unknown videoType', function () {
       expect(spec.isBidRequestValid({ params: { placementId: '1', videoType: 'banner' } })).to.equal(false);
     });
+
+    it('rejects an outstream-only video unit', function () {
+      const bid = {
+        params: { placementId: '1' },
+        mediaTypes: { video: { context: 'outstream', playerSize: [[640, 360]] } }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('accepts a mixed banner and outstream unit', function () {
+      const bid = {
+        params: { placementId: '1' },
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'outstream', playerSize: [[640, 360]] }
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
   });
 
   describe('buildRequests', function () {
@@ -76,7 +95,7 @@ describe('adhouseBidAdapter', function () {
       const r = reqs[0];
       expect(r.method).to.equal('POST');
       expect(r.url).to.equal('https://bid.adhouse.pro/openrtb2/auction');
-      expect(r.options.withCredentials).to.equal(true);
+      expect(r.options.withCredentials).to.equal(false);
       expect(r.options.contentType).to.equal(undefined);
       expect(r.data).to.be.an('object');
       expect(r.data.imp).to.be.an('array').with.lengthOf(1);
@@ -110,6 +129,18 @@ describe('adhouseBidAdapter', function () {
         const imp = spec.buildRequests([videoBid], bidderRequest)[0].data.imp[0];
         expect(imp.video).to.be.an('object');
         expect(imp.ext.adhouse.videoType).to.equal('standart_video');
+      });
+
+      it('keeps the banner and drops the video of a mixed outstream unit', function () {
+        const bid = Object.assign({}, bannerBid, {
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] },
+            video: { context: 'outstream', playerSize: [[640, 360]], mimes: ['video/mp4'] }
+          }
+        });
+        const imp = spec.buildRequests([bid], bidderRequest)[0].data.imp[0];
+        expect(imp.banner).to.be.an('object');
+        expect(imp.video).to.equal(undefined);
       });
     }
   });

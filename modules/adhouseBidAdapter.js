@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { deepSetValue, isFn, isPlainObject, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, isFn, isPlainObject, logWarn } from '../src/utils.js';
+import { OUTSTREAM } from '../src/video.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -25,6 +26,11 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    // Only instream video is served. A mixed banner + outstream unit keeps its
+    // banner demand; the outstream video object is not sent.
+    if (isOutstream(bidRequest)) {
+      delete imp.video;
+    }
     const placementId = String(bidRequest.params.placementId);
     // bidMotor reads the placement from tagid and ext.adhouse.placementId.
     imp.tagid = placementId;
@@ -55,6 +61,10 @@ const converter = ortbConverter({
     return result;
   },
 });
+
+function isOutstream(bidRequest) {
+  return deepAccess(bidRequest, 'mediaTypes.video.context') === OUTSTREAM;
+}
 
 function getFloor(bidRequest) {
   if (isFn(bidRequest.getFloor)) {
@@ -91,6 +101,10 @@ export const spec = {
       logWarn('adhouse: videoType must be standart_video or sticky_video');
       return false;
     }
+    if (isOutstream(bid) && !deepAccess(bid, 'mediaTypes.banner')) {
+      logWarn('adhouse: outstream video is not supported');
+      return false;
+    }
     return true;
   },
 
@@ -106,8 +120,9 @@ export const spec = {
       // Content-Type stays at the ajax default (text/plain). The body is still
       // JSON; bidMotor parses it regardless of the header. text/plain keeps the
       // cross-origin POST a simple request, so the browser skips the preflight.
+      // No cookies: bidMotor neither reads nor sets any.
       options: {
-        withCredentials: true,
+        withCredentials: false,
       },
     }];
   },
