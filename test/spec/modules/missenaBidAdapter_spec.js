@@ -4,6 +4,7 @@ import { BANNER } from '../../../src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { getWinDimensions } from '../../../src/utils.js';
+import * as utils from 'src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const REFERRER = 'https://referer';
@@ -484,6 +485,49 @@ describe('Missena Adapter', function () {
       expect(syncUrl.searchParams.get('us_privacy')).to.equal('1YNN');
       expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString);
       expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7');
+    });
+  });
+
+  describe('onTimeout', function () {
+    it('should not throw', function () {
+      expect(() => spec.onTimeout([{ bidder: 'missena', bidId }])).to.not.throw();
+    });
+  });
+
+  describe('onBidWon', function () {
+    const wonBid = {
+      params: [{ apiKey: API_KEY }],
+      meta: { networkName: 'pubmatic-banner' },
+      originalCpm: 1.25,
+      originalCurrency: 'EUR',
+    };
+
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should trigger the bid success pixel on the production events domain', function () {
+      spec.onBidWon(wonBid);
+      expect(utils.triggerPixel.calledOnce).to.equal(true);
+      const url = new URL(utils.triggerPixel.firstCall.args[0]);
+      expect(url.hostname).to.equal('events.missena.io');
+      expect(url.pathname).to.equal('/v1/bidsuccess');
+      expect(url.searchParams.get('t')).to.equal(API_KEY);
+      expect(url.searchParams.get('provider')).to.equal('pubmatic-banner');
+      expect(url.searchParams.get('cpm')).to.equal('1.25');
+      expect(url.searchParams.get('currency')).to.equal('EUR');
+    });
+
+    it('should use the staging events domain when a baseUrl is set', function () {
+      spec.onBidWon({
+        ...wonBid,
+        params: [{ apiKey: API_KEY, baseUrl: 'https://bid.staging.missena.xyz/' }],
+      });
+      const url = new URL(utils.triggerPixel.firstCall.args[0]);
+      expect(url.hostname).to.equal('events.staging.missena.xyz');
     });
   });
 });
