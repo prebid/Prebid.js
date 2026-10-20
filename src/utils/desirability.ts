@@ -4,7 +4,7 @@ import type { Bid } from '../bidfactory.ts';
 import type { BidderCode } from '../types/common';
 import { S2S } from '../constants.js';
 import { logError } from '../utils.js';
-import { getBidAdjustmentFn } from './cpm.js';
+import { adjustCpm, getBidAdjustmentFn } from './cpm.js';
 
 export type SortByHighestDesirabilityDeps = {
   bs?: typeof bidderSettings;
@@ -34,13 +34,21 @@ export function isPriorityBidAllowed(
 
 /**
  * The CPM that desirability starts from: `meta.deal.pacingAdjustedCpm` for bids from adapters the publisher
- * allows priority bids from, otherwise `cpm`.
+ * allows priority bids from, otherwise `cpm`. The pacing-adjusted value goes through `bidCpmAdjustment`
+ * like the bid's own `cpm` (which has already been adjusted by the time this runs).
  */
-function getRankingCpm(bid: Bid, bidderRequest: BidderRequest<any> | undefined | null, bs: typeof bidderSettings): number {
+function getRankingCpm(
+  bid: Bid,
+  bidRequest: BidRequest<BidderCode> | undefined | null,
+  bidderRequest: BidderRequest<any> | undefined | null,
+  bs: typeof bidderSettings,
+): number {
   const pacingAdjustedCpm = bid.meta?.deal?.pacingAdjustedCpm;
   if (typeof pacingAdjustedCpm === 'number' && Number.isFinite(pacingAdjustedCpm) && pacingAdjustedCpm >= 0 &&
     isPriorityBidAllowed(bid, bidderRequest, bs)) {
-    return pacingAdjustedCpm;
+    const adjusted = adjustCpm(pacingAdjustedCpm, bid, bidRequest, { bs });
+    // like adjustBids, ignore adjustments that would make the value negative
+    return adjusted >= 0 ? adjusted : pacingAdjustedCpm;
   }
   return bid.cpm;
 }
@@ -59,7 +67,7 @@ export function adjustDesirability(
   const bs = deps.bs ?? bidderSettings;
   const bidCopy = Object.assign({}, bid) as Bid;
 
-  const adjustedCpm = getRankingCpm(bid, deps.bidderRequest, bs);
+  const adjustedCpm = getRankingCpm(bid, bidRequest, deps.bidderRequest, bs);
 
   const bidDesirabilityAdjustment = getBidAdjustmentFn(bid, bs, 'bidDesirabilityAdjustment', bidRequest) as BidAdjustmentFn | undefined;
   if (typeof bidDesirabilityAdjustment !== 'function') {

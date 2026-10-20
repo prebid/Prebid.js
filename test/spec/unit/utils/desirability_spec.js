@@ -190,6 +190,28 @@ describe('desirability utils', function () {
       expect(adjustDesirability(dealBid({ meta: {} }), null, { bidderRequest: clientRequest() })).to.equal(2);
     });
 
+    it('applies bidCpmAdjustment to pacingAdjustedCpm, as it is applied to cpm', function () {
+      getGlobal().bidderSettings = {
+        adapterA: { allowPriorityBids: true, bidCpmAdjustment: (cpm) => cpm * 0.8 }
+      };
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(4);
+    });
+
+    it('uses the bidCpmAdjustment that applies to the bid, e.g. for an alternate bidder code', function () {
+      getGlobal().bidderSettings = {
+        adapterA: { allowPriorityBids: true },
+        bidderB: { bidCpmAdjustment: (cpm) => cpm / 2 }
+      };
+      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: clientRequest() })).to.equal(2.5);
+    });
+
+    it('ignores a bidCpmAdjustment that would make pacingAdjustedCpm negative', function () {
+      getGlobal().bidderSettings = {
+        adapterA: { allowPriorityBids: true, bidCpmAdjustment: (cpm) => cpm - 10 }
+      };
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(5);
+    });
+
     it('passes pacingAdjustedCpm to bidDesirabilityAdjustment, without changing bid.cpm', function () {
       getGlobal().bidderSettings = {
         adapterA: { allowPriorityBids: true, bidDesirabilityAdjustment: (cpm) => cpm + 1 }
