@@ -258,12 +258,11 @@ const PBS_CONVERTER = ortbConverter({
 });
 
 /**
- * The bidders in this request whose deal metadata the publisher trusts, per `s2sConfig.allowPriorityBids`
- * (`true` for every bidder routed through the instance, or a list of bidder codes).
+ * The bidders in this request whose deal metadata the publisher trusts: those listed in `s2sConfig.allowPriorityBids`.
+ * Anything other than a list (including `true`) trusts no one; trusted bidders must be enumerated.
  */
 export function getPriorityBidders(allowPriorityBids, requestedBidders = []) {
   const bidders = requestedBidders.filter(bidder => bidder != null);
-  if (allowPriorityBids === true) return bidders;
   if (Array.isArray(allowPriorityBids)) return bidders.filter(bidder => allowPriorityBids.includes(bidder));
   return [];
 }

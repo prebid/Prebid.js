@@ -162,12 +162,15 @@ describe('desirability utils', function () {
       expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA' } })).to.equal(2);
 
       getGlobal().bidderSettings = {};
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(5);
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: ['adapterA'] } })).to.equal(5);
+    });
+
+    it('does not trust any Prebid Server bidder when s2sConfig.allowPriorityBids is true instead of a list', function () {
+      expect(adjustDesirability(dealBid({ source: 's2s' }), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(2);
     });
 
     it('does not trust Prebid Server bids under a seat other than the requested bidder', function () {
       const bid = dealBid({ source: 's2s', bidderCode: 'bidderB' });
-      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(2);
       expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: ['adapterA', 'bidderB'] } })).to.equal(2);
     });
 
@@ -180,7 +183,7 @@ describe('desirability utils', function () {
 
     it('does not trust Prebid Server bids answering a stored impression (null bidder) request', function () {
       const bid = dealBid({ source: 's2s' });
-      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: null, allowPriorityBids: true } })).to.equal(2);
+      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: null, allowPriorityBids: ['adapterA'] } })).to.equal(2);
     });
 
     it('trusts only the listed bidders when s2sConfig.allowPriorityBids is a list', function () {

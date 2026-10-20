@@ -25,13 +25,13 @@ export function isPriorityBidAllowed(
 ): boolean {
   if (bid.source === S2S.SRC || bidderRequest?.src === S2S.SRC) {
     // Prebid Server may not act on ext.prebid.allowprioritybids yet, so trust only bids whose seat is the bidder
-    // they were requested for, and only if that bidder is in the trusted list sent to Prebid Server. Bids under
+    // they were requested for, and only if that bidder is listed in s2sConfig.allowPriorityBids (the list sent to Prebid Server). Bids under
     // alternate or unknown seats, or without a matching request, are never trusted.
     if (bidderRequest?.src !== S2S.SRC || bid.bidderCode == null || bid.bidderCode !== bidderRequest.bidderCode) {
       return false;
     }
     const allowed = bidderRequest.allowPriorityBids;
-    return allowed === true || (Array.isArray(allowed) && allowed.includes(bid.bidderCode));
+    return Array.isArray(allowed) && allowed.includes(bid.bidderCode);
   }
   const adapterCode = bid.adapterCode ?? bidderRequest?.bidderCode ?? bid.bidderCode;
   // a null scope would resolve to `standard`, which must not opt adapters in

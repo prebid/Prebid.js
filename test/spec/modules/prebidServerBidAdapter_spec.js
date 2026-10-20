@@ -790,18 +790,14 @@ describe('S2S Adapter', function () {
         return JSON.parse(server.requests[0].requestBody);
       }
 
-      Object.entries({
-        'true': [true, ['appnexus']],
-        'a list including a requested bidder': [['appnexus', 'other'], ['appnexus']],
-      }).forEach(([desc, [allowPriorityBids, expected]]) => {
-        it(`sends ext.prebid.allowprioritybids for ${desc}`, () => {
-          expect(makeRequest(allowPriorityBids).ext.prebid.allowprioritybids).to.eql(expected);
-        });
+      it('sends the listed bidders that are in the request as ext.prebid.allowprioritybids', () => {
+        expect(makeRequest(['appnexus', 'other']).ext.prebid.allowprioritybids).to.eql(['appnexus']);
       });
 
       Object.entries({
         'not set': undefined,
         'false': false,
+        'true (trusted bidders must be listed)': true,
         'a list without any requested bidder': ['other'],
       }).forEach(([desc, allowPriorityBids]) => {
         it(`does not send ext.prebid.allowprioritybids when ${desc}`, () => {
@@ -810,7 +806,7 @@ describe('S2S Adapter', function () {
       });
 
       it('getPriorityBidders ignores the null bidder of module-only requests', () => {
-        expect(pbsOrtbConverter.getPriorityBidders(true, [null, 'appnexus'])).to.eql(['appnexus']);
+        expect(pbsOrtbConverter.getPriorityBidders(['appnexus'], [null, 'appnexus'])).to.eql(['appnexus']);
       });
     });
 

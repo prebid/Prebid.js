@@ -795,7 +795,7 @@ describe('auctionmanager.js', function () {
       });
       const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
 
-      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: [bid.bidderCode] }) });
       assert.equal(bid.cpm, 0.5);
       assert.equal(bid.desirability, 4);
 

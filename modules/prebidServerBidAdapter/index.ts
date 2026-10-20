@@ -153,10 +153,10 @@ type S2SConfig = {
   /**
    * Bidders routed through this Prebid Server instance whose deal metadata (`bid.meta.deal`) is trusted when ranking:
    * their desirability starts from `meta.deal.pacingAdjustedCpm` instead of `cpm`.
-   * `true` trusts every bidder routed through the instance; a list trusts only those bidder codes.
-   * The trusted bidders are also sent to Prebid Server as `ext.prebid.allowprioritybids`.
+   * Trusted bidders must be listed explicitly; there is no option to trust every bidder on the instance.
+   * The listed bidders in each request are also sent to Prebid Server as `ext.prebid.allowprioritybids`.
    */
-  allowPriorityBids?: boolean | BidderCode[];
+  allowPriorityBids?: BidderCode[];
 };
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
