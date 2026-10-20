@@ -1553,6 +1553,7 @@ describe('Unit: Prebid Module', function () {
         let logMessageSpy;
         let makeRequestsStub;
         let adUnits;
+        let clock;
 
         const BIDDER_CODE = 'sampleBidder';
         const bids = [{
@@ -1592,6 +1593,7 @@ describe('Unit: Prebid Module', function () {
         let spec, indexStub, auction, completeAuction, auctionStarted;
 
         beforeEach(function () {
+          clock = sinon.useFakeTimers();
           logMessageSpy = sinon.spy(utils, 'logMessage');
           makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
           makeRequestsStub.returns(bidRequests);
@@ -1642,6 +1644,7 @@ describe('Unit: Prebid Module', function () {
         });
 
         afterEach(function () {
+          clock.restore();
           adapterManager.makeBidRequests.restore();
           adapterManager.callBids.restore();
           indexStub.restore();
@@ -1656,29 +1659,24 @@ describe('Unit: Prebid Module', function () {
         }
 
         it('should execute callback after timeout', async function () {
-          const clock = sinon.useFakeTimers();
-          try {
-            const requestObj = {
-              bidsBackHandler: sinon.stub(),
-              timeout: 2000,
-              adUnits: adUnits
-            };
-            await runAuction(requestObj);
+          const requestObj = {
+            bidsBackHandler: sinon.stub(),
+            timeout: 2000,
+            adUnits: adUnits
+          };
+          await runAuction(requestObj);
 
-            const re = new RegExp('^Auction [a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12} timedOut$');
-            await clock.tick(requestObj.timeout - 1);
-            assert.ok(logMessageSpy.neverCalledWith(sinon.match(re)), 'executeCallback not called');
+          const re = new RegExp('^Auction [a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12} timedOut$');
+          await clock.tick(requestObj.timeout - 1);
+          assert.ok(logMessageSpy.neverCalledWith(sinon.match(re)), 'executeCallback not called');
 
-            await clock.tick(1);
-            assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
+          await clock.tick(1);
+          assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
 
-            expect(requestObj.bidsBackHandler.getCall(0).args[1]).to.equal(true,
-              'bidsBackHandler should be called with timedOut=true');
+          expect(requestObj.bidsBackHandler.getCall(0).args[1]).to.equal(true,
+            'bidsBackHandler should be called with timedOut=true');
 
-            sinon.assert.called(spec.onTimeout);
-          } finally {
-            clock.restore();
-          }
+          sinon.assert.called(spec.onTimeout);
         });
 
         describe('requestBids event', () => {
@@ -1859,46 +1857,46 @@ describe('Unit: Prebid Module', function () {
             })
           }).forEach(([t, requestBids]) => {
             describe(t, () => {
-              it('with no args, when no adUnits are defined', () => {
-                return requestBids({}).then((res) => {
-                  expect(res).to.eql({
-                    bids: undefined,
-                    timedOut: undefined,
-                    auctionId: undefined
-                  });
+              it('with no args, when no adUnits are defined', async () => {
+                const result = requestBids({});
+                await clock.tickAsync(0);
+                expect(await result).to.eql({
+                  bids: undefined,
+                  timedOut: undefined,
+                  auctionId: undefined
                 });
               });
 
-              it('on timeout', (done) => {
-                requestBids({
+              it('on timeout', async () => {
+                const result = requestBids({
                   auctionId: 'mock-auctionId',
                   adUnits,
                   timeout: 10
-                }).then(({ timedOut, bids, auctionId }) => {
-                  expect(timedOut).to.be.true;
-                  expect(bids).to.eql({});
-                  expect(auctionId).to.eql('mock-auctionId');
-                  done();
                 });
+                await clock.tickAsync(12);
+                const { timedOut, bids, auctionId } = await result;
+                expect(timedOut).to.be.true;
+                expect(bids).to.eql({});
+                expect(auctionId).to.eql('mock-auctionId');
               });
 
-              it('with auction result', (done) => {
+              it('with auction result', async () => {
                 const bid = {
                   bidder: 'mock-bidder',
                   adUnitCode: adUnits[0].code,
                   transactionId: adUnits[0].transactionId,
                   adUnitId: adUnits[0].adUnitId,
                 };
-                requestBids({
+                const result = requestBids({
                   adUnits,
-                }).then(({ bids }) => {
-                  sinon.assert.match(bids[bid.adUnitCode].bids[0], bid);
-                  done();
                 });
                 // `completeAuction` won't work until we're out of `delayHook`
                 // and the mocked auction has been set up;
                 // setTimeout here takes us after the setTimeout in `delayHook`
                 setTimeout(() => completeAuction([bid]));
+                await clock.tickAsync(0);
+                const { bids } = await result;
+                sinon.assert.match(bids[bid.adUnitCode].bids[0], bid);
               });
             });
           });
