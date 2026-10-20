@@ -393,15 +393,17 @@ export function newTargeting(auctionManager) {
   // - slotRenderEnded fired for the same ad unit, or
   // - 100ms have passed.
 
-  const renderedAndWon = eventConjoiner<string>(2);
+  const renderedAndWon = eventConjoiner<string>(3);
   renderedAndWon.on(adUnitCode => {
-    setTimeout(() => targeting.presetGPTTargeting([adUnitCode]));
+    targeting.presetGPTTargeting([adUnitCode]);
   });
+
   const gptRendered = gptEventHandler('slotRenderEnded', ({ slot }) => {
     getTargetedAdIdsForSlot(slot)?.forEach(adId => {
       const bid = auctionManager.findBidByAdId(adId);
       if (bid) {
         renderedAndWon.collect(0, bid.adUnitCode);
+        setTimeout(() => renderedAndWon.collect(1, bid.adUnitCode));
       }
     });
   });
@@ -413,7 +415,8 @@ export function newTargeting(auctionManager) {
   events.on(EVENTS.BID_WON, (bid) => {
     const slots = getBidSlots(bid);
     if (slots.length > 0) {
-      renderedAndWon.collectWithin(100, 1, bid.adUnitCode);
+      renderedAndWon.collect(0, bid.adUnitCode);
+      setTimeout(() => renderedAndWon.collectWithin(100, 2, bid.adUnitCode));
       slots.forEach(slot => lock.unlock(slot));
     }
   });
