@@ -7,9 +7,11 @@ import {
   parseSizesInput,
   triggerPixel,
   deepSetValue,
-  deepAccess
+  deepAccess,
+  deepClone
 } from '../src/utils.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { keyCompare, simpleCompare, tiebreakCompare } from '../src/utils/reducers.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -30,6 +32,7 @@ const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
 const ADQUERY_EID_SOURCE = 'adquery.io';
+const ADQUERY_MAX_EID_UIDS = 50;
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -64,6 +67,10 @@ export const spec = {
       pathname: '/prebid/bid',
     });
 
+    // Core gives every bid of a bidder request the same ortb2, so userIdAsEids is the same list
+    // for all of them; it is processed once per call.
+    const userIds = getUserIds(bidRequests[0]);
+
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const bid = bidRequests[i];
       const isVideo = bid.mediaTypes && bid.mediaTypes.video && ['instream', 'outstream'].includes(bid.mediaTypes.video.context);
@@ -81,7 +88,7 @@ export const spec = {
       const request = {
         method: 'POST',
         url: requestUrl,
-        data: buildRequest(bid, bidderRequest, isVideo),
+        data: buildRequest(bid, bidderRequest, userIds, isVideo),
         options: {
           withCredentials: false,
           crossOrigin: true
@@ -289,50 +296,199 @@ export const spec = {
   }
 };
 
-// Only the adquery.io EID is used. Other vendors' ids are never sent as bidQid; without an
-// adquery.io uid bidQid stays empty and the adQuery bidder assigns its own user id.
-// Among several adquery.io uids the lowest id wins (plain code-unit comparison, not
-// localeCompare), so the result does not depend on EID/uid order or the browser locale.
-function getUserIdFromEids(bid) {
-  if (!Array.isArray(bid.userIdAsEids)) {
-    return '';
-  }
+// The helpers below mirror the Prebid Server adQuery adapter field by field, so client- and
+// server-side requests sort, dedupe and cap the same EIDs the same way. Strings are compared by
+// code unit (simpleCompare, not localeCompare, so the order does not depend on the browser
+// locale); a missing string/number counts as ''/0 and ext is compared as its JSON text. The only
+// known difference: strings with characters above U+FFFF sort by UTF-16 here and by UTF-8 in Go,
+// which does not matter for EID sources (domains) and ids (ASCII).
 
-  let best = '';
-  for (const eid of bid.userIdAsEids) {
-    if (eid?.source !== ADQUERY_EID_SOURCE || !Array.isArray(eid.uids)) {
-      continue;
-    }
-    for (const uid of eid.uids) {
-      const id = uid?.id ? String(uid.id) : '';
-      if (id && (!best || id < best)) {
-        best = id;
-      }
-    }
-  }
-  return best;
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value !== '';
 }
 
-function buildRequest(bid, bidderRequest, isVideo = false) {
-  const userId = getUserIdFromEids(bid);
+function isNonZeroNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value !== 0;
+}
 
+function extKey(ext) {
+  return ext === undefined ? '' : JSON.stringify(ext);
+}
+
+const compareUids = tiebreakCompare(
+  keyCompare(uid => uid.id),
+  keyCompare(uid => uid.atype ?? 0),
+  keyCompare(uid => extKey(uid.ext))
+);
+
+function compareUidLists(a, b) {
+  const length = Math.min(a.length, b.length);
+  for (let i = 0; i < length; i++) {
+    const result = compareUids(a[i], b[i]);
+    if (result) {
+      return result;
+    }
+  }
+  return simpleCompare(a.length, b.length);
+}
+
+// adquery.io first, then by source, uids, inserter, matcher, mm and ext.
+const compareEids = tiebreakCompare(
+  keyCompare(eid => (eid.source === ADQUERY_EID_SOURCE ? 0 : 1)),
+  keyCompare(eid => eid.source),
+  (a, b) => compareUidLists(a.uids, b.uids),
+  keyCompare(eid => eid.inserter ?? ''),
+  keyCompare(eid => eid.matcher ?? ''),
+  keyCompare(eid => eid.mm ?? 0),
+  keyCompare(eid => extKey(eid.ext))
+);
+
+// Returns a sorted copy without entries that compare equal to the previous one. Only known ORTB
+// fields are kept (see cleanEid) and all of them are compared, so those entries are identical
+// duplicates.
+function sortUnique(items, compare) {
+  const sorted = [...items].sort(compare);
+  const result = [];
+  for (const item of sorted) {
+    if (!result.length || compare(result[result.length - 1], item) !== 0) {
+      result.push(item);
+    }
+  }
+  return result;
+}
+
+// Only the ORTB fields of a uid, the way Prebid Server serializes them (zero atype and missing ext
+// are left out). ext still points into the input; every request deep-copies the list.
+function copyUid(uid) {
+  const copy = { id: uid.id };
+  if (isNonZeroNumber(uid.atype)) {
+    copy.atype = uid.atype;
+  }
+  if (uid.ext != null) {
+    copy.ext = uid.ext;
+  }
+  return copy;
+}
+
+// One EID with only its ORTB fields and its uids that have a non-empty string id, sorted and
+// without identical duplicates; null when no uid is left. Unknown fields are dropped, like
+// Prebid Server does.
+function cleanEid(eid) {
+  const uids = [];
+  for (const uid of eid.uids) {
+    if (isNonEmptyString(uid?.id)) {
+      uids.push(copyUid(uid));
+    }
+  }
+  if (!uids.length) {
+    return null;
+  }
+  const copy = { source: eid.source, uids: sortUnique(uids, compareUids) };
+  if (isNonEmptyString(eid.inserter)) {
+    copy.inserter = eid.inserter;
+  }
+  if (isNonEmptyString(eid.matcher)) {
+    copy.matcher = eid.matcher;
+  }
+  if (isNonZeroNumber(eid.mm)) {
+    copy.mm = eid.mm;
+  }
+  if (eid.ext != null) {
+    copy.ext = eid.ext;
+  }
+  return copy;
+}
+
+// EIDs the bidder receives (already limited by userId `bidders` config and, when tcfControl is
+// in the build, by transmitEids consent), with their original source so the adQuery backend can
+// tell them apart. Only adquery.io is ever used as bidQid; the other sources are just forwarded.
+// Entries without a source and uids without a non-empty string id are dropped, only ORTB fields
+// are kept, and identical duplicates are removed. The order does not depend on user ID module
+// order: adquery.io first (its lowest uid, the one also sent as bidQid, at the very front, which
+// is what the video endpoint reads from user.ext.eids), then by source and uids, ties broken by
+// the remaining fields. The ADQUERY_MAX_EID_UIDS cap is applied after sorting, so it never drops
+// the adquery.io uid. The input is not modified.
+function getEids(eids) {
+  const cleaned = [];
+  for (const eid of eids) {
+    if (!isNonEmptyString(eid?.source) || !Array.isArray(eid.uids)) {
+      continue;
+    }
+    const cleanedEid = cleanEid(eid);
+    if (cleanedEid) {
+      cleaned.push(cleanedEid);
+    }
+  }
+
+  const capped = [];
+  let budget = ADQUERY_MAX_EID_UIDS;
+  for (const eid of sortUnique(cleaned, compareEids)) {
+    if (budget <= 0) {
+      break;
+    }
+    const uids = eid.uids.slice(0, budget);
+    capped.push({ ...eid, uids });
+    budget -= uids.length;
+  }
+  // Cutting uids can turn an EID into a copy of another one, so the capped list is sorted and
+  // deduplicated again; adquery.io still sorts first.
+  return sortUnique(capped, compareEids);
+}
+
+// bidQid comes only from the adquery.io EID: after sorting, the lowest adquery.io uid is the very
+// first uid of eids. Other vendors' ids are never sent as bidQid; without an adquery.io uid
+// bidQid stays empty and the adQuery bidder assigns its own user id.
+function getUserIds(bid) {
+  const eids = getEids(Array.isArray(bid?.userIdAsEids) ? bid.userIdAsEids : []);
+  const bidQid = eids[0]?.source === ADQUERY_EID_SOURCE ? eids[0].uids[0].id : '';
+  return { bidQid, eids };
+}
+
+// Deep copy of bid.ortb2 without user.ext.eids and user.eids (the cleaned list is sent in
+// user.ext.eids instead); user and user.ext are left out when nothing else is in them.
+// bid.ortb2 is shared by every bid of the bidder request, so the video request must not write
+// into it (site.ext.bidder, user.consent) through a shallow copy.
+function cloneOrtb2WithoutEids(ortb2) {
+  const { user, ...rest } = ortb2 || {};
+  const copy = deepClone(rest);
+  if (user) {
+    const { ext, eids: _userEids, ...userRest } = user;
+    const userCopy = deepClone(userRest);
+    if (ext) {
+      const { eids: _eids, ...extRest } = ext;
+      if (Object.keys(extRest).length) {
+        userCopy.ext = deepClone(extRest);
+      }
+    }
+    if (Object.keys(userCopy).length) {
+      copy.user = userCopy;
+    }
+  }
+  return copy;
+}
+
+function buildRequest(bid, bidderRequest, userIds, isVideo = false) {
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {
     pageUrl = bidderRequest.refererInfo.page || '';
   }
 
   if (isVideo) {
-    let baseRequest = bid.ortb2;
-    let videoRequest = {
-      ...baseRequest,
+    const videoRequest = {
+      ...cloneOrtb2WithoutEids(bid.ortb2),
       imp: [{
         id: bid.bidId,
-        video: bid.ortb2Imp?.video || {},
+        video: deepClone(bid.ortb2Imp?.video || {}),
       }]
     };
 
     deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
     videoRequest.id = bid.bidId;
+
+    // Each request gets its own copy, so requests of the same call never share EID objects.
+    if (userIds.eids.length) {
+      deepSetValue(videoRequest, 'user.ext.eids', deepClone(userIds.eids));
+    }
 
     if (bidderRequest?.gdprConsent?.gdprApplies != null) {
       deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -372,7 +528,8 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     auctionId: null,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
-    bidQid: userId,
+    bidQid: userIds.bidQid,
+    ...(userIds.eids.length ? { eids: deepClone(userIds.eids) } : {}),
     bidId: bid.bidId,
     bidder: bid.bidder,
     bidPageUrl: pageUrl,
