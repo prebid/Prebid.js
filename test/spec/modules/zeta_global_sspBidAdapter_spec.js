@@ -810,6 +810,71 @@ describe('Zeta Ssp Bid Adapter', function () {
         expect(bidResponse[0].mediaType).to.eql(VIDEO);
         expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
       });
+
+      describe('multiformat imp', function () {
+        let multiformatRequest;
+        beforeEach(function () {
+          multiformatRequest = deepClone(bannerRequest);
+          multiformatRequest[0].mediaTypes.video = deepClone(videoRequest[0].mediaTypes.video);
+        });
+
+        it('Test the response mediaType:banner from non-VAST adm', function () {
+          const request = spec.buildRequests(multiformatRequest, multiformatRequest[0]);
+          expect(request.data.imp[0].banner).to.exist;
+          expect(request.data.imp[0].video).to.exist;
+          const response = deepClone(zetaResponse);
+          response.body.seatbid[0].bid[0].impid = multiformatRequest[0].bidId;
+          const bidResponse = spec.interpretResponse(response, request);
+          expect(bidResponse.length).to.eql(1);
+          expect(bidResponse[0].mediaType).to.eql(BANNER);
+          expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
+          expect(bidResponse[0].vastXml).to.be.undefined;
+        });
+
+        it('Test the response mediaType:video from VAST adm', function () {
+          const request = spec.buildRequests(multiformatRequest, multiformatRequest[0]);
+          const response = deepClone(zetaResponse);
+          response.body.seatbid[0].bid[0].impid = multiformatRequest[0].bidId;
+          response.body.seatbid[0].bid[0].adm = '<?xml version="1.0" encoding="UTF-8"?><VAST version="4.0"><Ad></Ad></VAST>';
+          const bidResponse = spec.interpretResponse(response, request);
+          expect(bidResponse.length).to.eql(1);
+          expect(bidResponse[0].mediaType).to.eql(VIDEO);
+          expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+        });
+
+        it('Test the response mediaType:banner when adm is missing', function () {
+          const request = spec.buildRequests(multiformatRequest, multiformatRequest[0]);
+          const response = deepClone(zetaResponse);
+          response.body.seatbid[0].bid[0].impid = multiformatRequest[0].bidId;
+          delete response.body.seatbid[0].bid[0].adm;
+          const bidResponse = spec.interpretResponse(response, request);
+          expect(bidResponse.length).to.eql(1);
+          expect(bidResponse[0].mediaType).to.eql(BANNER);
+        });
+
+        it('Test the response mediaType:banner from ext.prebid.type', function () {
+          const request = spec.buildRequests(multiformatRequest, multiformatRequest[0]);
+          const response = deepClone(zetaResponse);
+          response.body.seatbid[0].bid[0].impid = multiformatRequest[0].bidId;
+          response.body.seatbid[0].bid[0].ext = { prebid: { type: BANNER } };
+          const bidResponse = spec.interpretResponse(response, request);
+          expect(bidResponse.length).to.eql(1);
+          expect(bidResponse[0].mediaType).to.eql(BANNER);
+          expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
+          expect(bidResponse[0].vastXml).to.be.undefined;
+        });
+
+        it('Test the response mediaType:video from ext.prebid.type', function () {
+          const request = spec.buildRequests(multiformatRequest, multiformatRequest[0]);
+          const response = deepClone(zetaResponse);
+          response.body.seatbid[0].bid[0].impid = multiformatRequest[0].bidId;
+          response.body.seatbid[0].bid[0].ext = { prebid: { type: VIDEO } };
+          const bidResponse = spec.interpretResponse(response, request);
+          expect(bidResponse.length).to.eql(1);
+          expect(bidResponse[0].mediaType).to.eql(VIDEO);
+          expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+        });
+      });
     }
 
     it('Test the response mediaType:banner from a banner imp', function () {

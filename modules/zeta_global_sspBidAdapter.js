@@ -78,7 +78,10 @@ export const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     // Zeta's endpoint may omit ORTB 2.6 `mtype`. The context is shared by all bids on an imp, so copy it.
     if (!context.mediaType && !ORTB_MTYPES.hasOwnProperty(bid.mtype)) {
-      context = { ...context, mediaType: getMediaTypeFallback(bid, context.imp) };
+      const mediaType = getMediaTypeFallback(bid, context.imp);
+      if (mediaType) {
+        context = { ...context, mediaType };
+      }
     }
     const bidResponse = buildBidResponse(bid, context);
 
@@ -201,7 +204,15 @@ function getMediaTypeFallback(bid, imp) {
   if (type) {
     return type === VIDEO ? VIDEO : BANNER;
   }
-  return imp?.video ? VIDEO : BANNER;
+  if (imp?.video && imp?.banner) {
+    return typeof bid.adm === 'string' && /<\s*VAST[\s>]/i.test(bid.adm) ? VIDEO : BANNER;
+  }
+  if (imp?.video) {
+    return VIDEO;
+  }
+  if (imp?.banner) {
+    return BANNER;
+  }
 }
 
 function cropPage(page) {
