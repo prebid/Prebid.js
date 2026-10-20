@@ -147,7 +147,7 @@ describe('ID5 analytics adapter', () => {
       // Wait as gzip stream is async, we need to wait until it is processed.  3 requests: config, tcf2Enforcement, auctionEnd
       await waitForRequests(3);
       const eventReq = server.requests[2];
-      if (utils.isGzipCompressionSupported()) {
+      if (await utils.isGzipCompressionSupported()) {
         expect(eventReq.requestHeaders['Content-Encoding']).to.equal('gzip');
         expect(eventReq.requestBody).to.be.instanceof(Uint8Array);
       } else {    // compression is not supported in some test browsers, so we expect the event to be uncompressed.

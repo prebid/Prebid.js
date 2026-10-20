@@ -3,7 +3,7 @@ import { config } from "../config.ts";
 import { ttlCollection } from "../utils/ttlCollection.ts";
 import { isGptPubadsDefined } from "../utils.js";
 import { getSlotTargeting } from "../utils/gptTargeting.ts";
-import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
+type SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
 
 const DEFAULT_LOCK_TIMEOUT = 3000;
 

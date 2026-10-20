@@ -905,6 +905,51 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(data.url).to.equal(encodeURIComponent('https://publisher.com'));
     });
 
+    it('should copy nativeOrtbRequest onto the payload when present', function () {
+      const nativeOrtbRequest = {
+        ver: '1.2',
+        assets: [{ id: 1, required: 1, title: { len: 80 } }]
+      };
+      const bid = {
+        ...baseBid,
+        mediaTypes: { native: { ortb: nativeOrtbRequest } },
+        nativeOrtbRequest
+      };
+      const data = utilities.buildRequestData(
+        bid, 'https://publisher.com', [], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data.nativeOrtbRequest).to.deep.equal(nativeOrtbRequest);
+      expect(data.mediaTypes.native.ortb).to.deep.equal(nativeOrtbRequest);
+    });
+
+    it('should copy nativeOrtbRequest onto the payload for multiformat bids that still have native active', function () {
+      const nativeOrtbRequest = { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] };
+      const bid = {
+        ...baseBid,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, native: { ortb: nativeOrtbRequest } },
+        nativeOrtbRequest
+      };
+      const data = utilities.buildRequestData(
+        bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data.nativeOrtbRequest).to.deep.equal(nativeOrtbRequest);
+    });
+
+    it('should not send nativeOrtbRequest when mediaTypes was narrowed (e.g. Size Mapping V2) and native is not active', function () {
+      const nativeOrtbRequest = { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] };
+      // core copies the ad unit level nativeOrtbRequest even though the bid's mediaTypes only has banner/video
+      const bid = {
+        ...baseBid,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 480]] } },
+        nativeOrtbRequest
+      };
+      const data = utilities.buildRequestData(
+        bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data).to.not.have.property('nativeOrtbRequest');
+      expect(data.mediaTypes).to.not.have.property('native');
+    });
+
     it('should extract ortb2 site fields (cat, pagecat, contentData, contentLang, coppa)', function () {
       const data = utilities.buildRequestData(
         baseBid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -1201,6 +1246,14 @@ describe('Vidazoo Bidder Utils Tests', function () {
   });
 
   describe('createInterpretResponseFn', function () {
+    // the request that produced a native response must carry the normalized nativeOrtbRequest set by core
+    const NATIVE_REQUEST = {
+      data: {
+        bidId: 'bid-native',
+        nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] }
+      }
+    };
+
     it('should return empty array when serverResponse is null', function () {
       const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
       const result = interpretResponse(null, {});
@@ -1295,6 +1348,194 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(bid.vastXml).to.equal('<VAST></VAST>');
       expect(bid.mediaType).to.equal('video');
       expect(bid.ad).to.be.undefined;
+    });
+
+    it('should parse a native response from result.native.ortb when supportNative is enabled', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+      const nativeOrtb = {
+        ver: '1.2',
+        assets: [{ id: 1, title: { text: 'Hello' } }],
+        link: { url: 'https://example.com' }
+      };
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-native',
+            price: 3.0,
+            width: 1,
+            height: 1,
+            mediaType: 'native',
+            native: { ortb: nativeOrtb }
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, NATIVE_REQUEST);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('native');
+      expect(bids[0].native).to.deep.equal({ ortb: nativeOrtb });
+      expect(bids[0].vastXml).to.be.undefined;
+      expect(bids[0].ad).to.be.undefined;
+    });
+
+    it('should parse a native response from result.native assets object when supportNative is enabled', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+      const nativeOrtb = {
+        ver: '1.2',
+        assets: [{ id: 1, title: { text: 'Hello' } }]
+      };
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-native',
+            price: 3.0,
+            mediaType: 'native',
+            native: nativeOrtb
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, NATIVE_REQUEST);
+      expect(bids[0].native.ortb).to.deep.equal(nativeOrtb);
+    });
+
+    it('should parse a native response from wrapped ad JSON when supportNative is enabled', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+      const nativeOrtb = {
+        ver: '1.2',
+        assets: [{ id: 1, title: { text: 'Hello' } }]
+      };
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-native',
+            price: 3.0,
+            mediaType: 'native',
+            ad: JSON.stringify({ native: nativeOrtb })
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, NATIVE_REQUEST);
+      expect(bids[0].native.ortb).to.deep.equal(nativeOrtb);
+    });
+
+    it('should parse a native response from unwrapped ad JSON when supportNative is enabled', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+      const nativeOrtb = {
+        ver: '1.2',
+        assets: [{ id: 1, title: { text: 'Hello' } }]
+      };
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-native',
+            price: 3.0,
+            mediaType: 'native',
+            ad: JSON.stringify(nativeOrtb)
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, NATIVE_REQUEST);
+      expect(bids[0].native.ortb).to.deep.equal(nativeOrtb);
+    });
+
+    it('should skip native results with invalid ad JSON when supportNative is enabled', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-native',
+            price: 3.0,
+            mediaType: 'native',
+            ad: 'not-json'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, NATIVE_REQUEST);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    describe('native responses require a normalized nativeOrtbRequest on the matched request', function () {
+      const nativeResult = (extra = {}) => ({
+        creativeId: 'cr-native',
+        price: 3.0,
+        mediaType: 'native',
+        native: { ortb: { ver: '1.2', assets: [{ id: 1, title: { text: 'Hello' } }], link: { url: 'https://example.com' } } },
+        ...extra
+      });
+
+      it('should skip native results when the request has no nativeOrtbRequest (malformed mediaTypes.native)', function () {
+        const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+        const bids = interpretResponse({ body: { results: [nativeResult()] } }, { data: { bidId: 'bid-native' } });
+        expect(bids).to.be.an('array').that.is.empty;
+      });
+
+      it('should skip native results when the nativeOrtbRequest has no assets array', function () {
+        const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+        const request = { data: { bidId: 'bid-native', nativeOrtbRequest: { ver: '1.2' } } };
+        expect(interpretResponse({ body: { results: [nativeResult()] } }, request)).to.be.empty;
+      });
+
+      it('should skip native results when there is no request at all', function () {
+        const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+        expect(interpretResponse({ body: { results: [nativeResult()] } }, undefined)).to.be.empty;
+      });
+
+      it('should still return non-native results of a request without nativeOrtbRequest', function () {
+        const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+        const results = [
+          nativeResult(),
+          { creativeId: 'cr-banner', price: 1.0, width: 300, height: 250, ad: '<div></div>' }
+        ];
+        const bids = interpretResponse({ body: { results } }, { data: { bidId: 'bid-native' } });
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].creativeId).to.equal('cr-banner');
+        expect(bids[0].ad).to.equal('<div></div>');
+        expect(bids[0].native).to.be.undefined;
+      });
+
+      it('should match the batched request entry by bidId in singleRequest mode', function () {
+        const stub = sinon.stub(config, 'getConfig').callsFake((key) => key === 'vidazoo.singleRequest' ? true : undefined);
+        try {
+          const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true, { supportNative: true });
+          const request = {
+            data: {
+              bids: [
+                { bidId: 'multi-with-native', nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, title: { len: 80 } }] } },
+                { bidId: 'multi-without-native' }
+              ]
+            }
+          };
+          const results = [
+            nativeResult({ bidId: 'multi-with-native' }),
+            nativeResult({ bidId: 'multi-without-native' }),
+            nativeResult({ bidId: 'unknown-bid' })
+          ];
+          const bids = interpretResponse({ body: { results } }, request);
+          expect(bids).to.have.lengthOf(1);
+          expect(bids[0].requestId).to.equal('multi-with-native');
+          expect(bids[0].mediaType).to.equal('native');
+        } finally {
+          stub.restore();
+        }
+      });
+    });
+
+    it('should treat mediaType native as video when supportNative is off', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-native',
+            ad: '{"native":{"assets":[{"id":1}]}}',
+            price: 3.0,
+            mediaType: 'native'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-native' } });
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('video');
+      expect(bids[0].vastXml).to.equal('{"native":{"assets":[{"id":1}]}}');
+      expect(bids[0].native).to.be.undefined;
     });
 
     it('should default currency to USD and ttl to TTL_SECONDS when not provided', function () {
@@ -1686,6 +1927,80 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(bannerRequests).to.have.lengthOf(1);
       expect(bannerRequests[0].data.bids).to.have.lengthOf(1);
       expect(videoRequests).to.have.lengthOf(2);
+    });
+
+    it('should send native bids individually in singleRequest mode when supportNative is enabled', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'vidazoo.singleRequest') return true;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true, { supportNative: true });
+      const bids = [
+        makeBid({ bidId: 'banner-1', mediaTypes: { banner: { sizes: [[300, 250]] } } }),
+        makeBid({ bidId: 'native-1', mediaTypes: { native: { ortb: { assets: [{ id: 1, title: { len: 80 } }] } } }, nativeOrtbRequest: { assets: [{ id: 1, title: { len: 80 } }] } }),
+        makeBid({ bidId: 'native-2', mediaTypes: { native: { ortb: { assets: [{ id: 2, title: { len: 80 } }] } } }, nativeOrtbRequest: { assets: [{ id: 2, title: { len: 80 } }] } })
+      ];
+      const requests = buildRequests(bids, baseBidderRequest);
+      const bannerRequests = requests.filter(r => Array.isArray(r.data?.bids));
+      const nativeRequests = requests.filter(r => r.data?.bidId && String(r.data.bidId).startsWith('native'));
+      expect(bannerRequests).to.have.lengthOf(1);
+      expect(bannerRequests[0].data.bids).to.have.lengthOf(1);
+      expect(nativeRequests).to.have.lengthOf(2);
+    });
+
+    describe('nativeOrtbRequest is only sent while native is an active media type', function () {
+      const nativeOrtbRequest = { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] };
+      const nativeMediaType = { ortb: nativeOrtbRequest };
+
+      it('should not send nativeOrtbRequest when mediaTypes was narrowed to banner/video', function () {
+        const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', false, { supportNative: true });
+        const bid = makeBid({
+          mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 480]] } },
+          nativeOrtbRequest
+        });
+        const requests = buildRequests([bid], baseBidderRequest);
+        expect(requests).to.have.lengthOf(1);
+        expect(requests[0].data).to.not.have.property('nativeOrtbRequest');
+      });
+
+      it('should send nativeOrtbRequest for a multiformat bid with native still active', function () {
+        const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', false, { supportNative: true });
+        const bid = makeBid({
+          mediaTypes: { banner: { sizes: [[300, 250]] }, native: nativeMediaType },
+          nativeOrtbRequest
+        });
+        const requests = buildRequests([bid], baseBidderRequest);
+        expect(requests[0].data.nativeOrtbRequest).to.deep.equal(nativeOrtbRequest);
+      });
+
+      it('should apply the same rule to bids batched in singleRequest mode', function () {
+        sandbox.stub(config, 'getConfig').callsFake((key) => key === 'vidazoo.singleRequest' ? true : undefined);
+        const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true, { supportNative: true });
+        const bids = [
+          makeBid({ bidId: 'narrowed', mediaTypes: { banner: { sizes: [[300, 250]] } }, nativeOrtbRequest }),
+          makeBid({ bidId: 'multiformat', mediaTypes: { banner: { sizes: [[300, 250]] }, native: nativeMediaType }, nativeOrtbRequest })
+        ];
+        const requests = buildRequests(bids, baseBidderRequest);
+        expect(requests).to.have.lengthOf(1);
+        const [narrowed, multiformat] = requests[0].data.bids;
+        expect(narrowed.bidId).to.equal('narrowed');
+        expect(narrowed).to.not.have.property('nativeOrtbRequest');
+        expect(multiformat.bidId).to.equal('multiformat');
+        expect(multiformat.nativeOrtbRequest).to.deep.equal(nativeOrtbRequest);
+      });
+    });
+
+    it('should drop native-only bids in singleRequest mode when supportNative is off', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'vidazoo.singleRequest') return true;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
+      const bids = [
+        makeBid({ bidId: 'native-1', mediaTypes: { native: { ortb: { assets: [{ id: 1, title: { len: 80 } }] } } } })
+      ];
+      const requests = buildRequests(bids, baseBidderRequest);
+      expect(requests).to.have.lengthOf(0);
     });
 
     it('should not use singleRequest mode for non-allowed bidders', function () {
