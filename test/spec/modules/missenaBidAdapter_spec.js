@@ -214,10 +214,11 @@ describe('Missena Adapter', function () {
     getDataFromLocalStorageStub.restore();
 
     describe('capping', function () {
-      const now = Date.now();
+      let now;
       let stub;
 
       beforeEach(function () {
+        now = Date.now();
         stub = sinon.stub(storage, 'getDataFromLocalStorage');
       });
       afterEach(function () {
@@ -300,6 +301,21 @@ describe('Missena Adapter', function () {
           capping: { counters: { 'remove-bubble': { value: 1, expiry: now - 1 } } },
         });
         expect(requests.length).to.equal(1);
+      });
+
+      it('should apply the close capping per api key', function () {
+        const otherBid = {
+          ...bidWithoutFloor,
+          params: { ...bidWithoutFloor.params, apiKey: 'PA-OTHER' },
+        };
+        stub.withArgs('msna-local.PA-OTHER').returns(
+          JSON.stringify({
+            capping: { counters: { 'remove-bubble': { value: 1, expiry: now + 60000 } } },
+          }),
+        );
+        const requests = spec.buildRequests([otherBid, bidWithoutFloor], bidderRequest);
+        expect(requests.length).to.equal(1);
+        expect(JSON.parse(requests[0].data).params.apiKey).to.equal(API_KEY);
       });
     });
 

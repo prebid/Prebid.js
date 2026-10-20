@@ -52,7 +52,19 @@ function isLive(entry) {
 
 function cappedProviders(apiKey) {
   const providers = readCapping(apiKey).providers || {};
-  return Object.keys(providers).filter((name) => isLive(providers[name]));
+  const names = Object.keys(providers);
+  const capped = [];
+  for (let i = 0; i < names.length; i++) {
+    if (isLive(providers[names[i]])) {
+      capped.push(names[i]);
+    }
+  }
+  return capped;
+}
+
+function isClosed(apiKey, referer) {
+  const closed = readCapping(apiKey).counters?.[CLOSE_COUNTER];
+  return isLive(closed) && (!closed.referer || closed.referer === referer);
 }
 
 /* Get Floor price information */
@@ -140,17 +152,19 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const apiKey = validBidRequests[0]?.params.apiKey;
-    const closed = readCapping(apiKey).counters?.[CLOSE_COUNTER];
     const referer = bidderRequest?.refererInfo?.topmostLocation;
-    if (isLive(closed) && (!closed.referer || closed.referer === referer)) {
-      logInfo('Missena - Capped');
-      return [];
+    const bidRequests = [];
+    for (let i = 0; i < validBidRequests.length; i++) {
+      if (isClosed(validBidRequests[i].params.apiKey, referer)) {
+        logInfo('Missena - Capped', validBidRequests[i].params.apiKey);
+      } else {
+        bidRequests.push(validBidRequests[i]);
+      }
     }
 
-    this.msnaApiKey = apiKey;
+    this.msnaApiKey = bidRequests[0]?.params.apiKey;
 
-    return validBidRequests.map((bidRequest) =>
+    return bidRequests.map((bidRequest) =>
       toPayload(bidRequest, bidderRequest),
     );
   },
