@@ -1942,20 +1942,23 @@ describe('targeting tests', function () {
         sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
       });
 
-      it('uses the ad unit of the bid found by adId', () => {
+      it('does not join a render with a win for a different ad unit', () => {
         setTargeting(targetedAdId);
         bidsByAdId[targetedAdId].adUnitCode = 'other-unit';
         renderEnded();
-        bidWon(targetedAdId);
-        clock.tick(0);
-        sinon.assert.calledOnceWithExactly(presetStub, ['other-unit']);
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId });
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+        clock.tick(52);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
       });
 
-      it('does not reset when no bid is found for the adId', () => {
+      it('does not count a render of ad ids that have no known bid', () => {
         setTargeting(targetedAdId);
+        delete bidsByAdId[targetedAdId];
         renderEnded();
-        events.emit(EVENTS.BID_WON, { adUnitCode, adId: 'unknown' });
-        clock.tick(1000);
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId });
+        clock.tick(50);
         sinon.assert.notCalled(presetStub);
       });
 
@@ -1974,18 +1977,30 @@ describe('targeting tests', function () {
         sinon.assert.notCalled(presetStub);
       });
 
-      it('does not let a render of a losing ad id complete a later win', () => {
+      it('does not let a render that was already joined complete a later win', () => {
         setTargeting(targetedAdId, olderAdId);
         renderEnded();
         bidWon(targetedAdId);
         clock.tick(0);
         presetStub.resetHistory();
-        // olderAdId was targeted but did not render; a later render of a fresh targeting
-        // should be required before its win resets anything
         setTargeting(olderAdId);
         bidWon(olderAdId);
         clock.tick(50);
         sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not let a render without a win complete the next win', () => {
+        // e.g. a non-Prebid line item served on the first refresh
+        setTargeting(olderAdId);
+        renderEnded();
+        clock.tick(1000);
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+        renderEnded();
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
       });
     });
 
