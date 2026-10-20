@@ -6,6 +6,7 @@ import { fillNativeImp, fillNativeResponse } from './native.js';
 import { BID_RESPONSE, IMP, REQUEST } from '../../../src/pbjsORTB.js';
 import { clientSectionChecker } from '../../../src/fpd/oneClient.js';
 import { fillAudioImp, fillAudioResponse } from './audio.js';
+import { getDealMeta } from './deal.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -114,6 +115,10 @@ export const DEFAULT_PROCESSORS = {
         }
         if (bid.cattax) {
           bidResponse.meta.cattax = bid.cattax;
+        }
+        const dealMeta = getDealMeta(bid);
+        if (dealMeta) {
+          bidResponse.meta.deal = dealMeta;
         }
       }
     }

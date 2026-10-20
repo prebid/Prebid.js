@@ -582,7 +582,7 @@ describe('adapexBidAdapter', function () {
     it('retains a valid banner among unsupported, unknown and malformed responses', function () {
       const request = spec.buildRequests([validBannerBid, validNativeBid], bidderRequest)[0];
       const good = { impid: validBannerBid.bidId, price: 1.23, w: 300, h: 250, crid: 'good', adm: '<div>ad</div>', mtype: 1 };
-      const invalid = [{ ...good, impid: 'unknown' }, { ...good, mtype: 3 }];
+      const invalid = [{ ...good, impid: 'unknown' }, { ...good, mtype: 5 }];
       if (FEATURES.NATIVE) invalid.push({ ...good, impid: validNativeBid.bidId, mtype: 4, adm: 'not JSON' });
       const response = { body: { seatbid: [{ bid: [good, ...invalid] }] } };
       const bids = spec.interpretResponse(response, request);
