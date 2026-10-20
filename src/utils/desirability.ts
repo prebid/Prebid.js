@@ -15,7 +15,7 @@ export type SortByHighestDesirabilityDeps = {
 };
 
 /**
- * Whether the publisher trusts this bid's deal metadata: `s2sConfig.allowPriorityBids` for Prebid Server bids,
+ * Whether the publisher trusts this bid's deal metadata: `s2sConfig.allowPriorityBids` (and a matching seat) for Prebid Server bids,
  * otherwise `bidderSettings[adapterCode].allowPriorityBids` (adapter-specific settings only, not `standard`).
  */
 export function isPriorityBidAllowed(
@@ -23,9 +23,15 @@ export function isPriorityBidAllowed(
   bidderRequest: BidderRequest<any> | undefined | null,
   bs: typeof bidderSettings = bidderSettings,
 ): boolean {
-  if (bidderRequest?.src === S2S.SRC) {
+  if (bid.source === S2S.SRC || bidderRequest?.src === S2S.SRC) {
+    // Prebid Server may not act on ext.prebid.allowprioritybids yet, so trust only bids whose seat is the bidder
+    // they were requested for, and only if that bidder is in the trusted list sent to Prebid Server. Bids under
+    // alternate or unknown seats, or without a matching request, are never trusted.
+    if (bidderRequest?.src !== S2S.SRC || bid.bidderCode == null || bid.bidderCode !== bidderRequest.bidderCode) {
+      return false;
+    }
     const allowed = bidderRequest.allowPriorityBids;
-    return allowed === true || (Array.isArray(allowed) && bidderRequest.bidderCode != null && allowed.includes(bidderRequest.bidderCode));
+    return allowed === true || (Array.isArray(allowed) && allowed.includes(bid.bidderCode));
   }
   const adapterCode = bid.adapterCode ?? bidderRequest?.bidderCode ?? bid.bidderCode;
   // a null scope would resolve to `standard`, which must not opt adapters in

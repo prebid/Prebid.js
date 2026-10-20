@@ -165,6 +165,24 @@ describe('desirability utils', function () {
       expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(5);
     });
 
+    it('does not trust Prebid Server bids under a seat other than the requested bidder', function () {
+      const bid = dealBid({ source: 's2s', bidderCode: 'bidderB' });
+      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(2);
+      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: ['adapterA', 'bidderB'] } })).to.equal(2);
+    });
+
+    it('does not trust Prebid Server bids without a matching Prebid Server request, even if bidderSettings would', function () {
+      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
+      const bid = dealBid({ source: 's2s' });
+      expect(adjustDesirability(bid, null, {})).to.equal(2);
+      expect(adjustDesirability(bid, null, { bidderRequest: clientRequest() })).to.equal(2);
+    });
+
+    it('does not trust Prebid Server bids answering a stored impression (null bidder) request', function () {
+      const bid = dealBid({ source: 's2s' });
+      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: null, allowPriorityBids: true } })).to.equal(2);
+    });
+
     it('trusts only the listed bidders when s2sConfig.allowPriorityBids is a list', function () {
       const s2sRequest = (bidderCode) => ({ src: 's2s', bidderCode, allowPriorityBids: ['adapterA'] });
       expect(adjustDesirability(dealBid(), null, { bidderRequest: s2sRequest('adapterA') })).to.equal(5);
