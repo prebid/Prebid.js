@@ -56,7 +56,7 @@ type Endpoint = string | {
   noP1Consent: string;
 };
 
-type S2SConfig = {
+export type S2SConfig = {
   /**
    * Your Prebid Server account ID. This is obtained from whoever’s hosting your Prebid Server.
    */
