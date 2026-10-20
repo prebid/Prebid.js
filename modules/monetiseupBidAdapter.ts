@@ -6,6 +6,19 @@ const BIDDER_CODE = 'monetiseup';
 const ENDPOINT_URL = 'https://bid5up.monetiseup.com/api/bid';
 const USER_SYNC_URL = 'https://bid5up.monetiseup.com/api/usersync';
 
+export interface MonetiseUpBidParams {
+  placementId?: string;
+  placement?: string;
+  zoneId?: string;
+  [key: string]: unknown;
+}
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: MonetiseUpBidParams;
+  }
+}
+
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -13,7 +26,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   /**
    * Validates whether or not the bid request has required publisher params.
    */
-  isBidRequestValid: function (bid: any): boolean {
+  isBidRequestValid: function (bid: { params?: MonetiseUpBidParams }): boolean {
     return !!(bid && bid.params && (bid.params.placement || bid.params.placementId || bid.params.zoneId));
   },
 

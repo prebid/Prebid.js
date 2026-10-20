@@ -32,3 +32,12 @@ var adUnits = [
   }
 ];
 ```
+
+# User Sync and Device Storage Disclosure
+
+When user syncing is enabled in Prebid (`userSync.filterSettings`), the adapter triggers user synchronization via the endpoint `https://bid5up.monetiseup.com/api/usersync`.
+
+- **Sync Types**: Supports `iframe` and `image` (pixel) syncs.
+- **Privacy Controls**: All consent signals (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`, `gpp_sid`) are attached to user sync requests.
+- **Device Storage**: The sync endpoint sets a first-party/third-party synchronization identifier cookie (`mu_uid`) on the MonetiseUp bidding domain for cookie matching across integrated DSPs. The adapter does not access or read `localStorage` or `document.cookie` directly from the publisher page.
+
