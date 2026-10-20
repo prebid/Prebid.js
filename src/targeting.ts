@@ -393,7 +393,7 @@ export function newTargeting(auctionManager) {
   // - slotRenderEnded fired for the same ad unit, or
   // - 100ms have passed.
 
-  const renderedAndWon = eventConjoiner<string>(3);
+  const renderedAndWon = eventConjoiner<string>(4);
   renderedAndWon.on(adUnitCode => {
     targeting.presetGPTTargeting([adUnitCode]);
   });
@@ -402,6 +402,7 @@ export function newTargeting(auctionManager) {
     getTargetedAdIdsForSlot(slot)?.forEach(adId => {
       const bid = auctionManager.findBidByAdId(adId);
       if (bid) {
+        // collect now and a moment from now, so that the join is deferred but immediately cancelable
         renderedAndWon.collect(0, bid.adUnitCode);
         setTimeout(() => renderedAndWon.collect(1, bid.adUnitCode));
       }
@@ -415,8 +416,9 @@ export function newTargeting(auctionManager) {
   events.on(EVENTS.BID_WON, (bid) => {
     const slots = getBidSlots(bid);
     if (slots.length > 0) {
-      renderedAndWon.collect(0, bid.adUnitCode);
-      setTimeout(() => renderedAndWon.collectWithin(100, 2, bid.adUnitCode));
+      // two channels for the same reason as gptRendered above
+      renderedAndWon.collectWithin(100, 2, bid.adUnitCode);
+      setTimeout(() => renderedAndWon.collect(3, bid.adUnitCode));
       slots.forEach(slot => lock.unlock(slot));
     }
   });
