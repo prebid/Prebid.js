@@ -16,7 +16,7 @@ import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
 import { createBid } from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
-import { getHighestCpm } from '../../../../src/utils/reducers.js';
+import { getHighestCpm, getHighestDesirability } from '../../../../src/utils/reducers.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
 import { lock } from '../../../../src/targeting/lock.js';
@@ -1202,6 +1202,79 @@ describe('targeting tests', function () {
         config.resetConfig();
       });
     });
+
+    describe('with bidDesirabilityAdjustment', function () {
+      const adUnitCode = '/123456/header-bid-tag-0';
+      let lowCpmDesirable, highCpmUndesirable;
+
+      function desirabilityBid(bidderCode, adId, cpm, desirability, pb) {
+        const bid = deepClone(bid1);
+        delete bid.dealId;
+        return Object.assign(bid, {
+          bidderCode,
+          bidder: bidderCode,
+          adId,
+          cpm,
+          desirability,
+          adserverTargeting: {
+            [TARGETING_KEYS.BIDDER]: bidderCode,
+            [TARGETING_KEYS.AD_ID]: adId,
+            [TARGETING_KEYS.PRICE_BUCKET]: pb
+          }
+        });
+      }
+
+      beforeEach(function () {
+        lowCpmDesirable = desirabilityBid('bidderA', 'adid-a', 2, 5, '2.00');
+        highCpmUndesirable = desirabilityBid('bidderB', 'adid-b', 3, 1, '3.00');
+        bidsReceived = [lowCpmDesirable, highCpmUndesirable];
+      });
+
+      afterEach(function () {
+        enableSendAllBids = false;
+        config.resetConfig();
+      });
+
+      it('sets the winning keys to the most desirable bid rather than the highest CPM', function () {
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-a');
+        expect(targeting[TARGETING_KEYS.BIDDER]).to.equal('bidderA');
+        expect(targeting[TARGETING_KEYS.PRICE_BUCKET]).to.equal('2.00');
+      });
+
+      it('sets the winning keys to the most desirable bid when sending all bids', function () {
+        enableSendAllBids = true;
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderA`]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderB`]).to.equal('adid-b');
+      });
+
+      it('targets the same bid that getWinningBids selects by desirability', function () {
+        const [best] = targetingInstance.getWinningBids(adUnitCode, undefined, getHighestDesirability);
+        expect(best.adId, 'getWinningBids by desirability').to.equal('adid-a');
+        expect(targetingInstance.getAllTargeting(adUnitCode)[adUnitCode][TARGETING_KEYS.AD_ID], 'hb_adid').to.equal(best.adId);
+      });
+
+      it('still targets the highest CPM bid when desirability mirrors CPM', function () {
+        lowCpmDesirable.desirability = lowCpmDesirable.cpm;
+        highCpmUndesirable.desirability = highCpmUndesirable.cpm;
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-b');
+      });
+
+      it('does not let a zero desirability outrank a positive one under bidLimit and dealPrioritization', function () {
+        enableSendAllBids = true;
+        sandbox.stub(auctionManager, 'getAdUnits').returns([{ code: adUnitCode }]);
+        config.setConfig({ sendBidsControl: { bidLimit: 1, dealPrioritization: true } });
+        lowCpmDesirable.desirability = 2;
+        highCpmUndesirable.desirability = 0;
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderA`]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderB`]).to.not.exist;
+      });
+    });
   }); // end getAllTargeting tests
 
   describe('getAllTargeting will work correctly when a hook raises has modified flag in getHighestCpmBidsFromBidPool', function () {
@@ -1644,6 +1717,20 @@ describe('targeting tests', function () {
       expect(bids[3].adserverTargeting.hb_adid).to.equal('def');
       expect(bids[4].adserverTargeting.hb_adid).to.equal('pqr');
       expect(bids[5].adserverTargeting.hb_adid).to.equal('mno');
+    });
+
+    it('compares desirability when set to 0', function () {
+      const bids = [{
+        cpm: 3,
+        desirability: 0,
+        adserverTargeting: { hb_adid: 'zero' }
+      }, {
+        cpm: 2,
+        desirability: 2,
+        adserverTargeting: { hb_adid: 'positive' }
+      }];
+      bids.sort(sortByDealAndPriceBucketOrDesirability(true));
+      expect(bids.map(bid => bid.adserverTargeting.hb_adid)).to.eql(['positive', 'zero']);
     });
   });
 
