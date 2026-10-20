@@ -60,6 +60,40 @@ describe('publinkBidAdapter', function () {
     });
   });
 
+  describe('required media MIME types', function () {
+    ['video', 'audio'].forEach(format => {
+      const media = format === 'video' ? { context: 'instream', playerSize: [[640, 360]] } : { protocols: [9] };
+      [undefined, null, [], 'video/mp4', [''], ['  '], [null], ['video/mp4', 1]].forEach(mimes => {
+        it(`rejects ${format}-only bids with invalid mimes ${JSON.stringify(mimes)}`, function () {
+          const bid = { ...validBid, mediaTypes: { [format]: { ...media, mimes } } };
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+          expect(spec.buildRequests([bid], bidderRequest)).to.deep.equal([]);
+        });
+        it(`retains banner but omits ${format} with invalid mimes ${JSON.stringify(mimes)}`, function () {
+          const mediaTypes = { banner: { sizes: [[300, 250]] }, [format]: { ...media, mimes } };
+          const bid = { ...validBid, mediaTypes };
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+          const [request] = spec.buildRequests([bid], bidderRequest);
+          expect(request.data.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+          expect(request.data.imp[0]).not.to.have.property(format);
+          expect(bid.mediaTypes).to.equal(mediaTypes);
+          expect(bid.mediaTypes[format].mimes).to.equal(mimes);
+        });
+      });
+      const other = format === 'video' ? 'audio' : 'video';
+      if (format === 'video' ? FEATURES.AUDIO : FEATURES.VIDEO) {
+        it(`retains valid ${other} when ${format} has no mimes`, function () {
+          const otherMedia = other === 'video' ? { context: 'instream', playerSize: [[640, 360]] } : {};
+          const bid = { ...validBid, mediaTypes: { [format]: media, [other]: { ...otherMedia, mimes: [`${other}/mp4`] } } };
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+          const [request] = spec.buildRequests([bid], bidderRequest);
+          expect(request.data.imp[0]).not.to.have.property(format);
+          expect(request.data.imp[0][other].mimes).to.deep.equal([`${other}/mp4`]);
+        });
+      }
+    });
+  });
+
   describe('parameter boundaries', function () {
     [undefined, null, {}, { params: null }].forEach(bid => {
       it(`rejects missing bid/params: ${JSON.stringify(bid)}`, function () {
@@ -112,7 +146,7 @@ describe('publinkBidAdapter', function () {
     [['video', 2, FEATURES.VIDEO], ['audio', 3, FEATURES.AUDIO]].forEach(([format, mtype, enabled]) => {
       if (!enabled) return;
       it(`sends a winning ${format} notice once, separately from the VAST URL`, function () {
-        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]] } } : { audio: { mimes: ['audio/mpeg'] } };
+        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]], mimes: ['video/mp4'] } } : { audio: { mimes: ['audio/mpeg'] } };
         const [req] = spec.buildRequests([{ ...validBid, mediaTypes }], bidderRequest);
         const nurl = `https://ortb.publink.io/notice/win?format=${format}`;
         const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST/>', crid: 'test', mtype, nurl }), req);
@@ -140,7 +174,7 @@ describe('publinkBidAdapter', function () {
     if (FEATURES.VIDEO || FEATURES.AUDIO) {
       it('resolves all win-price macros using the original endpoint price', function () {
         const format = FEATURES.VIDEO ? 'video' : 'audio';
-        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]] } } : { audio: { mimes: ['audio/mpeg'] } };
+        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]], mimes: ['video/mp4'] } } : { audio: { mimes: ['audio/mpeg'] } };
         const [req] = spec.buildRequests([{ ...validBid, mediaTypes }], bidderRequest);
         const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST/>', mtype: format === 'video' ? 2 : 3, nurl: `https://ortb.publink.io/notice/win?p=\${AUCTION_PRICE}&again=\${AUCTION_PRICE}` }), req);
         bid.cpm = 1.25; // Publisher adjustment must not change the endpoint's USD price.
@@ -405,7 +439,7 @@ describe('publinkBidAdapter', function () {
     it('keeps each bid\'s media type independent for a multiformat imp', function () {
       // ortbConverter reuses one per-impression context across bids; an audio
       // bid must not drag a sibling video bid for the same imp into audio.
-      const mfBid = { ...validBid, mediaTypes: { banner: { sizes: [[300, 250]] }, video: { context: 'instream', playerSize: [[640, 480]] }, audio: { mimes: ['audio/mp4'] } } };
+      const mfBid = { ...validBid, mediaTypes: { banner: { sizes: [[300, 250]] }, video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] }, audio: { mimes: ['audio/mp4'] } } };
       const [req] = spec.buildRequests([mfBid], bidderRequest);
       const impid = req.data.imp[0].id;
       const bids = spec.interpretResponse({
@@ -453,7 +487,7 @@ describe('publinkBidAdapter', function () {
     if (FEATURES.VIDEO || FEATURES.AUDIO) {
       it('does not expose a win-notice pixel as a VAST URL', function () {
         const format = FEATURES.VIDEO ? 'video' : 'audio';
-        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]] } } : { audio: { mimes: ['audio/mpeg'] } };
+        const mediaTypes = format === 'video' ? { video: { context: 'instream', playerSize: [[640, 360]], mimes: ['video/mp4'] } } : { audio: { mimes: ['audio/mpeg'] } };
         const [req] = spec.buildRequests([{ ...validBid, mediaTypes }], bidderRequest);
         const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST version="3.0"/>', crid: 'test', mtype: format === 'video' ? 2 : 3, nurl: 'https://ortb.publink.io/notice/win' }), req);
         expect(bid.vastXml).to.contain('VAST');

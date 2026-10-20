@@ -35,6 +35,11 @@ function placement(bid: BidRequest<typeof BIDDER_CODE>): unknown {
   return bid?.params?.placementId ?? bid?.ortb2Imp?.tagid;
 }
 
+function validMimes(mimes: unknown): boolean {
+  return Array.isArray(mimes) && mimes.length > 0 &&
+    mimes.every(mime => typeof mime === 'string' && mime.trim().length > 0);
+}
+
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: { netRevenue: true, ttl: 300, currency: DEFAULT_CURRENCY },
 
@@ -43,6 +48,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     imp.tagid = placement(bidRequest) as string;
     // Do not send a format the adapter does not support on mixed units.
     delete imp.native;
+    // Core can remove invalid mimes while retaining the other media fields.
+    if (!validMimes(imp.video?.mimes)) delete imp.video;
+    if (!validMimes(imp.audio?.mimes)) delete imp.audio;
     if (imp.bidfloor == null && bidRequest.params?.bidFloor != null) {
       imp.bidfloor = bidRequest.params.bidFloor;
       imp.bidfloorcur = DEFAULT_CURRENCY;
@@ -106,7 +114,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     return validPlacement(placement(bid)) &&
       (params?.bidFloor == null || (Number.isFinite(params.bidFloor) && params.bidFloor >= 0)) &&
       (params?.currency == null || params.currency === DEFAULT_CURRENCY) &&
-      !!(bid.mediaTypes?.banner || bid.mediaTypes?.video || bid.mediaTypes?.audio);
+      !!(bid.mediaTypes?.banner || validMimes(bid.mediaTypes?.video?.mimes) || validMimes(bid.mediaTypes?.audio?.mimes));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
