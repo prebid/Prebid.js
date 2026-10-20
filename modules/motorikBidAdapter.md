@@ -13,7 +13,7 @@ Module that connects Prebid.js publishers to Motorik ad exchange via OpenRTB.
 Supported media types: banner, video (VAST XML in `adm`), native.
 
 Motorik accepts a single ad format per impression. If an ad unit declares several
-formats, the first one in the order banner → video → native is requested.
+formats, a separate request is sent for each of them, so all declared formats compete.
 
 Please contact support@motorik.io to get `accountId` and `placementId`.
 
