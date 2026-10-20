@@ -212,30 +212,95 @@ describe('Missena Adapter', function () {
     });
 
     getDataFromLocalStorageStub.restore();
-    getDataFromLocalStorageStub = sinon.stub(
-      storage,
-      'getDataFromLocalStorage',
-    );
-    const local = { capped: ['pubmatic-banner'] };
-    const localStorageData = {
-      [`msna-local.${bid.params.apiKey}`]: JSON.stringify(local),
-    };
-    getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
-    const localPayload = JSON.parse(
-      spec.buildRequests(bids, bidderRequest)[0].data,
-    );
 
-    it('should send the msna-local.<apiKey> storage content as local', function () {
-      expect(localPayload.local).to.deep.equal(local);
-    });
+    describe('capping', function () {
+      const now = Date.now();
+      let stub;
 
-    getDataFromLocalStorageStub.callsFake(() => 'not json');
-    const brokenLocalPayload = JSON.parse(
-      spec.buildRequests(bids, bidderRequest)[0].data,
-    );
+      beforeEach(function () {
+        stub = sinon.stub(storage, 'getDataFromLocalStorage');
+      });
+      afterEach(function () {
+        stub.restore();
+      });
 
-    it('should not send local when the storage content is not JSON', function () {
-      expect(brokenLocalPayload).to.not.have.property('local');
+      function buildWithLocal(local) {
+        stub
+          .withArgs(`msna-local.${API_KEY}`)
+          .returns(typeof local === 'string' ? local : JSON.stringify(local));
+        return spec.buildRequests([bidWithoutFloor], bidderRequest);
+      }
+
+      it('should not send local when the storage content is not JSON', function () {
+        const payload = JSON.parse(buildWithLocal('not json')[0].data);
+        expect(payload).to.not.have.property('local');
+      });
+
+      it('should send the providers whose capping has not expired', function () {
+        const payload = JSON.parse(
+          buildWithLocal({
+            capping: {
+              providers: {
+                'pubmatic-banner': { value: 1, expiry: now + 60000 },
+                'other-banner': { value: 1, expiry: now - 1 },
+                broken: { value: 1 },
+              },
+            },
+          })[0].data,
+        );
+        expect(payload.local).to.deep.equal({
+          capping: { providers: ['pubmatic-banner'] },
+        });
+      });
+
+      it('should not send local when every provider capping has expired', function () {
+        const payload = JSON.parse(
+          buildWithLocal({
+            capping: { providers: { 'pubmatic-banner': { value: 1, expiry: now - 1 } } },
+          })[0].data,
+        );
+        expect(payload).to.not.have.property('local');
+      });
+
+      it('should not request when the user closed the ad recently', function () {
+        const requests = buildWithLocal({
+          capping: { counters: { 'remove-bubble': { value: 1, expiry: now + 60000 } } },
+        });
+        expect(requests).to.deep.equal([]);
+      });
+
+      it('should not request when the ad was closed on the same page', function () {
+        const requests = buildWithLocal({
+          capping: {
+            counters: {
+              'remove-bubble': { value: 1, expiry: now + 60000, referer: REFERRER },
+            },
+          },
+        });
+        expect(requests).to.deep.equal([]);
+      });
+
+      it('should request when the ad was closed on another page', function () {
+        const requests = buildWithLocal({
+          capping: {
+            counters: {
+              'remove-bubble': {
+                value: 1,
+                expiry: now + 60000,
+                referer: 'https://other',
+              },
+            },
+          },
+        });
+        expect(requests.length).to.equal(1);
+      });
+
+      it('should request when the close capping has expired', function () {
+        const requests = buildWithLocal({
+          capping: { counters: { 'remove-bubble': { value: 1, expiry: now - 1 } } },
+        });
+        expect(requests.length).to.equal(1);
+      });
     });
 
     it('should send the prebid version', function () {
