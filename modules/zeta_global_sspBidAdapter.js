@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { parseDomain } from '../src/refererDetection.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -75,7 +76,20 @@ export const converter = ortbConverter({
   },
 
   bidResponse(buildBidResponse, bid, context) {
+    // Zeta's endpoint may omit ORTB 2.6 `mtype`. The context is shared by all bids on an imp, so copy it.
+    if (!context.mediaType && !ORTB_MTYPES.hasOwnProperty(bid.mtype)) {
+      context = { ...context, mediaType: getMediaTypeFallback(bid, context.imp) };
+    }
     const bidResponse = buildBidResponse(bid, context);
+
+    // Prebid core rejects bids without currency or creativeId, but ORTB `cur` (default USD) and `crid` are optional.
+    // Not set via context.currency: that would also override request.cur and the floor currency.
+    if (bidResponse.currency == null) {
+      bidResponse.currency = DEFAULT_CUR;
+    }
+    if (bidResponse.creativeId == null && bid.id != null) {
+      bidResponse.creativeId = bid.id;
+    }
 
     const seat = context.seatbid?.seat;
     if (seat) {
@@ -181,6 +195,14 @@ export const spec = {
     }
   }
 };
+
+function getMediaTypeFallback(bid, imp) {
+  const type = bid.ext?.prebid?.type;
+  if (type) {
+    return type === VIDEO ? VIDEO : BANNER;
+  }
+  return imp?.video ? VIDEO : BANNER;
+}
 
 function cropPage(page) {
   if (page) {
