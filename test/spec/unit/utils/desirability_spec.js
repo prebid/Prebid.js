@@ -165,6 +165,13 @@ describe('desirability utils', function () {
       expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(5);
     });
 
+    it('trusts only the listed bidders when s2sConfig.allowPriorityBids is a list', function () {
+      const s2sRequest = (bidderCode) => ({ src: 's2s', bidderCode, allowPriorityBids: ['adapterA'] });
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: s2sRequest('adapterA') })).to.equal(5);
+      expect(adjustDesirability(dealBid({ bidderCode: 'adapterB', adapterCode: 'adapterB' }), null, { bidderRequest: s2sRequest('adapterB') })).to.equal(2);
+      expect(isPriorityBidAllowed(dealBid(), s2sRequest(null))).to.be.false;
+    });
+
     [
       ['missing', undefined],
       ['negative', -1],

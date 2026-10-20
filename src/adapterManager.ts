@@ -207,7 +207,7 @@ export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends Base
   /**
    * Copied from the `s2sConfig` this request was routed through.
    */
-  allowPriorityBids?: boolean;
+  allowPriorityBids?: boolean | BidderCode[];
 }
 
 export interface ClientBidderRequest<BIDDER extends BidderCode> extends BaseBidderRequest<BIDDER> {

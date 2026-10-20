@@ -24,7 +24,8 @@ export function isPriorityBidAllowed(
   bs: typeof bidderSettings = bidderSettings,
 ): boolean {
   if (bidderRequest?.src === S2S.SRC) {
-    return bidderRequest.allowPriorityBids === true;
+    const allowed = bidderRequest.allowPriorityBids;
+    return allowed === true || (Array.isArray(allowed) && bidderRequest.bidderCode != null && allowed.includes(bidderRequest.bidderCode));
   }
   const adapterCode = bid.adapterCode ?? bidderRequest?.bidderCode ?? bid.bidderCode;
   // a null scope would resolve to `standard`, which must not opt adapters in

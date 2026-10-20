@@ -782,6 +782,38 @@ describe('S2S Adapter', function () {
       });
     });
 
+    describe('allowPriorityBids', () => {
+      function makeRequest(allowPriorityBids) {
+        const s2sConfig = { ...CONFIG, allowPriorityBids };
+        config.setConfig({ s2sConfig });
+        adapter.callBids({ ...REQUEST, s2sConfig }, BID_REQUESTS, addBidResponse, done, ajax);
+        return JSON.parse(server.requests[0].requestBody);
+      }
+
+      Object.entries({
+        'true': [true, ['appnexus']],
+        'a list including a requested bidder': [['appnexus', 'other'], ['appnexus']],
+      }).forEach(([desc, [allowPriorityBids, expected]]) => {
+        it(`sends ext.prebid.allowprioritybids for ${desc}`, () => {
+          expect(makeRequest(allowPriorityBids).ext.prebid.allowprioritybids).to.eql(expected);
+        });
+      });
+
+      Object.entries({
+        'not set': undefined,
+        'false': false,
+        'a list without any requested bidder': ['other'],
+      }).forEach(([desc, allowPriorityBids]) => {
+        it(`does not send ext.prebid.allowprioritybids when ${desc}`, () => {
+          expect(makeRequest(allowPriorityBids).ext.prebid.allowprioritybids).to.not.exist;
+        });
+      });
+
+      it('getPriorityBidders ignores the null bidder of module-only requests', () => {
+        expect(pbsOrtbConverter.getPriorityBidders(true, [null, 'appnexus'])).to.eql(['appnexus']);
+      });
+    });
+
     describe('browsingTopics', () => {
       const sandbox = sinon.createSandbox();
       afterEach(() => {

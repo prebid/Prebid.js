@@ -75,6 +75,11 @@ const PBS_CONVERTER = ortbConverter({
         deepSetValue(request, 'ext.prebid.createtids', false);
       }
 
+      const priorityBidders = getPriorityBidders(s2sBidRequest.s2sConfig.allowPriorityBids, context.requestedBidders);
+      if (priorityBidders.length > 0) {
+        deepSetValue(request, 'ext.prebid.allowprioritybids', priorityBidders);
+      }
+
       return request;
     }
   },
@@ -251,6 +256,17 @@ const PBS_CONVERTER = ortbConverter({
     }
   },
 });
+
+/**
+ * The bidders in this request whose deal metadata the publisher trusts, per `s2sConfig.allowPriorityBids`
+ * (`true` for every bidder routed through the instance, or a list of bidder codes).
+ */
+export function getPriorityBidders(allowPriorityBids, requestedBidders = []) {
+  const bidders = requestedBidders.filter(bidder => bidder != null);
+  if (allowPriorityBids === true) return bidders;
+  if (Array.isArray(allowPriorityBids)) return bidders.filter(bidder => allowPriorityBids.includes(bidder));
+  return [];
+}
 
 export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   const requestTimestamp = timestamp();

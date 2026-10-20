@@ -151,10 +151,12 @@ type S2SConfig = {
    */
   filterBidderlessCalls?: boolean;
   /**
-   * If true, trust the deal metadata (`bid.meta.deal`) of bids from this Prebid Server instance when ranking them:
+   * Bidders routed through this Prebid Server instance whose deal metadata (`bid.meta.deal`) is trusted when ranking:
    * their desirability starts from `meta.deal.pacingAdjustedCpm` instead of `cpm`.
+   * `true` trusts every bidder routed through the instance; a list trusts only those bidder codes.
+   * The trusted bidders are also sent to Prebid Server as `ext.prebid.allowprioritybids`.
    */
-  allowPriorityBids?: boolean;
+  allowPriorityBids?: boolean | BidderCode[];
 };
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
