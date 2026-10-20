@@ -1,13 +1,48 @@
-import type { BidRequest } from '../adapterManager.ts';
+import type { BidderRequest, BidRequest } from '../adapterManager.ts';
 import { bidderSettings } from '../bidderSettings.js';
 import type { Bid } from '../bidfactory.ts';
 import type { BidderCode } from '../types/common';
+import { S2S } from '../constants.js';
 import { logError } from '../utils.js';
 import { getBidAdjustmentFn } from './cpm.js';
 
 export type SortByHighestDesirabilityDeps = {
   bs?: typeof bidderSettings;
+  /**
+   * The bidder request the bid answers; tells whether it came from a Prebid Server instance that allows priority bids.
+   */
+  bidderRequest?: BidderRequest<any>;
 };
+
+/**
+ * Whether the publisher trusts this bid's deal metadata: `s2sConfig.allowPriorityBids` for Prebid Server bids,
+ * otherwise `bidderSettings[adapterCode].allowPriorityBids` (adapter-specific settings only, not `standard`).
+ */
+export function isPriorityBidAllowed(
+  bid: Bid,
+  bidderRequest: BidderRequest<any> | undefined | null,
+  bs: typeof bidderSettings = bidderSettings,
+): boolean {
+  if (bidderRequest?.src === S2S.SRC) {
+    return bidderRequest.allowPriorityBids === true;
+  }
+  const adapterCode = bid.adapterCode ?? bidderRequest?.bidderCode ?? bid.bidderCode;
+  // a null scope would resolve to `standard`, which must not opt adapters in
+  return adapterCode != null && bs.getOwn(adapterCode, 'allowPriorityBids') === true;
+}
+
+/**
+ * The CPM that desirability starts from: `meta.deal.pacingAdjustedCpm` for bids from adapters the publisher
+ * allows priority bids from, otherwise `cpm`.
+ */
+function getRankingCpm(bid: Bid, bidderRequest: BidderRequest<any> | undefined | null, bs: typeof bidderSettings): number {
+  const pacingAdjustedCpm = bid.meta?.deal?.pacingAdjustedCpm;
+  if (typeof pacingAdjustedCpm === 'number' && Number.isFinite(pacingAdjustedCpm) && pacingAdjustedCpm >= 0 &&
+    isPriorityBidAllowed(bid, bidderRequest, bs)) {
+    return pacingAdjustedCpm;
+  }
+  return bid.cpm;
+}
 
 type BidAdjustmentFn = (
   cpm: number,
@@ -23,7 +58,7 @@ export function adjustDesirability(
   const bs = deps.bs ?? bidderSettings;
   const bidCopy = Object.assign({}, bid) as Bid;
 
-  const adjustedCpm = bid.cpm;
+  const adjustedCpm = getRankingCpm(bid, deps.bidderRequest, bs);
 
   const bidDesirabilityAdjustment = getBidAdjustmentFn(bid, bs, 'bidDesirabilityAdjustment', bidRequest) as BidAdjustmentFn | undefined;
   if (typeof bidDesirabilityAdjustment !== 'function') {

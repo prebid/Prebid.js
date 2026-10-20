@@ -204,6 +204,10 @@ export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends Base
   src: typeof S2S.SRC;
   uniquePbsTid: Identifier;
   adUnitsS2SCopy: PBSAdUnit[];
+  /**
+   * Copied from the `s2sConfig` this request was routed through.
+   */
+  allowPriorityBids?: boolean;
 }
 
 export interface ClientBidderRequest<BIDDER extends BidderCode> extends BaseBidderRequest<BIDDER> {
@@ -650,6 +654,7 @@ const adapterManager = {
             refererInfo,
             metrics,
             alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
+            allowPriorityBids: s2sConfig.allowPriorityBids,
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);

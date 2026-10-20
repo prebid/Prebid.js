@@ -1155,8 +1155,8 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
   return keyValues;
 }
 
-export function adjustBids(bid) {
-  const bidRequest = auctionManager.index.getBidRequest(bid);
+export function adjustBids(bid, { index = auctionManager.index } = {}) {
+  const bidRequest = index.getBidRequest(bid);
   const bidPriceAdjusted = adjustCpm(bid.cpm, bid, bidRequest);
 
   if (bidPriceAdjusted >= 0) {
@@ -1164,7 +1164,7 @@ export function adjustBids(bid) {
   }
 
   // defaults to  cpm
-  const bidDesirabilityAdjusted = adjustDesirability(bid, bidRequest);
+  const bidDesirabilityAdjusted = adjustDesirability(bid, bidRequest, { bidderRequest: index.getBidderRequest(bid) });
   bid.desirability = bidDesirabilityAdjusted;
 }
 

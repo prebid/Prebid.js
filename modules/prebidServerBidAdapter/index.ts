@@ -150,6 +150,11 @@ type S2SConfig = {
    * If true, exclude ad units that have no bidders defined.
    */
   filterBidderlessCalls?: boolean;
+  /**
+   * If true, trust the deal metadata (`bid.meta.deal`) of bids from this Prebid Server instance when ranking them:
+   * their desirability starts from `meta.deal.pacingAdjustedCpm` instead of `cpm`.
+   */
+  allowPriorityBids?: boolean;
 };
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {

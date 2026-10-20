@@ -788,6 +788,20 @@ describe('auctionmanager.js', function () {
       // reset bidderSettings so we don't mess up further tests
       getGlobal().bidderSettings = {};
     });
+
+    it('should rank bids from a Prebid Server instance with allowPriorityBids on meta.deal.pacingAdjustedCpm', function () {
+      const bid = Object.assign({}, createBid(), fixtures.getBidResponses()[5], {
+        meta: { deal: { type: 2, pacingAdjustedCpm: 4 } }
+      });
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+
+      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+      assert.equal(bid.cpm, 0.5);
+      assert.equal(bid.desirability, 4);
+
+      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode }) });
+      assert.equal(bid.desirability, 0.5);
+    });
   });
 
   describe('createAuction', () => {

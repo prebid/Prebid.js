@@ -13,6 +13,13 @@ export interface BidderSettings<B extends BidderCode> {
    */
   allowZeroCpmBids?: boolean;
   /**
+   * If true, trust the deal metadata (`bid.meta.deal`) of bids from this adapter when ranking them:
+   * their desirability starts from `meta.deal.pacingAdjustedCpm` instead of `cpm`.
+   * Checked against the adapter that made the request (`bid.adapterCode`), and only on adapter-specific settings,
+   * not `standard`. Bids from Prebid Server use `s2sConfig.allowPriorityBids` instead.
+   */
+  allowPriorityBids?: boolean;
+  /**
    * Optionally allow alternate bidder codes to use an adapter’s bidCpmAdjustment function by default instead of
    * the standard bidCpmAdjustment function if present (note: if a bidCpmAdjustment function exists for the alternate
    * bidder code within bidderSettings, then this will be used instead of falling back to the adapter’s bidCpmAdjustment function).

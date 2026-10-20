@@ -2095,6 +2095,33 @@ describe('adapterManager tests', function () {
           ]);
         });
 
+        it('should copy allowPriorityBids from the s2s config each request was routed through', () => {
+          config.setConfig({
+            s2sConfig: config.getConfig('s2sConfig').map(cfg => cfg.name === 'mock1' ? { ...cfg, allowPriorityBids: true } : cfg)
+          });
+          adUnits = [
+            {
+              code: 'one',
+              bids: [
+                { bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2'] },
+                { bidder: 'mockBidder2', s2sConfigName: 'mock1' },
+                { bidder: 'mockBidder3' }
+              ]
+            },
+          ];
+          dep.isAllowed.returns(true);
+          const allowedByBidders = makeBidRequests().reduce((acc, request) => {
+            const bidders = request.adUnitsS2SCopy.flatMap(au => au.bids).map(bid => bid.bidder).join(',');
+            (acc[bidders] = acc[bidders] || []).push(request.allowPriorityBids);
+            return acc;
+          }, {});
+          expect(allowedByBidders).to.eql({
+            'mockBidder3': [undefined],
+            'mockBidder1,mockBidder2': [true, true],
+            'mockBidder1': [undefined],
+          });
+        });
+
         it('should keep stored impressions, even if everything else is denied', () => {
           adUnits = [
             { code: 'one', bids: [{ bidder: null }] },

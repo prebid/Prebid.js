@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
-import { adjustDesirability } from '../../../../src/utils/desirability.js';
+import { adjustDesirability, isPriorityBidAllowed } from '../../../../src/utils/desirability.js';
+import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { highestDesirabilityFirst } from '../../../../src/utils/reducers.js';
 
 describe('desirability utils', function () {
@@ -104,6 +105,91 @@ describe('desirability utils', function () {
       };
       const bid = { cpm: 20, bidderCode: 'combo', bidder: 'combo' };
       expect(adjustDesirability(bid, null, testDeps(bs))).to.equal(27);
+    });
+  });
+
+  describe('allowPriorityBids', function () {
+    let origBidderSettings;
+
+    beforeEach(function () {
+      origBidderSettings = getGlobal().bidderSettings;
+      getGlobal().bidderSettings = {};
+    });
+
+    afterEach(function () {
+      getGlobal().bidderSettings = origBidderSettings;
+    });
+
+    function dealBid(props = {}) {
+      return {
+        cpm: 2,
+        bidderCode: 'adapterA',
+        adapterCode: 'adapterA',
+        meta: { deal: { type: 2, pacingAdjustedCpm: 5 } },
+        ...props
+      };
+    }
+
+    function clientRequest(bidderCode = 'adapterA') {
+      return { src: 'client', bidderCode };
+    }
+
+    it('ranks on cpm when the adapter is not allowed', function () {
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(2);
+    });
+
+    it('ranks on meta.deal.pacingAdjustedCpm when the adapter is allowed', function () {
+      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(5);
+    });
+
+    it('does not take allowPriorityBids from the standard settings', function () {
+      getGlobal().bidderSettings = { standard: { allowPriorityBids: true } };
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(2);
+      expect(isPriorityBidAllowed({ cpm: 1 }, null)).to.be.false;
+    });
+
+    it('checks the adapter that made the request, not an alternate bidder code', function () {
+      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
+      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: clientRequest() })).to.equal(5);
+
+      getGlobal().bidderSettings = { bidderB: { allowPriorityBids: true } };
+      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: clientRequest() })).to.equal(2);
+    });
+
+    it('uses s2sConfig.allowPriorityBids, not bidderSettings, for Prebid Server bids', function () {
+      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA' } })).to.equal(2);
+
+      getGlobal().bidderSettings = {};
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(5);
+    });
+
+    [
+      ['missing', undefined],
+      ['negative', -1],
+      ['not a number', '5'],
+      ['not finite', Infinity],
+    ].forEach(([desc, pacingAdjustedCpm]) => {
+      it(`ranks on cpm when pacingAdjustedCpm is ${desc}`, function () {
+        getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
+        const bid = dealBid({ meta: { deal: { type: 2, pacingAdjustedCpm } } });
+        expect(adjustDesirability(bid, null, { bidderRequest: clientRequest() })).to.equal(2);
+      });
+    });
+
+    it('ranks on cpm when the bid has no deal metadata', function () {
+      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
+      expect(adjustDesirability(dealBid({ meta: {} }), null, { bidderRequest: clientRequest() })).to.equal(2);
+    });
+
+    it('passes pacingAdjustedCpm to bidDesirabilityAdjustment, without changing bid.cpm', function () {
+      getGlobal().bidderSettings = {
+        adapterA: { allowPriorityBids: true, bidDesirabilityAdjustment: (cpm) => cpm + 1 }
+      };
+      const bid = dealBid();
+      expect(adjustDesirability(bid, null, { bidderRequest: clientRequest() })).to.equal(6);
+      expect(bid.cpm).to.equal(2);
     });
   });
 
