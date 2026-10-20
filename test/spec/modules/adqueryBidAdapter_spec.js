@@ -1071,30 +1071,96 @@ describe('adqueryBidAdapter', function () {
     });
 
     describe('userId resolution via userIdAsEids', function () {
+      function buildWithEids(eids) {
+        return spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: eids })], { refererInfo: {} })[0];
+      }
+
       it('should use adquery.io EID as userId when available', function () {
-        const bid = Object.assign({}, bidRequest, {
-          userIdAsEids: [
-            { source: 'other.com', uids: [{ id: 'other-id' }] },
-            { source: 'adquery.io', uids: [{ id: 'qd_adquery-id' }] }
-          ]
-        });
-        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
+        const req = buildWithEids([
+          { source: 'other.com', uids: [{ id: 'other-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_adquery-id' }] }
+        ]);
         expect(req.data.bidQid).to.equal('qd_adquery-id');
       });
 
-      it('should fall back to first EID when no adquery.io EID available', function () {
-        const bid = Object.assign({}, bidRequest, {
-          userIdAsEids: [
-            { source: 'other.com', uids: [{ id: 'fallback-id' }] }
-          ]
-        });
-        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.equal('fallback-id');
+      it('should not use a foreign EID as bidQid when adquery.io EID is missing', function () {
+        const req = buildWithEids([
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] },
+          { source: 'pubcid.org', uids: [{ id: 'pubcid-id' }] },
+          { source: 'uidapi.com', uids: [{ id: 'uid2-id' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('');
       });
 
-      it('should generate qd_ prefixed userId when no userIdAsEids present', function () {
+      it('should not use a foreign EID as bidQid when adquery.io EID has no usable uid', function () {
+        const req = buildWithEids([
+          { source: 'adquery.io', uids: [{ id: '' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('');
+      });
+
+      it('should not treat a source that only contains adquery.io as the adquery.io EID', function () {
+        const req = buildWithEids([
+          { source: 'notadquery.io', uids: [{ id: 'spoofed-id' }] },
+          { source: 'adquery.io.example.com', uids: [{ id: 'spoofed-id-2' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('');
+      });
+
+      it('should pick the same adquery.io uid regardless of uid order within the EID', function () {
+        const uids = [{ id: 'qd_b' }, { id: 'qd_a' }, { id: 'qd_c' }];
+        const forward = buildWithEids([{ source: 'adquery.io', uids }]);
+        const reversed = buildWithEids([{ source: 'adquery.io', uids: [...uids].reverse() }]);
+        expect(forward.data.bidQid).to.equal('qd_a');
+        expect(reversed.data.bidQid).to.equal('qd_a');
+      });
+
+      it('should pick the same adquery.io uid regardless of duplicate adquery.io EID order', function () {
+        const eids = [
+          { source: 'aaa.com', uids: [{ id: 'aaa-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_b' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_a' }] }
+        ];
+        expect(buildWithEids(eids).data.bidQid).to.equal('qd_a');
+        expect(buildWithEids([...eids].reverse()).data.bidQid).to.equal('qd_a');
+      });
+
+      it('should skip empty adquery.io uids', function () {
+        const req = buildWithEids([
+          { source: 'adquery.io', uids: [{ id: '' }, null, {}, { id: 'second-uid' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('second-uid');
+      });
+
+      it('should skip a malformed adquery.io EID', function () {
+        const req = buildWithEids([
+          null,
+          { source: 'adquery.io', uids: { id: 'not-an-array' } },
+          { source: 'adquery.io', uids: [{ id: 'qd_valid' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('qd_valid');
+      });
+
+      it('should not modify userIdAsEids', function () {
+        const eids = [
+          { source: 'zzz.com', uids: [{ id: 'zzz-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_b' }, { id: 'qd_a' }] }
+        ];
+        const snapshot = JSON.parse(JSON.stringify(eids));
+        buildWithEids(eids);
+        expect(eids).to.deep.equal(snapshot);
+      });
+
+      it('should send empty bidQid when no userIdAsEids present', function () {
         const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.match(/^qd_/);
+        expect(req.data.bidQid).to.equal('');
+      });
+
+      it('should not generate a random userId per request', function () {
+        const first = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
+        const second = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
+        expect(first.data.bidQid).to.equal(second.data.bidQid);
       });
     });
   });
