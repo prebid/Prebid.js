@@ -153,30 +153,31 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
+    // Stored bids are kept per auction, so that concurrent auctions don't share limits
+    const unitPath = [bid.auctionId, adUnitCode, bid.bidderCode];
+    const unit = deepAccess(multibidUnits, unitPath);
     // Check if stored bids for auction include adUnitCode.bidder and max limit not reach for ad unit
-    if (deepAccess(multibidUnits, [adUnitCode, bid.bidderCode])) {
+    if (unit) {
       // Store request id under new property originalRequestId, create new unique bidId,
       // and push bid into multibid stored bids for auction if max not reached and bid cpm above floor
-      if (!multibidUnits[adUnitCode][bid.bidderCode].maxReached && (!floor || floor <= bid.cpm)) {
+      if (!unit.maxReached && (!floor || floor <= bid.cpm)) {
         bid.originalRequestId = bid.requestId;
 
         bid.requestId = getUniqueIdentifierStr();
-        multibidUnits[adUnitCode][bid.bidderCode].ads.push(bid);
+        unit.ads.push(bid);
 
-        const length = multibidUnits[adUnitCode][bid.bidderCode].ads.length;
+        const length = unit.ads.length;
 
         if (multiConfig[bid.bidderCode].prefix) bid.targetingBidder = multiConfig[bid.bidderCode].prefix + length;
-        if (length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
+        if (length === multiConfig[bid.bidderCode].maxbids) unit.maxReached = true;
 
         fn.call(this, adUnitCode, bid, reject);
       } else {
-        logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
+        logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((unit.maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
     } else {
-      if (deepAccess(bid, 'floorData.floorValue')) deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], { floor: deepAccess(bid, 'floorData.floorValue') });
-
-      deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], { ads: [bid] });
-      if (multibidUnits[adUnitCode][bid.bidderCode].ads.length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
+      deepSetValue(multibidUnits, unitPath, { ads: [bid] });
+      if (multiConfig[bid.bidderCode].maxbids === 1) deepAccess(multibidUnits, unitPath).maxReached = true;
 
       fn.call(this, adUnitCode, bid, reject);
     }
@@ -267,12 +268,6 @@ export const resetMultibidUnits = () => {
   multibidUnits = {};
 };
 
-function initMultibidUnitsForAuction({ auctionId }) {
-  if (auctionId != null && multibidUnits[auctionId] == null) {
-    multibidUnits[auctionId] = {};
-  }
-}
-
 function clearMultibidUnitsForAuction({ auctionId }) {
   if (auctionId != null) {
     delete multibidUnits[auctionId];
@@ -283,7 +278,6 @@ function clearMultibidUnitsForAuction({ auctionId }) {
  * Set up hooks on init
  */
 function init() {
-  events.on(EVENTS.AUCTION_INIT, initMultibidUnitsForAuction);
   events.on(EVENTS.AUCTION_END, clearMultibidUnitsForAuction);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
   getHook('addBidResponse').before(addBidResponseHook, 3);
