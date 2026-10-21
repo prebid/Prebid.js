@@ -16,7 +16,7 @@ import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
 import { createBid } from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
-import { getHighestCpm, getHighestDesirability } from '../../../../src/utils/reducers.js';
+import { getHighestCpm, getHighestDesirability, highestDesirabilityFirst } from '../../../../src/utils/reducers.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
 import { lock } from '../../../../src/targeting/lock.js';
@@ -1598,8 +1598,8 @@ describe('targeting tests', function () {
         it(`sorts the higher priority bid first regardless of cpm when ${t}`, () => {
           const hi = { cpm: 1, desirability: 1, priority: HIGH, adserverTargeting: { hb_adid: 'hi', hb_pb: '1.00', hb_deal: hiDeal } };
           const lo = { cpm: 100, desirability: 100, priority: LOW, adserverTargeting: { hb_adid: 'lo', hb_pb: '100.00', hb_deal: loDeal } };
-          expect([lo, hi].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([hi, lo]);
-          expect([hi, lo].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([hi, lo]);
+          expect([lo, hi].sort(sortByDealAndPriceBucketOrDesirability(getHighestDesirability))).to.eql([hi, lo]);
+          expect([hi, lo].sort(sortByDealAndPriceBucketOrDesirability(getHighestDesirability))).to.eql([hi, lo]);
         });
       });
 
@@ -1607,8 +1607,8 @@ describe('targeting tests', function () {
         it(`sorts the deal bid first regardless of cpm when both bids have priority ${priority}`, () => {
           const deal = { cpm: 1, desirability: 1, priority, adserverTargeting: { hb_adid: 'deal', hb_pb: '1.00', hb_deal: '1' } };
           const noDeal = { cpm: 100, desirability: 100, priority, adserverTargeting: { hb_adid: 'noDeal', hb_pb: '100.00' } };
-          expect([noDeal, deal].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([deal, noDeal]);
-          expect([deal, noDeal].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([deal, noDeal]);
+          expect([noDeal, deal].sort(sortByDealAndPriceBucketOrDesirability(getHighestDesirability))).to.eql([deal, noDeal]);
+          expect([deal, noDeal].sort(sortByDealAndPriceBucketOrDesirability(getHighestDesirability))).to.eql([deal, noDeal]);
         });
       });
     });
@@ -1773,7 +1773,7 @@ describe('targeting tests', function () {
           hb_pb: '100.00',
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrDesirability(true));
+      bids.sort(sortByDealAndPriceBucketOrDesirability(getHighestDesirability));
       expect(bids[0].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('abc');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('ghi');
@@ -1792,7 +1792,7 @@ describe('targeting tests', function () {
         desirability: 2,
         adserverTargeting: { hb_adid: 'positive' }
       }];
-      bids.sort(sortByDealAndPriceBucketOrDesirability(true));
+      bids.sort(sortByDealAndPriceBucketOrDesirability(getHighestDesirability));
       expect(bids.map(bid => bid.adserverTargeting.hb_adid)).to.eql(['positive', 'zero']);
     });
   });
