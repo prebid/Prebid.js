@@ -93,10 +93,10 @@ export function validateMultibid(conf) {
 
     return true;
   }).map(entry => {
-    // Check if entry.maxbids is not defined, not typeof number, or less than 1, set maxbids to 1 and reset configuration
-    // Check if entry.maxbids is greater than 9, set maxbids to 9 and reset configuration
-    if (typeof entry.maxBids !== 'number' || entry.maxBids < 1 || entry.maxBids > 9) {
-      entry.maxBids = (typeof entry.maxBids !== 'number' || entry.maxBids < 1) ? 1 : 9;
+    // Check if entry.maxBids is not a finite integer in range [1, 9], normalize and reset configuration
+    if (!Number.isFinite(entry.maxBids) || !Number.isInteger(entry.maxBids) || entry.maxBids < 1 || entry.maxBids > 9) {
+      const normalizedMaxBids = Number.isFinite(entry.maxBids) ? Math.floor(entry.maxBids) : 1;
+      entry.maxBids = normalizedMaxBids < 1 ? 1 : (normalizedMaxBids > 9 ? 9 : normalizedMaxBids);
       check = false;
     }
 
