@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
-import { adjustDesirability, isPriorityBidAllowed } from '../../../../src/utils/desirability.js';
+import { adjustDesirability } from '../../../../src/utils/desirability.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { highestDesirabilityFirst } from '../../../../src/utils/reducers.js';
 
