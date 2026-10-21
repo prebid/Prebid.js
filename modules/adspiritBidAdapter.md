@@ -3,7 +3,7 @@
 ## Overview
 
 ```text
-Module Name:  AdSpirit Bid Adapter
+Module Name:  AdSpirit Bid Adapter 
 Module Type:  Bidder Adapter
 Maintainer:   prebid@adspirit.de
 ```
