@@ -33,7 +33,6 @@ import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
 import { isBidUsable } from './targeting/filters.ts';
 import { recordSlotTargeting, slotHasTargetedAdId, updateSlotTargetingFromMap } from "./utils/gptTargeting.ts";
-import { eventConjoiner } from "./utils/eventConjoiner.ts";
 import { gptEventHandler } from "./utils/gptEvents.ts";
 
 var pbTargetingKeys = [];
@@ -387,19 +386,14 @@ export function newTargeting(auctionManager) {
     },
   };
 
-  // reset GPT targeting after bidWon and:
-  // - slotRenderEnded fired for the same ad unit, or
-  // - 100ms have passed.
-
-  const renderedAndWon = eventConjoiner<string>(4);
-  renderedAndWon.on(adUnitCode => {
-    targeting.presetGPTTargeting([adUnitCode]);
-  });
-
   const slotRenderedAt = new WeakMap();
   const pendingReset = new Map();
 
   const scheduleReset = (() => {
+    // reset GPT targeting after bidWon and:
+    // - slotRenderEnded fired within 100ms in either direction, or
+    // - 100ms have passed.
+
     const TIMEOUT = 100;
     let next;
 
