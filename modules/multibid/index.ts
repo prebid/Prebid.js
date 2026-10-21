@@ -6,7 +6,7 @@
 import { config } from '../../src/config.js';
 import { setupBeforeHookFnOnce, getHook } from '../../src/hook.js';
 import {
-  logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
+  logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy, sortByHighestCpm
 } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
@@ -15,7 +15,12 @@ import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrDesirability } 
 import { PBS, registerOrtbProcessor, REQUEST } from '../../src/pbjsORTB.js';
 import { timedBidResponseHook } from '../../src/utils/perfMetrics.js';
 import type { BidderCode } from "../../src/types/common.d.ts";
-import { highestDesirabilityFirst } from '../../src/utils/reducers.js';
+import {
+  highestDesirabilityFirst,
+  priorityCompare,
+  reverseCompare,
+  tiebreakCompare
+} from '../../src/utils/reducers.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -185,11 +190,17 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
   }
 });
 
+
+export function sortByMultibid(fallback) {
+  const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
+  return tiebreakCompare(reverseCompare(priorityCompare), aliasedBiddersFirst, dealPrioritization ? sortByDealAndPriceBucketOrDesirability(fallback) : fallback)
+}
+
 /**
  * A descending sort function that will sort the list of objects based on the following:
  *  - bids without dynamic aliases are sorted before bids with dynamic aliases
  */
-export function sortByMultibid(a, b) {
+export function aliasedBiddersFirst(a, b) {
   if (a.bidder !== a.bidderCode && b.bidder === b.bidderCode) {
     return 1;
   }
@@ -212,7 +223,6 @@ export function sortByMultibid(a, b) {
 export function targetBidPoolHook(fn, bidsReceived, winReducer, adUnitBidLimit = 0, hasModified = false, winSorter = highestDesirabilityFirst) {
   if (!config.getConfig('multibid')) resetMultiConfig();
   if (hasMultibid) {
-    const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
     const modifiedBids = [];
     const buckets = groupBy(bidsReceived, 'adUnitCode');
     const bids = [].concat(...Object.keys(buckets).reduce((result, slotId) => {
@@ -239,8 +249,7 @@ export function targetBidPoolHook(fn, bidsReceived, winReducer, adUnitBidLimit =
       Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(winReducer)));
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit > 0) {
-        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(winSorter)) : bucketBids.sort(highestDesirabilityFirst);
-        bucketBids.sort(sortByMultibid);
+        bucketBids.sort(sortByMultibid(winSorter));
         modifiedBids.push(...bucketBids.slice(0, adUnitBidLimit));
       } else {
         modifiedBids.push(...bucketBids);

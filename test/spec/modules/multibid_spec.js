@@ -4,7 +4,7 @@ import {
   adjustBidderRequestsHook,
   resetMultibidUnits,
   resetMultiConfig,
-  sortByMultibid,
+  aliasedBiddersFirst,
   targetBidPoolHook,
   validateMultibid
 } from 'modules/multibid/index.js';
@@ -912,7 +912,7 @@ describe('multibid adapter', function () {
         'originalBidder': 'bidderA',
         'bidder': 'bidderA',
       }];
-      const result = bids.sort(sortByMultibid);
+      const result = bids.sort(aliasedBiddersFirst);
 
       expect(result).to.deep.equal(expected);
     });
@@ -976,7 +976,7 @@ describe('multibid adapter', function () {
         'originalBidder': 'bidderB',
         'bidder': 'bidderB',
       }];
-      const result = bids.sort(sortByMultibid);
+      const result = bids.sort(aliasedBiddersFirst);
 
       expect(result).to.deep.equal(expected);
     });
