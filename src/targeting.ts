@@ -10,19 +10,25 @@ import {
   groupBy,
   isAdUnitCodeMatchingSlot,
   isArray,
-  isFn, isGptPubadsDefined,
+  isFn,
+  isGptPubadsDefined,
   isStr,
   logError,
   logInfo,
   logMessage,
   logWarn,
+  sortByHighestCpm,
   uniques,
 } from './utils.js';
 import {
+  dealsFirst,
   getHighestCpm,
   getHighestDesirability,
   getOldestHighestCpmBid,
-  highestDesirabilityFirst, higherPriorityFirst, tiebreakCompare, dealsFirst
+  highestDesirabilityFirst,
+  priorityCompare,
+  reverseCompare,
+  tiebreakCompare
 } from './utils/reducers.js';
 import type { Bid } from './bidfactory.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
@@ -99,8 +105,8 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
  *    "hb_pb": "2"
  *  }]
  */
-export function sortByDealAndPriceBucketOrDesirability(fallback = getHighestCpm) {
-  return tiebreakCompare(higherPriorityFirst, dealsFirst, fallback);
+export function sortByDealAndPriceBucketOrDesirability(fallback = sortByHighestCpm) {
+  return tiebreakCompare(reverseCompare(priorityCompare), dealsFirst, fallback);
 }
 
 /**
@@ -618,6 +624,7 @@ export function newTargeting(auctionManager) {
     const targetingMap = Object.keys(targetingCopy).map(adUnitCode => {
       return {
         adUnitCode,
+        cpm: targetingCopy[adUnitCode].hb_pb,
         adserverTargeting: targetingCopy[adUnitCode]
       };
     }).sort(sortByDealAndPriceBucketOrDesirability());
