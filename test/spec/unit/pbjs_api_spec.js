@@ -1554,12 +1554,6 @@ describe('Unit: Prebid Module', function () {
         let makeRequestsStub;
         let adUnits;
         let clock;
-        before(function () {
-          clock = sinon.useFakeTimers();
-        });
-        after(function () {
-          clock.restore();
-        });
 
         const BIDDER_CODE = 'sampleBidder';
         const bids = [{
@@ -1599,6 +1593,7 @@ describe('Unit: Prebid Module', function () {
         let spec, indexStub, auction, completeAuction, auctionStarted;
 
         beforeEach(function () {
+          clock = sinon.useFakeTimers();
           logMessageSpy = sinon.spy(utils, 'logMessage');
           makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
           makeRequestsStub.returns(bidRequests);
@@ -1862,47 +1857,46 @@ describe('Unit: Prebid Module', function () {
             })
           }).forEach(([t, requestBids]) => {
             describe(t, () => {
-              it('with no args, when no adUnits are defined', () => {
-                return requestBids({}).then((res) => {
-                  expect(res).to.eql({
-                    bids: undefined,
-                    timedOut: undefined,
-                    auctionId: undefined
-                  });
+              it('with no args, when no adUnits are defined', async () => {
+                const result = requestBids({});
+                await clock.tickAsync(0);
+                expect(await result).to.eql({
+                  bids: undefined,
+                  timedOut: undefined,
+                  auctionId: undefined
                 });
               });
 
-              it('on timeout', (done) => {
-                requestBids({
+              it('on timeout', async () => {
+                const result = requestBids({
                   auctionId: 'mock-auctionId',
                   adUnits,
                   timeout: 10
-                }).then(({ timedOut, bids, auctionId }) => {
-                  expect(timedOut).to.be.true;
-                  expect(bids).to.eql({});
-                  expect(auctionId).to.eql('mock-auctionId');
-                  done();
                 });
-                clock.tick(12);
+                await clock.tickAsync(12);
+                const { timedOut, bids, auctionId } = await result;
+                expect(timedOut).to.be.true;
+                expect(bids).to.eql({});
+                expect(auctionId).to.eql('mock-auctionId');
               });
 
-              it('with auction result', (done) => {
+              it('with auction result', async () => {
                 const bid = {
                   bidder: 'mock-bidder',
                   adUnitCode: adUnits[0].code,
                   transactionId: adUnits[0].transactionId,
                   adUnitId: adUnits[0].adUnitId,
                 };
-                requestBids({
+                const result = requestBids({
                   adUnits,
-                }).then(({ bids }) => {
-                  sinon.assert.match(bids[bid.adUnitCode].bids[0], bid);
-                  done();
                 });
                 // `completeAuction` won't work until we're out of `delayHook`
                 // and the mocked auction has been set up;
                 // setTimeout here takes us after the setTimeout in `delayHook`
                 setTimeout(() => completeAuction([bid]));
+                await clock.tickAsync(0);
+                const { bids } = await result;
+                sinon.assert.match(bids[bid.adUnitCode].bids[0], bid);
               });
             });
           });
@@ -3583,7 +3577,7 @@ describe('Unit: Prebid Module', function () {
 
       pbjs.aliasBidder(bidderCode, alias);
       assert.ok(aliasBidAdapterSpy.calledWith(bidderCode, alias), 'called adapterManager.aliasBidAdapterSpy');
-      adapterManager.aliasBidAdapter();
+      aliasBidAdapterSpy.restore();
     });
 
     it('should log error when not passed correct arguments', function () {
@@ -3903,6 +3897,49 @@ describe('Unit: Prebid Module', function () {
 
       const highestCpmBids = pbjs.getHighestCpmBids('/19968336/header-bid-tag-0');
       expect(highestCpmBids[0]).to.deep.equal(auctionManager.getBidsReceived()[2]);
+    });
+  });
+
+  describe('getBestBids', () => {
+    const adUnitCode = '/19968336/header-bid-tag-0';
+    const otherAdUnitCode = '/19968336/header-bid-tag1';
+    let bids;
+
+    beforeEach(() => {
+      const responses = getBidResponses();
+      bids = [
+        { ...responses[1], cpm: 10, desirability: 10 },
+        { ...responses[1], adId: 'boosted', cpm: 2, desirability: 25 },
+        { ...responses[0], cpm: 8, desirability: 20 },
+        { ...responses[2], cpm: 9, desirability: 30 }
+      ];
+      sandbox.stub(auctionManager, 'getBidsReceived').returns(bids);
+      sandbox.stub(auctionManager, 'getAdUnitCodes').returns([adUnitCode, otherAdUnitCode]);
+    });
+
+    it('selects the highest desirability bid for an ad unit without changing CPM selection', () => {
+      expect(pbjs.getBestBids(adUnitCode)).to.deep.equal([bids[1]]);
+      expect(pbjs.getHighestCpmBids(adUnitCode)).to.deep.equal([bids[0]]);
+    });
+
+    it('returns the most desirable bid for each ad unit when no code is given', () => {
+      expect(pbjs.getBestBids()).to.have.members([bids[1], bids[3]]);
+    });
+
+    it('filters ineligible bids before choosing among bids from the same bidder', () => {
+      bids.splice(2);
+      bids[1].cpm = 0;
+      bids[1].desirability = 100;
+
+      expect(pbjs.getBestBids(adUnitCode)).to.deep.equal([bids[0]]);
+    });
+
+    it('excludes unusable and zero CPM bids and returns an empty array when no bid qualifies', () => {
+      bids[1].status = BID_STATUS.RENDERED;
+      bids.push({ ...bids[2], adId: 'zero-cpm', bidderCode: 'zero-cpm', cpm: 0, desirability: 100 });
+
+      expect(pbjs.getBestBids(adUnitCode)).to.deep.equal([bids[2]]);
+      expect(pbjs.getBestBids('missing-ad-unit')).to.deep.equal([]);
     });
   });
 

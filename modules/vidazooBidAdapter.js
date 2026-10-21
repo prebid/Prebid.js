@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   createSessionId,
@@ -44,15 +44,16 @@ function createUniqueRequestData(hashUrl) {
   };
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, true);
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE, true);
+const NATIVE_OPTIONS = { supportNative: true };
+const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, true, NATIVE_OPTIONS);
+const interpretResponse = createInterpretResponseFn(BIDDER_CODE, true, NATIVE_OPTIONS);
 const getUserSyncs = createUserSyncGetter();
 
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   aliases: ALIASES,
   isBidRequestValid,
   buildRequests,

@@ -35,7 +35,6 @@ import {
 } from '../src/activities/activities.js';
 // @ts-expect-error the ts compiler is confused by build-time renaming of validate.mjs to validate.js
 import { validatePurposeDeclarations } from '../libraries/purposeDeclarations/validate.js';
-import type { PurposeDeclarations } from '../libraries/consentManagement/consentUtils.js';
 import {
   DEFAULT_PURPOSE_DECLARATION,
   NO_PURPOSE_DECLARATION,
@@ -43,6 +42,7 @@ import {
   hasAddtlConsent,
   setDefaultPurposeDeclaration,
   setGvlLegalBasisMapping,
+  type PurposeDeclarations,
 } from '../libraries/consentManagement/consentUtils.js';
 
 export {
@@ -50,8 +50,8 @@ export {
   NO_PURPOSE_DECLARATION,
   getAcceptableFlags,
   getPurposeDeclarations,
+  type PurposeDeclarations,
 } from '../libraries/consentManagement/consentUtils.js';
-export type { PurposeDeclarations } from '../libraries/consentManagement/consentUtils.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 

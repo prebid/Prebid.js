@@ -36,8 +36,7 @@ import type { Identifier, BidderCode } from '../../src/types/common.d.ts';
 import type { Metrics } from "../../src/utils/perfMetrics.ts";
 import type { ORTBResponse } from "../../src/types/ortb/response.d.ts";
 import type { NativeRequest } from '../../src/types/ortb/native.d.ts';
-import { browserSupportsUserSyncCookies } from "../../src/userSync.ts";
-import type { SyncType } from "../../src/userSync.ts";
+import { browserSupportsUserSyncCookies, type SyncType } from "../../src/userSync.ts";
 
 const getConfig = config.getConfig;
 

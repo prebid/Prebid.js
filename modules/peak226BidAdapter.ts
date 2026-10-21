@@ -1,5 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import type { BidderSpec, ExtendedResponse } from '../src/adapters/bidderFactory.js';
+import { registerBidder, type BidderSpec, type ExtendedResponse } from '../src/adapters/bidderFactory.js';
 import type { BidRequest } from '../src/adapterManager.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, groupBy, isNumber, isStr, replaceAuctionPrice } from '../src/utils.js';

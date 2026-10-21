@@ -1,12 +1,11 @@
 import { type AdapterRequest, type ExtendedResponse, type ServerResponse, type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, type MediaType } from '../src/mediaTypes.js';
 import { deepSetValue, logInfo } from '../src/utils.js';
 import { CLIENT_SECTIONS, hasSection } from '../src/fpd/oneClient.js';
 import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import type { ORTBRequest } from '../src/types/ortb/request.d.ts';
 import type { Currency } from '../src/types/common.d.ts';
-import type { MediaType } from '../src/mediaTypes.js';
 
 /**
  * PubFuture bidder adapter (oRTB 2.x).

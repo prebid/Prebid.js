@@ -7,7 +7,6 @@ import { getWinDimensions } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const REFERRER = 'https://referer';
-const REFERRER2 = 'https://referer2';
 
 const CONSENT_STRING = 'AAAAAAAAA==';
 const API_KEY = 'PA-XXXXXX';
@@ -208,56 +207,35 @@ describe('Missena Adapter', function () {
       expect(payloadNoFloor.sizes[0].height).to.equal(1);
     });
 
+    it('should not send local when the storage is empty', function () {
+      expect(payload).to.not.have.property('local');
+    });
+
     getDataFromLocalStorageStub.restore();
     getDataFromLocalStorageStub = sinon.stub(
       storage,
       'getDataFromLocalStorage',
     );
+    const local = { capped: ['pubmatic-banner'] };
     const localStorageData = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-        }),
+      [`msna-local.${bid.params.apiKey}`]: JSON.stringify(local),
     };
     getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
-    const cappedRequests = spec.buildRequests(bids, bidderRequest);
+    const localPayload = JSON.parse(
+      spec.buildRequests(bids, bidderRequest)[0].data,
+    );
 
-    it('should not participate if capped', function () {
-      expect(cappedRequests.length).to.equal(0);
+    it('should send the msna-local.<apiKey> storage content as local', function () {
+      expect(localPayload.local).to.deep.equal(local);
     });
 
-    const localStorageDataSamePage = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-          referer: REFERRER,
-        }),
-    };
-
-    getDataFromLocalStorageStub.callsFake(
-      (key) => localStorageDataSamePage[key],
+    getDataFromLocalStorageStub.callsFake(() => 'not json');
+    const brokenLocalPayload = JSON.parse(
+      spec.buildRequests(bids, bidderRequest)[0].data,
     );
-    const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest);
 
-    it('should not participate if capped on same page', function () {
-      expect(cappedRequestsSamePage.length).to.equal(0);
-    });
-
-    const localStorageDataOtherPage = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-          referer: REFERRER2,
-        }),
-    };
-
-    getDataFromLocalStorageStub.callsFake(
-      (key) => localStorageDataOtherPage[key],
-    );
-    const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest);
-
-    it('should participate if capped on a different page', function () {
-      expect(cappedRequestsOtherPage.length).to.equal(2);
+    it('should not send local when the storage content is not JSON', function () {
+      expect(brokenLocalPayload).to.not.have.property('local');
     });
 
     it('should send the prebid version', function () {

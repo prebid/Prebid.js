@@ -35,7 +35,10 @@ const timestampCompare = keyCompare((bid) => bid.responseTimestamp);
 // This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
 export const getHighestCpm = maximum(tiebreakCompare(cpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond))));
 
-const bidDesirabilityCompare = keyCompare((bid) => bid.desirability);
+export const bidDesirabilityCompare = keyCompare((bid) => bid.desirability ?? bid.cpm);
+
+// Sort comparator that orders bids by `.desirability` (falling back to cpm), highest first.
+export const highestDesirabilityFirst = reverseCompare(bidDesirabilityCompare);
 
 // This function will get highest bid by `.desirability` (publisher `bidDesirabilityAdjustment` when set, else mirrors cpm via `adjustBids`);
 // ties use lowest `timeToRespond`, matching {@link getHighestCpm}.

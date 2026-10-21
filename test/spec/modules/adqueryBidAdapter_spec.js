@@ -1071,30 +1071,492 @@ describe('adqueryBidAdapter', function () {
     });
 
     describe('userId resolution via userIdAsEids', function () {
+      function buildWithEids(eids) {
+        return spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: eids })], { refererInfo: {} })[0];
+      }
+
       it('should use adquery.io EID as userId when available', function () {
-        const bid = Object.assign({}, bidRequest, {
-          userIdAsEids: [
-            { source: 'other.com', uids: [{ id: 'other-id' }] },
-            { source: 'adquery.io', uids: [{ id: 'qd_adquery-id' }] }
-          ]
-        });
-        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
+        const req = buildWithEids([
+          { source: 'other.com', uids: [{ id: 'other-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_adquery-id' }] }
+        ]);
         expect(req.data.bidQid).to.equal('qd_adquery-id');
       });
 
-      it('should fall back to first EID when no adquery.io EID available', function () {
-        const bid = Object.assign({}, bidRequest, {
-          userIdAsEids: [
-            { source: 'other.com', uids: [{ id: 'fallback-id' }] }
-          ]
-        });
-        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.equal('fallback-id');
+      it('should not use a foreign EID as bidQid when adquery.io EID is missing', function () {
+        const req = buildWithEids([
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] },
+          { source: 'pubcid.org', uids: [{ id: 'pubcid-id' }] },
+          { source: 'uidapi.com', uids: [{ id: 'uid2-id' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('');
       });
 
-      it('should generate qd_ prefixed userId when no userIdAsEids present', function () {
+      it('should not use a foreign EID as bidQid when adquery.io EID has no usable uid', function () {
+        const req = buildWithEids([
+          { source: 'adquery.io', uids: [{ id: '' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('');
+      });
+
+      it('should not treat a source that only contains adquery.io as the adquery.io EID', function () {
+        const req = buildWithEids([
+          { source: 'notadquery.io', uids: [{ id: 'spoofed-id' }] },
+          { source: 'adquery.io.example.com', uids: [{ id: 'spoofed-id-2' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('');
+      });
+
+      it('should pick the same adquery.io uid regardless of uid order within the EID', function () {
+        const uids = [{ id: 'qd_b' }, { id: 'qd_a' }, { id: 'qd_c' }];
+        const forward = buildWithEids([{ source: 'adquery.io', uids }]);
+        const reversed = buildWithEids([{ source: 'adquery.io', uids: [...uids].reverse() }]);
+        expect(forward.data.bidQid).to.equal('qd_a');
+        expect(reversed.data.bidQid).to.equal('qd_a');
+      });
+
+      it('should pick the same adquery.io uid regardless of duplicate adquery.io EID order', function () {
+        const eids = [
+          { source: 'aaa.com', uids: [{ id: 'aaa-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_b' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_a' }] }
+        ];
+        expect(buildWithEids(eids).data.bidQid).to.equal('qd_a');
+        expect(buildWithEids([...eids].reverse()).data.bidQid).to.equal('qd_a');
+      });
+
+      it('should skip empty adquery.io uids', function () {
+        const req = buildWithEids([
+          { source: 'adquery.io', uids: [{ id: '' }, null, {}, { id: 'second-uid' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('second-uid');
+      });
+
+      it('should skip a malformed adquery.io EID', function () {
+        const req = buildWithEids([
+          null,
+          { source: 'adquery.io', uids: { id: 'not-an-array' } },
+          { source: 'adquery.io', uids: [{ id: 'qd_valid' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('qd_valid');
+      });
+
+      it('should not modify userIdAsEids', function () {
+        const eids = [
+          { source: 'zzz.com', uids: [{ id: 'zzz-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_b' }, { id: 'qd_a' }] }
+        ];
+        const snapshot = JSON.parse(JSON.stringify(eids));
+        buildWithEids(eids);
+        expect(eids).to.deep.equal(snapshot);
+      });
+
+      it('should send empty bidQid when no userIdAsEids present', function () {
         const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.match(/^qd_/);
+        expect(req.data.bidQid).to.equal('');
+      });
+
+      it('should not generate a random userId per request', function () {
+        const first = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
+        const second = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
+        expect(first.data.bidQid).to.equal(second.data.bidQid);
+      });
+    });
+
+    describe('eids forwarding', function () {
+      function buildWithEids(eids) {
+        return spec.buildRequests([Object.assign({}, bidRequest, { userIdAsEids: eids })], { refererInfo: {} })[0];
+      }
+
+      it('should omit eids when no userIdAsEids present', function () {
+        const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
+        expect(req.data).to.not.have.property('eids');
+      });
+
+      it('should omit eids when no EID is usable', function () {
+        const req = buildWithEids([{ source: 'aaa.com', uids: [{ id: '' }] }]);
+        expect(req.data).to.not.have.property('eids');
+      });
+
+      it('should remove identical duplicate EIDs and uids', function () {
+        const req = buildWithEids([
+          { source: 'pubcid.org', uids: [{ id: 'x', atype: 1 }, { id: 'x', atype: 1 }, { id: 'y' }] },
+          { source: 'pubcid.org', uids: [{ id: 'x', atype: 1 }, { id: 'y' }] },
+          { source: 'pubcid.org', uids: [{ id: 'x', atype: 3 }] }
+        ]);
+        expect(req.data.eids).to.deep.equal([
+          { source: 'pubcid.org', uids: [{ id: 'x', atype: 1 }, { id: 'y' }] },
+          { source: 'pubcid.org', uids: [{ id: 'x', atype: 3 }] }
+        ]);
+      });
+
+      it('should compare atype as a number, like the Prebid Server adapter', function () {
+        const req = buildWithEids([{ source: 'id5-sync.com', uids: [{ id: 'same', atype: 10 }, { id: 'same', atype: 3 }] }]);
+        expect(req.data.eids).to.deep.equal([{ source: 'id5-sync.com', uids: [{ id: 'same', atype: 3 }, { id: 'same', atype: 10 }] }]);
+      });
+
+      it('should break ties by inserter, matcher, mm and ext', function () {
+        const eids = [
+          { source: 'x.com', uids: [{ id: 'same' }], ext: { b: 1 } },
+          { source: 'x.com', uids: [{ id: 'same' }], ext: { a: 1 } },
+          { source: 'x.com', uids: [{ id: 'same' }], mm: 2 },
+          { source: 'x.com', uids: [{ id: 'same' }], mm: 1 },
+          { source: 'x.com', uids: [{ id: 'same' }], matcher: 'm.com' },
+          { source: 'x.com', uids: [{ id: 'same' }], inserter: 'i.com' },
+          { source: 'x.com', uids: [{ id: 'same' }, { id: 'zzz' }] }
+        ];
+        const expected = [
+          { source: 'x.com', uids: [{ id: 'same' }], ext: { a: 1 } },
+          { source: 'x.com', uids: [{ id: 'same' }], ext: { b: 1 } },
+          { source: 'x.com', uids: [{ id: 'same' }], mm: 1 },
+          { source: 'x.com', uids: [{ id: 'same' }], mm: 2 },
+          { source: 'x.com', uids: [{ id: 'same' }], matcher: 'm.com' },
+          { source: 'x.com', uids: [{ id: 'same' }], inserter: 'i.com' },
+          { source: 'x.com', uids: [{ id: 'same' }, { id: 'zzz' }] }
+        ];
+        expect(buildWithEids(eids).data.eids).to.deep.equal(expected);
+        expect(buildWithEids([...eids].reverse()).data.eids).to.deep.equal(expected);
+      });
+
+      it('should forward all EIDs with their source, including adquery.io', function () {
+        const eids = [
+          { source: 'adquery.io', uids: [{ id: 'qd_adquery-id', atype: 1 }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id', atype: 1, ext: { linkType: 2 } }] },
+          { source: 'pubcid.org', uids: [{ id: 'pubcid-id', atype: 1 }] }
+        ];
+        const req = buildWithEids(eids);
+        expect(req.data.eids).to.deep.equal(eids);
+      });
+
+      it('should keep optional ORTB EID fields', function () {
+        const eids = [{
+          source: 'adserver.org',
+          inserter: 'inserter.com',
+          matcher: 'matcher.com',
+          mm: 3,
+          ext: { foo: 'bar' },
+          uids: [{ id: 'tdid', atype: 1, ext: { rtiPartner: 'TDID' } }]
+        }];
+        expect(buildWithEids(eids).data.eids).to.deep.equal(eids);
+      });
+
+      it('should not use forwarded foreign EIDs as bidQid', function () {
+        const req = buildWithEids([{ source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }]);
+        expect(req.data.bidQid).to.equal('');
+        expect(req.data.eids).to.deep.equal([{ source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }]);
+      });
+
+      it('should drop malformed EIDs and uids without an id', function () {
+        const req = buildWithEids([
+          null,
+          { uids: [{ id: 'no-source' }] },
+          { source: '', uids: [{ id: 'empty-source' }] },
+          { source: 'aaa.com', uids: { id: 'not-an-array' } },
+          { source: 'bbb.com', uids: [] },
+          { source: 'ccc.com', uids: [{ id: '' }, null, {}] },
+          { source: 'ddd.com', uids: [{ id: '' }, { id: 'ddd-id' }] }
+        ]);
+        expect(req.data.eids).to.deep.equal([{ source: 'ddd.com', uids: [{ id: 'ddd-id' }] }]);
+      });
+
+      it('should keep uids that share an id but differ in atype or ext, in an order independent of input', function () {
+        const eids = [
+          { source: 'id5-sync.com', uids: [{ id: 'same', atype: 1, ext: { linkType: 1 } }] },
+          { source: 'id5-sync.com', uids: [{ id: 'same', atype: 3, ext: { linkType: 2 } }] }
+        ];
+        expect(buildWithEids(eids).data.eids).to.deep.equal(eids);
+        expect(buildWithEids([...eids].reverse()).data.eids).to.deep.equal(eids);
+      });
+
+      it('should order EIDs with the same source and first uid independently of input', function () {
+        const eids = [
+          { source: 'id5-sync.com', uids: [{ id: 'same' }], ext: { b: 1 } },
+          { source: 'id5-sync.com', uids: [{ id: 'same' }], ext: { a: 1 } }
+        ];
+        const forward = buildWithEids(eids).data.eids;
+        expect(buildWithEids([...eids].reverse()).data.eids).to.deep.equal(forward);
+        expect(forward.map(eid => eid.ext)).to.deep.equal([{ a: 1 }, { b: 1 }]);
+      });
+
+      it('should order uids with the same id inside one EID independently of input', function () {
+        const uids = [{ id: 'same', atype: 3 }, { id: 'same', atype: 1 }];
+        const expected = [{ source: 'id5-sync.com', uids: [{ id: 'same', atype: 1 }, { id: 'same', atype: 3 }] }];
+        expect(buildWithEids([{ source: 'id5-sync.com', uids }]).data.eids).to.deep.equal(expected);
+        expect(buildWithEids([{ source: 'id5-sync.com', uids: [...uids].reverse() }]).data.eids).to.deep.equal(expected);
+      });
+
+      it('should drop non-string ids, like the Prebid Server adapter', function () {
+        const req = buildWithEids([
+          { source: 'num.com', uids: [{ id: 0 }, { id: 123 }, { id: 'kept' }] },
+          { source: 'obj.com', uids: [{ id: { nested: 'x' } }, { id: true }] }
+        ]);
+        expect(req.data.eids).to.deep.equal([{ source: 'num.com', uids: [{ id: 'kept' }] }]);
+      });
+
+      it('should keep only ORTB fields and leave out zero atype and mm', function () {
+        const req = buildWithEids([{
+          source: 'x.com',
+          foo: 1,
+          inserter: '',
+          mm: 0,
+          uids: [{ id: 'a', atype: 0, bar: 2 }, { id: 'b', atype: 1, ext: { k: 1 } }]
+        }]);
+        expect(req.data.eids).to.deep.equal([{ source: 'x.com', uids: [{ id: 'a' }, { id: 'b', atype: 1, ext: { k: 1 } }] }]);
+      });
+
+      it('should not send an EID that the cap turned into a copy of a non-adjacent one', function () {
+        const eids = [];
+        for (let i = 0; i < 47; i++) {
+          eids.push({ source: `a${String(i).padStart(2, '0')}.com`, uids: [{ id: `id-${i}` }] });
+        }
+        const x = [
+          { source: 'x.com', uids: [{ id: 'a' }] },
+          { source: 'x.com', inserter: 'i.com', uids: [{ id: 'a' }] },
+          { source: 'x.com', uids: [{ id: 'a' }, { id: 'c' }] }
+        ];
+        const req = buildWithEids([...eids, ...x].reverse());
+        expect(req.data.eids).to.deep.equal([...eids, x[0], x[1]]);
+      });
+
+      it('should not send an EID that the cap turned into a copy of the previous one', function () {
+        const eids = [];
+        for (let i = 0; i < 48; i++) {
+          eids.push({ source: `a${String(i).padStart(2, '0')}.com`, uids: [{ id: `id-${i}` }] });
+        }
+        // 48 + 1 uids leave a budget of 1, which cuts { a, b } down to a copy of { a }.
+        eids.push({ source: 'x.com', uids: [{ id: 'a' }, { id: 'b' }] });
+        eids.push({ source: 'x.com', uids: [{ id: 'a' }] });
+        const req = buildWithEids(eids);
+        expect(req.data.eids).to.have.length(49);
+        expect(req.data.eids[48]).to.deep.equal({ source: 'x.com', uids: [{ id: 'a' }] });
+      });
+
+      it('should cap the total number of forwarded uids at 50, keeping the first sources in order', function () {
+        const eids = [];
+        for (let i = 0; i < 60; i++) {
+          eids.push({ source: `source${String(i).padStart(2, '0')}.com`, uids: [{ id: `id-${i}` }] });
+        }
+        const req = buildWithEids([...eids].reverse());
+        expect(req.data.eids).to.have.length(50);
+        expect(req.data.eids[0].source).to.equal('source00.com');
+        expect(req.data.eids[49].source).to.equal('source49.com');
+      });
+
+      it('should cap uids inside a single EID too, keeping the lowest ids', function () {
+        const uids = [];
+        for (let i = 0; i < 1000; i++) {
+          uids.push({ id: `id-${String(i).padStart(4, '0')}` });
+        }
+        const req = buildWithEids([
+          { source: 'big.com', uids: [...uids].reverse() },
+          { source: 'zzz.com', uids: [{ id: 'after-id' }] }
+        ]);
+        expect(req.data.eids).to.have.length(1);
+        expect(req.data.eids[0].uids).to.have.length(50);
+        expect(req.data.eids[0].uids[0].id).to.equal('id-0000');
+        expect(req.data.eids[0].uids[49].id).to.equal('id-0049');
+      });
+
+      it('should send EIDs in the same order regardless of user ID module order', function () {
+        const eids = [
+          { source: 'uidapi.com', uids: [{ id: 'uid2-id' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-b' }, { id: 'id5-a' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_adquery-id' }] },
+          { source: 'criteo.com', uids: [{ id: 'criteo-id' }] }
+        ];
+        const expected = [
+          { source: 'adquery.io', uids: [{ id: 'qd_adquery-id' }] },
+          { source: 'criteo.com', uids: [{ id: 'criteo-id' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-a' }, { id: 'id5-b' }] },
+          { source: 'uidapi.com', uids: [{ id: 'uid2-id' }] }
+        ];
+        expect(buildWithEids(eids).data.eids).to.deep.equal(expected);
+        expect(buildWithEids([...eids].reverse()).data.eids).to.deep.equal(expected);
+      });
+
+      it('should put adquery.io EIDs first so the cap never drops them', function () {
+        const eids = [];
+        for (let i = 0; i < 60; i++) {
+          eids.push({ source: `source${String(i).padStart(2, '0')}.com`, uids: [{ id: `id-${i}` }] });
+        }
+        eids.push({ source: 'adquery.io', uids: [{ id: 'qd_adquery-id-1234567' }] });
+        const req = buildWithEids(eids);
+        expect(req.data.eids[0]).to.deep.equal({ source: 'adquery.io', uids: [{ id: 'qd_adquery-id-1234567' }] });
+        expect(req.data.eids).to.have.length(50);
+        expect(req.data.eids[49].source).to.equal('source48.com');
+      });
+
+      it('should put the adquery.io uid sent as bidQid first', function () {
+        const req = buildWithEids([
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_c' }, { id: 'qd_b' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_a' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('qd_a');
+        expect(req.data.eids).to.deep.equal([
+          { source: 'adquery.io', uids: [{ id: 'qd_a' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_b' }, { id: 'qd_c' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }
+        ]);
+      });
+
+      it('should keep the bidQid uid when adquery.io alone exceeds the cap', function () {
+        const many = [];
+        for (let i = 0; i < 60; i++) {
+          many.push({ id: `qd_${i + 10}` });
+        }
+        const req = buildWithEids([
+          { source: 'adquery.io', uids: many },
+          { source: 'adquery.io', uids: [{ id: 'qd_00' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }
+        ]);
+        expect(req.data.bidQid).to.equal('qd_00');
+        expect(req.data.eids[0].uids[0].id).to.equal('qd_00');
+        const total = req.data.eids.reduce((sum, eid) => sum + eid.uids.length, 0);
+        expect(total).to.equal(50);
+        expect(req.data.eids.map(eid => eid.source)).to.not.include('id5-sync.com');
+      });
+
+      it('should give every banner request the same bidQid and eids', function () {
+        const userIdAsEids = [
+          { source: 'adquery.io', uids: [{ id: 'qd_1' }] },
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }
+        ];
+        const bids = [
+          Object.assign({}, bidRequest, { bidId: 'b1', userIdAsEids }),
+          Object.assign({}, bidRequest, { bidId: 'b2', userIdAsEids })
+        ];
+        const [first, second] = spec.buildRequests(bids, { refererInfo: {} });
+        expect(first.data.bidQid).to.equal('qd_1');
+        expect(second.data.bidQid).to.equal('qd_1');
+        expect(first.data.eids).to.deep.equal(userIdAsEids);
+        expect(second.data.eids).to.deep.equal(userIdAsEids);
+        expect(first.data.eids).to.not.equal(second.data.eids);
+        expect(first.data.eids[0].uids[0]).to.not.equal(second.data.eids[0].uids[0]);
+      });
+
+      it('should not mutate or share userIdAsEids objects', function () {
+        const eids = [{ source: 'id5-sync.com', uids: [{ id: 'id5-id', ext: { linkType: 2 } }] }];
+        const snapshot = JSON.parse(JSON.stringify(eids));
+        const req = buildWithEids(eids);
+        expect(eids).to.deep.equal(snapshot);
+        expect(req.data.eids[0]).to.not.equal(eids[0]);
+        expect(req.data.eids[0].uids[0]).to.not.equal(eids[0].uids[0]);
+        expect(req.data.eids[0].uids[0].ext).to.not.equal(eids[0].uids[0].ext);
+      });
+
+      function videoBidWith(overrides) {
+        return Object.assign({
+          bidder: 'adquery',
+          params: { placementId: 'test-placement-id' },
+          mediaTypes: { video: { context: 'outstream', playerSize: [[640, 360]] } },
+          ortb2Imp: { video: { w: 640, h: 360 } },
+          ortb2: {},
+          bidId: 'test-bid-id-video'
+        }, overrides);
+      }
+
+      it('should send the cleaned EIDs in user.ext.eids of video requests', function () {
+        const eids = [
+          { source: 'id5-sync.com', uids: [{ id: 'id5-id' }] },
+          { source: 'broken.com', uids: [{ id: '' }] }
+        ];
+        const req = spec.buildRequests([videoBidWith({
+          userIdAsEids: eids,
+          ortb2: { user: { ext: { eids } } }
+        })], { refererInfo: {} })[0];
+        expect(req.data.user.ext.eids).to.deep.equal([{ source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }]);
+      });
+
+      it('should keep the adquery.io EID first in video user.ext.eids despite the cap', function () {
+        const eids = [];
+        for (let i = 0; i < 60; i++) {
+          eids.push({ source: `source${i}.com`, uids: [{ id: `id-${i}` }] });
+        }
+        eids.push({ source: 'adquery.io', uids: [{ id: 'qd_adquery-id-1234567' }] });
+        const req = spec.buildRequests([videoBidWith({
+          userIdAsEids: eids,
+          ortb2: { user: { ext: { eids } } }
+        })], { refererInfo: {} })[0];
+        expect(req.data.user.ext.eids[0]).to.deep.equal({ source: 'adquery.io', uids: [{ id: 'qd_adquery-id-1234567' }] });
+        expect(req.data.user.ext.eids).to.have.length(50);
+      });
+
+      it('should not send empty user or user.ext objects in video requests', function () {
+        const eids = [{ source: 'broken.com', uids: [{ id: '' }] }];
+        const onlyEids = spec.buildRequests([videoBidWith({
+          userIdAsEids: eids,
+          ortb2: { user: { ext: { eids } } }
+        })], { refererInfo: {} })[0];
+        expect(onlyEids.data).to.not.have.property('user');
+        const withOther = spec.buildRequests([videoBidWith({
+          userIdAsEids: eids,
+          ortb2: { user: { id: 'u', ext: { eids } } }
+        })], { refererInfo: {} })[0];
+        expect(withOther.data.user).to.deep.equal({ id: 'u' });
+      });
+
+      it('should use ortb2.user.ext.eids when userIdAsEids is not set (no userId module)', function () {
+        const eids = [
+          { source: 'pubcid.org', uids: [{ id: 'pubcid-id' }] },
+          { source: 'adquery.io', uids: [{ id: 'qd_adquery-id-1234567' }] }
+        ];
+        const sorted = [eids[1], eids[0]];
+        const banner = spec.buildRequests([Object.assign({}, bidRequest, { ortb2: { user: { ext: { eids } } } })], { refererInfo: {} })[0];
+        expect(banner.data.eids).to.deep.equal(sorted);
+        expect(banner.data.bidQid).to.equal('qd_adquery-id-1234567');
+        const videoBid = videoBidWith({ ortb2: { user: { ext: { eids } } } });
+        delete videoBid.userIdAsEids;
+        const video = spec.buildRequests([videoBid], { refererInfo: {} })[0];
+        expect(video.data.user.ext.eids).to.deep.equal(sorted);
+      });
+
+      it('should ignore a non-array ortb2.user.ext.eids', function () {
+        const req = spec.buildRequests([Object.assign({}, bidRequest, { ortb2: { user: { ext: { eids: 'x' } } } })], { refererInfo: {} })[0];
+        expect(req.data).to.not.have.property('eids');
+      });
+
+      it('should not copy uncleaned user.eids into video requests', function () {
+        const eids = [{ source: 'id5-sync.com', uids: [{ id: 'id5-id' }] }];
+        const req = spec.buildRequests([videoBidWith({
+          userIdAsEids: eids,
+          ortb2: { user: { eids: [{ source: 'raw.com', uids: [{ id: '' }] }], ext: { eids } } }
+        })], { refererInfo: {} })[0];
+        expect(req.data.user).to.not.have.property('eids');
+        expect(req.data.user.ext.eids).to.deep.equal(eids);
+      });
+
+      it('should drop user.ext.eids from video requests when no usable EID is left', function () {
+        const eids = [{ source: 'broken.com', uids: [{ id: '' }] }];
+        const req = spec.buildRequests([videoBidWith({
+          userIdAsEids: eids,
+          ortb2: { user: { ext: { eids, other: 1 } } }
+        })], { refererInfo: {} })[0];
+        expect(req.data.user.ext).to.deep.equal({ other: 1 });
+      });
+
+      it('should not let video requests share or mutate bid.ortb2 and bid.ortb2Imp', function () {
+        const ortb2 = { site: { page: 'https://example.com' }, user: { ext: {} } };
+        const bids = [
+          videoBidWith({ bidId: 'v1', params: { placementId: 'A' }, ortb2, ortb2Imp: { video: { w: 640, h: 360 } } }),
+          videoBidWith({ bidId: 'v2', params: { placementId: 'B' }, ortb2, ortb2Imp: { video: { w: 640, h: 360 } } })
+        ];
+        bids.forEach(bid => {
+          bid.getFloor = () => ({ floor: 1.5, currency: 'PLN' });
+        });
+        const ortb2Snapshot = JSON.parse(JSON.stringify(ortb2));
+        const [first, second] = spec.buildRequests(bids, {
+          refererInfo: {},
+          gdprConsent: { gdprApplies: true, consentString: 'consent' }
+        });
+        expect(first.data.site.ext.bidder).to.deep.equal({ placementId: 'A' });
+        expect(second.data.site.ext.bidder).to.deep.equal({ placementId: 'B' });
+        expect(first.data.user.consent).to.equal('consent');
+        expect(first.data.user).to.not.equal(second.data.user);
+        expect(first.data.imp[0].video.bidfloor).to.equal(1.5);
+        expect(ortb2).to.deep.equal(ortb2Snapshot);
+        expect(bids[0].ortb2Imp.video).to.deep.equal({ w: 640, h: 360 });
       });
     });
   });
@@ -1206,8 +1668,8 @@ describe('adqueryBidAdapter', function () {
         {}
       );
       expect(sync.length).to.equal(1);
-      expect(sync[0].type === 'iframe');
-      expect(typeof sync[0].url === 'string');
+      expect(sync[0].type).to.equal('iframe');
+      expect(sync[0].url).to.be.a('string');
     });
     it('should return image sync', function () {
       const sync = spec.getUserSyncs(
@@ -1220,8 +1682,8 @@ describe('adqueryBidAdapter', function () {
         {}
       );
       expect(sync.length).to.equal(1);
-      expect(sync[0].type === 'image');
-      expect(typeof sync[0].url === 'string');
+      expect(sync[0].type).to.equal('image');
+      expect(sync[0].url).to.be.a('string');
     });
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
