@@ -485,6 +485,19 @@ describe('currency', function () {
       expect(reject.calledOnce).to.be.true;
     });
 
+    it('should process queued bids when the rates response is not valid JSON', function () {
+      fakeCurrencyFileServer.respondWith('not json');
+      setConfig({ 'adServerCurrency': 'JPY' });
+      const bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
+      const addBidResponse = sinon.spy();
+      addBidResponseHook(addBidResponse, 'elementId', bid, reject);
+      expect(reject.called).to.be.false;
+
+      fakeCurrencyFileServer.respond();
+      sinon.assert.notCalled(addBidResponse);
+      sinon.assert.calledWith(reject, REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+    });
+
     it('should reject bid when adServerCurrency is not supported in file', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
@@ -643,6 +656,20 @@ describe('currency', function () {
       clock.tick(3000);
       expect(logWarnSpy.calledOnce).to.equal(true);
       expect(continueAuction.calledOnce).to.be.true;
+    });
+
+    it('should run a delayed auction, and retry on the next auction, when the rates response is not valid JSON', () => {
+      fakeCurrencyFileServer.respondWith('not json');
+      setConfig({ auctionDelay: 3000, adServerCurrency: 'USD' });
+      requestBidsHook(continueAuction, { auctionId: '128937' });
+      expect(continueAuction.notCalled).to.be.true;
+
+      fakeCurrencyFileServer.respond();
+      expect(continueAuction.calledOnce).to.be.true;
+
+      const requestCount = fakeCurrencyFileServer.requests.length;
+      events.emit(EVENTS.AUCTION_INIT, {});
+      expect(fakeCurrencyFileServer.requests.length).to.equal(requestCount + 1);
     });
 
     it('should run auction if rates were fetched before auctionDelay time', () => {

@@ -157,6 +157,15 @@ function errorSettingsRates(msg) {
   }
 }
 
+// let queued bids and delayed auctions continue without fresh rates, and retry on the next auction
+function ratesLoadFailed(msg) {
+  errorSettingsRates(msg);
+  currencyRatesLoaded = true;
+  processBidResponseQueue();
+  delayedAuctions.resume();
+  needToCallForCurrencyFile = true;
+}
+
 function loadRates() {
   if (needToCallForCurrencyFile) {
     needToCallForCurrencyFile = false;
@@ -173,20 +182,10 @@ function loadRates() {
             processBidResponseQueue();
             delayedAuctions.resume();
           } catch (e) {
-            errorSettingsRates('Failed to parse currencyRates response: ' + response);
-            currencyRatesLoaded = true;
-            processBidResponseQueue();
-            delayedAuctions.resume();
-            needToCallForCurrencyFile = true;
+            ratesLoadFailed('Failed to parse currencyRates response: ' + response);
           }
         },
-        error: function (err) {
-          errorSettingsRates(err);
-          currencyRatesLoaded = true;
-          processBidResponseQueue();
-          delayedAuctions.resume();
-          needToCallForCurrencyFile = true;
-        }
+        error: ratesLoadFailed
       }
     );
   } else {
