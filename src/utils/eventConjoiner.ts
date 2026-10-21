@@ -24,7 +24,7 @@ export function eventConjoiner<T>(size: number) {
     callbacks.forEach(cb => cb(event));
   }
 
-  function collect(channel: number, event: T) {
+  function doCollect(channel: number, event: T) {
     if (typeof channel !== 'number' || channel < 0 || channel >= size) throw new Error('invalid channel');
     const tally = active.get(event) ?? new Set();
     if (!active.has(event)) {
@@ -37,11 +37,15 @@ export function eventConjoiner<T>(size: number) {
   return {
     fire,
     cancel,
-    collect,
+    collect(timeout: number, channel: number, event: T) {
+      clearTimer(event);
+      timers.set(event, setTimeout(() => cancel(event), timeout));
+      doCollect(channel, event);
+    },
     collectWithin(timeout: number, channel: number, event: T) {
       clearTimer(event);
       timers.set(event, setTimeout(() => fire(event), timeout));
-      collect(channel, event);
+      doCollect(channel, event);
     },
     on(handler: (event: T) => void) {
       callbacks.push(handler);

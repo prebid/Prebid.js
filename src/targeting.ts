@@ -10,31 +10,29 @@ import {
   groupBy,
   isAdUnitCodeMatchingSlot,
   isArray,
-  isFn, isGptPubadsDefined,
+  isFn,
+  isGptPubadsDefined,
   isStr,
   logError,
   logInfo,
   logMessage,
   logWarn,
+  timestamp,
   uniques,
 } from './utils.js';
 import {
   getHighestCpm,
   getHighestDesirability,
   getOldestHighestCpmBid,
-  highestDesirabilityFirst
+  highestDesirabilityFirst,
+  minimum
 } from './utils/reducers.js';
 import type { Bid } from './bidfactory.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
 import { isBidUsable } from './targeting/filters.ts';
-import {
-  getTargetedAdIdsForSlot,
-  recordSlotTargeting,
-  slotHasTargetedAdId,
-  updateSlotTargetingFromMap
-} from "./utils/gptTargeting.ts";
+import { recordSlotTargeting, slotHasTargetedAdId, updateSlotTargetingFromMap } from "./utils/gptTargeting.ts";
 import { eventConjoiner } from "./utils/eventConjoiner.ts";
 import { gptEventHandler } from "./utils/gptEvents.ts";
 
@@ -289,7 +287,7 @@ export function newTargeting(auctionManager) {
           logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
           updateSlotTargetingFromMap(slot, Object.assign({}, resetMap, targeting[targetId]));
           if (operation === 'set') {
-            adUnits.forEach(renderedAndWon.cancel);
+            adUnits.forEach((au) => pendingReset.delete(au));
             gptRendered.enable();
             recordSlotTargeting(slot, targetedAdIdsByAdUnit[targetId] ?? []);
           }
@@ -398,15 +396,52 @@ export function newTargeting(auctionManager) {
     targeting.presetGPTTargeting([adUnitCode]);
   });
 
-  const gptRendered = gptEventHandler('slotRenderEnded', ({ slot }) => {
-    getTargetedAdIdsForSlot(slot)?.forEach(adId => {
-      const bid = auctionManager.findBidByAdId(adId);
-      if (bid) {
-        // collect now and a moment from now, so that the join is deferred but immediately cancelable
-        renderedAndWon.collect(0, bid.adUnitCode);
-        setTimeout(() => renderedAndWon.collect(1, bid.adUnitCode));
+  const slotRenderedAt = new WeakMap();
+  const pendingReset = new Map();
+
+  const scheduleReset = (() => {
+    const TIMEOUT = 100;
+    let next;
+
+    function reset(adUnitCode) {
+      pendingReset.delete(adUnitCode);
+      targeting.presetGPTTargeting([adUnitCode]);
+    }
+
+    function reschedule() {
+      const delay = Array.from(pendingReset.entries())
+        .map(([adUnitCode, [wonAt, slots]]) => {
+          const elapsed = timestamp() - wonAt;
+          if (elapsed > TIMEOUT) {
+            reset(adUnitCode);
+          } else {
+            const delta = slots.map((slot) => slotRenderedAt.get(slot))
+              .filter((renderedAt) => renderedAt)
+              .map((renderedAt) => renderedAt > wonAt ? renderedAt - wonAt : wonAt - renderedAt)
+              .reduce(minimum(), Number.POSITIVE_INFINITY);
+            if (delta < TIMEOUT) {
+              reset(adUnitCode);
+            } else {
+              return TIMEOUT - elapsed;
+            }
+          }
+        })
+        .filter((delta) => delta !== null)
+        .reduce(minimum(), Number.POSITIVE_INFINITY);
+      if (Number.isFinite(delay)) {
+        next = setTimeout(reschedule, delay);
       }
-    });
+    }
+
+    return () => {
+      if (next != null) clearTimeout(next);
+      next = setTimeout(reschedule, 0);
+    };
+  })();
+
+  const gptRendered = gptEventHandler('slotRenderEnded', ({ slot }) => {
+    slotRenderedAt.set(slot, timestamp());
+    scheduleReset();
   });
 
   events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
@@ -416,9 +451,8 @@ export function newTargeting(auctionManager) {
   events.on(EVENTS.BID_WON, (bid) => {
     const slots = getBidSlots(bid);
     if (slots.length > 0) {
-      // two channels for the same reason as gptRendered above
-      renderedAndWon.collectWithin(100, 2, bid.adUnitCode);
-      setTimeout(() => renderedAndWon.collect(3, bid.adUnitCode));
+      pendingReset.set(bid.adUnitCode, [timestamp(), slots]);
+      scheduleReset();
       slots.forEach(slot => lock.unlock(slot));
     }
   });
