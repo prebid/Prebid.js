@@ -4,10 +4,8 @@
  */
 
 import { config } from '../../src/config.js';
-import { setupBeforeHookFnOnce, getHook } from '../../src/hook.js';
-import {
-  logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy, sortByHighestCpm
-} from '../../src/utils.js';
+import { getHook, setupBeforeHookFnOnce } from '../../src/hook.js';
+import { deepAccess, deepSetValue, getUniqueIdentifierStr, groupBy, logWarn } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { addBidderRequests } from '../../src/auction.js';
@@ -190,10 +188,9 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
   }
 });
 
-
 export function sortByMultibid(fallback) {
   const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
-  return tiebreakCompare(reverseCompare(priorityCompare), aliasedBiddersFirst, dealPrioritization ? sortByDealAndPriceBucketOrDesirability(fallback) : fallback)
+  return tiebreakCompare(reverseCompare(priorityCompare), aliasedBiddersFirst, dealPrioritization ? sortByDealAndPriceBucketOrDesirability(fallback) : fallback);
 }
 
 /**

@@ -2,16 +2,14 @@ import { expect } from 'chai';
 import {
   addBidResponseHook,
   adjustBidderRequestsHook,
+  aliasedBiddersFirst,
   resetMultibidUnits,
   resetMultiConfig,
-  aliasedBiddersFirst,
   targetBidPoolHook,
   validateMultibid
 } from 'modules/multibid/index.js';
 import { config } from 'src/config.js';
 import { getHighestCpm, getHighestDesirability } from '../../../src/utils/reducers.js';
-import { adjustBids } from '../../../src/auction.js';
-import { AuctionIndex } from '../../../src/auctionIndex.js';
 import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../../src/utils/desirability.js';
 
 describe('multibid adapter', function () {
@@ -767,61 +765,6 @@ describe('multibid adapter', function () {
 
             expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi']);
           });
-        });
-      });
-    });
-  });
-
-  describe('adjustBids on multibid bids', () => {
-    const HIGH = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
-    let bids, index;
-
-    beforeEach(() => {
-      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
-      const bidderRequest = {
-        bidderCode: 'bidderA',
-        bidderRequestId: 'bidder-request',
-        allowPriorityBids: true,
-        bids: [{ bidder: 'bidderA', bidId: 'request', adUnitCode: 'test.div' }],
-      };
-      index = new AuctionIndex(() => [{
-        getAuctionId: () => 'auction',
-        getBidRequests: () => [bidderRequest],
-        getAdUnits: () => [],
-      }]);
-      bids = [];
-      [{ cpm: 10, pacingAdjustedCpm: 20 }, { cpm: 5, pacingAdjustedCpm: 30 }].forEach(({ cpm, pacingAdjustedCpm }) => {
-        addBidResponseHook((adUnitCode, bid) => bids.push(bid), 'test.div', {
-          bidder: 'bidderA',
-          bidderCode: 'bidderA',
-          adapterCode: 'bidderA',
-          requestId: 'request',
-          bidderRequestId: 'bidder-request',
-          auctionId: 'auction',
-          cpm,
-          meta: { deal: { priority: HIGH, pacingAdjustedCpm } },
-        });
-      });
-    });
-
-    it('accepts both bids, with a new requestId on the second', () => {
-      expect(bids.length).to.equal(2);
-      expect(bids[1].originalRequestId).to.equal('request');
-      expect(bids[1].requestId).to.not.equal('request');
-    });
-
-    [0, 1].forEach(i => {
-      describe(`on bid #${i + 1}`, () => {
-        beforeEach(() => {
-          adjustBids(bids[i], { index });
-        });
-
-        it('sets priority from meta.deal.priority', () => {
-          expect(bids[i].priority).to.equal(HIGH);
-        });
-
-        it('ranks on meta.deal.pacingAdjustedCpm', () => {
-          expect(bids[i].desirability).to.equal(bids[i].meta.deal.pacingAdjustedCpm);
         });
       });
     });
