@@ -21,6 +21,7 @@ import 'modules/debugging/index.js'; // some tests look for debugging side effec
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import { expect } from 'chai';
 import { deepClone } from '../../src/utils.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../src/utils/desirability.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
 
@@ -801,6 +802,98 @@ describe('auctionmanager.js', function () {
 
       adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: false }) });
       assert.equal(bid.desirability, 0.5);
+    });
+
+    describe('sets .priority', () => {
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+      const HIGH_PRIORITY = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+
+      function mkBid(meta) {
+        return Object.assign({}, createBid(), fixtures.getBidResponses()[5], { meta });
+      }
+
+      afterEach(() => {
+        getGlobal().bidderSettings = {};
+      });
+
+      Object.entries({
+        'there is no bidder request': undefined,
+        'the bidder request does not set allowPriorityBids': { bidderCode: 'brealtime' },
+        'the bidder request sets allowPriorityBids = false': { bidderCode: 'brealtime', allowPriorityBids: false },
+      }).forEach(([t, bidderRequest]) => {
+        describe(`when ${t}`, () => {
+          Object.entries({
+            'no meta': undefined,
+            'no meta.deal.priority': { deal: {} },
+            'meta.deal.priority': { deal: { priority: HIGH_PRIORITY } },
+          }).forEach(([t, meta]) => {
+            it(`to the default on bids with ${t}`, () => {
+              const bid = mkBid(meta);
+              adjustBids(bid, { index: index(bidderRequest) });
+              expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+            });
+          });
+        });
+      });
+
+      describe('when the bidder request sets allowPriorityBids = true', () => {
+        const bidderRequest = { src: 's2s', bidderCode: 'brealtime', allowPriorityBids: true };
+
+        Object.entries({
+          'no meta': undefined,
+          'no meta.deal.priority': { deal: {} },
+          'non-numeric meta.deal.priority': { deal: { priority: 'high' } },
+        }).forEach(([t, meta]) => {
+          it(`to the default on bids with ${t}`, () => {
+            const bid = mkBid(meta);
+            adjustBids(bid, { index: index(bidderRequest) });
+            expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+          });
+        });
+
+        it('to meta.deal.priority', () => {
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index(bidderRequest) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+
+        it('replacing any .priority the adapter set', () => {
+          const bid = Object.assign(mkBid({ deal: { priority: HIGH_PRIORITY } }), { priority: 0 });
+          adjustBids(bid, { index: index(bidderRequest) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+      });
+
+      it('to the default, replacing any .priority the adapter set, when priority bids are not allowed', () => {
+        const bid = Object.assign(mkBid(), { priority: 0 });
+        adjustBids(bid, { index: index({ bidderCode: 'brealtime' }) });
+        expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+      });
+
+      Object.entries({
+        'discarded for being negative': (cpm) => cpm * -1,
+        'zero': () => 0,
+        'positive': (cpm) => cpm * 2,
+      }).forEach(([t, bidCpmAdjustment]) => {
+        it(`even when the cpm adjustment is ${t}`, () => {
+          getGlobal().bidderSettings = { brealtime: { bidCpmAdjustment } };
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index({ bidderCode: 'brealtime', allowPriorityBids: true }) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+      });
+
+      it('even when bidDesirabilityAdjustment throws', () => {
+        const logError = sinon.stub(utils, 'logError');
+        try {
+          getGlobal().bidderSettings = { brealtime: { bidDesirabilityAdjustment: () => { throw new Error(); } } };
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index({ bidderCode: 'brealtime', allowPriorityBids: true }) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        } finally {
+          logError.restore();
+        }
+      });
     });
   });
 

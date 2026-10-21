@@ -20,6 +20,7 @@ import { getHighestCpm, getHighestDesirability } from '../../../../src/utils/red
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
 import { lock } from '../../../../src/targeting/lock.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../../../src/utils/desirability.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -603,6 +604,32 @@ describe('targeting tests', function () {
         const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1);
 
         expect(limitedBids.length).to.equal(2);
+      });
+
+      describe('getHighestCpmBidsFromBidPool with getHighestDesirability', () => {
+        const HIGH = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+        const LOW = DEFAULT_PRIORITY;
+        let pool;
+
+        beforeEach(() => {
+          pool = [
+            mkBid({ adUnitCode: 'au', bidderCode: 'a', adId: 'a-hi', cpm: 1, desirability: 1, priority: HIGH }),
+            mkBid({ adUnitCode: 'au', bidderCode: 'a', adId: 'a-lo', cpm: 100, desirability: 100, priority: LOW }),
+            mkBid({ adUnitCode: 'au', bidderCode: 'b', adId: 'b-lo', cpm: 50, desirability: 50, priority: LOW }),
+            mkBid({ adUnitCode: 'au', bidderCode: 'c', adId: 'c-hi', cpm: 2, desirability: 2, priority: HIGH }),
+          ];
+        });
+
+        it('picks the higher priority bid from each bidder, and sorts higher priority first, regardless of cpm', () => {
+          const bids = getHighestCpmBidsFromBidPool(pool, getHighestDesirability);
+          expect(bids.map(b => b.adId)).to.eql(['c-hi', 'a-hi', 'b-lo']);
+        });
+
+        it('keeps the higher priority bids when a bid limit applies', () => {
+          config.setConfig({ sendBidsControl: { dealPrioritization: false } });
+          const bids = getHighestCpmBidsFromBidPool(pool, getHighestDesirability, 2);
+          expect(bids.map(b => b.adId)).to.eql(['c-hi', 'a-hi']);
+        });
       });
 
       it('getHighestCpmBidsFromBidPool calculates bids limit properly when bidLimit is a map', function () {
@@ -1550,6 +1577,23 @@ describe('targeting tests', function () {
   });
 
   describe('sortByDealAndPriceBucketOrDesirability', function() {
+    describe('when using desirability', () => {
+      const HIGH = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+      const LOW = DEFAULT_PRIORITY;
+
+      Object.entries({
+        'both bids have a deal': ['1', '2'],
+        'neither bid has a deal': [undefined, undefined],
+      }).forEach(([t, [hiDeal, loDeal]]) => {
+        it(`sorts the higher priority bid first regardless of cpm when ${t}`, () => {
+          const hi = { cpm: 1, desirability: 1, priority: HIGH, adserverTargeting: { hb_adid: 'hi', hb_pb: '1.00', hb_deal: hiDeal } };
+          const lo = { cpm: 100, desirability: 100, priority: LOW, adserverTargeting: { hb_adid: 'lo', hb_pb: '100.00', hb_deal: loDeal } };
+          expect([lo, hi].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([hi, lo]);
+          expect([hi, lo].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([hi, lo]);
+        });
+      });
+    });
+
     it('will properly sort bids when some bids have deals and some do not', function () {
       const bids = [{
         adserverTargeting: {
