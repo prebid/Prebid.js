@@ -172,6 +172,69 @@ describe('ImpactifyAdapter', function () {
       return JSON.parse(spec.buildRequests([bid], videoBidderRequest).data).imp[0];
     }
 
+    it('should pass the optional size string in the impression extension', function () {
+      videoBidRequests[0].params.size = '300x250';
+
+      expect(buildImpression().ext.impactify.size).to.equal('300x250');
+    });
+
+    [undefined, 300, [300, 250]].forEach((size) => {
+      it(`should omit the size extension when params.size is ${JSON.stringify(size)}`, function () {
+        videoBidRequests[0].params.size = size;
+
+        expect(buildImpression().ext.impactify).to.not.have.property('size');
+      });
+    });
+
+    [
+      { device: 'tablet', userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)', devicetype: 5 },
+      { device: 'mobile', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', devicetype: 4 },
+      { device: 'desktop', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', devicetype: 2 }
+    ].forEach(({ device, userAgent, devicetype }) => {
+      it(`should send the OpenRTB device type and user agent for ${device}`, function () {
+        sandbox.stub(navigator, 'userAgent').value(userAgent);
+
+        const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+        expect(request.device).to.include({ devicetype, ua: userAgent });
+      });
+    });
+
+    describe('_checkPrebid query parameter', function () {
+      let originalUrl;
+      let originalState;
+      let url;
+
+      beforeEach(function () {
+        originalUrl = window.location.href;
+        originalState = window.history.state;
+        url = new URL(originalUrl);
+        url.searchParams.delete('_checkPrebid');
+        window.history.replaceState(originalState, '', url.href);
+      });
+
+      afterEach(function () {
+        window.history.replaceState(originalState, '', originalUrl);
+      });
+
+      [0, 1].forEach((test) => {
+        it(`should send numeric test=${test} when _checkPrebid=${test}`, function () {
+          url.searchParams.set('_checkPrebid', String(test));
+          window.history.replaceState(originalState, '', url.href);
+
+          const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+          expect(request.test).to.equal(test);
+        });
+      });
+
+      it('should omit test when _checkPrebid is absent', function () {
+        const request = JSON.parse(spec.buildRequests(videoBidRequests, videoBidderRequest).data);
+
+        expect(request).to.not.have.property('test');
+      });
+    });
+
     it('should pass bidfloor', function () {
       videoBidRequests[0].getFloor = function () {
         return {
