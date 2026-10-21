@@ -245,7 +245,8 @@ export function targetBidPoolHook(fn, bidsReceived, winReducer, adUnitBidLimit =
       const bidsByBidderCode = groupBy(adjustedBids, 'bidderCode');
       Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(winReducer)));
       // if adUnitBidLimit is set, pass top N number bids
-      if (adUnitBidLimit > 0) {
+      const slotBidLimit = Number(typeof adUnitBidLimit === 'number' ? adUnitBidLimit : adUnitBidLimit?.[slotId]) || 0;
+      if (slotBidLimit > 0) {
         bucketBids.sort(sortByMultibid(winSorter));
         modifiedBids.push(...bucketBids.slice(0, adUnitBidLimit));
       } else {
