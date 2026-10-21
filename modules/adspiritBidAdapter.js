@@ -166,7 +166,12 @@ export const spec = {
         seat.bid.forEach(bid => {
           let adm = bid.adm;
           if (typeof adm === 'string' && adm.trim().startsWith('{')) {
-            adm = JSON.parse(adm);
+            try {
+              adm = JSON.parse(adm);
+            } catch (e) {
+              utils.logWarn('adspirit: Invalid native JSON response');
+              return;
+            }
           }
 
           const bidResponse = {
@@ -272,8 +277,8 @@ export const spec = {
           advertiserDomains: adData.adomain || []
         }
       };
-      // Allows our ad script to render into the surrounding page instead of
-      // staying inside the iframe (special ad formats). Publisher opt-out.
+	  // Allows our ad script to render into the surrounding page instead of
+// staying inside the iframe (special ad formats). Publisher opt-out.
       const breakoutParam = bidObj.params?.allowIframeBreakout;
       const allowIframeBreakout = !(
         breakoutParam === false ||
@@ -283,7 +288,10 @@ export const spec = {
       );
 
       const scriptValue = value =>
-        JSON.stringify(value).replace(/</g, '\\u003c');
+        JSON.stringify(value)
+          .replace(/</g, '\\u003c')
+          .replace(/\u2028/g, '\\u2028')
+          .replace(/\u2029/g, '\\u2029');
 
       const renderScript =
         '<script>(function(){' +
@@ -347,6 +355,8 @@ export const spec = {
 
     return bidResponses;
   },
+
+
 
   getBidderHost: function (bid) {
     if (bid.bidder === 'adspirit') {
