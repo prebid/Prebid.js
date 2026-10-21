@@ -215,7 +215,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
     const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
     const modifiedBids = [];
     const buckets = groupBy(bidsReceived, 'adUnitCode');
-    const bids = [].concat(...Object.keys(buckets).reduce((result, slotId) => {
+    Object.keys(buckets).forEach((slotId) => {
       let bucketBids = [];
       // Get bids and group by property originalBidder
       const bidsByBidderName = groupBy(buckets[slotId], 'originalBidder');
@@ -246,9 +246,8 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
       } else {
         modifiedBids.push(...bucketBids);
       }
-
-      return [].concat(...modifiedBids);
-    }, []));
+    });
+    const bids = modifiedBids;
 
     fn.call(this, bids, highestCpmCallback, adUnitBidLimit, true);
   } else {
