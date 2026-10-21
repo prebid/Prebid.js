@@ -268,12 +268,24 @@ export const resetMultibidUnits = () => {
   multibidUnits = {};
 };
 
+function initMultibidUnitsForAuction({ auctionId }) {
+  if (auctionId != null && multibidUnits[auctionId] == null) {
+    multibidUnits[auctionId] = {};
+  }
+}
+
+function clearMultibidUnitsForAuction({ auctionId }) {
+  if (auctionId != null) {
+    delete multibidUnits[auctionId];
+  }
+}
+
 /**
  * Set up hooks on init
  */
 function init() {
-  // TODO: does this reset logic make sense - what about simultaneous auctions?
-  events.on(EVENTS.AUCTION_INIT, resetMultibidUnits);
+  events.on(EVENTS.AUCTION_INIT, initMultibidUnitsForAuction);
+  events.on(EVENTS.AUCTION_END, clearMultibidUnitsForAuction);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
   getHook('addBidResponse').before(addBidResponseHook, 3);
   setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, targetBidPoolHook);
