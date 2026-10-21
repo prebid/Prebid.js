@@ -14,14 +14,6 @@ export type SortByHighestDesirabilityDeps = {
 };
 
 /**
- * Whether the publisher trusts this bid's deal metadata. This is decided when the bidder request is made
- * (from `s2sConfig.allowPriorityBids` or `bidderSettings`); bids without a matching bidder request are never trusted.
- */
-export function isPriorityBidAllowed(bidderRequest: BidderRequest<any> | undefined | null): boolean {
-  return bidderRequest?.allowPriorityBids === true;
-}
-
-/**
  * The CPM that desirability starts from: `meta.deal.pacingAdjustedCpm` for bids from adapters the publisher
  * allows priority bids from, otherwise `cpm`. The pacing-adjusted value goes through `bidCpmAdjustment`
  * like the bid's own `cpm` (which has already been adjusted by the time this runs).
@@ -33,8 +25,7 @@ function getRankingCpm(
   bs: typeof bidderSettings,
 ): number {
   const pacingAdjustedCpm = bid.meta?.deal?.pacingAdjustedCpm;
-  if (typeof pacingAdjustedCpm === 'number' && Number.isFinite(pacingAdjustedCpm) && pacingAdjustedCpm >= 0 &&
-    isPriorityBidAllowed(bidderRequest)) {
+  if (bidderRequest?.allowPriorityBids && Number.isFinite(pacingAdjustedCpm) && pacingAdjustedCpm >= 0) {
     const adjusted = adjustCpm(pacingAdjustedCpm, bid, bidRequest, { bs });
     // like adjustBids, ignore adjustments that would make the value negative
     return adjusted >= 0 ? adjusted : pacingAdjustedCpm;

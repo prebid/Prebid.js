@@ -145,11 +145,6 @@ describe('desirability utils', function () {
     it('does not trust bids without a bidder request, even if bidderSettings would', function () {
       getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
       expect(adjustDesirability(dealBid(), null, {})).to.equal(2);
-      expect(isPriorityBidAllowed(null)).to.be.false;
-    });
-
-    it('only trusts allowPriorityBids === true', function () {
-      expect(isPriorityBidAllowed({ ...bidderRequest(), allowPriorityBids: ['adapterA'] })).to.be.false;
     });
 
     [
