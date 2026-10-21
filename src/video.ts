@@ -107,7 +107,7 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
       });
     }
     if (conflict) {
-      logWarn(`Ad unit "${adUnit.code} has conflicting playerSize and w/h`, adUnit);
+      logWarn(`Ad unit "${adUnit.code}" has conflicting playerSize and w/h`, adUnit);
     }
   }
 }
