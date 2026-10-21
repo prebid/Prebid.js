@@ -77,7 +77,8 @@ const PBS_CONVERTER = ortbConverter({
 
       const priorityBidders = getPriorityBidders(s2sBidRequest.s2sConfig.allowPriorityBids, context.requestedBidders);
       if (priorityBidders.length > 0) {
-        deepSetValue(request, 'ext.prebid.allowprioritybids', priorityBidders);
+        // ext.prebid.as: ad server signals. ap: priority bids are allowed; apb: the bidders allowed to send them
+        deepSetValue(request, 'ext.prebid.as', { ap: true, apb: priorityBidders });
       }
 
       return request;

@@ -24,7 +24,7 @@ export function isPriorityBidAllowed(
   bs: typeof bidderSettings = bidderSettings,
 ): boolean {
   if (bid.source === S2S.SRC || bidderRequest?.src === S2S.SRC) {
-    // Prebid Server may not act on ext.prebid.allowprioritybids yet, so trust only bids whose seat is the bidder
+    // Prebid Server may not act on ext.prebid.as.apb yet, so trust only bids whose seat is the bidder
     // they were requested for, and only if that bidder is listed in s2sConfig.allowPriorityBids (the list sent to Prebid Server). Bids under
     // alternate or unknown seats, or without a matching request, are never trusted.
     if (bidderRequest?.src !== S2S.SRC || bid.bidderCode == null || bid.bidderCode !== bidderRequest.bidderCode) {

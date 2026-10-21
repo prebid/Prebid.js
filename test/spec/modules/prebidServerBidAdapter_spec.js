@@ -790,8 +790,8 @@ describe('S2S Adapter', function () {
         return JSON.parse(server.requests[0].requestBody);
       }
 
-      it('sends the listed bidders that are in the request as ext.prebid.allowprioritybids', () => {
-        expect(makeRequest(['appnexus', 'other']).ext.prebid.allowprioritybids).to.eql(['appnexus']);
+      it('sends ext.prebid.as with ap: true and the listed bidders that are in the request as apb', () => {
+        expect(makeRequest(['appnexus', 'other']).ext.prebid.as).to.eql({ ap: true, apb: ['appnexus'] });
       });
 
       Object.entries({
@@ -800,8 +800,8 @@ describe('S2S Adapter', function () {
         'true (trusted bidders must be listed)': true,
         'a list without any requested bidder': ['other'],
       }).forEach(([desc, allowPriorityBids]) => {
-        it(`does not send ext.prebid.allowprioritybids when ${desc}`, () => {
-          expect(makeRequest(allowPriorityBids).ext.prebid.allowprioritybids).to.not.exist;
+        it(`does not send ext.prebid.as when ${desc}`, () => {
+          expect(makeRequest(allowPriorityBids).ext.prebid.as).to.not.exist;
         });
       });
 
