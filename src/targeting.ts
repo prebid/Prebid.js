@@ -419,6 +419,7 @@ export function newTargeting(auctionManager) {
               return TIMEOUT - elapsed;
             }
           }
+          return null;
         })
         .filter((delta) => delta != null)
         .reduce(minimum(), Number.POSITIVE_INFINITY);
