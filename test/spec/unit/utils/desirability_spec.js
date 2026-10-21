@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
-import { adjustDesirability } from '../../../../src/utils/desirability.js';
+import { adjustDesirability, DEFAULT_PRIORITY, getPriority } from '../../../../src/utils/desirability.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { highestDesirabilityFirst } from '../../../../src/utils/reducers.js';
 
@@ -191,6 +191,33 @@ describe('desirability utils', function () {
       const bid = dealBid();
       expect(adjustDesirability(bid, null, { bidderRequest: bidderRequest() })).to.equal(6);
       expect(bid.cpm).to.equal(2);
+    });
+  });
+
+  describe('getPriority', () => {
+    Object.entries({
+      'no priority': {},
+      'meta.deal.priority': { meta: { deal: { priority: 0 } } },
+      'meta.deal.priority conflicting with bid.priority': { priority: 1, meta: { deal: { priority: 0 } } }
+    }).forEach(([desc, bid]) => {
+      describe(`when bid has ${desc}`, () => {
+        Object.entries({
+          'missing bidderRequest': undefined,
+          'missing allowPriorityBids': {},
+          'allowPriorityBids = false': { allowPriorityBids: false },
+        }).forEach(([desc, bidderRequest]) => {
+          it(`returns default priority when ${desc}`, () => {
+            expect(getPriority(bid, bidderRequest)).to.equal(DEFAULT_PRIORITY);
+          });
+        });
+        describe(`when allowPrioritybids = true`, () => {
+          const bidderRequest = { allowPriorityBids: true };
+
+          it(`returns meta.deal.priority, falling back to default priority`, () => {
+            expect(getPriority(bid, bidderRequest)).to.equal(bid.meta?.deal?.priority ?? DEFAULT_PRIORITY);
+          });
+        });
+      });
     });
   });
 
