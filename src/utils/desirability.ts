@@ -6,7 +6,7 @@ import { logError } from '../utils.js';
 import { adjustCpm, getBidAdjustmentFn } from './cpm.js';
 
 export const DEFAULT_PRIORITY = 12;
-export const PRIORITY_INCREMENT = -1;
+export const PRIORITY_INCREMENT = -1; // lower number is higher priority
 
 export type SortByHighestDesirabilityDeps = {
   bs?: typeof bidderSettings;
