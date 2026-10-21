@@ -18,6 +18,7 @@ import {
   logMessage,
   logWarn,
   sortByHighestCpm,
+  timestamp,
   uniques,
 } from './utils.js';
 import {
@@ -28,7 +29,8 @@ import {
   highestDesirabilityFirst,
   priorityCompare,
   reverseCompare,
-  tiebreakCompare
+  tiebreakCompare,
+  minimum
 } from './utils/reducers.js';
 import type { Bid } from './bidfactory.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
@@ -36,6 +38,7 @@ import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
 import { isBidUsable } from './targeting/filters.ts';
 import { recordSlotTargeting, slotHasTargetedAdId, updateSlotTargetingFromMap } from "./utils/gptTargeting.ts";
+import { gptEventHandler } from "./utils/gptEvents.ts";
 
 var pbTargetingKeys = [];
 
@@ -257,8 +260,9 @@ export function newTargeting(auctionManager) {
 
     updateGPTTargeting(targeting: ByAdUnit<GPTTargetingValues>, operation: string, postUpdate?: (targeting: GPTTargetingValues) => void, targetedAdIdsByAdUnit: ByAdUnit<Set<string>> = {}) {
       const resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
+      const adUnits = Object.keys(targeting);
 
-      Object.entries(getGPTSlotsForAdUnits(Object.keys(targeting))).forEach(([targetId, slots]) => {
+      Object.entries(getGPTSlotsForAdUnits(adUnits)).forEach(([targetId, slots]) => {
         slots.forEach(slot => {
           // now set new targeting keys
           Object.keys(targeting[targetId]).forEach(key => {
@@ -272,6 +276,8 @@ export function newTargeting(auctionManager) {
           logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
           updateSlotTargetingFromMap(slot, Object.assign({}, resetMap, targeting[targetId]));
           if (operation === 'set') {
+            adUnits.forEach((au) => pendingReset.delete(au));
+            gptRendered.enable();
             recordSlotTargeting(slot, targetedAdIdsByAdUnit[targetId] ?? []);
           }
           if (postUpdate != null) postUpdate(targeting[targetId]);
@@ -370,6 +376,59 @@ export function newTargeting(auctionManager) {
     },
   };
 
+  const slotRenderedAt = new WeakMap();
+  const pendingReset = new Map();
+
+  const scheduleReset = (() => {
+    // reset GPT targeting after bidWon and:
+    // - slotRenderEnded fired within 100ms in either direction, or
+    // - 100ms have passed.
+
+    const TIMEOUT = 100;
+    let next;
+
+    function reset(adUnitCode) {
+      pendingReset.delete(adUnitCode);
+      targeting.presetGPTTargeting([adUnitCode]);
+    }
+
+    function reschedule() {
+      const delay = Array.from(pendingReset.entries())
+        .map(([adUnitCode, [wonAt, slots]]) => {
+          const elapsed = timestamp() - wonAt;
+          if (elapsed > TIMEOUT) {
+            reset(adUnitCode);
+          } else {
+            const delta = slots.map((slot) => slotRenderedAt.get(slot))
+              .filter((renderedAt) => renderedAt != null)
+              .map((renderedAt) => renderedAt > wonAt ? renderedAt - wonAt : wonAt - renderedAt)
+              .reduce(minimum(), Number.POSITIVE_INFINITY);
+            if (delta < TIMEOUT) {
+              reset(adUnitCode);
+            } else {
+              return TIMEOUT - elapsed;
+            }
+          }
+          return null;
+        })
+        .filter((delta) => delta != null)
+        .reduce(minimum(), Number.POSITIVE_INFINITY);
+      if (Number.isFinite(delay)) {
+        next = setTimeout(reschedule, delay);
+      }
+    }
+
+    return () => {
+      if (next != null) clearTimeout(next);
+      next = setTimeout(reschedule, 0);
+    };
+  })();
+
+  const gptRendered = gptEventHandler('slotRenderEnded', ({ slot }) => {
+    slotRenderedAt.set(slot, timestamp());
+    scheduleReset();
+  });
+
   events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
     targeting.presetGPTTargeting(adUnitCodes);
   });
@@ -377,8 +436,9 @@ export function newTargeting(auctionManager) {
   events.on(EVENTS.BID_WON, (bid) => {
     const slots = getBidSlots(bid);
     if (slots.length > 0) {
+      pendingReset.set(bid.adUnitCode, [timestamp(), slots]);
+      scheduleReset();
       slots.forEach(slot => lock.unlock(slot));
-      targeting.presetGPTTargeting([bid.adUnitCode]);
     }
   });
 
