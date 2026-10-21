@@ -174,6 +174,10 @@ function loadRates() {
             delayedAuctions.resume();
           } catch (e) {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
+            currencyRatesLoaded = true;
+            processBidResponseQueue();
+            delayedAuctions.resume();
+            needToCallForCurrencyFile = true;
           }
         },
         error: function (err) {
