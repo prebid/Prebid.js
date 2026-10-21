@@ -892,6 +892,12 @@ describe('sevioBidAdapter', function () {
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
+      // buildRequests also reads the viewport through this accessor, which calls
+      // canAccessWindowTop whenever its 20ms cache has expired
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        screen: { width: 1024, height: 768 },
+        visualViewport: { width: 800, height: 600 }
+      });
     });
 
     afterEach(function () {
