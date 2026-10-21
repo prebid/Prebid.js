@@ -248,7 +248,7 @@ export function targetBidPoolHook(fn, bidsReceived, winReducer, adUnitBidLimit =
       const slotBidLimit = Number(typeof adUnitBidLimit === 'number' ? adUnitBidLimit : adUnitBidLimit?.[slotId]) || 0;
       if (slotBidLimit > 0) {
         bucketBids.sort(sortByMultibid(winSorter));
-        modifiedBids.push(...bucketBids.slice(0, adUnitBidLimit));
+        modifiedBids.push(...bucketBids.slice(0, slotBidLimit));
       } else {
         modifiedBids.push(...bucketBids);
       }
