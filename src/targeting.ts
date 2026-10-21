@@ -416,7 +416,7 @@ export function newTargeting(auctionManager) {
             reset(adUnitCode);
           } else {
             const delta = slots.map((slot) => slotRenderedAt.get(slot))
-              .filter((renderedAt) => renderedAt)
+              .filter((renderedAt) => renderedAt != null)
               .map((renderedAt) => renderedAt > wonAt ? renderedAt - wonAt : wonAt - renderedAt)
               .reduce(minimum(), Number.POSITIVE_INFINITY);
             if (delta < TIMEOUT) {
@@ -426,7 +426,7 @@ export function newTargeting(auctionManager) {
             }
           }
         })
-        .filter((delta) => delta !== null)
+        .filter((delta) => delta != null)
         .reduce(minimum(), Number.POSITIVE_INFINITY);
       if (Number.isFinite(delay)) {
         next = setTimeout(reschedule, delay);
