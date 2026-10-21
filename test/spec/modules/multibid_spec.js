@@ -756,6 +756,17 @@ describe('multibid adapter', function () {
 
             expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi-1', 'a-hi-2']);
           });
+
+          it('keeps a higher priority bid over a lower priority deal bid', () => {
+            const pool = [
+              mkMultibid({ adId: 'a-hi', cpm: 1, desirability: 1, priority: HIGH }),
+              mkBid({ bidder: 'bidderB', bidderCode: 'bidderB', adId: 'b-lo', cpm: 50, desirability: 50, priority: LOW, adserverTargeting: { hb_deal: 'deal' } }),
+            ];
+
+            targetBidPoolHook(callbackFn, pool, getHighestDesirability, 1);
+
+            expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi']);
+          });
         });
       });
     });

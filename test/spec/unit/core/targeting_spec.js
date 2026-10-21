@@ -630,6 +630,14 @@ describe('targeting tests', function () {
           const bids = getHighestCpmBidsFromBidPool(pool, getHighestDesirability, 2);
           expect(bids.map(b => b.adId)).to.eql(['c-hi', 'a-hi']);
         });
+
+        it('keeps the higher priority bids over deal bids when a bid limit applies and dealPrioritization is on', () => {
+          config.setConfig({ sendBidsControl: { dealPrioritization: true } });
+          pool.forEach(bid => { bid.adserverTargeting = { hb_pb: bid.cpm.toFixed(2) }; });
+          pool.filter(bid => bid.priority === LOW).forEach(bid => { bid.adserverTargeting.hb_deal = `deal-${bid.adId}`; });
+          const bids = getHighestCpmBidsFromBidPool(pool, getHighestDesirability, 2);
+          expect(bids.map(b => b.adId)).to.eql(['c-hi', 'a-hi']);
+        });
       });
 
       it('getHighestCpmBidsFromBidPool calculates bids limit properly when bidLimit is a map', function () {
@@ -1584,12 +1592,23 @@ describe('targeting tests', function () {
       Object.entries({
         'both bids have a deal': ['1', '2'],
         'neither bid has a deal': [undefined, undefined],
+        'only the higher priority bid has a deal': ['1', undefined],
+        'only the lower priority bid has a deal': [undefined, '2'],
       }).forEach(([t, [hiDeal, loDeal]]) => {
         it(`sorts the higher priority bid first regardless of cpm when ${t}`, () => {
           const hi = { cpm: 1, desirability: 1, priority: HIGH, adserverTargeting: { hb_adid: 'hi', hb_pb: '1.00', hb_deal: hiDeal } };
           const lo = { cpm: 100, desirability: 100, priority: LOW, adserverTargeting: { hb_adid: 'lo', hb_pb: '100.00', hb_deal: loDeal } };
           expect([lo, hi].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([hi, lo]);
           expect([hi, lo].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([hi, lo]);
+        });
+      });
+
+      [HIGH, LOW].forEach(priority => {
+        it(`sorts the deal bid first regardless of cpm when both bids have priority ${priority}`, () => {
+          const deal = { cpm: 1, desirability: 1, priority, adserverTargeting: { hb_adid: 'deal', hb_pb: '1.00', hb_deal: '1' } };
+          const noDeal = { cpm: 100, desirability: 100, priority, adserverTargeting: { hb_adid: 'noDeal', hb_pb: '100.00' } };
+          expect([noDeal, deal].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([deal, noDeal]);
+          expect([deal, noDeal].sort(sortByDealAndPriceBucketOrDesirability(true))).to.eql([deal, noDeal]);
         });
       });
     });
