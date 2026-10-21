@@ -1818,7 +1818,7 @@ describe('targeting tests', function () {
       // A separate instance per test, so that its slotRenderEnded listener is
       // registered on this test's pubads mock rather than on whichever GPT mock
       // first received targeting in the run.
-      let instance, presetStub, bidsByAdId, listeners, clock, slot;
+      let instance, presetStub, listeners, clock, slot;
       const adUnitCode = 'div-1';
       const targetedAdId = 'ad-b';
       const olderAdId = 'ad-a';
@@ -1838,20 +1838,12 @@ describe('targeting tests', function () {
           removeEventListener: sinon.stub()
         };
         window.googletag = { pubads: () => pubads };
-        const bids = bidsByAdId = {};
-        const am = Object.create(auctionManager);
-        am.findBidByAdId = (adId) => bids[adId];
-        instance = newTargeting(am);
+        instance = newTargeting(auctionManager);
         // not a sandbox stub: the instance's event listeners outlive the test and must stay inert
         presetStub = instance.presetGPTTargeting = sinon.stub();
       });
 
-      afterEach(() => {
-        Object.keys(bidsByAdId).forEach(adId => delete bidsByAdId[adId]);
-      });
-
       function setTargeting(...adIds) {
-        adIds.forEach(adId => { bidsByAdId[adId] = { adId, adUnitCode }; });
         instance.updateGPTTargeting(
           { [adUnitCode]: { hb_adid: adIds[0] } },
           'set',
@@ -1865,7 +1857,6 @@ describe('targeting tests', function () {
       }
 
       function bidWon(adId) {
-        bidsByAdId[adId] = bidsByAdId[adId] ?? { adId, adUnitCode };
         events.emit(EVENTS.BID_WON, { adUnitCode, adId });
       }
 
@@ -1875,13 +1866,24 @@ describe('targeting tests', function () {
         expect(listeners.slotRenderEnded).to.be.a('function');
       });
 
-      it('resets when slotRenderEnded fires before BID_WON', () => {
+      it('resets when slotRenderEnded fires within 100ms before BID_WON', () => {
         setTargeting(targetedAdId);
         renderEnded();
-        clock.tick(1000);
+        clock.tick(99);
         sinon.assert.notCalled(presetStub);
         bidWon(targetedAdId);
         clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('falls back to the timeout when slotRenderEnded fired more than 100ms before BID_WON', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        clock.tick(100);
+        bidWon(targetedAdId);
+        clock.tick(99);
+        sinon.assert.notCalled(presetStub);
+        clock.tick(2);
         sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
       });
 
@@ -1942,24 +1944,21 @@ describe('targeting tests', function () {
         sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
       });
 
-      it('does not join a render with a win for a different ad unit', () => {
+      it('does not count a render of a slot that was not targeted with the winning bid', () => {
         setTargeting(targetedAdId);
-        bidsByAdId[targetedAdId].adUnitCode = 'other-unit';
-        renderEnded();
-        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId });
+        const otherSlot = {
+          getAdUnitPath: sinon.stub().returns('/slot/path2'),
+          getSlotElementId: sinon.stub().returns('div-2'),
+          updateTargetingFromMap: sinon.stub()
+        };
+        slots.push(otherSlot);
+        instance.updateGPTTargeting({ 'div-2': { hb_adid: 'other-ad' } }, 'set', null, { 'div-2': new Set(['other-ad']) });
+        listeners.slotRenderEnded({ slot: otherSlot });
+        bidWon(targetedAdId);
         clock.tick(50);
         sinon.assert.notCalled(presetStub);
         clock.tick(52);
         sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
-      });
-
-      it('does not count a render of ad ids that have no known bid', () => {
-        setTargeting(targetedAdId);
-        delete bidsByAdId[targetedAdId];
-        renderEnded();
-        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId });
-        clock.tick(50);
-        sinon.assert.notCalled(presetStub);
       });
 
       it('does not reset for BID_WON from an older bid after newer targeting is installed', () => {
@@ -1977,12 +1976,13 @@ describe('targeting tests', function () {
         sinon.assert.notCalled(presetStub);
       });
 
-      it('does not let a render that was already joined complete a later win', () => {
+      it('does not let a render that completed an earlier reset complete a win more than 100ms later', () => {
         setTargeting(targetedAdId, olderAdId);
         renderEnded();
         bidWon(targetedAdId);
         clock.tick(0);
         presetStub.resetHistory();
+        clock.tick(100);
         setTargeting(olderAdId);
         bidWon(olderAdId);
         clock.tick(50);
@@ -2028,27 +2028,28 @@ describe('targeting tests', function () {
         sinon.assert.notCalled(presetStub);
       });
 
-      it('does not let a render from the same tick as a retarget complete the next win', () => {
+      it('does not let a render from before a retarget complete a win more than 100ms later', () => {
         setTargeting(targetedAdId);
         renderEnded();
+        clock.tick(100);
         setTargeting(olderAdId);
         bidWon(olderAdId);
         clock.tick(50);
         sinon.assert.notCalled(presetStub);
       });
 
-      it('does not let a render from a refresh before a retarget complete the next win', () => {
-        // a refresh issued for older targeting renders after the slot was retargeted
+      it('counts any render of the slot within 100ms of BID_WON, including one from before a retarget', () => {
+        // renders are not matched to the targeting they were requested with
         setTargeting(olderAdId);
-        setTargeting(targetedAdId);
         renderEnded();
+        setTargeting(targetedAdId);
         clock.tick(1);
         bidWon(targetedAdId);
-        clock.tick(1);
-        sinon.assert.notCalled(presetStub);
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
       });
 
-      it('does not let deferred collects from before a retarget complete the next join synchronously', () => {
+      it('does not reset synchronously for a win after a retarget', () => {
         setTargeting(olderAdId);
         renderEnded();
         bidWon(olderAdId);
@@ -2225,10 +2226,7 @@ describe('targeting tests', function () {
         };
         window.googletag = { pubads: () => pubads };
         const bid = winningBid();
-        const am = Object.create(auctionManager);
-        let bidsByAdId = { 'win-ad': bid, 'not-an-ad-id': bid };
-        am.findBidByAdId = (adId) => bidsByAdId[adId];
-        const instance = newTargeting(am);
+        const instance = newTargeting(auctionManager);
         sandbox.stub(auctionManager, 'getBidsReceived').returns([bid]);
         instance.setTargetingForGPT(adUnitCode);
         // not a sandbox stub: the instance's event listeners outlive the test and must stay inert
@@ -2240,7 +2238,6 @@ describe('targeting tests', function () {
         events.emit(EVENTS.BID_WON, { adUnitCode, adId: 'win-ad' });
         clock.tick(0);
         sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
-        bidsByAdId = {};
       });
 
       it('excludes bids with a missing or empty adId from the recorded ad ids', () => {
