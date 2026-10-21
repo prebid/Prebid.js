@@ -186,36 +186,6 @@ describe('adhouseBidAdapter', function () {
       expect(bids[0].ad).to.equal('<div>ad</div>');
       expect(bids[0].mediaType).to.equal(BANNER);
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['brand.com']);
-      expect(bids[0].meta.adhouseBillable).to.equal(true);
-    });
-
-    it('flags a non-billable (house) bid in meta', function () {
-      const request = buildRequestData(bannerBid);
-      const response = {
-        body: {
-          id: 'auc-1',
-          cur: 'USD',
-          seatbid: [{
-            seat: 'adhouse',
-            bid: [{
-              id: 'b3',
-              impid: request.data.imp[0].id,
-              price: 0.5,
-              adm: '<div>house</div>',
-              crid: '100',
-              w: 300,
-              h: 250,
-              mtype: 1,
-              adomain: ['brand.com'],
-              ext: { adhouse: { billable: false } }
-            }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(response, request);
-      expect(bids).to.have.lengthOf(1);
-      expect(bids[0].meta.adhouseBillable).to.equal(false);
-      expect(bids[0].meta.advertiserDomains).to.deep.equal(['brand.com']);
     });
 
     if (FEATURES.VIDEO) {

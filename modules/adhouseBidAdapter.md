@@ -30,10 +30,6 @@ receives banner bids; its video part is not sent.
 A hosted MP4 is returned as an InLine VAST document. A third-party VAST tag is
 returned as a VAST Wrapper. Native is not offered by this adapter.
 
-Each bid carries `meta.adhouseBillable`. It is `false` for house campaigns that
-the server marks with `ext.adhouse.billable: false`, so a publisher's analytics
-can keep them out of revenue; it is `true` otherwise.
-
 # Bid Params
 
 | Name          | Scope    | Description                                                      | Example            | Type             |
