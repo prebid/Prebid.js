@@ -1615,37 +1615,37 @@ describe('targeting tests', function () {
 
     it('will properly sort bids when some bids have deals and some do not', function () {
       const bids = [{
+        cpm: 1.00,
         adserverTargeting: {
           hb_adid: 'abc',
-          hb_pb: '1.00',
           hb_deal: '1234'
         }
       }, {
+        cpm: 0.50,
         adserverTargeting: {
-          hb_adid: 'def',
-          hb_pb: '0.50',
+          hb_adid: 'def'
         }
       }, {
+        cpm: 20.00,
         adserverTargeting: {
           hb_adid: 'ghi',
-          hb_pb: '20.00',
           hb_deal: '4532'
         }
       }, {
+        cpm: 9.00,
         adserverTargeting: {
           hb_adid: 'jkl',
-          hb_pb: '9.00',
           hb_deal: '9864'
         }
       }, {
+        cpm: 50.00,
         adserverTargeting: {
-          hb_adid: 'mno',
-          hb_pb: '50.00',
+          hb_adid: 'mno'
         }
       }, {
+        cpm: 100.00,
         adserverTargeting: {
-          hb_adid: 'pqr',
-          hb_pb: '100.00',
+          hb_adid: 'pqr'
         }
       }];
       bids.sort(sortByDealAndPriceBucketOrDesirability());
@@ -1659,27 +1659,27 @@ describe('targeting tests', function () {
 
     it('will properly sort bids when all bids have deals', function () {
       const bids = [{
+        cpm: 1.00,
         adserverTargeting: {
           hb_adid: 'abc',
-          hb_pb: '1.00',
           hb_deal: '1234'
         }
       }, {
+        cpm: 0.50,
         adserverTargeting: {
           hb_adid: 'def',
-          hb_pb: '0.50',
           hb_deal: '4321'
         }
       }, {
+        cpm: 2.50,
         adserverTargeting: {
           hb_adid: 'ghi',
-          hb_pb: '2.50',
           hb_deal: '4532'
         }
       }, {
+        cpm: 2.00,
         adserverTargeting: {
           hb_adid: 'jkl',
-          hb_pb: '2.00',
           hb_deal: '9864'
         }
       }];
@@ -1692,34 +1692,34 @@ describe('targeting tests', function () {
 
     it('will properly sort bids when no bids have deals', function () {
       const bids = [{
+        cpm: 1.00,
         adserverTargeting: {
-          hb_adid: 'abc',
-          hb_pb: '1.00'
+          hb_adid: 'abc'
         }
       }, {
+        cpm: 0.10,
         adserverTargeting: {
-          hb_adid: 'def',
-          hb_pb: '0.10'
+          hb_adid: 'def'
         }
       }, {
+        cpm: 10.00,
         adserverTargeting: {
-          hb_adid: 'ghi',
-          hb_pb: '10.00'
+          hb_adid: 'ghi'
         }
       }, {
+        cpm: 10.01,
         adserverTargeting: {
-          hb_adid: 'jkl',
-          hb_pb: '10.01'
+          hb_adid: 'jkl'
         }
       }, {
+        cpm: 1.00,
         adserverTargeting: {
-          hb_adid: 'mno',
-          hb_pb: '1.00'
+          hb_adid: 'mno'
         }
       }, {
+        cpm: 100.00,
         adserverTargeting: {
-          hb_adid: 'pqr',
-          hb_pb: '100.00'
+          hb_adid: 'pqr'
         }
       }];
       bids.sort(sortByDealAndPriceBucketOrDesirability());
