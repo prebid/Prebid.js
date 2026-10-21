@@ -10,6 +10,9 @@ import {
 } from 'modules/multibid/index.js';
 import { config } from 'src/config.js';
 import { getHighestCpm, getHighestDesirability } from '../../../src/utils/reducers.js';
+import { adjustBids } from '../../../src/auction.js';
+import { AuctionIndex } from '../../../src/auctionIndex.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../../src/utils/desirability.js';
 
 describe('multibid adapter', function () {
   const bidArray = [{
@@ -696,6 +699,120 @@ describe('multibid adapter', function () {
       targetBidPoolHook(callbackFn, [zero, positive], getHighestDesirability, 1);
 
       expect(result.bidsReceived).to.deep.equal([positive]);
+    });
+
+    describe('with priority bids', () => {
+      const HIGH = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+      const LOW = DEFAULT_PRIORITY;
+
+      function mkBid(bid) {
+        return Object.assign({ adUnitCode: 'test.div', adserverTargeting: {} }, bid);
+      }
+
+      function mkMultibid(bid) {
+        return mkBid(Object.assign({ bidder: 'bidderA', bidderCode: 'bidderA', originalBidder: 'bidderA', multibidPrefix: 'bidA' }, bid));
+      }
+
+      beforeEach(() => {
+        config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
+      });
+
+      it('gives the unaliased bidder code to the highest priority bid, regardless of cpm', () => {
+        const hi = mkMultibid({ adId: 'a-hi', cpm: 1, desirability: 1, priority: HIGH });
+        const lo = mkMultibid({ adId: 'a-lo', cpm: 100, desirability: 100, priority: LOW });
+
+        targetBidPoolHook(callbackFn, [lo, hi], getHighestDesirability);
+
+        expect(hi.bidderCode).to.equal('bidderA');
+        expect(lo.bidderCode).to.equal('bidA2');
+      });
+
+      [false, true].forEach(dealPrioritization => {
+        describe(`when a bid limit applies, and dealPrioritization = ${dealPrioritization}`, () => {
+          beforeEach(() => {
+            config.setConfig({ sendBidsControl: { dealPrioritization } });
+          });
+
+          it('keeps the highest priority bid from a bidder, regardless of cpm', () => {
+            const pool = [
+              mkMultibid({ adId: 'a-lo', cpm: 100, desirability: 100, priority: LOW }),
+              mkMultibid({ adId: 'a-hi', cpm: 1, desirability: 1, priority: HIGH }),
+              mkBid({ bidder: 'bidderB', bidderCode: 'bidderB', adId: 'b-lo', cpm: 50, desirability: 50, priority: LOW }),
+            ];
+
+            targetBidPoolHook(callbackFn, pool, getHighestDesirability, 2);
+
+            expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi', 'b-lo']);
+          });
+
+          it('keeps a dynamic alias bid over a lower priority bid from another bidder', () => {
+            const pool = [
+              mkMultibid({ adId: 'a-hi-1', cpm: 2, desirability: 2, priority: HIGH }),
+              mkMultibid({ adId: 'a-hi-2', cpm: 1, desirability: 1, priority: HIGH }),
+              mkBid({ bidder: 'bidderB', bidderCode: 'bidderB', adId: 'b-lo', cpm: 50, desirability: 50, priority: LOW }),
+            ];
+
+            targetBidPoolHook(callbackFn, pool, getHighestDesirability, 2);
+
+            expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi-1', 'a-hi-2']);
+          });
+        });
+      });
+    });
+  });
+
+  describe('adjustBids on multibid bids', () => {
+    const HIGH = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+    let bids, index;
+
+    beforeEach(() => {
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
+      const bidderRequest = {
+        bidderCode: 'bidderA',
+        bidderRequestId: 'bidder-request',
+        allowPriorityBids: true,
+        bids: [{ bidder: 'bidderA', bidId: 'request', adUnitCode: 'test.div' }],
+      };
+      index = new AuctionIndex(() => [{
+        getAuctionId: () => 'auction',
+        getBidRequests: () => [bidderRequest],
+        getAdUnits: () => [],
+      }]);
+      bids = [];
+      [{ cpm: 10, pacingAdjustedCpm: 20 }, { cpm: 5, pacingAdjustedCpm: 30 }].forEach(({ cpm, pacingAdjustedCpm }) => {
+        addBidResponseHook((adUnitCode, bid) => bids.push(bid), 'test.div', {
+          bidder: 'bidderA',
+          bidderCode: 'bidderA',
+          adapterCode: 'bidderA',
+          requestId: 'request',
+          bidderRequestId: 'bidder-request',
+          auctionId: 'auction',
+          cpm,
+          meta: { deal: { priority: HIGH, pacingAdjustedCpm } },
+        });
+      });
+    });
+
+    it('accepts both bids, with a new requestId on the second', () => {
+      expect(bids.length).to.equal(2);
+      expect(bids[1].originalRequestId).to.equal('request');
+      expect(bids[1].requestId).to.not.equal('request');
+    });
+
+    [0, 1].forEach(i => {
+      describe(`on bid #${i + 1}`, () => {
+        beforeEach(() => {
+          adjustBids(bids[i], { index });
+        });
+
+        it('sets priority from meta.deal.priority', () => {
+          expect(bids[i].priority).to.equal(HIGH);
+        });
+
+        it('ranks on meta.deal.pacingAdjustedCpm', () => {
+          expect(bids[i].desirability).to.equal(bids[i].meta.deal.pacingAdjustedCpm);
+        });
+      });
     });
   });
 
