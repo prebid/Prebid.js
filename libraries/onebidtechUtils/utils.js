@@ -1,6 +1,7 @@
 import { deepAccess, isNumber, isArray, isFn, generateUUID } from '../../src/utils.js';
 import { config } from '../../src/config.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import { ORTB_VIDEO_PARAMS } from '../../src/video.js';
 
 // Shared OneBid Tech backend config. All partner-branded adapters that hit
 // this backend use the same currency default, TTL, and revenue model --
@@ -60,6 +61,23 @@ function getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSiz
   return (info && isNumber(info.floor)) ? info.floor : staticFloor;
 }
 
+function buildVideoObject(bidRequest, videoSizes) {
+  const declared = deepAccess(bidRequest, 'mediaTypes.video') || {};
+  const video = {};
+
+  ORTB_VIDEO_PARAMS.forEach((isValid, name) => {
+    if (declared[name] != null && isValid(declared[name])) {
+      video[name] = declared[name];
+    }
+  });
+
+  video.w = videoSizes[0][0];
+  video.h = videoSizes[0][1];
+  video.mimes = video.mimes || ['video/mp4'];
+
+  return video;
+}
+
 function buildImpression(bidRequest) {
   const params = bidRequest.params || {};
   const cur = params.currency || DEFAULT_CUR;
@@ -83,13 +101,7 @@ function buildImpression(bidRequest) {
   }
 
   if (hasVideo) {
-    imp.video = {
-      w: videoSizes[0][0],
-      h: videoSizes[0][1],
-      mimes: deepAccess(bidRequest, 'mediaTypes.video.mimes') || ['video/mp4'],
-      protocols: deepAccess(bidRequest, 'mediaTypes.video.protocols'),
-      placement: deepAccess(bidRequest, 'mediaTypes.video.placement')
-    };
+    imp.video = buildVideoObject(bidRequest, videoSizes);
   }
 
   return imp;
@@ -128,6 +140,24 @@ function resolveSchain(validBidRequests, bidderRequest) {
   return deepAccess(validBidRequests[0], 'schain');
 }
 
+function buildSiteOrApp(bidderRequest) {
+  const ortb2 = bidderRequest.ortb2 || {};
+
+  if (ortb2.app) {
+    return { app: { ...ortb2.app } };
+  }
+
+  const site = { ...ortb2.site };
+  const refererInfo = bidderRequest.refererInfo || {};
+  if (!site.page && refererInfo.page) {
+    site.page = refererInfo.page;
+  }
+  if (!site.domain && refererInfo.domain) {
+    site.domain = refererInfo.domain;
+  }
+  return { site };
+}
+
 export function buildRequests(validBidRequests, bidderRequest, endpointUrl) {
   const placementId = validBidRequests[0].params.placementId;
   const imps = validBidRequests.map(buildImpression);
@@ -137,10 +167,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpointUrl) {
     id: bidderRequest.bidderRequestId || generateUUID(),
     cur: [DEFAULT_CUR],
     imp: imps,
-    site: {
-      page: bidderRequest.refererInfo && bidderRequest.refererInfo.page,
-      domain: bidderRequest.refererInfo && bidderRequest.refererInfo.domain
-    },
+    ...buildSiteOrApp(bidderRequest),
     user: buildConsentBlock(bidderRequest)
   };
 

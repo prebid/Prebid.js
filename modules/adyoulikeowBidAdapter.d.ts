@@ -4,6 +4,6 @@ export type AdyoulikeOWBidRequestParams = OneBidTechBidderParams;
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    adyoulikeOW: AdyoulikeOWBidRequestParams;
+    adyoulikeow: AdyoulikeOWBidRequestParams;
   }
 }

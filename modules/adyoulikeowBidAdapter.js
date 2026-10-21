@@ -1,14 +1,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { isStr, logError, logWarn } from '../src/utils.js';
+import { isStr, logError, logWarn, replaceAuctionPrice } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { buildRequests, interpretResponse } from '../libraries/adyoulikeowUtils/buildAndInterpret.js';
+import { buildRequests, interpretResponse } from '../libraries/onebidtechUtils/utils.js';
 
 /**
  * @typedef {import('./adyoulikeowBidAdapter.d.ts').AdyoulikeOWBidRequestParams} AdyoulikeOWBidRequestParams
  */
 
-const BIDDER_CODE = 'adyoulikeOW';
+const BIDDER_CODE = 'adyoulikeow';
 const ENDPOINT_URL = `https://us-e.openweb-ayl.com/ssp/placement`;
 const GVLID = 259;
 
@@ -47,7 +47,8 @@ export const spec = {
 
   onBidWon: function (bid) {
     if (bid.nurl && isStr(bid.nurl)) {
-      ajax(bid.nurl, null, null, { method: 'GET', withCredentials: false, keepalive: true });
+      const winUrl = replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm);
+      ajax(winUrl, null, null, { method: 'GET', withCredentials: false, keepalive: true });
     }
   },
 

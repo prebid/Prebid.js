@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/adyoulikeowBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { server } from 'test/mocks/xhr.js';
+import { config } from 'src/config.js';
 
 const PLACEMENT_ID = '194f787b85c829fb8822cdaf1ae64435';
 
@@ -34,12 +35,22 @@ describe('AdyoulikeOW Bid Adapter', function () {
       const bid = { params: { placementId: '' } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('returns false when the bid itself is missing', function () {
+      expect(spec.isBidRequestValid(null)).to.equal(false);
+      expect(spec.isBidRequestValid(undefined)).to.equal(false);
+    });
+
+    it('returns false when placementId is not a string', function () {
+      const bid = { params: { placementId: 12345 } };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
     const bidRequests = [
       {
-        bidder: 'adyoulikeOW',
+        bidder: 'adyoulikeow',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -88,6 +99,46 @@ describe('AdyoulikeOW Bid Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.imp).to.have.lengthOf(1);
     });
+
+    it('forwards GPP consent', function () {
+      const gppRequest = {
+        ...bidderRequest,
+        gppConsent: { gppString: 'DBABMA~gpp', applicableSections: [7] }
+      };
+      const request = spec.buildRequests(bidRequests, gppRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.gpp).to.equal('DBABMA~gpp');
+      expect(payload.user.gppSid).to.deep.equal([7]);
+    });
+
+    describe('COPPA', function () {
+      afterEach(function () {
+        config.resetConfig();
+      });
+
+      it('sets user.coppa when the coppa config is enabled', function () {
+        config.setConfig({ coppa: true });
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(JSON.parse(request.data).user.coppa).to.equal(1);
+      });
+
+      it('does not set user.coppa by default', function () {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(JSON.parse(request.data).user).to.not.have.property('coppa');
+      });
+    });
+
+    it('falls back to the legacy bid.sizes when no mediaTypes sizes are declared', function () {
+      const legacyBids = [{
+        bidder: 'adyoulikeow',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        sizes: [[320, 50]]
+      }];
+      const request = spec.buildRequests(legacyBids, bidderRequest);
+      const imp = JSON.parse(request.data).imp[0];
+      expect(imp.banner).to.deep.include({ w: 320, h: 50 });
+    });
   });
 
   describe('buildRequests -- bid floor precedence', function () {
@@ -98,7 +149,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('uses the static params.bidFloor when getFloor is not a function', function () {
       const bidRequests = [{
-        bidder: 'adyoulikeOW',
+        bidder: 'adyoulikeow',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID, bidFloor: 1.5 },
         mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -111,7 +162,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('prefers the floors-module getFloor() result over the static param', function () {
       const bidRequests = [{
-        bidder: 'adyoulikeOW',
+        bidder: 'adyoulikeow',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID, bidFloor: 1.5 },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
@@ -126,7 +177,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
     it('calls getFloor with the impression\'s real mediaType and size, not placeholders', function () {
       let receivedArgs;
       const bidRequests = [{
-        bidder: 'adyoulikeOW',
+        bidder: 'adyoulikeow',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { video: { playerSize: [[640, 480]] } },
@@ -143,7 +194,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('falls back to the static param when getFloor returns no usable floor', function () {
       const bidRequests = [{
-        bidder: 'adyoulikeOW',
+        bidder: 'adyoulikeow',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID, bidFloor: 0.75 },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
@@ -250,6 +301,12 @@ describe('AdyoulikeOW Bid Adapter', function () {
   });
 
   describe('onBidWon', function () {
+    const request = {
+      bids: [
+        { bidId: 'bid1', mediaTypes: { banner: { sizes: [[300, 250]] } } }
+      ]
+    };
+
     it('does not throw when nurl is absent', function () {
       expect(() => spec.onBidWon({})).to.not.throw();
     });
@@ -288,9 +345,36 @@ describe('AdyoulikeOW Bid Adapter', function () {
       }
     });
 
+    it('replaces ${AUCTION_PRICE} in the nurl with originalCpm, not the adjusted cpm', function () {
+      spec.onBidWon({
+        nurl: 'https://win.example.com/notice?price=${AUCTION_PRICE}',
+        cpm: 1.1,
+        originalCpm: 1.5
+      });
+
+      expect(server.requests).to.have.lengthOf(1);
+      expect(server.requests[0].url).to.equal('https://win.example.com/notice?price=1.5');
+    });
+
+    it('falls back to cpm for ${AUCTION_PRICE} when originalCpm is absent', function () {
+      spec.onBidWon({
+        nurl: 'https://win.example.com/notice?price=${AUCTION_PRICE}',
+        cpm: 1.25
+      });
+
+      expect(server.requests).to.have.lengthOf(1);
+      expect(server.requests[0].url).to.equal('https://win.example.com/notice?price=1.25');
+    });
+
     it('does not send a win notice when nurl is missing', function () {
       spec.onBidWon({});
       expect(server.requests).to.have.lengthOf(0);
+    });
+  });
+
+  describe('onTimeout', function () {
+    it('does not throw', function () {
+      expect(() => spec.onTimeout({ bidder: 'adyoulikeow', bidId: 'bid1' })).to.not.throw();
     });
   });
 
@@ -301,7 +385,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
     };
 
     const multiformatBid = {
-      bidder: 'adyoulikeOW',
+      bidder: 'adyoulikeow',
       bidId: 'bid1',
       params: { placementId: PLACEMENT_ID },
       mediaTypes: {
@@ -343,7 +427,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('still asks per-format when only one media type is declared', function () {
       const bannerOnly = {
-        bidder: 'adyoulikeOW',
+        bidder: 'adyoulikeow',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
@@ -383,7 +467,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
   describe('supply chain (schain)', function () {
     const bidRequests = [{
-      bidder: 'adyoulikeOW',
+      bidder: 'adyoulikeow',
       bidId: 'bid1',
       params: { placementId: PLACEMENT_ID },
       mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -429,6 +513,169 @@ describe('AdyoulikeOW Bid Adapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload).to.not.have.property('source');
+    });
+  });
+
+  describe('site / app context from ORTB2', function () {
+    const bidRequests = [{
+      bidder: 'adyoulikeow',
+      bidId: 'bid1',
+      params: { placementId: PLACEMENT_ID },
+      mediaTypes: { banner: { sizes: [[300, 250]] } }
+    }];
+    const refererInfo = { page: 'https://referer.example.com/p', domain: 'referer.example.com' };
+
+    it('sends ortb2.app as app, with its identity, and no site', function () {
+      const ortb2 = { app: { bundle: 'com.example.app', name: 'Example', publisher: { id: 'pub1' } } };
+      const payload = JSON.parse(spec.buildRequests(bidRequests, { refererInfo, ortb2 }).data);
+
+      expect(payload.app).to.deep.equal(ortb2.app);
+      expect(payload).to.not.have.property('site');
+    });
+
+    it('keeps publisher and content from ortb2.site', function () {
+      const ortb2 = {
+        site: {
+          page: 'https://fpd.example.com/article',
+          domain: 'fpd.example.com',
+          publisher: { id: 'pub1', name: 'Pub' },
+          content: { title: 'An article' }
+        }
+      };
+      const payload = JSON.parse(spec.buildRequests(bidRequests, { refererInfo, ortb2 }).data);
+
+      expect(payload.site).to.deep.equal(ortb2.site);
+      expect(payload).to.not.have.property('app');
+    });
+
+    it('prefers ortb2.site page/domain over the referer', function () {
+      const ortb2 = { site: { page: 'https://fpd.example.com/a', domain: 'fpd.example.com' } };
+      const payload = JSON.parse(spec.buildRequests(bidRequests, { refererInfo, ortb2 }).data);
+
+      expect(payload.site.page).to.equal('https://fpd.example.com/a');
+      expect(payload.site.domain).to.equal('fpd.example.com');
+    });
+
+    it('falls back to the referer for page/domain when ortb2 has no site data', function () {
+      const payload = JSON.parse(spec.buildRequests(bidRequests, { refererInfo }).data);
+
+      expect(payload.site).to.deep.equal({ page: refererInfo.page, domain: refererInfo.domain });
+    });
+
+    it('fills only the missing field from the referer', function () {
+      const ortb2 = { site: { page: 'https://fpd.example.com/a', publisher: { id: 'pub1' } } };
+      const payload = JSON.parse(spec.buildRequests(bidRequests, { refererInfo, ortb2 }).data);
+
+      expect(payload.site.page).to.equal('https://fpd.example.com/a');
+      expect(payload.site.domain).to.equal('referer.example.com');
+      expect(payload.site.publisher).to.deep.equal({ id: 'pub1' });
+    });
+
+    it('does not mutate the ortb2 object it was given', function () {
+      const ortb2 = { site: { publisher: { id: 'pub1' } } };
+      spec.buildRequests(bidRequests, { refererInfo, ortb2 });
+
+      expect(ortb2.site).to.deep.equal({ publisher: { id: 'pub1' } });
+    });
+  });
+
+  describe('video constraints from mediaTypes.video', function () {
+    const bidderRequest = {
+      bidderRequestId: 'req1',
+      refererInfo: { page: 'https://example.com', domain: 'example.com' }
+    };
+
+    function videoImp(video) {
+      const bids = [{
+        bidder: 'adyoulikeow',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        mediaTypes: { video }
+      }];
+      return JSON.parse(spec.buildRequests(bids, bidderRequest).data).imp[0].video;
+    }
+
+    it('forwards the publisher\'s duration, api, playback, linearity, plcmt and pos constraints', function () {
+      const video = videoImp({
+        playerSize: [[640, 480]],
+        mimes: ['video/mp4', 'video/webm'],
+        protocols: [2, 3, 5, 6],
+        minduration: 5,
+        maxduration: 30,
+        api: [1, 2],
+        playbackmethod: [2],
+        linearity: 1,
+        plcmt: 1,
+        pos: 1,
+        startdelay: 0,
+        skip: 1,
+        skipafter: 5,
+        minbitrate: 300,
+        maxbitrate: 1500
+      });
+
+      expect(video).to.include({
+        minduration: 5,
+        maxduration: 30,
+        linearity: 1,
+        plcmt: 1,
+        pos: 1,
+        startdelay: 0,
+        skip: 1,
+        skipafter: 5,
+        minbitrate: 300,
+        maxbitrate: 1500
+      });
+      expect(video.api).to.deep.equal([1, 2]);
+      expect(video.playbackmethod).to.deep.equal([2]);
+      expect(video.protocols).to.deep.equal([2, 3, 5, 6]);
+      expect(video.mimes).to.deep.equal(['video/mp4', 'video/webm']);
+    });
+
+    it('still forwards the legacy placement field', function () {
+      expect(videoImp({ playerSize: [[640, 480]], placement: 3 }).placement).to.equal(3);
+    });
+
+    it('leaves out values that fail the OpenRTB type check', function () {
+      const video = videoImp({
+        playerSize: [[640, 480]],
+        maxduration: 'thirty',
+        api: 'vpaid',
+        pos: 1.5
+      });
+
+      expect(video).to.not.have.any.keys('maxduration', 'api', 'pos');
+    });
+
+    it('does not send fields the publisher did not declare', function () {
+      const video = videoImp({ playerSize: [[640, 480]] });
+
+      expect(video).to.not.have.any.keys('minduration', 'maxduration', 'api', 'playbackmethod', 'linearity', 'plcmt', 'pos');
+    });
+
+    it('takes width and height from the player size and defaults mimes to video/mp4', function () {
+      const video = videoImp({ playerSize: [[640, 480]], w: 1, h: 1 });
+
+      expect(video.w).to.equal(640);
+      expect(video.h).to.equal(480);
+      expect(video.mimes).to.deep.equal(['video/mp4']);
+    });
+
+    it('forwards video constraints on multiformat ad units too', function () {
+      const bids = [{
+        bidder: 'adyoulikeow',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { playerSize: [[640, 480]], maxduration: 15, api: [2] }
+        }
+      }];
+      const imp = JSON.parse(spec.buildRequests(bids, bidderRequest).data).imp[0];
+
+      expect(imp.video.maxduration).to.equal(15);
+      expect(imp.video.api).to.deep.equal([2]);
+      expect(imp.banner).to.deep.include({ w: 300, h: 250 });
     });
   });
 });
