@@ -78,7 +78,7 @@ config.getConfig(MODULE_NAME, conf => {
 
 /**
  * @summary validates multibid configuration entries
- * @param {Object[]} conf - example [{bidder: 'bidderA', maxbids: 2, prefix: 'bidA'}, {bidder: 'bidderB', maxbids: 2}]
+ * @param {Object[]} conf - example [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}, {bidder: 'bidderB', maxBids: 2}]
  * @return {Boolean}
  */
 export function validateMultibid(conf) {
