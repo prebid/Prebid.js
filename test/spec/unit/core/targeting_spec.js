@@ -2037,6 +2037,28 @@ describe('targeting tests', function () {
         sinon.assert.notCalled(presetStub);
       });
 
+      it('does not let a render from a refresh before a retarget complete the next win', () => {
+        // a refresh issued for older targeting renders after the slot was retargeted
+        setTargeting(olderAdId);
+        setTargeting(targetedAdId);
+        renderEnded();
+        clock.tick(1);
+        bidWon(targetedAdId);
+        clock.tick(1);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not let deferred collects from before a retarget complete the next join synchronously', () => {
+        setTargeting(olderAdId);
+        renderEnded();
+        bidWon(olderAdId);
+        setTargeting(targetedAdId);
+        clock.tick(1);
+        bidWon(targetedAdId);
+        renderEnded();
+        sinon.assert.notCalled(presetStub);
+      });
+
       it('does not let a render without a win complete the next win', () => {
         // e.g. a non-Prebid line item served on the first refresh
         setTargeting(olderAdId);
