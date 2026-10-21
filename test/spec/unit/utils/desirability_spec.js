@@ -130,67 +130,26 @@ describe('desirability utils', function () {
       };
     }
 
-    function clientRequest(bidderCode = 'adapterA') {
-      return { src: 'client', bidderCode };
+    function bidderRequest(allowPriorityBids = true) {
+      return { src: 'client', bidderCode: 'adapterA', allowPriorityBids };
     }
 
-    it('ranks on cpm when the adapter is not allowed', function () {
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(2);
+    it('ranks on cpm when the bidder request does not allow priority bids', function () {
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest(false) })).to.equal(2);
     });
 
-    it('ranks on meta.deal.pacingAdjustedCpm when the adapter is allowed', function () {
+    it('ranks on meta.deal.pacingAdjustedCpm when the bidder request allows priority bids', function () {
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(5);
+    });
+
+    it('does not trust bids without a bidder request, even if bidderSettings would', function () {
       getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(5);
+      expect(adjustDesirability(dealBid(), null, {})).to.equal(2);
+      expect(isPriorityBidAllowed(null)).to.be.false;
     });
 
-    it('does not take allowPriorityBids from the standard settings', function () {
-      getGlobal().bidderSettings = { standard: { allowPriorityBids: true } };
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(2);
-      expect(isPriorityBidAllowed({ cpm: 1 }, null)).to.be.false;
-    });
-
-    it('checks the adapter that made the request, not an alternate bidder code', function () {
-      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
-      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: clientRequest() })).to.equal(5);
-
-      getGlobal().bidderSettings = { bidderB: { allowPriorityBids: true } };
-      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: clientRequest() })).to.equal(2);
-    });
-
-    it('uses s2sConfig.allowPriorityBids, not bidderSettings, for Prebid Server bids', function () {
-      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA' } })).to.equal(2);
-
-      getGlobal().bidderSettings = {};
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: ['adapterA'] } })).to.equal(5);
-    });
-
-    it('does not trust any Prebid Server bidder when s2sConfig.allowPriorityBids is true instead of a list', function () {
-      expect(adjustDesirability(dealBid({ source: 's2s' }), null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: true } })).to.equal(2);
-    });
-
-    it('does not trust Prebid Server bids under a seat other than the requested bidder', function () {
-      const bid = dealBid({ source: 's2s', bidderCode: 'bidderB' });
-      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: 'adapterA', allowPriorityBids: ['adapterA', 'bidderB'] } })).to.equal(2);
-    });
-
-    it('does not trust Prebid Server bids without a matching Prebid Server request, even if bidderSettings would', function () {
-      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
-      const bid = dealBid({ source: 's2s' });
-      expect(adjustDesirability(bid, null, {})).to.equal(2);
-      expect(adjustDesirability(bid, null, { bidderRequest: clientRequest() })).to.equal(2);
-    });
-
-    it('does not trust Prebid Server bids answering a stored impression (null bidder) request', function () {
-      const bid = dealBid({ source: 's2s' });
-      expect(adjustDesirability(bid, null, { bidderRequest: { src: 's2s', bidderCode: null, allowPriorityBids: ['adapterA'] } })).to.equal(2);
-    });
-
-    it('trusts only the listed bidders when s2sConfig.allowPriorityBids is a list', function () {
-      const s2sRequest = (bidderCode) => ({ src: 's2s', bidderCode, allowPriorityBids: ['adapterA'] });
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: s2sRequest('adapterA') })).to.equal(5);
-      expect(adjustDesirability(dealBid({ bidderCode: 'adapterB', adapterCode: 'adapterB' }), null, { bidderRequest: s2sRequest('adapterB') })).to.equal(2);
-      expect(isPriorityBidAllowed(dealBid(), s2sRequest(null))).to.be.false;
+    it('only trusts allowPriorityBids === true', function () {
+      expect(isPriorityBidAllowed({ ...bidderRequest(), allowPriorityBids: ['adapterA'] })).to.be.false;
     });
 
     [
@@ -200,45 +159,42 @@ describe('desirability utils', function () {
       ['not finite', Infinity],
     ].forEach(([desc, pacingAdjustedCpm]) => {
       it(`ranks on cpm when pacingAdjustedCpm is ${desc}`, function () {
-        getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
         const bid = dealBid({ meta: { deal: { type: 2, pacingAdjustedCpm } } });
-        expect(adjustDesirability(bid, null, { bidderRequest: clientRequest() })).to.equal(2);
+        expect(adjustDesirability(bid, null, { bidderRequest: bidderRequest() })).to.equal(2);
       });
     });
 
     it('ranks on cpm when the bid has no deal metadata', function () {
-      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
-      expect(adjustDesirability(dealBid({ meta: {} }), null, { bidderRequest: clientRequest() })).to.equal(2);
+      expect(adjustDesirability(dealBid({ meta: {} }), null, { bidderRequest: bidderRequest() })).to.equal(2);
     });
 
     it('applies bidCpmAdjustment to pacingAdjustedCpm, as it is applied to cpm', function () {
       getGlobal().bidderSettings = {
-        adapterA: { allowPriorityBids: true, bidCpmAdjustment: (cpm) => cpm * 0.8 }
+        adapterA: { bidCpmAdjustment: (cpm) => cpm * 0.8 }
       };
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(4);
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(4);
     });
 
     it('uses the bidCpmAdjustment that applies to the bid, e.g. for an alternate bidder code', function () {
       getGlobal().bidderSettings = {
-        adapterA: { allowPriorityBids: true },
         bidderB: { bidCpmAdjustment: (cpm) => cpm / 2 }
       };
-      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: clientRequest() })).to.equal(2.5);
+      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: bidderRequest() })).to.equal(2.5);
     });
 
     it('ignores a bidCpmAdjustment that would make pacingAdjustedCpm negative', function () {
       getGlobal().bidderSettings = {
-        adapterA: { allowPriorityBids: true, bidCpmAdjustment: (cpm) => cpm - 10 }
+        adapterA: { bidCpmAdjustment: (cpm) => cpm - 10 }
       };
-      expect(adjustDesirability(dealBid(), null, { bidderRequest: clientRequest() })).to.equal(5);
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(5);
     });
 
     it('passes pacingAdjustedCpm to bidDesirabilityAdjustment, without changing bid.cpm', function () {
       getGlobal().bidderSettings = {
-        adapterA: { allowPriorityBids: true, bidDesirabilityAdjustment: (cpm) => cpm + 1 }
+        adapterA: { bidDesirabilityAdjustment: (cpm) => cpm + 1 }
       };
       const bid = dealBid();
-      expect(adjustDesirability(bid, null, { bidderRequest: clientRequest() })).to.equal(6);
+      expect(adjustDesirability(bid, null, { bidderRequest: bidderRequest() })).to.equal(6);
       expect(bid.cpm).to.equal(2);
     });
   });

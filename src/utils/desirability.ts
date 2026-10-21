@@ -2,40 +2,23 @@ import type { BidderRequest, BidRequest } from '../adapterManager.ts';
 import { bidderSettings } from '../bidderSettings.js';
 import type { Bid } from '../bidfactory.ts';
 import type { BidderCode } from '../types/common';
-import { S2S } from '../constants.js';
 import { logError } from '../utils.js';
 import { adjustCpm, getBidAdjustmentFn } from './cpm.js';
 
 export type SortByHighestDesirabilityDeps = {
   bs?: typeof bidderSettings;
   /**
-   * The bidder request the bid answers; tells whether it came from a Prebid Server instance that allows priority bids.
+   * The bidder request the bid answers; its `allowPriorityBids` tells whether the publisher trusts the bid's deal metadata.
    */
   bidderRequest?: BidderRequest<any>;
 };
 
 /**
- * Whether the publisher trusts this bid's deal metadata: `s2sConfig.allowPriorityBids` (and a matching seat) for Prebid Server bids,
- * otherwise `bidderSettings[adapterCode].allowPriorityBids` (adapter-specific settings only, not `standard`).
+ * Whether the publisher trusts this bid's deal metadata. This is decided when the bidder request is made
+ * (from `s2sConfig.allowPriorityBids` or `bidderSettings`); bids without a matching bidder request are never trusted.
  */
-export function isPriorityBidAllowed(
-  bid: Bid,
-  bidderRequest: BidderRequest<any> | undefined | null,
-  bs: typeof bidderSettings = bidderSettings,
-): boolean {
-  if (bid.source === S2S.SRC || bidderRequest?.src === S2S.SRC) {
-    // Prebid Server may not act on ext.prebid.as.apb yet, so trust only bids whose seat is the bidder
-    // they were requested for, and only if that bidder is listed in s2sConfig.allowPriorityBids (the list sent to Prebid Server). Bids under
-    // alternate or unknown seats, or without a matching request, are never trusted.
-    if (bidderRequest?.src !== S2S.SRC || bid.bidderCode == null || bid.bidderCode !== bidderRequest.bidderCode) {
-      return false;
-    }
-    const allowed = bidderRequest.allowPriorityBids;
-    return Array.isArray(allowed) && allowed.includes(bid.bidderCode);
-  }
-  const adapterCode = bid.adapterCode ?? bidderRequest?.bidderCode ?? bid.bidderCode;
-  // a null scope would resolve to `standard`, which must not opt adapters in
-  return adapterCode != null && bs.getOwn(adapterCode, 'allowPriorityBids') === true;
+export function isPriorityBidAllowed(bidderRequest: BidderRequest<any> | undefined | null): boolean {
+  return bidderRequest?.allowPriorityBids === true;
 }
 
 /**
@@ -51,7 +34,7 @@ function getRankingCpm(
 ): number {
   const pacingAdjustedCpm = bid.meta?.deal?.pacingAdjustedCpm;
   if (typeof pacingAdjustedCpm === 'number' && Number.isFinite(pacingAdjustedCpm) && pacingAdjustedCpm >= 0 &&
-    isPriorityBidAllowed(bid, bidderRequest, bs)) {
+    isPriorityBidAllowed(bidderRequest)) {
     const adjusted = adjustCpm(pacingAdjustedCpm, bid, bidRequest, { bs });
     // like adjustBids, ignore adjustments that would make the value negative
     return adjusted >= 0 ? adjusted : pacingAdjustedCpm;

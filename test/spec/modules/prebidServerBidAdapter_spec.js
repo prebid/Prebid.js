@@ -784,29 +784,33 @@ describe('S2S Adapter', function () {
 
     describe('allowPriorityBids', () => {
       function makeRequest(allowPriorityBids) {
-        const s2sConfig = { ...CONFIG, allowPriorityBids };
-        config.setConfig({ s2sConfig });
-        adapter.callBids({ ...REQUEST, s2sConfig }, BID_REQUESTS, addBidResponse, done, ajax);
+        config.setConfig({ s2sConfig: CONFIG });
+        const bidRequests = BID_REQUESTS.map(req => ({ ...req, allowPriorityBids }));
+        adapter.callBids({ ...REQUEST, s2sConfig: CONFIG }, bidRequests, addBidResponse, done, ajax);
         return JSON.parse(server.requests[0].requestBody);
       }
 
-      it('sends ext.prebid.as with ap: true and the listed bidders that are in the request as apb', () => {
-        expect(makeRequest(['appnexus', 'other']).ext.prebid.as).to.eql({ ap: true, apb: ['appnexus'] });
+      it('sends ext.prebid.as with ap: true and the bidders whose requests allow priority bids as apb', () => {
+        expect(makeRequest(true).ext.prebid.as).to.eql({ ap: true, apb: ['appnexus'] });
       });
 
       Object.entries({
         'not set': undefined,
         'false': false,
-        'true (trusted bidders must be listed)': true,
-        'a list without any requested bidder': ['other'],
       }).forEach(([desc, allowPriorityBids]) => {
-        it(`does not send ext.prebid.as when ${desc}`, () => {
+        it(`does not send ext.prebid.as when allowPriorityBids is ${desc} on every bidder request`, () => {
           expect(makeRequest(allowPriorityBids).ext.prebid.as).to.not.exist;
         });
       });
 
-      it('getPriorityBidders ignores the null bidder of module-only requests', () => {
-        expect(pbsOrtbConverter.getPriorityBidders(['appnexus'], [null, 'appnexus'])).to.eql(['appnexus']);
+      it('getPriorityBidders keeps only requested bidders, and ignores the null bidder of module-only requests', () => {
+        const bidderRequests = [
+          { bidderCode: 'appnexus', allowPriorityBids: true },
+          { bidderCode: 'other', allowPriorityBids: true },
+          { bidderCode: 'rubicon', allowPriorityBids: false },
+          { bidderCode: null, allowPriorityBids: false },
+        ];
+        expect(pbsOrtbConverter.getPriorityBidders(bidderRequests, [null, 'appnexus', 'rubicon'])).to.eql(['appnexus']);
       });
     });
 

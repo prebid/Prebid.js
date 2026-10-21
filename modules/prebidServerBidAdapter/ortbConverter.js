@@ -75,7 +75,7 @@ const PBS_CONVERTER = ortbConverter({
         deepSetValue(request, 'ext.prebid.createtids', false);
       }
 
-      const priorityBidders = getPriorityBidders(s2sBidRequest.s2sConfig.allowPriorityBids, context.requestedBidders);
+      const priorityBidders = getPriorityBidders(context.actualBidderRequests, context.requestedBidders);
       if (priorityBidders.length > 0) {
         // ext.prebid.as: ad server signals. ap: priority bids are allowed; apb: the bidders allowed to send them
         deepSetValue(request, 'ext.prebid.as', { ap: true, apb: priorityBidders });
@@ -259,13 +259,11 @@ const PBS_CONVERTER = ortbConverter({
 });
 
 /**
- * The bidders in this request whose deal metadata the publisher trusts: those listed in `s2sConfig.allowPriorityBids`.
- * Anything other than a list (including `true`) trusts no one; trusted bidders must be enumerated.
+ * The bidders in this request whose deal metadata the publisher trusts, i.e. those whose bidder request has `allowPriorityBids`.
  */
-export function getPriorityBidders(allowPriorityBids, requestedBidders = []) {
-  const bidders = requestedBidders.filter(bidder => bidder != null);
-  if (Array.isArray(allowPriorityBids)) return bidders.filter(bidder => allowPriorityBids.includes(bidder));
-  return [];
+export function getPriorityBidders(bidderRequests = [], requestedBidders = []) {
+  return requestedBidders.filter(bidder => bidder != null &&
+    bidderRequests.some(req => req.bidderCode === bidder && req.allowPriorityBids === true));
 }
 
 export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
