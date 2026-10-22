@@ -13,6 +13,7 @@ import {
 } from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
+import * as layoutEpoch from '../../src/utils/layoutEpoch.js';
 import { compressDataWithGZip, isGzipCompressionSupported } from '../../src/utils/gzip.js';
 
 var assert = require('assert');
@@ -1573,19 +1574,19 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should clear cache once per 20ms', () => {
+  it('should cache values for the rest of the task, however long it takes, and clear them once it ends', async () => {
+    layoutEpoch.endLayoutEpoch();
     const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledOnce(resetWinDimensionsSpy);
-    clock.tick(18);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledTwice(resetWinDimensionsSpy);
+    try {
+      expect(getWinDimensions().innerHeight).to.exist;
+      clock.tick(100);
+      expect(getWinDimensions().innerHeight).to.exist;
+      sinon.assert.notCalled(resetWinDimensionsSpy);
+      await Promise.resolve();
+      sinon.assert.calledOnce(resetWinDimensionsSpy);
+    } finally {
+      resetWinDimensionsSpy.restore();
+    }
   });
 });
 

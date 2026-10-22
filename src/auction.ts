@@ -664,10 +664,7 @@ export function addBidToAuction(auctionInstance, bidResponse: Bid) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, { index = auctionManager.index } = {}) {
-  const videoMediaType = index.getMediaTypes({
-    requestId: bidResponse.originalRequestId || bidResponse.requestId,
-    adUnitId: bidResponse.adUnitId
-  })?.video;
+  const videoMediaType = index.getMediaTypes(bidResponse)?.video;
   handleVideoBidCaching({
     bidResponse,
     auctionInstance,
