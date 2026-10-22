@@ -21,12 +21,11 @@ and collects only the following events:
 | `bidResponse` | `auctionId`, `adUnitCode`, `transactionId`, `requestId`, `adId`, `bidder`, `bidderCode`, `cpm`, `currency`, `originalCpm`, `originalCurrency`, `mediaType`, `width`, `height`, `size`, `dealId`, `meta`, `adserverTargeting`, `floorData`, `requestTimestamp`, `responseTimestamp`, `timeToRespond`, `ttl`, `source` |
 | `bidWon` | same as `bidResponse`, plus `status` |
 | `noBid` | `auctionId`, `adUnitCode`, `bidder`, `source` |
-| `bidTimeout` | `bids` (see below), `eidsSources`, and `ortb2` (without EIDs) / `ortb2Imp` when they are the same across all bids |
+| `bidTimeout` | `bidderRequests`: the timed out bids grouped by bidder request, each with `auctionId`, `bidderRequestId`, `bidderCode`, `ortb2` (without EIDs), `eidsSources` and `bids` (see below) |
 
 Bid requests (in `bidRequested` and `bidTimeout`) contain `bidId`, `bidderRequestId`, `auctionId`, `adUnitCode`,
 `transactionId`, `bidder`, `source`, `mediaTypes`, `sizes`, `auctionsCount`, `bidRequestsCount`,
-`bidderRequestsCount`, `bidderWinsCount` and `ortb2Imp`. In `bidTimeout`, `ortb2` and `ortb2Imp` are included on
-each bid only when they differ between bids.
+`bidderRequestsCount`, `bidderWinsCount` and `ortb2Imp`.
 
 Instead of EIDs, `eidsSources` lists which ID sources were present (for example `['pubcid.org', 'id5-sync.com']`).
 

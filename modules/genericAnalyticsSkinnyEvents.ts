@@ -7,7 +7,6 @@
  */
 import { submodule } from '../src/hook.js';
 import { EVENTS } from '../src/constants.js';
-import { deepEqual } from '../src/utils.js';
 import { deepClone } from '../src/utils/objects.js';
 import type { EventMapping } from './genericAnalyticsAdapter.ts';
 import type { BidderRequest, BidRequest } from '../src/adapterManager.ts';
@@ -185,19 +184,18 @@ export function bidRequested(bidderRequest: BidderRequest<any> & AnalyticsLabels
   };
 }
 
-type SkinnyTimedOutBid = Omit<SkinnyBidRequestFields, 'ortb2Imp'> & Partial<Pick<BidRequest<any>, 'ortb2' | 'ortb2Imp'>>;
+export type SkinnyTimedOutBidderRequest = Pick<SkinnyBidRequested,
+  'auctionId' | 'bidderRequestId' | 'bidderCode' | 'ortb2' | 'eidsSources' | 'bids'
+>;
 
 export type SkinnyBidTimeout = {
   eventType: typeof EVENTS.BID_TIMEOUT;
-  ortb2?: ORTB2;
-  ortb2Imp?: BidRequest<any>['ortb2Imp'];
-  eidsSources: string[];
-  bids: SkinnyTimedOutBid[];
+  bidderRequests: SkinnyTimedOutBidderRequest[];
 } & AnalyticsLabels;
 
 /**
- * `ortb2` (without EIDs) and `ortb2Imp` are moved to the top level when they are the same across all timed out bids,
- * and left on each bid otherwise.
+ * Timed out bids are grouped by bidder request, in the same shape as `bidRequested`: `ortb2` (without EIDs) is
+ * always on the bidder request, and `ortb2Imp` always on each bid.
  */
 export function bidTimeout(args: BidRequest<any>[] | ({ [index: number]: BidRequest<any> } & AnalyticsLabels)): SkinnyBidTimeout {
   // when analytics labels are set, the analytics adapter spreads the event args into an object:
@@ -205,20 +203,26 @@ export function bidTimeout(args: BidRequest<any>[] | ({ [index: number]: BidRequ
   const bidRequests: BidRequest<any>[] = Array.isArray(args)
     ? args
     : Object.keys(args ?? {}).filter(key => /^\d+$/.test(key)).map(key => args[key]);
-  const ortb2 = bidRequests.map(bidRequest => stripEids(bidRequest.ortb2));
-  const result: SkinnyBidTimeout = {
+  const bidderRequests = new Map<string, SkinnyTimedOutBidderRequest>();
+  bidRequests.forEach(bidRequest => {
+    if (!bidderRequests.has(bidRequest.bidderRequestId)) {
+      // bid requests share their bidder request's ortb2
+      bidderRequests.set(bidRequest.bidderRequestId, {
+        auctionId: bidRequest.auctionId,
+        bidderRequestId: bidRequest.bidderRequestId,
+        bidderCode: bidRequest.bidder,
+        ortb2: stripEids(bidRequest.ortb2),
+        eidsSources: eidsSources(bidRequest.ortb2),
+        bids: [],
+      });
+    }
+    bidderRequests.get(bidRequest.bidderRequestId).bids.push(bidRequestFields(bidRequest));
+  });
+  return {
     eventType: EVENTS.BID_TIMEOUT,
-    eidsSources: [...new Set(bidRequests.flatMap(bidRequest => eidsSources(bidRequest.ortb2)))],
-    bids: bidRequests.map((bidRequest, i) => ({ ...bidRequestFields(bidRequest), ortb2: ortb2[i] })),
+    bidderRequests: [...bidderRequests.values()],
     analyticsLabels: (args as AnalyticsLabels)?.analyticsLabels,
   };
-  for (const [field, values] of [['ortb2', ortb2], ['ortb2Imp', bidRequests.map(bidRequest => bidRequest.ortb2Imp)]] as const) {
-    if (values.length > 0 && values.every(value => deepEqual(value, values[0]))) {
-      result[field] = values[0] as any;
-      result.bids.forEach(bid => { delete bid[field]; });
-    }
-  }
-  return result;
 }
 
 export const skinnyEvents = {

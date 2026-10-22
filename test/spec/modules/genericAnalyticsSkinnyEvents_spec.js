@@ -248,43 +248,55 @@ describe('Generic analytics skinny events', () => {
     });
 
     describe('bidTimeout', () => {
-      it('moves ortb2 and ortb2Imp to the top level when they are the same across bids', () => {
+      it('groups bids by bidder request, with ortb2 once and without EIDs', () => {
         expect(bidTimeout([makeBidRequest(), makeBidRequest({ bidId: 'bid2' })])).to.eql({
           eventType: EVENTS.BID_TIMEOUT,
-          ortb2: ORTB2_WITHOUT_EIDS,
-          ortb2Imp: { ext: { gpid: '/slot' } },
-          eidsSources: ['a.com', 'b.com'],
-          bids: [
-            (({ ortb2Imp, ...rest }) => rest)(skinnyBidRequest()),
-            (({ ortb2Imp, ...rest }) => rest)(skinnyBidRequest({ bidId: 'bid2' }))
-          ],
+          bidderRequests: [{
+            auctionId: 'auction',
+            bidderRequestId: 'bidderRequest',
+            bidderCode: 'bidder',
+            ortb2: ORTB2_WITHOUT_EIDS,
+            eidsSources: ['a.com', 'b.com'],
+            bids: [skinnyBidRequest(), skinnyBidRequest({ bidId: 'bid2' })]
+          }],
           analyticsLabels: undefined
         });
       });
 
-      it('leaves ortb2 and ortb2Imp on each bid when they differ', () => {
+      it('keeps ortb2 on each bidder request and ortb2Imp on each bid, whether or not they differ', () => {
         const ortb2Imp = { ext: { gpid: '/other' } };
         const ortb2 = { site: { domain: 'other.com' } };
-        const result = bidTimeout([makeBidRequest(), makeBidRequest({ bidId: 'bid2', ortb2, ortb2Imp })]);
-        expect(result).to.not.have.property('ortb2');
-        expect(result).to.not.have.property('ortb2Imp');
-        expect(result.bids).to.eql([
-          skinnyBidRequest({ ortb2: ORTB2_WITHOUT_EIDS }),
-          skinnyBidRequest({ bidId: 'bid2', ortb2, ortb2Imp })
+        const result = bidTimeout([
+          makeBidRequest(),
+          makeBidRequest({ bidId: 'bid2', bidderRequestId: 'bidderRequest2', bidder: 'bidder2', ortb2, ortb2Imp })
         ]);
+        expect(result.bidderRequests).to.eql([{
+          auctionId: 'auction',
+          bidderRequestId: 'bidderRequest',
+          bidderCode: 'bidder',
+          ortb2: ORTB2_WITHOUT_EIDS,
+          eidsSources: ['a.com', 'b.com'],
+          bids: [skinnyBidRequest()]
+        }, {
+          auctionId: 'auction',
+          bidderRequestId: 'bidderRequest2',
+          bidderCode: 'bidder2',
+          ortb2,
+          eidsSources: [],
+          bids: [skinnyBidRequest({ bidId: 'bid2', bidderRequestId: 'bidderRequest2', bidder: 'bidder2', ortb2Imp })]
+        }]);
       });
 
       it('accepts args spread into an object together with analytics labels', () => {
         const result = bidTimeout({ analyticsLabels: { label: 'value' }, 0: makeBidRequest(), 1: makeBidRequest({ bidId: 'bid2' }) });
         expect(result.analyticsLabels).to.eql({ label: 'value' });
-        expect(result.bids.map(bid => bid.bidId)).to.eql(['bid', 'bid2']);
+        expect(result.bidderRequests[0].bids.map(bid => bid.bidId)).to.eql(['bid', 'bid2']);
       });
 
       it('does not choke on no bids', () => {
         expect(bidTimeout([])).to.eql({
           eventType: EVENTS.BID_TIMEOUT,
-          eidsSources: [],
-          bids: [],
+          bidderRequests: [],
           analyticsLabels: undefined
         });
       });
