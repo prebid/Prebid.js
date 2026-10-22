@@ -202,8 +202,9 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   /**
    * Whether the publisher trusts the deal metadata (`bid.meta.deal`) of bids answering this request:
    * from `s2sConfig.allowPriorityBids` for Prebid Server requests, `bidderSettings[bidderCode].allowPriorityBids` otherwise.
+   * Absent or false means the deal metadata is not trusted.
    */
-  allowPriorityBids: boolean;
+  allowPriorityBids?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
