@@ -20,6 +20,8 @@ type AnalyticsLabels = { analyticsLabels?: Record<string, unknown> };
 export type SkinnyNoBid = {
   eventType: typeof EVENTS.NO_BID;
   auctionId: BidRequest<any>['auctionId'];
+  bidId: BidRequest<any>['bidId'];
+  bidderRequestId: BidRequest<any>['bidderRequestId'];
   adUnitCode: BidRequest<any>['adUnitCode'];
   bidder: BidRequest<any>['bidder'];
   source: BidRequest<any>['src'];
@@ -29,6 +31,9 @@ export function noBid(bidRequest: BidRequest<any> & AnalyticsLabels): SkinnyNoBi
   return {
     eventType: EVENTS.NO_BID,
     auctionId: bidRequest.auctionId,
+    // so that the no-bid can be matched to its request in bidRequested, even when a bidder has several on an ad unit
+    bidId: bidRequest.bidId,
+    bidderRequestId: bidRequest.bidderRequestId,
     adUnitCode: bidRequest.adUnitCode,
     bidder: bidRequest.bidder,
     source: bidRequest.src,
