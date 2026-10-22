@@ -22,6 +22,7 @@ type Reset = () => void;
 
 const resets: Reset[] = [];
 let running = false;
+let epochToken = 0;
 
 /**
  * Register a function that discards a layout cache; it is called whenever an epoch ends.
@@ -40,6 +41,7 @@ export function onLayoutEpochEnd(reset: Reset) {
  */
 export function endLayoutEpoch() {
   running = false;
+  epochToken += 1;
   resets.forEach(reset => reset());
 }
 
@@ -50,7 +52,9 @@ export function endLayoutEpoch() {
 export function startLayoutEpoch() {
   if (running) return;
   running = true;
+  epochToken += 1;
+  const token = epochToken;
   dep.queueMicrotask(() => {
-    if (running) endLayoutEpoch();
+    if (running && epochToken === token) endLayoutEpoch();
   });
 }
