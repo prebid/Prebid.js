@@ -66,6 +66,30 @@ describe('currency', function () {
       expect(currencySupportEnabled).to.equal(true);
     });
 
+    describe('when rates are configured while the rates file is still loading', () => {
+      const rates = { USD: { JPY: 100 } };
+
+      it('does not refetch the file after the superseded request fails', () => {
+        fakeCurrencyFileServer.respondWith('not json');
+        setConfig({ adServerCurrency: 'JPY' });
+        setConfig({ adServerCurrency: 'JPY', rates });
+        fakeCurrencyFileServer.respond();
+
+        const requestCount = fakeCurrencyFileServer.requests.length;
+        events.emit(EVENTS.AUCTION_INIT, {});
+        expect(fakeCurrencyFileServer.requests.length).to.equal(requestCount);
+        expect(currencyRates.conversions).to.eql(rates);
+      });
+
+      it('keeps the configured rates when the superseded request succeeds', () => {
+        fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+        setConfig({ adServerCurrency: 'JPY' });
+        setConfig({ adServerCurrency: 'JPY', rates });
+        fakeCurrencyFileServer.respond();
+        expect(currencyRates.conversions).to.eql(rates);
+      });
+    });
+
     it('does not lose loaded rates when reconfigured', () => {
       const config = {
         adServerCurrency: 'USD',
@@ -483,6 +507,35 @@ describe('currency', function () {
       }, 'elementId', bid, reject);
       expect(bidAdded).to.be.false;
       expect(reject.calledOnce).to.be.true;
+    });
+
+    it('should convert bids queued before rates were configured with the configured rates, when the superseded request completes', function () {
+      fakeCurrencyFileServer.respondWith('not json');
+      setConfig({ 'adServerCurrency': 'JPY' });
+      const addBidResponse = sinon.spy();
+      addBidResponseHook(addBidResponse, 'elementId', makeBid({ 'cpm': 1, 'currency': 'USD' }), reject);
+      setConfig({ 'adServerCurrency': 'JPY', rates: { USD: { JPY: 100 } } });
+
+      fakeCurrencyFileServer.respond();
+      sinon.assert.notCalled(reject);
+      sinon.assert.calledOnce(addBidResponse);
+      expect(addBidResponse.args[0][1].cpm).to.equal(100);
+      expect(addBidResponse.args[0][1].currency).to.equal('JPY');
+    });
+
+    it('should not let a request from before a reset reject bids waiting on a newer request', function () {
+      setConfig({ 'adServerCurrency': 'JPY' });
+      setConfig({});
+      setConfig({ 'adServerCurrency': 'JPY' });
+      const addBidResponse = sinon.spy();
+      addBidResponseHook(addBidResponse, 'elementId', makeBid({ 'cpm': 1, 'currency': 'USD' }), reject);
+
+      fakeCurrencyFileServer.requests[0].respond(200, {}, 'not json');
+      sinon.assert.notCalled(reject);
+      sinon.assert.notCalled(addBidResponse);
+
+      fakeCurrencyFileServer.requests[1].respond(200, {}, JSON.stringify(getCurrencyRates()));
+      sinon.assert.calledOnce(addBidResponse);
     });
 
     it('should process queued bids when the rates response is not valid JSON', function () {
