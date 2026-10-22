@@ -1574,26 +1574,18 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should clear cache once per 20ms', () => {
-    // animation frames are faked by the clock too; keep them from ending the epoch first
-    const raf = sinon.stub(layoutEpoch.dep, 'requestAnimationFrame');
+  it('should cache values for the rest of the task, however long it takes, and clear them once it ends', async () => {
+    layoutEpoch.endLayoutEpoch();
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
     try {
-      layoutEpoch.endLayoutEpoch();
-      const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
       expect(getWinDimensions().innerHeight).to.exist;
-      clock.tick(1);
-      expect(getWinDimensions().innerHeight).to.exist;
-      clock.tick(1);
-      expect(getWinDimensions().innerHeight).to.exist;
-      clock.tick(18);
+      clock.tick(100);
       expect(getWinDimensions().innerHeight).to.exist;
       sinon.assert.notCalled(resetWinDimensionsSpy);
-      clock.tick(1);
-      expect(getWinDimensions().innerHeight).to.exist;
+      await Promise.resolve();
       sinon.assert.calledOnce(resetWinDimensionsSpy);
-      resetWinDimensionsSpy.restore();
     } finally {
-      raf.restore();
+      resetWinDimensionsSpy.restore();
     }
   });
 });

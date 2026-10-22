@@ -1,11 +1,11 @@
 import { canAccessWindowTop, internal as utilsInternals } from '../utils.js';
 import { CachedApiWrapper } from './cachedApiWrapper.js';
-import { endLayoutEpoch, enterLayoutEpoch, onLayoutEpochEnd, startLayoutEpoch } from './layoutEpoch.js';
+import { endLayoutEpoch, onLayoutEpochEnd, startLayoutEpoch } from './layoutEpoch.js';
 
 const winDimensions = new CachedApiWrapper(
   () => {
-    // a value read through an object obtained from getWinDimensions() in an earlier epoch must still be
-    // discarded when the epoch it was read in ends
+    // called for every value read into the cache, including through an object obtained from
+    // getWinDimensions() in an earlier epoch, so that each value is discarded when the epoch it was read in ends
     startLayoutEpoch();
     return canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
   },
@@ -51,7 +51,6 @@ onLayoutEpochEnd(() => internal.winDimensions.reset());
  * `boundingClientRect` library, so the two can be combined; see `layoutEpoch.js`.
  */
 export function getWinDimensions() {
-  enterLayoutEpoch();
   return internal.winDimensions.obj;
 }
 

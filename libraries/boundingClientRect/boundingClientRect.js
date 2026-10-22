@@ -1,4 +1,4 @@
-import { endLayoutEpoch, enterLayoutEpoch, onLayoutEpochEnd } from '../../src/utils/layoutEpoch.js';
+import { endLayoutEpoch, onLayoutEpochEnd, startLayoutEpoch } from '../../src/utils/layoutEpoch.js';
 
 // rects are cached for the current layout epoch, together with getWinDimensions(), so the two can be
 // combined; see src/utils/layoutEpoch.js
@@ -13,11 +13,11 @@ export function clearCache() {
 }
 
 export function getBoundingClientRect(element) {
-  enterLayoutEpoch();
   let clientRect;
   if (cache.has(element)) {
     clientRect = cache.get(element);
   } else {
+    startLayoutEpoch();
     // eslint-disable-next-line no-restricted-properties
     clientRect = element.getBoundingClientRect();
     cache.set(element, clientRect);

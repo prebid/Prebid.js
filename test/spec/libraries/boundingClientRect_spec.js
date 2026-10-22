@@ -1,5 +1,5 @@
 import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
-import { dep, endLayoutEpoch } from '../../../src/utils/layoutEpoch.js';
+import { endLayoutEpoch } from '../../../src/utils/layoutEpoch.js';
 
 describe('getBoundingClientRect', () => {
   let element, getBoundingClientRectSpy;
@@ -32,18 +32,11 @@ describe('getBoundingClientRect', () => {
     expect(getBoundingClientRectSpy.callCount).to.equal(2);
   });
 
-  it('should fire getBoundingClientRect on element again at the next animation frame', () => {
-    const frames = [];
-    const sandbox = sinon.createSandbox();
-    sandbox.stub(dep, 'requestAnimationFrame').callsFake(callback => frames.push(callback));
-    try {
-      getBoundingClientRect(element);
-      frames.forEach(callback => callback());
-      getBoundingClientRect(element);
-      expect(getBoundingClientRectSpy.callCount).to.equal(2);
-    } finally {
-      sandbox.restore();
-    }
+  it('should fire getBoundingClientRect on element again once the task that measured it has ended', async () => {
+    getBoundingClientRect(element);
+    await new Promise(resolve => setTimeout(resolve));
+    getBoundingClientRect(element);
+    expect(getBoundingClientRectSpy.callCount).to.equal(2);
   });
 
   it('should return same value for multiple calls', () => {
