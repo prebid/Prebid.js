@@ -52,12 +52,15 @@ describe('Generic analytics skinny events', () => {
         bidder: 'bidder',
         src: 'client',
         bidId: 'bid',
+        bidderRequestId: 'bidderRequest',
         ortb2: { site: { domain: 'example.com' } },
         ortb2Imp: { ext: {} },
         analyticsLabels: { label: 'value' }
       })).to.eql({
         eventType: EVENTS.NO_BID,
         auctionId: 'auction',
+        bidId: 'bid',
+        bidderRequestId: 'bidderRequest',
         adUnitCode: 'adUnit',
         bidder: 'bidder',
         source: 'client',
