@@ -12,6 +12,7 @@ import { server } from 'test/mocks/xhr.js';
 import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
 import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
 import { config } from 'src/config.js';
+import { getWinDimensions } from 'src/utils/winDimensions.js';
 import * as rtdModule from '../../../modules/rtdModule/index.js';
 import { gdprDataHandler, gppDataHandler } from 'src/consentHandler.js';
 import { toConsentData } from '../../../modules/consentManagementGpp.js';
@@ -2294,5 +2295,591 @@ describe('encypherRtdProvider decision-network v1', () => {
       startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
       config.resetConfig();
     }
+  });
+});
+
+describe('encypherRtdProvider adjacency profile', () => {
+  const TELEMETRY_URL = SIGNAL_ORIGIN + '/v1/telemetry/rtd';
+  const INDEX_KID = 'encypher-index-test';
+  const GATEWAY_KID = 'gw-test-1';
+  const NOW_SECONDS = 1704067200;
+  const VARIATION_RUN = String.fromCodePoint(0xFE01).repeat(4) + String.fromCodePoint(0xE0101).repeat(4);
+  let sandbox;
+  let cleanups;
+  let indexKeys;
+  let gatewayKeys;
+  let indexJwks;
+  let gatewayJwk;
+  let realDigest;
+  let digestStub;
+  let dateNowStub;
+
+  before(async () => {
+    const subtle = window.crypto.subtle;
+    indexKeys = await subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+    gatewayKeys = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+    const indexPublic = await subtle.exportKey('jwk', indexKeys.publicKey);
+    const gatewayPublic = await subtle.exportKey('jwk', gatewayKeys.publicKey);
+    indexJwks = {
+      keys: [
+        TRUSTED_JWK,
+        { kty: 'EC', crv: 'P-256', alg: 'ES256', use: 'sig', kid: INDEX_KID, x: indexPublic.x, y: indexPublic.y },
+      ],
+    };
+    gatewayJwk = { kty: 'EC', crv: 'P-256', kid: GATEWAY_KID, x: gatewayPublic.x, y: gatewayPublic.y, use: 'enc', alg: 'ECDH-ES' };
+  });
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    cleanups = [];
+    dateNowStub = sandbox.stub(Date, 'now').returns(NOW_SECONDS * 1000);
+    realDigest = window.crypto.subtle.digest.bind(window.crypto.subtle);
+    digestStub = sandbox.stub(window.crypto.subtle, 'digest').callsFake((algorithm, encoded) => {
+      const expected = DIGEST_BYTES_BY_CANONICAL_URL.get(new TextDecoder().decode(encoded));
+      return expected ? GreedyPromise.resolve(expected.buffer) : realDigest(algorithm, encoded);
+    });
+    encypherSubmodule.init({ params: {} });
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    resetProviderState();
+    cleanups.forEach(cleanup => cleanup());
+  });
+
+  function useFakeTimers() {
+    dateNowStub.restore();
+    return sandbox.useFakeTimers({ now: NOW_SECONDS * 1000 });
+  }
+
+  async function assetDigest(url) {
+    return base64url(new Uint8Array(await realDigest('SHA-256', new TextEncoder().encode(url)))).slice(0, 11);
+  }
+
+  async function signIndex(claims, header = { alg: 'ES256', kid: INDEX_KID, typ: 'epai+jws' }) {
+    const encode = value => base64url(new TextEncoder().encode(JSON.stringify(value)));
+    const signingInput = encode(header) + '.' + encode(claims);
+    const signature = await window.crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      indexKeys.privateKey,
+      new TextEncoder().encode(signingInput),
+    );
+    return signingInput + '.' + base64url(new Uint8Array(signature));
+  }
+
+  function indexClaims(entries, overrides = {}) {
+    return Object.assign({
+      iss: API_ISSUER,
+      sub: 'epa_s',
+      iat: NOW_SECONDS,
+      exp: NOW_SECONDS + 3600,
+      publisher_domain: 'publisher.example',
+      url_hash: STORY_HASH,
+      trust_policy_version: ACCEPTED_TRUST_POLICY_VERSION,
+      record_revision: 1,
+      method: 'crawl-screen-v1',
+      entries,
+    }, overrides);
+  }
+
+  function entry(d, overrides = {}) {
+    return Object.assign({ d, k: d === 'text' ? 'text' : 'image', s: 'verified', ai: false, c: 'content', o: true }, overrides);
+  }
+
+  /** `index` undefined or `gateway` null omits that key from the lookup response. */
+  function readyWithAdjacency(index, datasetVersion = 300, gateway = gatewayJwk, record = STORY_SIGNAL) {
+    const envelope = ready(record, datasetVersion);
+    if (index !== undefined) envelope.index = index;
+    if (gateway !== null) envelope.gateway_jwk = gateway;
+    return envelope;
+  }
+
+  async function openEnvelope(envelope) {
+    const subtle = window.crypto.subtle;
+    const epk = await subtle.importKey('raw', decodeBase64url(envelope.epk), { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+    const shared = await subtle.deriveBits({ name: 'ECDH', public: epk }, gatewayKeys.privateKey, 256);
+    const secret = await subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+    const key = await subtle.deriveKey(
+      { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: new TextEncoder().encode('encypher-adj-v1') },
+      secret,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt'],
+    );
+    const sealed = decodeBase64url(envelope.ct);
+    const plaintext = await subtle.decrypt({ name: 'AES-GCM', iv: sealed.slice(0, 12), tagLength: 128 }, key, sealed.slice(12));
+    return new TextDecoder().decode(plaintext);
+  }
+
+  function expectedViewport() {
+    if (getWinDimensions().innerWidth < 768) return 'm';
+    if (getWinDimensions().innerWidth < 1200) return 't';
+    return 'd';
+  }
+
+  function pageRoot() {
+    const root = document.createElement('div');
+    root.style.cssText = 'position:absolute;top:0;left:0;width:1200px;margin:0;padding:0;';
+    document.body.appendChild(root);
+    cleanups.push(() => root.remove());
+    return root;
+  }
+
+  function place(parent, tag, { top, left = 0, width, height, attrs = {}, text, css = '' }) {
+    const element = document.createElement(tag);
+    element.style.cssText = 'position:absolute;margin:0;padding:0;border:0;overflow:hidden;' +
+      'top:' + top + 'px;left:' + left + 'px;width:' + width + 'px;height:' + height + 'px;' + css;
+    Object.entries(attrs).forEach(([name, value]) => element.setAttribute(name, value));
+    if (text !== undefined) element.textContent = text;
+    parent.appendChild(element);
+    return element;
+  }
+
+  function assetUrl(path) {
+    return new URL(path, document.baseURI).href;
+  }
+
+  function telemetryEvents() {
+    return server.requests
+      .filter(request => request.url === TELEMETRY_URL)
+      .map(request => JSON.parse(request.requestBody));
+  }
+
+  function sortOn(entries) {
+    return entries.slice().sort((left, right) => right.a - left.a || (left.d < right.d ? -1 : left.d > right.d ? 1 : 0));
+  }
+
+  /**
+   * Leaderboard (static, by element id) with five measured neighbours of equal height and widths
+   * 650 / 150 / 100 / 40 / 60 px, one far-away labelled image and a labelled creative inside the
+   * slot. Rectangle (by `data-ad-slot`) sits far below with nothing labelled on its screen.
+   */
+  async function staticPage() {
+    const screen = getWinDimensions().innerHeight;
+    const slotTop = 20 * screen;
+    const centre = slotTop + 45;
+    const row = Math.round(centre + screen / 16);
+    const height = Math.round(screen / 8);
+    const root = pageRoot();
+    const slot = place(root, 'div', { top: slotTop, width: 728, height: 90, attrs: { id: 'leaderboard' } });
+    const creative = document.createElement('img');
+    creative.src = assetUrl('/adj/creative.jpg');
+    creative.style.cssText = 'width:728px;height:90px;display:block;';
+    slot.appendChild(creative);
+    const lead = place(root, 'img', { top: row, left: 0, width: 650, height, attrs: { src: assetUrl('/adj/lead.jpg?b=2&a=1') } });
+    const quote = place(root, 'blockquote', { top: row, left: 650, width: 150, height });
+    const signed = document.createElement('p');
+    signed.style.cssText = 'margin:0;width:100%;height:100%;overflow:hidden;';
+    signed.textContent = 'Signed paragraph' + VARIATION_RUN + ' continues.';
+    quote.appendChild(signed);
+    const teaser = place(root, 'img', { top: row, left: 800, width: 100, height, attrs: { src: assetUrl('/adj/teaser.jpg') } });
+    const chrome = place(root, 'img', { top: row, left: 900, width: 40, height, attrs: { src: assetUrl('/adj/logo.png') } });
+    place(root, 'p', { top: row, left: 940, width: 60, height, text: 'Emoji only \u2764\uFE0F, no mark run.' });
+    const far = place(root, 'img', { top: centre + 3 * screen, width: 300, height, attrs: { src: assetUrl('/adj/far.jpg') } });
+    place(root, 'div', { top: 40 * screen, width: 300, height: 250, attrs: { 'data-ad-slot': 'rectangle' } });
+    const digests = {
+      lead: await assetDigest(lead.currentSrc || lead.src),
+      teaser: await assetDigest(teaser.currentSrc || teaser.src),
+      chrome: await assetDigest(chrome.currentSrc || chrome.src),
+      far: await assetDigest(far.currentSrc || far.src),
+      creative: await assetDigest(creative.currentSrc || creative.src),
+    };
+    const entries = [
+      entry(digests.lead),
+      entry('text'),
+      entry(digests.teaser, { ai: true, c: 'teaser', o: false }),
+      entry(digests.chrome, { ai: true, c: 'chrome' }),
+      entry(digests.far),
+      entry(digests.creative),
+      entry('zzzzzzzzzzz', { s: 'broken' }),
+    ];
+    return { digests, entries, lead };
+  }
+
+  function staticOn(digests) {
+    return sortOn([
+      { d: digests.lead, a: 3 },
+      { d: 'text', a: 1 },
+      { d: digests.teaser, a: 1 },
+      { d: digests.chrome, a: 0 },
+    ]);
+  }
+
+  function assertV1Only(auction) {
+    auction.adUnits.forEach(adUnit => {
+      assert.deepStrictEqual(adUnit.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+      assert.strictEqual(Object.prototype.hasOwnProperty.call(adUnit.ortb2Imp.ext, 'encypher'), false);
+    });
+  }
+
+  it('hashes media URLs exactly as the page resolved them and seals the observation to the gateway key', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const { digests, entries, lead } = await staticPage();
+    assert.strictEqual(lead.src, assetUrl('/adj/lead.jpg?b=2&a=1'), 'the query order is kept as referenced');
+    const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
+    const lookup = pendingLookup();
+    assert.strictEqual(new URL(lookup.url).searchParams.get('adjacency'), '1');
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims(entries))), { jwks: indexJwks });
+    await run.completion;
+
+    const [leaderboard, rectangle] = run.auction.adUnits;
+    assert.deepStrictEqual(leaderboard.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    const envelope = leaderboard.ortb2Imp.ext.encypher;
+    assert.deepStrictEqual(Object.keys(envelope), ['v', 'kid', 'epk', 'ct']);
+    assert.strictEqual(envelope.v, 1);
+    assert.strictEqual(envelope.kid, GATEWAY_KID);
+    assert.strictEqual(decodeBase64url(envelope.epk).length, 65);
+    assert.strictEqual(decodeBase64url(envelope.epk)[0], 4);
+    assert.strictEqual(new TextEncoder().encode(JSON.stringify(envelope)).byteLength <= 700, true);
+    const plaintext = await openEnvelope(envelope);
+    assert.strictEqual(plaintext, JSON.stringify({
+      v: 1, id: 'epa_s', m: 'vp1', vp: expectedViewport(), tr: 's', on: staticOn(digests),
+    }));
+    assert.strictEqual(new TextEncoder().encode(plaintext).byteLength <= 400, true);
+    assert.notStrictEqual(rectangle.ortb2Imp.ext.encypher.epk, envelope.epk, 'every impression uses a fresh ephemeral key');
+    assert.strictEqual(await openEnvelope(rectangle.ortb2Imp.ext.encypher), JSON.stringify({
+      v: 1, id: 'epa_s', m: 'vp1', vp: expectedViewport(), tr: 's', on: [],
+    }));
+
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {
+      leaderboard: { encypher_verified: '1', encypher_near: 'va' },
+      rectangle: { encypher_verified: '1', encypher_near: '0' },
+    });
+    await nextTask();
+    const events = telemetryEvents();
+    assert.deepStrictEqual(events.map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_attached', 2]]);
+    events.forEach(event => assertDiagnostic(JSON.stringify(event), event.event, event.impression_count, 300));
+  });
+
+  it('extends the screen over a sticky slot containing block plus half a screen each side', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const blockTop = 20 * screen;
+    const height = Math.round(screen / 8);
+    const root = pageRoot();
+    const block = place(root, 'div', { top: blockTop, width: 800, height: 4 * screen, css: 'overflow:visible;' });
+    const slot = document.createElement('div');
+    slot.id = 'leaderboard';
+    slot.style.cssText = 'position:sticky;top:0;width:728px;height:90px;';
+    block.appendChild(slot);
+    const travelled = place(root, 'img', { top: blockTop + 3 * screen, left: 0, width: 300, height, attrs: { src: assetUrl('/adj/sticky-near.jpg') } });
+    const beyond = place(root, 'img', { top: blockTop + 6 * screen, left: 0, width: 300, height, attrs: { src: assetUrl('/adj/sticky-far.jpg') } });
+    const near = await assetDigest(travelled.src);
+    const far = await assetDigest(beyond.src);
+    const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([entry(near), entry(far, { ai: true })]))), { jwks: indexJwks });
+    await run.completion;
+
+    const [leaderboard, rectangle] = run.auction.adUnits;
+    assert.strictEqual(await openEnvelope(leaderboard.ortb2Imp.ext.encypher), JSON.stringify({
+      v: 1, id: 'epa_s', m: 'vp1', vp: expectedViewport(), tr: 'k', on: [{ d: near, a: 3 }],
+    }));
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(rectangle.ortb2Imp.ext, 'encypher'), false, 'an unresolved slot carries no observation');
+    assert.deepStrictEqual(rectangle.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {
+      leaderboard: { encypher_verified: '1', encypher_near: 'v' },
+      rectangle: { encypher_verified: '1' },
+    });
+    await nextTask();
+    assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_attached', 1]]);
+  });
+
+  it('treats a fixed slot as sharing the screen with the whole document', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const root = pageRoot();
+    place(root, 'div', { top: 0, width: 320, height: 50, attrs: { id: 'leaderboard' }, css: 'position:fixed;bottom:0;top:auto;' });
+    const distant = place(root, 'img', { top: 30 * screen, width: 300, height: 200, attrs: { src: assetUrl('/adj/fixed-far.jpg') } });
+    const d = await assetDigest(distant.src);
+    const run = beginAuction({ adjacency: true, gamTargeting: {} });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([entry(d, { ai: true })]))), { jwks: indexJwks });
+    await run.completion;
+
+    const observation = JSON.parse(await openEnvelope(run.auction.adUnits[0].ortb2Imp.ext.encypher));
+    assert.strictEqual(observation.tr, 'f');
+    assert.deepStrictEqual(observation.on.map(item => item.d), [d]);
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), {
+      leaderboard: { encypher_verified: '1', encypher_near: 'va' },
+    });
+  });
+
+  it('resolves a slot through its GPT div when no element carries the ad unit code', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const root = pageRoot();
+    place(root, 'div', { top: 20 * screen, width: 300, height: 90, attrs: { id: 'div-gpt-ad-rect' } });
+    const neighbour = place(root, 'img', { top: 20 * screen + 90 + Math.round(screen / 16), width: 300, height: Math.round(screen / 8), attrs: { src: assetUrl('/adj/gpt-near.jpg') } });
+    const d = await assetDigest(neighbour.src);
+    const previousGoogletag = window.googletag;
+    window.googletag = {
+      pubads: () => ({
+        getSlots: () => [{ getAdUnitPath: () => '/1234/rect', getSlotElementId: () => 'div-gpt-ad-rect' }],
+      }),
+    };
+    cleanups.push(() => { window.googletag = previousGoogletag; });
+    const auction = makeAuction();
+    auction.adUnits[1].code = '/1234/rect';
+    const run = beginAuction({ adjacency: true }, auction);
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([entry(d)]))), { jwks: indexJwks });
+    await run.completion;
+
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(run.auction.adUnits[0].ortb2Imp.ext, 'encypher'), false);
+    const observation = JSON.parse(await openEnvelope(run.auction.adUnits[1].ortb2Imp.ext.encypher));
+    assert.deepStrictEqual(observation.on, [{ d, a: 3 }]);
+  });
+
+  it('reuses the cached index and gateway key for a cached ready decision with a fresh seal', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const { digests, entries } = await staticPage();
+    const first = beginAuction({ adjacency: true });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims(entries))), { jwks: indexJwks });
+    await first.completion;
+    const requestCount = server.requests.length;
+
+    const second = beginAuction({ adjacency: true });
+    await second.completion;
+    assert.strictEqual(server.requests.length, requestCount, 'a cached decision adds no network request');
+    const firstEnvelope = first.auction.adUnits[0].ortb2Imp.ext.encypher;
+    const secondEnvelope = second.auction.adUnits[0].ortb2Imp.ext.encypher;
+    assert.notStrictEqual(secondEnvelope.ct, firstEnvelope.ct);
+    assert.deepStrictEqual(JSON.parse(await openEnvelope(secondEnvelope)).on, staticOn(digests));
+  });
+
+  const ENTRY_D = 'abcdefghijk';
+  [
+    ['a wrong typ header', async () => signIndex(indexClaims([entry(ENTRY_D)]), { alg: 'ES256', kid: INDEX_KID, typ: 'epat+jws' })],
+    ['an unpinned kid', async () => signIndex(indexClaims([entry(ENTRY_D)]), { alg: 'ES256', kid: 'unpinned', typ: 'epai+jws' })],
+    ['a tampered claim', async () => replaceClaims(await signIndex(indexClaims([entry(ENTRY_D)])), claims => { claims.entries[0].ai = true; })],
+    ['another attestation sub', async () => signIndex(indexClaims([entry(ENTRY_D)], { sub: 'epa_other' }))],
+    ['an expired exp', async () => signIndex(indexClaims([entry(ENTRY_D)], { exp: NOW_SECONDS }))],
+    ['another record revision', async () => signIndex(indexClaims([entry(ENTRY_D)], { record_revision: 2 }))],
+    ['another URL hash', async () => signIndex(indexClaims([entry(ENTRY_D)], { url_hash: PAGE_HASH }))],
+    ['another publisher domain', async () => signIndex(indexClaims([entry(ENTRY_D)], { publisher_domain: 'other.example' }))],
+    ['another issuer', async () => signIndex(indexClaims([entry(ENTRY_D)], { iss: 'https://attacker.example' }))],
+    ['an unknown claim', async () => signIndex(indexClaims([entry(ENTRY_D)], { score: 1 }))],
+    ['a duplicate entry', async () => signIndex(indexClaims([entry(ENTRY_D), entry(ENTRY_D)]))],
+    ['an image entry named text', async () => signIndex(indexClaims([entry('text', { k: 'image' })]))],
+    ['an unknown entry state', async () => signIndex(indexClaims([entry(ENTRY_D, { s: 'human' })]))],
+    ['65 entries', async () => signIndex(indexClaims(Array.from({ length: 65 }, (_unused, i) => entry('e' + String(i).padStart(10, '0')))))],
+    ['a non-string index', async () => 42],
+    ['no index', async () => undefined],
+  ].forEach(([name, makeIndex], offset) => {
+    it('attaches only the v1 record for an index with ' + name, async () => {
+      addCanonical(STORY_URL, cleanups);
+      await staticPage();
+      const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
+      await respondDecision(readyWithAdjacency(await makeIndex(), 400 + offset), { jwks: indexJwks });
+      await run.completion;
+      assertV1Only(run.auction);
+      assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), { leaderboard: { encypher_verified: '1' } });
+      await nextTask();
+      assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_skipped', 2]]);
+    });
+  });
+
+  [
+    ['no gateway key', null],
+    ['a gateway key with a private member', 'private'],
+    ['a gateway key on another curve', 'curve'],
+    ['a signing gateway key', 'use'],
+    ['a gateway kid that is not GAM-safe', 'kid'],
+  ].forEach(([name, variant], offset) => {
+    it('attaches only the v1 record for ' + name, async () => {
+      addCanonical(STORY_URL, cleanups);
+      const { entries } = await staticPage();
+      const gateway = variant === null ? null : Object.assign({}, gatewayJwk, {
+        private: { d: 'A'.repeat(43) },
+        curve: { crv: 'P-384' },
+        use: { use: 'sig' },
+        kid: { kid: 'gw key' },
+      }[variant]);
+      const run = beginAuction({ adjacency: true, gamTargeting: {} });
+      await respondDecision(readyWithAdjacency(await signIndex(indexClaims(entries)), 450 + offset, gateway), { jwks: indexJwks });
+      await run.completion;
+      assertV1Only(run.auction);
+      assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), { leaderboard: { encypher_verified: '1' } });
+    });
+  });
+
+  it('fits a worst-case observation: 32-character id, six entries, 64-character gateway kid', async () => {
+    const subtle = window.crypto.subtle;
+    const realImportKey = subtle.importKey.bind(subtle);
+    sandbox.stub(subtle, 'importKey').callsFake((format, key, algorithm, ...rest) => (
+      algorithm.name === 'ECDSA' ? Promise.resolve({}) : realImportKey(format, key, algorithm, ...rest)
+    ));
+    sandbox.stub(subtle, 'verify').resolves(true);
+    addCanonical(STORY_URL, cleanups);
+    const id = 'r'.repeat(32);
+    const record = recordWithClaims(Object.assign({}, STORY_SIGNAL, { id }), claims => { claims.sub = id; });
+    const screen = getWinDimensions().innerHeight;
+    const root = pageRoot();
+    place(root, 'div', { top: 20 * screen, width: 728, height: 90, attrs: { id: 'leaderboard' } });
+    const entries = [];
+    for (let i = 0; i < 7; i += 1) {
+      const image = place(root, 'img', { top: 20 * screen + 100, left: i * 100, width: 90, height: 40, attrs: { src: assetUrl('/adj/many-' + i + '.jpg') } });
+      entries.push(entry(await assetDigest(image.src)));
+    }
+    const kid = 'K'.repeat(64);
+    const run = beginAuction({ adjacency: true });
+    await respondDecision(
+      readyWithAdjacency(await signIndex(indexClaims(entries, { sub: id })), 500, Object.assign({}, gatewayJwk, { kid }), record),
+      { jwks: indexJwks },
+    );
+    await run.completion;
+    const envelope = run.auction.adUnits[0].ortb2Imp.ext.encypher;
+    const plaintext = await openEnvelope(envelope);
+    assert.strictEqual(JSON.parse(plaintext).on.length, 6);
+    assert.strictEqual(new TextEncoder().encode(plaintext).byteLength, 238);
+    assert.strictEqual(new TextEncoder().encode(JSON.stringify(envelope)).byteLength, 539);
+  });
+
+  it('omits an envelope that would serialize above 700 bytes', async () => {
+    sandbox.stub(window.crypto.subtle, 'encrypt').resolves(new Uint8Array(600).buffer);
+    addCanonical(STORY_URL, cleanups);
+    const { entries } = await staticPage();
+    const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims(entries))), { jwks: indexJwks });
+    await run.completion;
+    assertV1Only(run.auction);
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), { leaderboard: { encypher_verified: '1' } });
+    await nextTask();
+    assert.deepStrictEqual(telemetryEvents().map(event => event.event), ['injected', 'adjacency_skipped']);
+  });
+
+  [
+    ['asset hashing', 'digest'],
+    ['encryption', 'encrypt'],
+  ].forEach(([name, method]) => {
+    it('attaches the v1 record without adjacency when ' + name + ' outlasts the budget', async () => {
+      const clock = useFakeTimers();
+      let stalled = 0;
+      if (method === 'digest') {
+        digestStub.callsFake((algorithm, encoded) => {
+          const expected = DIGEST_BYTES_BY_CANONICAL_URL.get(new TextDecoder().decode(encoded));
+          if (expected) return GreedyPromise.resolve(expected.buffer);
+          stalled += 1;
+          return new Promise(() => {});
+        });
+      } else {
+        sandbox.stub(window.crypto.subtle, 'encrypt').callsFake(() => {
+          stalled += 1;
+          return new Promise(() => {});
+        });
+      }
+      addCanonical(STORY_URL, cleanups);
+      const { entries } = await staticPage();
+      const index = await signIndex(indexClaims(entries));
+      const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
+      await respondDecision(readyWithAdjacency(index), { jwks: indexJwks });
+      const inFlight = () => stalled > 0;
+      for (let attempt = 0; attempt < 100 && !inFlight(); attempt += 1) await nextTask();
+      assert.ok(stalled > 0, name + ' must be in flight');
+      assert.strictEqual(run.callbackCount(), 0);
+      clock.tick(300);
+      await run.completion;
+      assert.strictEqual(run.callbackCount(), 1);
+      assertV1Only(run.auction);
+      assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {
+        leaderboard: { encypher_verified: '1' },
+        rectangle: { encypher_verified: '1' },
+      });
+      await nextTask();
+      assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_skipped', 2]]);
+    });
+  });
+
+  it('orders encypher_near after encypher_verified and drops packages before it', async () => {
+    const canonical = addCanonical(STORY_URL, cleanups);
+    const { entries } = await staticPage();
+    const run = beginAuction({ adjacency: true });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims(entries))), { jwks: indexJwks });
+    await run.completion;
+
+    const full = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: ['VPP-V1'] } });
+    assert.deepStrictEqual(Object.keys(full.leaderboard), ['encypher_verified', 'encypher_near', 'encypher_att', 'encypher_pkg']);
+    assert.deepStrictEqual(full.leaderboard, {
+      encypher_verified: '1', encypher_near: 'va', encypher_att: 'epa_s', encypher_pkg: ['VPP-V1'],
+    });
+    const overCap = Array.from({ length: 8 }, () => 'A'.repeat(32));
+    const dropped = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: overCap } });
+    assert.deepStrictEqual(dropped, {
+      leaderboard: { encypher_verified: '1', encypher_near: 'va', encypher_att: 'epa_s' },
+    });
+    assert.strictEqual(targetingBytes(dropped.leaderboard), 69);
+
+    canonical.href = PAGE_URL;
+    const next = beginAuction({ adjacency: true });
+    await respondDecision(miss('revoked', 301));
+    await next.completion;
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), {}, 'near does not leak into the next auction');
+  });
+
+  it('admits a full 64-entry index above the 1.1.0 4 KiB lookup cap', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const { digests, entries } = await staticPage();
+    const filler = Array.from({ length: 64 - entries.length }, (_unused, i) => (
+      entry('f' + String(i).padStart(10, '0'), { k: 'video', s: 'unrecognized_signer', c: 'content', o: false })
+    ));
+    const envelope = readyWithAdjacency(await signIndex(indexClaims(entries.concat(filler))));
+    assert.strictEqual(new TextEncoder().encode(JSON.stringify(envelope)).byteLength > 4096, true);
+    assert.strictEqual(new TextEncoder().encode(JSON.stringify(envelope)).byteLength <= 16384, true);
+    const run = beginAuction({ adjacency: true });
+    await respondDecision(envelope, { jwks: indexJwks });
+    await run.completion;
+    assert.deepStrictEqual(JSON.parse(await openEnvelope(run.auction.adUnits[0].ortb2Imp.ext.encypher)).on, staticOn(digests));
+  });
+
+  it('keeps adjacency: false byte-identical to 1.1.0, including rejection of the adjacency lookup keys', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const { entries } = await staticPage();
+    const index = await signIndex(indexClaims(entries));
+    const outcomes = [];
+    for (const [offset, params] of [{}, { adjacency: false }].entries()) {
+      resetProviderState();
+      encypherSubmodule.init({ params });
+      const extended = beginAuction(Object.assign({ telemetry: true }, params));
+      await respondDecision(readyWithAdjacency(index, 700 + offset));
+      await extended.completion;
+      assertNoInjection(extended.auction);
+
+      server.requests.length = 0;
+      const run = beginAuction(Object.assign({ telemetry: true, gamTargeting: {} }, params));
+      const lookup = pendingLookup();
+      assertCanonicalLookup(lookup, STORY_HASH, STORY_URL);
+      await respondDecision(ready(STORY_SIGNAL, 800 + offset));
+      await run.completion;
+      assertV1Only(run.auction);
+      await nextTask();
+      outcomes.push({
+        adUnits: JSON.stringify(run.auction.adUnits),
+        targeting: JSON.stringify(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} })),
+        events: telemetryEvents().map(event => event.event),
+        lookup: lookup.url,
+      });
+    }
+    assert.deepStrictEqual(outcomes[1], outcomes[0]);
+    assert.deepStrictEqual(outcomes[0].events, ['injected']);
+    assert.strictEqual(outcomes[0].targeting, JSON.stringify({
+      leaderboard: { encypher_verified: '1' },
+      rectangle: { encypher_verified: '1' },
+    }));
+  });
+
+  it('warns at init for a non-boolean adjacency value and keeps the profile off', async () => {
+    const warn = sandbox.stub(utils, 'logWarn');
+    assert.strictEqual(encypherSubmodule.init({ params: { adjacency: 'yes' } }), true);
+    assert.strictEqual(warn.callCount, 1);
+    assert.strictEqual(warn.firstCall.args[0].includes('adjacency'), true);
+    assert.strictEqual(encypherSubmodule.init({ params: { adjacency: true } }), true);
+    assert.strictEqual(encypherSubmodule.init({ params: { adjacency: false } }), true);
+    assert.strictEqual(warn.callCount, 1);
+
+    addCanonical(STORY_URL, cleanups);
+    await staticPage();
+    const run = beginAuction({ adjacency: 'yes' });
+    assertCanonicalLookup(pendingLookup(), STORY_HASH, STORY_URL);
+    await respondDecision(ready(STORY_SIGNAL, 800));
+    await run.completion;
+    assertV1Only(run.auction);
   });
 });

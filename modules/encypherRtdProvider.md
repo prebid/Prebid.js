@@ -40,6 +40,7 @@ pbjs.setConfig({
 | `telemetry` | unset | Set to `true` to emit diagnostic-only delivery events after the auction callback. |
 | `adoptionReporting` | `true` | Enables privacy-minimized, domain-level adoption reporting on consent-allowed signal lookups. Set to `false` to stop future adoption observations without changing auction behavior. |
 | `gamTargeting` | `false` | Ad server key-values for GAM line items. Either `false` or an object with the optional `includeAttestationId` boolean and the optional `packages` string array. See Targeting Contract V1. |
+| `adjacency` | `false` | Set to `true` to add the sealed on-screen observation `imp.ext.encypher` and the `encypher_near` key. A value other than a boolean logs one warning at `init` and leaves the profile off. See the adjacency profile below. |
 
 The signal origin is not configurable. Lookups and telemetry use exactly `https://signals.encypher.com`.
 
@@ -51,7 +52,7 @@ With `gamTargeting` set to an object, the module implements the standard RTD `ge
 | --- | --- | --- |
 | `encypher_verified` | `"1"` | The ad unit received `ortb2Imp.ext.c2pa` in this auction. |
 | `encypher_att` | attestation ID, the same value as `ortb2Imp.ext.c2pa.id` | `includeAttestationId` is `true` and the ID matches `[A-Za-z0-9_-]{1,32}`. |
-| `encypher_pkg` | array of publisher package codes, copied verbatim from `packages` | `packages` is non-empty. |
+| `encypher_near` | `v`, `a`, `va`, or `0` | `adjacency` is `true` and the ad unit carries `imp.ext.encypher` in this auction. See the adjacency profile. |
 
 Rules:
 
@@ -59,7 +60,7 @@ Rules:
 - Targeting is per auction. A verified hit does not carry into the next auction for the same ad unit code.
 - Each `packages` entry must match `[A-Za-z0-9_-]{1,32}`. The module never derives package codes from provenance evidence.
 - A malformed `gamTargeting` value, an unknown key inside it, or a rejected package code logs one warning at `init` and leaves targeting off. Existing installs that omit the parameter see no behavior change.
-- The serialized key-value payload is at most 256 bytes per ad unit. On overflow the module drops `encypher_pkg`, then `encypher_att`, then `encypher_verified`. Only `encypher_pkg` can reach the cap in practice: with `encypher_pkg` gone the payload is at most 75 bytes, because the attestation ID is limited to 32 characters.
+- The serialized key-value payload is at most 256 bytes per ad unit. On overflow the module drops `encypher_pkg`, then `encypher_att`, then `encypher_near`, then `encypher_verified`. Only `encypher_pkg` can reach the cap in practice: with `encypher_pkg` gone the payload is at most 96 bytes, because the attestation ID is limited to 32 characters and `encypher_near` to 2.
 - Keys are lowercase ASCII; values are ASCII. Package codes and attestation IDs may contain uppercase letters. No URL, digest, price, deal, or user value appears in targeting.
 
 On a page that calls `requestBids` more than once, clear the keys on the ad server slot before each set. Prebid's `auctionManager.getAdUnits()` returns the ad units of every retained auction, and `targeting.getAdUnitTargeting` reads `adserverTargeting` from all of them, so a verified earlier auction keeps supplying `encypher_verified` for the same ad unit code after a later auction missed. The module cannot correct this from `getTargetingData`: it returns no entry for the missed ad unit, and an empty value would reach the ad server as a present key with an empty string rather than an absent key.
@@ -123,6 +124,80 @@ When configured, the module establishes auction-local shallow copies of the ad-u
 
 Because of those copies, `pbjs.adUnits` never carries the record. Wrapper code that wants to read the carrier itself, instead of using `gamTargeting`, must read `adUnits[].ortb2Imp.ext.c2pa` from the `auctionEnd` payload, which keeps the same `ortb2Imp` reference the module wrote.
 
+## Adjacency profile (`adjacency: true`)
+
+The adjacency profile tells a buyer's admission gateway which signed assets of the page share the reader's screen with each ad slot, so a deal can require verified content next to the ad. The browser asserts only a position. Every fact about an asset (its label state, its AI declaration, whether it is article content, a teaser, or site chrome) comes from an asset index that Encypher signs, and the gateway takes those facts from the signed index, never from the browser. The open auction cannot read the observation: it is encrypted to the gateway.
+
+### What the lookup adds
+
+With `adjacency: true` the module adds `adjacency=1` to the existing signal lookup. A ready response may then carry two optional fields next to the record, and the module accepts a lookup body of up to 16 KiB instead of 4 KiB:
+
+| Field | Content |
+| --- | --- |
+| `index` | Compact JWS, header `{"alg":"ES256","kid","typ":"epai+jws"}`, verified against the same pinned JWKS as the attestation. Claims are exactly `iss`, `sub`, `iat`, `exp`, `publisher_domain`, `url_hash`, `trust_policy_version`, `record_revision`, `method`, and `entries`. `sub` must equal the record ID, `record_revision` the attestation's signed revision, and `iss`, `publisher_domain`, `url_hash`, policy version, issue time, and expiry follow the attestation rules. `entries` holds at most 64 unique entries `{d, k, s, ai, c, o}`: `d` is the first 11 characters of the unpadded base64url SHA-256 of the asset URL, or `text` for the article text. |
+| `gateway_jwk` | The gateway's P-256 public key: exactly `kty: "EC"`, `crv: "P-256"`, `kid` matching `[A-Za-z0-9_-]{1,64}`, `x`, `y`, and optionally `use: "enc"` and `alg: "ECDH-ES"`. Any other member, including a private `d`, rejects the key. |
+
+Both fields are ignored silently when absent or invalid; the record still attaches as in 1.1.0. Without `adjacency: true` the lookup is byte-identical to 1.1.0 and a response carrying either field is rejected as malformed, as before. Deploy the edge support for `adjacency=1` before enabling the profile: an edge that does not know the flag answers every lookup as malformed, which removes the 1.1.0 signal too.
+
+### Measurement
+
+After the record verifies, the module verifies the index and runs one synchronous layout read for the auction. For each ad unit it finds the slot element: the element whose `id` equals the ad unit code, else the element whose `data-ad-slot` equals it, else the div of the GPT slot matching the code. An ad unit without a rendered slot element carries no observation.
+
+The slot's screen is the page band it shares the reader's screen with:
+
+- Static slot (`tr: "s"`): one viewport height centred on the slot, widened to the slot itself when it is taller.
+- Sticky slot (`tr: "k"`), when the slot or an ancestor has computed `position: sticky`: the sticky element's containing block plus half a viewport height above and below.
+- Fixed slot (`tr: "f"`), when the slot or an ancestor has computed `position: fixed`: the whole document.
+
+Inside that band the module measures every rendered `img`, `video`, and `audio` element and every innermost text block (`p`, `li`, `h1`-`h6`, `blockquote`, `figcaption`) outside the auction's slots. A media element maps to an index entry by the SHA-256 prefix of its URL exactly as the browser resolved it (`currentSrc`, else `src`, else a video poster), with no further normalization. A text block maps to the `text` entry when it contains a C2PA text-mark run: eight or more consecutive variation selectors (U+FE00-U+FE0F, U+E0100-U+E01EF), so a single emoji presentation selector does not count. The browser does not separate teasers and chrome; every intersecting index entry counts, and the index's `c` field carries the classification.
+
+Each entry's area class is its share of the measured area (media plus text blocks) on the slot's screen: `0` below 5%, `1` from 5% to below 25%, `2` from 25% to 60%, `3` above 60%. The observation keeps at most six entries, largest class first, then by `d`.
+
+### `imp.ext.encypher`
+
+The plaintext observation, at most 400 UTF-8 bytes, is:
+
+```json
+{"v":1,"id":"epa_01J...","m":"vp1","vp":"d","tr":"s","on":[{"d":"Xk3r0bQp1aZ","a":3},{"d":"text","a":1}]}
+```
+
+`vp` is the viewport class from `window.innerWidth`: `m` below 768 px, `t` below 1200 px, `d` otherwise. `on` may be empty: the slot's screen shows no indexed asset.
+
+The module seals it with ECIES to `gateway_jwk`, using WebCrypto only: an ephemeral ECDH P-256 key per impression, HKDF-SHA256 over the 32-byte shared secret with an empty salt and info `encypher-adj-v1`, and AES-256-GCM with a random 12-byte IV, a 128-bit tag, and no additional data. The impression carries:
+
+```json
+{"imp":[{"ext":{"c2pa":{"v":1,"id":"epa_01J...","ref":"...","att":"..."},"encypher":{"v":1,"kid":"gw-2026-10","epk":"BH4...","ct":"q9..."}}}]}
+```
+
+`epk` is the unpadded base64url 65-byte uncompressed ephemeral public key; `ct` is the unpadded base64url of IV, ciphertext, and tag. An envelope larger than 700 serialized bytes is omitted. The worst case (a 32-character record ID, six entries, a 64-character `kid`) measures 539 bytes.
+
+### `encypher_near`
+
+For ad units that carry `imp.ext.encypher`, `getTargetingData` adds `encypher_near` after `encypher_verified`:
+
+| Value | Meaning, from the signed index entries in the observation |
+| --- | --- |
+| `v` | Verified article content is on screen: an entry with `s: "verified"` and `c: "content"`. |
+| `a` | An intact label declaring AI is on screen: an entry with `ai: true`, `s` of `verified` or `unrecognized_signer`, and `c` other than `chrome`. |
+| `va` | Both. |
+| `0` | Neither. |
+
+`0` means only that no labelled asset matching `v` or `a` shares the screen. Unlabelled content is neither human nor AI, so `0` must never be described as human content, AI-free, or safe.
+
+### Privacy properties
+
+- No new request. The index and gateway key arrive in the existing lookup; nothing is posted during the auction, and nothing is stored.
+- The observation holds no coordinates, scroll offsets, timestamps, URLs, or user data: a record ID, a coarse viewport class, a travel class, and at most six index digests with a four-step area class.
+- Only the gateway key holder can read it. Each impression uses a fresh ephemeral key, so two envelopes cannot be linked by key material.
+- `encypher_near` reveals one of four values per ad unit to the publisher's ad server, which already controls the page.
+- Consent gates apply unchanged: a blocked auction does no measurement.
+
+### Fail-open rules
+
+- An absent or invalid index or gateway key, an index for another record, revision, page, or domain, an expired index, a failed signature, an unresolvable slot, a WebCrypto failure, or an oversize plaintext or envelope removes only the observation and `encypher_near`. The verified record still attaches.
+- Index verification, measurement, hashing, and encryption run inside the provider's existing budget (300 ms by default). If the budget fires while they are in flight, the module attaches the verified record without `imp.ext.encypher` and without `encypher_near`, and calls back once.
+- `imp.ext.encypher` is written only inside the same per-impression injection as `imp.ext.c2pa`, only on the module's auction-local ad-unit copies, and only for ad units that reached the injected state.
+
 ## Trust split and residual authority risk
 
 The record JWS authenticates the carrier and its signed claims. The pinned `https://api.encypher.com` JWKS origin supplies the verification key. The exact `https://signals.encypher.com` origin is the online authority for the current `ready`, `miss`, `revoked`, or `stale` decision and dataset version.
@@ -144,6 +219,8 @@ Allowed lookup requests disclose the canonical URL digest, canonical publisher h
 ## Diagnostic telemetry
 
 When consent permits transmission and `telemetry` is `true`, the module sends a post-callback event to `https://signals.encypher.com/v1/telemetry/rtd` through Prebid's fetch wrapper with keepalive, omitted credentials, no referrer, no-store caching, and redirects rejected. The event contains only its protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. `impression_count` is the number of impressions injected on the owned auction graph; every non-injected outcome reports zero. The event contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect the auction.
+
+With `adjacency: true`, an injected auction sends one more event of the same shape: `adjacency_attached` with the number of impressions that carry `imp.ext.encypher`, or `adjacency_skipped` with the injected impression count when none does.
 
 ## Publisher adoption reporting
 

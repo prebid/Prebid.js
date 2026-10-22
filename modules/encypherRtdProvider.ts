@@ -2,6 +2,9 @@ import { getHook, submodule } from '../src/hook.js';
 import { fetcherFactory } from '../src/ajax.js';
 import { gdprDataHandler, gppDataHandler, type AllConsentData } from '../src/consentHandler.ts';
 import { logWarn } from '../src/utils.js';
+import { getGptSlotForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getWinDimensions } from '../src/utils/winDimensions.js';
 import type { StartAuctionOptions } from '../src/prebid.ts';
 import type { AdUnitCode, ByAdUnit } from '../src/types/common.d.ts';
 import type { TargetingMap } from '../src/targeting.ts';
@@ -24,11 +27,33 @@ const MAX_ATTESTATION_LIFETIME_SECONDS = 3600;
 const RECORD_STATUS_CACHE_TTL_MS = 30_000;
 const JWKS_CACHE_TTL_MS = 30_000;
 const LOOKUP_MAX_BYTES = 4 * 1024;
+/** A 64-entry signed index is about 9 KiB; the adjacency profile admits it next to the record. */
+const ADJACENCY_LOOKUP_MAX_BYTES = 16 * 1024;
 const JWKS_MAX_BYTES = 64 * 1024;
 const MAX_TARGETING_BYTES = 256;
 const TARGETING_VALUE_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;
-const TARGETING_DROP_ORDER = ['encypher_pkg', 'encypher_att', 'encypher_verified'] as const;
+const TARGETING_DROP_ORDER = ['encypher_pkg', 'encypher_att', 'encypher_near', 'encypher_verified'] as const;
 const GAM_TARGETING_PARAM_KEYS = ['includeAttestationId', 'packages'];
+const LOOKUP_ENVELOPE_KEYS = ['v', 'status', 'dataset_version', 'record'];
+const ADJACENCY_ENVELOPE_KEYS = ['index', 'gateway_jwk'];
+const ASSET_INDEX_TYPE = 'epai+jws';
+const ADJACENCY_HKDF_INFO = 'encypher-adj-v1';
+const ADJACENCY_METHOD = 'vp1';
+const MAX_INDEX_ENTRIES = 64;
+const MAX_INDEX_METHOD_LENGTH = 64;
+const MAX_ON_SCREEN_ENTRIES = 6;
+const MAX_OBSERVATION_BYTES = 400;
+const MAX_ADJACENCY_ENVELOPE_BYTES = 700;
+const ASSET_DIGEST_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+const ASSET_DIGEST_LENGTH = 11;
+const TEXT_ENTRY = 'text';
+const GATEWAY_KID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+/** A C2PA text mark is a contiguous run of variation selectors; one alone is an emoji presentation selector. */
+const TEXT_MARK_RUN = /[\uFE00-\uFE0F\u{E0100}-\u{E01EF}]{8,}/u;
+const MEDIA_SELECTOR = 'img, video, audio';
+const TEXT_BLOCK_SELECTOR = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, figcaption';
+const MOBILE_MAX_WIDTH = 768;
+const TABLET_MAX_WIDTH = 1200;
 
 /** GAM key-value emission, Targeting Contract V1. Omit or set `false` to emit nothing. */
 export interface EncypherGamTargetingParams {
@@ -41,6 +66,8 @@ export interface EncypherRtdParams {
   telemetry?: boolean;
   adoptionReporting?: boolean;
   gamTargeting?: false | EncypherGamTargetingParams;
+  /** Encrypted on-screen observation in `imp.ext.encypher` plus the `encypher_near` key. Default `false`. */
+  adjacency?: boolean;
 }
 
 declare module './rtdModule/spec.ts' {
@@ -59,7 +86,71 @@ export interface C2paSignalV1 {
 }
 
 type JsonObject = Record<string, unknown>;
-type DiagnosticEvent = 'injected' | 'miss' | 'stale' | 'revoked' | 'invalid' | 'timeout';
+type DiagnosticEvent = 'injected' | 'miss' | 'stale' | 'revoked' | 'invalid' | 'timeout' | 'adjacency_attached' | 'adjacency_skipped';
+
+/** `imp.ext.encypher`: the ECIES-sealed observation, readable only by the gateway key holder. */
+export interface EncypherAdjacencyEnvelopeV1 {
+  v: 1;
+  kid: string;
+  epk: string;
+  ct: string;
+}
+
+type IndexState = 'verified' | 'unrecognized_signer' | 'broken';
+type IndexClass = 'content' | 'teaser' | 'chrome';
+type ViewportClass = 'm' | 't' | 'd';
+type TravelClass = 's' | 'k' | 'f';
+type AreaClass = 0 | 1 | 2 | 3;
+type NearValue = 'v' | 'a' | 'va' | '0';
+
+interface AssetIndexEntry {
+  d: string;
+  k: 'text' | 'image' | 'video' | 'audio';
+  s: IndexState;
+  ai: boolean;
+  c: IndexClass;
+  o: boolean;
+}
+
+/** Unverified adjacency inputs from the lookup; the index is verified before each use. */
+interface AdjacencyMaterial {
+  index: string;
+  gatewayKid: string;
+  gatewayJwk: JsonWebKey;
+}
+
+interface OnScreenEntry {
+  d: string;
+  a: AreaClass;
+}
+
+interface AdjacencyAttachment {
+  envelope: EncypherAdjacencyEnvelopeV1;
+  near: NearValue;
+}
+
+/** Sealed observations by auction-local ad unit object. */
+type AdjacencyAttachments = Map<object, AdjacencyAttachment>;
+
+/** A rendered element's page band: document-coordinate top and bottom, and width. */
+interface MeasuredBox {
+  top: number;
+  bottom: number;
+  width: number;
+}
+
+/** A media element or text block; `asset` is the resolved media URL, `text` for marked text, or null. */
+interface PageCandidate {
+  box: MeasuredBox;
+  asset: string | null;
+}
+
+/** The page band a slot shares the reader's screen with, and how the slot travels. */
+interface SlotScreen {
+  travel: TravelClass;
+  top: number;
+  bottom: number;
+}
 
 type DecisionStatus = 'ready' | 'miss' | 'revoked';
 
@@ -70,6 +161,7 @@ interface DecisionState {
   recordRevision?: number;
   recordFingerprint?: string;
   statusExpiresAt?: number;
+  adjacency?: AdjacencyMaterial;
 }
 
 interface RequestCallbacks {
@@ -85,6 +177,7 @@ interface GamTargetingSettings {
 /** Targeting Contract V1 key-value payload for one ad unit. */
 type TargetingValues = {
   encypher_verified?: '1';
+  encypher_near?: NearValue;
   encypher_att?: string;
   encypher_pkg?: string[];
 };
@@ -92,6 +185,8 @@ type TargetingValues = {
 const decisions = new Map<string, DecisionState>();
 /** Attestation IDs injected on the ad units of the auction the module last served, by ad unit code. */
 const injectedAttestationIds = new Map<AdUnitCode, string>();
+/** `encypher_near` for ad units of that auction that carry a sealed observation, by ad unit code. */
+const injectedNear = new Map<AdUnitCode, NearValue>();
 let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
 let maxDatasetVersionSeen = 0;
 let globalStaleBarrier = 0;
@@ -343,13 +438,20 @@ async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain
   const jwk = selectJwk(jwks, protectedHeader.kid);
   const recordRevision = validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000));
   if (!jwk || recordRevision === null) return null;
+  return await verifyCompactSignature(jwk, segments)
+    ? validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
+    : null;
+}
+
+/** ES256 signature check of a split compact JWS against one JWK; any failure is `false`. */
+async function verifyCompactSignature(jwk: JsonWebKey, segments: string[]): Promise<boolean> {
   let signature: Uint8Array;
   try {
     signature = decodeBase64url(segments[2]);
   } catch {
-    return null;
+    return false;
   }
-  if (signature.length !== 64) return null;
+  if (signature.length !== 64) return false;
   try {
     const key = await window.crypto.subtle.importKey(
       'jwk',
@@ -358,18 +460,359 @@ async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain
       false,
       ['verify']
     );
-    const valid = await window.crypto.subtle.verify(
+    return await window.crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       key,
       signature,
       new TextEncoder().encode(segments[0] + '.' + segments[1])
     );
-    return valid
-      ? validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
-      : null;
+  } catch {
+    return false;
+  }
+}
+
+/** Lookup keys accepted for the profile: the four v1 keys plus the optional adjacency keys. */
+function lookupEnvelope(envelope: unknown, adjacency: boolean): envelope is JsonObject {
+  if (!adjacency) return exactKeys(envelope, LOOKUP_ENVELOPE_KEYS);
+  if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) return false;
+  const actual = Object.keys(envelope);
+  return LOOKUP_ENVELOPE_KEYS.every(key => actual.includes(key)) &&
+    actual.every(key => LOOKUP_ENVELOPE_KEYS.includes(key) || ADJACENCY_ENVELOPE_KEYS.includes(key));
+}
+
+/** Gateway P-256 public key from the lookup, or `null` when absent or not an exact public JWK. */
+function gatewayKey(value: unknown): { kid: string; jwk: JsonWebKey } | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const key = value as JsonObject;
+  const keys = Object.keys(key);
+  if (!keys.every(name => ['kty', 'crv', 'kid', 'x', 'y', 'use', 'alg'].includes(name))) return null;
+  if (
+    key.kty !== 'EC' ||
+    key.crv !== 'P-256' ||
+    typeof key.kid !== 'string' || !GATEWAY_KID_PATTERN.test(key.kid) ||
+    typeof key.x !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(key.x) ||
+    typeof key.y !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(key.y) ||
+    (key.use !== undefined && key.use !== 'enc') ||
+    (key.alg !== undefined && key.alg !== 'ECDH-ES')
+  ) return null;
+  return { kid: key.kid, jwk: { kty: 'EC', crv: 'P-256', x: key.x, y: key.y } };
+}
+
+/** Adjacency inputs from a ready lookup, or `undefined` when either is absent or malformed. */
+function adjacencyMaterial(envelope: JsonObject): AdjacencyMaterial | undefined {
+  const gateway = gatewayKey(envelope.gateway_jwk);
+  if (!gateway || typeof envelope.index !== 'string' || envelope.index.split('.').length !== 3) return undefined;
+  return { index: envelope.index, gatewayKid: gateway.kid, gatewayJwk: gateway.jwk };
+}
+
+function indexEntry(value: unknown): AssetIndexEntry | null {
+  if (!exactKeys(value, ['d', 'k', 's', 'ai', 'c', 'o'])) return null;
+  const { d, k, s, ai, c, o } = value;
+  if (typeof d !== 'string' || (d !== TEXT_ENTRY && !ASSET_DIGEST_PATTERN.test(d))) return null;
+  if (typeof k !== 'string' || !['text', 'image', 'video', 'audio'].includes(k) || (k === 'text') !== (d === TEXT_ENTRY)) return null;
+  if (typeof s !== 'string' || !['verified', 'unrecognized_signer', 'broken'].includes(s)) return null;
+  if (typeof c !== 'string' || !['content', 'teaser', 'chrome'].includes(c)) return null;
+  if (typeof ai !== 'boolean' || typeof o !== 'boolean') return null;
+  return { d, k: k as AssetIndexEntry['k'], s: s as IndexState, ai, c: c as IndexClass, o };
+}
+
+/** Index entries by `d` when the claims bind to this attestation and are current, else `null`. */
+function validIndexClaims(
+  claims: unknown,
+  record: C2paSignalV1,
+  recordRevision: number,
+  publisherDomain: string,
+  urlHash: string,
+  now: number
+): Map<string, AssetIndexEntry> | null {
+  if (!exactKeys(claims, [
+    'iss', 'sub', 'iat', 'exp', 'publisher_domain', 'url_hash', 'trust_policy_version', 'record_revision',
+    'method', 'entries',
+  ])) return null;
+  if (
+    claims.iss !== TRUSTED_ISSUER ||
+    claims.sub !== record.id ||
+    claims.publisher_domain !== publisherDomain ||
+    claims.url_hash !== urlHash ||
+    claims.trust_policy_version !== ACCEPTED_TRUST_POLICY_VERSION ||
+    claims.record_revision !== recordRevision
+  ) return null;
+  if (typeof claims.iat !== 'number' || !Number.isInteger(claims.iat) || claims.iat < 0) return null;
+  if (typeof claims.exp !== 'number' || !Number.isInteger(claims.exp)) return null;
+  if (
+    claims.iat > now + CLOCK_SKEW_SECONDS ||
+    claims.exp <= now ||
+    claims.exp <= claims.iat ||
+    claims.exp - claims.iat > MAX_ATTESTATION_LIFETIME_SECONDS
+  ) return null;
+  if (typeof claims.method !== 'string' || claims.method.length === 0 || claims.method.length > MAX_INDEX_METHOD_LENGTH) return null;
+  if (!Array.isArray(claims.entries) || claims.entries.length > MAX_INDEX_ENTRIES) return null;
+  const entries = new Map<string, AssetIndexEntry>();
+  for (const value of claims.entries) {
+    const entry = indexEntry(value);
+    if (!entry || entries.has(entry.d)) return null;
+    entries.set(entry.d, entry);
+  }
+  return entries;
+}
+
+/** The signed asset index bound to a verified attestation, or `null` on any mismatch. */
+async function verifyAssetIndex(
+  compact: string,
+  jwks: unknown,
+  record: C2paSignalV1,
+  recordRevision: number,
+  publisherDomain: string,
+  urlHash: string
+): Promise<Map<string, AssetIndexEntry> | null> {
+  const segments = compact.split('.');
+  if (segments.length !== 3) return null;
+  let protectedHeader: unknown;
+  let claims: unknown;
+  try {
+    protectedHeader = decodeJson(segments[0]);
+    claims = decodeJson(segments[1]);
   } catch {
     return null;
   }
+  if (!exactKeys(protectedHeader, ['alg', 'kid', 'typ']) || protectedHeader.alg !== 'ES256' || protectedHeader.typ !== ASSET_INDEX_TYPE) return null;
+  const jwk = selectJwk(jwks, protectedHeader.kid);
+  if (!jwk || !validIndexClaims(claims, record, recordRevision, publisherDomain, urlHash, Math.floor(Date.now() / 1000))) return null;
+  return await verifyCompactSignature(jwk, segments)
+    ? validIndexClaims(claims, record, recordRevision, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
+    : null;
+}
+
+function viewportClass(): ViewportClass {
+  const width = getWinDimensions().innerWidth;
+  if (width < MOBILE_MAX_WIDTH) return 'm';
+  if (width < TABLET_MAX_WIDTH) return 't';
+  return 'd';
+}
+
+/** The element's page band, or `null` when it is not rendered. */
+function measure(element: Element, allowEmpty: boolean): MeasuredBox | null {
+  if (element.getClientRects().length === 0) return null;
+  const rect = getBoundingClientRect(element);
+  if (!allowEmpty && (rect.width <= 0 || rect.height <= 0)) return null;
+  return { top: rect.top + window.scrollY, bottom: rect.bottom + window.scrollY, width: rect.width };
+}
+
+/** The slot's element: ad unit code as element id, else `data-ad-slot`, else its GPT slot div. */
+function slotElement(code: AdUnitCode): Element | null {
+  const byId = document.getElementById(code);
+  if (byId) return byId;
+  const byAttribute = Array.from(document.querySelectorAll('[data-ad-slot]'))
+    .find(element => element.getAttribute('data-ad-slot') === code);
+  if (byAttribute) return byAttribute;
+  const gptSlot = getGptSlotForAdUnitCode(code);
+  const divId = gptSlot && gptSlot.getSlotElementId();
+  return divId ? document.getElementById(divId) : null;
+}
+
+/**
+ * The page band the slot shares the screen with: the viewport height centred on the slot, the
+ * whole document when the slot or an ancestor is fixed, or the sticky element's containing block
+ * plus half a screen each side.
+ */
+function slotScreen(slot: Element, box: MeasuredBox, screenHeight: number, pageBottom: number): SlotScreen {
+  for (let node: Element | null = slot; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
+    const position = window.getComputedStyle(node).position;
+    if (position === 'fixed') return { travel: 'f', top: 0, bottom: pageBottom };
+    if (position === 'sticky' && node.parentElement) {
+      const block = getBoundingClientRect(node.parentElement);
+      return {
+        travel: 'k',
+        top: block.top + window.scrollY - screenHeight / 2,
+        bottom: block.bottom + window.scrollY + screenHeight / 2,
+      };
+    }
+  }
+  const centre = (box.top + box.bottom) / 2;
+  return {
+    travel: 's',
+    top: Math.min(box.top, centre - screenHeight / 2),
+    bottom: Math.max(box.bottom, centre + screenHeight / 2),
+  };
+}
+
+/**
+ * The absolute http(s) URL of the media an element shows, exactly as the browser resolved it
+ * (`currentSrc`, else `src`, else a video poster), or `null`. The index digests the same string,
+ * with no canonicalization beyond resolution against the document base.
+ */
+function mediaUrl(element: Element): string | null {
+  let url = '';
+  if (element instanceof HTMLImageElement) url = element.currentSrc || element.src;
+  if (element instanceof HTMLMediaElement) {
+    url = element.currentSrc || element.src || (element instanceof HTMLVideoElement ? element.poster : '');
+  }
+  return /^https?:\/\//i.test(url) ? url : null;
+}
+
+/**
+ * One synchronous layout read: every rendered media element and innermost text block outside the
+ * auction's slots, and each resolved slot's screen band.
+ */
+function measurePage(adUnits: Array<{ code?: unknown }>): { candidates: PageCandidate[]; screens: Map<object, SlotScreen> } {
+  const screenHeight = getWinDimensions().innerHeight;
+  const pageBottom = Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0);
+  const slots: Element[] = [];
+  const screens = new Map<object, SlotScreen>();
+  adUnits.forEach(adUnit => {
+    if (typeof adUnit.code !== 'string') return;
+    const slot = slotElement(adUnit.code);
+    const box = slot && measure(slot, true);
+    if (!slot || !box) return;
+    slots.push(slot);
+    screens.set(adUnit, slotScreen(slot, box, screenHeight, pageBottom));
+  });
+  const candidates: PageCandidate[] = [];
+  if (screens.size === 0) return { candidates, screens };
+  document.querySelectorAll(MEDIA_SELECTOR + ', ' + TEXT_BLOCK_SELECTOR).forEach(element => {
+    const isMedia = element.matches(MEDIA_SELECTOR);
+    if (!isMedia && element.querySelector(TEXT_BLOCK_SELECTOR) !== null) return;
+    if (slots.some(slot => slot.contains(element))) return;
+    const box = measure(element, false);
+    if (!box) return;
+    const asset = isMedia
+      ? mediaUrl(element)
+      : (TEXT_MARK_RUN.test(element.textContent || '') ? TEXT_ENTRY : null);
+    candidates.push({ box, asset });
+  });
+  return { candidates, screens };
+}
+
+function areaWithin(box: MeasuredBox, screen: SlotScreen): number {
+  const overlap = Math.min(box.bottom, screen.bottom) - Math.max(box.top, screen.top);
+  return overlap > 0 ? box.width * overlap : 0;
+}
+
+/** 0 below 5%, 1 to 25%, 2 to 60%, 3 above 60% of the measured content area on the slot's screen. */
+function areaClass(share: number): AreaClass {
+  if (share < 0.05) return 0;
+  if (share < 0.25) return 1;
+  if (share <= 0.6) return 2;
+  return 3;
+}
+
+/** Index entries on the slot's screen with their area class, largest first, at most six. */
+function onScreen(
+  candidates: PageCandidate[],
+  screen: SlotScreen,
+  digests: Map<string, string>,
+  index: Map<string, AssetIndexEntry>
+): OnScreenEntry[] {
+  let total = 0;
+  const areas = new Map<string, number>();
+  candidates.forEach(candidate => {
+    const area = areaWithin(candidate.box, screen);
+    if (area <= 0) return;
+    total += area;
+    const d = candidate.asset === TEXT_ENTRY ? TEXT_ENTRY : candidate.asset && digests.get(candidate.asset);
+    if (d && index.has(d)) areas.set(d, (areas.get(d) || 0) + area);
+  });
+  return Array.from(areas, ([d, area]) => ({ d, a: areaClass(area / total) }))
+    .sort((left, right) => right.a - left.a || compareText(left.d, right.d))
+    .slice(0, MAX_ON_SCREEN_ENTRIES);
+}
+
+/** `v` verified content on screen, `a` intact AI-declared label on screen, `va` both, `0` neither. */
+function nearValue(entries: OnScreenEntry[], index: Map<string, AssetIndexEntry>): NearValue {
+  let verified = false;
+  let aiDeclared = false;
+  entries.forEach(({ d }) => {
+    const entry = index.get(d);
+    if (!entry) return;
+    if (entry.s === 'verified' && entry.c === 'content') verified = true;
+    if (entry.ai && entry.s !== 'broken' && entry.c !== 'chrome') aiDeclared = true;
+  });
+  if (verified && aiDeclared) return 'va';
+  if (verified) return 'v';
+  return aiDeclared ? 'a' : '0';
+}
+
+/** 11-character b64url SHA-256 prefix for each distinct media URL that shares any slot's screen. */
+function assetDigests(candidates: PageCandidate[], screens: Map<object, SlotScreen>): Promise<Map<string, string>> {
+  const urls = new Set<string>();
+  candidates.forEach(candidate => {
+    if (!candidate.asset || candidate.asset === TEXT_ENTRY) return;
+    for (const screen of screens.values()) {
+      if (areaWithin(candidate.box, screen) > 0) {
+        urls.add(candidate.asset);
+        return;
+      }
+    }
+  });
+  return Promise.all(Array.from(urls, url => sha256(url).then(digest => [url, base64url(digest).slice(0, ASSET_DIGEST_LENGTH)] as const)))
+    .then(pairs => new Map(pairs));
+}
+
+/** ECIES to the gateway key: ephemeral ECDH P-256, HKDF-SHA256, AES-256-GCM with a 12-byte IV. */
+async function sealObservation(plaintext: string, kid: string, recipient: CryptoKey): Promise<EncypherAdjacencyEnvelopeV1> {
+  const subtle = window.crypto.subtle;
+  const ephemeral = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+  const shared = await subtle.deriveBits({ name: 'ECDH', public: recipient }, ephemeral.privateKey, 256);
+  const secret = await subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+  const key = await subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: new TextEncoder().encode(ADJACENCY_HKDF_INFO) },
+    secret,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  );
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = new Uint8Array(await subtle.encrypt(
+    { name: 'AES-GCM', iv, tagLength: 128 },
+    key,
+    new TextEncoder().encode(plaintext)
+  ));
+  const sealed = new Uint8Array(iv.length + ciphertext.length);
+  sealed.set(iv);
+  sealed.set(ciphertext, iv.length);
+  const epk = new Uint8Array(await subtle.exportKey('raw', ephemeral.publicKey));
+  return { v: 1, kid, epk: base64url(epk), ct: base64url(sealed) };
+}
+
+/**
+ * Seal one observation per resolvable ad unit of the auction. `isCurrent` turns false once the
+ * budget fires; work stops at the next step and the caller attaches nothing.
+ */
+async function observeAdjacency(
+  adUnits: Array<{ code?: unknown }>,
+  material: AdjacencyMaterial,
+  jwks: unknown,
+  record: C2paSignalV1,
+  recordRevision: number,
+  publisherDomain: string,
+  urlHash: string,
+  isCurrent: () => boolean
+): Promise<AdjacencyAttachments> {
+  const attachments: AdjacencyAttachments = new Map();
+  const index = await verifyAssetIndex(material.index, jwks, record, recordRevision, publisherDomain, urlHash);
+  if (!index || !isCurrent()) return attachments;
+  const viewport = viewportClass();
+  const { candidates, screens } = measurePage(adUnits);
+  if (screens.size === 0) return attachments;
+  const digests = await assetDigests(candidates, screens);
+  if (!isCurrent()) return attachments;
+  const recipient = await window.crypto.subtle.importKey(
+    'jwk',
+    material.gatewayJwk,
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  );
+  for (const [adUnit, screen] of screens) {
+    if (!isCurrent()) return new Map();
+    const entries = onScreen(candidates, screen, digests, index);
+    const plaintext = JSON.stringify({ v: 1, id: record.id, m: ADJACENCY_METHOD, vp: viewport, tr: screen.travel, on: entries });
+    if (new TextEncoder().encode(plaintext).byteLength > MAX_OBSERVATION_BYTES) continue;
+    const envelope = await sealObservation(plaintext, material.gatewayKid, recipient);
+    if (new TextEncoder().encode(JSON.stringify(envelope)).byteLength > MAX_ADJACENCY_ENVELOPE_BYTES) continue;
+    attachments.set(adUnit, { envelope, near: nearValue(entries, index) });
+  }
+  return isCurrent() ? attachments : new Map();
 }
 
 function isolateAuctionAdUnits(auction: StartAuctionOptions): void {
@@ -407,7 +850,10 @@ function auctionAdUnitCodes(auction: StartAuctionOptions): AdUnitCode[] {
 
 /** Drop this auction's ad units from targeting memory so an earlier hit cannot leak forward. */
 function forgetTargeting(auction: StartAuctionOptions): void {
-  auctionAdUnitCodes(auction).forEach(code => injectedAttestationIds.delete(code));
+  auctionAdUnitCodes(auction).forEach(code => {
+    injectedAttestationIds.delete(code);
+    injectedNear.delete(code);
+  });
 }
 
 /** `null` when the publisher value does not match Targeting Contract V1. */
@@ -437,8 +883,8 @@ function gamTargetingSettings(moduleConfig: RTDProviderConfig<'encypher'>): GamT
 /**
  * Drop optional keys until the serialized payload fits the per-ad-unit cap.
  * Only the `encypher_pkg` step is reachable in practice: without it the payload is at most
- * 75 bytes, since `record.id` is limited to 32 characters. The later steps stay as a guard
- * in case the contract admits a longer value.
+ * 96 bytes, since `record.id` is limited to 32 characters and `encypher_near` to 2. The later
+ * steps stay as a guard in case the contract admits a longer value.
  */
 function fitTargetingCap(values: TargetingValues): TargetingValues | null {
   let dropIndex = 0;
@@ -452,7 +898,8 @@ function fitTargetingCap(values: TargetingValues): TargetingValues | null {
   return values.encypher_verified === undefined ? null : values;
 }
 
-function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1): number | null {
+/** Write the v1 carrier on every auction impression, and each sealed observation on its own. */
+function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1, attachments?: AdjacencyAttachments): number | null {
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return null;
   const adUnits = auction.adUnits;
   adUnits.forEach(adUnit => {
@@ -460,6 +907,10 @@ function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1)
     const extension = impression.ext || (impression.ext = {});
     extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
     if (typeof adUnit.code === 'string') injectedAttestationIds.set(adUnit.code, record.id);
+    const attachment = attachments && attachments.get(adUnit);
+    if (!attachment) return;
+    extension.encypher = { v: 1, kid: attachment.envelope.kid, epk: attachment.envelope.epk, ct: attachment.envelope.ct };
+    if (typeof adUnit.code === 'string') injectedNear.set(adUnit.code, attachment.near);
   });
   return adUnits.length;
 }
@@ -618,7 +1069,7 @@ function verifyWithTrustedJwks(
   publisherDomain: string,
   urlHash: string,
   remainingTime: () => number,
-  completeVerification: (recordRevision: number | null, timedOut: boolean) => void
+  completeVerification: (recordRevision: number | null, timedOut: boolean, jwks?: unknown) => void
 ): void {
   const fetchAndVerify = (): void => {
     const remaining = remainingTime();
@@ -641,7 +1092,7 @@ function verifyWithTrustedJwks(
         }
         verifyRecord(record, jwks, publisherDomain, urlHash).then(recordRevision => {
           if (recordRevision !== null) trustedJwkCache = { jwks, expiresAt: Date.now() + JWKS_CACHE_TTL_MS };
-          completeVerification(recordRevision, false);
+          completeVerification(recordRevision, false, jwks);
         }, () => completeVerification(null, false));
       },
       error(timedOut) {
@@ -657,7 +1108,7 @@ function verifyWithTrustedJwks(
   }
   verifyRecord(record, cached, publisherDomain, urlHash).then(recordRevision => {
     if (recordRevision !== null) {
-      completeVerification(recordRevision, false);
+      completeVerification(recordRevision, false, cached);
       return;
     }
     trustedJwkCache = null;
@@ -668,7 +1119,14 @@ function verifyWithTrustedJwks(
   });
 }
 
-function commitReadyDecision(urlHash: string, record: C2paSignalV1, datasetVersion: number, recordRevision: number, statusExpiresAt: number): boolean {
+function commitReadyDecision(
+  urlHash: string,
+  record: C2paSignalV1,
+  datasetVersion: number,
+  recordRevision: number,
+  statusExpiresAt: number,
+  adjacency?: AdjacencyMaterial
+): boolean {
   if (
     statusExpiresAt <= Date.now() ||
     datasetVersion < maxDatasetVersionSeen ||
@@ -694,6 +1152,7 @@ function commitReadyDecision(urlHash: string, record: C2paSignalV1, datasetVersi
     recordRevision,
     recordFingerprint,
     statusExpiresAt,
+    adjacency,
   });
   maxDatasetVersionSeen = datasetVersion;
   return true;
@@ -725,6 +1184,9 @@ const init = (config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentDat
     parseGamTargeting(params.gamTargeting) === null
   ) {
     logWarn(MODULE_NAME + ': ignoring malformed params.gamTargeting; GAM targeting stays off');
+  }
+  if (params.adjacency !== undefined && typeof params.adjacency !== 'boolean') {
+    logWarn(MODULE_NAME + ': ignoring malformed params.adjacency; adjacency stays off');
   }
   if (!isolationHookInstalled) {
     const startAuction = getHook('startAuction');
@@ -760,16 +1222,29 @@ const getBidRequestData = (
     return;
   }
   const deadlineAt = startedAt + timeout;
+  const adjacencyEnabled = params.adjacency === true;
   let completed = false;
   let deadlineTimer: number | undefined;
-  const finish = (event: DiagnosticEvent, datasetVersion?: number, record?: C2paSignalV1): void => {
+  /** A committed record whose adjacency observation is still being built. */
+  let verifiedPending: { record: C2paSignalV1; datasetVersion: number } | null = null;
+  const finish = (event: DiagnosticEvent, datasetVersion?: number, record?: C2paSignalV1, attachments?: AdjacencyAttachments): void => {
     if (completed) return;
     completed = true;
     window.clearTimeout(deadlineTimer);
-    const injectedCount = event === 'injected' && record ? injectPerImpression(auction, record) : 0;
+    const injectedCount = event === 'injected' && record ? injectPerImpression(auction, record, attachments) : 0;
     const reportedEvent = injectedCount === null ? 'invalid' : event;
     callback();
     emitDiagnostic(params, reportedEvent, injectedCount === null ? 0 : injectedCount, datasetVersion, startedAt);
+    if (adjacencyEnabled && reportedEvent === 'injected' && injectedCount) {
+      const attached = attachments ? attachments.size : 0;
+      emitDiagnostic(
+        params,
+        attached > 0 ? 'adjacency_attached' : 'adjacency_skipped',
+        attached > 0 ? attached : injectedCount,
+        datasetVersion,
+        startedAt
+      );
+    }
   };
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) {
     finish('invalid');
@@ -779,7 +1254,13 @@ const getBidRequestData = (
     callback();
     return;
   }
-  deadlineTimer = window.setTimeout(() => finish('timeout'), timeout);
+  const auctionAdUnits = auction.adUnits;
+  deadlineTimer = window.setTimeout(() => {
+    // A verified record still attaches when the budget fires mid-observation, without adjacency.
+    const pending = verifiedPending;
+    if (pending) finish('injected', pending.datasetVersion, pending.record);
+    else finish('timeout');
+  }, timeout);
   const remainingTime = (): number => deadlineAt - Date.now();
   if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle.digest !== 'function') {
     finish('invalid');
@@ -807,9 +1288,10 @@ const getBidRequestData = (
       record: C2paSignalV1,
       datasetVersion: number,
       statusExpiresAt: number,
+      material: AdjacencyMaterial | undefined,
       cachedDecision?: DecisionState
     ): void {
-      verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (recordRevision, timedOut) => {
+      verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (recordRevision, timedOut, jwks) => {
         if (completed) return;
         if (timedOut) {
           finish('timeout', datasetVersion);
@@ -817,7 +1299,7 @@ const getBidRequestData = (
         }
         if (
           recordRevision === null ||
-          !commitReadyDecision(urlHash, record, datasetVersion, recordRevision, statusExpiresAt)
+          !commitReadyDecision(urlHash, record, datasetVersion, recordRevision, statusExpiresAt, material)
         ) {
           if (cachedDecision && remainingTime() > 0) {
             if (decisions.get(urlHash) === cachedDecision) cachedDecision.statusExpiresAt = 0;
@@ -827,7 +1309,24 @@ const getBidRequestData = (
           finish('invalid', datasetVersion);
           return;
         }
-        finish('injected', datasetVersion, record);
+        if (!adjacencyEnabled || !material || remainingTime() <= 0) {
+          finish('injected', datasetVersion, record);
+          return;
+        }
+        verifiedPending = { record, datasetVersion };
+        observeAdjacency(
+          auctionAdUnits,
+          material,
+          jwks,
+          record,
+          recordRevision,
+          publisherDomain,
+          urlHash,
+          () => !completed && remainingTime() > 0
+        ).then(
+          attachments => finish('injected', datasetVersion, record, attachments),
+          () => finish('injected', datasetVersion, record)
+        );
       });
     }
 
@@ -837,13 +1336,15 @@ const getBidRequestData = (
         return;
       }
       const reportingQuery = params.adoptionReporting === false ? '&adoption_reporting=0' : '';
+      const adjacencyQuery = adjacencyEnabled ? '&adjacency=1' : '';
       requestText(
         SIGNAL_ORIGIN + '/v1/attestations/' + urlHash +
         '?publisher_domain=' + encodeURIComponent(publisherDomain) +
         '&module_version=' + encodeURIComponent(MODULE_VERSION) +
-        reportingQuery,
+        reportingQuery +
+        adjacencyQuery,
         Math.max(1, remainingTime()),
-        LOOKUP_MAX_BYTES,
+        adjacencyEnabled ? ADJACENCY_LOOKUP_MAX_BYTES : LOOKUP_MAX_BYTES,
         {
           success(responseText, status) {
             if (completed) return;
@@ -859,7 +1360,7 @@ const getBidRequestData = (
               return;
             }
             if (
-              !exactKeys(envelope, ['v', 'status', 'dataset_version', 'record']) ||
+              !lookupEnvelope(envelope, adjacencyEnabled) ||
               envelope.v !== 1 ||
               !['ready', 'miss', 'revoked', 'stale'].includes(String(envelope.status)) ||
               typeof envelope.dataset_version !== 'number' ||
@@ -889,7 +1390,12 @@ const getBidRequestData = (
               finish('invalid');
               return;
             }
-            acceptVerified(record, datasetVersion, Date.now() + RECORD_STATUS_CACHE_TTL_MS);
+            acceptVerified(
+              record,
+              datasetVersion,
+              Date.now() + RECORD_STATUS_CACHE_TTL_MS,
+              adjacencyEnabled ? adjacencyMaterial(envelope) : undefined
+            );
           },
           error(timedOut) {
             finish(timedOut ? 'timeout' : 'invalid');
@@ -908,7 +1414,7 @@ const getBidRequestData = (
       cached.datasetVersion >= maxDatasetVersionSeen &&
       cached.datasetVersion > globalStaleBarrier
     ) {
-      acceptVerified(cached.record, cached.datasetVersion, cached.statusExpiresAt, cached);
+      acceptVerified(cached.record, cached.datasetVersion, cached.statusExpiresAt, cached.adjacency, cached);
       return;
     }
     requestLookup();
@@ -933,6 +1439,8 @@ const getTargetingData = (
     const attestationId = injectedAttestationIds.get(adUnitCode);
     if (attestationId === undefined) return;
     const values: TargetingValues = { encypher_verified: '1' };
+    const near = injectedNear.get(adUnitCode);
+    if (near !== undefined) values.encypher_near = near;
     if (settings.includeAttestationId && TARGETING_VALUE_PATTERN.test(attestationId)) {
       values.encypher_att = attestationId;
     }
@@ -947,6 +1455,7 @@ const getTargetingData = (
 export function resetProviderState(): void {
   decisions.clear();
   injectedAttestationIds.clear();
+  injectedNear.clear();
   trustedJwkCache = null;
   maxDatasetVersionSeen = 0;
   globalStaleBarrier = 0;
