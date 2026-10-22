@@ -124,6 +124,21 @@ describe('currency', function () {
       expect(fakeCurrencyFileServer.requests[1].url).to.equal('https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=20030306');
     });
 
+    it('forgets defaultRates when reset', () => {
+      fakeCurrencyFileServer.respondWith([500, {}, 'error']);
+      setConfig({ adServerCurrency: 'JPY', defaultRates: { USD: { JPY: 100 } } });
+      fakeCurrencyFileServer.respond();
+
+      setConfig({});
+
+      const logWarn = sandbox.spy(utils, 'logWarn');
+      const logError = sandbox.spy(utils, 'logError');
+      setConfig({ adServerCurrency: 'JPY' });
+      fakeCurrencyFileServer.respond();
+      sinon.assert.neverCalledWithMatch(logWarn, 'falling back to currency.defaultRates');
+      sinon.assert.called(logError);
+    });
+
     it('date macro token $$TODAY$$ is replaced by current date (formatted as yyyymmdd)', function () {
       // RESET to request currency file (specifically url value for this test)
       setConfig({ 'adServerCurrency': undefined });
