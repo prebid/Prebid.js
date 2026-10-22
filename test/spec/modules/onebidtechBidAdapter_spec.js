@@ -205,6 +205,70 @@ describe('One Bid Tech Bid Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].bidfloor).to.equal(0.75);
     });
+
+    describe('floor currency', function () {
+      function floorImp(overrides) {
+        const bidRequests = [{
+          bidder: 'onebidtech',
+          bidId: 'bid1',
+          params: { placementId: PLACEMENT_ID },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          ...overrides
+        }];
+        return JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data).imp[0];
+      }
+
+      it('sends the currency getFloor returned when it could not convert to the requested one', function () {
+        const imp = floorImp({ getFloor: () => ({ currency: 'EUR', floor: 3 }) });
+
+        expect(imp.bidfloor).to.equal(3);
+        expect(imp.bidfloorcur).to.equal('EUR');
+      });
+
+      it('keeps the requested currency when getFloor converted to it', function () {
+        const imp = floorImp({ getFloor: () => ({ currency: 'USD', floor: 3.25 }) });
+
+        expect(imp.bidfloor).to.equal(3.25);
+        expect(imp.bidfloorcur).to.equal('USD');
+      });
+
+      it('falls back to the requested currency when getFloor returns a floor without one', function () {
+        const imp = floorImp({ getFloor: () => ({ floor: 2 }) });
+
+        expect(imp.bidfloor).to.equal(2);
+        expect(imp.bidfloorcur).to.equal('USD');
+      });
+
+      it('asks getFloor for the currency set in params.currency', function () {
+        let receivedArgs;
+        floorImp({
+          params: { placementId: PLACEMENT_ID, currency: 'EUR' },
+          getFloor: (args) => {
+            receivedArgs = args;
+            return { currency: 'EUR', floor: 1 };
+          }
+        });
+
+        expect(receivedArgs.currency).to.equal('EUR');
+      });
+
+      it('labels the static floor with params.currency', function () {
+        const imp = floorImp({ params: { placementId: PLACEMENT_ID, bidFloor: 2, currency: 'EUR' } });
+
+        expect(imp.bidfloor).to.equal(2);
+        expect(imp.bidfloorcur).to.equal('EUR');
+      });
+
+      it('uses the static floor in the requested currency when getFloor returns nothing', function () {
+        const imp = floorImp({
+          params: { placementId: PLACEMENT_ID, bidFloor: 0.75, currency: 'EUR' },
+          getFloor: () => null
+        });
+
+        expect(imp.bidfloor).to.equal(0.75);
+        expect(imp.bidfloorcur).to.equal('EUR');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -576,6 +640,255 @@ describe('One Bid Tech Bid Adapter', function () {
       spec.buildRequests(bidRequests, { refererInfo, ortb2 });
 
       expect(ortb2.site).to.deep.equal({ publisher: { id: 'pub1' } });
+    });
+  });
+
+  describe('impression-level ORTB2 (ortb2Imp)', function () {
+    const bidderRequest = {
+      bidderRequestId: 'req1',
+      refererInfo: { page: 'https://example.com', domain: 'example.com' }
+    };
+
+    function impFor(overrides) {
+      const bidRequests = [{
+        bidder: 'onebidtech',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        ...overrides
+      }];
+      return JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data).imp[0];
+    }
+
+    it('forwards instl, ext (tid, gpid, data) and pmp from ortb2Imp', function () {
+      const imp = impFor({
+        ortb2Imp: {
+          instl: 1,
+          ext: { tid: 'tid-123', gpid: '/123/slot', data: { pbadslot: 'top' } },
+          pmp: { private_auction: 0, deals: [{ id: 'deal1', bidfloor: 2 }] }
+        }
+      });
+
+      expect(imp.instl).to.equal(1);
+      expect(imp.ext).to.deep.equal({ tid: 'tid-123', gpid: '/123/slot', data: { pbadslot: 'top' } });
+      expect(imp.pmp.deals[0].id).to.equal('deal1');
+    });
+
+    it('does not let ortb2Imp override the fields the adapter owns', function () {
+      const imp = impFor({
+        ortb2Imp: { id: 'from-ortb2', bidfloor: 99, bidfloorcur: 'EUR', secure: 0, instl: 1 }
+      });
+
+      expect(imp.id).to.equal('bid1');
+      expect(imp.bidfloor).to.equal(0);
+      expect(imp.bidfloorcur).to.equal('USD');
+      expect(imp.secure).to.equal(1);
+      expect(imp.instl).to.equal(1);
+    });
+
+    it('keeps FPD banner fields such as pos next to the adapter\'s own sizes', function () {
+      const imp = impFor({ ortb2Imp: { banner: { pos: 1, w: 1, h: 1 } } });
+
+      expect(imp.banner.pos).to.equal(1);
+      expect(imp.banner.w).to.equal(300);
+      expect(imp.banner.h).to.equal(250);
+      expect(imp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+    });
+
+    it('keeps FPD video fields, with the ad unit\'s declared values taking precedence', function () {
+      const imp = impFor({
+        mediaTypes: { video: { playerSize: [[640, 480]], maxduration: 30 } },
+        ortb2Imp: { video: { maxduration: 5, rwdd: 1 } }
+      });
+
+      expect(imp.video.rwdd).to.equal(1);
+      expect(imp.video.maxduration).to.equal(30);
+      expect(imp.video.w).to.equal(640);
+    });
+
+    it('does not add a media type the ad unit does not declare', function () {
+      const imp = impFor({
+        mediaTypes: { video: { playerSize: [[640, 480]] } },
+        ortb2Imp: { banner: { pos: 1 }, audio: { mimes: ['audio/mp3'] }, native: { request: '{}' } }
+      });
+
+      expect(imp).to.have.property('video');
+      expect(imp).to.not.have.any.keys('banner', 'audio', 'native');
+    });
+
+    it('gives each impression its own ortb2Imp', function () {
+      const bids = [
+        { bidder: 'onebidtech', bidId: 'bid1', params: { placementId: PLACEMENT_ID }, mediaTypes: { banner: { sizes: [[300, 250]] } }, ortb2Imp: { instl: 1 } },
+        { bidder: 'onebidtech', bidId: 'bid2', params: { placementId: PLACEMENT_ID }, mediaTypes: { banner: { sizes: [[728, 90]] } }, ortb2Imp: { ext: { gpid: 'second' } } }
+      ];
+      const imps = JSON.parse(spec.buildRequests(bids, bidderRequest).data).imp;
+
+      expect(imps[0].instl).to.equal(1);
+      expect(imps[0]).to.not.have.property('ext');
+      expect(imps[1].ext.gpid).to.equal('second');
+      expect(imps[1]).to.not.have.property('instl');
+    });
+
+    it('does not mutate the ortb2Imp it was given', function () {
+      const ortb2Imp = { instl: 1, banner: { pos: 1 }, ext: { gpid: 'g' } };
+      impFor({ ortb2Imp });
+
+      expect(ortb2Imp).to.deep.equal({ instl: 1, banner: { pos: 1 }, ext: { gpid: 'g' } });
+    });
+
+    it('is unchanged when the bid has no ortb2Imp', function () {
+      const imp = impFor({});
+
+      expect(imp).to.not.have.any.keys('instl', 'ext', 'pmp');
+    });
+  });
+
+  describe('global ORTB2 restrictions', function () {
+    const bidRequests = [{
+      bidder: 'onebidtech',
+      bidId: 'bid1',
+      params: { placementId: PLACEMENT_ID },
+      mediaTypes: { banner: { sizes: [[300, 250]] } }
+    }];
+    const refererInfo = { page: 'https://example.com', domain: 'example.com' };
+
+    function build(ortb2) {
+      return JSON.parse(spec.buildRequests(bidRequests, { bidderRequestId: 'req1', refererInfo, ortb2 }).data);
+    }
+
+    it('forwards the publisher\'s blocked categories, advertisers and apps', function () {
+      const payload = build({
+        bcat: ['IAB25', 'IAB26'],
+        cattax: 2,
+        badv: ['blocked.example.com'],
+        bapp: ['com.blocked.app']
+      });
+
+      expect(payload.bcat).to.deep.equal(['IAB25', 'IAB26']);
+      expect(payload.cattax).to.equal(2);
+      expect(payload.badv).to.deep.equal(['blocked.example.com']);
+      expect(payload.bapp).to.deep.equal(['com.blocked.app']);
+    });
+
+    it('forwards seat and language allow/block lists', function () {
+      const payload = build({
+        wseat: ['seat1'],
+        bseat: ['seat2'],
+        wlang: ['en'],
+        wlangb: ['en-US']
+      });
+
+      expect(payload.wseat).to.deep.equal(['seat1']);
+      expect(payload.bseat).to.deep.equal(['seat2']);
+      expect(payload.wlang).to.deep.equal(['en']);
+      expect(payload.wlangb).to.deep.equal(['en-US']);
+    });
+
+    it('adds none of these keys when ortb2 does not set them', function () {
+      const payload = build({ site: { publisher: { id: 'pub1' } } });
+
+      ['bcat', 'cattax', 'badv', 'bapp', 'wseat', 'bseat', 'wlang', 'wlangb'].forEach((field) => {
+        expect(payload).to.not.have.property(field);
+      });
+    });
+
+    it('does not let ortb2 override the fields the adapter owns', function () {
+      const payload = build({ id: 'from-ortb2', cur: ['EUR'], imp: [], bcat: ['IAB25'] });
+
+      expect(payload.id).to.equal('req1');
+      expect(payload.cur).to.deep.equal(['USD']);
+      expect(payload.imp).to.have.lengthOf(1);
+      expect(payload.bcat).to.deep.equal(['IAB25']);
+    });
+
+    it('still works when there is no ortb2 at all', function () {
+      const payload = JSON.parse(spec.buildRequests(bidRequests, { bidderRequestId: 'req1', refererInfo }).data);
+
+      expect(payload).to.not.have.property('bcat');
+      expect(payload.imp).to.have.lengthOf(1);
+    });
+  });
+
+  describe('banner constraints from mediaTypes.banner', function () {
+    const bidderRequest = {
+      bidderRequestId: 'req1',
+      refererInfo: { page: 'https://example.com', domain: 'example.com' }
+    };
+
+    function bannerImp(banner, extra) {
+      const bids = [{
+        bidder: 'onebidtech',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        mediaTypes: { banner },
+        ...extra
+      }];
+      return JSON.parse(spec.buildRequests(bids, bidderRequest).data).imp[0].banner;
+    }
+
+    it('forwards the publisher\'s pos, btype, battr, mimes, api, topframe, expdir and vcm', function () {
+      const banner = bannerImp({
+        sizes: [[300, 250]],
+        pos: 1,
+        btype: [1, 4],
+        battr: [3, 8],
+        mimes: ['image/png', 'image/jpeg'],
+        api: [3, 5],
+        topframe: 1,
+        expdir: [2, 4],
+        vcm: 0
+      });
+
+      expect(banner).to.include({ pos: 1, topframe: 1, vcm: 0 });
+      expect(banner.btype).to.deep.equal([1, 4]);
+      expect(banner.battr).to.deep.equal([3, 8]);
+      expect(banner.mimes).to.deep.equal(['image/png', 'image/jpeg']);
+      expect(banner.api).to.deep.equal([3, 5]);
+      expect(banner.expdir).to.deep.equal([2, 4]);
+    });
+
+    it('leaves out values that fail the OpenRTB type check', function () {
+      const banner = bannerImp({ sizes: [[300, 250]], pos: 1.5, btype: 'popup', topframe: 2 });
+
+      expect(banner).to.not.have.any.keys('pos', 'btype', 'topframe');
+    });
+
+    it('does not send fields the publisher did not declare', function () {
+      const banner = bannerImp({ sizes: [[300, 250]] });
+
+      expect(banner).to.not.have.any.keys('pos', 'btype', 'battr', 'mimes', 'api', 'topframe', 'expdir', 'vcm');
+    });
+
+    it('always builds w, h and format from the declared sizes, not from banner fields', function () {
+      const banner = bannerImp({ sizes: [[300, 250], [728, 90]], w: 1, h: 1, format: [{ w: 2, h: 2 }] });
+
+      expect(banner.w).to.equal(300);
+      expect(banner.h).to.equal(250);
+      expect(banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+    });
+
+    it('lets the ad unit\'s declared banner values win over ortb2Imp.banner', function () {
+      const banner = bannerImp({ sizes: [[300, 250]], pos: 1 }, { ortb2Imp: { banner: { pos: 3, topframe: 1 } } });
+
+      expect(banner.pos).to.equal(1);
+      expect(banner.topframe).to.equal(1);
+    });
+
+    it('forwards banner constraints on multiformat ad units too', function () {
+      const bids = [{
+        bidder: 'onebidtech',
+        bidId: 'bid1',
+        params: { placementId: PLACEMENT_ID },
+        mediaTypes: {
+          banner: { sizes: [[300, 250]], pos: 1, btype: [1] },
+          video: { playerSize: [[640, 480]], maxduration: 15 }
+        }
+      }];
+      const imp = JSON.parse(spec.buildRequests(bids, bidderRequest).data).imp[0];
+
+      expect(imp.banner.pos).to.equal(1);
+      expect(imp.banner.btype).to.deep.equal([1]);
+      expect(imp.video.maxduration).to.equal(15);
     });
   });
 

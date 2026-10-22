@@ -1,6 +1,7 @@
-import { deepAccess, isNumber, isArray, isFn, generateUUID } from '../../src/utils.js';
+import { deepAccess, deepClone, isNumber, isArray, isFn, generateUUID } from '../../src/utils.js';
 import { config } from '../../src/config.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import { ORTB_BANNER_PARAMS } from '../../src/banner.js';
 import { ORTB_VIDEO_PARAMS } from '../../src/video.js';
 
 // Shared One Bid Tech backend config. All partner-branded adapters that hit
@@ -42,7 +43,7 @@ function resolveDeclaredSizes(bidRequest) {
 
 function getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSizes) {
   const params = bidRequest.params || {};
-  const staticFloor = isNumber(params.bidFloor) ? params.bidFloor : 0;
+  const staticFloor = { floor: isNumber(params.bidFloor) ? params.bidFloor : 0, currency: cur };
 
   if (!isFn(bidRequest.getFloor)) {
     return staticFloor;
@@ -58,18 +59,34 @@ function getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSiz
   }
 
   const info = bidRequest.getFloor(floorArgs);
-  return (info && isNumber(info.floor)) ? info.floor : staticFloor;
+  if (info && isNumber(info.floor)) {
+    return { floor: info.floor, currency: info.currency || cur };
+  }
+  return staticFloor;
+}
+
+function pickValidOrtbParams(declared, ortbParams) {
+  const picked = {};
+  ortbParams.forEach((isValid, name) => {
+    if (declared[name] != null && isValid(declared[name])) {
+      picked[name] = declared[name];
+    }
+  });
+  return picked;
+}
+
+function buildBannerObject(bidRequest, bannerSizes) {
+  const banner = pickValidOrtbParams(deepAccess(bidRequest, 'mediaTypes.banner') || {}, ORTB_BANNER_PARAMS);
+
+  banner.w = bannerSizes[0][0];
+  banner.h = bannerSizes[0][1];
+  banner.format = bannerSizes.map(([w, h]) => ({ w, h }));
+
+  return banner;
 }
 
 function buildVideoObject(bidRequest, videoSizes) {
-  const declared = deepAccess(bidRequest, 'mediaTypes.video') || {};
-  const video = {};
-
-  ORTB_VIDEO_PARAMS.forEach((isValid, name) => {
-    if (declared[name] != null && isValid(declared[name])) {
-      video[name] = declared[name];
-    }
-  });
+  const video = pickValidOrtbParams(deepAccess(bidRequest, 'mediaTypes.video') || {}, ORTB_VIDEO_PARAMS);
 
   video.w = videoSizes[0][0];
   video.h = videoSizes[0][1];
@@ -85,26 +102,37 @@ function buildImpression(bidRequest) {
   const hasBanner = bannerSizes.length > 0;
   const hasVideo = videoSizes.length > 0;
 
+  const { floor, currency } = getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSizes);
+
+  const { fpdBanner, fpdVideo, fpdImp } = splitImpressionFpd(bidRequest);
+
   const imp = {
+    ...fpdImp,
     id: bidRequest.bidId,
-    bidfloor: getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSizes),
-    bidfloorcur: cur,
+    bidfloor: floor,
+    bidfloorcur: currency,
     secure: 1
   };
 
   if (hasBanner) {
-    imp.banner = {
-      w: bannerSizes[0][0],
-      h: bannerSizes[0][1],
-      format: bannerSizes.map(([w, h]) => ({ w, h }))
-    };
+    imp.banner = { ...fpdBanner, ...buildBannerObject(bidRequest, bannerSizes) };
   }
 
   if (hasVideo) {
-    imp.video = buildVideoObject(bidRequest, videoSizes);
+    imp.video = { ...fpdVideo, ...buildVideoObject(bidRequest, videoSizes) };
   }
 
   return imp;
+}
+
+function splitImpressionFpd(bidRequest) {
+  const fpdImp = deepClone(bidRequest.ortb2Imp || {});
+  const fpdBanner = fpdImp.banner;
+  const fpdVideo = fpdImp.video;
+  ['banner', 'video', 'audio', 'native'].forEach((mediaType) => {
+    delete fpdImp[mediaType];
+  });
+  return { fpdBanner, fpdVideo, fpdImp };
 }
 
 function buildConsentBlock(bidderRequest) {
@@ -158,12 +186,26 @@ function buildSiteOrApp(bidderRequest) {
   return { site };
 }
 
+const ORTB2_RESTRICTION_FIELDS = ['bcat', 'cattax', 'badv', 'bapp', 'wseat', 'bseat', 'wlang', 'wlangb'];
+
+function buildRestrictions(bidderRequest) {
+  const ortb2 = bidderRequest.ortb2 || {};
+  const restrictions = {};
+  ORTB2_RESTRICTION_FIELDS.forEach((field) => {
+    if (ortb2[field] != null) {
+      restrictions[field] = ortb2[field];
+    }
+  });
+  return restrictions;
+}
+
 export function buildRequests(validBidRequests, bidderRequest, endpointUrl) {
   const placementId = validBidRequests[0].params.placementId;
   const imps = validBidRequests.map(buildImpression);
   const schain = resolveSchain(validBidRequests, bidderRequest);
 
   const payload = {
+    ...buildRestrictions(bidderRequest),
     id: bidderRequest.bidderRequestId || generateUUID(),
     cur: [DEFAULT_CUR],
     imp: imps,
