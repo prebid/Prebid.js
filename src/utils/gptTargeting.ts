@@ -16,6 +16,10 @@ export function slotHasTargetedAdId(slot: GptSlot, adId: string): boolean {
   return targetedAdIdsBySlot.get(slot)?.has(adId) ?? false;
 }
 
+export function getTargetedAdIdsForSlot(slot: GptSlot): Set<string> {
+  return targetedAdIdsBySlot.get(slot);
+}
+
 export function findSlotElementIdByAdId(adId: string, getSlots: () => GptSlot[] = () => (window as any).googletag.pubads().getSlots()): string | null {
   if (adId == null) return null;
   const slot = getSlots().find((s) => slotHasTargetedAdId(s, adId));
