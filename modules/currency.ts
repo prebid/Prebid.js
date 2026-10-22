@@ -310,7 +310,7 @@ function rejectOnAuctionTimeout({ auctionId }) {
 // meta.deal amounts are in the bid's currency, so they are scaled along with bid.cpm
 function convertDealMeta(deal, conversion) {
   if (deal == null) return;
-  ['cpm', 'pacingAdjustedCpm'].forEach(key => {
+  ['cpm', 'priorityAdjustedCpm'].forEach(key => {
     if (typeof deal[key] === 'number') {
       deal[key] = roundCpm(deal[key] * conversion);
     }

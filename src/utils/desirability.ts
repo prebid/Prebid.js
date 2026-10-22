@@ -17,8 +17,8 @@ export type SortByHighestDesirabilityDeps = {
 };
 
 /**
- * The CPM that desirability starts from: `meta.deal.pacingAdjustedCpm` for bids from adapters the publisher
- * allows priority bids from, otherwise `cpm`. The pacing-adjusted value goes through `bidCpmAdjustment`
+ * The CPM that desirability starts from: `meta.deal.priorityAdjustedCpm` for bids from adapters the publisher
+ * allows priority bids from, otherwise `cpm`. The priority-adjusted value goes through `bidCpmAdjustment`
  * like the bid's own `cpm` (which has already been adjusted by the time this runs).
  */
 function getRankingCpm(
@@ -27,11 +27,11 @@ function getRankingCpm(
   bidderRequest: BidderRequest<any> | undefined | null,
   bs: typeof bidderSettings,
 ): number {
-  const pacingAdjustedCpm = bid.meta?.deal?.pacingAdjustedCpm;
-  if (bidderRequest?.allowPriorityBids && Number.isFinite(pacingAdjustedCpm) && pacingAdjustedCpm >= 0) {
-    const adjusted = adjustCpm(pacingAdjustedCpm, bid, bidRequest, { bs });
+  const priorityAdjustedCpm = bid.meta?.deal?.priorityAdjustedCpm;
+  if (bidderRequest?.allowPriorityBids && Number.isFinite(priorityAdjustedCpm) && priorityAdjustedCpm >= 0) {
+    const adjusted = adjustCpm(priorityAdjustedCpm, bid, bidRequest, { bs });
     // like adjustBids, ignore adjustments that would make the value negative
-    return adjusted >= 0 ? adjusted : pacingAdjustedCpm;
+    return adjusted >= 0 ? adjusted : priorityAdjustedCpm;
   }
   return bid.cpm;
 }

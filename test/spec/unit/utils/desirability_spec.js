@@ -125,7 +125,7 @@ describe('desirability utils', function () {
         cpm: 2,
         bidderCode: 'adapterA',
         adapterCode: 'adapterA',
-        meta: { deal: { type: 2, pacingAdjustedCpm: 5 } },
+        meta: { deal: { type: 2, priorityAdjustedCpm: 5 } },
         ...props
       };
     }
@@ -138,7 +138,7 @@ describe('desirability utils', function () {
       expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest(false) })).to.equal(2);
     });
 
-    it('ranks on meta.deal.pacingAdjustedCpm when the bidder request allows priority bids', function () {
+    it('ranks on meta.deal.priorityAdjustedCpm when the bidder request allows priority bids', function () {
       expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(5);
     });
 
@@ -152,9 +152,9 @@ describe('desirability utils', function () {
       ['negative', -1],
       ['not a number', '5'],
       ['not finite', Infinity],
-    ].forEach(([desc, pacingAdjustedCpm]) => {
-      it(`ranks on cpm when pacingAdjustedCpm is ${desc}`, function () {
-        const bid = dealBid({ meta: { deal: { type: 2, pacingAdjustedCpm } } });
+    ].forEach(([desc, priorityAdjustedCpm]) => {
+      it(`ranks on cpm when priorityAdjustedCpm is ${desc}`, function () {
+        const bid = dealBid({ meta: { deal: { type: 2, priorityAdjustedCpm } } });
         expect(adjustDesirability(bid, null, { bidderRequest: bidderRequest() })).to.equal(2);
       });
     });
@@ -163,7 +163,7 @@ describe('desirability utils', function () {
       expect(adjustDesirability(dealBid({ meta: {} }), null, { bidderRequest: bidderRequest() })).to.equal(2);
     });
 
-    it('applies bidCpmAdjustment to pacingAdjustedCpm, as it is applied to cpm', function () {
+    it('applies bidCpmAdjustment to priorityAdjustedCpm, as it is applied to cpm', function () {
       getGlobal().bidderSettings = {
         adapterA: { bidCpmAdjustment: (cpm) => cpm * 0.8 }
       };
@@ -177,14 +177,14 @@ describe('desirability utils', function () {
       expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: bidderRequest() })).to.equal(2.5);
     });
 
-    it('ignores a bidCpmAdjustment that would make pacingAdjustedCpm negative', function () {
+    it('ignores a bidCpmAdjustment that would make priorityAdjustedCpm negative', function () {
       getGlobal().bidderSettings = {
         adapterA: { bidCpmAdjustment: (cpm) => cpm - 10 }
       };
       expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(5);
     });
 
-    it('passes pacingAdjustedCpm to bidDesirabilityAdjustment, without changing bid.cpm', function () {
+    it('passes priorityAdjustedCpm to bidDesirabilityAdjustment, without changing bid.cpm', function () {
       getGlobal().bidderSettings = {
         adapterA: { bidDesirabilityAdjustment: (cpm) => cpm + 1 }
       };

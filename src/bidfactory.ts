@@ -31,10 +31,10 @@ export interface DealMeta {
    */
   cpm?: number;
   /**
-   * CPM-equivalent value after applying the current pacing or delivery adjustment, in the bid's currency.
+   * CPM-equivalent value the ad server ranks the deal at, after any adjustment to its price (for example for pacing or delivery), in the bid's currency.
    * The currency module converts it along with the bid's own `cpm`.
    */
-  pacingAdjustedCpm?: number;
+  priorityAdjustedCpm?: number;
   /**
    * Delivery relative to schedule; e.g. 0.5 means half of the expected impressions have been served.
    */

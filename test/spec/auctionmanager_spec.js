@@ -790,9 +790,9 @@ describe('auctionmanager.js', function () {
       getGlobal().bidderSettings = {};
     });
 
-    it('should rank bids answering a request with allowPriorityBids on meta.deal.pacingAdjustedCpm', function () {
+    it('should rank bids answering a request with allowPriorityBids on meta.deal.priorityAdjustedCpm', function () {
       const bid = Object.assign({}, createBid(), fixtures.getBidResponses()[5], {
-        meta: { deal: { type: 2, pacingAdjustedCpm: 4 } }
+        meta: { deal: { type: 2, priorityAdjustedCpm: 4 } }
       });
       const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
 

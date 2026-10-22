@@ -48,7 +48,7 @@ export interface BidderSettings<B extends BidderCode> {
 export interface BidderScopedSettings<B extends BidderCode> extends BidderSettings<B> {
   /**
    * If true, trust the deal metadata (`bid.meta.deal`) of bids from this adapter when ranking them:
-   * their desirability starts from `meta.deal.pacingAdjustedCpm` instead of `cpm`.
+   * their desirability starts from `meta.deal.priorityAdjustedCpm` instead of `cpm`.
    * Read when the bidder request is made, under the adapter's own code (so it also covers bids the adapter
    * makes under alternate bidder codes), and only here: it is not available on `standard`.
    * Bids from Prebid Server use `s2sConfig.allowPriorityBids` instead.

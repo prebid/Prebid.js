@@ -152,7 +152,7 @@ export type S2SConfig = {
   filterBidderlessCalls?: boolean;
   /**
    * Bidders routed through this Prebid Server instance whose deal metadata (`bid.meta.deal`) is trusted when ranking:
-   * their desirability starts from `meta.deal.pacingAdjustedCpm` instead of `cpm`.
+   * their desirability starts from `meta.deal.priorityAdjustedCpm` instead of `cpm`.
    * Trusted bidders must be listed explicitly; there is no option to trust every bidder on the instance.
    * The listed bidders in each request are also sent to Prebid Server as `ext.prebid.as.apb`, with `ext.prebid.as.ap: true`.
    */
