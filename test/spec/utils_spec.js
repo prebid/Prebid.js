@@ -13,6 +13,7 @@ import {
 } from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
+import * as layoutEpoch from '../../src/utils/layoutEpoch.js';
 import { compressDataWithGZip, isGzipCompressionSupported } from '../../src/utils/gzip.js';
 
 var assert = require('assert');
@@ -1574,18 +1575,26 @@ describe('getWinDimensions', () => {
   });
 
   it('should clear cache once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledOnce(resetWinDimensionsSpy);
-    clock.tick(18);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledTwice(resetWinDimensionsSpy);
+    // animation frames are faked by the clock too; keep them from ending the epoch first
+    const raf = sinon.stub(layoutEpoch.dep, 'requestAnimationFrame');
+    try {
+      layoutEpoch.endLayoutEpoch();
+      const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
+      expect(getWinDimensions().innerHeight).to.exist;
+      clock.tick(1);
+      expect(getWinDimensions().innerHeight).to.exist;
+      clock.tick(1);
+      expect(getWinDimensions().innerHeight).to.exist;
+      clock.tick(18);
+      expect(getWinDimensions().innerHeight).to.exist;
+      sinon.assert.notCalled(resetWinDimensionsSpy);
+      clock.tick(1);
+      expect(getWinDimensions().innerHeight).to.exist;
+      sinon.assert.calledOnce(resetWinDimensionsSpy);
+      resetWinDimensionsSpy.restore();
+    } finally {
+      raf.restore();
+    }
   });
 });
 

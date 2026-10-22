@@ -1,17 +1,19 @@
-import { startAuction } from '../../src/prebid.js';
+import { endLayoutEpoch, enterLayoutEpoch, onLayoutEpochEnd } from '../../src/utils/layoutEpoch.js';
 
-const cache = new Map();
+// rects are cached for the current layout epoch, together with getWinDimensions(), so the two can be
+// combined; see src/utils/layoutEpoch.js
+let cache = new WeakMap();
 
-startAuction.before((next, auctionConfig) => {
-  clearCache();
-  next(auctionConfig);
+onLayoutEpochEnd(() => {
+  cache = new WeakMap();
 });
 
 export function clearCache() {
-  cache.clear();
+  endLayoutEpoch();
 }
 
 export function getBoundingClientRect(element) {
+  enterLayoutEpoch();
   let clientRect;
   if (cache.has(element)) {
     clientRect = cache.get(element);

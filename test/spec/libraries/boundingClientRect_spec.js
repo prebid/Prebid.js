@@ -1,10 +1,11 @@
 import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
-import { startAuction } from '../../../src/prebid.js';
+import { dep, endLayoutEpoch } from '../../../src/utils/layoutEpoch.js';
 
 describe('getBoundingClientRect', () => {
   let element, getBoundingClientRectSpy;
 
   beforeEach(() => {
+    endLayoutEpoch();
     element = document.createElement('div');
     getBoundingClientRectSpy = sinon.spy(element, 'getBoundingClientRect');
   });
@@ -24,26 +25,25 @@ describe('getBoundingClientRect', () => {
     expect(getBoundingClientRectSpy.callCount).to.equal(1);
   });
 
-  it('should fire getBoundingClientRect on element again if new auction was started', (done) => {
-    const onAuctionDone = function() {
+  it('should fire getBoundingClientRect on element again once the layout epoch has ended', () => {
+    getBoundingClientRect(element);
+    endLayoutEpoch();
+    getBoundingClientRect(element);
+    expect(getBoundingClientRectSpy.callCount).to.equal(2);
+  });
+
+  it('should fire getBoundingClientRect on element again at the next animation frame', () => {
+    const frames = [];
+    const sandbox = sinon.createSandbox();
+    sandbox.stub(dep, 'requestAnimationFrame').callsFake(callback => frames.push(callback));
+    try {
+      getBoundingClientRect(element);
+      frames.forEach(callback => callback());
       getBoundingClientRect(element);
       expect(getBoundingClientRectSpy.callCount).to.equal(2);
-      done();
-    };
-
-    const mockAuctionData = {
-      bidsBackHandler: onAuctionDone,
-      ortb2Fragments: {},
-      timeout: 3000,
-      adUnitCodes: [],
-      adUnits: [],
-      ttlBuffer: 1000,
-      auctionId: '909090',
-      defer: { resolve: () => {} }
-    };
-
-    getBoundingClientRect(element);
-    startAuction(mockAuctionData);
+    } finally {
+      sandbox.restore();
+    }
   });
 
   it('should return same value for multiple calls', () => {
