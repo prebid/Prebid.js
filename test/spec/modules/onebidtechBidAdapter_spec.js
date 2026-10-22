@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adyoulikeowBidAdapter.js';
+import { spec } from 'modules/onebidtechBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 
 const PLACEMENT_ID = '194f787b85c829fb8822cdaf1ae64435';
 
-describe('AdyoulikeOW Bid Adapter', function () {
+describe('One Bid Tech Bid Adapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -50,7 +50,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
   describe('buildRequests', function () {
     const bidRequests = [
       {
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -66,7 +66,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('builds the endpoint URL from the first bid request\'s placementId', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.equal(`https://us-e.openweb-ayl.com/ssp/${PLACEMENT_ID}`);
+      expect(request.url).to.equal(`https://r.one-bid.com/ssp/${PLACEMENT_ID}`);
     });
 
     it('does not put placementId on the impression itself -- routing is URL-only', function () {
@@ -130,7 +130,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('falls back to the legacy bid.sizes when no mediaTypes sizes are declared', function () {
       const legacyBids = [{
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         sizes: [[320, 50]]
@@ -149,7 +149,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('uses the static params.bidFloor when getFloor is not a function', function () {
       const bidRequests = [{
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID, bidFloor: 1.5 },
         mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -162,7 +162,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('prefers the floors-module getFloor() result over the static param', function () {
       const bidRequests = [{
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID, bidFloor: 1.5 },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
@@ -177,7 +177,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
     it('calls getFloor with the impression\'s real mediaType and size, not placeholders', function () {
       let receivedArgs;
       const bidRequests = [{
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { video: { playerSize: [[640, 480]] } },
@@ -194,7 +194,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('falls back to the static param when getFloor returns no usable floor', function () {
       const bidRequests = [{
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID, bidFloor: 0.75 },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
@@ -374,7 +374,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
   describe('onTimeout', function () {
     it('does not throw', function () {
-      expect(() => spec.onTimeout({ bidder: 'adyoulikeow', bidId: 'bid1' })).to.not.throw();
+      expect(() => spec.onTimeout({ bidder: 'onebidtech', bidId: 'bid1' })).to.not.throw();
     });
   });
 
@@ -385,7 +385,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
     };
 
     const multiformatBid = {
-      bidder: 'adyoulikeow',
+      bidder: 'onebidtech',
       bidId: 'bid1',
       params: { placementId: PLACEMENT_ID },
       mediaTypes: {
@@ -427,7 +427,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('still asks per-format when only one media type is declared', function () {
       const bannerOnly = {
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
@@ -467,7 +467,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
   describe('supply chain (schain)', function () {
     const bidRequests = [{
-      bidder: 'adyoulikeow',
+      bidder: 'onebidtech',
       bidId: 'bid1',
       params: { placementId: PLACEMENT_ID },
       mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -518,7 +518,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
   describe('site / app context from ORTB2', function () {
     const bidRequests = [{
-      bidder: 'adyoulikeow',
+      bidder: 'onebidtech',
       bidId: 'bid1',
       params: { placementId: PLACEMENT_ID },
       mediaTypes: { banner: { sizes: [[300, 250]] } }
@@ -587,7 +587,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     function videoImp(video) {
       const bids = [{
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: { video }
@@ -663,7 +663,7 @@ describe('AdyoulikeOW Bid Adapter', function () {
 
     it('forwards video constraints on multiformat ad units too', function () {
       const bids = [{
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         bidId: 'bid1',
         params: { placementId: PLACEMENT_ID },
         mediaTypes: {

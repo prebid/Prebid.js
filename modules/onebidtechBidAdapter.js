@@ -5,12 +5,12 @@ import { ajax } from '../src/ajax.js';
 import { buildRequests, interpretResponse } from '../libraries/onebidtechUtils/utils.js';
 
 /**
- * @typedef {import('./adyoulikeowBidAdapter.d.ts').AdyoulikeOWBidRequestParams} AdyoulikeOWBidRequestParams
+ * @typedef {import('./onebidtechBidAdapter.d.ts').OneBidTechBidRequestParams} OneBidTechBidRequestParams
  */
 
-const BIDDER_CODE = 'adyoulikeow';
-const ENDPOINT_URL = `https://us-e.openweb-ayl.com/ssp/placement`;
-const GVLID = 259;
+const BIDDER_CODE = 'onebidtech';
+const ENDPOINT_URL = `https://r.one-bid.com/ssp/placement`;
+const GVLID = 149;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -18,7 +18,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
-   * @param {{ params: AdyoulikeOWBidRequestParams }} bid
+   * @param {{ params: OneBidTechBidRequestParams }} bid
    * @return {boolean}
    */
   isBidRequestValid: function (bid) {
@@ -35,11 +35,6 @@ export const spec = {
     return true;
   },
 
-  // buildRequests in the shared lib now takes the endpoint as a third arg
-  // (so it isn't hardcoded per-partner); Prebid core only ever calls
-  // spec.buildRequests(validBidRequests, bidderRequest), so this wrapper
-  // supplies it. A direct `buildRequests,` reference here would leave
-  // endpointUrl undefined and throw on .replace() during a real auction.
   buildRequests: function (validBidRequests, bidderRequest) {
     return buildRequests(validBidRequests, bidderRequest, ENDPOINT_URL);
   },

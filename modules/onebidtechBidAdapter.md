@@ -1,20 +1,20 @@
 # Overview
 
 ```
-Module Name: AdyoulikeOW Bidder Adapter
+Module Name: One Bid Tech Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid-owayl@adyoulike.com
+Maintainer: support@onebidtech.com
 ```
 
 # Description
 
-Connects to the OpenWeb/AYL OW SSP endpoint for banner and video demand via Prebid.js.
+Connects to the One Bid Tech SSP endpoint for banner and video demand via Prebid.js.
 
 # Bid Params
 
 | Name | Scope | Description | Example | Type |
 | --- | --- | --- | --- | --- |
-| `placementId` | required | Hash-based placement id from OpenWeb/AYL (identifies the partner/slot server-side) | `'354f787b85c829fb83g2cdaf1ae64435'` | `string` |
+| `placementId` | required | Hash-based placement id from One Bid Tech (identifies the partner/slot server-side) | `'194f787b85c829fb8822cdaf1ae64435'` | `string` |
 | `bidFloor` | optional | Minimum CPM floor for the impression | `0.50` | `number` |
 | `currency` | optional | Currency for the floor, defaults to `USD` | `'USD'` | `string` |
 
@@ -31,9 +31,9 @@ var adUnits = [
     },
     bids: [
       {
-        bidder: 'adyoulikeow',
+        bidder: 'onebidtech',
         params: {
-          placementId: '354f787b85c829fb83g2cdaf1ae64435',
+          placementId: '194f787b85c829fb8822cdaf1ae64435',
           bidFloor: 0.5
         }
       }

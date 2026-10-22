@@ -3,7 +3,7 @@ import { config } from '../../src/config.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import { ORTB_VIDEO_PARAMS } from '../../src/video.js';
 
-// Shared OneBid Tech backend config. All partner-branded adapters that hit
+// Shared One Bid Tech backend config. All partner-branded adapters that hit
 // this backend use the same currency default, TTL, and revenue model --
 // routing to the right partner happens via the placementId hash substituted
 // into the URL, not via any per-bidder constant here. The endpoint itself is

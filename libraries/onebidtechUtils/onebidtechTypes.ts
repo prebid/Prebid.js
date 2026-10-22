@@ -1,6 +1,6 @@
 export interface OneBidTechBidderParams {
   /**
-   * OneBid Tech / OpenWeb AYL SSP placement identifier. Selects which
+   * One Bid Tech placement identifier. Selects which
    * partner backend and configuration handle this impression; required.
    */
   placementId: string;
