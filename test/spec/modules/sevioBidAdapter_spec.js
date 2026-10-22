@@ -585,13 +585,16 @@ describe('sevioBidAdapter', function () {
       ortb2: { ...baseBidderRequest.ortb2, regs }
     });
 
+    let sandbox;
+
     beforeEach(function () {
+      sandbox = sinon.createSandbox();
       window.ethereum = {};
     });
 
     afterEach(function () {
+      sandbox.restore();
       delete window.ethereum;
-      config.resetConfig();
     });
 
     ['1', 1].forEach((gpc) => {
@@ -625,7 +628,8 @@ describe('sevioBidAdapter', function () {
     });
 
     it('turns syncs off without GPC when user syncs are disabled', function () {
-      config.setConfig({ userSync: { syncEnabled: false } });
+      sandbox.stub(config, 'getConfig').callThrough()
+        .withArgs('userSync.syncEnabled').returns(false);
 
       const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
 
