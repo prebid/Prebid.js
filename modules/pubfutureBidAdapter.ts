@@ -15,7 +15,7 @@ import type { Currency } from '../src/types/common.d.ts';
  */
 
 const BIDDER_CODE = 'pubfuture';
-const ENDPOINT = 'https://ortb2.pubstar-ad.com/v1/bid'; // production exchange URL
+const ENDPOINT = 'https://prebid.pubfuture-ad.com/v1/bid'; // production exchange URL
 const DEFAULT_CURRENCY: Currency = 'USD';
 const DEFAULT_TTL = 300;
 // PubFuture's server-recognized test ad unit — always returns a canned
