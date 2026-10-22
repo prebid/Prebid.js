@@ -12,18 +12,20 @@ const MAX_EPOCH_MS = 20;
 
 export const dep = {
   now: () => Date.now(),
-  requestAnimationFrame: (callback) => window.requestAnimationFrame(callback),
+  requestAnimationFrame: (callback: () => void) => window.requestAnimationFrame(callback),
 };
 
-const resets = [];
+type Reset = () => void;
+
+const resets: Reset[] = [];
 let epoch = 0;
-let startedAt = null;
+let startedAt: number | null = null;
 
 /**
  * Register a function that discards a layout cache; it is called whenever an epoch ends.
  * Returns a function that unregisters it.
  */
-export function onLayoutEpochEnd(reset) {
+export function onLayoutEpochEnd(reset: Reset) {
   resets.push(reset);
   return () => {
     const i = resets.indexOf(reset);
