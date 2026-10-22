@@ -940,6 +940,25 @@ describe('gumgumAdapter', function () {
         const request = spec.buildRequests(bidRequests)[0];
         expect(request.data.fpc).to.equal(floorTestData.currency);
       });
+      it('should use the banner floor for multi-format in-slot units even when native is listed first', function () {
+        let seenMediaType;
+        const request = {
+          ...bidRequests[0],
+          mediaTypes: {
+            native: { title: { required: true }, image: { required: true } },
+            banner: { sizes: [[300, 250], [300, 600]] }
+          },
+          params: { inSlot: 9 },
+          getFloor: ({ mediaType }) => {
+            seenMediaType = mediaType;
+            return { currency: 'USD', floor: mediaType === 'banner' ? 2.50 : 0.50 };
+          }
+        };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(seenMediaType).to.equal('banner');
+        expect(bidRequest.data.fp).to.equal(2.50);
+        expect(bidRequest.data.pi).to.equal(3);
+      });
     });
 
     it('sends bid request to ENDPOINT via GET', function () {

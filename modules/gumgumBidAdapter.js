@@ -252,8 +252,13 @@ function _getVidParams(attributes) {
  * @param {Object} bid - The bid object which may contain a method to get dynamic floor values.
  * @returns {Object} An object containing the calculated bid floor and its currency.
  */
-function _getFloor(mediaTypes, staticBidFloor, bid) {
-  const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
+function _getFloor(mediaTypes, staticBidFloor, bid, params = {}) {
+  // Multi-format units configured for in-slot display are served as banner
+  // (see buildRequests), so their floor is the banner floor regardless of
+  // the order mediaTypes happens to list its keys in.
+  const curMediaType = (mediaTypes.banner && (params.inSlot || params.slot))
+    ? 'banner'
+    : (Object.keys(mediaTypes)[0] || 'banner');
   const bidFloor = { floor: 0, currency: 'USD' };
 
   if (typeof bid.getFloor === 'function') {
@@ -480,7 +485,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
-    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest, params);
     const userEids = getUserEids(bidRequest, bidderRequest);
     const eids = getEidsFromEidsArray(userEids);
     const gpid = deepAccess(ortb2Imp, 'ext.gpid');
