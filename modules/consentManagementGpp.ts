@@ -45,6 +45,12 @@ class GPPError {
   }
 }
 
+const GPP_API = {
+  apiName: '__gpp',
+  apiArgs: ['command', 'callback', 'parameter'], // do not pass version - not clear what it's for (or what we should use),
+  mode: MODE_CALLBACK
+};
+
 export class GPPClient {
   apiVersion = '1.1';
   cmp;
@@ -52,11 +58,7 @@ export class GPPClient {
 
   static get(mkCmp = cmpClient) {
     if (this.INST == null) {
-      const cmp = mkCmp({
-        apiName: '__gpp',
-        apiArgs: ['command', 'callback', 'parameter'], // do not pass version - not clear what it's for (or what we should use),
-        mode: MODE_CALLBACK
-      });
+      const cmp = mkCmp(GPP_API);
       if (cmp == null) {
         throw new GPPError('GPP CMP not found');
       }
@@ -179,15 +181,11 @@ export class GPPClient {
   }
 }
 
-function lookupIabConsent(_setProvisionalConsent, { waitForCmp = false, timeout = 0 }: { waitForCmp?: boolean; timeout?: number } = {}) {
-  if (!waitForCmp) {
-    return new PbPromise((resolve) => resolve(GPPClient.get().refresh()));
-  }
-  const apiConfig = { apiName: '__gpp', apiArgs: ['command', 'callback', 'parameter'], mode: MODE_CALLBACK };
-  return pollForCmp(apiConfig, timeout).then(cmp => {
-    if (!cmp) throw new GPPError('GPP CMP not found');
-    return GPPClient.get(() => cmp).refresh();
-  });
+function lookupIabConsent(_setProvisionalConsent, cmpPollTimeout = 0) {
+  const client = GPPClient.INST != null
+    ? PbPromise.resolve(GPPClient.INST)
+    : pollForCmp(GPP_API, cmpPollTimeout).then(cmp => GPPClient.get(() => cmp));
+  return client.then(client => client.refresh());
 }
 
 // add new CMPs here, with their dedicated lookup function

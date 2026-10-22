@@ -10,8 +10,31 @@ describe('cmpClient', () => {
       expect(await result).to.have.property('isDirect', true);
     });
 
-    it('resolves undefined after the polling window', async () => {
-      expect(await pollForCmp({ apiName: '__pollCmp' }, 0)).to.be.undefined;
+    it('rejects after the polling window', async () => {
+      const lateCmp = setTimeout(() => { window.__pollCmp = sinon.stub(); }, 50);
+      try {
+        await pollForCmp({ apiName: '__pollCmp' }, 20);
+        sinon.assert.fail('should have rejected');
+      } catch (e) {
+        expect(e.message).to.contain('__pollCmp');
+      } finally {
+        clearTimeout(lateCmp);
+      }
+    });
+
+    describe('with no timeout', () => {
+      it('resolves to a CMP that is already present', async () => {
+        window.__pollCmp = sinon.stub();
+        expect(await pollForCmp({ apiName: '__pollCmp' })).to.have.property('isDirect', true);
+      });
+
+      it('rejects when the CMP is not present', async () => {
+        const cmpClient = pollForCmp({ apiName: '__pollCmp' }, 0);
+        window.__pollCmp = sinon.stub();
+        let error;
+        await cmpClient.catch(e => { error = e; });
+        expect(error).to.exist;
+      });
     });
   });
 

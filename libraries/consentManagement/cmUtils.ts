@@ -28,6 +28,7 @@ export function consentManagementHook(name, loadConsentData) {
  *   through consent data handlers' `setConsentData`.
  * @param {SetProvisionalConsent} setProvisionalConsent optionally, the function can call this with provisional consent
  *   data, which will be used if the lookup times out before "proper" consent data can be retrieved.
+ * @param {number} cmpPollTimeout how long (in ms) to wait for the CMP API to appear, if it's not already present.
  * @returns {Promise<{void}>} a promise that resolves when the auction should be continued, or rejects if it should be canceled.
  *
  * @typedef {Function} SetProvisionalConsent
@@ -45,7 +46,7 @@ export function consentManagementHook(name, loadConsentData) {
  * @param {Number?} options.cmpTimeout timeout (in ms) after which the auction should continue without consent data.
  * @param {Number?} options.actionTimeout timeout (in ms) from when provisional consent is available to when the auction should continue with it
  * @param {() => {}} options.getNullConsent consent data to use on timeout
- * @param {boolean} options.waitForCmp whether to wait for a CMP API that is loaded late
+ * @param {Number?} options.cmpPollTimeout how long (in ms) `setupCmp` should wait for the CMP API to appear.
  * @returns {Promise<{error: Error, consentData: {}}>}
  */
 export function lookupConsentData(
@@ -56,7 +57,7 @@ export function lookupConsentData(
     cmpTimeout,
     actionTimeout,
     getNullConsent,
-    waitForCmp
+    cmpPollTimeout = 0
   }
 ) {
   consentDataHandler.enable();
@@ -87,7 +88,7 @@ export function lookupConsentData(
         timeoutHandle = null;
       }
     }
-    setupCmp(setProvisionalConsent, { waitForCmp, timeout: cmpTimeout })
+    setupCmp(setProvisionalConsent, cmpPollTimeout)
       .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject);
     cmpTimeout != null && resetTimeout(cmpTimeout);
   }).finally(() => {
@@ -247,7 +248,7 @@ export function configParser(
       cmpTimeout,
       actionTimeout,
       getNullConsent,
-      waitForCmp: cmConfig.waitForCmp === true,
+      cmpPollTimeout: cmConfig.waitForCmp === true ? cmpTimeout : 0,
     });
 
     cdLoader = (() => {

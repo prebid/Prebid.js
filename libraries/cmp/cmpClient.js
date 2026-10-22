@@ -19,16 +19,18 @@ export const CMP_POLL_INTERVAL = 100;
  * Wait for a CMP API to become available.
  *
  * @param {object} apiConfig arguments passed to {@link cmpClient}
- * @param {number} timeout maximum time to wait, in milliseconds
- * @returns {Promise<CMPClient|undefined>}
+ * @param {number} [timeout] maximum time to wait, in milliseconds. With 0, the CMP is looked for only once.
+ * @returns {Promise<CMPClient>} a promise to the CMP client, rejected if no CMP was found within `timeout`.
  */
-export function pollForCmp(apiConfig, timeout) {
+export function pollForCmp(apiConfig, timeout = 0) {
   const deadline = Date.now() + timeout;
-  return new PbPromise(resolve => {
+  return new PbPromise((resolve, reject) => {
     function check() {
       const cmp = cmpClient(apiConfig);
-      if (cmp || Date.now() >= deadline) {
+      if (cmp) {
         resolve(cmp);
+      } else if (Date.now() >= deadline) {
+        reject(new Error(`CMP not found (${apiConfig.apiName})`));
       } else {
         setTimeout(check, Math.min(CMP_POLL_INTERVAL, deadline - Date.now()));
       }

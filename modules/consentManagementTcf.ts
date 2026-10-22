@@ -9,7 +9,7 @@ import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
 import { registerOrtbProcessor, REQUEST } from '../src/pbjsORTB.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
+import { pollForCmp } from '../libraries/cmp/cmpClient.js';
 import { configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
 import { CONSENT_GDPR } from "../src/consentHandler.ts";
@@ -55,8 +55,12 @@ declare module '../src/consentHandler' {
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  */
-function lookupIabConsent(setProvisionalConsent, { waitForCmp = false, timeout = 0 }: { waitForCmp?: boolean; timeout?: number } = {}) {
-  return new Promise<void>((resolve, reject) => {
+function lookupIabConsent(setProvisionalConsent, cmpPollTimeout = 0) {
+  return pollForCmp({
+    apiName: '__tcfapi',
+    apiVersion: CMP_VERSION,
+    apiArgs: ['command', 'version', 'callback', 'parameter'],
+  }, cmpPollTimeout).then(cmp => new Promise<void>((resolve, reject) => {
     function cmpResponseCallback(tcfData, success) {
       logInfo('Received a response from CMP', tcfData);
       if (success) {
@@ -81,43 +85,23 @@ function lookupIabConsent(setProvisionalConsent, { waitForCmp = false, timeout =
       }
     }
 
-    const apiConfig = {
-      apiName: '__tcfapi',
-      apiVersion: CMP_VERSION,
-      apiArgs: ['command', 'version', 'callback', 'parameter'],
-    };
-
-    function subscribe(cmp) {
-      if ((cmp as any).isDirect) {
-        logInfo('Detected CMP API is directly accessible, calling it now...');
-      } else {
-        logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
-      }
-
-      // Initialize CMP event manager and set CMP API
-      if (!tcfCmpEventManager) {
-        tcfCmpEventManager = createCmpEventManager('tcf', () => gdprDataHandler.getConsentData());
-      }
-      tcfCmpEventManager.setCmpApi(cmp);
-
-      cmp({
-        command: 'addEventListener',
-        callback: cmpResponseCallback
-      });
+    if ((cmp as any).isDirect) {
+      logInfo('Detected CMP API is directly accessible, calling it now...');
+    } else {
+      logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
     }
 
-    const cmp = cmpClient(apiConfig);
-
-    if (!cmp) {
-      if (!waitForCmp) {
-        reject(new Error('TCF2 CMP not found.'));
-      } else {
-        pollForCmp(apiConfig, timeout).then(cmp => cmp ? subscribe(cmp) : reject(new Error('TCF2 CMP not found.')));
-      }
-      return;
+    // Initialize CMP event manager and set CMP API
+    if (!tcfCmpEventManager) {
+      tcfCmpEventManager = createCmpEventManager('tcf', () => gdprDataHandler.getConsentData());
     }
-    subscribe(cmp);
-  });
+    tcfCmpEventManager.setCmpApi(cmp);
+
+    cmp({
+      command: 'addEventListener',
+      callback: cmpResponseCallback
+    });
+  }));
 }
 
 function parseConsentData(consentObject): TCFConsentData {

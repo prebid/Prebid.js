@@ -10,7 +10,8 @@ import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';
 import { getHook } from '../src/hook.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
+import { pollForCmp } from '../libraries/cmp/cmpClient.js';
+import { PbPromise } from '../src/utils/promise.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
 import type { USPConsentData } from "../src/types/consent/usp.d.ts";
@@ -22,7 +23,7 @@ const USPAPI_VERSION = 1;
 export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
-let waitForCmp = false;
+let cmpPollTimeout = 0;
 
 export type BaseUSPConfig = {
   /**
@@ -101,14 +102,13 @@ function lookupUspConsent({ onSuccess, onError }) {
     };
   }
 
-  const apiConfig = {
+  const callbackHandler = handleUspApiResponseCallbacks();
+
+  return pollForCmp({
     apiName: '__uspapi',
     apiVersion: USPAPI_VERSION,
     apiArgs: ['command', 'version', 'callback'],
-  };
-
-  function subscribe(cmp) {
-    const callbackHandler = handleUspApiResponseCallbacks();
+  }, cmpPollTimeout).then((cmp: any) => {
     if (cmp.isDirect) {
       logInfo('Detected USP CMP is directly accessible, calling it now...');
     } else {
@@ -132,18 +132,7 @@ function lookupUspConsent({ onSuccess, onError }) {
         logError('Error invoking CMP `registerDeletion`:', e);
       });
     }
-  }
-
-  const cmp = cmpClient(apiConfig) as any;
-
-  if (!cmp) {
-    if (waitForCmp) {
-      pollForCmp(apiConfig, consentTimeout).then(cmp => cmp ? subscribe(cmp) : onError('USP CMP not found.'));
-      return;
-    }
-    return onError('USP CMP not found.');
-  }
-  subscribe(cmp);
+  }, (e) => onError(e.message));
 }
 
 /**
@@ -182,11 +171,12 @@ function loadConsentData(cb?) {
     }
   };
 
-  uspCallMap[consentAPI](callbacks);
+  const lookup = uspCallMap[consentAPI](callbacks);
 
   if (!isDone) {
     if (consentTimeout === 0) {
-      processUspData(undefined, callbacks);
+      // the CMP is called once the lookup has found it; waiting for that lets a CMP that replies synchronously provide consent
+      PbPromise.resolve(lookup).finally(() => processUspData(undefined, callbacks));
     } else {
       timer = setTimeout(callbacks.onError.bind(null, 'USPAPI workflow exceeded timeout threshold.'), consentTimeout);
     }
@@ -253,7 +243,7 @@ export function resetConsentData() {
   consentTimeout = undefined;
   uspDataHandler.reset();
   enabled = false;
-  waitForCmp = false;
+  cmpPollTimeout = 0;
 }
 
 /**
@@ -278,7 +268,7 @@ export function setConsentConfig(config) {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
-  waitForCmp = config?.waitForCmp === true;
+  cmpPollTimeout = config?.waitForCmp === true ? consentTimeout : 0;
   if (consentAPI === 'static') {
     if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {
       if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };

@@ -509,7 +509,7 @@ describe('consentManagementGpp', function () {
 
     describe('on CMP sectionChange events', () => {
       let pingData, triggerCMPEvent;
-      beforeEach(() => {
+      beforeEach(async () => {
         pingData = {
           applicableSections: [7],
           gppString: 'xyz',
@@ -528,6 +528,8 @@ describe('consentManagementGpp', function () {
           }
         });
         setConsentConfig(goodConfig);
+        // let the lookup find the CMP and subscribe to its events
+        await new Promise(resolve => setTimeout(resolve));
       });
 
       afterEach(() => {
