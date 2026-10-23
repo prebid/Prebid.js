@@ -5,6 +5,12 @@ import { mergeDeep } from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./openxBidAdapter.d.ts').OpenxBidderParams} OpenxBidderParams
+ * @typedef {BidRequest & {params: OpenxBidderParams}} OpenxBidRequest
+ */
+
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
 export const REQUEST_URL = 'https://rtb.openx.net/openrtbb/prebidjs';
@@ -126,6 +132,10 @@ const converter = ortbConverter({
   }
 });
 
+/**
+ * @param {OpenxBidRequest} bidRequest
+ * @returns {boolean}
+ */
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||
     bidRequest.params.platform;
@@ -143,7 +153,12 @@ function buildRequests(bidRequests, bidderRequest) {
   return [{
     method: 'POST',
     url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
-    data: converter.toORTB({ bidRequests, bidderRequest })
+    data: converter.toORTB({ bidRequests, bidderRequest }),
+    // Prebid core gzips the body and appends `gzip=1` to the URL; it falls back to an
+    // uncompressed request in debug mode or when the browser lacks CompressionStream.
+    options: {
+      endpointCompression: true
+    }
   }];
 }
 

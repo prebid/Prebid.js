@@ -17,6 +17,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -356,7 +357,7 @@ export const spec = {
         request.regs.ext.us_privacy = uspConsent;
       }
 
-      if (config.getConfig('coppa') === true) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         if (!request.regs) {
           request.regs = {};
         }

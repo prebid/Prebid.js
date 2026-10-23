@@ -17,6 +17,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'utiqId';
 const LOG_PREFIX = 'Utiq module';
+const CATEGORY_PRIORITIES = ['mobile', 'netid', 'fixed'];
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_UID,
@@ -25,7 +26,7 @@ export const storage = getStorageManager({
 
 /**
  * Get the "atid" from html5 local storage to make it available to the UserId module.
- * @returns {{utiq: (*|string)}}
+ * @returns {{utiq: (*|{atid:string,category:string})}}
  */
 function getUtiqFromStorage() {
   let utiqPass;
@@ -33,16 +34,11 @@ function getUtiqFromStorage() {
     storage.getDataFromLocalStorage('utiqPass')
   );
 
-  const netIdAdtechpass = storage.getDataFromLocalStorage('netid_utiq_adtechpass');
-
-  if (netIdAdtechpass) {
-    logInfo(
-      `${LOG_PREFIX}: Local storage netid_utiq_adtechpass: ${netIdAdtechpass}`
-    );
-    return {
-      utiq: netIdAdtechpass,
-    };
-  }
+  logInfo(
+    `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
+      utiqPassStorage
+    )}`
+  );
 
   if (
     utiqPassStorage &&
@@ -50,13 +46,20 @@ function getUtiqFromStorage() {
     Array.isArray(utiqPassStorage.connectId.idGraph) &&
     utiqPassStorage.connectId.idGraph.length > 0
   ) {
-    utiqPass = utiqPassStorage.connectId.idGraph[0];
+    const idGraph = utiqPassStorage.connectId.idGraph;
 
-    logInfo(
-      `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
-        utiqPassStorage
-      )}`
-    );
+    for (let i = 0; i < CATEGORY_PRIORITIES.length; i++) {
+      const found = idGraph.find(g => g.category === CATEGORY_PRIORITIES[i]);
+      if (found) {
+        utiqPass = found;
+        break; // Stop immediately once the highest priority is found
+      }
+    }
+
+    // Fallback to the first item if no prioritized category matched
+    if (!utiqPass) {
+      utiqPass = idGraph[0];
+    }
 
     logInfo(
       `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
@@ -65,11 +68,27 @@ function getUtiqFromStorage() {
     );
   }
 
+  const netIdAdtechpass = storage.getDataFromLocalStorage('netid_utiq_adtechpass');
+
+  if (netIdAdtechpass) {
+    const atidPriority = CATEGORY_PRIORITIES.findIndex(el => utiqPass && el === utiqPass.category);
+    const netIdPriority = CATEGORY_PRIORITIES.findIndex(el => el === 'netid');
+
+    if (atidPriority >= 0 && netIdPriority < atidPriority) {
+      logInfo(
+        `${LOG_PREFIX}: Local storage netid_utiq_adtechpass: ${netIdAdtechpass}`
+      );
+      return { utiq: { atid: netIdAdtechpass, category: 'netid' } };
+    }
+  }
+
   return {
-    utiq:
-      utiqPass && utiqPass.atid
-        ? utiqPass.atid
-        : null,
+    utiq: utiqPass && utiqPass.atid
+      ? {
+          atid: utiqPass.atid,
+          category: utiqPass.category,
+        }
+      : null
   };
 }
 
@@ -84,7 +103,7 @@ export const utiqIdSubmodule = {
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function
-   * @returns {{utiq: string} | null}
+   * @returns {{utiq: {atid: string, category: string} | string } | null}
    */
   decode(bidId) {
     logInfo(`${LOG_PREFIX}: Decoded ID value ${JSON.stringify(bidId)}`);
@@ -93,7 +112,7 @@ export const utiqIdSubmodule = {
   /**
    * Get the id from helper function and initiate a new user sync.
    * @param config
-   * @returns {{callback: Function}|{id: {utiq: string}}}
+   * @returns {{callback: Function}|{id: {utiq: {atid:string,category:string}}}}
    */
   getId: function (config) {
     const data = getUtiqFromStorage();
@@ -148,8 +167,16 @@ export const utiqIdSubmodule = {
       source: 'utiq.com',
       atype: 1,
       getValue: function (data) {
-        return data;
+        return data.atid;
       },
+      getUidExt: function (data) {
+        const category = (data && data.category) || false;
+        return {
+          utiq: {
+            category
+          }
+        };
+      }
     },
   }
 };

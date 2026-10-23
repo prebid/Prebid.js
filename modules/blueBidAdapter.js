@@ -18,6 +18,7 @@ import {
   isEmpty
 } from '../src/utils.js';
 const BIDDER_CODE = 'blue';
+const ACP_ID = 2699; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
 const DEFAULT_CURRENCY = 'USD';
 
@@ -27,6 +28,7 @@ const converter = createOrtbConverter(ortbConverter, BANNER, DEFAULT_CURRENCY, o
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
 
   // Validate bid request
@@ -52,7 +54,8 @@ export const spec = {
     serverResponse.body.seatbid.forEach((response) => {
       response.bid.forEach((bid) => {
         const baseBid = buildBidObjectBase(bid, serverResponse.body, BIDDER_CODE, DEFAULT_CURRENCY);
-        const blueSpecific = { creativeId: bid.ext.blue.adId, creative_id: bid.ext.blue.adId, ttl: 1200 };
+        const creativeId = bid.ext?.blue?.adId || bid.adid;
+        const blueSpecific = { creativeId, creative_id: creativeId, ttl: 1200 };
         bids.push({ ...baseBid, ...blueSpecific });
       });
     });

@@ -40,6 +40,7 @@ const path = require('path');
 const tap = require('gulp-tap');
 const _ = require('lodash');
 const fs = require('fs');
+const {Transform} = require('node:stream');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
@@ -166,6 +167,24 @@ function generateMetadataModules() {
     .pipe(gulp.dest(helpers.getPrecompiledPath('metadata/modules')));
 }
 
+/**
+ * Whether `dest` already holds exactly `contents`.
+ *
+ * A watch task precompiles again on every source change, and anything watching `dist/src` reacts
+ * to a write whether or not the bytes changed. Rewriting a file that a test build imports re-runs
+ * the tests once more - against the previous version of the edited file, if the rewrite lands
+ * before that file's own output does - and rewriting many files at once costs a watcher an event
+ * each. A step whose output is usually identical from one precompile to the next can check this
+ * and leave such a file alone.
+ */
+function isUpToDate(dest, contents) {
+  try {
+    return fs.readFileSync(dest).equals(Buffer.from(contents));
+  } catch {
+    return false;
+  }
+}
+
 const TS_OUT = path.resolve('.cache/ts/out');
 
 /**
@@ -193,6 +212,9 @@ function copyDeclarations() {
         return;
       }
       const dest = helpers.getPrecompiledPath(relative);
+      if (isUpToDate(dest, fs.readFileSync(file))) {
+        return;
+      }
       fs.mkdirSync(path.dirname(dest), {recursive: true});
       fs.copyFileSync(file, dest);
     });
@@ -352,10 +374,15 @@ function generateBuildOptions(options = {}) {
     options = buildOptions(getDefaults(options));
     import('./customize/buildOptions.mjs').then(({getBuildOptionsModule}) => {
       const dest = getBuildOptionsModule();
+      const contents = `export default ${JSON.stringify(options, null, 2)}`;
+      if (isUpToDate(dest, contents)) {
+        done();
+        return;
+      }
       if (!fs.existsSync(path.dirname(dest))) {
         fs.mkdirSync(path.dirname(dest), {recursive: true});
       }
-      fs.writeFile(dest, `export default ${JSON.stringify(options, null, 2)}`, done);
+      fs.writeFile(dest, contents, done);
     })
   }
 
@@ -382,6 +409,14 @@ function generateCreativeRenderers() {
   return gulp.src(['build/creative/renderers/**/*.js'], {since: gulp.lastRun(generateCreativeRenderers)})
     .pipe(tap((file) => {
       file.contents = Buffer.from(tpl({contents: file.contents}));
+    }))
+    // a renderer in `build/creative` being newer than the last run does not mean its contents
+    // changed, so `since` alone does not tell which ones need writing
+    .pipe(new Transform({
+      objectMode: true,
+      transform(file, enc, cb) {
+        cb(null, isUpToDate(path.join(helpers.getCreativeRendererPath(), file.relative), file.contents) ? undefined : file);
+      }
     }))
     .pipe(gulp.dest(helpers.getCreativeRendererPath()))
 }

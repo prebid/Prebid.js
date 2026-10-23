@@ -160,10 +160,18 @@ export const eids = {
     source: 'liveintent.com',
     atype: 3,
     getEidExt: function(data) {
+      const result = {};
+
       if (Array.isArray(data.segments) && data.segments.length) {
-        return {
-          segments: data.segments
-        };
+        result.segments = data.segments;
+      }
+
+      if (data.m) {
+        result.m = data.m;
+      }
+
+      if (Object.keys(result).length > 0) {
+        return result;
       }
     }
   },

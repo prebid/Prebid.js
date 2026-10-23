@@ -160,7 +160,6 @@ function canonicalJson(value) {
     .map(key => JSON.stringify(key) + ':' + canonicalJson(value[key]))
     .join(',') + '}';
 }
-
 function replaceClaims(compact, mutate) {
   const segments = compact.split('.');
   const claims = decodeClaims(compact);
@@ -436,7 +435,6 @@ function packagesForTargetingBytes(target, attestationId) {
   }
   throw new Error('could not construct a package list at ' + target + ' bytes');
 }
-
 describe('encypherRtdProvider decision-network v1', () => {
   let sandbox;
   let cleanups;
@@ -1028,7 +1026,6 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertNoInjection(belowFloor.auction);
     assert.strictEqual(server.requests.some(request => request.url === PINNED_JWKS_URL), false);
   });
-
   it('keeps the page dataset floor and stale barrier across canonical URL hashes', async () => {
     const canonical = addCanonical(STORY_URL, cleanups);
     const first = beginAuction();

@@ -7,6 +7,7 @@
             pbjs.que = pbjs.que || [];
 
             const adUnitCode = 'adUnit-0000';
+            const vastXml = '<?xml version="1.0" encoding="UTF-8"?><VAST version="3.0"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://prebid.org/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery="progressive" width="640" height="360" type="video/mp4" scalable="true" maintainAspectRatio="true"><![CDATA[https://s3.amazonaws.com/files.prebid.org/creatives/PrebidLogo.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>';
 
             const adUnits = [{
                 mediaTypes: {
@@ -45,6 +46,16 @@
                                     title: {
                                         len: 20
                                     }
+                                },
+                                {
+                                    required: true,
+                                    id: 5,
+                                    video: {
+                                        mimes: ['video/mp4'],
+                                        protocols: [2, 3],
+                                        minduration: 5,
+                                        maxduration: 60
+                                    }
                                 }
                             ]
                         }
@@ -81,6 +92,37 @@
                                 },
                                 then: {
                                     creativeId: 'testCreativeId',
+                                    // Default: debugging fills native.ortb from the request,
+                                    // including assets[].video.vasttag → ##hb_native_video##
+
+                                    // Explicit ORTB native response:
+                                    // native: {
+                                    //     ortb: {
+                                    //         link: {
+                                    //             url: 'https://www.link.example'
+                                    //         },
+                                    //         assets: [
+                                    //             { id: 1, img: { type: 3, w: 600, h: 500, url: 'https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png' } },
+                                    //             { id: 2, img: { type: 3, w: 600, h: 500, url: 'https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png' } },
+                                    //             { id: 3, data: { value: '5 stars' } },
+                                    //             { id: 4, title: { text: 'Prebid Native Example' } },
+                                    //             { id: 5, video: { vasttag: vastXml } }
+                                    //         ]
+                                    //     }
+                                    // }
+
+                                    // Explicit legacy native response (video → vasttag):
+                                    native: {
+                                        title: 'Prebid Native Example',
+                                        rating: '5 stars',
+                                        image: {
+                                            url: 'https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png',
+                                            width: 600,
+                                            height: 500
+                                        },
+                                        video: vastXml,
+                                        clickUrl: 'https://www.link.example'
+                                    }
                                 }
                             }
                         ]
@@ -103,7 +145,7 @@
                             marginWidth: 0,
                             marginHeight: 0,
                             width: 600,
-                            height: 500,
+                            height: 700,
                             scrolling: 'no',
                             srcdoc: document.getElementById('native-template').innerHTML
                         }).forEach(([prop, val]) => iframe.setAttribute(prop, val));
@@ -116,6 +158,48 @@
     </head>
     <body>
         <template id="native-template">
+            <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+            <script>
+                function fitNativeFrame() {
+                    const frame = window.frameElement;
+                    if (!frame) {
+                        return;
+                    }
+                    const height = Math.max(
+                        document.body.scrollHeight,
+                        document.body.offsetHeight,
+                        document.documentElement.scrollHeight
+                    );
+                    const width = Math.max(
+                        document.body.scrollWidth,
+                        document.body.offsetWidth,
+                        document.documentElement.scrollWidth
+                    );
+                    frame.width = width;
+                    frame.height = height;
+                }
+
+                window.postRenderAd = function () {
+                    const vastXml = document.getElementById('hb_native_video').value;
+                    const player = jwplayer('player').setup({
+                        debug: true,
+                        width: 300,
+                        height: 169,
+                        advertising: {
+                            client: 'vast',
+                            outstream: true,
+                            endstate: 'close'
+                        }
+                    });
+                    ['ready', 'adImpression', 'adPlay', 'viewable'].forEach(function (event) {
+                        player.on(event, fitNativeFrame);
+                    });
+                    player.on('ready', function () {
+                        player.loadAdXml(vastXml);
+                    });
+                    fitNativeFrame();
+                };
+            </script>
             <style>
                 body {
                     display: inline-block;
@@ -136,12 +220,22 @@
                     width: 300px;
                     height: 200px;
                 }
+
+                #player {
+                    width: 300px;
+                    height: 169px;
+                    min-height: 169px;
+                    background: #000;
+                    margin-top: 12px;
+                }
     
             </style>
             <div class="container">
                 <h1>##hb_native_asset_id_4##</h1>
                 <h3>Rating: ##hb_native_asset_id_3##</h3>
                 <img class="img" src="##hb_native_asset_id_1##" alt="bg" />
+                <div id="player"></div>
+                <textarea id="hb_native_video" hidden>##hb_native_video##</textarea>
             </div>
         </template>
         <h2>Prebid Test Bidder Example</h2>

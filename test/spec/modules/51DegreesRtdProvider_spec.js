@@ -15,6 +15,7 @@ import {
   getPageFodErrors,
   storageManager,
   fiftyOneDegreesSubmodule,
+  MODEL_TERMS_URL,
 } from 'modules/51DegreesRtdProvider';
 import { mergeDeep } from '../../../src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
@@ -484,7 +485,7 @@ describe('51DegreesRtdProvider', function() {
       const result = convert51DegreesDataToOrtb2(data51, { tdlUrl: 'https://tdl.example/x' });
       expect(result.user.eids).to.have.lengthOf(1);
       expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
-      expect(result.user.eids[0].ext.tdl).to.deep.equal(['https://tdl.example/x']);
+      expect(result.user.eids[0].ext.tdl).to.deep.equal([MODEL_TERMS_URL, 'https://tdl.example/x']);
     });
 
     it('returns only device mapping when ip and fodid are absent', function () {
@@ -782,16 +783,32 @@ describe('51DegreesRtdProvider', function() {
             source: '51d.es',
             mm: 5,
             uids: [{ id: 'lic-uid-base64', atype: 1 }, { id: 'global-uid-base64', atype: 1 }],
-            ext: { tdl: [TDL_URL] },
+            ext: { tdl: [MODEL_TERMS_URL, TDL_URL] },
           }],
         },
       });
     });
 
-    it('omits ext.tdl when tdlUrl is falsy', function() {
+    it('names the Model Terms alone when tdlUrl is falsy', function() {
       const result = convert51DegreesFoDiDToOrtb2(fullFodid, undefined);
-      expect(result.user.eids[0].ext).to.be.undefined;
+      expect(result.user.eids[0].ext.tdl).to.deep.equal([MODEL_TERMS_URL]);
       expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-uid-base64', atype: 1 }, { id: 'global-uid-base64', atype: 1 }]);
+    });
+
+    it('names the Model Terms first and the publisher TDL second', function() {
+      const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL);
+      expect(result.user.eids[0].ext.tdl).to.deep.equal([MODEL_TERMS_URL, TDL_URL]);
+    });
+
+    it('gives every entry its own terms array', function() {
+      const result = convert51DegreesFoDiDToOrtb2({
+        idproblic: 'p-lic',
+        idrandlic: 'r-lic',
+      }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(2);
+      expect(result.user.eids[0].ext.tdl).to.not.equal(result.user.eids[1].ext.tdl);
+      result.user.eids[0].ext.tdl.push('https://elsewhere.example/y');
+      expect(result.user.eids[1].ext.tdl).to.deep.equal([MODEL_TERMS_URL, TDL_URL]);
     });
 
     it('emits entry with only idproblic when idprobglobal is absent', function() {
@@ -846,7 +863,8 @@ describe('51DegreesRtdProvider', function() {
       expect(result.user.eids).to.have.lengthOf(3);
       expect(result.user.eids.map((e) => e.mm)).to.deep.equal([5, 0, 3]);
       expect(result.user.eids.every((e) => e.source === '51d.es')).to.equal(true);
-      expect(result.user.eids.every((e) => e.ext.tdl[0] === TDL_URL)).to.equal(true);
+      expect(result.user.eids.every((e) => e.ext.tdl[0] === MODEL_TERMS_URL)).to.equal(true);
+      expect(result.user.eids.every((e) => e.ext.tdl[1] === TDL_URL)).to.equal(true);
       expect(result.user.eids[2].uids).to.deep.equal(
         [{ id: 'h-lic', atype: 3 }, { id: 'h-global', atype: 3 }]);
     });
@@ -1102,7 +1120,7 @@ describe('51DegreesRtdProvider', function() {
       expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].uids)
         .to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
       expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].ext.tdl)
-        .to.deep.equal(['https://tdl.example/x']);
+        .to.deep.equal([MODEL_TERMS_URL, 'https://tdl.example/x']);
     });
 
     it('does not overwrite a publisher-set device.ip / device.ipv6', async function() {

@@ -12,6 +12,7 @@ import { executeRenderer } from '../../../src/Renderer.js';
 import { expect } from 'chai';
 import { userSync } from '../../../src/userSync.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { coppaDataHandler } from '../../../src/consentHandler.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -256,12 +257,82 @@ describe('Adagio bid adapter', () => {
       const bidderRequest = new BidderRequestBuilder().build();
 
       const requests = spec.buildRequests([bid01], bidderRequest);
-      const expectedUrl = `${ENDPOINT}?orgid=1000`;
+      const expectedUrl = `${ENDPOINT}?orgid=1000&site=SITE-NAME`;
 
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(expectedUrl);
       expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+    });
+
+    it('should append the orgid and site params to the request url', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        organizationId: '1000',
+        site: 'my-site'
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].url).to.equal(`${ENDPOINT}?orgid=1000&site=my-site`);
+    });
+
+    it('should use the matching site param for each organizationId group in the request url', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        organizationId: '1000',
+        site: 'site-a'
+      }).build();
+      const bid02 = new BidRequestBuilder().withParams({
+        organizationId: '1000',
+        site: 'site-a'
+      }).build();
+      const bid03 = new BidRequestBuilder().withParams({
+        organizationId: '1002',
+        site: 'site-b'
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02, bid03], bidderRequest);
+
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].url).to.equal(`${ENDPOINT}?orgid=1000&site=site-a`);
+      expect(requests[1].url).to.equal(`${ENDPOINT}?orgid=1002&site=site-b`);
+    });
+
+    it('should repeat the site param for each distinct site value of a single organizationId', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        organizationId: '1000',
+        site: 'site-a'
+      }).build();
+      const bid02 = new BidRequestBuilder().withParams({
+        organizationId: '1000',
+        site: 'site-b'
+      }).build();
+      // Duplicate site is deduplicated.
+      const bid03 = new BidRequestBuilder().withParams({
+        organizationId: '1000',
+        site: 'site-a'
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02, bid03], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data.adUnits).to.have.lengthOf(3);
+      expect(requests[0].url).to.equal(`${ENDPOINT}?orgid=1000&site=site-a&site=site-b`);
+    });
+
+    it('should url-encode the site param', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        organizationId: '1000',
+        site: 'My Site & Promo'
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest);
+
+      expect(requests[0].url).to.equal(`${ENDPOINT}?orgid=1000&site=My%20Site%20%26%20Promo`);
     });
 
     it('should use a custom generated auctionId from ortb2.site.ext.data.adg_rtd.uid when available', function() {
@@ -725,14 +796,24 @@ describe('Adagio bid adapter', () => {
 
       it('should send the Coppa "required" flag set to "1" in the request', function () {
         const bidderRequest = new BidderRequestBuilder().build();
+        bidderRequest.ortb2 = { regs: { coppa: 1 } };
 
         sandbox.stub(config, 'getConfig')
-          .withArgs('userSync').returns({ syncEnabled: true })
-          .withArgs('coppa').returns(true);
+          .withArgs('userSync').returns({ syncEnabled: true });
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.regs.coppa.required).to.equal(1);
+      });
+
+      it('should honor a request-level COPPA override set to 0', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+        bidderRequest.ortb2 = { regs: { coppa: 0 } };
+        sandbox.stub(coppaDataHandler, 'getCoppa').returns(true);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.regs.coppa.required).to.equal(0);
       });
     });
 

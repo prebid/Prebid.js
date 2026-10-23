@@ -1484,7 +1484,6 @@ function commitReadyDecision(
   maxDatasetVersionSeen = datasetVersion;
   return { urlHash, record, datasetVersion, recordRevision, recordFingerprint, recordExpiresAt };
 }
-
 function commitNonReadyDecision(urlHash: string, status: 'miss' | 'revoked' | 'stale', datasetVersion: number): void {
   if (datasetVersion < maxDatasetVersionSeen) return;
   maxDatasetVersionSeen = datasetVersion;

@@ -5,7 +5,7 @@ import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
 import adapterManager, { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../src/adapterManager.js';
 import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
-import { GDPR_GVLIDS } from '../../src/consentHandler.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../src/consentHandler.js';
 import { MODULE_TYPE_RTD } from '../../src/activities/modules.js';
 import { guardOrtb2Fragments } from '../../libraries/objectGuard/ortbGuard.js';
 import { activityParamsBuilder } from '../../src/activities/params.js';
@@ -37,6 +37,7 @@ let _userConsent;
  * @param {Object} submodule The RTD submodule to register.
  * @param {string} submodule.name The name of the RTD submodule.
  * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
+ * @param {number} [submodule.acpId] The Google Additional Consent provider ID of the RTD submodule.
  */
 export function attachRealTimeDataProvider(submodule) {
   if (registeredSubModules.some((sm) => sm.name === submodule.name)) {
@@ -45,6 +46,7 @@ export function attachRealTimeDataProvider(submodule) {
   }
   registeredSubModules.push(submodule);
   GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
+  GDPR_ACPIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.acpId);
   // providers may be loaded after the module was configured (and therefore already initialized);
   // pick them up now, since `realTimeData` configuration is accepted only once.
   initSubModules();
@@ -164,7 +166,14 @@ function initSubModules(logNewlyEnabled = true) {
       return;
     }
     if (!initializedSubModules.has(sm)) {
-      const enabled = !!(sm.init && sm.init(provider, _userConsent));
+      let enabled = false;
+      try {
+        enabled = !!(sm.init && sm.init(provider, _userConsent));
+      } catch (e) {
+        // A provider that throws on init is treated as one that returned false, so that the
+        // providers configured after it are still given their turn
+        logError(`Error executing ${sm.name}.init`, e);
+      }
       initializedSubModules.set(sm, enabled);
       if (enabled && logNewlyEnabled) {
         logInfo(`Real time data module: enabling submodule ${sm.name}`);
@@ -201,7 +210,10 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   });
 
   const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0;
-  let callbacksExpected = prioritySubModules.length;
+  // Tracked by submodule identity rather than as a bare counter, so that a submodule which calls
+  // its own callback more than once can only ever clear its own slot, and can never affect -
+  // accidentally or otherwise - how long the auction waits for any other submodule.
+  const pendingPrioritySubModules = new Set(prioritySubModules);
   let isDone = false;
   let waitTimeout;
 
@@ -236,18 +248,32 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
         return Reflect.deleteProperty(target, prop);
       }
     });
-    const remainingTimeout = Math.max(0, deadline - Date.now());
-    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, remainingTimeout);
+    try {
+      const remainingTimeout = Math.max(0, deadline - Date.now());
+      sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, remainingTimeout);
+    } catch (e) {
+      // Without this, one throwing provider would take the whole loop down with it and every
+      // provider behind it would lose its chance to enrich the auction. A provider that threw
+      // will also never call its callback, so it stops being something to wait for
+      logError(`Error executing ${sm.name}.getBidRequestData`, e);
+      pendingPrioritySubModules.delete(sm);
+    }
   });
+
+  // The callback is what normally notices that the last priority submodule is done. If that
+  // submodule threw instead, there is nobody left to notice it
+  if (prioritySubModules.length && pendingPrioritySubModules.size === 0) {
+    setTimeout(exitHook, 0);
+  }
 
   function onGetBidRequestDataCallback() {
     if (isDone) {
       return;
     }
     if (this.config && this.config.waitForIt) {
-      callbacksExpected--;
+      pendingPrioritySubModules.delete(this);
     }
-    if (callbacksExpected === 0) {
+    if (pendingPrioritySubModules.size === 0) {
       setTimeout(exitHook, 0);
     }
   }
@@ -282,7 +308,15 @@ export function getAdUnitTargeting(auction) {
   }
   const targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
-    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
+    let smTargeting;
+    try {
+      smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
+    } catch (e) {
+      // This runs as the AUCTION_END preprocess, outside the try/catch that guards the event
+      // handlers, so a throw here would also cost every provider its onAuctionEndEvent
+      logError(`Error executing ${relevantSubModules[i].name}.getTargetingData`, e);
+      continue;
+    }
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
     } else {

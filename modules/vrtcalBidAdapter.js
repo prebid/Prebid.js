@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
 import { deepAccess, isFn, isPlainObject } from '../src/utils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const GVLID = 706;
 const VRTCAL_USER_SYNC_URL_IFRAME = `https://usync.vrtcal.com/i?ssp=1804&synctype=iframe`;
@@ -15,7 +15,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return true;
   },
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const requests = bidRequests.map(function (bid) {
       let floor = 0;
 
@@ -46,7 +46,7 @@ export const spec = {
         ccpa = bid.uspConsent;
       }
 
-      if (config.getConfig('coppa') === true) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         coppa = 1;
       }
 
@@ -151,7 +151,7 @@ export const spec = {
     return true;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent = {}, coppa) {
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;

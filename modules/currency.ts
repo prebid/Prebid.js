@@ -236,6 +236,7 @@ export function resetCurrency() {
     needToCallForCurrencyFile = true;
     shouldUseDefaults = true;
     currencyRates = {};
+    defaultRates = undefined;
     bidderCurrencyDefault = {};
     responseReady = defer();
   }
@@ -253,6 +254,10 @@ declare module '../src/bidfactory' {
      */
     getCpmInNewCurrency(toCurrency: Currency): string
   }
+}
+
+function roundCpm(value) {
+  return Number(parseFloat(value).toFixed(4));
 }
 
 export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid, reject) {
@@ -302,6 +307,16 @@ function rejectOnAuctionTimeout({ auctionId }) {
   });
 }
 
+// meta.deal amounts are in the bid's currency, so they are scaled along with bid.cpm
+function convertDealMeta(deal, conversion) {
+  if (deal == null) return;
+  ['cpm', 'pacingAdjustedCpm'].forEach(key => {
+    if (typeof deal[key] === 'number') {
+      deal[key] = roundCpm(deal[key] * conversion);
+    }
+  });
+}
+
 function processBidResponseQueue() {
   while (bidResponseQueue.length > 0) {
     const [fn, ctx, adUnitCode, bid, reject] = bidResponseQueue.shift();
@@ -310,8 +325,9 @@ function processBidResponseQueue() {
       try {
         const conversion = getCurrencyConversion(fromCurrency);
         if (conversion !== 1) {
-          bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
+          bid.cpm = roundCpm(parseFloat(bid.cpm) * conversion);
           bid.currency = adServerCurrency;
+          convertDealMeta(bid.meta?.deal, conversion);
         }
       } catch (e) {
         logWarn('getCurrencyConversion threw error: ', e);

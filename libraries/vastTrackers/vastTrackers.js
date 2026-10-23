@@ -62,6 +62,17 @@ export function registerVastTrackers(moduleType, moduleName, trackerFn) {
   }
 }
 
+/**
+ * Ensures a tracking URL is a well-formed http(s) URL and cannot break out of the
+ * CDATA section it will be inserted into (e.g. via a "]]>" sequence), which would
+ * otherwise allow injection of arbitrary markup into the VAST XML.
+ * @param {string} url
+ * @returns {boolean}
+ */
+function isSafeTrackingUrl(url) {
+  return isStr(url) && !isEmptyStr(url) && !url.includes(']]>') && /^https?:\/\//i.test(url);
+}
+
 export function insertVastTrackers(trackers, vastXml) {
   const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
   const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
@@ -69,7 +80,7 @@ export function insertVastTrackers(trackers, vastXml) {
     if (wrappers.length) {
       wrappers.forEach(wrapper => {
         if (isArray(trackers.impression) && trackers.impression.length) {
-          trackers.impression.forEach(trackingUrl => {
+          trackers.impression.filter(isSafeTrackingUrl).forEach(trackingUrl => {
             const impression = doc.createElement('Impression');
             impression.appendChild(doc.createCDATASection(trackingUrl));
             wrapper.appendChild(impression);
@@ -77,7 +88,7 @@ export function insertVastTrackers(trackers, vastXml) {
         }
 
         if (isArray(trackers.error) && trackers.error.length) {
-          trackers.error.forEach(trackingUrl => {
+          trackers.error.filter(isSafeTrackingUrl).forEach(trackingUrl => {
             const errorElement = doc.createElement('Error');
             errorElement.appendChild(doc.createCDATASection(trackingUrl));
             wrapper.appendChild(errorElement);
@@ -140,7 +151,7 @@ function insertLinearTrackingEvents(doc, wrapper, trackers) {
  * @param {Array<{event: string, url: string}>} trackers - Array of tracking event objects
  */
 function appendTrackingElements(doc, trackingEvents, trackers) {
-  trackers.forEach(({ event, url }) => {
+  trackers.filter(({ url }) => isSafeTrackingUrl(url)).forEach(({ event, url }) => {
     const trackingElement = doc.createElement('Tracking');
     trackingElement.setAttribute('event', event);
     trackingElement.appendChild(doc.createCDATASection(url));

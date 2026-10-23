@@ -4,7 +4,7 @@ import { POST_ENDPOINT } from '../../../libraries/medianetUtils/constants.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
 import { server } from '../../mocks/xhr.js';
-import { resetWinDimensions } from '../../../src/utils.js';
+import { deepClone, resetWinDimensions } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import * as adUnits from 'src/utils/adUnits';
 
@@ -1799,14 +1799,13 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should have valid crid present in bid request', function() {
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        const config = {
-          'coppa': true
-        };
-        return config[key];
+      const bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_CRID, {
+        ...VALID_AUCTIONDATA,
+        ortb2: { regs: { coppa: 1 } }
       });
-      const bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_CRID, VALID_AUCTIONDATA);
-      expect(JSON.parse(bidreq.data)).to.deep.equal(VALID_PAYLOAD_WITH_CRID);
+      const expectedPayload = deepClone(VALID_PAYLOAD_WITH_CRID);
+      expectedPayload.ortb2.regs = { coppa: 1 };
+      expect(JSON.parse(bidreq.data)).to.deep.equal(expectedPayload);
     });
 
     it('should have valid ortb2Imp param present in bid request', function() {

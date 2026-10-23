@@ -2,6 +2,7 @@ import { _each, deepAccess, deepSetValue, isEmpty, isFn, isPlainObject } from '.
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,6 +11,7 @@ import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
  */
 
 const BIDDER_CODE = 'fluct';
+const ACP_ID = 2328; // Google Additional Consent provider ID
 const END_POINT = 'https://hb.adingo.jp/prebid/';
 const VERSION = '1.8';
 const NET_REVENUE = true;
@@ -91,7 +93,8 @@ function getHighestBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['adingo'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'adingo', acpId: ACP_ID }],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -179,7 +182,7 @@ export const spec = {
           consent: bidderRequest.uspConsent,
         });
       }
-      if (config.getConfig('coppa') === true) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         deepSetValue(data, 'regs.coppa', 1);
       }
       if (bidderRequest.gppConsent) {

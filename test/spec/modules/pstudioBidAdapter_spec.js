@@ -602,10 +602,10 @@ describe('PStudioAdapter', function () {
 
       // tmaPrime is guarded, so it should only be called once.
       // It reads from LS.
-      expect(lsStub.callCount).to.equal(3); // 1 for prime, 2 for the two buildRequests calls.
+      expect(lsStub.callCount).to.equal(1);
     });
 
-    it('should use latest user ID from LS on subsequent calls', function() {
+    it('should use same user ID from LS on subsequent calls', function() {
       const ls = sandbox.stub(storage, 'getDataFromLocalStorage');
       ls.returns('cached-id');
 
@@ -614,13 +614,58 @@ describe('PStudioAdapter', function () {
       let payload = JSON.parse(request[0].data);
       expect(payload.user.id).to.equal('cached-id');
 
-      // Update LS value
-      ls.returns('new-id');
-
       // Second call, should re-read from LS due to tmaGetIdCached behavior
       request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       payload = JSON.parse(request[0].data);
-      expect(payload.user.id).to.equal('new-id');
+      expect(payload.user.id).to.equal('cached-id');
+    });
+
+    it('should use a profile ID that becomes available after initialization', function () {
+      const ls = sandbox.stub(storage, 'getDataFromLocalStorage');
+      ls.onFirstCall().returns(null);
+      ls.onSecondCall().returns(null);
+      ls.onThirdCall().returns('late-profile-id');
+
+      let request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      let payload = JSON.parse(request[0].data);
+      expect(payload).not.to.haveOwnProperty('user');
+
+      request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      payload = JSON.parse(request[0].data);
+      expect(payload.user.id).to.equal('late-profile-id');
+      expect(ls.callCount).to.equal(3);
+    });
+  });
+  describe('TMA User Profile ID', function () {
+    const userId = 'user-profile-id-123';
+
+    it('should create user object with id if firstPartyData.user is not defined', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(userId);
+      const bidderRequest = { ortb2: {} };
+      const request = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.user).to.deep.equal({ id: userId });
+    });
+
+    it('should add user id to existing user object in firstPartyData', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(userId);
+      const bidderRequest = {
+        ortb2: {
+          user: {
+            yob: 1985,
+            gender: 'F'
+          }
+        }
+      };
+      const request = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.user).to.deep.equal({
+        yob: 1985,
+        gender: 'F',
+        id: userId
+      });
     });
   });
 });

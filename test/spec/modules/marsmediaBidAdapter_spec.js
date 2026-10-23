@@ -1,6 +1,5 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
 import * as adUnits from 'src/utils/adUnits';
 
@@ -270,14 +269,13 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.regs.ext.us_privacy).to.equal('1YYN');
     });
 
-    it('should submit coppa if set in config', function () {
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-      const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+    it('should submit coppa if set in ortb2', function () {
+      const request = marsAdapter.buildRequests(this.defaultBidRequestList, {
+        ...this.defaultBidderRequest,
+        ortb2: { regs: { coppa: 1 } }
+      });
       const requestparse = JSON.parse(request.data);
       expect(requestparse.regs.coppa).to.equal(1);
-      config.getConfig.restore();
     });
 
     it('should process floors module if available', function() {

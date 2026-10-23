@@ -678,7 +678,7 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.ext).to.deep.equal({
         prebidversion: '$prebid.version$',
-        adapterversion: '2.1.1'
+        adapterversion: '2.1.2'
       });
 
       expect(dataRequest.device).to.deep.equal({
@@ -822,6 +822,64 @@ describe('OguryBidAdapter', () => {
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.site.page).to.equal('https://publisher-page.example/article');
+    });
+
+    it('should repair a publisher site.page sent as a bare hostname, restoring the page path', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal(currentLocation);
+    });
+
+    it('should repair a bare hostname even when it carries a path, since the scheme is what fails validation', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com/article-123?a=b';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal(currentLocation);
+    });
+
+    it('should repair a protocol-relative site.page', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = '//www.publisher.com/article-123';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal(currentLocation);
+    });
+
+    it('should keep an http site.page as provided', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'http://www.publisher.com/article-123';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('http://www.publisher.com/article-123');
+    });
+
+    it('should leave a malformed site.page untouched when refererInfo has no page to offer', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com';
+      bidderRequest.refererInfo = {};
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('www.publisher.com');
+    });
+
+    // tripwire: request() has to resolve the page without reading the top window, which throws here
+    it('should resolve site.page without any top-window location read', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com';
+      bidderRequest.refererInfo = { page: 'https://www.publisher.com/article-123' };
+
+      windowTopStub.returns({
+        get location() {
+          throw new DOMException('Blocked a frame with origin "https://frame.publisher.com" from accessing a cross-origin frame.', 'SecurityError');
+        },
+        devicePixelRatio: stubbedDevicePixelRatio
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('https://www.publisher.com/article-123');
     });
   });
 
@@ -1041,6 +1099,21 @@ describe('OguryBidAdapter', () => {
       // request() sends ortb2.site.page, so timeout monitoring must report the same URL
       expect(JSON.parse(requests[0].requestBody).location).to.equal('https://publisher.com/custom-page-url');
       expect(JSON.parse(requests[0].requestBody).location).to.not.equal(getRefererInfo().page);
+    });
+
+    it('should report the resolved page, not the raw ortb2.site.page, when the publisher value is not an absolute URL', function() {
+      const bid = {
+        ad: '<img src="https://assets.example/creative.jpg" alt="creative" />',
+        cpm: 3,
+        ortb2: { site: { page: 'www.publisher.com' } }
+      };
+
+      spec.onTimeout([bid]);
+
+      expect(requests.length).to.equal(1);
+      // request() repairs a schemeless site.page, so monitoring must report the repaired URL
+      expect(JSON.parse(requests[0].requestBody).location).to.equal(getRefererInfo().page);
+      expect(JSON.parse(requests[0].requestBody).location).to.not.equal('www.publisher.com');
     });
   });
 

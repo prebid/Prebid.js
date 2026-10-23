@@ -1,9 +1,9 @@
 import { logInfo, deepAccess, logWarn, isArray, getParameterByName, getWinDimensions } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -92,8 +92,8 @@ function nobidBuildRequests(bids, bidderRequest) {
         return null;
       }
     };
-    var coppa = function() {
-      if (config.getConfig('coppa') === true) {
+    var coppa = function(bidderRequest) {
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
         return { 'coppa': true };
       }
       if (bids && bids.length > 0) {
@@ -166,7 +166,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['pbver'] = '$prebid.version$';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
-    const cop = coppa();
+    const cop = coppa(bidderRequest);
     if (cop) state['coppa'] = cop;
     const eids = getEIDs(deepAccess(bids, '0.userIdAsEids'));
     if (eids && eids.length > 0) state['eids'] = eids;

@@ -1,4 +1,4 @@
-import { describe, it, after } from 'mocha';
+import { describe, it, after, beforeEach } from 'mocha';
 import { expect } from 'chai';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,6 +44,33 @@ describe('copyDeclarations', () => {
     seedCache();
     await copyDeclarations();
     expect(fs.existsSync(copied)).to.equal(false);
+  });
+
+  describe('when the declaration is already in dist/src', () => {
+    const past = new Date('2000-01-01T00:00:00Z');
+
+    function seedCopied(contents) {
+      fs.mkdirSync(path.dirname(copied), { recursive: true });
+      fs.writeFileSync(copied, contents);
+      fs.utimesSync(copied, past, past);
+    }
+
+    beforeEach(() => {
+      fs.writeFileSync(source, `export function ${name}(): number { return 1; }\n`);
+      seedCache();
+    });
+
+    it('should not rewrite it when it is identical', async () => {
+      seedCopied(fs.readFileSync(cached));
+      await copyDeclarations();
+      expect(fs.statSync(copied).mtime.getTime()).to.equal(past.getTime());
+    });
+
+    it('should overwrite it when it differs', async () => {
+      seedCopied(`export declare function ${name}(): string;\n`);
+      await copyDeclarations();
+      expect(fs.readFileSync(copied, 'utf8')).to.equal(fs.readFileSync(cached, 'utf8'));
+    });
   });
 
   it('should leave the orphan in the cache rather than delete it', async () => {

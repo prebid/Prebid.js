@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { getTimeoutUrl, spec, BIDFLOOR_CURRENCY } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as adUnits from 'src/utils/adUnits';
 
@@ -400,6 +401,71 @@ describe('Seedtag Adapter', function () {
         expect(bidRequests[1]).not.to.have.property('bidFloor');
       });
 
+      describe('getFloor mediaType', function () {
+        function buildRequestWithFloor(mediaTypes) {
+          const getFloor = sinon.stub().returns({
+            currency: BIDFLOOR_CURRENCY,
+            floor: bidFloor
+          });
+          const bidRequest = getSlotConfigs(mediaTypes, mandatoryDisplayParams);
+          bidRequest.getFloor = getFloor;
+          const request = spec.buildRequests([bidRequest], bidderRequest);
+          return { getFloor, data: JSON.parse(request.data) };
+        }
+
+        it('should request banner floor when bid has only banner mediaType', function () {
+          const { getFloor, data } = buildRequestWithFloor({ banner: {} });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: 'banner',
+            size: '*'
+          })).to.equal(true);
+          expect(data.bidRequests[0].bidFloor).to.equal(bidFloor);
+        });
+
+        it('should request wildcard floor when bid has banner and video mediaTypes', function () {
+          const { getFloor } = buildRequestWithFloor({
+            banner: {},
+            video: {
+              context: 'outstream',
+              playerSize: [[600, 200]],
+            },
+          });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: '*',
+            size: '*'
+          })).to.equal(true);
+        });
+
+        it('should request video floor when bid has only video mediaType', function () {
+          const { getFloor } = buildRequestWithFloor({
+            video: {
+              context: 'instream',
+              playerSize: [[300, 200]],
+            },
+          });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: 'video',
+            size: '*'
+          })).to.equal(true);
+        });
+
+        it('should request wildcard floor when bid has neither banner nor video mediaType', function () {
+          const { getFloor } = buildRequestWithFloor({ native: {} });
+
+          expect(getFloor.calledWith({
+            currency: BIDFLOOR_CURRENCY,
+            mediaType: '*',
+            size: '*'
+          })).to.equal(true);
+        });
+      });
+
       it('should not launch an exception when request a video with no playerSize', function () {
         const validBidRequests = [
           getSlotConfigs(
@@ -748,6 +814,26 @@ describe('Seedtag Adapter', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.ortb).to.be.undefined;
+      });
+    });
+
+    describe('autoplay param', function () {
+      let isAutoplayEnabledStub;
+
+      afterEach(function () {
+        isAutoplayEnabledStub.restore();
+      });
+
+      it('should send autoplay = true when autoplay is not forbidden', function () {
+        isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled').returns(true);
+        const data = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        expect(data.autoplay).to.equal(true);
+      });
+
+      it('should send autoplay = false when autoplay is forbidden', function () {
+        isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled').returns(false);
+        const data = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        expect(data.autoplay).to.equal(false);
       });
     });
   });

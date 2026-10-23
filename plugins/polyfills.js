@@ -15,7 +15,7 @@ module.exports = function (api, options, dirname) {
   let dirty = true;
   const polyfillInjector = corejs3Polyfills.default(api, {
     method: 'usage-global',
-    version: require('../node_modules/core-js/package.json').version,
+    version: require('core-js-pure/package.json').version,
     proposals: false,
     shouldInjectPolyfill(name, toBeInjected) {
       if (toBeInjected) {

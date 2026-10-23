@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/mediakeysBidAdapter.js';
 
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { OUTSTREAM } from '../../../src/video.js';
 
@@ -460,14 +459,10 @@ describe('mediakeysBidAdapter', function () {
     });
 
     it('should get expected properties with coppa', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-
       const bidRequests = [utils.deepClone(bid)];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       const data = request.data;
       expect(data.regs.coppa).to.equal(1);
-
-      config.getConfig.restore();
     });
 
     it('should get expected properties with US privacy', function () {

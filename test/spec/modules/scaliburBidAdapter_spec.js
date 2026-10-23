@@ -228,6 +228,75 @@ describe('Scalibur Adapter', function () {
     });
   });
 
+  describe('buildRequests with publisher block lists', function () {
+    it('should forward bcat, badv and cattax from ortb2', function () {
+      const bidderRequest = {
+        ...BIDDER_REQUEST,
+        ortb2: {
+          ...BIDDER_REQUEST.ortb2,
+          bcat: ['IAB25', 'IAB26'],
+          badv: ['blocked-advertiser.com'],
+          cattax: 2,
+        },
+      };
+      const payload = spec.buildRequests([BID], bidderRequest).data;
+
+      expect(payload.bcat).to.deep.equal(['IAB25', 'IAB26']);
+      expect(payload.badv).to.deep.equal(['blocked-advertiser.com']);
+      expect(payload.cattax).to.equal(2);
+    });
+
+    it('should omit bcat, badv and cattax when ortb2 has none', function () {
+      const payload = spec.buildRequests([DEFAULTS_BID], DEFAULTS_BIDDER_REQUEST).data;
+
+      expect(payload).to.not.have.property('bcat');
+      expect(payload).to.not.have.property('badv');
+      expect(payload).to.not.have.property('cattax');
+    });
+
+    it('should omit empty block lists', function () {
+      const bidderRequest = { ...DEFAULTS_BIDDER_REQUEST, ortb2: { bcat: [], badv: [] } };
+      const payload = spec.buildRequests([DEFAULTS_BID], bidderRequest).data;
+
+      expect(payload).to.not.have.property('bcat');
+      expect(payload).to.not.have.property('badv');
+    });
+  });
+
+  describe('interpretResponse advertiser domains and creative id', function () {
+    const interpret = (bid) => {
+      const request = spec.buildRequests([BID], BIDDER_REQUEST);
+      const serverResponse = { body: { seatbid: [{ bid: [{ impid: '1', cpm: 1, width: 300, height: 250, adm: '<div></div>', ...bid }] }] } };
+      return spec.interpretResponse(serverResponse, request)[0];
+    };
+
+    it('should set meta.advertiserDomains from meta.advertiserDomains', function () {
+      const response = interpret({ meta: { advertiserDomains: ['advertiser.com'] } });
+      expect(response.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+    });
+
+    it('should set meta.advertiserDomains from an adomain array', function () {
+      const response = interpret({ adomain: ['advertiser.com', ''] });
+      expect(response.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+    });
+
+    it('should set meta.advertiserDomains from an adomain string', function () {
+      const response = interpret({ adomain: 'advertiser.com' });
+      expect(response.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+    });
+
+    it('should not set meta when the bid carries no advertiser domain', function () {
+      expect(interpret({ adomain: '' })).to.not.have.property('meta');
+      expect(interpret({})).to.not.have.property('meta');
+    });
+
+    it('should fall back to creativeId when crid is absent', function () {
+      expect(interpret({ creativeId: 'creative-777' }).creativeId).to.equal('creative-777');
+      expect(interpret({ crid: 'crid-1', creativeId: 'creative-777' }).creativeId).to.equal('crid-1');
+      expect(interpret({}).creativeId).to.equal('');
+    });
+  });
+
   describe('getUserSyncs', function () {
     it('should return iframe and pixel sync URLs with correct params', function () {
       const syncOptions = { iframeEnabled: true, pixelEnabled: true };

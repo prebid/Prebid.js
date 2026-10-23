@@ -36,11 +36,17 @@ import { hook } from '../../../src/hook.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import { getPPID } from '../../../src/adserver.js';
 import { uninstall as uninstallTcfControl } from 'modules/tcfControl.js';
-import { allConsent, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHandler.js';
+import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
-import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
-import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
-import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE,
+  ACTIVITY_PARAM_STORAGE_WRITE
+} from '../../../src/activities/params.js';
+import { isActivityAllowed, registerActivityControl } from '../../../src/activities/rules.js';
+import { activityParams } from '../../../src/activities/activityParams.js';
 import {
   discloseStorageUse,
   getCoreStorageManager,
@@ -209,6 +215,16 @@ describe('User ID', function () {
     it('are registered when ID submodule is registered', () => {
       attachIdSystem({ name: 'gvlidMock', gvlid: 123 });
       sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
+    });
+
+    it('registers Additional Consent provider IDs', () => {
+      sinon.stub(GDPR_ACPIDS, 'register');
+      try {
+        attachIdSystem({ name: 'acpIdMock', acpId: 321 });
+        sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_UID, 'acpIdMock', 321);
+      } finally {
+        GDPR_ACPIDS.register.restore();
+      }
     });
   });
 
@@ -603,6 +619,99 @@ describe('User ID', function () {
         expect(getGlobal().getUserIds()).to.deep.equal(ids);
         done();
       });
+    });
+
+    it('initializes submodules added after initial configuration', async function () {
+      const firstSubmodule = createMockIdSubmodule('firstId', { id: { firstId: 'first' } });
+      const addedSubmodule = createMockIdSubmodule('addedId', { id: { addedId: 'added' } });
+      sinon.spy(firstSubmodule, 'getId');
+      sinon.spy(addedSubmodule, 'getId');
+      init(config);
+      setSubmoduleRegistry([firstSubmodule, addedSubmodule]);
+
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{ name: 'firstId' }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+
+      config.mergeConfig({
+        userSync: {
+          userIds: [{ name: 'addedId' }]
+        }
+      });
+
+      expect(await getGlobal().getUserIdsAsync()).to.deep.equal({
+        firstId: 'first',
+        addedId: 'added'
+      });
+      sinon.assert.calledOnce(firstSubmodule.getId);
+      sinon.assert.calledOnce(addedSubmodule.getId);
+    });
+
+    it('uses a stored ID when a submodule is added without autoRefresh', async function () {
+      const firstSubmodule = createMockIdSubmodule('firstId', { id: { firstId: 'first' } });
+      const addedSubmodule = createMockIdSubmodule('addedId', { id: { addedId: 'fetched' } });
+      sinon.spy(addedSubmodule, 'getId');
+      init(config);
+      setSubmoduleRegistry([firstSubmodule, addedSubmodule]);
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [{ name: 'firstId' }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+
+      const expires = new Date(Date.now() + 10000).toUTCString();
+      coreStorage.setCookie('addedId', JSON.stringify({ addedId: 'stored' }), expires);
+      coreStorage.setCookie('addedId_cst', getConsentHash(), expires);
+      config.mergeConfig({
+        userSync: {
+          userIds: [{ name: 'addedId', storage: { name: 'addedId', type: 'cookie' } }]
+        }
+      });
+
+      expect(await getGlobal().getUserIdsAsync()).to.include({ addedId: 'stored' });
+      sinon.assert.notCalled(addedSubmodule.getId);
+      coreStorage.setCookie('addedId', '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('addedId_cst', '', EXPIRED_COOKIE_DATE);
+    });
+
+    it('does not refresh submodules retained from an earlier config when a later config adds others', async function () {
+      const retainedSubmodule = createMockIdSubmodule('retainedId', { id: { retainedId: 'retained' } });
+      const addedSubmodule = createMockIdSubmodule('addedId', { id: { addedId: 'added' } });
+      sinon.spy(retainedSubmodule, 'getId');
+      sinon.spy(addedSubmodule, 'getId');
+      init(config);
+      setSubmoduleRegistry([retainedSubmodule, addedSubmodule]);
+
+      config.setConfig({
+        userSync: {
+          autoRefresh: true,
+          auctionDelay: 10,
+          userIds: [{ name: 'retainedId' }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+
+      // retainConfig defaults to true, so 'retainedId' is kept although this config does not list it
+      config.setConfig({
+        userSync: {
+          autoRefresh: true,
+          auctionDelay: 10,
+          userIds: [{ name: 'addedId' }]
+        }
+      });
+
+      expect(await getGlobal().getUserIdsAsync()).to.deep.equal({
+        retainedId: 'retained',
+        addedId: 'added'
+      });
+      sinon.assert.calledOnce(addedSubmodule.getId);
+      sinon.assert.calledOnce(retainedSubmodule.getId);
     });
 
     it('pbjs.getUserIds(Async) should prioritize user ids according to config available to core', () => {
@@ -1249,6 +1358,140 @@ describe('User ID', function () {
         clearStack().then(() => {
           // simulate init complete
           mockIdCallback.callArg(0, { id: { MOCKID: '1111' } });
+        });
+      });
+
+      it('should not release the auction when a filtered refresh cancels a pending submodule', () => {
+        // A refresh filtered by `submoduleNames` cancels the in-flight init and replaces
+        // it with a chain scoped to the named submodules. Submodules it did not name may
+        // still be fetching, and the auction must keep waiting for them.
+        startInit();
+        let auctionStarted = false;
+        // `mkDelay`, not `delay`: with the real one the 10ms `auctionDelay` timer wins
+        // the race on a slow browser and releases the auction before the assertion.
+        startAuctionHook(() => {
+          auctionStarted = true;
+        }, { adUnits: [getAdUnitMock()] }, { mkDelay: delay() });
+        return clearStack().then(() => {
+          // init has passed consent by now, so `initialized` is set and the refresh
+          // takes the cancel path; mockId's callback is still outstanding.
+          getGlobal().refreshUserIds({ submoduleNames: ['someOtherModule'] });
+          return clearStack();
+        }).then(() => {
+          expect(auctionStarted).to.be.false;
+          mockIdCallback.callArg(0, { id: { MOCKID: '1111' } });
+          return clearStack();
+        }).then(() => {
+          expect(auctionStarted).to.be.true;
+        });
+      });
+
+      it('should not keep waiting on a callback the refresh superseded without a new one', () => {
+        // mockId's first init leaves a callback outstanding that never fires. An
+        // unfiltered refresh whose getId returns an id and no callback supersedes
+        // that work, so `getUserIdsAsync` must stop waiting on the abandoned one:
+        // this is the escape from a stuck initialization that a forced refresh has
+        // always provided.
+        startInit();
+        let resolved = false;
+        return clearStack().then(() => {
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+          getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(resolved).to.be.true;
+          expect(getGlobal().getUserIds()).to.deep.equal({ mid: '2222' });
+        });
+      });
+
+      it('should still escape a stuck initialization through an unfiltered refresh', () => {
+        // mockId's callback never fires. An unfiltered refresh supersedes everything,
+        // so it must not inherit that wait: this is the escape hatch a forced refresh
+        // has always provided, and only the filtered path is being changed here.
+        startInit();
+        let resolved = false;
+        return clearStack().then(() => {
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+          getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(resolved).to.be.true;
+          expect(getGlobal().getUserIds()).to.deep.equal({ mid: '2222' });
+        });
+      });
+
+      describe('with a second submodule', () => {
+        let otherIdCallback;
+        let otherIdSystem;
+        let startBoth;
+
+        beforeEach(() => {
+          otherIdCallback = sinon.stub();
+          coreStorage.setCookie('OTHERID', '', EXPIRED_COOKIE_DATE);
+          otherIdSystem = {
+            name: 'otherId',
+            decode: (value) => ({ 'oid': value['OTHERID'] }),
+            getId: sinon.stub().callsFake(() => ({ callback: otherIdCallback }))
+          };
+          startBoth = () => {
+            init(config);
+            setSubmoduleRegistry([mockIdSystem, otherIdSystem]);
+            config.setConfig({
+              userSync: {
+                auctionDelay: 10,
+                userIds: [
+                  { name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' } },
+                  { name: 'otherId', storage: { name: 'OTHERID', type: 'cookie' } }
+                ]
+              }
+            });
+          };
+        });
+
+        it('should wait for a batch started by an earlier filtered refresh', () => {
+          // Two filtered refreshes back to back. The second must not resolve while the
+          // callback the first one started is still outstanding, so the batch has to be
+          // registered when the refresh is issued rather than when its chain runs.
+          startBoth();
+          const refreshedMockCallback = sinon.stub();
+          let resolved = false;
+          return clearStack().then(() => {
+            mockIdCallback.callArg(0, { MOCKID: 'first' });
+            otherIdCallback.callArg(0, { OTHERID: 'first' });
+            return clearStack();
+          }).then(() => {
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ callback: refreshedMockCallback }));
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            getGlobal().refreshUserIds({ submoduleNames: ['mockId'] });
+            getGlobal().refreshUserIds({ submoduleNames: ['otherId'] });
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.false; // mockId's refreshed callback is still pending
+            refreshedMockCallback.callArg(0, { MOCKID: '2222' });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+
+        it('should not inherit a stuck batch that an unfiltered refresh superseded', () => {
+          // mockId never calls back. An unfiltered refresh escapes it, and a filtered
+          // refresh afterwards must not pick the abandoned batch back up.
+          startBoth();
+          let resolved = false;
+          return clearStack().then(() => {
+            otherIdCallback.callArg(0, { OTHERID: 'first' });
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: '2222' } }));
+            otherIdSystem.getId = sinon.stub().callsFake(() => ({ id: { OTHERID: 'other' } }));
+            return getGlobal().refreshUserIds().then(clearStack);
+          }).then(() => {
+            getGlobal().refreshUserIds({ submoduleNames: ['otherId'] });
+            getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
         });
       });
 
@@ -2632,6 +2875,45 @@ describe('User ID', function () {
           });
         });
       });
+
+      it('passes the latest IDs of submodules retained from an earlier config', async function () {
+        let completeCallback, callbackStarted;
+        const started = new Promise((resolve) => { callbackStarted = resolve; });
+        const retainedSubmodule = {
+          ...createMockIdSubmodule('retainedId'),
+          getId() {
+            return {
+              callback(done) {
+                completeCallback = done;
+                callbackStarted();
+              }
+            };
+          },
+          onDataDeletionRequest: sinon.stub()
+        };
+        init(config);
+        setSubmoduleRegistry([retainedSubmodule, createMockIdSubmodule('addedId', { id: { addedId: 'added' } })]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{ name: 'retainedId' }]
+          }
+        });
+        await started;
+
+        // retainConfig defaults to true, so 'retainedId' is kept while its callback is still pending
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{ name: 'addedId' }]
+          }
+        });
+        completeCallback({ retainedId: 'retained' });
+        expect(await getGlobal().getUserIdsAsync()).to.include({ retainedId: 'retained' });
+
+        requestDataDeletion(sinon.stub());
+        sinon.assert.calledWith(retainedSubmodule.onDataDeletionRequest, sinon.match({ name: 'retainedId' }), { retainedId: 'retained' });
+      });
     });
   });
 
@@ -3371,6 +3653,8 @@ describe('User ID', function () {
       const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[0].new).to.be.true;
+      expect(result[0].dirty).to.be.true;
     });
 
     it('should properly map registry to submodule containers for non-empty previous submodule containers', () => {
@@ -3387,6 +3671,8 @@ describe('User ID', function () {
       const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[0].new).to.be.true;
+      expect(result[0].dirty).to.be.true;
     });
 
     it('should properly map registry to submodule containers for retainConfig flag', () => {
@@ -3401,10 +3687,14 @@ describe('User ID', function () {
       const result = generateSubmoduleContainers({ retainConfig: true }, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(2);
       expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[0].new).to.be.true;
+      expect(result[0].dirty).to.be.true;
       expect(result[1].submodule.name).to.eql('shouldBeKept');
+      expect(result[1].new).to.be.false;
+      expect(result[1].dirty).to.be.false;
     });
 
-    it('should properly map registry to submodule containers for autoRefresh flag', () => {
+    it('should mark modules whose configuration has changed', () => {
       const previousSubmoduleContainers = [
         { submodule: { name: 'modified' }, config: { name: 'modified', auctionDelay: 300 } },
         { submodule: { name: 'unchanged' }, config: { name: 'unchanged', auctionDelay: 300 } },
@@ -3419,17 +3709,29 @@ describe('User ID', function () {
         { name: 'new' },
         { name: 'unchanged', auctionDelay: 300 },
       ];
-      const result = generateSubmoduleContainers({ autoRefresh: true }, configRegistry, previousSubmoduleContainers, submoduleRegistry);
-      expect(result).to.have.lengthOf(3);
-      const itemsWithRefreshIds = result.filter(item => item.refreshIds);
-      const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
-      expect(submoduleNames).to.deep.eql(['modified', 'new']);
+      const result = Object.fromEntries(
+        generateSubmoduleContainers({ autoRefresh: true }, configRegistry, previousSubmoduleContainers, submoduleRegistry)
+          .map(item => [item.submodule.name, item])
+      );
+      sinon.assert.match(result.modified, {
+        dirty: true,
+        new: false,
+      });
+      sinon.assert.match(result.new, {
+        new: true,
+        dirty: true,
+      });
+      sinon.assert.match(result.unchanged, {
+        dirty: false,
+        new: false,
+      });
     });
   });
   describe('user id modules - enforceStorageType', () => {
     let warnLogSpy;
     const UID_MODULE_NAME = 'userIdModule';
     const cookieName = 'testCookie';
+    const localStorageKey = 'testLocalStorageKey';
     const userSync = {
       userIds: [
         {
@@ -3455,6 +3757,7 @@ describe('User ID', function () {
     afterEach(() => {
       warnLogSpy.restore();
       getCoreStorageManager('test').setCookie(cookieName, '', EXPIRED_COOKIE_DATE);
+      getCoreStorageManager('test').removeDataFromLocalStorage(localStorageKey);
     });
 
     it('should not warn when reading', () => {
@@ -3482,6 +3785,46 @@ describe('User ID', function () {
       const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME });
       storage.setCookie(cookieName, 'value', 20000);
       expect(storage.getCookie(cookieName)).to.not.exist;
+    });
+
+    [
+      `${STORAGE_TYPE_COOKIES}&${STORAGE_TYPE_LOCALSTORAGE}`,
+      `${STORAGE_TYPE_LOCALSTORAGE}&${STORAGE_TYPE_COOKIES}`
+    ].forEach(storageType => {
+      describe(`with storage type '${storageType}'`, () => {
+        const userIds = [
+          {
+            name: UID_MODULE_NAME,
+            storage: {
+              type: storageType,
+              name: 'storageName'
+            }
+          }
+        ];
+
+        Object.entries({
+          'unset': {},
+          'set to true': { enforceStorageType: true }
+        }).forEach(([desc, enforceConfig]) => {
+          it(`should allow userId module to store data in cookies and local storage without warning for enforceStorageType ${desc}`, () => {
+            config.setConfig({ userSync: { ...enforceConfig, userIds } });
+            const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME });
+            storage.setCookie(cookieName, 'value', 20000);
+            storage.setDataInLocalStorage(localStorageKey, 'value');
+            expect(storage.getCookie(cookieName)).to.eql('value');
+            expect(storage.getDataFromLocalStorage(localStorageKey)).to.eql('value');
+            sinon.assert.notCalled(warnLogSpy);
+          });
+        });
+
+        it('should not allow userId module to store data in a storage type that is not listed for enforceStorageType set to true', () => {
+          config.setConfig({ userSync: { enforceStorageType: true, userIds } });
+          expect(isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_UID, UID_MODULE_NAME, {
+            [ACTIVITY_PARAM_STORAGE_TYPE]: 'unlisted',
+            [ACTIVITY_PARAM_STORAGE_WRITE]: true
+          }))).to.be.false;
+        });
+      });
     });
   });
 });

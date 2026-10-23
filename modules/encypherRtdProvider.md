@@ -74,7 +74,6 @@ On a page that calls `requestBids` more than once, clear the keys on the ad serv
 5. Confirm delivery on a signed page and on an unsigned control page before raising the line item's priority. An unsigned page must show no `encypher_verified` value at all.
 
 ## `imp.ext.c2pa` data injected
-
 The module adds one compact object to each impression and preserves all existing impression, GPID, and supply-chain fields.
 
 ```json
@@ -203,7 +202,6 @@ For ad units that carry `imp.ext.encypher`, `getTargetingData` adds auction-scop
 - Immediately before either carrier or adjacency injection, the module rechecks the current URL decision, dataset floor, stale barrier, record identity and revision, status expiry, attestation expiry, index expiry, and observation age. A later revocation, stale barrier, superseding revision, or expiry removes a pending injection while ownership remains open.
 - `imp.ext.encypher` is written only on the module's auction-local ad-unit copies. When the module owns an auction but produces no fresh observation, it removes a stale input `ext.encypher` and preserves unrelated impression extension fields.
 - A missing or invalid observation does not remove page-level `verified_provenance` or `transparent_ai` eligibility at the gateway. Only adjacency and AI-area policies require a valid observation.
-
 ## Trust split and residual authority risk
 
 The record JWS authenticates the carrier and its signed claims. The pinned `https://api.encypher.com` JWKS origin supplies the verification key. The exact `https://signals.encypher.com` origin is the online authority for the current `ready`, `miss`, `revoked`, or `stale` decision and dataset version.

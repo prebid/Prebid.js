@@ -448,7 +448,7 @@ const serverResponse = {
 
 const request = {
   method: 'POST',
-  url: 'https://ds.uncn.jp/pb/0/bid.json',
+  url: 'https://rtbf.uncn.jp/pb/0/bid.json',
   data: '{"id":"5ebea288-f13a-4754-be6d-4ade66c68877","at":1,"imp":[{"id":"216255f234b602","banner":{"w":300,"h":250},"format":[{"w":300,"h":250},{"w":336,"h":280}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-0"},{"id":"31e2b28ced2475","banner":{"w":"300","h":"250"},"format":[{"w":"300","h":"250"}],"secure":1,"bidfloor":0"tagid":"/19968336/header-bid-tag-1"},{"id":"40a333e047a9bd","banner":{"w":300,"h":250},"format":[{"w":300,"h":250}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-2"}],"cur":"JPY","site":{"id":"uni-corn.net","publisher":{"id":12345},"domain":"uni-corn.net","page":"https://uni-corn.net/","ref":"https://uni-corn.net/"},"device":{"language":"ja","ua":"Mozilla/5.0 (Linux; Android 8.0.0; ONEPLUS A5000) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.93 Mobile Safari/537.36"},"user":{"id":"69d9e1c2-801e-4901-a665-fad467550fec"},"bcat":[],"source":{"ext":{"stype":"prebid_uncn","bidder":"unicorn","prebid_version":"1.1"}}}'
 };
 
@@ -631,9 +631,10 @@ describe('unicornBidAdapterTest', () => {
       sandbox = sinon.createSandbox();
       sandbox.stub(percentInViewLib, 'getViewportOffset').returns({ x: 0, y: 0 });
       winDimensionsStub = sandbox.stub(winDimensionsLib, 'getWinDimensions').returns({
+        scrollX: 0,
+        scrollY: 0,
         document: {
-          documentElement: { scrollLeft: 0, scrollTop: 0, clientHeight: VH },
-          body: { scrollLeft: 0, scrollTop: 0 }
+          documentElement: { clientHeight: VH }
         }
       });
       origGoogletag = window.googletag;
@@ -662,9 +663,10 @@ describe('unicornBidAdapterTest', () => {
       // rect.top alone looks "above the fold", but a large scroll offset
       // means the slot's real page position is well past one viewport height.
       winDimensionsStub.returns({
+        scrollX: 0,
+        scrollY: 5000,
         document: {
-          documentElement: { scrollLeft: 0, scrollTop: 5000, clientHeight: VH },
-          body: { scrollLeft: 0, scrollTop: 0 }
+          documentElement: { clientHeight: VH }
         }
       });
       makeSlotEl('adslot-2', { top: 50, left: 0, width: 300, height: 250 });

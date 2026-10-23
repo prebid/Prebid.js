@@ -43,6 +43,7 @@ The adapter tracks the following Prebid.js events:
 - **bidResponse** - When bid responses are received
 - **bidWon** - When a bid wins the auction
 - **bidTimeout** - When bidders timeout
+- **bidderDone** - When a bidder has answered; carries the Nexx360 server-side auction, so keep it if you restrict events with `includeEvents`
 - **adRenderSucceeded** - When an ad renders successfully
 - **adRenderFailed** - When an ad fails to render
 

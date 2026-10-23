@@ -24,7 +24,7 @@ import { setSizeConfig } from 'modules/sizeMapping.js';
 import s2sTestingMod from 'modules/s2sTesting.js';
 import { hook } from '../../../../src/hook.js';
 import { auctionManager } from '../../../../src/auctionManager.js';
-import { GDPR_GVLIDS } from '../../../../src/consentHandler.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../../../src/consentHandler.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
 import { server } from '../../../mocks/xhr.js';
 
@@ -1196,6 +1196,17 @@ describe('adapterManager tests', function () {
         delete adapterManager.bidderRegistry['adequant'];
       });
     });
+
+    it('calls a later s2sConfig when no bidder from an earlier one is in the auction', () => {
+      const adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder === 'pubmatic');
+        return adUnit;
+      }).filter(adUnit => adUnit.bids.length > 0);
+      const bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+      expect(prebidServerAdapterMock.callBids.firstCall.args[0].s2sConfig.accountId).to.equal(CONFIG2.accountId);
+    });
   }); // end multiple s2s tests
 
   describe('s2sTesting', function () {
@@ -1745,6 +1756,22 @@ describe('adapterManager tests', function () {
         const alias = 'bidderWithGvlid';
         adapterManager.aliasBidAdapter(CODE, alias, { useBaseGvlid: true });
         expect(adapterManager.bidderRegistry[alias].getSpec()?.gvlid).to.deep.eql(gvlid);
+      });
+
+      it('should use acpId of original adapter when useBaseGvlid is set', () => {
+        const thisSpec = Object.assign(spec, { acpId: 123 });
+        registerBidder(thisSpec);
+        const alias = 'bidderWithAcpId';
+        adapterManager.aliasBidAdapter(CODE, alias, { useBaseGvlid: true });
+        expect(adapterManager.bidderRegistry[alias].getSpec()?.acpId).to.eql(123);
+      });
+
+      it('should use acpId from alias options', () => {
+        const thisSpec = Object.assign(spec, { acpId: 123 });
+        registerBidder(thisSpec);
+        const alias = 'bidderWithAliasAcpId';
+        adapterManager.aliasBidAdapter(CODE, alias, { acpId: 321 });
+        expect(adapterManager.bidderRegistry[alias].getSpec()?.acpId).to.eql(321);
       });
     });
 
@@ -3359,6 +3386,25 @@ describe('adapterManager tests', function () {
     it('for analytics adapters', () => {
       adapterManager.registerAnalyticsAdapter({ adapter: { enableAnalytics: sinon.stub() }, code: 'mock', gvlid: 123 });
       sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_ANALYTICS, 'mock', 123);
+    });
+  });
+
+  describe('registers Additional Consent provider IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_ACPIDS, 'register');
+    });
+    afterEach(() => {
+      GDPR_ACPIDS.register.restore();
+    });
+
+    it('for bid adapters', () => {
+      adapterManager.registerBidAdapter({ getSpec: () => ({ acpId: 123 }), callBids: sinon.stub() }, 'mock');
+      sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_BIDDER, 'mock', 123);
+    });
+
+    it('for analytics adapters', () => {
+      adapterManager.registerAnalyticsAdapter({ adapter: { enableAnalytics: sinon.stub() }, code: 'mock', acpId: 123 });
+      sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_ANALYTICS, 'mock', 123);
     });
   });
 });

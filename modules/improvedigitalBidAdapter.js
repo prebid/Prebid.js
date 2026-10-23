@@ -77,8 +77,8 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
+    if (coppa === true || !hasPurpose1Consent(gdprConsent)) {
       return [];
     }
 

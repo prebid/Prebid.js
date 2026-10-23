@@ -130,6 +130,52 @@ export const buildExtuidQuery = ({ id5, imuId }) => {
   return queryString;
 };
 
+/** eids source emitted by modules/imuIdSystem.js for imuid (NOT `ppid.intimatemerger.com`) */
+export const EID_SOURCE_IMUID = 'intimatemerger.com';
+/** eids source emitted by modules/id5IdSystem.js */
+export const EID_SOURCE_ID5 = 'id5-sync.com';
+
+/**
+ * Returns the first non-empty uid among the eids whose `source` matches exactly.
+ * @param {Array<{source: string, uids: Array<{id: string}>}>|undefined} eids
+ * @param {string} source
+ * @returns {string|undefined}
+ */
+export const getUidFromEids = (eids, source) => {
+  if (!Array.isArray(eids)) return undefined;
+  for (const eid of eids) {
+    if (!eid || eid.source !== source || !Array.isArray(eid.uids)) continue;
+    for (const uid of eid.uids) {
+      if (uid && typeof uid.id === 'string' && uid.id !== '') return uid.id;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Prebid 10 no longer attaches `bid.userId`; user ids live in the ORTB2
+ * location `user.ext.eids`. Read them from `bid.ortb2` (where core FPD and the
+ * userId module write eids) so ids still come through even when the userId
+ * module is not in the build, or when an RTD module / the publisher injects
+ * eids straight into ortb2. Fall back to the `bid.userIdAsEids` alias, then to
+ * the legacy `bid.userId` shape for Prebid <= 9 builds.
+ * @param {Object} bid
+ * @returns {Array|undefined}
+ */
+const getBidEids = (bid) => utils.deepAccess(bid, 'ortb2.user.ext.eids') || bid.userIdAsEids;
+
+/**
+ * @param {Object} bid
+ * @returns {{id5: string|undefined, imuId: string|undefined}}
+ */
+export const getExtuidIds = (bid) => {
+  const eids = getBidEids(bid);
+  return {
+    id5: getUidFromEids(eids, EID_SOURCE_ID5) || utils.deepAccess(bid, 'userId.id5id.uid'),
+    imuId: getUidFromEids(eids, EID_SOURCE_IMUID) || utils.deepAccess(bid, 'userId.imuid'),
+  };
+};
+
 /**
  * Get Floor Price from Prebid Price Floors Module
  * @param {Object} bid - Object bid request
@@ -247,9 +293,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo, sua) {
   }
 
   // imuid, id5
-  const id5 = utils.deepAccess(bid, 'userId.id5id.uid');
-  const imuId = utils.deepAccess(bid, 'userId.imuid');
-  const extuidQuery = buildExtuidQuery({ id5, imuId });
+  const extuidQuery = buildExtuidQuery(getExtuidIds(bid));
   if (extuidQuery) data.extuid = extuidQuery;
 
   // makeUAQuery

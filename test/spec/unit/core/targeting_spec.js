@@ -1,22 +1,26 @@
 import { expect } from 'chai';
 import {
+  getAdUnitBidLimitMap,
   getGPTSlotsForAdUnits,
   getHighestCpmBidsFromBidPool,
+  newTargeting,
   sortByDealAndPriceBucketOrDesirability,
   targeting as targetingInstance
-  , getAdUnitBidLimitMap
 } from 'src/targeting.js';
 import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
 import { createBidReceived } from 'test/fixtures/fixtures.js';
-import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
+import { DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
 import { auctionManager } from 'src/auctionManager.js';
+import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
 import { createBid } from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
-import { getHighestCpm } from '../../../../src/utils/reducers.js';
+import { getHighestCpm, getHighestDesirability } from '../../../../src/utils/reducers.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
+import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
+import { lock } from '../../../../src/targeting/lock.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -1199,6 +1203,79 @@ describe('targeting tests', function () {
         config.resetConfig();
       });
     });
+
+    describe('with bidDesirabilityAdjustment', function () {
+      const adUnitCode = '/123456/header-bid-tag-0';
+      let lowCpmDesirable, highCpmUndesirable;
+
+      function desirabilityBid(bidderCode, adId, cpm, desirability, pb) {
+        const bid = deepClone(bid1);
+        delete bid.dealId;
+        return Object.assign(bid, {
+          bidderCode,
+          bidder: bidderCode,
+          adId,
+          cpm,
+          desirability,
+          adserverTargeting: {
+            [TARGETING_KEYS.BIDDER]: bidderCode,
+            [TARGETING_KEYS.AD_ID]: adId,
+            [TARGETING_KEYS.PRICE_BUCKET]: pb
+          }
+        });
+      }
+
+      beforeEach(function () {
+        lowCpmDesirable = desirabilityBid('bidderA', 'adid-a', 2, 5, '2.00');
+        highCpmUndesirable = desirabilityBid('bidderB', 'adid-b', 3, 1, '3.00');
+        bidsReceived = [lowCpmDesirable, highCpmUndesirable];
+      });
+
+      afterEach(function () {
+        enableSendAllBids = false;
+        config.resetConfig();
+      });
+
+      it('sets the winning keys to the most desirable bid rather than the highest CPM', function () {
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-a');
+        expect(targeting[TARGETING_KEYS.BIDDER]).to.equal('bidderA');
+        expect(targeting[TARGETING_KEYS.PRICE_BUCKET]).to.equal('2.00');
+      });
+
+      it('sets the winning keys to the most desirable bid when sending all bids', function () {
+        enableSendAllBids = true;
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderA`]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderB`]).to.equal('adid-b');
+      });
+
+      it('targets the same bid that getWinningBids selects by desirability', function () {
+        const [best] = targetingInstance.getWinningBids(adUnitCode, undefined, getHighestDesirability);
+        expect(best.adId, 'getWinningBids by desirability').to.equal('adid-a');
+        expect(targetingInstance.getAllTargeting(adUnitCode)[adUnitCode][TARGETING_KEYS.AD_ID], 'hb_adid').to.equal(best.adId);
+      });
+
+      it('still targets the highest CPM bid when desirability mirrors CPM', function () {
+        lowCpmDesirable.desirability = lowCpmDesirable.cpm;
+        highCpmUndesirable.desirability = highCpmUndesirable.cpm;
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-b');
+      });
+
+      it('does not let a zero desirability outrank a positive one under bidLimit and dealPrioritization', function () {
+        enableSendAllBids = true;
+        sandbox.stub(auctionManager, 'getAdUnits').returns([{ code: adUnitCode }]);
+        config.setConfig({ sendBidsControl: { bidLimit: 1, dealPrioritization: true } });
+        lowCpmDesirable.desirability = 2;
+        highCpmUndesirable.desirability = 0;
+        const targeting = targetingInstance.getAllTargeting(adUnitCode)[adUnitCode];
+        expect(targeting[TARGETING_KEYS.AD_ID]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderA`]).to.equal('adid-a');
+        expect(targeting[`${TARGETING_KEYS.AD_ID}_bidderB`]).to.not.exist;
+      });
+    });
   }); // end getAllTargeting tests
 
   describe('getAllTargeting will work correctly when a hook raises has modified flag in getHighestCpmBidsFromBidPool', function () {
@@ -1642,6 +1719,20 @@ describe('targeting tests', function () {
       expect(bids[4].adserverTargeting.hb_adid).to.equal('pqr');
       expect(bids[5].adserverTargeting.hb_adid).to.equal('mno');
     });
+
+    it('compares desirability when set to 0', function () {
+      const bids = [{
+        cpm: 3,
+        desirability: 0,
+        adserverTargeting: { hb_adid: 'zero' }
+      }, {
+        cpm: 2,
+        desirability: 2,
+        adserverTargeting: { hb_adid: 'positive' }
+      }];
+      bids.sort(sortByDealAndPriceBucketOrDesirability(true));
+      expect(bids.map(bid => bid.adserverTargeting.hb_adid)).to.eql(['positive', 'zero']);
+    });
   });
 
   describe('GPT eager targeting', () => {
@@ -1687,6 +1778,510 @@ describe('targeting tests', function () {
         });
         targetingInstance.presetGPTTargeting();
         sinon.assert.notCalled(window.googletag.pubads);
+      });
+    });
+    describe('event hooks', () => {
+      let presetGPTTargetingStub;
+      let slot;
+      const adUnitCode = 'div-1';
+      const targetedAdId = 'ad-b';
+
+      beforeEach(() => {
+        slot = {
+          getAdUnitPath: sinon.stub().returns('/slot/path'),
+          getSlotElementId: sinon.stub().returns(adUnitCode),
+          updateTargetingFromMap: sinon.stub()
+        };
+        slots = [slot];
+        presetGPTTargetingStub = sandbox.stub(targetingInstance, 'presetGPTTargeting');
+      });
+
+      function installGptTargeting(adId) {
+        recordSlotTargeting(slot, [adId]);
+      }
+
+      it('calls presetGPTTargeting with adUnitCodes on AUCTION_INIT', () => {
+        const adUnitCodes = ['div-1', 'div-2'];
+        events.emit(EVENTS.AUCTION_INIT, { adUnitCodes });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, adUnitCodes);
+      });
+
+      it('releases targeting lock on BID_WON', () => {
+        sandbox.stub(lock, 'unlock');
+        installGptTargeting(targetedAdId);
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: targetedAdId, auctionId: 'auction-b' });
+        sinon.assert.calledWith(lock.unlock, slot);
+      });
+    });
+
+    describe('reset after BID_WON and slotRenderEnded', () => {
+      // A separate instance per test, so that its slotRenderEnded listener is
+      // registered on this test's pubads mock rather than on whichever GPT mock
+      // first received targeting in the run.
+      let instance, presetStub, listeners, clock, slot;
+      const adUnitCode = 'div-1';
+      const targetedAdId = 'ad-b';
+      const olderAdId = 'ad-a';
+
+      beforeEach(() => {
+        clock = sandbox.useFakeTimers();
+        slot = {
+          getAdUnitPath: sinon.stub().returns('/slot/path'),
+          getSlotElementId: sinon.stub().returns(adUnitCode),
+          updateTargetingFromMap: sinon.stub()
+        };
+        slots = [slot];
+        listeners = {};
+        const pubads = {
+          getSlots: () => slots,
+          addEventListener: (event, fn) => { listeners[event] = fn; },
+          removeEventListener: sinon.stub()
+        };
+        window.googletag = { pubads: () => pubads };
+        instance = newTargeting(auctionManager);
+        // not a sandbox stub: the instance's event listeners outlive the test and must stay inert
+        presetStub = instance.presetGPTTargeting = sinon.stub();
+      });
+
+      function setTargeting(...adIds) {
+        instance.updateGPTTargeting(
+          { [adUnitCode]: { hb_adid: adIds[0] } },
+          'set',
+          null,
+          { [adUnitCode]: new Set(adIds) }
+        );
+      }
+
+      function renderEnded() {
+        listeners.slotRenderEnded({ slot });
+      }
+
+      function bidWon(adId) {
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId });
+      }
+
+      it('listens for slotRenderEnded once GPT targeting is set', () => {
+        expect(listeners.slotRenderEnded).to.not.exist;
+        setTargeting(targetedAdId);
+        expect(listeners.slotRenderEnded).to.be.a('function');
+      });
+
+      it('resets when slotRenderEnded fires within 100ms before BID_WON', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        clock.tick(99);
+        sinon.assert.notCalled(presetStub);
+        bidWon(targetedAdId);
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('falls back to the timeout when slotRenderEnded fired more than 100ms before BID_WON', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        clock.tick(100);
+        bidWon(targetedAdId);
+        clock.tick(99);
+        sinon.assert.notCalled(presetStub);
+        clock.tick(2);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('resets when BID_WON fires before slotRenderEnded', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+        renderEnded();
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+        clock.tick(1000);
+        sinon.assert.calledOnce(presetStub);
+      });
+
+      it('does not reset synchronously from inside the event handler', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        bidWon(targetedAdId);
+        sinon.assert.notCalled(presetStub);
+        clock.tick(0);
+        sinon.assert.calledOnce(presetStub);
+      });
+
+      it('resets on BID_WON alone after 100ms if slotRenderEnded does not follow', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        clock.tick(99);
+        sinon.assert.notCalled(presetStub);
+        // the deferred reset is scheduled from inside a timer, which fake timers run 1ms later
+        clock.tick(2);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('does not reset again when slotRenderEnded arrives after the timeout', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        clock.tick(102);
+        sinon.assert.calledOnce(presetStub);
+        renderEnded();
+        clock.tick(1000);
+        sinon.assert.calledOnce(presetStub);
+      });
+
+      it('does not reset on slotRenderEnded alone', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        clock.tick(10000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('resets when the winning bid is any of the ad ids targeted on the slot', () => {
+        setTargeting(targetedAdId, olderAdId);
+        renderEnded();
+        bidWon(olderAdId);
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('does not count a render of a slot that was not targeted with the winning bid', () => {
+        setTargeting(targetedAdId);
+        const otherSlot = {
+          getAdUnitPath: sinon.stub().returns('/slot/path2'),
+          getSlotElementId: sinon.stub().returns('div-2'),
+          updateTargetingFromMap: sinon.stub()
+        };
+        slots.push(otherSlot);
+        instance.updateGPTTargeting({ 'div-2': { hb_adid: 'other-ad' } }, 'set', null, { 'div-2': new Set(['other-ad']) });
+        listeners.slotRenderEnded({ slot: otherSlot });
+        bidWon(targetedAdId);
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+        clock.tick(52);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('does not reset for BID_WON from an older bid after newer targeting is installed', () => {
+        setTargeting(olderAdId);
+        setTargeting(targetedAdId);
+        bidWon(olderAdId);
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not reset for BID_WON from a bid that was never targeted on a GPT slot', () => {
+        setTargeting(targetedAdId);
+        bidWon('non-gpt-ad');
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not let a render that completed an earlier reset complete a win more than 100ms later', () => {
+        setTargeting(targetedAdId, olderAdId);
+        renderEnded();
+        bidWon(targetedAdId);
+        clock.tick(0);
+        presetStub.resetHistory();
+        clock.tick(100);
+        setTargeting(olderAdId);
+        bidWon(olderAdId);
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not reset for a pending BID_WON once the ad unit is targeted again', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        clock.tick(50);
+        setTargeting(olderAdId);
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('keeps waiting on a pending BID_WON when a different ad unit is targeted', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        slots.push({
+          getAdUnitPath: sinon.stub().returns('/slot/path2'),
+          getSlotElementId: sinon.stub().returns('div-2'),
+          updateTargetingFromMap: sinon.stub()
+        });
+        instance.updateGPTTargeting({ 'div-2': { hb_adid: 'other-ad' } }, 'set', null, { 'div-2': new Set(['other-ad']) });
+        clock.tick(102);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('does not reset targeting installed in the same tick as the join completing', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        bidWon(targetedAdId);
+        setTargeting(olderAdId);
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not reset targeting installed in the same tick as BID_WON', () => {
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        setTargeting(olderAdId);
+        clock.tick(1000);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not let a render from before a retarget complete a win more than 100ms later', () => {
+        setTargeting(targetedAdId);
+        renderEnded();
+        clock.tick(100);
+        setTargeting(olderAdId);
+        bidWon(olderAdId);
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('counts any render of the slot within 100ms of BID_WON, including one from before a retarget', () => {
+        // renders are not matched to the targeting they were requested with
+        setTargeting(olderAdId);
+        renderEnded();
+        setTargeting(targetedAdId);
+        clock.tick(1);
+        bidWon(targetedAdId);
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('does not reset synchronously for a win after a retarget', () => {
+        setTargeting(olderAdId);
+        renderEnded();
+        bidWon(olderAdId);
+        setTargeting(targetedAdId);
+        clock.tick(1);
+        bidWon(targetedAdId);
+        renderEnded();
+        sinon.assert.notCalled(presetStub);
+      });
+
+      it('does not let a render without a win complete the next win', () => {
+        // e.g. a non-Prebid line item served on the first refresh
+        setTargeting(olderAdId);
+        renderEnded();
+        clock.tick(1000);
+        setTargeting(targetedAdId);
+        bidWon(targetedAdId);
+        clock.tick(50);
+        sinon.assert.notCalled(presetStub);
+        renderEnded();
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+    });
+
+    describe('records slot ad ids from bids, not targeting keys', () => {
+      const adUnitCode = 'div-1';
+      let slot;
+
+      beforeEach(() => {
+        slot = {
+          getAdUnitPath: sinon.stub().returns(adUnitCode),
+          getSlotElementId: sinon.stub().returns(adUnitCode),
+          updateTargetingFromMap: sinon.stub()
+        };
+        slots = [slot];
+        sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
+        sandbox.stub(auctionManager, 'getAdUnitCodes').returns([adUnitCode]);
+        sandbox.stub(auctionManager, 'getAdUnits').returns([]);
+      });
+
+      afterEach(() => {
+        enableSendAllBids = false;
+        config.resetConfig();
+      });
+
+      function winningBid(overrides = {}) {
+        return mkBid({
+          ...sampleBid,
+          adUnitCode,
+          adId: 'win-ad',
+          cpm: 2,
+          bidderCode: 'rubicon',
+          bidder: 'rubicon',
+          adserverTargeting: {
+            hb_pb: '2.00',
+            hb_bidder: 'rubicon',
+            hb_adid_custom: 'not-an-ad-id',
+            foobar: 'winner'
+          },
+          ...overrides
+        });
+      }
+
+      it('records bid.adId and ignores custom targeting values under hb_adid-prefixed keys', () => {
+        sandbox.stub(auctionManager, 'getBidsReceived').returns([winningBid()]);
+        targetingInstance.setTargetingForGPT(adUnitCode);
+        expect(slotHasTargetedAdId(slot, 'win-ad')).to.equal(true);
+        expect(slotHasTargetedAdId(slot, 'not-an-ad-id')).to.equal(false);
+      });
+
+      it('assigns each GPT slot the winning bid.adId even when custom targeting values look like other ad ids', () => {
+        const adUnitA = 'div-a';
+        const adUnitB = 'div-b';
+        const slotA = {
+          getAdUnitPath: sinon.stub().returns(adUnitA),
+          getSlotElementId: sinon.stub().returns(adUnitA),
+          updateTargetingFromMap: sinon.stub()
+        };
+        const slotB = {
+          getAdUnitPath: sinon.stub().returns(adUnitB),
+          getSlotElementId: sinon.stub().returns(adUnitB),
+          updateTargetingFromMap: sinon.stub()
+        };
+        slots = [slotA, slotB];
+
+        sandbox.stub(auctionManager, 'getBidsReceived').returns([
+          winningBid({
+            adUnitCode: adUnitA,
+            adId: 'ad-a',
+            adserverTargeting: {
+              foobar: 'custom-a',
+              hb_adid_custom: 'ad-b'
+            }
+          }),
+          winningBid({
+            adUnitCode: adUnitB,
+            adId: 'ad-b',
+            bidderCode: 'appnexus',
+            bidder: 'appnexus',
+            cpm: 1.5,
+            adserverTargeting: {
+              foobar: 'custom-b',
+              hb_adid_custom: 'ad-a',
+              hb_bidder: 'appnexus',
+              hb_pb: '1.50'
+            }
+          })
+        ]);
+
+        targetingInstance.setTargetingForGPT([adUnitA, adUnitB]);
+
+        expect(slotHasTargetedAdId(slotA, 'ad-a')).to.equal(true);
+        expect(slotHasTargetedAdId(slotA, 'ad-b')).to.equal(false);
+        expect(slotHasTargetedAdId(slotB, 'ad-b')).to.equal(true);
+        expect(slotHasTargetedAdId(slotB, 'ad-a')).to.equal(false);
+        expect(findSlotElementIdByAdId('ad-a', () => slots)).to.equal(adUnitA);
+        expect(findSlotElementIdByAdId('ad-b', () => slots)).to.equal(adUnitB);
+      });
+
+      it('does not record losing bid ad ids from custom targeting when sendAllBids is off', () => {
+        config.setConfig({ targetingControls: { allBidsCustomTargeting: true } });
+        sandbox.stub(auctionManager, 'getBidsReceived').returns([
+          winningBid(),
+          mkBid({
+            ...sampleBid,
+            adUnitCode,
+            adId: 'lose-ad',
+            cpm: 0.1,
+            bidderCode: 'appnexus',
+            bidder: 'appnexus',
+            adserverTargeting: {
+              hb_pb: '0.10',
+              hb_bidder: 'appnexus',
+              hb_adid: 'lose-ad',
+              foobar: 'loser'
+            }
+          })
+        ]);
+        targetingInstance.setTargetingForGPT(adUnitCode);
+        expect(slotHasTargetedAdId(slot, 'win-ad')).to.equal(true);
+        expect(slotHasTargetedAdId(slot, 'lose-ad')).to.equal(false);
+      });
+
+      it('records sendAllBids ad ids from the bid objects', () => {
+        enableSendAllBids = true;
+        sandbox.stub(auctionManager, 'getBidsReceived').returns([
+          winningBid(),
+          mkBid({
+            ...sampleBid,
+            adUnitCode,
+            adId: 'lose-ad',
+            cpm: 0.1,
+            bidderCode: 'appnexus',
+            bidder: 'appnexus',
+            adserverTargeting: {
+              hb_pb: '0.10',
+              hb_bidder: 'appnexus',
+              hb_adid: 'lose-ad'
+            }
+          })
+        ]);
+        targetingInstance.setTargetingForGPT(adUnitCode);
+        expect(slotHasTargetedAdId(slot, 'win-ad')).to.equal(true);
+        expect(slotHasTargetedAdId(slot, 'lose-ad')).to.equal(true);
+      });
+
+      it('resets GPT targeting after render and BID_WON using bid.adId even when hb_adid was not in targeting', () => {
+        const clock = sandbox.useFakeTimers();
+        const listeners = {};
+        const pubads = {
+          getSlots: () => slots,
+          addEventListener: (event, fn) => { listeners[event] = fn; },
+        };
+        window.googletag = { pubads: () => pubads };
+        const bid = winningBid();
+        const instance = newTargeting(auctionManager);
+        sandbox.stub(auctionManager, 'getBidsReceived').returns([bid]);
+        instance.setTargetingForGPT(adUnitCode);
+        // not a sandbox stub: the instance's event listeners outlive the test and must stay inert
+        const presetStub = instance.presetGPTTargeting = sinon.stub();
+        listeners.slotRenderEnded({ slot });
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: 'not-an-ad-id' });
+        clock.tick(0);
+        sinon.assert.notCalled(presetStub);
+        events.emit(EVENTS.BID_WON, { adUnitCode, adId: 'win-ad' });
+        clock.tick(0);
+        sinon.assert.calledOnceWithExactly(presetStub, [adUnitCode]);
+      });
+
+      it('excludes bids with a missing or empty adId from the recorded ad ids', () => {
+        enableSendAllBids = true;
+        sandbox.stub(auctionManager, 'getBidsReceived').returns([
+          winningBid(),
+          mkBid({
+            ...sampleBid,
+            adUnitCode,
+            adId: '',
+            cpm: 0.5,
+            bidderCode: 'appnexus',
+            bidder: 'appnexus',
+            adserverTargeting: {
+              hb_pb: '0.50',
+              hb_bidder: 'appnexus',
+              hb_adid: ''
+            }
+          }),
+          mkBid({
+            ...sampleBid,
+            adUnitCode,
+            adId: null,
+            cpm: 0.1,
+            bidderCode: 'openx',
+            bidder: 'openx',
+            adserverTargeting: {
+              hb_pb: '0.10',
+              hb_bidder: 'openx'
+            }
+          })
+        ]);
+        targetingInstance.setTargetingForGPT(adUnitCode);
+        expect(slotHasTargetedAdId(slot, 'win-ad')).to.equal(true);
+        expect(slotHasTargetedAdId(slot, '')).to.equal(false);
+        expect(slotHasTargetedAdId(slot, null)).to.equal(false);
+      });
+
+      it('records a winning bid.adId even when sendStandardTargeting is false and hb_adid is excluded from GPT targeting', () => {
+        sandbox.stub(auctionManager, 'getBidsReceived').returns([
+          winningBid({ sendStandardTargeting: false })
+        ]);
+        targetingInstance.setTargetingForGPT(adUnitCode);
+        expect(slotHasTargetedAdId(slot, 'win-ad')).to.equal(true);
       });
     });
   });

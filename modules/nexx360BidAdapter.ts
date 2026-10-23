@@ -4,7 +4,7 @@ import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidd
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-import { interpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting as libGetGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { interpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting as libGetGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs, Nexx360AdapterRequest } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
@@ -54,6 +54,7 @@ const ALIASES = [
   { code: 'pubxai', gvlid: 1485 },
   { code: 'ybidder', gvlid: 1253 },
   { code: 'netads', gvlid: 965 },
+  { code: 'stmbidder', gvlid: 965 },
 ];
 
 export const STORAGE = getStorageManager({
@@ -129,13 +130,14 @@ const buildRequests = (
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
   const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest });
-  const adapterRequest:AdapterRequest = {
+  const adapterRequest:Nexx360AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,
     data,
     options: {
       endpointCompression: getGzipSetting(bidderRequest.bidderCode)
     },
+    bidderRequest,
   };
   return adapterRequest;
 };

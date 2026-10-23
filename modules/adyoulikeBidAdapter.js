@@ -1,6 +1,5 @@
 import { buildUrl, deepAccess, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -190,7 +189,7 @@ export const spec = {
    * @param {*} serverResponses A successful response from the server.
    * @return {UserSync[]} An array of syncs that should be executed.
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
@@ -204,7 +203,7 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       params += '&coppa=1';
     }
 
