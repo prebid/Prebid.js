@@ -2225,6 +2225,11 @@ describe('encypherRtdProvider decision-network v1', () => {
     await run.completion;
     assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
     assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], {}, undefined, run.auction), {});
+    assert.deepStrictEqual(
+      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
+      {},
+      'disabled targeting still consumes this auction state',
+    );
     const disabled = beginAuction();
     await disabled.completion;
     assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: false }, undefined, disabled.auction), {});
@@ -2313,6 +2318,65 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.deepStrictEqual(
       getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true } }, undefined, missRun.auction),
       {},
+    );
+  });
+
+  it('bounds 129 overlapping live auctions without evicting the first 128 targeting records', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const runs = [];
+    for (let index = 0; index < 129; index += 1) {
+      const run = beginAuction();
+      if (index === 0) await respondDecision(ready(STORY_SIGNAL, 242));
+      await run.completion;
+      events.emit(EVENTS.AUCTION_INIT, { auctionId: run.auction.auctionId });
+      runs.push(run);
+    }
+
+    for (const run of runs.slice(0, 128)) {
+      assert.deepStrictEqual(
+        getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
+        { leaderboard: { encypher_verified: '1' } },
+      );
+    }
+    assert.deepStrictEqual(runs[128].auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.deepStrictEqual(
+      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, runs[128].auction),
+      {},
+    );
+  });
+
+  it('removes an abandoned pending targeting record after its cleanup deadline', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 243));
+    await run.completion;
+    clock.tick(5 * 60 * 1000);
+
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.deepStrictEqual(
+      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
+      {},
+    );
+  });
+
+  it('keeps live targeting past the cleanup deadline and consumes it at AUCTION_END', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const run = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 244));
+    await run.completion;
+    events.emit(EVENTS.AUCTION_INIT, { auctionId: run.auction.auctionId });
+    clock.tick(10 * 60 * 1000);
+
+    assert.deepStrictEqual(
+      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
+      { leaderboard: { encypher_verified: '1' } },
+    );
+    assert.deepStrictEqual(
+      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
+      {},
+      'AUCTION_END targeting consumes the live record',
     );
   });
   it('places the V1 keys on auction ad units through the RTD core', async () => {

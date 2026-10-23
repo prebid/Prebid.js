@@ -2,6 +2,8 @@ import { getHook, submodule } from '../src/hook.js';
 import { fetcherFactory } from '../src/ajax.js';
 import { gdprDataHandler, gppDataHandler, type AllConsentData } from '../src/consentHandler.ts';
 import { logWarn } from '../src/utils.js';
+import * as events from '../src/events.js';
+import { EVENTS } from '../src/constants.js';
 import { getGptSlotForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { clearCache as clearBoundingClientRectCache, getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWinDimensions } from '../src/utils/winDimensions.js';
@@ -224,7 +226,9 @@ interface AuctionTargetingEvidence {
 
 interface AuctionTargetingState {
   byCode: Map<AdUnitCode, AuctionTargetingEvidence>;
-  cleanupTimer: number;
+  lifecycle: 'pending' | 'live';
+  abandonAt: number;
+  cleanupTimer: number | null;
 }
 
 const decisions = new Map<string, DecisionState>();
@@ -1082,8 +1086,26 @@ function clearAuctionTargeting(auction: { auctionId?: unknown }): void {
   const id = auctionId(auction);
   if (!id) return;
   const state = targetingByAuctionId.get(id);
-  if (state) window.clearTimeout(state.cleanupTimer);
+  if (state && state.cleanupTimer !== null) window.clearTimeout(state.cleanupTimer);
   targetingByAuctionId.delete(id);
+}
+
+function purgeAbandonedTargeting(now: number): void {
+  targetingByAuctionId.forEach((state, id) => {
+    if (state.lifecycle === 'pending' && state.abandonAt <= now) {
+      clearAuctionTargeting({ auctionId: id });
+    }
+  });
+}
+
+function markAuctionTargetingLive(auction: { auctionId?: unknown }): void {
+  const id = auctionId(auction);
+  if (!id) return;
+  const state = targetingByAuctionId.get(id);
+  if (!state || state.lifecycle === 'live') return;
+  if (state.cleanupTimer !== null) window.clearTimeout(state.cleanupTimer);
+  state.lifecycle = 'live';
+  state.cleanupTimer = null;
 }
 
 function storeAuctionTargeting(
@@ -1092,17 +1114,22 @@ function storeAuctionTargeting(
 ): void {
   const id = auctionId(auction);
   if (!id) return;
+  const existing = targetingByAuctionId.get(id);
+  const lifecycle = existing?.lifecycle ?? 'pending';
   clearAuctionTargeting(auction);
-  while (targetingByAuctionId.size >= MAX_AUCTION_TARGETING_STATES) {
-    const oldest = targetingByAuctionId.keys().next().value as string | undefined;
-    if (!oldest) break;
-    clearAuctionTargeting({ auctionId: oldest });
+  purgeAbandonedTargeting(Date.now());
+  if (targetingByAuctionId.size >= MAX_AUCTION_TARGETING_STATES) return;
+  const abandonAt = Date.now() + AUCTION_TARGETING_TTL_MS;
+  let cleanupTimer: number | null = null;
+  if (lifecycle === 'pending') {
+    cleanupTimer = window.setTimeout(() => {
+      const current = targetingByAuctionId.get(id);
+      if (current?.lifecycle === 'pending' && current.cleanupTimer === cleanupTimer) {
+        targetingByAuctionId.delete(id);
+      }
+    }, AUCTION_TARGETING_TTL_MS);
   }
-  const cleanupTimer = window.setTimeout(() => {
-    const current = targetingByAuctionId.get(id);
-    if (current && current.cleanupTimer === cleanupTimer) targetingByAuctionId.delete(id);
-  }, AUCTION_TARGETING_TTL_MS);
-  targetingByAuctionId.set(id, { byCode, cleanupTimer });
+  targetingByAuctionId.set(id, { byCode, lifecycle, abandonAt, cleanupTimer });
 }
 
 /** Consume targeting when this exact auction reaches ad-server targeting. */
@@ -1111,7 +1138,7 @@ function takeAuctionTargeting(auction: { auctionId?: unknown }): Map<AdUnitCode,
   if (!id) return undefined;
   const state = targetingByAuctionId.get(id);
   if (!state) return undefined;
-  window.clearTimeout(state.cleanupTimer);
+  if (state.cleanupTimer !== null) window.clearTimeout(state.cleanupTimer);
   targetingByAuctionId.delete(id);
   return state.byCode;
 }
@@ -1541,6 +1568,7 @@ const init = (config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentDat
     const startAuction = getHook('startAuction');
     startAuction.before(isolateBeforeRtd, 21);
     startAuction.before(closeAuctionOwnership, 19);
+    events.on(EVENTS.AUCTION_INIT, markAuctionTargetingLive);
     auctionHooksInstalled = true;
   }
   return true;
@@ -1844,7 +1872,9 @@ const getTargetingData = (
 /** Clear page-lifecycle memory between isolated module tests. */
 export function resetProviderState(): void {
   decisions.clear();
-  targetingByAuctionId.forEach(state => window.clearTimeout(state.cleanupTimer));
+  targetingByAuctionId.forEach(state => {
+    if (state.cleanupTimer !== null) window.clearTimeout(state.cleanupTimer);
+  });
   targetingByAuctionId.clear();
   acceptedByAdUnits = new WeakMap<object, AcceptedDecision>();
   trustedJwkCache = null;
@@ -1855,6 +1885,7 @@ export function resetProviderState(): void {
     const startAuction = getHook('startAuction');
     startAuction.getHooks({ hook: isolateBeforeRtd }).remove();
     startAuction.getHooks({ hook: closeAuctionOwnership }).remove();
+    events.off(EVENTS.AUCTION_INIT, markAuctionTargetingLive);
     auctionHooksInstalled = false;
   }
 }

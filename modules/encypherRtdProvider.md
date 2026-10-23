@@ -177,7 +177,7 @@ The module seals it with ECIES to `gateway_jwk`, using WebCrypto only: an epheme
 
 ### `encypher_near`
 
-For ad units that carry `imp.ext.encypher`, `getTargetingData` adds auction-scoped `encypher_near` after `encypher_verified`. Prebid assigns the auction ID before RTD hooks run. The module keeps the attestation ID and optional adjacency value together in one record keyed by that auction ID and ad-unit code, consumes it when that exact auction reaches targeting, and discards abandoned records after five minutes. A hit cannot supply targeting to an overlapping miss or to another auction that uses the same ad-unit code:
+For ad units that carry `imp.ext.encypher`, `getTargetingData` adds auction-scoped `encypher_near` after `encypher_verified`. Prebid assigns the auction ID before RTD hooks run. The module keeps the attestation ID and optional adjacency value together in one record keyed by that auction ID and ad-unit code. A record starts pending, becomes live when Prebid emits `AUCTION_INIT` for that ID, and is consumed when that exact auction reaches targeting, even when consent or targeting settings make the returned map empty. The five-minute abandonment deadline deletes pending records only; live records remain until targeting consumes them. State is capped at 128 auctions. At capacity the module first removes expired pending records, then declines targeting storage for a new auction rather than evicting live state; the v1 carrier and auction flow remain intact. A hit cannot supply targeting to an overlapping miss or to another auction that uses the same ad-unit code:
 
 | Value | Meaning, from the signed index entries in the observation |
 | --- | --- |
