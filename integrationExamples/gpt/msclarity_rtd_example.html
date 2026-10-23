@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>MS Clarity RTD — Integration Example</title>
+
+  <!--
+    The RTD module auto-injects the Clarity JS tag by default.
+    To disable auto-injection, set params.injectClarity = false and
+    include the Clarity snippet manually. Replace YOUR_PROJECT_ID below.
+  -->
+  <!--
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "YOUR_PROJECT_ID");
+  </script>
+  -->
+
+  <!-- Prebid.js (built with msClarityRtdProvider + appnexusBidAdapter + msftBidAdapter) -->
+  <script src="../../build/dev/prebid.js"></script>
+
+  <!-- GPT -->
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+</head>
+<body>
+<h1>MS Clarity RTD — Integration Test</h1>
+<p>Open the browser console to see bucketed Clarity signals flowing into bid requests.</p>
+<p>Scroll down, click around, and watch feature values change between auctions.</p>
+<p><strong>Signals are written to global ORTB2 — all bidders receive them.</strong></p>
+
+<div id="ad-div-1" style="width:300px;height:250px;border:1px solid #ccc;margin:20px 0;"></div>
+
+<!-- filler content for scroll-depth testing -->
+<div style="height:2000px;background:linear-gradient(to bottom,#f0f0f0,#d0d0d0);padding:20px;">
+  <p>Scroll down to increase the <code>scroll</code> feature...</p>
+  <div style="margin-top:800px;">
+    <p>You've scrolled past 40% of the page.</p>
+  </div>
+  <div style="margin-top:400px;">
+    <p>You've scrolled past 60% of the page.</p>
+  </div>
+</div>
+
+<div id="ad-div-2" style="width:728px;height:90px;border:1px solid #ccc;margin:20px 0;"></div>
+
+<script>
+  window.pbjs = window.pbjs || { que: [] };
+
+  pbjs.que.push(function() {
+    console.log('=== PREBID + MS CLARITY RTD INITIALIZATION ===');
+    console.log('Installed Modules:', pbjs.installedModules);
+
+    // Enable debug logging
+    pbjs.setConfig({ debug: true });
+
+    // Configure RTD + Clarity
+    // Signals are written to global ORTB2 — available to all bidders.
+    // The Clarity JS tag is auto-injected by default (set injectClarity: false to disable).
+    pbjs.setConfig({
+      realTimeData: {
+        auctionDelay: 200,
+        dataProviders: [{
+          name: 'msClarity',
+          waitForIt: true,
+          params: {
+            projectId: 'YOUR_PROJECT_ID',   // Replace with your Clarity project ID
+            // injectClarity: false,          // Uncomment to disable auto-injection of Clarity tag
+            targetingPrefix: 'msc'
+          }
+        }]
+      }
+    });
+
+    // Ad units — all bidders receive Clarity signals via global ORTB2
+    pbjs.addAdUnits([
+      {
+        code: 'ad-div-1',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [
+          { bidder: 'appnexus', params: { placementId: 13144370 } },
+          { bidder: 'msft', params: { placement_id: '13144370' } }
+        ]
+      },
+      {
+        code: 'ad-div-2',
+        mediaTypes: { banner: { sizes: [[728, 90]] } },
+        bids: [
+          { bidder: 'appnexus', params: { placementId: 13144370 } },
+          { bidder: 'msft', params: { placement_id: '13144370' } }
+        ]
+      }
+    ]);
+
+    console.log('=== REQUESTING BIDS ===');
+    pbjs.requestBids({
+      bidsBackHandler: function (bidResponses) {
+        console.log('=== BID RESPONSES ===', bidResponses);
+
+        // Log ORTB2 config to see Clarity features
+        var ortb2 = pbjs.getConfig('ortb2');
+        console.log('=== ORTB2 CONFIG ===', JSON.stringify(ortb2, null, 2));
+
+        // Render via GPT
+        window.googletag = window.googletag || { cmd: [] };
+        googletag.cmd.push(function () {
+          googletag.pubads().disableInitialLoad();
+          googletag.pubads().enableSingleRequest();
+
+          var slot1 = googletag.defineSlot('/19968336/header-bid-tag-0', [300, 250], 'ad-div-1').addService(googletag.pubads());
+          var slot2 = googletag.defineSlot('/19968336/header-bid-tag-1', [728, 90], 'ad-div-2').addService(googletag.pubads());
+          googletag.enableServices();
+
+          pbjs.setTargetingForGPTAsync();
+
+          console.log('=== GPT SLOTS RENDERED ===');
+          console.log('Clarity signals are in global ORTB2 (site.ext.data.msclarity, user.data, site.keywords)');
+
+          googletag.pubads().refresh();
+        });
+      }
+    });
+  });
+</script>
+</body>
+</html>
