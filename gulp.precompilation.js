@@ -248,13 +248,34 @@ function copyVerbatim() {
  * Generate "public" versions of module files (used in  package.json "exports") that
  * just import the "real" module
  *
- * This achieves two things:
+ * This achieves three things:
  *
  *   - removes the need for awkward "index" imports, e.g. userId/index
  *   - hides their exports from NPM consumers
+ *   - pulls in parent modules (from .submodules.json), so that e.g. importing 'prebid.js/modules/sharedIdSystem'
+ *     also includes userId, as `gulp build --modules=sharedIdSystem` does - along with its types
  */
+const PUBLIC_MODULE_TEMPLATES = {
+  'js': _.template(`<% if (parentPath) { %>import '<%= parentPath %>';\n<% } %>import '<%= modulePath %>';`),
+  // `export type {}` adds no exports, but brings in the parent's declarations, which include its augmentations of
+  // the public API (e.g. `getUserIds` from userId)
+  'd.ts': _.template(`<% if (parentPath) { %>export type {} from '<%= parentPath %>';\n<% } %>export type * from '<%= modulePath %>'`)
+};
+
+/**
+ * Contents of the public version of `moduleName`, which imports the real module from `modulePath`.
+ * For submodules, both the JS and the type declaration versions first import the public version of their parent module.
+ */
+function renderPublicModule(ext, moduleName, modulePath) {
+  const parent = helpers.getParentModule(moduleName);
+  return PUBLIC_MODULE_TEMPLATES[ext]({
+    modulePath,
+    parentPath: parent != null ? `./${parent}.${ext}` : null
+  });
+}
+
 const generatePublicModules = _.memoize(
-  function (ext, template) {
+  function (ext) {
     const publicDir = helpers.getPrecompiledPath('public');
 
     function getNames(file) {
@@ -264,7 +285,7 @@ const generatePublicModules = _.memoize(
       const publicName = `${moduleName}.${ext}`;
       const modulePath = path.relative(publicDir, file.path);
       const publicPath = path.join(publicDir, publicName);
-      return {modulePath, publicPath}
+      return {moduleName, modulePath, publicPath}
     }
 
     function publicVersionDoesNotExist(file) {
@@ -279,11 +300,11 @@ const generatePublicModules = _.memoize(
           helpers.getPrecompiledPath(`modules/*.${ext}`),
           helpers.getPrecompiledPath(`modules/**/index.${ext}`),
           `!${publicDir}/**/*`
-        ], {since: gulp.lastRun(generatePublicModules(ext, template))})
+        ], {since: gulp.lastRun(generatePublicModules(ext))})
           .pipe(filter(publicVersionDoesNotExist))
           .pipe(tap((file) => {
-            const {modulePath, publicPath} = getNames(file);
-            file.contents = Buffer.from(template({modulePath: toModulePath(modulePath)}));
+            const {moduleName, modulePath, publicPath} = getNames(file);
+            file.contents = Buffer.from(renderPublicModule(ext, moduleName, toModulePath(modulePath)));
             file.path = publicPath;
           }))
           .pipe(gulp.dest(publicDir))
@@ -316,10 +337,7 @@ const generateCoreSummary = generateTypeSummary(
   helpers.getPrecompiledPath('src/types/summary/**/*')
 );
 const generateModuleSummary = generateTypeSummary(helpers.getPrecompiledPath('modules'), helpers.getPrecompiledPath('src/types/summary/modules.d.ts'))
-const publicModules = gulp.parallel(Object.entries({
-  'js':  _.template(`import '<%= modulePath %>';`),
-  'd.ts': _.template(`export type * from '<%= modulePath %>'`)
-}).map(args => generatePublicModules.apply(null, args)));
+const publicModules = gulp.parallel(Object.keys(PUBLIC_MODULE_TEMPLATES).map(ext => generatePublicModules(ext)));
 
 
 /**
@@ -458,5 +476,6 @@ gulp.task('verbatim', copyVerbatim)
 module.exports = {
   precompile,
   babelPrecomp,
-  copyDeclarations
+  copyDeclarations,
+  renderPublicModule
 }
