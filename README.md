@@ -98,11 +98,14 @@ For details and examples, see [Customize build options](customize/README.md).
 
 <a id="bundlers"></a>
 
-### Using other compilers (example: webpack + SWC)
+### Using other compilers and bundlers
 
 The npm package contains precompiled JavaScript (under `dist/src`, which the package exports point to), so Prebid.js can be
 bundled with any toolchain - it does not need Babel, or any Prebid-specific compilation, in your project.
-For example, a webpack project that compiles its own code with [SWC](https://swc.rs/):
+
+#### webpack + SWC
+
+A webpack project that compiles its own code with [SWC](https://swc.rs/):
 
 ```bash
 npm install prebid.js
@@ -140,6 +143,50 @@ Notes:
 - If your `package.json` has `"type": "commonjs"` (the default of recent `npm init`) and your own source files use `import`, add `type: 'javascript/auto'`
   to the rule, or webpack will reject them.
 - To set [build options](#customize-options) such as `globalVarName`, add `prebid.js/customize/webpackLoader` as described in [Customize build options](customize/README.md).
+
+#### Bun
+
+[Bun](https://bun.sh/)'s bundler needs no configuration:
+
+```bash
+bun add prebid.js
+bun build ./src/index.js --outfile=dist/bundle.js --minify --target=browser
+```
+
+To set [build options](#customize-options), use `Bun.build` with a plugin that serves Prebid's build options module, using the
+helper from `prebid.js/customize/virtualBuildOptions.mjs`:
+
+```javascript
+// build.mjs - run with `bun build.mjs`
+import path from 'node:path';
+import { getBuildOptionsVirtualModuleId, renderBuildOptionsVirtualModule } from 'prebid.js/customize/virtualBuildOptions.mjs';
+
+const buildOptionsModule = path.normalize(getBuildOptionsVirtualModuleId());
+
+const result = await Bun.build({
+  entrypoints: ['./src/index.js'],
+  outdir: './dist',
+  target: 'browser',
+  minify: true,
+  plugins: [{
+    name: 'prebid-build-options',
+    setup(build) {
+      build.onLoad({ filter: /[\\/]prebid\.js[\\/]dist[\\/]src[\\/]buildOptions\.mjs$/ }, async (args) => {
+        if (path.normalize(args.path) !== buildOptionsModule) return undefined;
+        return {
+          contents: await renderBuildOptionsVirtualModule({ globalVarName: 'myPbjs' }),
+          loader: 'js'
+        };
+      });
+    }
+  }]
+});
+
+if (!result.success) {
+  console.error(result.logs);
+  process.exit(1);
+}
+```
 
 <a name="Install"></a>
 
