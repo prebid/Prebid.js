@@ -3,7 +3,7 @@ import { UID2_EIDS } from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { isNumber } from '../../src/utils.js';
 
-export const PRIMARY_IDS = ['libp'];
+export const PRIMARY_IDS = ['lipb'];
 export const GVLID = 148;
 export const DEFAULT_AJAX_TIMEOUT = 5000;
 export const DEFAULT_DELAY = 500;
