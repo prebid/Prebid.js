@@ -727,7 +727,7 @@ describe('LiveIntentId', function() {
     before(() => {
       attachIdSystem(liveIntentIdSubmodule);
     });
-    it('liveIntentId; getValue call and ext', function() {
+    it('liveIntentId; getValue call and ext with segments', function() {
       const userId = {
         lipb: {
           lipbid: 'some-random-id-value',
@@ -740,6 +740,40 @@ describe('LiveIntentId', function() {
         source: 'liveintent.com',
         uids: [{ id: 'some-random-id-value', atype: 3 }],
         ext: { segments: ['s1', 's2'] }
+      });
+    });
+    it('liveIntentId; getValue call and ext with metadata', function() {
+      const userId = {
+        lipb: {
+          lipbid: 'some-random-id-value',
+          m: 'id-res-metadata'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.com',
+        uids: [{ id: 'some-random-id-value', atype: 3 }],
+        ext: { m: 'id-res-metadata' }
+      });
+    });
+    it('liveIntentId; getValue call and ext with segments and metadata', function() {
+      const userId = {
+        lipb: {
+          lipbid: 'some-random-id-value',
+          m: 'id-res-metadata',
+          segments: ['s1', 's2']
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.com',
+        uids: [{ id: 'some-random-id-value', atype: 3 }],
+        ext: {
+          m: 'id-res-metadata',
+          segments: ['s1', 's2']
+        }
       });
     });
     it('fpid; getValue call', function() {
