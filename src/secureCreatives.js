@@ -15,6 +15,32 @@ import { findSlotElementIdByAdId, getSlotTargeting, getSlotTargetingKeys } from 
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
+// Only frames explicitly registered by a renderer use strict source validation.
+// Legacy ad-server creatives continue to use the existing message protocol.
+const creativeMessageSources = new WeakMap();
+
+/**
+ * Bind creative messages for a bid to a known iframe window. A renderer that
+ * owns the frame should register before loading it and revoke on navigation
+ * or removal. An optional origin adds a second check for non-opaque frames.
+ *
+ * Revocation keeps the bid restricted so late messages cannot fall back to
+ * the legacy unauthenticated path.
+ */
+export function registerCreativeMessageSource(adId, source, origin) {
+  const bid = auctionManager.findBidByAdId(adId);
+  if (!bid || !source) {
+    throw new Error('Cannot register creative message source without a bid and frame window');
+  }
+  const registration = { source, origin };
+  creativeMessageSources.set(bid, registration);
+  return function revokeCreativeMessageSource() {
+    if (creativeMessageSources.get(bid) === registration) {
+      creativeMessageSources.set(bid, { source: null });
+    }
+  };
+}
+
 const HANDLER_MAP = {
   [REQUEST]: handleRenderRequest,
   [EVENT]: handleEventRequest,
@@ -66,7 +92,13 @@ export function receiveMessage(ev, cb) {
   }
 
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, auctionManager.findBidByAdId(data.adId));
+    const bid = auctionManager.findBidByAdId(data.adId);
+    const registration = bid && creativeMessageSources.get(bid);
+    if (registration && (registration.source !== ev.source ||
+        (registration.origin != null && registration.origin !== ev.origin))) {
+      return;
+    }
+    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, bid);
     cb && cb();
   }
 }
