@@ -253,16 +253,18 @@ function copyVerbatim() {
  *   - removes the need for awkward "index" imports, e.g. userId/index
  *   - hides their exports from NPM consumers
  *   - pulls in parent modules (from .submodules.json), so that e.g. importing 'prebid.js/modules/sharedIdSystem'
- *     also includes userId, as `gulp build --modules=sharedIdSystem` does
+ *     also includes userId, as `gulp build --modules=sharedIdSystem` does - along with its types
  */
 const PUBLIC_MODULE_TEMPLATES = {
   'js': _.template(`<% if (parentPath) { %>import '<%= parentPath %>';\n<% } %>import '<%= modulePath %>';`),
-  'd.ts': _.template(`export type * from '<%= modulePath %>'`)
+  // `export type {}` adds no exports, but brings in the parent's declarations, which include its augmentations of
+  // the public API (e.g. `getUserIds` from userId)
+  'd.ts': _.template(`<% if (parentPath) { %>export type {} from '<%= parentPath %>';\n<% } %>export type * from '<%= modulePath %>'`)
 };
 
 /**
  * Contents of the public version of `moduleName`, which imports the real module from `modulePath`.
- * For submodules, the JS version first imports the public version of their parent module.
+ * For submodules, both the JS and the type declaration versions first import the public version of their parent module.
  */
 function renderPublicModule(ext, moduleName, modulePath) {
   const parent = helpers.getParentModule(moduleName);

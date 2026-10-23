@@ -25,8 +25,13 @@ describe('renderPublicModule', () => {
       .to.equal(`import '../modules/userId/index.js';`);
   });
 
-  it('only re-exports the module types in type declarations', () => {
-    expect(renderPublicModule('d.ts', 'sharedIdSystem', '../modules/sharedIdSystem.js'))
-      .to.equal(`export type * from '../modules/sharedIdSystem.js'`);
+  it('re-exports the module types in type declarations', () => {
+    expect(renderPublicModule('d.ts', 'rubiconBidAdapter', '../modules/rubiconBidAdapter.d.ts'))
+      .to.equal(`export type * from '../modules/rubiconBidAdapter.d.ts'`);
+  });
+
+  it('brings in the parent module declarations (without re-exporting them) for submodules', () => {
+    expect(renderPublicModule('d.ts', 'sharedIdSystem', '../modules/sharedIdSystem.d.ts'))
+      .to.equal(`export type {} from './userId.d.ts';\nexport type * from '../modules/sharedIdSystem.d.ts'`);
   });
 });
