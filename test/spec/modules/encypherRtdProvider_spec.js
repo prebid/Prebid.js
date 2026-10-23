@@ -14,6 +14,7 @@ import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
+import { AUCTION_INVOCATION } from 'src/auction.js';
 import { getWinDimensions } from 'src/utils/winDimensions.js';
 import * as rtdModule from '../../../modules/rtdModule/index.js';
 import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
@@ -414,7 +415,7 @@ function getTargeting(adUnitCodes, params = {}, userConsent, auction) {
     adUnitCodes,
     { params: Object.assign({ timeout: 300 }, params) },
     userConsent,
-    auction && { auctionId: auction.auctionId, adUnits: auction.adUnits },
+    auction,
   );
 }
 
@@ -2298,10 +2299,15 @@ describe('encypherRtdProvider decision-network v1', () => {
 
   it('isolates overlapping same-code hit and miss auctions across reverse completion and targeting order', async () => {
     const canonical = addCanonical(STORY_URL, cleanups);
-    const hit = beginAuction();
+    const publicAuctionId = 'publisher-shared-auction';
+    const hitOptions = makeAuction();
+    hitOptions.auctionId = publicAuctionId;
+    const hit = beginAuction({}, hitOptions);
     const hitLookup = pendingLookup();
     canonical.href = PAGE_URL;
-    const missRun = beginAuction();
+    const missOptions = makeAuction();
+    missOptions.auctionId = publicAuctionId;
+    const missRun = beginAuction({}, missOptions);
     const missLookup = pendingLookup();
 
     missLookup.respond(200, HEADERS, JSON.stringify(miss('miss', 240)));
@@ -2310,6 +2316,11 @@ describe('encypherRtdProvider decision-network v1', () => {
     hitLookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 241)));
     await respondJwksIfRequested(JWKS);
     await hit.completion;
+    assert.strictEqual(hit.auction.auctionId, publicAuctionId);
+    assert.strictEqual(missRun.auction.auctionId, publicAuctionId);
+    assert.notStrictEqual(hit.auction[AUCTION_INVOCATION], missRun.auction[AUCTION_INVOCATION]);
+    assert.strictEqual(Object.prototype.propertyIsEnumerable.call(hit.auction, AUCTION_INVOCATION), false);
+    assert.strictEqual(Object.prototype.propertyIsEnumerable.call(missRun.auction, AUCTION_INVOCATION), false);
 
     assert.deepStrictEqual(
       getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true } }, undefined, hit.auction),
@@ -2321,64 +2332,6 @@ describe('encypherRtdProvider decision-network v1', () => {
     );
   });
 
-  it('bounds 129 overlapping live auctions without evicting the first 128 targeting records', async () => {
-    addCanonical(STORY_URL, cleanups);
-    const runs = [];
-    for (let index = 0; index < 129; index += 1) {
-      const run = beginAuction();
-      if (index === 0) await respondDecision(ready(STORY_SIGNAL, 242));
-      await run.completion;
-      events.emit(EVENTS.AUCTION_INIT, { auctionId: run.auction.auctionId });
-      runs.push(run);
-    }
-
-    for (const run of runs.slice(0, 128)) {
-      assert.deepStrictEqual(
-        getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
-        { leaderboard: { encypher_verified: '1' } },
-      );
-    }
-    assert.deepStrictEqual(runs[128].auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.deepStrictEqual(
-      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, runs[128].auction),
-      {},
-    );
-  });
-
-  it('removes an abandoned pending targeting record after its cleanup deadline', async () => {
-    const clock = useFakeTimers();
-    addCanonical(STORY_URL, cleanups);
-    const run = beginAuction();
-    await respondDecision(ready(STORY_SIGNAL, 243));
-    await run.completion;
-    clock.tick(5 * 60 * 1000);
-
-    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.deepStrictEqual(
-      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
-      {},
-    );
-  });
-
-  it('keeps live targeting past the cleanup deadline and consumes it at AUCTION_END', async () => {
-    const clock = useFakeTimers();
-    addCanonical(STORY_URL, cleanups);
-    const run = beginAuction();
-    await respondDecision(ready(STORY_SIGNAL, 244));
-    await run.completion;
-    events.emit(EVENTS.AUCTION_INIT, { auctionId: run.auction.auctionId });
-    clock.tick(10 * 60 * 1000);
-
-    assert.deepStrictEqual(
-      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
-      { leaderboard: { encypher_verified: '1' } },
-    );
-    assert.deepStrictEqual(
-      getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, run.auction),
-      {},
-      'AUCTION_END targeting consumes the live record',
-    );
-  });
   it('places the V1 keys on auction ad units through the RTD core', async () => {
     addCanonical(STORY_URL, cleanups);
     try {
@@ -2393,11 +2346,8 @@ describe('encypherRtdProvider decision-network v1', () => {
       const run = beginAuction();
       await respondDecision(ready(STORY_SIGNAL, 232));
       await run.completion;
-      const adUnits = rtdModule.getAdUnitTargeting({
-        adUnitCodes: ['leaderboard'],
-        adUnits: [{ code: 'leaderboard' }],
-        auctionId: run.auction.auctionId,
-      });
+      run.auction.adUnitCodes = ['leaderboard'];
+      const adUnits = rtdModule.getAdUnitTargeting(run.auction);
       assert.deepStrictEqual(adUnits[0].adserverTargeting, {
         encypher_verified: '1',
         encypher_att: 'epa_s',
@@ -2422,6 +2372,12 @@ describe('encypherRtdProvider decision-network v1', () => {
         }],
       });
       const auction = makeAuction();
+      auction.auctionId = 'publisher-size-map-auction';
+      const spoofedInvocation = {};
+      Object.defineProperty(auction, AUCTION_INVOCATION, {
+        configurable: true,
+        value: spoofedInvocation,
+      });
       auction.adUnits = [{
         code: 'leaderboard',
         mediaTypes: {
@@ -2442,23 +2398,70 @@ describe('encypherRtdProvider decision-network v1', () => {
       });
 
       startAuction(auction);
+      const invocation = auction[AUCTION_INVOCATION];
       await respondDecision(ready(STORY_SIGNAL, 233));
       const auctionEnd = await ended;
-      assert.strictEqual(typeof auction.auctionId, 'string');
-      assert.strictEqual(auction.auctionId.length, 36);
+      assert.strictEqual(auction.auctionId, 'publisher-size-map-auction');
       assert.strictEqual(auctionEnd.auctionId, auction.auctionId);
-      const targetingAuction = {
-        auctionId: auctionEnd.auctionId,
-        adUnitCodes: auctionEnd.adUnitCodes,
-        adUnits: auctionEnd.adUnits,
-      };
-      rtdModule.getAdUnitTargeting(targetingAuction);
-      assert.deepStrictEqual(targetingAuction.adUnits[0].adserverTargeting, {
+
+      assert.notStrictEqual(invocation, spoofedInvocation);
+      assert.strictEqual(auctionEnd[AUCTION_INVOCATION], invocation);
+      assert.strictEqual(Object.prototype.propertyIsEnumerable.call(auction, AUCTION_INVOCATION), false);
+      assert.strictEqual(Object.prototype.propertyIsEnumerable.call(auctionEnd, AUCTION_INVOCATION), false);
+      assert.deepStrictEqual(Object.keys(auctionEnd).includes('auctionInvocation'), false);
+      rtdModule.getAdUnitTargeting(auctionEnd);
+      assert.deepStrictEqual(auctionEnd.adUnits[0].adserverTargeting, {
         encypher_verified: '1',
         encypher_att: 'epa_s',
       });
     } finally {
       if (handleAuctionEnd) events.off(EVENTS.AUCTION_END, handleAuctionEnd);
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      config.resetConfig();
+    }
+  });
+  it('uses a fresh hidden context when no auction is created for a reused public auction ID', async () => {
+    addCanonical(STORY_URL, cleanups);
+    let auctionEndCount = 0;
+    const handleAuctionEnd = () => { auctionEndCount += 1; };
+    events.on(EVENTS.AUCTION_END, handleAuctionEnd);
+    try {
+      configureActualRtd({
+        auctionDelay: 300,
+        dataProviders: [{
+          name: MODULE_NAME,
+          waitForIt: true,
+          params: { timeout: 300, gamTargeting: {} },
+        }],
+      });
+      let resolveNoAuction;
+      const completed = new Promise(resolve => { resolveNoAuction = resolve; });
+      const noAuction = makeAuction();
+      noAuction.auctionId = 'publisher-no-auction';
+      noAuction.adUnits = [];
+      noAuction.adUnitCodes = [];
+      noAuction.timeout = 100;
+      noAuction.labels = [];
+      noAuction.defer = { resolve: resolveNoAuction };
+      startAuction(noAuction);
+      await completed;
+      const abandonedInvocation = noAuction[AUCTION_INVOCATION];
+
+      const nextOptions = makeAuction();
+      nextOptions.auctionId = 'publisher-no-auction';
+      const next = beginAuction({}, nextOptions);
+      await respondDecision(ready(STORY_SIGNAL, 234));
+      await next.completion;
+      assert.strictEqual(auctionEndCount, 0);
+      assert.strictEqual(noAuction.auctionId, next.auction.auctionId);
+      assert.notStrictEqual(abandonedInvocation, next.auction[AUCTION_INVOCATION]);
+      assert.strictEqual(Object.prototype.propertyIsEnumerable.call(noAuction, AUCTION_INVOCATION), false);
+      assert.deepStrictEqual(
+        getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, next.auction),
+        { leaderboard: { encypher_verified: '1' } },
+      );
+    } finally {
+      events.off(EVENTS.AUCTION_END, handleAuctionEnd);
       startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
       config.resetConfig();
     }
@@ -3367,6 +3370,7 @@ describe('encypherRtdProvider adjacency profile', () => {
     sandbox.stub(window.crypto.subtle, 'encrypt').callsFake(() => new Promise(resolve => releases.push(resolve)));
     const oneSlotAuction = () => {
       const auction = makeAuction();
+      auction.auctionId = 'publisher-overlap-auction';
       auction.adUnits = [auction.adUnits[0]];
       return auction;
     };
@@ -3390,6 +3394,8 @@ describe('encypherRtdProvider adjacency profile', () => {
     assert.strictEqual(first.callbackCount(), 0);
     releases[0](new Uint8Array(32).buffer);
     await first.completion;
+    assert.strictEqual(first.auction.auctionId, second.auction.auctionId);
+    assert.notStrictEqual(first.auction[AUCTION_INVOCATION], second.auction[AUCTION_INVOCATION]);
     configureActualRtd({
       dataProviders: [{
         name: MODULE_NAME,
@@ -3397,16 +3403,12 @@ describe('encypherRtdProvider adjacency profile', () => {
       }],
     });
     try {
-      const firstAuction = {
-        adUnitCodes: ['leaderboard'],
-        adUnits: checkAdUnitSetup(first.auction.adUnits),
-        auctionId: first.auction.auctionId,
-      };
-      const secondAuction = {
-        adUnitCodes: ['leaderboard'],
-        adUnits: checkAdUnitSetup(second.auction.adUnits),
-        auctionId: second.auction.auctionId,
-      };
+      first.auction.adUnitCodes = ['leaderboard'];
+      first.auction.adUnits = checkAdUnitSetup(first.auction.adUnits);
+      second.auction.adUnitCodes = ['leaderboard'];
+      second.auction.adUnits = checkAdUnitSetup(second.auction.adUnits);
+      const firstAuction = first.auction;
+      const secondAuction = second.auction;
       rtdModule.getAdUnitTargeting(firstAuction);
       rtdModule.getAdUnitTargeting(secondAuction);
       assert.deepStrictEqual(firstAuction.adUnits[0].adserverTargeting, {

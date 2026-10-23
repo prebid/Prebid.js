@@ -28,6 +28,7 @@ import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
+import { AUCTION_INVOCATION } from './auction.js';
 import { isBidUsable } from './targeting/filters.js';
 import { targeting } from './targeting.js';
 import { hook, wrapHook } from './hook.js';
@@ -857,7 +858,10 @@ export const requestBids = (function() {
 
 addApiMethod('requestBids', requestBids as unknown as RequestBids, false);
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {} as any) {
+export const startAuction = hook('async', function (options: StartAuctionOptions = {} as StartAuctionOptions) {
+  const internalOptions = options as StartAuctionOptions & { [AUCTION_INVOCATION]: object };
+  const { bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = internalOptions;
+  const invocation = internalOptions[AUCTION_INVOCATION];
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   fillAdUnitDefaults(adUnitDefs);
   const adUnits: AdUnit[] = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnitDefs));
@@ -936,6 +940,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       auctionId,
       ortb2Fragments,
       metrics,
+      [AUCTION_INVOCATION]: invocation,
     });
 
     const adUnitsLen = adUnits.length;
@@ -948,13 +953,16 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   }
 }, 'startAuction');
 
-/** Assign the auction identity before RTD and other start-auction hooks observe the request. */
-function ensureAuctionId(next: (auction: StartAuctionOptions) => void, auction: StartAuctionOptions = {} as StartAuctionOptions): void {
-  if (!auction.auctionId) auction.auctionId = generateUUID();
+/** Assign an unforgeable identity before RTD and other start-auction hooks observe the request. */
+function assignAuctionInvocation(next: (auction: StartAuctionOptions) => void, auction: StartAuctionOptions = {} as StartAuctionOptions): void {
+  Object.defineProperty(auction, AUCTION_INVOCATION, {
+    configurable: true,
+    value: {},
+  });
   next(auction);
 }
 
-startAuction.before(ensureAuctionId, 100);
+startAuction.before(assignAuctionInvocation, 100);
 
 export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);

@@ -69,6 +69,8 @@ export function resetAuctionState() {
   [outstandingRequests, sourceInfo].forEach((ob) => Object.keys(ob).forEach((k) => { delete ob[k]; }));
 }
 
+/** Opaque per-startAuction identity shared only by core auction lifecycle objects. */
+export const AUCTION_INVOCATION = Symbol('auctionInvocation');
 type AuctionOptions = {
   adUnits: AdUnit[],
   adUnitCodes: AdUnitCode[],
@@ -78,6 +80,7 @@ type AuctionOptions = {
   auctionId: Identifier;
   ortb2Fragments: ORTBFragments;
   metrics: Metrics;
+  [AUCTION_INVOCATION]: object;
 };
 
 export type AuctionProperties = ReturnType<ReturnType<typeof newAuction>['getProperties']>;
@@ -188,7 +191,9 @@ declare module './config' {
 
 export const beforeInitAuction = hook('sync', (auction) => {});
 
-export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics }: AuctionOptions) {
+export function newAuction(options: AuctionOptions) {
+  let { adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics } = options;
+  const invocation = options[AUCTION_INVOCATION];
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
   const _labels = labels;
@@ -225,7 +230,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
   function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
 
   function getProperties() {
-    return {
+    const properties = {
       auctionId: _auctionId,
       timestamp: _auctionStart,
       auctionEnd: _auctionEnd,
@@ -242,6 +247,8 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
       metrics: metrics,
       seatNonBids: _nonBids
     };
+    Object.defineProperty(properties, AUCTION_INVOCATION, { value: invocation });
+    return properties;
   }
 
   function startAuctionTimer() {
