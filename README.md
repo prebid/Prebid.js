@@ -103,6 +103,36 @@ For details and examples, see [Customize build options](customize/README.md).
 The npm package contains precompiled JavaScript (under `dist/src`, which the package exports point to), so Prebid.js can be
 bundled with any toolchain - it does not need Babel, or any Prebid-specific compilation, in your project.
 
+#### Choosing modules
+
+When Prebid.js is an npm dependency, there is no `--modules` option: the modules in your bundle are the ones your code imports.
+Each one is imported by its name in Prebid's [`modules`](modules) directory (the same names `gulp build --modules` takes).
+The examples below build this entry file:
+
+```javascript
+// src/index.js
+import pbjs from 'prebid.js';
+
+// bid adapters
+import 'prebid.js/modules/appnexusBidAdapter';
+import 'prebid.js/modules/rubiconBidAdapter';
+
+// other modules
+import 'prebid.js/modules/consentManagementTcf';
+import 'prebid.js/modules/tcfControl';
+import 'prebid.js/modules/priceFloors';
+
+// submodules need their parent module, which you must import yourself
+import 'prebid.js/modules/userId';
+import 'prebid.js/modules/sharedIdSystem';
+
+pbjs.processQueue();
+```
+
+Unlike `gulp build`, importing a submodule does not pull in its parent: `sharedIdSystem` does nothing without `userId`, and the same goes for
+RTD providers (`rtdModule`), first party data submodules (`fpdModule`) and video submodules (`videoModule`). The full list is in
+[`modules/.submodules.json`](modules/.submodules.json).
+
 #### webpack + SWC
 
 A webpack project that compiles its own code with [SWC](https://swc.rs/):
@@ -116,7 +146,7 @@ npm install --save-dev webpack webpack-cli @swc/core swc-loader
 // webpack.config.js
 module.exports = {
   mode: 'production',
-  entry: './src/index.js', // imports prebid.js and its modules as in the example above
+  entry: './src/index.js', // the entry file from "Choosing modules" above
   output: { filename: 'bundle.js', path: __dirname + '/dist' },
   module: {
     rules: [
@@ -146,7 +176,7 @@ Notes:
 
 #### Bun
 
-[Bun](https://bun.sh/)'s bundler needs no configuration:
+[Bun](https://bun.sh/)'s bundler needs no configuration to build the entry file above:
 
 ```bash
 bun add prebid.js
