@@ -1919,6 +1919,30 @@ describe('adapterManager tests', function () {
       });
     });
 
+    describe('allowHouseBids on client requests', () => {
+      let origBidderSettings;
+      beforeEach(() => {
+        origBidderSettings = getGlobal().bidderSettings;
+      });
+      afterEach(() => {
+        getGlobal().bidderSettings = origBidderSettings;
+      });
+
+      function allowedByBidder() {
+        return Object.fromEntries(makeBidRequests().map(req => [req.bidderCode, req.allowHouseBids]));
+      }
+
+      it('is set from the adapter\x27s own bidderSettings, independently of allowPriorityBids', () => {
+        getGlobal().bidderSettings = { appnexus: { allowHouseBids: true }, rubicon: { allowPriorityBids: true } };
+        expect(allowedByBidder()).to.eql({ appnexus: true, rubicon: false });
+      });
+
+      it('is not taken from the standard settings', () => {
+        getGlobal().bidderSettings = { standard: { allowHouseBids: true } };
+        expect(allowedByBidder()).to.eql({ appnexus: false, rubicon: false });
+      });
+    });
+
     it('should transfer deferBilling from ad unit', () => {
       adUnits[0].deferBilling = true;
       const requests = makeBidRequests();
@@ -2139,6 +2163,34 @@ describe('adapterManager tests', function () {
             request.adUnitsS2SCopy.flatMap(au => au.bids).map(bid => bid.bidder).join(','),
             request.bidderCode,
             request.allowPriorityBids
+          ]);
+          expect(allowed).to.have.deep.members([
+            ['mockBidder3', 'mockBidder3', false],
+            ['mockBidder1,mockBidder2', 'mockBidder1', false],
+            ['mockBidder1,mockBidder2', 'mockBidder2', true],
+            ['mockBidder1', 'mockBidder1', false],
+          ]);
+        });
+
+        it('should set allowHouseBids on requests for bidders listed in the s2s config they were routed through', () => {
+          config.setConfig({
+            s2sConfig: config.getConfig('s2sConfig').map(cfg => cfg.name === 'mock1' ? { ...cfg, allowHouseBids: ['mockBidder2'] } : cfg)
+          });
+          adUnits = [
+            {
+              code: 'one',
+              bids: [
+                { bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2'] },
+                { bidder: 'mockBidder2', s2sConfigName: 'mock1' },
+                { bidder: 'mockBidder3' }
+              ]
+            },
+          ];
+          dep.isAllowed.returns(true);
+          const allowed = makeBidRequests().map(request => [
+            request.adUnitsS2SCopy.flatMap(au => au.bids).map(bid => bid.bidder).join(','),
+            request.bidderCode,
+            request.allowHouseBids
           ]);
           expect(allowed).to.have.deep.members([
             ['mockBidder3', 'mockBidder3', false],

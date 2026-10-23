@@ -157,6 +157,11 @@ export type S2SConfig = {
    * The listed bidders in each request are also sent to Prebid Server as `ext.prebid.as.apb`, with `ext.prebid.as.ap: true`.
    */
   allowPriorityBids?: BidderCode[];
+  /**
+   * Bidders routed through this Prebid Server instance whose house bids (`bid.meta.deal.type` 4) are accepted at CPM 0
+   * and ranked below ordinary demand. Bidders must be listed explicitly; there is no option to cover every bidder on the instance.
+   */
+  allowHouseBids?: BidderCode[];
 };
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {

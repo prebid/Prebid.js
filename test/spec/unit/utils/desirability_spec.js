@@ -1,7 +1,15 @@
 import { expect } from 'chai';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
-import { adjustDesirability, DEFAULT_PRIORITY, getPriority } from '../../../../src/utils/desirability.js';
+import {
+  adjustDesirability,
+  DEFAULT_PRIORITY,
+  getPriority,
+  HOUSE_DEAL_TYPE,
+  HOUSE_PRIORITY,
+  isCpmEligible,
+  isHouseBid
+} from '../../../../src/utils/desirability.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { highestDesirabilityFirst } from '../../../../src/utils/reducers.js';
 
@@ -217,6 +225,65 @@ describe('desirability utils', function () {
             expect(getPriority(bid, bidderRequest)).to.equal(bid.meta?.deal?.priority ?? DEFAULT_PRIORITY);
           });
         });
+      });
+    });
+  });
+
+  describe('house bids', () => {
+    const house = (extra = {}) => ({ cpm: 0, bidderCode: 'adServer', meta: { deal: { type: HOUSE_DEAL_TYPE, ...extra } } });
+
+    describe('isHouseBid', () => {
+      it('is true for meta.deal.type 4 when the bidder request allows house bids', () => {
+        expect(isHouseBid(house(), { allowHouseBids: true })).to.be.true;
+      });
+      Object.entries({
+        'missing bidderRequest': [house(), undefined],
+        'allowHouseBids not set': [house(), {}],
+        'only allowPriorityBids': [house(), { allowPriorityBids: true }],
+        'a non-house deal type': [{ cpm: 0, meta: { deal: { type: 3 } } }, { allowHouseBids: true }],
+        'no deal metadata': [{ cpm: 0 }, { allowHouseBids: true }],
+      }).forEach(([desc, [bid, bidderRequest]]) => {
+        it(`is false with ${desc}`, () => {
+          expect(isHouseBid(bid, bidderRequest)).to.be.false;
+        });
+      });
+    });
+
+    describe('getPriority', () => {
+      it('gives allowed house bids HOUSE_PRIORITY, below the default', () => {
+        expect(HOUSE_PRIORITY).to.be.greaterThan(DEFAULT_PRIORITY);
+        expect(getPriority(house(), { allowHouseBids: true })).to.equal(HOUSE_PRIORITY);
+      });
+      it('ignores the priority of house bids when priority bids are not allowed', () => {
+        expect(getPriority(house({ priority: 1 }), { allowHouseBids: true })).to.equal(HOUSE_PRIORITY);
+      });
+      it('uses a trusted meta.deal.priority on house bids', () => {
+        expect(getPriority(house({ priority: 14 }), { allowHouseBids: true, allowPriorityBids: true })).to.equal(14);
+      });
+      it('does not change the priority of house bids that are not allowed', () => {
+        expect(getPriority(house(), {})).to.equal(DEFAULT_PRIORITY);
+      });
+    });
+
+    describe('isCpmEligible', () => {
+      let bs;
+      beforeEach(() => {
+        bs = { get: sinon.stub() };
+      });
+      it('rejects zero-CPM bids by default', () => {
+        expect(isCpmEligible({ cpm: 0, bidderCode: 'b' }, { bs })).to.be.false;
+        expect(isCpmEligible({ cpm: 1, bidderCode: 'b' }, { bs })).to.be.true;
+      });
+      it('accepts zero-CPM bids from bidders with allowZeroCpmBids', () => {
+        bs.get.withArgs('b', 'allowZeroCpmBids').returns(true);
+        expect(isCpmEligible({ cpm: 0, bidderCode: 'b' }, { bs })).to.be.true;
+      });
+      it('accepts zero-CPM house bids', () => {
+        expect(isCpmEligible({ cpm: 0, bidderCode: 'b', houseBid: true }, { bs })).to.be.true;
+      });
+      it('never accepts negative CPMs', () => {
+        bs.get.returns(true);
+        expect(isCpmEligible({ cpm: -1, bidderCode: 'b', houseBid: true }, { bs })).to.be.false;
       });
     });
   });

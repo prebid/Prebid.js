@@ -21,7 +21,7 @@ import { getHighestCpm, getHighestDesirability, highestDesirabilityFirst } from 
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
 import { lock } from '../../../../src/targeting/lock.js';
-import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../../../src/utils/desirability.js';
+import { DEFAULT_PRIORITY, HOUSE_PRIORITY, PRIORITY_INCREMENT } from '../../../../src/utils/desirability.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -726,6 +726,28 @@ describe('targeting tests', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_pb', 'hb_bidder', 'hb_adid', 'hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
         expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0');
+      });
+
+      it('targeting should allow a 0 cpm house bid without allowZeroCpmBids', function () {
+        bid4.houseBid = true;
+        bid4.priority = HOUSE_PRIORITY;
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']['hb_bidder']).to.equal('appnexus');
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0');
+      });
+
+      it('a 0 cpm house bid should not win over ordinary demand', function () {
+        bid4.houseBid = true;
+        bid4.priority = HOUSE_PRIORITY;
+        const other = utils.deepClone(bid1);
+        other.bidder = other.bidderCode = 'rubicon';
+        other.adId = 'other';
+        other.cpm = 0.01;
+        other.priority = DEFAULT_PRIORITY;
+        other.adserverTargeting = { hb_pb: '0.01', hb_adid: 'other', hb_bidder: 'rubicon' };
+        bidsReceived = [bid4, other];
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']['hb_bidder']).to.equal('rubicon');
       });
     });
 
