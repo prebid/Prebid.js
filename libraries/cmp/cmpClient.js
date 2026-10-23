@@ -13,6 +13,29 @@ import { PbPromise } from '../../src/utils/promise.js';
 export const MODE_MIXED = 0;
 export const MODE_RETURN = 1;
 export const MODE_CALLBACK = 2;
+export const CMP_POLL_INTERVAL = 100;
+
+/**
+ * Wait for a CMP API to become available.
+ *
+ * @param {object} apiConfig arguments passed to {@link cmpClient}
+ * @param {number} timeout maximum time to wait, in milliseconds
+ * @returns {Promise<CMPClient|undefined>}
+ */
+export function pollForCmp(apiConfig, timeout) {
+  const deadline = Date.now() + timeout;
+  return new PbPromise(resolve => {
+    function check() {
+      const cmp = cmpClient(apiConfig);
+      if (cmp || Date.now() >= deadline) {
+        resolve(cmp);
+      } else {
+        setTimeout(check, Math.min(CMP_POLL_INTERVAL, deadline - Date.now()));
+      }
+    }
+    check();
+  });
+}
 
 /**
  * Returns a client function that can interface with a CMP regardless of where it's located.

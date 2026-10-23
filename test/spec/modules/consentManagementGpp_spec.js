@@ -450,6 +450,30 @@ describe('consentManagementGpp', function () {
         expect(gppDataHandler.ready).to.be.true;
       });
 
+      it('should wait for a late CMP only when configured', async function () {
+        const configPromise = setConsentConfig({
+          gpp: {
+            cmpApi: 'iab',
+            timeout: 500,
+            waitForCmp: true,
+          }
+        });
+        setTimeout(() => {
+          window.__gpp = sinon.stub().callsFake(function (command, callback) {
+            if (command === 'ping') {
+              callback({ signalStatus: 'ready', applicableSections: [7], gppString: 'late-consent', gppVersion: '1.1' });
+            }
+          });
+        }, 10);
+        try {
+          await configPromise;
+          expect(await runHook()).to.be.true;
+          expect(gppDataHandler.getConsentData().gppString).to.eql('late-consent');
+        } finally {
+          delete window.__gpp;
+        }
+      });
+
       it('should not trip when adUnits have no size', async () => {
         await setConsentConfig(staticConfig);
         const request = {

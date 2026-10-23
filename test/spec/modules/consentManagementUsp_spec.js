@@ -236,6 +236,54 @@ describe('consentManagement', function () {
       });
     });
 
+    describe('waitForCmp:', function () {
+      afterEach(function () {
+        config.resetConfig();
+        requestBids.removeAll();
+        delete window.__uspapi;
+        resetConsentData();
+      });
+
+      it('should wait for a late CMP only when configured', (done) => {
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 500, waitForCmp: true } });
+        setTimeout(() => {
+          window.__uspapi = (...args) => args[2]({ uspString: '1YYY' }, true);
+        }, 10);
+        requestBidsHook(() => {
+          expect(uspDataHandler.getConsentData()).to.equal('1YYY');
+          done();
+        }, {});
+      });
+
+      it('should not wait for a late CMP by default', (done) => {
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 20 } });
+        const lateCmpTimer = setTimeout(() => {
+          window.__uspapi = (...args) => args[2]({ uspString: '1YYY' }, true);
+        }, 10);
+        requestBidsHook(() => {
+          clearTimeout(lateCmpTimer);
+          expect(uspDataHandler.getConsentData()).to.equal(null);
+          done();
+        }, {});
+      });
+
+      it('should not resume the auction twice when a late CMP response arrives after the timeout', (done) => {
+        let callCount = 0;
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 50, waitForCmp: true } });
+        setTimeout(() => {
+          // CMP appears just before the timeout, but responds well after it
+          window.__uspapi = (...args) => setTimeout(() => args[2]({ uspString: '1YYY' }, true), 50);
+        }, 10);
+        requestBidsHook(() => {
+          callCount++;
+        }, {});
+        setTimeout(() => {
+          expect(callCount).to.equal(1);
+          done();
+        }, 150);
+      });
+    });
+
     describe('already known consentData:', function () {
       let uspStub = sinon.stub();
       let ifr = null;
