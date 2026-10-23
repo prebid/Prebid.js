@@ -1,4 +1,4 @@
-import { getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
+import { getReplier, receiveMessage, registerCreativeMessageSource, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -146,6 +146,55 @@ describe('secureCreatives', () => {
       sandbox.restore();
       resetAuction();
       adResponse.adId = bidId;
+    });
+
+    describe('registered creative message sources', function() {
+      function renderRequest(source, origin = 'https://creative.example') {
+        return makeEvent({
+          source,
+          origin,
+          data: JSON.stringify({ adId: bidId, message: 'Prebid Request' })
+        });
+      }
+
+      it('accepts only the registered frame and origin', function() {
+        const renderer = { render: sinon.stub(), url: 'some url' };
+        pushBidResponseToAuction({ renderer });
+        const frame = {};
+        const revoke = registerCreativeMessageSource(bidId, frame, 'https://creative.example');
+        const callback = sinon.spy();
+
+        receiveMessage(renderRequest({}, 'https://creative.example'), callback);
+        receiveMessage(renderRequest(frame, 'https://other.example'), callback);
+        sinon.assert.notCalled(callback);
+        sinon.assert.notCalled(renderer.render);
+
+        return receive(renderRequest(frame)).then(() => {
+          sinon.assert.calledOnce(renderer.render);
+          revoke();
+        });
+      });
+
+      it('rejects messages after revocation', function() {
+        const renderer = { render: sinon.stub(), url: 'some url' };
+        pushBidResponseToAuction({ renderer });
+        const frame = {};
+        const revoke = registerCreativeMessageSource(bidId, frame);
+        revoke();
+
+        const callback = sinon.spy();
+        receiveMessage(renderRequest(frame), callback);
+        sinon.assert.notCalled(callback);
+        sinon.assert.notCalled(renderer.render);
+      });
+
+      it('retains legacy behavior for unregistered bids', function() {
+        const renderer = { render: sinon.stub(), url: 'some url' };
+        pushBidResponseToAuction({ renderer });
+        return receive(renderRequest({})).then(() => {
+          sinon.assert.calledOnce(renderer.render);
+        });
+      });
     });
 
     describe('Prebid Request', function() {
