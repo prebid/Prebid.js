@@ -16,7 +16,7 @@ export function parseRequestedAttributes(overrides) {
   function createParameterArray(config) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
-  if (typeof overrides === 'object') {
+  if (overrides != null && typeof overrides === 'object') {
     return createParameterArray({ ...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides });
   } else {
     return createParameterArray(DEFAULT_REQUESTED_ATTRIBUTES);
