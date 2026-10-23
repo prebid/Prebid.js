@@ -1,7 +1,7 @@
 # Overview
 
 ```text
-Module Name: Publink Bid Adapter
+Module Name: Publink.io Bid Adapter
 Module Type: Bidder Adapter
 Maintainer: hello@publink.io
 ```
@@ -40,7 +40,7 @@ var adUnits = [
   {
     code: 'publink-banner',
     mediaTypes: { banner: { sizes: [[300, 250]] } },
-    bids: [{ bidder: 'publink', params: { placementId: 'publink-prebid-banner' } }]
+    bids: [{ bidder: 'publinkio', params: { placementId: 'publink-prebid-banner' } }]
   },
   {
     code: 'publink-video',
@@ -53,7 +53,7 @@ var adUnits = [
         playbackmethod: [2]
       }
     },
-    bids: [{ bidder: 'publink', params: { placementId: 'publink-prebid-video' } }]
+    bids: [{ bidder: 'publinkio', params: { placementId: 'publink-prebid-video' } }]
   },
   {
     code: 'publink-audio',
@@ -64,7 +64,7 @@ var adUnits = [
         protocols: [2, 3, 5, 6, 7, 8]
       }
     },
-    bids: [{ bidder: 'publink', params: { placementId: 'publink-prebid-audio' } }]
+    bids: [{ bidder: 'publinkio', params: { placementId: 'publink-prebid-audio' } }]
   }
 ];
 ```

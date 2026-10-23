@@ -5,14 +5,14 @@ import { AUDIO, BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, logWarn, runBackgroundTask } from '../src/utils.js';
 import type { BidRequest } from '../src/adapterManager.js';
 
-const BIDDER_CODE = 'publink';
+const BIDDER_CODE = 'publinkio';
 const ENDPOINT = 'https://ortb.publink.io/api/ortb/prebid';
 const DEFAULT_CURRENCY = 'USD';
 const MEDIA_TYPES = { 1: BANNER, 2: VIDEO, 3: AUDIO } as const;
 
 export const dep = { ajax, runBackgroundTask };
 
-export type PublinkBidParams = {
+export type PublinkioBidParams = {
   /** Overrides ortb2Imp.tagid with the tag ID issued by Publink. */
   placementId?: string;
   /** Fallback floor CPM; standard ORTB/floors module values take precedence. */
@@ -23,7 +23,7 @@ export type PublinkBidParams = {
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    [BIDDER_CODE]: PublinkBidParams;
+    [BIDDER_CODE]: PublinkioBidParams;
   }
 }
 
@@ -94,7 +94,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     const response = buildBidResponse(creativeBid, { ...context, mediaType });
     if (mediaType !== BANNER && typeof bid.nurl === 'string' && bid.nurl.trim()) {
       Object.assign(response, {
-        publinkWinNotice: {
+        publinkioWinNotice: {
           url: bid.nurl.replace(/\$\{AUCTION_PRICE\}/g, String(bid.price)),
           sent: false,
         }
@@ -129,7 +129,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   onBidWon(bid) {
-    const notice = (bid as typeof bid & { publinkWinNotice?: { url: string; sent: boolean } }).publinkWinNotice;
+    const notice = (bid as typeof bid & { publinkioWinNotice?: { url: string; sent: boolean } }).publinkioWinNotice;
     if (!notice || notice.sent) return;
     // Keep state per response: core's shallow bid copies share this notice.
     notice.sent = true;
@@ -137,7 +137,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       try {
         dep.ajax(notice.url, undefined, undefined, { method: 'GET', keepalive: true, withCredentials: false });
       } catch (error) {
-        logWarn('publink: win notice failed', error);
+        logWarn('publinkio: win notice failed', error);
       }
     });
   },

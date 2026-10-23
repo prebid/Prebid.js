@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-// The module is TypeScript (publinkBidAdapter.ts); Prebid's build resolves
+// The module is TypeScript (publinkioBidAdapter.ts); Prebid's build resolves
 // the .js specifier to it, same as every core import.
-import { dep, spec } from 'modules/publinkBidAdapter.js';
+import { dep, spec } from 'modules/publinkioBidAdapter.js';
 import sinon from 'sinon';
 import 'modules/priceFloors.js';
 
-describe('publinkBidAdapter', function () {
+describe('publinkioBidAdapter', function () {
   const validBid = {
-    bidder: 'publink',
+    bidder: 'publinkio',
     bidId: 'bid123',
     adUnitCode: 'video-1',
     params: { placementId: 'publink-prebid-fixture' },
@@ -23,7 +23,7 @@ describe('publinkBidAdapter', function () {
   };
 
   const bidderRequest = {
-    bidderCode: 'publink',
+    bidderCode: 'publinkio',
     auctionId: 'auction-1',
     timeout: 1000,
     refererInfo: { page: 'https://example.com/watch', domain: 'example.com' },
@@ -150,7 +150,7 @@ describe('publinkBidAdapter', function () {
         const [req] = spec.buildRequests([{ ...validBid, mediaTypes }], bidderRequest);
         const nurl = `https://ortb.publink.io/notice/win?format=${format}`;
         const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST/>', crid: 'test', mtype, nurl }), req);
-        expect(bid.publinkWinNotice.url).to.equal(nurl);
+        expect(bid.publinkioWinNotice.url).to.equal(nurl);
         expect(bid.vastUrl).to.equal(undefined);
         expect(ajax.called).to.equal(false);
         spec.onBidWon(bid);
@@ -166,7 +166,7 @@ describe('publinkBidAdapter', function () {
       const nurl = 'https://ortb.publink.io/notice/banner';
       const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<div/>', mtype: 1, nurl }), req);
       expect(bid.ad).to.contain(nurl);
-      expect(bid.publinkWinNotice).to.equal(undefined);
+      expect(bid.publinkioWinNotice).to.equal(undefined);
       spec.onBidWon(bid);
       expect(ajax.called).to.equal(false);
     });
@@ -191,15 +191,15 @@ describe('publinkBidAdapter', function () {
 
     it('does not retry a synchronously failing transport', function () {
       ajax.throws(new Error('Transport unavailable'));
-      const bid = { publinkWinNotice: { url: 'https://ortb.publink.io/notice/win', sent: false } };
+      const bid = { publinkioWinNotice: { url: 'https://ortb.publink.io/notice/win', sent: false } };
       expect(() => spec.onBidWon(bid)).not.to.throw();
       spec.onBidWon({ ...bid });
       expect(ajax.calledOnce).to.equal(true);
     });
 
     it('does not share notice state between separate bids', function () {
-      const a = { publinkWinNotice: { url: 'https://ortb.publink.io/notice/a', sent: false } };
-      const b = { publinkWinNotice: { url: 'https://ortb.publink.io/notice/b', sent: false } };
+      const a = { publinkioWinNotice: { url: 'https://ortb.publink.io/notice/a', sent: false } };
+      const b = { publinkioWinNotice: { url: 'https://ortb.publink.io/notice/b', sent: false } };
       spec.onBidWon(a);
       spec.onBidWon(b);
       spec.onBidWon(a);
@@ -492,7 +492,7 @@ describe('publinkBidAdapter', function () {
         const [bid] = spec.interpretResponse(respond(req, { price: 5, adm: '<VAST version="3.0"/>', crid: 'test', mtype: format === 'video' ? 2 : 3, nurl: 'https://ortb.publink.io/notice/win' }), req);
         expect(bid.vastXml).to.contain('VAST');
         expect(bid.vastUrl).to.equal(undefined);
-        expect(bid.publinkWinNotice.url).to.equal('https://ortb.publink.io/notice/win');
+        expect(bid.publinkioWinNotice.url).to.equal('https://ortb.publink.io/notice/win');
       });
     }
 
