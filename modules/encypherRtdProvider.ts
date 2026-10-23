@@ -3,7 +3,7 @@ import { fetcherFactory } from '../src/ajax.js';
 import { gdprDataHandler, gppDataHandler, type AllConsentData } from '../src/consentHandler.ts';
 import { logWarn } from '../src/utils.js';
 import { getGptSlotForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { clearCache as clearBoundingClientRectCache, getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWinDimensions } from '../src/utils/winDimensions.js';
 import type { StartAuctionOptions } from '../src/prebid.ts';
 import type { AdUnitCode, ByAdUnit } from '../src/types/common.d.ts';
@@ -40,18 +40,18 @@ const ASSET_INDEX_TYPE = 'epai+jws';
 const ADJACENCY_HKDF_INFO = 'encypher-adj-v1';
 const ADJACENCY_METHOD = 'vp1';
 const MAX_INDEX_ENTRIES = 64;
-const MAX_INDEX_METHOD_LENGTH = 64;
 const MAX_ON_SCREEN_ENTRIES = 6;
+const MAX_PAGE_CANDIDATES = 512;
+const MAX_DOM_ELEMENTS = 4096;
+const MAX_ANCESTOR_DEPTH = 64;
 const MAX_OBSERVATION_BYTES = 400;
 const MAX_ADJACENCY_ENVELOPE_BYTES = 700;
 const ASSET_DIGEST_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const ASSET_DIGEST_LENGTH = 11;
-const TEXT_ENTRY = 'text';
+const INDEX_METHOD_PATTERN = /^[a-z0-9][a-z0-9.-]{0,31}$/;
+const OBSERVATION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const GATEWAY_KID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
-/** A C2PA text mark is a contiguous run of variation selectors; one alone is an emoji presentation selector. */
-const TEXT_MARK_RUN = /[\uFE00-\uFE0F\u{E0100}-\u{E01EF}]{8,}/u;
 const MEDIA_SELECTOR = 'img, video, audio';
-const TEXT_BLOCK_SELECTOR = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, figcaption';
 const MOBILE_MAX_WIDTH = 768;
 const TABLET_MAX_WIDTH = 1200;
 
@@ -86,7 +86,7 @@ export interface C2paSignalV1 {
 }
 
 type JsonObject = Record<string, unknown>;
-type DiagnosticEvent = 'injected' | 'miss' | 'stale' | 'revoked' | 'invalid' | 'timeout' | 'adjacency_attached' | 'adjacency_skipped';
+type DiagnosticEvent = 'injected' | 'miss' | 'stale' | 'revoked' | 'invalid' | 'timeout';
 
 /** `imp.ext.encypher`: the ECIES-sealed observation, readable only by the gateway key holder. */
 export interface EncypherAdjacencyEnvelopeV1 {
@@ -112,6 +112,12 @@ interface AssetIndexEntry {
   o: boolean;
 }
 
+interface VerifiedAssetIndex {
+  entries: Map<string, AssetIndexEntry>;
+  expiresAt: number;
+  observedAt: number;
+}
+
 /** Unverified adjacency inputs from the lookup; the index is verified before each use. */
 interface AdjacencyMaterial {
   index: string;
@@ -132,6 +138,11 @@ interface AdjacencyAttachment {
 /** Sealed observations by auction-local ad unit object. */
 type AdjacencyAttachments = Map<object, AdjacencyAttachment>;
 
+interface AdjacencyBuild {
+  attachments: AdjacencyAttachments;
+  validUntil: number;
+}
+
 /** A rendered element's page band: document-coordinate top and bottom, and width. */
 interface MeasuredBox {
   top: number;
@@ -139,10 +150,11 @@ interface MeasuredBox {
   width: number;
 }
 
-/** A media element or text block; `asset` is the resolved media URL, `text` for marked text, or null. */
+/** A visible media element and the browser-serialized URL it shows. */
 interface PageCandidate {
   box: MeasuredBox;
-  asset: string | null;
+  asset: string;
+  kind: 'image' | 'video' | 'audio';
 }
 
 /** The page band a slot shares the reader's screen with, and how the slot travels. */
@@ -160,8 +172,23 @@ interface DecisionState {
   record?: C2paSignalV1;
   recordRevision?: number;
   recordFingerprint?: string;
+  recordExpiresAt?: number;
   statusExpiresAt?: number;
   adjacency?: AdjacencyMaterial;
+}
+
+interface VerifiedRecordClaims {
+  recordRevision: number;
+  expiresAt: number;
+}
+
+interface AcceptedDecision {
+  urlHash: string;
+  record: C2paSignalV1;
+  datasetVersion: number;
+  recordRevision: number;
+  recordFingerprint: string;
+  recordExpiresAt: number;
 }
 
 interface RequestCallbacks {
@@ -185,8 +212,10 @@ type TargetingValues = {
 const decisions = new Map<string, DecisionState>();
 /** Attestation IDs injected on the ad units of the auction the module last served, by ad unit code. */
 const injectedAttestationIds = new Map<AdUnitCode, string>();
-/** `encypher_near` for ad units of that auction that carry a sealed observation, by ad unit code. */
-const injectedNear = new Map<AdUnitCode, NearValue>();
+/** Auction-local adjacency targeting, keyed by the auction's ad-unit array. */
+let injectedNearByAdUnits = new WeakMap<object, Map<AdUnitCode, NearValue>>();
+/** Accepted decision retained until ownership closes so a later blocker can remove it. */
+let acceptedByAdUnits = new WeakMap<object, AcceptedDecision>();
 let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
 let maxDatasetVersionSeen = 0;
 let globalStaleBarrier = 0;
@@ -391,7 +420,13 @@ function selectJwk(jwks: unknown, kid: unknown): JsonWebKey | null {
   return match;
 }
 
-function validClaims(claims: unknown, record: C2paSignalV1, publisherDomain: string, urlHash: string, now: number): number | null {
+function validClaims(
+  claims: unknown,
+  record: C2paSignalV1,
+  publisherDomain: string,
+  urlHash: string,
+  now: number
+): VerifiedRecordClaims | null {
   if (!exactKeys(claims, [
     'iss', 'sub', 'iat', 'exp', 'publisher_domain', 'url_hash', 'content_hash', 'manifest_digest',
     'validation_results', 'declaration', 'trust_policy_version', 'record_revision',
@@ -420,10 +455,15 @@ function validClaims(claims: unknown, record: C2paSignalV1, publisherDomain: str
   if (!exactKeys(declaration, ['label', 'source_assertion'])) return null;
   if (typeof declaration.label !== 'string' || !['human_declared', 'ai_assisted', 'unknown'].includes(declaration.label)) return null;
   if (typeof declaration.source_assertion !== 'string' || declaration.source_assertion.length === 0) return null;
-  return claims.record_revision;
+  return { recordRevision: claims.record_revision, expiresAt: claims.exp };
 }
 
-async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain: string, urlHash: string): Promise<number | null> {
+async function verifyRecord(
+  record: C2paSignalV1,
+  jwks: unknown,
+  publisherDomain: string,
+  urlHash: string
+): Promise<VerifiedRecordClaims | null> {
   const segments = record.att.split('.');
   if (segments.length !== 3) return null;
   let protectedHeader: unknown;
@@ -436,8 +476,8 @@ async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain
   }
   if (!exactKeys(protectedHeader, ['alg', 'kid', 'typ']) || protectedHeader.alg !== 'ES256' || protectedHeader.typ !== 'epat+jws') return null;
   const jwk = selectJwk(jwks, protectedHeader.kid);
-  const recordRevision = validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000));
-  if (!jwk || recordRevision === null) return null;
+  const verifiedClaims = validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000));
+  if (!jwk || verifiedClaims === null) return null;
   return await verifyCompactSignature(jwk, segments)
     ? validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
     : null;
@@ -508,26 +548,31 @@ function adjacencyMaterial(envelope: JsonObject): AdjacencyMaterial | undefined 
 function indexEntry(value: unknown): AssetIndexEntry | null {
   if (!exactKeys(value, ['d', 'k', 's', 'ai', 'c', 'o'])) return null;
   const { d, k, s, ai, c, o } = value;
-  if (typeof d !== 'string' || (d !== TEXT_ENTRY && !ASSET_DIGEST_PATTERN.test(d))) return null;
-  if (typeof k !== 'string' || !['text', 'image', 'video', 'audio'].includes(k) || (k === 'text') !== (d === TEXT_ENTRY)) return null;
+  if (typeof d !== 'string' || (d !== 'text' && !ASSET_DIGEST_PATTERN.test(d))) return null;
+  if (typeof k !== 'string' || !['text', 'image', 'video', 'audio'].includes(k) || (k === 'text') !== (d === 'text')) return null;
   if (typeof s !== 'string' || !['verified', 'unrecognized_signer', 'broken'].includes(s)) return null;
   if (typeof c !== 'string' || !['content', 'teaser', 'chrome'].includes(c)) return null;
   if (typeof ai !== 'boolean' || typeof o !== 'boolean') return null;
   return { d, k: k as AssetIndexEntry['k'], s: s as IndexState, ai, c: c as IndexClass, o };
 }
 
-/** Index entries by `d` when the claims bind to this attestation and are current, else `null`. */
+function indexIsCurrent(index: VerifiedAssetIndex, now = Math.floor(Date.now() / 1000)): boolean {
+  return index.expiresAt > now && index.observedAt + OBSERVATION_MAX_AGE_SECONDS > now;
+}
+
+/** Index claims bound exactly to this attestation and a current observation, else `null`. */
 function validIndexClaims(
   claims: unknown,
   record: C2paSignalV1,
   recordRevision: number,
+  recordExpiresAt: number,
   publisherDomain: string,
   urlHash: string,
   now: number
-): Map<string, AssetIndexEntry> | null {
+): VerifiedAssetIndex | null {
   if (!exactKeys(claims, [
     'iss', 'sub', 'iat', 'exp', 'publisher_domain', 'url_hash', 'trust_policy_version', 'record_revision',
-    'method', 'entries',
+    'method', 'observed_at', 'entries',
   ])) return null;
   if (
     claims.iss !== TRUSTED_ISSUER ||
@@ -541,30 +586,45 @@ function validIndexClaims(
   if (typeof claims.exp !== 'number' || !Number.isInteger(claims.exp)) return null;
   if (
     claims.iat > now + CLOCK_SKEW_SECONDS ||
+    claims.exp !== recordExpiresAt ||
     claims.exp <= now ||
-    claims.exp <= claims.iat ||
-    claims.exp - claims.iat > MAX_ATTESTATION_LIFETIME_SECONDS
+    claims.exp <= claims.iat
   ) return null;
-  if (typeof claims.method !== 'string' || claims.method.length === 0 || claims.method.length > MAX_INDEX_METHOD_LENGTH) return null;
+  if (
+    typeof claims.observed_at !== 'number' ||
+    !Number.isInteger(claims.observed_at) ||
+    claims.observed_at < 0 ||
+    claims.observed_at > claims.iat ||
+    claims.observed_at > now + CLOCK_SKEW_SECONDS ||
+    claims.observed_at + OBSERVATION_MAX_AGE_SECONDS <= now
+  ) return null;
+  if (typeof claims.method !== 'string' || !INDEX_METHOD_PATTERN.test(claims.method)) return null;
   if (!Array.isArray(claims.entries) || claims.entries.length > MAX_INDEX_ENTRIES) return null;
   const entries = new Map<string, AssetIndexEntry>();
+  let previous = '';
   for (const value of claims.entries) {
     const entry = indexEntry(value);
-    if (!entry || entries.has(entry.d)) return null;
+    if (!entry || (previous !== '' && previous >= entry.d)) return null;
+    previous = entry.d;
     entries.set(entry.d, entry);
   }
-  return entries;
+  return { entries, expiresAt: claims.exp, observedAt: claims.observed_at };
 }
 
-/** The signed asset index bound to a verified attestation, or `null` on any mismatch. */
+/**
+ * The signed asset index bound to a verified attestation, or `null` on any mismatch.
+ * Its `kid` selects any current trusted attestation-purpose key; rotation does not bind it
+ * to the key that signed the older attestation.
+ */
 async function verifyAssetIndex(
   compact: string,
   jwks: unknown,
   record: C2paSignalV1,
   recordRevision: number,
+  recordExpiresAt: number,
   publisherDomain: string,
   urlHash: string
-): Promise<Map<string, AssetIndexEntry> | null> {
+): Promise<VerifiedAssetIndex | null> {
   const segments = compact.split('.');
   if (segments.length !== 3) return null;
   let protectedHeader: unknown;
@@ -577,9 +637,9 @@ async function verifyAssetIndex(
   }
   if (!exactKeys(protectedHeader, ['alg', 'kid', 'typ']) || protectedHeader.alg !== 'ES256' || protectedHeader.typ !== ASSET_INDEX_TYPE) return null;
   const jwk = selectJwk(jwks, protectedHeader.kid);
-  if (!jwk || !validIndexClaims(claims, record, recordRevision, publisherDomain, urlHash, Math.floor(Date.now() / 1000))) return null;
+  if (!jwk || !validIndexClaims(claims, record, recordRevision, recordExpiresAt, publisherDomain, urlHash, Math.floor(Date.now() / 1000))) return null;
   return await verifyCompactSignature(jwk, segments)
-    ? validIndexClaims(claims, record, recordRevision, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
+    ? validIndexClaims(claims, record, recordRevision, recordExpiresAt, publisherDomain, urlHash, Math.floor(Date.now() / 1000))
     : null;
 }
 
@@ -590,11 +650,10 @@ function viewportClass(): ViewportClass {
   return 'd';
 }
 
-/** The element's page band, or `null` when it is not rendered. */
-function measure(element: Element, allowEmpty: boolean): MeasuredBox | null {
+/** The slot element's page band, or `null` when it is not rendered. */
+function measureSlot(element: Element): MeasuredBox | null {
   if (element.getClientRects().length === 0) return null;
   const rect = getBoundingClientRect(element);
-  if (!allowEmpty && (rect.width <= 0 || rect.height <= 0)) return null;
   return { top: rect.top + window.scrollY, bottom: rect.bottom + window.scrollY, width: rect.width };
 }
 
@@ -637,49 +696,112 @@ function slotScreen(slot: Element, box: MeasuredBox, screenHeight: number, pageB
 }
 
 /**
- * The absolute http(s) URL of the media an element shows, exactly as the browser resolved it
- * (`currentSrc`, else `src`, else a video poster), or `null`. The index digests the same string,
- * with no canonicalization beyond resolution against the document base.
+ * The http(s) URL bytes used by the shared asset digest: browser URL serialization after
+ * resolution (`new URL(resolved).href`), with the fragment removed.
  */
 function mediaUrl(element: Element): string | null {
-  let url = '';
-  if (element instanceof HTMLImageElement) url = element.currentSrc || element.src;
+  let resolved = '';
+  if (element instanceof HTMLImageElement) resolved = element.currentSrc || element.src;
   if (element instanceof HTMLMediaElement) {
-    url = element.currentSrc || element.src || (element instanceof HTMLVideoElement ? element.poster : '');
+    resolved = element.currentSrc || element.src || (element instanceof HTMLVideoElement ? element.poster : '');
   }
-  return /^https?:\/\//i.test(url) ? url : null;
+  try {
+    const url = new URL(resolved, document.baseURI);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    url.hash = '';
+    return url.href;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * One synchronous layout read: every rendered media element and innermost text block outside the
- * auction's slots, and each resolved slot's screen band.
+ * Visible media geometry in document coordinates. The horizontal viewport and clipping
+ * ancestors trim the measured width. Hidden, transparent, travelling, transformed, deeply
+ * nested, or wholly clipped media is ambiguous and excluded.
  */
-function measurePage(adUnits: Array<{ code?: unknown }>): { candidates: PageCandidate[]; screens: Map<object, SlotScreen> } {
+function measureCandidate(element: Element): MeasuredBox | null {
+  if (element.getClientRects().length === 0) return null;
+  const rect = getBoundingClientRect(element);
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  let left = Math.max(0, rect.left);
+  let right = Math.min(getWinDimensions().innerWidth, rect.right);
+  let top = rect.top;
+  let bottom = rect.bottom;
+  let depth = 0;
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    depth += 1;
+    if (depth > MAX_ANCESTOR_DEPTH) return null;
+    const style = window.getComputedStyle(node);
+    if (
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      style.visibility === 'collapse' ||
+      style.contentVisibility === 'hidden' ||
+      style.opacity === '0' ||
+      (style.transform !== '' && style.transform !== 'none') ||
+      style.position === 'fixed' ||
+      style.position === 'sticky'
+    ) return null;
+    if (node !== element) {
+      const clip = getBoundingClientRect(node);
+      if (['hidden', 'clip', 'scroll', 'auto'].includes(style.overflowX)) {
+        left = Math.max(left, clip.left);
+        right = Math.min(right, clip.right);
+      }
+      if (['hidden', 'clip', 'scroll', 'auto'].includes(style.overflowY)) {
+        top = Math.max(top, clip.top);
+        bottom = Math.min(bottom, clip.bottom);
+      }
+    }
+  }
+  if (right <= left || bottom <= top) return null;
+  return { top: top + window.scrollY, bottom: bottom + window.scrollY, width: right - left };
+}
+
+/**
+ * One fresh, bounded layout snapshot: visible media outside the auction's slots and each
+ * resolved slot's vertical screen band. `null` means the deadline or candidate cap was hit.
+ */
+function measurePage(
+  adUnits: Array<{ code?: unknown }>,
+  isCurrent: () => boolean
+): { candidates: PageCandidate[]; screens: Map<object, SlotScreen> } | null {
+  if (!isCurrent()) return null;
+  clearBoundingClientRectCache();
   const screenHeight = getWinDimensions().innerHeight;
   const pageBottom = Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0);
   const slots: Element[] = [];
   const screens = new Map<object, SlotScreen>();
-  adUnits.forEach(adUnit => {
-    if (typeof adUnit.code !== 'string') return;
+  for (const adUnit of adUnits) {
+    if (!isCurrent()) return null;
+    if (typeof adUnit.code !== 'string') continue;
     const slot = slotElement(adUnit.code);
-    const box = slot && measure(slot, true);
-    if (!slot || !box) return;
+    const box = slot && measureSlot(slot);
+    if (!slot || !box) continue;
     slots.push(slot);
     screens.set(adUnit, slotScreen(slot, box, screenHeight, pageBottom));
-  });
+  }
   const candidates: PageCandidate[] = [];
   if (screens.size === 0) return { candidates, screens };
-  document.querySelectorAll(MEDIA_SELECTOR + ', ' + TEXT_BLOCK_SELECTOR).forEach(element => {
-    const isMedia = element.matches(MEDIA_SELECTOR);
-    if (!isMedia && element.querySelector(TEXT_BLOCK_SELECTOR) !== null) return;
-    if (slots.some(slot => slot.contains(element))) return;
-    const box = measure(element, false);
-    if (!box) return;
-    const asset = isMedia
-      ? mediaUrl(element)
-      : (TEXT_MARK_RUN.test(element.textContent || '') ? TEXT_ENTRY : null);
-    candidates.push({ box, asset });
-  });
+  const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_ELEMENT);
+  let visitedElements = 0;
+  let mediaElements = 0;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    visitedElements += 1;
+    if (visitedElements > MAX_DOM_ELEMENTS || !isCurrent()) return null;
+    if (!(node instanceof Element) || !node.matches(MEDIA_SELECTOR)) continue;
+    mediaElements += 1;
+    if (mediaElements > MAX_PAGE_CANDIDATES) return null;
+    if (slots.some(slot => slot.contains(node))) continue;
+    const box = measureCandidate(node);
+    const asset = mediaUrl(node);
+    if (!box || !asset) continue;
+    let kind: PageCandidate['kind'] = 'audio';
+    if (node instanceof HTMLImageElement) kind = 'image';
+    if (node instanceof HTMLVideoElement) kind = 'video';
+    candidates.push({ box, asset, kind });
+  }
   return { candidates, screens };
 }
 
@@ -705,13 +827,18 @@ function onScreen(
 ): OnScreenEntry[] {
   let total = 0;
   const areas = new Map<string, number>();
-  candidates.forEach(candidate => {
+  for (const candidate of candidates) {
     const area = areaWithin(candidate.box, screen);
-    if (area <= 0) return;
+    if (area <= 0) continue;
+    const d = digests.get(candidate.asset);
+    const entry = d && index.get(d);
+    if (entry?.c === 'chrome') continue;
     total += area;
-    const d = candidate.asset === TEXT_ENTRY ? TEXT_ENTRY : candidate.asset && digests.get(candidate.asset);
-    if (d && index.has(d)) areas.set(d, (areas.get(d) || 0) + area);
-  });
+    if (d && entry && entry.k === candidate.kind) {
+      areas.set(d, (areas.get(d) || 0) + area);
+    }
+  }
+  if (total === 0) return [];
   return Array.from(areas, ([d, area]) => ({ d, a: areaClass(area / total) }))
     .sort((left, right) => right.a - left.a || compareText(left.d, right.d))
     .slice(0, MAX_ON_SCREEN_ENTRIES);
@@ -732,20 +859,30 @@ function nearValue(entries: OnScreenEntry[], index: Map<string, AssetIndexEntry>
   return aiDeclared ? 'a' : '0';
 }
 
-/** 11-character b64url SHA-256 prefix for each distinct media URL that shares any slot's screen. */
-function assetDigests(candidates: PageCandidate[], screens: Map<object, SlotScreen>): Promise<Map<string, string>> {
+/** 11-character b64url SHA-256 prefix for each distinct media URL sharing any slot's band. */
+async function assetDigests(
+  candidates: PageCandidate[],
+  screens: Map<object, SlotScreen>,
+  isCurrent: () => boolean
+): Promise<Map<string, string> | null> {
   const urls = new Set<string>();
-  candidates.forEach(candidate => {
-    if (!candidate.asset || candidate.asset === TEXT_ENTRY) return;
+  for (const candidate of candidates) {
+    if (!isCurrent()) return null;
     for (const screen of screens.values()) {
       if (areaWithin(candidate.box, screen) > 0) {
         urls.add(candidate.asset);
-        return;
+        break;
       }
     }
-  });
-  return Promise.all(Array.from(urls, url => sha256(url).then(digest => [url, base64url(digest).slice(0, ASSET_DIGEST_LENGTH)] as const)))
-    .then(pairs => new Map(pairs));
+  }
+  const digests = new Map<string, string>();
+  for (const url of urls) {
+    if (!isCurrent()) return null;
+    const digest = await sha256(url);
+    if (!isCurrent()) return null;
+    digests.set(url, base64url(digest).slice(0, ASSET_DIGEST_LENGTH));
+  }
+  return digests;
 }
 
 /** ECIES to the gateway key: ephemeral ECDH P-256, HKDF-SHA256, AES-256-GCM with a 12-byte IV. */
@@ -784,18 +921,32 @@ async function observeAdjacency(
   jwks: unknown,
   record: C2paSignalV1,
   recordRevision: number,
+  recordExpiresAt: number,
   publisherDomain: string,
   urlHash: string,
   isCurrent: () => boolean
-): Promise<AdjacencyAttachments> {
+): Promise<AdjacencyBuild> {
   const attachments: AdjacencyAttachments = new Map();
-  const index = await verifyAssetIndex(material.index, jwks, record, recordRevision, publisherDomain, urlHash);
-  if (!index || !isCurrent()) return attachments;
+  const index = await verifyAssetIndex(
+    material.index,
+    jwks,
+    record,
+    recordRevision,
+    recordExpiresAt,
+    publisherDomain,
+    urlHash
+  );
+  if (!index || !indexIsCurrent(index) || !isCurrent()) return { attachments, validUntil: 0 };
+  const indexDigest = base64url(await sha256(material.index));
+  if (!indexIsCurrent(index) || !isCurrent()) return { attachments, validUntil: 0 };
+  const validUntil = Math.min(index.expiresAt, index.observedAt + OBSERVATION_MAX_AGE_SECONDS);
   const viewport = viewportClass();
-  const { candidates, screens } = measurePage(adUnits);
-  if (screens.size === 0) return attachments;
-  const digests = await assetDigests(candidates, screens);
-  if (!isCurrent()) return attachments;
+  const measured = measurePage(adUnits, isCurrent);
+  if (!measured) return { attachments, validUntil: 0 };
+  if (measured.screens.size === 0) return { attachments, validUntil };
+  const { candidates, screens } = measured;
+  const digests = await assetDigests(candidates, screens, isCurrent);
+  if (!digests || !indexIsCurrent(index) || !isCurrent()) return { attachments, validUntil: 0 };
   const recipient = await window.crypto.subtle.importKey(
     'jwk',
     material.gatewayJwk,
@@ -803,16 +954,28 @@ async function observeAdjacency(
     false,
     []
   );
+  if (!indexIsCurrent(index) || !isCurrent()) return { attachments, validUntil: 0 };
   for (const [adUnit, screen] of screens) {
-    if (!isCurrent()) return new Map();
-    const entries = onScreen(candidates, screen, digests, index);
-    const plaintext = JSON.stringify({ v: 1, id: record.id, m: ADJACENCY_METHOD, vp: viewport, tr: screen.travel, on: entries });
+    if (!indexIsCurrent(index) || !isCurrent()) return { attachments: new Map(), validUntil: 0 };
+    const entries = onScreen(candidates, screen, digests, index.entries);
+    const plaintext = JSON.stringify({
+      v: 1,
+      id: record.id,
+      m: ADJACENCY_METHOD,
+      ix: indexDigest,
+      vp: viewport,
+      tr: screen.travel,
+      on: entries,
+    });
     if (new TextEncoder().encode(plaintext).byteLength > MAX_OBSERVATION_BYTES) continue;
     const envelope = await sealObservation(plaintext, material.gatewayKid, recipient);
+    if (!indexIsCurrent(index) || !isCurrent()) return { attachments: new Map(), validUntil: 0 };
     if (new TextEncoder().encode(JSON.stringify(envelope)).byteLength > MAX_ADJACENCY_ENVELOPE_BYTES) continue;
-    attachments.set(adUnit, { envelope, near: nearValue(entries, index) });
+    attachments.set(adUnit, { envelope, near: nearValue(entries, index.entries) });
   }
-  return isCurrent() ? attachments : new Map();
+  return indexIsCurrent(index) && isCurrent()
+    ? { attachments, validUntil }
+    : { attachments: new Map(), validUntil: 0 };
 }
 
 function isolateAuctionAdUnits(auction: StartAuctionOptions): void {
@@ -837,7 +1000,12 @@ function isolateBeforeRtd(next: (auction?: StartAuctionOptions) => void, auction
 }
 
 function closeAuctionOwnership(next: (auction?: StartAuctionOptions) => void, auction?: StartAuctionOptions): void {
-  if (auction && Array.isArray(auction.adUnits)) isolatedAdUnitArrays.delete(auction.adUnits);
+  if (auction && Array.isArray(auction.adUnits)) {
+    const accepted = acceptedByAdUnits.get(auction.adUnits);
+    if (accepted && !decisionIsCurrent(accepted)) removeInjectedRecord(auction, accepted);
+    acceptedByAdUnits.delete(auction.adUnits);
+    isolatedAdUnitArrays.delete(auction.adUnits);
+  }
   next(auction);
 }
 
@@ -848,12 +1016,9 @@ function auctionAdUnitCodes(auction: StartAuctionOptions): AdUnitCode[] {
     .filter((code): code is AdUnitCode => typeof code === 'string');
 }
 
-/** Drop this auction's ad units from targeting memory so an earlier hit cannot leak forward. */
+/** Drop this auction's ad units from page-global v1 targeting memory. */
 function forgetTargeting(auction: StartAuctionOptions): void {
-  auctionAdUnitCodes(auction).forEach(code => {
-    injectedAttestationIds.delete(code);
-    injectedNear.delete(code);
-  });
+  auctionAdUnitCodes(auction).forEach(code => injectedAttestationIds.delete(code));
 }
 
 /** `null` when the publisher value does not match Targeting Contract V1. */
@@ -898,20 +1063,88 @@ function fitTargetingCap(values: TargetingValues): TargetingValues | null {
   return values.encypher_verified === undefined ? null : values;
 }
 
-/** Write the v1 carrier on every auction impression, and each sealed observation on its own. */
+/** Remove only this module's adjacency field before processing an owned auction. */
+function clearStaleAdjacency(auction: StartAuctionOptions): void {
+  if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return;
+  auction.adUnits.forEach(adUnit => {
+    if (adUnit.ortb2Imp?.ext) delete adUnit.ortb2Imp.ext.encypher;
+  });
+  injectedNearByAdUnits.delete(auction.adUnits);
+}
+
+function decisionIsCurrent(accepted: AcceptedDecision): boolean {
+  const current = decisions.get(accepted.urlHash);
+  const now = Date.now();
+  return Boolean(
+    current &&
+    current.status === 'ready' &&
+    current.record &&
+    current.recordFingerprint === accepted.recordFingerprint &&
+    current.recordRevision === accepted.recordRevision &&
+    current.datasetVersion === accepted.datasetVersion &&
+    current.statusExpiresAt !== undefined &&
+    current.statusExpiresAt > now &&
+    current.recordExpiresAt === accepted.recordExpiresAt &&
+    accepted.recordExpiresAt > Math.floor(now / 1000) &&
+    accepted.datasetVersion >= maxDatasetVersionSeen &&
+    accepted.datasetVersion > globalStaleBarrier
+  );
+}
+
+/** Remove a previously injected accepted record after it becomes non-current while owned. */
+function removeInjectedRecord(auction: StartAuctionOptions, accepted: AcceptedDecision): void {
+  if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return;
+  const { record } = accepted;
+  const current = decisions.get(accepted.urlHash);
+  const preserveNewerTargeting = current?.status === 'ready' &&
+    current.recordFingerprint !== accepted.recordFingerprint &&
+    current.statusExpiresAt !== undefined &&
+    current.statusExpiresAt > Date.now() &&
+    current.recordExpiresAt !== undefined &&
+    current.recordExpiresAt > Math.floor(Date.now() / 1000);
+  auction.adUnits.forEach(adUnit => {
+    const extension = adUnit.ortb2Imp?.ext;
+    const c2pa = extension?.c2pa;
+    if (
+      exactKeys(c2pa, ['v', 'id', 'ref', 'att']) &&
+      c2pa.v === record.v &&
+      c2pa.id === record.id &&
+      c2pa.ref === record.ref &&
+      c2pa.att === record.att
+    ) {
+      delete extension.c2pa;
+    }
+    if (extension) delete extension.encypher;
+    if (
+      !preserveNewerTargeting &&
+      typeof adUnit.code === 'string' &&
+      injectedAttestationIds.get(adUnit.code) === record.id
+    ) {
+      injectedAttestationIds.delete(adUnit.code);
+    }
+  });
+  injectedNearByAdUnits.delete(auction.adUnits);
+}
+
+/** Write the v1 carrier and replace every owned adjacency field with this auction's fresh result. */
 function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1, attachments?: AdjacencyAttachments): number | null {
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return null;
   const adUnits = auction.adUnits;
+  const nearByCode = new Map<AdUnitCode, NearValue>();
   adUnits.forEach(adUnit => {
     const impression = adUnit.ortb2Imp || (adUnit.ortb2Imp = {});
     const extension = impression.ext || (impression.ext = {});
     extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
     if (typeof adUnit.code === 'string') injectedAttestationIds.set(adUnit.code, record.id);
     const attachment = attachments && attachments.get(adUnit);
-    if (!attachment) return;
+    if (!attachment) {
+      delete extension.encypher;
+      return;
+    }
     extension.encypher = { v: 1, kid: attachment.envelope.kid, epk: attachment.envelope.epk, ct: attachment.envelope.ct };
-    if (typeof adUnit.code === 'string') injectedNear.set(adUnit.code, attachment.near);
+    if (typeof adUnit.code === 'string') nearByCode.set(adUnit.code, attachment.near);
   });
+  injectedNearByAdUnits.set(adUnits, nearByCode);
   return adUnits.length;
 }
 
@@ -1069,7 +1302,7 @@ function verifyWithTrustedJwks(
   publisherDomain: string,
   urlHash: string,
   remainingTime: () => number,
-  completeVerification: (recordRevision: number | null, timedOut: boolean, jwks?: unknown) => void
+  completeVerification: (verifiedClaims: VerifiedRecordClaims | null, timedOut: boolean, jwks?: unknown) => void
 ): void {
   const fetchAndVerify = (): void => {
     const remaining = remainingTime();
@@ -1090,9 +1323,9 @@ function verifyWithTrustedJwks(
           completeVerification(null, false);
           return;
         }
-        verifyRecord(record, jwks, publisherDomain, urlHash).then(recordRevision => {
-          if (recordRevision !== null) trustedJwkCache = { jwks, expiresAt: Date.now() + JWKS_CACHE_TTL_MS };
-          completeVerification(recordRevision, false, jwks);
+        verifyRecord(record, jwks, publisherDomain, urlHash).then(verifiedClaims => {
+          if (verifiedClaims !== null) trustedJwkCache = { jwks, expiresAt: Date.now() + JWKS_CACHE_TTL_MS };
+          completeVerification(verifiedClaims, false, jwks);
         }, () => completeVerification(null, false));
       },
       error(timedOut) {
@@ -1106,9 +1339,9 @@ function verifyWithTrustedJwks(
     fetchAndVerify();
     return;
   }
-  verifyRecord(record, cached, publisherDomain, urlHash).then(recordRevision => {
-    if (recordRevision !== null) {
-      completeVerification(recordRevision, false, cached);
+  verifyRecord(record, cached, publisherDomain, urlHash).then(verifiedClaims => {
+    if (verifiedClaims !== null) {
+      completeVerification(verifiedClaims, false, cached);
       return;
     }
     trustedJwkCache = null;
@@ -1124,26 +1357,28 @@ function commitReadyDecision(
   record: C2paSignalV1,
   datasetVersion: number,
   recordRevision: number,
+  recordExpiresAt: number,
   statusExpiresAt: number,
   adjacency?: AdjacencyMaterial
-): boolean {
+): AcceptedDecision | null {
   if (
     statusExpiresAt <= Date.now() ||
+    recordExpiresAt <= Math.floor(Date.now() / 1000) ||
     datasetVersion < maxDatasetVersionSeen ||
     datasetVersion <= globalStaleBarrier
-  ) return false;
+  ) return null;
   const current = decisions.get(urlHash);
   const recordFingerprint = JSON.stringify(record);
   if (current) {
-    if (datasetVersion < current.datasetVersion) return false;
-    if (current.status !== 'ready' && datasetVersion <= current.datasetVersion) return false;
-    if (current.recordRevision !== undefined && recordRevision < current.recordRevision) return false;
+    if (datasetVersion < current.datasetVersion) return null;
+    if (current.status !== 'ready' && datasetVersion <= current.datasetVersion) return null;
+    if (current.recordRevision !== undefined && recordRevision < current.recordRevision) return null;
     if (
       current.status === 'ready' &&
       datasetVersion === current.datasetVersion &&
       recordRevision === current.recordRevision &&
       recordFingerprint !== current.recordFingerprint
-    ) return false;
+    ) return null;
   }
   decisions.set(urlHash, {
     datasetVersion,
@@ -1151,11 +1386,12 @@ function commitReadyDecision(
     record,
     recordRevision,
     recordFingerprint,
+    recordExpiresAt,
     statusExpiresAt,
     adjacency,
   });
   maxDatasetVersionSeen = datasetVersion;
-  return true;
+  return { urlHash, record, datasetVersion, recordRevision, recordFingerprint, recordExpiresAt };
 }
 
 function commitNonReadyDecision(urlHash: string, status: 'miss' | 'revoked' | 'stale', datasetVersion: number): void {
@@ -1205,6 +1441,11 @@ const getBidRequestData = (
   rtdTimeout?: number
 ): void => {
   forgetTargeting(auction);
+  if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) {
+    callback();
+    return;
+  }
+  clearStaleAdjacency(auction);
   if (!hasConsentForDataTransmission(userConsent)) {
     callback();
     return;
@@ -1225,43 +1466,34 @@ const getBidRequestData = (
   const adjacencyEnabled = params.adjacency === true;
   let completed = false;
   let deadlineTimer: number | undefined;
-  /** A committed record whose adjacency observation is still being built. */
-  let verifiedPending: { record: C2paSignalV1; datasetVersion: number } | null = null;
-  const finish = (event: DiagnosticEvent, datasetVersion?: number, record?: C2paSignalV1, attachments?: AdjacencyAttachments): void => {
+  let acceptedPending: AcceptedDecision | null = null;
+  let injectedCount = 0;
+  const finish = (event: DiagnosticEvent, datasetVersion?: number, count = 0): void => {
     if (completed) return;
     completed = true;
     window.clearTimeout(deadlineTimer);
-    const injectedCount = event === 'injected' && record ? injectPerImpression(auction, record, attachments) : 0;
-    const reportedEvent = injectedCount === null ? 'invalid' : event;
     callback();
-    emitDiagnostic(params, reportedEvent, injectedCount === null ? 0 : injectedCount, datasetVersion, startedAt);
-    if (adjacencyEnabled && reportedEvent === 'injected' && injectedCount) {
-      const attached = attachments ? attachments.size : 0;
-      emitDiagnostic(
-        params,
-        attached > 0 ? 'adjacency_attached' : 'adjacency_skipped',
-        attached > 0 ? attached : injectedCount,
-        datasetVersion,
-        startedAt
-      );
-    }
+    emitDiagnostic(params, event, count, datasetVersion, startedAt);
   };
-  if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) {
-    finish('invalid');
-    return;
-  }
   if (auction.adUnits.length === 0) {
     callback();
     return;
   }
   const auctionAdUnits = auction.adUnits;
-  deadlineTimer = window.setTimeout(() => {
-    // A verified record still attaches when the budget fires mid-observation, without adjacency.
-    const pending = verifiedPending;
-    if (pending) finish('injected', pending.datasetVersion, pending.record);
-    else finish('timeout');
-  }, timeout);
   const remainingTime = (): number => deadlineAt - Date.now();
+  deadlineTimer = window.setTimeout(() => {
+    const accepted = acceptedPending;
+    if (!accepted) {
+      finish('timeout');
+      return;
+    }
+    if (!decisionIsCurrent(accepted)) {
+      removeInjectedRecord(auction, accepted);
+      finish('invalid', accepted.datasetVersion);
+      return;
+    }
+    finish('injected', accepted.datasetVersion, injectedCount);
+  }, timeout);
   if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle.digest !== 'function') {
     finish('invalid');
     return;
@@ -1291,16 +1523,22 @@ const getBidRequestData = (
       material: AdjacencyMaterial | undefined,
       cachedDecision?: DecisionState
     ): void {
-      verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (recordRevision, timedOut, jwks) => {
+      verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (verifiedClaims, timedOut, jwks) => {
         if (completed) return;
         if (timedOut) {
           finish('timeout', datasetVersion);
           return;
         }
-        if (
-          recordRevision === null ||
-          !commitReadyDecision(urlHash, record, datasetVersion, recordRevision, statusExpiresAt, material)
-        ) {
+        const accepted = verifiedClaims && commitReadyDecision(
+          urlHash,
+          record,
+          datasetVersion,
+          verifiedClaims.recordRevision,
+          verifiedClaims.expiresAt,
+          statusExpiresAt,
+          material
+        );
+        if (!accepted || !decisionIsCurrent(accepted)) {
           if (cachedDecision && remainingTime() > 0) {
             if (decisions.get(urlHash) === cachedDecision) cachedDecision.statusExpiresAt = 0;
             requestLookup();
@@ -1309,24 +1547,62 @@ const getBidRequestData = (
           finish('invalid', datasetVersion);
           return;
         }
-        if (!adjacencyEnabled || !material || remainingTime() <= 0) {
-          finish('injected', datasetVersion, record);
+
+        // The mandatory v1 carrier is committed immediately. Optional observation work can no
+        // longer lose it to the RTD core's earlier deadline timer.
+        const count = injectPerImpression(auction, record);
+        if (count === null) {
+          finish('invalid', datasetVersion);
           return;
         }
-        verifiedPending = { record, datasetVersion };
+        injectedCount = count;
+        acceptedPending = accepted;
+        acceptedByAdUnits.set(auctionAdUnits, accepted);
+        if (!adjacencyEnabled || !material || !jwks || remainingTime() <= 0) {
+          finish('injected', datasetVersion, count);
+          return;
+        }
+
         observeAdjacency(
           auctionAdUnits,
           material,
           jwks,
           record,
-          recordRevision,
+          verifiedClaims.recordRevision,
+          verifiedClaims.expiresAt,
           publisherDomain,
           urlHash,
-          () => !completed && remainingTime() > 0
-        ).then(
-          attachments => finish('injected', datasetVersion, record, attachments),
-          () => finish('injected', datasetVersion, record)
-        );
+          () => (
+            !completed &&
+            remainingTime() > 0 &&
+            isolatedAdUnitArrays.has(auctionAdUnits) &&
+            decisionIsCurrent(accepted)
+          )
+        ).then(build => {
+          if (completed) return;
+          if (!decisionIsCurrent(accepted)) {
+            removeInjectedRecord(auction, accepted);
+            finish('invalid', datasetVersion);
+            return;
+          }
+          if (build.attachments.size > 0 && build.validUntil > Math.floor(Date.now() / 1000)) {
+            const refreshedCount = injectPerImpression(auction, record, build.attachments);
+            if (refreshedCount === null) {
+              finish('invalid', datasetVersion);
+              return;
+            }
+            injectedCount = refreshedCount;
+          }
+          finish('injected', datasetVersion, injectedCount);
+        }, () => {
+          if (completed) return;
+          if (!decisionIsCurrent(accepted)) {
+            removeInjectedRecord(auction, accepted);
+            finish('invalid', datasetVersion);
+            return;
+          }
+          finish('injected', datasetVersion, injectedCount);
+        });
       });
     }
 
@@ -1430,16 +1706,20 @@ const getBidRequestData = (
 const getTargetingData = (
   adUnitCodes: AdUnitCode[],
   moduleConfig: RTDProviderConfig<'encypher'>,
-  userConsent?: AllConsentData
+  userConsent?: AllConsentData,
+  auction?: { adUnits?: unknown }
 ): ByAdUnit<TargetingMap<string | string[]>> => {
   const targeting: ByAdUnit<TargetingValues> = {};
   const settings = gamTargetingSettings(moduleConfig);
   if (settings === null || !hasConsentForDataTransmission(userConsent)) return targeting;
+  const nearByCode = auction && Array.isArray(auction.adUnits)
+    ? injectedNearByAdUnits.get(auction.adUnits)
+    : undefined;
   adUnitCodes.forEach(adUnitCode => {
     const attestationId = injectedAttestationIds.get(adUnitCode);
     if (attestationId === undefined) return;
     const values: TargetingValues = { encypher_verified: '1' };
-    const near = injectedNear.get(adUnitCode);
+    const near = nearByCode?.get(adUnitCode);
     if (near !== undefined) values.encypher_near = near;
     if (settings.includeAttestationId && TARGETING_VALUE_PATTERN.test(attestationId)) {
       values.encypher_att = attestationId;
@@ -1455,7 +1735,8 @@ const getTargetingData = (
 export function resetProviderState(): void {
   decisions.clear();
   injectedAttestationIds.clear();
-  injectedNear.clear();
+  injectedNearByAdUnits = new WeakMap<object, Map<AdUnitCode, NearValue>>();
+  acceptedByAdUnits = new WeakMap<object, AcceptedDecision>();
   trustedJwkCache = null;
   maxDatasetVersionSeen = 0;
   globalStaleBarrier = 0;

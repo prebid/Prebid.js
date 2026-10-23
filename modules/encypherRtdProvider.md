@@ -36,7 +36,7 @@ pbjs.setConfig({
 
 | Parameter | Default | Purpose |
 | --- | --- | --- |
-| `timeout` | `300` | Provider deadline in milliseconds for WebCrypto hashing plus signal and JWKS reads. The effective budget is the smaller of this value and the RTD core `auctionDelay`. A provider with no RTD delay budget does not start asynchronous work. |
+| `timeout` | `300` | Provider deadline in milliseconds for WebCrypto, signal and JWKS reads, bounded measurement, hashing, and encryption. The effective budget is the smaller of this value and the RTD core `auctionDelay`. A provider with no RTD delay budget does not start asynchronous work. |
 | `telemetry` | unset | Set to `true` to emit diagnostic-only delivery events after the auction callback. |
 | `adoptionReporting` | `true` | Enables privacy-minimized, domain-level adoption reporting on consent-allowed signal lookups. Set to `false` to stop future adoption observations without changing auction behavior. |
 | `gamTargeting` | `false` | Ad server key-values for GAM line items. Either `false` or an object with the optional `includeAttestationId` boolean and the optional `packages` string array. See Targeting Contract V1. |
@@ -134,14 +134,14 @@ With `adjacency: true` the module adds `adjacency=1` to the existing signal look
 
 | Field | Content |
 | --- | --- |
-| `index` | Compact JWS, header `{"alg":"ES256","kid","typ":"epai+jws"}`, verified against the same pinned JWKS as the attestation. Claims are exactly `iss`, `sub`, `iat`, `exp`, `publisher_domain`, `url_hash`, `trust_policy_version`, `record_revision`, `method`, and `entries`. `sub` must equal the record ID, `record_revision` the attestation's signed revision, and `iss`, `publisher_domain`, `url_hash`, policy version, issue time, and expiry follow the attestation rules. `entries` holds at most 64 unique entries `{d, k, s, ai, c, o}`: `d` is the first 11 characters of the unpadded base64url SHA-256 of the asset URL, or `text` for the article text. |
+| `index` | Compact JWS, header `{"alg":"ES256","kid","typ":"epai+jws"}`, verified against the pinned attestation JWKS. `kid` may select any current trusted attestation-purpose key; it need not equal the key that signed the bound attestation after key rotation. Claims are exactly `iss`, `sub`, `iat`, `exp`, `publisher_domain`, `url_hash`, `trust_policy_version`, `record_revision`, `method`, `observed_at`, and `entries`. `sub` equals the record ID, `record_revision` equals the attestation's signed revision, and `exp` equals the attestation expiry. `method` matches `^[a-z0-9][a-z0-9.-]{0,31}$`. `observed_at` cannot follow issuance or be more than 30 days old. `entries` contains at most 64 exact objects `{d, k, s, ai, c, o}`, sorted by unique `d` in ascending byte order. |
 | `gateway_jwk` | The gateway's P-256 public key: exactly `kty: "EC"`, `crv: "P-256"`, `kid` matching `[A-Za-z0-9_-]{1,64}`, `x`, `y`, and optionally `use: "enc"` and `alg: "ECDH-ES"`. Any other member, including a private `d`, rejects the key. |
 
 Both fields are ignored silently when absent or invalid; the record still attaches as in 1.1.0. Without `adjacency: true` the lookup is byte-identical to 1.1.0 and a response carrying either field is rejected as malformed, as before. Deploy the edge support for `adjacency=1` before enabling the profile: an edge that does not know the flag answers every lookup as malformed, which removes the 1.1.0 signal too.
 
 ### Measurement
 
-After the record verifies, the module verifies the index and runs one synchronous layout read for the auction. For each ad unit it finds the slot element: the element whose `id` equals the ad unit code, else the element whose `data-ad-slot` equals it, else the div of the GPT slot matching the code. An ad unit without a rendered slot element carries no observation.
+After the record verifies, the module verifies the index and takes a fresh layout snapshot for the auction. It clears Prebid's shared rectangle cache first. For each ad unit it finds the slot element: the element whose `id` equals the ad unit code, else the element whose `data-ad-slot` equals it, else the div of the GPT slot matching the code. An ad unit without a rendered slot element carries no observation.
 
 The slot's screen is the page band it shares the reader's screen with:
 
@@ -149,19 +149,23 @@ The slot's screen is the page band it shares the reader's screen with:
 - Sticky slot (`tr: "k"`), when the slot or an ancestor has computed `position: sticky`: the sticky element's containing block plus half a viewport height above and below.
 - Fixed slot (`tr: "f"`), when the slot or an ancestor has computed `position: fixed`: the whole document.
 
-Inside that band the module measures every rendered `img`, `video`, and `audio` element and every innermost text block (`p`, `li`, `h1`-`h6`, `blockquote`, `figcaption`) outside the auction's slots. A media element maps to an index entry by the SHA-256 prefix of its URL exactly as the browser resolved it (`currentSrc`, else `src`, else a video poster), with no further normalization. A text block maps to the `text` entry when it contains a C2PA text-mark run: eight or more consecutive variation selectors (U+FE00-U+FE0F, U+E0100-U+E01EF), so a single emoji presentation selector does not count. The browser does not separate teasers and chrome; every intersecting index entry counts, and the index's `c` field carries the classification.
+Inside that vertical band the module measures visible `img`, `video`, and `audio` elements outside the auction's slots. It excludes hidden, transparent, fixed, sticky, transformed, wholly horizontally off-screen, wholly clipped, or deeply nested media as ambiguous. Clipping and the horizontal viewport trim measured width.
 
-Each entry's area class is its share of the measured area (media plus text blocks) on the slot's screen: `0` below 5%, `1` from 5% to below 25%, `2` from 25% to 60%, `3` above 60%. The observation keeps at most six entries, largest class first, then by `d`.
+A media element maps to an index entry by the first 11 characters of unpadded base64url SHA-256 over the browser-equivalent serialized absolute URL: `new URL(resolved, document.baseURI).href` after removing the fragment. Resolution prefers `currentSrc`, then `src`, then a video poster. Query order and browser percent encoding remain as serialized. Raw source spelling is not the digest input.
+
+Browser adjacency does not emit the index's `d: "text"` entry. A variation-selector mark proves that some text carries a mark, but the current index has no signed locator that binds an arbitrary DOM block to the indexed article. Text adjacency remains unavailable until that locator exists.
+
+The area denominator is the sum of each visible media candidate's clipped width times its vertical overlap with the slot's band. Unindexed media remains in the denominator. A media item whose matching signed index entry has `c: "chrome"` is excluded from both the denominator and `on`. Each emitted entry's area class is its share of that denominator: `0` below 5%, `1` from 5% to below 25%, `2` from 25% to 60%, `3` above 60%. The observation keeps at most six entries, largest class first, then by `d`. The module stops observation if the RTD deadline closes, the scan visits more than 4,096 DOM elements, or the page contains more than 512 media candidates. Hashing starts no further asset after that deadline. In each case the verified v1 carrier remains available without adjacency.
 
 ### `imp.ext.encypher`
 
 The plaintext observation, at most 400 UTF-8 bytes, is:
 
 ```json
-{"v":1,"id":"epa_01J...","m":"vp1","vp":"d","tr":"s","on":[{"d":"Xk3r0bQp1aZ","a":3},{"d":"text","a":1}]}
+{"v":1,"id":"epa_01J...","m":"vp1","ix":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","vp":"d","tr":"s","on":[{"d":"Xk3r0bQp1aZ","a":3}]}
 ```
 
-`vp` is the viewport class from `window.innerWidth`: `m` below 768 px, `t` below 1200 px, `d` otherwise. `on` may be empty: the slot's screen shows no indexed asset.
+`ix` is the 43-character unpadded base64url SHA-256 digest of the exact compact index JWS bytes that the browser verified. The gateway requires it to equal the digest of the index in the authenticated snapshot. A mismatch removes adjacency and area-policy eligibility but preserves page-level policy inputs. `vp` is the viewport class from `window.innerWidth`: `m` below 768 px, `t` below 1200 px, `d` otherwise. `on` may be empty: the slot's screen shows no indexed asset.
 
 The module seals it with ECIES to `gateway_jwk`, using WebCrypto only: an ephemeral ECDH P-256 key per impression, HKDF-SHA256 over the 32-byte shared secret with an empty salt and info `encypher-adj-v1`, and AES-256-GCM with a random 12-byte IV, a 128-bit tag, and no additional data. The impression carries:
 
@@ -169,11 +173,11 @@ The module seals it with ECIES to `gateway_jwk`, using WebCrypto only: an epheme
 {"imp":[{"ext":{"c2pa":{"v":1,"id":"epa_01J...","ref":"...","att":"..."},"encypher":{"v":1,"kid":"gw-2026-10","epk":"BH4...","ct":"q9..."}}}]}
 ```
 
-`epk` is the unpadded base64url 65-byte uncompressed ephemeral public key; `ct` is the unpadded base64url of IV, ciphertext, and tag. An envelope larger than 700 serialized bytes is omitted. The worst case (a 32-character record ID, six entries, a 64-character `kid`) measures 539 bytes.
+`epk` is the unpadded base64url 65-byte uncompressed ephemeral public key; `ct` is the unpadded base64url of IV, ciphertext, and tag. An envelope larger than 700 serialized bytes is omitted. The worst case (a 32-character record ID, 43-character `ix`, six entries, and a 64-character `kid`) measures 607 bytes.
 
 ### `encypher_near`
 
-For ad units that carry `imp.ext.encypher`, `getTargetingData` adds `encypher_near` after `encypher_verified`:
+For ad units that carry `imp.ext.encypher`, `getTargetingData` adds auction-scoped `encypher_near` after `encypher_verified`:
 
 | Value | Meaning, from the signed index entries in the observation |
 | --- | --- |
@@ -182,11 +186,11 @@ For ad units that carry `imp.ext.encypher`, `getTargetingData` adds `encypher_ne
 | `va` | Both. |
 | `0` | Neither. |
 
-`0` means only that no labelled asset matching `v` or `a` shares the screen. Unlabelled content is neither human nor AI, so `0` must never be described as human content, AI-free, or safe.
+`0` means only that no labelled asset matching `v` or `a` shares the screen. Unlabelled content is neither human nor AI, so `0` must never be described as human content, AI-free, or safe. A downstream maximum AI-area policy also requires at least one applicable intact labelled item; an empty, unknown-only, or broken-only observation does not satisfy that policy.
 
 ### Privacy properties
 
-- No new request. The index and gateway key arrive in the existing lookup; nothing is posted during the auction, and nothing is stored.
+- No new adjacency request. The index and gateway key arrive in the existing lookup, and nothing is stored. If the publisher separately enables diagnostic telemetry, the existing post-callback telemetry request still occurs.
 - The observation holds no coordinates, scroll offsets, timestamps, URLs, or user data: a record ID, a coarse viewport class, a travel class, and at most six index digests with a four-step area class.
 - Only the gateway key holder can read it. Each impression uses a fresh ephemeral key, so two envelopes cannot be linked by key material.
 - `encypher_near` reveals one of four values per ad unit to the publisher's ad server, which already controls the page.
@@ -194,9 +198,11 @@ For ad units that carry `imp.ext.encypher`, `getTargetingData` adds `encypher_ne
 
 ### Fail-open rules
 
-- An absent or invalid index or gateway key, an index for another record, revision, page, or domain, an expired index, a failed signature, an unresolvable slot, a WebCrypto failure, or an oversize plaintext or envelope removes only the observation and `encypher_near`. The verified record still attaches.
-- Index verification, measurement, hashing, and encryption run inside the provider's existing budget (300 ms by default). If the budget fires while they are in flight, the module attaches the verified record without `imp.ext.encypher` and without `encypher_near`, and calls back once.
-- `imp.ext.encypher` is written only inside the same per-impression injection as `imp.ext.c2pa`, only on the module's auction-local ad-unit copies, and only for ad units that reached the injected state.
+- An absent or invalid index or gateway key, an index for another record, revision, page, domain, or attestation expiry, an observation older than 30 days, a failed signature, an unresolvable slot, a candidate-cap or deadline breach, a WebCrypto failure, or an oversize plaintext or envelope removes only the observation and `encypher_near`. The verified page-level record still attaches.
+- The verified v1 carrier is written as soon as its current decision is validated, while auction ownership is open. Optional index verification, measurement, hashing, and encryption remain inside the provider's budget. If the RTD core deadline closes ownership first, no late mutation occurs and the validated v1 carrier remains without adjacency.
+- Immediately before either carrier or adjacency injection, the module rechecks the current URL decision, dataset floor, stale barrier, record identity and revision, status expiry, attestation expiry, index expiry, and observation age. A later revocation, stale barrier, superseding revision, or expiry removes a pending injection while ownership remains open.
+- `imp.ext.encypher` is written only on the module's auction-local ad-unit copies. When the module owns an auction but produces no fresh observation, it removes a stale input `ext.encypher` and preserves unrelated impression extension fields.
+- A missing or invalid observation does not remove page-level `verified_provenance` or `transparent_ai` eligibility at the gateway. Only adjacency and AI-area policies require a valid observation.
 
 ## Trust split and residual authority risk
 
@@ -220,7 +226,6 @@ Allowed lookup requests disclose the canonical URL digest, canonical publisher h
 
 When consent permits transmission and `telemetry` is `true`, the module sends a post-callback event to `https://signals.encypher.com/v1/telemetry/rtd` through Prebid's fetch wrapper with keepalive, omitted credentials, no referrer, no-store caching, and redirects rejected. The event contains only its protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. `impression_count` is the number of impressions injected on the owned auction graph; every non-injected outcome reports zero. The event contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect the auction.
 
-With `adjacency: true`, an injected auction sends one more event of the same shape: `adjacency_attached` with the number of impressions that carry `imp.ext.encypher`, or `adjacency_skipped` with the injected impression count when none does.
 
 ## Publisher adoption reporting
 

@@ -14,6 +14,7 @@ import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
 import { config } from 'src/config.js';
 import { getWinDimensions } from 'src/utils/winDimensions.js';
 import * as rtdModule from '../../../modules/rtdModule/index.js';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
 import { gdprDataHandler, gppDataHandler } from 'src/consentHandler.js';
 import { toConsentData } from '../../../modules/consentManagementGpp.js';
 
@@ -395,11 +396,12 @@ function utf8Chunks(text, chunkSizes = []) {
   return chunks;
 }
 
-function getTargeting(adUnitCodes, params = {}, userConsent) {
+function getTargeting(adUnitCodes, params = {}, userConsent, auction) {
   return encypherSubmodule.getTargetingData(
     adUnitCodes,
     { params: Object.assign({ timeout: 300 }, params) },
     userConsent,
+    auction && { adUnits: auction.adUnits },
   );
 }
 
@@ -2353,7 +2355,15 @@ describe('encypherRtdProvider adjacency profile', () => {
   }
 
   async function assetDigest(url) {
-    return base64url(new Uint8Array(await realDigest('SHA-256', new TextEncoder().encode(url)))).slice(0, 11);
+    return base64url(new Uint8Array(
+      await realDigest('SHA-256', new TextEncoder().encode(serializedAssetUrl(url))),
+    )).slice(0, 11);
+  }
+
+  async function compactIndexDigest(index) {
+    return base64url(new Uint8Array(
+      await realDigest('SHA-256', new TextEncoder().encode(index)),
+    ));
   }
 
   async function signIndex(claims, header = { alg: 'ES256', kid: INDEX_KID, typ: 'epai+jws' }) {
@@ -2368,6 +2378,9 @@ describe('encypherRtdProvider adjacency profile', () => {
   }
 
   function indexClaims(entries, overrides = {}) {
+    const orderedEntries = entries.slice().sort((left, right) => (
+      left.d < right.d ? -1 : left.d > right.d ? 1 : 0
+    ));
     return Object.assign({
       iss: API_ISSUER,
       sub: 'epa_s',
@@ -2378,7 +2391,8 @@ describe('encypherRtdProvider adjacency profile', () => {
       trust_policy_version: ACCEPTED_TRUST_POLICY_VERSION,
       record_revision: 1,
       method: 'crawl-screen-v1',
-      entries,
+      observed_at: NOW_SECONDS,
+      entries: orderedEntries,
     }, overrides);
   }
 
@@ -2439,6 +2453,12 @@ describe('encypherRtdProvider adjacency profile', () => {
     return new URL(path, document.baseURI).href;
   }
 
+  function serializedAssetUrl(url) {
+    const parsed = new URL(url, document.baseURI);
+    parsed.hash = '';
+    return parsed.href;
+  }
+
   function telemetryEvents() {
     return server.requests
       .filter(request => request.url === TELEMETRY_URL)
@@ -2450,9 +2470,9 @@ describe('encypherRtdProvider adjacency profile', () => {
   }
 
   /**
-   * Leaderboard (static, by element id) with five measured neighbours of equal height and widths
-   * 650 / 150 / 100 / 40 / 60 px, one far-away labelled image and a labelled creative inside the
-   * slot. Rectangle (by `data-ad-slot`) sits far below with nothing labelled on its screen.
+   * Leaderboard (static, by element id) with visible labelled media, marked article text that
+   * must not be emitted without a signed locator, one far-away image, and a labelled creative
+   * inside the slot. Rectangle sits far below with nothing labelled on its screen.
    */
   async function staticPage() {
     const screen = getWinDimensions().innerHeight;
@@ -2466,15 +2486,15 @@ describe('encypherRtdProvider adjacency profile', () => {
     creative.src = assetUrl('/adj/creative.jpg');
     creative.style.cssText = 'width:728px;height:90px;display:block;';
     slot.appendChild(creative);
-    const lead = place(root, 'img', { top: row, left: 0, width: 650, height, attrs: { src: assetUrl('/adj/lead.jpg?b=2&a=1') } });
-    const quote = place(root, 'blockquote', { top: row, left: 650, width: 150, height });
+    const lead = place(root, 'img', { top: row, left: 0, width: 500, height, attrs: { src: assetUrl('/adj/lead.jpg?b=2&a=1#crop') } });
+    const quote = place(root, 'blockquote', { top: row, left: 500, width: 100, height });
     const signed = document.createElement('p');
     signed.style.cssText = 'margin:0;width:100%;height:100%;overflow:hidden;';
     signed.textContent = 'Signed paragraph' + VARIATION_RUN + ' continues.';
     quote.appendChild(signed);
-    const teaser = place(root, 'img', { top: row, left: 800, width: 100, height, attrs: { src: assetUrl('/adj/teaser.jpg') } });
-    const chrome = place(root, 'img', { top: row, left: 900, width: 40, height, attrs: { src: assetUrl('/adj/logo.png') } });
-    place(root, 'p', { top: row, left: 940, width: 60, height, text: 'Emoji only \u2764\uFE0F, no mark run.' });
+    const teaser = place(root, 'img', { top: row, left: 600, width: 100, height, attrs: { src: assetUrl('/adj/teaser.jpg') } });
+    const chrome = place(root, 'img', { top: row, left: 700, width: 40, height, attrs: { src: assetUrl('/adj/logo.png') } });
+    place(root, 'p', { top: row, left: 740, width: 60, height, text: 'Emoji only \u2764\uFE0F, no mark run.' });
     const far = place(root, 'img', { top: centre + 3 * screen, width: 300, height, attrs: { src: assetUrl('/adj/far.jpg') } });
     place(root, 'div', { top: 40 * screen, width: 300, height: 250, attrs: { 'data-ad-slot': 'rectangle' } });
     const digests = {
@@ -2493,15 +2513,13 @@ describe('encypherRtdProvider adjacency profile', () => {
       entry(digests.creative),
       entry('zzzzzzzzzzz', { s: 'broken' }),
     ];
-    return { digests, entries, lead };
+    return { digests, entries, lead, signed };
   }
 
   function staticOn(digests) {
     return sortOn([
       { d: digests.lead, a: 3 },
-      { d: 'text', a: 1 },
       { d: digests.teaser, a: 1 },
-      { d: digests.chrome, a: 0 },
     ]);
   }
 
@@ -2512,14 +2530,40 @@ describe('encypherRtdProvider adjacency profile', () => {
     });
   }
 
-  it('hashes media URLs exactly as the page resolved them and seals the observation to the gateway key', async () => {
+  async function beginStalledObservation(index, datasetVersion = 620, record = STORY_SIGNAL) {
+    let resolveEncryption;
+    sandbox.stub(window.crypto.subtle, 'encrypt').callsFake(() => new Promise(resolve => {
+      resolveEncryption = resolve;
+    }));
+    const run = beginAuction({ adjacency: true, timeout: 60_000 });
+    await respondDecision(readyWithAdjacency(index, datasetVersion, gatewayJwk, record), { jwks: indexJwks });
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      if (resolveEncryption) break;
+      await nextTask();
+    }
+    assert.ok(resolveEncryption, 'observation encryption must be pending');
+    assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, record);
+    return {
+      run,
+      release() {
+        resolveEncryption(new Uint8Array(32).buffer);
+      },
+    };
+  }
+
+  it('hashes browser-serialized fragmentless media URLs and omits unlocated text', async () => {
     addCanonical(STORY_URL, cleanups);
-    const { digests, entries, lead } = await staticPage();
-    assert.strictEqual(lead.src, assetUrl('/adj/lead.jpg?b=2&a=1'), 'the query order is kept as referenced');
+    const { digests, entries, lead, signed } = await staticPage();
+    assert.strictEqual(lead.src, assetUrl('/adj/lead.jpg?b=2&a=1#crop'), 'the DOM retains the fragment and query order');
+    assert.strictEqual(serializedAssetUrl(lead.src), assetUrl('/adj/lead.jpg?b=2&a=1'));
+    assert.strictEqual(signed.textContent.includes(VARIATION_RUN), true, 'the generic text mark is present but has no signed locator');
+    assert.notStrictEqual(INDEX_KID, TRUSTED_JWK.kid, 'a current trusted index key may differ after rotation');
+    const index = await signIndex(indexClaims(entries));
+    const ix = await compactIndexDigest(index);
     const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
     const lookup = pendingLookup();
     assert.strictEqual(new URL(lookup.url).searchParams.get('adjacency'), '1');
-    await respondDecision(readyWithAdjacency(await signIndex(indexClaims(entries))), { jwks: indexJwks });
+    await respondDecision(readyWithAdjacency(index), { jwks: indexJwks });
     await run.completion;
 
     const [leaderboard, rectangle] = run.auction.adUnits;
@@ -2533,21 +2577,26 @@ describe('encypherRtdProvider adjacency profile', () => {
     assert.strictEqual(new TextEncoder().encode(JSON.stringify(envelope)).byteLength <= 700, true);
     const plaintext = await openEnvelope(envelope);
     assert.strictEqual(plaintext, JSON.stringify({
-      v: 1, id: 'epa_s', m: 'vp1', vp: expectedViewport(), tr: 's', on: staticOn(digests),
+      v: 1, id: 'epa_s', m: 'vp1', ix, vp: expectedViewport(), tr: 's', on: staticOn(digests),
     }));
     assert.strictEqual(new TextEncoder().encode(plaintext).byteLength <= 400, true);
     assert.notStrictEqual(rectangle.ortb2Imp.ext.encypher.epk, envelope.epk, 'every impression uses a fresh ephemeral key');
     assert.strictEqual(await openEnvelope(rectangle.ortb2Imp.ext.encypher), JSON.stringify({
-      v: 1, id: 'epa_s', m: 'vp1', vp: expectedViewport(), tr: 's', on: [],
+      v: 1, id: 'epa_s', m: 'vp1', ix, vp: expectedViewport(), tr: 's', on: [],
     }));
 
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {
+    assert.deepStrictEqual(getTargeting(
+      ['leaderboard', 'rectangle'],
+      { gamTargeting: {} },
+      undefined,
+      run.auction,
+    ), {
       leaderboard: { encypher_verified: '1', encypher_near: 'va' },
       rectangle: { encypher_verified: '1', encypher_near: '0' },
     });
     await nextTask();
     const events = telemetryEvents();
-    assert.deepStrictEqual(events.map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_attached', 2]]);
+    assert.deepStrictEqual(events.map(event => [event.event, event.impression_count]), [['injected', 2]]);
     events.forEach(event => assertDiagnostic(JSON.stringify(event), event.event, event.impression_count, 300));
   });
 
@@ -2566,22 +2615,29 @@ describe('encypherRtdProvider adjacency profile', () => {
     const beyond = place(root, 'img', { top: blockTop + 6 * screen, left: 0, width: 300, height, attrs: { src: assetUrl('/adj/sticky-far.jpg') } });
     const near = await assetDigest(travelled.src);
     const far = await assetDigest(beyond.src);
+    const index = await signIndex(indexClaims([entry(near), entry(far, { ai: true })]));
+    const ix = await compactIndexDigest(index);
     const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
-    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([entry(near), entry(far, { ai: true })]))), { jwks: indexJwks });
+    await respondDecision(readyWithAdjacency(index), { jwks: indexJwks });
     await run.completion;
 
     const [leaderboard, rectangle] = run.auction.adUnits;
     assert.strictEqual(await openEnvelope(leaderboard.ortb2Imp.ext.encypher), JSON.stringify({
-      v: 1, id: 'epa_s', m: 'vp1', vp: expectedViewport(), tr: 'k', on: [{ d: near, a: 3 }],
+      v: 1, id: 'epa_s', m: 'vp1', ix, vp: expectedViewport(), tr: 'k', on: [{ d: near, a: 3 }],
     }));
     assert.strictEqual(Object.prototype.hasOwnProperty.call(rectangle.ortb2Imp.ext, 'encypher'), false, 'an unresolved slot carries no observation');
     assert.deepStrictEqual(rectangle.ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {
+    assert.deepStrictEqual(getTargeting(
+      ['leaderboard', 'rectangle'],
+      { gamTargeting: {} },
+      undefined,
+      run.auction,
+    ), {
       leaderboard: { encypher_verified: '1', encypher_near: 'v' },
       rectangle: { encypher_verified: '1' },
     });
     await nextTask();
-    assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_attached', 1]]);
+    assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2]]);
   });
 
   it('treats a fixed slot as sharing the screen with the whole document', async () => {
@@ -2598,7 +2654,12 @@ describe('encypherRtdProvider adjacency profile', () => {
     const observation = JSON.parse(await openEnvelope(run.auction.adUnits[0].ortb2Imp.ext.encypher));
     assert.strictEqual(observation.tr, 'f');
     assert.deepStrictEqual(observation.on.map(item => item.d), [d]);
-    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), {
+    assert.deepStrictEqual(getTargeting(
+      ['leaderboard'],
+      { gamTargeting: {} },
+      undefined,
+      run.auction,
+    ), {
       leaderboard: { encypher_verified: '1', encypher_near: 'va' },
     });
   });
@@ -2645,6 +2706,113 @@ describe('encypherRtdProvider adjacency profile', () => {
     assert.deepStrictEqual(JSON.parse(await openEnvelope(secondEnvelope)).on, staticOn(digests));
   });
 
+  it('clears prior-auction rectangle cache entries before measuring changed layout', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const slotTop = 20 * screen;
+    const root = pageRoot();
+    place(root, 'div', { top: slotTop, width: 728, height: 90, attrs: { id: 'leaderboard' } });
+    const image = place(root, 'img', {
+      top: slotTop + 100,
+      width: 300,
+      height: 100,
+      attrs: { src: assetUrl('/adj/layout-change.jpg') },
+    });
+    const d = await assetDigest(image.src);
+    const first = beginAuction({ adjacency: true });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([entry(d)]))), { jwks: indexJwks });
+    await first.completion;
+    assert.deepStrictEqual(JSON.parse(await openEnvelope(first.auction.adUnits[0].ortb2Imp.ext.encypher)).on, [{ d, a: 3 }]);
+
+    getBoundingClientRect(image);
+    image.style.top = (slotTop + 3 * screen) + 'px';
+    const second = beginAuction({ adjacency: true });
+    await second.completion;
+    assert.deepStrictEqual(JSON.parse(await openEnvelope(second.auction.adUnits[0].ortb2Imp.ext.encypher)).on, []);
+  });
+
+  it('excludes hidden, horizontally off-screen, clipped, and travelling media', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const slotTop = 20 * screen;
+    const root = pageRoot();
+    place(root, 'div', { top: slotTop, width: 728, height: 90, attrs: { id: 'leaderboard' } });
+    const visible = place(root, 'img', {
+      top: slotTop + 100,
+      width: 300,
+      height: 100,
+      attrs: { src: assetUrl('/adj/visible.jpg') },
+    });
+    const hidden = place(root, 'img', {
+      top: slotTop + 100,
+      left: 310,
+      width: 100,
+      height: 100,
+      attrs: { src: assetUrl('/adj/hidden.jpg') },
+      css: 'display:none;',
+    });
+    const offscreen = place(root, 'img', {
+      top: slotTop + 100,
+      left: getWinDimensions().innerWidth + 10,
+      width: 100,
+      height: 100,
+      attrs: { src: assetUrl('/adj/offscreen.jpg') },
+    });
+    const clip = place(root, 'div', {
+      top: slotTop + 100,
+      left: 420,
+      width: 20,
+      height: 20,
+      css: 'overflow:hidden;',
+    });
+    const clipped = place(clip, 'img', {
+      top: 50,
+      width: 100,
+      height: 100,
+      attrs: { src: assetUrl('/adj/clipped.jpg') },
+    });
+    const fixed = place(root, 'img', {
+      top: slotTop + 100,
+      left: 450,
+      width: 100,
+      height: 100,
+      attrs: { src: assetUrl('/adj/fixed-media.jpg') },
+      css: 'position:fixed;',
+    });
+    const pairs = await Promise.all([visible, hidden, offscreen, clipped, fixed].map(async image => (
+      [image, await assetDigest(image.src)]
+    )));
+    const run = beginAuction({ adjacency: true });
+    await respondDecision(
+      readyWithAdjacency(await signIndex(indexClaims(pairs.map(([, d]) => entry(d))))),
+      { jwks: indexJwks },
+    );
+    await run.completion;
+    assert.deepStrictEqual(
+      JSON.parse(await openEnvelope(run.auction.adUnits[0].ortb2Imp.ext.encypher)).on,
+      [{ d: pairs[0][1], a: 3 }],
+    );
+  });
+
+  it('drops optional adjacency before traversing a page above the candidate cap', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const root = pageRoot();
+    place(root, 'div', { top: 20 * screen, width: 728, height: 90, attrs: { id: 'leaderboard' } });
+    for (let index = 0; index < 513; index += 1) {
+      place(root, 'img', {
+        top: 20 * screen + 100,
+        width: 1,
+        height: 1,
+        attrs: { src: assetUrl('/adj/large-' + index + '.jpg') },
+      });
+    }
+    const run = beginAuction({ adjacency: true });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([]))), { jwks: indexJwks });
+    await run.completion;
+    assertV1Only(run.auction);
+  });
+
   const ENTRY_D = 'abcdefghijk';
   [
     ['a wrong typ header', async () => signIndex(indexClaims([entry(ENTRY_D)]), { alg: 'ES256', kid: INDEX_KID, typ: 'epat+jws' })],
@@ -2661,6 +2829,15 @@ describe('encypherRtdProvider adjacency profile', () => {
     ['an image entry named text', async () => signIndex(indexClaims([entry('text', { k: 'image' })]))],
     ['an unknown entry state', async () => signIndex(indexClaims([entry(ENTRY_D, { s: 'human' })]))],
     ['65 entries', async () => signIndex(indexClaims(Array.from({ length: 65 }, (_unused, i) => entry('e' + String(i).padStart(10, '0')))))],
+    ['an exp different from the attestation', async () => signIndex(indexClaims([entry(ENTRY_D)], { exp: NOW_SECONDS + 3599 }))],
+    ['an uppercase method', async () => signIndex(indexClaims([entry(ENTRY_D)], { method: 'Crawl-Screen' }))],
+    ['a method above 32 characters', async () => signIndex(indexClaims([entry(ENTRY_D)], { method: 'a'.repeat(33) }))],
+    ['an observation older than 30 days', async () => signIndex(indexClaims([entry(ENTRY_D)], { observed_at: NOW_SECONDS - 30 * 24 * 60 * 60 }))],
+    ['an observation after issuance', async () => signIndex(indexClaims([entry(ENTRY_D)], { observed_at: NOW_SECONDS + 1 }))],
+    ['unsorted entries', async () => signIndex(indexClaims(
+      [entry('AAAAAAAAAAA'), entry('BBBBBBBBBBB')],
+      { entries: [entry('BBBBBBBBBBB'), entry('AAAAAAAAAAA')] },
+    ))],
     ['a non-string index', async () => 42],
     ['no index', async () => undefined],
   ].forEach(([name, makeIndex], offset) => {
@@ -2673,7 +2850,7 @@ describe('encypherRtdProvider adjacency profile', () => {
       assertV1Only(run.auction);
       assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), { leaderboard: { encypher_verified: '1' } });
       await nextTask();
-      assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_skipped', 2]]);
+      assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2]]);
     });
   });
 
@@ -2720,17 +2897,20 @@ describe('encypherRtdProvider adjacency profile', () => {
       entries.push(entry(await assetDigest(image.src)));
     }
     const kid = 'K'.repeat(64);
+    const index = await signIndex(indexClaims(entries, { sub: id }));
     const run = beginAuction({ adjacency: true });
     await respondDecision(
-      readyWithAdjacency(await signIndex(indexClaims(entries, { sub: id })), 500, Object.assign({}, gatewayJwk, { kid }), record),
+      readyWithAdjacency(index, 500, Object.assign({}, gatewayJwk, { kid }), record),
       { jwks: indexJwks },
     );
     await run.completion;
     const envelope = run.auction.adUnits[0].ortb2Imp.ext.encypher;
     const plaintext = await openEnvelope(envelope);
     assert.strictEqual(JSON.parse(plaintext).on.length, 6);
-    assert.strictEqual(new TextEncoder().encode(plaintext).byteLength, 238);
-    assert.strictEqual(new TextEncoder().encode(JSON.stringify(envelope)).byteLength, 539);
+    assert.strictEqual(JSON.parse(plaintext).ix, await compactIndexDigest(index));
+    assert.strictEqual(JSON.parse(plaintext).ix.length, 43);
+    assert.strictEqual(new TextEncoder().encode(plaintext).byteLength, 289);
+    assert.strictEqual(new TextEncoder().encode(JSON.stringify(envelope)).byteLength, 607);
   });
 
   it('omits an envelope that would serialize above 700 bytes', async () => {
@@ -2743,7 +2923,7 @@ describe('encypherRtdProvider adjacency profile', () => {
     assertV1Only(run.auction);
     assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), { leaderboard: { encypher_verified: '1' } });
     await nextTask();
-    assert.deepStrictEqual(telemetryEvents().map(event => event.event), ['injected', 'adjacency_skipped']);
+    assert.deepStrictEqual(telemetryEvents().map(event => event.event), ['injected']);
   });
 
   [
@@ -2753,10 +2933,13 @@ describe('encypherRtdProvider adjacency profile', () => {
     it('attaches the v1 record without adjacency when ' + name + ' outlasts the budget', async () => {
       const clock = useFakeTimers();
       let stalled = 0;
+      let index;
       if (method === 'digest') {
         digestStub.callsFake((algorithm, encoded) => {
-          const expected = DIGEST_BYTES_BY_CANONICAL_URL.get(new TextDecoder().decode(encoded));
+          const input = new TextDecoder().decode(encoded);
+          const expected = DIGEST_BYTES_BY_CANONICAL_URL.get(input);
           if (expected) return GreedyPromise.resolve(expected.buffer);
+          if (input === index) return realDigest(algorithm, encoded);
           stalled += 1;
           return new Promise(() => {});
         });
@@ -2768,7 +2951,7 @@ describe('encypherRtdProvider adjacency profile', () => {
       }
       addCanonical(STORY_URL, cleanups);
       const { entries } = await staticPage();
-      const index = await signIndex(indexClaims(entries));
+      index = await signIndex(indexClaims(entries));
       const run = beginAuction({ adjacency: true, telemetry: true, gamTargeting: {} });
       await respondDecision(readyWithAdjacency(index), { jwks: indexJwks });
       const inFlight = () => stalled > 0;
@@ -2784,8 +2967,136 @@ describe('encypherRtdProvider adjacency profile', () => {
         rectangle: { encypher_verified: '1' },
       });
       await nextTask();
-      assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2], ['adjacency_skipped', 2]]);
+      assert.deepStrictEqual(telemetryEvents().map(event => [event.event, event.impression_count]), [['injected', 2]]);
     });
+  });
+
+  ['revoked', 'stale'].forEach((status, offset) => {
+    it('removes a pending record superseded by a higher ' + status + ' decision', async () => {
+      const clock = useFakeTimers();
+      addCanonical(STORY_URL, cleanups);
+      const { entries } = await staticPage();
+      const pending = await beginStalledObservation(await signIndex(indexClaims(entries)), 620 + offset);
+      clock.tick(30_000);
+      const blocker = beginAuction({ timeout: 60_000 });
+      await respondDecision(miss(status, 630 + offset));
+      await blocker.completion;
+      pending.release();
+      await pending.run.completion;
+      assertNoInjection(pending.run.auction);
+    });
+  });
+
+  it('removes a pending record superseded by a higher ready revision', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const { entries } = await staticPage();
+    const index = await signIndex(indexClaims(entries));
+    const higher = recordWithClaims(STORY_SIGNAL, claims => { claims.record_revision = 2; });
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    const pending = await beginStalledObservation(index, 640);
+    clock.tick(30_000);
+    const replacement = beginAuction({ timeout: 60_000 });
+    await respondDecision(ready(higher, 641), { jwks: indexJwks });
+    await replacement.completion;
+    pending.release();
+    await pending.run.completion;
+    assertNoInjection(pending.run.auction);
+    assert.deepStrictEqual(replacement.auction.adUnits[0].ortb2Imp.ext.c2pa, higher);
+  });
+
+  it('removes a pending record when its status cache expires', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const { entries } = await staticPage();
+    const pending = await beginStalledObservation(await signIndex(indexClaims(entries)), 650);
+    clock.tick(30_000);
+    pending.release();
+    await pending.run.completion;
+    assertNoInjection(pending.run.auction);
+  });
+
+  it('removes a pending record when its attestation and index expire', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const { entries } = await staticPage();
+    const expiring = recordWithClaims(STORY_SIGNAL, claims => {
+      claims.exp = NOW_SECONDS + 2;
+      claims.record_revision = 2;
+    });
+    const index = await signIndex(indexClaims(entries, {
+      exp: NOW_SECONDS + 2,
+      record_revision: 2,
+    }));
+    sandbox.stub(window.crypto.subtle, 'verify').resolves(true);
+    const pending = await beginStalledObservation(index, 660, expiring);
+    clock.tick(2_000);
+    pending.release();
+    await pending.run.completion;
+    assertNoInjection(pending.run.auction);
+  });
+
+  it('preserves validated v1 through the real RTD deadline after a preceding provider delay', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const { entries } = await staticPage();
+    const index = await signIndex(indexClaims(entries));
+    let stalled = 0;
+    digestStub.callsFake((algorithm, encoded) => {
+      const input = new TextDecoder().decode(encoded);
+      const expected = DIGEST_BYTES_BY_CANONICAL_URL.get(input);
+      if (expected) return GreedyPromise.resolve(expected.buffer);
+      if (input === index) return realDigest(algorithm, encoded);
+      stalled += 1;
+      return new Promise(() => {});
+    });
+    const request = makeAuction();
+    request.adUnitCodes = request.adUnits.map(adUnit => adUnit.code);
+    const before = {
+      name: 'encypherAdjacencyDeadlineSibling',
+      init: () => true,
+      getBidRequestData() {
+        clock.tick(90);
+      },
+    };
+    let actualAdUnits;
+    function captureActualAuction(_next, actualRequest) {
+      actualAdUnits = checkAdUnitSetup(actualRequest.adUnits);
+    }
+    rtdModule.attachRealTimeDataProvider(before);
+    startAuction.before(captureActualAuction, 18);
+    try {
+      configureActualRtd({
+        auctionDelay: 100,
+        dataProviders: [
+          { name: before.name, waitForIt: false },
+          { name: MODULE_NAME, waitForIt: true, params: { timeout: 300, adjacency: true } },
+        ],
+      });
+      startAuction(request);
+      await respondDecision(readyWithAdjacency(index), { jwks: indexJwks });
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        if (stalled > 0) break;
+        await nextTask();
+      }
+      assert.ok(stalled > 0, 'optional asset hashing must still be pending');
+      clock.tick(10);
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        if (actualAdUnits) break;
+        await nextTask();
+      }
+      assert.ok(actualAdUnits, 'the actual auction must continue at the RTD core deadline');
+      actualAdUnits.forEach(adUnit => {
+        assert.deepStrictEqual(adUnit.ortb2Imp.ext.c2pa, STORY_SIGNAL);
+        assert.strictEqual(Object.prototype.hasOwnProperty.call(adUnit.ortb2Imp.ext, 'encypher'), false);
+      });
+    } finally {
+      clock.tick(300);
+      startAuction.getHooks({ hook: captureActualAuction }).remove();
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      rtdModule.detachRealTimeDataProvider(before);
+      config.resetConfig();
+    }
   });
 
   it('orders encypher_near after encypher_verified and drops packages before it', async () => {
@@ -2795,13 +3106,23 @@ describe('encypherRtdProvider adjacency profile', () => {
     await respondDecision(readyWithAdjacency(await signIndex(indexClaims(entries))), { jwks: indexJwks });
     await run.completion;
 
-    const full = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: ['VPP-V1'] } });
+    const full = getTargeting(
+      ['leaderboard'],
+      { gamTargeting: { includeAttestationId: true, packages: ['VPP-V1'] } },
+      undefined,
+      run.auction,
+    );
     assert.deepStrictEqual(Object.keys(full.leaderboard), ['encypher_verified', 'encypher_near', 'encypher_att', 'encypher_pkg']);
     assert.deepStrictEqual(full.leaderboard, {
       encypher_verified: '1', encypher_near: 'va', encypher_att: 'epa_s', encypher_pkg: ['VPP-V1'],
     });
     const overCap = Array.from({ length: 8 }, () => 'A'.repeat(32));
-    const dropped = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: overCap } });
+    const dropped = getTargeting(
+      ['leaderboard'],
+      { gamTargeting: { includeAttestationId: true, packages: overCap } },
+      undefined,
+      run.auction,
+    );
     assert.deepStrictEqual(dropped, {
       leaderboard: { encypher_verified: '1', encypher_near: 'va', encypher_att: 'epa_s' },
     });
@@ -2811,7 +3132,63 @@ describe('encypherRtdProvider adjacency profile', () => {
     const next = beginAuction({ adjacency: true });
     await respondDecision(miss('revoked', 301));
     await next.completion;
-    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), {}, 'near does not leak into the next auction');
+    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }, undefined, next.auction), {}, 'near does not leak into the next auction');
+  });
+
+  it('scopes encypher_near to overlapping same-code auctions that complete in reverse', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const root = pageRoot();
+    place(root, 'div', { top: 20 * screen, width: 728, height: 90, attrs: { id: 'leaderboard' } });
+    const image = place(root, 'img', {
+      top: 20 * screen + 100,
+      width: 300,
+      height: 100,
+      attrs: { src: assetUrl('/adj/overlap.jpg') },
+    });
+    const d = await assetDigest(image.src);
+    const verifiedIndex = await signIndex(indexClaims([entry(d)]));
+    const aiIndex = await signIndex(indexClaims([
+      entry(d, { s: 'unrecognized_signer', ai: true, c: 'teaser', o: false }),
+    ]));
+    const releases = [];
+    sandbox.stub(window.crypto.subtle, 'encrypt').callsFake(() => new Promise(resolve => releases.push(resolve)));
+    const oneSlotAuction = () => {
+      const auction = makeAuction();
+      auction.adUnits = [auction.adUnits[0]];
+      return auction;
+    };
+    const first = beginAuction({ adjacency: true, gamTargeting: {} }, oneSlotAuction());
+    const firstLookup = pendingLookup();
+    const second = beginAuction({ adjacency: true, gamTargeting: {} }, oneSlotAuction());
+    const secondLookup = pendingLookup();
+    firstLookup.respond(200, HEADERS, JSON.stringify(readyWithAdjacency(verifiedIndex, 670)));
+    secondLookup.respond(200, HEADERS, JSON.stringify(readyWithAdjacency(aiIndex, 670)));
+    for (let attempt = 0; attempt < 100 && releases.length < 2; attempt += 1) {
+      const pendingJwks = server.requests.filter(request => (
+        request.url === PINNED_JWKS_URL && request.readyState !== XMLHttpRequest.DONE
+      ));
+      pendingJwks.forEach(request => request.respond(200, HEADERS, JSON.stringify(indexJwks)));
+      await nextTask();
+    }
+    assert.strictEqual(releases.length, 2, 'both auction observations must reach encryption');
+    releases[1](new Uint8Array(32).buffer);
+    await second.completion;
+    assert.strictEqual(first.callbackCount(), 0);
+    releases[0](new Uint8Array(32).buffer);
+    await first.completion;
+    assert.deepStrictEqual(getTargeting(
+      ['leaderboard'],
+      { gamTargeting: {} },
+      undefined,
+      first.auction,
+    ), { leaderboard: { encypher_verified: '1', encypher_near: 'v' } });
+    assert.deepStrictEqual(getTargeting(
+      ['leaderboard'],
+      { gamTargeting: {} },
+      undefined,
+      second.auction,
+    ), { leaderboard: { encypher_verified: '1', encypher_near: 'a' } });
   });
 
   it('admits a full 64-entry index above the 1.1.0 4 KiB lookup cap', async () => {
@@ -2827,6 +3204,47 @@ describe('encypherRtdProvider adjacency profile', () => {
     await respondDecision(envelope, { jwks: indexJwks });
     await run.completion;
     assert.deepStrictEqual(JSON.parse(await openEnvelope(run.auction.adUnits[0].ortb2Imp.ext.encypher)).on, staticOn(digests));
+  });
+
+  it('removes a stale owned envelope in off mode while preserving unrelated impression ext', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const auction = makeAuction();
+    auction.adUnits[0].ortb2Imp.ext.encypher = { stale: true };
+    auction.adUnits[0].ortb2Imp.ext.keep = 'caller';
+    const run = beginAuction({ adjacency: false }, auction);
+    await respondDecision(ready(STORY_SIGNAL, 610));
+    await run.completion;
+    assertV1Only(run.auction);
+    assert.strictEqual(run.auction.adUnits[0].ortb2Imp.ext.keep, 'caller');
+  });
+
+  it('removes a stale owned envelope when the new index is invalid', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const auction = makeAuction();
+    auction.adUnits[0].ortb2Imp.ext.encypher = { stale: true };
+    auction.adUnits[0].ortb2Imp.ext.keep = 'caller';
+    const run = beginAuction({ adjacency: true }, auction);
+    await respondDecision(
+      readyWithAdjacency(await signIndex(indexClaims([entry(ENTRY_D)], { method: 'INVALID' })), 611),
+      { jwks: indexJwks },
+    );
+    await run.completion;
+    assertV1Only(run.auction);
+    assert.strictEqual(run.auction.adUnits[0].ortb2Imp.ext.keep, 'caller');
+  });
+
+  it('removes a stale owned envelope when the lookup times out', async () => {
+    const clock = useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const auction = makeAuction();
+    auction.adUnits[0].ortb2Imp.ext.encypher = { stale: true };
+    auction.adUnits[0].ortb2Imp.ext.keep = 'caller';
+    const run = beginAuction({ adjacency: true, timeout: 100 }, auction);
+    clock.tick(100);
+    await run.completion;
+    assertNoInjection(run.auction);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(run.auction.adUnits[0].ortb2Imp.ext, 'encypher'), false);
+    assert.strictEqual(run.auction.adUnits[0].ortb2Imp.ext.keep, 'caller');
   });
 
   it('keeps adjacency: false byte-identical to 1.1.0, including rejection of the adjacency lookup keys', async () => {
