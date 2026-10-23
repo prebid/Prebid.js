@@ -9,6 +9,8 @@ import {
   validateMultibid
 } from 'modules/multibid/index.js';
 import { config } from 'src/config.js';
+import * as events from 'src/events.js';
+import { EVENTS } from 'src/constants.js';
 import { getHighestCpm, getHighestDesirability } from '../../../src/utils/reducers.js';
 
 describe('multibid adapter', function () {
@@ -192,6 +194,31 @@ describe('multibid adapter', function () {
 
     beforeEach(function() {
       result = null;
+    });
+
+    describe('per-auction limits', function () {
+      const adUnitCode = 'test.div';
+      const bidIn = (auctionId) => ({ ...bidArray[0], auctionId });
+
+      beforeEach(function () {
+        config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 1 }] });
+      });
+
+      it('counts bids separately for each auction', function () {
+        const added = sinon.spy();
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-2'));
+        expect(added.args.map(([, bid]) => bid.auctionId)).to.eql(['auction-1', 'auction-2']);
+      });
+
+      it('forgets an auction once it ends', function () {
+        const added = sinon.spy();
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-1' });
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        sinon.assert.calledTwice(added);
+      });
     });
 
     it('adds original bids and does not modify', function () {
@@ -719,6 +746,12 @@ describe('multibid adapter', function () {
       const result = validateMultibid(conf);
 
       expect(result).to.equal(false);
+    });
+
+    it('should round down a fractional maxBids and fail validation', function () {
+      const conf = [{ bidder: 'bidderA', maxBids: 2.5 }];
+      expect(validateMultibid(conf)).to.equal(false);
+      expect(conf[0].maxBids).to.equal(2);
     });
 
     it('should fail validation for maxbids greater than 9 in entry', function () {
