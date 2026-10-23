@@ -52,6 +52,48 @@ var adUnits = [
 
 - `banner`
 
+## Viewability
+
+Engerio records viewable impressions from the verdict your Prebid.js already produces — it
+does not measure viewability itself. To enable it, include **either** module in your build and
+switch it on:
+
+```javascript
+// IntersectionObserver based; needs no ad server.
+pbjs.setConfig({ bidViewabilityIO: { enabled: true } });
+
+// Or, if you serve through GAM, Active View via GPT:
+pbjs.setConfig({ bidViewability: { enabled: true } });
+```
+
+With one of them enabled the adapter's `onBidViewable` handler fires Engerio's `vurl`, and the
+bid also carries a standard `eventtrackers` entry (`event: 2`, viewable) that Prebid fires
+itself — either route is sufficient, and the endpoint is idempotent.
+
+The adapter reports which of these is active in the bid request, so Engerio can tell "measured,
+not viewed" apart from "not measured at all". **With neither module enabled, viewable
+impressions are reported as unavailable rather than as zero** — no bids are lost either way.
+
+## First-party data
+
+The adapter forwards first-party data that Prebid has already assembled:
+
+- page and user level, from `ortb2` (`site.content.data`, `user.data`, and anything else set
+  there);
+- ad unit level, from each ad unit's `ortb2Imp`, merged into that impression.
+
+The adapter's own fields (`imp.id`, `imp.ext.adUnitCode`, `imp.banner.format`) take precedence
+over anything `ortb2Imp` sets for the same key. Note that under TCF enforcement Prebid may
+strip user first-party data before it reaches any bidder — that is expected and does not
+affect bidding.
+
+## Sizes
+
+Every size in the ad unit's `mediaTypes.banner.sizes` is sent, and Engerio returns a bid at one
+of them. A creative is only served into a size whose aspect ratio it already matches, so ads
+are scaled but never stretched; where no creative fits any requested size, Engerio returns no
+bid rather than a distorted ad.
+
 ## Win Notification
 
 Engerio uses the OpenRTB `nurl` field for win notifications. When Prebid.js
@@ -77,4 +119,11 @@ checks the last node of the chain against the seller id that owns the ad slot.
 - The adapter passes `site.page` and `site.domain` from Prebid.js `refererInfo`
   for contextual targeting.
 - `device.ua` is forwarded from Prebid.js normalized request data when available.
+- `device.w`/`device.h` are forwarded when present and used for device targeting, falling back
+  to the user agent.
+- Consent signals set in `ortb2` (`regs.ext.gdpr`, `user.ext.consent`, GPP) are forwarded
+  unchanged.
+- When no bid is returned, the response carries a standard OpenRTB `nbr` reason code and a
+  per-impression `ext.nobid` detail, which the adapter logs at info level. This is a debugging
+  aid for diagnosing an unfilled slot; no publisher configuration is involved.
 - Bid TTL is 300 seconds.
