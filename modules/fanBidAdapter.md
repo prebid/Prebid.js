@@ -38,3 +38,23 @@ var adUnits = [{
   }]
 }];
 ```
+
+## View Impressions
+
+View impression pixels are fired from `onBidViewable`, which requires the publisher to include and enable one of the bid viewability modules: `bidViewability` for GPT setups or `bidViewabilityIO` for setups without GPT.
+
+```javascript
+pbjs.setConfig({
+  bidViewability: {
+    enabled: true
+  }
+});
+```
+
+```javascript
+pbjs.setConfig({
+  bidViewabilityIO: {
+    enabled: true
+  }
+});
+```
