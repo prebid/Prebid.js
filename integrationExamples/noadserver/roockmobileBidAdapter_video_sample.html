@@ -77,7 +77,7 @@
         adUnitCodes: [adUnitCode],
         timeout: 5000,
         bidsBackHandler() {
-          const bid = pbjs.getHighestCpmBids(adUnitCode)[0];
+          const bid = pbjs.getBestBids(adUnitCode)[0];
           const status = document.querySelector('#status');
           const vast = document.querySelector('#vast');
           if (!bid) {

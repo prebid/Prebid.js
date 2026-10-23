@@ -30,7 +30,7 @@
         adUnitCodes: [adUnitCode],
         timeout: 2500,
         bidsBackHandler() {
-          const bid = pbjs.getHighestCpmBids(adUnitCode)[0];
+          const bid = pbjs.getBestBids(adUnitCode)[0];
           document.querySelector('#status').textContent = bid ? `Bid received: ${bid.cpm} ${bid.currency}` : 'Request sent. No bid was returned.';
           if (bid) pbjs.renderAd(document.querySelector('#ad').contentWindow.document, bid.adId);
         }
