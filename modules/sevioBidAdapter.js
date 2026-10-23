@@ -9,7 +9,7 @@ import { getBrowserLanguage } from "../libraries/fpdUtils/deviceInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const ORTB = converter.ortbConverter({
   context: { ttl: 300 }
 });
@@ -17,6 +17,17 @@ const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
 const ENDPOINT_URL = "https://req.adx.ws/prebid";
 const ACTION_METHOD = "POST";
+const ADSHIELD_HEADER = "X-Adshield";
+
+// getResponseHeader returns null for an absent header and "" for one sent without a value,
+// so presence must be tested against null rather than by truthiness.
+const hasResponseHeader = (serverResponse, name) => {
+  try {
+    return serverResponse?.headers?.get?.(name) != null;
+  } catch (e) {
+    return false;
+  }
+};
 
 const detectAdType = (bid) =>
   (
@@ -300,7 +311,8 @@ export const spec = {
     const gdpr = bidderRequest?.gdprConsent;
     const usp = bidderRequest?.uspConsent;
     const gpp = bidderRequest?.gppConsent;
-    const hasWallet = detectWalletsPresence();
+    const gpc = String(bidderRequest?.ortb2?.regs?.ext?.gpc) === '1';
+    const hasWallet = gpc ? 0 : detectWalletsPresence();
 
     return bidRequests.map((bidRequest) => {
       const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native';
@@ -357,11 +369,12 @@ export const spec = {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
           usp: usp?.uspString || "",
+          gpc: gpc ? 1 : 0,
         },
         xPageUrl: pageUrl,
         wdb: hasWallet,
         externalRef: bidRequest.bidId,
-        userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
+        userSyncOption: userSyncEnabled === false || gpc ? "OFF" : "BIDDERS",
         referer: getReferrerInfo(bidderRequest),
         pageReferer,
         context: [{
@@ -413,10 +426,12 @@ export const spec = {
     }
 
     const bids = serverResponse.body.bids;
+    const adshield = hasResponseHeader(serverResponse, ADSHIELD_HEADER) ? 1 : 0;
 
     bids.forEach((bid) => {
       if (bid && typeof bid === "object") {
         bid.bidder = BIDDER_CODE;
+        bid.meta = { ...bid.meta, adshield };
         if ((bid.mediaType || '').toLowerCase() === 'native') {
           const native = parseNativeAd(bid);
           if (native) {

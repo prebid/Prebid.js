@@ -1193,6 +1193,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "tpmn",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "truereach",
       "aliasOf": null,
       "gvlid": null,
@@ -1397,6 +1404,13 @@
     {
       "componentType": "bidder",
       "componentName": "a1media",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ad_spiro",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -1764,13 +1778,6 @@
       "aliasOf": null,
       "gvlid": 849,
       "disclosureURL": "https://epom.com/deviceStorage.json"
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "floxis",
-      "aliasOf": null,
-      "gvlid": 1609,
-      "disclosureURL": null
     },
     {
       "componentType": "bidder",
@@ -2316,13 +2323,6 @@
       "componentName": "topon",
       "aliasOf": null,
       "gvlid": 1305,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "tpmn",
-      "aliasOf": null,
-      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3114,6 +3114,20 @@
       "componentName": "adagio",
       "aliasOf": null,
       "gvlid": 617,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adapex",
+      "aliasOf": null,
+      "gvlid": 1609,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "floxis",
+      "aliasOf": null,
+      "gvlid": 1609,
       "disclosureURL": null
     },
     {

@@ -15,7 +15,7 @@ import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrDesirability } 
 import { PBS, registerOrtbProcessor, REQUEST } from '../../src/pbjsORTB.js';
 import { timedBidResponseHook } from '../../src/utils/perfMetrics.js';
 import type { BidderCode } from "../../src/types/common.d.ts";
-import { sortByHighestDesirability } from '../../src/utils/desirability.ts';
+import { highestDesirabilityFirst } from '../../src/utils/reducers.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -238,10 +238,11 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
       const bidsByBidderCode = groupBy(adjustedBids, 'bidderCode');
       Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(highestCpmCallback)));
       // if adUnitBidLimit is set, pass top N number bids
-      if (adUnitBidLimit > 0) {
-        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(true)) : bucketBids.sort(sortByHighestDesirability);
+      const slotBidLimit = Number(typeof adUnitBidLimit === 'number' ? adUnitBidLimit : adUnitBidLimit?.[slotId]) || 0;
+      if (slotBidLimit > 0) {
+        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(true)) : bucketBids.sort(highestDesirabilityFirst);
         bucketBids.sort(sortByMultibid);
-        modifiedBids.push(...bucketBids.slice(0, adUnitBidLimit));
+        modifiedBids.push(...bucketBids.slice(0, slotBidLimit));
       } else {
         modifiedBids.push(...bucketBids);
       }

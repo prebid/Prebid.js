@@ -306,12 +306,10 @@ function getDivIdPosition(divId) {
       }
 
       const box = getBoundingClientRect(domElement);
-      const docEl = d.documentElement;
       const body = d.body;
       const clientTop = (d.clientTop ?? body.clientTop) ?? 0;
       const clientLeft = (d.clientLeft ?? body.clientLeft) ?? 0;
-      const scrollTop = (wt.scrollY ?? docEl.scrollTop) ?? body.scrollTop;
-      const scrollLeft = (wt.scrollX ?? docEl.scrollLeft) ?? body.scrollLeft;
+      const { scrollY: scrollTop, scrollX: scrollLeft } = getWinDimensions();
 
       position.visibility = getVisibilityStateElement(domElement, wt);
       position.x = Math.round(box.left + scrollLeft - clientLeft);

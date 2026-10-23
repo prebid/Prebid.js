@@ -15,7 +15,8 @@ import {
   getUniqueDealId,
   getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import { deepClone, getWinDimensions } from 'src/utils.js';
+import { deepClone } from 'src/utils.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
@@ -212,7 +213,10 @@ describe('ShinezRtbBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
-  describe('validtae spec', function () {
+  describe('validate spec', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -240,6 +244,9 @@ describe('ShinezRtbBidAdapter', function () {
   });
 
   describe('validate bid requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -270,8 +277,11 @@ describe('ShinezRtbBidAdapter', function () {
   });
 
   describe('build requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     let sandbox;
-    before(function () {
+    beforeEach(function () {
       getGlobal().bidderSettings = {
         shinezRtb: {
           storageAllowed: true
@@ -279,6 +289,9 @@ describe('ShinezRtbBidAdapter', function () {
       };
       sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        screen: { width: 1280, height: 720 }
+      });
     });
 
     it('should build video request', function () {
@@ -313,7 +326,7 @@ describe('ShinezRtbBidAdapter', function () {
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
-          res: `${getWinDimensions().screen.width}x${getWinDimensions().screen.height}`,
+          res: '1280x720',
           schain: VIDEO_BID.schain,
           sizes: ['545x307'],
           sua: {
@@ -418,7 +431,7 @@ describe('ShinezRtbBidAdapter', function () {
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
-          res: `${getWinDimensions().screen.width}x${getWinDimensions().screen.height}`,
+          res: '1280x720',
           mediaTypes: [BANNER],
           gpid: '0123456789',
           uqs: getTopWindowQueryParams(),
@@ -448,7 +461,7 @@ describe('ShinezRtbBidAdapter', function () {
       expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
     });
 
-    after(function () {
+    afterEach(function () {
       getGlobal().bidderSettings = {};
       sandbox.restore();
     });
@@ -559,6 +572,9 @@ describe('ShinezRtbBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
@@ -598,6 +614,9 @@ describe('ShinezRtbBidAdapter', function () {
   });
 
   describe('interpret response', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
@@ -675,6 +694,9 @@ describe('ShinezRtbBidAdapter', function () {
   });
 
   describe('alternate param names extractors', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return undefined when param not supported', function () {
       const cid = extractCID({ 'c_id': '1' });
       const pid = extractPID({ 'p_id': '1' });
@@ -695,6 +717,9 @@ describe('ShinezRtbBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     let clock;
 
     before(function () {
@@ -736,6 +761,9 @@ describe('ShinezRtbBidAdapter', function () {
   });
 
   describe('storage utils', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         shinezRtb: {
