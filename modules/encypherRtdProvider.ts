@@ -50,10 +50,11 @@ const ASSET_DIGEST_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const ASSET_DIGEST_LENGTH = 11;
 const INDEX_METHOD_PATTERN = /^[a-z0-9][a-z0-9.-]{0,31}$/;
 const OBSERVATION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+const AUCTION_TARGETING_TTL_MS = 5 * 60 * 1000;
+const MAX_AUCTION_TARGETING_STATES = 128;
 const GATEWAY_KID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const MEDIA_SELECTOR = 'img, video, audio';
 const MOBILE_MAX_WIDTH = 768;
-const AUCTION_TARGET_TOKEN = Symbol('encypherAuctionTarget');
 const TABLET_MAX_WIDTH = 1200;
 
 /** GAM key-value emission, Targeting Contract V1. Omit or set `false` to emit nothing. */
@@ -102,7 +103,6 @@ type IndexClass = 'content' | 'teaser' | 'chrome';
 type ViewportClass = 'm' | 't' | 'd';
 type TravelClass = 's' | 'k' | 'f';
 type AreaClass = 0 | 1 | 2 | 3;
-type AuctionTargetCarrier = { [AUCTION_TARGET_TOKEN]?: object };
 type NearValue = 'v' | 'a' | 'va' | '0';
 
 interface AssetIndexEntry {
@@ -217,19 +217,26 @@ type TargetingValues = {
   encypher_pkg?: string[];
 };
 
+interface AuctionTargetingEvidence {
+  attestationId: string;
+  near?: NearValue;
+}
+
+interface AuctionTargetingState {
+  byCode: Map<AdUnitCode, AuctionTargetingEvidence>;
+  cleanupTimer: number;
+}
+
 const decisions = new Map<string, DecisionState>();
-/** Attestation IDs injected on the ad units of the auction the module last served, by ad unit code. */
-const injectedAttestationIds = new Map<AdUnitCode, string>();
-/** Auction-local adjacency targeting, keyed by an opaque token that survives ad-unit validation. */
-let injectedNearByAuctionToken = new WeakMap<object, Map<AdUnitCode, NearValue>>();
+/** V1 and adjacency targeting evidence isolated by the core-assigned auction ID. */
+const targetingByAuctionId = new Map<string, AuctionTargetingState>();
 /** Accepted decision retained until ownership closes so a later blocker can remove it. */
 let acceptedByAdUnits = new WeakMap<object, AcceptedDecision>();
 let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
 let maxDatasetVersionSeen = 0;
 let globalStaleBarrier = 0;
 let isolatedAdUnitArrays = new WeakSet<object>();
-let lifecycleHooksInstalled = false;
-const pendingAuctionTargetTokens: Array<object | undefined> = [];
+let auctionHooksInstalled = false;
 
 /** SHA-256 bytes for the canonical URL lookup key. */
 export function sha256(value: string): Promise<Uint8Array> {
@@ -267,8 +274,42 @@ function decodeBase64url(value: unknown): Uint8Array {
   return decoded;
 }
 
+function canonicalJson(value: unknown): string {
+  if (value === null) return 'null';
+  if (typeof value === 'string' || typeof value === 'boolean') return JSON.stringify(value);
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error('invalid JSON number');
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+  if (!value || typeof value !== 'object') throw new Error('invalid JSON value');
+  return '{' + Object.keys(value)
+    .sort(compareText)
+    .map(key => JSON.stringify(key) + ':' + canonicalJson((value as JsonObject)[key]))
+    .join(',') + '}';
+}
+
+function decodeJsonBytes(segment: string): { bytes: Uint8Array; value: unknown } {
+  const bytes = decodeBase64url(segment);
+  return {
+    bytes,
+    value: JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes))
+  };
+}
+
+function equalBytes(left: Uint8Array, right: Uint8Array): boolean {
+  return left.length === right.length && left.every((byte, index) => byte === right[index]);
+}
+
+function canonicalJsonPayload(segment: string): unknown {
+  const decoded = decodeJsonBytes(segment);
+  const canonical = new TextEncoder().encode(canonicalJson(decoded.value));
+  if (!equalBytes(decoded.bytes, canonical)) throw new Error('non-canonical JSON payload');
+  return decoded.value;
+}
+
 function decodeJson(segment: string): unknown {
-  return JSON.parse(new TextDecoder().decode(decodeBase64url(segment)));
+  return decodeJsonBytes(segment).value;
 }
 
 /** Canonical page URL under the generated v1 URL profile. */
@@ -591,8 +632,8 @@ function validIndexClaims(
     claims.trust_policy_version !== ACCEPTED_TRUST_POLICY_VERSION ||
     claims.record_revision !== recordRevision
   ) return null;
-  if (typeof claims.iat !== 'number' || !Number.isInteger(claims.iat) || claims.iat < 0) return null;
-  if (typeof claims.exp !== 'number' || !Number.isInteger(claims.exp)) return null;
+  if (typeof claims.iat !== 'number' || !Number.isSafeInteger(claims.iat) || claims.iat < 0) return null;
+  if (typeof claims.exp !== 'number' || !Number.isSafeInteger(claims.exp)) return null;
   if (
     claims.iat > now + CLOCK_SKEW_SECONDS ||
     claims.exp !== recordExpiresAt ||
@@ -601,12 +642,13 @@ function validIndexClaims(
   ) return null;
   if (
     typeof claims.observed_at !== 'number' ||
-    !Number.isInteger(claims.observed_at) ||
+    !Number.isSafeInteger(claims.observed_at) ||
     claims.observed_at < 0 ||
     claims.observed_at > claims.iat ||
     claims.observed_at > now + CLOCK_SKEW_SECONDS ||
     claims.observed_at + OBSERVATION_MAX_AGE_SECONDS <= now
   ) return null;
+  if (typeof claims.record_revision !== 'number' || !Number.isSafeInteger(claims.record_revision) || claims.record_revision < 1) return null;
   if (typeof claims.method !== 'string' || !INDEX_METHOD_PATTERN.test(claims.method)) return null;
   if (!Array.isArray(claims.entries) || claims.entries.length > MAX_INDEX_ENTRIES) return null;
   const entries = new Map<string, AssetIndexEntry>();
@@ -640,7 +682,7 @@ async function verifyAssetIndex(
   let claims: unknown;
   try {
     protectedHeader = decodeJson(segments[0]);
-    claims = decodeJson(segments[1]);
+    claims = canonicalJsonPayload(segments[1]);
   } catch {
     return null;
   }
@@ -1030,65 +1072,53 @@ async function observeAdjacency(
     : { attachments: new Map(), validUntil: 0 };
 }
 
-function auctionTargetToken(adUnits: unknown): object | undefined {
-  if (!Array.isArray(adUnits)) return undefined;
-  for (const adUnit of adUnits) {
-    if (adUnit && typeof adUnit === 'object') {
-      const token = (adUnit as AuctionTargetCarrier)[AUCTION_TARGET_TOKEN];
-      if (token) return token;
-    }
+function auctionId(auction: { auctionId?: unknown }): string | undefined {
+  return typeof auction.auctionId === 'string' && auction.auctionId.length > 0
+    ? auction.auctionId
+    : undefined;
+}
+
+function clearAuctionTargeting(auction: { auctionId?: unknown }): void {
+  const id = auctionId(auction);
+  if (!id) return;
+  const state = targetingByAuctionId.get(id);
+  if (state) window.clearTimeout(state.cleanupTimer);
+  targetingByAuctionId.delete(id);
+}
+
+function storeAuctionTargeting(
+  auction: { auctionId?: unknown },
+  byCode: Map<AdUnitCode, AuctionTargetingEvidence>
+): void {
+  const id = auctionId(auction);
+  if (!id) return;
+  clearAuctionTargeting(auction);
+  while (targetingByAuctionId.size >= MAX_AUCTION_TARGETING_STATES) {
+    const oldest = targetingByAuctionId.keys().next().value as string | undefined;
+    if (!oldest) break;
+    clearAuctionTargeting({ auctionId: oldest });
   }
-  return undefined;
+  const cleanupTimer = window.setTimeout(() => {
+    const current = targetingByAuctionId.get(id);
+    if (current && current.cleanupTimer === cleanupTimer) targetingByAuctionId.delete(id);
+  }, AUCTION_TARGETING_TTL_MS);
+  targetingByAuctionId.set(id, { byCode, cleanupTimer });
 }
 
-function markAuctionTarget(adUnit: object, token: object): void {
-  Object.defineProperty(adUnit, AUCTION_TARGET_TOKEN, {
-    configurable: true,
-    enumerable: false,
-    value: token,
-  });
-}
-
-function auctionNear(adUnits: unknown): Map<AdUnitCode, NearValue> | undefined {
-  const token = auctionTargetToken(adUnits);
-  return token ? injectedNearByAuctionToken.get(token) : undefined;
-}
-
-function clearAuctionTargeting(auction: { adUnits?: unknown }): void {
-  const token = auctionTargetToken(auction.adUnits);
-  if (token) injectedNearByAuctionToken.delete(token);
-  if (Array.isArray(auction.adUnits)) {
-    auction.adUnits.forEach(adUnit => {
-      if (adUnit && typeof adUnit === 'object') {
-        delete (adUnit as AuctionTargetCarrier)[AUCTION_TARGET_TOKEN];
-      }
-    });
-  }
-}
-
-/**
- * Validation clones ad units. Capture the token before the synchronous validation pipeline, then
- * restore its non-wire symbol on each accepted clone in the matching after hook.
- */
-function captureAuctionTargetToken(next: (adUnits: unknown) => void, adUnits: unknown): void {
-  pendingAuctionTargetTokens.push(auctionTargetToken(adUnits));
-  next(adUnits);
-}
-
-function carryAuctionTargetToken(next: (validated: unknown) => void, validated: unknown): void {
-  const token = pendingAuctionTargetTokens.pop();
-  if (token && Array.isArray(validated)) {
-    validated.forEach(adUnit => {
-      if (adUnit && typeof adUnit === 'object') markAuctionTarget(adUnit, token);
-    });
-  }
-  next(validated);
+/** Consume targeting when this exact auction reaches ad-server targeting. */
+function takeAuctionTargeting(auction: { auctionId?: unknown }): Map<AdUnitCode, AuctionTargetingEvidence> | undefined {
+  const id = auctionId(auction);
+  if (!id) return undefined;
+  const state = targetingByAuctionId.get(id);
+  if (!state) return undefined;
+  window.clearTimeout(state.cleanupTimer);
+  targetingByAuctionId.delete(id);
+  return state.byCode;
 }
 
 function isolateAuctionAdUnits(auction: StartAuctionOptions): void {
   if (Array.isArray(auction.adUnits) && isolatedAdUnitArrays.has(auction.adUnits)) return;
   const sourceAdUnits = Array.isArray(auction.adUnits) ? auction.adUnits : [];
-  const token = {};
   auction.adUnits = sourceAdUnits.map(adUnit => {
     const isolatedAdUnit = { ...adUnit };
     if (adUnit.ortb2Imp) {
@@ -1097,7 +1127,6 @@ function isolateAuctionAdUnits(auction: StartAuctionOptions): void {
         isolatedAdUnit.ortb2Imp.ext = { ...adUnit.ortb2Imp.ext };
       }
     }
-    markAuctionTarget(isolatedAdUnit, token);
     return isolatedAdUnit;
   });
   isolatedAdUnitArrays.add(auction.adUnits);
@@ -1116,18 +1145,6 @@ function closeAuctionOwnership(next: (auction?: StartAuctionOptions) => void, au
     isolatedAdUnitArrays.delete(auction.adUnits);
   }
   next(auction);
-}
-
-/** Ad unit codes carried by an auction the module is about to serve. */
-function auctionAdUnitCodes(auction: StartAuctionOptions): AdUnitCode[] {
-  return (Array.isArray(auction.adUnits) ? auction.adUnits : [])
-    .map(adUnit => adUnit.code)
-    .filter((code): code is AdUnitCode => typeof code === 'string');
-}
-
-/** Drop this auction's ad units from page-global v1 targeting memory. */
-function forgetTargeting(auction: StartAuctionOptions): void {
-  auctionAdUnitCodes(auction).forEach(code => injectedAttestationIds.delete(code));
 }
 
 /** `null` when the publisher value does not match Targeting Contract V1. */
@@ -1178,8 +1195,7 @@ function clearStaleAdjacency(auction: StartAuctionOptions): void {
   auction.adUnits.forEach(adUnit => {
     if (adUnit.ortb2Imp?.ext) delete adUnit.ortb2Imp.ext.encypher;
   });
-  const token = auctionTargetToken(auction.adUnits);
-  if (token) injectedNearByAuctionToken.delete(token);
+  clearAuctionTargeting(auction);
 }
 
 function decisionIsCurrent(accepted: AcceptedDecision): boolean {
@@ -1205,13 +1221,7 @@ function decisionIsCurrent(accepted: AcceptedDecision): boolean {
 function removeInjectedRecord(auction: StartAuctionOptions, accepted: AcceptedDecision): void {
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return;
   const { record } = accepted;
-  const current = decisions.get(accepted.urlHash);
-  const preserveNewerTargeting = current?.status === 'ready' &&
-    current.recordFingerprint !== accepted.recordFingerprint &&
-    current.statusExpiresAt !== undefined &&
-    current.statusExpiresAt > Date.now() &&
-    current.recordExpiresAt !== undefined &&
-    current.recordExpiresAt > Math.floor(Date.now() / 1000);
+  clearAuctionTargeting(auction);
   auction.adUnits.forEach(adUnit => {
     const extension = adUnit.ortb2Imp?.ext;
     const c2pa = extension?.c2pa;
@@ -1225,38 +1235,29 @@ function removeInjectedRecord(auction: StartAuctionOptions, accepted: AcceptedDe
       delete extension.c2pa;
     }
     if (extension) delete extension.encypher;
-    if (
-      !preserveNewerTargeting &&
-      typeof adUnit.code === 'string' &&
-      injectedAttestationIds.get(adUnit.code) === record.id
-    ) {
-      injectedAttestationIds.delete(adUnit.code);
-    }
   });
-  const token = auctionTargetToken(auction.adUnits);
-  if (token) injectedNearByAuctionToken.delete(token);
 }
 
 /** Write the v1 carrier and replace every owned adjacency field with this auction's fresh result. */
 function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1, attachments?: AdjacencyAttachments): number | null {
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return null;
   const adUnits = auction.adUnits;
-  const nearByCode = new Map<AdUnitCode, NearValue>();
+  const byCode = new Map<AdUnitCode, AuctionTargetingEvidence>();
   adUnits.forEach(adUnit => {
     const impression = adUnit.ortb2Imp || (adUnit.ortb2Imp = {});
     const extension = impression.ext || (impression.ext = {});
     extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
-    if (typeof adUnit.code === 'string') injectedAttestationIds.set(adUnit.code, record.id);
+    if (typeof adUnit.code === 'string') byCode.set(adUnit.code, { attestationId: record.id });
     const attachment = attachments && attachments.get(adUnit);
     if (!attachment) {
       delete extension.encypher;
       return;
     }
     extension.encypher = { v: 1, kid: attachment.envelope.kid, epk: attachment.envelope.epk, ct: attachment.envelope.ct };
-    if (typeof adUnit.code === 'string') nearByCode.set(adUnit.code, attachment.near);
+    if (typeof adUnit.code === 'string') byCode.set(adUnit.code, { attestationId: record.id, near: attachment.near });
   });
-  const token = auctionTargetToken(adUnits);
-  if (token) injectedNearByAuctionToken.set(token, nearByCode);
+  if (byCode.size > 0) storeAuctionTargeting(auction, byCode);
+  else clearAuctionTargeting(auction);
   return adUnits.length;
 }
 
@@ -1536,14 +1537,11 @@ const init = (config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentDat
   if (params.adjacency !== undefined && typeof params.adjacency !== 'boolean') {
     logWarn(MODULE_NAME + ': ignoring malformed params.adjacency; adjacency stays off');
   }
-  if (!lifecycleHooksInstalled) {
+  if (!auctionHooksInstalled) {
     const startAuction = getHook('startAuction');
     startAuction.before(isolateBeforeRtd, 21);
     startAuction.before(closeAuctionOwnership, 19);
-    const checkAdUnitSetup = getHook('checkAdUnitSetup');
-    checkAdUnitSetup.before(captureAuctionTargetToken, 21);
-    checkAdUnitSetup.after(carryAuctionTargetToken, 21);
-    lifecycleHooksInstalled = true;
+    auctionHooksInstalled = true;
   }
   return true;
 };
@@ -1555,7 +1553,7 @@ const getBidRequestData = (
   userConsent?: AllConsentData,
   rtdTimeout?: number
 ): void => {
-  forgetTargeting(auction);
+  clearAuctionTargeting(auction);
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) {
     callback();
     return;
@@ -1822,23 +1820,19 @@ const getTargetingData = (
   adUnitCodes: AdUnitCode[],
   moduleConfig: RTDProviderConfig<'encypher'>,
   userConsent?: AllConsentData,
-  auction?: { adUnits?: unknown }
+  auction?: { auctionId?: unknown; adUnits?: unknown }
 ): ByAdUnit<TargetingMap<string | string[]>> => {
   const targeting: ByAdUnit<TargetingValues> = {};
-  const nearByCode = auctionNear(auction?.adUnits);
-  if (auction && auctionTargetToken(auction.adUnits)) {
-    queueMicrotask(() => clearAuctionTargeting(auction));
-  }
+  const evidenceByCode = auction ? takeAuctionTargeting(auction) : undefined;
   const settings = gamTargetingSettings(moduleConfig);
   if (settings === null || !hasConsentForDataTransmission(userConsent)) return targeting;
   adUnitCodes.forEach(adUnitCode => {
-    const attestationId = injectedAttestationIds.get(adUnitCode);
-    if (attestationId === undefined) return;
+    const evidence = evidenceByCode?.get(adUnitCode);
+    if (evidence === undefined) return;
     const values: TargetingValues = { encypher_verified: '1' };
-    const near = nearByCode?.get(adUnitCode);
-    if (near !== undefined) values.encypher_near = near;
-    if (settings.includeAttestationId && TARGETING_VALUE_PATTERN.test(attestationId)) {
-      values.encypher_att = attestationId;
+    if (evidence.near !== undefined) values.encypher_near = evidence.near;
+    if (settings.includeAttestationId && TARGETING_VALUE_PATTERN.test(evidence.attestationId)) {
+      values.encypher_att = evidence.attestationId;
     }
     if (settings.packages.length > 0) values.encypher_pkg = settings.packages.slice();
     const fitted = fitTargetingCap(values);
@@ -1850,23 +1844,19 @@ const getTargetingData = (
 /** Clear page-lifecycle memory between isolated module tests. */
 export function resetProviderState(): void {
   decisions.clear();
-  injectedAttestationIds.clear();
-  injectedNearByAuctionToken = new WeakMap<object, Map<AdUnitCode, NearValue>>();
+  targetingByAuctionId.forEach(state => window.clearTimeout(state.cleanupTimer));
+  targetingByAuctionId.clear();
   acceptedByAdUnits = new WeakMap<object, AcceptedDecision>();
   trustedJwkCache = null;
   maxDatasetVersionSeen = 0;
   globalStaleBarrier = 0;
   isolatedAdUnitArrays = new WeakSet<object>();
-  if (lifecycleHooksInstalled) {
+  if (auctionHooksInstalled) {
     const startAuction = getHook('startAuction');
     startAuction.getHooks({ hook: isolateBeforeRtd }).remove();
     startAuction.getHooks({ hook: closeAuctionOwnership }).remove();
-    const checkAdUnitSetup = getHook('checkAdUnitSetup');
-    checkAdUnitSetup.getHooks({ hook: captureAuctionTargetToken }).remove();
-    checkAdUnitSetup.getHooks({ hook: carryAuctionTargetToken }).remove();
-    lifecycleHooksInstalled = false;
+    auctionHooksInstalled = false;
   }
-  pendingAuctionTargetTokens.length = 0;
 }
 
 export const encypherSubmodule: RtdProviderSpec<'encypher'> = {

@@ -948,6 +948,14 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   }
 }, 'startAuction');
 
+/** Assign the auction identity before RTD and other start-auction hooks observe the request. */
+function ensureAuctionId(next: (auction: StartAuctionOptions) => void, auction: StartAuctionOptions = {} as StartAuctionOptions): void {
+  if (!auction.auctionId) auction.auctionId = generateUUID();
+  next(auction);
+}
+
+startAuction.before(ensureAuctionId, 100);
+
 export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
   runAll(enableAnalyticsCallbacks);
