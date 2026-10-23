@@ -57,6 +57,14 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
 - Title module changes as `X Adapter: short description` where X is the name of an adapter eg `Rubicon Bid Adapter: stylistic changes'; changes to `/src` should be titled `Core: short description`.
 - Keep PRs scoped to a single change type. Add a release label and a SemVer label; `PR_REVIEW.md` has the current list of both.
 
+## Say when you wrote something
+Anything you post to GitHub runs under a person's account, so readers will assume that person wrote it unless you say otherwise.
+- Start every comment you post with a line saying an AI agent wrote it, and for whom. That covers PR and issue comments, review comments and replies, review summaries, and comments left when closing or reopening something. Example:
+  `> 🤖 *This comment was written by an AI agent (<agent name>) on behalf of @<github user>.*`
+  Keep that line when you edit one of your comments later.
+- End PR and issue descriptions you write with a similar note, e.g. `🤖 Generated with <agent name>`.
+- Don't remove or reword a person's own comments to look agent-written, or yours to look human-written.
+
 ## Issue template
 - Fill out every section of `.github/ISSUE_TEMPLATE.md` when filing issues, including steps to reproduce and platform details. If there isn't an associated issue, include this template into any PR. 
 
