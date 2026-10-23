@@ -96,6 +96,51 @@ Prebid.js allows you to set the following build options:
 These options can be customized via the webpack loader or the Rollup-compatible plugin.
 For details and examples, see [Customize build options](customize/README.md).
 
+<a id="bundlers"></a>
+
+### Using other compilers (example: webpack + SWC)
+
+The npm package contains precompiled JavaScript (under `dist/src`, which the package exports point to), so Prebid.js can be
+bundled with any toolchain - it does not need Babel, or any Prebid-specific compilation, in your project.
+For example, a webpack project that compiles its own code with [SWC](https://swc.rs/):
+
+```bash
+npm install prebid.js
+npm install --save-dev webpack webpack-cli @swc/core swc-loader
+```
+
+```javascript
+// webpack.config.js
+module.exports = {
+  mode: 'production',
+  entry: './src/index.js', // imports prebid.js and its modules as in the example above
+  output: { filename: 'bundle.js', path: __dirname + '/dist' },
+  module: {
+    rules: [
+      {
+        test: /\.m?js$/,
+        // Prebid's npm files are already compiled; running them through SWC again only makes the bundle larger
+        exclude: /node_modules[\\/]prebid\.js[\\/]/,
+        use: {
+          loader: 'swc-loader',
+          options: {
+            jsc: { target: 'es2020', parser: { syntax: 'ecmascript' } }
+          }
+        }
+      }
+    ]
+  }
+};
+```
+
+Notes:
+
+- Prebid's npm files target the browsers in Prebid's `browserslist` (see `package.json`). If you need to support older browsers, remove the `exclude`
+  so SWC also compiles Prebid; expect a somewhat larger bundle.
+- If your `package.json` has `"type": "commonjs"` (the default of recent `npm init`) and your own source files use `import`, add `type: 'javascript/auto'`
+  to the rule, or webpack will reject them.
+- To set [build options](#customize-options) such as `globalVarName`, add `prebid.js/customize/webpackLoader` as described in [Customize build options](customize/README.md).
+
 <a name="Install"></a>
 
 ## Install
