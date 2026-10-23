@@ -130,7 +130,7 @@ var adUnits = [
 |-------------------------------------------|-------------|-----------------------------------------------------------------------------------------------------------|
 | `mimes`                                   | required    | Non-empty array of MIME types. May instead be set for this bidder only in `bids[].ortb2Imp.video.mimes`. |
 | `playerSize`                              | recommended | Sent as `imp.video.w`/`imp.video.h`.                                                                      |
-| `plcmt`                                   | recommended | Prebid core sets `4` for outstream when omitted.                                                          |
+| `plcmt`                                   | recommended |                                                                                                           |
 | `minduration`, `maxduration`, `protocols` | recommended | Some demand partners require them.                                                                        |
 
 - When the video part of an ad unit cannot be sent (no `mimes`), a multiformat ad unit is sent
@@ -138,19 +138,11 @@ var adUnits = [
 - Video is sent only for ad units that declare `mediaTypes.video`. A video set up through
   `ortb2Imp.video` alone is not sent: the adapter drops that `imp.video` and sends the banner
   part, if any.
-- Instream: the Exchange returns the VAST XML in `adm` and no VAST URL, so Prebid core discards
-  the bid unless one of `cache.url`, `cache.useLocal: true` or `cache.allowVastXmlOnly: true` is
-  configured, or the ad unit sets `mediaTypes.video.cache: false`. `cache.allowVastXmlOnly` and
-  `mediaTypes.video.cache: false` skip caching and leave only `bid.vastXml`, so use them only
-  when the page hands that XML to its player directly (an ad server cannot fetch it).
-- Outstream: the adapter does not supply a renderer. Prebid core renders an outstream bid
-  through a publisher-defined `renderer` or `safeRenderer` (on the ad unit, on the bid or on
-  `mediaTypes.video`), or plays it from Prebid Cache when `mediaTypes.video.useCacheKey` is set;
-  otherwise core discards the bid. A `renderer` receives the VAST XML as `bid.vastXml`.
-  A renderer or safeRenderer that sets `requiresVastUrl: true` needs `cache.url` or
-  `cache.useLocal: true`, and the ad unit must not set `mediaTypes.video.cache: false`: the
-  Exchange returns no VAST URL, so Prebid core caches the XML to make one, and discards the bid
-  when it cannot cache.
+- Instream: bids are VAST XML, so
+  [Prebid Cache](https://docs.prebid.org/dev-docs/show-video-with-a-dfp-video-tag.html) is
+  required.
+- Outstream: Geniee does not provide a renderer. Publishers must set up their own; see
+  [Show Outstream Video Ads](https://docs.prebid.org/dev-docs/show-outstream-video-ads.html).
 - Size of a video bid: only when the response carries both `w` and `h` does the bid keep them.
   Otherwise (neither, or only one of them) the adapter sets both `width` and `height` to the
   requested player size (`playerSize`), so that a response size is never mixed with the player
