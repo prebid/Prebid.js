@@ -58,7 +58,7 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
 - Keep PRs scoped to a single change type. Add a release label and a SemVer label; `PR_REVIEW.md` has the current list of both.
 
 ## Say when you wrote something
-Anything you post to GitHub runs under a person's account, so readers will assume that person wrote it unless you say otherwise.
+Anything you post to GitHub may run under a person's account, so readers will assume that person wrote it unless you say otherwise.
 - Start every comment you post with a line saying an AI agent wrote it, and for whom. That covers PR and issue comments, review comments and replies, review summaries, and comments left when closing or reopening something. Example:
   `> 🤖 *This comment was written by an AI agent (<agent name>) on behalf of @<github user>.*`
   Keep that line when you edit one of your comments later.
