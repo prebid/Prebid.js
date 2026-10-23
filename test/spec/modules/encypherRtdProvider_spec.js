@@ -2813,6 +2813,49 @@ describe('encypherRtdProvider adjacency profile', () => {
     assertV1Only(run.auction);
   });
 
+  it('bounds data-ad-slot lookup within the shared DOM traversal cap', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const root = pageRoot();
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 4097; index += 1) {
+      fragment.appendChild(document.createElement('span'));
+    }
+    root.appendChild(fragment);
+    place(root, 'div', {
+      top: 20 * screen,
+      width: 728,
+      height: 90,
+      attrs: { 'data-ad-slot': 'leaderboard' },
+    });
+    const run = beginAuction({ adjacency: true });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([]))), { jwks: indexJwks });
+    await run.completion;
+    assertV1Only(run.auction);
+  });
+
+  it('drops optional adjacency for a slot beyond the ancestor-depth cap', async () => {
+    addCanonical(STORY_URL, cleanups);
+    const screen = getWinDimensions().innerHeight;
+    const root = pageRoot();
+    let parent = root;
+    for (let depth = 0; depth < 65; depth += 1) {
+      const wrapper = document.createElement('div');
+      parent.appendChild(wrapper);
+      parent = wrapper;
+    }
+    place(parent, 'div', {
+      top: 20 * screen,
+      width: 728,
+      height: 90,
+      attrs: { id: 'leaderboard' },
+    });
+    const run = beginAuction({ adjacency: true });
+    await respondDecision(readyWithAdjacency(await signIndex(indexClaims([]))), { jwks: indexJwks });
+    await run.completion;
+    assertV1Only(run.auction);
+  });
+
   const ENTRY_D = 'abcdefghijk';
   [
     ['a wrong typ header', async () => signIndex(indexClaims([entry(ENTRY_D)]), { alg: 'ES256', kid: INDEX_KID, typ: 'epat+jws' })],
@@ -3177,18 +3220,35 @@ describe('encypherRtdProvider adjacency profile', () => {
     assert.strictEqual(first.callbackCount(), 0);
     releases[0](new Uint8Array(32).buffer);
     await first.completion;
-    assert.deepStrictEqual(getTargeting(
-      ['leaderboard'],
-      { gamTargeting: {} },
-      undefined,
-      first.auction,
-    ), { leaderboard: { encypher_verified: '1', encypher_near: 'v' } });
-    assert.deepStrictEqual(getTargeting(
-      ['leaderboard'],
-      { gamTargeting: {} },
-      undefined,
-      second.auction,
-    ), { leaderboard: { encypher_verified: '1', encypher_near: 'a' } });
+    configureActualRtd({
+      dataProviders: [{
+        name: MODULE_NAME,
+        params: { gamTargeting: {} },
+      }],
+    });
+    try {
+      const firstAuction = {
+        adUnitCodes: ['leaderboard'],
+        adUnits: checkAdUnitSetup(first.auction.adUnits),
+      };
+      const secondAuction = {
+        adUnitCodes: ['leaderboard'],
+        adUnits: checkAdUnitSetup(second.auction.adUnits),
+      };
+      rtdModule.getAdUnitTargeting(firstAuction);
+      rtdModule.getAdUnitTargeting(secondAuction);
+      assert.deepStrictEqual(firstAuction.adUnits[0].adserverTargeting, {
+        encypher_verified: '1',
+        encypher_near: 'v',
+      });
+      assert.deepStrictEqual(secondAuction.adUnits[0].adserverTargeting, {
+        encypher_verified: '1',
+        encypher_near: 'a',
+      });
+    } finally {
+      startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
+      config.resetConfig();
+    }
   });
 
   it('admits a full 64-entry index above the 1.1.0 4 KiB lookup cap', async () => {

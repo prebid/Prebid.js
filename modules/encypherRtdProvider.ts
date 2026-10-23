@@ -53,6 +53,7 @@ const OBSERVATION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const GATEWAY_KID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const MEDIA_SELECTOR = 'img, video, audio';
 const MOBILE_MAX_WIDTH = 768;
+const AUCTION_TARGET_TOKEN = Symbol('encypherAuctionTarget');
 const TABLET_MAX_WIDTH = 1200;
 
 /** GAM key-value emission, Targeting Contract V1. Omit or set `false` to emit nothing. */
@@ -101,6 +102,7 @@ type IndexClass = 'content' | 'teaser' | 'chrome';
 type ViewportClass = 'm' | 't' | 'd';
 type TravelClass = 's' | 'k' | 'f';
 type AreaClass = 0 | 1 | 2 | 3;
+type AuctionTargetCarrier = { [AUCTION_TARGET_TOKEN]?: object };
 type NearValue = 'v' | 'a' | 'va' | '0';
 
 interface AssetIndexEntry {
@@ -164,6 +166,12 @@ interface SlotScreen {
   bottom: number;
 }
 
+interface SlotRequest {
+  adUnit: { code?: unknown };
+  code: AdUnitCode;
+  slot: Element | null;
+}
+
 type DecisionStatus = 'ready' | 'miss' | 'revoked';
 
 interface DecisionState {
@@ -212,15 +220,16 @@ type TargetingValues = {
 const decisions = new Map<string, DecisionState>();
 /** Attestation IDs injected on the ad units of the auction the module last served, by ad unit code. */
 const injectedAttestationIds = new Map<AdUnitCode, string>();
-/** Auction-local adjacency targeting, keyed by the auction's ad-unit array. */
-let injectedNearByAdUnits = new WeakMap<object, Map<AdUnitCode, NearValue>>();
+/** Auction-local adjacency targeting, keyed by an opaque token that survives ad-unit validation. */
+let injectedNearByAuctionToken = new WeakMap<object, Map<AdUnitCode, NearValue>>();
 /** Accepted decision retained until ownership closes so a later blocker can remove it. */
 let acceptedByAdUnits = new WeakMap<object, AcceptedDecision>();
 let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
 let maxDatasetVersionSeen = 0;
 let globalStaleBarrier = 0;
 let isolatedAdUnitArrays = new WeakSet<object>();
-let isolationHookInstalled = false;
+let lifecycleHooksInstalled = false;
+const pendingAuctionTargetTokens: Array<object | undefined> = [];
 
 /** SHA-256 bytes for the canonical URL lookup key. */
 export function sha256(value: string): Promise<Uint8Array> {
@@ -657,29 +666,28 @@ function measureSlot(element: Element): MeasuredBox | null {
   return { top: rect.top + window.scrollY, bottom: rect.bottom + window.scrollY, width: rect.width };
 }
 
-/** The slot's element: ad unit code as element id, else `data-ad-slot`, else its GPT slot div. */
-function slotElement(code: AdUnitCode): Element | null {
-  const byId = document.getElementById(code);
-  if (byId) return byId;
-  const byAttribute = Array.from(document.querySelectorAll('[data-ad-slot]'))
-    .find(element => element.getAttribute('data-ad-slot') === code);
-  if (byAttribute) return byAttribute;
-  const gptSlot = getGptSlotForAdUnitCode(code);
-  const divId = gptSlot && gptSlot.getSlotElementId();
-  return divId ? document.getElementById(divId) : null;
-}
-
 /**
  * The page band the slot shares the screen with: the viewport height centred on the slot, the
  * whole document when the slot or an ancestor is fixed, or the sticky element's containing block
  * plus half a screen each side.
  */
-function slotScreen(slot: Element, box: MeasuredBox, screenHeight: number, pageBottom: number): SlotScreen {
+function slotScreen(
+  slot: Element,
+  box: MeasuredBox,
+  screenHeight: number,
+  pageBottom: number,
+  isCurrent: () => boolean
+): SlotScreen | null {
+  let depth = 0;
   for (let node: Element | null = slot; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
+    depth += 1;
+    if (depth > MAX_ANCESTOR_DEPTH || !isCurrent()) return null;
     const position = window.getComputedStyle(node).position;
     if (position === 'fixed') return { travel: 'f', top: 0, bottom: pageBottom };
     if (position === 'sticky' && node.parentElement) {
+      if (!isCurrent()) return null;
       const block = getBoundingClientRect(node.parentElement);
+      if (!isCurrent()) return null;
       return {
         travel: 'k',
         top: block.top + window.scrollY - screenHeight / 2,
@@ -687,6 +695,7 @@ function slotScreen(slot: Element, box: MeasuredBox, screenHeight: number, pageB
       };
     }
   }
+  if (!isCurrent()) return null;
   const centre = (box.top + box.bottom) / 2;
   return {
     travel: 's',
@@ -771,35 +780,78 @@ function measurePage(
   clearBoundingClientRectCache();
   const screenHeight = getWinDimensions().innerHeight;
   const pageBottom = Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0);
-  const slots: Element[] = [];
-  const screens = new Map<object, SlotScreen>();
+  const requests: SlotRequest[] = [];
+  const unresolvedByAttribute = new Map<AdUnitCode, SlotRequest[]>();
   for (const adUnit of adUnits) {
     if (!isCurrent()) return null;
     if (typeof adUnit.code !== 'string') continue;
-    const slot = slotElement(adUnit.code);
-    const box = slot && measureSlot(slot);
-    if (!slot || !box) continue;
-    slots.push(slot);
-    screens.set(adUnit, slotScreen(slot, box, screenHeight, pageBottom));
+    const request: SlotRequest = {
+      adUnit,
+      code: adUnit.code,
+      slot: document.getElementById(adUnit.code),
+    };
+    requests.push(request);
+    if (!request.slot) {
+      const matching = unresolvedByAttribute.get(request.code) || [];
+      matching.push(request);
+      unresolvedByAttribute.set(request.code, matching);
+    }
   }
-  const candidates: PageCandidate[] = [];
-  if (screens.size === 0) return { candidates, screens };
+
+  const media: Element[] = [];
   const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_ELEMENT);
   let visitedElements = 0;
-  let mediaElements = 0;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     visitedElements += 1;
     if (visitedElements > MAX_DOM_ELEMENTS || !isCurrent()) return null;
-    if (!(node instanceof Element) || !node.matches(MEDIA_SELECTOR)) continue;
-    mediaElements += 1;
-    if (mediaElements > MAX_PAGE_CANDIDATES) return null;
-    if (slots.some(slot => slot.contains(node))) continue;
-    const box = measureCandidate(node);
-    const asset = mediaUrl(node);
+    if (!(node instanceof Element)) continue;
+    const attributeCode = node.getAttribute('data-ad-slot');
+    const matching = attributeCode && unresolvedByAttribute.get(attributeCode);
+    if (matching) {
+      matching.forEach(request => { request.slot = node; });
+      unresolvedByAttribute.delete(attributeCode);
+    }
+    if (!node.matches(MEDIA_SELECTOR)) continue;
+    if (media.length >= MAX_PAGE_CANDIDATES) return null;
+    media.push(node);
+  }
+
+  const gptSlots = new Map<AdUnitCode, Element | null>();
+  for (const request of requests) {
+    if (request.slot) continue;
+    if (!isCurrent()) return null;
+    if (!gptSlots.has(request.code)) {
+      const gptSlot = getGptSlotForAdUnitCode(request.code);
+      const divId = gptSlot && gptSlot.getSlotElementId();
+      gptSlots.set(request.code, divId ? document.getElementById(divId) : null);
+    }
+    request.slot = gptSlots.get(request.code) || null;
+  }
+
+  const slots: Element[] = [];
+  const screens = new Map<object, SlotScreen>();
+  for (const request of requests) {
+    if (!isCurrent()) return null;
+    const slot = request.slot;
+    const box = slot && measureSlot(slot);
+    if (!slot || !box) continue;
+    if (!slots.includes(slot)) slots.push(slot);
+    const screen = slotScreen(slot, box, screenHeight, pageBottom, isCurrent);
+    if (screen) screens.set(request.adUnit, screen);
+  }
+
+  const candidates: PageCandidate[] = [];
+  if (screens.size === 0) return { candidates, screens };
+  for (const element of media) {
+    if (!isCurrent()) return null;
+    if (slots.some(slot => slot.contains(element))) continue;
+    const box = measureCandidate(element);
+    const asset = mediaUrl(element);
+    if (!isCurrent()) return null;
     if (!box || !asset) continue;
     let kind: PageCandidate['kind'] = 'audio';
-    if (node instanceof HTMLImageElement) kind = 'image';
-    if (node instanceof HTMLVideoElement) kind = 'video';
+    if (element instanceof HTMLImageElement) kind = 'image';
+    if (element instanceof HTMLVideoElement) kind = 'video';
     candidates.push({ box, asset, kind });
   }
   return { candidates, screens };
@@ -978,9 +1030,65 @@ async function observeAdjacency(
     : { attachments: new Map(), validUntil: 0 };
 }
 
+function auctionTargetToken(adUnits: unknown): object | undefined {
+  if (!Array.isArray(adUnits)) return undefined;
+  for (const adUnit of adUnits) {
+    if (adUnit && typeof adUnit === 'object') {
+      const token = (adUnit as AuctionTargetCarrier)[AUCTION_TARGET_TOKEN];
+      if (token) return token;
+    }
+  }
+  return undefined;
+}
+
+function markAuctionTarget(adUnit: object, token: object): void {
+  Object.defineProperty(adUnit, AUCTION_TARGET_TOKEN, {
+    configurable: true,
+    enumerable: false,
+    value: token,
+  });
+}
+
+function auctionNear(adUnits: unknown): Map<AdUnitCode, NearValue> | undefined {
+  const token = auctionTargetToken(adUnits);
+  return token ? injectedNearByAuctionToken.get(token) : undefined;
+}
+
+function clearAuctionTargeting(auction: { adUnits?: unknown }): void {
+  const token = auctionTargetToken(auction.adUnits);
+  if (token) injectedNearByAuctionToken.delete(token);
+  if (Array.isArray(auction.adUnits)) {
+    auction.adUnits.forEach(adUnit => {
+      if (adUnit && typeof adUnit === 'object') {
+        delete (adUnit as AuctionTargetCarrier)[AUCTION_TARGET_TOKEN];
+      }
+    });
+  }
+}
+
+/**
+ * Validation clones ad units. Capture the token before the synchronous validation pipeline, then
+ * restore its non-wire symbol on each accepted clone in the matching after hook.
+ */
+function captureAuctionTargetToken(next: (adUnits: unknown) => void, adUnits: unknown): void {
+  pendingAuctionTargetTokens.push(auctionTargetToken(adUnits));
+  next(adUnits);
+}
+
+function carryAuctionTargetToken(next: (validated: unknown) => void, validated: unknown): void {
+  const token = pendingAuctionTargetTokens.pop();
+  if (token && Array.isArray(validated)) {
+    validated.forEach(adUnit => {
+      if (adUnit && typeof adUnit === 'object') markAuctionTarget(adUnit, token);
+    });
+  }
+  next(validated);
+}
+
 function isolateAuctionAdUnits(auction: StartAuctionOptions): void {
   if (Array.isArray(auction.adUnits) && isolatedAdUnitArrays.has(auction.adUnits)) return;
   const sourceAdUnits = Array.isArray(auction.adUnits) ? auction.adUnits : [];
+  const token = {};
   auction.adUnits = sourceAdUnits.map(adUnit => {
     const isolatedAdUnit = { ...adUnit };
     if (adUnit.ortb2Imp) {
@@ -989,6 +1097,7 @@ function isolateAuctionAdUnits(auction: StartAuctionOptions): void {
         isolatedAdUnit.ortb2Imp.ext = { ...adUnit.ortb2Imp.ext };
       }
     }
+    markAuctionTarget(isolatedAdUnit, token);
     return isolatedAdUnit;
   });
   isolatedAdUnitArrays.add(auction.adUnits);
@@ -1069,7 +1178,8 @@ function clearStaleAdjacency(auction: StartAuctionOptions): void {
   auction.adUnits.forEach(adUnit => {
     if (adUnit.ortb2Imp?.ext) delete adUnit.ortb2Imp.ext.encypher;
   });
-  injectedNearByAdUnits.delete(auction.adUnits);
+  const token = auctionTargetToken(auction.adUnits);
+  if (token) injectedNearByAuctionToken.delete(token);
 }
 
 function decisionIsCurrent(accepted: AcceptedDecision): boolean {
@@ -1123,7 +1233,8 @@ function removeInjectedRecord(auction: StartAuctionOptions, accepted: AcceptedDe
       injectedAttestationIds.delete(adUnit.code);
     }
   });
-  injectedNearByAdUnits.delete(auction.adUnits);
+  const token = auctionTargetToken(auction.adUnits);
+  if (token) injectedNearByAuctionToken.delete(token);
 }
 
 /** Write the v1 carrier and replace every owned adjacency field with this auction's fresh result. */
@@ -1144,7 +1255,8 @@ function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1,
     extension.encypher = { v: 1, kid: attachment.envelope.kid, epk: attachment.envelope.epk, ct: attachment.envelope.ct };
     if (typeof adUnit.code === 'string') nearByCode.set(adUnit.code, attachment.near);
   });
-  injectedNearByAdUnits.set(adUnits, nearByCode);
+  const token = auctionTargetToken(adUnits);
+  if (token) injectedNearByAuctionToken.set(token, nearByCode);
   return adUnits.length;
 }
 
@@ -1424,11 +1536,14 @@ const init = (config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentDat
   if (params.adjacency !== undefined && typeof params.adjacency !== 'boolean') {
     logWarn(MODULE_NAME + ': ignoring malformed params.adjacency; adjacency stays off');
   }
-  if (!isolationHookInstalled) {
+  if (!lifecycleHooksInstalled) {
     const startAuction = getHook('startAuction');
     startAuction.before(isolateBeforeRtd, 21);
     startAuction.before(closeAuctionOwnership, 19);
-    isolationHookInstalled = true;
+    const checkAdUnitSetup = getHook('checkAdUnitSetup');
+    checkAdUnitSetup.before(captureAuctionTargetToken, 21);
+    checkAdUnitSetup.after(carryAuctionTargetToken, 21);
+    lifecycleHooksInstalled = true;
   }
   return true;
 };
@@ -1710,11 +1825,12 @@ const getTargetingData = (
   auction?: { adUnits?: unknown }
 ): ByAdUnit<TargetingMap<string | string[]>> => {
   const targeting: ByAdUnit<TargetingValues> = {};
+  const nearByCode = auctionNear(auction?.adUnits);
+  if (auction && auctionTargetToken(auction.adUnits)) {
+    queueMicrotask(() => clearAuctionTargeting(auction));
+  }
   const settings = gamTargetingSettings(moduleConfig);
   if (settings === null || !hasConsentForDataTransmission(userConsent)) return targeting;
-  const nearByCode = auction && Array.isArray(auction.adUnits)
-    ? injectedNearByAdUnits.get(auction.adUnits)
-    : undefined;
   adUnitCodes.forEach(adUnitCode => {
     const attestationId = injectedAttestationIds.get(adUnitCode);
     if (attestationId === undefined) return;
@@ -1735,18 +1851,22 @@ const getTargetingData = (
 export function resetProviderState(): void {
   decisions.clear();
   injectedAttestationIds.clear();
-  injectedNearByAdUnits = new WeakMap<object, Map<AdUnitCode, NearValue>>();
+  injectedNearByAuctionToken = new WeakMap<object, Map<AdUnitCode, NearValue>>();
   acceptedByAdUnits = new WeakMap<object, AcceptedDecision>();
   trustedJwkCache = null;
   maxDatasetVersionSeen = 0;
   globalStaleBarrier = 0;
   isolatedAdUnitArrays = new WeakSet<object>();
-  if (isolationHookInstalled) {
+  if (lifecycleHooksInstalled) {
     const startAuction = getHook('startAuction');
     startAuction.getHooks({ hook: isolateBeforeRtd }).remove();
     startAuction.getHooks({ hook: closeAuctionOwnership }).remove();
-    isolationHookInstalled = false;
+    const checkAdUnitSetup = getHook('checkAdUnitSetup');
+    checkAdUnitSetup.getHooks({ hook: captureAuctionTargetToken }).remove();
+    checkAdUnitSetup.getHooks({ hook: carryAuctionTargetToken }).remove();
+    lifecycleHooksInstalled = false;
   }
+  pendingAuctionTargetTokens.length = 0;
 }
 
 export const encypherSubmodule: RtdProviderSpec<'encypher'> = {

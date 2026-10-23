@@ -141,7 +141,7 @@ Both fields are ignored silently when absent or invalid; the record still attach
 
 ### Measurement
 
-After the record verifies, the module verifies the index and takes a fresh layout snapshot for the auction. It clears Prebid's shared rectangle cache first. For each ad unit it finds the slot element: the element whose `id` equals the ad unit code, else the element whose `data-ad-slot` equals it, else the div of the GPT slot matching the code. An ad unit without a rendered slot element carries no observation.
+After the record verifies, the module verifies the index and takes a fresh layout snapshot for the auction. It clears Prebid's shared rectangle cache first. For each ad unit it finds the slot element: the element whose `id` equals the ad unit code, else the first element whose `data-ad-slot` equals it during the shared capped DOM traversal, else the div of the GPT slot matching the code. Slot travel classification checks the auction deadline and stops after 64 ancestors. An ad unit without a rendered, bounded-depth slot element carries no observation.
 
 The slot's screen is the page band it shares the reader's screen with:
 
@@ -177,7 +177,7 @@ The module seals it with ECIES to `gateway_jwk`, using WebCrypto only: an epheme
 
 ### `encypher_near`
 
-For ad units that carry `imp.ext.encypher`, `getTargetingData` adds auction-scoped `encypher_near` after `encypher_verified`:
+For ad units that carry `imp.ext.encypher`, `getTargetingData` adds auction-scoped `encypher_near` after `encypher_verified`. An opaque symbol carries the auction identity across Prebid's ad-unit validation clones; it is not serialized and is removed with its targeting state at auction end:
 
 | Value | Meaning, from the signed index entries in the observation |
 | --- | --- |

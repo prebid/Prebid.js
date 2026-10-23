@@ -298,6 +298,25 @@ describe('Real time module', function () {
           expect(withoutWait.cbRan).to.be.false;
         });
       });
+
+      it('passes each provider only the remaining shared auction delay', () => {
+        const clock = sinon.useFakeTimers();
+        const budgets = [];
+        validSMWait.getBidRequestData = sinon.stub().callsFake((_request, _callback, _config, _consent, timeout) => {
+          budgets.push(timeout);
+          clock.tick(90);
+        });
+        validSM.getBidRequestData = sinon.stub().callsFake((_request, _callback, _config, _consent, timeout) => {
+          budgets.push(timeout);
+        });
+        try {
+          rtdModule.setBidRequestsData(() => {}, { bidRequest: {} });
+          expect(budgets).to.eql([100, 10]);
+        } finally {
+          clock.tick(10);
+          clock.restore();
+        }
+      });
     });
   });
 

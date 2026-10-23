@@ -210,6 +210,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   }
 
   const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0;
+  const deadline = Date.now() + timeout;
   waitTimeout = setTimeout(exitHook, timeout);
   const fpdKey = 'ortb2Fragments';
 
@@ -235,7 +236,8 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
         return Reflect.deleteProperty(target, prop);
       }
     });
-    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+    const remainingTimeout = Math.max(0, deadline - Date.now());
+    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, remainingTimeout);
   });
 
   function onGetBidRequestDataCallback() {
