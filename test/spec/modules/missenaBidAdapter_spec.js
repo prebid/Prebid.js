@@ -325,6 +325,8 @@ describe('Missena Adapter', function () {
     });
 
     it('should send cookie deprecation', function () {
+      expect(payload).to.have.property('cookieDeprecation');
+      expect(payload.cookieDeprecation).to.not.equal(undefined);
     });
   });
 
