@@ -63,6 +63,7 @@ import type {
 } from "./types/common.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
+import { mergeBidderOrtb2 } from './fpd/merge.js';
 import type {
   AnalyticsConfig,
   AnalyticsProvider,
@@ -542,9 +543,7 @@ const adapterManager = {
         }
         const [tid, tidSource] = getTid(bidderCode, auctionId, bidderOrtb2[bidderCode]?.source?.tid ?? ortb2.source?.tid);
         const fpd = Object.freeze(redact.ortb2(mergeDeep(
-          {},
-          ortb2,
-          bidderOrtb2[bidderCode],
+          mergeBidderOrtb2(ortb2, bidderOrtb2[bidderCode]),
           {
             source: {
               tid,

@@ -2165,6 +2165,19 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
+    it('should give bidders their own schain instead of merging it with the global one', () => {
+      const schain = (asi) => ({ ver: '1.0', complete: 1, nodes: [{ asi, sid: '1', hp: 1 }] });
+      const requests = Object.fromEntries(
+        adapterManager.makeBidRequests(adUnits, 123, 'auction-id', 123, [], {
+          global: { source: { ext: { schain: schain('global') } } },
+          bidder: { appnexus: { source: { ext: { schain: schain('appnexus') } } } }
+        }).map((r) => [r.bidderCode, r])
+      );
+      expect(requests.appnexus.ortb2.source.ext.schain).to.eql(schain('appnexus'));
+      expect(requests.rubicon.ortb2.source.ext.schain).to.eql(schain('global'));
+      requests.appnexus.bids.forEach((bid) => expect(bid.ortb2.source.ext.schain).to.eql(schain('appnexus')));
+    });
+
     describe('transaction IDs', () => {
       beforeEach(() => {
         sinon.stub(dep, 'redact').returns({

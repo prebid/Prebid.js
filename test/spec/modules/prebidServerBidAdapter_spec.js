@@ -4611,6 +4611,22 @@ describe('S2S Adapter', function () {
             array: [{ id: 1 }, { id: 2 }]
           }
         }
+      },
+      {
+        t: 'does not merge schain nodes from global config into a bidder schain',
+        global: {
+          source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }] } } }
+        },
+        bidder: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        },
+        expected: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        }
       }
     ].forEach(({ t, global, bidder, expected }) => {
       it(t, () => {
