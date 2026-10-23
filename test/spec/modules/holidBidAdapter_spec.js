@@ -1,387 +1,262 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec } from 'modules/holidBidAdapter.js';
+import * as utils from 'src/utils.js';
+import 'modules/priceFloors.js';
 
-describe('holidBidAdapterTests', () => {
-  const bidderRequest = {
-    bidderRequestId: 'test-id'
-  };
-
-  const bidRequestData = {
+const clone = utils.deepClone;
+function fixture() {
+  return {
     bidder: 'holid',
-    adUnitCode: 'test-div',
+    adUnitCode: 'rail',
     bidId: 'bid-id',
     params: { adUnitID: '12345' },
-    mediaTypes: { banner: {} },
     sizes: [[300, 250]],
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
     ortb2: {
-      site: {
-        publisher: {
-          domain: 'https://foo.bar',
-        }
-      },
-      regs: {
-        gdpr: 1,
-      },
-      user: {
-        ext: {
-          consent: 'G4ll0p1ng_Un1c0rn5',
-        }
-      },
-      device: {
-        h: 410,
-        w: 1860,
-      }
-    }
+      site: { publisher: { id: 'publisher' } },
+      user: { ext: { data: { segment: 'cooking' } } },
+      ext: { prebid: { aliases: { test: 'adform' } } },
+      source: { tid: 'transaction', ext: { schain: { ver: '1.0', complete: 1, nodes: [] } } }
+    },
+    ortb2Imp: { ext: { gpid: '/publisher/rail', data: { pbadslot: 'rail' } }, pmp: { deals: [{ id: 'pmp-input' }] } }
   };
+}
+function build(bid = fixture(), request = {}) {
+  return spec.buildRequests([bid], { bidderRequestId: 'request-id', timeout: 1000, ...request })[0];
+}
+function payload(bid, request) { return JSON.parse(build(bid, request).data); }
+function serverBid(overrides = {}) {
+  return { id: 'server-bid', impid: 'bid-id', price: 2, adm: '<div>ad</div>', crid: 'creative', w: 300, h: 250, ...overrides };
+}
+function interpret(bids, request = build(), currency = 'USD') {
+  return spec.interpretResponse({ body: { cur: currency, seatbid: [{ seat: 'adform', bid: bids }] } }, request);
+}
+const syncResponses = [{ body: { ext: { responsetimemillis: { adform: 10, rubicon: 20 } } } }];
+function syncParams(gdpr, usp, gpp) {
+  return new URL(spec.getUserSyncs({ iframeEnabled: true }, syncResponses, gdpr, usp, gpp)[0].url).searchParams;
+}
 
-  const clone = (obj) => JSON.parse(JSON.stringify(obj));
-
-  describe('isBidRequestValid', () => {
-    it('should return true', () => {
-      expect(spec.isBidRequestValid(clone(bidRequestData))).to.equal(true);
-    });
-
-    it('should return false when required params are not passed', () => {
-      const bid = clone(bidRequestData);
-      delete bid.params.adUnitID;
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+describe('Holid adapter', () => {
+  const sandbox = sinon.createSandbox();
+  afterEach(() => sandbox.restore());
+  describe('validation', () => {
+    ['12345', 12345].forEach(id => it(`accepts stored ID ${typeof id}`, () => {
+      expect(spec.isBidRequestValid({ params: { adUnitID: id } })).to.equal(true);
+    }));
+    [undefined, null, '', '  ', 0, -1, {}, []].forEach(id => it(`rejects invalid ID ${JSON.stringify(id)}`, () => {
+      expect(spec.isBidRequestValid({ params: { adUnitID: id } })).to.equal(false);
+    }));
+    it('handles missing bid/params', () => {
+      expect(spec.isBidRequestValid()).to.equal(false);
+      expect(spec.isBidRequestValid({})).to.equal(false);
     });
   });
-
-  describe('buildRequests', () => {
-    const bid = clone(bidRequestData);
-    const request = spec.buildRequests([bid], bidderRequest);
-    const payload = JSON.parse(request[0].data);
-
-    it('should include id in request', () => {
-      expect(payload.id).to.equal('test-id');
+  describe('requests', () => {
+    it('retains endpoint, POST and stored request IDs at both levels', () => {
+      const request = build(); const data = JSON.parse(request.data);
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://helloworld.holid.io/openrtb2/auction');
+      expect(data.id).to.equal('request-id');
+      expect(data.imp[0].id).to.equal('bid-id');
+      expect(data.ext.prebid.storedrequest.id).to.equal('12345');
+      expect(data.imp[0].ext.prebid.storedrequest.id).to.equal('12345');
     });
-
-    it('should include ext in imp', () => {
-      expect(payload.imp[0].ext).to.deep.equal({
-        prebid: { storedrequest: { id: '12345' } },
+    it('keeps distinct stored requests separate', () => {
+      const a = fixture(); const b = fixture(); b.bidId = 'other'; b.params.adUnitID = '67890';
+      const requests = spec.buildRequests([a, b], { bidderRequestId: 'id' }).map(r => JSON.parse(r.data));
+      expect(requests).to.have.length(2);
+      expect(requests.map(r => r.ext.prebid.storedrequest.id)).to.deep.equal(['12345', '67890']);
+    });
+    it('preserves GPID, slot data, PMP, source fields, schain and aliases', () => {
+      const bid = fixture(); const data = payload(bid);
+      expect(data.imp[0].ext.gpid).to.equal('/publisher/rail');
+      expect(data.imp[0].ext.data).to.deep.equal(bid.ortb2Imp.ext.data);
+      expect(data.imp[0].pmp).to.deep.equal(bid.ortb2Imp.pmp);
+      expect(data.source).to.deep.equal(bid.ortb2.source);
+      expect(data.ext.prebid.aliases).to.deep.equal(bid.ortb2.ext.prebid.aliases);
+    });
+    it('does not mutate input or share nested output references', () => {
+      const bid = fixture(); const original = clone(bid);
+      const request = build(bid, { gdprConsent: { gdprApplies: true, consentString: 'consent' } });
+      request.ortbRequest.imp[0].ext.data.pbadslot = 'changed';
+      request.ortbRequest.ext.prebid.aliases.test = 'changed';
+      expect(bid).to.deep.equal(original);
+    });
+    it('uses bidderRequest.ortb2 when per-bid ortb2 is absent', () => {
+      const bid = fixture(); delete bid.ortb2;
+      const br = { ortb2: { site: { domain: 'example.com' }, regs: { gpp: 'ORTB-GPP', gpp_sid: [7] } } };
+      const original = clone(br); const data = payload(bid, br);
+      expect(data.site.domain).to.equal('example.com'); expect(data.regs.gpp).to.equal('ORTB-GPP');
+      expect(br).to.deep.equal(original);
+    });
+    it('prefers filtered per-bid FPD over request-level data', () => {
+      expect(payload(fixture(), { ortb2: { site: { domain: 'must-not-leak.example' } } }).site.domain).to.equal(undefined);
+    });
+    it('preserves COPPA, DSA and blocking fields', () => {
+      const bid = fixture(); bid.ortb2.regs = { coppa: 1, ext: { dsa: { dsarequired: 1 } } };
+      bid.ortb2.bcat = ['IAB7']; bid.ortb2.badv = ['blocked.example'];
+      expect(payload(bid).regs).to.deep.equal(bid.ortb2.regs);
+      expect(payload(bid).badv).to.deep.equal(['blocked.example']);
+    });
+    it('uses mediaTypes sizes, with fallback to legacy sizes', () => {
+      expect(payload().imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+      const bid = fixture(); delete bid.mediaTypes.banner.sizes;
+      expect(payload(bid).imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+    });
+    it('preserves explicit ortb2Imp banner format', () => {
+      const bid = fixture(); bid.ortb2Imp.banner = { format: [{ w: 336, h: 280 }], pos: 1 };
+      expect(payload(bid).imp[0].banner.format).to.deep.equal([{ w: 336, h: 280 }]);
+    });
+    it('sets modern and legacy GDPR consistently and carries EIDs', () => {
+      const bid = fixture(); bid.ortb2.regs = { gdpr: 0, ext: { gdpr: 0 } };
+      bid.userIdAsEids = [{ source: 'id.example', uids: [{ id: 'test', atype: 1 }] }];
+      const data = payload(bid, { gdprConsent: { gdprApplies: true, consentString: 'TCF' }, usPrivacy: '1YNN' });
+      expect(data.regs.gdpr).to.equal(1); expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.equal('TCF'); expect(data.user.ext.eids).to.deep.equal(bid.userIdAsEids);
+      expect(data.regs.ext.us_privacy).to.equal('1YNN');
+    });
+    it('does not translate unknown GDPR to gdpr=0', () => {
+      const data = payload(fixture(), { gdprConsent: {} });
+      expect(data.regs?.gdpr).to.equal(undefined); expect(data.regs?.ext?.gdpr).to.equal(undefined);
+    });
+    it('carries explicit GDPR false', () => {
+      expect(payload(fixture(), { gdprConsent: { gdprApplies: false } }).regs.gdpr).to.equal(0);
+    });
+    it('maps gppConsent to ORTB 2.6 fields and preserves other regs', () => {
+      const bid = fixture(); bid.ortb2.regs = { coppa: 1 };
+      const data = payload(bid, { gppConsent: { gppString: 'GPP', applicableSections: [7, 8] } });
+      expect(data.regs).to.include({ coppa: 1, gpp: 'GPP' });
+      expect(data.regs.gpp_sid).to.deep.equal([7, 8]); expect(data.regs.ext?.gpp).to.equal(undefined);
+    });
+    it('respects the auction timeout and caps per-bid override', () => {
+      expect(payload().tmax).to.equal(1000);
+      const bid = fixture(); bid.params.tmax = 2000; expect(payload(bid).tmax).to.equal(1000);
+      bid.params.tmax = 650; expect(payload(bid).tmax).to.equal(650);
+      expect(payload(bid, { timeout: undefined }).tmax).to.equal(650);
+    });
+    it('omits invalid timeout and inherited stale tmax', () => {
+      const bid = fixture(); bid.params.tmax = -1; bid.ortb2.tmax = 9000;
+      expect(payload(bid, { timeout: undefined }).tmax).to.equal(undefined);
+    });
+    it('uses getFloor and currency via Price Floors', () => {
+      const bid = fixture(); bid.params.floor = 0.1;
+      bid.getFloor = sandbox.stub().returns({ floor: 1.25, currency: 'USD' });
+      const data = payload(bid);
+      expect(bid.getFloor.called).to.equal(true);
+      expect(data.imp[0].bidfloor).to.equal(1.25); expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
+    it('supports legacy floor and explicit currency fallback', () => {
+      const bid = fixture(); bid.params.floor = 0.5; bid.params.floorCurrency = 'EUR';
+      expect(payload(bid).imp[0]).to.include({ bidfloor: 0.5, bidfloorcur: 'EUR' });
+      delete bid.params.floorCurrency;
+      expect(payload(bid).imp[0].bidfloorcur).to.equal('USD');
+    });
+    it('preserves an explicit impression floor over legacy params', () => {
+      const bid = fixture(); bid.params.floor = 0.5; bid.ortb2Imp.bidfloor = 0.8; bid.ortb2Imp.bidfloorcur = 'EUR';
+      expect(payload(bid).imp[0]).to.include({ bidfloor: 0.8, bidfloorcur: 'EUR' });
+    });
+    it('does not send invalid legacy floor', () => {
+      const bid = fixture(); bid.params.floor = -1; expect(payload(bid).imp[0].bidfloor).to.equal(undefined);
+    });
+    it('accepts a zero legacy floor', () => {
+      const bid = fixture(); bid.params.floor = 0; expect(payload(bid).imp[0].bidfloor).to.equal(0);
+    });
+  });
+  describe('responses and wins', () => {
+    it('maps banner, price, IDs, currency, deal and TTL', () => {
+      const bid = interpret([serverBid({ dealid: 'deal-out', exp: 25 })], build(), 'EUR')[0];
+      expect(bid).to.include({
+        requestId: 'bid-id',
+        cpm: 2,
+        ad: '<div>ad</div>',
+        width: 300,
+        height: 250,
+        creativeId: 'creative',
+        currency: 'EUR',
+        dealId: 'deal-out',
+        ttl: 25,
+        netRevenue: true,
+        mediaType: 'banner'
       });
     });
-
-    it('should include ext in request', () => {
-      expect(payload.ext).to.deep.equal({
-        prebid: { storedrequest: { id: '12345' } },
-      });
+    it('defaults missing TTL and currency', () => {
+      const bid = interpret([serverBid()], build(), null)[0];
+      expect(bid.ttl).to.equal(300); expect(bid.currency).to.equal('USD');
     });
-
-    it('should include banner format in imp', () => {
-      expect(payload.imp[0].banner).to.deep.equal({
-        format: [{ w: 300, h: 250 }],
-      });
+    it('keeps highest bid and its own win URL regardless of response order', () => {
+      const pixel = sandbox.stub(utils, 'triggerPixel');
+      for (const prices of [[5, 1], [1, 5]]) {
+        const bids = prices.map(price => serverBid({ price, ext: { prebid: { events: { win: `https://example.invalid/${price}` } } } }));
+        const winner = interpret(bids)[0]; expect(winner.cpm).to.equal(5);
+        spec.onBidWon(winner); spec.onBidWon(winner);
+      }
+      expect(pixel.callCount).to.equal(2);
+      expect(pixel.alwaysCalledWith('https://example.invalid/5')).to.equal(true);
     });
-
-    it('should include ortb2 first party data', () => {
-      expect(payload.device.w).to.equal(1860);
-      expect(payload.device.h).to.equal(410);
-      expect(payload.user.ext.consent).to.equal('G4ll0p1ng_Un1c0rn5');
-      expect(payload.regs.gdpr).to.equal(1);
+    it('does not notify loser when winner has no win URL', () => {
+      const pixel = sandbox.stub(utils, 'triggerPixel');
+      const winner = interpret([serverBid({ price: 5 }), serverBid({ price: 1, ext: { prebid: { events: { win: 'https://example.invalid/loser' } } } })])[0];
+      spec.onBidWon(winner); expect(pixel.called).to.equal(false);
     });
-  });
-
-  // NEW: cover tmax behavior introduced in the PR
-  describe('buildRequests - tmax behavior', () => {
-    it('should set tmax from bidderRequest.timeout when no params.tmax is provided', () => {
-      const bid = clone(bidRequestData);
-      const br = { bidderRequestId: 'test-id', timeout: 1200 };
-
-      const request = spec.buildRequests([bid], br);
-      const payload = JSON.parse(request[0].data);
-
-      expect(payload.tmax).to.equal(1200);
+    it('does not mix URLs between overlapping auctions', () => {
+      const pixel = sandbox.stub(utils, 'triggerPixel');
+      const make = url => interpret([serverBid({ ext: { prebid: { events: { win: url } } } })])[0];
+      const first = make('https://example.invalid/first'); const second = make('https://example.invalid/second');
+      spec.onBidWon(first); spec.onBidWon(second);
+      expect(pixel.args.map(args => args[0])).to.deep.equal(['https://example.invalid/first', 'https://example.invalid/second']);
     });
-
-    it('should cap params.tmax to bidderRequest.timeout when provided', () => {
-      const bid = clone(bidRequestData);
-      bid.params.tmax = 2500;
-
-      const br = { bidderRequestId: 'test-id', timeout: 900 };
-
-      const request = spec.buildRequests([bid], br);
-      const payload = JSON.parse(request[0].data);
-
-      expect(payload.tmax).to.equal(900);
+    it('preserves metadata, normalizes adomain, does not mutate the response', () => {
+      const input = serverBid({ adomain: [' https://WWW.Example.COM ', null, ''], ext: { prebid: { meta: { networkId: 42 } }, dsa: { behalf: 'advertiser' } } });
+      const before = clone(input); const result = interpret([input])[0];
+      expect(result.meta.advertiserDomains).to.deep.equal(['example.com']);
+      expect(result.meta.networkId).to.equal(42); expect(result.meta.dsa).to.deep.equal(input.ext.dsa);
+      expect(input).to.deep.equal(before);
     });
-
-    it('should use params.tmax when bidderRequest.timeout is missing', () => {
-      const bid = clone(bidRequestData);
-      bid.params.tmax = 750;
-
-      const br = { bidderRequestId: 'test-id' };
-
-      const request = spec.buildRequests([bid], br);
-      const payload = JSON.parse(request[0].data);
-
-      expect(payload.tmax).to.equal(750);
+    it('handles nurl-only creatives through standard converter', () => {
+      expect(interpret([serverBid({ adm: undefined, nurl: 'https://example.invalid/ad' })])[0].adUrl).to.equal('https://example.invalid/ad');
+    });
+    it('ignores bids for other impressions', () => {
+      expect(interpret([serverBid({ impid: 'unknown' })])).to.deep.equal([]);
+    });
+    [{ price: -1 }, { price: NaN }, { price: 0 }, { adm: '' }, { w: 0 }, { exp: -1 }, { exp: 0 }].forEach(overrides => {
+      it(`rejects unusable bid ${JSON.stringify(overrides)}`, () => expect(interpret([serverBid(overrides)])).to.deep.equal([]));
+    });
+    it('accepts empty/no-bid and malformed seats without throwing', () => {
+      for (const body of [null, {}, { seatbid: null }, { seatbid: [] }, { seatbid: [null, {}, { bid: [null] }] }]) {
+        expect(spec.interpretResponse({ body }, build())).to.deep.equal([]);
+      }
+      expect(spec.interpretResponse({ body: { seatbid: [] } }, {})).to.deep.equal([]);
     });
   });
-
-  // NEW: ensure ORTB fields are merged rather than clobbered
-  describe('buildRequests - ORTB merge safety', () => {
-    it('should merge storedrequest into ext.prebid without clobbering existing ext fields', () => {
-      const bid = clone(bidRequestData);
-      bid.ortb2.ext = { someExtKey: 'keep-me', prebid: { somePrebidKey: 'keep-me-too' } };
-
-      const br = { bidderRequestId: 'test-id', timeout: 1000 };
-      const request = spec.buildRequests([bid], br);
-      const payload = JSON.parse(request[0].data);
-
-      // existing ext preserved
-      expect(payload.ext).to.exist;
-      expect(payload.ext.someExtKey).to.equal('keep-me');
-      expect(payload.ext.prebid).to.exist;
-      expect(payload.ext.prebid.somePrebidKey).to.equal('keep-me-too');
-
-      // storedrequest merged in
-      expect(payload.ext.prebid.storedrequest).to.exist;
-      expect(payload.ext.prebid.storedrequest.id).to.equal('12345');
+  describe('syncs', () => {
+    it('returns no tracking pixel when syncs are disabled', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, syncResponses)).to.deep.equal([]);
     });
-
-    it('should merge schain into source.ext.schain without clobbering source fields', () => {
-      const bid = clone(bidRequestData);
-      bid.ortb2.source = {
-        tid: 'tid-123',
-        ext: {
-          other: 'keep-me',
-          schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'example.com', sid: '123', hp: 1 }] }
-        }
-      };
-
-      const br = { bidderRequestId: 'test-id', timeout: 1000 };
-      const request = spec.buildRequests([bid], br);
-      const payload = JSON.parse(request[0].data);
-
-      expect(payload.source).to.exist;
-      expect(payload.source.tid).to.equal('tid-123');
-      expect(payload.source.ext.other).to.equal('keep-me');
-      expect(payload.source.ext.schain).to.deep.equal(bid.ortb2.source.ext.schain);
+    it('does not advertise an HTML page as image fallback', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses)).to.deep.equal([]);
     });
-  });
-
-  describe('interpretResponse', () => {
-    // Add impid: 'bid-id' so requestId matches bidRequestData.bidId
-    const serverResponse = {
-      body: {
-        id: 'test-id',
-        cur: 'USD',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: 'testbidid',
-                impid: 'bid-id',
-                price: 0.4,
-                adm: 'test-ad',
-                adid: 789456,
-                crid: 1234,
-                w: 300,
-                h: 250,
-              },
-            ],
-          },
-        ],
-      },
-    };
-
-    const interpretedResponse = spec.interpretResponse(serverResponse, bidRequestData);
-
-    it('should interpret response', () => {
-      expect(interpretedResponse[0].requestId).to.equal(bidRequestData.bidId);
-      expect(interpretedResponse[0].cpm).to.equal(
-        serverResponse.body.seatbid[0].bid[0].price
-      );
-      expect(interpretedResponse[0].ad).to.equal(
-        serverResponse.body.seatbid[0].bid[0].adm
-      );
-      expect(interpretedResponse[0].creativeId).to.equal(
-        serverResponse.body.seatbid[0].bid[0].crid
-      );
-      expect(interpretedResponse[0].width).to.equal(
-        serverResponse.body.seatbid[0].bid[0].w
-      );
-      expect(interpretedResponse[0].height).to.equal(
-        serverResponse.body.seatbid[0].bid[0].h
-      );
-      expect(interpretedResponse[0].currency).to.equal(serverResponse.body.cur);
+    it('carries GDPR, both USP bridge names and GPP', () => {
+      const params = syncParams({ gdprApplies: true, consentString: 'a+b&c' }, '1YNN', { gppString: 'GPP~test', applicableSections: [7, 8] });
+      expect(params.get('gdpr')).to.equal('1'); expect(params.get('gdpr_consent')).to.equal('a+b&c');
+      expect(params.get('us_privacy')).to.equal('1YNN'); expect(params.get('usp_consent')).to.equal('1YNN');
+      expect(params.get('gpp')).to.equal('GPP~test'); expect(JSON.parse(params.get('gpp_sid'))).to.deep.equal([7, 8]);
     });
-
-    it('should map adomain to meta.advertiserDomains and preserve existing meta fields', () => {
-      const serverResponseWithAdomain = {
-        body: {
-          id: 'test-id',
-          cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: 'testbidid-2',
-                  impid: 'bid-id',
-                  price: 0.55,
-                  adm: '<div>ad</div>',
-                  crid: 'cr-2',
-                  w: 300,
-                  h: 250,
-                  // intentionally mixed-case + protocol + www to test normalization
-                  adomain: ['https://Holid.se', 'www.Example.COM'],
-                  ext: {
-                    prebid: {
-                      meta: {
-                        networkId: 42
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      };
-
-      const out = spec.interpretResponse(serverResponseWithAdomain, bidRequestData);
-      expect(out).to.have.length(1);
-      expect(out[0].requestId).to.equal('bid-id');
-
-      // critical assertion: advertiserDomains normalized and present
-      expect(out[0].meta).to.have.property('advertiserDomains');
-      expect(out[0].meta.advertiserDomains).to.deep.equal(['holid.se', 'example.com']);
-
-      // ensure any existing meta (e.g., networkId) is preserved
-      expect(out[0].meta.networkId).to.equal(42);
+    it('does not claim gdpr=0 without a known applicability', () => {
+      expect(syncParams().has('gdpr')).to.equal(false);
+      expect(syncParams({}).has('gdpr')).to.equal(false);
+      expect(syncParams({ gdprApplies: false }).get('gdpr')).to.equal('0');
     });
-  });
-
-  describe('getUserSyncs', () => {
-    it('should return user sync', () => {
-      const optionsType = {
-        iframeEnabled: true,
-        pixelEnabled: true,
-      };
-      const serverResponse = [
-        {
-          body: {
-            ext: {
-              responsetimemillis: {
-                'test seat 1': 2,
-                'test seat 2': 1,
-              },
-            },
-          },
-        },
-      ];
-      const gdprConsent = {
-        gdprApplies: 1,
-        consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
-      };
-      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
-
-      const expectedUserSyncs = [
-        {
-          type: 'image',
-          url: 'https://track.adform.net/Serving/TrackPoint/?pm=2992097&lid=132720821',
-        },
-        {
-          type: 'iframe',
-          url: 'https://null.holid.io/sync.html?bidders=%5B%22test%20seat%201%22%2C%22test%20seat%202%22%5D&gdpr=1&gdpr_consent=dkj49Sjmfjuj34as%3A12jaf90123hufabidfy9u23brfpoig&us_privacy=mkjvbiniwot4827obfoy8sdg8203gb&type=iframe',
-        },
-      ];
-
-      const userSyncs = spec.getUserSyncs(
-        optionsType,
-        serverResponse,
-        gdprConsent,
-        uspConsent
-      );
-
-      expect(userSyncs).to.deep.equal(expectedUserSyncs);
+    it('deduplicates bidders and uses seat fallback', () => {
+      const response = { body: { ext: { responsetimemillis: { adform: 1 } }, seatbid: [{ seat: 'adform' }, { seat: 'rubicon' }, null] } };
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, response);
+      expect(syncs).to.have.length(1); expect(syncs[0].type).to.equal('iframe');
+      expect(JSON.parse(new URL(syncs[0].url).searchParams.get('bidders'))).to.deep.equal(['adform', 'rubicon']);
     });
-
-    it('should return base user syncs when responsetimemillis is not defined', () => {
-      const optionsType = {
-        iframeEnabled: true,
-        pixelEnabled: true,
-      };
-      const serverResponse = [
-        {
-          body: {
-            ext: {},
-          },
-        },
-      ];
-      const gdprConsent = {
-        gdprApplies: 1,
-        consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
-      };
-      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
-
-      const expectedUserSyncs = [
-        {
-          type: 'image',
-          url: 'https://track.adform.net/Serving/TrackPoint/?pm=2992097&lid=132720821',
-        },
-      ];
-
-      const userSyncs = spec.getUserSyncs(
-        optionsType,
-        serverResponse,
-        gdprConsent,
-        uspConsent
-      );
-
-      expect(userSyncs).to.deep.equal(expectedUserSyncs);
-    });
-
-    // NEW: verify seatbid[].seat fallback is used when responsetimemillis is missing
-    it('should derive bidders from seatbid[].seat when responsetimemillis is missing', () => {
-      const optionsType = { iframeEnabled: true, pixelEnabled: true };
-      const serverResponse = [
-        {
-          body: {
-            seatbid: [
-              { seat: 'rubicon', bid: [] },
-              { seat: 'pubmatic', bid: [] },
-            ]
-          }
-        }
-      ];
-
-      const userSyncs = spec.getUserSyncs(optionsType, serverResponse);
-
-      const iframe = userSyncs.find(s => s.type === 'iframe');
-      expect(iframe).to.exist;
-      expect(iframe.url).to.include('bidders=');
-
-      const decoded = decodeURIComponent(iframe.url.split('bidders=')[1].split('&')[0]);
-      expect(decoded).to.include('rubicon');
-      expect(decoded).to.include('pubmatic');
-    });
-
-    // NEW: verify pixel-based fallback is used when iframe is disabled
-    it('should add an extra image sync when iframe is disabled but pixelEnabled is true', () => {
-      const optionsType = { iframeEnabled: false, pixelEnabled: true };
-      const serverResponse = [
-        {
-          body: {
-            ext: { responsetimemillis: { pubmatic: 12 } }
-          }
-        }
-      ];
-
-      const userSyncs = spec.getUserSyncs(optionsType, serverResponse);
-
-      // base Adform pixel always exists
-      expect(userSyncs[0].type).to.equal('image');
-
-      // additional image sync from our endpoint should exist
-      const extraImages = userSyncs.filter(s => s.type === 'image');
-      expect(extraImages.length).to.be.greaterThan(1);
-      const urls = extraImages.map(s => s.url).join(' ');
-      expect(urls).to.include('bidders=');
-      expect(urls).to.include('type=image');
+    it('handles missing/no-bid responses', () => {
+      for (const response of [undefined, [], [null], [{}], [{ body: { seatbid: {} } }]]) {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, response)).to.deep.equal([]);
+      }
     });
   });
 });

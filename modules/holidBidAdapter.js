@@ -1,387 +1,151 @@
-import {
-  deepAccess,
-  deepSetValue,
-  getBidIdParameter,
-  isStr,
-  logMessage,
-  triggerPixel,
-} from '../src/utils.js';
+import { deepAccess, deepClone, deepSetValue, isStr, triggerPixel } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-const BIDDER_CODE = 'holid';
-const GVLID = 1177;
+/** @typedef {import('./holidBidAdapter.d.ts').HolidBidderParams} HolidBidderParams */
 
 const ENDPOINT = 'https://helloworld.holid.io/openrtb2/auction';
 const COOKIE_SYNC_ENDPOINT = 'https://null.holid.io/sync.html';
+const DEFAULT_TTL = 300;
 
-const TIME_TO_LIVE = 300;
-
-// Keep win URLs in-memory (per page-load)
-const wurlMap = {};
-
-/**
- * Resolve tmax for the outgoing ORTB request.
- * Goal: respect publisher's Prebid timeout (bidderRequest.timeout) and allow an optional per-bid override,
- * without hard-forcing an arbitrary 500ms.
- *
- * Rules:
- * - If bid.params.tmax is a positive number, use it, but never exceed bidderRequest.timeout when available.
- * - Else if bidderRequest.timeout is a positive number, use it.
- * - Else omit tmax entirely (PBS will apply its own default / config).
- */
 function resolveTmax(bid, bidderRequest) {
-  const auctionTimeout = Number(bidderRequest?.timeout);
-  const paramTmax = Number(bid?.params?.tmax);
-
-  const hasAuctionTimeout = Number.isFinite(auctionTimeout) && auctionTimeout > 0;
-  const hasParamTmax = Number.isFinite(paramTmax) && paramTmax > 0;
-
-  if (hasParamTmax && hasAuctionTimeout) {
-    return Math.min(paramTmax, auctionTimeout);
-  }
-  if (hasParamTmax) {
-    return paramTmax;
-  }
-  if (hasAuctionTimeout) {
-    return auctionTimeout;
-  }
-  return undefined;
+  const values = [bid.params.tmax, bidderRequest.timeout].map(Number)
+    .filter(value => Number.isFinite(value) && value >= 1);
+  return values.length ? Math.floor(Math.min(...values)) : undefined;
 }
 
-/**
- * Merge stored request ID into request.ext.prebid.storedrequest.id (without clobbering other ext fields).
- * Keeps behavior consistent with the existing adapter expectation of bid.params.adUnitID.
- */
-function mergeStoredRequest(ortbRequest, bid) {
-  const storedId = getBidIdParameter('adUnitID', bid.params);
-  if (storedId) {
-    deepSetValue(ortbRequest, 'ext.prebid.storedrequest.id', storedId);
-  }
+function setStoredRequest(target, bid) {
+  deepSetValue(target, 'ext.prebid.storedrequest.id', String(bid.params.adUnitID));
 }
 
-/**
- * Merge schain into request.source.ext.schain (without overwriting request.source / request.ext).
- */
-function mergeSchain(ortbRequest, bid) {
-  const schain = deepAccess(bid, 'ortb2.source.ext.schain');
-  if (schain) {
-    deepSetValue(ortbRequest, 'source.ext.schain', schain);
-  }
+function validFloor(floor) {
+  return typeof floor === 'number' && Number.isFinite(floor) && floor >= 0;
 }
 
-/**
- * Build a sync URL for our sync endpoint.
- */
-function buildSyncUrl({ bidders, gdprConsent, uspConsent, type }) {
-  const queryParams = [];
+const converter = ortbConverter({
+  context: { netRevenue: true, ttl: DEFAULT_TTL, mediaType: BANNER, currency: 'USD' },
+  imp(buildImp, bid, context) {
+    const imp = buildImp(bid, context);
+    setStoredRequest(imp, bid);
+    // Price Floors' converter processors populate bidfloor/bidfloorcur when enabled.
+    // Preserve an explicit ortb2Imp floor; legacy params are only a fallback.
+    if (!validFloor(imp.bidfloor) && validFloor(bid.params.floor)) {
+      imp.bidfloor = bid.params.floor;
+      imp.bidfloorcur = bid.params.floorCurrency || 'USD';
+    }
+    return imp;
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    const bid = context.bidRequests[0];
+    setStoredRequest(request, bid);
+    request.id = bidderRequest.bidderRequestId;
+    // Keep one request per stored-request configuration; do not combine site/alias settings.
+    const tmax = resolveTmax(bid, bidderRequest);
+    if (tmax !== undefined) request.tmax = tmax;
+    else delete request.tmax;
 
-  queryParams.push('bidders=' + bidders);
-
-  if (gdprConsent) {
-    queryParams.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-    queryParams.push(
-      'gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '')
-    );
-  } else {
-    queryParams.push('gdpr=0');
+    const gdpr = bidderRequest.gdprConsent;
+    if (typeof gdpr?.gdprApplies === 'boolean') {
+      deepSetValue(request, 'regs.ext.gdpr', gdpr.gdprApplies ? 1 : 0);
+      // Do not leave contradictory legacy and ORTB 2.6 signals.
+      deepSetValue(request, 'regs.gdpr', gdpr.gdprApplies ? 1 : 0);
+    }
+    if (isStr(gdpr?.consentString)) deepSetValue(request, 'user.ext.consent', gdpr.consentString);
+    const gpp = bidderRequest.gppConsent;
+    if (isStr(gpp?.gppString)) deepSetValue(request, 'regs.gpp', gpp.gppString);
+    if (Array.isArray(gpp?.applicableSections)) deepSetValue(request, 'regs.gpp_sid', deepClone(gpp.applicableSections));
+    if (isStr(bidderRequest.usPrivacy)) deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.usPrivacy);
+    if (bid.userIdAsEids) deepSetValue(request, 'user.ext.eids', deepClone(bid.userIdAsEids));
+    return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    if (!Number.isFinite(bid.price) || bid.price <= 0 ||
+        !(bid.w > 0 && bid.h > 0) || (!bid.adm && !bid.nurl) ||
+        (bid.exp !== undefined && (!Number.isFinite(bid.exp) || bid.exp <= 0))) return;
+    const response = buildBidResponse(bid, context);
+    response.meta = { ...deepClone(deepAccess(bid, 'ext.prebid.meta', {})), ...response.meta };
+    const domains = Array.isArray(bid.adomain) ? bid.adomain
+      .filter(isStr).map(domain => domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, ''))
+      .filter(Boolean) : [];
+    if (domains.length) response.meta.advertiserDomains = domains;
+    // Carry the URL on the bid itself: losing bids cannot overwrite it and there is no page-global map.
+    const win = deepAccess(bid, 'ext.prebid.events.win');
+    if (isStr(win) && win) response.holidWinUrl = win;
+    return response;
   }
-
-  if (typeof uspConsent !== 'undefined') {
-    queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
-  }
-
-  queryParams.push('type=' + encodeURIComponent(type));
-
-  return COOKIE_SYNC_ENDPOINT + '?' + queryParams.join('&');
-}
+});
 
 export const spec = {
-  code: BIDDER_CODE,
-  gvlid: GVLID,
+  code: 'holid',
+  gvlid: 1177,
   supportedMediaTypes: [BANNER],
-
-  // Validate bid: requires adUnitID parameter
-  isBidRequestValid: function (bid) {
-    return !!bid.params.adUnitID;
+  isBidRequestValid(bid) {
+    const id = bid?.params?.adUnitID;
+    return (isStr(id) && id.trim().length > 0) || (Number.isSafeInteger(id) && id > 0);
   },
-
-  // Build request payload including GDPR, GPP, and US Privacy data if available
-  buildRequests: function (validBidRequests, bidderRequest) {
-    return validBidRequests.map((bid) => {
-      // Start from ortb2 (publisher modules may have populated site/user/device/ext/etc)
-      const requestData = {
-        ...bid.ortb2,
-        id: bidderRequest.bidderRequestId,
-        imp: [getImp(bid)],
+  buildRequests(validBidRequests, bidderRequest) {
+    return validBidRequests.map(bid => {
+      // Converter expects request-level ortb2; older integrations attach it to each bid.
+      // Clone before conversion, including nested objects, so publisher data stays immutable.
+      const request = { ...bidderRequest, ortb2: deepClone(bid.ortb2 ?? bidderRequest.ortb2 ?? {}) };
+      const normalizedBid = {
+        ...bid,
+        ortb2Imp: deepClone(bid.ortb2Imp || {}),
+        mediaTypes: { banner: { ...bid.mediaTypes?.banner, sizes: bid.mediaTypes?.banner?.sizes || bid.sizes } }
       };
-
-      // Merge (don’t overwrite) schain + storedrequest
-      mergeSchain(requestData, bid);
-      mergeStoredRequest(requestData, bid);
-
-      // Resolve and set tmax (don’t hard-force)
-      const tmax = resolveTmax(bid, bidderRequest);
-      if (tmax) {
-        requestData.tmax = tmax;
-      }
-
-      // GDPR
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        deepSetValue(
-          requestData,
-          'regs.ext.gdpr',
-          bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-        );
-        deepSetValue(
-          requestData,
-          'user.ext.consent',
-          bidderRequest.gdprConsent.consentString
-        );
-      }
-
-      // GPP
-      if (bidderRequest && bidderRequest.gpp) {
-        deepSetValue(requestData, 'regs.ext.gpp', bidderRequest.gpp);
-      }
-      if (bidderRequest && bidderRequest.gppSids) {
-        deepSetValue(requestData, 'regs.ext.gpp_sid', bidderRequest.gppSids);
-      }
-
-      // US Privacy
-      if (bidderRequest && bidderRequest.usPrivacy) {
-        deepSetValue(
-          requestData,
-          'regs.ext.us_privacy',
-          bidderRequest.usPrivacy
-        );
-      }
-
-      // User IDs
-      if (bid.userIdAsEids) {
-        deepSetValue(requestData, 'user.ext.eids', bid.userIdAsEids);
-      }
-
-      return {
-        method: 'POST',
-        url: ENDPOINT,
-        data: JSON.stringify(requestData),
-        bidId: bid.bidId,
-      };
+      const ortbRequest = converter.toORTB({ bidRequests: [normalizedBid], bidderRequest: request });
+      return { method: 'POST', url: ENDPOINT, data: JSON.stringify(ortbRequest), bidId: bid.bidId, ortbRequest };
     });
   },
-
-  // Interpret response: group bids by unique impid and select the highest CPM bid per imp
-  interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponsesMap = {}; // Maps impid -> highest bid object
-
-    if (!serverResponse.body || !serverResponse.body.seatbid) {
-      return [];
-    }
-
-    serverResponse.body.seatbid.forEach((seatbid) => {
-      seatbid.bid.forEach((bid) => {
-        const impId = bid.impid; // Unique identifier matching getImp(bid).id
-
-        // --- MINIMAL CHANGE START ---
-        // Build meta object and propagate advertiser domains for hb_adomain
-        const meta = deepAccess(bid, 'ext.prebid.meta', {}) || {};
-
-        // Read ORTB adomain; normalize to array of clean strings
-        let advertiserDomains = deepAccess(bid, 'adomain', []);
-        advertiserDomains = Array.isArray(advertiserDomains)
-          ? advertiserDomains
-            .filter(Boolean)
-            .map((d) =>
-              String(d)
-                .toLowerCase()
-                .replace(/^https?:\/\//, '')
-                .replace(/^www\./, '')
-                .trim()
-            )
-          : [];
-
-        if (advertiserDomains.length > 0) {
-          meta.advertiserDomains = advertiserDomains; // <-- Prebid uses this to set hb_adomain
-        }
-
-        const networkId = deepAccess(bid, 'ext.prebid.meta.networkId');
-        if (networkId) {
-          meta.networkId = networkId;
-        }
-
-        // Keep writing back for completeness (preserves existing behavior)
-        deepSetValue(bid, 'ext.prebid.meta', meta);
-        // --- MINIMAL CHANGE END ---
-
-        const currentBidResponse = {
-          requestId: impId, // Using imp.id as the unique request identifier
-          cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
-          ad: bid.adm,
-          creativeId: bid.crid,
-          currency: serverResponse.body.cur,
-          netRevenue: true,
-          ttl: TIME_TO_LIVE,
-          meta: meta, // includes advertiserDomains now
-        };
-
-        // For each imp, only keep the bid with the highest CPM
-        if (
-          !bidResponsesMap[impId] ||
-          currentBidResponse.cpm > bidResponsesMap[impId].cpm
-        ) {
-          bidResponsesMap[impId] = currentBidResponse;
-        }
-
-        // Store win notification URL (if provided) using the impid as key
-        const wurl = deepAccess(bid, 'ext.prebid.events.win');
-        if (wurl) {
-          addWurl(impId, wurl);
-        }
-      });
-    });
-
-    return Object.values(bidResponsesMap);
-  },
-
-  // User syncs: supports both image and iframe syncing with privacy parameters if available
-  getUserSyncs(optionsType, serverResponse, gdprConsent, uspConsent) {
-    const syncs = [
-      {
-        type: 'image',
-        url: 'https://track.adform.net/Serving/TrackPoint/?pm=2992097&lid=132720821',
-      },
-    ];
-
-    if (
-      !serverResponse ||
-      (Array.isArray(serverResponse) && serverResponse.length === 0)
-    ) {
-      return syncs;
-    }
-
-    const responses = Array.isArray(serverResponse) ? serverResponse : [serverResponse];
-    const bidders = getBidders(responses);
-
-    // Prefer iframe when allowed
-    if (optionsType.iframeEnabled && bidders) {
-      syncs.push({
-        type: 'iframe',
-        url: buildSyncUrl({
-          bidders,
-          gdprConsent,
-          uspConsent,
-          type: 'iframe',
-        }),
-      });
-      return syncs;
-    }
-
-    // Fallback: if iframe is disabled but pixels are enabled, attempt a pixel-based sync call
-    // (Your sync endpoint must support this mode for it to be effective.)
-    if (optionsType.pixelEnabled && bidders) {
-      syncs.push({
-        type: 'image',
-        url: buildSyncUrl({
-          bidders,
-          gdprConsent,
-          uspConsent,
-          type: 'image',
-        }),
-      });
-    }
-
-    return syncs;
-  },
-
-  // On bid win, trigger win notification via an image pixel if available
-  onBidWon(bid) {
-    const wurl = getWurl(bid.requestId);
-    if (wurl) {
-      logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
-      triggerPixel(wurl);
-      removeWurl(bid.requestId);
-    }
-  },
-};
-
-// Create a unique impression object with bid id as the identifier
-function getImp(bid) {
-  const imp = buildStoredRequest(bid);
-  imp.id = bid.bidId; // Ensure imp.id is unique to match the bid response correctly
-
-  const sizes = bid.sizes && !Array.isArray(bid.sizes[0]) ? [bid.sizes] : bid.sizes;
-
-  if (deepAccess(bid, 'mediaTypes.banner')) {
-    imp.banner = {
-      format: sizes.map((size) => {
-        return { w: size[0], h: size[1] };
-      }),
+  interpretResponse(serverResponse, request) {
+    if (!Array.isArray(serverResponse?.body?.seatbid) || !request?.ortbRequest) return [];
+    // Ignore malformed seats/bids without losing other valid bids.
+    const body = {
+      ...serverResponse.body,
+      seatbid: serverResponse.body.seatbid
+        .filter(seat => Array.isArray(seat?.bid))
+        .map(seat => ({ ...seat, bid: seat.bid.filter(bid => bid && typeof bid === 'object') }))
     };
-  }
-
-  // Include bid floor if defined in bid.params
-  if (bid.params.floor) {
-    imp.bidfloor = bid.params.floor;
-  }
-
-  return imp;
-}
-
-// Build stored request object using bid parameters
-function buildStoredRequest(bid) {
-  return {
-    ext: {
-      prebid: {
-        storedrequest: {
-          id: getBidIdParameter('adUnitID', bid.params),
-        },
-      },
-    },
-  };
-}
-
-// Helper: Extract unique bidders from responses for user syncs
-// Primary source: ext.responsetimemillis (PBS), fallback: seatbid[].seat
-function getBidders(responses) {
-  const bidderSet = new Set();
-
-  responses.forEach((res) => {
-    const rtm = deepAccess(res, 'body.ext.responsetimemillis');
-    if (rtm && typeof rtm === 'object') {
-      Object.keys(rtm).forEach((k) => bidderSet.add(k));
+    const bids = converter.fromORTB({ request: request.ortbRequest, response: body }).bids;
+    const winners = new Map();
+    bids.forEach(bid => {
+      if (!winners.has(bid.requestId) || bid.cpm > winners.get(bid.requestId).cpm) winners.set(bid.requestId, bid);
+    });
+    return [...winners.values()];
+  },
+  getUserSyncs(options, responses, gdprConsent, usPrivacy, gppConsent) {
+    if (!options.iframeEnabled) return [];
+    const bidders = new Set();
+    (Array.isArray(responses) ? responses : [responses]).forEach(response => {
+      Object.keys(deepAccess(response, 'body.ext.responsetimemillis', {}) || {}).forEach(bidder => bidders.add(bidder));
+      const seats = response?.body?.seatbid;
+      if (Array.isArray(seats)) seats.forEach(seat => { if (isStr(seat?.seat) && seat.seat) bidders.add(seat.seat); });
+    });
+    if (!bidders.size) return [];
+    const params = { bidders: JSON.stringify([...bidders]) };
+    // Unknown is not equivalent to GDPR not applying.
+    if (typeof gdprConsent?.gdprApplies === 'boolean') params.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+    if (isStr(gdprConsent?.consentString)) params.gdpr_consent = gdprConsent.consentString;
+    // Support the existing live bridge and the corrected PBS /cookie_sync name.
+    if (isStr(usPrivacy)) { params.us_privacy = usPrivacy; params.usp_consent = usPrivacy; }
+    if (isStr(gppConsent?.gppString)) params.gpp = gppConsent.gppString;
+    if (Array.isArray(gppConsent?.applicableSections)) params.gpp_sid = JSON.stringify(gppConsent.applicableSections);
+    params.type = 'iframe';
+    return [{
+      type: 'iframe',
+      url: COOKIE_SYNC_ENDPOINT + '?' + Object.entries(params)
+        .map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
+    }];
+  },
+  onBidWon(bid) {
+    if (isStr(bid.holidWinUrl) && bid.holidWinUrl) {
+      const url = bid.holidWinUrl;
+      delete bid.holidWinUrl;
+      triggerPixel(url);
     }
-
-    const seatbid = deepAccess(res, 'body.seatbid', []);
-    if (Array.isArray(seatbid)) {
-      seatbid.forEach((sb) => {
-        if (sb && sb.seat) bidderSet.add(sb.seat);
-      });
-    }
-  });
-
-  if (bidderSet.size) {
-    return encodeURIComponent(JSON.stringify([...bidderSet]));
   }
-}
-
-// Win URL helper functions
-function addWurl(requestId, wurl) {
-  if (isStr(requestId)) {
-    wurlMap[requestId] = wurl;
-  }
-}
-
-function removeWurl(requestId) {
-  delete wurlMap[requestId];
-}
-
-function getWurl(requestId) {
-  if (isStr(requestId)) {
-    return wurlMap[requestId];
-  }
-}
+};
 
 registerBidder(spec);
