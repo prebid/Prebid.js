@@ -55,6 +55,14 @@ export interface BidderScopedSettings<B extends BidderCode> extends BidderSettin
    */
   allowPriorityBids?: boolean;
   /**
+   * A narrower form of `allowZeroCpmBids`: if true, accept house bids from this adapter at CPM 0, without allowing its
+   * other zero-CPM bids. Requires `allowPriorityBids`; a house bid is one with `meta.deal.type` 4 or a `meta.deal.priority`
+   * above the default 12. Has no effect when `allowZeroCpmBids` is set, since that already allows every zero-CPM bid.
+   * Read like `allowPriorityBids`: under the adapter's own code, and not available on `standard`.
+   * Bids from Prebid Server use `s2sConfig.allowHouseBids` instead.
+   */
+  allowHouseBids?: boolean;
+  /**
    * Custom CPM adjustment function. Could, for example, adjust a bidder’s gross-price bid to net price.
    */
   bidCpmAdjustment?: (cpm: number, bid: Bid, bidRequest: BidRequest<B>) => number;

@@ -230,6 +230,7 @@ describe('desirability utils', function () {
 
   describe('house bids', () => {
     const house = (extra = {}) => ({ cpm: 0, bidderCode: 'adServer', meta: { deal: { type: HOUSE_DEAL_TYPE, ...extra } } });
+    const ALLOWED = { allowHouseBids: true, allowPriorityBids: true };
 
     describe('isHouseBid', () => {
       Object.entries({
@@ -238,17 +239,18 @@ describe('desirability utils', function () {
         'meta.deal.priority above the default': { cpm: 0, meta: { deal: { type: 1, priority: DEFAULT_PRIORITY + 1 } } },
         'meta.deal.priority above the default and no type': { cpm: 0, meta: { deal: { priority: 20 } } },
       }).forEach(([desc, bid]) => {
-        it(`is true for ${desc} when the bidder request allows priority bids`, () => {
-          expect(isHouseBid(bid, { allowPriorityBids: true })).to.be.true;
+        it(`is true for ${desc} when the bidder request allows house and priority bids`, () => {
+          expect(isHouseBid(bid, ALLOWED)).to.be.true;
         });
       });
       Object.entries({
         'missing bidderRequest': [house(), undefined],
-        'allowPriorityBids not set': [house({ priority: 20 }), {}],
-        'a non-house deal type at the default priority': [{ cpm: 0, meta: { deal: { type: 3, priority: DEFAULT_PRIORITY } } }, { allowPriorityBids: true }],
-        'a non-house deal type with a high priority': [{ cpm: 0, meta: { deal: { type: 1, priority: 1 } } }, { allowPriorityBids: true }],
-        'a non-numeric priority': [{ cpm: 0, meta: { deal: { priority: '20' } } }, { allowPriorityBids: true }],
-        'no deal metadata': [{ cpm: 0 }, { allowPriorityBids: true }],
+        'allowHouseBids not set': [house({ priority: 20 }), { allowPriorityBids: true }],
+        'allowPriorityBids not set': [house({ priority: 20 }), { allowHouseBids: true }],
+        'a non-house deal type at the default priority': [{ cpm: 0, meta: { deal: { type: 3, priority: DEFAULT_PRIORITY } } }, ALLOWED],
+        'a non-house deal type with a high priority': [{ cpm: 0, meta: { deal: { type: 1, priority: 1 } } }, ALLOWED],
+        'a non-numeric priority': [{ cpm: 0, meta: { deal: { priority: '20' } } }, ALLOWED],
+        'no deal metadata': [{ cpm: 0 }, ALLOWED],
       }).forEach(([desc, [bid, bidderRequest]]) => {
         it(`is false with ${desc}`, () => {
           expect(isHouseBid(bid, bidderRequest)).to.be.false;
