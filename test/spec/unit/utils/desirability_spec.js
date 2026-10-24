@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
-import { adjustDesirability } from '../../../../src/utils/desirability.js';
+import { adjustDesirability, DEFAULT_PRIORITY, getPriority } from '../../../../src/utils/desirability.js';
+import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { highestDesirabilityFirst } from '../../../../src/utils/reducers.js';
 
 describe('desirability utils', function () {
@@ -104,6 +105,119 @@ describe('desirability utils', function () {
       };
       const bid = { cpm: 20, bidderCode: 'combo', bidder: 'combo' };
       expect(adjustDesirability(bid, null, testDeps(bs))).to.equal(27);
+    });
+  });
+
+  describe('allowPriorityBids', function () {
+    let origBidderSettings;
+
+    beforeEach(function () {
+      origBidderSettings = getGlobal().bidderSettings;
+      getGlobal().bidderSettings = {};
+    });
+
+    afterEach(function () {
+      getGlobal().bidderSettings = origBidderSettings;
+    });
+
+    function dealBid(props = {}) {
+      return {
+        cpm: 2,
+        bidderCode: 'adapterA',
+        adapterCode: 'adapterA',
+        meta: { deal: { type: 2, priorityAdjustedCpm: 5 } },
+        ...props
+      };
+    }
+
+    function bidderRequest(allowPriorityBids = true) {
+      return { src: 'client', bidderCode: 'adapterA', allowPriorityBids };
+    }
+
+    it('ranks on cpm when the bidder request does not allow priority bids', function () {
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest(false) })).to.equal(2);
+    });
+
+    it('ranks on meta.deal.priorityAdjustedCpm when the bidder request allows priority bids', function () {
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(5);
+    });
+
+    it('does not trust bids without a bidder request, even if bidderSettings would', function () {
+      getGlobal().bidderSettings = { adapterA: { allowPriorityBids: true } };
+      expect(adjustDesirability(dealBid(), null, {})).to.equal(2);
+    });
+
+    [
+      ['missing', undefined],
+      ['negative', -1],
+      ['not a number', '5'],
+      ['not finite', Infinity],
+    ].forEach(([desc, priorityAdjustedCpm]) => {
+      it(`ranks on cpm when priorityAdjustedCpm is ${desc}`, function () {
+        const bid = dealBid({ meta: { deal: { type: 2, priorityAdjustedCpm } } });
+        expect(adjustDesirability(bid, null, { bidderRequest: bidderRequest() })).to.equal(2);
+      });
+    });
+
+    it('ranks on cpm when the bid has no deal metadata', function () {
+      expect(adjustDesirability(dealBid({ meta: {} }), null, { bidderRequest: bidderRequest() })).to.equal(2);
+    });
+
+    it('applies bidCpmAdjustment to priorityAdjustedCpm, as it is applied to cpm', function () {
+      getGlobal().bidderSettings = {
+        adapterA: { bidCpmAdjustment: (cpm) => cpm * 0.8 }
+      };
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(4);
+    });
+
+    it('uses the bidCpmAdjustment that applies to the bid, e.g. for an alternate bidder code', function () {
+      getGlobal().bidderSettings = {
+        bidderB: { bidCpmAdjustment: (cpm) => cpm / 2 }
+      };
+      expect(adjustDesirability(dealBid({ bidderCode: 'bidderB' }), null, { bidderRequest: bidderRequest() })).to.equal(2.5);
+    });
+
+    it('ignores a bidCpmAdjustment that would make priorityAdjustedCpm negative', function () {
+      getGlobal().bidderSettings = {
+        adapterA: { bidCpmAdjustment: (cpm) => cpm - 10 }
+      };
+      expect(adjustDesirability(dealBid(), null, { bidderRequest: bidderRequest() })).to.equal(5);
+    });
+
+    it('passes priorityAdjustedCpm to bidDesirabilityAdjustment, without changing bid.cpm', function () {
+      getGlobal().bidderSettings = {
+        adapterA: { bidDesirabilityAdjustment: (cpm) => cpm + 1 }
+      };
+      const bid = dealBid();
+      expect(adjustDesirability(bid, null, { bidderRequest: bidderRequest() })).to.equal(6);
+      expect(bid.cpm).to.equal(2);
+    });
+  });
+
+  describe('getPriority', () => {
+    Object.entries({
+      'no priority': {},
+      'meta.deal.priority': { meta: { deal: { priority: 0 } } },
+      'meta.deal.priority conflicting with bid.priority': { priority: 1, meta: { deal: { priority: 0 } } }
+    }).forEach(([desc, bid]) => {
+      describe(`when bid has ${desc}`, () => {
+        Object.entries({
+          'missing bidderRequest': undefined,
+          'missing allowPriorityBids': {},
+          'allowPriorityBids = false': { allowPriorityBids: false },
+        }).forEach(([desc, bidderRequest]) => {
+          it(`returns default priority when ${desc}`, () => {
+            expect(getPriority(bid, bidderRequest)).to.equal(DEFAULT_PRIORITY);
+          });
+        });
+        describe(`when allowPrioritybids = true`, () => {
+          const bidderRequest = { allowPriorityBids: true };
+
+          it(`returns meta.deal.priority, falling back to default priority`, () => {
+            expect(getPriority(bid, bidderRequest)).to.equal(bid.meta?.deal?.priority ?? DEFAULT_PRIORITY);
+          });
+        });
+      });
     });
   });
 

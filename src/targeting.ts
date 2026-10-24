@@ -17,14 +17,19 @@ import {
   logInfo,
   logMessage,
   logWarn,
+  sortByHighestCpm,
   timestamp,
   uniques,
 } from './utils.js';
 import {
+  dealsFirst,
   getHighestCpm,
   getHighestDesirability,
   getOldestHighestCpmBid,
   highestDesirabilityFirst,
+  priorityCompare,
+  reverseCompare,
+  tiebreakCompare,
   minimum
 } from './utils/reducers.js';
 import type { Bid } from './bidfactory.ts';
@@ -68,7 +73,7 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
       // if adUnitBidLimit is set, pass top N number bids
       const bidLimit = typeof adUnitBidLimit === 'object' ? adUnitBidLimit[bucketKey] : adUnitBidLimit;
       if (bidLimit) {
-        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(true)) : bucketBids.sort(winSorter);
+        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(winSorter)) : bucketBids.sort(winSorter);
         bids.push(...bucketBids.slice(0, bidLimit));
       } else {
         bucketBids = bucketBids.sort(winSorter);
@@ -103,23 +108,8 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
  *    "hb_pb": "2"
  *  }]
  */
-export function sortByDealAndPriceBucketOrDesirability(useDesirability = false) {
-  return function(a, b) {
-    if (a.adserverTargeting.hb_deal !== undefined && b.adserverTargeting.hb_deal === undefined) {
-      return -1;
-    }
-
-    if ((a.adserverTargeting.hb_deal === undefined && b.adserverTargeting.hb_deal !== undefined)) {
-      return 1;
-    }
-
-    // assuming both values either have a deal or don't have a deal - sort by the hb_pb param
-    if (useDesirability) {
-      return highestDesirabilityFirst(a, b);
-    }
-
-    return b.adserverTargeting.hb_pb - a.adserverTargeting.hb_pb;
-  };
+export function sortByDealAndPriceBucketOrDesirability(fallback = sortByHighestCpm) {
+  return tiebreakCompare(reverseCompare(priorityCompare), dealsFirst, fallback);
 }
 
 /**
@@ -694,6 +684,7 @@ export function newTargeting(auctionManager) {
     const targetingMap = Object.keys(targetingCopy).map(adUnitCode => {
       return {
         adUnitCode,
+        cpm: targetingCopy[adUnitCode].hb_pb,
         adserverTargeting: targetingCopy[adUnitCode]
       };
     }).sort(sortByDealAndPriceBucketOrDesirability());

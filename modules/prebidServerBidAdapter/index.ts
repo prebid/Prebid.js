@@ -56,7 +56,7 @@ type Endpoint = string | {
   noP1Consent: string;
 };
 
-type S2SConfig = {
+export type S2SConfig = {
   /**
    * Your Prebid Server account ID. This is obtained from whoever’s hosting your Prebid Server.
    */
@@ -150,6 +150,13 @@ type S2SConfig = {
    * If true, exclude ad units that have no bidders defined.
    */
   filterBidderlessCalls?: boolean;
+  /**
+   * Bidders routed through this Prebid Server instance whose deal metadata (`bid.meta.deal`) is trusted when ranking:
+   * their desirability starts from `meta.deal.priorityAdjustedCpm` instead of `cpm`.
+   * Trusted bidders must be listed explicitly; there is no option to trust every bidder on the instance.
+   * The listed bidders in each request are also sent to Prebid Server as `ext.prebid.as.apb`, with `ext.prebid.as.ap: true`.
+   */
+  allowPriorityBids?: BidderCode[];
 };
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
