@@ -208,7 +208,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   /**
    * Whether the publisher accepts house bids answering this request at CPM 0 (with `allowPriorityBids`, bids with
    * `meta.deal.type` 4 or `meta.deal.priority` above 12):
-   * from `s2sConfig.allowHouseBids` for Prebid Server requests, `bidderSettings[bidderCode].allowHouseBids` otherwise.
+   * from `bidderSettings[bidderCode].allowHouseBids`, for client and Prebid Server requests alike.
    */
   allowHouseBids?: boolean;
 }
@@ -664,7 +664,7 @@ const adapterManager = {
             metrics,
             alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
             allowPriorityBids: bidderCode != null && Array.isArray(s2sConfig.allowPriorityBids) && s2sConfig.allowPriorityBids.includes(bidderCode),
-            allowHouseBids: bidderCode != null && Array.isArray(s2sConfig.allowHouseBids) && s2sConfig.allowHouseBids.includes(bidderCode),
+            allowHouseBids: bidderCode != null && bidderSettings.getOwn(bidderCode, 'allowHouseBids') === true,
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);

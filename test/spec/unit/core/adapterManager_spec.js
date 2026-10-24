@@ -2172,32 +2172,35 @@ describe('adapterManager tests', function () {
           ]);
         });
 
-        it('should set allowHouseBids on requests for bidders listed in the s2s config they were routed through', () => {
-          config.setConfig({
-            s2sConfig: config.getConfig('s2sConfig').map(cfg => cfg.name === 'mock1' ? { ...cfg, allowHouseBids: ['mockBidder2'] } : cfg)
-          });
-          adUnits = [
-            {
-              code: 'one',
-              bids: [
-                { bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2'] },
-                { bidder: 'mockBidder2', s2sConfigName: 'mock1' },
-                { bidder: 'mockBidder3' }
-              ]
-            },
-          ];
-          dep.isAllowed.returns(true);
-          const allowed = makeBidRequests().map(request => [
-            request.adUnitsS2SCopy.flatMap(au => au.bids).map(bid => bid.bidder).join(','),
-            request.bidderCode,
-            request.allowHouseBids
-          ]);
-          expect(allowed).to.have.deep.members([
-            ['mockBidder3', 'mockBidder3', false],
-            ['mockBidder1,mockBidder2', 'mockBidder1', false],
-            ['mockBidder1,mockBidder2', 'mockBidder2', true],
-            ['mockBidder1', 'mockBidder1', false],
-          ]);
+        it('should set allowHouseBids on S2S requests from the bidder\'s own bidderSettings', () => {
+          const origBidderSettings = getGlobal().bidderSettings;
+          getGlobal().bidderSettings = { mockBidder2: { allowHouseBids: true }, standard: { allowHouseBids: true } };
+          try {
+            adUnits = [
+              {
+                code: 'one',
+                bids: [
+                  { bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2'] },
+                  { bidder: 'mockBidder2', s2sConfigName: 'mock1' },
+                  { bidder: 'mockBidder3' }
+                ]
+              },
+            ];
+            dep.isAllowed.returns(true);
+            const allowed = makeBidRequests().map(request => [
+              request.adUnitsS2SCopy.flatMap(au => au.bids).map(bid => bid.bidder).join(','),
+              request.bidderCode,
+              request.allowHouseBids
+            ]);
+            expect(allowed).to.have.deep.members([
+              ['mockBidder3', 'mockBidder3', false],
+              ['mockBidder1,mockBidder2', 'mockBidder1', false],
+              ['mockBidder1,mockBidder2', 'mockBidder2', true],
+              ['mockBidder1', 'mockBidder1', false],
+            ]);
+          } finally {
+            getGlobal().bidderSettings = origBidderSettings;
+          }
         });
 
         it('should keep stored impressions, even if everything else is denied', () => {

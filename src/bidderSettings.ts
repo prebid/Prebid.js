@@ -58,8 +58,8 @@ export interface BidderScopedSettings<B extends BidderCode> extends BidderSettin
    * A narrower form of `allowZeroCpmBids`: if true, accept house bids from this adapter at CPM 0, without allowing its
    * other zero-CPM bids. Requires `allowPriorityBids`; a house bid is one with `meta.deal.type` 4 or a `meta.deal.priority`
    * above the default 12. Has no effect when `allowZeroCpmBids` is set, since that already allows every zero-CPM bid.
-   * Read like `allowPriorityBids`: under the adapter's own code, and not available on `standard`.
-   * Bids from Prebid Server use `s2sConfig.allowHouseBids` instead.
+   * Read under the adapter's own code and not available on `standard`, like `allowPriorityBids`; unlike it, this also
+   * applies to bids from Prebid Server, as `allowZeroCpmBids` does (they still need `s2sConfig.allowPriorityBids`).
    */
   allowHouseBids?: boolean;
   /**
