@@ -44,7 +44,16 @@ export function fireViewabilityPixels(bid) {
   }
 
   img.forEach(triggerPixel);
-  const safeJs = js.filter(url => /^https?:\/\//i.test(url));
+  const safeJs = js
+    .map(url => {
+      try {
+        const parsed = new URL(url, window.location.href);
+        return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : null;
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter(url => url != null);
   if (safeJs.length > 0) {
     const markup = safeJs.map(url => `<script async src="${attributeValue(url)}"></script>`).join('\n');
     insertHtmlIntoIframe(markup);
