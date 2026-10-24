@@ -205,12 +205,6 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
    * Absent or false means the deal metadata is not trusted.
    */
   allowPriorityBids?: boolean;
-  /**
-   * Whether the publisher accepts house bids answering this request at CPM 0 (with `allowPriorityBids`, bids with
-   * `meta.deal.type` 4 or `meta.deal.priority` above 12):
-   * from `bidderSettings[bidderCode].allowHouseBids`, for client and Prebid Server requests alike.
-   */
-  allowHouseBids?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
@@ -664,7 +658,6 @@ const adapterManager = {
             metrics,
             alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
             allowPriorityBids: bidderCode != null && Array.isArray(s2sConfig.allowPriorityBids) && s2sConfig.allowPriorityBids.includes(bidderCode),
-            allowHouseBids: bidderCode != null && bidderSettings.getOwn(bidderCode, 'allowHouseBids') === true,
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);
@@ -717,7 +710,6 @@ const adapterManager = {
         alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
         // adapter-specific settings only: `standard` must not opt every adapter in
         allowPriorityBids: bidderSettings.getOwn(bidderCode, 'allowPriorityBids') === true,
-        allowHouseBids: bidderSettings.getOwn(bidderCode, 'allowHouseBids') === true,
       });
       if (!adapter) {
         logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);

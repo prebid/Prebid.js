@@ -41,13 +41,17 @@ function getRankingCpm(
  */
 export const HOUSE_DEAL_TYPE = 4;
 /**
- * True for house bids from adapters the publisher allows house bids from and trusts with priority bids
- * (`bidderRequest.allowHouseBids` and `bidderRequest.allowPriorityBids`): bids that are either house deals
- * (`meta.deal.type` 4) or have a priority lower than the default (`meta.deal.priority` above 12).
- * Such bids are accepted at CPM 0.
+ * True for house bids from adapters the publisher trusts with priority bids (`bidderRequest.allowPriorityBids`) and
+ * allows house bids from (`bidderSettings[adapter].allowHouseBids`, read under the adapter's own code and not from
+ * `standard`): bids that are either house deals (`meta.deal.type` 4) or have a priority lower than the default
+ * (`meta.deal.priority` above 12). Such bids are accepted at CPM 0.
  */
-export function isHouseBid(bid: Partial<Bid>, bidderRequest: BidderRequest<any> | undefined | null): boolean {
-  if (bidderRequest?.allowHouseBids !== true || bidderRequest?.allowPriorityBids !== true) return false;
+export function isHouseBid(
+  bid: Partial<Bid>,
+  bidderRequest: BidderRequest<any> | undefined | null,
+  { bs = bidderSettings }: { bs?: typeof bidderSettings } = {}
+): boolean {
+  if (bidderRequest?.allowPriorityBids !== true || bs.getOwn(bidderRequest.bidderCode, 'allowHouseBids') !== true) return false;
   const deal = bid.meta?.deal;
   return deal?.type === HOUSE_DEAL_TYPE || (Number.isFinite(deal?.priority) && deal.priority > DEFAULT_PRIORITY);
 }
