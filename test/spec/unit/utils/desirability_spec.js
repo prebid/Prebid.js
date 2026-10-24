@@ -6,7 +6,6 @@ import {
   DEFAULT_PRIORITY,
   getPriority,
   HOUSE_DEAL_TYPE,
-  HOUSE_PRIORITY,
   isCpmEligible,
   isHouseBid
 } from '../../../../src/utils/desirability.js';
@@ -233,15 +232,23 @@ describe('desirability utils', function () {
     const house = (extra = {}) => ({ cpm: 0, bidderCode: 'adServer', meta: { deal: { type: HOUSE_DEAL_TYPE, ...extra } } });
 
     describe('isHouseBid', () => {
-      it('is true for meta.deal.type 4 when the bidder request allows house bids', () => {
-        expect(isHouseBid(house(), { allowHouseBids: true })).to.be.true;
+      Object.entries({
+        'meta.deal.type 4': house(),
+        'meta.deal.type 4 with a high priority': house({ priority: 1 }),
+        'meta.deal.priority above the default': { cpm: 0, meta: { deal: { type: 1, priority: DEFAULT_PRIORITY + 1 } } },
+        'meta.deal.priority above the default and no type': { cpm: 0, meta: { deal: { priority: 20 } } },
+      }).forEach(([desc, bid]) => {
+        it(`is true for ${desc} when the bidder request allows priority bids`, () => {
+          expect(isHouseBid(bid, { allowPriorityBids: true })).to.be.true;
+        });
       });
       Object.entries({
         'missing bidderRequest': [house(), undefined],
-        'allowHouseBids not set': [house(), {}],
-        'only allowPriorityBids': [house(), { allowPriorityBids: true }],
-        'a non-house deal type': [{ cpm: 0, meta: { deal: { type: 3 } } }, { allowHouseBids: true }],
-        'no deal metadata': [{ cpm: 0 }, { allowHouseBids: true }],
+        'allowPriorityBids not set': [house({ priority: 20 }), {}],
+        'a non-house deal type at the default priority': [{ cpm: 0, meta: { deal: { type: 3, priority: DEFAULT_PRIORITY } } }, { allowPriorityBids: true }],
+        'a non-house deal type with a high priority': [{ cpm: 0, meta: { deal: { type: 1, priority: 1 } } }, { allowPriorityBids: true }],
+        'a non-numeric priority': [{ cpm: 0, meta: { deal: { priority: '20' } } }, { allowPriorityBids: true }],
+        'no deal metadata': [{ cpm: 0 }, { allowPriorityBids: true }],
       }).forEach(([desc, [bid, bidderRequest]]) => {
         it(`is false with ${desc}`, () => {
           expect(isHouseBid(bid, bidderRequest)).to.be.false;
@@ -250,18 +257,12 @@ describe('desirability utils', function () {
     });
 
     describe('getPriority', () => {
-      it('gives allowed house bids HOUSE_PRIORITY, below the default', () => {
-        expect(HOUSE_PRIORITY).to.be.greaterThan(DEFAULT_PRIORITY);
-        expect(getPriority(house(), { allowHouseBids: true })).to.equal(HOUSE_PRIORITY);
-      });
-      it('ignores the priority of house bids when priority bids are not allowed', () => {
-        expect(getPriority(house({ priority: 1 }), { allowHouseBids: true })).to.equal(HOUSE_PRIORITY);
+      it('does not infer a priority from the house deal type', () => {
+        expect(getPriority(house(), { allowPriorityBids: true })).to.equal(DEFAULT_PRIORITY);
+        expect(getPriority(house(), {})).to.equal(DEFAULT_PRIORITY);
       });
       it('uses a trusted meta.deal.priority on house bids', () => {
-        expect(getPriority(house({ priority: 14 }), { allowHouseBids: true, allowPriorityBids: true })).to.equal(14);
-      });
-      it('does not change the priority of house bids that are not allowed', () => {
-        expect(getPriority(house(), {})).to.equal(DEFAULT_PRIORITY);
+        expect(getPriority(house({ priority: 1 }), { allowPriorityBids: true })).to.equal(1);
       });
     });
 

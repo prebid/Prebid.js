@@ -41,25 +41,19 @@ function getRankingCpm(
  */
 export const HOUSE_DEAL_TYPE = 4;
 /**
- * Priority given to house bids that don't come with a trusted priority of their own, so that they rank below
- * ordinary demand (which has `DEFAULT_PRIORITY`).
- */
-export const HOUSE_PRIORITY = 16;
-
-/**
- * True for house bids (`meta.deal.type` 4) from adapters the publisher allows house bids from
- * (`bidderRequest.allowHouseBids`).
+ * True for bids from adapters trusted with priority bids (`bidderRequest.allowPriorityBids`) that are either
+ * house deals (`meta.deal.type` 4) or have a priority lower than the default (`meta.deal.priority` above 12).
+ * Such bids are accepted at CPM 0.
  */
 export function isHouseBid(bid: Partial<Bid>, bidderRequest: BidderRequest<any> | undefined | null): boolean {
-  return bidderRequest?.allowHouseBids === true && bid.meta?.deal?.type === HOUSE_DEAL_TYPE;
+  if (bidderRequest?.allowPriorityBids !== true) return false;
+  const deal = bid.meta?.deal;
+  return deal?.type === HOUSE_DEAL_TYPE || (Number.isFinite(deal?.priority) && deal.priority > DEFAULT_PRIORITY);
 }
 
 export function getPriority(bid: Bid, bidderRequest: BidderRequest<any>) {
   if (bidderRequest?.allowPriorityBids && Number.isFinite(bid.meta?.deal?.priority)) {
     return bid.meta.deal.priority;
-  }
-  if (isHouseBid(bid, bidderRequest)) {
-    return HOUSE_PRIORITY;
   }
   return DEFAULT_PRIORITY;
 }

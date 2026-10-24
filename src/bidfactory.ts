@@ -197,8 +197,8 @@ export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidRespon
   desirability: number;
   priority: number;
   /**
-   * Set to true on house bids (`meta.deal.type` 4) from adapters the publisher allows house bids from
-   * (`bidderSettings[bidder].allowHouseBids` or `s2sConfig.allowHouseBids`). Such bids are eligible at CPM 0.
+   * Set to true on bids from adapters trusted with priority bids (`allowPriorityBids`) whose `meta.deal.type` is 4 (house)
+   * or whose `meta.deal.priority` is above 12. Such bids are eligible at CPM 0.
    */
   houseBid?: boolean;
 }

@@ -21,7 +21,7 @@ import 'modules/debugging/index.js'; // some tests look for debugging side effec
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import { expect } from 'chai';
 import { deepClone } from '../../src/utils.js';
-import { DEFAULT_PRIORITY, HOUSE_PRIORITY, PRIORITY_INCREMENT } from '../../src/utils/desirability.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../src/utils/desirability.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
 
@@ -902,23 +902,23 @@ describe('auctionmanager.js', function () {
         return Object.assign({}, createBid(), fixtures.getBidResponses()[5], { cpm: 0, meta: { deal: { type: 4, ...deal } } });
       }
 
-      it('are flagged and given the house priority when the bidder request allows house bids', () => {
-        const bid = mkHouseBid();
-        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowHouseBids: true }) });
-        expect(bid.houseBid).to.be.true;
-        expect(bid.priority).to.equal(HOUSE_PRIORITY);
-      });
-
-      it('are not flagged when the bidder request does not allow house bids', () => {
+      it('are flagged when the bidder request allows priority bids, without changing their priority', () => {
         const bid = mkHouseBid();
         adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.true;
+        expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+      });
+
+      it('are not flagged when the bidder request does not allow priority bids', () => {
+        const bid = mkHouseBid({ priority: 14 });
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode }) });
         expect(bid.houseBid).to.not.exist;
         expect(bid.priority).to.equal(DEFAULT_PRIORITY);
       });
 
-      it('keep a trusted meta.deal.priority', () => {
-        const bid = mkHouseBid({ priority: 14 });
-        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowHouseBids: true, allowPriorityBids: true }) });
+      it('include bids of any deal type with a trusted priority above the default', () => {
+        const bid = mkHouseBid({ type: 1, priority: 14 });
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
         expect(bid.houseBid).to.be.true;
         expect(bid.priority).to.equal(14);
       });

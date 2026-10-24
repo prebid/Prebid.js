@@ -21,7 +21,7 @@ import { getHighestCpm, getHighestDesirability, highestDesirabilityFirst } from 
 import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { findSlotElementIdByAdId, recordSlotTargeting, slotHasTargetedAdId } from 'src/utils/gptTargeting.js';
 import { lock } from '../../../../src/targeting/lock.js';
-import { DEFAULT_PRIORITY, HOUSE_PRIORITY, PRIORITY_INCREMENT } from '../../../../src/utils/desirability.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../../../src/utils/desirability.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -730,7 +730,7 @@ describe('targeting tests', function () {
 
       it('targeting should allow a 0 cpm house bid without allowZeroCpmBids', function () {
         bid4.houseBid = true;
-        bid4.priority = HOUSE_PRIORITY;
+        bid4.priority = DEFAULT_PRIORITY;
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']['hb_bidder']).to.equal('appnexus');
         expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0');
@@ -738,7 +738,7 @@ describe('targeting tests', function () {
 
       it('a 0 cpm house bid should not win over ordinary demand', function () {
         bid4.houseBid = true;
-        bid4.priority = HOUSE_PRIORITY;
+        bid4.priority = DEFAULT_PRIORITY;
         const other = utils.deepClone(bid1);
         other.bidder = other.bidderCode = 'rubicon';
         other.adId = 'other';
