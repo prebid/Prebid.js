@@ -463,10 +463,9 @@ describe('Aidem adapter', () => {
       });
     }
 
-    it('should omit plugin enumeration data from the environment', () => {
+    it('should leave navigator environment data empty', () => {
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      expect(data.environment.nav).not.to.have.property('plugins');
-      expect(data.environment.nav).not.to.have.property('mimeTypes');
+      expect(data.environment.nav).to.deep.equal({});
     });
 
     it('should hav wpar keys in environment object', function () {
