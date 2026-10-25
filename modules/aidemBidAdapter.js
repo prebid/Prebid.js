@@ -89,8 +89,11 @@ const converter = ortbConverter({
 function recur(obj) {
   var result = {}; var _tmp;
   for (var i in obj) {
-    // enabledPlugin is too nested, also skip functions
-    if (!(i === 'enabledPlugin' || typeof obj[i] === 'function')) {
+    // Skip fingerprinting-sensitive plugin APIs before accessing their values.
+    if (i === 'plugins' || i === 'mimeTypes' || i === 'enabledPlugin') {
+      continue;
+    }
+    if (typeof obj[i] !== 'function') {
       if (typeof obj[i] === 'object' && obj[i] !== null) {
         // get props recursively
         _tmp = recur(obj[i]);
@@ -134,7 +137,6 @@ function getRegs(bidderRequest) {
 
 function setPrebidRequestEnvironment(payload) {
   const __navigator = deepClone(recur(navigator));
-  delete __navigator.plugins;
   deepSetValue(payload, 'environment.ri', getRefererInfo());
   deepSetValue(payload, 'environment.hl', window.history.length);
   deepSetValue(payload, 'environment.nav', __navigator);
