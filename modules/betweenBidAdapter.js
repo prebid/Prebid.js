@@ -51,6 +51,7 @@ export const spec = {
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
+        fl: 0,
         rr: getRr(),
         s: i.params && i.params.s,
         bidid: i.bidId,
