@@ -238,6 +238,7 @@ function copyVerbatim() {
   return gulp.src(helpers.getSourceFolders().flatMap(name => [
     `${name}/**/*.json`,
     `${name}/**/*.d.ts`,
+    `${name}/**/*.d.mts`,
   ]).concat([
     '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
   ]), {base: '.', since: gulp.lastRun(copyVerbatim)})

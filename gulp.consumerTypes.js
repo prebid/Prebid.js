@@ -43,6 +43,20 @@ declare global {
 }
 window.myCustomPrebidGlobal.que.push(() => window.myCustomPrebidGlobal.processQueue());
 `,
+  // a type that fails to resolve degrades to \`any\` without an error; the expected errors catch that
+  'namedTypes.ts': `
+import pbjs from 'prebid.js';
+import type {AdUnitDefinition, Bid, BidRequest, EventPayload} from 'prebid.js';
+const adUnits: AdUnitDefinition[] = [];
+pbjs.requestBids({adUnits});
+export let bid: Bid | undefined;
+export let request: BidRequest<'appnexus'> | undefined;
+export let payload: EventPayload<'bidWon'> | undefined;
+// @ts-expect-error
+pbjs.notAMethod();
+// @ts-expect-error
+export let notAnEvent: EventPayload<'notAnEvent'> | undefined;
+`,
 };
 
 function createConsumer({moduleResolution, module}, type) {

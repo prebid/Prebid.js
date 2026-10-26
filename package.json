@@ -5,9 +5,27 @@
   "main": "dist/src/src/prebid.public.js",
   "types": "dist/src/src/prebid.public.d.ts",
   "exports": {
-    ".": "./dist/src/src/prebid.public.js",
-    "./prebid.js": "./dist/src/src/prebid.public.js",
-    "./prebid": "./dist/src/src/prebid.public.js",
+    ".": {
+      "import": {
+        "types": "./dist/src/src/prebid.public.d.mts",
+        "default": "./dist/src/src/prebid.public.js"
+      },
+      "default": "./dist/src/src/prebid.public.js"
+    },
+    "./prebid.js": {
+      "import": {
+        "types": "./dist/src/src/prebid.public.d.mts",
+        "default": "./dist/src/src/prebid.public.js"
+      },
+      "default": "./dist/src/src/prebid.public.js"
+    },
+    "./prebid": {
+      "import": {
+        "types": "./dist/src/src/prebid.public.d.mts",
+        "default": "./dist/src/src/prebid.public.js"
+      },
+      "default": "./dist/src/src/prebid.public.js"
+    },
     "./types.d.ts": "./dist/src/src/types/summary/types.d.ts",
     "./global.d.ts": "./dist/src/src/types/summary/global.d.ts",
     "./modules/*.js": "./dist/src/public/*.js",
