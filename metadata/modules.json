@@ -4644,13 +4644,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "rhythmone",
-      "aliasOf": null,
-      "gvlid": 36,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "scalibur",
       "aliasOf": null,
       "gvlid": 1471,
