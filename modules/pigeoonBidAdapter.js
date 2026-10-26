@@ -258,14 +258,26 @@ export const spec = {
    * @returns {object[]}
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    if (!syncOptions.iframeEnabled) return [];
+    // iframe is preferred; image (pixel) is used when only pixel syncs are allowed
+    let type;
+    if (syncOptions.iframeEnabled) {
+      type = 'iframe';
+    } else if (syncOptions.pixelEnabled) {
+      type = 'image';
+    } else {
+      return [];
+    }
 
-    const query = gdprConsent?.gdprApplies === true
-      ? buildQuery({ gdpr: '1', gdpr_consent: gdprConsent.consentString || '' })
-      : '';
+    const params = {};
+    if (type === 'image') params.t = 'img';
+    if (gdprConsent?.gdprApplies === true) {
+      params.gdpr = '1';
+      params.gdpr_consent = gdprConsent.consentString || '';
+    }
+    const query = buildQuery(params);
 
     return [{
-      type: 'iframe',
+      type,
       url: query ? `${SYNC_URL}?${query}` : SYNC_URL
     }];
   },

@@ -305,8 +305,30 @@ describe('pigeoonBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    it('should return nothing when iframe syncs are disabled', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: false }, [], null)).to.deep.equal([]);
+    it('should return nothing when iframe and pixel syncs are disabled', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [], null)).to.deep.equal([]);
+    });
+
+    it('should prefer an iframe sync when both iframe and pixel syncs are enabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], undefined);
+
+      expect(syncs).to.have.length(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal(SYNC_URL);
+    });
+
+    it('should return an image sync when only pixel syncs are enabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], undefined);
+
+      expect(syncs).to.have.length(1);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal(`${SYNC_URL}?t=img`);
+    });
+
+    it('should add encoded GDPR params to an image sync when GDPR applies', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], { gdprApplies: true, consentString: 'a b+c' });
+
+      expect(syncs[0].url).to.equal(`${SYNC_URL}?t=img&gdpr=1&gdpr_consent=a%20b%2Bc`);
     });
 
     it('should return the sync url without params when GDPR does not apply', function () {

@@ -23,7 +23,7 @@ The adapter uses Prebid's OpenRTB converter, so publisher first-party data (site
 
 # User Sync
 
-Pigeoon uses iframe user syncs. To enable them:
+Pigeoon supports both iframe and image (pixel) user syncs. Image syncs work with Prebid's default settings; when iframe syncs are enabled for Pigeoon, the iframe sync is used instead. To enable iframe syncs:
 
 ```javascript
 pbjs.setConfig({
