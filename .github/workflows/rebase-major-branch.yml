@@ -1,0 +1,108 @@
+name: Rebase next major branch
+
+# Keeps the branch for the next major version (e.g. prebid-12.0) from falling behind master:
+# every two weeks it is rebased onto master and force-pushed. If the rebase conflicts, nothing is
+# pushed and an issue asks a maintainer to rebase by hand.
+
+on:
+  schedule:
+    - cron: '17 6 1,15 * *'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to rebase onto master'
+        required: false
+        default: 'prebid-12.0'
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: rebase-major-branch
+  cancel-in-progress: false
+
+env:
+  BRANCH: ${{ inputs.branch || 'prebid-12.0' }}
+  BASE: master
+
+jobs:
+  rebase:
+    name: Rebase onto master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          case "$BRANCH" in
+            prebid-[0-9]*) ;;
+            *) echo "::error::Only prebid-<version> branches can be rebased, got '$BRANCH'"; exit 1 ;;
+          esac
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+
+      - name: Rebase
+        id: rebase
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "+refs/heads/$BASE:refs/remotes/origin/$BASE"
+          behind=$(git rev-list --count "HEAD..origin/$BASE")
+          echo "$BRANCH is $behind commit(s) behind $BASE"
+          if [ "$behind" = "0" ]; then
+            echo "result=current" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          before=$(git rev-parse HEAD)
+          if git rebase "origin/$BASE"; then
+            # only push if nobody else pushed to the branch meanwhile
+            git push --force-with-lease="$BRANCH:$before" origin "HEAD:$BRANCH"
+            echo "result=rebased" >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "conflicts<<EOF"
+              git diff --name-only --diff-filter=U
+              echo "EOF"
+              echo "stopped=$(git log -1 --format='%h %s' REBASE_HEAD 2>/dev/null)"
+            } >> "$GITHUB_OUTPUT"
+            git rebase --abort
+            echo "result=conflict" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report conflicts
+        if: steps.rebase.outputs.result == 'conflict'
+        uses: actions/github-script@v9
+        env:
+          CONFLICTS: ${{ steps.rebase.outputs.conflicts }}
+          STOPPED: ${{ steps.rebase.outputs.stopped }}
+        with:
+          script: |
+            const branch = process.env.BRANCH;
+            const title = `Automatic rebase of ${branch} onto master failed`;
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const files = process.env.CONFLICTS.trim().split('\n').filter(Boolean).map(f => `- \`${f}\``).join('\n');
+            const body = [
+              `The scheduled rebase of \`${branch}\` onto \`master\` hit conflicts and pushed nothing ([run](${run})).`,
+              '',
+              `Stopped at: ${process.env.STOPPED || 'unknown commit'}`,
+              '',
+              'Conflicting files:',
+              files || '- (none reported)',
+              '',
+              'Rebase by hand:',
+              '```sh',
+              `git fetch origin && git checkout ${branch} && git rebase origin/master`,
+              `# resolve conflicts; for metadata/*.json, keep master's version and re-apply this branch's removals`,
+              `git push --force-with-lease origin ${branch}`,
+              '```'
+            ].join('\n');
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', creator: 'github-actions[bot]', per_page: 100 });
+            const existing = open.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ ...context.repo, title, body });
+            }
