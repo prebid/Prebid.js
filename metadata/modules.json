@@ -1193,13 +1193,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "tpmn",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "truereach",
       "aliasOf": null,
       "gvlid": null,
