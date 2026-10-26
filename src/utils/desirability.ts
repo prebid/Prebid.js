@@ -36,11 +36,35 @@ function getRankingCpm(
   return bid.cpm;
 }
 
+/**
+ * True for house bids from adapters the publisher trusts with priority bids (`bidderRequest.allowPriorityBids`) and
+ * allows house bids from (`bidderSettings[adapter].allowHouseBids`, read under the adapter's own code and not from
+ * `standard`): bids with a priority lower than the default (`meta.deal.priority` above 12). Such bids are accepted
+ * at CPM 0. `meta.deal.type` is not considered, since any bidder could declare a bid to be a house deal.
+ */
+export function isHouseBid(
+  bid: Partial<Bid>,
+  bidderRequest: BidderRequest<any> | undefined | null,
+  { bs = bidderSettings }: { bs?: typeof bidderSettings } = {}
+): boolean {
+  if (bidderRequest?.allowPriorityBids !== true || bs.getOwn(bidderRequest.bidderCode, 'allowHouseBids') !== true) return false;
+  const priority = bid.meta?.deal?.priority;
+  return Number.isFinite(priority) && priority > DEFAULT_PRIORITY;
+}
+
 export function getPriority(bid: Bid, bidderRequest: BidderRequest<any>) {
   if (bidderRequest?.allowPriorityBids && Number.isFinite(bid.meta?.deal?.priority)) {
     return bid.meta.deal.priority;
   }
   return DEFAULT_PRIORITY;
+}
+
+/**
+ * Whether a bid's CPM is high enough for it to be used: above 0, or 0 if the bidder allows zero-CPM bids
+ * (`allowZeroCpmBids`) or the bid is an allowed house bid (`bid.houseBid`, set by `adjustBids`).
+ */
+export function isCpmEligible(bid: Bid, { bs = bidderSettings }: { bs?: typeof bidderSettings } = {}): boolean {
+  return (bs.get(bid.bidderCode, 'allowZeroCpmBids') === true || bid.houseBid === true) ? bid.cpm >= 0 : bid.cpm > 0;
 }
 
 type BidAdjustmentFn = (

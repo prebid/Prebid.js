@@ -895,6 +895,56 @@ describe('auctionmanager.js', function () {
         }
       });
     });
+
+    describe('house bids', () => {
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+      function mkHouseBid(deal = {}) {
+        return Object.assign({}, createBid(), fixtures.getBidResponses()[5], { cpm: 0, meta: { deal: { priority: 14, ...deal } } });
+      }
+      function allowHouseBids(bid) {
+        getGlobal().bidderSettings = { [bid.bidderCode]: { allowHouseBids: true } };
+      }
+
+      afterEach(() => {
+        getGlobal().bidderSettings = {};
+      });
+
+      it('are flagged when the adapter is allowed house and priority bids and the trusted priority is above the default', () => {
+        const bid = mkHouseBid();
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.true;
+        expect(bid.priority).to.equal(14);
+      });
+
+      it('are not flagged when the adapter is not allowed house bids', () => {
+        const bid = mkHouseBid();
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+      });
+
+      it('are not flagged when the bidder request does not allow priority bids', () => {
+        const bid = mkHouseBid();
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode }) });
+        expect(bid.houseBid).to.be.false;
+      });
+
+      it('are not flagged for declaring the house deal type without a low priority', () => {
+        const bid = mkHouseBid({ type: 4, priority: undefined });
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+        expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+      });
+
+      it('overwrite a houseBid flag set by the adapter', () => {
+        const bid = Object.assign(mkHouseBid({ priority: DEFAULT_PRIORITY }), { houseBid: true });
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+      });
+    });
   });
 
   describe('createAuction', () => {

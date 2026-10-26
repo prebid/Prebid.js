@@ -1,5 +1,4 @@
 import { auctionManager } from './auctionManager.js';
-import { bidderSettings } from './bidderSettings.js';
 import { config } from './config.js';
 import { BID_STATUS, DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, TARGETING_KEYS } from './constants.js';
 import * as events from './events.js';
@@ -33,6 +32,7 @@ import {
   minimum
 } from './utils/reducers.js';
 import type { Bid } from './bidfactory.ts';
+import { isCpmEligible as isBidCpmEligible } from './utils/desirability.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
@@ -53,7 +53,7 @@ export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
 );
 
 function isCpmEligible(bid: Bid): boolean {
-  return bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true ? bid.cpm >= 0 : bid.cpm > 0;
+  return isBidCpmEligible(bid);
 }
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
