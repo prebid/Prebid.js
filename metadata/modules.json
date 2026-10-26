@@ -2306,20 +2306,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "showheroesBs",
-      "aliasOf": "showheroes-bs",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "showheroes-bs",
-      "aliasOf": null,
-      "gvlid": 111,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "silvermob",
       "aliasOf": null,
       "gvlid": 1058,
