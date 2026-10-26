@@ -4738,13 +4738,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "risemediatech",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "aivertise",
       "aliasOf": null,
       "gvlid": 1654,
