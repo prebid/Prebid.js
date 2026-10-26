@@ -39,6 +39,7 @@ const { spawn, fork } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const {precompile} = require('./gulp.precompilation.js');
+const {tsConsumer} = require('./gulp.consumerTypes.js');
 
 const TEST_CHUNKS = 8;
 
@@ -600,6 +601,8 @@ gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'))
 // non-recursive, but a glob is taken "as is without extensions" (see mocha's lookup-files),
 // so `**/*` would load test/build-logic/fixtures/**.ts as if they were specs.
 gulp.task('test-build-logic', execaTask('npx mocha \"./test/build-logic/**/*_spec.@(js|mjs)\"'));
+gulp.task('ts-consumer-nobuild', tsConsumer);
+gulp.task('ts-consumer', gulp.series('precompile', 'ts-consumer-nobuild'));
 gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})));
 // the build logic suite has nothing to do with the spec selected by --file; leave it out so that it
 // neither slows down iterating on that spec nor stops it when one of its own tests fails
