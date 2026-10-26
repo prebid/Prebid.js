@@ -15,7 +15,7 @@ describe('The smartx adapter', function () {
     // isRendererPreferredFromAdUnit (src/Renderer.js) throws as soon as
     // bid.renderer.render() runs in the oustreamRender describe block.
     // Matches the same workaround already in use in
-    // test/spec/modules/showheroes-bsBidAdapter_spec.js.
+    // test/spec/modules/showheroesBidAdapter_spec.js.
     getGlobal().adUnits = [];
   });
 
