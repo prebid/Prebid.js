@@ -1161,9 +1161,8 @@ export function adjustBids(bid, { index = auctionManager.index } = {}) {
 
   const bidderRequest = index.getBidderRequest(bid);
   bid.desirability = adjustDesirability(bid, bidRequest, { bidderRequest });
-  if (isHouseBid(bid, bidderRequest)) {
-    bid.houseBid = true;
-  }
+  // always set, so that a value set by the adapter itself has no effect
+  bid.houseBid = isHouseBid(bid, bidderRequest);
   bid.priority = getPriority(bid, bidderRequest);
 }
 

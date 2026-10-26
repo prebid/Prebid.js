@@ -5,7 +5,6 @@ import {
   adjustDesirability,
   DEFAULT_PRIORITY,
   getPriority,
-  HOUSE_DEAL_TYPE,
   isCpmEligible,
   isHouseBid
 } from '../../../../src/utils/desirability.js';
@@ -229,7 +228,7 @@ describe('desirability utils', function () {
   });
 
   describe('house bids', () => {
-    const house = (extra = {}) => ({ cpm: 0, bidderCode: 'adServer', meta: { deal: { type: HOUSE_DEAL_TYPE, ...extra } } });
+    const house = (deal = {}) => ({ cpm: 0, bidderCode: 'adServer', meta: { deal: { priority: 16, ...deal } } });
     const TRUSTED = { bidderCode: 'adServer', allowPriorityBids: true };
 
     describe('isHouseBid', () => {
@@ -240,10 +239,9 @@ describe('desirability utils', function () {
       });
 
       Object.entries({
-        'meta.deal.type 4': house(),
-        'meta.deal.type 4 with a high priority': house({ priority: 1 }),
-        'meta.deal.priority above the default': { cpm: 0, meta: { deal: { type: 1, priority: DEFAULT_PRIORITY + 1 } } },
-        'meta.deal.priority above the default and no type': { cpm: 0, meta: { deal: { priority: 20 } } },
+        'meta.deal.priority above the default': house({ priority: DEFAULT_PRIORITY + 1 }),
+        'a low priority and any deal type': house({ type: 1 }),
+        'a low priority and the house deal type': house({ type: 4 }),
       }).forEach(([desc, bid]) => {
         it(`is true for ${desc} when the adapter is allowed house and priority bids`, () => {
           expect(isHouseBid(bid, TRUSTED, { bs })).to.be.true;
@@ -251,10 +249,12 @@ describe('desirability utils', function () {
       });
       Object.entries({
         'missing bidderRequest': [house(), undefined],
-        'allowHouseBids not set': [house({ priority: 20 }), { bidderCode: 'other', allowPriorityBids: true }],
-        'allowPriorityBids not set': [house({ priority: 20 }), { bidderCode: 'adServer' }],
-        'a non-house deal type at the default priority': [{ cpm: 0, meta: { deal: { type: 3, priority: DEFAULT_PRIORITY } } }, TRUSTED],
-        'a non-house deal type with a high priority': [{ cpm: 0, meta: { deal: { type: 1, priority: 1 } } }, TRUSTED],
+        'allowHouseBids not set': [house(), { bidderCode: 'other', allowPriorityBids: true }],
+        'allowPriorityBids not set': [house(), { bidderCode: 'adServer' }],
+        'the default priority': [house({ priority: DEFAULT_PRIORITY }), TRUSTED],
+        'a high priority': [house({ priority: 1 }), TRUSTED],
+        'the house deal type without a priority': [{ cpm: 0, meta: { deal: { type: 4 } } }, TRUSTED],
+        'the house deal type with a high priority': [house({ type: 4, priority: 1 }), TRUSTED],
         'a non-numeric priority': [{ cpm: 0, meta: { deal: { priority: '20' } } }, TRUSTED],
         'no deal metadata': [{ cpm: 0 }, TRUSTED],
       }).forEach(([desc, [bid, bidderRequest]]) => {
@@ -291,11 +291,12 @@ describe('desirability utils', function () {
 
     describe('getPriority', () => {
       it('does not infer a priority from the house deal type', () => {
-        expect(getPriority(house(), { allowPriorityBids: true })).to.equal(DEFAULT_PRIORITY);
-        expect(getPriority(house(), {})).to.equal(DEFAULT_PRIORITY);
+        const bid = { cpm: 0, meta: { deal: { type: 4 } } };
+        expect(getPriority(bid, { allowPriorityBids: true })).to.equal(DEFAULT_PRIORITY);
+        expect(getPriority(bid, {})).to.equal(DEFAULT_PRIORITY);
       });
       it('uses a trusted meta.deal.priority on house bids', () => {
-        expect(getPriority(house({ priority: 1 }), { allowPriorityBids: true })).to.equal(1);
+        expect(getPriority(house(), { allowPriorityBids: true })).to.equal(16);
       });
     });
 
