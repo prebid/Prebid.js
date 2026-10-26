@@ -449,7 +449,7 @@ function precompile(options = {}) {
 // before does.
 gulp.task('ts', helpers.execaTask('tsc --incremental'));
 gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
-gulp.task('ts-consumer', tsConsumer);
+gulp.task('ts-consumer', tsConsumer('link'));
 gulp.task('check-declarations', checkDeclarations);
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));

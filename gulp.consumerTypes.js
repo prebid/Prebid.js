@@ -60,8 +60,7 @@ export let notAnEvent: EventPayload<'notAnEvent'> | undefined;
 
 function createConsumer(workDir, {moduleResolution, module}, type) {
   const dir = path.join(workDir, `${moduleResolution}-${module}-${type}`.toLowerCase());
-  fs.mkdirSync(path.join(dir, 'node_modules'), {recursive: true});
-  fs.symlinkSync(__dirname, path.join(dir, 'node_modules/prebid.js'), 'junction');
+  fs.mkdirSync(dir);
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({name: 'consumer', private: true, type}));
   fs.writeFileSync(path.join(dir, 'tsconfig.json'), JSON.stringify({
     compilerOptions: {
@@ -79,28 +78,66 @@ function createConsumer(workDir, {moduleResolution, module}, type) {
   return dir;
 }
 
-function typeCheck(dir) {
+function run(file, args, options) {
   return new Promise((resolve) => {
-    execFile(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', dir], {cwd: dir}, (error, stdout, stderr) => {
-      resolve({dir, ok: !error, output: `${stdout}${stderr}`.trim()});
+    execFile(file, args, options, (error, stdout, stderr) => {
+      resolve({ok: !error, output: `${stdout}${stderr}`.trim()});
     });
   });
 }
 
-function tsConsumer() {
-  if (!fs.existsSync(helpers.getPrecompiledPath('src/prebid.public.d.ts'))) {
-    return Promise.reject(new Error(`no declarations under '${helpers.getPrecompiledPath()}', run 'gulp precompile' first`));
-  }
-  // outside the repository: CI archives the working directory, and the links point back into it
-  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prebid-ts-consumer-'));
-  const consumers = COMPILER_SETTINGS.flatMap(settings => PACKAGE_TYPES.map(type => createConsumer(workDir, settings, type)));
-  return Promise.all(consumers.map(typeCheck)).then(results => {
-    results.forEach(({dir, ok}) => console.log(`${ok ? 'pass' : 'FAIL'}  ${path.basename(dir)}`));
-    const failures = results.filter(({ok}) => !ok);
-    if (failures.length > 0) {
-      throw new Error(['', ...failures.map(({dir, output}) => `${path.basename(dir)}:\n${output}`)].join('\n\n'));
+function typeCheck(dir) {
+  return run(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', dir], {cwd: dir}).then(result => ({dir, ...result}));
+}
+
+function npm(args, cwd) {
+  return run('npm', args, {cwd}).then(({ok, output}) => {
+    if (!ok) {
+      throw new Error(`npm ${args.join(' ')} failed:\n${output}`);
     }
-  }).finally(() => fs.rmSync(workDir, {recursive: true, force: true}));
+  });
+}
+
+/**
+ * Make 'prebid.js' resolvable from every consumer, which are subdirectories of `workDir`.
+ */
+const INSTALLERS = {
+  // fast, but sees the whole checkout - including devDependencies and files that are not published
+  link(workDir) {
+    fs.mkdirSync(path.join(workDir, 'node_modules'));
+    fs.symlinkSync(__dirname, path.join(workDir, 'node_modules/prebid.js'), 'junction');
+    return Promise.resolve();
+  },
+  // what users get, but needs a generated .npmignore and the registry
+  pack(workDir) {
+    fs.writeFileSync(path.join(workDir, 'package.json'), JSON.stringify({private: true}));
+    return npm(['pack', '--ignore-scripts', '--loglevel=warn', '--pack-destination', workDir], __dirname).then(() => {
+      const tarball = fs.readdirSync(workDir).find(name => name.endsWith('.tgz'));
+      return npm(['install', '--ignore-scripts', '--no-audit', '--no-fund', path.join(workDir, tarball)], workDir);
+    });
+  }
+};
+
+function tsConsumer(install) {
+  const task = function () {
+    if (!fs.existsSync(helpers.getPrecompiledPath('src/prebid.public.d.ts'))) {
+      return Promise.reject(new Error(`no declarations under '${helpers.getPrecompiledPath()}', run 'gulp precompile' first`));
+    }
+    // outside the repository: CI archives the working directory, and the links point back into it
+    const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prebid-ts-consumer-'));
+    return INSTALLERS[install](workDir).then(() => {
+      const consumers = COMPILER_SETTINGS.flatMap(settings => PACKAGE_TYPES.map(type => createConsumer(workDir, settings, type)));
+      return Promise.all(consumers.map(typeCheck));
+    }).then(results => {
+      results.forEach(({dir, ok}) => console.log(`${ok ? 'pass' : 'FAIL'}  ${path.basename(dir)}`));
+      const failures = results.filter(({ok}) => !ok);
+      if (failures.length > 0) {
+        throw new Error(['', ...failures.map(({dir, output}) => `${path.basename(dir)}:\n${output}`)].join('\n\n'));
+      }
+    }).finally(() => fs.rmSync(workDir, {recursive: true, force: true}));
+  };
+  task.displayName = `ts-consumer (${install})`;
+  return task;
 }
 
 module.exports = {tsConsumer};
