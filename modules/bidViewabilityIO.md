@@ -38,4 +38,4 @@ Maintainer: adam.prime@alum.utoronto.ca
     });
 ```
 
-An example implmentation without an ad server can be found in integrationExamples/postbid/bidViewabilityIO_example.html
+An example implmentation without an ad server can be found in integrationExamples/noadserver/bidViewabilityIO_example.html
