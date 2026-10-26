@@ -4,7 +4,7 @@ import { PbPromise } from '../../src/utils/promise.js';
 import { buildActivityParams } from '../../src/activities/params.js';
 import { getHook } from '../../src/hook.js';
 import { type ConsentHandler } from "../../src/consentHandler.ts";
-import { cmpClient, pollForCmp } from '../cmp/cmpClient.js';
+import { CMP_POLL_INTERVAL, cmpClient, pollForCmp } from '../cmp/cmpClient.js';
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -50,6 +50,7 @@ export function consentManagementHook(name, loadConsentData) {
  * @param {Number?} options.cmpTimeout timeout (in ms) after which the auction should continue without consent data.
  * @param {Number?} options.actionTimeout timeout (in ms) from when provisional consent is available to when the auction should continue with it
  * @param {() => {}} options.getNullConsent consent data to use on timeout
+ * @param {AbortSignal?} options.signal when aborted, stop looking for the CMP and resolve without touching `consentDataHandler`.
  * @returns {Promise<{error: Error, consentData: {}}>}
  */
 export function lookupConsentData(
@@ -62,6 +63,7 @@ export function lookupConsentData(
     cmpTimeout,
     actionTimeout,
     getNullConsent,
+    signal,
   }
 ) {
   consentDataHandler.enable();
@@ -98,6 +100,11 @@ export function lookupConsentData(
         timeoutHandle = null;
       }
     }
+    signal?.addEventListener('abort', () => resolve({
+      consentData: consentDataHandler.getConsentData(),
+      error: new Error(`${name} consent lookup was canceled`)
+    }));
+
     function start(cmp?) {
       cmpFound = true;
       setupCmp(setProvisionalConsent, cmp)
@@ -110,7 +117,9 @@ export function lookupConsentData(
       stopPolling = pollForCmp(findCmp, {
         onFound: start,
         onMissing: () => reject(new Error(`${name} CMP not found`)),
-        wait: waitForCmp && cmpTimeout != null
+        wait: waitForCmp && cmpTimeout != null,
+        // otherwise a timeout under CMP_POLL_INTERVAL would allow a single check
+        interval: Math.min(CMP_POLL_INTERVAL, cmpTimeout / 2)
       });
     }
     cmpTimeout != null && resetTimeout(cmpTimeout);
@@ -178,7 +187,7 @@ export function configParser(
   function msg(message) {
     return `consentManagement.${namespace} ${message}`;
   }
-  let requestBidsHook, cdLoader, staticConsentData;
+  let requestBidsHook, cdLoader, staticConsentData, currentLookup;
 
   function attachActivityParams(next, params) {
     return next(Object.assign({ [`${namespace}Consent`]: consentDataHandler.getConsentData() }, params));
@@ -219,6 +228,9 @@ export function configParser(
   }
 
   return function getConsentConfig(config: { [key: string]: CMConfig<any> }) {
+    // a lookup started under the previous config must not touch consent data, or the CMP, from now on
+    currentLookup?.abort();
+    currentLookup = null;
     const cmConfig = config?.[namespace];
     if (!cmConfig || typeof cmConfig !== 'object') {
       logWarn(msg(`config not defined, exiting consent manager module`));
@@ -269,6 +281,7 @@ export function configParser(
     }
 
     const lookup = () => lookupConsentData({
+      signal: (currentLookup = new AbortController()).signal,
       name: displayName,
       consentDataHandler,
       setupCmp,

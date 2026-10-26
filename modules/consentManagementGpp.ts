@@ -182,7 +182,14 @@ export class GPPClient {
 }
 
 function lookupIabConsent(_setProvisionalConsent, cmp) {
-  return new PbPromise((resolve) => resolve(GPPClient.get(() => cmp).refresh()));
+  return new PbPromise((resolve) => {
+    const client = GPPClient.get(() => cmp);
+    if (client.cmp !== cmp) {
+      // GPPClient keeps the first CMP client it was given; this one would otherwise leak its message listener
+      cmp.close();
+    }
+    resolve(client.refresh());
+  });
 }
 
 // add new CMPs here, with their dedicated lookup function

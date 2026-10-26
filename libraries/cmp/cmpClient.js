@@ -17,23 +17,24 @@ export const CMP_POLL_INTERVAL = 100;
 
 /**
  * Pass the CMP client returned by `findCmp` to `onFound`; if there is none, call `onMissing`, or with `wait`, keep looking
- * every CMP_POLL_INTERVAL ms.
+ * every `interval` ms.
  *
  * @param {() => CMPClient | undefined} findCmp
  * @param {object} options
  * @param {(cmp: CMPClient) => void} options.onFound
  * @param {() => void} [options.onMissing]
  * @param {boolean} [options.wait]
+ * @param {number} [options.interval]
  * @returns {() => void} a function that stops looking.
  */
-export function pollForCmp(findCmp, { onFound, onMissing, wait = false }) {
+export function pollForCmp(findCmp, { onFound, onMissing, wait = false, interval = CMP_POLL_INTERVAL }) {
   let handle;
   (function check() {
     const cmp = findCmp();
     if (cmp) {
       onFound(cmp);
     } else if (wait) {
-      handle = setTimeout(check, CMP_POLL_INTERVAL);
+      handle = setTimeout(check, interval);
     } else {
       onMissing();
     }

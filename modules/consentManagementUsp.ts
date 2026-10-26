@@ -10,7 +10,7 @@ import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';
 import { getHook } from '../src/hook.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
+import { CMP_POLL_INTERVAL, cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
 import type { USPConsentData } from "../src/types/consent/usp.d.ts";
@@ -23,6 +23,10 @@ export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
 let waitForCmp = false;
+// incremented to make in-flight lookups ignore any reply they get from now on
+let lookupGeneration = 0;
+const pendingLookups = new Set<() => void>();
+const LOOKUP_CANCELED = 'USP consent lookup was canceled.';
 
 export type BaseUSPConfig = {
   /**
@@ -138,7 +142,8 @@ function lookupUspConsent({ onSuccess, onError }): () => void {
   }), {
     onFound: setupCmp,
     onMissing: () => onError('USP CMP not found.'),
-    wait: waitForCmp
+    wait: waitForCmp,
+    interval: Math.min(CMP_POLL_INTERVAL, consentTimeout / 2)
   });
 }
 
@@ -152,21 +157,41 @@ function loadConsentData(cb?) {
   let timer = null;
   let isDone = false;
   let stopLookup;
+  const generation = lookupGeneration;
 
-  function done(consentData, errMsg, ...extraArgs) {
-    if (isDone) {
-      return;
-    }
+  function end() {
     if (timer != null) {
       clearTimeout(timer);
     }
     stopLookup?.();
     isDone = true;
+    pendingLookups.delete(cancel);
+  }
+
+  function cancel() {
+    end();
+    if (cb != null) {
+      cb(LOOKUP_CANCELED);
+    }
+  }
+
+  function done(consentData, errMsg, ...extraArgs) {
+    if (generation !== lookupGeneration) {
+      return;
+    }
+    if (isDone) {
+      // the auction has moved on, but consent that arrives late is still good for the next one
+      consentData != null && uspDataHandler.setConsentData(consentData);
+      return;
+    }
+    end();
     uspDataHandler.setConsentData(consentData);
     if (cb != null) {
       cb(errMsg, ...extraArgs);
     }
   }
+
+  pendingLookups.add(cancel);
 
   if (!uspCallMap[consentAPI]) {
     done(null, `USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
@@ -245,7 +270,13 @@ function storeUspConsentData(consentObject) {
 /**
  * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
  */
+function cancelLookups() {
+  lookupGeneration++;
+  pendingLookups.forEach(cancel => cancel());
+}
+
 export function resetConsentData() {
+  cancelLookups();
   consentData = undefined;
   consentAPI = undefined;
   consentTimeout = undefined;
@@ -259,6 +290,7 @@ export function resetConsentData() {
  * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int)
  */
 export function setConsentConfig(config) {
+  cancelLookups();
   config = config && config.usp;
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');

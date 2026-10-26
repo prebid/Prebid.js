@@ -281,6 +281,28 @@ describe('consent management utils', () => {
           sinon.assert.notCalled(findCmp);
         });
 
+        it('should look for the CMP more often when cmpTimeout is shorter than the poll interval', async () => {
+          cmpTimeout = CMP_POLL_INTERVAL / 2;
+          const lookup = runLookup({ findCmp, waitForCmp: true });
+          findCmp.returns(cmp);
+          clock.tick(cmpTimeout / 2);
+          await lookup;
+          sinon.assert.calledWith(setupCmp, sinon.match.func, cmp);
+        });
+
+        it('should resolve without touching consent data, and stop looking, when aborted', async () => {
+          const controller = new AbortController();
+          const lookup = runLookup({ findCmp, waitForCmp: true, signal: controller.signal });
+          controller.abort();
+          const { error } = await lookup;
+          expect(error.message).to.contain('canceled');
+          findCmp.resetHistory();
+          clock.tick(cmpTimeout * 2);
+          sinon.assert.notCalled(findCmp);
+          sinon.assert.notCalled(consentDataHandler.setConsentData);
+          sinon.assert.notCalled(consentDataHandler.error);
+        });
+
         it('should time out with null consent if the CMP is found but does not reply', async () => {
           setupCmp.returns(new Promise(() => null));
           const lookup = runLookup({ findCmp, waitForCmp: true });
@@ -423,6 +445,14 @@ describe('consent management utils', () => {
       afterEach(() => {
         delete window.__testCmp;
         getConsentConfig({});
+      });
+
+      it('should stop a lookup still looking for the CMP when reconfigured', async () => {
+        getConsentConfig({ [namespace]: { cmpApi: 'iab', waitForCmp: true } }).loadConsentData();
+        getConsentConfig({ [namespace]: { cmpApi: 'iab', waitForCmp: true } });
+        window.__testCmp = sinon.stub();
+        await clock.tickAsync(CMP_POLL_INTERVAL * 2);
+        sinon.assert.notCalled(cmpHandlers.iab.lookup);
       });
 
       it('should pass the CMP client to the cmp handler, reusing it across lookups', async () => {

@@ -450,28 +450,32 @@ describe('consentManagementGpp', function () {
         expect(gppDataHandler.ready).to.be.true;
       });
 
-      it('should wait for a late CMP only when configured', async function () {
-        const configPromise = setConsentConfig({
-          gpp: {
-            cmpApi: 'iab',
-            timeout: 500,
-            waitForCmp: true,
-          }
+      describe('with a CMP that appears late', () => {
+        let lateCmpTimer;
+        beforeEach(() => {
+          lateCmpTimer = setTimeout(() => {
+            window.__gpp = sinon.stub().callsFake(function (command, callback) {
+              if (command === 'ping') {
+                callback({ signalStatus: 'ready', applicableSections: [7], gppString: 'late-consent', gppVersion: '1.1' });
+              }
+            });
+          }, 10);
         });
-        setTimeout(() => {
-          window.__gpp = sinon.stub().callsFake(function (command, callback) {
-            if (command === 'ping') {
-              callback({ signalStatus: 'ready', applicableSections: [7], gppString: 'late-consent', gppVersion: '1.1' });
-            }
-          });
-        }, 10);
-        try {
-          await configPromise;
+        afterEach(() => {
+          clearTimeout(lateCmpTimer);
+          delete window.__gpp;
+        });
+
+        it('should wait for it when configured', async function () {
+          await setConsentConfig({ gpp: { cmpApi: 'iab', timeout: 500, waitForCmp: true } });
           expect(await runHook()).to.be.true;
           expect(gppDataHandler.getConsentData().gppString).to.eql('late-consent');
-        } finally {
-          delete window.__gpp;
-        }
+        });
+
+        it('should not wait for it by default', async function () {
+          await setConsentConfig({ gpp: { cmpApi: 'iab', timeout: 500 } });
+          expect(await runHook()).to.be.false;
+        });
       });
 
       it('should not trip when adUnits have no size', async () => {
@@ -509,7 +513,7 @@ describe('consentManagementGpp', function () {
 
     describe('on CMP sectionChange events', () => {
       let pingData, triggerCMPEvent;
-      beforeEach(async () => {
+      beforeEach(() => {
         pingData = {
           applicableSections: [7],
           gppString: 'xyz',
@@ -528,8 +532,6 @@ describe('consentManagementGpp', function () {
           }
         });
         setConsentConfig(goodConfig);
-        // let the lookup find the CMP and subscribe to its events
-        await new Promise(resolve => setTimeout(resolve));
       });
 
       afterEach(() => {
