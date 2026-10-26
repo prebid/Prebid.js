@@ -344,7 +344,7 @@ export function getExtNextMilImp(impId, bid) {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
+      scrollTop: getWinDimensions().scrollY,
     },
   };
 

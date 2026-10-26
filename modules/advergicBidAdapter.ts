@@ -5,8 +5,7 @@
  *
  * @module advergicBidAdapter
  */
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import type { BidderSpec } from '../src/adapters/bidderFactory.js';
+import { registerBidder, type BidderSpec } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { deepAccess, isArray, logError, logWarn, isFn } from '../src/utils.js';

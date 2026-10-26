@@ -212,7 +212,10 @@ describe('programmaticXBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
-  describe('validtae spec', function () {
+  describe('validate spec', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -244,6 +247,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('validate bid requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -274,6 +280,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('build requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     let sandbox;
     before(function () {
       getGlobal().bidderSettings = {
@@ -582,6 +591,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
@@ -640,6 +652,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('interpret response', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
@@ -717,6 +732,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('alternate param names extractors', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return undefined when param not supported', function () {
       const cid = extractCID({ 'c_id': '1' });
       const pid = extractPID({ 'p_id': '1' });
@@ -737,6 +755,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         programmaticX: {
@@ -772,6 +793,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('storage utils', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         programmaticX: {
@@ -819,6 +843,9 @@ describe('programmaticXBidAdapter', function () {
   });
 
   describe('createDomain test', function() {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return correct domain', function () {
       const responses = createDomain();
       expect(responses).to.be.equal('https://exchange.programmaticx.ai');

@@ -17,5 +17,5 @@
     "strict": true,
     "noEmit": true
   },
-  "include": ["./dist/src/**/*.ts"]
+  "include": ["./dist/src/**/*.ts", "./dist/src/**/*.d.mts"]
 }
