@@ -788,9 +788,32 @@ describe('SparteoAdapter', function () {
 
     describe('Check methods succeed', function () {
       // `isSynced` is a module-level flag that only ever flips false -> true, never back (it is
-      // never reset between tests since the module is loaded once for the whole spec run). This
-      // test must therefore run BEFORE the "fires" test below: it keeps iframeEnabled false so it
-      // never trips the flag, leaving the gate open for the next test to exercise the full path.
+      // never reset between tests since the module is loaded once for the whole spec run). The two
+      // tests below must therefore run BEFORE the "fires" test at the end: the COPPA test returns
+      // before the flag is touched and the fallback test keeps iframeEnabled false, so neither trips
+      // it, leaving the gate open for the last test to exercise the full path. That last test passing
+      // is also the proof that the COPPA call marked nothing as synced.
+      it('returns no sync when the publisher flags the page as subject to COPPA', function () {
+        const syncOptions = {
+          'iframeEnabled': true,
+          'pixelEnabled': false
+        };
+        const gdprConsent = {
+          gdprApplies: 1,
+          consentString: 'tcfv2'
+        };
+        const uspConsent = '1Y---';
+        const gppConsent = {
+          gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+          applicableSections: [2, 6]
+        };
+
+        const result = adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent, gppConsent, true);
+
+        expect(result).to.deep.equal([]);
+        expect(window.sparteoCrossfire).to.be.undefined;
+      });
+
       it('falls back to default empty values when GDPR/GPP consent sub-fields are missing', function () {
         const syncOptions = { iframeEnabled: false };
         const gdprConsent = { gdprApplies: false };

@@ -266,7 +266,12 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
+    // No user sync when the publisher flags the page as subject to COPPA (`setConfig({coppa: true})`).
+    if (coppa === true) {
+      return [];
+    }
+
     let syncurl = '';
 
     if (!isSynced && !window.sparteoCrossfire?.started) {
