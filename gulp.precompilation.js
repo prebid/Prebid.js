@@ -44,6 +44,7 @@ const {Transform} = require('node:stream');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
+const {tsConsumer} = require('./gulp.consumerTypes.js');
 const {
   cachedPipeline,
   getDefaults,
@@ -437,7 +438,7 @@ function precompile(options = {}) {
       generateGlobalDef(options),
     ]),
   ].concat(options.dev ? [] : [
-    gulp.parallel(['ts-strict', 'check-declarations'])
+    gulp.parallel(['ts-strict', 'check-declarations', 'ts-consumer'])
   ]));
 }
 
@@ -448,6 +449,7 @@ function precompile(options = {}) {
 // before does.
 gulp.task('ts', helpers.execaTask('tsc --incremental'));
 gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
+gulp.task('ts-consumer', tsConsumer);
 gulp.task('check-declarations', checkDeclarations);
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));

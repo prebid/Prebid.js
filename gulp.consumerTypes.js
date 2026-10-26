@@ -4,11 +4,10 @@
  * as a CommonJS package and once as an ES module package.
  */
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const {execFile} = require('child_process');
 const helpers = require('./gulpHelpers.js');
-
-const WORK_DIR = path.resolve(__dirname, 'build/ts-consumer');
 
 // keep in sync with the "TypeScript configuration" table in README.md
 const COMPILER_SETTINGS = [
@@ -43,7 +42,7 @@ declare global {
 }
 window.myCustomPrebidGlobal.que.push(() => window.myCustomPrebidGlobal.processQueue());
 `,
-  // a type that fails to resolve degrades to \`any\` without an error; the expected errors catch that
+  // the expected errors fail the check if these types degrade to `any`
   'namedTypes.ts': `
 import pbjs from 'prebid.js';
 import type {AdUnitDefinition, Bid, BidRequest, EventPayload} from 'prebid.js';
@@ -59,10 +58,10 @@ export let notAnEvent: EventPayload<'notAnEvent'> | undefined;
 `,
 };
 
-function createConsumer({moduleResolution, module}, type) {
-  const dir = path.join(WORK_DIR, `${moduleResolution}-${module}-${type}`.toLowerCase());
+function createConsumer(workDir, {moduleResolution, module}, type) {
+  const dir = path.join(workDir, `${moduleResolution}-${module}-${type}`.toLowerCase());
   fs.mkdirSync(path.join(dir, 'node_modules'), {recursive: true});
-  fs.symlinkSync(path.relative(path.join(dir, 'node_modules'), __dirname), path.join(dir, 'node_modules/prebid.js'), 'dir');
+  fs.symlinkSync(__dirname, path.join(dir, 'node_modules/prebid.js'), 'junction');
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({name: 'consumer', private: true, type}));
   fs.writeFileSync(path.join(dir, 'tsconfig.json'), JSON.stringify({
     compilerOptions: {
@@ -92,15 +91,16 @@ function tsConsumer() {
   if (!fs.existsSync(helpers.getPrecompiledPath('src/prebid.public.d.ts'))) {
     return Promise.reject(new Error(`no declarations under '${helpers.getPrecompiledPath()}', run 'gulp precompile' first`));
   }
-  fs.rmSync(WORK_DIR, {recursive: true, force: true});
-  const consumers = COMPILER_SETTINGS.flatMap(settings => PACKAGE_TYPES.map(type => createConsumer(settings, type)));
+  // outside the repository: CI archives the working directory, and the links point back into it
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prebid-ts-consumer-'));
+  const consumers = COMPILER_SETTINGS.flatMap(settings => PACKAGE_TYPES.map(type => createConsumer(workDir, settings, type)));
   return Promise.all(consumers.map(typeCheck)).then(results => {
-    results.forEach(({dir, ok}) => console.log(`${ok ? 'pass' : 'FAIL'}  ${path.relative(__dirname, dir)}`));
+    results.forEach(({dir, ok}) => console.log(`${ok ? 'pass' : 'FAIL'}  ${path.basename(dir)}`));
     const failures = results.filter(({ok}) => !ok);
     if (failures.length > 0) {
-      throw new Error(['', ...failures.map(({dir, output}) => `${path.relative(__dirname, dir)}:\n${output}`)].join('\n\n'));
+      throw new Error(['', ...failures.map(({dir, output}) => `${path.basename(dir)}:\n${output}`)].join('\n\n'));
     }
-  });
+  }).finally(() => fs.rmSync(workDir, {recursive: true, force: true}));
 }
 
 module.exports = {tsConsumer};
