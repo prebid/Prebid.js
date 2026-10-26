@@ -1263,20 +1263,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "viewdeosDX",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "viewdeos",
-      "aliasOf": "viewdeosDX",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "viously",
       "aliasOf": null,
       "gvlid": 1028,
