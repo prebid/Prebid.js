@@ -17,11 +17,9 @@ const {bundler: makeBundlerConfig, manifest: makeManifestConfig} = require('./we
 var helpers = require('./gulpHelpers.js');
 const execaTask = helpers.execaTask;
 var concat = require('gulp-concat');
-var replace = require('gulp-replace');
 const execaCmd = require('execa');
 const { Transform, PassThrough } = require('node:stream');
 var fs = require('fs');
-var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const {minify} = require('terser');
 const Vinyl = require('vinyl');
@@ -94,14 +92,6 @@ function requireNodeVersion(version) {
     done();
   }
 }
-
-// Dependant task for building postbid. It escapes postbid-config file.
-function escapePostbidConfig() {
-  gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
-    .pipe(jsEscape())
-    .pipe(gulp.dest('build/postbid/'));
-};
-escapePostbidConfig.displayName = 'escape-postbid-config';
 
 function lint(done) {
   if (argv.nolint) {
@@ -468,17 +458,6 @@ function testCoverage(done) {
   }, done);
 }
 
-// This task creates postbid.js. Postbid setup is different from prebid.js
-// More info can be found here http://prebid.org/overview/what-is-post-bid.html
-
-function buildPostbid() {
-  var fileContent = fs.readFileSync('./build/postbid/postbid-config.js', 'utf8');
-
-  return gulp.src('./integrationExamples/postbid/oas/postbid.js')
-    .pipe(replace('\[%%postbid%%\]', fileContent))
-    .pipe(gulp.dest('build/postbid/'));
-}
-
 function startIntegServer(dev = false) {
   const args = ['./test/fake-server/index.js', `--port=${INTEG_SERVER_PORT}`, `--host=${INTEG_SERVER_HOST}`];
   if (dev) {
@@ -583,7 +562,6 @@ gulp.task(clean);
 
 gulp.task(cleanCache);
 
-gulp.task(escapePostbidConfig);
 
 
 gulp.task('build-web-bundler-prod', gulp.series(buildManifest(false), makeWebpackPkg(makeManifestConfig(false)), gulp.parallel(buildManifestChecksums(false), buildOptionsInjector(false)), makeWebpackPkg(makeBundlerConfig(false))));
@@ -633,7 +611,6 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
 gulp.task('build-release', gulp.series('clean-cache', 'update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
 // prepare NPM release - 'build' to generate files in dist/; 'setup-npmignore' to make sure 'dist' is published in NPM
 gulp.task('prepare-release', gulp.series('clean-cache', 'build', 'setup-npmignore'));
-gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
 gulp.task('serve-fast', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast)));
