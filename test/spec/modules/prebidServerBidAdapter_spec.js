@@ -4645,7 +4645,24 @@ describe('S2S Adapter', function () {
         }
       },
       {
-        t: 'does not merge schain nodes from global config into a bidder schain',
+        t: 'concatenates schain nodes from global config and a bidder schain by default',
+        global: {
+          source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }] } } }
+        },
+        bidder: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        },
+        expected: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }, { asi: 'bidderA' }] } } }
+          }
+        }
+      },
+      {
+        t: 'does not merge schain nodes from global config into a bidder schain with firstPartyData.replaceGlobalSchain',
+        fpdConfig: { replaceGlobalSchain: true },
         global: {
           source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }] } } }
         },
@@ -4660,9 +4677,16 @@ describe('S2S Adapter', function () {
           }
         }
       }
-    ].forEach(({ t, global, bidder, expected }) => {
+    ].forEach(({ t, global, bidder, expected, fpdConfig }) => {
       it(t, () => {
-        expect(getPBSBidderConfig({ global, bidder })).to.eql(expected);
+        if (fpdConfig) {
+          config.setConfig({ firstPartyData: fpdConfig });
+        }
+        try {
+          expect(getPBSBidderConfig({ global, bidder })).to.eql(expected);
+        } finally {
+          config.resetConfig();
+        }
       });
     });
   });
