@@ -181,6 +181,7 @@ export function configParser(
     return `consentManagement.${namespace} ${message}`;
   }
   let requestBidsHook, cdLoader, staticConsentData;
+  const lookupsWaitingForCmp = new Set();
 
   function attachActivityParams(next, params) {
     return next(Object.assign({ [`${namespace}Consent`]: consentDataHandler.getConsentData() }, params));
@@ -270,16 +271,29 @@ export function configParser(
       findCmp = () => cmp ?? (cmp = cmpClient(api));
     }
 
-    const lookup = () => lookupConsentData({
-      name: displayName,
-      consentDataHandler,
-      setupCmp,
-      findCmp,
-      waitForCmp: cmConfig.waitForCmp === true,
-      cmpTimeout,
-      actionTimeout,
-      getNullConsent,
-    });
+    const lookup = () => {
+      if (lookupsWaitingForCmp.size > 0) {
+        logError(msg(`started a consent lookup while another is still waiting for the CMP; either may overwrite the other's consent data. Avoid changing consentManagement config while waiting for the CMP.`));
+      }
+      const waiting = {};
+      const stopWaiting = () => lookupsWaitingForCmp.delete(waiting);
+      if (findCmp != null && cmConfig.waitForCmp === true) {
+        lookupsWaitingForCmp.add(waiting);
+      }
+      return lookupConsentData({
+        name: displayName,
+        consentDataHandler,
+        setupCmp: (...args) => {
+          stopWaiting();
+          return setupCmp(...args);
+        },
+        findCmp,
+        waitForCmp: cmConfig.waitForCmp === true,
+        cmpTimeout,
+        actionTimeout,
+        getNullConsent,
+      }).finally(stopWaiting);
+    };
 
     cdLoader = (() => {
       let cd;

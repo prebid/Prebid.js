@@ -434,6 +434,43 @@ describe('consent management utils', () => {
         getConsentConfig({});
       });
 
+      describe('when a lookup starts while another is waiting for the CMP', () => {
+        function startLookup(cmConfig = { cmpApi: 'iab', waitForCmp: true, timeout: 1000 }) {
+          return getConsentConfig({ [namespace]: cmConfig }).loadConsentData().catch(() => null);
+        }
+
+        function assertWaitingError(called) {
+          (called ? sinon.assert.calledWith : sinon.assert.neverCalledWith)(utils.logError, sinon.match('still waiting for the CMP'));
+        }
+
+        it('should log an error', () => {
+          startLookup();
+          startLookup({ cmpApi: 'static', consentData: {} });
+          assertWaitingError(true);
+        });
+
+        it('should not log an error if the CMP was found', () => {
+          window.__testCmp = sinon.stub();
+          startLookup();
+          startLookup();
+          assertWaitingError(false);
+        });
+
+        it('should not log an error after the previous lookup times out', async () => {
+          const previous = startLookup();
+          await clock.tickAsync(1000);
+          await previous;
+          startLookup();
+          assertWaitingError(false);
+        });
+
+        it('should not log an error without waitForCmp', () => {
+          startLookup({ cmpApi: 'iab' });
+          startLookup({ cmpApi: 'iab' });
+          assertWaitingError(false);
+        });
+      });
+
       it('should pass the CMP client to the cmp handler, reusing it across lookups', async () => {
         window.__testCmp = sinon.stub();
         cmpHandlers.iab.lookup.onFirstCall().returns(Promise.reject(new Error()));
