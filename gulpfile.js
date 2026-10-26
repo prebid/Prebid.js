@@ -39,6 +39,7 @@ const { spawn, fork } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const {precompile} = require('./gulp.precompilation.js');
+const {tsConsumer, TS_MIN, TS_CURRENT} = require('./gulp.consumerTypes.js');
 
 const TEST_CHUNKS = 8;
 
@@ -620,6 +621,7 @@ gulp.task('update-codeql', function (done) {
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$/\\/dist\\/src\\/test/g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('ts-consumer-packed', gulp.series('setup-npmignore', tsConsumer('pack', [TS_MIN, TS_CURRENT])));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
 // `clean-cache` first, as belt and braces rather than to fix a known gap: the key covers file
