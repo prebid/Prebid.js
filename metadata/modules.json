@@ -430,13 +430,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "bidscube",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "bliink",
       "aliasOf": null,
       "gvlid": null,
