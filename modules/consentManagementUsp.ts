@@ -10,8 +10,7 @@ import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';
 import { getHook } from '../src/hook.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { pollForCmp } from '../libraries/cmp/cmpClient.js';
-import { PbPromise } from '../src/utils/promise.js';
+import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
 import type { USPConsentData } from "../src/types/consent/usp.d.ts";
@@ -23,7 +22,7 @@ const USPAPI_VERSION = 1;
 export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
-let cmpPollTimeout = 0;
+let waitForCmp = false;
 
 export type BaseUSPConfig = {
   /**
@@ -79,8 +78,10 @@ function lookupStaticConsentData({ onSuccess, onError }) {
  * This function handles interacting with an USP compliant consent manager to obtain the consent information of the user.
  * Given the async nature of the USP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
+ *
+ * @returns a function that stops looking for the CMP.
  */
-function lookupUspConsent({ onSuccess, onError }) {
+function lookupUspConsent({ onSuccess, onError }): () => void {
   function handleUspApiResponseCallbacks() {
     const uspResponse = {} as any;
 
@@ -104,11 +105,7 @@ function lookupUspConsent({ onSuccess, onError }) {
 
   const callbackHandler = handleUspApiResponseCallbacks();
 
-  return pollForCmp({
-    apiName: '__uspapi',
-    apiVersion: USPAPI_VERSION,
-    apiArgs: ['command', 'version', 'callback'],
-  }, cmpPollTimeout).then((cmp: any) => {
+  function setupCmp(cmp) {
     if (cmp.isDirect) {
       logInfo('Detected USP CMP is directly accessible, calling it now...');
     } else {
@@ -132,7 +129,17 @@ function lookupUspConsent({ onSuccess, onError }) {
         logError('Error invoking CMP `registerDeletion`:', e);
       });
     }
-  }, (e) => onError(e.message));
+  }
+
+  return pollForCmp(() => cmpClient({
+    apiName: '__uspapi',
+    apiVersion: USPAPI_VERSION,
+    apiArgs: ['command', 'version', 'callback'],
+  }), {
+    onFound: setupCmp,
+    onMissing: () => onError('USP CMP not found.'),
+    wait: waitForCmp
+  });
 }
 
 /**
@@ -144,6 +151,7 @@ function lookupUspConsent({ onSuccess, onError }) {
 function loadConsentData(cb?) {
   let timer = null;
   let isDone = false;
+  let stopLookup;
 
   function done(consentData, errMsg, ...extraArgs) {
     if (isDone) {
@@ -152,6 +160,7 @@ function loadConsentData(cb?) {
     if (timer != null) {
       clearTimeout(timer);
     }
+    stopLookup?.();
     isDone = true;
     uspDataHandler.setConsentData(consentData);
     if (cb != null) {
@@ -171,12 +180,11 @@ function loadConsentData(cb?) {
     }
   };
 
-  const lookup = uspCallMap[consentAPI](callbacks);
+  stopLookup = uspCallMap[consentAPI](callbacks);
 
   if (!isDone) {
     if (consentTimeout === 0) {
-      // the CMP is called once the lookup has found it; waiting for that lets a CMP that replies synchronously provide consent
-      PbPromise.resolve(lookup).finally(() => processUspData(undefined, callbacks));
+      processUspData(undefined, callbacks);
     } else {
       timer = setTimeout(callbacks.onError.bind(null, 'USPAPI workflow exceeded timeout threshold.'), consentTimeout);
     }
@@ -243,7 +251,7 @@ export function resetConsentData() {
   consentTimeout = undefined;
   uspDataHandler.reset();
   enabled = false;
-  cmpPollTimeout = 0;
+  waitForCmp = false;
 }
 
 /**
@@ -268,7 +276,7 @@ export function setConsentConfig(config) {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
-  cmpPollTimeout = config?.waitForCmp === true ? consentTimeout : 0;
+  waitForCmp = config?.waitForCmp === true;
   if (consentAPI === 'static') {
     if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {
       if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };

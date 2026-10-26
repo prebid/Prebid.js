@@ -9,7 +9,6 @@ import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
 import { registerOrtbProcessor, REQUEST } from '../src/pbjsORTB.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { pollForCmp } from '../libraries/cmp/cmpClient.js';
 import { configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
 import { CONSENT_GDPR } from "../src/consentHandler.ts";
@@ -26,7 +25,14 @@ const CMP_VERSION = TCF_CMP_VERSION;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
-  'iab': lookupIabConsent,
+  'iab': {
+    api: {
+      apiName: '__tcfapi',
+      apiVersion: CMP_VERSION,
+      apiArgs: ['command', 'version', 'callback', 'parameter'],
+    },
+    lookup: lookupIabConsent
+  },
 };
 
 // CMP event manager instance for TCF
@@ -55,12 +61,8 @@ declare module '../src/consentHandler' {
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  */
-function lookupIabConsent(setProvisionalConsent, cmpPollTimeout = 0) {
-  return pollForCmp({
-    apiName: '__tcfapi',
-    apiVersion: CMP_VERSION,
-    apiArgs: ['command', 'version', 'callback', 'parameter'],
-  }, cmpPollTimeout).then(cmp => new Promise<void>((resolve, reject) => {
+function lookupIabConsent(setProvisionalConsent, cmp) {
+  return new Promise<void>((resolve, reject) => {
     function cmpResponseCallback(tcfData, success) {
       logInfo('Received a response from CMP', tcfData);
       if (success) {
@@ -101,7 +103,7 @@ function lookupIabConsent(setProvisionalConsent, cmpPollTimeout = 0) {
       command: 'addEventListener',
       callback: cmpResponseCallback
     });
-  }));
+  });
 }
 
 function parseConsentData(consentObject): TCFConsentData {

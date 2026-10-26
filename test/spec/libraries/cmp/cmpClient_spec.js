@@ -1,39 +1,51 @@
-import { cmpClient, MODE_CALLBACK, MODE_RETURN, pollForCmp } from '../../../../libraries/cmp/cmpClient.js';
+import { CMP_POLL_INTERVAL, cmpClient, MODE_CALLBACK, MODE_RETURN, pollForCmp } from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
   describe('pollForCmp', () => {
-    afterEach(() => delete window.__pollCmp);
-
-    it('resolves when a CMP appears during the polling window', async () => {
-      const result = pollForCmp({ apiName: '__pollCmp' }, 200);
-      setTimeout(() => { window.__pollCmp = sinon.stub(); }, 10);
-      expect(await result).to.have.property('isDirect', true);
+    let clock, findCmp, onFound, onMissing;
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+      findCmp = sinon.stub();
+      onFound = sinon.stub();
+      onMissing = sinon.stub();
+    });
+    afterEach(() => {
+      clock.restore();
     });
 
-    it('rejects after the polling window', async () => {
-      const lateCmp = setTimeout(() => { window.__pollCmp = sinon.stub(); }, 50);
-      try {
-        await pollForCmp({ apiName: '__pollCmp' }, 20);
-        sinon.assert.fail('should have rejected');
-      } catch (e) {
-        expect(e.message).to.contain('__pollCmp');
-      } finally {
-        clearTimeout(lateCmp);
-      }
+    it('passes a CMP that is already present to onFound', () => {
+      findCmp.returns('cmp');
+      pollForCmp(findCmp, { onFound, onMissing });
+      sinon.assert.calledWith(onFound, 'cmp');
+      sinon.assert.notCalled(onMissing);
     });
 
-    describe('with no timeout', () => {
-      it('resolves to a CMP that is already present', async () => {
-        window.__pollCmp = sinon.stub();
-        expect(await pollForCmp({ apiName: '__pollCmp' })).to.have.property('isDirect', true);
+    it('calls onMissing, and stops looking, when the CMP is not present', () => {
+      pollForCmp(findCmp, { onFound, onMissing });
+      sinon.assert.calledOnce(onMissing);
+      clock.tick(CMP_POLL_INTERVAL * 2);
+      sinon.assert.calledOnce(findCmp);
+    });
+
+    describe('with wait', () => {
+      it('keeps looking until the CMP appears', () => {
+        pollForCmp(findCmp, { onFound, onMissing, wait: true });
+        clock.tick(CMP_POLL_INTERVAL);
+        sinon.assert.notCalled(onFound);
+        findCmp.returns('cmp');
+        clock.tick(CMP_POLL_INTERVAL);
+        sinon.assert.calledWith(onFound, 'cmp');
+        clock.tick(CMP_POLL_INTERVAL * 2);
+        sinon.assert.calledThrice(findCmp);
+        sinon.assert.notCalled(onMissing);
       });
 
-      it('rejects when the CMP is not present', async () => {
-        const cmpClient = pollForCmp({ apiName: '__pollCmp' }, 0);
-        window.__pollCmp = sinon.stub();
-        let error;
-        await cmpClient.catch(e => { error = e; });
-        expect(error).to.exist;
+      it('stops looking when stopped', () => {
+        const stop = pollForCmp(findCmp, { onFound, onMissing, wait: true });
+        stop();
+        clock.tick(CMP_POLL_INTERVAL * 2);
+        sinon.assert.calledOnce(findCmp);
+        sinon.assert.notCalled(onMissing);
       });
     });
   });

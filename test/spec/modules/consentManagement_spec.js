@@ -399,6 +399,22 @@ describe('consentManagement', function () {
         }
       });
 
+      it('should cancel the auction, and look again on the next one, if a late CMP does not appear within the timeout', async () => {
+        await setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 20,
+          waitForCmp: true,
+        });
+        expect(await runHook()).to.be.false;
+        try {
+          window.__tcfapi = mockCMP({ gdprApplies: true, tcString: 'late-consent' });
+          expect(await runHook()).to.be.true;
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('late-consent');
+        } finally {
+          delete window.__tcfapi;
+        }
+      });
+
       it('should poll again to check if it appears later', async () => {
         await setConsentConfig({
           cmpApi: 'iab',

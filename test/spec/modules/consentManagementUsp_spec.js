@@ -274,6 +274,21 @@ describe('consentManagement', function () {
         }, {});
       });
 
+      it('should stop looking for a late CMP once the timeout expires', (done) => {
+        const lateCmp = sinon.stub();
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 20, waitForCmp: true } });
+        setTimeout(() => {
+          window.__uspapi = lateCmp;
+        }, 50);
+        requestBidsHook(() => {
+          expect(uspDataHandler.getConsentData()).to.equal(null);
+          setTimeout(() => {
+            sinon.assert.notCalled(lateCmp);
+            done();
+          }, 200);
+        }, {});
+      });
+
       it('should not resume the auction twice when a late CMP response arrives after the timeout', (done) => {
         let callCount = 0;
         setConsentConfig({ usp: { cmpApi: 'iab', timeout: 50, waitForCmp: true } });

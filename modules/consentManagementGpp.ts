@@ -8,7 +8,7 @@ import { deepSetValue, isEmpty, isPlainObject, isStr, logInfo, logWarn } from '.
 import { config } from '../src/config.js';
 import { gppDataHandler } from '../src/adapterManager.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient, MODE_CALLBACK, pollForCmp } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, MODE_CALLBACK } from '../libraries/cmp/cmpClient.js';
 import { PbPromise, defer } from '../src/utils/promise.js';
 import { type CMConfig, configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
@@ -181,16 +181,13 @@ export class GPPClient {
   }
 }
 
-function lookupIabConsent(_setProvisionalConsent, cmpPollTimeout = 0) {
-  const client = GPPClient.INST != null
-    ? PbPromise.resolve(GPPClient.INST)
-    : pollForCmp(GPP_API, cmpPollTimeout).then(cmp => GPPClient.get(() => cmp));
-  return client.then(client => client.refresh());
+function lookupIabConsent(_setProvisionalConsent, cmp) {
+  return new PbPromise((resolve) => resolve(GPPClient.get(() => cmp).refresh()));
 }
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
-  'iab': lookupIabConsent,
+  'iab': { api: GPP_API, lookup: lookupIabConsent },
 };
 
 function parseConsentData(cmpData) {

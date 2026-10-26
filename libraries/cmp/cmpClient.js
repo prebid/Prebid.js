@@ -16,27 +16,29 @@ export const MODE_CALLBACK = 2;
 export const CMP_POLL_INTERVAL = 100;
 
 /**
- * Wait for a CMP API to become available.
+ * Pass the CMP client returned by `findCmp` to `onFound`; if there is none, call `onMissing`, or with `wait`, keep looking
+ * every CMP_POLL_INTERVAL ms.
  *
- * @param {object} apiConfig arguments passed to {@link cmpClient}
- * @param {number} [timeout] maximum time to wait, in milliseconds. With 0, the CMP is looked for only once.
- * @returns {Promise<CMPClient>} a promise to the CMP client, rejected if no CMP was found within `timeout`.
+ * @param {() => CMPClient | undefined} findCmp
+ * @param {object} options
+ * @param {(cmp: CMPClient) => void} options.onFound
+ * @param {() => void} [options.onMissing]
+ * @param {boolean} [options.wait]
+ * @returns {() => void} a function that stops looking.
  */
-export function pollForCmp(apiConfig, timeout = 0) {
-  const deadline = Date.now() + timeout;
-  return new PbPromise((resolve, reject) => {
-    function check() {
-      const cmp = cmpClient(apiConfig);
-      if (cmp) {
-        resolve(cmp);
-      } else if (Date.now() >= deadline) {
-        reject(new Error(`CMP not found (${apiConfig.apiName})`));
-      } else {
-        setTimeout(check, Math.min(CMP_POLL_INTERVAL, deadline - Date.now()));
-      }
+export function pollForCmp(findCmp, { onFound, onMissing, wait = false }) {
+  let handle;
+  (function check() {
+    const cmp = findCmp();
+    if (cmp) {
+      onFound(cmp);
+    } else if (wait) {
+      handle = setTimeout(check, CMP_POLL_INTERVAL);
+    } else {
+      onMissing();
     }
-    check();
-  });
+  })();
+  return () => clearTimeout(handle);
 }
 
 /**
