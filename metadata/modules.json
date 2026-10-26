@@ -4749,13 +4749,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "risemediatech",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "exco",
       "aliasOf": null,
       "gvlid": null,
