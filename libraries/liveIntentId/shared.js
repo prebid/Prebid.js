@@ -3,7 +3,7 @@ import { UID2_EIDS } from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { isNumber } from '../../src/utils.js';
 
-export const PRIMARY_IDS = ['libp'];
+export const PRIMARY_IDS = ['lipb'];
 export const GVLID = 148;
 export const DEFAULT_AJAX_TIMEOUT = 5000;
 export const DEFAULT_DELAY = 500;
@@ -16,7 +16,7 @@ export function parseRequestedAttributes(overrides) {
   function createParameterArray(config) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
-  if (typeof overrides === 'object') {
+  if (overrides != null && typeof overrides === 'object') {
     return createParameterArray({ ...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides });
   } else {
     return createParameterArray(DEFAULT_REQUESTED_ATTRIBUTES);
