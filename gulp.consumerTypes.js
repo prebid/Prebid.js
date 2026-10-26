@@ -56,6 +56,20 @@ pbjs.notAMethod();
 // @ts-expect-error
 export let notAnEvent: EventPayload<'notAnEvent'> | undefined;
 `,
+  // same, for types that modules add through augmentation
+  'augmentedTypes.ts': `
+import pbjs from 'prebid.js';
+import type {BidderParams} from 'prebid.js';
+import 'prebid.js/modules/userId';
+import 'prebid.js/modules/sharedIdSystem';
+import 'prebid.js/modules/appnexusBidAdapter';
+export const pubcid: string | undefined = pbjs.getUserIds().pubcid;
+// @ts-expect-error
+export const notANumber: number | undefined = pbjs.getUserIds().pubcid;
+export const params: BidderParams['appnexus'] = {placementId: 1};
+// @ts-expect-error
+export const badParams: BidderParams['appnexus'] = {placementId: true};
+`,
 };
 
 function createConsumer(workDir, {moduleResolution, module}, type) {
