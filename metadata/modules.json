@@ -4889,13 +4889,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "bms",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "brid",
       "aliasOf": null,
       "gvlid": 786,
