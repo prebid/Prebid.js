@@ -290,17 +290,25 @@ describe('consent management utils', () => {
           sinon.assert.calledWith(setupCmp, sinon.match.func, cmp);
         });
 
-        it('should resolve without touching consent data, and stop looking, when aborted', async () => {
+        it('should reject without touching consent data, and stop looking, when aborted', async () => {
           const controller = new AbortController();
           const lookup = runLookup({ findCmp, waitForCmp: true, signal: controller.signal });
           controller.abort();
-          const { error } = await lookup;
-          expect(error.message).to.contain('canceled');
+          expect(await lookupError(lookup)).to.equal(controller.signal.reason);
           findCmp.resetHistory();
           clock.tick(cmpTimeout * 2);
           sinon.assert.notCalled(findCmp);
           sinon.assert.notCalled(consentDataHandler.setConsentData);
           sinon.assert.notCalled(consentDataHandler.error);
+        });
+
+        it('should not be affected by aborting once the CMP is found', async () => {
+          const controller = new AbortController();
+          findCmp.returns(cmp);
+          const lookup = runLookup({ findCmp, waitForCmp: true, signal: controller.signal });
+          controller.abort();
+          await lookup;
+          sinon.assert.calledWith(setupCmp, sinon.match.func, cmp);
         });
 
         it('should time out with null consent if the CMP is found but does not reply', async () => {
@@ -447,12 +455,13 @@ describe('consent management utils', () => {
         getConsentConfig({});
       });
 
-      it('should stop a lookup still looking for the CMP when reconfigured', async () => {
-        getConsentConfig({ [namespace]: { cmpApi: 'iab', waitForCmp: true } }).loadConsentData();
+      it('should replace a lookup still looking for the CMP with the new config\'s when reconfigured', async () => {
+        const consent = getConsentConfig({ [namespace]: { cmpApi: 'iab', waitForCmp: true } }).loadConsentData();
         getConsentConfig({ [namespace]: { cmpApi: 'iab', waitForCmp: true } });
         window.__testCmp = sinon.stub();
         await clock.tickAsync(CMP_POLL_INTERVAL * 2);
-        sinon.assert.notCalled(cmpHandlers.iab.lookup);
+        await consent;
+        sinon.assert.calledOnce(cmpHandlers.iab.lookup);
       });
 
       it('should pass the CMP client to the cmp handler, reusing it across lookups', async () => {

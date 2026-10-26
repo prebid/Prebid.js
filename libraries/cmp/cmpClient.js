@@ -25,11 +25,12 @@ export const CMP_POLL_INTERVAL = 100;
  * @param {() => void} [options.onMissing]
  * @param {boolean} [options.wait]
  * @param {number} [options.interval]
- * @returns {() => void} a function that stops looking.
+ * @returns {() => boolean} a function that stops looking, and returns whether it was still looking.
  */
 export function pollForCmp(findCmp, { onFound, onMissing, wait = false, interval = CMP_POLL_INTERVAL }) {
-  let handle;
+  let handle = null;
   (function check() {
+    handle = null;
     const cmp = findCmp();
     if (cmp) {
       onFound(cmp);
@@ -39,7 +40,14 @@ export function pollForCmp(findCmp, { onFound, onMissing, wait = false, interval
       onMissing();
     }
   })();
-  return () => clearTimeout(handle);
+  return () => {
+    if (handle == null) {
+      return false;
+    }
+    clearTimeout(handle);
+    handle = null;
+    return true;
+  };
 }
 
 /**

@@ -15,7 +15,7 @@ describe('cmpClient', () => {
 
     it('passes a CMP that is already present to onFound', () => {
       findCmp.returns('cmp');
-      pollForCmp(findCmp, { onFound, onMissing });
+      expect(pollForCmp(findCmp, { onFound, onMissing, wait: true })()).to.be.false;
       sinon.assert.calledWith(onFound, 'cmp');
       sinon.assert.notCalled(onMissing);
     });
@@ -48,7 +48,8 @@ describe('cmpClient', () => {
 
       it('stops looking when stopped', () => {
         const stop = pollForCmp(findCmp, { onFound, onMissing, wait: true });
-        stop();
+        expect(stop()).to.be.true;
+        expect(stop()).to.be.false;
         clock.tick(CMP_POLL_INTERVAL * 2);
         sinon.assert.calledOnce(findCmp);
         sinon.assert.notCalled(onMissing);

@@ -315,6 +315,30 @@ describe('consentManagement', function () {
       });
     });
 
+    describe('when reconfigured while an auction waits for the CMP to reply', function () {
+      afterEach(function () {
+        config.resetConfig();
+        requestBids.removeAll();
+        delete window.__uspapi;
+        resetConsentData();
+      });
+
+      it('should keep the auction waiting for consent', (done) => {
+        window.__uspapi = (command, version, callback) => {
+          if (command === 'getUSPData') {
+            setTimeout(() => callback({ uspString: '1YNN' }, true), 30);
+          }
+        };
+        const cmConfig = { usp: { cmpApi: 'iab', timeout: 500 } };
+        setConsentConfig(cmConfig);
+        requestBidsHook(() => {
+          expect(uspDataHandler.getConsentData()).to.equal('1YNN');
+          done();
+        }, {});
+        setConsentConfig(cmConfig);
+      });
+    });
+
     describe('already known consentData:', function () {
       let uspStub = sinon.stub();
       let ifr = null;

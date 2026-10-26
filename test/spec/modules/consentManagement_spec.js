@@ -415,6 +415,36 @@ describe('consentManagement', function () {
         }
       });
 
+      describe('when reconfigured while an auction waits for the user to act on the CMP', () => {
+        let cmpCallbacks;
+        beforeEach(() => {
+          cmpCallbacks = [];
+          window.__tcfapi = (command, version, callback) => {
+            if (command === 'addEventListener') {
+              cmpCallbacks.push(callback);
+              callback({ eventStatus: 'cmpuishown', gdprApplies: true, tcString: 'pending' }, true);
+            }
+          };
+        });
+        afterEach(() => {
+          delete window.__tcfapi;
+        });
+
+        it('should keep the auction waiting for consent', async () => {
+          const cmConfig = { cmpApi: 'iab', timeout: 5000 };
+          setConsentConfig(cmConfig);
+          let hookRan = false;
+          consentConfig.requestBidsHook(() => { hookRan = true; }, {});
+          setConsentConfig(cmConfig);
+          await new Promise(resolve => setTimeout(resolve, 20));
+          expect(hookRan).to.be.false;
+          cmpCallbacks.forEach(cb => cb({ eventStatus: 'useractioncomplete', gdprApplies: true, tcString: 'user-consent' }, true));
+          await new Promise(resolve => setTimeout(resolve));
+          expect(hookRan).to.be.true;
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('user-consent');
+        });
+      });
+
       describe('when reconfigured while waiting for a late CMP', () => {
         let lateCmp;
         beforeEach(() => {
@@ -429,6 +459,23 @@ describe('consentManagement', function () {
           await setConsentConfig({ cmpApi: 'static', consentData: { gdprApplies: true, tcString: 'static-consent' } });
           await new Promise(resolve => setTimeout(resolve, 100));
           expect(gdprDataHandler.getConsentData().consentString).to.eql('static-consent');
+        });
+
+        it('should give an auction waiting on the previous lookup the new consent', async () => {
+          let hookRan = false;
+          consentConfig.requestBidsHook(() => { hookRan = true; }, {});
+          await setConsentConfig({ cmpApi: 'static', consentData: { gdprApplies: true, tcString: 'static-consent' } });
+          await new Promise(resolve => setTimeout(resolve));
+          expect(hookRan).to.be.true;
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('static-consent');
+        });
+
+        it('should let an auction waiting on the previous lookup continue when the module is disabled', async () => {
+          let hookRan = false;
+          consentConfig.requestBidsHook(() => { hookRan = true; }, {});
+          setConsentConfig({ gdpr: { enabled: false } });
+          await new Promise(resolve => setTimeout(resolve));
+          expect(hookRan).to.be.true;
         });
 
         it('should not call a CMP that appears after the module is disabled', async () => {
