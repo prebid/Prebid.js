@@ -27,10 +27,12 @@ export interface YieldlabBidderParams {
 
 /**
  * IAB content fields, copied into the request's `content` over any first-party
- * content. Values must have the types OpenRTB 2.6 gives them: Yieldlab rejects
- * a request whose content does not. Null values are skipped, `live` is sent as
- * `livestream` unless `livestream` is set too, and a `keywords` array is joined
- * with commas. Prefer setting `ortb2.site.content` (or `ortb2.app.content`).
+ * content. Use the types OpenRTB 2.6 gives them: Yieldlab rejects a request
+ * whose content does not. For compatibility with the previous endpoint, an
+ * integer string in an integer field (`episode: '1'`) is also accepted and sent
+ * as a number. Null values are skipped, `live` is sent as `livestream` unless
+ * `livestream` is set too, and a `keywords` array is joined with commas.
+ * Prefer setting `ortb2.site.content` (or `ortb2.app.content`).
  */
 export interface YieldlabIabContent {
   id?: string;

@@ -125,11 +125,7 @@ export const spec = {
     return {
       method: 'POST',
       url: `${ENDPOINT}${ORTB_PATH}`,
-      data: ortbRequest,
-      options: {
-        contentType: 'application/json',
-        customHeaders: { 'x-openrtb-version': '2.6' }
-      }
+      data: ortbRequest
     };
   },
 
@@ -314,6 +310,12 @@ function applySchain(ortb) {
   }
 }
 
+// The content fields OpenRTB 2.6 defines as integers.
+const INTEGER_CONTENT_FIELDS = [
+  'episode', 'context', 'livestream', 'sourcerelationship', 'len',
+  'qagmediarating', 'embeddable', 'prodq', 'videoquality', 'cattax'
+];
+
 /**
  * Merge `params.iabContent` into the request's `app.content`, or `site.content`
  * for a web request, over whatever the page's first-party data put there.
@@ -322,7 +324,9 @@ function applySchain(ortb) {
  * fields are skipped, so they never clear a first-party value. `live` is the
  * name the /yp endpoint used and is sent as OpenRTB's `livestream`, unless the
  * publisher also set `livestream` itself, and a `keywords` array is joined into
- * the comma-separated string OpenRTB defines, as /yp did.
+ * the comma-separated string OpenRTB defines, as /yp did. /yp also took integer
+ * fields as strings (`episode: '1'`), so an integer string in one of OpenRTB's
+ * integer fields is sent as a number.
  *
  * @param {Object} ortb              The OpenRTB request object to mutate.
  * @param {YieldlabBidRequest[]} bidRequests Valid bid requests (to read params.iabContent from).
@@ -341,6 +345,11 @@ function applyIabContent(ortb, bidRequests) {
   // /yp took keywords as an array; OpenRTB's keywords is a comma-separated string.
   if (Array.isArray(content.keywords)) {
     content.keywords = content.keywords.join(',');
+  }
+  for (const field of INTEGER_CONTENT_FIELDS) {
+    if (typeof content[field] === 'string' && /^-?\d+$/.test(content[field].trim())) {
+      content[field] = Number(content[field]);
+    }
   }
 
   const parent = ortb.app || (ortb.site = ortb.site || {});

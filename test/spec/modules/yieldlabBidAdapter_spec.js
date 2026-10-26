@@ -114,8 +114,9 @@ describe('yieldlabBidAdapter (ORTB)', () => {
 
       expect(req.method).to.equal('POST');
       expect(req.url).to.match(/\/ortb$/);
-      expect(req.options).to.have.nested.property('contentType', 'application/json');
-      expect(req.options).to.have.nested.property('customHeaders.x-openrtb-version', '2.6');
+      // Left to bidderFactory's text/plain default, so the browser sends no CORS preflight.
+      expect(req.options?.contentType).to.be.undefined;
+      expect(req.options?.customHeaders).to.be.undefined;
 
       const ortb = req.data;
 
@@ -268,6 +269,15 @@ describe('yieldlabBidAdapter (ORTB)', () => {
         const content = spec.buildRequests([bid], { auctionId: 'auc-iab-kw' }).data.site.content;
 
         expect(content.keywords).to.equal('k1,k2');
+      });
+
+      it('sends the integer strings the /yp endpoint accepted as numbers', () => {
+        const bid = DEFAULT_REQUEST();
+        bid.params.iabContent = { episode: '1', context: '7', live: '0', cattax: '2', season: '2', len: 'long' };
+
+        const content = spec.buildRequests([bid], { auctionId: 'auc-iab-int' }).data.site.content;
+
+        expect(content).to.deep.equal({ episode: 1, context: 7, livestream: 0, cattax: 2, season: '2', len: 'long' });
       });
 
       it('ignores an iabContent param that is not a plain object', () => {
