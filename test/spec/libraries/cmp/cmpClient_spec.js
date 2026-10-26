@@ -40,12 +40,6 @@ describe('cmpClient', () => {
         sinon.assert.notCalled(onMissing);
       });
 
-      it('can look at a different interval', () => {
-        pollForCmp(findCmp, { onFound, onMissing, wait: true, interval: 10 });
-        clock.tick(10);
-        sinon.assert.calledTwice(findCmp);
-      });
-
       it('stops looking when stopped', () => {
         const stop = pollForCmp(findCmp, { onFound, onMissing, wait: true });
         stop();

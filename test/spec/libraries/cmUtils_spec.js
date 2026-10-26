@@ -281,15 +281,6 @@ describe('consent management utils', () => {
           sinon.assert.notCalled(findCmp);
         });
 
-        it('should look for the CMP more often when cmpTimeout is shorter than the poll interval', async () => {
-          cmpTimeout = CMP_POLL_INTERVAL / 2;
-          const lookup = runLookup({ findCmp, waitForCmp: true });
-          findCmp.returns(cmp);
-          clock.tick(cmpTimeout / 2);
-          await lookup;
-          sinon.assert.calledWith(setupCmp, sinon.match.func, cmp);
-        });
-
         it('should time out with null consent if the CMP is found but does not reply', async () => {
           setupCmp.returns(new Promise(() => null));
           const lookup = runLookup({ findCmp, waitForCmp: true });

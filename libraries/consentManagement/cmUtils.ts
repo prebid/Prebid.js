@@ -4,7 +4,7 @@ import { PbPromise } from '../../src/utils/promise.js';
 import { buildActivityParams } from '../../src/activities/params.js';
 import { getHook } from '../../src/hook.js';
 import { type ConsentHandler } from "../../src/consentHandler.ts";
-import { CMP_POLL_INTERVAL, cmpClient, pollForCmp } from '../cmp/cmpClient.js';
+import { cmpClient, pollForCmp } from '../cmp/cmpClient.js';
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -110,9 +110,7 @@ export function lookupConsentData(
       stopPolling = pollForCmp(findCmp, {
         onFound: start,
         onMissing: () => reject(new Error(`${name} CMP not found`)),
-        wait: waitForCmp && cmpTimeout != null,
-        // otherwise a timeout under CMP_POLL_INTERVAL would allow a single check
-        interval: Math.min(CMP_POLL_INTERVAL, cmpTimeout / 2)
+        wait: waitForCmp && cmpTimeout != null
       });
     }
     cmpTimeout != null && resetTimeout(cmpTimeout);
@@ -129,6 +127,7 @@ export interface BaseCMConfig {
   /**
    * Wait for a CMP API that is not present when consent lookup begins.
    * This supports non-compliant integrations that load the CMP stub late and defaults to false.
+   * The CMP is looked for every 100ms, until `timeout`.
    */
   waitForCmp?: boolean;
   /**

@@ -10,7 +10,7 @@ import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';
 import { getHook } from '../src/hook.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { CMP_POLL_INTERVAL, cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
 import type { USPConsentData } from "../src/types/consent/usp.d.ts";
@@ -33,6 +33,7 @@ export type BaseUSPConfig = {
   /**
    * Wait for a CMP API that is not present when consent lookup begins.
    * This supports non-compliant integrations that load the CMP stub late and defaults to false.
+   * The CMP is looked for every 100ms, until `timeout` - which should then be set well above its default of 50ms.
    */
   waitForCmp?: boolean;
 };
@@ -138,8 +139,7 @@ function lookupUspConsent({ onSuccess, onError }): () => void {
   }), {
     onFound: setupCmp,
     onMissing: () => onError('USP CMP not found.'),
-    wait: waitForCmp,
-    interval: Math.min(CMP_POLL_INTERVAL, consentTimeout / 2)
+    wait: waitForCmp
   });
 }
 
