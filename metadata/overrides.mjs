@@ -17,6 +17,5 @@ export default {
   relevadRtdProvider: 'RelevadRTDModule',
   sirdataRtdProvider: 'SirdataRTDModule',
   fanBidAdapter: 'freedomadnetwork',
-  teqBlazeDemoBidAdapter: 'tqblz_demo',
-  sspBCBidAdapter: 'sspBC'
+  teqBlazeDemoBidAdapter: 'tqblz_demo'
 }
