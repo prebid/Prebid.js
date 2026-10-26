@@ -145,6 +145,7 @@
     "terser-webpack-plugin": "^5.6.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
+    "typescript-min": "npm:typescript@5.7.2",
     "url": "^0.11.0",
     "url-parse": "^1.0.5",
     "video.js": "^7.21.7",

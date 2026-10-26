@@ -86,8 +86,9 @@ function run(file, args, options) {
   });
 }
 
-function typeCheck(dir) {
-  return run(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', dir], {cwd: dir}).then(result => ({dir, ...result}));
+function typeCheck(dir, compiler) {
+  return run(process.execPath, [require.resolve(`${compiler}/bin/tsc`), '-p', dir], {cwd: dir})
+    .then(result => ({name: `${compiler} ${path.basename(dir)}`, ...result}));
 }
 
 function npm(args, cwd) {
@@ -118,7 +119,7 @@ const INSTALLERS = {
   }
 };
 
-function tsConsumer(install) {
+function tsConsumer(install, compilers) {
   const task = function () {
     if (!fs.existsSync(helpers.getPrecompiledPath('src/prebid.public.d.ts'))) {
       return Promise.reject(new Error(`no declarations under '${helpers.getPrecompiledPath()}', run 'gulp precompile' first`));
@@ -127,12 +128,12 @@ function tsConsumer(install) {
     const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prebid-ts-consumer-'));
     return INSTALLERS[install](workDir).then(() => {
       const consumers = COMPILER_SETTINGS.flatMap(settings => PACKAGE_TYPES.map(type => createConsumer(workDir, settings, type)));
-      return Promise.all(consumers.map(typeCheck));
+      return Promise.all(compilers.flatMap(compiler => consumers.map(dir => typeCheck(dir, compiler))));
     }).then(results => {
-      results.forEach(({dir, ok}) => console.log(`${ok ? 'pass' : 'FAIL'}  ${path.basename(dir)}`));
+      results.forEach(({name, ok}) => console.log(`${ok ? 'pass' : 'FAIL'}  ${name}`));
       const failures = results.filter(({ok}) => !ok);
       if (failures.length > 0) {
-        throw new Error(['', ...failures.map(({dir, output}) => `${path.basename(dir)}:\n${output}`)].join('\n\n'));
+        throw new Error(['', ...failures.map(({name, output}) => `${name}:\n${output}`)].join('\n\n'));
       }
     }).finally(() => fs.rmSync(workDir, {recursive: true, force: true}));
   };
@@ -140,4 +141,8 @@ function tsConsumer(install) {
   return task;
 }
 
-module.exports = {tsConsumer};
+// keep in sync with the minimum TypeScript version in README.md
+const TS_MIN = 'typescript-min';
+const TS_CURRENT = 'typescript';
+
+module.exports = {tsConsumer, TS_MIN, TS_CURRENT};
