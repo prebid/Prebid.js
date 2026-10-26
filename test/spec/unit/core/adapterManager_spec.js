@@ -2218,6 +2218,36 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
+    describe('bidder-specific schain', () => {
+      const schain = (asi) => ({ ver: '1.0', complete: 1, nodes: [{ asi, sid: '1', hp: 1 }] });
+      function requestsWithSchains() {
+        return Object.fromEntries(
+          adapterManager.makeBidRequests(adUnits, 123, 'auction-id', 123, [], {
+            global: { source: { ext: { schain: schain('global') } } },
+            bidder: { appnexus: { source: { ext: { schain: schain('appnexus') } } } }
+          }).map((r) => [r.bidderCode, r])
+        );
+      }
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('should append the bidder schain nodes to the global ones by default', () => {
+        const requests = requestsWithSchains();
+        expect(requests.appnexus.ortb2.source.ext.schain.nodes.map(n => n.asi)).to.eql(['global', 'appnexus']);
+        expect(requests.rubicon.ortb2.source.ext.schain).to.eql(schain('global'));
+      });
+
+      it('should give bidders their own schain with firstPartyData.replaceGlobalSchain', () => {
+        config.setConfig({ firstPartyData: { replaceGlobalSchain: true } });
+        const requests = requestsWithSchains();
+        expect(requests.appnexus.ortb2.source.ext.schain).to.eql(schain('appnexus'));
+        expect(requests.rubicon.ortb2.source.ext.schain).to.eql(schain('global'));
+        requests.appnexus.bids.forEach((bid) => expect(bid.ortb2.source.ext.schain).to.eql(schain('appnexus')));
+      });
+    });
+
     describe('transaction IDs', () => {
       beforeEach(() => {
         sinon.stub(dep, 'redact').returns({
