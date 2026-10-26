@@ -268,7 +268,9 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
     // No user sync when the publisher flags the page as subject to COPPA (`setConfig({coppa: true})`).
-    if (coppa === true) {
+    // Empty array on purpose: the core then marks the bidder as done with syncs for the page, so a
+    // page once flagged never syncs until it is reloaded, even if the flag is turned off later.
+    if (coppa) {
       return [];
     }
 

@@ -802,7 +802,7 @@ describe('SparteoAdapter', function () {
           gdprApplies: 1,
           consentString: 'tcfv2'
         };
-        const uspConsent = '1Y---';
+        const uspConsent = '1YNN';
         const gppConsent = {
           gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
           applicableSections: [2, 6]
@@ -810,6 +810,8 @@ describe('SparteoAdapter', function () {
 
         const result = adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent, gppConsent, true);
 
+        // `[]`, not a falsy value: the core marks the bidder as done with syncs for the page only when
+        // it gets a truthy value, and a page once flagged must not sync until it is reloaded.
         expect(result).to.deep.equal([]);
         expect(window.sparteoCrossfire).to.be.undefined;
       });
@@ -834,7 +836,7 @@ describe('SparteoAdapter', function () {
           gdprApplies: 1,
           consentString: 'tcfv2'
         };
-        const uspConsent = '1Y---';
+        const uspConsent = '1YNN';
         const gppConsent = {
           gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
           applicableSections: [2, 6]
@@ -842,7 +844,7 @@ describe('SparteoAdapter', function () {
 
         const syncUrls = [{
           type: 'iframe',
-          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1Y---&gpp=' + encodeURIComponent('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA') + '&gpp_sid=' + encodeURIComponent('2,6')
+          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1YNN&gpp=' + encodeURIComponent('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA') + '&gpp_sid=' + encodeURIComponent('2,6')
         }];
 
         expect(adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent, gppConsent)).to.deep.equal(syncUrls);
