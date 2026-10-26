@@ -23,8 +23,6 @@ export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
 let waitForCmp = false;
-const pendingLookups = new Set<() => void>();
-const LOOKUP_CANCELED = 'USP consent lookup was canceled.';
 
 export type BaseUSPConfig = {
   /**
@@ -156,39 +154,22 @@ function loadConsentData(cb?) {
   let isDone = false;
   let stopLookup;
 
-  function end() {
-    if (timer != null) {
-      clearTimeout(timer);
-    }
-    stopLookup?.();
-    isDone = true;
-    pendingLookups.delete(cancel);
-  }
-
-  // only lookups still looking for the CMP are canceled; the others finish as they would have
-  function cancel() {
-    if (stopLookup?.()) {
-      end();
-      if (cb != null) {
-        cb(LOOKUP_CANCELED);
-      }
-    }
-  }
-
   function done(consentData, errMsg, ...extraArgs) {
     if (isDone) {
       // the auction has moved on, but consent that arrives late is still good for the next one
       consentData != null && uspDataHandler.setConsentData(consentData);
       return;
     }
-    end();
+    if (timer != null) {
+      clearTimeout(timer);
+    }
+    stopLookup?.();
+    isDone = true;
     uspDataHandler.setConsentData(consentData);
     if (cb != null) {
       cb(errMsg, ...extraArgs);
     }
   }
-
-  pendingLookups.add(cancel);
 
   if (!uspCallMap[consentAPI]) {
     done(null, `USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
@@ -267,12 +248,7 @@ function storeUspConsentData(consentObject) {
 /**
  * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
  */
-function cancelLookups() {
-  pendingLookups.forEach(cancel => cancel());
-}
-
 export function resetConsentData() {
-  cancelLookups();
   consentData = undefined;
   consentAPI = undefined;
   consentTimeout = undefined;
@@ -286,7 +262,6 @@ export function resetConsentData() {
  * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int)
  */
 export function setConsentConfig(config) {
-  cancelLookups();
   config = config && config.usp;
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');

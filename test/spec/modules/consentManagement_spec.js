@@ -445,47 +445,6 @@ describe('consentManagement', function () {
         });
       });
 
-      describe('when reconfigured while waiting for a late CMP', () => {
-        let lateCmp;
-        beforeEach(() => {
-          lateCmp = sinon.stub();
-          setConsentConfig({ cmpApi: 'iab', timeout: 50, waitForCmp: true });
-        });
-        afterEach(() => {
-          delete window.__tcfapi;
-        });
-
-        it('should not let the previous lookup overwrite consent', async () => {
-          await setConsentConfig({ cmpApi: 'static', consentData: { gdprApplies: true, tcString: 'static-consent' } });
-          await new Promise(resolve => setTimeout(resolve, 100));
-          expect(gdprDataHandler.getConsentData().consentString).to.eql('static-consent');
-        });
-
-        it('should give an auction waiting on the previous lookup the new consent', async () => {
-          let hookRan = false;
-          consentConfig.requestBidsHook(() => { hookRan = true; }, {});
-          await setConsentConfig({ cmpApi: 'static', consentData: { gdprApplies: true, tcString: 'static-consent' } });
-          await new Promise(resolve => setTimeout(resolve));
-          expect(hookRan).to.be.true;
-          expect(gdprDataHandler.getConsentData().consentString).to.eql('static-consent');
-        });
-
-        it('should let an auction waiting on the previous lookup continue when the module is disabled', async () => {
-          let hookRan = false;
-          consentConfig.requestBidsHook(() => { hookRan = true; }, {});
-          setConsentConfig({ gdpr: { enabled: false } });
-          await new Promise(resolve => setTimeout(resolve));
-          expect(hookRan).to.be.true;
-        });
-
-        it('should not call a CMP that appears after the module is disabled', async () => {
-          setConsentConfig({ gdpr: { enabled: false } });
-          window.__tcfapi = lateCmp;
-          await new Promise(resolve => setTimeout(resolve, 200));
-          sinon.assert.notCalled(lateCmp);
-        });
-      });
-
       it('should poll again to check if it appears later', async () => {
         await setConsentConfig({
           cmpApi: 'iab',

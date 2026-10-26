@@ -285,20 +285,6 @@ describe('consentManagement', function () {
         }, {});
       });
 
-      it('should resume the auction, and stop looking for the CMP, when reset', (done) => {
-        const lateCmp = sinon.stub();
-        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 500, waitForCmp: true } });
-        cmpAppearsAfter(10, lateCmp);
-        let resumed = false;
-        requestBidsHook(() => { resumed = true; }, {});
-        resetConsentData();
-        expect(resumed).to.be.true;
-        setTimeout(() => {
-          sinon.assert.notCalled(lateCmp);
-          done();
-        }, 200);
-      });
-
       it('should resume the auction only once, but keep consent, when the CMP replies after the timeout', (done) => {
         let callCount = 0;
         setConsentConfig({ usp: { cmpApi: 'iab', timeout: 50, waitForCmp: true } });
