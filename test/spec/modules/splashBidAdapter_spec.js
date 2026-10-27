@@ -1214,6 +1214,7 @@ describe('splashBidAdapter', () => {
 
         beforeEach(() => {
           utils.isSafariBrowser.returns(true);
+          sandbox.stub(window.CSS, 'supports').returns(false);
           sandbox.stub(window, 'ResizeObserver').returns({ observe: sandbox.spy(), disconnect: sandbox.spy() });
           intersectionObservers = [];
           sandbox.stub(window, 'IntersectionObserver').callsFake(callback => {
@@ -1445,6 +1446,153 @@ describe('splashBidAdapter', () => {
           expect(frame.classList.contains('sp-pointer-guarded')).to.equal(false);
         });
 
+        describe('native vertical positioning', () => {
+          beforeEach(() => {
+            window.CSS.supports.callsFake((property, value) =>
+              (property === 'overflow' && value === 'clip') || (property === 'position' && value === 'sticky'));
+          });
+
+          it('keeps the canvas viewport-sized inside a clipped sticky travel area', () => {
+            root.style.cssText = 'width:280px;margin-left:70px;margin-top:80px';
+            const { frame } = render();
+            const iframe = frame.querySelector('iframe');
+            const stage = frame.querySelector('.sp-stage');
+            expect(frame.classList.contains('sp-native-parallax')).to.equal(true);
+            expect(getComputedStyle(frame).overflowY).to.equal('clip');
+            expect(getComputedStyle(iframe).position).to.equal('sticky');
+            expect(iframe.getAttribute('sandbox')).not.to.include('allow-same-origin');
+            expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
+            expect(Math.abs(iframe.getBoundingClientRect().left)).to.be.lessThan(1);
+            expect(stage.getBoundingClientRect().height).to.be.closeTo(frame.getBoundingClientRect().height + 2 * iframe.getBoundingClientRect().height, 1);
+          });
+
+          it('does not write vertical iframe offsets when scrolling changes the aperture position', () => {
+            const raf = sandbox.stub(window, 'requestAnimationFrame').returns(180);
+            const { frame } = render();
+            intersect(frame);
+            const iframe = frame.querySelector('iframe');
+            const rect = sandbox.stub(frame, 'getClientRects').returns([{ left: 30, top: -160 }]);
+            raf.firstCall.args[0]();
+            expect(iframe.style.marginLeft).to.equal('-30px');
+            expect([iframe.style.top, iframe.style.left]).to.deep.equal(['', '']);
+            rect.returns([{ left: 30, top: -480 }]);
+            window.dispatchEvent(new Event('scroll'));
+            raf.secondCall.args[0]();
+            expect([iframe.style.top, iframe.style.left, iframe.style.marginLeft]).to.deep.equal(['', '', '-30px']);
+            sinon.assert.calledTwice(raf);
+          });
+
+          ['auto', 'scroll', 'hidden'].forEach(overflow => {
+            it(`retains absolute clipping under an overflow:${overflow} ancestor`, () => {
+              root.style.overflow = overflow;
+              const { frame } = render();
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+              expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('absolute');
+            });
+          });
+
+          ['transform:translateY(10px)', 'perspective:500px', 'filter:blur(0px)', 'will-change:transform', 'contain:paint'].forEach(style => {
+            it(`retains the existing alignment for a ${style} ancestor`, () => {
+              root.style.cssText = style;
+              const { frame } = render();
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+            });
+          });
+
+          ['translate:0 20px', 'rotate:5deg', 'scale:0.9', 'will-change:translate'].forEach(style => {
+            it(`retains absolute alignment under an individual ${style} ancestor`, () => {
+              root.style.cssText = style;
+              const { frame } = render();
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+            });
+          });
+
+          it('does not treat a non-propagating body scroll container as the root viewport', () => {
+            const htmlStyle = document.documentElement.style.cssText;
+            const bodyStyle = document.body.style.cssText;
+            try {
+              document.documentElement.style.overflowX = 'hidden';
+              document.body.style.overflowX = 'hidden';
+              const { frame } = render();
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+            } finally {
+              document.documentElement.style.cssText = htmlStyle;
+              document.body.style.cssText = bodyStyle;
+            }
+          });
+
+          it('rechecks data-attribute CSS selectors that change the scroll container', async () => {
+            const style = document.createElement('style');
+            style.textContent = '[data-splash-native-test="clipped"]{overflow:hidden}';
+            document.head.appendChild(style);
+            try {
+              const { frame } = render();
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(true);
+              root.setAttribute('data-splash-native-test', 'clipped');
+              await tick();
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+            } finally {
+              style.remove();
+            }
+          });
+
+          it('rechecks geometry when a stylesheet load changes CSS without resizing the ancestor', () => {
+            const style = document.createElement('style');
+            style.textContent = '.splash-native-load-test{overflow:visible}';
+            root.className = 'splash-native-load-test';
+            document.head.appendChild(style);
+            try {
+              const { frame } = render();
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(true);
+              style.sheet.insertRule('.splash-native-load-test{overflow:hidden}', 1);
+              style.dispatchEvent(new Event('load'));
+              expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+            } finally {
+              style.remove();
+            }
+          });
+
+          it('re-evaluates native positioning when publisher overflow changes', async () => {
+            const { frame } = render();
+            expect(frame.classList.contains('sp-native-parallax')).to.equal(true);
+            root.style.overflow = 'auto';
+            await tick();
+            expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+            expect(frame.querySelector('.sp-stage').style.height).to.equal(frame.style.height);
+            expect(frame.querySelector('iframe').style.marginLeft).to.equal('');
+            root.style.overflow = 'visible';
+            await tick();
+            expect(frame.classList.contains('sp-native-parallax')).to.equal(true);
+            expect(frame.querySelector('iframe').style.top).to.equal('');
+          });
+
+          it('preserves clipping when the native canvas extends outside the aperture', () => {
+            root.style.cssText = 'position:absolute;left:70px;top:70px;width:280px';
+            const { frame } = render({ ext: { splash: { slot: { height: 160 } } } });
+            const iframe = frame.querySelector('iframe');
+            const rect = frame.getBoundingClientRect();
+            frame.style.clipPath = 'none';
+            frame.style.setProperty('-webkit-clip-path', 'none');
+            expect(document.elementFromPoint(rect.left + 10, rect.top + 10)).to.equal(iframe);
+            [
+              [rect.left - 8, rect.top + 10], [rect.right + 8, rect.top + 10],
+              [rect.left + 10, rect.top - 8], [rect.left + 10, rect.bottom + 8],
+            ].forEach(([x, y]) => expect(document.elementFromPoint(x, y)).not.to.equal(iframe));
+          });
+
+          it('uses native positioning for iOS Chrome and clears it on removal', async () => {
+            utils.isSafariBrowser.returns(false);
+            utils.isChromeIOSBrowser.returns(true);
+            const { frame } = render();
+            const iframe = frame.querySelector('iframe');
+            expect(frame.classList.contains('sp-native-parallax')).to.equal(true);
+            frame.remove();
+            await tick();
+            expect(frame.classList.contains('sp-native-parallax')).to.equal(false);
+            expect(iframe.style.marginLeft).to.equal('');
+          });
+        });
+
         it('cancels pending alignment and removes listeners on refresh and removal', async () => {
           sandbox.stub(window, 'matchMedia').returns({ matches: true });
           const raf = sandbox.stub(window, 'requestAnimationFrame').returns(125);
@@ -1625,7 +1773,10 @@ describe('splashBidAdapter', () => {
       }
 
       function message(source, data) {
-        window.dispatchEvent(new MessageEvent('message', { data, source }));
+        const event = new MessageEvent('message', { data });
+        // Firefox rejects opaque WindowProxy values in MessageEventInit.
+        Object.defineProperty(event, 'source', { value: source });
+        window.dispatchEvent(event);
       }
 
       function fixtureScript(body) {

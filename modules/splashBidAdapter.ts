@@ -618,6 +618,9 @@ const PARALLAX_CSS = `
 .sp-frame[data-splash-renderer="parallax"] .sp-creative{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;border:0;background:transparent;pointer-events:auto}
 .sp-clip-svg[data-splash-renderer="parallax"]{position:absolute;width:0;height:0;overflow:hidden}
 .sp-frame.sp-pointer-guarded[data-splash-renderer="parallax"] .sp-creative{position:absolute}
+.sp-frame.sp-native-parallax[data-splash-renderer="parallax"]{overflow:clip}
+.sp-frame.sp-native-parallax[data-splash-renderer="parallax"] .sp-stage{top:-100vh}
+.sp-frame.sp-native-parallax[data-splash-renderer="parallax"] .sp-creative{position:sticky;top:0}
 `;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -680,7 +683,7 @@ function renderParallax(bid, sizes: ParallaxSizes) {
   destroyers.set(frame, destroy);
   try {
     iframe.srcdoc = unwrapCreativeHtml(creativeMarkup(bid));
-    const pointerGuard = installSafariPointerGuard(frame, iframe);
+    const pointerGuard = installSafariPointerGuard(frame, stage, iframe);
     if (pointerGuard) cleanups.push(pointerGuard.destroy);
     const sizing = installParallaxSizing(frame, stage, sizes, pointerGuard?.refresh);
     cleanups.push(sizing.destroy);
@@ -745,6 +748,11 @@ function fitIntrinsicParallaxWidth(frame: HTMLElement, win: Window): boolean {
   return true;
 }
 
+function setParallaxStageHeight(frame: HTMLElement, stage: HTMLElement) {
+  const height = frame.style.height || '100%';
+  stage.style.height = frame.classList.contains('sp-native-parallax') ? `calc(${height} + 200vh)` : frame.style.height;
+}
+
 function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHeight, creativeHeight }: ParallaxSizes, onGeometryChange?: () => void): { refresh: () => void, destroy: () => void } {
   const win = frame.ownerDocument.defaultView || window;
   let intrinsicWidth = false;
@@ -763,7 +771,7 @@ function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHei
     const height = computeHeight();
     if (height > 0) {
       frame.style.height = height + 'px';
-      stage.style.height = height + 'px';
+      setParallaxStageHeight(frame, stage);
     }
     const rect = frame.getClientRects()[0];
     if (rect && (!rect.width || intrinsicWidth)) intrinsicWidth = fitIntrinsicParallaxWidth(frame, win);
@@ -814,11 +822,31 @@ function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHei
   return { refresh, destroy };
 }
 
+function canUseNativeParallax(win: typeof window, doc: Document, parents: HTMLElement[]): boolean {
+  const css = win.CSS;
+  if (!css || typeof css.supports !== 'function' || !css.supports('overflow', 'clip') || !css.supports('position', 'sticky')) return false;
+  const rootStyle = win.getComputedStyle(doc.documentElement);
+  const bodyOverflowPropagates = rootStyle.overflowX === 'visible' && rootStyle.overflowY === 'visible';
+  return parents.every(parent => {
+    const style = win.getComputedStyle(parent);
+    const root = parent === doc.documentElement || (parent === doc.body && bodyOverflowPropagates);
+    const containment = style.getPropertyValue('contain');
+    return (root || [style.overflowX, style.overflowY].every(value => value === 'visible' || value === 'clip')) &&
+      (!containment || containment === 'none') &&
+      style.transform === 'none' && style.perspective === 'none' && style.filter === 'none' &&
+      ['translate', 'rotate', 'scale'].every(property => {
+        const value = style.getPropertyValue(property);
+        return !value || value === 'none';
+      }) && !/transform|perspective|translate|rotate|scale/.test(style.willChange);
+  });
+}
+
 /**
  * WebKit can ignore a fixed frame's aperture during hit testing and visibility measurement.
- * An absolute frame stays physically clipped while event-driven offsets preserve the parallax.
+ * Sticky positioning keeps vertical motion native where the root scrollport is reachable.
+ * Other layouts retain the physically clipped, event-driven absolute frame.
  */
-function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement): { refresh: () => void, destroy: () => void } | null {
+function installSafariPointerGuard(frame: HTMLElement, stage: HTMLElement, iframe: HTMLIFrameElement): { refresh: () => void, destroy: () => void } | null {
   if (!isSafariBrowser() && !isChromeIOSBrowser()) return null;
   const win = frame.ownerDocument.defaultView || window;
   const doc = frame.ownerDocument;
@@ -830,6 +858,7 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
   let observer: IntersectionObserver | null = null;
   let layoutObserver: MutationObserver | null = null;
   let parents: HTMLElement[] = [];
+  let nativeMotion = false;
   let visible = typeof IntersectionObserver !== 'function';
   let destroyed = false;
   function alignCreative() {
@@ -837,9 +866,13 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
     const rect = frame.getClientRects()[0];
     if (rect) {
       const left = -rect.left + 'px';
-      const top = -rect.top + 'px';
-      if (iframe.style.left !== left) iframe.style.left = left;
-      if (iframe.style.top !== top) iframe.style.top = top;
+      if (nativeMotion) {
+        if (iframe.style.marginLeft !== left) iframe.style.marginLeft = left;
+      } else {
+        const top = -rect.top + 'px';
+        if (iframe.style.left !== left) iframe.style.left = left;
+        if (iframe.style.top !== top) iframe.style.top = top;
+      }
     }
   }
   function updateAlignment() {
@@ -857,9 +890,17 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
     for (let parent = frame.parentElement; parent; parent = parent.parentElement) next.push(parent);
     if (layoutObserver && (next.length !== parents.length || next.some((parent, index) => parent !== parents[index]))) {
       if (parents.length) layoutObserver.disconnect();
-      next.forEach(parent => layoutObserver.observe(parent, { attributes: true, attributeFilter: ['class', 'style', 'hidden', 'dir'] }));
+      next.forEach(parent => layoutObserver.observe(parent, { attributes: true }));
     }
     parents = next;
+    const useNativeMotion = canUseNativeParallax(win, doc, parents);
+    if (useNativeMotion !== nativeMotion) {
+      nativeMotion = useNativeMotion;
+      frame.classList.toggle('sp-native-parallax', nativeMotion);
+      ['left', 'top', 'margin-left'].forEach(property => iframe.style.removeProperty(property));
+      alignCreative();
+    }
+    setParallaxStageHeight(frame, stage);
     scheduleAlignment();
   }
   function syncVisibility() {
@@ -877,19 +918,22 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
     if (layoutObserver) layoutObserver.disconnect();
     doc.removeEventListener('visibilitychange', syncVisibility);
     win.removeEventListener('scroll', scheduleAlignment, true);
-    doc.removeEventListener('load', scheduleAlignment, true);
+    doc.removeEventListener('load', refresh, true);
     if (viewport) {
       viewport.removeEventListener('scroll', scheduleAlignment);
       viewport.removeEventListener('resize', scheduleAlignment);
     }
     parents = [];
     frame.classList.remove('sp-pointer-guarded');
+    frame.classList.remove('sp-native-parallax');
+    setParallaxStageHeight(frame, stage);
     iframe.style.removeProperty('left');
     iframe.style.removeProperty('top');
+    iframe.style.removeProperty('margin-left');
   }
   try {
     alignCreative();
-    if (typeof MutationObserver === 'function') layoutObserver = new MutationObserver(scheduleAlignment);
+    if (typeof MutationObserver === 'function') layoutObserver = new MutationObserver(refresh);
     refresh();
     if (typeof IntersectionObserver === 'function') {
       observer = new IntersectionObserver(entries => {
@@ -901,7 +945,7 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
     doc.addEventListener('visibilitychange', syncVisibility);
     // Capture also observes nested scroll containers without attaching listeners to publisher nodes.
     win.addEventListener('scroll', scheduleAlignment, { passive: true, capture: true });
-    doc.addEventListener('load', scheduleAlignment, true);
+    doc.addEventListener('load', refresh, true);
     if (viewport) {
       viewport.addEventListener('scroll', scheduleAlignment, { passive: true });
       viewport.addEventListener('resize', scheduleAlignment, { passive: true });

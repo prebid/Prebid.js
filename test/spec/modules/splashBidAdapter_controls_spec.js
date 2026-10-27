@@ -56,7 +56,10 @@ function controlsMessage(timer, source = OWNER_SOURCE, type = CONTROLS_TYPE) {
 }
 
 function postFrom(source, data) {
-  window.dispatchEvent(new MessageEvent('message', { source, data }));
+  const event = new MessageEvent('message', { data });
+  // Firefox rejects opaque WindowProxy values in MessageEventInit.
+  Object.defineProperty(event, 'source', { value: source });
+  window.dispatchEvent(event);
 }
 
 function timerHidden(timer) {
