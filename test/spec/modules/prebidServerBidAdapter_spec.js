@@ -3573,11 +3573,10 @@ describe('S2S Adapter', function () {
     });
 
     it('emits the PBS_ANALYTICS event and captures atag responses', function () {
-      const original = CONFIG;
-      CONFIG.extPrebid = { returnallbidstatus: true };
+      const localConfig = deepClone(CONFIG);
+      localConfig.extPrebid = { returnallbidstatus: true };
       const atagResponse = { ...RESPONSE_OPENRTB, ext: { prebid: { analytics: { tags: ['data'] } } } };
-      config.setConfig({ CONFIG });
-      CONFIG = original;
+      config.setConfig({ s2sConfig: localConfig });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const responding = deepClone(atagResponse);
       Object.assign(responding.ext.prebid.analytics.tags, ['stuff']);
