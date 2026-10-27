@@ -102,7 +102,7 @@ describe('consentManagement', function () {
         expect(consentConfig.cmpTimeout).to.be.equal(5000);
       });
 
-      it('should ignore config.usp and use config.gdpr, with default cmpAip and timeout', async function () {
+      it('should ignore config.usp and use config.gdpr, with default cmpApi and timeout', async function () {
         await setConsentConfig({
           gdpr: {},
           usp: { cmpApi: 'daa', timeout: 50 }
@@ -112,7 +112,7 @@ describe('consentManagement', function () {
         expect(consentConfig.cmpTimeout).to.be.equal(10000);
       });
 
-      it('should recognize config.gdpr, with default cmpAip and timeout', async function () {
+      it('should recognize config.gdpr, with default cmpApi and timeout', async function () {
         await setConsentConfig({
           gdpr: {}
         });
@@ -881,7 +881,7 @@ describe('consentManagement', function () {
           });
         });
 
-        it('It still considers it a valid cmp response if gdprApplies is not a boolean', async function () {
+        it('it still considers it a valid cmp response if gdprApplies is not a boolean', async function () {
           // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
           const testConsentData = {
             tcString: 'abc12345234',
