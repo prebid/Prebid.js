@@ -44,7 +44,7 @@ export function renderBid(bid: Bid, options?: RenderAdOptions) {
   // data URLs set an opaque origin regardless of sandbox, keeping the frame isolated but allowing nested iframes
   // to use a real origin (as long as allow-same-origin)
   const frame = createIframe(doc, {
-    sandbox: 'allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-scripts allow-top-navigation-by-user-activation',
+    sandbox: 'allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation',
     src: `data:text/html;charset=utf-8,${encodeURIComponent(srcdoc)}`
   });
   element.appendChild(frame);

@@ -1,4 +1,3 @@
-import 'src/secureCreatives.js';
 import { renderBid } from '../../../modules/safeRendering.js';
 import { isMessageAllowed, parseMessage } from '../../../src/secureCreatives.js';
 
