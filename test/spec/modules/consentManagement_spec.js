@@ -881,7 +881,7 @@ describe('consentManagement', function () {
           });
         });
 
-        it('It still considers it a valid cmp response if gdprApplies is not a boolean', async function () {
+        it('it still considers it a valid cmp response if gdprApplies is not a boolean', async function () {
           // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
           const testConsentData = {
             tcString: 'abc12345234',
