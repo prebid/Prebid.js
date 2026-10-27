@@ -7,7 +7,7 @@ import { config } from '../src/config.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
-import { GDPR_ACPIDS, GDPR_GVLIDS, VENDORLESS_GVLID } from '../src/consentHandler.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS, gvlidList, type GVLIDs, normalizeGvlid, VENDORLESS_GVLID } from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
@@ -139,8 +139,10 @@ declare module '../src/config' {
     /**
      * Map from module name to that module's GVL ID. This overrides the GVL ID provided
      * by the modules themselves.
+     * The value may be a list of GVL IDs, for modules that act on behalf of several vendors; all of them
+     * then need a legal basis for the module to be allowed.
      */
-    gvlMapping?: { [moduleName: string]: number }
+    gvlMapping?: { [moduleName: string]: GVLIDs }
     /**
      * Map from module name to that module's Google Additional Consent provider ID. This overrides the ID provided
      * by the modules themselves. It is used to check vendor consent for modules that have no GVL ID, against the
@@ -197,17 +199,17 @@ function lookupId<T>(registry: { get(moduleName: string): { gvlid?: T, modules: 
 export function getGvlid(moduleType, moduleName, fallbackFn) {
   if (moduleName) {
     // Check user defined GVL Mapping in pbjs.setConfig()
-    const gvlMapping = config.getConfig('gvlMapping');
+    const mappedGvlid = normalizeGvlid(config.getConfig('gvlMapping')?.[moduleName]);
 
     // Return GVL ID from user defined gvlMapping
-    if (gvlMapping && gvlMapping[moduleName]) {
-      return gvlMapping[moduleName];
+    if (mappedGvlid) {
+      return mappedGvlid;
     } else if (moduleType === MODULE_TYPE_PREBID) {
       return VENDORLESS_GVLID;
     } else {
       let gvlid = lookupId(GDPR_GVLIDS, 'GVL', moduleType, moduleName);
       if (gvlid == null && fallbackFn) {
-        gvlid = fallbackFn();
+        gvlid = normalizeGvlid(fallbackFn());
       }
       return gvlid || null;
     }
@@ -294,12 +296,22 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = 
     const modName = params[ACTIVITY_PARAM_COMPONENT_NAME];
 
     if (shouldEnforce(consentData, purposeNo, modName)) {
-      const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
-      const acpId = gvlid == null ? getAcpId(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName) : null;
-      const allow = !!checkConsent(consentData, modName, gvlid, acpId, params);
-      if (!allow) {
-        blocked && blocked.add(modName);
-        return { allow };
+      const gvlids = gvlidList(getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, () => gvlidFallback(params)));
+      if (gvlids.length === 0) {
+        const acpId = getAcpId(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName);
+        if (!checkConsent(consentData, modName, null, acpId, params)) {
+          blocked && blocked.add(modName);
+          return { allow: false };
+        }
+      } else {
+        // a module that declares several GVL IDs needs a legal basis for every one of them
+        const denied = gvlids.filter(gvlid => !checkConsent(consentData, modName, gvlid, null, params));
+        if (denied.length > 0) {
+          blocked && blocked.add(modName);
+          return gvlids.length > 1
+            ? { allow: false, reason: `no legal basis for GVL ID(s) ${denied.join(', ')}` }
+            : { allow: false };
+        }
       }
     }
   };

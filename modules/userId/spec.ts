@@ -1,6 +1,6 @@
 import type { BidderCode, StorageDisclosure } from "../../src/types/common";
 import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts";
-import type { AllConsentData, VENDORLESS_GVLID } from "../../src/consentHandler.ts";
+import type { AllConsentData, GVLIDs, VENDORLESS_GVLID } from "../../src/consentHandler.ts";
 import type { Ext } from '../../src/types/ortb/common';
 import type { ORTBRequest } from "../../src/types/ortb/request";
 
@@ -137,8 +137,9 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   aliasName?: UserIdProvider;
   /**
    * GVL ID to use for TCF. If omitted your module may be excluded when TCF is in scope.
+   * May be a list, for modules that act on behalf of several vendors; all of them then need a legal basis.
    */
-  gvlid?: number | typeof VENDORLESS_GVLID;
+  gvlid?: GVLIDs | typeof VENDORLESS_GVLID;
   /**
    * Google Additional Consent provider ID, for vendors that are not on the GVL.
    * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
