@@ -112,7 +112,7 @@ describe('consentManagement', function () {
         expect(consentConfig.cmpTimeout).to.be.equal(10000);
       });
 
-      it('should recognize config.gdpr, with default cmpAip and timeout', async function () {
+      it('should recognize config.gdpr, with default cmpApi and timeout', async function () {
         await setConsentConfig({
           gdpr: {}
         });
