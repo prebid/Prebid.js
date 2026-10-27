@@ -1,0 +1,61 @@
+<html>
+
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script>
+      var PREBID_TIMEOUT = 1000;
+
+      var adUnits = [{
+        code: 'div-1',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]],
+          }
+        },
+
+        // Replace this object to test a new Adapter!
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: 13144370
+          }
+        }]
+
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+      pbjs.que.push(function () {
+        pbjs.addAdUnits(adUnits);
+        pbjs.setConfig({
+          debugging: {
+            enabled: true,
+            intercept: [{ when: {} }]
+          }
+        });
+
+        pbjs.requestBids({
+          bidsBackHandler: renderWinners,
+          timeout: PREBID_TIMEOUT
+        });
+      });
+
+      function renderWinners() {
+        pbjs.getBestBids().forEach(function (bid) {
+          pbjs.renderBid(bid);
+        });
+      }
+    </script>
+</head>
+
+<body>
+<h2>Prebid.js Test</h2>
+<h5>Div-1</h5>
+<div id='div-1'></div>
+</body>
+
+</html>
