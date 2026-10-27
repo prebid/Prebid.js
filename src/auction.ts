@@ -818,9 +818,9 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
 
   let safeRenderer: SafeRendererConfig | undefined = null;
 
-  if (mediaTypeSafeRenderer && mediaTypeSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
+  if (mediaTypeSafeRenderer?.url && !(mediaTypeSafeRenderer.backupOnly === true && bid.safeRenderer)) {
     safeRenderer = mediaTypeSafeRenderer;
-  } else if (bidSafeRenderer && bidSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
+  } else if (bidSafeRenderer?.url && !(bidSafeRenderer.backupOnly === true && bid.safeRenderer)) {
     safeRenderer = bidSafeRenderer;
   }
 
