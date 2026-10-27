@@ -77,9 +77,14 @@ describe('ssmasBidAdapter', function () {
         return spec.buildRequests([bid], request)[0].data.ext?.ssmas?.usersync;
       };
 
-      it('asks for images alone with the default settings', function () {
-        expect(syncsAsked({ syncEnabled: true, filterSettings: { image: { bidders: '*', filter: 'include' } } }))
-          .to.deep.equal({ iframe: 0, image: 1 });
+      it('asks for images alone when iframes are not allowed to ssmas', function () {
+        expect(syncsAsked({
+          syncEnabled: true,
+          filterSettings: {
+            iframe: { bidders: ['ssmas'], filter: 'exclude' },
+            image: { bidders: '*', filter: 'include' }
+          }
+        })).to.deep.equal({ iframe: 0, image: 1 });
       });
 
       it('asks for iframes too when the publisher allows them to ssmas', function () {
