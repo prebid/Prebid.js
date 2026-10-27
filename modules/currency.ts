@@ -28,6 +28,8 @@ export var currencySupportEnabled = false;
 export var currencyRates = {} as any;
 let bidderCurrencyDefault = {};
 let defaultRates;
+// incremented to supersede a rates file request that is still in flight
+let ratesRequestId = 0;
 let shouldUseDefaults = true;
 
 export let responseReady = defer<void>();
@@ -97,6 +99,7 @@ export function setConfig(config: CurrencyConfig) {
     shouldUseDefaults = false;
     currencyRatesLoaded = true;
     needToCallForCurrencyFile = false; // don't call if rates are already specified
+    ratesRequestId++; // and ignore the result of any request already in flight
   }
 
   if (shouldUseDefaults && config.defaultRates !== null && typeof config.defaultRates === 'object') {
@@ -157,13 +160,38 @@ function errorSettingsRates(msg) {
   }
 }
 
+// a request superseded by explicitly configured rates (or a reset) must not change the rates or retry.
+// If configured rates are in place, let queued bids and delayed auctions continue with them; otherwise a newer
+// request is responsible for that
+function ratesRequestSuperseded() {
+  if (currencyRatesLoaded) {
+    processBidResponseQueue();
+    delayedAuctions.resume();
+  }
+}
+
+// let queued bids and delayed auctions continue without fresh rates, and retry on the next auction
+function ratesLoadFailed(msg) {
+  errorSettingsRates(msg);
+  currencyRatesLoaded = true;
+  processBidResponseQueue();
+  delayedAuctions.resume();
+  needToCallForCurrencyFile = true;
+}
+
 function loadRates() {
   if (needToCallForCurrencyFile) {
     needToCallForCurrencyFile = false;
     currencyRatesLoaded = false;
+    const requestId = ++ratesRequestId;
+    const isSuperseded = () => requestId !== ratesRequestId;
     ajax(ratesURL,
       {
         success: function (response) {
+          if (isSuperseded()) {
+            ratesRequestSuperseded();
+            return;
+          }
           try {
             currencyRates = JSON.parse(response);
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
@@ -173,15 +201,15 @@ function loadRates() {
             processBidResponseQueue();
             delayedAuctions.resume();
           } catch (e) {
-            errorSettingsRates('Failed to parse currencyRates response: ' + response);
+            ratesLoadFailed('Failed to parse currencyRates response: ' + response);
           }
         },
         error: function (err) {
-          errorSettingsRates(err);
-          currencyRatesLoaded = true;
-          processBidResponseQueue();
-          delayedAuctions.resume();
-          needToCallForCurrencyFile = true;
+          if (isSuperseded()) {
+            ratesRequestSuperseded();
+            return;
+          }
+          ratesLoadFailed(err);
         }
       }
     );
@@ -237,6 +265,7 @@ export function resetCurrency() {
     shouldUseDefaults = true;
     currencyRates = {};
     defaultRates = undefined;
+    ratesRequestId++;
     bidderCurrencyDefault = {};
     responseReady = defer();
   }
