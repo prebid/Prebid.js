@@ -12,6 +12,7 @@ import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
 import { auctionManager } from './auctionManager.js';
 import { findSlotElementIdByAdId, getSlotTargeting, getSlotTargetingKeys } from './utils/gptTargeting.js';
+import { hook } from './hook.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -56,16 +57,24 @@ function ensureAdId(adId, reply) {
   };
 }
 
-export function receiveMessage(ev, cb) {
-  var key = ev.message ? 'message' : 'data';
-  var data;
+export function parseMessage(ev) {
+  const key = ev.message ? 'message' : 'data';
+  let data;
   try {
     data = JSON.parse(ev[key]);
   } catch (e) {
     return;
   }
-
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
+    return data;
+  }
+}
+
+export const isMessageAllowed = hook('sync', (event, data) => true);
+
+export function receiveMessage(ev, cb) {
+  const data = parseMessage(ev);
+  if (data && isMessageAllowed(ev, data)) {
     HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, auctionManager.findBidByAdId(data.adId));
     cb && cb();
   }

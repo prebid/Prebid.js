@@ -1,4 +1,10 @@
-import { getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
+import {
+  getReplier,
+  isMessageAllowed,
+  receiveMessage,
+  resizeAnchor,
+  resizeRemoteCreative
+} from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -39,6 +45,45 @@ describe('secureCreatives', () => {
       receiveMessage(ev, resolve);
     });
   }
+
+  describe('isMessageAllowed', () => {
+    let isAllowed;
+    function hook(next, ...args) {
+      next.bail(isAllowed(...args));
+    }
+    before(() => {
+      isMessageAllowed.before(hook);
+    });
+    after(() => {
+      isMessageAllowed.getHooks({ hook }).remove();
+    });
+
+    it('can prevent message processing', () => {
+      isAllowed = sinon.stub().callsFake(() => false);
+      const message = {
+        adId: '123',
+        message: 'Prebid Request'
+      };
+      const ev = {
+        ports: [],
+        source: {
+          postMessage: sinon.spy()
+        },
+        origin: 'mock-origin',
+        message: JSON.stringify(message)
+      };
+      const cb = sinon.stub();
+      receiveMessage(ev, cb);
+      sinon.assert.notCalled(cb);
+      sinon.assert.calledWith(isAllowed, ev, message);
+    });
+
+    Object.entries({
+      'can allow': true,
+      'can disallow': false
+    }).forEach(([desc, allowed]) => {
+    });
+  });
 
   describe('getReplier', () => {
     it('should use source.postMessage if no MessagePort is available', () => {
