@@ -14,6 +14,20 @@ declare module '../src/prebidGlobal.ts' {
   }
 }
 
+declare module '../src/config.ts' {
+  interface Config {
+    safeRendering?: {
+      /**
+       * If true, allow only renderBid to set up cross-origin rendering; requests from other channels
+       * (e.g. GAM safeframes) are ignored.
+       *
+       * Default is false.
+       */
+      exclusive?: boolean;
+    }
+  }
+}
+
 function escapeInlineHtml(src) {
   // the source is inlined in a <script> tag, so </script and <!-- must be escaped
   return src
@@ -68,7 +82,7 @@ export function renderBid(bid: Bid, options?: RenderAdOptions) {
       adId: bid.adId,
       pubUrl: doc.defaultView.location.href,
       clickUrl
-    });
+    }).replace(/</g, '\\u003c'); // handle HTML strings
     const srcdoc = `<script>${getCreativeSource()}</script>\n<script>window.pbRender(${renderArgs});</script>`;
     // use a data url instead of srcdoc
     // srcdoc is not isolated unless in a sandbox without `allow-same-origin`, which would break anything that needs an origin

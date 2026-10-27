@@ -99,7 +99,18 @@ describe('safeRendering', () => {
       expect(message.options.clickUrl).to.eql('test');
     });
 
-    it('can handle non-ASCII options', async () => {
+    Object.entries({
+      'non-ASCII': { option: 'è' },
+      'HTML': { option: '</script>' }
+    }).forEach(([desc, options]) => {
+      it(`can handle ${desc} in options`, async () => {
+        renderBid(bid, options);
+        const [[, message]] = await expectMessage();
+        expect(message.options).to.eql(options);
+      });
+    });
+
+    it('can handle HTML options', async () => {
       const options = { option: 'è' };
       renderBid(bid, options);
       const [[, message]] = await expectMessage();
