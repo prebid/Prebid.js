@@ -62,10 +62,12 @@ export function renderBid(bid: Bid, options?: RenderAdOptions) {
   try {
     element.innerHTML = '';
     const doc = element.ownerDocument;
+    const { clickThrough: clickUrl, ...rest } = options ?? {};
     const renderArgs = JSON.stringify({
+      ...rest,
       adId: bid.adId,
       pubUrl: doc.defaultView.location.href,
-      ...options
+      clickUrl
     });
     const srcdoc = `<script>${getCreativeSource()}</script>\n<script>window.pbRender(${renderArgs});</script>`;
     // use a data url instead of srcdoc
@@ -77,8 +79,8 @@ export function renderBid(bid: Bid, options?: RenderAdOptions) {
       sandbox: 'allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation',
       src: `data:text/html;charset=utf-8,${encodeURIComponent(srcdoc)}`
     });
+    frame.onload = () => RENDERED.set(frame.contentWindow, bid.adId);
     element.appendChild(frame);
-    RENDERED.set(frame.contentWindow, bid.adId);
   } catch (e) {
     logError('renderBid: error rendering bid', bid, e);
   }

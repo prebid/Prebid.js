@@ -1,7 +1,6 @@
 import { allowMessageHook, getAdIdForFrame, renderBid } from '../../../modules/safeRendering.js';
 import { isMessageAllowed, parseMessage } from '../../../src/secureCreatives.js';
 import * as utils from 'src/utils.js';
-import { logError } from 'src/utils.js';
 
 describe('safeRendering', () => {
   let disableSecureCreatives, onMessage, messages, sandbox;
@@ -57,11 +56,12 @@ describe('safeRendering', () => {
         adId: 'mock-adid',
         element
       };
-
     });
 
     afterEach(() => {
-      document.body.removeChild(bid.element);
+      if (bid.element?.parent === document.body) {
+        document.body.removeChild(bid.element);
+      }
     });
 
     it('drops an iframe that posts a cross-domain request', async () => {
@@ -73,11 +73,30 @@ describe('safeRendering', () => {
       expect(event.origin).to.eql('null');
     });
 
+    it('can populate a detached element', async () => {
+      bid.element = document.createElement('div');
+      renderBid(bid);
+      document.body.appendChild(bid.element);
+      try {
+        const [[event,]] = await expectMessage();
+        expect(getAdIdForFrame(event.source)).to.eql(bid.adId);
+      } finally {
+        document.body.removeChild(bid.element);
+      }
+    });
+
     it('passes options back', async () => {
-      const options = { clickUrl: 'test' };
+      const options = { option: 'test' };
       renderBid(bid, options);
       const [[, message]] = await expectMessage();
       expect(message.options).to.eql(options);
+    });
+
+    it('translates clickThrough to clickUrl', async () => {
+      const options = { clickThrough: 'test' };
+      renderBid(bid, options);
+      const [[, message]] = await expectMessage();
+      expect(message.options.clickUrl).to.eql('test');
     });
 
     it('can handle non-ASCII options', async () => {
@@ -106,10 +125,10 @@ describe('safeRendering', () => {
     });
 
     it('registers the adId/iframe pair with getAdIdForFrame', async () => {
-      sinon.spy(document, 'createElement');
+      sandbox.spy(document, 'createElement');
       renderBid(bid);
-      expect(getAdIdForFrame(document.createElement.returnValues[0].contentWindow)).to.eql(bid.adId);
       const [[event,]] = await expectMessage();
+      expect(getAdIdForFrame(document.createElement.returnValues[0].contentWindow)).to.eql(bid.adId);
       expect(getAdIdForFrame(event.source)).to.eql(bid.adId);
     });
   });
