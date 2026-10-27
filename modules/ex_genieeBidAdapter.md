@@ -126,12 +126,12 @@ var adUnits = [
 
 ## Video
 
-| `mediaTypes.video` field                  | Scope       | Notes                                                                                                                                      |
-|-------------------------------------------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| `mimes`                                   | required    | Non-empty array of MIME types.                                                                                                             |
-| `playerSize`                              | recommended | Sent as `imp.video.w`/`imp.video.h`.                                                                                                       |
-| `plcmt`                                   | recommended | Passed to demand partners as is; the Exchange does not fill it in. When omitted, Prebid sets `4` for outstream; set it for instream (`1`). |
-| `minduration`, `maxduration`, `protocols` | recommended | Some demand partners require them.                                                                                                         |
+| `mediaTypes.video` field                  | Scope       | Notes                                                              |
+|-------------------------------------------|-------------|--------------------------------------------------------------------|
+| `mimes`                                   | required    | Non-empty array of MIME types.                                     |
+| `playerSize`                              | recommended | Sent as `imp.video.w`/`imp.video.h`.                               |
+| `plcmt`                                   | recommended | Passed to demand partners as is; the Exchange does not fill it in. |
+| `minduration`, `maxduration`, `protocols` | recommended | Some demand partners require them.                                 |
 
 - When the video part of an ad unit cannot be sent (no `mimes`), a multiformat ad unit is sent
   as banner only, and a video-only ad unit is rejected by `isBidRequestValid`.
