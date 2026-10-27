@@ -384,6 +384,26 @@ describe('bidderFactory', () => {
           });
         }
 
+        [true, false].forEach(policy => {
+          it(`should expose policy ${policy} without changing frozen input requests`, () => {
+            config.setConfig({ allowTopWindowRenderers: policy });
+            const request = makeRequest();
+            request.bids[0].allowTopWindowRenderers = !policy;
+            const snapshot = JSON.stringify(request);
+            request.bids.forEach(Object.freeze);
+            Object.freeze(request.bids);
+            Object.freeze(request);
+
+            callBidder(newBidder(spec), request);
+
+            expect(validationPolicies).to.deep.equal([policy, policy]);
+            expect(buildPolicies).to.deep.equal([[policy, policy]]);
+            expect(bidderRequestPolicies).to.deep.equal(buildPolicies);
+            expect(JSON.stringify(request)).to.equal(snapshot);
+            sinon.assert.calledOnce(doneStub);
+          });
+        });
+
         [
           { value: undefined, expected: true },
           { value: null, expected: true },
@@ -487,7 +507,7 @@ describe('bidderFactory', () => {
         expect(ajaxStub.called).to.equal(false);
         expect(spec.isBidRequestValid.calledTwice).to.equal(true);
         expect(spec.buildRequests.calledOnce).to.equal(true);
-        expect(spec.buildRequests.firstCall.args[0]).to.deep.equal(MOCK_BIDS_REQUEST.bids);
+        expect(spec.buildRequests.firstCall.args[0]).to.deep.equal(MOCK_BIDS_REQUEST.bids.map(bid => ({ ...bid, allowTopWindowRenderers: true })));
       });
 
       it('should not call buildRequests the params are invalid', function () {
@@ -515,7 +535,7 @@ describe('bidderFactory', () => {
         expect(ajaxStub.called).to.equal(false);
         expect(spec.isBidRequestValid.calledTwice).to.equal(true);
         expect(spec.buildRequests.calledOnce).to.equal(true);
-        expect(spec.buildRequests.firstCall.args[0]).to.deep.equal([MOCK_BIDS_REQUEST.bids[0]]);
+        expect(spec.buildRequests.firstCall.args[0]).to.deep.equal([{ ...MOCK_BIDS_REQUEST.bids[0], allowTopWindowRenderers: true }]);
       });
 
       it('should make no server requests if the spec doesn\'t return any', function () {

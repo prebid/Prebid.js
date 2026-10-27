@@ -303,8 +303,11 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
         return;
       }
       const allowTopWindowRenderers = !!(config.getConfig('allowTopWindowRenderers') ?? true);
-      bidderRequest.bids.forEach(bid => { bid.allowTopWindowRenderers = allowTopWindowRenderers; });
-      const tidGuard = guardTids(bidderRequest);
+      const adapterBidderRequest: ClientBidderRequest<B> = {
+        ...bidderRequest,
+        bids: bidderRequest.bids.map(bid => ({ ...bid, allowTopWindowRenderers })),
+      };
+      const tidGuard = guardTids(adapterBidderRequest);
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode: string, bid: Bid, responseMediaType = null) {
@@ -329,8 +332,8 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
         });
       }
 
-      const validBidRequests = adapterMetrics(bidderRequest)
-        .measureTime('validate', () => bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br))));
+      const validBidRequests = adapterMetrics(adapterBidderRequest)
+        .measureTime('validate', () => adapterBidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br))));
 
       if (validBidRequests.length === 0) {
         afterAllResponses();
@@ -341,7 +344,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
         bidRequestMap[bid.bidId] = bid;
       });
 
-      processBidderRequests(spec, validBidRequests as any, bidderRequest, ajax, configEnabledCallback, {
+      processBidderRequests(spec, validBidRequests as any, adapterBidderRequest, ajax, configEnabledCallback, {
         onRequest: requestObject => events.emit(EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);

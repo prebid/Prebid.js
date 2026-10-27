@@ -95,7 +95,7 @@ describe('Splash renderer policy through core', () => {
     } else {
       expect(accepted).to.equal(true);
     }
-    return request;
+    return { request, validatedBid: validation.firstCall.args[0] };
   }
 
   ['standard', 'parallax', 'interstitial'].forEach(format => {
@@ -109,11 +109,13 @@ describe('Splash renderer policy through core', () => {
   it('uses the bidder-scoped core policy rather than another bidder or the global value', () => {
     config.setBidderConfig({ bidders: ['splash'], config: { allowTopWindowRenderers: true } });
     const first = run('parallax', {}, {}, {}, { allowTopWindowRenderers: false });
-    expect(first.bids[0].allowTopWindowRenderers).to.equal(true);
+    expect(first.validatedBid.allowTopWindowRenderers).to.equal(true);
+    expect(first.request.bids[0]).not.to.have.property('allowTopWindowRenderers');
     config.setBidderConfig({ bidders: ['splash'], config: { allowTopWindowRenderers: false } });
     const second = run('parallax', {}, {}, {}, { allowTopWindowRenderers: true });
-    expect(second.bids[0].allowTopWindowRenderers).to.equal(false);
-    expect(first.bids[0].allowTopWindowRenderers).to.equal(true);
+    expect(second.validatedBid.allowTopWindowRenderers).to.equal(false);
+    expect(second.request.bids[0]).not.to.have.property('allowTopWindowRenderers');
+    expect(first.validatedBid.allowTopWindowRenderers).to.equal(true);
     expect(config.getCurrentBidder()).to.equal(null);
   });
 });
