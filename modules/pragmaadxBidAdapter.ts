@@ -72,7 +72,8 @@
  * more. See POST /api/adx/prebid in app/main.py for the full reasoning.
  */
 
-import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { type BidderSpec, type ServerResponse, registerBidder } from '../src/adapters/bidderFactory.js';
+import { type UserSync } from '../src/userSync.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'pragmaadx' as const;
@@ -331,12 +332,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * so a future downstream sync redirect can honour them.
    */
   getUserSyncs(
-    syncOptions: { pixelEnabled?: boolean },
-    _serverResponses: any[],
+    syncOptions: { iframeEnabled: boolean; pixelEnabled: boolean },
+    _serverResponses: ServerResponse[],
     gdprConsent: any,
-    uspConsent: string,
-    gppConsent: any
-  ): Array<{ type: string; url: string }> {
+    uspConsent: any,
+    gppConsent: any,
+    _coppa: boolean
+  ): UserSync[] {
     if (!syncOptions.pixelEnabled) {
       return [];
     }
