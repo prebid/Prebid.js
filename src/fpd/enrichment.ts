@@ -51,7 +51,7 @@ export interface FirstPartyDataConfig {
      */
     meta?: boolean,
     /**
-     * If true (the default), look for keywords in a JSON-LD tag (<script type="application/json+ld">) and add themm to first party data.
+     * If true (the default), look for keywords in a JSON-LD tag (<script type="application/ld+json">) and add themm to first party data.
      */
     json?: boolean
   }
