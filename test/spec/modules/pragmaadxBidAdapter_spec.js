@@ -265,11 +265,34 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
     });
 
-    it('filters out a bid with no vastXml', function () {
+    it('filters out a video bid with neither vastXml nor vastUrl', function () {
       const serverResponse = {
         body: { bids: [{ requestId: 'x', cpm: 1.5, currency: 'USD' }] }
       };
       expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
+    });
+
+    it('uses vastUrl when server returns it (instream-safe, no cache needed)', function () {
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'url-bid',
+            cpm: 3.00,
+            currency: 'USD',
+            width: 640,
+            height: 360,
+            creativeId: 'adx-url-1',
+            netRevenue: false,
+            ttl: 300,
+            vastUrl: 'https://ads.pragma-crm.com/vast/abc123',
+            meta: { advertiserDomains: ['advertiser.example.com'] }
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].vastUrl).to.equal('https://ads.pragma-crm.com/vast/abc123');
+      expect(bids[0].vastXml).to.be.undefined;
     });
 
     it('filters out a bid with a zero or missing cpm', function () {

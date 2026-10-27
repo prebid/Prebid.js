@@ -122,6 +122,7 @@ interface PragmaAdxServerBid {
   mediaType?: string;
   ad?: string;
   vastXml?: string;
+  vastUrl?: string;
   meta?: { advertiserDomains?: string[] };
 }
 
@@ -285,7 +286,10 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         if (bid.mediaType === 'banner') {
           return !!(bid.ad && String(bid.ad).trim());
         }
-        return !!(bid.vastXml && String(bid.vastXml).trim());
+        return !!(
+          (bid.vastUrl && String(bid.vastUrl).trim()) ||
+          (bid.vastXml && String(bid.vastXml).trim())
+        );
       })
       .map((bid: PragmaAdxServerBid) => {
         const isBanner = bid.mediaType === 'banner';
@@ -309,12 +313,15 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         };
         if (isBanner) {
           out.ad = bid.ad;
+        } else if (bid.vastUrl) {
+          // Prefer vastUrl: instream works without publisher-side cache config.
+          out.vastUrl = bid.vastUrl;
         } else {
           out.vastXml = bid.vastXml;
         }
         return out;
       });
-  }
+  },
 
   /**
    * Cookie-sync pixel (image only; no iframe sync endpoint exists yet).
