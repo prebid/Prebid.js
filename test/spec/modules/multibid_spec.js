@@ -2,14 +2,15 @@ import { expect } from 'chai';
 import {
   addBidResponseHook,
   adjustBidderRequestsHook,
+  aliasedBiddersFirst,
   resetMultibidUnits,
   resetMultiConfig,
-  sortByMultibid,
   targetBidPoolHook,
   validateMultibid
 } from 'modules/multibid/index.js';
 import { config } from 'src/config.js';
-import { getHighestCpm } from '../../../src/utils/reducers.js';
+import { getHighestCpm, getHighestDesirability } from '../../../src/utils/reducers.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../../src/utils/desirability.js';
 
 describe('multibid adapter', function () {
   const bidArray = [{
@@ -684,6 +685,89 @@ describe('multibid adapter', function () {
       expect(result.hasModified).to.not.equal(null);
       expect(result.hasModified).to.equal(true);
     });
+
+    it('does not let a zero desirability outrank a positive one under bid limit and dealPrioritization', function () {
+      config.setConfig({
+        multibid: [{ bidder: 'bidderA', maxBids: 2 }],
+        sendBidsControl: { dealPrioritization: true }
+      });
+      const zero = { bidderCode: 'bidderA', bidder: 'bidderA', adUnitCode: 'test.div', cpm: 3, desirability: 0, adserverTargeting: {} };
+      const positive = { bidderCode: 'bidderB', bidder: 'bidderB', adUnitCode: 'test.div', cpm: 2, desirability: 2, adserverTargeting: {} };
+
+      targetBidPoolHook(callbackFn, [zero, positive], getHighestDesirability, 1);
+
+      expect(result.bidsReceived).to.deep.equal([positive]);
+    });
+
+    describe('with priority bids', () => {
+      const HIGH = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+      const LOW = DEFAULT_PRIORITY;
+
+      function mkBid(bid) {
+        return Object.assign({ adUnitCode: 'test.div', adserverTargeting: {} }, bid);
+      }
+
+      function mkMultibid(bid) {
+        return mkBid(Object.assign({ bidder: 'bidderA', bidderCode: 'bidderA', originalBidder: 'bidderA', multibidPrefix: 'bidA' }, bid));
+      }
+
+      beforeEach(() => {
+        config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
+      });
+
+      it('gives the unaliased bidder code to the highest priority bid, regardless of cpm', () => {
+        const hi = mkMultibid({ adId: 'a-hi', cpm: 1, desirability: 1, priority: HIGH });
+        const lo = mkMultibid({ adId: 'a-lo', cpm: 100, desirability: 100, priority: LOW });
+
+        targetBidPoolHook(callbackFn, [lo, hi], getHighestDesirability);
+
+        expect(hi.bidderCode).to.equal('bidderA');
+        expect(lo.bidderCode).to.equal('bidA2');
+      });
+
+      [false, true].forEach(dealPrioritization => {
+        describe(`when a bid limit applies, and dealPrioritization = ${dealPrioritization}`, () => {
+          beforeEach(() => {
+            config.setConfig({ sendBidsControl: { dealPrioritization } });
+          });
+
+          it('keeps the highest priority bid from a bidder, regardless of cpm', () => {
+            const pool = [
+              mkMultibid({ adId: 'a-lo', cpm: 100, desirability: 100, priority: LOW }),
+              mkMultibid({ adId: 'a-hi', cpm: 1, desirability: 1, priority: HIGH }),
+              mkBid({ bidder: 'bidderB', bidderCode: 'bidderB', adId: 'b-lo', cpm: 50, desirability: 50, priority: LOW }),
+            ];
+
+            targetBidPoolHook(callbackFn, pool, getHighestDesirability, 2);
+
+            expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi', 'b-lo']);
+          });
+
+          it('keeps a dynamic alias bid over a lower priority bid from another bidder', () => {
+            const pool = [
+              mkMultibid({ adId: 'a-hi-1', cpm: 2, desirability: 2, priority: HIGH }),
+              mkMultibid({ adId: 'a-hi-2', cpm: 1, desirability: 1, priority: HIGH }),
+              mkBid({ bidder: 'bidderB', bidderCode: 'bidderB', adId: 'b-lo', cpm: 50, desirability: 50, priority: LOW }),
+            ];
+
+            targetBidPoolHook(callbackFn, pool, getHighestDesirability, 2);
+
+            expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi-1', 'a-hi-2']);
+          });
+
+          it('keeps a higher priority bid over a lower priority deal bid', () => {
+            const pool = [
+              mkMultibid({ adId: 'a-hi', cpm: 1, desirability: 1, priority: HIGH }),
+              mkBid({ bidder: 'bidderB', bidderCode: 'bidderB', adId: 'b-lo', cpm: 50, desirability: 50, priority: LOW, adserverTargeting: { hb_deal: 'deal' } }),
+            ];
+
+            targetBidPoolHook(callbackFn, pool, getHighestDesirability, 1);
+
+            expect(result.bidsReceived.map(b => b.adId)).to.eql(['a-hi']);
+          });
+        });
+      });
+    });
   });
 
   describe('validate multibid', function () {
@@ -771,7 +855,7 @@ describe('multibid adapter', function () {
         'originalBidder': 'bidderA',
         'bidder': 'bidderA',
       }];
-      const result = bids.sort(sortByMultibid);
+      const result = bids.sort(aliasedBiddersFirst);
 
       expect(result).to.deep.equal(expected);
     });
@@ -835,7 +919,7 @@ describe('multibid adapter', function () {
         'originalBidder': 'bidderB',
         'bidder': 'bidderB',
       }];
-      const result = bids.sort(sortByMultibid);
+      const result = bids.sort(aliasedBiddersFirst);
 
       expect(result).to.deep.equal(expected);
     });

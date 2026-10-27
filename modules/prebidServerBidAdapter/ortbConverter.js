@@ -75,6 +75,12 @@ const PBS_CONVERTER = ortbConverter({
         deepSetValue(request, 'ext.prebid.createtids', false);
       }
 
+      const priorityBidders = getPriorityBidders(context.actualBidderRequests, context.requestedBidders);
+      if (priorityBidders.length > 0) {
+        // ext.prebid.as: ad server signals. ap: priority bids are allowed; apb: the bidders allowed to send them
+        deepSetValue(request, 'ext.prebid.as', { ap: true, apb: priorityBidders });
+      }
+
       return request;
     }
   },
@@ -252,6 +258,14 @@ const PBS_CONVERTER = ortbConverter({
   },
 });
 
+/**
+ * The bidders in this request whose deal metadata the publisher trusts, i.e. those whose bidder request has `allowPriorityBids`.
+ */
+export function getPriorityBidders(bidderRequests = [], requestedBidders = []) {
+  return requestedBidders.filter(bidder => bidder != null &&
+    bidderRequests.some(req => req.bidderCode === bidder && req.allowPriorityBids === true));
+}
+
 export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   const requestTimestamp = timestamp();
   const impIds = new Set();
@@ -307,7 +321,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     bidRequests: proxyBidRequests,
     context: {
       currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
-      ttl: s2sBidRequest.s2sConfig.defaultTtl || DEFAULT_S2S_TTL,
+      ttl: s2sBidRequest.s2sConfig.defaultTtl || s2sBidRequest.s2sConfig.defaultTTL || DEFAULT_S2S_TTL,
       requestTimestamp,
       s2sBidRequest: {
         ...s2sBidRequest,

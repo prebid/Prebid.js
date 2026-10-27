@@ -22,6 +22,7 @@ describe('betweenBidAdapterTests', function () {
     const request = spec.buildRequests(bidRequestData);
     const req_data = JSON.parse(request.data)[0].data;
     expect(req_data.bidid).to.equal('bid1234');
+    expect(req_data.fl).to.equal(0);
   });
 
   it('validate_video_params', function () {

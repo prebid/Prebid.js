@@ -782,6 +782,38 @@ describe('S2S Adapter', function () {
       });
     });
 
+    describe('allowPriorityBids', () => {
+      function makeRequest(allowPriorityBids) {
+        config.setConfig({ s2sConfig: CONFIG });
+        const bidRequests = BID_REQUESTS.map(req => ({ ...req, allowPriorityBids }));
+        adapter.callBids({ ...REQUEST, s2sConfig: CONFIG }, bidRequests, addBidResponse, done, ajax);
+        return JSON.parse(server.requests[0].requestBody);
+      }
+
+      it('sends ext.prebid.as with ap: true and the bidders whose requests allow priority bids as apb', () => {
+        expect(makeRequest(true).ext.prebid.as).to.eql({ ap: true, apb: ['appnexus'] });
+      });
+
+      Object.entries({
+        'not set': undefined,
+        'false': false,
+      }).forEach(([desc, allowPriorityBids]) => {
+        it(`does not send ext.prebid.as when allowPriorityBids is ${desc} on every bidder request`, () => {
+          expect(makeRequest(allowPriorityBids).ext.prebid.as).to.not.exist;
+        });
+      });
+
+      it('getPriorityBidders keeps only requested bidders, and ignores the null bidder of module-only requests', () => {
+        const bidderRequests = [
+          { bidderCode: 'appnexus', allowPriorityBids: true },
+          { bidderCode: 'other', allowPriorityBids: true },
+          { bidderCode: 'rubicon', allowPriorityBids: false },
+          { bidderCode: null, allowPriorityBids: false },
+        ];
+        expect(pbsOrtbConverter.getPriorityBidders(bidderRequests, [null, 'appnexus', 'rubicon'])).to.eql(['appnexus']);
+      });
+    });
+
     describe('browsingTopics', () => {
       const sandbox = sinon.createSandbox();
       afterEach(() => {
@@ -3588,6 +3620,22 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('ttl', 30);
     });
 
+    it('respects defaultTTL', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        defaultTTL: 30
+      });
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('ttl', 30);
+    });
+
     if (FEATURES.VIDEO) {
       it('handles OpenRTB video responses', function () {
         const s2sConfig = Object.assign({}, CONFIG, {
@@ -4611,10 +4659,50 @@ describe('S2S Adapter', function () {
             array: [{ id: 1 }, { id: 2 }]
           }
         }
+      },
+      {
+        t: 'concatenates schain nodes from global config and a bidder schain by default',
+        global: {
+          source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }] } } }
+        },
+        bidder: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        },
+        expected: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }, { asi: 'bidderA' }] } } }
+          }
+        }
+      },
+      {
+        t: 'does not merge schain nodes from global config into a bidder schain with firstPartyData.replaceGlobalSchain',
+        fpdConfig: { replaceGlobalSchain: true },
+        global: {
+          source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }] } } }
+        },
+        bidder: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        },
+        expected: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        }
       }
-    ].forEach(({ t, global, bidder, expected }) => {
+    ].forEach(({ t, global, bidder, expected, fpdConfig }) => {
       it(t, () => {
-        expect(getPBSBidderConfig({ global, bidder })).to.eql(expected);
+        if (fpdConfig) {
+          config.setConfig({ firstPartyData: fpdConfig });
+        }
+        try {
+          expect(getPBSBidderConfig({ global, bidder })).to.eql(expected);
+        } finally {
+          config.resetConfig();
+        }
       });
     });
   });

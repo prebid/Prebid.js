@@ -46,6 +46,7 @@ import * as events from './events.js';
 import { EVENTS, S2S } from './constants.js';
 import { type Metrics, useMetrics } from './utils/perfMetrics.js';
 import { auctionManager } from './auctionManager.js';
+import { bidderSettings } from './bidderSettings.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID } from './activities/modules.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS } from './activities/activities.js';
@@ -63,6 +64,7 @@ import type {
 } from "./types/common.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
+import { mergeBidderOrtb2 } from './fpd/merge.js';
 import type {
   AnalyticsConfig,
   AnalyticsProvider,
@@ -202,6 +204,12 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
   gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
   alwaysHasCapacity?: boolean;
+  /**
+   * Whether the publisher trusts the deal metadata (`bid.meta.deal`) of bids answering this request:
+   * from `s2sConfig.allowPriorityBids` for Prebid Server requests, `bidderSettings[bidderCode].allowPriorityBids` otherwise.
+   * Absent or false means the deal metadata is not trusted.
+   */
+  allowPriorityBids?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
@@ -549,9 +557,7 @@ const adapterManager = {
         }
         const [tid, tidSource] = getTid(bidderCode, auctionId, bidderOrtb2[bidderCode]?.source?.tid ?? ortb2.source?.tid);
         const fpd = Object.freeze(redact.ortb2(mergeDeep(
-          {},
-          ortb2,
-          bidderOrtb2[bidderCode],
+          mergeBidderOrtb2(ortb2, bidderOrtb2[bidderCode]),
           {
             source: {
               tid,
@@ -657,6 +663,7 @@ const adapterManager = {
             refererInfo,
             metrics,
             alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
+            allowPriorityBids: bidderCode != null && Array.isArray(s2sConfig.allowPriorityBids) && s2sConfig.allowPriorityBids.includes(bidderCode),
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);
@@ -707,6 +714,8 @@ const adapterManager = {
         metrics,
         src: 'client',
         alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
+        // adapter-specific settings only: `standard` must not opt every adapter in
+        allowPriorityBids: bidderSettings.getOwn(bidderCode, 'allowPriorityBids') === true,
       });
       if (!adapter) {
         logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
