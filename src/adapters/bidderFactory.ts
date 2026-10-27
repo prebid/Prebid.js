@@ -302,6 +302,8 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
+      const allowTopWindowRenderers = !!(config.getConfig('allowTopWindowRenderers') ?? true);
+      bidderRequest.bids.forEach(bid => { bid.allowTopWindowRenderers = allowTopWindowRenderers; });
       const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};

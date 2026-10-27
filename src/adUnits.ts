@@ -55,6 +55,8 @@ export interface BaseAdUnitBidDefinition {
    * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this bidder or module.
    */
   renderer?: RendererConfig;
+  /** Safe iframe renderer for this bidder or module, overriding the ad unit's configuration. */
+  safeRenderer?: SafeRendererConfig;
   /**
    * OpenRTB first-party data specific to this bidder or module. This is merged with, and takes precedence over, adUnit.ortb2Imp.
    */

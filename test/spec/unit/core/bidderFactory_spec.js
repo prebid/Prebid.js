@@ -347,6 +347,121 @@ describe('bidderFactory', () => {
         });
       });
 
+      describe('allowTopWindowRenderers policy', () => {
+        let validationPolicies, buildPolicies, bidderRequestPolicies, bidderScopes;
+
+        beforeEach(() => {
+          config.resetConfig();
+          validationPolicies = [];
+          buildPolicies = [];
+          bidderRequestPolicies = [];
+          bidderScopes = [];
+          spec.isBidRequestValid.callsFake(bid => {
+            validationPolicies.push(bid.allowTopWindowRenderers);
+            bidderScopes.push(config.getCurrentBidder());
+            return true;
+          });
+          spec.buildRequests.callsFake((bids, bidderRequest) => {
+            buildPolicies.push(bids.map(bid => bid.allowTopWindowRenderers));
+            bidderRequestPolicies.push(bidderRequest.bids.map(bid => bid.allowTopWindowRenderers));
+            bidderScopes.push(config.getCurrentBidder());
+            return [];
+          });
+        });
+
+        afterEach(() => {
+          config.resetConfig();
+        });
+
+        function makeRequest(bidderCode = CODE) {
+          return { ...utils.deepClone(MOCK_BIDS_REQUEST), bidderCode };
+        }
+
+        function callBidder(bidder, request) {
+          config.runWithBidder(request.bidderCode, () => {
+            bidder.callBids(request, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub,
+              config.callbackWithBidder(request.bidderCode));
+          });
+        }
+
+        [
+          { value: undefined, expected: true },
+          { value: null, expected: true },
+          { value: true, expected: true },
+          { value: false, expected: false },
+          { value: 0, expected: false },
+          { value: 'false', expected: true }
+        ].forEach(({ value, expected }) => {
+          it(`should expose ${expected} to validation and buildRequests for config ${String(value)}`, () => {
+            if (value !== undefined) {
+              config.setConfig({ allowTopWindowRenderers: value });
+            }
+            const request = makeRequest();
+            request.bids[0].allowTopWindowRenderers = !expected;
+
+            callBidder(newBidder(spec), request);
+
+            expect(validationPolicies).to.deep.equal([expected, expected]);
+            expect(buildPolicies).to.deep.equal([[expected, expected]]);
+            expect(bidderRequestPolicies).to.deep.equal([[expected, expected]]);
+            expect(bidderScopes).to.deep.equal([CODE, CODE, CODE]);
+            expect(config.getConfig('allowTopWindowRenderers')).to.equal(value);
+            expect(config.getCurrentBidder()).to.equal(null);
+            sinon.assert.calledTwice(spec.isBidRequestValid);
+            sinon.assert.calledOnce(spec.buildRequests);
+            sinon.assert.calledOnce(doneStub);
+            sinon.assert.notCalled(ajaxStub);
+          });
+        });
+
+        [false, true].forEach(globalPolicy => {
+          it(`should respect a bidder override of ${!globalPolicy} without leaking into other calls`, () => {
+            const otherCode = 'otherBidder';
+            const override = !globalPolicy;
+            config.setConfig({ allowTopWindowRenderers: globalPolicy });
+            config.setBidderConfig({ bidders: [CODE], config: { allowTopWindowRenderers: override } });
+            const bidder = newBidder(spec);
+            const otherBidder = newBidder({ ...spec, code: otherCode });
+            const setConfigSpy = sandbox.spy(config, 'setConfig');
+            const setBidderConfigSpy = sandbox.spy(config, 'setBidderConfig');
+
+            [
+              [bidder, CODE],
+              [otherBidder, otherCode],
+              [bidder, CODE]
+            ].forEach(([adapter, code]) => {
+              callBidder(adapter, makeRequest(code));
+              expect(config.getConfig('allowTopWindowRenderers')).to.equal(globalPolicy);
+              expect(config.getCurrentBidder()).to.equal(null);
+            });
+
+            expect(validationPolicies).to.deep.equal([override, override, globalPolicy, globalPolicy, override, override]);
+            expect(buildPolicies).to.deep.equal([[override, override], [globalPolicy, globalPolicy], [override, override]]);
+            expect(bidderRequestPolicies).to.deep.equal(buildPolicies);
+            expect(bidderScopes).to.deep.equal([CODE, CODE, CODE, otherCode, otherCode, otherCode, CODE, CODE, CODE]);
+            expect(config.runWithBidder(CODE, () => config.getConfig('allowTopWindowRenderers'))).to.equal(override);
+            sinon.assert.notCalled(setConfigSpy);
+            sinon.assert.notCalled(setBidderConfigSpy);
+            sinon.assert.notCalled(ajaxStub);
+          });
+        });
+
+        it('should refresh the policy when the same bid requests are reused after a config change', () => {
+          const bidder = newBidder(spec);
+          const request = makeRequest();
+
+          [true, false, null].forEach(value => {
+            config.setConfig({ allowTopWindowRenderers: value });
+            callBidder(bidder, request);
+          });
+
+          expect(validationPolicies).to.deep.equal([true, true, false, false, true, true]);
+          expect(buildPolicies).to.deep.equal([[true, true], [false, false], [true, true]]);
+          expect(bidderRequestPolicies).to.deep.equal(buildPolicies);
+          sinon.assert.notCalled(ajaxStub);
+        });
+      });
+
       it('should handle bad bid requests gracefully', function () {
         const bidder = newBidder(spec);
 
