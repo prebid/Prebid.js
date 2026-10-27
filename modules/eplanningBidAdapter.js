@@ -1,14 +1,14 @@
-import {isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
+import { isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { serializeSupplyChain } from '../libraries/schainSerializer/schainSerializer.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'eplanning';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const rnd = Math.random();
 const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
@@ -166,7 +166,7 @@ export const spec = {
           syncs.push({
             type: 'iframe',
             url: sync.u,
-          })
+          });
         }
       });
     }
@@ -298,7 +298,7 @@ function getSpaces(bidRequests, ml) {
   }
 
   const spacesStruct = getSpacesStruct(bidRequests);
-  const es = {str: '', vs: '', map: {}, impType: impType};
+  const es = { str: '', vs: '', map: {}, impType: impType };
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 
@@ -420,6 +420,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 }
 
 function _getAdSlotHTMLElement(adUnitCode) {
+  // TODO: this should use getAdUnitElement
   return document.getElementById(adUnitCode) ||
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
@@ -477,7 +478,7 @@ function getViewabilityTracker() {
   function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
     const visibleIntervals = observedElementIsVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
     if (visibleIntervals === TIME_PARTITIONS) {
-      stopObserveViewability(element)
+      stopObserveViewability(element);
       callback();
     } else {
       setTimeout(processIntervalVisibilityStatus.bind(this, visibleIntervals, element, callback), VIEWABILITY_TIME / TIME_PARTITIONS);

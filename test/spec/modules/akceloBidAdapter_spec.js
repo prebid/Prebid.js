@@ -147,7 +147,7 @@ describe('Akcelo bid adapter tests', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.imp[0].ext.akcelo.siteId).to.be.undefined;
       expect(utils.logError.calledOnce).to.equal(true);
-      expect(utils.logError.args[0][0]).to.equal('Missing parameter : siteId')
+      expect(utils.logError.args[0][0]).to.equal('Missing parameter : siteId');
     });
 
     it('should not add ext.akcelo.adUnitId to imp object when adUnitId is not defined', () => {
@@ -158,7 +158,7 @@ describe('Akcelo bid adapter tests', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.imp[0].ext.akcelo.adUnitId).to.be.undefined;
       expect(utils.logError.calledOnce).to.equal(true);
-      expect(utils.logError.args[0][0]).to.equal('Missing parameter : adUnitId')
+      expect(utils.logError.args[0][0]).to.equal('Missing parameter : adUnitId');
     });
 
     it('should add ext.akcelo.test=1 to imp object when param akcelo_demo is true', () => {

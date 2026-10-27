@@ -1,15 +1,15 @@
-import {deepClone, getParameterByName, logError, logInfo} from '../src/utils.js';
+import { deepClone, getParameterByName, logError, logInfo } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 
-import {ajaxBuilder} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE_CODE = 'roxot';
 
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 const ajax = ajaxBuilder(0);
 
@@ -310,8 +310,8 @@ function handleOtherEvents(eventType, args) {
   registerEvent(eventType, eventType, args);
 }
 
-const roxotAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
-  track({eventType, args}) {
+const roxotAdapter = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
+  track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         handleAuctionInit(args);

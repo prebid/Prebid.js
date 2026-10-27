@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import {
   getImp,
   setImpPos,
@@ -21,14 +22,14 @@ describe('nextMillenniumBidAdapterTests', () => {
           impId: '5',
           id: '123',
           bid: {
-            mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
+            mediaTypes: { banner: { sizes: [[300, 250], [320, 250]] } },
             adUnitCode: 'test-banner-1',
             bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
             banner: {
-              data: {sizes: [[300, 250], [320, 250]]},
+              data: { sizes: [[300, 250], [320, 250]] },
               bidfloorcur: 'EUR',
               bidfloor: 1.11,
               pos: 3,
@@ -40,12 +41,12 @@ describe('nextMillenniumBidAdapterTests', () => {
           id: '5',
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
-          ext: {prebid: {storedrequest: {id: '123'}}},
+          ext: { prebid: { storedrequest: { id: '123' } } },
           banner: {
             pos: 3,
             w: 300,
             h: 250,
-            format: [{w: 300, h: 250}, {w: 320, h: 250}],
+            format: [{ w: 300, h: 250 }, { w: 320, h: 250 }],
           },
         },
       },
@@ -56,14 +57,14 @@ describe('nextMillenniumBidAdapterTests', () => {
           impId: '3',
           id: '234',
           bid: {
-            mediaTypes: {video: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1}},
+            mediaTypes: { video: { playerSize: [400, 300], api: [2], placement: 1, plcmt: 1 } },
             adUnitCode: 'test-video-1',
             bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
             video: {
-              data: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1},
+              data: { playerSize: [400, 300], api: [2], placement: 1, plcmt: 1 },
               bidfloorcur: 'USD',
               pos: 0,
             },
@@ -73,7 +74,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         expected: {
           id: '3',
           bidfloorcur: 'USD',
-          ext: {prebid: {storedrequest: {id: '234'}}},
+          ext: { prebid: { storedrequest: { id: '234' } } },
           video: {
             mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript'],
             api: [2],
@@ -92,13 +93,13 @@ describe('nextMillenniumBidAdapterTests', () => {
           impId: '4',
           id: '234',
           bid: {
-            mediaTypes: {video: {w: 640, h: 480}},
+            mediaTypes: { video: { w: 640, h: 480 } },
             bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
             video: {
-              data: {w: 640, h: 480},
+              data: { w: 640, h: 480 },
               bidfloorcur: 'USD',
             },
           },
@@ -107,8 +108,8 @@ describe('nextMillenniumBidAdapterTests', () => {
         expected: {
           id: '4',
           bidfloorcur: 'USD',
-          ext: {prebid: {storedrequest: {id: '234'}}},
-          video: {w: 640, h: 480, mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript']},
+          ext: { prebid: { storedrequest: { id: '234' } } },
+          video: { w: 640, h: 480, mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript'] },
         },
       },
 
@@ -118,15 +119,15 @@ describe('nextMillenniumBidAdapterTests', () => {
           impId: '2',
           id: '123',
           bid: {
-            mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
+            mediaTypes: { banner: { sizes: [[300, 250], [320, 250]] } },
             adUnitCode: 'test-gpid-1',
             bidId: 'e36ea395f67a',
-            ortb2Imp: {ext: {gpid: 'imp-gpid-123'}},
+            ortb2Imp: { ext: { gpid: 'imp-gpid-123' } },
           },
 
           mediaTypes: {
             banner: {
-              data: {sizes: [[300, 250], [320, 250]]},
+              data: { sizes: [[300, 250], [320, 250]] },
             },
           },
         },
@@ -134,10 +135,10 @@ describe('nextMillenniumBidAdapterTests', () => {
         expected: {
           id: '2',
           ext: {
-            prebid: {storedrequest: {id: '123'}},
+            prebid: { storedrequest: { id: '123' } },
             gpid: 'imp-gpid-123'
           },
-          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+          banner: { w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 320, h: 250 }] },
         },
       },
 
@@ -147,7 +148,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           impId: '1',
           id: '123',
           bid: {
-            mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
+            mediaTypes: { banner: { sizes: [[300, 250], [320, 250]] } },
             adUnitCode: 'test-gpid-1',
             bidId: 'e36ea395f67a',
             ortb2Imp: {
@@ -161,7 +162,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
           mediaTypes: {
             banner: {
-              data: {sizes: [[300, 250], [320, 250]]},
+              data: { sizes: [[300, 250], [320, 250]] },
             },
           },
         },
@@ -169,16 +170,16 @@ describe('nextMillenniumBidAdapterTests', () => {
         expected: {
           id: '1',
           ext: {
-            prebid: {storedrequest: {id: '123'}},
+            prebid: { storedrequest: { id: '123' } },
           },
-          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+          banner: { w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 320, h: 250 }] },
         },
       },
     ];
 
-    for (const {title, data, expected} of dataTests) {
+    for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const {impId, bid, id, mediaTypes} = data;
+        const { impId, bid, id, mediaTypes } = data;
         const imp = getImp(impId, bid, id, mediaTypes);
         expect(imp).to.deep.equal(expected);
       });
@@ -190,13 +191,13 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'position is - 1',
         pos: 0,
-        expected: {pos: 0},
+        expected: { pos: 0 },
       },
 
       {
         title: 'position is - 2',
         pos: 7,
-        expected: {pos: 7},
+        expected: { pos: 7 },
       },
 
       {
@@ -205,7 +206,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (const {title, pos, expected} of tests) {
+    for (const { title, pos, expected } of tests) {
       it(title, () => {
         const obj = {};
         setImpPos(obj, pos);
@@ -235,7 +236,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                   config: {
                     ver: '1.0',
                     complete: 1,
-                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                    nodes: [{ asi: 'test.test', sid: '00001', hp: 1 }],
                   },
                 },
               },
@@ -249,7 +250,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             config: {
               ver: '1.0',
               complete: 1,
-              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+              nodes: [{ asi: 'test.test', sid: '00001', hp: 1 }],
             },
           },
         },
@@ -265,7 +266,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                 config: {
                   ver: '1.0',
                   complete: 1,
-                  nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  nodes: [{ asi: 'test.test', sid: '00001', hp: 1 }],
                 },
               },
             },
@@ -279,7 +280,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             config: {
               ver: '1.0',
               complete: 1,
-              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+              nodes: [{ asi: 'test.test', sid: '00001', hp: 1 }],
             },
           },
         },
@@ -296,7 +297,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                   config: {
                     ver: '1.0',
                     complete: 1,
-                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                    nodes: [{ asi: 'test.test', sid: '00001', hp: 1 }],
                   },
                 },
               },
@@ -311,14 +312,14 @@ describe('nextMillenniumBidAdapterTests', () => {
             config: {
               ver: '1.0',
               complete: 1,
-              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+              nodes: [{ asi: 'test.test', sid: '00001', hp: 1 }],
             },
           },
         },
       },
     ];
 
-    for (const {title, validBidRequests, bidderRequest, expected} of dataTests) {
+    for (const { title, validBidRequests, bidderRequest, expected } of dataTests) {
       it(title, () => {
         const source = getSourceObj(validBidRequests, bidderRequest);
         expect(source).to.deep.equal(expected);
@@ -334,14 +335,14 @@ describe('nextMillenniumBidAdapterTests', () => {
           postBody: {},
           bidderRequest: {
             uspConsent: '1---',
-            gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
-            gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 1}},
+            gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7] },
+            gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
+            ortb2: { regs: { gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 1 } },
           },
         },
 
         expected: {
-          user: {consent: 'kjfdniwjnifwenrif3'},
+          user: { consent: 'kjfdniwjnifwenrif3' },
           regs: {
             gpp: 'DBACNYA~CPXxRfAPXxR',
             gpp_sid: [7],
@@ -357,13 +358,13 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           postBody: {},
           bidderRequest: {
-            gdprConsent: {consentString: 'ewtewbefbawyadexv', gdprApplies: false},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 0}},
+            gdprConsent: { consentString: 'ewtewbefbawyadexv', gdprApplies: false },
+            ortb2: { regs: { gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 0 } },
           },
         },
 
         expected: {
-          user: {consent: 'ewtewbefbawyadexv'},
+          user: { consent: 'ewtewbefbawyadexv' },
           regs: {
             gpp: 'DSFHFHWEUYVDC',
             gpp_sid: [8, 9, 10],
@@ -377,11 +378,11 @@ describe('nextMillenniumBidAdapterTests', () => {
         title: 'gdprConsent(false)',
         data: {
           postBody: {},
-          bidderRequest: {gdprConsent: {gdprApplies: false}},
+          bidderRequest: { gdprConsent: { gdprApplies: false } },
         },
 
         expected: {
-          regs: {gdpr: 0},
+          regs: { gdpr: 0 },
         },
       },
 
@@ -396,9 +397,9 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (const {title, data, expected} of dataTests) {
+    for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const {postBody, bidderRequest} = data;
+        const { postBody, bidderRequest } = data;
         setConsentStrings(postBody, bidderRequest);
         expect(postBody).to.deep.equal(expected);
       });
@@ -412,8 +413,8 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           url: 'https://some.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}',
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
           type: 'image',
         },
 
@@ -425,8 +426,8 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           url: 'https://some.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&type={{.TYPE_PIXEL}}',
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: false},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: false },
           type: 'iframe',
         },
 
@@ -438,8 +439,8 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           url: 'https://some.url?param1=value1&param2=value2',
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: false},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: false },
           type: 'iframe',
         },
 
@@ -456,9 +457,9 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (const {title, data, expected} of dataTests) {
+    for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const {url, gdprConsent, uspConsent, gppConsent, type} = data;
+        const { url, gdprConsent, uspConsent, gppConsent, type } = data;
         const newUrl = replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type);
         expect(newUrl).to.equal(expected);
       });
@@ -470,159 +471,189 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'pixels from responses ({iframeEnabled: true, pixelEnabled: true})',
         data: {
-          syncOptions: {iframeEnabled: true, pixelEnabled: true},
+          syncOptions: { iframeEnabled: true, pixelEnabled: true },
           responses: [
-            {body: {ext: {sync: {
-              image: [
-                'https://some.1.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.2.url?us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.3.url?param=1234',
-              ],
+            {
+              body: {
+                ext: {
+                  sync: {
+                    image: [
+                      'https://some.1.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.2.url?us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.3.url?param=1234',
+                    ],
 
-              iframe: [
-                'https://some.4.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.5.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
-              ],
-            }}}},
+                    iframe: [
+                      'https://some.4.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.5.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
+                    ],
+                  }
+                }
+              }
+            },
 
-            {body: {ext: {sync: {
-              iframe: [
-                'https://some.6.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.7.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
-              ],
-            }}}},
+            {
+              body: {
+                ext: {
+                  sync: {
+                    iframe: [
+                      'https://some.6.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.7.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
+                    ],
+                  }
+                }
+              }
+            },
 
-            {body: {ext: {sync: {
-              image: [
-                'https://some.8.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-              ],
-            }}}},
+            {
+              body: {
+                ext: {
+                  sync: {
+                    image: [
+                      'https://some.8.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                    ],
+                  }
+                }
+              }
+            },
           ],
 
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
         },
 
         expected: [
-          {type: 'image', url: 'https://some.1.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
-          {type: 'image', url: 'https://some.2.url?us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
-          {type: 'image', url: 'https://some.3.url?param=1234'},
-          {type: 'iframe', url: 'https://some.4.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
-          {type: 'iframe', url: 'https://some.5.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---'},
-          {type: 'iframe', url: 'https://some.6.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
-          {type: 'iframe', url: 'https://some.7.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---'},
-          {type: 'image', url: 'https://some.8.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
+          { type: 'image', url: 'https://some.1.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
+          { type: 'image', url: 'https://some.2.url?us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
+          { type: 'image', url: 'https://some.3.url?param=1234' },
+          { type: 'iframe', url: 'https://some.4.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
+          { type: 'iframe', url: 'https://some.5.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---' },
+          { type: 'iframe', url: 'https://some.6.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
+          { type: 'iframe', url: 'https://some.7.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---' },
+          { type: 'image', url: 'https://some.8.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
         ],
       },
 
       {
         title: 'pixels from responses ({iframeEnabled: true, pixelEnabled: false})',
         data: {
-          syncOptions: {iframeEnabled: true, pixelEnabled: false},
+          syncOptions: { iframeEnabled: true, pixelEnabled: false },
           responses: [
-            {body: {ext: {sync: {
-              image: [
-                'https://some.1.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.2.url?us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.3.url?param=1234',
-              ],
+            {
+              body: {
+                ext: {
+                  sync: {
+                    image: [
+                      'https://some.1.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.2.url?us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.3.url?param=1234',
+                    ],
 
-              iframe: [
-                'https://some.4.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.5.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
-              ],
-            }}}},
+                    iframe: [
+                      'https://some.4.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.5.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
+                    ],
+                  }
+                }
+              }
+            },
           ],
 
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
         },
 
         expected: [
-          {type: 'iframe', url: 'https://some.4.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
-          {type: 'iframe', url: 'https://some.5.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---'},
+          { type: 'iframe', url: 'https://some.4.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
+          { type: 'iframe', url: 'https://some.5.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---' },
         ],
       },
 
       {
         title: 'pixels from responses ({iframeEnabled: false, pixelEnabled: true})',
         data: {
-          syncOptions: {iframeEnabled: false, pixelEnabled: true},
+          syncOptions: { iframeEnabled: false, pixelEnabled: true },
           responses: [
-            {body: {ext: {sync: {
-              image: [
-                'https://some.1.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.2.url?us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.3.url?param=1234',
-              ],
+            {
+              body: {
+                ext: {
+                  sync: {
+                    image: [
+                      'https://some.1.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.2.url?us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.3.url?param=1234',
+                    ],
 
-              iframe: [
-                'https://some.4.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
-                'https://some.5.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
-              ],
-            }}}},
+                    iframe: [
+                      'https://some.4.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}',
+                      'https://some.5.url?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}',
+                    ],
+                  }
+                }
+              }
+            },
           ],
 
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
         },
 
         expected: [
-          {type: 'image', url: 'https://some.1.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
-          {type: 'image', url: 'https://some.2.url?us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8'},
-          {type: 'image', url: 'https://some.3.url?param=1234'},
+          { type: 'image', url: 'https://some.1.url?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
+          { type: 'image', url: 'https://some.2.url?us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8' },
+          { type: 'image', url: 'https://some.3.url?param=1234' },
         ],
       },
 
       {
         title: 'pixels - responses is empty ({iframeEnabled: true, pixelEnabled: true})',
         data: {
-          syncOptions: {iframeEnabled: true, pixelEnabled: true},
+          syncOptions: { iframeEnabled: true, pixelEnabled: true },
           responses: [],
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
         },
 
         expected: [
-          {type: 'image', url: 'https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8&type=image'},
-          {type: 'iframe', url: 'https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8&type=iframe'},
+          { type: 'image', url: 'https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8&type=image' },
+          { type: 'iframe', url: 'https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8&type=iframe' },
         ],
       },
 
       {
         title: 'pixels - responses is empty ({iframeEnabled: true, pixelEnabled: false})',
         data: {
-          syncOptions: {iframeEnabled: true, pixelEnabled: false},
+          syncOptions: { iframeEnabled: true, pixelEnabled: false },
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
         },
 
         expected: [
-          {type: 'iframe', url: 'https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8&type=iframe'},
+          { type: 'iframe', url: 'https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7,8&type=iframe' },
         ],
       },
 
       {
         title: 'pixels - responses is empty ({iframeEnabled: false, pixelEnabled: false})',
         data: {
-          syncOptions: {iframeEnabled: false, pixelEnabled: false},
+          syncOptions: { iframeEnabled: false, pixelEnabled: false },
           uspConsent: '1---',
-          gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8]},
-          gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
+          gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7, 8] },
+          gdprConsent: { consentString: 'kjfdniwjnifwenrif3', gdprApplies: true },
         },
 
         expected: [],
       },
     ];
 
-    for (const {title, data, expected} of dataTests) {
+    for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const {syncOptions, responses, gdprConsent, uspConsent, gppConsent} = data;
+        const { syncOptions, responses, gdprConsent, uspConsent, gppConsent } = data;
         const pixels = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent);
         expect(pixels).to.deep.equal(expected);
       });
@@ -642,7 +673,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             wlangb: ['en', 'fr', 'de'],
             site: {
               pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-              content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+              content: { cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN' },
             }
           },
         },
@@ -653,7 +684,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           wlang: ['en', 'fr', 'de'],
           site: {
             pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+            content: { cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN' },
           }
         },
       },
@@ -664,20 +695,20 @@ describe('nextMillenniumBidAdapterTests', () => {
           postBody: {},
           ortb2: {
             wlangb: ['en', 'fr', 'de'],
-            user: {keywords: 'key7,key8,key9'},
+            user: { keywords: 'key7,key8,key9' },
             site: {
               keywords: 'key1,key2,key3',
-              content: {keywords: 'key4,key5,key6'},
+              content: { keywords: 'key4,key5,key6' },
             },
           },
         },
 
         expected: {
           wlangb: ['en', 'fr', 'de'],
-          user: {keywords: 'key7,key8,key9'},
+          user: { keywords: 'key7,key8,key9' },
           site: {
             keywords: 'key1,key2,key3',
-            content: {keywords: 'key4,key5,key6'},
+            content: { keywords: 'key4,key5,key6' },
           },
         },
       },
@@ -685,31 +716,35 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'only site.content.language',
         data: {
-          postBody: {site: {domain: 'some.domain'}},
-          ortb2: {site: {
-            content: {language: 'EN'},
-          }},
+          postBody: { site: { domain: 'some.domain' } },
+          ortb2: {
+            site: {
+              content: { language: 'EN' },
+            }
+          },
         },
 
-        expected: {site: {
-          domain: 'some.domain',
-          content: {language: 'EN'},
-        }},
+        expected: {
+          site: {
+            domain: 'some.domain',
+            content: { language: 'EN' },
+          }
+        },
       },
 
       {
         title: 'object ortb2 is empty',
         data: {
-          postBody: {imp: []},
+          postBody: { imp: [] },
         },
 
-        expected: {imp: []},
+        expected: { imp: [] },
       },
     ];
 
-    for (const {title, data, expected} of dataTests) {
+    for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const {postBody, ortb2} = data;
+        const { postBody, ortb2 } = data;
         setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, ortb2);
         expect(postBody).to.deep.equal(expected);
       });
@@ -755,12 +790,12 @@ describe('nextMillenniumBidAdapterTests', () => {
               userIdAsEids: [
                 {
                   source: '33across.com',
-                  uids: [{id: 'some-random-id-value', atype: 1}],
+                  uids: [{ id: 'some-random-id-value', atype: 1 }],
                 },
 
                 {
                   source: 'utiq.com',
-                  uids: [{id: 'some-random-id-value', atype: 1}],
+                  uids: [{ id: 'some-random-id-value', atype: 1 }],
                 },
               ],
             },
@@ -769,7 +804,7 @@ describe('nextMillenniumBidAdapterTests', () => {
               userIdAsEids: [
                 {
                   source: 'test.test',
-                  uids: [{id: 'some-random-id-value', atype: 1}],
+                  uids: [{ id: 'some-random-id-value', atype: 1 }],
                 },
               ],
             },
@@ -781,12 +816,12 @@ describe('nextMillenniumBidAdapterTests', () => {
             eids: [
               {
                 source: '33across.com',
-                uids: [{id: 'some-random-id-value', atype: 1}],
+                uids: [{ id: 'some-random-id-value', atype: 1 }],
               },
 
               {
                 source: 'utiq.com',
-                uids: [{id: 'some-random-id-value', atype: 1}],
+                uids: [{ id: 'some-random-id-value', atype: 1 }],
               },
             ],
           },
@@ -868,7 +903,7 @@ describe('nextMillenniumBidAdapterTests', () => {
   }
 
   describe('check parameters group_id or placement_id', function() {
-    let numberTest = 0
+    let numberTest = 0;
     for (const test of bidRequestDataGI) {
       it(`test - ${++numberTest}`, () => {
         const request = spec.buildRequests([test]);
@@ -901,17 +936,17 @@ describe('nextMillenniumBidAdapterTests', () => {
     const expectedNextMilImps = [
       {
         impId: '1',
-        nextMillennium: {refresh_count: 1},
+        nextMillennium: { refresh_count: 1 },
       },
 
       {
         impId: '2',
-        nextMillennium: {refresh_count: 1},
+        nextMillennium: { refresh_count: 1 },
       },
 
       {
         impId: '3',
-        nextMillennium: {refresh_count: 1},
+        nextMillennium: { refresh_count: 1 },
       },
     ];
 
@@ -924,7 +959,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           const nextMilImp = bidRequest.ext.next_mil_imps[i];
           expect(nextMilImp.impId).to.deep.equal(expectedNextMilImps[i].impId);
           expect(nextMilImp.nextMillennium.refresh_count).to.deep.equal(expectedNextMilImps[i].nextMillennium.refresh_count + j);
-        })
+        });
       };
     };
   });
@@ -936,7 +971,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         eventName: 'bidRequested',
         bids: {
           bidderCode: 'appnexus',
-          bids: [{bidder: 'appnexus', params: {}}],
+          bids: [{ bidder: 'appnexus', params: {} }],
         },
 
         expected: undefined,
@@ -947,7 +982,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         eventName: 'bidRequested',
         bids: {
           bidderCode: 'appnexus',
-          bids: [{bidder: 'appnexus', params: {placement_id: '807'}}],
+          bids: [{ bidder: 'appnexus', params: { placement_id: '807' } }],
         },
 
         expected: undefined,
@@ -958,7 +993,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         eventName: 'bidRequested',
         bids: {
           bidderCode: 'nextMillennium',
-          bids: [{bidder: 'nextMillennium', params: {placement_id: '807'}}],
+          bids: [{ bidder: 'nextMillennium', params: { placement_id: '807' } }],
         },
 
         expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
@@ -970,8 +1005,8 @@ describe('nextMillenniumBidAdapterTests', () => {
         bids: {
           bidderCode: 'nextMillennium',
           bids: [
-            {bidder: 'nextMillennium', params: {placement_id: '807'}},
-            {bidder: 'nextMillennium', params: {placement_id: '111'}},
+            { bidder: 'nextMillennium', params: { placement_id: '807' } },
+            { bidder: 'nextMillennium', params: { placement_id: '111' } },
           ],
         },
 
@@ -983,7 +1018,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         eventName: 'bidRequested',
         bids: {
           bidderCode: 'nextMillennium',
-          bids: [{bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}}],
+          bids: [{ bidder: 'nextMillennium', params: { placement_id: '807', group_id: '123' } }],
         },
 
         expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
@@ -995,9 +1030,9 @@ describe('nextMillenniumBidAdapterTests', () => {
         bids: {
           bidderCode: 'nextMillennium',
           bids: [
-            {bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}},
-            {bidder: 'nextMillennium', params: {group_id: '456'}},
-            {bidder: 'nextMillennium', params: {placement_id: '222'}},
+            { bidder: 'nextMillennium', params: { placement_id: '807', group_id: '123' } },
+            { bidder: 'nextMillennium', params: { group_id: '456' } },
+            { bidder: 'nextMillennium', params: { placement_id: '222' } },
           ],
         },
 
@@ -1019,7 +1054,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         eventName: 'bidResponse',
         bids: {
           bidderCode: 'nextMillennium',
-          params: {placement_id: '807'},
+          params: { placement_id: '807' },
         },
 
         expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
@@ -1040,7 +1075,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         eventName: 'noBid',
         bids: {
           bidder: 'nextMillennium',
-          params: {placement_id: '807'},
+          params: { placement_id: '807' },
         },
 
         expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
@@ -1061,7 +1096,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         eventName: 'bidTimeout',
         bids: {
           bidder: 'nextMillennium',
-          params: {placement_id: '807'},
+          params: { placement_id: '807' },
         },
 
         expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
@@ -1074,20 +1109,20 @@ describe('nextMillenniumBidAdapterTests', () => {
           {
             bidderCode: 'nextMillennium',
             bids: [
-              {bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}},
-              {bidder: 'nextMillennium', params: {group_id: '456'}},
-              {bidder: 'nextMillennium', params: {placement_id: '222'}},
+              { bidder: 'nextMillennium', params: { placement_id: '807', group_id: '123' } },
+              { bidder: 'nextMillennium', params: { group_id: '456' } },
+              { bidder: 'nextMillennium', params: { placement_id: '222' } },
             ],
           },
 
           {
             bidderCode: 'nextMillennium',
-            params: {group_id: '7777'},
+            params: { group_id: '7777' },
           },
 
           {
             bidderCode: 'nextMillennium',
-            params: {placement_id: '8888'},
+            params: { placement_id: '8888' },
           },
         ],
 
@@ -1095,7 +1130,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (const {title, eventName, bids, expected} of dataForTests) {
+    for (const { title, eventName, bids, expected } of dataForTests) {
       it(title, () => {
         const url = spec._getUrlPixelMetric(eventName, bids);
         expect(url).to.equal(expected);
@@ -1107,7 +1142,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     const tests = [
       {
         title: 'test - 1',
-        bidderRequest: {bidderRequestId: 'mock-uuid', timeout: 1200},
+        bidderRequest: { bidderRequestId: 'mock-uuid', timeout: 1200 },
         bidRequests: [
           {
             adUnitCode: 'test-div',
@@ -1117,7 +1152,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             params: { placement_id: '-1' },
             sizes: [[300, 250]],
             uspConsent: '1---',
-            gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
+            gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7] },
             gdprConsent: {
               consentString: 'kjfdniwjnifwenrif3',
               gdprApplies: true
@@ -1144,7 +1179,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             params: { placement_id: '333' },
             sizes: [[300, 250]],
             uspConsent: '1---',
-            gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
+            gppConsent: { gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7] },
             gdprConsent: {
               consentString: 'kjfdniwjnifwenrif3',
               gdprApplies: true
@@ -1174,7 +1209,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (const {title, bidRequests, bidderRequest, expected} of tests) {
+    for (const { title, bidRequests, bidderRequest, expected } of tests) {
       it(title, () => {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.length).to.equal(expected.requestSize);
@@ -1223,7 +1258,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                     adomain: ['test.addomain.com'],
                     w: 400,
                     h: 300,
-                    ext: {prebid: {type: 'video'}},
+                    ext: { prebid: { type: 'video' } },
                   },
 
                   {
@@ -1235,7 +1270,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                     adomain: ['test.addomain.com'],
                     w: 640,
                     h: 480,
-                    ext: {prebid: {type: 'video'}},
+                    ext: { prebid: { type: 'video' } },
                   },
                 ],
               },
@@ -1295,14 +1330,14 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (const {title, serverResponse, bidRequest, expected} of tests) {
+    for (const { title, serverResponse, bidRequest, expected } of tests) {
       describe(title, () => {
         const bids = spec.interpretResponse(serverResponse, bidRequest);
         for (let i = 0; i < bids.length; i++) {
           it(expected[i].title, () => {
             expect(bids).to.have.lengthOf(expected.length);
 
-            const bid = bids[i]
+            const bid = bids[i];
             expect(bid.creativeId).to.equal(expected[i].creativeId);
             expect(bid.requestId).to.equal(expected[i].requestId);
             expect(bid.ad).to.equal(expected[i].ad);
@@ -1350,7 +1385,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (const {title, impId, bid, expected} of tests) {
+    for (const { title, impId, bid, expected } of tests) {
       it(title, () => {
         const extNextMilImp = getExtNextMilImp(impId, bid);
         expect(extNextMilImp.impId).to.deep.equal(expected.impId);
@@ -1358,5 +1393,14 @@ describe('nextMillenniumBidAdapterTests', () => {
         expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
+
+    it('reports the scroll offset from getWinDimensions', () => {
+      const stub = sinon.stub(winDimensions, 'getWinDimensions').returns({ scrollY: 1234 });
+      try {
+        expect(getExtNextMilImp('1', { params: {} }).nextMillennium.scrollTop).to.equal(1234);
+      } finally {
+        stub.restore();
+      }
+    });
   });
 });

@@ -25,20 +25,20 @@ function isBidResponseValid(bidResponse) {
       break;
     case NATIVE:
       if (!bidResponse.native.hasOwnProperty('impressionTrackers')) {
-        return false
+        return false;
       }
       break;
     default:
-      return false
+      return false;
   }
 
   for (const key of requiredKeys) {
     if (!bidResponse.hasOwnProperty(key)) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 export const spec = {
@@ -134,7 +134,7 @@ export const spec = {
           if (Array.isArray(bidResponse.advertiserDomains)) {
             bidResponse.meta = {
               advertiserDomains: bidResponse.advertiserDomains
-            }
+            };
           }
           bidResponses.push(bidResponse);
         }

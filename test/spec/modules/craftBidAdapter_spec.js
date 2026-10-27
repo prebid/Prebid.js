@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/craftBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { expect } from 'chai';
+import { spec } from 'modules/craftBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('craftAdapter', function () {
   const adapter = newBidder(spec);
@@ -101,8 +101,8 @@ describe('craftAdapter', function () {
         },
       },
       userIdAsEids: [
-        {source: 'foobar1.com', uids: [{id: 'xxxxxxx', atype: 1}]},
-        {source: 'foobar2.com', uids: [{id: 'yyyyyyy', atype: 1}]},
+        { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },
+        { source: 'foobar2.com', uids: [{ id: 'yyyyyyy', atype: 1 }] },
       ],
     }];
     const bidderRequest = {
@@ -134,10 +134,41 @@ describe('craftAdapter', function () {
       });
       expect(data.user).to.deep.equals({
         eids: [
-          {source: 'foobar1.com', uids: [{id: 'xxxxxxx', atype: 1}]},
-          {source: 'foobar2.com', uids: [{id: 'yyyyyyy', atype: 1}]},
+          { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },
+          { source: 'foobar2.com', uids: [{ id: 'yyyyyyy', atype: 1 }] },
         ]
       });
+    });
+
+    it('sends bidfloor from getFloor in JPY', function () {
+      const getFloorArgs = [];
+      const bidRequestsWithFloor = [{
+        ...bidRequests[0],
+        getFloor: function (args) {
+          getFloorArgs.push(args);
+          return { currency: 'JPY', floor: 150 };
+        }
+      }];
+      const request = spec.buildRequests(bidRequestsWithFloor, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(getFloorArgs).to.deep.equals([{ currency: 'JPY', mediaType: '*', size: '*' }]);
+      expect(data.tags[0].bidfloor).to.equal(150);
+    });
+
+    it('does not send bidfloor when getFloor returns another currency', function () {
+      const bidRequestsWithFloor = [{
+        ...bidRequests[0],
+        getFloor: () => ({ currency: 'USD', floor: 1.5 })
+      }];
+      const request = spec.buildRequests(bidRequestsWithFloor, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.tags[0]).to.not.have.property('bidfloor');
+    });
+
+    it('does not send bidfloor when getFloor is not available', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.tags[0]).to.not.have.property('bidfloor');
     });
   });
 
@@ -172,7 +203,7 @@ describe('craftAdapter', function () {
       }]
     };
     it('should get correct bid response', function() {
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest: bidderRequest});
+      const bids = spec.interpretResponse(serverResponse, { bidderRequest: bidderRequest });
       expect(bids).to.have.lengthOf(1);
       expect(bids[0]).to.deep.equals({
         _adUnitCode: 'craft-prebid-example',

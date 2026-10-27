@@ -1,6 +1,6 @@
-import {deepAccess, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { deepAccess, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -14,7 +14,7 @@ import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'zeta_global';
 const GVLID = 469;
-const PREBID_DEFINER_ID = '44253'
+const PREBID_DEFINER_ID = '44253';
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
 const USER_SYNC_URL = 'https://p.rfihub.com/cm?in=1&pub=';
 const DEFAULT_CUR = 'USD';
@@ -112,13 +112,13 @@ export const spec = {
     if (request.gdprConsent) {
       payload.regs.ext = Object.assign(
         payload.regs.ext,
-        {gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0}
+        { gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0 }
       );
     }
     if (request.gdprConsent && request.gdprConsent.gdprApplies) {
       payload.user.ext = Object.assign(
         payload.user.ext,
-        {consent: request.gdprConsent.consentString}
+        { consent: request.gdprConsent.consentString }
       );
     }
     const postUrl = params.definerId !== PREBID_DEFINER_ID ? ENDPOINT_URL.concat('/', params.definerId) : ENDPOINT_URL;
@@ -180,7 +180,7 @@ export const spec = {
     }
     return syncs;
   }
-}
+};
 
 function buildBanner(request) {
   let sizes = request.sizes;

@@ -152,7 +152,7 @@ describe("DatawrkzAnalyticsAdapter", function () {
     });
 
     sinon.assert.calledOnce(fetchStub);
-    const [url, options] = fetchStub.firstCall.args;
+    const [, options] = fetchStub.firstCall.args;
     const payload = JSON.parse(options.body);
 
     expect(payload.eventType).to.equal(AD_RENDER_SUCCEEDED);
@@ -176,7 +176,7 @@ describe("DatawrkzAnalyticsAdapter", function () {
     });
 
     sinon.assert.calledOnce(fetchStub);
-    const [url, options] = fetchStub.firstCall.args;
+    const [, options] = fetchStub.firstCall.args;
     const payload = JSON.parse(options.body);
 
     expect(payload.eventType).to.equal(AD_RENDER_FAILED);

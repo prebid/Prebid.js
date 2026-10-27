@@ -154,14 +154,14 @@ describe('docereeadmanager', function () {
         platformUid: 'Xx.xxx.xxxxxx',
         mobile: 'XXXXXXXXXX',
         userconsent: 1
-      }
-      bid = { ...bid, params: { ...bid.params, placementId: 'DOC-19-1' } }
+      };
+      bid = { ...bid, params: { ...bid.params, placementId: 'DOC-19-1' } };
       const buildRequests = {
         gdprConsent: {
           consentString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
           gdprApplies: false
         }
-      }
+      };
       const payload = getPayload(bid, data, buildRequests);
 
       const payloadData = payload.data;
@@ -214,6 +214,6 @@ describe('docereeadmanager', function () {
       expect(payloadData.pageurl).to.equal('http://localhost:9876/context.html');
       expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
       expect(payloadData.consent.gdpr).to.equal(0);
-    })
-  })
+    });
+  });
 });

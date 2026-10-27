@@ -23,15 +23,15 @@ const NATIVE_CODE = 2;
 const VIDEO_CODE = 4;
 
 const AUDIENCE_IDS = [
-  {type: 6, bidKey: 'userId.imuid', source: 'intimatemerger.com'},
-  {type: 8, bidKey: 'userId.id5id.uid', source: 'id5-sync.com'},
-  {type: 9, bidKey: 'userId.tdid', source: 'adserver.org'},
-  {type: 10, bidKey: 'userId.novatiq.snowflake', source: 'novatiq.com'},
-  {type: 12, bidKey: 'userId.dacId.id', source: 'dac.co.jp'},
-  {type: 13, bidKey: 'userId.idl_env', source: 'liveramp.com'},
-  {type: 14, bidKey: 'userId.criteoId', source: 'criteo.com'},
-  {type: 15, bidKey: 'userId.pubcid', source: 'pubcid.org'},
-  {type: 17, bidKey: 'userId.uid2.id', source: 'uidapi.com'}
+  { type: 6, bidKey: 'userId.imuid', source: 'intimatemerger.com' },
+  { type: 8, bidKey: 'userId.id5id.uid', source: 'id5-sync.com' },
+  { type: 9, bidKey: 'userId.tdid', source: 'adserver.org' },
+  { type: 10, bidKey: 'userId.novatiq.snowflake', source: 'novatiq.com' },
+  { type: 12, bidKey: 'userId.dacId.id', source: 'dac.co.jp' },
+  { type: 13, bidKey: 'userId.idl_env', source: 'liveramp.com' },
+  { type: 14, bidKey: 'userId.criteoId', source: 'criteo.com' },
+  { type: 15, bidKey: 'userId.pubcid', source: 'pubcid.org' },
+  { type: 17, bidKey: 'userId.uid2.id', source: 'uidapi.com' }
 ];
 
 function createCBT() {
@@ -91,7 +91,7 @@ export const spec = {
         params['appid'] = bidParams.appid.replace(EXT_APPID_STRING, '');
       }
 
-      const aidsParams = []
+      const aidsParams = [];
       const userIdAsEids = bid.userIdAsEids;
       AUDIENCE_IDS.forEach((audienceId) => {
         const bidAudienceId = deepAccess(bid, audienceId.bidKey);
@@ -108,9 +108,9 @@ export const spec = {
           // Set Ramp ID
           if (audienceId.type === 13) params['idl_env'] = bidAudienceId;
         }
-      })
+      });
       if (aidsParams.length > 0) {
-        params['aids'] = JSON.stringify(aidsParams)
+        params['aids'] = JSON.stringify(aidsParams);
       }
 
       const pbadslot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');

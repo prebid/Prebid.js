@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/temedyaBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/temedyaBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
@@ -13,7 +13,7 @@ export const _getUrlVars = function(url) {
     myJson[hash[0]] = hash[1];
   }
   return myJson;
-}
+};
 
 describe('temedya adapter', function() {
   let bidRequests;
@@ -33,7 +33,7 @@ describe('temedya adapter', function() {
           }
         }
       }
-    ]
+    ];
 
     nativeBidRequests = [
       {
@@ -51,8 +51,8 @@ describe('temedya adapter', function() {
           }
         }
       }
-    ]
-  })
+    ];
+  });
 
   describe('isBidRequestValid', function () {
     it('valid bid case', function () {
@@ -62,7 +62,7 @@ describe('temedya adapter', function() {
           widgetId: 753497,
           count: 1
         }
-      }
+      };
       const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
@@ -72,11 +72,11 @@ describe('temedya adapter', function() {
         bidder: 'temedya',
         params: {
         }
-      }
+      };
       const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(false);
-    })
-  })
+    });
+  });
 
   describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via GET', function () {
@@ -87,24 +87,26 @@ describe('temedya adapter', function() {
 
     it('buildRequests function should not modify original bidRequests object', function () {
       const originalBidRequests = utils.deepClone(bidRequests);
-      const request = spec.buildRequests(bidRequests);
+      spec.buildRequests(bidRequests);
+
       expect(bidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('buildRequests function should not modify original nativeBidRequests object', function () {
       const originalBidRequests = utils.deepClone(nativeBidRequests);
-      const request = spec.buildRequests(nativeBidRequests);
+      spec.buildRequests(nativeBidRequests);
+
       expect(nativeBidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('Request params check', function() {
       const request = spec.buildRequests(bidRequests)[0];
-      const data = _getUrlVars(request.url)
+      const data = _getUrlVars(request.url);
       data.type = 'native';
       data.wid = bidRequests[0].params.widgetId;
       data.count = bidRequests[0].params.count;
-    })
-  })
+    });
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -165,7 +167,7 @@ describe('temedya adapter', function() {
         }
       ];
       const request = spec.buildRequests(bidRequests)[0];
-      const result = spec.interpretResponse({body: response}, request);
+      const result = spec.interpretResponse({ body: response }, request);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].cpm).to.not.equal(null);
       expect(result[0].creativeId).to.not.equal(null);
@@ -173,5 +175,5 @@ describe('temedya adapter', function() {
       expect(result[0].currency).to.equal('TRY');
       expect(result[0].netRevenue).to.equal(false);
     });
-  })
-})
+  });
+});

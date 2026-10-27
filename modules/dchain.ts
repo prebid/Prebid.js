@@ -1,8 +1,8 @@
-import {config} from '../src/config.js';
-import {getHook} from '../src/hook.js';
-import {_each, deepAccess, deepClone, isArray, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
-import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
-import type {DemandChain} from "../src/types/ortb/ext/dchain.d.ts";
+import { config } from '../src/config.js';
+import { getHook } from '../src/hook.js';
+import { _each, deepAccess, deepClone, isArray, isPlainObject, isStr, logError, logWarn } from '../src/utils.js';
+import { timedBidResponseHook } from '../src/utils/perfMetrics.js';
+import type { DemandChain } from "../src/types/ortb/ext/dchain.d.ts";
 
 const shouldBeAString = ' should be a string';
 const shouldBeAnObject = ' should be an object';

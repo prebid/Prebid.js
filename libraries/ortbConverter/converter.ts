@@ -1,16 +1,16 @@
-import {compose} from './lib/composer.js';
-import {logError, memoize} from '../../src/utils.js';
-import {DEFAULT_PROCESSORS} from './processors/default.js';
-import {BID_RESPONSE, DEFAULT, getProcessors, IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
-import {mergeProcessors} from './lib/mergeProcessors.js';
-import type {MediaType} from "../../src/mediaTypes.ts";
-import type {NativeRequest} from '../../src/types/ortb/native.d.ts';
-import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
-import type {Currency, BidderCode} from "../../src/types/common.d.ts";
-import type {BidderRequest, BidRequest} from "../../src/adapterManager.ts";
-import type {BidResponse} from "../../src/bidfactory.ts";
-import type {AdapterResponse} from "../../src/adapters/bidderFactory.ts";
-import type {ORTBResponse} from "../../src/types/ortb/response";
+import { compose } from './lib/composer.js';
+import { logError, memoize } from '../../src/utils.js';
+import { DEFAULT_PROCESSORS } from './processors/default.js';
+import { BID_RESPONSE, DEFAULT, getProcessors, IMP, REQUEST, RESPONSE } from '../../src/pbjsORTB.js';
+import { mergeProcessors } from './lib/mergeProcessors.js';
+import type { MediaType } from "../../src/mediaTypes.ts";
+import type { NativeRequest } from '../../src/types/ortb/native.d.ts';
+import type { ORTBImp, ORTBRequest } from "../../src/types/ortb/request.d.ts";
+import type { Currency, BidderCode } from "../../src/types/common.d.ts";
+import type { BidderRequest, BidRequest } from "../../src/adapterManager.ts";
+import type { BidResponse } from "../../src/bidfactory.ts";
+import type { AdapterResponse } from "../../src/adapters/bidderFactory.ts";
+import type { ORTBResponse } from "../../src/types/ortb/response";
 
 type Context = {
   [key: string]: unknown;
@@ -41,14 +41,14 @@ type Context = {
    * the default value to use for `bidResponse.ttl` (if the ORTB response does not provide one in `seatbid[].bid[].exp`).
    */
   ttl?: number;
-}
+};
 
 type RequestContext = Context & {
   /**
    * Map from imp id to the context object used to generate that imp.
    */
   impContext: { [impId: string]: Context };
-}
+};
 
 type Params<B extends BidderCode> = {
   [IMP]: (
@@ -65,9 +65,9 @@ type Params<B extends BidderCode> = {
     }
   ) => ORTBRequest;
   [BID_RESPONSE]: (
-    bid: ORTBResponse['seatbid'][number]['bid'][number],
+    bid: NonNullable<ORTBResponse['seatbid']>[number]['bid'][number],
     context: Context & {
-      seatbid: ORTBResponse['seatbid'][number];
+      seatbid: NonNullable<ORTBResponse['seatbid']>[number];
       imp: ORTBImp;
       bidRequest: BidRequest<B>;
       ortbRequest: ORTBRequest;
@@ -83,29 +83,29 @@ type Params<B extends BidderCode> = {
       bidRequests: BidRequest<B>[];
     }
   ) => AdapterResponse
-}
+};
 
 type Processors<B extends BidderCode> = {
   [M in keyof Params<B>]?: {
     [name: string]: (...args: [Partial<ReturnType<Params<B>[M]>>, ...Parameters<Params<B>[M]>]) => void;
   }
-}
+};
 
 type Customizers<B extends BidderCode> = {
   [M in keyof Params<B>]?: (buildObject: Params<B>[M], ...args: Parameters<Params<B>[M]>) => ReturnType<Params<B>[M]>;
-}
+};
 
 type Overrides<B extends BidderCode> = {
   [M in keyof Params<B>]?: {
-    [name: string]: (orig: Processors<B>[M][string], ...args: Parameters<Processors<B>[M][string]>) => void;
+    [name: string]: (orig: NonNullable<Processors<B>[M]>[string], ...args: Parameters<NonNullable<Processors<B>[M]>[string]>) => void;
   }
-}
+};
 
 type ConverterConfig<B extends BidderCode> = Customizers<B> & {
   context?: Context;
   processors?: () => Processors<B>;
   overrides?: Overrides<B>;
-}
+};
 
 export function ortbConverter<B extends BidderCode>({
   context: defaultContext = {},
@@ -133,11 +133,11 @@ export function ortbConverter<B extends BidderCode>({
             } catch (e) {
               errorHandler.call(this, e, ...args);
             }
-          }
+          };
         })();
       }
       return build.apply(this, args);
-    }
+    };
   }
 
   const buildImp = builder(IMP, imp,
@@ -147,18 +147,18 @@ export function ortbConverter<B extends BidderCode>({
       return imp;
     },
     function (error, bidRequest, context) {
-      logError('Error while converting bidRequest to ORTB imp; request skipped.', {error, bidRequest, context});
+      logError('Error while converting bidRequest to ORTB imp; request skipped.', { error, bidRequest, context });
     }
   );
 
   const buildRequest = builder(REQUEST, request,
     function (process, imps, bidderRequest, context) {
-      const ortbRequest = {imp: imps};
+      const ortbRequest = { imp: imps };
       process(ortbRequest, bidderRequest, context);
       return ortbRequest;
     },
     function (error, imps, bidderRequest, context) {
-      logError('Error while converting to ORTB request', {error, imps, bidderRequest, context});
+      logError('Error while converting to ORTB request', { error, imps, bidderRequest, context });
       throw error;
     }
   );
@@ -170,40 +170,40 @@ export function ortbConverter<B extends BidderCode>({
       return bidResponse;
     },
     function (error, bid, context) {
-      logError('Error while converting ORTB seatbid.bid to bidResponse; bid skipped.', {error, bid, context});
+      logError('Error while converting ORTB seatbid.bid to bidResponse; bid skipped.', { error, bid, context });
     }
   );
 
   const buildResponse = builder(RESPONSE, response,
     function (process, bidResponses, ortbResponse, context) {
-      const response = {bids: bidResponses};
+      const response = { bids: bidResponses };
       process(response, ortbResponse, context);
       return response;
     },
     function (error, bidResponses, ortbResponse, context) {
-      logError('Error while converting from ORTB response', {error, bidResponses, ortbResponse, context});
+      logError('Error while converting from ORTB response', { error, bidResponses, ortbResponse, context });
       throw error;
     }
   );
 
   return {
-    toORTB({bidderRequest, bidRequests, context = {}}: {
+    toORTB({ bidderRequest, bidRequests, context = {} }: {
       bidderRequest: BidderRequest<B>,
       bidRequests?: BidRequest<B>[],
       context?: Context
     }): ORTBRequest {
       bidRequests = bidRequests || bidderRequest.bids;
       const ctx = {
-        req: Object.assign({bidRequests}, defaultContext, context),
+        req: Object.assign({ bidRequests }, defaultContext, context),
         imp: {}
-      }
+      };
       ctx.req.impContext = ctx.imp;
       const imps = bidRequests.map(bidRequest => {
-        const impContext = Object.assign({bidderRequest, reqContext: ctx.req}, defaultContext, context);
+        const impContext = Object.assign({ bidderRequest, reqContext: ctx.req }, defaultContext, context);
         const result = buildImp(bidRequest, impContext);
         if (result != null) {
           if (result.hasOwnProperty('id')) {
-            Object.assign(impContext, {bidRequest, imp: result});
+            Object.assign(impContext, { bidRequest, imp: result });
             ctx.imp[result.id] = impContext;
             return result;
           }
@@ -219,22 +219,22 @@ export function ortbConverter<B extends BidderCode>({
       }
       return request;
     },
-    fromORTB({request, response}: {
+    fromORTB({ request, response }: {
       request: ORTBRequest;
       response: ORTBResponse | null;
     }): AdapterResponse {
       const ctx = REQ_CTX.get(request);
       if (ctx == null) {
-        throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`')
+        throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`');
       }
       function augmentContext(ctx, extraParams = {}) {
-        return Object.assign(ctx, {ortbRequest: request}, extraParams);
+        return Object.assign(ctx, { ortbRequest: request }, extraParams);
       }
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));
       const bidResponses = (response?.seatbid || []).flatMap(seatbid =>
         (seatbid.bid || []).map((bid) => {
           if (impsById.hasOwnProperty(bid.impid) && ctx.imp.hasOwnProperty(bid.impid)) {
-            return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));
+            return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], { imp: impsById[bid.impid], seatbid, ortbResponse: response }));
           }
           logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
           return undefined;
@@ -242,7 +242,7 @@ export function ortbConverter<B extends BidderCode>({
       ).filter(Boolean);
       return buildResponse(bidResponses, response, augmentContext(ctx.req));
     }
-  }
+  };
 }
 
 export const defaultProcessors = memoize(() => mergeProcessors(DEFAULT_PROCESSORS, getProcessors(DEFAULT)));

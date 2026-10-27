@@ -25,6 +25,9 @@ declare module './userId/spec' {
   interface ProvidersToId {
     gemiusId: 'gemiusId';
   }
+  interface ProviderParams {
+    gemiusId: never
+  }
 }
 
 function getTopAccessibleWindow(): Window {
@@ -49,7 +52,7 @@ function retrieveId(primaryScriptWindow: PrimaryScriptWindow, callback: (id: Ser
       timeoutId = null;
     }
     callback(id);
-  }
+  };
 
   timeoutId = setTimeout(() => {
     logError(LOG_PREFIX + 'failed to get id, timeout');
@@ -60,10 +63,10 @@ function retrieveId(primaryScriptWindow: PrimaryScriptWindow, callback: (id: Ser
   try {
     primaryScriptWindow.gemius_cmd('get_ruid', function (ruid, desc) {
       if (desc.status === 'ok') {
-        setResult({id: ruid});
+        setResult({ id: ruid });
       } else if (desc.status === 'no-consent') {
         logInfo(LOG_PREFIX + 'failed to get id, no consent');
-        setResult({id: null});
+        setResult({ id: null });
       } else {
         logError(LOG_PREFIX + 'failed to get id, response: ' + desc.status);
         setResult();
@@ -80,15 +83,15 @@ export const gemiusIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
   gvlid: GVLID,
   decode(value) {
     if (isStr(value?.['id'])) {
-      return {[MODULE_NAME]: value['id']};
+      return { [MODULE_NAME]: value['id'] };
     }
     return undefined;
   },
-  getId(_, {gdpr: consentData}: Partial<AllConsentData> = {}) {
+  getId(_, { gdpr: consentData }: Partial<AllConsentData> = {}) {
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
       if (REQUIRED_PURPOSES.some(purposeId => !(consentData.vendorData?.purpose as any)?.consents?.[purposeId])) {
         logInfo(LOG_PREFIX + 'getId, no consent');
-        return {id: {id: null}};
+        return { id: { id: null } };
       }
     }
 

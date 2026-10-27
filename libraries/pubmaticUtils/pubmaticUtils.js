@@ -44,7 +44,7 @@ export const getBrowserType = () => {
     browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
   }
   return browserIndex.toString();
-}
+};
 
 export const getCurrentTimeOfDay = () => {
   const currentHour = new Date().getHours();
@@ -54,23 +54,23 @@ export const getCurrentTimeOfDay = () => {
       : currentHour < 17 ? CONSTANTS.TIME_OF_DAY_VALUES.AFTERNOON
         : currentHour < 19 ? CONSTANTS.TIME_OF_DAY_VALUES.EVENING
           : CONSTANTS.TIME_OF_DAY_VALUES.NIGHT;
-}
+};
 
 export const getUtmValue = () => {
   const url = new URL(window.location?.href);
   const urlParams = new URLSearchParams(url?.search);
   return urlParams && urlParams.toString().includes(CONSTANTS.UTM) ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE;
-}
+};
 
 export const getDayOfWeek = () => {
   const dayOfWeek = new Date().getDay();
   return dayOfWeek.toString();
-}
+};
 
 export const getHourOfDay = () => {
   const hourOfDay = new Date().getHours();
   return hourOfDay.toString();
-}
+};
 
 /**
  * Determines whether an action should be throttled based on a given percentage.

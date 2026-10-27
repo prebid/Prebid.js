@@ -1,0 +1,78 @@
+{
+   "disclosures":[
+      {
+         "identifier":"_jxx",
+         "type":"cookie",
+         "maxAgeSeconds":31536000,
+         "cookieRefresh": true,
+         "domains":[
+            "*"
+         ],
+         "purposes":[
+            1
+         ]
+      },
+      {
+         "identifier":"_jxx",
+         "type":"web",
+         "domains":[
+            "*"
+         ],
+         "purposes":[
+            1
+         ]
+      },
+      {
+         "identifier":"_jxxs",
+         "type":"cookie",
+         "maxAgeSeconds":1800,
+         "cookieRefresh": true,
+         "domains":[
+            "*"
+         ],
+         "purposes":[
+            1
+         ]
+      },
+      {
+         "identifier":"_jxxs",
+         "type":"web",
+         "domains":[
+            "*"
+         ],
+         "purposes":[
+            1
+         ]
+      },
+         {
+         "identifier":"pbjx_jxx",
+         "type":"cookie",
+         "maxAgeSeconds":31536000,
+         "cookieRefresh": true,
+         "domains":[
+            "*"
+         ],
+         "purposes":[
+            1
+         ]
+      },
+         {
+         "identifier":"pbjx_idlog",
+         "type":"cookie",
+         "maxAgeSeconds":31536000,
+         "cookieRefresh": true,
+         "domains":[
+            "*"
+         ],
+         "purposes":[
+            1
+         ]
+      }
+   ],
+   "domains": [
+    {
+      "domain": "*",
+      "use": "Jixie id module stores and reads identifiers on the first-party domain."
+    }
+  ]
+}

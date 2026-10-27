@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/adkernelAdnBidAdapter';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { spec } from 'modules/adkernelAdnBidAdapter';
+import { config } from 'src/config';
 
 describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {
@@ -19,21 +19,6 @@ describe('AdkernelAdn adapter', function () {
       }
     },
     adUnitCode: 'ad-unit-1',
-  }; const bid2_pub1 = {
-    bidder: 'adkernelAdn',
-    transactionId: 'transact0',
-    bidderRequestId: 'req0',
-    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-    bidId: 'bidid_2',
-    params: {
-      pubId: 1
-    },
-    adUnitCode: 'ad-unit-2',
-    mediaTypes: {
-      banner: {
-        sizes: [[300, 250]]
-      }
-    }
   }; const bid1_pub2 = {
     bidder: 'adkernelAdn',
     transactionId: 'transact2',
@@ -92,11 +77,11 @@ describe('AdkernelAdn adapter', function () {
     auctionId: 'auc-001',
     bidId: 'Bid_01',
     mediaTypes: {
-      banner: {sizes: [[300, 250], [300, 200]]},
-      video: {context: 'instream', playerSize: [[640, 480]]}
+      banner: { sizes: [[300, 250], [300, 200]] },
+      video: { context: 'instream', playerSize: [[640, 480]] }
     },
     adUnitCode: 'ad-unit-1',
-    params: {pubId: 7}
+    params: { pubId: 7 }
   };
 
   const response = {
@@ -220,7 +205,7 @@ describe('AdkernelAdn adapter', function () {
   }
 
   describe('banner request building', function () {
-    const [_, tagRequests] = buildRequest([bid1_pub1], {ortb2: {source: {tid: 'mock-tid'}}});
+    const [, tagRequests] = buildRequest([bid1_pub1], { ortb2: { source: { tid: 'mock-tid' } } });
     const tagRequest = tagRequests[0];
 
     it('should have request id', function () {
@@ -254,13 +239,13 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
-      const [_, tagRequests] = buildRequest([bid1_pub1]);
+      const [, tagRequests] = buildRequest([bid1_pub1]);
       expect(tagRequests[0]).to.not.have.property('user');
     });
 
     it('should contain gdpr and ccpa information if consent is configured', function () {
-      const [_, bidRequests] = buildRequest([bid1_pub1],
-        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}, uspConsent: '1YNN'});
+      const [, bidRequests] = buildRequest([bid1_pub1],
+        { gdprConsent: { gdprApplies: true, consentString: 'test-consent-string' }, uspConsent: '1YNN' });
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 1);
       expect(bidRequests[0].user).to.have.property('consent', 'test-consent-string');
@@ -268,15 +253,15 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      const [_, bidRequests] = buildRequest([bid1_pub1], {gdprConsent: {gdprApplies: false}});
+      const [, bidRequests] = buildRequest([bid1_pub1], { gdprConsent: { gdprApplies: false } });
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 0);
       expect(bidRequests[0].user).to.not.have.property('consent');
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      config.setConfig({coppa: true});
-      const [_, bidRequests] = buildRequest([bid1_pub1]);
+      config.setConfig({ coppa: true });
+      const [, bidRequests] = buildRequest([bid1_pub1]);
       config.resetConfig();
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('coppa', 1);
@@ -288,7 +273,7 @@ describe('AdkernelAdn adapter', function () {
         return {
           currency: 'USD',
           floor: 0.145
-        }
+        };
       };
       const [, tagRequests] = buildRequest([bid]);
       expect(tagRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
@@ -296,7 +281,7 @@ describe('AdkernelAdn adapter', function () {
   });
 
   describe('video request building', () => {
-    const [_, tagRequests] = buildRequest([bid_video1, bid_video2]);
+    const [, tagRequests] = buildRequest([bid_video1, bid_video2]);
     const tagRequest = tagRequests[0];
 
     it('should have video object', () => {
@@ -327,7 +312,7 @@ describe('AdkernelAdn adapter', function () {
   });
 
   describe('multiformat request building', function () {
-    const [_, tagRequests] = buildRequest([bid_multiformat]);
+    const [, tagRequests] = buildRequest([bid_multiformat]);
 
     it('should contain single request', function () {
       expect(tagRequests).to.have.length(1);
@@ -365,7 +350,7 @@ describe('AdkernelAdn adapter', function () {
     let responses;
 
     before(function () {
-      responses = spec.interpretResponse({body: response});
+      responses = spec.interpretResponse({ body: response });
     });
 
     it('should parse all responses', function () {
@@ -404,22 +389,22 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('should perform usersync', function () {
-      let syncs = spec.getUserSyncs({iframeEnabled: false}, [{body: response}]);
+      let syncs = spec.getUserSyncs({ iframeEnabled: false }, [{ body: response }]);
       expect(syncs).to.have.length(0);
-      syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: response}]);
+      syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: response }]);
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
       expect(syncs[0]).to.have.property('url', 'https://dsp.adkernel.com/sync');
     });
 
     it('should handle user-sync only response', function () {
-      const [pbRequests, tagRequests] = buildRequest([bid1_pub1]);
-      const resp = spec.interpretResponse({body: usersyncOnlyResponse}, pbRequests[0]);
+      const [pbRequests] = buildRequest([bid1_pub1]);
+      const resp = spec.interpretResponse({ body: usersyncOnlyResponse }, pbRequests[0]);
       expect(resp).to.have.length(0);
     });
 
     it('shouldn\' fail on empty response', function () {
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: ''}]);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: '' }]);
       expect(syncs).to.have.length(0);
     });
   });

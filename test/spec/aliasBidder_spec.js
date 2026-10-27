@@ -1,12 +1,8 @@
+import '../../src/prebid.js';
 import { pbjsTestOnly } from 'test/helpers/pbjs-test-only.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 describe('Publisher API _ Alias Bidder', function () {
-  var assert = require('chai').assert;
-  var expect = require('chai').expect;
-  var should = require('chai').should();
-  var prebid = require('../../src/prebid.js');
-
   before(function () {
     var topSlotCode = '/19968336/header-bid-tag1';
     var topSlotSizes = [[728, 90], [970, 90]];

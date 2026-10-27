@@ -31,6 +31,7 @@ import {
   logWarn,
   mergeDeep
 } from "../src/utils.js";
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = "msft";
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
@@ -145,11 +146,6 @@ const converter = ortbConverter({
       if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'instream') {
         extANData.require_asset_url = true;
       }
-
-      if (imp.video.plcmt) {
-        imp.video.placement = imp.video.plcmt;
-        delete imp.video.plcmt;
-      }
     }
 
     if (bidderParams) {
@@ -207,6 +203,18 @@ const converter = ortbConverter({
           eid.rti_partner = 'UID2';
         }
       });
+    }
+
+    if (bidderRequest?.gdprConsent?.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+      const ac = bidderRequest.gdprConsent.addtlConsent;
+      const segments = ac.split('~');
+      const consentedSegment = segments[1] || '';
+      // ACv1 uses: version~vendorIds; ACv2 uses: version~consentedVendorIds~dv.disclosedVendorIds
+      // Only the consented-vendor segment should be populated into user.ext.addtl_consent.
+      const addtlConsent = consentedSegment.split('.').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      if (addtlConsent.length > 0) {
+        deepSetValue(request, 'user.ext.addtl_consent', addtlConsent);
+      }
     }
 
     const extANData = {
@@ -319,7 +327,11 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [], // TODO fill in after full transition or as seperately requested
+  aliases: [
+    { code: 'oftmedia', gvlid: 32 },
+    { code: 'msftstaila', gvlid: 32 },
+    { code: 'projectagora', gvlid: 1032 }
+  ], // TODO fill in after full transition or as separately requested
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: (bid) => {
@@ -376,7 +388,7 @@ export const spec = {
       return [{
         type: "iframe",
         url: "https://acdn.adnxs.com/dmp/async_usersync.html",
-      }, ];
+      },];
     }
 
     if (syncOptions.pixelEnabled) {
@@ -502,12 +514,10 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
 
 /**
  * This function hides google div container for outstream bids to remove unwanted space on page. Appnexus renderer creates a new iframe outside of google iframe to render the outstream creative.
- * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
+function hidedfpContainer(container) {
   try {
-    const el = document
-      .getElementById(elementId)
+    const el = container
       .querySelectorAll("div[id^='google_ads']");
     if (el[0]) {
       el[0].style.setProperty("display", "none");
@@ -517,11 +527,10 @@ function hidedfpContainer(elementId) {
   }
 }
 
-function hideSASIframe(elementId) {
+function hideSASIframe(container) {
   try {
     // find script tag with id 'sas_script'. This ensures it only works if you're using Smart Ad Server.
-    const el = document
-      .getElementById(elementId)
+    const el = container
       .querySelectorAll("script[id^='sas_script']");
     if (el[0]?.nextSibling?.localName === "iframe") {
       el[0].nextSibling.style.setProperty("display", "none");
@@ -539,8 +548,9 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
 }
 
 function outstreamRender(bid, doc) {
-  hidedfpContainer(bid.adUnitCode);
-  hideSASIframe(bid.adUnitCode);
+  const container = getAdUnitElement(bid);
+  hidedfpContainer(container);
+  hideSASIframe(container);
   // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
     const win = doc?.defaultView || window;

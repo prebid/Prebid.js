@@ -34,7 +34,38 @@ const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+/* Capping state written by the Missena renderer, one key per api key */
+const LOCAL_STORAGE_KEY_PREFIX = 'msna-local.';
+const CLOSE_COUNTER = 'remove-bubble';
 window.msna_ik = window.msna_ik || generateUUID();
+
+function readCapping(apiKey) {
+  const local = safeJSONParse(
+    storage.getDataFromLocalStorage(LOCAL_STORAGE_KEY_PREFIX + apiKey),
+  );
+  return local?.capping || {};
+}
+
+function isLive(entry) {
+  return typeof entry?.expiry === 'number' && entry.expiry > Date.now();
+}
+
+function cappedProviders(apiKey) {
+  const providers = readCapping(apiKey).providers || {};
+  const names = Object.keys(providers);
+  const capped = [];
+  for (let i = 0; i < names.length; i++) {
+    if (isLive(providers[names[i]])) {
+      capped.push(names[i]);
+    }
+  }
+  return capped;
+}
+
+function isClosed(apiKey, referer) {
+  const closed = readCapping(apiKey).counters?.[CLOSE_COUNTER];
+  return isLive(closed) && (!closed.referer || closed.referer === referer);
+}
 
 /* Get Floor price information */
 function getFloor(bidRequest) {
@@ -76,6 +107,10 @@ function toPayload(bidRequest, bidderRequest) {
   payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
   payload.viewport = getViewportSize();
   payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
+  const providers = cappedProviders(bidRequest.params.apiKey);
+  if (providers.length > 0) {
+    payload.local = { capping: { providers } };
+  }
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   payload.ortb2 = {
@@ -106,7 +141,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid === 'object' && !!bid.params.apiKey;
+    return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);
   },
 
   /**
@@ -117,21 +152,19 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
-    const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
     const referer = bidderRequest?.refererInfo?.topmostLocation;
-    if (
-      typeof capping?.expiry === 'number' &&
-      new Date().getTime() < capping?.expiry &&
-      (!capping?.referer || capping?.referer === referer)
-    ) {
-      logInfo('Missena - Capped');
-      return [];
+    const bidRequests = [];
+    for (let i = 0; i < validBidRequests.length; i++) {
+      if (isClosed(validBidRequests[i].params.apiKey, referer)) {
+        logInfo('Missena - Capped', validBidRequests[i].params.apiKey);
+      } else {
+        bidRequests.push(validBidRequests[i]);
+      }
     }
 
-    this.msnaApiKey = validBidRequests[0]?.params.apiKey;
+    this.msnaApiKey = bidRequests[0]?.params.apiKey;
 
-    return validBidRequests.map((bidRequest) =>
+    return bidRequests.map((bidRequest) =>
       toPayload(bidRequest, bidderRequest),
     );
   },
@@ -157,6 +190,7 @@ export const spec = {
     serverResponses,
     gdprConsent = {},
     uspConsent,
+    gppConsent,
   ) {
     if (!syncOptions.iframeEnabled || !this.msnaApiKey) {
       return [];
@@ -172,6 +206,13 @@ export const spec = {
     if (uspConsent) {
       url.searchParams.append('us_privacy', uspConsent);
     }
+    if (gppConsent?.gppString) {
+      url.searchParams.append('gpp', gppConsent.gppString);
+      url.searchParams.append(
+        'gpp_sid',
+        (gppConsent.applicableSections || []).join(','),
+      );
+    }
 
     return [{ type: 'iframe', url: url.href }];
   },
@@ -184,7 +225,7 @@ export const spec = {
   },
 
   /**
-   * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function (bid) {

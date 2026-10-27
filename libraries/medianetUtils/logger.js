@@ -7,7 +7,7 @@ import {
   mnetGlobals, POST_ENDPOINT,
   PREBID_VERSION
 } from './constants.js';
-import { ajax, sendBeacon } from '../../src/ajax.js';
+import { noCredsAjax as ajax, sendBeacon } from '../../src/ajax.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
@@ -23,7 +23,7 @@ export function shouldLogAPPR(auctionData, adUnitId) {
 
 // common error logger for medianet analytics and bid adapter
 export function errorLogger(event, data = undefined, analytics = true) {
-  const { name, cid, value, relatedData, logData, project } = isPlainObject(event) ? {...event, logData: data} : { name: event, relatedData: data };
+  const { name, cid, value, relatedData, logData, project } = isPlainObject(event) ? { ...event, logData: data } : { name: event, relatedData: data };
   const refererInfo = mnetGlobals.refererInfo || getRefererInfo();
   const errorData = Object.assign({},
     {
@@ -88,7 +88,7 @@ export function fireAjaxLog(loggingHost, payload, errorData = {}) {
   ajax(loggingHost,
     {
       success: () => undefined,
-      error: (_, {reason}) => errorLogger(Object.assign(errorData, {name: 'ajax_log_failed', relatedData: reason})).send()
+      error: (_, { reason }) => errorLogger(Object.assign(errorData, { name: 'ajax_log_failed', relatedData: reason })).send()
     },
     payload,
     {

@@ -3,6 +3,10 @@ import {
   spec,
   BANNER_ENDPOINT,
   buildExtuidQuery,
+  getUidFromEids,
+  getExtuidIds,
+  EID_SOURCE_IMUID,
+  EID_SOURCE_ID5,
 } from 'modules/ssp_genieeBidAdapter.js';
 import { config } from 'src/config.js';
 
@@ -220,6 +224,57 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[1].data.cur).to.deep.equal('USD');
       });
 
+      it('should set UA client hints from bidderRequest.ortb2.device.sua', function () {
+        const request = spec.buildRequests([BANNER_BID], {
+          ortb2: {
+            device: {
+              sua: {
+                browsers: [{ brand: 'Chromium', version: ['123', '0', '6312', '86'] }],
+                platform: { brand: 'macOS', version: ['14', '4', '1'] },
+                architecture: 'arm',
+                bitness: '64',
+                mobile: 0,
+                model: 'MacBookPro'
+              }
+            }
+          }
+        });
+
+        expect(request[0].data.ucfvl).to.equal('"Chromium";v="123.0.6312.86"');
+        expect(request[0].data.ucp).to.equal('"macOS"');
+        expect(request[0].data.ucarch).to.equal('"arm"');
+        expect(request[0].data.ucpv).to.equal('"14.4.1"');
+        expect(request[0].data.ucbit).to.equal('"64"');
+        expect(request[0].data.ucmbl).to.equal('?0');
+        expect(request[0].data.ucmdl).to.equal('"MacBookPro"');
+      });
+
+      it('should prefer bid.ortb2.device.sua over bidderRequest.ortb2.device.sua', function () {
+        const request = spec.buildRequests([{
+          ...BANNER_BID,
+          ortb2: {
+            device: {
+              sua: {
+                platform: { brand: 'Android' },
+                mobile: 1
+              }
+            }
+          }
+        }], {
+          ortb2: {
+            device: {
+              sua: {
+                platform: { brand: 'macOS' },
+                mobile: 0
+              }
+            }
+          }
+        });
+
+        expect(request[0].data.ucp).to.equal('"Android"');
+        expect(request[0].data.ucmbl).to.equal('?1');
+      });
+
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('adtk');
@@ -364,26 +419,153 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should include only imuid in extuid query when only imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {imuid}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid } }]);
         expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
       });
 
       it('should include only id5id in extuid query when only id5id exists', function () {
         const id5id = 'id5id';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {id5id: {uid: id5id}}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id } } }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}`);
       });
 
       it('should include id5id and imuid in extuid query when id5id and imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
         const id5id = 'id5id';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {id5id: {uid: id5id}, imuid: imuid}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id }, imuid: imuid } }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}\tim:${imuid}`);
       });
 
       it('should not include the extuid query when both id5 and imuid are missing', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('extuid');
+      });
+
+      describe('extuid from userIdAsEids (Prebid 10)', function () {
+        const IMUID = 'b.a4ad1d3eeb51e600';
+        const ID5 = 'ID5*abc';
+        const EID_IMUID = { source: 'intimatemerger.com', uids: [{ id: IMUID, atype: 1 }] };
+        const EID_IMPPID = { source: 'ppid.intimatemerger.com', uids: [{ id: 'ppid-xyz', atype: 1 }] };
+        const EID_ID5 = { source: 'id5-sync.com', uids: [{ id: ID5, atype: 1, ext: { linkType: 2 } }] };
+        const EID_PUBCID = { source: 'pubcid.org', uids: [{ id: 'pubcid-1', atype: 1 }] };
+
+        it('should build extuid from userIdAsEids when bid.userId is absent', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [EID_PUBCID, EID_ID5, EID_IMUID, EID_IMPPID] }]);
+          expect(request[0].data.extuid).to.equal(`id5:${ID5}\tim:${IMUID}`);
+        });
+
+        it('should build extuid from bid.ortb2.user.ext.eids when userIdAsEids is absent', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, ortb2: { user: { ext: { eids: [EID_ID5, EID_IMUID] } } } }]);
+          expect(request[0].data.extuid).to.equal(`id5:${ID5}\tim:${IMUID}`);
+        });
+
+        it('should include only imuid when eids has imuid but no id5 (ppid source must be ignored)', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [EID_IMPPID, EID_IMUID] }]);
+          expect(request[0].data.extuid).to.equal(`im:${IMUID}`);
+        });
+
+        it('should prefer userIdAsEids over legacy bid.userId when both exist', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid: 'legacy-imuid' }, userIdAsEids: [EID_IMUID] }]);
+          expect(request[0].data.extuid).to.equal(`im:${IMUID}`);
+        });
+
+        it('should fall back to legacy bid.userId when userIdAsEids has no usable source', function () {
+          const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid: 'legacy-imuid' }, userIdAsEids: [EID_PUBCID] }]);
+          expect(request[0].data.extuid).to.equal('im:legacy-imuid');
+        });
+
+        it('should not include extuid when userIdAsEids has no id5/imuid source or is malformed', function () {
+          expect(spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [EID_PUBCID, EID_IMPPID] }])[0].data).to.not.have.property('extuid');
+          expect(spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [null, { source: 'intimatemerger.com', uids: [] }, { source: 'intimatemerger.com', uids: [{ id: '' }] }] }])[0].data).to.not.have.property('extuid');
+        });
+      });
+
+      describe('getUidFromEids / getExtuidIds', function () {
+        it('should match source exactly and ignore malformed input', function () {
+          const eids = [{ source: 'ppid.intimatemerger.com', uids: [{ id: 'ppid' }] }, { source: EID_SOURCE_IMUID, uids: [{ id: '' }, { id: 'imu-1' }] }];
+          expect(getUidFromEids(eids, EID_SOURCE_IMUID)).to.equal('imu-1');
+          expect(getUidFromEids(eids, EID_SOURCE_ID5)).to.be.undefined;
+          expect(getUidFromEids(undefined, EID_SOURCE_IMUID)).to.be.undefined;
+          expect(getUidFromEids([{ source: EID_SOURCE_IMUID, uids: [{ id: 123 }] }], EID_SOURCE_IMUID)).to.be.undefined;
+        });
+
+        it('should read eids first and fall back to bid.userId per id', function () {
+          const bid = { userId: { imuid: 'legacy-imu', id5id: { uid: 'legacy-id5' } }, userIdAsEids: [{ source: EID_SOURCE_IMUID, uids: [{ id: 'eid-imu' }] }] };
+          expect(getExtuidIds(bid)).to.deep.equal({ id5: 'legacy-id5', imuId: 'eid-imu' });
+          expect(getExtuidIds({})).to.deep.equal({ id5: undefined, imuId: undefined });
+        });
+
+        it('should read eids from bid.ortb2.user.ext.eids before the userIdAsEids alias', function () {
+          const bid = {
+            ortb2: { user: { ext: { eids: [{ source: EID_SOURCE_IMUID, uids: [{ id: 'ortb2-imu' }] }] } } },
+            userIdAsEids: [{ source: EID_SOURCE_IMUID, uids: [{ id: 'alias-imu' }] }],
+          };
+          expect(getExtuidIds(bid)).to.deep.equal({ id5: undefined, imuId: 'ortb2-imu' });
+        });
+      });
+
+      it('should include schain in data when schain exists', function () {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{ asi: 'example.com', sid: 'publisher-id', hp: 1 }]
+        };
+        const bidWithSchain = {
+          ...BANNER_BID,
+          ortb2: { source: { ext: { schain } } }
+        };
+        const request = spec.buildRequests([bidWithSchain]);
+        expect(request[0].data.schain).to.equal(JSON.stringify(schain));
+      });
+
+      it('should set schain to empty when schain not exists', function () {
+        const bidWithSchain = {
+          ...BANNER_BID,
+          ortb2: { source: { ext: {} } }
+        };
+        const request = spec.buildRequests([bidWithSchain]);
+        expect(request[0].data.schain).to.equal('');
+      });
+
+      it('should set schain to empty string when ortb2 is missing', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data.schain).to.equal('');
+      });
+
+      it('should set fl_pr when bid.getFloor returns a valid floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 10 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(10);
+      });
+
+      it('should not include fl_pr when bid.getFloor is not a function', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should not include fl_pr when getFloor returns NaN floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 'invalid' }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should pass size * when bid has multiple sizes', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          sizes: [[300, 250], [728, 90]],
+          mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 5.5 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(5.5);
       });
 
       describe('buildExtuidQuery', function() {
@@ -505,7 +687,7 @@ describe('ssp_genieeBidAdapter', function () {
             adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d'
           }
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'image',
@@ -521,7 +703,7 @@ describe('ssp_genieeBidAdapter', function () {
             adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a%20none%3b%20visibility%3a%20hidden%3b%5c%22%20%5c%2f%3e%3cimg%20src%3d%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3drtbhouse%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a'
           }
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'image',
@@ -537,7 +719,7 @@ describe('ssp_genieeBidAdapter', function () {
         body: {
           [ZONE_ID]: responseBase
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([]);
     });

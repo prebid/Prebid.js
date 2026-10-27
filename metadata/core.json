@@ -13,6 +13,12 @@
     },
     {
       "componentType": "prebid",
+      "componentName": "storage",
+      "moduleName": "prebid-core",
+      "disclosureURL": "local://prebid/probes.json"
+    },
+    {
+      "componentType": "prebid",
       "componentName": "debugging",
       "moduleName": "prebid-core",
       "disclosureURL": "local://prebid/debugging.json"
@@ -34,12 +40,6 @@
       "componentName": "FPDValidation",
       "moduleName": "validationFpdModule",
       "disclosureURL": "local://prebid/sharedId-optout.json"
-    },
-    {
-      "componentType": "prebid",
-      "componentName": "categoryTranslation",
-      "moduleName": "categoryTranslation",
-      "disclosureURL": "local://prebid/categoryTranslation.json"
     },
     {
       "componentType": "prebid",

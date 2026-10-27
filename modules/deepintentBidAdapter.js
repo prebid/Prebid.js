@@ -1,9 +1,10 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { buildOrtbVideo } from '../libraries/ortbVideoUtils/ortbVideoUtils.js';
 
 const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
@@ -71,7 +72,7 @@ export const spec = {
       at: 1,
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
-      device: buildDevice(),
+      device: buildDevice(bidderRequest),
       user: user && user.length === 1 ? user[0] : {}
     };
 
@@ -96,6 +97,16 @@ export const spec = {
     // coppa compliance
     if (bidderRequest?.ortb2?.regs?.coppa) {
       deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
+    }
+
+    // ortb2 blocking: bcat, badv (with optional params fallback)
+    const bcat = bidderRequest?.ortb2?.bcat || deepAccess(validBidRequests, '0.params.bcat');
+    const badv = bidderRequest?.ortb2?.badv || deepAccess(validBidRequests, '0.params.badv');
+    if (isArray(bcat) && bcat.length > 0) {
+      openRtbBidRequest.bcat = bcat;
+    }
+    if (isArray(badv) && badv.length > 0) {
+      openRtbBidRequest.badv = badv;
     }
 
     injectEids(openRtbBidRequest, validBidRequests);
@@ -142,7 +153,7 @@ function clean(obj) {
 }
 
 function buildImpression(bid) {
-  let impression = {};
+  let impression;
   const floor = getFloor(bid);
   impression = {
     id: bid.bidId,
@@ -186,34 +197,9 @@ function getFloor(bidRequest) {
 }
 
 function _buildVideo(bid) {
-  const videoObj = {};
-  const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bid, 'params.video', {});
-  const computedParams = {};
-
-  if (Array.isArray(videoAdUnitParams.playerSize)) {
-    const tempSize = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize;
-    computedParams.w = tempSize[0];
-    computedParams.h = tempSize[1];
-  }
-
-  const videoParams = {
-    ...computedParams,
-    ...videoAdUnitParams,
-    ...videoBidderParams
-  };
-
-  Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
-    if (videoParams.hasOwnProperty(paramName)) {
-      if (ORTB_VIDEO_PARAMS[paramName](videoParams[paramName])) {
-        videoObj[paramName] = videoParams[paramName];
-      } else {
-        logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
-      }
-    }
+  return buildOrtbVideo(bid, ORTB_VIDEO_PARAMS, (paramName) => {
+    logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
   });
-
-  return videoObj;
 };
 
 function buildCustomParams(bid) {
@@ -221,9 +207,9 @@ function buildCustomParams(bid) {
     return {
       deepintent: bid.params.custom
 
-    }
+    };
   } else {
-    return {}
+    return {};
   }
 }
 function buildUser(bid) {
@@ -235,7 +221,7 @@ function buildUser(bid) {
       gender: bid.params.user.gender && typeof bid.params.user.gender === 'string' ? bid.params.user.gender : undefined,
       keywords: bid.params.user.keywords && typeof bid.params.user.keywords === 'string' ? bid.params.user.keywords : undefined,
       customdata: bid.params.user.customdata && typeof bid.params.user.customdata === 'string' ? bid.params.user.customdata : undefined
-    }
+    };
   }
 }
 
@@ -257,14 +243,14 @@ function buildBanner(bid) {
           h: sizes[0][1],
           w: sizes[0][0],
           pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
-        }
+        };
       }
     } else {
       return {
         h: bid.params.height,
         w: bid.params.width,
         pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
-      }
+      };
     }
   }
 }
@@ -278,15 +264,17 @@ function buildSite(bidderRequest) {
   return site;
 }
 
-function buildDevice() {
+function buildDevice(bidderRequest) {
+  // core FPD enrichment already fills ortb2.device from the browser (ua, w, h, language);
+  // read it from the request rather than from navigator/screen directly
   return {
-    ua: navigator.userAgent,
+    ua: deepAccess(bidderRequest, 'ortb2.device.ua'),
     js: 1,
     dnt: getDNT() ? 1 : 0,
-    h: screen.height,
-    w: screen.width,
-    language: navigator.language
-  }
+    h: deepAccess(bidderRequest, 'ortb2.device.h'),
+    w: deepAccess(bidderRequest, 'ortb2.device.w'),
+    language: deepAccess(bidderRequest, 'ortb2.device.language')
+  };
 }
 
 registerBidder(spec);

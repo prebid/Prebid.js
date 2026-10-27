@@ -1,4 +1,4 @@
-import {isFn, isPlainObject} from '../../src/utils.js';
+import { isFn, isPlainObject } from '../../src/utils.js';
 
 export function hasUserInfo(bid) {
   return !!(bid.params && bid.params.user);
@@ -15,9 +15,9 @@ export function hasAppId(bid) {
 export function addUserId(eids, id, source, rti) {
   if (id) {
     if (rti) {
-      eids.push({source, id, rti_partner: rti});
+      eids.push({ source, id, rti_partner: rti });
     } else {
-      eids.push({source, id});
+      eids.push({ source, id });
     }
   }
   return eids;

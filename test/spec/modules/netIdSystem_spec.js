@@ -1,7 +1,7 @@
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {netIdSubmodule} from '../../../modules/netIdSystem.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { netIdSubmodule } from '../../../modules/netIdSystem.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 describe('Net ID', () => {
   describe('eid', () => {
@@ -16,7 +16,7 @@ describe('Net ID', () => {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'netid.de',
-        uids: [{id: 'some-random-id-value', atype: 1}]
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
       });
     });
   });

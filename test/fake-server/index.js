@@ -2,20 +2,31 @@
 
 const express = require('express');
 const morgan = require('morgan');
-const bodyParser = require('body-parser');
-const argv = require('yargs').argv;
-const fakeResponder = require('./fake-responder.js');
+const path = require('path');
+const { parseArgs } = require('node:util');
+const appnexusHandler = require('./responders/appnexus.js');
+const tripleliftHandler = require('./responders/triplelift.js');
 const bundleMaker = require('./bundle.js');
+
+const { values: argv } = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  options: {
+    port: { type: 'string' },
+  },
+});
 
 const PORT = argv.port || '4444';
 
 // Initialize express app
 const app = express();
 
+app.use('/static', express.static(path.join(__dirname, 'static')));
+
 // Middlewares
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(bodyParser.text({ type: 'text/plain' }));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.text({ type: 'text/plain' }));
 app.use(morgan('dev')); // used to log incoming requests
 
 // Allow Cross Origin request from 'test.localhost:9999'
@@ -29,7 +40,11 @@ app.get('/bundle', bundleMaker, (req, res) => {
   res.send();
 });
 
-app.post('/appnexus', fakeResponder, (req, res) => {
+app.post('/appnexus', appnexusHandler, (req, res) => {
+  res.send();
+});
+
+app.post('/triplelift', tripleliftHandler, (req, res) => {
   res.send();
 });
 

@@ -1,26 +1,35 @@
+// Compiles the sources. The options a consumer's compiler has live in tsconfig-strict.json, which
+// this extends; what is here is what the build needs on top of them - emit, and the looseness the
+// sources still need.
 {
+  "extends": "./tsconfig-strict.json",
   "compilerOptions": {
     // Ensure that .d.ts files are created by tsc, but not .js files
+    "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true,
     // Ensure that Babel can safely transpile files in the TypeScript project
     "isolatedModules": true,
     "rootDir": "./",
-    "outDir": "./dist/src/",
-    "noImplicitAny": false,
-    "allowJs": true,
+    // Emit into the cache, not into `dist/src`. `gulp precompile` empties `dist/src` on every cold
+    // run and then copies these declarations in, so tsc's outputs and its incremental state both
+    // survive - they have to agree, and they only can if they live together. Emitting straight into
+    // `dist/src` with the buildinfo elsewhere makes tsc skip emitting declarations it believes it
+    // already wrote, leaving a partial type surface that nothing in the build detects.
+    "outDir": "./.cache/ts/out/",
+    "tsBuildInfoFile": "./.cache/ts/tsconfig.tsbuildinfo",
+    // the sources are not strict yet; the declarations they emit are checked as a consumer sees them
+    // by `gulp ts-strict`
+    "strict": false,
+    "allowJs": false,
     "checkJs": false,
-    "types": [],
-    "lib": ["es2019", "DOM"],
-    "target": "es2019",
-    "allowImportingTsExtensions": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "allowImportingTsExtensions": true
   },
   "include": [
     "./**/*.ts",
   ],
   "exclude": [
+    "./.cache/**/*", // tsc's own output; the `include` above would otherwise feed it back in
     "./dist/**/*",
     "./build/**/*",
     "./node_modules/**/*",

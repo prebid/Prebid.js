@@ -4,7 +4,7 @@ type AddUntil<E, T extends E[], L extends number> = T['length'] extends L ? T : 
  * Last<T> => type of last element in tuple T
  */
 export type Last<T extends readonly any[]> =
-    [...T] extends [...rest: any[], last: infer R] ? R : IfUnbounded<T, T[1e100], never>
+    [...T] extends [...rest: any[], last: infer R] ? R : IfUnbounded<T, T[1e100], never>;
 /**
  * AllExceptLast<T> => Type of tuple that matches T except it drops the last element
  */

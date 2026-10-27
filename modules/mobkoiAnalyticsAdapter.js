@@ -76,6 +76,7 @@ export class LocalContext {
   _impressionPayloadCache = {
     // [impid]: { ... }
   };
+
   /**
    * The payload that is common to all bid contexts. The payload will be
    * submitted to the server along with the debug events.
@@ -87,6 +88,7 @@ export class LocalContext {
 
     return this._impressionPayloadCache[impid] || {};
   }
+
   /**
    * Update the payload for all impressions. The new values will be merged to
    * the existing payload.
@@ -253,7 +255,7 @@ export class LocalContext {
    * @param {*} params.subPayloads Objects containing additional data that are
    * obtain from to the Prebid events indexed by SUB_PAYLOAD_TYPES.
    */
-  pushEventToAllBidContexts({eventType, level, timestamp, note, subPayloads}) {
+  pushEventToAllBidContexts({ eventType, level, timestamp, note, subPayloads }) {
     // Create one event for each impression ID
     _each(this.getAllBidderRequestImpIds(), impid => {
       const eventClone = new Event({
@@ -418,7 +420,6 @@ function pickKeyFields(objType, eventArgs) {
           'requestTimestamp',
           'responseTimestamp',
           'seatBidId',
-          'statusMessage',
           'timeToRespond',
           'rejectionReason',
           'ortbId',
@@ -450,7 +451,7 @@ function pickKeyFields(objType, eventArgs) {
         reason: eventArgs.reason,
         message: eventArgs.message,
         doc: pick(eventArgs.doc, ['visibilityState', 'readyState', 'hidden']),
-      }
+      };
     }
     case SUB_PAYLOAD_TYPES.BIDDER_ERROR_ARGS: {
       return {
@@ -466,7 +467,7 @@ function pickKeyFields(objType, eventArgs) {
   }
 }
 
-const mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
+const mobkoiAnalytics = Object.assign(adapter({ analyticsType }), {
   localContext: new LocalContext(),
   async track({
     eventType,
@@ -582,7 +583,7 @@ const mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
           break;
         };
         case BIDDER_ERROR: {
-          utils.logTrackEvent(eventType, prebidEventArgs)
+          utils.logTrackEvent(eventType, prebidEventArgs);
           const argsType = utils.determineObjType(prebidEventArgs);
           this.localContext.pushEventToAllBidContexts({
             eventType,
@@ -597,7 +598,7 @@ const mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         case AD_RENDER_FAILED: {
           utils.logTrackEvent(eventType, prebidEventArgs);
           const argsType = utils.determineObjType(prebidEventArgs);
-          const {bid: prebidBid} = prebidEventArgs;
+          const { bid: prebidBid } = prebidEventArgs;
           const bidContext = this.localContext.retrieveBidContext(prebidBid);
           bidContext.pushEvent({
             eventInstance: new Event({
@@ -647,7 +648,7 @@ const mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
           break;
         }
         case BIDDER_DONE: {
-          utils.logTrackEvent(eventType, prebidEventArgs)
+          utils.logTrackEvent(eventType, prebidEventArgs);
           const argsType = utils.determineObjType(prebidEventArgs);
           this.localContext.pushEventToAllBidContexts({
             eventType,
@@ -775,6 +776,7 @@ class BidContext {
   get subPayloads() {
     return this._subPayloads;
   }
+
   /**
    * To avoid overriding the subPayloads object, we merge the new values to the
    * existing subPayloads object. Identity fields will automatically added to the
@@ -868,7 +870,7 @@ class BidContext {
    * @param {Event} params.eventInstance - DebugEvent object. If it does not contain the same impid as the BidContext, the event will be ignored.
    * @param {Object|null} params.subPayloads - Object containing various payloads obtained from the Prebid Event args. The payloads will be merged into the existing subPayloads.
    */
-  pushEvent({eventInstance, subPayloads}) {
+  pushEvent({ eventInstance, subPayloads }) {
     if (!(eventInstance instanceof Event)) {
       throw new Error('bugEvent must be an instance of DebugEvent');
     }
@@ -919,7 +921,7 @@ class Event {
    */
   timestamp = null;
 
-  constructor({eventType, impid, publisherId, level, timestamp, note = undefined}) {
+  constructor({ eventType, impid, publisherId, level, timestamp, note = undefined }) {
     if (!eventType) {
       throw new Error('eventType is required');
     }
@@ -994,7 +996,7 @@ export const SUB_PAYLOAD_UNIQUE_FIELDS_LOOKUP = {
 const PAYLOAD_REQUIRED_FIELDS = {
   impid: 'string',
   publisherId: 'string',
-}
+};
 
 export const utils = {
   /**

@@ -44,7 +44,7 @@ describe('adgrid bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
     it('We verify isBidRequestValid unvalid domainId', () => {
@@ -77,9 +77,9 @@ describe('adgrid bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
-  })
+  });
 
   describe('getLocalStorage enabled but nothing', () => {
     before(() => {
@@ -92,9 +92,9 @@ describe('adgrid bid adapter tests', () => {
       expect(typeof output.adgridId).to.be.eql('string');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
-  })
+  });
 
   describe('getLocalStorage enabled but wrong payload', () => {
     before(() => {
@@ -107,7 +107,7 @@ describe('adgrid bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -122,7 +122,7 @@ describe('adgrid bid adapter tests', () => {
       expect(output.adgridId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -203,7 +203,7 @@ describe('adgrid bid adapter tests', () => {
           bidderRequestId: '359bf8a3c06b2e',
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         }
-      ]
+      ];
       const bidderRequest = {
         bidderCode: 'adgrid',
         auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
@@ -364,7 +364,7 @@ describe('adgrid bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 

@@ -48,7 +48,7 @@ const request_banner = {
   params: {
     placementId: '1a8d9c22db19906cb8a5fd4518d05f62'
   }
-}
+};
 
 const bidRequest = {
   gdprConsent: {
@@ -61,29 +61,30 @@ const bidRequest = {
     referer: 'testdomain.com'
   },
   timeout: 700
-}
+};
 
 const request_video = {
   code: 'videoheroes-video-prebid',
-  mediaTypes: { video: {
-    minduration: 1,
-    maxduration: 999,
-    boxingallowed: 1,
-    skip: 0,
-    mimes: [
-      'application/javascript',
-      'video/mp4'
-    ],
-    playerSize: [[768, 1024]],
-    protocols: [
-      2, 3
-    ],
-    linearity: 1,
-    api: [
-      1,
-      2
-    ]
-  }
+  mediaTypes: {
+    video: {
+      minduration: 1,
+      maxduration: 999,
+      boxingallowed: 1,
+      skip: 0,
+      mimes: [
+        'application/javascript',
+        'video/mp4'
+      ],
+      playerSize: [[768, 1024]],
+      protocols: [
+        2, 3
+      ],
+      linearity: 1,
+      api: [
+        1,
+        2
+      ]
+    }
   },
 
   bidder: 'videoheroes',
@@ -91,7 +92,7 @@ const request_video = {
     placementId: '1a8d9c22db19906cb8a5fd4518d05f62'
   }
 
-}
+};
 
 const response_banner = {
   id: 'request_id',
@@ -144,17 +145,18 @@ const response_native = {
       impid: 'request_imp_id',
       price: 5,
       adomain: ['example.com'],
-      adm: { native:
+      adm: {
+        native:
           {
             assets: [
-              {id: 1, title: 'dummyText'},
-              {id: 3, image: imgData},
+              { id: 1, title: 'dummyText' },
+              { id: 3, image: imgData },
               {
                 id: 5,
-                data: {value: 'organization.name'}
+                data: { value: 'organization.name' }
               }
             ],
-            link: {url: 'example.com'},
+            link: { url: 'example.com' },
             imptrackers: ['tracker1.com', 'tracker2.com', 'tracker3.com'],
             jstracker: 'tracker1.com'
           }
@@ -250,12 +252,12 @@ describe('VideoheroesBidAdapter', function() {
       const response = spec.interpretResponse(emptyResponse);
 
       expect(response).to.be.an('array').that.is.empty;
-    })
+    });
 
     it('Should interpret banner response', function () {
       const bannerResponse = {
         body: response_banner
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_banner.seatbid[0].bid[0].impid,
@@ -269,7 +271,7 @@ describe('VideoheroesBidAdapter', function() {
         dealId: response_banner.seatbid[0].bid[0].dealid,
         mediaType: 'banner',
         ad: response_banner.seatbid[0].bid[0].adm
-      }
+      };
 
       const bannerResponses = spec.interpretResponse(bannerResponse);
 
@@ -291,7 +293,7 @@ describe('VideoheroesBidAdapter', function() {
     it('Should interpret video response', function () {
       const videoResponse = {
         body: response_video
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_video.seatbid[0].bid[0].impid,
@@ -305,7 +307,7 @@ describe('VideoheroesBidAdapter', function() {
         dealId: response_video.seatbid[0].bid[0].dealid,
         mediaType: 'video',
         vastXml: response_video.seatbid[0].bid[0].adm
-      }
+      };
 
       const videoResponses = spec.interpretResponse(videoResponse);
 
@@ -315,7 +317,7 @@ describe('VideoheroesBidAdapter', function() {
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
+      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
@@ -327,7 +329,7 @@ describe('VideoheroesBidAdapter', function() {
     it('Should interpret native response', function () {
       const nativeResponse = {
         body: response_native
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_native.seatbid[0].bid[0].impid,
@@ -340,8 +342,8 @@ describe('VideoheroesBidAdapter', function() {
         creativeId: response_native.seatbid[0].bid[0].crid,
         dealId: response_native.seatbid[0].bid[0].dealid,
         mediaType: 'native',
-        native: {clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url}
-      }
+        native: { clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url }
+      };
 
       const nativeResponses = spec.interpretResponse(nativeResponse);
 
@@ -351,7 +353,7 @@ describe('VideoheroesBidAdapter', function() {
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl)
+      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
@@ -360,4 +362,4 @@ describe('VideoheroesBidAdapter', function() {
       expect(dataItem.height).to.equal(expectedBidResponse.height);
     });
   });
-})
+});

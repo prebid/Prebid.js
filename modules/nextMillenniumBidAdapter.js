@@ -13,14 +13,14 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 
-import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
+import { getAd } from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
@@ -149,7 +149,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const bidIds = new Map()
+    const bidIds = new Map();
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
@@ -180,11 +180,11 @@ export const spec = {
     _each(validBidRequests, (bid, i) => {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getPlacementId(bid);
-      const {cur, mediaTypes} = getCurrency(bid);
+      const { cur, mediaTypes } = getCurrency(bid);
       if (i === 0) postBody.cur = cur;
 
-      const impId = String(i + 1)
-      bidIds.set(impId, bid.bidId)
+      const impId = String(i + 1);
+      bidIds.set(impId, bid.bidId);
 
       const imp = getImp(impId, bid, id, mediaTypes);
       setOrtb2Parameters(ALLOWED_ORTB2_IMP_PARAMETERS, imp, bid?.ortb2Imp);
@@ -218,7 +218,7 @@ export const spec = {
       _each(resp.bid, (bid) => {
         const requestId = bidRequest.bidIds.get(bid.impid);
 
-        const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
+        const { ad, adUrl, vastUrl, vastXml } = getAd(bid);
 
         const bidResponse = {
           requestId,
@@ -259,10 +259,10 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
 
     const pixels = [];
-    const getSetPixelFunc = type => url => { pixels.push({type, url: replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type)}) };
-    const getSetPixelsFunc = type => response => { deepAccess(response, `body.ext.sync.${type}`, []).forEach(getSetPixelFunc(type)) };
+    const getSetPixelFunc = type => url => { pixels.push({ type, url: replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type) }); };
+    const getSetPixelsFunc = type => response => { deepAccess(response, `body.ext.sync.${type}`, []).forEach(getSetPixelFunc(type)); };
 
-    const setPixel = (type, url) => { (getSetPixelFunc(type))(url) };
+    const setPixel = (type, url) => { (getSetPixelFunc(type))(url); };
     const setPixelImages = getSetPixelsFunc('image');
     const setPixelIframes = getSetPixelsFunc('iframe');
 
@@ -337,25 +337,25 @@ export const spec = {
 
 export function getExtNextMilImp(impId, bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
-  const {adSlots, allowedAds} = bid.params
+  const { adSlots, allowedAds } = bid.params;
   const nextMilImp = {
     impId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
+      scrollTop: getWinDimensions().scrollY,
     },
   };
 
   if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots;
-  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
+  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds;
 
   return nextMilImp;
 }
 
 export function getImp(impId, bid, id, mediaTypes) {
-  const {banner, video} = mediaTypes;
+  const { banner, video } = mediaTypes;
   const imp = {
     id: impId,
     ext: {
@@ -382,8 +382,8 @@ export function getImpBanner(imp, banner) {
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
   if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
 
-  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} });
-  const {w, h} = (format[0] || {})
+  const format = (banner.data?.sizes || []).map(s => { return { w: s[0], h: s[1] }; });
+  const { w, h } = (format[0] || {});
   imp.banner = {
     w,
     h,
@@ -462,7 +462,7 @@ export function setOrtb2Parameters(allowedOrtb2Parameters, body, ortb2 = {}) {
     if (value) deepSetValue(body, parameter, value);
   }
 
-  if (body.wlang) delete body.wlangb
+  if (body.wlang) delete body.wlangb;
 }
 
 export function setEids(postBody = {}, bids = []) {
@@ -499,13 +499,13 @@ function getCurrency(bid = {}) {
   for (const mediaType of types) {
     const mediaTypeData = deepAccess(bid, `mediaTypes.${mediaType}`);
     if (mediaTypeData) {
-      mediaTypes[mediaType] = {data: mediaTypeData};
+      mediaTypes[mediaType] = { data: mediaTypeData };
     } else {
       continue;
     };
 
     if (typeof bid.getFloor === 'function') {
-      const floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      const floorInfo = bid.getFloor({ currency, mediaType, size: '*' });
       mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
       mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
@@ -517,7 +517,7 @@ function getCurrency(bid = {}) {
 
   if (!cur.length) cur.push(DEFAULT_CURRENCY);
 
-  return {cur, mediaTypes};
+  return { cur, mediaTypes };
 }
 
 export function getPlacementId(bid) {
@@ -611,13 +611,13 @@ export function getSourceObj(validBidRequests, bidderRequest) {
 }
 
 function getSua() {
-  const {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  const { brands, mobile, platform } = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 
   return {
     browsers: brands,
     mobile: Number(!!mobile),
-    platform: (platform && {brand: platform}) || undefined,
+    platform: { brand: platform },
   };
 }
 

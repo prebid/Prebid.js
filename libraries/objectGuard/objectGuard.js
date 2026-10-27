@@ -1,5 +1,5 @@
-import {isData, sessionedApplies} from '../../src/activities/redactor.js';
-import {deepEqual, logWarn} from '../../src/utils.js';
+import { isData, sessionedApplies } from '../../src/activities/redactor.js';
+import { deepEqual, logWarn } from '../../src/utils.js';
 
 /**
  * @typedef {import('../src/activities/redactor.js').TransformationRuleDef} TransformationRuleDef
@@ -71,7 +71,7 @@ export function objectGuard(rules) {
           }
           return val;
         }
-      }
+      };
     }
     return node.redactRule;
   }
@@ -80,7 +80,7 @@ export function objectGuard(rules) {
     if (node.wpRule == null) {
       node.wpRule = node.wpRules.length === 0 ? false : {
         check: (applies) => node.wpRules.some(applies),
-      }
+      };
     }
     return node.wpRule;
   }
@@ -139,20 +139,46 @@ export function objectGuard(rules) {
     return true;
   }
 
+  const TARGET = Symbol('TARGET');
+
   function mkGuard(obj, tree, final, applies, cache = new WeakMap()) {
     // If this object is already proxied, return the cached proxy
     if (cache.has(obj)) {
       return cache.get(obj);
     }
 
+    /**
+     * Dereference (possibly nested) proxies to their underlying objects.
+     *
+     * This is to accommodate usage patterns like:
+     *
+     * guardedObject.property = [...guardedObject.property, additionalData];
+     *
+     * where the `set` proxy trap would get an already proxied object as argument.
+     */
+    function deref(obj, visited = new Set()) {
+      if (cache.has(obj?.[TARGET])) return obj[TARGET];
+      if (obj == null || typeof obj !== 'object') return obj;
+      if (visited.has(obj)) return obj;
+      visited.add(obj);
+      Object.keys(obj).forEach(k => {
+        const sub = deref(obj[k], visited);
+        if (sub !== obj[k]) {
+          obj[k] = sub;
+        }
+      });
+      return obj;
+    }
+
     const proxy = new Proxy(obj, {
       get(target, prop, receiver) {
+        if (prop === TARGET) return target;
         const val = Reflect.get(target, prop, receiver);
         if (final && val != null && typeof val === 'object') {
           // a parent property has write protect rules, keep guarding
-          return mkGuard(val, tree, final, applies, cache)
+          return mkGuard(val, tree, final, applies, cache);
         } else if (tree.children?.hasOwnProperty(prop)) {
-          const {children, hasWP} = tree.children[prop];
+          const { children, hasWP } = tree.children[prop];
           if (isData(val)) {
             // if this property has redact rules, apply them
             const rule = getRedactRule(tree.children[prop]);
@@ -175,6 +201,7 @@ export function objectGuard(rules) {
             return true;
           }
         }
+        newValue = deref(newValue);
         if (tree.children?.hasOwnProperty(prop)) {
           // apply all (possibly nested) write protect rules
           const curValue = Reflect.get(target, prop, receiver);
@@ -208,7 +235,7 @@ export function objectGuard(rules) {
 
   return function guard(obj, ...args) {
     const session = {};
-    return mkGuard(obj, root, false, sessionedApplies(session, ...args))
+    return mkGuard(obj, root, false, sessionedApplies(session, ...args));
   };
 }
 
@@ -219,5 +246,5 @@ export function objectGuard(rules) {
 export function writeProtectRule(ruleDef) {
   return Object.assign({
     wp: true,
-  }, ruleDef)
+  }, ruleDef);
 }

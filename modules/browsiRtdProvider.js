@@ -71,8 +71,8 @@ export function sendPageviewEvent(eventType) {
         vendor: 'browsi',
         type: 'pageview',
         billingId: generateUUID()
-      })
-    })
+      });
+    });
   }
 }
 
@@ -145,7 +145,7 @@ export function addBrowsiTag(data) {
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
+  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data);
   script.brwRandom = RANDOM;
   Object.assign(script.prebidData, { pvid: PVID || data.pvid, t: TIMESTAMP, apik: API_KEY });
   if (_moduleParams.keyName) {
@@ -195,7 +195,7 @@ function getServerData(auc) {
       _ic[uc] = _ic[uc] || 0;
       const _c = _ic[uc];
       if (!uc) {
-        return rp
+        return rp;
       }
       rp[uc] = {};
       Object.assign(rp[uc], _pg);
@@ -203,7 +203,7 @@ function getServerData(auc) {
       const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
       const _pd = _plc[identifier];
       if (!_pd) {
-        return rp
+        return rp;
       }
       Object.entries(_pd).forEach(([key, value]) => {
         const kv = getKVObject(key, getCurrentData(value, _c));
@@ -279,7 +279,7 @@ function getPredictionsFromServer(url) {
             addBrowsiTag(data);
           } catch (err) {
             logError('unable to parse data');
-            setBrowsiData({})
+            setBrowsiData({});
           }
         } else if (req.status === 204) {
           // unrecognized site key
@@ -383,7 +383,7 @@ function getGptTargeting(uc) {
           ...(viewabilityValue ? { [viewabilityKey]: viewabilityValue } : {}),
           ...(scrollValue ? { [scrollKey]: scrollValue } : {}),
           ...(revenueValue ? { [revenueKey]: revenueValue } : {}),
-        }
+        };
         return [key, result];
       })
     );
@@ -408,10 +408,10 @@ function getTargetingData(uc, c, us, a) {
         billingId: generateUUID(),
         transactionId: transactionId,
         auctionId: auctionId
-      })
+      });
     }
   });
-  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc)
+  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc);
   return targetingData;
 }
 

@@ -1,4 +1,5 @@
 import * as optimeraRTD from '../../../modules/optimeraRtdProvider.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 const utils = require('src/utils.js');
 
@@ -160,12 +161,55 @@ describe('Optimera RTD propery sets the window.optimera object', () => {
     insights: {
       ilv: ['div-5'],
       miv: ['div-6'],
-    }
+    },
+    pagelevel: [
+      'U',
+      'LA_9999',
+      'LB_9999',
+      'LC_9999',
+    ]
   };
   it('Properly set the score file url and scores', () => {
     optimeraRTD.setScores(JSON.stringify(scores));
     expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8']);
     expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
+    expect(window.optimera.pagelevel).to.include.ordered.members(['U', 'LA_9999', 'LB_9999', 'LC_9999']);
+  });
+
+  const scoresWithoutPageLevel = {
+    'div-0': ['A1', 'A2'],
+    'div-1': ['A3', 'A4'],
+    device: {
+      de: {
+        'div-0': ['A5', 'A6'],
+        'div-1': ['A7', 'A8'],
+        insights: {
+          ilv: ['div-0'],
+          miv: ['div-4'],
+        }
+      },
+      mo: {
+        'div-0': ['A9', 'B0'],
+        'div-1': ['B1', 'B2'],
+        insights: {
+          ilv: ['div-1'],
+          miv: ['div-2'],
+        }
+      }
+    },
+    insights: {
+      ilv: ['div-5'],
+      miv: ['div-6'],
+    },
+  };
+
+  it('Properly leaves pagelevel empty when it is not provided', () => {
+    window.optimera = {};
+
+    optimeraRTD.setScores(JSON.stringify(scoresWithoutPageLevel));
+    expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8']);
+    expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
+    expect(window.optimera.pagelevel).to.deep.equal([]);
   });
 });
 
@@ -231,5 +275,37 @@ describe('Optimera RTD injectOrtbScores', () => {
     optimeraRTD.injectOrtbScores(reqBidsConfigObj);
 
     expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined;
+  });
+});
+
+describe('Optimera RTD oPS script', () => {
+  function conf(params) {
+    return { name: 'optimeraRTD', params: Object.assign({ clientID: '9999' }, params) };
+  }
+
+  it('should default callOPS to false and not request the script', () => {
+    optimeraRTD.init(conf());
+    expect(optimeraRTD.callOPS).to.equal(false);
+    expect(loadExternalScriptStub.called).to.equal(false);
+  });
+
+  it('should not request the script when callOPS is false', () => {
+    optimeraRTD.init(conf({ callOPS: false }));
+    expect(optimeraRTD.callOPS).to.equal(false);
+    expect(loadExternalScriptStub.called).to.equal(false);
+  });
+
+  it('should request the oPS script and append it to the body when callOPS is true', () => {
+    optimeraRTD.init(conf({ callOPS: true }));
+    expect(optimeraRTD.callOPS).to.equal(true);
+    expect(loadExternalScriptStub.calledOnce).to.equal(true);
+    expect(loadExternalScriptStub.getCall(0).args[0]).to.equal('https://d15kdpgjg3unno.cloudfront.net/oPS.js?cid=9999');
+    expect(loadExternalScriptStub.getCall(0).args[5]).to.deep.equal({
+      id: 'optimera-ops',
+      'data-cid': '9999',
+    });
+    const script = loadExternalScriptStub.getCall(0).returnValue;
+    expect(script.parentNode).to.equal(document.body);
+    script.remove();
   });
 });

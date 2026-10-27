@@ -20,7 +20,7 @@ const BidStatus = {
   REJECTED: 'rejected',
   NOBID: 'noBid',
   ERROR: 'error',
-}
+};
 
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
@@ -194,7 +194,7 @@ export const locals = {
     };
     this.adUnitMap = {};
   }
-}
+};
 
 /**
  * @typedef {Object} AnalyticsAdapter
@@ -337,8 +337,8 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
-    auctions: [ auctions[completedAuctionId] ],
-  }
+    auctions: [auctions[completedAuctionId]],
+  };
   if (uspDataHandler.getConsentData()) {
     report.usPrivacy = uspDataHandler.getConsentData();
   }
@@ -401,8 +401,7 @@ function analyticEventHandler({ eventType, args }) {
     case EVENTS.BID_REJECTED:
       onBidRejected(args);
       break;
-    case EVENTS.NO_BID:
-    case EVENTS.SEAT_NON_BID:
+    case EVENTS.NO_BID: // todo: need to also consider pbsanalytics where nonbid is not null
       setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
       break;
     case EVENTS.BIDDER_ERROR:
@@ -447,7 +446,7 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         mediaTypes: Object.keys(au.mediaTypes),
         sizes: au.sizes.map(size => size.join('x')),
         bids: [],
-      }
+      };
     }),
     userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {})),
   };
@@ -603,7 +602,7 @@ function setBidStatus(bid, status = BidStatus.AVAILABLE) {
     error: {
       next: [BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
     },
-  }
+  };
 
   const winningStatuses = [BidStatus.RENDERED];
 
@@ -650,5 +649,5 @@ function getLogger() {
     info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...deepClone(args)),
     warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...deepClone(args)),
     error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...deepClone(args)),
-  }
+  };
 }

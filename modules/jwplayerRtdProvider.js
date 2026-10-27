@@ -9,11 +9,11 @@
  * @requires module:modules/realTimeData
  */
 
-import {submodule} from '../src/hook.js';
-import {config} from '../src/config.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import { deepAccess, logError, logWarn } from '../src/utils.js'
-import {getGlobal} from '../src/prebidGlobal.js';
+import { submodule } from '../src/hook.js';
+import { config } from '../src/config.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { deepAccess, logError, logWarn } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -52,9 +52,9 @@ export const jwplayerSubmodule = {
   init
 };
 
-config.getConfig('realTimeData', ({realTimeData}) => {
+config.getConfig('realTimeData', ({ realTimeData }) => {
   const providers = realTimeData.dataProviders;
-  const jwplayerProvider = providers && ((providers) || []).find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
+  const jwplayerProvider = providers && providers.find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
   const params = jwplayerProvider && jwplayerProvider.params;
   if (!params) {
     return;
@@ -281,7 +281,7 @@ export function getVatFromPlayer(playerDivId, mediaID) {
   const description = item.description;
   const mediaUrl = item.file;
   const segments = item.jwpseg;
-  cachePlaylistItem(item, mediaID)
+  cachePlaylistItem(item, mediaID);
 
   return {
     segments,
@@ -305,7 +305,7 @@ export function formatTargetingResponse(vat) {
   if (mediaID) {
     targeting.content = {
       id: getContentId(mediaID)
-    }
+    };
   }
   return targeting;
 }

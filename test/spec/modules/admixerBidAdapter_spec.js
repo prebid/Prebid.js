@@ -1,14 +1,14 @@
-import {expect} from 'chai';
-import {spec} from 'modules/admixerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/admixerBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const RTB_BIDDER_CODE = 'rtbstack'
+const RTB_BIDDER_CODE = 'rtbstack';
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
-const CLIENT_ID = 5124;
+
 const ENDPOINT_ID = 81264;
 
 describe('AdmixerAdapter', function () {
@@ -153,7 +153,7 @@ describe('AdmixerAdapter', function () {
           page: 'https://example.com',
         },
       }
-    })
+    });
 
     it('build request for admixer', function () {
       const requestParams = requestParamsFor('admixer');
@@ -309,9 +309,9 @@ describe('AdmixerAdapter', function () {
     ];
 
     it('Returns valid values', function () {
-      const userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
-      const userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
-      const userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
+      const userSyncAll = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, responses);
+      const userSyncImg = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, responses);
+      const userSyncFrm = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, responses);
       expect(userSyncAll).to.be.an('array').with.lengthOf(2);
       expect(userSyncImg).to.be.an('array').with.lengthOf(1);
       expect(userSyncImg[0].url).to.be.equal(imgUrl);

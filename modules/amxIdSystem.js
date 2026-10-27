@@ -5,16 +5,16 @@
  * @module modules/amxIdSystem
  * @requires module:modules/userId
  */
-import {uspDataHandler} from '../src/adapterManager.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {deepAccess, logError} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
+import { uspDataHandler } from '../src/adapterManager.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { deepAccess, logError } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 
 const NAME = 'amxId';
 const GVL_ID = 737;
@@ -22,9 +22,9 @@ const ID_KEY = NAME;
 const version = '2.0';
 const SYNC_URL = 'https://id.a-mx.com/sync/';
 const AJAX_TIMEOUT = 300;
-const AJAX_OPTIONS = {method: 'GET', withCredentials: true, contentType: 'text/plain'};
+const AJAX_OPTIONS = { method: 'GET', withCredentials: true, contentType: 'text/plain' };
 
-export const storage = getStorageManager({moduleName: NAME, moduleType: MODULE_TYPE_UID});
+export const storage = getStorageManager({ moduleName: NAME, moduleType: MODULE_TYPE_UID });
 const AMUID_KEY = '__amuidpb';
 const getBidAdapterID = () => storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(AMUID_KEY) : null;
 

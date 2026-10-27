@@ -1,8 +1,9 @@
-import {deepAccess, isArray} from '../../src/utils.js';
+import { deepAccess, isArray } from '../../src/utils.js';
 import { config } from '../../src/config.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import { getPlacementPositionUtils } from "../placementPositionInfo/placementPositionInfo.js";
 
-export const supportedMediaTypes = [VIDEO, BANNER]
+export const supportedMediaTypes = [VIDEO, BANNER];
 
 export function isBidRequestValid (bid) {
   return !!deepAccess(bid, 'params.aid');
@@ -28,8 +29,8 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
         syncs.push({
           type: type,
           url: uri
-        })
-      })
+        });
+      });
     }
   }
 
@@ -39,20 +40,22 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
         if (isArray(response.body)) {
           response.body.forEach(b => {
             addSyncs(b);
-          })
+          });
         } else {
-          addSyncs(response.body)
+          addSyncs(response.body);
         }
       }
-    })
+    });
   }
   return syncs;
 }
 
 export function createTag(bidRequests, adapterRequest) {
+  const placementEnv = getPlacementPositionUtils().getPlacementEnv();
   const tag = {
     // TODO: is 'page' the right value here?
     Domain: deepAccess(adapterRequest, 'refererInfo.page'),
+    ...placementEnv
   };
 
   if (config.getConfig('coppa') === true) {

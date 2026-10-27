@@ -1,9 +1,10 @@
-import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { deepAccess, getWindowTop, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,7 +12,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
  */
 
 const BIDDER_CODE = 'livewrapped';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const URL = 'https://lwadm.com/ad';
 const VERSION = '1.4';
 
@@ -94,9 +95,9 @@ export const spec = {
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
-      coppa: getCoppa(),
+      coppa: getCoppa(bidderRequest),
       usPrivacy: bidderRequest.uspConsent,
-      cookieSupport: !isSafariBrowser() && storage.cookiesAreEnabled(),
+      cookieSupport: !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
       rtbData: ortb2,
@@ -112,7 +113,8 @@ export const spec = {
     return {
       method: 'POST',
       url: bidUrl,
-      data: payloadString};
+      data: payloadString
+    };
   },
 
   /**
@@ -174,17 +176,17 @@ export const spec = {
 
     userSync.forEach(function(sync) {
       if (syncOptions.pixelEnabled && sync.type === 'Redirect') {
-        syncList.push({type: 'image', url: sync.url});
+        syncList.push({ type: 'image', url: sync.url });
       }
 
       if (syncOptions.iframeEnabled && sync.type === 'Iframe') {
-        syncList.push({type: 'iframe', url: sync.url});
+        syncList.push({ type: 'iframe', url: sync.url });
       }
     });
 
     return syncList;
   }
-}
+};
 
 function hasUserId(bid) {
   return !!bid.params.userId;
@@ -273,7 +275,7 @@ function sizeToFormat(size) {
   return {
     width: size[0],
     height: size[1]
-  }
+  };
 }
 
 function getBidFloor(bid, currency) {
@@ -301,7 +303,7 @@ function getAdblockerRecovered() {
 function handleEids(bidRequests) {
   const bidRequest = bidRequests[0];
   if (bidRequest && bidRequest.userIdAsEids) {
-    return {user: {ext: {eids: bidRequest.userIdAsEids}}};
+    return { user: { ext: { eids: bidRequest.userIdAsEids } } };
   }
 
   return undefined;
@@ -339,9 +341,7 @@ function getDeviceHeight() {
   return device.h || getWinDimensions().innerHeight;
 }
 
-function getCoppa() {
-  if (typeof config.getConfig('coppa') === 'boolean') {
-    return config.getConfig('coppa');
-  }
+function getCoppa(bidderRequest) {
+  return bidderRequest?.ortb2?.regs?.coppa === 1 || (coppaDataHandler.getCoppa() ? true : undefined);
 }
 registerBidder(spec);

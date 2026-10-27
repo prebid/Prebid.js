@@ -1,5 +1,5 @@
-import {config} from 'src/config.js';
-import {deepAccess} from 'src/utils.js';
+import { config } from 'src/config.js';
+
 import * as agRTD from 'modules/airgridRtdProvider.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
@@ -40,7 +40,7 @@ describe('airgrid RTD Submodule', function () {
       expect(agRTD.airgridSubmodule.init(RTD_CONFIG.dataProviders[0])).to.equal(
         true
       );
-      expect(loadExternalScriptStub.called).to.be.true
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('should attach script to DOM with correct config', function () {
@@ -78,15 +78,15 @@ describe('airgrid RTD Submodule', function () {
 
       const bidderOrtb2 = {};
 
-      agRTD.setAudiencesAsBidderOrtb2({ortb2Fragments: {bidder: bidderOrtb2}}, RTD_CONFIG.dataProviders[0], audiences);
+      agRTD.setAudiencesAsBidderOrtb2({ ortb2Fragments: { bidder: bidderOrtb2 } }, RTD_CONFIG.dataProviders[0], audiences);
 
-      const bidders = RTD_CONFIG.dataProviders[0].params.bidders
+      const bidders = RTD_CONFIG.dataProviders[0].params.bidders;
 
       bidders.forEach((bidder) => {
         const ortb2 = bidderOrtb2[bidder];
         MATCHED_AUDIENCES.forEach((audience) => {
           expect(ortb2.user.data[0].segment.find(segment => segment.id === audience)).to.exist;
-        })
+        });
       });
     });
   });

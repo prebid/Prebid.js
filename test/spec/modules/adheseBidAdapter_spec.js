@@ -1,12 +1,12 @@
-import {expect} from 'chai';
-import {spec} from 'modules/adheseBidAdapter.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/adheseBidAdapter.js';
+import { config } from 'src/config.js';
 
 const BID_ID = 456;
 const TTL = 360;
 const NET_REVENUE = true;
 
-const minimalBid = function() {
+const minimalBid = function () {
   return {
     'bidId': BID_ID,
     'bidder': 'adhese',
@@ -15,10 +15,10 @@ const minimalBid = function() {
       location: '_main_page_',
       format: 'leaderboard'
     }
-  }
+  };
 };
 
-const bidWithParams = function(data) {
+const bidWithParams = function (data) {
   const bid = minimalBid();
   bid.params.data = data;
   return bid;
@@ -72,68 +72,68 @@ describe('AdheseAdapter', function () {
     };
 
     it('should include requested slots', function () {
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
       expect(JSON.parse(req.data).slots[0].slotname).to.equal('_main_page_-leaderboard');
     });
 
     it('should include all extra bid params', function () {
-      const req = spec.buildRequests([ bidWithParams({ 'ag': '25' }) ], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'ag': '25' })], bidderRequest);
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': [ '25' ] });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': ['25'] });
     });
 
     it('should assign bid params per slot', function () {
-      const req = spec.buildRequests([ bidWithParams({ 'ag': '25' }), bidWithParams({ 'ag': '25', 'ci': 'gent' }) ], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'ag': '25' }), bidWithParams({ 'ag': '25', 'ci': 'gent' })], bidderRequest);
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': [ '25' ] }).and.not.to.deep.include({ 'ci': [ 'gent' ] });
-      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ag': [ '25' ] }).and.to.deep.include({ 'ci': [ 'gent' ] });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': ['25'] }).and.not.to.deep.include({ 'ci': ['gent'] });
+      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ag': ['25'] }).and.to.deep.include({ 'ci': ['gent'] });
     });
 
     it('should split multiple target values', function () {
-      const req = spec.buildRequests([ bidWithParams({ 'ci': 'london' }), bidWithParams({ 'ci': 'gent' }) ], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'ci': 'london' }), bidWithParams({ 'ci': 'gent' })], bidderRequest);
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ci': [ 'london' ] });
-      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ci': [ 'gent' ] });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ci': ['london'] });
+      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ci': ['gent'] });
     });
 
     it('should filter out empty params', function () {
-      const req = spec.buildRequests([ bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': [ '', '' ], 'ee': [ 0, 1, null ], 'ff': 0, 'gg': [ 'x', 'y', '' ] }) ], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': ['', ''], 'ee': [0, 1, null], 'ff': 0, 'gg': ['x', 'y', ''] })], bidderRequest);
 
       const params = JSON.parse(req.data).slots[0].parameters;
       expect(params).to.not.have.any.keys('aa', 'bb', 'cc', 'dd');
-      expect(params).to.deep.include({ 'ee': [ 0, 1 ], 'ff': [ 0 ], 'gg': [ 'x', 'y' ] });
+      expect(params).to.deep.include({ 'ee': [0, 1], 'ff': [0], 'gg': ['x', 'y'] });
     });
 
     it('should include gdpr consent param', function () {
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': [ 'CONSENT_STRING' ] });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': ['CONSENT_STRING'] });
     });
 
     it('should include referer param in base64url format', function () {
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xf': [ 'aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ' ] });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xf': ['aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ'] });
     });
 
     it('should include eids', function () {
       const bid = minimalBid();
       bid.userIdAsEids = [{ source: 'id5-sync.com', uids: [{ id: 'ID5@59sigaS-...' }] }];
 
-      const req = spec.buildRequests([ bid ], bidderRequest);
+      const req = spec.buildRequests([bid], bidderRequest);
 
       expect(JSON.parse(req.data).user.ext.eids).to.deep.equal(bid.userIdAsEids);
     });
 
     it('should not include eids field when userid module disabled', function () {
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
       expect(JSON.parse(req.data)).to.not.have.key('eids');
     });
 
     it('should request vast content as url by default', function () {
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
       expect(JSON.parse(req.data).vastContentAsUrl).to.equal(true);
     });
@@ -141,7 +141,7 @@ describe('AdheseAdapter', function () {
     it('should request vast content as markup when configured', function () {
       sinon.stub(config, 'getConfig').withArgs('adhese').returns({ vastContentAsUrl: false });
 
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
       expect(JSON.parse(req.data).vastContentAsUrl).to.equal(false);
       config.getConfig.restore();
@@ -149,43 +149,43 @@ describe('AdheseAdapter', function () {
 
     it('should include bids', function () {
       const bid = minimalBid();
-      const req = spec.buildRequests([ bid ], bidderRequest);
+      const req = spec.buildRequests([bid], bidderRequest);
 
-      expect(req.bids).to.deep.equal([ bid ]);
+      expect(req.bids).to.deep.equal([bid]);
     });
 
     it('should make a POST request', function () {
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
       expect(req.method).to.equal('POST');
     });
 
     it('should request the json endpoint', function () {
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
-      expect(req.url).to.equal('https://ads-demo.adhese.com/json');
+      expect(req.url).to.equal('https://demo.ads.adhese.eu/json');
     });
 
     it('should include params specified in the config', function () {
-      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'tl': [ 'all' ] } });
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'tl': ['all'] } });
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'tl': [ 'all' ] });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'tl': ['all'] });
       config.getConfig.restore();
     });
 
     it('should give priority to bid params over config params', function () {
       sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'xt': ['CONFIG_CONSENT_STRING'] } });
-      const req = spec.buildRequests([ minimalBid() ], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': [ 'CONSENT_STRING' ] });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': ['CONSENT_STRING'] });
       config.getConfig.restore();
     });
   });
 
   describe('interpretResponse', () => {
     const bidRequest = {
-      bids: [ minimalBid() ]
+      bids: [minimalBid()]
     };
 
     it('should get correct ssp banner response', () => {
@@ -210,9 +210,9 @@ describe('AdheseAdapter', function () {
             width: '728',
             height: '90',
             body: '<div style="background-color:red; height:250px; width:300px"></div>',
-            tracker: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
-            impressionCounter: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
-            extension: {'prebid': {'cpm': {'amount': '1.000000', 'currency': 'USD'}}, mediaType: 'banner'},
+            tracker: 'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
+            impressionCounter: 'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
+            extension: { 'prebid': { 'cpm': { 'amount': '1.000000', 'currency': 'USD' } }, mediaType: 'banner' },
             adomain: [
               'www.example.com'
             ]
@@ -222,7 +222,7 @@ describe('AdheseAdapter', function () {
 
       const expectedResponse = [{
         requestId: BID_ID,
-        ad: '<div style="background-color:red; height:250px; width:300px"></div><img src=\'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
+        ad: '<div style="background-color:red; height:250px; width:300px"></div><img src=\'https://demo.hosts.adhese.eu/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
         cpm: 1,
         currency: 'USD',
         creativeId: '60613369',
@@ -239,7 +239,7 @@ describe('AdheseAdapter', function () {
             adType: 'leaderboard',
             seatbid: [
               {
-                bid: [ { crid: '60613369', dealid: null } ],
+                bid: [{ crid: '60613369', dealid: null }],
                 seat: '958'
               }
             ],
@@ -267,7 +267,7 @@ describe('AdheseAdapter', function () {
             width: '640',
             height: '350',
             body: '<?xml version="1.0" encoding="UTF-8"?><VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:noNamespaceSchemaLocation="vast.xsd"></VAST>',
-            extension: {'prebid': {'cpm': {'amount': '2.1', 'currency': 'USD'}}, mediaType: 'video'}
+            extension: { 'prebid': { 'cpm': { 'amount': '2.1', 'currency': 'USD' } }, mediaType: 'video' }
           }
         ]
       };
@@ -306,15 +306,15 @@ describe('AdheseAdapter', function () {
             adType: 'leaderboard',
             width: '640',
             height: '350',
-            cachedBodyUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
-            extension: {'prebid': {'cpm': {'amount': '2.1', 'currency': 'USD'}}, mediaType: 'video'}
+            cachedBodyUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
+            extension: { 'prebid': { 'cpm': { 'amount': '2.1', 'currency': 'USD' } }, mediaType: 'video' }
           }
         ]
       };
 
       const expectedResponse = [{
         requestId: BID_ID,
-        vastUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+        vastUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
         cpm: 2.1,
         currency: 'USD',
         creativeId: 'RUBICON',
@@ -347,23 +347,23 @@ describe('AdheseAdapter', function () {
             adspaceId: '162363',
             body: '<script id="body" type="text/javascript"></script>',
             tag: '<script id="tag" type="text/javascript"></script>',
-            tracker: 'https://hosts-demo.adhese.com/track/tracker',
+            tracker: 'https://demo.hosts.adhese.eu/track/tracker',
             altText: '<ADHESE_ALT_TEXT>',
             height: '150',
             width: '840',
-            tagUrl: 'https://pool-demo.adhese.com/pool/lib/90511.js',
+            tagUrl: 'https://demo.pool.adhese.eu/pool/lib/90511.js',
             libId: '90511',
             id: '742898',
             advertiserId: '2081',
             ext: 'js',
-            url: 'https://hosts-demo.adhese.com/raylene/url',
-            clickTag: 'https://hosts-demo.adhese.com/raylene/clickTag',
-            poolPath: 'https://hosts-demo.adhese.com/pool/lib/',
+            url: 'https://demo.hosts.adhese.eu/raylene/url',
+            clickTag: 'https://demo.hosts.adhese.eu/raylene/clickTag',
+            poolPath: 'https://demo.hosts.adhese.eu/pool/lib/',
             orderName: 'Luminus boiler comodity-Pareto -201812',
             creativeName: 'nl_demo _network_ron_dlbd_840x150_fix_dir_asv_std_dis_brd_nrt_na_red',
             slotName: '_main_page_-leaderboard',
             slotID: '29306',
-            impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
+            impressionCounter: 'https://demo.hosts.adhese.eu/track/742898',
             origin: 'JERLICIA',
             originData: {},
             auctionable: true,
@@ -382,7 +382,7 @@ describe('AdheseAdapter', function () {
 
       const expectedResponse = [{
         requestId: BID_ID,
-        ad: '<script id="body" type="text/javascript"></script><img src=\'https://hosts-demo.adhese.com/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
+        ad: '<script id="body" type="text/javascript"></script><img src=\'https://demo.hosts.adhese.eu/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
         adhese: {
           origin: '',
           originInstance: '',
@@ -436,7 +436,7 @@ describe('AdheseAdapter', function () {
             creativeName: 'PREROLL',
             slotName: '_main_page_-leaderboard',
             slotID: '41711',
-            impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
+            impressionCounter: 'https://demo.hosts.adhese.eu/track/742898',
             origin: 'JERLICIA',
             originData: {},
             auctionable: true,
@@ -497,7 +497,7 @@ describe('AdheseAdapter', function () {
             extension: {
               mediaType: 'video'
             },
-            cachedBodyUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+            cachedBodyUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
             libId: '89860',
             id: '742470',
             advertiserId: '2263',
@@ -506,7 +506,7 @@ describe('AdheseAdapter', function () {
             creativeName: 'PREROLL',
             slotName: '_main_page_-leaderboard',
             slotID: '41711',
-            impressionCounter: 'https://hosts-demo.adhese.com/track/742898',
+            impressionCounter: 'https://demo.hosts.adhese.eu/track/742898',
             origin: 'JERLICIA',
             originData: {},
             auctionable: true
@@ -516,7 +516,7 @@ describe('AdheseAdapter', function () {
 
       const expectedResponse = [{
         requestId: BID_ID,
-        vastUrl: 'https://ads-demo.adhese.com/content/38983ccc-4083-4c24-932c-96f798d969b3',
+        vastUrl: 'https://demo.ads.adhese.eu/content/38983ccc-4083-4c24-932c-96f798d969b3',
         adhese: {
           origin: '',
           originInstance: '',

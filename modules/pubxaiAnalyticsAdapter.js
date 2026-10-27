@@ -5,13 +5,14 @@ import {
 import { getDeviceType, getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
-import { sendBeacon } from '../src/ajax.js'
+import { sendBeacon } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess, parseSizesInput, getWindowLocation, buildUrl, cyrb53Hash
 } from '../src/utils.js';
+import { getSlotTargeting, getSlotTargetingKeys } from '../src/utils/gptTargeting.js';
 
 let initOptions;
 
@@ -22,7 +23,7 @@ const pubxaiAnalyticsVersion = 'v2.1.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
-const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode });
 
 /**
  * The sendCache is a global cache object which tracks the pending sends
@@ -99,14 +100,13 @@ const getAdServerDataForBid = (bid) => {
   const gptSlot = getGptSlotForAdUnitCode(bid);
   if (gptSlot) {
     return Object.fromEntries(
-      gptSlot
-        .getTargetingKeys()
+      getSlotTargetingKeys(gptSlot)
         .filter(
           (key) =>
             key.startsWith('pubx-') ||
             (key.startsWith('hb_') && (key.match(/_/g) || []).length === 1)
         )
-        .map((key) => [key, gptSlot.getTargeting(key)])
+        .map((key) => [key, getSlotTargeting(gptSlot, key)])
     );
   }
   return {}; // TODO: support more ad servers
@@ -136,7 +136,6 @@ const extractBid = (bidResponse) => {
     responseTimestamp: bidResponse.responseTimestamp,
     status: bidResponse.status,
     sizes: parseSizesInput(bidResponse.size).toString(),
-    statusMessage: bidResponse.statusMessage,
     timeToRespond: bidResponse.timeToRespond,
     transactionId: bidResponse.transactionId,
     bidId: bidResponse.bidId || bidResponse.requestId,
@@ -180,9 +179,6 @@ const track = ({ eventType, args }) => {
           .map((i) => i?.bids.length && i.bids[0]?.floorData)
           .find((i) => i) || {}
       );
-      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
-        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
-        .find((i) => i);
       Object.assign(auctionCache[args.auctionId].auctionDetail, {
         adUnitCodes: args.adUnits.map((i) => i.code),
         timestamp: args.timestamp,

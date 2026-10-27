@@ -1,8 +1,8 @@
 import { deepAccess, triggerPixel } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {OUTSTREAM} from '../src/video.js';
-import {Renderer} from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -40,7 +40,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const tz = (new Date()).getTimezoneOffset()
+    const tz = (new Date()).getTimezoneOffset();
     const padInt = (v) => (v < 10 ? '0' + v : '' + v);
 
     return {
@@ -55,7 +55,7 @@ export const spec = {
         // TODO: please do not send internal data structures over the network
         refererInfo: bidderRequest.refererInfo.legacy
       },
-    }
+    };
   },
 
   /**
@@ -94,7 +94,7 @@ export const spec = {
           }
 
           bid.playerMuted = muted;
-          bid.renderer = renderer
+          bid.renderer = renderer;
 
           renderer.setRender(setOutstreamRenderer);
         }
@@ -129,7 +129,7 @@ export const spec = {
       triggerPixel(bid.nurl);
     }
   }
-}
+};
 
 /**
  * Initialize RtbSape outstream player
@@ -145,7 +145,7 @@ function setOutstreamRenderer(bid) {
     props.xml = bid.vastXml;
   }
   bid.renderer.push(() => {
-    const player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, {singleton: true});
+    const player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, { singleton: true });
     props.onComplete = () => player.destroy();
     props.onError = () => player.destroy();
     player.addSlot(props);

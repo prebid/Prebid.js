@@ -1,8 +1,6 @@
-import {getBidIdParameter} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {interpretResponse} from '../libraries/uniquestUtils/uniquestUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { interpretResponse, buildQueryString } from '../libraries/uniquestUtils/uniquestUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -35,31 +33,11 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const bidRequests = [];
-
-    for (let i = 0; i < validBidRequests.length; i++) {
-      let queryString = '';
-      const request = validBidRequests[i];
-
-      const bid = request.bidId;
-      const wid = getBidIdParameter('wid', request.params);
-      const widths = request.sizes.map(size => size[0]).join(',');
-      const heights = request.sizes.map(size => size[1]).join(',');
-      const timeout = bidderRequest.timeout
-
-      queryString = tryAppendQueryString(queryString, 'bid', bid);
-      queryString = tryAppendQueryString(queryString, 'wid', wid);
-      queryString = tryAppendQueryString(queryString, 'widths', widths);
-      queryString = tryAppendQueryString(queryString, 'heights', heights);
-      queryString = tryAppendQueryString(queryString, 'timeout', timeout);
-
-      bidRequests.push({
-        method: 'GET',
-        url: ENDPOINT,
-        data: queryString,
-      });
-    }
-    return bidRequests;
+    return validBidRequests.map(request => ({
+      method: 'GET',
+      url: ENDPOINT,
+      data: buildQueryString(request, bidderRequest, 'wid'),
+    }));
   },
   interpretResponse: interpretResponse,
 };

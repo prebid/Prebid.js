@@ -1,12 +1,12 @@
-import {expect} from 'chai';
-import {spec} from 'modules/invamiaBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/invamiaBidAdapter.js';
 
 describe('invamia bid adapter tests', function () {
   describe('bid requests', function () {
     it('should accept valid bid', function () {
       const validBid = {
         bidder: 'invamia',
-        params: {zoneId: 123},
+        params: { zoneId: 123 },
       };
 
       expect(spec.isBidRequestValid(validBid)).to.equal(true);
@@ -24,7 +24,7 @@ describe('invamia bid adapter tests', function () {
     it('should correctly build payload string', function () {
       const bidRequests = [{
         bidder: 'invamia',
-        params: {zoneId: 123},
+        params: { zoneId: 123 },
         mediaTypes: {
           banner: {
             sizes: [[300, 250]],
@@ -46,7 +46,7 @@ describe('invamia bid adapter tests', function () {
     it('should support multiple bids', function () {
       const bidRequests = [{
         bidder: 'invamia',
-        params: {zoneId: 123},
+        params: { zoneId: 123 },
         mediaTypes: {
           banner: {
             sizes: [[300, 250]],
@@ -58,7 +58,7 @@ describe('invamia bid adapter tests', function () {
         transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
       }, {
         bidder: 'invamia',
-        params: {zoneId: 321},
+        params: { zoneId: 321 },
         mediaTypes: {
           banner: {
             sizes: [[728, 90]],
@@ -77,7 +77,7 @@ describe('invamia bid adapter tests', function () {
     it('should support multiple sizes', function () {
       const bidRequests = [{
         bidder: 'invamia',
-        params: {zoneId: 123},
+        params: { zoneId: 123 },
         mediaTypes: {
           banner: {
             sizes: [[300, 250], [300, 600]],
@@ -118,7 +118,7 @@ describe('invamia bid adapter tests', function () {
         },
       };
 
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest});
+      const bids = spec.interpretResponse(serverResponse, { bidderRequest });
 
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].requestId).to.equal('23acc48ad47af5');
@@ -144,7 +144,7 @@ describe('invamia bid adapter tests', function () {
         },
       };
 
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest});
+      const bids = spec.interpretResponse(serverResponse, { bidderRequest });
 
       expect(bids).to.be.lengthOf(0);
     });
@@ -164,7 +164,7 @@ describe('invamia bid adapter tests', function () {
         },
       };
 
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest});
+      const bids = spec.interpretResponse(serverResponse, { bidderRequest });
 
       expect(bids).to.be.lengthOf(0);
     });

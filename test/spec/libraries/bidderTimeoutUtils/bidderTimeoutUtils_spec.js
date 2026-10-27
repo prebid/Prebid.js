@@ -1,4 +1,4 @@
-import { bidderTimeoutFunctions } from '../../../../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js'
+import { bidderTimeoutFunctions } from '../../../../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js';
 import { expect } from 'chai';
 
 const DEFAULT_USER_AGENT = window.navigator.userAgent;
@@ -20,7 +20,7 @@ function resetConnection() {
   window.navigator.__defineGetter__('connection', () => DEFAULT_CONNECTION);
 }
 function setConnectionType(connectionType) {
-  window.navigator.__defineGetter__('connection', () => { return { 'type': connectionType } });
+  window.navigator.__defineGetter__('connection', () => { return { 'type': connectionType }; });
 }
 
 describe('Timeout RTD submodule', () => {
@@ -48,9 +48,9 @@ describe('Timeout RTD submodule', () => {
       it(`should be able to recognize ${deviceType} devices`, () => {
         setUserAgent(userAgent);
         const res = bidderTimeoutFunctions.getDeviceType();
-        expect(res).to.equal(deviceTypeNum)
-      })
-    })
+        expect(res).to.equal(deviceTypeNum);
+      });
+    });
   });
 
   describe('getConnectionSpeed', () => {
@@ -75,9 +75,9 @@ describe('Timeout RTD submodule', () => {
       it(`should be able to categorize connection speed when the connection type is ${connectionType}`, () => {
         setConnectionType(connectionType);
         const res = bidderTimeoutFunctions.getConnectionSpeed();
-        expect(res).to.equal(connectionSpeed)
-      })
-    })
+        expect(res).to.equal(connectionSpeed);
+      });
+    });
   });
 
   describe('Timeout modifier calculations', () => {
@@ -91,7 +91,7 @@ describe('Timeout RTD submodule', () => {
     });
 
     it('should be able to detect video ad units', () => {
-      let adUnits = []
+      let adUnits = [];
       let res = bidderTimeoutFunctions.checkVideo(adUnits);
       expect(res).to.be.false;
 
@@ -119,9 +119,9 @@ describe('Timeout RTD submodule', () => {
           'true': 200,
           'false': 50
         }
-      }
+      };
       const res = bidderTimeoutFunctions.calculateTimeoutModifier([], rules);
-      expect(res).to.equal(200)
+      expect(res).to.equal(200);
     });
 
     it('should calculate the timeout modifier for connectionSpeed', () => {
@@ -132,7 +132,7 @@ describe('Timeout RTD submodule', () => {
           'medium': 100,
           'fast': 50
         }
-      }
+      };
       const res = bidderTimeoutFunctions.calculateTimeoutModifier([], rules);
       expect(res).to.equal(200);
     });
@@ -145,9 +145,9 @@ describe('Timeout RTD submodule', () => {
           '4': 100,
           '5': 200
         },
-      }
+      };
       const res = bidderTimeoutFunctions.calculateTimeoutModifier([], rules);
-      expect(res).to.equal(100)
+      expect(res).to.equal(100);
     });
 
     it('should calculate the timeout modifier for ranged numAdunits', () => {
@@ -157,10 +157,10 @@ describe('Timeout RTD submodule', () => {
           '6-10': 200,
           '11-15': 300,
         }
-      }
+      };
       const adUnits = [1, 2, 3, 4, 5, 6];
       const res = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules);
-      expect(res).to.equal(200)
+      expect(res).to.equal(200);
     });
 
     it('should calculate the timeout modifier for exact numAdunits', () => {
@@ -171,7 +171,7 @@ describe('Timeout RTD submodule', () => {
           '3': 300,
           '4-5': 400,
         }
-      }
+      };
       const adUnits = [1, 2];
       const res = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules);
       expect(res).to.equal(200);
@@ -201,7 +201,7 @@ describe('Timeout RTD submodule', () => {
           '3': 300,
           '4-5': 400,
         }
-      }
+      };
       const res = bidderTimeoutFunctions.calculateTimeoutModifier([{
         mediaTypes: {
           video: []

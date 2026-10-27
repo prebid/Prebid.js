@@ -5,9 +5,9 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 const userId = {
   'criteoId': 'vYlICF9oREZlTHBGRVdrJTJCUUJnc3U2ckNVaXhrV1JWVUZVSUxzZmJlcnJZR0ZxbVhFRnU5bDAlMkJaUWwxWTlNcmdEeHFrJTJGajBWVlV4T3lFQ0FyRVcxNyUyQlIxa0lLSlFhcWJpTm9PSkdPVkx0JTJCbzlQRTQlM0Q',
   'pubcid': '074864cb-3705-430e-9ff7-48ccf3c21b94',
-  'sharedid': {'id': '01F61MX53D786DSB2WYD38ZVM7', 'third': '01F61MX53D786DSB2WYD38ZVM7'},
-  'uid2': {'id': 'eb33b0cb-8d35-1234-b9c0-1a31d4064777'},
-}
+  'sharedid': { 'id': '01F61MX53D786DSB2WYD38ZVM7', 'third': '01F61MX53D786DSB2WYD38ZVM7' },
+  'uid2': { 'id': 'eb33b0cb-8d35-1234-b9c0-1a31d4064777' },
+};
 const userIdAsEids = [{
   source: 'test.org',
   uids: [{
@@ -158,7 +158,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
 
@@ -190,7 +190,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/'
           }
         }
-      }
+      };
       const bidRequests2 = [
         {
           'bidder': 'bridgewell',
@@ -242,7 +242,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const validBidRequests = request.validBidRequests;
@@ -257,7 +257,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
       const bidRequestsWithOrtb2 = [
         {
           'bidder': 'bridgewell',
@@ -329,7 +329,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
       const bidRequestsWithFloor = [
         {
           'bidder': 'bridgewell',
@@ -375,7 +375,7 @@ describe('bridgewellBidAdapter', function () {
             name: 'test-site'
           }
         }
-      }
+      };
       const bidRequestsWithMetrics = [
         {
           'bidder': 'bridgewell',
@@ -416,9 +416,9 @@ describe('bridgewellBidAdapter', function () {
       expect(payload.bidderRequestsCount).to.equal(3);
       expect(payload.bidderWinsCount).to.equal(2);
       expect(payload.deferBilling).to.equal(true);
-      expect(payload.metrics).to.deep.equal({test: 'metric'});
+      expect(payload.metrics).to.deep.equal({ test: 'metric' });
       expect(payload.referrer).to.equal('https://www.referrer.com/');
-      expect(payload.ortb2).to.deep.equal({site: {name: 'test-site'}});
+      expect(payload.ortb2).to.deep.equal({ site: { name: 'test-site' } });
     });
   });
 

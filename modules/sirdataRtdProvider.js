@@ -18,6 +18,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
+import { setSlotTargeting } from '../src/utils/gptTargeting.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -72,7 +73,7 @@ const eidsProvidersMap = {
   'sharedid': 'pubcid.org',
   'publishercommonid': 'pubcid.org',
   'pubcid.org': 'pubcid.org',
-}
+};
 
 // params
 let params = {
@@ -673,8 +674,8 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
 
       window.googletag.cmd.push(() => {
         window.googletag.pubads().getSlots().forEach(slot => {
-          if (typeof slot.setTargeting !== 'undefined' && sirdataMergedList.length > 0) {
-            slot.setTargeting('sd_rtd', sirdataMergedList);
+          if (sirdataMergedList.length > 0) {
+            setSlotTargeting(slot, 'sd_rtd', sirdataMergedList);
           }
         });
       });

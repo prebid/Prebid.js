@@ -126,7 +126,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
       request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));
       expect(request.url).to.be.include(`https://pixel.adsafeprotected.com/services/pub?anId=1234`);
-      expect(request.url).to.be.include('url=https%253A%252F%252Fintegralads.com%252Ftest')
+      expect(request.url).to.be.include('url=https%253A%252F%252Fintegralads.com%252Ftest');
       expect(adUnits).to.length(2);
       expect(adUnits[0]).to.be.eq(adUnitsOriginal[0]);
       const targetingKeys = Object.keys(iasTargeting);
@@ -154,7 +154,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
       it('returns the right keys', function () {
         const targeting = iasSubModule.getTargetingData(adUnitsCode, config);
         const targetingKeys = Object.keys(targeting['one-div-id']);
-        expect(targetingKeys.length).to.equal(10);
+        expect(targetingKeys.length).to.equal(11);
         expect(targetingKeys).to.include('adt', 'adt key missing from the targeting object');
         expect(targetingKeys).to.include('alc', 'alc key missing from the targeting object');
         expect(targetingKeys).to.include('dlm', 'dlm key missing from the targeting object');
@@ -164,6 +164,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
         expect(targetingKeys).to.include('vio', 'vio key missing from the targeting object');
         expect(targetingKeys).to.include('fr', 'fr key missing from the targeting object');
         expect(targetingKeys).to.include('ias-kw', 'ias-kw key missing from the targeting object');
+        expect(targetingKeys).to.include('ias-qc', 'ias-qc key missing from the targeting object');
         expect(targetingKeys).to.not.include('id', 'id key present in the targeting object, should have been renamed to ias_id');
         expect(targetingKeys).to.include('ias_id', 'ias_id key missing from the targeting object');
       });
@@ -177,6 +178,8 @@ describe('iasRtdProvider is a RTD provider that', function () {
         expect(targeting['one-div-id']['off']).to.be.eq('veryLow');
         expect(targeting['one-div-id']['vio']).to.be.eq('veryLow');
         expect(targeting['one-div-id']['fr']).to.be.eq('false');
+        expect(targeting['one-div-id']['ias-kw']).to.deep.equal(['IAS_5995_KW', 'IAS_7066_KW', 'IAS_7232_KW', 'IAS_7364_KW', 'IAS_3894_KW', 'IAS_6535_KW', 'IAS_6153_KW', 'IAS_5238_KW', 'IAS_7393_KW', 'IAS_1499_KW', 'IAS_7376_KW', 'IAS_1035_KW', 'IAS_6566_KW', 'IAS_1058_KW', 'IAS_11338_724_KW', 'IAS_7301_KW', 'IAS_15969_725_KW', 'IAS_6358_KW', 'IAS_710_KW', 'IAS_5445_KW', 'IAS_3822_KW', 'IAS_4901_KW', 'IAS_5806_KW', 'IAS_460_KW', 'IAS_11461_702_KW', 'IAS_5681_KW', 'IAS_17609_1240_KW', 'IAS_6634_KW', 'IAS_5597_KW', 'IAS_SET']);
+        expect(targeting['one-div-id']['ias-qc']).to.deep.equal(['IAS_123_QC', 'IAS_456_QC', 'IAS_SET']);
         expect(targeting['one-div-id']['ias_id']).to.be.eq('4813f7a2-1f22-11ec-9bfd-0a1107f94461');
       });
       it('it merges response data', function () {
@@ -227,7 +230,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
         expect(targeting2['adunit-3']['ias_id']).to.be.eq('id3');
       });
     });
-  })
+  });
   describe('injectImpressionData', function () {
     it('should inject impression data into adUnits ortb2Imp object', function () {
       const adUnits = [
@@ -360,7 +363,7 @@ const adUnits = [
 
 const data = {
   brandSafety: { adt: 'veryLow', alc: 'veryLow', dlm: 'veryLow', drg: 'veryLow', hat: 'veryLow', off: 'veryLow', vio: 'veryLow' },
-  custom: { 'ias-kw': ['IAS_5995_KW', 'IAS_7066_KW', 'IAS_7232_KW', 'IAS_7364_KW', 'IAS_3894_KW', 'IAS_6535_KW', 'IAS_6153_KW', 'IAS_5238_KW', 'IAS_7393_KW', 'IAS_1499_KW', 'IAS_7376_KW', 'IAS_1035_KW', 'IAS_6566_KW', 'IAS_1058_KW', 'IAS_11338_724_KW', 'IAS_7301_KW', 'IAS_15969_725_KW', 'IAS_6358_KW', 'IAS_710_KW', 'IAS_5445_KW', 'IAS_3822_KW', 'IAS_4901_KW', 'IAS_5806_KW', 'IAS_460_KW', 'IAS_11461_702_KW', 'IAS_5681_KW', 'IAS_17609_1240_KW', 'IAS_6634_KW', 'IAS_5597_KW'] },
+  custom: { 'ias-kw': ['IAS_5995_KW', 'IAS_7066_KW', 'IAS_7232_KW', 'IAS_7364_KW', 'IAS_3894_KW', 'IAS_6535_KW', 'IAS_6153_KW', 'IAS_5238_KW', 'IAS_7393_KW', 'IAS_1499_KW', 'IAS_7376_KW', 'IAS_1035_KW', 'IAS_6566_KW', 'IAS_1058_KW', 'IAS_11338_724_KW', 'IAS_7301_KW', 'IAS_15969_725_KW', 'IAS_6358_KW', 'IAS_710_KW', 'IAS_5445_KW', 'IAS_3822_KW', 'IAS_4901_KW', 'IAS_5806_KW', 'IAS_460_KW', 'IAS_11461_702_KW', 'IAS_5681_KW', 'IAS_17609_1240_KW', 'IAS_6634_KW', 'IAS_5597_KW', 'IAS_SET'], 'ias-qc': ['IAS_123_QC', 'IAS_456_QC', 'IAS_SET'] },
   fr: 'false',
   slots: { 'one-div-id': { id: '4813f7a2-1f22-11ec-9bfd-0a1107f94461' } }
 };

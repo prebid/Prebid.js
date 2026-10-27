@@ -65,7 +65,7 @@ const smartyadsAdapter = Object.assign({},
 
 const sendDataToServer = (data) => {
   ajax(URL, () => {}, JSON.stringify(data));
-}
+};
 
 const auctionHandler = (eventType, data) => {
   const auctionData = {
@@ -78,35 +78,26 @@ const auctionHandler = (eventType, data) => {
       delete bidderRequest.refererInfo;
       return bidderRequest;
     }).filter(request => request.bidderCode === BIDDER_CODE),
-  }
+  };
 
   sendDataToServer({ eventType, auctionData });
-}
+};
 
 const bidHandler = (eventType, bid) => {
-  const bids = bid.length ? bid : [ bid ];
+  const bids = bid.length ? bid : [bid];
 
   for (const bidObj of bids) {
-    let bidToSend;
-
-    if (bidObj.bidderCode !== BIDDER_CODE) {
-      if (eventType === BID_WON) {
-        bidToSend = {
-          cpm: bidObj.cpm,
-          auctionId: bidObj.auctionId
-        };
-      } else continue;
+    if (bidObj.bidderCode !== BIDDER_CODE && eventType !== BID_WON) {
+      continue;
     }
-
-    bidToSend = bidObj;
-
+    const bidToSend = { ...bidObj };
     if (eventType === BID_REJECTED) {
       bidToSend.params = smartyParams[bid.requestId];
     }
 
     sendDataToServer({ eventType, bid: bidToSend });
   }
-}
+};
 
 const onBidderError = (data) => {
   sendDataToServer({
@@ -114,20 +105,20 @@ const onBidderError = (data) => {
     error: data.error,
     bidderRequests: data?.bidderRequests?.length
       ? data.bidderRequests.filter(request => request.bidderCode === BIDDER_CODE)
-      : [ data.bidderRequest ]
+      : [data.bidderRequest]
   });
-}
+};
 
 const onAdRender = (eventType, data) => {
   if (data?.bid?.bidderCode === BIDDER_CODE) {
     sendDataToServer({ eventType, renderData: data });
   }
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: smartyadsAdapter,
   code: BIDDER_CODE,
   gvlid: GVLID
-})
+});
 
 export default smartyadsAdapter;

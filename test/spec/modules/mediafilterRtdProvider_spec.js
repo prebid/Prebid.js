@@ -1,12 +1,11 @@
 import * as utils from '../../../src/utils.js';
-import * as hook from '../../../src/hook.js'
+import * as hook from '../../../src/hook.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
 import {
   MediaFilter,
-  MEDIAFILTER_EVENT_TYPE,
-  MEDIAFILTER_BASE_URL
+  MEDIAFILTER_EVENT_TYPE
 } from '../../../modules/mediafilterRtdProvider.js';
 
 describe('The Media Filter RTD module', function () {

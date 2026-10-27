@@ -1,13 +1,15 @@
 import * as utils from "../src/utils.js";
-import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
+import { detectWalletsPresence } from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { parseDomain } from "../src/refererDetection.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
-import {getDomComplexity, getPageDescription, getPageTitle} from "../libraries/fpdUtils/pageInfo.js";
+import { getDomComplexity, getPageDescription, getPageTitle } from "../libraries/fpdUtils/pageInfo.js";
+import { getBrowserLanguage } from "../libraries/fpdUtils/deviceInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const ORTB = converter.ortbConverter({
   context: { ttl: 300 }
 });
@@ -15,6 +17,17 @@ const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
 const ENDPOINT_URL = "https://req.adx.ws/prebid";
 const ACTION_METHOD = "POST";
+const ADSHIELD_HEADER = "X-Adshield";
+
+// getResponseHeader returns null for an absent header and "" for one sent without a value,
+// so presence must be tested against null rather than by truthiness.
+const hasResponseHeader = (serverResponse, name) => {
+  try {
+    return serverResponse?.headers?.get?.(name) != null;
+  } catch (e) {
+    return false;
+  }
+};
 
 const detectAdType = (bid) =>
   (
@@ -23,7 +36,67 @@ const detectAdType = (bid) =>
 
 const getReferrerInfo = (bidderRequest) => {
   return bidderRequest?.refererInfo?.page ?? '';
-}
+};
+
+const isUsablePageUrl = (url) => typeof url === 'string' && /^https?:\/\//i.test(url);
+
+const getTopWindowUrl = () => {
+  try {
+    return utils.canAccessWindowTop() ? utils.getWindowTop().location.href : '';
+  } catch {
+    return '';
+  }
+};
+
+const getPageUrl = (bidderRequest) => {
+  const page = bidderRequest?.refererInfo?.page;
+
+  if (isUsablePageUrl(page)) {
+    return page;
+  }
+
+  const topWindowUrl = getTopWindowUrl();
+
+  return isUsablePageUrl(topWindowUrl) ? topWindowUrl : '';
+};
+
+const isUsableDimension = (value) => typeof value === 'number' && isFinite(value) && value > 0;
+
+const getScreenDimensions = (bidderRequest) => {
+  const device = bidderRequest?.ortb2?.device;
+
+  if (isUsableDimension(device?.w) && isUsableDimension(device?.h)) {
+    return { width: device.w, height: device.h };
+  }
+
+  const { width, height } = utils.getWinDimensions().screen;
+
+  return { width, height };
+};
+
+const getPageReferrer = (bidderRequest) => bidderRequest?.refererInfo?.ref ?? '';
+
+const getPageDomain = (bidderRequest, pageUrl) => {
+  return bidderRequest?.refererInfo?.domain || parseDomain(pageUrl) || '';
+};
+
+const isUsableLanguage = (value) => typeof value === 'string' && value.trim() !== '';
+
+const getUserLanguage = (bidderRequest) => {
+  const device = bidderRequest?.ortb2?.device;
+
+  if (isUsableLanguage(device?.langb)) {
+    return device.langb;
+  }
+
+  if (isUsableLanguage(device?.language)) {
+    return device.language;
+  }
+
+  const browserLanguage = getBrowserLanguage();
+
+  return isUsableLanguage(browserLanguage) ? browserLanguage : '';
+};
 
 const normalizeKeywords = (input) => {
   if (!input) return [];
@@ -43,6 +116,39 @@ const normalizeKeywords = (input) => {
   return [];
 };
 
+function resolveDataType(asset) {
+  if (typeof asset?.data?.type === 'number') {
+    return asset.data.type;
+  }
+
+  if (typeof asset?.id === 'number') {
+    return asset.id;
+  }
+
+  return null;
+}
+
+// Helper: resolve the "image type" for an asset
+// Returns 1 (icon), 3 (image) or null if unknown
+function resolveImageType(asset) {
+  if (!asset) return null;
+
+  // 1) explicit image type in the img block (preferred)
+  if (typeof asset.img?.type === 'number') return asset.img.type;
+
+  // 2) fallback to data.type (some bidders put the type here)
+  if (typeof asset.data?.type === 'number') return asset.data.type;
+
+  // 3) last resort: map legacy asset.id values to image types
+  //    (13 -> icon, 14 -> image) — keep this mapping isolated here
+  if (typeof asset.id === 'number') {
+    if (asset.id === 13) return 1; // icon
+    if (asset.id === 14) return 3; // image
+  }
+
+  return null;
+}
+
 const parseNativeAd = function (bid) {
   try {
     const nativeAd = JSON.parse(bid.ad);
@@ -54,7 +160,8 @@ const parseNativeAd = function (bid) {
       }
       if (asset.data) {
         const value = asset.data.value;
-        switch (asset.data.type) {
+        const type = resolveDataType(asset);
+        switch (type) {
           case 1: if (value) native.sponsored = value; break;
           case 2: if (value) native.desc = value; break;
           case 3: if (value) native.rating = value; break;
@@ -71,13 +178,14 @@ const parseNativeAd = function (bid) {
         }
       }
       if (asset.img) {
-        const { url, w = 0, h = 0, type } = asset.img;
+        const { url, w = 0, h = 0 } = asset.img;
+        const imgType = resolveImageType(asset);
 
-        if (type === 1 && url) {
+        if (imgType === 1 && url) {
           native.icon = url;
           native.icon_width = w;
           native.icon_height = h;
-        } else if (type === 3 && url) {
+        } else if (imgType === 3 && url) {
           native.image = url;
           native.image_width = w;
           native.image_height = h;
@@ -121,7 +229,7 @@ const parseNativeAd = function (bid) {
     utils.logWarn('Invalid native JSON', e);
     return null;
   }
-}
+};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -191,6 +299,11 @@ export const spec = {
       };
     })();
     const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
+    const pageUrl = getPageUrl(bidderRequest);
+    const pageDomain = getPageDomain(bidderRequest, pageUrl);
+    const userLanguage = getUserLanguage(bidderRequest);
+    const screenDimensions = getScreenDimensions(bidderRequest);
+    const pageReferer = getPageReferrer(bidderRequest);
 
     if (bidRequests.length === 0) {
       return [];
@@ -198,7 +311,8 @@ export const spec = {
     const gdpr = bidderRequest?.gdprConsent;
     const usp = bidderRequest?.uspConsent;
     const gpp = bidderRequest?.gppConsent;
-    const hasWallet = detectWalletsPresence();
+    const gpc = String(bidderRequest?.ortb2?.regs?.ext?.gpc) === '1';
+    const hasWallet = gpc ? 0 : detectWalletsPresence();
 
     return bidRequests.map((bidRequest) => {
       const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native';
@@ -227,9 +341,9 @@ export const spec = {
       });
 
       const payload = {
-        userLanguage: navigator.language,
-        pageUrl: bidRequest?.refererInfo?.page,
-        pageDomain: bidRequest?.refererInfo?.referer,
+        userLanguage,
+        pageUrl,
+        pageDomain,
         userId: bidRequest.userId,
         eids: (bidRequest.userIdAsEids || []).map(eid => ({
           source: eid.source,
@@ -242,7 +356,7 @@ export const spec = {
             referenceId: bidRequest.params.referenceId,
             tagId: bidRequest.params.zone,
             type: detectAdType(bidRequest),
-            ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
+            ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {} } })
           },
         ],
         keywords: {
@@ -255,13 +369,14 @@ export const spec = {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
           usp: usp?.uspString || "",
+          gpc: gpc ? 1 : 0,
         },
-        xPageUrl: window.location.href,
+        xPageUrl: pageUrl,
         wdb: hasWallet,
         externalRef: bidRequest.bidId,
-        userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
+        userSyncOption: userSyncEnabled === false || gpc ? "OFF" : "BIDDERS",
         referer: getReferrerInfo(bidderRequest),
-        pageReferer: document.referrer,
+        pageReferer,
         context: [{
           source: "title",
           text: getPageTitle().slice(0, 300)
@@ -271,8 +386,8 @@ export const spec = {
         }],
         domComplexity: getDomComplexity(document),
         device: bidderRequest?.ortb2?.device || {},
-        deviceWidth: screen.width,
-        deviceHeight: screen.height,
+        deviceWidth: screenDimensions.width,
+        deviceHeight: screenDimensions.height,
         timeout: bidderRequest?.timeout,
         viewportHeight: utils.getWinDimensions().visualViewport.height,
         viewportWidth: utils.getWinDimensions().visualViewport.width,
@@ -311,10 +426,12 @@ export const spec = {
     }
 
     const bids = serverResponse.body.bids;
+    const adshield = hasResponseHeader(serverResponse, ADSHIELD_HEADER) ? 1 : 0;
 
     bids.forEach((bid) => {
       if (bid && typeof bid === "object") {
         bid.bidder = BIDDER_CODE;
+        bid.meta = { ...bid.meta, adshield };
         if ((bid.mediaType || '').toLowerCase() === 'native') {
           const native = parseNativeAd(bid);
           if (native) {

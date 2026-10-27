@@ -47,7 +47,15 @@ describe('GemiusId module', function () {
           consents: {
             1: true,
             2: false,
-            3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true, 11: true
+            3: true,
+            4: true,
+            5: true,
+            6: true,
+            7: true,
+            8: true,
+            9: true,
+            10: true,
+            11: true
           }
         }
       }
@@ -69,7 +77,7 @@ describe('GemiusId module', function () {
       const result = gemiusIdSubmodule.getId({}, {
         gdpr: gdprConsentData
       });
-      expect(result).to.deep.equal({id: {id: null}});
+      expect(result).to.deep.equal({ id: { id: null } });
     });
 
     it('should return callback on consent', function () {
@@ -92,12 +100,12 @@ describe('GemiusId module', function () {
         expect(callback).to.be.a('function');
 
         const testRuid = 'test-ruid-123';
-        const statusOk = {status: 'ok'};
+        const statusOk = { status: 'ok' };
         callback(testRuid, statusOk);
       });
 
       gemiusIdSubmodule.getId().callback((resultId) => {
-        expect(resultId).to.deep.equal({id: 'test-ruid-123'});
+        expect(resultId).to.deep.equal({ id: 'test-ruid-123' });
         expect(mockWindow.gemius_cmd.calledOnce).to.be.true;
         done();
       });
@@ -134,7 +142,7 @@ describe('GemiusId module', function () {
 
   describe('decode', function () {
     it('should return object with gemiusId when value exists', function () {
-      const result = gemiusIdSubmodule.decode({id: 'test-gemius-id'});
+      const result = gemiusIdSubmodule.decode({ id: 'test-gemius-id' });
       expect(result).to.deep.equal({
         gemiusId: 'test-gemius-id'
       });

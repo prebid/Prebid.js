@@ -6,6 +6,9 @@ autolabeler:
     title:
       - '/^(?!.*(bug|initial|release|fix)).*$/i'
 categories:
+  - title: '🏛 Core PRs'
+    labels:
+      - 'core'
   - title: '🚀 New Features'
     label: 'feature'
   - title: '🐛 Bug Fixes'

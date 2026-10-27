@@ -1,6 +1,6 @@
-import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { buildUrl, deepAccess, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -97,7 +97,7 @@ export const spec = {
 
     return bidResponses;
   }
-}
+};
 
 /* Get parsed size from request size */
 function getSize(bid) {
@@ -111,7 +111,7 @@ function getSize(bid) {
   if (Array.isArray(bid.params?.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
-      inputSize = [inputSize]
+      inputSize = [inputSize];
     }
   }
 

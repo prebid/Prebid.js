@@ -4,13 +4,16 @@ import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
+import '../../../modules/bidViewability.js';
+import adapterManager from '../../../src/adapterManager.js';
 
 describe('#bidViewabilityIO', function() {
   const makeElement = (id) => {
     const el = document.createElement('div');
     el.setAttribute('id', id);
     return el;
-  }
+  };
   const banner_bid = {
     adUnitCode: 'banner_id',
     mediaType: 'banner',
@@ -34,22 +37,22 @@ describe('#bidViewabilityIO', function() {
   };
 
   it('init to be a function', function() {
-    expect(bidViewabilityIO.init).to.be.a('function')
+    expect(bidViewabilityIO.init).to.be.a('function');
   });
 
   describe('isSupportedMediaType tests', function() {
     it('banner to be supported', function() {
-      expect(bidViewabilityIO.isSupportedMediaType(banner_bid)).to.be.true
+      expect(bidViewabilityIO.isSupportedMediaType(banner_bid)).to.be.true;
     });
 
     it('video not to be supported', function() {
-      expect(bidViewabilityIO.isSupportedMediaType(video_bid)).to.be.false
+      expect(bidViewabilityIO.isSupportedMediaType(video_bid)).to.be.false;
     });
 
     it('native not to be supported', function() {
-      expect(bidViewabilityIO.isSupportedMediaType(native_bid)).to.be.false
+      expect(bidViewabilityIO.isSupportedMediaType(native_bid)).to.be.false;
     });
-  })
+  });
 
   describe('getViewableOptions tests', function() {
     it('normal banner has expected threshold in options object', function() {
@@ -57,17 +60,17 @@ describe('#bidViewabilityIO', function() {
     });
 
     it('large banner has expected threshold in options object', function() {
-      expect(bidViewabilityIO.getViewableOptions(large_banner_bid).threshold).to.equal(bidViewabilityIO.IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD)
+      expect(bidViewabilityIO.getViewableOptions(large_banner_bid).threshold).to.equal(bidViewabilityIO.IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD);
     });
 
     it('video bid has undefined viewable options', function() {
-      expect(bidViewabilityIO.getViewableOptions(video_bid)).to.be.undefined
+      expect(bidViewabilityIO.getViewableOptions(video_bid)).to.be.undefined;
     });
 
     it('native bid has undefined viewable options', function() {
-      expect(bidViewabilityIO.getViewableOptions(native_bid)).to.be.undefined
+      expect(bidViewabilityIO.getViewableOptions(native_bid)).to.be.undefined;
     });
-  })
+  });
 
   describe('markViewed tests', function() {
     let sandbox;
@@ -80,14 +83,14 @@ describe('#bidViewabilityIO', function() {
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-    })
+    });
 
     afterEach(function() {
-      sandbox.restore()
-    })
+      sandbox.restore();
+    });
 
     it('markViewed returns a function', function() {
-      expect(bidViewabilityIO.markViewed(banner_bid, mockEntry, mockObserver)).to.be.a('function')
+      expect(bidViewabilityIO.markViewed(banner_bid, mockEntry, mockObserver)).to.be.a('function');
     });
 
     it('markViewed unobserves', function() {
@@ -99,21 +102,86 @@ describe('#bidViewabilityIO', function() {
       // expect(emitSpy.firstCall.args).to.be.false;
       expect(emitSpy.firstCall.args[0]).to.eq(EVENTS.BID_VIEWABLE);
     });
-  })
+  });
+
+  describe('viewability pixels', function() {
+    let sandbox;
+    let triggerPixelSpy;
+    const mockObserver = { unobserve: sinon.spy() };
+    const mockEntry = { target: makeElement('pixel_target_id') };
+
+    const VIEWABILITY_PIXEL_URLS = [
+      'https://io-viewable-1.com/pixel',
+      'https://io-viewable-2.com/track'
+    ];
+
+    const bidWithEventTrackers = {
+      adUnitCode: 'banner_id',
+      mediaType: 'banner',
+      width: 728,
+      height: 90,
+      eventtrackers: VIEWABILITY_PIXEL_URLS.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url }))
+    };
+
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('fires viewability pixels when markViewed callback runs with bid that has eventTrackers (EVENT_TYPE_VIEWABLE)', function() {
+      const func = bidViewabilityIO.markViewed(bidWithEventTrackers, mockEntry, mockObserver);
+      func();
+      expect(triggerPixelSpy.callCount).to.equal(VIEWABILITY_PIXEL_URLS.length);
+      VIEWABILITY_PIXEL_URLS.forEach((url, i) => {
+        expect(triggerPixelSpy.getCall(i).args[0]).to.equal(url);
+      });
+    });
+
+    it('does not fire pixels when bid has empty eventTrackers', function() {
+      const bidWithEmptyTrackers = { ...banner_bid, eventtrackers: [] };
+      const func = bidViewabilityIO.markViewed(bidWithEmptyTrackers, mockEntry, mockObserver);
+      func();
+      expect(triggerPixelSpy.callCount).to.equal(0);
+    });
+
+    it('should call onBidViewable', () => {
+      sandbox.stub(adapterManager, 'callBidViewableBidder');
+      const bid = {
+        bidder: 'mockBidder',
+        ...banner_bid
+      };
+      bidViewabilityIO.markViewed(bid, mockEntry, mockObserver)();
+      sinon.assert.calledWith(adapterManager.callBidViewableBidder, 'mockBidder', bid);
+    });
+
+    it('should call the triggerBilling function if the viewable bid has deferBilling set to true', function() {
+      sandbox.stub(adapterManager, 'triggerBilling');
+      const bid = {
+        ...banner_bid,
+        deferBilling: true
+      };
+      bidViewabilityIO.markViewed(bid, mockEntry, mockObserver)();
+      sinon.assert.called(adapterManager.triggerBilling);
+    });
+  });
 
   describe('viewCallbackFactory tests', function() {
     let sandbox;
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-    })
+    });
 
     afterEach(function() {
-      sandbox.restore()
-    })
+      sandbox.restore();
+    });
 
     it('viewCallbackFactory returns a function', function() {
-      expect(bidViewabilityIO.viewCallbackFactory(banner_bid)).to.be.a('function')
+      expect(bidViewabilityIO.viewCallbackFactory(banner_bid)).to.be.a('function');
     });
 
     it('viewCallbackFactory function does stuff', function() {
@@ -141,5 +209,5 @@ describe('#bidViewabilityIO', function() {
       expect(mockEntries[1].target.view_tracker).to.be.undefined;
       expect(logMessageSpy.lastCall.lastArg).to.eq('bidViewabilityIO: viewable timer stopped for id: false_id code: banner_id');
     });
-  })
+  });
 });

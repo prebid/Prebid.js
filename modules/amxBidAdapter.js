@@ -17,7 +17,8 @@ import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -334,7 +335,8 @@ export const spec = {
         : {
             bidderRequestsCount: 0,
             bidderWinsCount: 0,
-            bidRequestsCount: 0 };
+            bidRequestsCount: 0
+          };
 
     const payload = {
       a: generateUUID(),
@@ -364,7 +366,7 @@ export const spec = {
       smt: 1,
       d: '',
       m: createBidMap(bidRequests),
-      cpp: config.getConfig('coppa') ? 1 : 0,
+      cpp: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
       fpd2: bidderRequest.ortb2,
       tmax: bidderRequest.timeout,
       amp: refInfo(bidderRequest, 'isAmp', null),

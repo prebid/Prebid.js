@@ -151,8 +151,8 @@ describe('adnowBidAdapter', function () {
       const noBidResponses = [
         false,
         {},
-        {body: false},
-        {body: {}}
+        { body: false },
+        { body: {} }
       ];
 
       noBidResponses.forEach(response => {

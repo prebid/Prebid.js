@@ -1,5 +1,5 @@
-import { submodule } from '../src/hook.js'
-import { logInfo, logError } from '../src/utils.js'
+import { submodule } from '../src/hook.js';
+import { logInfo, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 
@@ -21,8 +21,8 @@ export const oxxionSubmodule = {
 };
 
 function init(config, userConsent) {
-  if (!config.params || !config.params.domain) { return false }
-  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') { return true }
+  if (!config.params || !config.params.domain) { return false; }
+  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') { return true; }
   return false;
 }
 
@@ -46,7 +46,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
         [reqBidsConfigObj.adUnits, filteredBids] = getFilteredAdUnitsOnBidRates(bidsRateInterests, reqBidsConfigObj.adUnits, config.params, true);
       }
       if (filteredBids.length > 0) {
-        getPromisifiedAjax('https://' + config.params.domain + '.oxxion.io/analytics/request_rejecteds', JSON.stringify({'bids': filteredBids, 'gdpr': gdpr}), {
+        getPromisifiedAjax('https://' + config.params.domain + '.oxxion.io/analytics/request_rejecteds', JSON.stringify({ 'bids': filteredBids, 'gdpr': gdpr }), {
           method: 'POST',
           withCredentials: true
         });
@@ -55,7 +55,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
       const timeToRun = new Date() - moduleStarted;
       logInfo(LOG_PREFIX + ' time to run: ' + timeToRun);
       if (getRandomNumber(50) === 1) {
-        ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId}), {method: 'POST', withCredentials: true});
+        ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({ 'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId }), { method: 'POST', withCredentials: true });
       }
     }).catch(error => logError(LOG_PREFIX, 'bidInterestError', error));
   }
@@ -72,7 +72,7 @@ function getPromisifiedAjax (url, data = {}, options = {}) {
       }
     };
     ajax(url, callbacks, data, options);
-  })
+  });
 }
 
 function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSampling) {

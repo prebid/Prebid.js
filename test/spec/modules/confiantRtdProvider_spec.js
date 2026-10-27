@@ -1,12 +1,12 @@
 import * as utils from '../../../src/utils.js';
-import * as hook from '../../../src/hook.js'
+import * as hook from '../../../src/hook.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
 import confiantModule from '../../../modules/confiantRtdProvider.js';
 
 const {
-  injectConfigScript,
+
   setupPage,
   subscribeToConfiantCommFrame,
   registerConfiantSubmodule
@@ -36,9 +36,8 @@ describe('Confiant RTD module', function () {
   });
 
   describe('Module initialization', function() {
-    let insertElementStub;
     beforeEach(function() {
-      insertElementStub = sinon.stub(utils, 'insertElement');
+      sinon.stub(utils, 'insertElement');
     });
     afterEach(function() {
       utils.insertElement.restore();
@@ -90,10 +89,10 @@ describe('Confiant RTD module', function () {
 
   describe('Sumbodule execution', function() {
     let submoduleStub;
-    let insertElementStub;
+
     beforeEach(function () {
       submoduleStub = sinon.stub(hook, 'submodule');
-      insertElementStub = sinon.stub(utils, 'insertElement');
+      sinon.stub(utils, 'insertElement');
     });
     afterEach(function () {
       utils.insertElement.restore();

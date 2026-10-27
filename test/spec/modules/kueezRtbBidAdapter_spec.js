@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec as adapter,
   createDomain,
@@ -7,10 +7,10 @@ import {
   createFirstPartyData,
 } from 'modules/kueezRtbBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {config} from '../../../src/config.js';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -20,8 +20,9 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -92,7 +93,7 @@ const VIDEO_BID = {
       'placement': 1
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -102,9 +103,9 @@ const ORTB2_DEVICE = {
       'version': ['8', '0', '0']
     },
     'browsers': [
-      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+      { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+      { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+      { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
     ],
     'mobile': 1,
     'model': 'SM-G955U',
@@ -121,7 +122,7 @@ const ORTB2_DEVICE = {
   model: 'iPhone 12 Pro Max',
   os: 'iOS',
   osv: '17.4',
-  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+  ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
 };
 
 const BIDDER_REQUEST = {
@@ -192,9 +193,8 @@ const VIDEO_SERVER_RESPONSE = {
 
 const ORTB2_OBJ = {
   "device": ORTB2_DEVICE,
-  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
-  "site": {"content": {"language": "en"}
-  }
+  "regs": { "coppa": 0, "gpp": "gpp_string", "gpp_sid": [7] },
+  "site": { "content": { "language": "en" } }
 };
 
 const REQUEST = {
@@ -205,17 +205,14 @@ const REQUEST = {
   }
 };
 
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
-
 describe('KueezRtbBidAdapter', function () {
-  describe('validtae spec', function () {
+  after(function () {
+    config.resetConfig();
+  });
+  describe('validate spec', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -237,12 +234,15 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('exists and contains media types', function () {
-      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
-      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(3);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO, NATIVE]);
     });
   });
 
   describe('validate bid requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -273,8 +273,11 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('build requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     let sandbox;
-    let createFirstPartyDataStub;
+
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
@@ -283,7 +286,7 @@ describe('KueezRtbBidAdapter', function () {
       };
       sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
-      createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
+      sandbox.stub(adapter, 'createFirstPartyData').returns({
         pcid: 'pcid',
         pcidDate: 1000
       });
@@ -333,9 +336,9 @@ describe('KueezRtbBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -408,9 +411,9 @@ describe('KueezRtbBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -448,14 +451,133 @@ describe('KueezRtbBidAdapter', function () {
       });
     });
 
+    it('should build video request with right url domain despite params.host', function () {
+      const videoBidWithHost = VIDEO_BID;
+      videoBidWithHost.params.host = "example2.com";
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
+
     after(function () {
       getGlobal().bidderSettings = {};
       sandbox.restore();
     });
   });
+  describe('native support', function () {
+    const NATIVE_ORTB = {
+      ver: '1.2',
+      assets: [
+        { id: 1, required: 1, title: { len: 80 } },
+        { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+        { id: 3, required: 1, data: { type: 1 } }
+      ]
+    };
+
+    const NATIVE_ORTB_RESPONSE = {
+      ver: '1.2',
+      assets: [
+        { id: 1, title: { text: 'Native title' } },
+        { id: 2, img: { url: 'https://cdn.example/img.jpg', w: 1200, h: 627 } },
+        { id: 3, data: { value: 'Advertiser' } }
+      ],
+      link: { url: 'https://advertiser.example/click' },
+      eventtrackers: [{ event: 1, method: 1, url: 'https://tracker.example/imp' }]
+    };
+
+    const NATIVE_BID = {
+      bidId: 'native-bid-1',
+      adUnitCode: 'div-native-1',
+      bidderRequestId: '1fdb5ff1b6eaa7',
+      params: {
+        subDomain: SUB_DOMAIN,
+        cId: '59db6b3b4ffaa70004f45cdc',
+        pId: '59ac17c192832d0011283fe3'
+      },
+      sizes: [],
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0,
+      schain: 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+      mediaTypes: { native: { ortb: NATIVE_ORTB } },
+      nativeOrtbRequest: NATIVE_ORTB,
+      ortb2Imp: { ext: { tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf' } }
+    };
+
+    const nativeServerResponse = (extra = {}) => ({
+      body: {
+        cid: '59db6b3b4ffaa70004f45cdc',
+        results: [{
+          ad: JSON.stringify({ native: NATIVE_ORTB_RESPONSE }),
+          advertiserDomains: ['example.com'],
+          exp: 60,
+          width: 1,
+          height: 1,
+          mediaType: 'native',
+          creativeId: '12610997325162499419',
+          price: 1.5,
+          cookies: [],
+          ...extra
+        }]
+      }
+    });
+
+    const buildNativeRequest = (bid = NATIVE_BID) => adapter.buildRequests([bid], BIDDER_REQUEST)[0];
+
+    it('should build a native request with mediaTypes.native and nativeOrtbRequest', function () {
+      config.setConfig({ bidderTimeout: 3000 });
+      const requests = adapter.buildRequests([NATIVE_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
+      expect(requests[0].data.mediaTypes).to.deep.equal(NATIVE_BID.mediaTypes);
+      expect(requests[0].data.nativeOrtbRequest).to.deep.equal(NATIVE_ORTB);
+      expect(requests[0].data.bidId).to.equal(NATIVE_BID.bidId);
+    });
+
+    it('should interpret a native response into bid.native.ortb', function () {
+      const responses = adapter.interpretResponse(nativeServerResponse(), buildNativeRequest());
+      expect(responses).to.have.length(1);
+      expect(responses[0].mediaType).to.equal(NATIVE);
+      expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
+      expect(responses[0].cpm).to.equal(1.5);
+      expect(responses[0].requestId).to.equal(NATIVE_BID.bidId);
+      expect(responses[0].ad).to.be.undefined;
+      expect(responses[0].vastXml).to.be.undefined;
+    });
+
+    it('should not send nativeOrtbRequest when mediaTypes was narrowed and native is no longer active', function () {
+      const narrowedBid = {
+        ...NATIVE_BID,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 480]] } }
+      };
+      const requests = adapter.buildRequests([narrowedBid], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].data).to.not.have.property('nativeOrtbRequest');
+      expect(requests[0].data.mediaTypes).to.not.have.property('native');
+    });
+
+    it('should skip a native result when the request has no nativeOrtbRequest (malformed mediaTypes.native)', function () {
+      const malformedBid = { ...NATIVE_BID, nativeOrtbRequest: undefined };
+      const request = buildNativeRequest(malformedBid);
+      expect(request.data).to.not.have.property('nativeOrtbRequest');
+      expect(adapter.interpretResponse(nativeServerResponse(), request)).to.be.empty;
+    });
+
+    it('should skip a native result whose ad is not valid native markup', function () {
+      expect(adapter.interpretResponse(nativeServerResponse({ ad: 'not-json' }), buildNativeRequest())).to.be.empty;
+    });
+  });
+
   describe('getUserSyncs', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -464,7 +586,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
@@ -472,7 +594,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
@@ -484,7 +606,7 @@ describe('KueezRtbBidAdapter', function () {
       config.setConfig({
         coppa: 1
       });
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
@@ -492,6 +614,9 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should generate url with consent data', function () {
+      config.setConfig({
+        coppa: 1
+      });
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'consent_string'
@@ -500,9 +625,9 @@ describe('KueezRtbBidAdapter', function () {
       const gppConsent = {
         gppString: 'gpp_string',
         applicableSections: [7]
-      }
+      };
 
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
@@ -510,20 +635,22 @@ describe('KueezRtbBidAdapter', function () {
       }]);
     });
   });
-
   describe('interpret response', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -588,111 +715,23 @@ describe('KueezRtbBidAdapter', function () {
     });
   });
 
-  describe('user id system', function () {
-    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
-      const id = Date.now().toString();
-      const bid = utils.deepClone(BID);
-
-      const userId = (function () {
-        switch (idSystemProvider) {
-          case 'lipb':
-            return {lipbid: id};
-          case 'id5id':
-            return {uid: id};
-          default:
-            return id;
-        }
-      })();
-
-      bid.userId = {
-        [idSystemProvider]: userId
-      };
-
-      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
-        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
-      });
-    });
-    // testing bid.userIdAsEids handling
-    it("should include user ids from bid.userIdAsEids (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{"id": "fakeidi6j6dlc6e"}]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
-    it("should include user ids from bid.userIdAsEids (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{"id": "fakeidi6j6dlc6e"}]
-        },
-        {
-          "source": "rwdcntrl.net",
-          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
-    // testing user.ext.eid handling
-    it("should include user ids from user.ext.eid (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{"id": "fakeid8888dlc6e"}]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
-    it("should include user ids from user.ext.eid (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{"id": "fakeid8888dlc6e"}]
-            },
-            {
-              "source": "adserver.org",
-              "uids": [{"id": "fakeid495ff1"}]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
-  });
-
   describe('alternate param names extractors', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({'c_id': '1'});
-      const pid = extractPID({'p_id': '1'});
-      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cID': '1'});
-      const pid = extractPID({'Pid': '2'});
-      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
+      const cid = extractCID({ 'cID': '1' });
+      const pid = extractPID({ 'Pid': '2' });
+      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -700,6 +739,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
@@ -714,7 +756,7 @@ describe('KueezRtbBidAdapter', function () {
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -730,11 +772,14 @@ describe('KueezRtbBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
   describe('storage utils', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
@@ -752,7 +797,7 @@ describe('KueezRtbBidAdapter', function () {
         now
       });
       setStorageItem(storage, 'myKey', 2020);
-      const {value, created} = getStorageItem(storage, 'myKey');
+      const { value, created } = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -761,15 +806,15 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 
@@ -782,6 +827,9 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('First party data', () => {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
@@ -792,7 +840,7 @@ describe('KueezRtbBidAdapter', function () {
     after(function () {
       getGlobal().bidderSettings = {};
       storage.removeDataFromLocalStorage('_iiq_fdata');
-    })
+    });
 
     it('should create first party data', function () {
       const data = createFirstPartyData();

@@ -1,16 +1,26 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import medianetAnalytics from 'modules/medianetAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
-import {EVENTS, REJECTION_REASON} from 'src/constants.js';
+import { EVENTS, REJECTION_REASON } from 'src/constants.js';
 import * as events from 'src/events.js';
-import {clearEvents} from 'src/events.js';
-import {deepAccess} from 'src/utils.js';
+import { clearEvents } from 'src/events.js';
+import { deepAccess } from 'src/utils.js';
 import 'src/prebid.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 
-import {getGlobal} from 'src/prebidGlobal.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 import sinon from "sinon";
 import * as mnUtils from '../../../libraries/medianetUtils/utils.js';
+import * as refererDetection from 'src/refererDetection.js';
+import * as medianetLogger from '../../../libraries/medianetUtils/logger.js';
+import { server } from 'test/mocks/xhr.js';
+import {
+  CONFIG_ERROR,
+  CONFIG_PASS,
+  CONFIG_URL,
+  DEFAULT_LOGGING_PERCENT,
+  mnetGlobals,
+} from '../../../libraries/medianetUtils/constants.js';
 
 const {
   AUCTION_INIT,
@@ -36,7 +46,7 @@ function createBidResponse(bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') 
     requestId,
     mediaType: 'banner',
     source: 'client',
-    ext: {pvid: 123, crid: '321'},
+    ext: { pvid: 123, crid: '321' },
     no_bid: false,
     cpm,
     ad: 'AD_CODE',
@@ -47,7 +57,7 @@ function createBidResponse(bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') 
     dfp_id: 'div-gpt-ad-1460505748561-0',
     originalCpm: cpm,
     originalCurrency: 'USD',
-    floorData: {floorValue: 1.10, floorRule: 'banner'},
+    floorData: { floorValue: 1.10, floorRule: 'banner' },
     auctionId: '8e0d5245-deb3-406c-96ca-9b609e077ff7',
     snm: 'SUCCESS',
     responseTimestamp: 1584563606009,
@@ -71,7 +81,7 @@ function createBidResponse(bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') 
       hb_format: 'banner',
       prebid_test: 1
     },
-    params: [{cid: 'test123', crid: '451466393'}]
+    params: [{ cid: 'test123', crid: '451466393' }]
   };
 }
 
@@ -81,7 +91,7 @@ function createBidRequest(bidderCode, auctionId, bidId, adUnits) {
     auctionId,
     bids: adUnits.map(adUnit => ({
       bidder: bidderCode,
-      params: {cid: 'TEST_CID', crid: '451466393'},
+      params: { cid: 'TEST_CID', crid: '451466393' },
       mediaTypes: adUnit.mediaTypes,
       adUnitCode: adUnit.code,
       sizes: [(adUnit.mediaTypes.banner?.sizes || []), (adUnit.mediaTypes.native?.image?.sizes || []), (adUnit.mediaTypes.video?.playerSize || [])],
@@ -100,7 +110,7 @@ function createNoBid(bidder, params) {
   return {
     bidder,
     params,
-    mediaTypes: {banner: {sizes: [[300, 250]], ext: ['asdads']}},
+    mediaTypes: { banner: { sizes: [[300, 250]], ext: ['asdads'] } },
     adUnitCode: 'div-gpt-ad-1460505748561-0',
     transactionId: '303fa0c6-682f-4aea-8e4a-dc68f0d5c7d5',
     sizes: [[300, 250], [300, 600]],
@@ -127,7 +137,6 @@ function createBidWon(bidderCode, adId, requestId, cpm) {
     bidderCode,
     width: 300,
     height: 250,
-    statusMessage: 'Bid available',
     adId,
     requestId,
     mediaType: 'banner',
@@ -166,29 +175,29 @@ function createBidWon(bidderCode, adId, requestId, cpm) {
       prebid_test: 1
     },
     status: 'rendered',
-    params: [{cid: 'test123', crid: '451466393'}]
+    params: [{ cid: 'test123', crid: '451466393' }]
   };
 }
 
-const BANNER_AD_UNIT = {code: 'div-gpt-ad-1460505748561-0', mediaTypes: {banner: {sizes: [[300, 250]]}}};
+const BANNER_AD_UNIT = { code: 'div-gpt-ad-1460505748561-0', mediaTypes: { banner: { sizes: [[300, 250]] } } };
 const VIDEO_AD_UNIT = {
   code: 'div-gpt-ad-1460505748561-0',
-  mediaTypes: {video: {playerSize: [640, 480], context: 'outstream'}}
+  mediaTypes: { video: { playerSize: [640, 480], context: 'outstream' } }
 };
 const INSTREAM_VIDEO_AD_UNIT = {
   code: 'div-gpt-ad-1460505748561-0',
-  mediaTypes: {video: {playerSize: [640, 480], context: 'instream'}}
+  mediaTypes: { video: { playerSize: [640, 480], context: 'instream' } }
 };
 const BANNER_NATIVE_AD_UNIT = {
   code: 'div-gpt-ad-1460505748561-0',
-  mediaTypes: {banner: {sizes: [[300, 250]]}, native: {image: {required: true, sizes: [150, 50]}}}
+  mediaTypes: { banner: { sizes: [[300, 250]] }, native: { image: { required: true, sizes: [150, 50] } } }
 };
 const BANNER_NATIVE_VIDEO_AD_UNIT = {
   code: 'div-gpt-ad-1460505748561-0',
   mediaTypes: {
-    banner: {sizes: [[300, 250]]},
-    video: {playerSize: [640, 480], context: 'outstream'},
-    native: {image: {required: true, sizes: [150, 50]}, title: {required: true, len: 80}}
+    banner: { sizes: [[300, 250]] },
+    video: { playerSize: [640, 480], context: 'outstream' },
+    native: { image: { required: true, sizes: [150, 50] }, title: { required: true, len: 80 } }
   }
 };
 
@@ -215,7 +224,7 @@ const MOCK = {
     auctionId: '8e0d5245-deb3-406c-96ca-9b609e077ff7',
     timestamp: 1584563605739,
     timeout: 6000,
-    bidderRequests: [{bids: [{floorData: {enforcements: {enforceJS: true}}}]}]
+    bidderRequests: [{ bids: [{ floorData: { enforcements: { enforceJS: true } } }] }]
   },
   MNET_BID_REQUESTED: createBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [BANNER_NATIVE_VIDEO_AD_UNIT]),
   MNET_BID_RESPONSE: createBidResponse('medianet', '28248b0e6aece2', 2.299),
@@ -234,14 +243,14 @@ const MOCK = {
   MULTI_BID_RESPONSES: [
     createBidResponse('medianet', '28248b0e6aece2', 2.299, '3e6e4bce5c8fb3'),
     Object.assign(createBidResponse('medianet', '28248b0e6aebecc', 3.299, '3e6e4bce5c8fb4'),
-      {originalBidder: 'bidA2', originalRequestId: '28248b0e6aece2'}),
+      { originalBidder: 'bidA2', originalRequestId: '28248b0e6aece2' }),
   ],
-  MNET_NO_BID: createNoBid('medianet', {cid: 'test123', crid: '451466393', site: {}}),
+  MNET_NO_BID: createNoBid('medianet', { cid: 'test123', crid: '451466393', site: {} }),
   MNET_BID_TIMEOUT: createBidTimeout('28248b0e6aece2', 'medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', [{
     cid: 'test123',
     crid: '451466393',
     site: {}
-  }, {cid: '8CUX0H51P', crid: '451466393', site: {}}]),
+  }, { cid: '8CUX0H51P', crid: '451466393', site: {} }]),
   AUCTION_END: {
     auctionId: '8e0d5245-deb3-406c-96ca-9b609e077ff7',
     auctionEnd: 1584563605739,
@@ -266,11 +275,11 @@ const MOCK = {
       hb_bidder_medianet: 'medianet'
     }
   },
-  NO_BID_SET_TARGETING: {'div-gpt-ad-1460505748561-0': {}},
+  NO_BID_SET_TARGETING: { 'div-gpt-ad-1460505748561-0': {} },
   // S2S mocks
   MNET_S2S_BID_REQUESTED: createS2SBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [BANNER_AD_UNIT]),
   MNET_S2S_BID_RESPONSE: createS2SBidResponse('medianet', '28248b0e6aece2', 2.299),
-  MNET_S2S_BID_WON: Object.assign({}, createBidWon('medianet', '3e6e4bce5c8fb3', '28248b0e6aece2', 2.299), {source: 's2s'}),
+  MNET_S2S_BID_WON: Object.assign({}, createBidWon('medianet', '3e6e4bce5c8fb3', '28248b0e6aece2', 2.299), { source: 's2s' }),
   MNET_S2S_SET_TARGETING: {
     'div-gpt-ad-1460505748561-0': {
       prebid_test: '1',
@@ -322,15 +331,15 @@ function waitForPromiseResolve(promise) {
 }
 
 function performNoBidAuction() {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(NO_BID, MOCK.MNET_NO_BID);
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [MOCK.MNET_BID_REQUESTED]}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [MOCK.MNET_BID_REQUESTED] }));
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
 function performBidWonAuction() {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_BID_RESPONSE);
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
@@ -338,63 +347,63 @@ function performBidWonAuction() {
 }
 
 function performBidTimeoutAuction() {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_TIMEOUT, MOCK.MNET_BID_TIMEOUT);
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [MOCK.MNET_BID_REQUESTED]}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [MOCK.MNET_BID_REQUESTED] }));
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
 function performAuctionWithSameRequestIdBids(bidRespArray) {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   bidRespArray.forEach(bidResp => events.emit(BID_RESPONSE, bidResp));
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [MOCK.MNET_BID_REQUESTED]}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [MOCK.MNET_BID_REQUESTED] }));
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
   events.emit(BID_WON, MOCK.MNET_BID_WON);
 }
 
 function performAuctionNoWin() {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   MOCK.COMMON_REQ_ID_BID_REQUESTS.forEach(bidReq => events.emit(BID_REQUESTED, bidReq));
   MOCK.COMMON_REQ_ID_BID_RESPONSES.forEach(bidResp => events.emit(BID_RESPONSE, bidResp));
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: MOCK.COMMON_REQ_ID_BID_REQUESTS}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: MOCK.COMMON_REQ_ID_BID_REQUESTS }));
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
 function performMultiBidAuction() {
   const bidRequest = createBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [BANNER_AD_UNIT]);
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, bidRequest);
   MOCK.MULTI_BID_RESPONSES.forEach(bidResp => events.emit(BID_RESPONSE, bidResp));
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [bidRequest]}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [bidRequest] }));
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
 function performBidRejectedAuction() {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_BID_RESPONSE);
   events.emit(BID_REJECTED, Object.assign({}, MOCK.MNET_BID_RESPONSE, {
     rejectionReason: REJECTION_REASON.FLOOR_NOT_MET,
   }));
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [MOCK.MNET_BID_REQUESTED]}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [MOCK.MNET_BID_REQUESTED] }));
 }
 
 function performS2SAuction() {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_S2S_BID_RESPONSE);
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [MOCK.MNET_S2S_BID_REQUESTED]}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [MOCK.MNET_S2S_BID_REQUESTED] }));
   events.emit(SET_TARGETING, MOCK.MNET_S2S_SET_TARGETING);
   events.emit(BID_WON, MOCK.MNET_S2S_BID_WON);
 }
 
 function performCurrencyConversionAuction() {
-  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+  events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_JPY_BID_RESPONSE);
-  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [MOCK.MNET_BID_REQUESTED]}));
+  events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [MOCK.MNET_BID_REQUESTED] }));
 }
 
 describe('Media.net Analytics Adapter', function () {
@@ -405,7 +414,7 @@ describe('Media.net Analytics Adapter', function () {
     options: {
       cid: CUSTOMER_ID
     }
-  }
+  };
 
   before(() => {
     clearEvents();
@@ -442,6 +451,104 @@ describe('Media.net Analytics Adapter', function () {
     });
   });
 
+  describe('fetchAnalyticsConfig', function () {
+    const nonLocalReferer = {
+      domain: 'example.com',
+      topmostLocation: 'https://www.example.com/page',
+    };
+
+    function respondConfigWithBody(body) {
+      server.respondWith(
+        (url) => url.startsWith(CONFIG_URL),
+        (req) => req.respond(200, { 'Content-Type': 'text/plain' }, body)
+      );
+    }
+
+    beforeEach(function () {
+      mnetGlobals.initialized = false;
+      sandbox.stub(refererDetection, 'getRefererInfo').returns(nonLocalReferer);
+      sandbox.stub(mnUtils, 'isSampledForLogging').returns(false);
+    });
+
+    afterEach(function () {
+      medianetAnalytics.disableAnalytics();
+      mnetGlobals.initialized = false;
+    });
+
+    it('should apply logging config from ajax success with valid percentage and call CONFIG_URL with cid and dn', function () {
+      respondConfigWithBody(JSON.stringify({ percentage: 50 }));
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(50);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
+      expect(server.requests.some((r) =>
+        r.url.startsWith(`${CONFIG_URL}?`) &&
+        r.url.includes('cid=test123') &&
+        r.url.includes('dn=example.com')
+      )).to.equal(true);
+    });
+
+    it('should use domain-specific percentage from ajax response when domain key matches referer', function () {
+      refererDetection.getRefererInfo.returns({
+        domain: 'mysite',
+        topmostLocation: 'https://mysite.example/page',
+      });
+      respondConfigWithBody(JSON.stringify({
+        percentage: 20,
+        domain: { mysite: { percentage: 75 } },
+      }));
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(75);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
+    });
+
+    it('should not update loggingPercent when ajax response percentage is not numeric', function () {
+      respondConfigWithBody(JSON.stringify({ percentage: 'invalid' }));
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(DEFAULT_LOGGING_PERCENT);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
+    });
+
+    it('should set CONFIG_ERROR when ajax success returns invalid JSON', function () {
+      const sendStub = sandbox.stub();
+      sandbox.stub(medianetLogger, 'errorLogger').returns({ send: sendStub });
+      respondConfigWithBody('not valid json');
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_ERROR);
+      expect(sendStub.called).to.be.true;
+    });
+
+    it('should set CONFIG_ERROR when ajax request fails', function () {
+      const sendStub = sandbox.stub();
+      sandbox.stub(medianetLogger, 'errorLogger').returns({ send: sendStub });
+      server.respondWith(
+        (url) => url.startsWith(CONFIG_URL),
+        (req) => req.respond(500, {}, '')
+      );
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_ERROR);
+      expect(sendStub.called).to.be.true;
+    });
+
+    it('should apply loggingConfig from options without calling ajax', function () {
+      medianetAnalytics.enableAnalytics({
+        options: {
+          cid: CUSTOMER_ID,
+          loggingConfig: { percentage: 60, loggingDelay: 1000 },
+        },
+      });
+      server.respond();
+      expect(server.requests.filter((r) => r.url.startsWith(CONFIG_URL)).length).to.equal(0);
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(60);
+      expect(mnetGlobals.configuration.loggingDelay).to.equal(1000);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
+    });
+  });
+
   describe('VAST Tracking', function () {
     beforeEach(function () {
       medianetAnalytics.enableAnalytics({
@@ -464,7 +571,7 @@ describe('Media.net Analytics Adapter', function () {
     });
 
     it('should generate valid tracking URL for video bids', function () {
-      const VIDEO_AUCTION = Object.assign({}, MOCK.AUCTION_INIT, {adUnits: [INSTREAM_VIDEO_AD_UNIT]});
+      const VIDEO_AUCTION = Object.assign({}, MOCK.AUCTION_INIT, { adUnits: [INSTREAM_VIDEO_AD_UNIT] });
       const VIDEO_BID_REQUESTED = createBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [INSTREAM_VIDEO_AD_UNIT]);
       const videoBidResponse = Object.assign({}, MOCK.MNET_BID_RESPONSE, {
         mediaType: 'video',
@@ -480,12 +587,12 @@ describe('Media.net Analytics Adapter', function () {
         bidRequest: VIDEO_BID_REQUESTED.bids[0]
       });
 
-      expect(trackers).to.be.an('array');
-      expect(trackers.length).to.equal(1);
-      expect(trackers[0].event).to.equal('impressions');
-      expect(trackers[0].url).to.include('https://');
+      expect(trackers).to.be.an('object');
+      expect(trackers.impression).to.be.an('array');
+      expect(trackers.impression.length).to.equal(1);
+      expect(trackers.impression[0]).to.include('https://');
 
-      const urlData = getQueryData(trackers[0].url);
+      const urlData = getQueryData(trackers.impression[0]);
       expect(urlData.lgtp).to.equal('RA');
       expect(urlData.pvnm).to.include('medianet');
       expect(urlData.bdp).to.equal('2.299');
@@ -505,13 +612,14 @@ describe('Media.net Analytics Adapter', function () {
         auction: MOCK.AUCTION_INIT
       });
 
-      expect(trackers).to.be.an('array');
-      expect(trackers.length).to.equal(1);
-      expect(trackers[0].url).to.include('vast_tracker_handler_missing_auction');
+      expect(trackers).to.be.an('object');
+      expect(trackers.impression).to.be.an('array');
+      expect(trackers.impression.length).to.equal(1);
+      expect(trackers.impression[0]).to.include('vast_tracker_handler_missing_auction');
     });
 
     it('should return error tracker when bidrequest is missing', function () {
-      const VIDEO_AUCTION = Object.assign({}, MOCK.AUCTION_INIT, {adUnits: [INSTREAM_VIDEO_AD_UNIT]});
+      const VIDEO_AUCTION = Object.assign({}, MOCK.AUCTION_INIT, { adUnits: [INSTREAM_VIDEO_AD_UNIT] });
       const VIDEO_BID_REQUESTED = createBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [INSTREAM_VIDEO_AD_UNIT]);
       const videoBidResponse = Object.assign({}, MOCK.MNET_BID_RESPONSE, {
         mediaType: 'video',
@@ -524,16 +632,17 @@ describe('Media.net Analytics Adapter', function () {
         auction: VIDEO_AUCTION,
         bidRequest: VIDEO_BID_REQUESTED.bids[0]
       });
-      expect(trackers).to.be.an('array');
-      expect(trackers.length).to.equal(1);
-      expect(trackers[0].url).to.include('missing_bidrequest');
+      expect(trackers).to.be.an('object');
+      expect(trackers.impression).to.be.an('array');
+      expect(trackers.impression.length).to.equal(1);
+      expect(trackers.impression[0]).to.include('missing_bidrequest');
     });
   });
 
   describe('Events', function () {
     beforeEach(function () {
       sandbox.stub(mnUtils, 'onHidden').callsFake(() => {
-      })
+      });
       medianetAnalytics.enableAnalytics({
         options: {
           cid: 'test123'
@@ -632,7 +741,7 @@ describe('Media.net Analytics Adapter', function () {
       bidCopy.cpm = bidCopy.originalCpm * 0.8; // Simulate bidCpmAdjustment
 
       // Emit events to simulate an auction
-      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
       events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
       events.emit(BID_RESPONSE, bidCopy);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
@@ -738,7 +847,7 @@ describe('Media.net Analytics Adapter', function () {
     it('should set serverLatencyMillis and filtered pbsExt for S2S bids on AUCTION_END', function (done) {
       // enable analytics and start an S2S auction flow
       medianetAnalytics.clearlogsQueue();
-      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
       events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.MNET_S2S_BID_RESPONSE);
 
@@ -776,7 +885,7 @@ describe('Media.net Analytics Adapter', function () {
       const auctionId = MOCK.MNET_S2S_BID_REQUESTED.auctionId;
       const bidId = MOCK.MNET_S2S_BID_REQUESTED.bids[0].bidId;
 
-      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, { adUnits: MOCK.AD_UNITS }));
       events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
 
       // mark the bid as timed out so bidsReceived contains a non-success entry

@@ -3,7 +3,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
-import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getViewability, isViewabilityMeasurable } from '../libraries/percentInView/percentInView.js';
 
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
@@ -21,10 +21,11 @@ import {
 } from '../src/utils.js';
 
 import {
-  ADPOD,
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -38,6 +39,10 @@ const IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT = 'cnx_identity_provider_collec
 let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+
+export const dep = {
+  ajax
+};
 
 let context = {};
 
@@ -65,6 +70,7 @@ export function getBidFloor(bid) {
 
 export function validateBanner(mediaTypes) {
   if (!mediaTypes[BANNER]) {
+    // Undefined banner means no banner ads, which is a valid option
     return true;
   }
 
@@ -75,14 +81,18 @@ export function validateBanner(mediaTypes) {
 export function validateVideo(mediaTypes) {
   const video = mediaTypes[VIDEO];
   if (!video) {
+    // Undefined video means no video ads, which is a valid option
     return true;
   }
 
-  return video.context !== ADPOD;
+  return video.context === INSTREAM || video.context === OUTSTREAM;
 }
 
 export function _getMinSize(sizes) {
-  if (!sizes || sizes.length === 0) return undefined;
+  if (!sizes || sizes.length === 0) {
+    return;
+  }
+
   return sizes.reduce((minSize, currentSize) => {
     const minArea = minSize.w * minSize.h;
     const currentArea = currentSize.w * currentSize.h;
@@ -90,41 +100,50 @@ export function _getMinSize(sizes) {
   });
 }
 
-export function _canSelectViewabilityContainer() {
-  try {
-    window.top.document.querySelector('#viewability-container');
-    return true;
-  } catch (e) {
-    return false;
+function getDomElement(elementId) {
+  const getElementFromDoc = doc => {
+    let element;
+
+    try {
+      element = doc.querySelector(elementId);
+    } catch (e) {
+      /* noop */
+    }
+
+    if (!element) {
+      element = doc.getElementById(elementId);
+    }
+
+    return element;
+  };
+
+  let viewabilityContainer = getElementFromDoc(document);
+  if (viewabilityContainer) {
+    return viewabilityContainer;
+  }
+
+  const topDocument = window.top.document;
+  if (document !== topDocument) {
+    return getElementFromDoc(topDocument);
   }
 }
 
-export function _isViewabilityMeasurable(element) {
-  if (!element) return false;
-  return _canSelectViewabilityContainer(element);
-}
-
-export function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, { w, h })
-    : 0;
-}
-
 export function detectViewability(bid) {
-  const { params, adUnitCode } = bid;
+  const { params } = bid;
 
   const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
 
   let element = null;
-  let bidParamSizes = null;
+  let bidParamSizes;
   let minSize = [];
 
   if (isStr(viewabilityContainerIdentifier)) {
     try {
-      element = document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
+      element = getDomElement(viewabilityContainerIdentifier);
+
       if (element) {
         bidParamSizes = [element.offsetWidth, element.offsetHeight];
-        minSize = _getMinSize(bidParamSizes)
+        minSize = _getMinSize(bidParamSizes);
       }
     } catch (e) {
       logError(`Error while trying to find viewability container element: ${viewabilityContainerIdentifier}`);
@@ -136,16 +155,16 @@ export function detectViewability(bid) {
     bidParamSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
-    minSize = _getMinSize(bidParamSizes ?? [])
-    element = document.getElementById(adUnitCode);
+    minSize = _getMinSize(bidParamSizes ?? []);
+    element = getAdUnitElement(bid);
   }
 
-  if (_isViewabilityMeasurable(element)) {
+  if (isViewabilityMeasurable(element)) {
     const minSizeObj = {
       w: minSize[0],
       h: minSize[1]
-    }
-    return Math.round(_getViewability(element, getWindowTop(), minSizeObj))
+    };
+    return Math.round(getViewability(element, getWindowTop(), minSizeObj));
   }
 
   return null;
@@ -164,7 +183,7 @@ export function _getBidRequests(validBidRequests) {
     if (isNumber(detectedViewabilityPercentage)) {
       detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
     }
-    return {
+    const bidRequest = {
       bidId,
       mediaTypes,
       sizes,
@@ -174,6 +193,13 @@ export function _getBidRequests(validBidRequests) {
       declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
       detectedViewabilityPercentage,
     };
+
+    const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+    if (gpid && isStr(gpid)) {
+      bidRequest.gpid = gpid;
+    }
+
+    return bidRequest;
   });
 }
 
@@ -194,6 +220,13 @@ export function hasQueryParams(url) {
   } catch (e) {
     return false;
   }
+}
+
+function _appendQueryParams(url, queryParams) {
+  if (!queryParams) {
+    return url;
+  }
+  return url + (hasQueryParams(url) ? `&${queryParams}` : `?${queryParams}`);
 }
 
 export function saveInLocalStorage(name, value) {
@@ -312,11 +345,13 @@ export const spec = {
 
   /*
    * Determine the user sync type (either 'iframe' or 'image') based on syncOptions.
+   * The iframe sync (UserSyncEndpoint) is preferred because it returns identity data via postMessage;
+   * the image sync (PixelSyncEndpoint, may be null) is used only when iframe syncs are not allowed.
    * Construct the sync URL by appending required query parameters such as gdpr, ccpa, and coppa consents.
    * Return an array containing an object with the sync type and the constructed URL.
    */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    if (!syncOptions.iframeEnabled) {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
 
@@ -347,41 +382,47 @@ export const spec = {
       params['gpp_sid'] = gppConsent.applicableSections.join(',');
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       params['coppa'] = 1;
     }
 
-    window.addEventListener('message', function handler(event) {
-      if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
-        return;
-      }
-
-      const { message, data } = event.data.cnx;
-
-      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
-        this.removeEventListener('message', handler);
-        event.stopImmediatePropagation();
-      }
-
-      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
-        if (data) {
-          saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
-        }
-      }
-    }, true)
-
-    const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
+    const { UserSyncEndpoint, PixelSyncEndpoint } = serverResponses[0].body || {};
 
-    let url = syncUrl;
-    if (queryParams) {
-      url += hasQueryParams(syncUrl) ? `&${queryParams}` : `?${queryParams}`;
+    if (syncOptions.iframeEnabled && UserSyncEndpoint && isStr(UserSyncEndpoint)) {
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
+          return;
+        }
+
+        const { message, data } = event.data.cnx;
+
+        if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
+          this.removeEventListener('message', handler);
+          event.stopImmediatePropagation();
+        }
+
+        if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
+          if (data) {
+            saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
+          }
+        }
+      }, true);
+
+      return [{
+        type: 'iframe',
+        url: _appendQueryParams(UserSyncEndpoint, queryParams)
+      }];
     }
 
-    return [{
-      type: 'iframe',
-      url
-    }];
+    if (syncOptions.pixelEnabled && PixelSyncEndpoint && isStr(PixelSyncEndpoint)) {
+      return [{
+        type: 'image',
+        url: _appendQueryParams(PixelSyncEndpoint, queryParams)
+      }];
+    }
+
+    return [];
   },
 
   isConnatix: (aliasName) => {
@@ -406,7 +447,7 @@ export const spec = {
     }
     const requestTimeout = connatixBidRequestTimeout.timeout;
     const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
-    spec.triggerEvent({type: 'Timeout', timeout, context});
+    spec.triggerEvent({ type: 'Timeout', timeout, context });
   },
 
   /**
@@ -416,13 +457,13 @@ export const spec = {
     if (bidWinData == null) {
       return;
     }
-    const {bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId} = bidWinData;
+    const { bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId } = bidWinData;
 
-    spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context});
+    spec.triggerEvent({ type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context });
   },
 
   triggerEvent(data) {
-    ajax(EVENTS_URL, null, JSON.stringify(data), {
+    dep.ajax(EVENTS_URL, null, JSON.stringify(data), {
       method: 'POST',
       withCredentials: false
     });

@@ -1,6 +1,6 @@
 import { _each } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -129,12 +129,12 @@ export const spec = {
       return [{
         type: 'iframe',
         url: 'https://cdn.holmesmind.com/js/capmapping.htm'
-      }]
+      }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
         url: 'https://c.holmesmind.com/cm'
-      }]
+      }];
     }
   }
 };

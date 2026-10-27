@@ -12,16 +12,16 @@ import {
 } from '../src/utils.js';
 import {
   ajax
-} from '../src/ajax.js'
+} from '../src/ajax.js';
 import {
   submodule
 } from '../src/hook.js';
 import {
   getStorageManager
 } from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 const MODULE_NAME = 'dacId';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export const FUUID_COOKIE_NAME = '_a1_f';
 export const AONEID_COOKIE_NAME = '_a1_d';
@@ -131,7 +131,7 @@ export const dacIdSystemSubmodule = {
           fuuid: id.fuuid,
           id: id.uid
         }
-      }
+      };
     }
   },
 
@@ -144,12 +144,12 @@ export const dacIdSystemSubmodule = {
     const cookie = getCookieId();
 
     if (!cookie.fuuid) {
-      logInfo(LOG_PREFIX + 'There is no fuuid in cookie')
+      logInfo(LOG_PREFIX + 'There is no fuuid in cookie');
       return undefined;
     }
 
     if (cookie.fuuid && cookie.uid) {
-      logInfo(LOG_PREFIX + 'There is fuuid and AoneId in cookie')
+      logInfo(LOG_PREFIX + 'There is fuuid and AoneId in cookie');
       return {
         id: {
           fuuid: cookie.fuuid,

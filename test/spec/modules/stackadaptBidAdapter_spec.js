@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/stackadaptBidAdapter';
 import { deepClone, mergeDeep, deepSetValue } from 'src/utils.js';
-import { config } from 'src/config';
 
 describe('stackadaptBidAdapter', function () {
   describe('intepretResponse() mediatypes - complete', () => {
@@ -54,15 +53,15 @@ describe('stackadaptBidAdapter', function () {
         'cur': 'USD'
       },
       'headers': {}
-    }
+    };
 
     it('should return empty', () => {
       const req = spec.buildRequests([defaultBidRequest], {
         bids: [defaultBidRequest]
-      })
+      });
       const result = spec.interpretResponse(null, {
         data: req.data
-      })
+      });
 
       expect(result.length).to.eq(0);
     });
@@ -72,13 +71,13 @@ describe('stackadaptBidAdapter', function () {
         id: '832j6c82-893j-21j9-8392-4wd9d82pl739',
         bidderRequestId: '2856b3d7c2c8e93e',
         bids: [defaultBidRequest]
-      })
+      });
       const result = spec.interpretResponse(ortbResponse, {
         data: req.data
-      })
+      });
 
       expect(result.length).to.eq(1);
-      expect(result[0].mediaType).to.eq('banner')
+      expect(result[0].mediaType).to.eq('banner');
     });
 
     it('should set mediaType from present video adm', () => {
@@ -93,18 +92,18 @@ describe('stackadaptBidAdapter', function () {
             playerSize: [640, 480]
           }
         }
-      })
+      });
       const bannerResponse = deepClone(ortbResponse);
       const ortbReq = spec.buildRequests([bidRequest], {
         bids: [bidRequest]
-      })
+      });
       deepSetValue(bannerResponse, 'body.seatbid.0.bid.0.adm', '<vast></vast>');
       const result = spec.interpretResponse(bannerResponse, {
         data: ortbReq.data
-      })
+      });
 
       expect(result.length).to.eq(1);
-      expect(result[0].mediaType).to.eq('video')
+      expect(result[0].mediaType).to.eq('video');
     });
 
     it('should set mediaType from missing adm', () => {
@@ -119,18 +118,18 @@ describe('stackadaptBidAdapter', function () {
             playerSize: [640, 480]
           }
         }
-      })
+      });
       const ortbReq = spec.buildRequests([bidRequest], {
         bids: [bidRequest]
-      })
+      });
       const result = spec.interpretResponse(ortbResponse, {
         data: ortbReq.data
-      })
+      });
 
       expect(result.length).to.eq(1);
-      expect(result[0].mediaType).to.eq('banner')
+      expect(result[0].mediaType).to.eq('banner');
     });
-  })
+  });
 
   describe('interpretResponse() empty', function () {
     it('should handle empty response', function () {
@@ -240,9 +239,9 @@ describe('stackadaptBidAdapter', function () {
     it('should match bid response', function () {
       const ortbRequest = spec.buildRequests([bidderRequest], {
         bids: [bidderRequest]
-      })
+      });
 
-      const result = spec.interpretResponse(ortbResponse, {data: ortbRequest.data});
+      const result = spec.interpretResponse(ortbResponse, { data: ortbRequest.data });
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(expectedBid);
     });
@@ -397,8 +396,8 @@ describe('stackadaptBidAdapter', function () {
     it('should match bid response', function () {
       const ortbRequest = spec.buildRequests([bidderRequest1, bidderRequest2], {
         bids: [bidderRequest1, bidderRequest2]
-      })
-      const result = spec.interpretResponse(ortbResponse, {data: ortbRequest.data});
+      });
+      const result = spec.interpretResponse(ortbResponse, { data: ortbRequest.data });
       expect(result.length).to.equal(2);
       expect(result).to.deep.equal(expectedBids);
     });
@@ -470,9 +469,9 @@ describe('stackadaptBidAdapter', function () {
       it('should match bid response with adm', function () {
         const ortbRequest = spec.buildRequests([bidderRequest], {
           bids: [bidderRequest]
-        })
+        });
 
-        const result = spec.interpretResponse(ortbResponse, {data: ortbRequest.data});
+        const result = spec.interpretResponse(ortbResponse, { data: ortbRequest.data });
         expect(result.length).to.equal(1);
         expect(result[0]).to.deep.equal(expectedBid);
       });
@@ -511,7 +510,7 @@ describe('stackadaptBidAdapter', function () {
 
       it('should be invalid if bid request is not mediaTypes.banner or mediaTypes.video', function () {
         const bidderRequest = deepClone(bannerBidderRequest);
-        delete bidderRequest.mediaTypes
+        delete bidderRequest.mediaTypes;
         expect(spec.isBidRequestValid(bidderRequest)).to.equal(false);
       });
 
@@ -767,7 +766,7 @@ describe('stackadaptBidAdapter', function () {
     it('should set the banner expansion direction if param set', function () {
       const clonedBidderRequest = deepClone(bidderRequest);
       const clonedBidRequests = deepClone(bidRequests);
-      const expdir = [1, 3]
+      const expdir = [1, 3];
       clonedBidRequests[0].params.banner = {
         expdir: expdir
       };
@@ -792,10 +791,10 @@ describe('stackadaptBidAdapter', function () {
           ...bidRequests.referer,
           domain: null
         }
-      }
+      };
 
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequestWithoutRefererDomain, ortb2}).data;
-      expect(ortbRequest.site.publisher).to.deep.equal({domain: 'https://publisher.com', id: '11111'});
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequestWithoutRefererDomain, ortb2 }).data;
+      expect(ortbRequest.site.publisher).to.deep.equal({ domain: 'https://publisher.com', id: '11111' });
     });
 
     it('should set first party side data publisher domain taking precedence over referer domain', function () {
@@ -804,7 +803,7 @@ describe('stackadaptBidAdapter', function () {
           domain: 'https://publisher.com',
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequest, ortb2}).data;
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 }).data;
       expect(ortbRequest.site.domain).to.equal('https://publisher.com');
     });
 
@@ -812,7 +811,7 @@ describe('stackadaptBidAdapter', function () {
       const ortb2 = {
         bcat: ['IAB1', 'IAB2']
       };
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequest, ortb2}).data;
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 }).data;
       expect(ortbRequest.bcat).to.deep.equal(['IAB1', 'IAB2']);
     });
 
@@ -820,7 +819,7 @@ describe('stackadaptBidAdapter', function () {
       const ortb2 = {
         badv: ['chargers.com', 'house.com']
       };
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequest, ortb2}).data;
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 }).data;
       expect(ortbRequest.badv).to.deep.equal(['chargers.com', 'house.com']);
     });
 
@@ -853,7 +852,7 @@ describe('stackadaptBidAdapter', function () {
           }
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.user.ext.consent).to.equal(consentString);
       expect(ortbRequest.regs.ext.gdpr).to.equal(1);
@@ -868,7 +867,7 @@ describe('stackadaptBidAdapter', function () {
           }
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.regs.ext.us_privacy).to.equal(consentString);
     });
@@ -879,7 +878,7 @@ describe('stackadaptBidAdapter', function () {
           coppa: 1
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
     });
@@ -891,7 +890,7 @@ describe('stackadaptBidAdapter', function () {
           gpp_sid: [9]
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.regs.gpp).to.equal('DCACTA~1YAA');
       expect(ortbRequest.regs.gpp_sid).to.eql([9]);
@@ -916,7 +915,7 @@ describe('stackadaptBidAdapter', function () {
 
       clonedBidRequests[0].ortb2 = {
         source: {
-          ext: {schain: schain}
+          ext: { schain: schain }
         }
       };
       clonedBidderRequest.bids = clonedBidRequests;
@@ -924,7 +923,7 @@ describe('stackadaptBidAdapter', function () {
       // Add schain to bidderRequest as well
       clonedBidderRequest.ortb2 = {
         source: {
-          ext: {schain: schain}
+          ext: { schain: schain }
         }
       };
 
@@ -946,7 +945,7 @@ describe('stackadaptBidAdapter', function () {
           keywords: 'device={}'
         }
       };
-      const mergedBidderRequest = {...bidderRequest, ortb2};
+      const mergedBidderRequest = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, mergedBidderRequest).data;
       expect(ortbRequest.site.id).to.equal('144da00b-8309-4b2e-9482-4b3829c0b54a');
       expect(ortbRequest.site.name).to.equal('game');
@@ -963,7 +962,7 @@ describe('stackadaptBidAdapter', function () {
       const clonedBidderRequests = deepClone(bidderRequest);
       const clonedBidRequests = deepClone(bidRequests);
       delete clonedBidRequests[0].params.bidfloor;
-      const bidfloor = 1.00
+      const bidfloor = 1.00;
       clonedBidRequests[0].getFloor = () => {
         return { currency: 'USD', floor: 1.00 };
       };
@@ -1000,7 +999,7 @@ describe('stackadaptBidAdapter', function () {
       custom_kvp: {
         customKey: 'customValue'
       }
-    }
+    };
 
     function validateExtFirstPartyData(ext) {
       expect(ext.data.firstPartyKey).to.equal('firstPartyValue');
@@ -1017,11 +1016,11 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
-      validateExtFirstPartyData(ortbRequest.site.ext)
-      expect(ortbRequest.site.search).to.equal('test search')
+      validateExtFirstPartyData(ortbRequest.site.ext);
+      expect(ortbRequest.site.search).to.equal('test search');
     });
 
     it('should set user first party data', function() {
@@ -1032,11 +1031,11 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
-      validateExtFirstPartyData(ortbRequest.user.ext)
-      expect(ortbRequest.user.yob).to.equal(1998)
+      validateExtFirstPartyData(ortbRequest.user.ext);
+      expect(ortbRequest.user.yob).to.equal(1998);
     });
 
     it('should set imp first party data', function() {
@@ -1052,10 +1051,10 @@ describe('stackadaptBidAdapter', function () {
 
       const ortbRequest = spec.buildRequests(clonedBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(ortbRequest.imp[0].ext)
+      validateExtFirstPartyData(ortbRequest.imp[0].ext);
       expect(ortbRequest.imp[0].tagid).to.equal('1');
       expect(ortbRequest.imp[0].metric[0]).to.deep.equal(metric);
-      expect(ortbRequest.imp[0].clickbrowser).to.equal(1)
+      expect(ortbRequest.imp[0].clickbrowser).to.equal(1);
     });
 
     it('should set app first party data', function() {
@@ -1066,11 +1065,11 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
-      validateExtFirstPartyData(ortbRequest.app.ext)
-      expect(ortbRequest.app.ver).to.equal('v1.0')
+      validateExtFirstPartyData(ortbRequest.app.ext);
+      expect(ortbRequest.app.ver).to.equal('v1.0');
     });
 
     it('should set device first party data', function() {
@@ -1081,11 +1080,11 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
-      validateExtFirstPartyData(ortbRequest.device.ext)
-      expect(ortbRequest.device.os).to.equal('ios')
+      validateExtFirstPartyData(ortbRequest.device.ext);
+      expect(ortbRequest.device.os).to.equal('ios');
     });
 
     it('should set pmp first party data', function() {
@@ -1096,11 +1095,11 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
-      validateExtFirstPartyData(ortbRequest.pmp.ext)
-      expect(ortbRequest.pmp.private_auction).to.equal(1)
+      validateExtFirstPartyData(ortbRequest.pmp.ext);
+      expect(ortbRequest.pmp.private_auction).to.equal(1);
     });
   });
 

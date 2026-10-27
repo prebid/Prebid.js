@@ -1,13 +1,14 @@
-import {BID_RESPONSE, IMP, REQUEST, RESPONSE} from '../../../src/pbjsORTB.js';
-import {isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
-import {extPrebidMediaType} from './mediaType.js';
-import {setRequestExtPrebidAliases} from './aliases.js';
-import {setImpBidParams} from './params.js';
-import {setImpAdUnitCode} from './adUnitCode.js';
-import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
-import {setBidResponseVideoCache} from './video.js';
-import {addEventTrackers} from './eventTrackers.js';
-import {setRequestExtPrebidPageViewIds} from './pageViewIds.js';
+import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js';
+import { isPlainObject, isStr, mergeDeep } from '../../../src/utils.js';
+import { extPrebidMediaType } from './mediaType.js';
+import { setRequestExtPrebidAliases } from './aliases.js';
+import { setImpBidParams } from './params.js';
+import { setImpAdUnitCode } from './adUnitCode.js';
+import { setRequestExtPrebid, setRequestExtPrebidChannel } from './requestExtPrebid.js';
+import { setBidResponseVideoCache } from './video.js';
+import { addEventTrackers } from './eventTrackers.js';
+import { setRequestExtPrebidPageViewIds } from './pageViewIds.js';
+import { setBidResponseSafeRenderer, setRequestExtPrebidSafeRenderer } from './safeRenderer.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -27,10 +28,14 @@ export const PBS_PROCESSORS = {
       // sets ext.prebid.page_view_ids
       fn: setRequestExtPrebidPageViewIds
     },
+    extPrebidSafeRenderer: {
+      // sets ext.prebid.safeRenderer support flag
+      fn: setRequestExtPrebidSafeRenderer
+    }
   },
   [IMP]: {
     params: {
-      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params, passed through transformBidParams if necessary
+      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params
       fn: setImpBidParams
     },
     adUnitCode: {
@@ -43,11 +48,6 @@ export const PBS_PROCESSORS = {
       // sets bidResponse.mediaType according to context.mediaType, falling back to imp.ext.prebid.type
       fn: extPrebidMediaType,
       priority: 99,
-    },
-    videoCache: {
-      // sets response video attributes; in addition, looks at ext.prebid.cache and .targeting to set video cache key and URL
-      fn: setBidResponseVideoCache,
-      priority: -10, // after 'video'
     },
     bidderCode: {
       // sets bidderCode from on seatbid.seat
@@ -84,6 +84,10 @@ export const PBS_PROCESSORS = {
       // converts "legacy" burl and ext.prebid.events.win into eventtrackers
       fn: addEventTrackers
     },
+    safeRenderer: {
+      // sets bidResponse.safeRenderer from ext.prebid.meta.rendererUrl
+      fn: setBidResponseSafeRenderer
+    }
   },
   [RESPONSE]: {
     serverSideStats: {
@@ -120,4 +124,12 @@ export const PBS_PROCESSORS = {
       }
     },
   }
+};
+
+if (FEATURES.VIDEO) {
+  PBS_PROCESSORS[BID_RESPONSE].videoCache = {
+    // sets response video attributes; in addition, looks at ext.prebid.cache and .targeting to set video cache key and URL
+    fn: setBidResponseVideoCache,
+    priority: -10, // after 'video'
+  };
 }

@@ -1,9 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adponeBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
-const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
   const bid = {
     bidder: 'adpone',
@@ -66,7 +65,7 @@ describe('adponeBidAdapter', function () {
 
     it('should return false when necessary information is not found', function () {
       // empty bid
-      expect(spec.isBidRequestValid({bidId: '', params: {}})).to.be.false;
+      expect(spec.isBidRequestValid({ bidId: '', params: {} })).to.be.false;
 
       // empty bidId
       bid.bidId = '';
@@ -112,7 +111,7 @@ describe('adponeBidAdapter', function () {
   });
   describe('interpretResponse', function () {
     let serverResponse;
-    const bidRequest = { data: {id: '1234'} };
+    const bidRequest = { data: { id: '1234' } };
 
     beforeEach(function () {
       serverResponse = {
@@ -190,7 +189,7 @@ describe('adponeBidAdapter', function () {
 
       serverResponse.body.seatbid[0].bid[0].price = null;
       response = spec.interpretResponse(serverResponse, bidRequest);
-      expect(response).to.deep.equal([])
+      expect(response).to.deep.equal([]);
     });
     it('should add responses if the cpm is valid', function () {
       serverResponse.body.seatbid[0].bid[0].price = 0.5;
@@ -211,7 +210,7 @@ describe('adponeBidAdapter', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });

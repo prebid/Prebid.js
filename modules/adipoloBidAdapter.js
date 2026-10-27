@@ -1,6 +1,6 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {buildRequests, getUserSyncs, interpretResponse, isBidRequestValid} from '../libraries/xeUtils/bidderUtils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { buildRequests, getUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js';
 import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const BIDDER_CODE = 'adipolo';
@@ -27,10 +27,10 @@ export const spec = {
   isBidRequestValid: bid => isBidRequestValid(bid, ['pid']),
   buildRequests: (validBidRequests, bidderRequest) => {
     const endpoint = `https://${getSubdomain()}.adipolo.live`;
-    return buildRequests(validBidRequests, bidderRequest, endpoint)
+    return buildRequests(validBidRequests, bidderRequest, endpoint);
   },
   interpretResponse,
   getUserSyncs
-}
+};
 
 registerBidder(spec);

@@ -4,13 +4,14 @@ import adapterManager, {
   type BidRequest,
   type ClientBidderRequest
 } from '../adapterManager.js';
-import {config} from '../config.js';
-import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
-import {type SyncType, userSync} from '../userSync.js';
-import {nativeBidIsValid} from '../native.js';
-import {isValidVideoBid} from '../video.js';
-import {EVENTS, REJECTION_REASON, DEBUG_MODE} from '../constants.js';
+import { config } from '../config.js';
+import { BannerBid, Bid, BidResponse, createBid } from '../bidfactory.js';
+import { type UserSync, userSync } from '../userSync.js';
+import { nativeBidIsValid } from '../native.js';
+import { isValidVideoBid } from '../video.js';
+import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
 import * as events from '../events.js';
+import { parseUntrustedJSON } from '../utils/untrustedJson.js';
 
 import {
   delayExecution,
@@ -28,20 +29,20 @@ import {
   getParameterByName,
   debugTurnedOn
 } from '../utils.js';
-import {hook} from '../hook.js';
-import {auctionManager} from '../auctionManager.js';
-import {bidderSettings} from '../bidderSettings.js';
-import {useMetrics} from '../utils/perfMetrics.js';
-import {isActivityAllowed} from '../activities/rules.js';
-import {activityParams} from '../activities/activityParams.js';
-import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
-import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
-import type {AnyFunction, Wraps} from "../types/functions.d.ts";
-import type {BidderCode, StorageDisclosure} from "../types/common.d.ts";
-import type {Ajax, AjaxOptions, XHR} from "../ajax.ts";
-import type {AddBidResponse} from "../auction.ts";
-import type {MediaType} from "../mediaTypes.ts";
-import {CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData} from "../consentHandler.ts";
+import { hook } from '../hook.js';
+import { auctionManager } from '../auctionManager.js';
+import { bidderSettings } from '../bidderSettings.js';
+import { useMetrics } from '../utils/perfMetrics.js';
+import { isActivityAllowed } from '../activities/rules.js';
+import { activityParams } from '../activities/activityParams.js';
+import { MODULE_TYPE_BIDDER } from '../activities/modules.js';
+import { ACTIVITY_TRANSMIT_TID } from '../activities/activities.js';
+import type { AnyFunction, Wraps } from "../types/functions.d.ts";
+import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
+import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
+import type { AddBidResponse } from "../auction.ts";
+import type { MediaType } from "../mediaTypes.ts";
+import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, coppaDataHandler, type ConsentDataForKey } from "../consentHandler.ts";
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -91,6 +92,7 @@ import {CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData} from "../conse
  *
  * @property {('image'|'iframe')} type The type of user sync to be done.
  * @property {string} url The URL which makes the sync happen.
+ * @property {function} [onCleanup] Releases work associated with an iframe when it is removed.
  */
 
 // common params for all mediaTypes
@@ -98,7 +100,7 @@ const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'cur
 const TIDS = {
   auctionId: (request) => request.ortb2?.source?.tid,
   transactionId: (request) => request.ortb2Imp?.ext?.tid
-}
+};
 
 export interface AdapterRequest {
   url: string;
@@ -123,7 +125,7 @@ export type AdapterResponse = BidResponse | BidResponse[] | ExtendedResponse;
 export type BidderError<B extends BidderCode> = {
   error: XHR;
   bidderRequest: BidderRequest<B>;
-}
+};
 
 export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure {
   code: BIDDER;
@@ -135,7 +137,14 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
    * @see https://iabeurope.eu/tcf-for-vendors/
    */
   gvlid?: number;
-  aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];
+  /**
+   * Google Additional Consent provider ID, for vendors that are not on the GVL.
+   * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
+   * when the module has no GVL ID. This is a different ID space from GVL IDs.
+   * @see https://support.google.com/admanager/answer/9681920
+   */
+  acpId?: number;
+  aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, acpId?: number, skipPbsAliasing?: boolean })[];
   isBidRequestValid(request: BidRequest<BIDDER>): boolean;
   buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
   interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
@@ -153,16 +162,17 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
       pixelEnabled: boolean;
     },
     responses: ServerResponse[],
-    gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
-    uspConsent: null | ConsentData[typeof CONSENT_USP],
-    gppConsent: null | ConsentData[typeof CONSENT_GPP]
-  ) => ({ type: SyncType, url: string })[];
+    gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
+    uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
+    gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>,
+    coppa: boolean
+  ) => UserSync[];
   alwaysHasCapacity?: boolean;
 }
 
 export type BidAdapter = {
   callBids: ReturnType<typeof newBidder>['callBids']
-}
+};
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -185,19 +195,21 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
     spec.aliases.forEach(alias => {
       let aliasCode: string = alias as any;
       let gvlid;
+      let acpId;
       let skipPbsAliasing;
       if (isPlainObject(alias)) {
         aliasCode = alias.code as string;
         gvlid = alias.gvlid;
-        skipPbsAliasing = alias.skipPbsAliasing
+        acpId = alias.acpId;
+        skipPbsAliasing = alias.skipPbsAliasing;
       }
       adapterManager.aliasRegistry[aliasCode] = spec.code;
-      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, skipPbsAliasing }));
+      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, acpId, skipPbsAliasing }));
     });
   }
 }
 
-export const guardTids: any = memoize(({bidderCode}) => {
+function makeTidGuard({ bidderCode }) {
   const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
     if (TIDS.hasOwnProperty(prop)) {
@@ -215,7 +227,7 @@ export const guardTids: any = memoize(({bidderCode}) => {
       });
     return proxy;
   }
-  const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);
+  const bidRequest = memoize((br) => privateAccessProxy(br, { get }), (arg) => arg.bidId);
   /**
    * Return a view on bidd(er) requests where auctionId/transactionId are nulled if the bidder is not allowed `transmitTid`.
    *
@@ -231,8 +243,22 @@ export const guardTids: any = memoize(({bidderCode}) => {
         return get(target, prop, receiver);
       }
     })
+  };
+}
+
+// Guards are cached per bidderRequest, so every use of the same request sees
+// the same guard: stable proxy identity, and one transmitTid activity check
+// per bidder request. The cache is keyed weakly, so an entry cannot outlive
+// the bidderRequest it guards.
+const tidGuards = new WeakMap<object, ReturnType<typeof makeTidGuard>>();
+export function guardTids<B extends BidderCode>(bidderRequest: ClientBidderRequest<B>) {
+  let guard = tidGuards.get(bidderRequest);
+  if (guard == null) {
+    guard = makeTidGuard(bidderRequest);
+    tidGuards.set(bidderRequest, guard);
   }
-});
+  return guard;
+}
 
 declare module '../events' {
   interface Events {
@@ -279,14 +305,14 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode: string, bid: Bid) {
+      function addBidWithCode(adUnitCode: string, bid: Bid, responseMediaType = null) {
         const metrics = useMetrics(bid.metrics);
         metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
-        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
+        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid, { responseMediaType }))) {
           addBidResponse(adUnitCode, bid);
         } else {
-          addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID)
+          addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID);
         }
       }
 
@@ -317,24 +343,16 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
         onRequest: requestObject => events.emit(EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
-          responses.push(resp)
-        },
-        onPaapi: (paapiConfig: any) => {
-          const bidRequest = bidRequestMap[paapiConfig.bidId];
-          if (bidRequest) {
-            addPaapiConfig(bidRequest, paapiConfig);
-          } else {
-            logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
-          }
+          responses.push(resp);
         },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
           if (!error.timedOut) {
             onTimelyResponse(spec.code);
           }
-          adapterManager.callBidderError(spec.code, error, bidderRequest)
+          adapterManager.callBidderError(spec.code, error, bidderRequest);
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
-          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, {bidRequests: validBidRequests});
+          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, { bidRequests: validBidRequests });
         },
         onBid: (bidResponse) => {
           const bidRequest = bidRequestMap[bidResponse.requestId];
@@ -343,7 +361,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bidResponse.bidderCode, bidRequest.bidder)) {
               logWarn(`${bidResponse.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
-              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED)
+              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED);
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -353,7 +371,10 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.deferBilling = bidRequest.deferBilling;
             bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
             const prebidBid: Bid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, Object.keys(TIDS)));
-            addBidWithCode(bidRequest.adUnitCode, prebidBid);
+            const responseMediaType = Object.prototype.hasOwnProperty.call(bidResponse, 'mediaType')
+              ? bidResponse.mediaType
+              : null;
+            addBidWithCode(bidRequest.adUnitCode, prebidBid, responseMediaType);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bidResponse.requestId}. Ignoring.`);
             addBidResponse.reject(null, bidResponse, REJECTION_REASON.INVALID_REQUEST_ID);
@@ -390,7 +411,12 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-const RESPONSE_PROPS = ['bids', 'paapi']
+const RESPONSE_PROPS = [
+  'bids',
+  // allow bid adapters to still reply with paapi (which will be ignored).
+  'paapi',
+];
+
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
  * them over the network, and parsing the responses.
@@ -407,7 +433,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
   bidderRequest: ClientBidderRequest<B>,
   ajax: Ajax,
   wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
-  {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}: {
+  { onRequest, onResponse, onError, onBid, onCompletion }: {
     /**
      * invoked once for each HTTP request built by the adapter - with the raw request
      */
@@ -424,10 +450,6 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
      *  invoked once for each bid in the response - with the bid as returned by interpretResponse
      */
     onBid: (bid: BidResponse) => void;
-    /**
-     * invoked once with each member of the adapter response's 'paapi' array.
-     */
-    onPaapi: (paapi: unknown) => void;
     /**
      * invoked once when all bid requests have been processed
      */
@@ -458,9 +480,9 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     // If the adapter code fails, no bids should be added. After all the bids have been added,
     // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
     const onSuccess = wrapCallback(function(response, responseObj) {
-      networkDone();
+      networkDone?.();
       try {
-        response = JSON.parse(response);
+        response = parseUntrustedJSON(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
 
       // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
@@ -483,15 +505,11 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       // an array of bids
       // a BidderAuctionResponse object
 
-      let bids, paapiConfigs;
+      let bids;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
-        paapiConfigs = response.paapi;
       } else {
         bids = response;
-      }
-      if (isArray(paapiConfigs)) {
-        paapiConfigs.forEach(onPaapi);
       }
       if (bids) {
         if (isArray(bids)) {
@@ -510,37 +528,39 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     });
 
     const onFailure = wrapCallback(function (errorMessage, error) {
-      networkDone();
+      networkDone?.();
       onError(errorMessage, error);
       requestDone();
     });
 
     onRequest(request);
 
-    const networkDone = requestMetrics.startTiming('net');
+    let networkDone;
 
     const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
 
     function getOptions(defaults) {
-      const ro = request.options;
-      return Object.assign(defaults, ro, {
-        browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
-          ? false
-          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code)),
-        suppressTopicsEnrollmentWarning: ro?.hasOwnProperty('suppressTopicsEnrollmentWarning')
-          ? ro.suppressTopicsEnrollmentWarning
-          : !debugMode
-      })
+      return Object.assign(defaults, request.options);
     }
+
+    // start network timer here so we do not include the compression time in `net` metric
+    const doAjax = (url: string, payload: unknown, options: AjaxOptions) => {
+      networkDone = requestMetrics.startTiming('net');
+      ajax(
+        url,
+        {
+          success: onSuccess,
+          error: onFailure
+        },
+        payload,
+        options
+      );
+    };
 
     switch (request.method) {
       case 'GET':
-        ajax(
+        doAjax(
           `${request.url}${formatGetParameters(request.data)}`,
-          {
-            success: onSuccess,
-            error: onFailure
-          },
           undefined,
           getOptions({
             method: 'GET',
@@ -551,12 +571,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       case 'POST':
         const enableGZipCompression = request.options?.endpointCompression;
         const callAjax = ({ url, payload }) => {
-          ajax(
+          doAjax(
             url,
-            {
-              success: onSuccess,
-              error: onFailure
-            },
             payload,
             getOptions({
               method: 'POST',
@@ -570,16 +586,25 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
           logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
         }
 
-        if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
-          compressDataWithGZip(request.data).then(compressedPayload => {
-            const url = new URL(request.url);
-            if (!url.searchParams.has('gzip')) {
-              url.searchParams.set('gzip', '1');
+        const sendUncompressed = wrapCallback(() => callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) }));
+
+        if (enableGZipCompression && !debugMode) {
+          isGzipCompressionSupported().then(wrapCallback((supported) => {
+            if (supported) {
+              return compressDataWithGZip(request.data)
+                .then(wrapCallback(compressedPayload => {
+                  const url = new URL(request.url);
+                  if (!url.searchParams.has('gzip')) {
+                    url.searchParams.set('gzip', '1');
+                  }
+                  callAjax({ url: url.href, payload: compressedPayload });
+                }));
+            } else {
+              sendUncompressed();
             }
-            callAjax({ url: url.href, payload: compressedPayload });
-          });
+          })).catch(sendUncompressed);
         } else {
-          callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
+          sendUncompressed();
         }
         break;
       default:
@@ -594,8 +619,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
 
       return '';
     }
-  })
-}, 'processBidderRequests')
+  });
+}, 'processBidderRequests');
 
 export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderCode>, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
@@ -603,21 +628,18 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
     let syncs = spec.getUserSyncs({
       iframeEnabled: userSync.canBidderRegisterSync('iframe', spec.code),
       pixelEnabled: userSync.canBidderRegisterSync('image', spec.code),
-    }, responses, gdprConsent, uspConsent, gppConsent);
+    }, responses, gdprConsent, uspConsent, gppConsent, coppaDataHandler.getCoppa());
     if (syncs) {
       if (!Array.isArray(syncs)) {
         syncs = [syncs];
       }
       syncs.forEach((sync) => {
-        userSync.registerSync(sync.type, spec.code, sync.url)
+        userSync.registerSync(sync.type, spec.code, sync.url, sync.onCleanup);
       });
       userSync.bidderDone(spec.code);
     }
   }
-}, 'registerSyncs')
-
-export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
-}, 'addPaapiConfig');
+}, 'registerSyncs');
 
 declare module '../bidfactory' {
   interface BannerBidProperties {
@@ -629,7 +651,7 @@ declare module '../bidfactory' {
 }
 
 // check that the bid has a width and height set
-function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index} = {}) {
+function validBidSize(adUnitCode, bid: BannerBid, { index = auctionManager.index } = {}) {
   if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
     bid.width = parseInt(bid.width, 10);
     bid.height = parseInt(bid.height, 10);
@@ -651,7 +673,7 @@ function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index}
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    const [ width, height ] = parsedSizes[0].split('x');
+    const [width, height] = parsedSizes[0].split('x');
     bid.width = parseInt(width, 10);
     bid.height = parseInt(height, 10);
     return true;
@@ -661,7 +683,7 @@ function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index}
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index} = {}) {
+export function isValid(adUnitCode: string, bid: Bid, { index = auctionManager.index, responseMediaType = bid.mediaType } = {}) {
   function hasValidKeys() {
     const bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key) && ![undefined, null].includes(bid[key]));
@@ -686,15 +708,30 @@ export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.in
     return false;
   }
 
-  if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
+  const auctionOptions = config.getConfig('auctionOptions') || {};
+  const rejectUnknownMediaTypes = auctionOptions.rejectUnknownMediaTypes === true;
+  const rejectInvalidMediaTypes = auctionOptions.rejectInvalidMediaTypes !== false;
+  const mediaTypes = index.getMediaTypes(bid);
+  if (mediaTypes && Object.keys(mediaTypes).length > 0) {
+    if (responseMediaType == null && rejectUnknownMediaTypes) {
+      logError(errorMessage(`Bid mediaType is required. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+      return false;
+    }
+    if (responseMediaType != null && rejectInvalidMediaTypes && !mediaTypes.hasOwnProperty(responseMediaType)) {
+      logError(errorMessage(`Bid mediaType '${responseMediaType}' is not supported by the ad unit. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+      return false;
+    }
+  }
+
+  if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, { index })) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
-  if (FEATURES.VIDEO && bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
+  if (FEATURES.VIDEO && bid.mediaType === 'video' && !isValidVideoBid(bid, { index })) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;
   }
-  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, {index})) {
+  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, { index })) {
     logError(errorMessage(`Banner bids require a width and height`));
     return false;
   }
@@ -703,5 +740,5 @@ export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.in
 }
 
 export function adapterMetrics(bidderRequest) {
-  return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`])
+  return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`]);
 }

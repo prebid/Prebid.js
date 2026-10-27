@@ -1,12 +1,11 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/ablidaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/ablidaBidAdapter.js';
+
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
 describe('ablidaBidAdapter', function () {
-  const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
     const bid = {
       adUnitCode: 'adunit-code',
@@ -17,7 +16,7 @@ describe('ablidaBidAdapter', function () {
       bidderRequestsCount: 1,
       bidderWinsCount: 0,
       bidId: '1234asdf1234',
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
       params: {
         placementId: 123
       },
@@ -42,7 +41,7 @@ describe('ablidaBidAdapter', function () {
         bidderRequestId: '14d2939272a26a',
         bidderRequestsCount: 1,
         bidderWinsCount: 0,
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         params: {
           placementId: 123
         },
@@ -81,7 +80,7 @@ describe('ablidaBidAdapter', function () {
         device: 'desktop',
         gdprConsent: undefined,
         jaySupported: true,
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         placementId: 'testPlacementId',
         width: 300,
         height: 200,
@@ -137,15 +136,17 @@ describe('ablidaBidAdapter', function () {
     });
 
     it('Should not trigger pixel if bid does not contain nurl', function() {
-      const result = spec.onBidWon({});
-      expect(utils.triggerPixel.callCount).to.equal(0)
-    })
+      spec.onBidWon({});
+
+      expect(utils.triggerPixel.callCount).to.equal(0);
+    });
 
     it('Should trigger pixel if bid nurl', function() {
-      const result = spec.onBidWon({
-        nurl: 'https://example.com/some-tracker'
-      });
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
+      const nurl = 'https://bidder.ablida.net/win';
+
+      spec.onBidWon({ nurl });
+
+      expect(utils.triggerPixel.calledOnceWithExactly(nurl)).to.equal(true);
+    });
+  });
 });

@@ -292,6 +292,7 @@ function getDivIdPosition(divId) {
 
       let domElement;
 
+      // TODO: this should use getAdUnitElement
       if (inIframe() === true) {
         const ws = getWindowSelf();
         const currentElement = ws.document.getElementById(divId);
@@ -305,12 +306,10 @@ function getDivIdPosition(divId) {
       }
 
       const box = getBoundingClientRect(domElement);
-      const docEl = d.documentElement;
       const body = d.body;
       const clientTop = (d.clientTop ?? body.clientTop) ?? 0;
       const clientLeft = (d.clientLeft ?? body.clientLeft) ?? 0;
-      const scrollTop = (wt.scrollY ?? docEl.scrollTop) ?? body.scrollTop;
-      const scrollLeft = (wt.scrollX ?? docEl.scrollLeft) ?? body.scrollLeft;
+      const { scrollY: scrollTop, scrollX: scrollLeft } = getWinDimensions();
 
       position.visibility = getVisibilityStateElement(domElement, wt);
       position.x = Math.round(box.left + scrollLeft - clientLeft);
@@ -335,6 +334,7 @@ function tryGetDivIdPosition(divIdMethod) {
   return undefined;
 }
 
+// TODO unified adUnit/element association in 11
 function tryMultipleDivIdPositions(adUnit) {
   const divMethods = [
     // ortb2\
@@ -450,7 +450,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
               ],
             },
           }
-          ]
+          ];
         }));
   }
 

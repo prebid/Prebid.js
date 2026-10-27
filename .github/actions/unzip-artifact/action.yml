@@ -11,9 +11,12 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: 'Delay waiting for artifacts to be ready'
+      shell: bash
+      run: sleep 10
     - name: 'Download artifact'
       id: download
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         result-encoding: string
         script: |

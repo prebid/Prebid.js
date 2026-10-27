@@ -1,18 +1,18 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deepSetValue, logError, deepClone } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 const BIDDER_CODE = 'distroscale';
 const SHORT_CODE = 'ds';
 const LOG_WARN_PREFIX = 'DistroScale: ';
 const ENDPOINT = 'https://hb.jsrdn.com/hb?from=pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
-const GVLID = 754;
 const UNDEF = undefined;
 
-const SUPPORTED_MEDIATYPES = [ BANNER ];
+const SUPPORTED_MEDIATYPES = [BANNER];
 
 function _getHost(url) {
   const a = document.createElement('a');
@@ -79,7 +79,7 @@ function _createImpressionObject(bid) {
     // Use the first preferred size
     var keys = Object.keys(sizes);
     keys.sort(function(a, b) {
-      return sizes[a].idx - sizes[b].idx
+      return sizes[a].idx - sizes[b].idx;
     });
     var bannerObj = {
       pos: 0,
@@ -116,7 +116,6 @@ function _createImpressionObject(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIATYPES,
   aliases: [SHORT_CODE],
 
@@ -215,17 +214,17 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
     // First Party Data
     const commonFpd = bidderRequest.ortb2 || {};
     if (commonFpd.site) {
-      mergeDeep(payload, {site: commonFpd.site});
+      mergeDeep(payload, { site: commonFpd.site });
     }
     if (commonFpd.user) {
-      mergeDeep(payload, {user: commonFpd.user});
+      mergeDeep(payload, { user: commonFpd.user });
     }
 
     // User IDs

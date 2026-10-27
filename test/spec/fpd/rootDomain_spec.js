@@ -1,6 +1,6 @@
-import {expect} from 'chai/index.js';
-import {findRootDomain, coreStorage} from 'src/fpd/rootDomain.js';
-import {canSetCookie} from '../../../src/storageManager.js';
+import { expect } from 'chai/index.js';
+import { findRootDomain, coreStorage } from 'src/fpd/rootDomain.js';
+import { canSetCookie } from '../../../src/storageManager.js';
 
 describe('findRootDomain', function () {
   let sandbox, cookies, rejectDomain;
@@ -19,9 +19,9 @@ describe('findRootDomain', function () {
           cookies[cookie] = value;
         }
       }
-    })
+    });
     sandbox.stub(coreStorage, 'getCookie').callsFake((cookie) => {
-      return cookies[cookie]
+      return cookies[cookie];
     });
   });
 
@@ -32,7 +32,7 @@ describe('findRootDomain', function () {
 
   after(() => {
     findRootDomain.clear();
-  })
+  });
 
   it('should just find the root domain', function () {
     rejectDomain = 'co.uk';

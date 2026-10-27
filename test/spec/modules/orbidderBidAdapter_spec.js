@@ -3,7 +3,7 @@ import { spec } from 'modules/orbidderBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as _ from 'lodash';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -206,7 +206,7 @@ describe('orbidderBidAdapter', () => {
     before(() => {
       request = buildRequest(defaultBidRequestBanner);
       nativeRequest = buildRequest(defaultBidRequestNative);
-    })
+    });
 
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
@@ -331,7 +331,7 @@ describe('orbidderBidAdapter', () => {
         floor: bidRequest.floors.values['banner|640x480'],
         currency: floorObj.currency,
         mediaType: floorObj.mediaType
-      }
+      };
     };
 
     bidRequest.floors = {

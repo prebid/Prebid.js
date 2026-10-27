@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {spec} from 'modules/koblerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/koblerBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getRefererInfo} from 'src/refererDetection.js';
+import { getRefererInfo } from 'src/refererDetection.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
@@ -55,7 +55,7 @@ describe('KoblerAdapter', function () {
   });
 
   afterEach(() => {
-    sandbox.restore()
+    sandbox.restore();
   });
 
   describe('inherited functions', function () {
@@ -420,16 +420,16 @@ describe('KoblerAdapter', function () {
           if (utils.isArray(params.size) && params.size[0] === 580 && params.size[1] === 400) {
             floorPrice = floorPriceFor580x400;
           } else if (params.size === '*') {
-            floorPrice = floorPriceForAnySize
+            floorPrice = floorPriceForAnySize;
           } else {
-            floorPrice = 0
+            floorPrice = 0;
           }
           return {
             currency: params.currency,
             floor: floorPrice
-          }
-        }
-      })
+          };
+        };
+      });
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
@@ -616,7 +616,7 @@ describe('KoblerAdapter', function () {
       const responseWithEmptyBody = {
         body: undefined
       };
-      const bids = spec.interpretResponse(responseWithEmptyBody)
+      const bids = spec.interpretResponse(responseWithEmptyBody);
 
       expect(bids.length).to.be.equal(0);
     });
@@ -666,7 +666,7 @@ describe('KoblerAdapter', function () {
           cur: 'USD'
         }
       };
-      const bids = spec.interpretResponse(responseWithTwoBids, {})
+      const bids = spec.interpretResponse(responseWithTwoBids, {});
 
       const expectedBids = [
         {
@@ -741,16 +741,22 @@ describe('KoblerAdapter', function () {
       const bidderRequest = { refererInfo };
       return addFPDToBidderRequest(bidderRequest).then(res => {
         JSON.parse(spec.buildRequests(validBidRequests, res).data);
-        const bids = spec.interpretResponse({ body: { seatbid: [{ bid: [{
-          originalCpm: 1.532,
-          price: 8.341,
-          currency: 'NOK',
-          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
-        }]}]}}, { bidderRequest: res });
+        const bids = spec.interpretResponse({
+          body: {
+            seatbid: [{
+              bid: [{
+                originalCpm: 1.532,
+                price: 8.341,
+                currency: 'NOK',
+                nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+              }]
+            }]
+          }
+        }, { bidderRequest: res });
         const bidToWon = bids[0];
         bidToWon.adserverTargeting = {
           hb_pb: 8
-        }
+        };
         spec.onBidWon(bidToWon);
 
         expect(utils.triggerPixel.callCount).to.be.equal(1);

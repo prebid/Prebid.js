@@ -1,11 +1,12 @@
-import AnalyticsAdapter, {type DefaultOptions} from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {prefixLog, isPlainObject} from '../src/utils.js';
-import {type Events, has as hasEvent} from '../src/events.js';
+import AnalyticsAdapter, { type AnalyticsAdapterInstance, type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { prefixLog, isPlainObject } from '../src/utils.js';
+import { type Events, has as hasEvent } from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import type {AnyFunction} from "../src/types/functions";
+import { ajaxBuilder } from '../src/ajax.js';
+import { module } from '../src/hook.js';
+import type { AnyFunction } from "../src/types/functions";
 
-type EventMapping = {[E in keyof Events]?: (payload: Events[E][0]) => any};
+export type EventMapping = { [E in keyof Events]?: (payload: Events[E][0]) => any };
 
 type BaseOptions = {
   /**
@@ -28,7 +29,12 @@ type BaseOptions = {
    * using the data returned by their corresponding function.
    */
   events?: EventMapping;
-}
+  /**
+   * Name of a preset event mapping, provided by a separate module (that must be included in the build).
+   * Events in the preset are formatted by its functions; any function in `events` overrides the preset's for the same event.
+   */
+  preset?: string;
+};
 
 type Payloads<M extends EventMapping> = {
   [H in keyof M]: M[H] extends AnyFunction ? ReturnType<M[H]> : never
@@ -43,7 +49,7 @@ type CustomHandlersOptions<M extends EventMapping> = BaseOptions & {
   events: M;
   url?: undefined;
   method?: undefined;
-}
+};
 
 type BasicHandlerOptions = BaseOptions & {
   /**
@@ -54,7 +60,7 @@ type BasicHandlerOptions = BaseOptions & {
   events?: undefined;
   url?: undefined;
   method?: undefined;
-}
+};
 
 type UrlOptions = BaseOptions & {
   /**
@@ -66,7 +72,7 @@ type UrlOptions = BaseOptions & {
    */
   method?: string;
   handler?: undefined;
-}
+};
 
 declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
   interface AnalyticsProviderConfig {
@@ -76,31 +82,54 @@ declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
   }
 }
 
+declare module '../src/hook' {
+  interface Submodules {
+    genericAnalytics: [name: string, events: EventMapping];
+  }
+}
+
+const presets: { [name: string]: EventMapping } = {};
+
+module('genericAnalytics', function (name: string, events: EventMapping) {
+  presets[name] = events;
+}, { postInstallAllowed: true });
+
 const DEFAULTS = {
   batchSize: 1,
   batchDelay: 100,
   method: 'POST'
-}
+};
 
 const TYPES = {
   handler: 'function',
   batchSize: 'number',
   batchDelay: 'number',
   gvlid: 'number',
-}
+  preset: 'string',
+};
 
 const MAX_CALL_DEPTH = 20;
 
-export function GenericAnalytics() {
-  const parent = AnalyticsAdapter<'generic'>({analyticsType: 'endpoint'});
-  const {logError, logWarn} = prefixLog('Generic analytics:');
+type GenericAnalyticsAdapter = AnalyticsAdapterInstance<'generic'> & {
+  gvlid: (config) => number | undefined;
+};
+
+type GenericAnalyticsConstructor = new () => GenericAnalyticsAdapter;
+
+export function GenericAnalytics(): GenericAnalyticsAdapter {
+  if (!new.target) {
+    return new (GenericAnalytics as unknown as GenericAnalyticsConstructor)();
+  }
+
+  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
+  const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;
   let options, handler, timer, translate;
 
-  function optionsAreValid(options) {
+  function optionsAreValid(options: DefaultOptions & (UrlOptions | BasicHandlerOptions | CustomHandlersOptions<EventMapping>)) {
     if (!options.url && !options.handler) {
-      logError('options must specify either `url` or `handler`')
+      logError('options must specify either `url` or `handler`');
       return false;
     }
     if (options.hasOwnProperty('method') && !['GET', 'POST'].includes(options.method)) {
@@ -113,6 +142,10 @@ export function GenericAnalytics() {
         logError(`options.${field} must be a ${type}`);
         return false;
       }
+    }
+    if (options.hasOwnProperty('preset') && !presets.hasOwnProperty(options.preset)) {
+      logError(`options.preset "${options.preset}" is not available; make sure the module that provides it is included`);
+      return false;
     }
     if (options.hasOwnProperty('events')) {
       if (!isPlainObject(options.events)) {
@@ -157,11 +190,11 @@ export function GenericAnalytics() {
     }
   }
 
-  function translator(eventHandlers) {
+  function translator(eventHandlers: EventMapping | undefined) {
     if (!eventHandlers) {
       return (data) => data;
     }
-    return function ({eventType, args}) {
+    return function ({ eventType, args }) {
       if (eventHandlers.hasOwnProperty(eventType)) {
         try {
           return eventHandlers[eventType](args);
@@ -169,20 +202,20 @@ export function GenericAnalytics() {
           logError(`error executing options.events.${eventType}`, e);
         }
       }
-    }
+    };
   }
 
   return Object.assign(
     Object.create(parent),
     {
       gvlid(config) {
-        return config?.options?.gvlid
+        return config?.options?.gvlid;
       },
       enableAnalytics(config) {
         if (optionsAreValid(config?.options || {})) {
           options = Object.assign({}, DEFAULTS, config.options);
           handler = options.handler || defaultHandler(options);
-          translate = translator(options.events);
+          translate = translator(options.preset ? { ...presets[options.preset], ...options.events } : options.events);
           parent.enableAnalytics.call(this, config);
         }
       },
@@ -202,20 +235,22 @@ export function GenericAnalytics() {
         }
       }
     }
-  )
+  );
 }
 
-export function defaultHandler({url, method, batchSize, ajax = ajaxBuilder()}) {
+export function defaultHandler({ url, method, batchSize, ajax = ajaxBuilder() }) {
   const callbacks = {
     success() {},
     error() {}
-  }
-  const extract = batchSize > 1 ? (events) => events : (events) => events[0];
-  const serialize = method === 'GET' ? (data) => ({data: JSON.stringify(data)}) : (data) => JSON.stringify(data);
+  };
+  type SerializedPayload = string | { data: string };
+  const extract: (events: unknown[]) => unknown = batchSize > 1 ? (events: unknown[]) => events : (events: unknown[]) => events[0];
+  const serialize: (data: unknown) => SerializedPayload =
+    method === 'GET' ? (data: unknown) => ({ data: JSON.stringify(data) }) : (data: unknown) => JSON.stringify(data);
 
   return function (events) {
-    ajax(url, callbacks, serialize(extract(events)), {method, keepalive: true})
-  }
+    ajax(url, callbacks, serialize(extract(events)), { method, keepalive: true });
+  };
 }
 
 adapterManager.registerAnalyticsAdapter({

@@ -65,7 +65,6 @@ const prebidAuction = {
     'bidderCode': 'appnexus',
     'width': 300,
     'height': 250,
-    'statusMessage': 'Bid available',
     'getStatusCode': function () { return 1; },
     'adId': '3ade442375213f',
     'requestId': '2bccebeda7fbe4',
@@ -283,7 +282,6 @@ const prebidNativeAuction = {
   ],
   'bidResponse': {
     'bidderCode': 'appnexus',
-    'statusMessage': 'Bid available',
     'source': 's2s',
     'getStatusCode': function () { return 1; },
     'cpm': 10,
@@ -373,7 +371,7 @@ const prebidNativeAuction = {
     'size': 'undefinedxundefined',
     'status': 'rendered'
   }
-}
+};
 
 describe('yuktamedia analytics adapter', function () {
   beforeEach(() => {

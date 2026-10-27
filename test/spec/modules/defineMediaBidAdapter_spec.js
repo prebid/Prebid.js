@@ -91,7 +91,7 @@ describe('Define Media Bid Adapter', function () {
       "bidderWinsCount": 0,
       "deferBilling": false,
     }
-  ]
+  ];
 
   const mockBidderRequest = {
     "bidderCode": "defineMedia",
@@ -336,7 +336,7 @@ describe('Define Media Bid Adapter', function () {
       "addtlConsent": "2~89~dv."
     },
     "start": 1753448648053
-  }
+  };
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
@@ -387,7 +387,7 @@ describe('Define Media Bid Adapter', function () {
       }
     });
   });
-})
+});
 
 describe('interpretResponse', function () {
   const formerBids = [
@@ -512,7 +512,7 @@ describe('interpretResponse', function () {
         }
       }
     }
-  ]
+  ];
   const formerBidRequest = {
     "bidderCode": "defineMedia",
     "auctionId": "0720d855-f13d-41b7-b5cf-41d6c89454af",
@@ -623,7 +623,7 @@ describe('interpretResponse', function () {
       }
     },
     "start": 1753451739307
-  }
+  };
 
   const goodBannerRequest = {
     "imp": [
@@ -733,7 +733,7 @@ describe('interpretResponse', function () {
     // "id": "15009fd8-a057-458f-9819-5ddcbf474cfe", //this is a random uuid, so it is not set here
     "test": 0,
     "tmax": 1500
-  }
+  };
   const goodBannerResponse = {
     // "id": "15009fd8-a057-458f-9819-5ddcbf474cfe", //this is a random uuid, so it is not set here
     "seatbid": [
@@ -765,7 +765,7 @@ describe('interpretResponse', function () {
       }
     ],
     "cur": "EUR"
-  }
+  };
   const goodInterpretedBannerResponses = [
     {
       "mediaType": "banner",
@@ -783,31 +783,31 @@ describe('interpretResponse', function () {
       "netRevenue": true,
       "meta": { "advertiserDomains": ["definemedia.de"] }
     }
-  ]
+  ];
   it('should return null if body is missing or empty', function () {
     let serverResponse = {
       body: null
-    }
+    };
     let request = {
       data: deepClone(goodBannerRequest)
-    }
+    };
 
     const result = spec.interpretResponse(serverResponse, request);
     assert.equal(result.length, 0);
   });
 
   it('should return the correct params', function () {
-    const computedRequest = spec.buildRequests(formerBids, formerBidRequest)[0]
+    const computedRequest = spec.buildRequests(formerBids, formerBidRequest)[0];
     let computedRequestExpected = deepClone(computedRequest.data);
-    assert.deepInclude(computedRequestExpected, goodBannerRequest)
+    assert.deepInclude(computedRequestExpected, goodBannerRequest);
     let serverResponse = {
       body: deepClone(goodBannerResponse)
-    }
+    };
     const result = spec.interpretResponse(serverResponse, computedRequest);
     assert.notEqual(result, null);
 
-    const bid = result[0].cpm
+    const bid = result[0].cpm;
     assert.isAbove(bid, 0.01, "Bid price should be higher 0.0");
-    assert.deepInclude(result[0], goodInterpretedBannerResponses[0])
+    assert.deepInclude(result[0], goodInterpretedBannerResponses[0]);
   });
-})
+});
