@@ -1,8 +1,10 @@
-import { renderBid } from '../../../modules/safeRendering.js';
+import { allowMessageHook, getAdIdForFrame, renderBid } from '../../../modules/safeRendering.js';
 import { isMessageAllowed, parseMessage } from '../../../src/secureCreatives.js';
+import * as utils from 'src/utils.js';
+import { logError } from 'src/utils.js';
 
 describe('safeRendering', () => {
-  let disableSecureCreatives, onMessage, messages;
+  let disableSecureCreatives, onMessage, messages, sandbox;
 
   function disableHook(next) {
     if (disableSecureCreatives) {
@@ -18,6 +20,7 @@ describe('safeRendering', () => {
   });
 
   beforeEach(() => {
+    sandbox = sinon.createSandbox();
     disableSecureCreatives = true;
     messages = [];
     onMessage = sinon.stub().callsFake((ev) => messages.push(ev));
@@ -25,6 +28,7 @@ describe('safeRendering', () => {
   });
 
   afterEach(() => {
+    sandbox.restore();
     window.removeEventListener('message', onMessage);
   });
 
@@ -53,6 +57,7 @@ describe('safeRendering', () => {
         adId: 'mock-adid',
         element
       };
+
     });
 
     afterEach(() => {
@@ -80,6 +85,64 @@ describe('safeRendering', () => {
       renderBid(bid, options);
       const [[, message]] = await expectMessage();
       expect(message.options).to.eql(options);
+    });
+
+    Object.entries({
+      'null': null,
+      'undefined': undefined,
+      'null adId': { adId: null, adUnitCode: 'au' },
+      'undefined adId': { adUnitCode: 'au' },
+      'unresolvable element': { adId: 'adId' },
+      'null element': { adId: 'adId', element: null },
+      'invalid element': { adId: 'adId', element: {} }
+    }).forEach(([description, bid]) => {
+      it(`refuses a bid with ${description}`, () => {
+        sandbox.spy(utils, 'logError');
+        sandbox.spy(document, 'createElement');
+        renderBid(bid);
+        sinon.assert.called(utils.logError);
+        sinon.assert.notCalled(document.createElement);
+      });
+    });
+
+    it('registers the adId/iframe pair with getAdIdForFrame', async () => {
+      sinon.spy(document, 'createElement');
+      renderBid(bid);
+      expect(getAdIdForFrame(document.createElement.returnValues[0].contentWindow)).to.eql(bid.adId);
+      const [[event,]] = await expectMessage();
+      expect(getAdIdForFrame(event.source)).to.eql(bid.adId);
+    });
+  });
+
+  describe('allowMessageHook', () => {
+    let next, hook, getAdId, source;
+    beforeEach(() => {
+      next = sinon.stub();
+      next.bail = sinon.stub();
+      getAdId = sinon.stub();
+      source = 'mock-source';
+      hook = allowMessageHook(getAdId);
+    });
+
+    [
+      {
+        desc: 'wrong adid',
+        event: () => ({ source, ports: ['mock-source'] }),
+        message: { adId: 'wrong' }
+      },
+      {
+        desc: 'missing port',
+        event: () => ({ source, ports: [] }),
+        message: { adId: 'right' }
+      }
+    ].forEach(({ desc, event, message }) => {
+      it(`rejects ${desc}`, () => {
+        getAdId.returns('right');
+        hook(next, event(), message);
+        sinon.assert.calledWith(getAdId, source);
+        sinon.assert.notCalled(next);
+        sinon.assert.calledWith(next.bail, false);
+      });
     });
   });
 });
