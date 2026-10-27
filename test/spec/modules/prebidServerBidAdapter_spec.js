@@ -1824,7 +1824,7 @@ describe('S2S Adapter', function () {
           });
         });
 
-        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
+        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define ratio_width and ratio_height', () => {
           const req = deepClone(REQUEST);
           req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = { 'min_width': 1, 'min_height': 2 };
           prepRequest(req);
