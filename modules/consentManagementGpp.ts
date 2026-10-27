@@ -93,7 +93,7 @@ export class GPPClient {
     const ready = this.updateWhenReady(pingData);
     if (!this.initialized) {
       if (pingData.gppVersion !== this.apiVersion) {
-        logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`);
+        logWarn(`Unrecognized GPP CMP version: ${pingData.gppVersion}. Continuing using GPP API version ${this.apiVersion}...`);
       }
       this.initialized = true;
 
