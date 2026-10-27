@@ -482,7 +482,7 @@ describe('consentManagement', function () {
           'CMP is not found': goodConfig,
           'static config has no consentData': { cmpApi: 'static' },
         }).forEach(([t, cmConfig]) => {
-          it(`rejectgs when ${t}`, async () => {
+          it(`rejects when ${t}`, async () => {
             await setConsentConfig(cmConfig);
             const bidsBackHandler = sinon.stub();
             expect(await settlement(pbjs.requestBids({ adUnits, bidsBackHandler }))).to.equal('rejected');
