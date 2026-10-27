@@ -2,7 +2,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import type { AdapterRequest, BidderSpec, ExtendedResponse } from '../src/adapters/bidderFactory.js';
 import type { BidRequest } from '../src/adapterManager.js';
-import { config } from '../src/config.js';
 import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 import { CLIENT_SECTIONS, hasSection } from '../src/fpd/oneClient.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -14,6 +13,7 @@ import {
   generateUUID,
   getWinDimensions,
   isArray,
+  isChromeIOSBrowser,
   isSafariBrowser,
   isStr,
   logError,
@@ -96,6 +96,10 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     if (!Number.isFinite(bid.price) || bid.price <= 0) return;
     const format = displayFormatOf(context.bidRequest.params);
     const responseFormat = responseDisplayFormat(bid);
+    if (responseFormat === null) {
+      logWarn(`${BIDDER_CODE}: ignoring a bid with an unsupported or conflicting response format`, bid.impid);
+      return;
+    }
     if (responseFormat && responseFormat !== format) {
       logWarn(`${BIDDER_CODE}: ignoring a ${responseFormat} bid for a ${format} ad unit`, bid.impid);
       return;
@@ -191,13 +195,13 @@ function displayFormatOf(params: SplashBidParams): SplashDisplayFormat {
 }
 
 function replacesAdapterRenderer(renderer): boolean {
-  return !!renderer && typeof renderer.render === 'function' && renderer.backupOnly !== true;
+  return !!(renderer && renderer.render && renderer.backupOnly !== true);
 }
 
 function customRenderingAllowed(bid: SplashBidRequest): boolean {
   // Core drops adapter renderers when top-window renderers are disabled, and replaces them with
   // a publisher Safe Renderer or with a publisher renderer that is not backupOnly.
-  return config.getConfig('allowTopWindowRenderers') !== false &&
+  return bid.allowTopWindowRenderers === true &&
     !deepAccess(bid, 'mediaTypes.banner.safeRenderer.url') && !deepAccess(bid, 'safeRenderer.url') &&
     !replacesAdapterRenderer(deepAccess(bid, 'mediaTypes.banner.renderer')) && !replacesAdapterRenderer(deepAccess(bid, 'renderer'));
 }
@@ -214,8 +218,15 @@ function normalizeFormat(value: unknown): SplashDisplayFormat | undefined {
   return DISPLAY_FORMATS.includes(format) ? format as SplashDisplayFormat : undefined;
 }
 
-function responseDisplayFormat(bid): SplashDisplayFormat | undefined {
-  return normalizeFormat(deepAccess(bid, 'ext.splash.format')) || normalizeFormat(deepAccess(bid, 'ext.general.display_format'));
+function responseDisplayFormat(bid): SplashDisplayFormat | null | undefined {
+  let format: SplashDisplayFormat | undefined;
+  for (const value of [deepAccess(bid, 'ext.splash.format'), deepAccess(bid, 'ext.general.display_format')]) {
+    if (value === undefined) continue;
+    const normalized = normalizeFormat(value);
+    if (!normalized || (format && normalized !== format)) return null;
+    format = normalized;
+  }
+  return format;
 }
 
 function addEventTrackers(bidResponse, bid) {
@@ -266,11 +277,12 @@ function createCreativeFrame(doc: Document, className: string, title: string): H
   iframe.setAttribute('allowtransparency', 'true');
   iframe.setAttribute('frameborder', '0');
   iframe.setAttribute('scrolling', 'no');
+  iframe.setAttribute('sandbox', 'allow-scripts allow-popups allow-popups-to-escape-sandbox');
   iframe.title = title;
   return iframe;
 }
 
-function observeRemoval(element: Element, destroy: () => void, onReparent?: () => void): MutationObserver | null {
+function observeRemoval(element: Element, destroy: () => void, onReparent?: () => void, onLayoutChange?: () => void): MutationObserver | null {
   if (typeof MutationObserver === 'undefined' || !element.parentNode) return null;
   let parents: Node[] = [];
   function observeParents() {
@@ -290,6 +302,7 @@ function observeRemoval(element: Element, destroy: () => void, onReparent?: () =
     }
     try {
       observeParents();
+      if (onLayoutChange) onLayoutChange();
     } catch (error) {
       destroy();
       logWarn(`${BIDDER_CODE}: removal observer failed`, error);
@@ -337,45 +350,68 @@ function unwrapCreativeHtml(html: string): string {
 
 const INTERSTITIAL_STYLE_ID = 'splash-interstitial-style';
 const INTERSTITIAL_MAX_DURATION_MS = 5 * 60 * 1000;
+const INTERSTITIAL_LOGO_URL = 'https://cdn.splashandroll.com/fractatemp/0/softpaywall-logo.svg';
 const INTERSTITIAL_CSS = `
-.sp-interstitial-overlay[data-splash-renderer="interstitial"]{position:fixed;inset:0;z-index:2147483000;display:block;width:100%;height:100%;margin:0;padding:0;background:transparent;overflow:hidden;box-sizing:border-box}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"]{position:fixed;inset:0;z-index:2147483000;display:grid;grid-template-rows:auto minmax(0,1fr);width:100%;height:100%;margin:0;padding:0;background:transparent;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);overflow:hidden;box-sizing:border-box}
 @supports (height: 100dvh) {
   .sp-interstitial-overlay[data-splash-renderer="interstitial"]{height:100dvh}
 }
 .sp-interstitial-overlay[data-splash-renderer="interstitial"] *{box-sizing:border-box}
-.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-creative{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:transparent}
-.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-close{position:absolute;top:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));z-index:1;min-width:88px;min-height:50px;padding:8px 16px;border:1px solid #d1d5db;border-radius:4px;background:#fff;color:#111827;font:600 14px Arial,sans-serif;cursor:pointer}
-.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-close[hidden]{display:none}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-toolbar{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:12px;min-height:64px;padding:10px 14px;padding:calc(10px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));background:#fff}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-logo{display:block;flex:0 1 132px;width:clamp(80px,25vw,132px);max-width:38%;min-width:0;height:40px;object-fit:contain;object-position:left center}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-actions{display:flex;flex:0 0 auto;flex-wrap:nowrap;align-items:center;gap:10px}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-creative{display:block;width:100%;height:100%;min-height:0;border:0;background:transparent}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-close{min-width:76px;min-height:44px;padding:8px 16px;border:1px solid #e0e2e6;border-radius:999px;background:#f3f4f6;color:#111827;font:600 13px Arial,sans-serif;cursor:pointer;transition:background-color 160ms ease}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-close:hover{background:#e5e7eb}
 .sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-close:focus-visible{outline:2px solid #111827;outline-offset:2px}
-@supports (height: 100dvh) {
-  .sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-creative{height:100dvh}
-}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer{position:relative;display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#f3f4f6;color:#111827;font:600 13px Arial,sans-serif;overflow:hidden}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer[hidden]{display:none}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer svg{position:absolute;inset:0;width:40px;height:40px;transform:rotate(-90deg)}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer circle{fill:none;stroke-width:3}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer-track{stroke:#d1d5db}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer-progress{stroke:#111827;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer-value{position:relative;z-index:1}
+.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer-value--tick{animation:splashInterstitialCounterTick 200ms ease-out}
+@keyframes splashInterstitialCounterTick{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer-progress,.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-close{transition:none}.sp-interstitial-overlay[data-splash-renderer="interstitial"] .sp-interstitial-timer-value--tick{animation:none}}
 `;
-// The creative's own close control; while it is available, the host close button stays hidden.
-const CREATIVE_CLOSE_SELECTOR = '[data-froc-interstitial-controls-ready="1"] .froc-display-close:not([disabled])';
 const FRAME_STYLE_ID = 'splash-prebid-interstitial-frame-style';
 const FRAME_STYLE =
   'html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:transparent}' +
-  'body iframe{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;display:block!important;background:transparent!important}';
-// Runs inside the creative frame: relays creative messages from owned nested frames, closes on Escape
-// in owned frames and reports creative errors so that the host close button can be shown.
+  '#creative-root.froc-standard-display--interstitial .froc-display-stage>iframe.froc-display-frame{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;display:block!important;background:transparent!important}' +
+  '#creative-root.froc-standard-display--interstitial .froc-display-interstitial-bar{display:none!important}' +
+  '#creative-root.froc-standard-display--interstitial{padding-top:clamp(20px,5vh,48px)!important}' +
+  '@media(min-width:768px){#creative-root.froc-standard-display--interstitial{padding-top:clamp(40px,8vh,80px)!important}}';
+// The opaque-origin creative communicates through its owned frame's WindowProxy, not shared DOM.
 const FRAME_BRIDGE = '(function(){' +
   'if(window.__splashPrebidInterstitialBridge)return;' +
   'window.__splashPrebidInterstitialBridge=true;' +
   'function onEscape(event){if(event.key==="Escape"){event.preventDefault();window.parent.postMessage({source:"froc-display",type:"close"},"*");}}' +
-  'function bindFrame(frame){' +
-    'if(!frame.__splashEscapeLoadBound){frame.__splashEscapeLoadBound=true;frame.addEventListener("load",function(){bindFrame(frame);});}' +
-    'try{bindEscape(frame.contentDocument);}catch(e){}' +
-  '}' +
-  'function bindEscape(doc){' +
-    'if(!doc)return;' +
-    'if(!doc.__splashEscapeBound){doc.__splashEscapeBound=true;doc.addEventListener("keydown",onEscape);' +
-      'doc.addEventListener("load",function(event){if(event.target&&event.target.tagName==="IFRAME")bindFrame(event.target);},true);}' +
-    'var frames=doc.querySelectorAll("iframe");for(var i=0;i<frames.length;i++)bindFrame(frames[i]);' +
-  '}' +
-  'bindEscape(document);document.addEventListener("DOMContentLoaded",function(){bindEscape(document);});' +
+  'document.addEventListener("keydown",onEscape);' +
   'function reportError(){window.parent.postMessage({source:"froc-display",type:"render-error"},"*");}' +
   'window.addEventListener("error",reportError);window.addEventListener("unhandledrejection",reportError);' +
+  'function observeControls(){' +
+    'var root=document.querySelector("#creative-root.froc-standard-display--interstitial");' +
+    'if(!root)return;' +
+    'var timer=root&&root.querySelector(".froc-display-interstitial-bar .froc-display-timer"),last="";' +
+    'function report(){' +
+      'var total=timer?Number(timer.getAttribute("data-seconds")):0;' +
+      'var value=timer&&(timer.querySelector(".froc-display-timer-value")||timer);' +
+      'var remaining=value?Number(value.textContent):0;' +
+      'var pending=timer&&(timer.getAttribute("data-start")==="complete"||(!timer.hasAttribute("data-start")&&root.querySelector(".froc-display-interstitial-bar--embedded-story")))&&root.getAttribute("data-froc-interstitial-complete")!=="1";' +
+      'var visible=!!timer&&!pending&&timer.getAttribute("aria-hidden")!=="true"&&!timer.classList.contains("froc-display-timer--pending");' +
+      'if(!Number.isInteger(total)||total<0||total>300||!Number.isInteger(remaining)||remaining<0||remaining>total){total=0;remaining=0;visible=false;}' +
+      'var signature=total+":"+remaining+":"+visible;if(signature===last)return;last=signature;' +
+      'window.parent.postMessage({source:"froc-display",type:"interstitial-controls",timer:{totalSeconds:total,remainingSeconds:remaining,visible:visible}},"*");' +
+    '}' +
+    'report();' +
+    'if(timer&&typeof MutationObserver==="function"){' +
+      'var observer=new MutationObserver(report);' +
+      'observer.observe(root,{attributes:true,attributeFilter:["data-froc-interstitial-complete"]});' +
+      'observer.observe(timer,{attributes:true,attributeFilter:["class","aria-hidden","data-seconds","data-start"],childList:true,subtree:true,characterData:true});' +
+    '}' +
+  '}' +
+  'if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",observeControls,{once:true});else observeControls();' +
   'window.addEventListener("message",function(event){' +
     'var data=event&&event.data;' +
     'if(!data||data.source!=="froc-display")return;' +
@@ -434,6 +470,56 @@ function destroyOwnedInterstitials(doc: Document) {
   });
 }
 
+function createInterstitialTimer(doc: Document) {
+  const element = doc.createElement('div');
+  element.className = 'sp-interstitial-timer';
+  element.hidden = true;
+  element.setAttribute('role', 'timer');
+  element.setAttribute('aria-live', 'off');
+  element.setAttribute('aria-label', 'Pozostały czas reklamy');
+  const svg = doc.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 40 40');
+  svg.setAttribute('aria-hidden', 'true');
+  let progress: SVGCircleElement;
+  ['track', 'progress'].forEach(part => {
+    const circle = doc.createElementNS(SVG_NS, 'circle');
+    circle.setAttribute('class', 'sp-interstitial-timer-' + part);
+    circle.setAttribute('cx', '20');
+    circle.setAttribute('cy', '20');
+    circle.setAttribute('r', '18');
+    circle.setAttribute('pathLength', '100');
+    if (part === 'progress') {
+      circle.setAttribute('stroke-dasharray', '100');
+      circle.setAttribute('stroke-dashoffset', '0');
+      progress = circle;
+    }
+    svg.appendChild(circle);
+  });
+  const value = doc.createElement('span');
+  value.className = 'sp-interstitial-timer-value';
+  element.append(svg, value);
+  let previous = -1;
+  function update(state) {
+    if (!state || typeof state.visible !== 'boolean' || !Number.isInteger(state.totalSeconds) ||
+      state.totalSeconds < 0 || state.totalSeconds > INTERSTITIAL_MAX_DURATION_MS / 1000 ||
+      !Number.isInteger(state.remainingSeconds) || state.remainingSeconds < 0 || state.remainingSeconds > state.totalSeconds) return;
+    element.hidden = !state.visible || state.totalSeconds === 0;
+    if (element.hidden) {
+      previous = -1;
+      return;
+    }
+    progress.setAttribute('stroke-dashoffset', String(100 * (1 - state.remainingSeconds / state.totalSeconds)));
+    if (previous !== state.remainingSeconds) {
+      value.textContent = String(state.remainingSeconds);
+      value.classList.remove('sp-interstitial-timer-value--tick');
+      void value.offsetWidth;
+      value.classList.add('sp-interstitial-timer-value--tick');
+      previous = state.remainingSeconds;
+    }
+  }
+  return { element, update };
+}
+
 function renderInterstitial(bid, renderDoc?: Document) {
   const doc = renderDoc || document;
   const win = doc.defaultView || window;
@@ -451,17 +537,27 @@ function renderInterstitial(bid, renderDoc?: Document) {
   const closeButton = doc.createElement('button');
   closeButton.className = 'sp-interstitial-close';
   closeButton.type = 'button';
-  closeButton.textContent = 'Close ad';
-  closeButton.setAttribute('aria-label', 'Close advertisement');
+  closeButton.textContent = 'Pomiń';
+  closeButton.setAttribute('aria-label', 'Pomiń reklamę');
+  const toolbar = doc.createElement('div');
+  toolbar.className = 'sp-interstitial-toolbar';
+  const logo = doc.createElement('img');
+  logo.className = 'sp-interstitial-logo';
+  logo.alt = 'Softpaywall';
+  logo.src = INTERSTITIAL_LOGO_URL;
+  const timer = createInterstitialTimer(doc);
+  const actions = doc.createElement('div');
+  actions.className = 'sp-interstitial-actions';
+  actions.append(timer.element, closeButton);
+  toolbar.append(logo, actions);
+  overlay.appendChild(toolbar);
   overlay.appendChild(iframe);
-  overlay.appendChild(closeButton);
   (doc.body || doc.documentElement).appendChild(overlay);
 
   const previousFocus = doc.activeElement as HTMLElement | null;
   let unlockScroll = () => {};
   let removalObserver: MutationObserver | null = null;
   let safetyTimer;
-  let creativeFailed = false;
   let destroyed = false;
 
   function destroy() {
@@ -469,7 +565,6 @@ function renderInterstitial(bid, renderDoc?: Document) {
     destroyed = true;
     win.removeEventListener('message', onMessage);
     doc.removeEventListener('keydown', onKeyDown);
-    iframe.removeEventListener('load', updateCloseButton);
     closeButton.removeEventListener('click', destroy);
     win.clearTimeout(safetyTimer);
     if (removalObserver) removalObserver.disconnect();
@@ -485,28 +580,12 @@ function renderInterstitial(bid, renderDoc?: Document) {
     destroy();
   }
 
-  function updateCloseButton() {
-    let creativeClose: boolean;
-    try {
-      creativeClose = !creativeFailed && !!iframe.contentDocument.querySelector(CREATIVE_CLOSE_SELECTOR);
-    } catch (e) {
-      // A creative that navigated away from the owned document cannot report its own close control.
-      creativeClose = false;
-    }
-    const closeButtonFocused = doc.activeElement === closeButton;
-    closeButton.hidden = creativeClose;
-    if (creativeClose && closeButtonFocused) iframe.focus();
-  }
-
   function onMessage(event: MessageEvent) {
     const data = event && event.data;
     if (!data || data.source !== 'froc-display' || event.source !== iframe.contentWindow) return;
     if (data.type === 'close') {
       destroy();
-    } else if (data.type === 'render-error') {
-      creativeFailed = true;
-      updateCloseButton();
-    }
+    } else if (data.type === 'interstitial-controls') timer.update(data.timer);
   }
 
   destroyers.set(overlay, destroy);
@@ -516,7 +595,6 @@ function renderInterstitial(bid, renderDoc?: Document) {
     win.addEventListener('message', onMessage);
     doc.addEventListener('keydown', onKeyDown);
     closeButton.addEventListener('click', destroy);
-    iframe.addEventListener('load', updateCloseButton);
     safetyTimer = win.setTimeout(destroy, INTERSTITIAL_MAX_DURATION_MS);
     closeButton.focus();
     iframe.srcdoc = buildInterstitialDocument(unwrapCreativeHtml(creativeMarkup(bid)));
@@ -602,11 +680,11 @@ function renderParallax(bid, sizes: ParallaxSizes) {
   destroyers.set(frame, destroy);
   try {
     iframe.srcdoc = unwrapCreativeHtml(creativeMarkup(bid));
-    const sizing = installParallaxSizing(frame, stage, sizes);
+    const pointerGuard = installSafariPointerGuard(frame, iframe);
+    if (pointerGuard) cleanups.push(pointerGuard.destroy);
+    const sizing = installParallaxSizing(frame, stage, sizes, pointerGuard?.refresh);
     cleanups.push(sizing.destroy);
-    const removePointerGuard = installSafariPointerGuard(frame, iframe);
-    if (removePointerGuard) cleanups.push(removePointerGuard);
-    const removalObserver = observeRemoval(frame, destroy, sizing.refresh);
+    const removalObserver = observeRemoval(frame, destroy, sizing.refresh, pointerGuard?.refresh);
     if (removalObserver) cleanups.push(() => removalObserver.disconnect());
   } catch (error) {
     destroy();
@@ -667,7 +745,7 @@ function fitIntrinsicParallaxWidth(frame: HTMLElement, win: Window): boolean {
   return true;
 }
 
-function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHeight, creativeHeight }: ParallaxSizes): { refresh: () => void, destroy: () => void } {
+function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHeight, creativeHeight }: ParallaxSizes, onGeometryChange?: () => void): { refresh: () => void, destroy: () => void } {
   const win = frame.ownerDocument.defaultView || window;
   let intrinsicWidth = false;
   let destroyed = false;
@@ -689,6 +767,7 @@ function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHei
     }
     const rect = frame.getClientRects()[0];
     if (rect && (!rect.width || intrinsicWidth)) intrinsicWidth = fitIntrinsicParallaxWidth(frame, win);
+    if (onGeometryChange) onGeometryChange();
   }
   function onViewportChange() {
     // Window dimensions are cached briefly; a viewport change must read the new height.
@@ -736,18 +815,21 @@ function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHei
 }
 
 /**
- * Safari can hit-test fixed descendants outside the aperture. An absolutely positioned iframe
- * stays physically clipped while scroll offsets keep the creative aligned to the viewport.
+ * WebKit can ignore a fixed frame's aperture during hit testing and visibility measurement.
+ * An absolute frame stays physically clipped while event-driven offsets preserve the parallax.
  */
-function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement): (() => void) | null {
-  if (!isSafariBrowser()) return null;
+function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement): { refresh: () => void, destroy: () => void } | null {
+  if (!isSafariBrowser() && !isChromeIOSBrowser()) return null;
   const win = frame.ownerDocument.defaultView || window;
-  const query = win.matchMedia && win.matchMedia('(pointer: fine) and (hover: hover)');
-  if (!query || !query.matches) return null;
   const doc = frame.ownerDocument;
+  const visualViewport = win.visualViewport;
+  const viewport = visualViewport && typeof visualViewport.addEventListener === 'function' &&
+    typeof visualViewport.removeEventListener === 'function' ? visualViewport : null;
   frame.classList.add('sp-pointer-guarded');
   let animationFrame: number | null = null;
   let observer: IntersectionObserver | null = null;
+  let layoutObserver: MutationObserver | null = null;
+  let parents: HTMLElement[] = [];
   let visible = typeof IntersectionObserver !== 'function';
   let destroyed = false;
   function alignCreative() {
@@ -760,34 +842,55 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
       if (iframe.style.top !== top) iframe.style.top = top;
     }
   }
-  function animate() {
+  function updateAlignment() {
     animationFrame = null;
     if (destroyed || !visible || doc.hidden) return;
     alignCreative();
-    animationFrame = win.requestAnimationFrame(animate);
+  }
+  function scheduleAlignment() {
+    if (destroyed || !visible || doc.hidden || animationFrame != null) return;
+    animationFrame = win.requestAnimationFrame(updateAlignment);
+  }
+  function refresh() {
+    if (destroyed) return;
+    const next: HTMLElement[] = [];
+    for (let parent = frame.parentElement; parent; parent = parent.parentElement) next.push(parent);
+    if (layoutObserver && (next.length !== parents.length || next.some((parent, index) => parent !== parents[index]))) {
+      if (parents.length) layoutObserver.disconnect();
+      next.forEach(parent => layoutObserver.observe(parent, { attributes: true, attributeFilter: ['class', 'style', 'hidden', 'dir'] }));
+    }
+    parents = next;
+    scheduleAlignment();
   }
   function syncVisibility() {
     if (destroyed) return;
     if (!visible || doc.hidden) {
       if (animationFrame != null) win.cancelAnimationFrame(animationFrame);
       animationFrame = null;
-    } else if (animationFrame == null) {
-      alignCreative();
-      animationFrame = win.requestAnimationFrame(animate);
-    }
+    } else scheduleAlignment();
   }
   function destroy() {
     if (destroyed) return;
     destroyed = true;
     if (animationFrame != null) win.cancelAnimationFrame(animationFrame);
     if (observer) observer.disconnect();
+    if (layoutObserver) layoutObserver.disconnect();
     doc.removeEventListener('visibilitychange', syncVisibility);
+    win.removeEventListener('scroll', scheduleAlignment, true);
+    doc.removeEventListener('load', scheduleAlignment, true);
+    if (viewport) {
+      viewport.removeEventListener('scroll', scheduleAlignment);
+      viewport.removeEventListener('resize', scheduleAlignment);
+    }
+    parents = [];
     frame.classList.remove('sp-pointer-guarded');
     iframe.style.removeProperty('left');
     iframe.style.removeProperty('top');
   }
   try {
     alignCreative();
+    if (typeof MutationObserver === 'function') layoutObserver = new MutationObserver(scheduleAlignment);
+    refresh();
     if (typeof IntersectionObserver === 'function') {
       observer = new IntersectionObserver(entries => {
         visible = entries.some(entry => entry.target === frame && entry.isIntersecting);
@@ -796,10 +899,17 @@ function installSafariPointerGuard(frame: HTMLElement, iframe: HTMLIFrameElement
       observer.observe(frame);
     }
     doc.addEventListener('visibilitychange', syncVisibility);
+    // Capture also observes nested scroll containers without attaching listeners to publisher nodes.
+    win.addEventListener('scroll', scheduleAlignment, { passive: true, capture: true });
+    doc.addEventListener('load', scheduleAlignment, true);
+    if (viewport) {
+      viewport.addEventListener('scroll', scheduleAlignment, { passive: true });
+      viewport.addEventListener('resize', scheduleAlignment, { passive: true });
+    }
     syncVisibility();
   } catch (error) {
     destroy();
     throw error;
   }
-  return destroy;
+  return { refresh, destroy };
 }

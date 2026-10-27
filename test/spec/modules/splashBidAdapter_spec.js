@@ -34,6 +34,7 @@ function makeBid({ format = 'standard', params = {}, ...overrides } = {}) {
       ...params,
     },
     mediaTypes: { banner: { sizes: [[w, h]] } },
+    allowTopWindowRenderers: true,
     ortb2Imp: {},
     ...overrides,
   };
@@ -98,6 +99,7 @@ describe('splashBidAdapter', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     pixel = sandbox.stub(utils, 'triggerPixel');
+    sandbox.stub(HTMLImageElement.prototype, 'src').set(function (url) { this.setAttribute('data-spec-src', url); });
     config.resetConfig();
   });
 
@@ -157,12 +159,23 @@ describe('splashBidAdapter', () => {
     });
 
     it('rejects Parallax and Interstitial when top-window renderers are disabled, keeping Standard', () => {
-      config.setConfig({ allowTopWindowRenderers: false });
-      expect(FORMATS.map(format => spec.isBidRequestValid(makeBid({ format })))).to.deep.equal([true, false, false]);
+      expect(FORMATS.map(format => spec.isBidRequestValid(makeBid({ format, allowTopWindowRenderers: false })))).to.deep.equal([true, false, false]);
       sinon.assert.calledWith(warn, "splash: parallax requires the adapter's top-window renderer, which this configuration disables");
       sinon.assert.calledWith(warn, "splash: interstitial requires the adapter's top-window renderer, which this configuration disables");
-      config.setConfig({ allowTopWindowRenderers: true });
       expect(FORMATS.every(format => spec.isBidRequestValid(makeBid({ format })))).to.equal(true);
+    });
+
+    it('uses only the renderer policy supplied by core, not global configuration', () => {
+      config.setConfig({ allowTopWindowRenderers: false });
+      expect(spec.isBidRequestValid(makeBid({ format: 'parallax' }))).to.equal(true);
+      config.setConfig({ allowTopWindowRenderers: true });
+      expect(spec.isBidRequestValid(makeBid({ format: 'interstitial', allowTopWindowRenderers: false }))).to.equal(false);
+    });
+
+    [undefined, null, 'true', 1].forEach(policy => {
+      it(`does not assume custom rendering is allowed without a valid core policy (${String(policy)})`, () => {
+        expect(FORMATS.map(format => spec.isBidRequestValid(makeBid({ format, allowTopWindowRenderers: policy })))).to.deep.equal([true, false, false]);
+      });
     });
 
     it('rejects Parallax and Interstitial when the banner uses a Safe Renderer, keeping Standard', () => {
@@ -184,6 +197,7 @@ describe('splashBidAdapter', () => {
       expect(spec.isBidRequestValid(withMediaTypeRenderer('parallax', { ...renderer, backupOnly: true }))).to.equal(true);
       expect(spec.isBidRequestValid(makeBid({ format: 'interstitial', renderer: { ...renderer, backupOnly: true } }))).to.equal(true);
       expect(spec.isBidRequestValid(makeBid({ format: 'parallax', renderer: { url: 'https://cdn.example/renderer.js' } }))).to.equal(true);
+      expect(spec.isBidRequestValid(makeBid({ format: 'parallax', renderer: { render: 'invalid-but-truthy' } }))).to.equal(false);
     });
   });
 
@@ -588,15 +602,16 @@ describe('splashBidAdapter', () => {
       });
     });
 
-    it('matches response formats case-insensitively and prefers ext.splash over ext.general', () => {
+    it('matches response formats case-insensitively and rejects invalid or conflicting declarations', () => {
       sandbox.stub(utils, 'logWarn');
       const request = () => buildRequest(makeBid({ format: 'interstitial' }));
       const accepted = ext => respond(request(), [makeServerBid('interstitial', { ext })]).length === 1;
       expect(accepted({ splash: { format: 'INTERSTITIAL' } })).to.equal(true);
-      expect(accepted({ splash: { format: 'interstitial' }, general: { display_format: 'standard' } })).to.equal(true);
-      expect(accepted({ splash: { format: 'splitboard' }, general: { display_format: 'Interstitial' } })).to.equal(true);
+      expect(accepted({ splash: { format: 'interstitial' }, general: { display_format: 'INTERSTITIAL' } })).to.equal(true);
+      expect(accepted({ splash: { format: 'interstitial' }, general: { display_format: 'standard' } })).to.equal(false);
+      expect(accepted({ splash: { format: 'splitboard' }, general: { display_format: 'Interstitial' } })).to.equal(false);
       expect(accepted({ splash: { format: 42 }, general: { display_format: 'standard' } })).to.equal(false);
-      expect(accepted({ splash: { format: 'unknown' }, general: { display_format: 'unknown' } })).to.equal(true);
+      expect(accepted({ splash: { format: 'unknown' }, general: { display_format: 'unknown' } })).to.equal(false);
     });
 
     [
@@ -686,6 +701,7 @@ describe('splashBidAdapter', () => {
       sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => viewport);
       // Keep renderer behaviour independent of the browser running the suite.
       sandbox.stub(utils, 'isSafariBrowser').returns(false);
+      sandbox.stub(utils, 'isChromeIOSBrowser').returns(false);
       root = document.createElement('div');
       slot = document.createElement('div');
       slot.id = 'splash-spec-slot';
@@ -773,6 +789,19 @@ describe('splashBidAdapter', () => {
     });
 
     describe('Parallax', () => {
+      beforeEach(() => {
+        // Layout and markup assertions do not execute creatives. Avoid exhausting the
+        // browser's navigation limit before the real Interstitial iframe tests run.
+        const documents = new WeakMap();
+        const getAttribute = HTMLIFrameElement.prototype.getAttribute;
+        sandbox.stub(HTMLIFrameElement.prototype, 'srcdoc')
+          .get(function () { return documents.get(this) || ''; })
+          .set(function (html) { documents.set(this, html); });
+        sandbox.stub(HTMLIFrameElement.prototype, 'getAttribute').callsFake(function (name) {
+          return name === 'srcdoc' && documents.has(this) ? documents.get(this) : getAttribute.call(this, name);
+        });
+      });
+
       function parallaxBid(serverOverrides = {}) {
         const bid = bidFor('parallax', serverOverrides);
         bid.adUnitCode = 'parallax-slot';
@@ -813,6 +842,8 @@ describe('splashBidAdapter', () => {
         expect(frame.querySelector('.sp-stage').style.height).to.equal('640px');
         const iframe = frame.querySelector('iframe.sp-creative');
         expect(iframe.title).to.equal('Splash parallax creative');
+        expect(iframe.getAttribute('sandbox')).to.equal('allow-scripts allow-popups allow-popups-to-escape-sandbox');
+        expect(iframe.sandbox.contains('allow-same-origin')).to.equal(false);
         expect(iframe.getAttribute('srcdoc')).to.equal('<div>parallax creative</div>');
         expect(getComputedStyle(iframe).position).to.equal('fixed');
         expect(document.querySelectorAll('#splash-parallax-style')).to.have.length(1);
@@ -1178,7 +1209,7 @@ describe('splashBidAdapter', () => {
         expect(render().frame.style.height).to.equal('450px');
       });
 
-      describe('desktop Safari pointer guard', () => {
+      describe('Safari and iOS Chrome frame alignment', () => {
         let intersectionObservers;
 
         beforeEach(() => {
@@ -1206,7 +1237,7 @@ describe('splashBidAdapter', () => {
           const { frame } = render();
           intersect(frame);
           const iframe = frame.querySelector('iframe');
-          sinon.assert.calledWith(matchMedia, '(pointer: fine) and (hover: hover)');
+          sinon.assert.notCalled(matchMedia);
           expect(frame.classList.contains('sp-pointer-guarded')).to.equal(true);
           expect(getComputedStyle(iframe).position).to.equal('absolute');
           expect(getComputedStyle(iframe).pointerEvents).to.equal('auto');
@@ -1214,7 +1245,7 @@ describe('splashBidAdapter', () => {
           expect(Math.abs(iframe.getBoundingClientRect().left)).to.be.lessThan(1);
           expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
           expect(addWindow.calledWith('mousemove')).to.equal(false);
-          expect(addWindow.calledWith('scroll')).to.equal(false);
+          sinon.assert.calledWith(addWindow, 'scroll', sinon.match.func, { passive: true, capture: true });
 
           const cancel = sandbox.spy(window, 'cancelAnimationFrame');
           frame.remove();
@@ -1252,7 +1283,7 @@ describe('splashBidAdapter', () => {
           expect(document.elementFromPoint(x, y)).to.equal(publisherControl);
         });
 
-        it('follows live geometry without parent pointer, scroll or resize events', () => {
+        it('coalesces scroll events into one alignment without a continuous animation loop', () => {
           sandbox.stub(window, 'matchMedia').returns({ matches: true });
           const raf = sandbox.stub(window, 'requestAnimationFrame').returns(123);
           const { frame } = render();
@@ -1263,11 +1294,17 @@ describe('splashBidAdapter', () => {
           sinon.assert.notCalled(rect);
           raf.firstCall.args[0]();
           expect([iframe.style.left, iframe.style.top]).to.deep.equal(['-90px', '130px']);
+          sinon.assert.calledOnce(raf);
           rect.returns([{ left: 120, top: 200 }]);
+          slot.dispatchEvent(new Event('scroll'));
+          slot.dispatchEvent(new Event('scroll'));
+          window.dispatchEvent(new Event('scroll'));
           sinon.assert.calledTwice(raf);
+          sinon.assert.calledOnce(rect);
           raf.secondCall.args[0]();
           expect([iframe.style.left, iframe.style.top]).to.deep.equal(['-120px', '-200px']);
-          sinon.assert.calledThrice(raf);
+          sinon.assert.calledTwice(raf);
+          sinon.assert.calledTwice(rect);
         });
 
         it('waits for a visible aperture when the slot starts hidden', () => {
@@ -1280,26 +1317,132 @@ describe('splashBidAdapter', () => {
           slot.style.display = '';
           intersect(frame);
           sinon.assert.calledOnce(raf);
+          raf.firstCall.args[0]();
           expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
         });
 
-        it('realigns after a layout shift and slot reparenting without publisher events', async () => {
+        it('realigns after observed ancestor layout changes and slot reparenting', async () => {
           sandbox.stub(window, 'matchMedia').returns({ matches: true });
           const raf = sandbox.stub(window, 'requestAnimationFrame').returns(126);
           const { frame } = render();
           intersect(frame);
           const iframe = frame.querySelector('iframe');
-          root.style.marginTop = '100px';
           raf.firstCall.args[0]();
+          root.style.marginTop = '100px';
+          await tick();
+          sinon.assert.calledTwice(raf);
+          raf.secondCall.args[0]();
           expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
           const parent = root.appendChild(document.createElement('div'));
           parent.style.cssText = 'padding-left:80px;padding-top:30px';
           parent.appendChild(slot);
           await tick();
-          raf.secondCall.args[0]();
+          sinon.assert.calledThrice(raf);
+          raf.thirdCall.args[0]();
           expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
           expect(Math.abs(iframe.getBoundingClientRect().left)).to.be.lessThan(1);
           expect(frame.isConnected).to.equal(true);
+        });
+
+        it('aligns after resize observations, viewport events and resource loads without polling', () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const viewport = new EventTarget();
+          sandbox.stub(window, 'visualViewport').value(viewport);
+          const raf = sandbox.stub(window, 'requestAnimationFrame');
+          raf.callsFake(() => raf.callCount);
+          const { frame } = render();
+          intersect(frame);
+          const iframe = frame.querySelector('iframe');
+          const rect = sandbox.stub(frame, 'getClientRects').returns([{ left: 30, top: 50 }]);
+          raf.firstCall.args[0]();
+          sinon.assert.calledOnce(raf);
+
+          viewport.dispatchEvent(new Event('scroll'));
+          viewport.dispatchEvent(new Event('resize'));
+          slot.dispatchEvent(new Event('load'));
+          sinon.assert.calledTwice(raf);
+          raf.secondCall.args[0]();
+          sinon.assert.calledTwice(raf);
+
+          window.ResizeObserver.firstCall.args[0]();
+          sinon.assert.calledThrice(raf);
+          // ResizeObserver defers sizing; sizing then schedules exactly one alignment.
+          raf.thirdCall.args[0]();
+          expect(raf.callCount).to.equal(4);
+          rect.returns([{ left: 60, top: 90 }]);
+          raf.getCall(3).args[0]();
+          expect([iframe.style.left, iframe.style.top]).to.deep.equal(['-60px', '-90px']);
+          expect(raf.callCount).to.equal(4);
+        });
+
+        it('realigns after a sibling is inserted without resizing an ancestor', async () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(143);
+          root.style.height = '500px';
+          const { frame } = render();
+          intersect(frame);
+          raf.firstCall.args[0]();
+          const iframe = frame.querySelector('iframe');
+          const spacer = document.createElement('div');
+          spacer.style.height = '60px';
+          slot.before(spacer);
+          await tick();
+          sinon.assert.calledTwice(raf);
+          raf.secondCall.args[0]();
+          expect(Math.abs(iframe.getBoundingClientRect().top)).to.be.lessThan(1);
+          sinon.assert.calledTwice(raf);
+        });
+
+        it('removes capture and visual viewport listeners and ancestor observations on removal', async () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          const viewport = new EventTarget();
+          sandbox.stub(window, 'visualViewport').value(viewport);
+          const removeViewport = sandbox.spy(viewport, 'removeEventListener');
+          const removeWindow = sandbox.spy(window, 'removeEventListener');
+          const removeDocument = sandbox.spy(document, 'removeEventListener');
+          const NativeMutationObserver = window.MutationObserver;
+          const layoutDisconnect = sandbox.spy();
+          sandbox.stub(window, 'MutationObserver').callsFake(callback => {
+            const observer = new NativeMutationObserver(callback);
+            const observe = observer.observe.bind(observer);
+            const disconnect = observer.disconnect.bind(observer);
+            observer.observe = (element, options) => {
+              if (options.attributes) observer.disconnect = () => { layoutDisconnect(); disconnect(); };
+              observe(element, options);
+            };
+            return observer;
+          });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(142);
+          const { frame } = render();
+          intersect(frame);
+          frame.remove();
+          await tick();
+          sinon.assert.calledOnce(layoutDisconnect);
+          sinon.assert.calledWith(removeWindow, 'scroll', sinon.match.func, true);
+          sinon.assert.calledWith(removeDocument, 'load', sinon.match.func, true);
+          ['scroll', 'resize'].forEach(type => sinon.assert.calledWith(removeViewport, type, sinon.match.func));
+          viewport.dispatchEvent(new Event('resize'));
+          slot.dispatchEvent(new Event('scroll'));
+          root.style.marginTop = '80px';
+          await tick();
+          sinon.assert.calledOnce(raf);
+        });
+
+        it('keeps scroll alignment when visualViewport is only a dimensions polyfill', async () => {
+          sandbox.stub(window, 'matchMedia').returns({ matches: true });
+          sandbox.stub(window, 'visualViewport').value({ width: 1024, height: 768 });
+          const raf = sandbox.stub(window, 'requestAnimationFrame').returns(144);
+          const { frame } = render();
+          intersect(frame);
+          raf.firstCall.args[0]();
+          const rect = sandbox.stub(frame, 'getClientRects').returns([{ left: 40, top: -50 }]);
+          window.dispatchEvent(new Event('scroll'));
+          raf.secondCall.args[0]();
+          expect([frame.querySelector('iframe').style.left, frame.querySelector('iframe').style.top]).to.deep.equal(['-40px', '50px']);
+          sinon.assert.calledOnce(rect);
+          frame.remove();
+          await tick();
+          expect(frame.classList.contains('sp-pointer-guarded')).to.equal(false);
         });
 
         it('cancels pending alignment and removes listeners on refresh and removal', async () => {
@@ -1322,7 +1465,7 @@ describe('splashBidAdapter', () => {
           sinon.assert.calledTwice(raf);
         });
 
-        it('sleeps offscreen and in a hidden tab, then resumes without duplicate animation frames', async () => {
+        it('sleeps offscreen and in a hidden tab, then queues one update on return', async () => {
           sandbox.stub(window, 'matchMedia').returns({ matches: true });
           const raf = sandbox.stub(window, 'requestAnimationFrame').returns(127);
           const cancel = sandbox.spy(window, 'cancelAnimationFrame');
@@ -1376,7 +1519,7 @@ describe('splashBidAdapter', () => {
           sinon.assert.calledOnceWithExactly(cancel, 130);
           expect(second.isConnected).to.equal(true);
           raf.secondCall.args[0]();
-          sinon.assert.calledThrice(raf);
+          sinon.assert.calledTwice(raf);
         });
 
         it('retains alignment and cleanup when IntersectionObserver is unavailable', async () => {
@@ -1403,18 +1546,31 @@ describe('splashBidAdapter', () => {
           expect(slot.childElementCount).to.equal(0);
         });
 
+        it('leaves non-WebKit browser frames fixed', () => {
+          utils.isSafariBrowser.returns(false);
+          const add = sandbox.spy(window, 'addEventListener');
+          const { frame } = render();
+          expect(frame.classList.contains('sp-pointer-guarded')).to.equal(false);
+          expect(add.calledWith('scroll')).to.equal(false);
+          expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('fixed');
+        });
+
         [
-          ['outside Safari', () => utils.isSafariBrowser.returns(false)],
           ['for coarse pointers', () => sandbox.stub(window, 'matchMedia').returns({ matches: false })],
           ['without matchMedia', () => sandbox.stub(window, 'matchMedia').value(undefined)],
+          ['in iOS Chrome', () => {
+            utils.isSafariBrowser.returns(false);
+            utils.isChromeIOSBrowser.returns(true);
+            sandbox.stub(window, 'matchMedia').returns({ matches: false });
+          }],
         ].forEach(([title, setup]) => {
-          it(`is not installed ${title}`, () => {
+          it(`physically clips the creative ${title}`, () => {
             setup();
             const add = sandbox.spy(window, 'addEventListener');
             const { frame } = render();
-            expect(frame.classList.contains('sp-pointer-guarded')).to.equal(false);
-            expect(add.calledWith('scroll')).to.equal(false);
-            expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('fixed');
+            expect(frame.classList.contains('sp-pointer-guarded')).to.equal(true);
+            sinon.assert.calledWith(add, 'scroll', sinon.match.func, { passive: true, capture: true });
+            expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('absolute');
           });
         });
       });
@@ -1434,7 +1590,10 @@ describe('splashBidAdapter', () => {
         utils.isSafariBrowser.returns(true);
         sandbox.stub(window, 'matchMedia').returns({ matches: true });
         const disconnect = sandbox.spy();
-        sandbox.stub(window, 'MutationObserver').callsFake(() => ({ observe() { throw new Error('observer unavailable'); }, disconnect }));
+        const NativeMutationObserver = window.MutationObserver;
+        const mutationObserver = sandbox.stub(window, 'MutationObserver');
+        mutationObserver.onFirstCall().callsFake(callback => new NativeMutationObserver(callback));
+        mutationObserver.onSecondCall().returns({ observe() { throw new Error('observer unavailable'); }, disconnect });
         const remove = sandbox.spy(window, 'removeEventListener');
         sandbox.stub(utils, 'logError');
         const bid = parallaxBid();
@@ -1469,6 +1628,128 @@ describe('splashBidAdapter', () => {
         window.dispatchEvent(new MessageEvent('message', { data, source }));
       }
 
+      function fixtureScript(body) {
+        return '<script>window.addEventListener("message", function (event) {' +
+          'if (event.source !== parent || !event.data || event.data.source !== "splash-spec") return;' +
+          body + '});</script>';
+      }
+
+      function command(iframe, action) {
+        iframe.contentWindow.postMessage({ source: 'splash-spec', command: action }, '*');
+      }
+
+      function fixtureReports(iframe, done, assertions) {
+        const creativeWindow = iframe.contentWindow;
+        listen(event => {
+          if (event.source !== creativeWindow || !event.data || event.data.source !== 'splash-spec') return;
+          try {
+            assertions(event.data);
+          } catch (error) {
+            done(error);
+          }
+        });
+      }
+
+      function nestedFixture(child, late = false) {
+        const url = 'data:text/html;charset=utf-8,' + encodeURIComponent(child);
+        return (late ? '' : '<iframe sandbox="allow-scripts" src="' + url + '"></iframe>') +
+          '<script>window.addEventListener("message", function (event) {' +
+          'var frame = document.querySelector("iframe");' +
+          'if (frame && event.source === frame.contentWindow && event.data && event.data.source === "splash-spec") {' +
+          'parent.postMessage(event.data, "*");}});</script>' +
+          fixtureScript('if (event.data.command === "add") {' +
+            'var frame = document.createElement("iframe"); frame.setAttribute("sandbox", "allow-scripts");' +
+            'frame.addEventListener("load", function () {parent.postMessage({source: "splash-spec", type: "child-added"}, "*");});' +
+            'frame.src = ' + JSON.stringify(url) + '; document.body.appendChild(frame);' +
+            '} else {document.querySelector("iframe").contentWindow.postMessage(event.data, "*");}');
+      }
+
+      function renderUntilClose(serverOverrides, done, assertions = () => {}) {
+        let rendered, creativeWindow;
+        const messages = [];
+        // Chrome 113 and WebKit clear event.source when the renderer removes its frame.
+        // Observe before the renderer, then assert after its message handlers have run.
+        listen(event => {
+          if (event.source !== creativeWindow || !event.data || event.data.source !== 'froc-display') return;
+          messages.push(event.data);
+          if (event.data.type !== 'close') return;
+          setTimeout(() => {
+            try {
+              expect(rendered.overlay.isConnected).to.equal(false);
+              expect(rendered.iframe.isConnected).to.equal(false);
+              expect(scrollLock()).to.equal(null);
+              assertions(messages);
+              done();
+            } catch (error) {
+              done(error);
+            }
+          }, 0);
+        });
+        rendered = render(serverOverrides);
+        creativeWindow = rendered.iframe.contentWindow;
+        return rendered;
+      }
+
+      it('keeps HTML tracking frames hidden without blocking quiz or CTA clicks', function (done) {
+        this.timeout(4000);
+        const child = '<style>html,body{height:100%;margin:0}button{position:absolute;inset:0;width:100%;height:100%}</style>' +
+          '<button id="quiz">Answer</button><script>' +
+          'document.querySelector("button").onclick=function(){var type=this.id==="quiz"?"quiz":"cta";' +
+            'this.id="cta";this.textContent="CTA";parent.postMessage({source:"tracking-frame-child",type:type},"*");};' +
+          'window.addEventListener("message",function(event){if(event.source===parent&&event.data==="click"){' +
+            'document.elementFromPoint(innerWidth/2,innerHeight/2).click();}});' +
+          'parent.postMessage({source:"tracking-frame-child",type:"ready"},"*");</script>';
+        const adm = '<style>#creative-root,.froc-display-stage{position:relative;height:100%;box-sizing:border-box}</style>' +
+          '<div id="creative-root" class="froc-standard-display--interstitial"><div class="froc-display-stage">' +
+          '<iframe id="quiz-frame" class="froc-display-frame" srcdoc="' + child.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"></iframe></div></div>' +
+          '<script>(function(){var creative=document.getElementById("quiz-frame"),tracker=document.createElement("iframe"),' +
+            'creativeReady=false,trackerReady=false;' +
+            'function report(data){data.source="splash-spec";parent.postMessage(data,"*");}' +
+            'window.addEventListener("message",function(event){' +
+              'if(event.source===tracker.contentWindow&&event.data==="tracker-executed")trackerReady=true;' +
+              'if(event.source===creative.contentWindow&&event.data&&event.data.source==="tracking-frame-child"){' +
+                'if(event.data.type==="ready")creativeReady=true;else report({type:event.data.type});' +
+              '}' +
+              'if(creativeReady&&trackerReady){report({type:"ready"});creativeReady=false;}' +
+              'if(event.source!==parent||!event.data||event.data.source!=="splash-spec")return;' +
+              'if(event.data.command==="inspect"){' +
+                'var bounds=tracker.getBoundingClientRect();' +
+                'report({type:"inspect",width:bounds.width,height:bounds.height,trackerExecuted:trackerReady,' +
+                  'hit:document.elementFromPoint(innerWidth/2,innerHeight/2)===creative,' +
+                  'creativePosition:getComputedStyle(creative).position});' +
+              '}else if(event.data.command==="click")creative.contentWindow.postMessage("click","*");' +
+            '});' +
+            'tracker.style.position="absolute";tracker.style.width="0";tracker.style.height="0";' +
+            'tracker.style.opacity="0";tracker.style.overflow="hidden";tracker.setAttribute("aria-hidden","true");' +
+            'tracker.srcdoc=' + JSON.stringify('<script>parent.postMessage("tracker-executed","*");') + '+"<"+"/script>";' +
+            'document.body.appendChild(tracker);' +
+          '}());</script>';
+        const { iframe, close } = render({ adm });
+        let answers = 0;
+        fixtureReports(iframe, done, report => {
+          if (report.type === 'ready') command(iframe, 'inspect');
+          if (report.type === 'inspect') {
+            expect(report.trackerExecuted).to.equal(true);
+            expect(report.width).to.be.at.most(4);
+            expect(report.height).to.be.at.most(4);
+            expect(report.hit).to.equal(true);
+            expect(report.creativePosition).to.equal('absolute');
+            command(iframe, 'click');
+          }
+          if (report.type === 'quiz') {
+            answers++;
+            command(iframe, 'click');
+          }
+          if (report.type === 'cta') {
+            expect(answers).to.equal(1);
+            close.click();
+            expect(overlay()).to.equal(null);
+            expect(scrollLock()).to.equal(null);
+            done();
+          }
+        });
+      });
+
       it('renders a full-screen dialog with a focused host close button and locks page scroll', () => {
         const { overlay: element, iframe, close } = render({ adm: '<a href="${CLICKTHROUGH}">${AUCTION_PRICE}</a>' });
         expect(element.parentNode).to.equal(document.body);
@@ -1478,11 +1759,14 @@ describe('splashBidAdapter', () => {
         expect(getComputedStyle(element).position).to.equal('fixed');
         expect(iframe.className).to.equal('sp-interstitial-creative');
         expect(iframe.title).to.equal('Splash interstitial creative');
+        expect(iframe.getAttribute('sandbox')).to.equal('allow-scripts allow-popups allow-popups-to-escape-sandbox');
+        expect(iframe.sandbox.contains('allow-same-origin')).to.equal(false);
         expect(parse(iframe.getAttribute('srcdoc')).body.innerHTML).to.equal('<a href="">3.5</a>');
         expect(close.type).to.equal('button');
-        expect(close.textContent).to.equal('Close ad');
-        expect(close.getAttribute('aria-label')).to.equal('Close advertisement');
+        expect(close.textContent).to.equal('Pomiń');
+        expect(close.getAttribute('aria-label')).to.equal('Pomiń reklamę');
         expect(close.hidden).to.equal(false);
+        expect(close.disabled).to.equal(false);
         expect(document.activeElement).to.equal(close);
         expect(scrollLock().getAttribute('data-splash-scroll-lock')).to.equal('1');
         expect(scrollLock().textContent).to.equal('html,body{overflow:hidden!important}');
@@ -1504,20 +1788,68 @@ describe('splashBidAdapter', () => {
         });
       });
 
+      it('replaces the built-in Splash bar while retaining its runtime elements and the host close', function (done) {
+        this.timeout(4000);
+        const adm = '<div id="creative-root" class="froc-standard-display--interstitial">' +
+          '<div class="froc-display-interstitial-bar"><button class="froc-display-close" aria-label="Skip label">Pomiń</button>' +
+          '<span class="froc-display-timer">10</span><span class="froc-display-interstitial-logo">Logo</span></div>' +
+          '<button class="froc-display-close" id="cta">Learn more</button></div>' + fixtureScript(
+          'var skip=document.querySelector(".froc-display-interstitial-bar .froc-display-close");' +
+          'parent.postMessage({source:"splash-spec",bar:getComputedStyle(skip.parentElement).display,' +
+            'skipRects:skip.getClientRects().length,timer:getComputedStyle(document.querySelector(".froc-display-timer")).display,' +
+            'logo:getComputedStyle(document.querySelector(".froc-display-interstitial-logo")).display,' +
+            'cta:getComputedStyle(document.querySelector("#cta")).display},"*");'
+        );
+        const { overlay: element, iframe, close } = render({ adm });
+        fixtureReports(iframe, done, report => {
+          expect(report.bar).to.equal('none');
+          expect(report.skipRects).to.equal(0);
+          expect(report.timer).not.to.equal('none');
+          expect(report.logo).not.to.equal('none');
+          expect(report.cta).not.to.equal('none');
+          expect(close.hidden).to.equal(false);
+          expect(close.disabled).to.equal(false);
+          expect(getComputedStyle(close).display).not.to.equal('none');
+          close.click();
+          expect(element.isConnected).to.equal(false);
+          expect(scrollLock()).to.equal(null);
+          done();
+        });
+        iframe.addEventListener('load', () => command(iframe, 'inspect'), { once: true });
+      });
+
+      ['standard', 'parallax'].forEach(format => {
+        it(`does not suppress a creative's controls in ${format}`, () => {
+          const adm = '<div id="creative-root" class="froc-standard-display--interstitial">' +
+            '<div class="froc-display-interstitial-bar"><button class="froc-display-close">Pomiń</button></div></div>';
+          const bid = bidFor(format, { adm });
+          if (format === 'parallax') {
+            bid.element = slot;
+            bid.renderer.render(bid, document);
+            expect(slot.querySelector('iframe').getAttribute('srcdoc')).to.equal(adm);
+          } else expect(bid.ad).to.equal(adm);
+        });
+      });
+
       [
-        ['shows', 'a creative without its own controls', '<div>creative</div>', false],
-        ['hides', 'a creative with ready controls and an enabled close button', CONTROLS, true],
-        ['shows', 'a creative marked ready but configured without a close button', '<div data-froc-interstitial-controls-ready="1">no close</div>', false],
-        ['shows', 'a creative whose close button is disabled', '<div data-froc-interstitial-controls-ready="1"><button class="froc-display-close" disabled>Close</button></div>', false],
-        ['shows', 'a close button outside a ready controls container', '<button class="froc-display-close">Close</button>', false],
-      ].forEach(([verb, title, adm, hidden]) => {
-        it(`${verb} the host close button for ${title}`, function (done) {
+        ['a creative without its own controls', '<div>creative</div>'],
+        ['a creative with spoofed ready controls and an unwired close button', CONTROLS],
+        ['a creative marked ready but configured without a close button', '<div data-froc-interstitial-controls-ready="1">no close</div>'],
+        ['a creative whose close button is disabled', '<div data-froc-interstitial-controls-ready="1"><button class="froc-display-close" disabled>Close</button></div>'],
+        ['a close button outside a ready controls container', '<button class="froc-display-close">Close</button>'],
+      ].forEach(([title, adm]) => {
+        it(`keeps the host close button visible, enabled and focused for ${title}`, function (done) {
           this.timeout(4000);
-          const { iframe, close } = render({ adm });
+          const { overlay: element, iframe, close } = render({ adm });
           onLoad(iframe, done, () => {
-            expect(close.hidden).to.equal(hidden);
-            // The focused host button hands focus to the creative when the creative's own controls take over.
-            expect(document.activeElement).to.equal(hidden ? iframe : close);
+            expect(close.hidden).to.equal(false);
+            expect(close.disabled).to.equal(false);
+            expect(getComputedStyle(close).display).not.to.equal('none');
+            expect(document.activeElement).to.equal(close);
+            close.click();
+            expect(element.isConnected).to.equal(false);
+            expect(iframe.isConnected).to.equal(false);
+            expect(scrollLock()).to.equal(null);
           });
         });
       });
@@ -1527,26 +1859,32 @@ describe('splashBidAdapter', () => {
         const failing = '<!doctype html><html><head><script>' +
           'window.bridgeReadyBeforeFailure = window.__splashPrebidInterstitialBridge === true;' +
           'throw new Error("head creative failure");' +
-          '</script></head><body>' + CONTROLS + '</body></html>';
+          '</script></head><body>' + CONTROLS + fixtureScript(
+          'parent.postMessage({source: "splash-spec", bridgeReady: window.bridgeReadyBeforeFailure,' +
+            'hasClose: !!document.querySelector("[data-froc-interstitial-controls-ready] .froc-display-close")}, "*");'
+        ) + '</body></html>';
         const { overlay: element, iframe, close } = render({ adm: failing });
         const creativeWindow = iframe.contentWindow;
-        let loaded = false;
+        let report;
         let reportedError = false;
 
-        // The error message and iframe load can reach the host in either order.
+        // Error notification and the fixture's report can reach the host in either order.
         function assertClose() {
-          if (!loaded || !reportedError) return;
+          if (!report || !reportedError) return;
           try {
-            expect(iframe.contentDocument.querySelector('[data-froc-interstitial-controls-ready="1"] .froc-display-close')).not.to.equal(null);
+            expect(report.bridgeReady).to.equal(true);
+            expect(report.hasClose).to.equal(true);
             expect(element.isConnected).to.equal(true);
-            expect(close.textContent).to.equal('Close ad');
+            expect(close.textContent).to.equal('Pomiń');
             expect(close.hidden).to.equal(false);
             expect(close.disabled).to.equal(false);
             expect(getComputedStyle(close).display).not.to.equal('none');
             expect(close.getBoundingClientRect().width).to.be.greaterThan(0);
             expect(close.getBoundingClientRect().height).to.be.greaterThan(0);
+            expect(document.activeElement).to.equal(close);
             close.click();
             expect(element.isConnected).to.equal(false);
+            expect(iframe.isConnected).to.equal(false);
             expect(scrollLock()).to.equal(null);
             done();
           } catch (error) {
@@ -1559,111 +1897,85 @@ describe('splashBidAdapter', () => {
           reportedError = true;
           assertClose();
         });
-        iframe.addEventListener('load', () => {
-          try {
-            expect(creativeWindow.bridgeReadyBeforeFailure).to.equal(true);
-            loaded = true;
-            assertClose();
-          } catch (error) {
-            done(error);
-          }
-        }, { once: true });
+        fixtureReports(iframe, done, data => {
+          report = data;
+          assertClose();
+        });
+        iframe.addEventListener('load', () => command(iframe, 'inspect'), { once: true });
       });
 
-      it('uses a full creative document\'s working controls without showing an additional Close ad button', function (done) {
+      it('uses a full creative document\'s working controls while keeping the focused host Close ad button available', function (done) {
         this.timeout(4000);
         const adm = '<!doctype html><html><head><script>' +
           'document.addEventListener("DOMContentLoaded", function () {' +
           'document.querySelector(".froc-display-close").addEventListener("click", function () {' +
           'parent.postMessage({ source: "froc-display", type: "close" }, "*");' +
-          '});});</script></head><body>' + CONTROLS + '</body></html>';
-        const { overlay: element, iframe, close } = render({ adm });
-        const creativeWindow = iframe.contentWindow;
-        listen(event => {
-          if (event.source !== creativeWindow || !event.data || event.data.source !== 'froc-display' || event.data.type !== 'close') return;
-          try {
-            expect(element.isConnected).to.equal(false);
-            expect(scrollLock()).to.equal(null);
-            done();
-          } catch (error) {
-            done(error);
-          }
-        });
-        iframe.addEventListener('load', () => {
-          try {
-            const creativeClose = iframe.contentDocument.querySelector('[data-froc-interstitial-controls-ready="1"] .froc-display-close');
-            expect(creativeClose).not.to.equal(null);
-            expect(creativeClose.disabled).to.equal(false);
-            expect(creativeWindow.getComputedStyle(creativeClose).display).not.to.equal('none');
-            expect(close.hidden).to.equal(true);
-            expect(getComputedStyle(close).display).to.equal('none');
-            expect(document.activeElement).to.equal(iframe);
-            creativeClose.click();
-          } catch (error) {
-            done(error);
-          }
-        }, { once: true });
-      });
-
-      it('shows the host close button again when the creative reports an error, without moving focus', function (done) {
-        this.timeout(4000);
-        const failing = CONTROLS + '<script>window.addEventListener("message", function (event) { if (event.data === "fail") throw new Error("creative failure"); });</script>';
-        const { iframe, close } = render({ adm: failing });
-        iframe.addEventListener('load', () => {
-          try {
-            expect(close.hidden).to.equal(true);
-            const focused = document.activeElement;
-            message(window, { source: 'froc-display', type: 'render-error' });
-            expect(close.hidden).to.equal(true);
-            listen(event => {
-              if (event.source !== iframe.contentWindow || !event.data || event.data.type !== 'render-error') return;
-              try {
-                expect(close.hidden).to.equal(false);
-                expect(document.activeElement).to.equal(focused);
-                expect(focused).not.to.equal(close);
-                done();
-              } catch (error) {
-                done(error);
-              }
-            });
-            iframe.contentWindow.postMessage('fail', '*');
-          } catch (error) {
-            done(error);
-          }
-        }, { once: true });
-      });
-
-      it('shows the host close button when the creative has an unhandled promise rejection', function (done) {
-        this.timeout(4000);
-        const rejecting = CONTROLS + '<script>window.addEventListener("message", function (event) { if (event.data === "reject") Promise.reject(new Error("creative rejection")); });</script>';
-        const { iframe, close } = render({ adm: rejecting });
-        iframe.addEventListener('load', () => {
-          try {
-            expect(close.hidden).to.equal(true);
-            listen(event => {
-              if (event.source !== iframe.contentWindow || !event.data || event.data.type !== 'render-error') return;
-              try {
-                expect(close.hidden).to.equal(false);
-                done();
-              } catch (error) {
-                done(error);
-              }
-            });
-            iframe.contentWindow.postMessage('reject', '*');
-          } catch (error) {
-            done(error);
-          }
-        }, { once: true });
-      });
-
-      it('shows the host close button when the creative document becomes inaccessible', function (done) {
-        this.timeout(4000);
-        const { iframe, close } = render({ adm: CONTROLS });
-        onLoad(iframe, done, () => {
-          expect(close.hidden).to.equal(true);
-          Object.defineProperty(iframe, 'contentDocument', { configurable: true, get: () => null });
-          iframe.dispatchEvent(new Event('load'));
+          '});});</script></head><body>' + CONTROLS + fixtureScript(
+          'var close = document.querySelector("[data-froc-interstitial-controls-ready] .froc-display-close");' +
+            'if (event.data.command === "inspect") parent.postMessage({source: "splash-spec", hasClose: !!close,' +
+            'disabled: close.disabled, display: getComputedStyle(close).display}, "*");' +
+            'if (event.data.command === "close") close.click();'
+        ) + '</body></html>';
+        let inspected = false;
+        const { iframe, close } = renderUntilClose({ adm }, done, () => expect(inspected).to.equal(true));
+        fixtureReports(iframe, done, report => {
+          expect(report.hasClose).to.equal(true);
+          expect(report.disabled).to.equal(false);
+          expect(report.display).not.to.equal('none');
           expect(close.hidden).to.equal(false);
+          expect(close.disabled).to.equal(false);
+          expect(getComputedStyle(close).display).not.to.equal('none');
+          expect(document.activeElement).to.equal(close);
+          inspected = true;
+          command(iframe, 'close');
+        });
+        iframe.addEventListener('load', () => command(iframe, 'inspect'), { once: true });
+      });
+
+      [
+        ['throws an error', 'throw new Error("creative failure");'],
+        ['has an unhandled promise rejection', 'Promise.reject(new Error("creative rejection"));'],
+      ].forEach(([title, failure]) => {
+        it(`keeps the host close button usable and focused when the creative ${title}`, function (done) {
+          this.timeout(4000);
+          const adm = CONTROLS + fixtureScript('if (event.data.command === "fail") {' + failure + '}');
+          const { overlay: element, iframe, close } = render({ adm });
+          const creativeWindow = iframe.contentWindow;
+          listen(event => {
+            if (event.source !== creativeWindow || !event.data || event.data.source !== 'froc-display' || event.data.type !== 'render-error') return;
+            try {
+              expect(close.hidden).to.equal(false);
+              expect(close.disabled).to.equal(false);
+              expect(document.activeElement).to.equal(close);
+              close.click();
+              expect(element.isConnected).to.equal(false);
+              expect(iframe.isConnected).to.equal(false);
+              expect(scrollLock()).to.equal(null);
+              done();
+            } catch (error) {
+              done(error);
+            }
+          });
+          iframe.addEventListener('load', () => {
+            message(window, { source: 'froc-display', type: 'render-error' });
+            command(iframe, 'fail');
+          }, { once: true });
+        });
+      });
+
+      it('keeps the host close button usable with a genuinely inaccessible sandboxed creative document', function (done) {
+        this.timeout(4000);
+        const { overlay: element, iframe, close } = render({ adm: CONTROLS });
+        onLoad(iframe, done, () => {
+          expect(iframe.contentDocument).to.equal(null);
+          expect(() => iframe.contentWindow.document).to.throw();
+          expect(close.hidden).to.equal(false);
+          expect(close.disabled).to.equal(false);
+          expect(document.activeElement).to.equal(close);
+          close.click();
+          expect(element.isConnected).to.equal(false);
+          expect(iframe.isConnected).to.equal(false);
+          expect(scrollLock()).to.equal(null);
         });
       });
 
@@ -1729,117 +2041,124 @@ describe('splashBidAdapter', () => {
         expect(scrollLock()).to.equal(null);
       });
 
-      [['the creative document', iframe => iframe.contentWindow], ['an owned nested frame', iframe => iframe.contentDocument.querySelector('iframe').contentWindow]]
-        .forEach(([title, target]) => {
-          it(`closes on Escape inside ${title} through the bridge`, function (done) {
-            this.timeout(4000);
-            const { iframe } = render({ adm: '<iframe srcdoc="<button>Answer</button>"></iframe>' });
-            const creativeWindow = iframe.contentWindow;
-            listen(event => {
-              if (event.source !== creativeWindow || !event.data || event.data.type !== 'close') return;
-              try {
-                expect(iframe.isConnected).to.equal(false);
-                expect(scrollLock()).to.equal(null);
-                done();
-              } catch (error) {
-                done(error);
-              }
-            });
-            iframe.addEventListener('load', () => {
-              try {
-                const win = target(iframe);
-                expect(win.document.__splashEscapeBound).to.equal(true);
-                win.document.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
-              } catch (error) {
-                done(error);
-              }
-            }, { once: true });
-          });
-        });
-
-      it('closes on Escape inside a frame that the creative adds after loading', function (done) {
+      it('closes on Escape inside the creative document through its own bridge', function (done) {
         this.timeout(4000);
-        const adder = '<script>window.addEventListener("message", function (event) { if (event.data !== "add") return;' +
-          'var frame = document.createElement("iframe"); frame.id = "late"; frame.srcdoc = "<button>Late</button>"; document.body.appendChild(frame); });</script>';
-        const { iframe } = render({ adm: adder });
-        const creativeWindow = iframe.contentWindow;
+        const adm = fixtureScript(
+          'if (event.data.command === "inspect") {' +
+          'var enter = new KeyboardEvent("keydown", {key: "Enter", cancelable: true}); document.dispatchEvent(enter);' +
+          'parent.postMessage({source: "splash-spec", bridgeReady: window.__splashPrebidInterstitialBridge === true,' +
+          'enterPrevented: enter.defaultPrevented}, "*");}' +
+          'if (event.data.command === "escape") document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", cancelable: true}));'
+        );
+        let inspected = false;
+        const { overlay: element, iframe, close } = renderUntilClose({ adm }, done, () => expect(inspected).to.equal(true));
+        fixtureReports(iframe, done, report => {
+          expect(report.bridgeReady).to.equal(true);
+          expect(report.enterPrevented).to.equal(false);
+          expect(element.isConnected).to.equal(true);
+          expect(document.activeElement).to.equal(close);
+          inspected = true;
+          command(iframe, 'escape');
+        });
+        iframe.addEventListener('load', () => command(iframe, 'inspect'), { once: true });
+      });
+
+      [false, true].forEach(late => {
+        it(`closes on cooperative Escape inside a cross-origin child${late ? ' added after loading' : ''}`, function (done) {
+          this.timeout(4000);
+          // A cross-origin child's key events do not reach the creative document.
+          // Its own script must send close to the creative's bridge.
+          const child = '<script>document.addEventListener("keydown", function (event) {' +
+            'if (event.key === "Escape") {event.preventDefault(); parent.postMessage({source: "froc-display", type: "close"}, "*");}});</script>' +
+            fixtureScript('if (event.data.command === "escape") document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", cancelable: true}));');
+          const { iframe } = renderUntilClose({ adm: nestedFixture(child, late) }, done);
+          fixtureReports(iframe, done, report => {
+            expect(report.type).to.equal('child-added');
+            command(iframe, 'escape');
+          });
+          iframe.addEventListener('load', () => command(iframe, late ? 'add' : 'escape'), { once: true });
+        });
+      });
+
+      it('keeps the host close usable when an arbitrary cross-origin child does not cooperate on Escape', function (done) {
+        this.timeout(4000);
+        const child = fixtureScript(
+          'var escape = new KeyboardEvent("keydown", {key: "Escape", cancelable: true}); document.dispatchEvent(escape);' +
+          'parent.postMessage({source: "splash-spec", type: "escape-dispatched", prevented: escape.defaultPrevented,' +
+          'bridgeReady: window.__splashPrebidInterstitialBridge === true}, "*");'
+        );
+        const { overlay: element, iframe, close } = render({ adm: nestedFixture(child) });
+        fixtureReports(iframe, done, report => {
+          expect(report.type).to.equal('escape-dispatched');
+          expect(report.prevented).to.equal(false);
+          expect(report.bridgeReady).to.equal(false);
+          expect(element.isConnected).to.equal(true);
+          expect(close.hidden).to.equal(false);
+          expect(close.disabled).to.equal(false);
+          expect(document.activeElement).to.equal(close);
+          close.click();
+          expect(element.isConnected).to.equal(false);
+          expect(iframe.isConnected).to.equal(false);
+          expect(scrollLock()).to.equal(null);
+          done();
+        });
+        iframe.addEventListener('load', () => command(iframe, 'escape'), { once: true });
+      });
+
+      it('relays click, custom-event and close from real owned nested frames through the bridge', function (done) {
+        this.timeout(4000);
+        const child = fixtureScript('if (event.data.command !== "go") return;' +
+          '["click", "custom-event", "close"].forEach(function (type) { parent.postMessage({source: "froc-display", type: type}, "*"); });');
+        const { iframe } = renderUntilClose({ adm: nestedFixture(child) }, done, messages => {
+          expect(messages.map(message => message.type)).to.deep.equal(['click', 'custom-event', 'close']);
+        });
+        iframe.addEventListener('load', () => command(iframe, 'go'), { once: true });
+      });
+
+      it('does not relay real parent, grandchild, forged or unsupported messages through the bridge', function (done) {
+        this.timeout(4000);
+        const grandchild = fixtureScript(
+          '["click", "custom-event", "close"].forEach(function (type) {parent.parent.postMessage({source: "froc-display", type: type}, "*");});' +
+          'parent.postMessage({source: "splash-spec", type: "sent"}, "*");'
+        );
+        const child = fixtureScript(
+          'if (event.data.command !== "go") return;' +
+          '[{source: "forged", type: "close"}, {source: "froc-display", type: "render-error"},' +
+          '{source: "froc-display", type: "unknown"}, {type: "close"}, null, "close"].forEach(function (data) {parent.postMessage(data, "*");});' +
+          'var frame = document.createElement("iframe"); frame.setAttribute("sandbox", "allow-scripts");' +
+          'window.addEventListener("message", function (reply) {' +
+          'if (reply.source !== frame.contentWindow || !reply.data || reply.data.source !== "splash-spec" || reply.data.type !== "sent") return;' +
+          'parent.postMessage({source: "froc-display", type: "click", directChildSentinel: true}, "*");});' +
+          'frame.addEventListener("load", function () {frame.contentWindow.postMessage({source: "splash-spec", command: "go"}, "*");});' +
+          'frame.src = ' + JSON.stringify('data:text/html;charset=utf-8,' + encodeURIComponent(grandchild)) + '; document.body.appendChild(frame);'
+        );
+        let rendered, creativeWindow;
+        const relayed = [];
+        // Observe before runtime so an incorrectly relayed close cannot lose its source on removal.
         listen(event => {
-          if (event.source !== creativeWindow || !event.data || event.data.type !== 'close') return;
+          if (event.source !== creativeWindow) return;
           try {
-            expect(iframe.isConnected).to.equal(false);
+            relayed.push(event.data);
+            expect(relayed).to.deep.equal([{ source: 'froc-display', type: 'click', directChildSentinel: true }]);
+            expect(rendered.overlay.isConnected).to.equal(true);
+            expect(rendered.close.hidden).to.equal(false);
+            expect(rendered.close.disabled).to.equal(false);
+            expect(document.activeElement).to.equal(rendered.close);
+            rendered.close.click();
+            expect(rendered.overlay.isConnected).to.equal(false);
+            expect(rendered.iframe.isConnected).to.equal(false);
             expect(scrollLock()).to.equal(null);
             done();
           } catch (error) {
             done(error);
           }
         });
-        iframe.addEventListener('load', () => {
-          try {
-            iframe.contentDocument.addEventListener('load', event => {
-              if (!event.target || event.target.id !== 'late') return;
-              try {
-                const win = event.target.contentWindow;
-                expect(win.document.__splashEscapeBound).to.equal(true);
-                win.document.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
-              } catch (error) {
-                done(error);
-              }
-            }, true);
-            creativeWindow.postMessage('add', '*');
-          } catch (error) {
-            done(error);
-          }
+        rendered = render({ adm: nestedFixture(child) });
+        creativeWindow = rendered.iframe.contentWindow;
+        rendered.iframe.addEventListener('load', () => {
+          creativeWindow.postMessage({ source: 'froc-display', type: 'close' }, '*');
+          command(rendered.iframe, 'go');
         }, { once: true });
-      });
-
-      it('relays click, custom-event and close from real owned nested frames through the bridge', function (done) {
-        this.timeout(4000);
-        const child = '<script>window.addEventListener("message", function (event) { if (event.data !== "go") return;' +
-          '["click", "custom-event", "close"].forEach(function (type) { parent.postMessage({ source: "froc-display", type: type }, "*"); }); });</script>';
-        const { iframe } = render({ adm: '<iframe srcdoc="' + child.replace(/"/g, '&quot;') + '"></iframe>' });
-        const creativeWindow = iframe.contentWindow;
-        const relayed = [];
-        listen(event => {
-          if (event.source !== creativeWindow || !event.data || event.data.source !== 'froc-display') return;
-          relayed.push(event.data.type);
-          if (event.data.type !== 'close') return;
-          try {
-            expect(relayed).to.deep.equal(['click', 'custom-event', 'close']);
-            expect(iframe.isConnected).to.equal(false);
-            done();
-          } catch (error) {
-            done(error);
-          }
-        });
-        iframe.addEventListener('load', () => {
-          iframe.contentDocument.querySelector('iframe').contentWindow.postMessage('go', '*');
-        }, { once: true });
-      });
-
-      it('does not relay forged or unsupported messages through the bridge', function (done) {
-        this.timeout(4000);
-        const { iframe } = render({ adm: '<iframe srcdoc="<div>child</div>"></iframe>' });
-        onLoad(iframe, done, () => {
-          const win = iframe.contentWindow;
-          const child = iframe.contentDocument.querySelector('iframe').contentWindow;
-          const relay = sandbox.stub(window, 'postMessage');
-          try {
-            [
-              [window, { source: 'froc-display', type: 'close' }],
-              [child, { source: 'forged', type: 'close' }],
-              [child, { source: 'froc-display', type: 'render-error' }],
-              [child, { source: 'froc-display', type: 'unknown' }],
-              [child, null],
-            ].forEach(([source, data]) => win.dispatchEvent(new win.MessageEvent('message', { data, source })));
-            sinon.assert.notCalled(relay);
-            const click = { source: 'froc-display', type: 'click' };
-            win.dispatchEvent(new win.MessageEvent('message', { data: click, source: child }));
-            sinon.assert.calledOnceWithExactly(relay, click, '*');
-          } finally {
-            relay.restore();
-          }
-          expect(iframe.isConnected).to.equal(true);
-        });
       });
 
       it('tears down after the five minute watchdog', () => {
@@ -1920,6 +2239,7 @@ describe('splashBidAdapter', () => {
         const host = root.appendChild(document.createElement('iframe'));
         const hostDocument = host.contentDocument;
         const hostWindow = host.contentWindow;
+        sandbox.stub(hostWindow.HTMLImageElement.prototype, 'src').set(function (url) { this.setAttribute('data-spec-src', url); });
         const { overlay: element } = render({}, hostDocument);
         expect(element.ownerDocument).to.equal(hostDocument);
         expect(element.parentNode).to.equal(hostDocument.body);
@@ -1972,7 +2292,8 @@ describe('splashBidAdapter', () => {
           expect(html.startsWith(`<!doctype html><html><head><meta charset="utf-8"><style id="${FRAME_STYLE_ID}">`)).to.equal(true);
           expect(html.endsWith('<body><header>Title</header><div>creative</div></body></html>')).to.equal(true);
           const doc = parse(html);
-          expect(doc.getElementById(FRAME_STYLE_ID).textContent).to.contain('body iframe{position:absolute!important;inset:0!important');
+          expect(doc.getElementById(FRAME_STYLE_ID).textContent).to.contain('.froc-display-stage>iframe.froc-display-frame{position:absolute!important;inset:0!important');
+          expect(doc.getElementById(FRAME_STYLE_ID).textContent).not.to.contain('body iframe{');
           expect(bridgeScripts(doc)).to.have.length(1);
           expect(bridgeScripts(doc)[0].parentNode).to.equal(doc.head);
         });

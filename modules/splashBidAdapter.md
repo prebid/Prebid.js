@@ -12,7 +12,9 @@ Bid adapter for Splash Standard Display, Parallax and Interstitial banner invent
 
 ## Disclosure
 
-Disclosure: Parallax and Interstitial use top-window [Renderer](https://docs.prebid.org/dev-docs/renderer.html) code bundled with the adapter; no external code is loaded. They add Splash-owned elements (iframe, SVG clip, styles) to the page. Interstitial shows a full-screen overlay with a **Close ad** button, closes with Escape or after at most five minutes, and locks page scrolling while open. The adapter does not bid for these formats with `allowTopWindowRenderers: false`, a Safe Renderer on the banner media type or the Splash bid, or a publisher renderer without `backupOnly: true`; do not set an ad unit level Safe Renderer on Parallax or Interstitial ad units either, because it replaces these renderers. SafeFrame delivery is not supported.
+Disclosure: Parallax and Interstitial use top-window [Renderer](https://docs.prebid.org/dev-docs/renderer.html) code bundled with the adapter; no external code is loaded. They add Splash-owned elements (iframe, SVG clip, styles) to the page. Interstitial shows a full-screen overlay with a **Pomiń** (Skip ad) button, closes with Escape or after at most five minutes, and locks page scrolling while open. The adapter does not bid for these formats when core disables top-window renderers, a publisher Safe Renderer would take precedence, or a publisher renderer without `backupOnly: true` would replace the adapter renderer. Standard Display remains eligible. SafeFrame delivery is not supported.
+
+Core supplies the effective `bidRequest.allowTopWindowRenderers` policy before validation and inherits ad-unit `safeRenderer` settings into each bid request unless the bid overrides them. The adapter uses these request fields and the banner media-type configuration, not global configuration or publisher DOM lookups. These are local core metadata, not Splash bid parameters or OpenRTB fields; use the adapter and its corresponding core build together.
 
 ## Bid Params
 
@@ -32,7 +34,11 @@ Disclosure: Parallax and Interstitial use top-window [Renderer](https://docs.pre
 | Parallax | `'parallax'` | Banner sizes, e.g. `[[700, 1600]]`; Prebid.js and the ad unit element must be in the top-level page | Adapter renderer: a clipped frame, up to the viewport height, in the ad unit element |
 | Interstitial | `'interstitial'` | Banner sizes, e.g. `[[320, 480]]`; set `ortb2Imp: { instl: 1 }` | Adapter renderer: a full-screen overlay |
 
-If the response declares a different format, the bid is ignored. The host **Close ad** button is hidden only if the loaded creative exposes its own enabled close control; a creative error shows it again. Creatives handle their own tracking.
+Response format fields (`ext.splash.format` and `ext.general.display_format`) are optional. Any declared value must be a supported format matching the request; unsupported or conflicting declarations discard the bid. Parallax and Interstitial creatives run in opaque-origin iframes with `sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"`, without access to publisher DOM or storage. Popups are permitted for user-initiated click-throughs; creative-to-host communication uses source-checked `postMessage`. The host **Pomiń** button is always available above the creative, independently of creative controls or errors. The creative fills the remaining viewport without overlapping the toolbar. Escape works in the host and the Interstitial frame; nested cross-origin content must cooperate through a close message. Creatives handle their own tracking.
+
+The host toolbar shows the Softpaywall logo, an optional countdown and **Pomiń** in one row. The logo loads from `https://cdn.splashandroll.com/fractatemp/0/softpaywall-logo.svg`. Splash's built-in creative toolbar is hidden; its timer continues running and reports bounded numeric state through source-checked messages. The host counter mirrors this state, including waiting for quiz completion when configured, and cannot disable or delay the host skip button. Creative timers, CTA and close messages remain active.
+
+Safari and iOS Chrome use a physically clipped frame for pointer and touch input. Alignment updates are coalesced after scrolling, viewport changes and observed layout changes, with no idle animation loop. Continuous CSS position or transform animations of the ad unit's ancestors are not tracked.
 
 ## Test Parameters
 
