@@ -1,15 +1,15 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec as adapter,
   createDomain,
   storage
 } from 'modules/twistDigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {config} from '../../../src/config.js';
-import {deepSetValue} from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import {
   extractPID,
   extractCID,
@@ -18,9 +18,10 @@ import {
   getStorageItem,
   setStorageItem,
   tryParseJSON,
-  getUniqueDealId
+  getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -93,7 +94,7 @@ const VIDEO_BID = {
       'placement': 1
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -103,9 +104,9 @@ const ORTB2_DEVICE = {
       'version': ['8', '0', '0']
     },
     'browsers': [
-      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+      { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+      { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+      { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
     ],
     'mobile': 1,
     'model': 'SM-G955U',
@@ -122,7 +123,7 @@ const ORTB2_DEVICE = {
   model: 'iPhone 12 Pro Max',
   os: 'iOS',
   osv: '17.4',
-  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+  ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
 };
 
 const BIDDER_REQUEST = {
@@ -149,8 +150,8 @@ const BIDDER_REQUEST = {
             'segtax': 7
           },
           'segments': [
-            {'id': 'segId1'},
-            {'id': 'segId2'}
+            { 'id': 'segId1' },
+            { 'id': 'segId2' }
           ]
         }]
       }
@@ -164,9 +165,9 @@ const BIDDER_REQUEST = {
     user: {
       data: [
         {
-          ext: {segtax: 600, segclass: '1'},
+          ext: { segtax: 600, segclass: '1' },
           name: 'example.com',
-          segment: [{id: '243'}],
+          segment: [{ id: '243' }],
         },
       ],
     }
@@ -215,21 +216,21 @@ const VIDEO_SERVER_RESPONSE = {
 
 const ORTB2_OBJ = {
   "device": ORTB2_DEVICE,
-  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "regs": { "coppa": 0, "gpp": "gpp_string", "gpp_sid": [7] },
   "site": {
     "cat": ["IAB2"],
     "content": {
       "data": [{
-        "ext": {"segtax": 7},
+        "ext": { "segtax": 7 },
         "name": "example.com",
-        "segments": [{"id": "segId1"}, {"id": "segId2"}]
+        "segments": [{ "id": "segId1" }, { "id": "segId2" }]
       }],
       "language": "en"
     },
     "pagecat": ["IAB2-2"]
   },
   "user": {
-    "data": [{"ext": {"segclass": "1", "segtax": 600}, "name": "example.com", "segment": [{"id": "243"}]}]
+    "data": [{ "ext": { "segclass": "1", "segtax": 600 }, "name": "example.com", "segment": [{ "id": "243" }] }]
   }
 };
 
@@ -241,20 +242,14 @@ const REQUEST = {
   }
 };
 
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
-
 describe('TwistDigitalBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
-  describe('validtae spec', function () {
+  describe('validate spec', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -276,12 +271,15 @@ describe('TwistDigitalBidAdapter', function () {
     });
 
     it('exists and contains media types', function () {
-      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
-      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(3);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO, NATIVE]);
     });
   });
 
   describe('validate bid requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -369,9 +367,9 @@ describe('TwistDigitalBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -387,15 +385,15 @@ describe('TwistDigitalBidAdapter', function () {
               'segtax': 7
             },
             'segments': [
-              {'id': 'segId1'},
-              {'id': 'segId2'}
+              { 'id': 'segId1' },
+              { 'id': 'segId2' }
             ]
           }],
           userData: [
             {
-              ext: {segtax: 600, segclass: '1'},
+              ext: { segtax: 600, segclass: '1' },
               name: 'example.com',
-              segment: [{id: '243'}],
+              segment: [{ id: '243' }],
             },
           ],
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
@@ -419,8 +417,7 @@ describe('TwistDigitalBidAdapter', function () {
             }
           }
         }
-      })
-      ;
+      });
     });
 
     it('should build banner request for each size', function () {
@@ -453,9 +450,9 @@ describe('TwistDigitalBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -493,15 +490,15 @@ describe('TwistDigitalBidAdapter', function () {
               'segtax': 7
             },
             'segments': [
-              {'id': 'segId1'},
-              {'id': 'segId2'}
+              { 'id': 'segId1' },
+              { 'id': 'segId2' }
             ]
           }],
           userData: [
             {
-              ext: {segtax: 600, segclass: '1'},
+              ext: { segtax: 600, segclass: '1' },
               name: 'example.com',
-              segment: [{id: '243'}],
+              segment: [{ id: '243' }],
             },
           ]
         }
@@ -544,9 +541,9 @@ describe('TwistDigitalBidAdapter', function () {
             'version': ['8', '0', '0']
           },
           'browsers': [
-            {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-            {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-            {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+            { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+            { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
           ],
           'mobile': 1,
           'model': 'SM-G955U',
@@ -582,15 +579,15 @@ describe('TwistDigitalBidAdapter', function () {
             'segtax': 7
           },
           'segments': [
-            {'id': 'segId1'},
-            {'id': 'segId2'}
+            { 'id': 'segId1' },
+            { 'id': 'segId2' }
           ]
         }],
         userData: [
           {
-            ext: {segtax: 600, segclass: '1'},
+            ext: { segtax: 600, segclass: '1' },
             name: 'example.com',
-            segment: [{id: '243'}],
+            segment: [{ id: '243' }],
           },
         ]
       };
@@ -606,10 +603,12 @@ describe('TwistDigitalBidAdapter', function () {
       expect(requests[0]).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
-        data: {bids: [
-          {...REQUEST_DATA, ortb2: ORTB2_OBJ, ortb2Imp: BID.ortb2Imp},
-          {...REQUEST_DATA2, ortb2: ORTB2_OBJ, ortb2Imp: BID.ortb2Imp}
-        ]}
+        data: {
+          bids: [
+            { ...REQUEST_DATA, ortb2: ORTB2_OBJ, ortb2Imp: BID.ortb2Imp },
+            { ...REQUEST_DATA2, ortb2: ORTB2_OBJ, ortb2Imp: BID.ortb2Imp }
+          ]
+        }
       });
     });
 
@@ -639,13 +638,15 @@ describe('TwistDigitalBidAdapter', function () {
       expect(requests).to.have.length(2);
     });
 
-    it('should set fledge correctly if enabled', function () {
-      config.resetConfig();
-      const bidderRequest = utils.deepClone(BIDDER_REQUEST);
-      bidderRequest.paapi = {enabled: true};
-      deepSetValue(bidderRequest, 'ortb2Imp.ext.ae', 1);
-      const requests = adapter.buildRequests([BID], bidderRequest);
-      expect(requests[0].data.fledge).to.equal(1);
+    it('should build video request with right url domain despite params.host', function () {
+      const videoBidWithHost = VIDEO_BID;
+      videoBidWithHost.params.host = "example.com";
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
     });
 
     after(function () {
@@ -655,9 +656,151 @@ describe('TwistDigitalBidAdapter', function () {
     });
   });
 
+  describe('native support', function () {
+    afterEach(function () {
+      config.resetConfig();
+    });
+
+    const NATIVE_ORTB = {
+      ver: '1.2',
+      assets: [
+        { id: 1, required: 1, title: { len: 80 } },
+        { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+        { id: 3, required: 1, data: { type: 1 } }
+      ]
+    };
+
+    const NATIVE_ORTB_RESPONSE = {
+      ver: '1.2',
+      assets: [
+        { id: 1, title: { text: 'Native title' } },
+        { id: 2, img: { url: 'https://cdn.example/img.jpg', w: 1200, h: 627 } },
+        { id: 3, data: { value: 'Advertiser' } }
+      ],
+      link: { url: 'https://advertiser.example/click' },
+      eventtrackers: [{ event: 1, method: 1, url: 'https://tracker.example/imp' }]
+    };
+
+    const NATIVE_BID = {
+      bidId: 'native-bid-1',
+      adUnitCode: 'div-native-1',
+      bidderRequestId: '1fdb5ff1b6eaa7',
+      params: {
+        subDomain: SUB_DOMAIN,
+        cId: '59db6b3b4ffaa70004f45cdc',
+        pId: '59ac17c192832d0011283fe3'
+      },
+      sizes: [],
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0,
+      schain: 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+      mediaTypes: { native: { ortb: NATIVE_ORTB } },
+      nativeOrtbRequest: NATIVE_ORTB,
+      ortb2Imp: { ext: { tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf' } }
+    };
+
+    const nativeServerResponse = (extra = {}) => ({
+      body: {
+        cid: '59db6b3b4ffaa70004f45cdc',
+        results: [{
+          ad: JSON.stringify({ native: NATIVE_ORTB_RESPONSE }),
+          advertiserDomains: ['example.com'],
+          exp: 60,
+          width: 1,
+          height: 1,
+          mediaType: 'native',
+          creativeId: '12610997325162499419',
+          price: 1.5,
+          cookies: [],
+          ...extra
+        }]
+      }
+    });
+
+    const buildNativeRequest = (bid = NATIVE_BID) => adapter.buildRequests([bid], BIDDER_REQUEST)[0];
+
+    it('should build a native request with mediaTypes.native and nativeOrtbRequest', function () {
+      config.setConfig({ bidderTimeout: 3000 });
+      const requests = adapter.buildRequests([NATIVE_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
+      expect(requests[0].data.mediaTypes).to.deep.equal(NATIVE_BID.mediaTypes);
+      expect(requests[0].data.nativeOrtbRequest).to.deep.equal(NATIVE_ORTB);
+      expect(requests[0].data.bidId).to.equal(NATIVE_BID.bidId);
+    });
+
+    it('should interpret a native response into bid.native.ortb', function () {
+      const responses = adapter.interpretResponse(nativeServerResponse(), buildNativeRequest());
+      expect(responses).to.have.length(1);
+      expect(responses[0].mediaType).to.equal(NATIVE);
+      expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
+      expect(responses[0].cpm).to.equal(1.5);
+      expect(responses[0].requestId).to.equal(NATIVE_BID.bidId);
+      expect(responses[0].ad).to.be.undefined;
+      expect(responses[0].vastXml).to.be.undefined;
+    });
+
+    it('should not send nativeOrtbRequest when mediaTypes was narrowed and native is no longer active', function () {
+      const narrowedBid = {
+        ...NATIVE_BID,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 480]] } }
+      };
+      const requests = adapter.buildRequests([narrowedBid], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].data).to.not.have.property('nativeOrtbRequest');
+      expect(requests[0].data.mediaTypes).to.not.have.property('native');
+    });
+
+    it('should skip a native result when the request has no nativeOrtbRequest (malformed mediaTypes.native)', function () {
+      const malformedBid = { ...NATIVE_BID, nativeOrtbRequest: undefined };
+      const request = buildNativeRequest(malformedBid);
+      expect(request.data).to.not.have.property('nativeOrtbRequest');
+      expect(adapter.interpretResponse(nativeServerResponse(), request)).to.be.empty;
+    });
+
+    it('should skip a native result whose ad is not valid native markup', function () {
+      expect(adapter.interpretResponse(nativeServerResponse({ ad: 'not-json' }), buildNativeRequest())).to.be.empty;
+    });
+
+    describe('in singleRequest mode', function () {
+      beforeEach(function () {
+        config.setConfig({
+          bidderTimeout: 3000,
+          twistdigital: {
+            singleRequest: true
+          }
+        });
+      });
+
+      it('should send native-only bids as individual requests and batch banner bids', function () {
+        const nativeBid2 = { ...NATIVE_BID, bidId: 'native-bid-2' };
+        const requests = adapter.buildRequests([BID, NATIVE_BID, nativeBid2], BIDDER_REQUEST);
+        const bannerRequests = requests.filter(r => Array.isArray(r.data.bids));
+        const nativeRequests = requests.filter(r => !Array.isArray(r.data.bids));
+        expect(bannerRequests).to.have.length(1);
+        expect(bannerRequests[0].data.bids).to.have.length(1);
+        expect(nativeRequests).to.have.length(2);
+        expect(nativeRequests.map(r => r.data.bidId)).to.have.members(['native-bid-1', 'native-bid-2']);
+        nativeRequests.forEach(r => expect(r.data.nativeOrtbRequest).to.deep.equal(NATIVE_ORTB));
+      });
+
+      it('should take requestId from the result bidId', function () {
+        const responses = adapter.interpretResponse(nativeServerResponse({ bidId: 'native-bid-2' }), buildNativeRequest({ ...NATIVE_BID, bidId: 'native-bid-2' }));
+        expect(responses).to.have.length(1);
+        expect(responses[0].requestId).to.equal('native-bid-2');
+        expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
+      });
+    });
+  });
+
   describe('getUserSyncs', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -666,7 +809,7 @@ describe('TwistDigitalBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.twist.win/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
@@ -674,7 +817,7 @@ describe('TwistDigitalBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.twist.win/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
@@ -686,7 +829,7 @@ describe('TwistDigitalBidAdapter', function () {
       config.setConfig({
         coppa: 1
       });
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.twist.win/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
@@ -695,18 +838,21 @@ describe('TwistDigitalBidAdapter', function () {
   });
 
   describe('interpret response', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -794,111 +940,23 @@ describe('TwistDigitalBidAdapter', function () {
     });
   });
 
-  describe('user id system', function () {
-    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
-      const id = Date.now().toString();
-      const bid = utils.deepClone(BID);
-
-      const userId = (function () {
-        switch (idSystemProvider) {
-          case 'lipb':
-            return {lipbid: id};
-          case 'id5id':
-            return {uid: id};
-          default:
-            return id;
-        }
-      })();
-
-      bid.userId = {
-        [idSystemProvider]: userId
-      };
-
-      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
-        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
-      });
-    });
-    // testing bid.userIdAsEids handling
-    it("should include user ids from bid.userIdAsEids (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{"id": "fakeidi6j6dlc6e"}]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
-    it("should include user ids from bid.userIdAsEids (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{"id": "fakeidi6j6dlc6e"}]
-        },
-        {
-          "source": "rwdcntrl.net",
-          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
-    // testing user.ext.eid handling
-    it("should include user ids from user.ext.eid (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{"id": "fakeid8888dlc6e"}]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
-    it("should include user ids from user.ext.eid (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{"id": "fakeid8888dlc6e"}]
-            },
-            {
-              "source": "adserver.org",
-              "uids": [{"id": "fakeid495ff1"}]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
-  });
-
   describe('alternate param names extractors', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({'c_id': '1'});
-      const pid = extractPID({'p_id': '1'});
-      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cID': '1'});
-      const pid = extractPID({'Pid': '2'});
-      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
+      const cid = extractCID({ 'cID': '1' });
+      const pid = extractPID({ 'Pid': '2' });
+      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -906,6 +964,9 @@ describe('TwistDigitalBidAdapter', function () {
   });
 
   describe('deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         twistdigital: {
@@ -919,6 +980,9 @@ describe('TwistDigitalBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         twistdigital: {
@@ -933,7 +997,7 @@ describe('TwistDigitalBidAdapter', function () {
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -949,11 +1013,14 @@ describe('TwistDigitalBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
   describe('storage utils', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         twistdigital: {
@@ -971,7 +1038,7 @@ describe('TwistDigitalBidAdapter', function () {
         now
       });
       setStorageItem(storage, 'myKey', 2020);
-      const {value, created} = getStorageItem(storage, 'myKey');
+      const { value, created } = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -980,15 +1047,15 @@ describe('TwistDigitalBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 
@@ -1001,14 +1068,10 @@ describe('TwistDigitalBidAdapter', function () {
   });
 
   describe('validate onBidWon', function () {
-    beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
+    after(function () {
+      config.resetConfig();
     });
-    afterEach(function () {
-      utils.triggerPixel.restore();
-    });
-
-    it('should call triggerPixel if nurl exists', function () {
+    it('should send keepalive ajax GET if nurl exists', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -1029,15 +1092,16 @@ describe('TwistDigitalBidAdapter', function () {
         ttl: 30,
         width: 300
       };
+      const expectedUrl = 'https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered';
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.true;
-
-      const url = utils.triggerPixel.args[0];
-
-      expect(url[0]).to.be.equal('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+      const matching = server.requests.filter((req) => req.url === expectedUrl);
+      expect(matching.length).to.equal(1);
+      expect(matching[0].method).to.equal('GET');
+      expect(matching[0].fetch.request.keepalive).to.be.true;
     });
 
-    it('should not call triggerPixel if nurl does not exist', function () {
+    it('should not send ping if nurl does not exist', function () {
+      const beforeCount = server.requests.length;
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -1058,7 +1122,7 @@ describe('TwistDigitalBidAdapter', function () {
         width: 300
       };
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.called).to.be.false;
+      expect(server.requests.length).to.equal(beforeCount);
     });
   });
 });

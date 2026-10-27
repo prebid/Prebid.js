@@ -1,8 +1,8 @@
-import {logError, logMessage, logWarn, deepSetValue} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {config} from '../src/config.js';
+import { logError, logMessage, logWarn, deepSetValue } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'luponmedia';
 const GVLID = 1132;
@@ -16,8 +16,8 @@ const buildServerUrl = (keyId) => {
     host = match[1];
   }
 
-  return `https://${host}.adxpremium.services/openrtb2/auction`
-}
+  return `https://${host}.adxpremium.services/openrtb2/auction`;
+};
 
 function hasRtd() {
   const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
@@ -39,7 +39,7 @@ export const converter = ortbConverter({
     const hasRtdEnabled = hasRtd();
 
     if (!hasRtdEnabled) {
-      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.')
+      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.');
     }
 
     imp.ext.luponmedia = imp.ext.luponmedia || {};
@@ -102,7 +102,7 @@ export const spec = {
     };
   },
   interpretResponse: (response, request) => {
-    return converter.fromORTB({response: response.body, request: request.data}).bids;
+    return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
   getUserSyncs: function (syncOptions, responses) {
     const allUserSyncs = [];

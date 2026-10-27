@@ -1,8 +1,8 @@
-import {on as onEvent, off as offEvent} from '../../src/events.js';
+import { on as onEvent, off as offEvent } from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { config } from '../../src/config.js';
-import {deepSetValue} from '../../src/utils.js';
-import {startAuction} from '../../src/prebid.js';
+import { deepSetValue } from '../../src/utils.js';
+import { startAuction } from '../../src/prebid.js';
 export const CONFIG_NS = 'previousAuctionInfo';
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
@@ -19,7 +19,7 @@ export function resetPreviousAuctionInfo() {
 }
 
 function initPreviousAuctionInfo() {
-  config.getConfig('previousAuctionInfo', ({[CONFIG_NS]: config = {}}) => {
+  config.getConfig('previousAuctionInfo', ({ [CONFIG_NS]: config = {} }) => {
     if (!config?.enabled) {
       resetPreviousAuctionInfo();
       return;
@@ -46,10 +46,10 @@ const deinitHandlers = () => {
   if (handlersAttached) {
     offEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
     offEvent(EVENTS.BID_WON, onBidWonHandler);
-    startAuction.getHooks({hook: startAuctionHook}).remove();
+    startAuction.getHooks({ hook: startAuctionHook }).remove();
     handlersAttached = false;
   }
-}
+};
 
 export const onAuctionEndHandler = (auctionDetails) => {
   try {
@@ -95,7 +95,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
               rejectionReason: rejectedBidsMap[bid.bidId]?.rejectionReason || null,
               timestamp: auctionDetails.timestamp,
               transactionId: bid.transactionId, // this field gets removed before injecting previous auction info into the bid stream
-            }
+            };
 
             if (auctionState[bidderRequest.bidderCode].length >= maxQueueLength) {
               auctionState[bidderRequest.bidderCode].shift();
@@ -107,7 +107,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
       });
     }
   } catch (error) {}
-}
+};
 
 export const onBidWonHandler = (winningBid) => {
   const winningTid = winningBid.transactionId;
@@ -124,10 +124,10 @@ export function startAuctionHook(next, req) {
   bidders
     .filter(bidder => auctionState[bidder]?.length)
     .forEach(bidder => {
-      auctionState[bidder].forEach(payload => { delete payload.transactionId });
+      auctionState[bidder].forEach(payload => { delete payload.transactionId; });
       deepSetValue(req.ortb2Fragments, `bidder.${bidder}.ext.prebid.previousauctioninfo`, auctionState[bidder]);
       delete auctionState[bidder];
-    })
+    });
   next.call(this, req);
 }
 

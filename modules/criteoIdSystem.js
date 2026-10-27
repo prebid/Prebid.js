@@ -17,9 +17,14 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./criteoIdSystem.d.ts').CriteoIdSystemModuleName} CriteoIdSystemModuleName
  */
 
 const gvlid = 91;
+/**
+ * @typedef CriteoIdSystemModuleName
+ */
 const bidderCode = 'criteo';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: bidderCode });
 
@@ -34,8 +39,36 @@ const STORAGE_TYPE_COOKIES = 'cookie';
 const pastDateString = new Date(0).toString();
 const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
 
+function normalizeBidId(value) {
+  let bidId = value;
+  let previousBidId;
+
+  do {
+    previousBidId = bidId;
+
+    if (bidId && typeof bidId === 'object' && typeof bidId.criteoId === 'string') {
+      bidId = bidId.criteoId;
+    } else if (typeof bidId === 'string' && bidId.trim().charAt(0) === '{') {
+      try {
+        const parsedBidId = JSON.parse(bidId);
+        if (parsedBidId && typeof parsedBidId.criteoId === 'string') {
+          bidId = parsedBidId.criteoId;
+        } else {
+          return bidId;
+        }
+      } catch (error) {
+        break;
+      }
+    } else {
+      break;
+    }
+  } while (bidId !== previousBidId);
+
+  return typeof bidId === 'string' && bidId ? bidId : undefined;
+}
+
 function extractProtocolHost(url, returnOnlyHost = false) {
-  const parsedUrl = parseUrl(url, { noDecodeWholeURL: true })
+  const parsedUrl = parseUrl(url, { noDecodeWholeURL: true });
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
@@ -95,8 +128,8 @@ function getCriteoDataFromStorage(submoduleConfig) {
   return {
     bundle: getFromStorage(submoduleConfig, bundleStorageKey),
     dnaBundle: getFromStorage(submoduleConfig, dnaBundleStorageKey),
-    bidId: getFromStorage(submoduleConfig, bididStorageKey),
-  }
+    bidId: normalizeBidId(getFromStorage(submoduleConfig, bididStorageKey)),
+  };
 }
 
 function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
@@ -114,7 +147,7 @@ function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWri
     url = url + `&us_privacy=${encodeURIComponent(usPrivacyString)}`;
   }
 
-  const gdprConsent = gdprDataHandler.getConsentData()
+  const gdprConsent = gdprDataHandler.getConsentData();
   if (gdprConsent) {
     url = url + `${gdprConsent.consentString ? '&gdprString=' + encodeURIComponent(gdprConsent.consentString) : ''}`;
     url = url + `&gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`;
@@ -189,8 +222,7 @@ function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
 
       if (jsonResponse.bidId) {
         saveOnStorage(submoduleConfig, bididStorageKey, jsonResponse.bidId, domain);
-        const criteoId = { criteoId: jsonResponse.bidId };
-        callback(criteoId);
+        callback(jsonResponse.bidId);
       } else {
         deleteFromAllStorages(bididStorageKey, domain);
         callback();
@@ -205,11 +237,11 @@ function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
   ajax(url, callbacks, undefined, { method: 'GET', contentType: 'application/json', withCredentials: true });
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<CriteoIdSystemModuleName>} */
 export const criteoIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {CriteoIdSystemModuleName}
    */
   name: bidderCode,
   gvlid: gvlid,
@@ -219,13 +251,14 @@ export const criteoIdSubmodule = {
    * @returns {{criteoId: string} | undefined}
    */
   decode(bidId) {
-    return bidId;
+    const normalizedBidId = normalizeBidId(bidId);
+    return normalizedBidId ? { criteoId: normalizedBidId } : undefined;
   },
   /**
    * get the Criteo Id from local storages and initiate a new user sync
    * @function
    * @param {SubmoduleConfig} [submoduleConfig]
-   * @returns {{id: {criteoId: string} | undefined}}}
+   * @returns {{id: string | undefined, callback: function}}
    */
   getId(submoduleConfig) {
     const localData = getCriteoDataFromStorage(submoduleConfig);
@@ -233,9 +266,9 @@ export const criteoIdSubmodule = {
     const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback);
 
     return {
-      id: localData.bidId ? { criteoId: localData.bidId } : undefined,
+      id: localData.bidId,
       callback: result
-    }
+    };
   },
   eids: {
     'criteoId': {

@@ -81,7 +81,7 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
 
     var gdprParams = '';
     if (gdprConsent) {
@@ -104,8 +104,8 @@ export const spec = {
 };
 
 function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
-  let adW = 0;
-  let adH = 0;
+  let adW;
+  let adH;
   const adSizes = Array.isArray(validBidRequests[0].params.sizes) ? validBidRequests[0].params.sizes : validBidRequests[0].sizes;
   const sizeArrayLength = adSizes.length;
   if (sizeArrayLength === 2 && typeof adSizes[0] === 'number' && typeof adSizes[1] === 'number') {

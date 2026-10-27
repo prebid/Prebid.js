@@ -1,16 +1,16 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import {
+  adlaneSubmodule,
   getAgeVerification,
   getAgeVerificationByLocalStorage,
-  setAgeVerificationConfig,
   isAdlCmpAvailable,
-  adlaneSubmodule
+  setAgeVerificationConfig
 } from '../../../modules/adlaneRtdProvider.js';
 import * as utils from 'src/utils.js';
 import * as storageManager from 'src/storageManager.js';
 import { config } from 'src/config.js';
-import {init} from 'modules/rtdModule'
+import { init } from 'modules/rtdModule/index.js';
 
 describe('adlane Module', () => {
   let sandbox;
@@ -131,12 +131,12 @@ describe('adlane Module', () => {
         status: 'accepted',
         id: '123456789123456789',
         decisionDate: '2011-10-05T14:48:00.000Z'
-      }
+      };
       const resultAgeVerification = {
         id: '123456789123456789',
         status: 'accepted',
         decisionDate: '2011-10-05T14:48:00.000Z'
-      }
+      };
       const win = {
         AdlCmp: {
           getAgeVerification: () => mockAgeVerification
@@ -160,7 +160,8 @@ describe('adlane Module', () => {
             decisionDate: '2011-10-05T14:48:00.000Z'
           })
       };
-      const cleanStub = sandbox.stub(utils, 'cleanObj').callsFake((o) => o);
+
+      sandbox.stub(utils, 'cleanObj').callsFake((o) => o);
       const logInfoStub = sandbox.stub(utils, 'logInfo');
       const result = getAgeVerification(win, storage);
 
@@ -196,31 +197,33 @@ describe('adlane Module', () => {
 
   describe('adlaneSubmodule', () => {
     it('should init with AdlCmp present', () => {
-      const winStub = sandbox.stub(utils, 'getWindowTop').returns({
-        AdlCmp: { getAgeVerification: () => ({ status: 'accepted' }) }
+      sandbox.stub(utils, 'getWindowTop').returns({
+        AdlCmp: {
+          getAgeVerification: () => ({ status: 'accepted' })
+        }
       });
 
       expect(adlaneSubmodule.init()).to.be.true;
     });
 
     it('should init with localStorage fallback', () => {
-      const winStub = sandbox.stub(utils, 'getWindowTop').returns({});
       const storage = {
         hasLocalStorage: () => true,
         getDataFromLocalStorage: () => JSON.stringify({ status: 'accepted' })
       };
       sandbox.stub(storageManager, 'getStorageManager').returns(storage);
+      sandbox.stub(utils, 'getWindowTop').returns({});
 
       expect(adlaneSubmodule.init()).to.be.true;
     });
 
     it('should log warn if init fails', () => {
-      const winStub = sandbox.stub(utils, 'getWindowTop').returns({});
       const storage = {
         hasLocalStorage: () => false,
         getDataFromLocalStorage: () => null
       };
       sandbox.stub(storageManager, 'getStorageManager').returns(storage);
+      sandbox.stub(utils, 'getWindowTop').returns({});
       const logStub = sandbox.stub(utils, 'logWarn');
 
       expect(adlaneSubmodule.init()).to.be.false;
@@ -229,12 +232,13 @@ describe('adlane Module', () => {
 
     it('should call setAgeVerificationConfig in getBidRequestData if valid', (done) => {
       const ageVerification = { id: '123456789123456789', status: 'accepted', decisionDate: '2011-10-05T14:48:00.000Z' };
-      const cleanStub = sandbox.stub(utils, 'cleanObj').returns(ageVerification);
+
       sandbox.stub(utils, 'getWindowTop').returns({
         AdlCmp: {
           getAgeVerification: () => ageVerification
         }
       });
+      sandbox.stub(utils, 'cleanObj').callsFake((o) => o);
       const setStub = sandbox.stub(utils, 'mergeDeep');
       const reqBidsConfigObj = { ortb2Fragments: { global: {} } };
 

@@ -9,8 +9,8 @@ const DEFAULT_CURRENCY = 'USD';
 const params = {
   region: "{{region}}",
   partnerId: "{{partnerId}}"
-}
-const BASE_ENDPOINT_URL = `https://${params.region}.clydo.io/${params.partnerId}`
+};
+const BASE_ENDPOINT_URL = `https://${params.region}.clydo.io/${params.partnerId}`;
 
 const converter = ortbConverter({
   context: {
@@ -19,7 +19,7 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     context.mediaType = deepAccess(bid, 'ext.mediaType');
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   }
 });
 
@@ -35,7 +35,7 @@ export const spec = {
     return allowedRegions.includes(region);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const data = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     const { partnerId, region } = validBidRequests[0].params;
 
     if (Array.isArray(data.imp)) {
@@ -47,7 +47,7 @@ export const spec = {
         const mediaType = imp.banner ? 'banner' : (imp.video ? 'video' : (imp.native ? 'native' : '*'));
         let floor = deepAccess(srcBid, 'floor');
         if (!floor && isFn(srcBid.getFloor)) {
-          const floorInfo = srcBid.getFloor({currency: DEFAULT_CURRENCY, mediaType, size: '*'});
+          const floorInfo = srcBid.getFloor({ currency: DEFAULT_CURRENCY, mediaType, size: '*' });
           if (floorInfo && typeof floorInfo.floor === 'number') {
             floor = floorInfo.floor;
           }
@@ -68,7 +68,7 @@ export const spec = {
       method: METHOD,
       url: ENDPOINT_URL,
       data
-    }]
+    }];
   },
   interpretResponse: function(serverResponse, request) {
     let bids = [];
@@ -84,7 +84,7 @@ export const spec = {
                   try {
                     const parsed = JSON.parse(b.adm);
                     if (parsed && parsed.native && Array.isArray(parsed.native.assets)) {
-                      return {...b, adm: JSON.stringify(parsed.native)};
+                      return { ...b, adm: JSON.stringify(parsed.native) };
                     }
                   } catch (e) {}
                 }
@@ -93,9 +93,9 @@ export const spec = {
             }))
           }
         : body;
-      bids = converter.fromORTB({response: normalized, request: request.data}).bids;
+      bids = converter.fromORTB({ response: normalized, request: request.data }).bids;
     }
     return bids;
   },
-}
+};
 registerBidder(spec);

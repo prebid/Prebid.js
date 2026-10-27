@@ -7,10 +7,10 @@ import {
   deepSetValue,
   mergeDeep
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -45,7 +45,7 @@ const converter = ortbConverter({
         prebidver: '$prebid.version$',
         adapterver: '1.0.0',
       }
-    })
+    });
 
     // Attaching GDPR Consent Params
     if (bidderRequest.gdprConsent) {
@@ -62,7 +62,7 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     let resMediaType;
-    const {bidRequest} = context;
+    const { bidRequest } = context;
 
     if (bid.adm?.trim().startsWith('<VAST')) {
       resMediaType = VIDEO;
@@ -114,19 +114,19 @@ export const spec = {
       contextMediaType = VIDEO;
     }
 
-    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: {contextMediaType} });
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: { contextMediaType } });
 
     let publisherId = validBidRequests[0].params.publisherId;
     const placementId = validBidRequests[0].params.placementId;
 
     if (validBidRequests[0].params.e2etest) {
       logMessage('dxkulture: E2E test mode enabled');
-      publisherId = 'e2etest'
+      publisherId = 'e2etest';
     }
     let baseEndpoint = spec.ENDPOINT + '?pid=' + publisherId;
 
     if (placementId) {
-      baseEndpoint += '&placementId=' + placementId
+      baseEndpoint += '&placementId=' + placementId;
     }
 
     return {
@@ -137,7 +137,7 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = converter.fromORTB({response: serverResponse.body, request: bidRequest.data}).bids;
+    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
     return bids;
   },
 
@@ -171,7 +171,7 @@ export const spec = {
             if (uspConsent) {
               queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
             }
-            syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
+            syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`;
           }
 
           syncs.push({
@@ -203,7 +203,7 @@ function outstreamRenderer(bid) {
     autoPlay: true,
     preload: true,
     mute: false
-  }
+  };
 
   const renderer = Renderer.install({
     id: bid.adId,

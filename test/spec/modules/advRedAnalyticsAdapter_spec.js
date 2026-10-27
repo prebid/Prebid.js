@@ -1,7 +1,7 @@
 import advRedAnalytics from 'modules/advRedAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
 
@@ -97,7 +97,7 @@ describe('AdvRed Analytics Adapter', function () {
 
   describe('pageUrl detection', function () {
     afterEach(function () {
-      advRedAnalytics.disableAnalytics()
+      advRedAnalytics.disableAnalytics();
     });
     it('check pageUrl property', function () {
       advRedAnalytics.enableAnalytics({
@@ -106,6 +106,8 @@ describe('AdvRed Analytics Adapter', function () {
           publisherId: '1234567890'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      advRedAnalytics.sendEvents();
 
       const message = JSON.parse(server.requests[0].requestBody);
       expect(message.pageUrl).to.equal(window.top.location.href);

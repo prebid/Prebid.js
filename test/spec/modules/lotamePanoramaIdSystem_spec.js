@@ -5,33 +5,37 @@ import {
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('LotameId', function() {
-  let logErrorStub;
+  let sandbox;
+
   let getCookieStub;
   let setCookieStub;
   let getLocalStorageStub;
   let setLocalStorageStub;
   let removeFromLocalStorageStub;
-  let timeStampStub;
+
   let requestHost;
 
   const nowTimestamp = new Date().getTime();
   beforeEach(function () {
-    logErrorStub = sinon.stub(utils, 'logError');
-    getCookieStub = sinon.stub(storage, 'getCookie');
-    setCookieStub = sinon.stub(storage, 'setCookie');
-    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-    setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-    removeFromLocalStorageStub = sinon.stub(
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'logError');
+    getCookieStub = sandbox.stub(storage, 'getCookie');
+    setCookieStub = sandbox.stub(storage, 'setCookie');
+    getLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
+    setLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage');
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+    removeFromLocalStorageStub = sandbox.stub(
       storage,
       'removeDataFromLocalStorage'
     );
-    timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
+    sandbox.stub(utils, 'timestamp').returns(nowTimestamp);
     if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
       requestHost = 'https://c.ltmsphrcl.net/id';
     } else {
@@ -40,13 +44,7 @@ describe('LotameId', function() {
   });
 
   afterEach(function () {
-    logErrorStub.restore();
-    getCookieStub.restore();
-    setCookieStub.restore();
-    getLocalStorageStub.restore();
-    setLocalStorageStub.restore();
-    removeFromLocalStorageStub.restore();
-    timeStampStub.restore();
+    sandbox.restore();
   });
 
   describe('caching initial data received from the remote server', function () {
@@ -360,7 +358,7 @@ describe('LotameId', function() {
     beforeEach(function() {
       getCookieStub.withArgs('panoramaId').returns(null);
       getLocalStorageStub.withArgs('panoramaId').returns(null);
-    })
+    });
     describe('and it is too early to try again', function () {
       let submoduleCallback;
 
@@ -847,5 +845,5 @@ describe('LotameId', function() {
         uids: [{ id: 'some-random-id-value', atype: 1 }],
       });
     });
-  })
+  });
 });

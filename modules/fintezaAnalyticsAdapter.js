@@ -2,12 +2,12 @@ import { parseUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { EVENTS } from '../src/constants.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE_CODE = 'finteza';
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 const ANALYTICS_TYPE = 'endpoint';
 const FINTEZA_HOST = 'https://content.mql5.com/tr';
@@ -27,7 +27,7 @@ const UNIQ_ID_KEY = '_fz_uniq';
 function getPageInfo() {
   const pageInfo = {
     domain: window.location.hostname,
-  }
+  };
 
   if (document.referrer) {
     pageInfo.referrerDomain = parseUrl(document.referrer).hostname;
@@ -71,12 +71,12 @@ function initFirstVisit() {
 
   try {
     // TODO: commented out because of rule violations
-    cookies = {} // parseCookies(document.cookie);
+    cookies = {}; // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
 
-  visitDate = cookies[ FIRST_VISIT_DATE ];
+  visitDate = cookies[FIRST_VISIT_DATE];
 
   if (!visitDate) {
     now = new Date();
@@ -136,7 +136,7 @@ function parseCookies(cookie) {
 
 function getRandAsStr(digits) {
   let str = '';
-  let rand = 0;
+  let rand;
   let i;
 
   digits = digits || 4;
@@ -168,7 +168,7 @@ function initSession() {
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_DURATION);
   const timestamp = Math.floor(now.getTime() / 1000);
-  let begin = 0;
+  let begin;
   let cookies;
   let sessionId;
   let sessionDuration;
@@ -176,12 +176,12 @@ function initSession() {
 
   try {
     // TODO: commented out because of rule violations
-    cookies = {} // parseCookies(document.cookie);
+    cookies = {}; // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
 
-  sessionId = cookies[ SESSION_ID ];
+  sessionId = cookies[SESSION_ID];
 
   if (!sessionId ||
       !checkSessionByExpires() ||
@@ -268,8 +268,8 @@ function getTrackRequestLastTime() {
     }
 
     // TODO: commented out because of rule violations
-    cookie = {} // parseCookies(document.cookie);
-    cookie = cookie[ TRACK_TIME_KEY ];
+    cookie = {}; // parseCookies(document.cookie);
+    cookie = cookie[TRACK_TIME_KEY];
     if (cookie) {
       return parseInt(cookie, 10);
     }
@@ -282,7 +282,7 @@ function getAntiCacheParam() {
   const date = new Date();
   const rand = (Math.random() * 99999 + 1) >>> 0;
 
-  return ([ date.getTime(), rand ].join(''));
+  return ([date.getTime(), rand].join(''));
 }
 
 function replaceBidder(str, bidder) {
@@ -328,7 +328,7 @@ function prepareBidTimeoutParams(args) {
       value: bid.timeout,
       unit: 'ms'
     };
-  })
+  });
 }
 
 function prepareTrackData(evtype, args) {
@@ -365,7 +365,7 @@ function prepareTrackData(evtype, args) {
       scr_res: fntzAnalyticsAdapter.context.screenResolution,
       fv_date: fntzAnalyticsAdapter.context.firstVisit,
       ac: getAntiCacheParam(),
-    })
+    });
 
     if (fntzAnalyticsAdapter.context.uniqId) {
       trackData.fz_uniq = fntzAnalyticsAdapter.context.uniqId;

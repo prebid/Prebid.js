@@ -1,8 +1,7 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
-import * as dnt from 'libraries/dnt/index.js';
-import { config } from 'src/config.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
+import * as adUnits from 'src/utils/adUnits';
 
 var marsAdapter = spec;
 
@@ -73,7 +72,7 @@ describe('marsmedia adapter tests', function () {
     ];
 
     sandbox = sinon.createSandbox();
-    sandbox.stub(document, 'getElementById').withArgs('Unit-Code').returns(element);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
@@ -270,14 +269,13 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.regs.ext.us_privacy).to.equal('1YYN');
     });
 
-    it('should submit coppa if set in config', function () {
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-      const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+    it('should submit coppa if set in ortb2', function () {
+      const request = marsAdapter.buildRequests(this.defaultBidRequestList, {
+        ...this.defaultBidderRequest,
+        ortb2: { regs: { coppa: 1 } }
+      });
       const requestparse = JSON.parse(request.data);
       expect(requestparse.regs.coppa).to.equal(1);
-      config.getConfig.restore();
     });
 
     it('should process floors module if available', function() {
@@ -383,7 +381,7 @@ describe('marsmedia adapter tests', function () {
             'zoneId': 9999
           },
           'mediaTypes': {
-            'banner': {'sizes': [['400', '500'], ['4n0', '5g0']]}
+            'banner': { 'sizes': [['400', '500'], ['4n0', '5g0']] }
           },
           'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
@@ -399,15 +397,10 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
     });
 
-    it('dnt is correctly set to 1', function () {
-      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
-
+    it('dnt is always 0', function () {
       var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
-
-      dntStub.restore();
-
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.device.dnt).to.equal(1);
+      expect(openrtbRequest.device.dnt).to.equal(0);
     });
 
     it('supports string video sizes', function () {
@@ -683,7 +676,7 @@ describe('marsmedia adapter tests', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });
@@ -700,7 +693,7 @@ describe('marsmedia adapter tests', function () {
     });
     it('should return nothing', function () {
       var response = spec.onTimeout({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });
@@ -717,7 +710,7 @@ describe('marsmedia adapter tests', function () {
     });
     it('should return nothing', function () {
       var response = spec.onSetTargeting({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });

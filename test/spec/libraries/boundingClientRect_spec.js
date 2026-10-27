@@ -1,13 +1,14 @@
 import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
-import { startAuction } from '../../../src/prebid.js';
+import { endLayoutEpoch } from '../../../src/utils/layoutEpoch.js';
 
 describe('getBoundingClientRect', () => {
   let element, getBoundingClientRectSpy;
 
   beforeEach(() => {
+    endLayoutEpoch();
     element = document.createElement('div');
     getBoundingClientRectSpy = sinon.spy(element, 'getBoundingClientRect');
-  })
+  });
 
   afterEach(() => {
     getBoundingClientRectSpy.restore();
@@ -24,30 +25,22 @@ describe('getBoundingClientRect', () => {
     expect(getBoundingClientRectSpy.callCount).to.equal(1);
   });
 
-  it('should fire getBoundingClientRect on element again if new auction was started', (done) => {
-    const onAuctionDone = function() {
-      getBoundingClientRect(element);
-      expect(getBoundingClientRectSpy.callCount).to.equal(2);
-      done();
-    }
-
-    const mockAuctionData = {
-      bidsBackHandler: onAuctionDone,
-      ortb2Fragments: {},
-      timeout: 3000,
-      adUnitCodes: [],
-      adUnits: [],
-      ttlBuffer: 1000,
-      auctionId: '909090',
-      defer: {resolve: () => {}}
-    };
-
+  it('should fire getBoundingClientRect on element again once the layout epoch has ended', () => {
     getBoundingClientRect(element);
-    startAuction(mockAuctionData);
+    endLayoutEpoch();
+    getBoundingClientRect(element);
+    expect(getBoundingClientRectSpy.callCount).to.equal(2);
+  });
+
+  it('should fire getBoundingClientRect on element again once the task that measured it has ended', async () => {
+    getBoundingClientRect(element);
+    await new Promise(resolve => setTimeout(resolve));
+    getBoundingClientRect(element);
+    expect(getBoundingClientRectSpy.callCount).to.equal(2);
   });
 
   it('should return same value for multiple calls', () => {
-    const expectedWidth = 200
+    const expectedWidth = 200;
     const expectedHeight = 300;
     element.style.width = expectedWidth + 'px';
     element.style.height = expectedHeight + 'px';

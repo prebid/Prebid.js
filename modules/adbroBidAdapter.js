@@ -2,6 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { isArray, isInteger, triggerPixel } from '../src/utils.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 
 const BIDDER_CODE = 'adbro';
 const GVLID = 1316;
@@ -27,6 +28,7 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
 
     request.device.js = 1;
+    request.device.connectiontype ||= getConnectionType();
 
     return request;
   },

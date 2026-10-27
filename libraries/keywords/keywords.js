@@ -1,5 +1,5 @@
-import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
-import {deepAccess} from '../../src/utils.js';
+import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
+import { deepAccess } from '../../src/utils.js';
 
 const ORTB_KEYWORDS_PATHS = ['user.keywords'].concat(
   CLIENT_SECTIONS.flatMap((prefix) => ['keywords', 'content.keywords'].map(suffix => `${prefix}.${suffix}`))
@@ -27,5 +27,5 @@ export function getAllOrtbKeywords(ortb2, ...extraCommaSeparatedKeywords) {
   return mergeKeywords(
     ...ORTB_KEYWORDS_PATHS.map(path => deepAccess(ortb2, path)),
     ...extraCommaSeparatedKeywords
-  )
+  );
 }

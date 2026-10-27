@@ -1,11 +1,8 @@
 import { spec } from 'modules/open8BidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
 
 describe('Open8Adapter', function() {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function() {
     const bid = {
       'bidder': 'open8',
@@ -53,7 +50,7 @@ describe('Open8Adapter', function() {
     });
   });
   describe('interpretResponse', function() {
-    const adomin = ['example.com']
+    const adomin = ['example.com'];
     const bannerResponse = {
       slotKey: 'slotkey1234',
       userId: 'userid1234',

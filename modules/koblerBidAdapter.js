@@ -7,9 +7,9 @@ import {
   replaceAuctionPrice,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const additionalData = new WeakMap();
@@ -25,6 +25,7 @@ export function getAdditionalData(obj, key) {
 }
 
 const BIDDER_CODE = 'kobler';
+const ACP_ID = 2575; // Google Additional Consent provider ID
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
 const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_call';
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
@@ -55,7 +56,7 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 
 export const interpretResponse = function (serverResponse, request) {
   const res = serverResponse.body;
-  const bids = []
+  const bids = [];
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
@@ -75,10 +76,10 @@ export const interpretResponse = function (serverResponse, request) {
           meta: {
             advertiserDomains: b.adomain
           }
-        }
+        };
         setAdditionalData(bid, 'adServerCurrency', getCurrencyFromBidderRequest(request.bidderRequest));
         bids.push(bid);
-      })
+      });
     });
   }
 
@@ -154,7 +155,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   let purpose2Given;
   let purpose3Given;
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.vendorData) {
-    const vendorData = bidderRequest.gdprConsent.vendorData
+    const vendorData = bidderRequest.gdprConsent.vendorData;
     const purposeData = vendorData.purpose;
     const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
     const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;
@@ -289,6 +290,7 @@ function buildPmpObject(validBidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

@@ -1,7 +1,7 @@
 // import or require modules necessary for the test, e.g.:
 
-import {expect} from 'chai';
-import {spec, _checkVideoPlacement, _checkMediaType, _parseAdSlot} from 'modules/pwbidBidAdapter.js'; // _ functions exported only for testing so maintaining the JS convention of _ to indicate the intent
+import { expect } from 'chai';
+import { spec, _checkVideoPlacement, _checkMediaType, _parseAdSlot } from 'modules/pwbidBidAdapter.js'; // _ functions exported only for testing so maintaining the JS convention of _ to indicate the intent
 import * as utils from 'src/utils.js';
 
 const sampleRequestBanner = {
@@ -221,7 +221,7 @@ const sampleValidBidRequests = [
     'bidderRequestsCount': 1,
     'bidderWinsCount': 0
   }
-]
+];
 
 const sampleBidderBannerRequest = {
   'bidder': 'pubwise',
@@ -495,7 +495,7 @@ describe('PubWiseAdapter', function () {
       // endpointBidRequest.forEach((bidRequest) => {
       //   bidRequest.params.endpoint_url = newEndpoint;
       // });
-      const result = spec.buildRequests(endpointBidRequest, {auctionId: 'placeholder'});
+      const result = spec.buildRequests(endpointBidRequest, { auctionId: 'placeholder' });
       expect(result.url).to.equal(referenceEndpoint);
     });
 
@@ -505,7 +505,7 @@ describe('PubWiseAdapter', function () {
       endpointBidRequest.forEach((bidRequest) => {
         bidRequest.params.endpoint_url = newEndpoint;
       });
-      const result = spec.buildRequests(endpointBidRequest, {auctionId: 'placeholder'});
+      const result = spec.buildRequests(endpointBidRequest, { auctionId: 'placeholder' });
       expect(result.url).to.equal(newEndpoint);
     });
   });
@@ -560,7 +560,7 @@ describe('PubWiseAdapter', function () {
   describe('Handling Request Construction', function () {
     it('bid requests are not mutable', function() {
       const sourceBidRequest = utils.deepClone(sampleValidBidRequests);
-      spec.buildRequests(sampleValidBidRequests, {auctionId: 'placeholder'});
+      spec.buildRequests(sampleValidBidRequests, { auctionId: 'placeholder' });
       expect(sampleValidBidRequests).to.deep.equal(sourceBidRequest, 'Should be unedited as they are used elsewhere');
     });
     it('should handle complex bidRequest', function() {
@@ -578,23 +578,23 @@ describe('PubWiseAdapter', function () {
   describe('Identifies Media Types', function () {
     it('identifies native adm type', function() {
       const adm = '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}';
-      const newBid = {mediaType: 'unknown'};
-      _checkMediaType({adm}, newBid);
+      const newBid = { mediaType: 'unknown' };
+      _checkMediaType({ adm }, newBid);
       expect(newBid.mediaType).to.equal('native', adm + ' Is a Native adm');
     });
 
     it('identifies banner adm type', function() {
       let adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵  <h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
-      let newBid = {mediaType: 'unknown'};
-      _checkMediaType({adm}, newBid);
+      let newBid = { mediaType: 'unknown' };
+      _checkMediaType({ adm }, newBid);
       expect(newBid.mediaType).to.equal('banner', adm + ' Is a Banner adm');
     });
   });
 
   describe('Properly Parses AdSlot Data', function () {
     it('parses banner', function() {
-      const testBid = utils.deepClone(sampleValidBannerBidRequest)
-      _parseAdSlot(testBid)
+      const testBid = utils.deepClone(sampleValidBannerBidRequest);
+      _parseAdSlot(testBid);
       expect(testBid).to.deep.equal(sampleBidderBannerRequest);
     });
   });
@@ -602,7 +602,7 @@ describe('PubWiseAdapter', function () {
   describe('Properly Handles Response', function () {
     it('handles response with muiltiple responses', function() {
       // the request when it comes back is on the data object
-      const pbResponse = spec.interpretResponse(sampleRTBResponse, {'data': sampleRequest})
+      const pbResponse = spec.interpretResponse(sampleRTBResponse, { 'data': sampleRequest });
       expect(pbResponse).to.deep.equal(samplePBBidObjects);
     });
   });
@@ -812,11 +812,6 @@ describe('PubWiseAdapter', function () {
         }
       };
 
-      const outstreamBidRequest =
-      [
-        validOutstreamRequest
-      ];
-
       const validInstreamRequest = {
         code: 'video1',
         mediaTypes: {
@@ -842,11 +837,6 @@ describe('PubWiseAdapter', function () {
         }
       };
 
-      const instreamBidRequest =
-      [
-        validInstreamRequest
-      ];
-
       const outstreamRequest = spec.isBidRequestValid(validOutstreamRequest);
       expect(outstreamRequest).to.equal(false);
 
@@ -869,7 +859,7 @@ describe('PubWiseAdapter', function () {
         skipmin: 10,
         minduration: 10,
         mimes: ['video/mp4', 'video/x-flv'],
-      }
+      };
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
         sandbox = sinon.createSandbox();
@@ -879,18 +869,18 @@ describe('PubWiseAdapter', function () {
       afterEach(() => {
         utilsMock.restore();
         sandbox.restore();
-      })
+      });
 
       it('should log Video.Placement param missing', function() {
         _checkVideoPlacement(videoData, adUnit);
         // when failing this gives an odd message about "AssertError: expected logWarn to be called with arguments" it means the specific message expected
         sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
-      })
+      });
       it('should not log Video.Placement param missing', function() {
         videoData['placement'] = 1;
         _checkVideoPlacement(videoData, adUnit);
         sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
-      })
+      });
     });
     // end video testing
   });

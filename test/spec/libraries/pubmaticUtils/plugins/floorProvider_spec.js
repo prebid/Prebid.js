@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import * as floorProvider from '../../../../../libraries/pubmaticUtils/plugins/floorProvider.js';
 import * as priceFloors from '../../../../../modules/priceFloors.js';
 import * as pubmaticUtils from '../../../../../libraries/pubmaticUtils/pubmaticUtils.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 describe('FloorProvider', () => {
   const floorsobj = {
@@ -46,9 +46,8 @@ describe('FloorProvider', () => {
       country: "IN"
     };
 
-    let continueAuctionStub;
     before(() => {
-      continueAuctionStub = sinon.stub(priceFloors, 'continueAuction').callsFake(() => true);
+      sinon.stub(priceFloors, 'continueAuction').callsFake(() => true);
     });
 
     const result = await floorProvider.init(pluginName, configJsonManager);
@@ -82,16 +81,15 @@ describe('FloorProvider', () => {
   });
 
   it('should handle errors in continueAuction gracefully', async () => {
-    let continueAuctionStub;
     before(() => {
-      continueAuctionStub = sinon.stub(priceFloors, 'continueAuction').callsFake(() => { throw new Error('fail!'); });
+      sinon.stub(priceFloors, 'continueAuction').callsFake(() => { throw new Error('fail!'); });
     });
 
     floorProvider.init('dynamicFloors', {
       getConfigByName: () => floorsobj
     });
 
-    const req = {err: 4};
+    const req = { err: 4 };
     const result = await floorProvider.processBidRequest(req);
 
     expect(result).to.equal(req);
@@ -156,7 +154,7 @@ describe('FloorProvider', () => {
     });
 
     it('getTimeOfDay should return result from getCurrentTimeOfDay', async () => {
-      const stub = sinon.stub(pubmaticUtils, 'getCurrentTimeOfDay').returns('evening');
+      sinon.stub(pubmaticUtils, 'getCurrentTimeOfDay').returns('evening');
       expect(floorProvider.getTimeOfDay()).to.equal('evening');
     });
 
@@ -165,12 +163,12 @@ describe('FloorProvider', () => {
     });
 
     it('getBrowser should return result from getBrowser', async () => {
-      const stub = sinon.stub(pubmaticUtils, 'getBrowserType').returns('Chrome');
+      sinon.stub(pubmaticUtils, 'getBrowserType').returns('Chrome');
       expect(floorProvider.getBrowser()).to.equal('Chrome');
     });
 
     it('getUtm should return result from getUtmValue', async () => {
-      const stub = sinon.stub(pubmaticUtils, 'getUtmValue').returns('evening');
+      sinon.stub(pubmaticUtils, 'getUtmValue').returns('evening');
       expect(floorProvider.getUtm()).to.equal('evening');
     });
 
@@ -181,11 +179,11 @@ describe('FloorProvider', () => {
       expect(floorProvider.getBidder(undefined)).to.equal(undefined);
     });
     it('getDOW should return result from getDayOfWeek', async () => {
-      const stub = sinon.stub(pubmaticUtils, 'getDayOfWeek').returns('0');
+      sinon.stub(pubmaticUtils, 'getDayOfWeek').returns('0');
       expect(floorProvider.getDOW()).to.equal('0');
     });
     it('getHOD should return result from getHourOfDay', async () => {
-      const stub = sinon.stub(pubmaticUtils, 'getHourOfDay').returns('15');
+      sinon.stub(pubmaticUtils, 'getHourOfDay').returns('15');
       expect(floorProvider.getHOD()).to.equal('15');
     });
   });

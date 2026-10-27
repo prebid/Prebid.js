@@ -17,10 +17,8 @@ const RTD_CONFIG = {
       bidderCode: 'appnexus',
       enrichRequest: true
     },
-  }, ],
+  },],
 };
-
-const TIMEOUT = 10;
 
 describe('oftmedia RTD Submodule', function() {
   let sandbox;

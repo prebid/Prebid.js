@@ -1,13 +1,13 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import { deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'digitalMatter';
 const GVLID = 1345;
-const ENDPOINT_URL = 'https://adx.digitalmatter.services/'
+const ENDPOINT_URL = 'https://adx.digitalmatter.services/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,13 +24,13 @@ export const spec = {
       return false;
     }
 
-    return !!(bid.params.accountId && bid.params.siteId)
+    return !!(bid.params.accountId && bid.params.siteId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     const common = bidderRequest.ortb2 || {};
     const site = common.site;
     const tid = common?.source?.tid;
-    const {user} = common || {};
+    const { user } = common || {};
 
     if (!site.page) {
       site.page = bidderRequest.refererInfo.page;
@@ -39,11 +39,11 @@ export const spec = {
     const device = getDevice(common.device);
     const schain = getByKey(validBidRequests, 'ortb2.source.ext.schain');
     const eids = getByKey(validBidRequests, 'userIdAsEids');
-    const currency = config.getConfig('currency')
+    const currency = config.getConfig('currency');
     const cur = currency && [currency];
 
     const imp = validBidRequests.map((bid, id) => {
-      const {accountId, siteId} = bid.params;
+      const { accountId, siteId } = bid.params;
       const bannerParams = deepAccess(bid, 'mediaTypes.banner');
       const position = deepAccess(bid, 'mediaTypes.banner.pos') ?? 0;
 
@@ -110,7 +110,7 @@ export const spec = {
   },
   interpretResponse: function (serverResponse) {
     const body = serverResponse.body || serverResponse;
-    const {cur} = body;
+    const { cur } = body;
     const bids = [];
 
     if (body && body.bids && Array.isArray(body.bids)) {
@@ -134,7 +134,7 @@ export const spec = {
       });
     }
 
-    return bids
+    return bids;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (usersSynced) {
@@ -162,12 +162,12 @@ export const spec = {
 
               if (url) {
                 if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
-                  userSyncs.push({type: 'image', url: url});
+                  userSyncs.push({ type: 'image', url: url });
                 } else if (type === 'iframe' && syncOptions.iframeEnabled) {
-                  userSyncs.push({type: 'iframe', url: url});
+                  userSyncs.push({ type: 'iframe', url: url });
                 }
               }
-            })
+            });
           } catch (e) {
             //
           }
@@ -177,7 +177,7 @@ export const spec = {
 
     return userSyncs;
   }
-}
+};
 
 const usersSynced = false;
 
@@ -198,7 +198,7 @@ function getDevice(data) {
     ua: data.ua || navigator.userAgent,
     dnt: dnt,
     language: data.language || navigator.language,
-  }
+  };
 }
 
 function getByKey(collection, key) {

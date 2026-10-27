@@ -1,10 +1,10 @@
-import {deepAccess, mergeDeep} from './utils.js';
-import {getGlobal} from './prebidGlobal.js';
+import { deepAccess, mergeDeep } from './utils.js';
+import { getGlobal } from './prebidGlobal.js';
 import { JSON_MAPPING } from './constants.js';
-import type {BidderCode} from "./types/common";
-import type {BidRequest} from "./adapterManager.ts";
-import type {Bid} from "./bidfactory.ts";
-import type {StorageType} from "./storageManager.ts";
+import type { BidderCode } from "./types/common";
+import type { BidRequest } from "./adapterManager.ts";
+import type { Bid } from "./bidfactory.ts";
+import type { StorageType } from "./storageManager.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface BidderSettings<B extends BidderCode> {
@@ -40,16 +40,37 @@ export interface BidderSettings<B extends BidderCode> {
    */
   allowedAlternateBidderCodes?: ['*'] | BidderCode[];
   /**
-   * If true (the default), allow the `Sec-Browsing-Topics` header in requests to their exchange.
+   * @deprecated - see
    */
   topicsHeader?: boolean;
 }
 
 export interface BidderScopedSettings<B extends BidderCode> extends BidderSettings<B> {
   /**
+   * If true, trust the deal metadata (`bid.meta.deal`) of bids from this adapter when ranking them:
+   * their desirability starts from `meta.deal.priorityAdjustedCpm` instead of `cpm`.
+   * Read when the bidder request is made, under the adapter's own code (so it also covers bids the adapter
+   * makes under alternate bidder codes), and only here: it is not available on `standard`.
+   * Bids from Prebid Server use `s2sConfig.allowPriorityBids` instead.
+   */
+  allowPriorityBids?: boolean;
+  /**
+   * A narrower form of `allowZeroCpmBids`: if true, accept house bids from this adapter at CPM 0, without allowing its
+   * other zero-CPM bids. Requires `allowPriorityBids`; a house bid is one with a `meta.deal.priority` above the default
+   * 12 (`meta.deal.type` is not considered, since any bidder could declare a house deal). Has no effect when `allowZeroCpmBids` is set, since that already allows every zero-CPM bid.
+   * Read under the adapter's own code and not available on `standard`, like `allowPriorityBids`; unlike it, this also
+   * applies to bids from Prebid Server, as `allowZeroCpmBids` does (they still need `s2sConfig.allowPriorityBids`).
+   */
+  allowHouseBids?: boolean;
+  /**
    * Custom CPM adjustment function. Could, for example, adjust a bidder’s gross-price bid to net price.
    */
   bidCpmAdjustment?: (cpm: number, bid: Bid, bidRequest: BidRequest<B>) => number;
+  /**
+   * Optional score used when sorting bids for targeting / winners.
+   * Should return a comparable number; higher is preferred. Defaults to `cpm`.
+   */
+  bidDesirabilityAdjustment?: (cpm: number, bid: Bid, bidRequest: BidRequest<B>) => number;
   /**
    * Define which key/value pairs are sent to the ad server.
    */
@@ -71,7 +92,7 @@ export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends
    * Get setting value at `path` under the given scope, falling back to the default scope if needed.
    * If `scope` is `null`, get the setting's default value.
    */
-  get<P extends keyof SETTINGS>(scope, path: P): SETTINGS[P] {
+  get<P extends keyof SCOPED>(scope, path: P): SCOPED[P] {
     let value = this.getOwn(scope, path);
     if (typeof value === 'undefined') {
       value = this.getOwn(null, path);
@@ -84,7 +105,7 @@ export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends
    */
   getOwn<P extends keyof SCOPED>(scope, path: P): SCOPED[P] {
     scope = this.#resolveScope(scope);
-    return deepAccess(this.getSettings(), `${scope}.${path as any}`)
+    return deepAccess(this.getSettings(), `${scope}.${path as any}`);
   }
 
   /**

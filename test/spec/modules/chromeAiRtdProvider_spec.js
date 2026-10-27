@@ -1,7 +1,7 @@
 import * as chromeAiRtdProvider from 'modules/chromeAiRtdProvider.js';
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
-import * as storageManager from 'src/storageManager.js';
+
+import 'src/storageManager.js';
 
 describe('Chrome AI RTD Provider', function () {
   // Set up sandbox for all stubs
@@ -22,8 +22,6 @@ describe('Chrome AI RTD Provider', function () {
   let mockSummarizerInstance;
 
   // Mock API availability status
-  let mockLanguageDetectorAvailability;
-  let mockSummarizerAvailability;
 
   // Original globals
   let originalLanguageDetector;
@@ -80,10 +78,6 @@ describe('Chrome AI RTD Provider', function () {
       addEventListener: sandbox.stub()
     };
 
-    // Reset mock availability to default values
-    mockLanguageDetectorAvailability = 'available';
-    mockSummarizerAvailability = 'available';
-
     // Mock global Chrome AI API constructors and their methods
     // LanguageDetector
     const MockLanguageDetectorFn = function () { /* This constructor body isn't called by the module */ };
@@ -135,6 +129,71 @@ describe('Chrome AI RTD Provider', function () {
       expect(chromeAiRtdProvider.CONSTANTS.SUBMODULE_NAME).to.equal('chromeAi');
       expect(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).to.equal('chromeAi_detected_data');
       expect(chromeAiRtdProvider.CONSTANTS.MIN_TEXT_LENGTH).to.be.a('number');
+      expect(chromeAiRtdProvider.CONSTANTS.MAX_TEXT_LENGTH).to.be.a('number');
+      expect(chromeAiRtdProvider.CONSTANTS.MAX_TEXT_LENGTH).to.equal(1000);
+    });
+  });
+
+  // Test getPageText and text truncation
+  describe('getPageText (text truncation)', function () {
+    // Override document.body.textContent via Object.defineProperty so we can
+    // control the value returned to getPageText() without mutating the actual
+    // DOM (which would break the Karma test-runner UI).
+    function setBodyText(text) {
+      Object.defineProperty(document.body, 'textContent', {
+        get: () => text,
+        configurable: true
+      });
+    }
+
+    afterEach(function () {
+      // Remove the instance-level override to restore the inherited getter
+      delete document.body.textContent;
+    });
+
+    it('should return null for text shorter than MIN_TEXT_LENGTH', function () {
+      setBodyText('short');
+      const result = chromeAiRtdProvider.getPageText();
+      expect(result).to.be.null;
+      expect(logMessageStub.calledWith(sinon.match('Not enough text content'))).to.be.true;
+    });
+
+    it('should return null for empty text', function () {
+      setBodyText('');
+      const result = chromeAiRtdProvider.getPageText();
+      expect(result).to.be.null;
+    });
+
+    it('should return full text when length is between MIN and MAX', function () {
+      const text = 'A'.repeat(500);
+      setBodyText(text);
+      const result = chromeAiRtdProvider.getPageText();
+      expect(result).to.equal(text);
+      expect(result).to.have.lengthOf(500);
+    });
+
+    it('should return text at exactly MAX_TEXT_LENGTH without truncating', function () {
+      const exactText = 'B'.repeat(chromeAiRtdProvider.CONSTANTS.MAX_TEXT_LENGTH);
+      setBodyText(exactText);
+      const result = chromeAiRtdProvider.getPageText();
+      expect(result).to.equal(exactText);
+      expect(logMessageStub.calledWith(sinon.match('Truncating'))).to.be.false;
+    });
+
+    it('should truncate text exceeding MAX_TEXT_LENGTH', function () {
+      const longText = 'C'.repeat(2000);
+      setBodyText(longText);
+      const result = chromeAiRtdProvider.getPageText();
+      expect(result).to.have.lengthOf(chromeAiRtdProvider.CONSTANTS.MAX_TEXT_LENGTH);
+      expect(result).to.equal('C'.repeat(1000));
+    });
+
+    it('should log a message when truncating text', function () {
+      setBodyText('D'.repeat(2000));
+      chromeAiRtdProvider.getPageText();
+      expect(logMessageStub.calledWith(
+        sinon.match('Truncating text from 2000 to 1000')
+      )).to.be.true;
     });
   });
 

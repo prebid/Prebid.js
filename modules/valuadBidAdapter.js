@@ -9,9 +9,10 @@ import {
   getWindowTop
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { config } from '../src/config.js';
 import { getBoundingBox, percentInView } from '../libraries/percentInView/percentInView.js';
-import {isIframe} from '../libraries/omsUtils/index.js';
+import { isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'valuad';
 const GVL_ID = 1478;
@@ -37,7 +38,7 @@ const converter = ortbConverter({
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent') || {};
     const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
-    const coppa = config.getConfig('coppa') === true ? 1 : 0;
+    const coppa = (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
 
@@ -104,9 +105,9 @@ const converter = ortbConverter({
 
     if (!adSize) { adSize = [0, 0]; }
 
-    const size = {w: adSize[0], h: adSize[1]};
+    const size = { w: adSize[0], h: adSize[1] };
 
-    const element = document.getElementById(bid.adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.divId);
+    const element = getAdUnitElement(bid) || document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.divId);
     const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), size) : 0;
 
     const rect = element && getBoundingBox(element, size);
@@ -197,7 +198,7 @@ function interpretResponse(response, request) {
   }
 
   // Restore original call, remove logging and safe navigation
-  const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
+  const bidResponses = converter.fromORTB({ response: response.body, request: request.data }).bids;
 
   return bidResponses;
 }

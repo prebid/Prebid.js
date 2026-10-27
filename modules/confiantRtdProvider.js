@@ -99,7 +99,7 @@ function getEventHandlerFunction(propertyId) {
         vendor: 'confiant'
       });
     }
-  }
+  };
 }
 
 /**

@@ -1,12 +1,12 @@
 import funHooks from 'fun-hooks/no-eval/index.js';
-import {defer} from './utils/promise.js';
-import type {AnyFunction, Wraps} from "./types/functions.d.ts";
-import type {AllExceptLast, Last} from "./types/tuples.d.ts";
+import { defer } from './utils/promise.js';
+import type { AnyFunction, Wraps } from "./types/functions.d.ts";
+import type { AllExceptLast, Last } from "./types/tuples.d.ts";
 
 export type Next<W extends AnyFunction> = {
   (...args: Parameters<W>): unknown;
   bail(result: ReturnType<W>): void;
-}
+};
 
 export type HookFunction<W extends AnyFunction> = (next: Next<W>, ...args: Parameters<W>) => unknown;
 export type BeforeHookParams<TYP extends HookType, FN extends AnyFunction> =
@@ -16,7 +16,7 @@ export type BeforeHookParams<TYP extends HookType, FN extends AnyFunction> =
 
 export type HookType = 'sync' | 'async';
 
-export type BeforeHook<TYP extends HookType, FN extends AnyFunction> = HookFunction<(...args: BeforeHookParams<TYP, FN>) => ReturnType<FN>>
+export type BeforeHook<TYP extends HookType, FN extends AnyFunction> = HookFunction<(...args: BeforeHookParams<TYP, FN>) => ReturnType<FN>>;
 export type AfterHook<FN extends AnyFunction> = HookFunction<(result: ReturnType<FN>) => ReturnType<FN>>;
 
 export type Hookable<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> & {
@@ -24,7 +24,7 @@ export type Hookable<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> &
   after(afterHook: AfterHook<FN>, priority?: number): void;
   getHooks(options?: { hook?: BeforeHook<TYP, FN> | AfterHook<FN> }): { length: number, remove(): void }
   removeAll(): void;
-}
+};
 
 export interface NamedHooks {
   [name: string]: Hookable<HookType, AnyFunction>;
@@ -54,7 +54,7 @@ hook.ready = (() => {
     } finally {
       readyCtl.resolve();
     }
-  }
+  };
 })();
 
 /**
@@ -66,14 +66,14 @@ export const ready: Promise<void> = readyCtl.promise;
 export const getHook = hook.get;
 
 export function setupBeforeHookFnOnce<TYP extends HookType, FN extends AnyFunction>(baseFn: Hookable<TYP, FN>, hookFn: BeforeHook<TYP, FN>, priority = 15) {
-  const result = baseFn.getHooks({hook: hookFn});
+  const result = baseFn.getHooks({ hook: hookFn });
   if (result.length === 0) {
     baseFn.before(hookFn, priority);
   }
 }
 const submoduleInstallMap = {};
 
-export function module(name, install, {postInstallAllowed = false} = {}) {
+export function module(name, install, { postInstallAllowed = false } = {}) {
   hook('async', function (submodules) {
     submodules.forEach(args => install(...args));
     if (postInstallAllowed) submoduleInstallMap[name] = install;
@@ -99,7 +99,7 @@ export function submodule<N extends keyof Submodules>(name: N, ...args: Submodul
 export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hookable<TYP, FN>, wrapper: FN): Hookable<TYP, FN> {
   Object.defineProperties(
     wrapper,
-    Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
+    Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, { get: () => hook[m] }]))
   );
   return (wrapper as unknown) as Hookable<TYP, FN>;
 }
@@ -114,7 +114,7 @@ export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hoo
  */
 export function ignoreCallbackArg<FN extends AnyFunction>(hook: Hookable<'async', FN>): Hookable<'async', (...args: [...Parameters<FN>, () => void]) => ReturnType<FN>> {
   return wrapHook(hook, function (...args) {
-    args.push(function () {})
+    args.push(function () {});
     return hook.apply(this, args);
   } as any) as any;
 }

@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import { buildRequests, interpretResponse } from '../../../../libraries/precisoUtils/bidUtils.js';
 
-const DEFAULT_PRICE = 1
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_BANNER_WIDTH = 300
-const DEFAULT_BANNER_HEIGHT = 250
+const DEFAULT_PRICE = 1;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_BANNER_WIDTH = 300;
+const DEFAULT_BANNER_HEIGHT = 250;
 const BIDDER_CODE = 'preciso';
-const TESTDOMAIN = 'test.org'
+const TESTDOMAIN = 'test.org';
 const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`;
 
 describe('bidUtils', function () {
@@ -112,7 +112,7 @@ describe('bidUtils', function () {
             seat: BIDDER_CODE
           }
         ],
-      }
+      };
       const expectedResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
@@ -126,10 +126,10 @@ describe('bidUtils', function () {
           ttl: 300,
           meta: { advertiserDomains: [] },
         }
-      ]
-      const result = spec.interpretResponse({ body: response })
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-    })
+      ];
+      const result = spec.interpretResponse({ body: response });
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
   });
   // describe('getUserSyncs', function () {
   //   const syncUrl = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?/iframe?pbjs=1&coppa=0`;

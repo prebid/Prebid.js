@@ -1,12 +1,12 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
-import { uspDataHandler } from 'src/adapterManager.js';
+
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
-import {createEidsArray} from 'modules/userId/eids.js';
-import {config} from 'src/config.js';
-import {server} from 'test/mocks/xhr.js';
+import { attachIdSystem, init, setSubmoduleRegistry } from 'modules/userId/index.js';
+import { createEidsArray } from 'modules/userId/eids.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 import 'src/prebid.js';
 
 const configMock = {
@@ -106,26 +106,26 @@ describe('FTRACK ID System', () => {
   describe(`ftrackIdSubmodule.isThereConsent():`, () => {
     describe(`returns 'false' if:`, () => {
       it(`GDPR: if gdprApplies is truthy`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: 1}})).to.not.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: true}})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ gdpr: { gdprApplies: 1 } })).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ gdpr: { gdprApplies: true } })).to.not.be.ok;
       });
 
       it(`US_PRIVACY version 1: if 'Opt Out Sale' is 'Y'`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({usp: '1YYY'})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ usp: '1YYY' })).to.not.be.ok;
       });
     });
 
     describe(`returns 'true' if`, () => {
       it(`GDPR: if gdprApplies is undefined, false or 0`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: 0}})).to.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: false}})).to.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: null}})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ gdpr: { gdprApplies: 0 } })).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ gdpr: { gdprApplies: false } })).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ gdpr: { gdprApplies: null } })).to.be.ok;
         expect(ftrackIdSubmodule.isThereConsent({})).to.be.ok;
       });
 
       it(`US_PRIVACY version 1: if 'Opt Out Sale' is not 'Y' ('N','-')`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({usp: '1NNN'})).to.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({usp: '1---'})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ usp: '1NNN' })).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({ usp: '1---' })).to.be.ok;
       });
     });
   });
@@ -147,7 +147,7 @@ describe('FTRACK ID System', () => {
       expect(loadExternalScriptStub.args).to.deep.equal([]);
       loadExternalScriptStub.resetHistory();
 
-      ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
+      ftrackIdSubmodule.extendId(configMock, null, { cache: { id: '' } });
       expect(loadExternalScriptStub.called).to.not.be.ok;
       expect(loadExternalScriptStub.args).to.deep.equal([]);
 
@@ -176,7 +176,7 @@ describe('FTRACK ID System', () => {
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
           expect(window.D9r).to.not.have.property('HHID');
-        })
+        });
 
         it(`- any ID set to false should not be added to window.D9r`, () => {
           const configMock1 = JSON.parse(JSON.stringify(configMock));
@@ -222,7 +222,7 @@ describe('FTRACK ID System', () => {
           expect(window.D9r).to.have.property('HHID', true);
         });
       });
-    })
+    });
 
     it(`should populate localstorage and return the IDS (end-to-end test)`, () => {
       let ftrackId;
@@ -318,18 +318,18 @@ describe('FTRACK ID System', () => {
       ftrackIdSubmodule.decode('value', configMock);
 
       expect(server.requests).to.have.length(0);
-    })
+    });
   });
 
   describe(`extendId() method`, () => {
     it(`should not be making requests to retrieve a new ID, it should just be adding additional data to the id object`, () => {
-      ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
+      ftrackIdSubmodule.extendId(configMock, null, { cache: { id: '' } });
 
       expect(server.requests).to.have.length(0);
     });
 
     it(`should return cacheIdObj`, () => {
-      expect(ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}})).to.deep.equal({cache: {id: ''}});
+      expect(ftrackIdSubmodule.extendId(configMock, null, { cache: { id: '' } })).to.deep.equal({ cache: { id: '' } });
     });
   });
 
@@ -583,5 +583,5 @@ describe('FTRACK ID System', () => {
         }]
       }]);
     });
-  })
+  });
 });

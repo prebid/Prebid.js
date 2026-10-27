@@ -1,12 +1,11 @@
-import { expect } from 'chai'
-import { spec } from 'modules/rakutenBidAdapter/index.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import {config} from '../../../src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/rakutenBidAdapter/index.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from '../../../src/config.js';
 
 describe('rakutenBidAdapter', function() {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://s-bid.rmp.rakuten.com/h';
-  let sandbox;
 
   beforeEach(function() {
     config.resetConfig();
@@ -18,8 +17,8 @@ describe('rakutenBidAdapter', function() {
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
   });
 
   describe('isBidRequestValid', () => {
@@ -31,20 +30,20 @@ describe('rakutenBidAdapter', function() {
     };
 
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', () => {
       bid.params.adSpotId = '';
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', () => {
       const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', () => {
@@ -74,7 +73,7 @@ describe('rakutenBidAdapter', function() {
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.equal(ENDPOINT);
-      expect(request.method).to.equal('GET')
+      expect(request.method).to.equal('GET');
       expect(request.data.gdpr).to.equal(1);
       expect(request.data.cd).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
       expect(request.data.ccpa).to.equal('1YN-');
@@ -88,7 +87,7 @@ describe('rakutenBidAdapter', function() {
       });
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.equal('//test.rakuten.com');
-    })
+    });
   });
 
   describe('interpretResponse', () => {
@@ -140,7 +139,7 @@ describe('rakutenBidAdapter', function() {
         bidRequests.banner
       );
       expect(result2.length).to.equal(0);
-    })
+    });
   });
   describe('spec.getUserSyncs', function () {
     const syncResponse = [{
@@ -149,22 +148,17 @@ describe('rakutenBidAdapter', function() {
         sync_urls: ['https://rdn1.test/sync?uid=9876543210', 'https://rdn2.test/sync?uid=9876543210']
       }
     }];
-    const nosyncResponse = [{
-      body: {
-        request_id: 'biequa9oaph4we',
-        sync_urls: []
-      }
-    }];
-    let syncOptions
+
+    let syncOptions;
     beforeEach(function () {
       syncOptions = {
         pixelEnabled: true
-      }
+      };
     });
     it('success usersync url', function () {
       const result = [];
-      result.push({type: 'image', url: 'https://rdn1.test/sync?uid=9876543210'});
-      result.push({type: 'image', url: 'https://rdn2.test/sync?uid=9876543210'});
+      result.push({ type: 'image', url: 'https://rdn1.test/sync?uid=9876543210' });
+      result.push({ type: 'image', url: 'https://rdn2.test/sync?uid=9876543210' });
       expect(spec.getUserSyncs(syncOptions, syncResponse)).to.deep.equal(result);
     });
   });

@@ -1,4 +1,4 @@
-import {clearEvents} from '../../src/events.js';
+import { clearEvents } from '../../src/events.js';
 
 window.describe = window.context = ((orig) => {
   let level = 0;
@@ -13,12 +13,12 @@ window.describe = window.context = ((orig) => {
               clearEvents();
             });
             return result;
-          }
-        })(fn)
+          };
+        })(fn);
       }
       return orig.call(this, name, fn, ...args);
     } finally {
       level--;
     }
-  }
+  };
 })(window.describe);

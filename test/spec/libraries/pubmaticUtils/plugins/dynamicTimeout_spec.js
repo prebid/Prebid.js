@@ -267,10 +267,8 @@ describe('DynamicTimeout Plugin', () => {
   });
 
   describe('getBidderTimeout', () => {
-    let getGlobalStub;
-
     beforeEach(() => {
-      getGlobalStub = sandbox.stub(prebidGlobal, 'getGlobal').returns({
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({
         getConfig: sandbox.stub().returns(800)
       });
     });

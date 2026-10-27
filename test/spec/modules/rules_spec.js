@@ -11,22 +11,19 @@ import { config } from 'src/config.js';
 
 describe('Rules Module', function() {
   let sandbox;
-  let logWarnStub;
-  let logInfoStub;
-  let newStorageManagerStub;
 
   beforeEach(function() {
     sandbox = sinon.createSandbox();
 
-    logWarnStub = sandbox.stub(utils, 'logWarn');
-    logInfoStub = sandbox.stub(utils, 'logInfo');
+    sandbox.stub(utils, 'logWarn');
+    sandbox.stub(utils, 'logInfo');
 
     const mockStorageManager = {
       localStorageIsEnabled: sandbox.stub().returns(true),
       getDataFromLocalStorage: sandbox.stub().returns(null),
       setDataInLocalStorage: sandbox.stub()
     };
-    newStorageManagerStub = sandbox.stub(storageManager, 'newStorageManager').returns(mockStorageManager);
+    sandbox.stub(storageManager, 'newStorageManager').returns(mockStorageManager);
   });
 
   afterEach(function() {
@@ -427,16 +424,16 @@ describe('Rules Module', function() {
       const auctionId = 'test-auction-id';
       const otherAuctionId = 'other-auction-id';
       const mathRandomStub = sandbox.stub(Math, 'random').returns(0.42);
-      const auction1 = {auctionId: auctionId};
-      const auction2 = {auctionId: otherAuctionId};
+      const auction1 = { auctionId: auctionId };
+      const auction2 = { auctionId: otherAuctionId };
       const auctions = {
         [auctionId]: auction1,
         [otherAuctionId]: auction2
-      }
+      };
 
       const index = {
-        getAuction: ({auctionId}) => auctions[auctionId]
-      }
+        getAuction: ({ auctionId }) => auctions[auctionId]
+      };
 
       const result1 = rulesModule.dep.getGlobalRandom(auctionId, index);
       const result2 = rulesModule.dep.getGlobalRandom(auctionId, index);

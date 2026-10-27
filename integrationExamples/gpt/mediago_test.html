@@ -121,116 +121,6 @@
                 }]
             }
         ];
-
-        var pbjs = pbjs || {};
-        pbjs.que = pbjs.que || [];
-
-        // Store request information for debugging
-        var requestLogs = [];
-
-        // Intercept AJAX requests to view sent data
-        var originalOpen = XMLHttpRequest.prototype.open;
-        var originalSend = XMLHttpRequest.prototype.send;
-
-        XMLHttpRequest.prototype.open = function(method, url, ...args) {
-            this._url = url;
-            this._method = method;
-            return originalOpen.apply(this, [method, url, ...args]);
-        };
-
-        XMLHttpRequest.prototype.send = function(data) {
-            if (this._url && this._url.includes('mediago.io')) {
-                try {
-                    var requestData = JSON.parse(data);
-                    requestLogs.push({
-                        url: this._url,
-                        method: this._method,
-                        data: requestData,
-                        timestamp: new Date().toISOString()
-                    });
-                    console.log('Mediago Request:', requestData);
-                    
-                    // Check if IDs in imp array are unique
-                    if (requestData.imp && Array.isArray(requestData.imp)) {
-                        var ids = requestData.imp.map(imp => imp.id).filter(Boolean);
-                        var uniqueIds = [...new Set(ids)];
-                        var isUnique = ids.length === uniqueIds.length;
-                        
-                        console.log('ID Uniqueness Check:');
-                        console.log('  Total IDs:', ids.length);
-                        console.log('  Unique IDs:', uniqueIds.length);
-                        console.log('  Is Unique:', isUnique ? '✓ Yes' : '✗ No');
-                        console.log('  ID List:', ids);
-                        
-                        if (!isUnique) {
-                            console.warn('Warning: Duplicate IDs found!', ids);
-                        }
-                        
-                        updateDebugInfo(requestData, isUnique, ids, uniqueIds);
-                    }
-                } catch (e) {
-                    console.error('Failed to parse request data:', e);
-                }
-            }
-            
-            // Listen for response
-            this.addEventListener('load', function() {
-                if (this._url && this._url.includes('mediago.io')) {
-                    try {
-                        var response = JSON.parse(this.responseText);
-                        console.log('Mediago Response:', response);
-                        updateResponseInfo(response);
-                    } catch (e) {
-                        console.error('Failed to parse response data:', e);
-                    }
-                }
-            });
-            
-            return originalSend.apply(this, [data]);
-        };
-
-        function updateDebugInfo(requestData, isUnique, ids, uniqueIds) {
-            var debugDiv = document.getElementById('debug-info');
-            if (!debugDiv) return;
-            
-            var html = '<h4>Request Debug Info</h4>';
-            html += '<p><strong>Time:</strong> ' + new Date().toLocaleString() + '</p>';
-            html += '<p><strong>ID Uniqueness:</strong> <span style="color: ' + (isUnique ? 'green' : 'red') + '">' + (isUnique ? '✓ Pass' : '✗ Fail') + '</span></p>';
-            html += '<p><strong>Total IDs:</strong> ' + ids.length + '</p>';
-            html += '<p><strong>Unique IDs:</strong> ' + uniqueIds.length + '</p>';
-            html += '<p><strong>ID List:</strong></p>';
-            html += '<ul>';
-            ids.forEach((id, index) => {
-                var isDup = ids.indexOf(id) !== ids.lastIndexOf(id);
-                html += '<li style="color: ' + (isDup ? 'red' : 'black') + '">';
-                html += 'Ad Unit ' + (index + 1) + ': <code>' + id + '</code>';
-                if (isDup) html += ' <strong>(Duplicate!)</strong>';
-                html += '</li>';
-            });
-            html += '</ul>';
-            
-            html += '<p><strong>Request Data (imp section):</strong></p>';
-            html += '<pre>' + JSON.stringify(requestData.imp, null, 2) + '</pre>';
-            
-            debugDiv.innerHTML = html;
-        }
-
-        function updateResponseInfo(response) {
-            var responseDiv = document.getElementById('response-info');
-            if (!responseDiv) return;
-            
-            var html = '<h4>Response Info</h4>';
-            html += '<p><strong>Time:</strong> ' + new Date().toLocaleString() + '</p>';
-            if (response.seatbid && response.seatbid.length > 0) {
-                html += '<p><strong>Number of bids returned:</strong> ' + response.seatbid[0].bid.length + '</p>';
-                html += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
-            } else {
-                html += '<p>No valid response received</p>';
-            }
-            
-            responseDiv.innerHTML = html;
-        }
-
     </script>
 </head>
 
@@ -281,6 +171,9 @@
             
             pbjs.que.push(function() {
                 console.log('Prebid.js loaded');
+                
+                // Enable TID (Transaction ID) transmission - required since Prebid 8 for ortb2Imp.ext.tid to reach bidders
+                pbjs.setConfig({ enableTIDs: true });
                 
                 // Set pageUrl and ortb2 site configuration to simulate other site
                 // pageUrl will override Prebid's referrer detection
@@ -420,7 +313,6 @@
         function clearDebug() {
             document.getElementById('debug-info').innerHTML = '<h4>Debug info cleared</h4>';
             document.getElementById('response-info').innerHTML = '<h4>Response info cleared</h4>';
-            requestLogs = [];
             
             // Clear ad containers
             ['mediago-ad-1', 'mediago-ad-2', 'mediago-ad-3'].forEach(function(id) {

@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {isArray, logError, logInfo} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { isArray, logError, logInfo } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -106,8 +106,7 @@ export const spec = {
     }
 
     if (!isArray(serverResponse.seatbid)) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
-      logError(errorMessage += 'Malformed seatbid response');
+      logError(`in response for ${bidderRequest.bidderCode} adapter Malformed seatbid response`);
       return bids;
     }
 
@@ -138,7 +137,7 @@ export const spec = {
       url: '//rtb.gumgum.com/getuid/15801?r=https%3A%2F%2Fads.playground.xyz%2Fusersync%3Fpartner%3Dgumgum%26uid%3D'
     }];
   }
-}
+};
 
 function newBid(bid, currency) {
   const { adomain } = bid;

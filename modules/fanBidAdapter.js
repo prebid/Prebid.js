@@ -6,6 +6,7 @@ import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { Renderer } from '../src/Renderer.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'freedomadnetwork';
 const BIDDER_VERSION = '0.2.0';
@@ -19,7 +20,7 @@ const DEFAULT_ENDPOINT = NETWORK_ENDPOINTS['fan'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
   context: {
@@ -118,7 +119,7 @@ const converter = ortbConverter({
     }
 
     // Add renderer if needed for outstream video
-    if (bidResponse.mediaType === VIDEO && bid.ext.libertas.ovp) {
+    if (bidResponse.mediaType === VIDEO && bid.ext?.libertas?.ovp) {
       bidResponse.width = bid.w;
       bidResponse.height = bid.h;
       bidResponse.renderer = createRenderer(bidRequest, bid.ext.libertas.vp);
@@ -294,10 +295,11 @@ export const spec = {
       triggerPixel(bid.nurl);
     }
 
-    if (bid.meta.libertas.pxl && bid.meta.libertas.pxl.length > 0) {
-      for (var i = 0; i < bid.meta.libertas.pxl.length; i++) {
-        if (Number(bid.meta.libertas.pxl[i].type) === 0) {
-          triggerPixel(bid.meta.libertas.pxl[i].url);
+    const pxl = bid.meta?.libertas?.pxl;
+    if (pxl && pxl.length > 0) {
+      for (var i = 0; i < pxl.length; i++) {
+        if (Number(pxl[i].type) === 0) {
+          triggerPixel(pxl[i].url);
         }
       }
     }
@@ -349,8 +351,7 @@ function createRenderer(bid, videoPlayerUrl) {
 
   try {
     renderer.setRender(function (bidResponse) {
-      const divId = document.getElementById(bid.adUnitCode) ? bid.adUnitCode : getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId;
-      const adUnit = document.getElementById(divId);
+      const adUnit = getAdUnitElement(bidResponse) ?? document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId);
 
       if (!window.createOutstreamPlayer) {
         logWarn('Renderer error: outstream player is not available');

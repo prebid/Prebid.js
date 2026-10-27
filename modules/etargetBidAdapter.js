@@ -1,5 +1,5 @@
 import { deepClone, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'etarget';
@@ -17,11 +17,11 @@ const countryMap = {
   10: 'co',
   11: 'de',
   255: 'en'
-}
+};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(bid.params.refid && bid.params.country);
   },
@@ -119,7 +119,7 @@ export const spec = {
     var bidRespones = [];
     var bids = bidRequest.bids;
     var responses = serverResponse.body;
-    var data = [];
+    var data;
     for (var i = 0; i < responses.length; i++) {
       data = responses[i];
       type = data.response === 'banner' ? BANNER : VIDEO;

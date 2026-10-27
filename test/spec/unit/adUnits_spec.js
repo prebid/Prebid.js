@@ -23,7 +23,7 @@ describe('Adunit Counter', function () {
     expect(adunitCounter.getRequestsCounter(ADUNIT_ID_2)).to.be.equal(1);
   });
   it('increments and checks requests counter if adUnit has a dots in it', function () {
-    const adCode = 'adunit.1'
+    const adCode = 'adunit.1';
     adunitCounter.incrementRequestsCounter(adCode);
     expect(adunitCounter.getRequestsCounter(adCode)).to.be.equal(1);
   });
@@ -40,7 +40,7 @@ describe('Adunit Counter', function () {
     expect(adunitCounter.getBidderRequestsCounter(ADUNIT_ID_1, BIDDER_ID_1)).to.be.equal(2);
   });
   it('increments and checks bidder requests counter if adUnit has a dots in it', function () {
-    const adCode = 'adunit.1'
+    const adCode = 'adunit.1';
     adunitCounter.incrementBidderRequestsCounter(adCode, BIDDER_ID_2);
     expect(adunitCounter.getBidderRequestsCounter(adCode, BIDDER_ID_2)).to.be.equal(1);
   });
@@ -57,7 +57,7 @@ describe('Adunit Counter', function () {
     expect(adunitCounter.getBidderWinsCounter(ADUNIT_ID_1, BIDDER_ID_2)).to.be.equal(1);
   });
   it('increments and checks wins counter if adUnit has a dots in it', function () {
-    const adCode = 'adunit.1'
+    const adCode = 'adunit.1';
     adunitCounter.incrementBidderWinsCounter(adCode, BIDDER_ID_2);
     expect(adunitCounter.getBidderWinsCounter(adCode, BIDDER_ID_2)).to.be.equal(1);
   });
@@ -70,7 +70,7 @@ describe('Adunit Counter', function () {
     expect(adunitCounter.getAuctionsCounter(ADUNIT_ID_2)).to.be.equal(1);
   });
   it('increments and checks auctions counter if adUnitCode has a dots in it', function () {
-    const adUnitCode = 'adunit.1'
+    const adUnitCode = 'adunit.1';
     adunitCounter.incrementAuctionsCounter(adUnitCode);
     expect(adunitCounter.getAuctionsCounter(adUnitCode)).to.be.equal(1);
   });

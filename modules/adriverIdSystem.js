@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import { logError, isPlainObject } from '../src/utils.js'
+import { logError, isPlainObject } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -20,7 +20,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'adriverId';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /** @type {Submodule} */
 export const adriverIdSubmodule = {
@@ -36,7 +36,7 @@ export const adriverIdSubmodule = {
    * @returns {{adriverId:string}}
    */
   decode(value) {
-    return { adrcid: value }
+    return { adrcid: value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -81,10 +81,10 @@ export const adriverIdSubmodule = {
           }
         };
         const newUrl = url + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
-        ajax(newUrl, callbacks, undefined, {method: 'GET'});
+        ajax(newUrl, callbacks, undefined, { method: 'GET' });
       }
     };
-    return {callback: resp};
+    return { callback: resp };
   }
 };
 

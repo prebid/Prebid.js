@@ -1,7 +1,7 @@
-import {isEmpty, parseUrl} from '../src/utils.js';
+import { isEmpty, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -28,7 +28,7 @@ const COMPACT_DEFAULT_HEIGHT = 600;
 const STANDARD_DEFAULT_HEIGHT = 1800;
 
 let userKey = null;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export function getUserKey(options = {}) {
   if (userKey) {
@@ -91,7 +91,7 @@ const getAdTypes = (creativeType) => {
     return DTX_TYPES;
   }
   return AD_TYPES;
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -127,9 +127,9 @@ export const spec = {
         siteId: bid.params.siteId,
         adTypes: getAdTypes(bid.params.creativeType),
         count: 1,
-        ...(!isEmpty(bid.params.zoneIds) && {zoneIds: bid.params.zoneIds}),
+        ...(!isEmpty(bid.params.zoneIds) && { zoneIds: bid.params.zoneIds }),
         properties: {
-          ...(!isEmpty(contentCode) && {contentCode: contentCode.slice(0, 32)}),
+          ...(!isEmpty(contentCode) && { contentCode: contentCode.slice(0, 32) }),
         },
         options,
         prebid: {
@@ -139,7 +139,7 @@ export const spec = {
           width: bid.mediaTypes.banner.sizes[index][1],
           creativeType: validateCreativeType(bid.params.creativeType),
         }
-      }
+      };
     });
     return {
       method: 'POST',
@@ -151,7 +151,7 @@ export const spec = {
           key: userKey,
         },
       },
-    }
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -182,7 +182,7 @@ export const spec = {
           netRevenue: true,
           ttl: DEFAULT_TTL,
           ad: decision.prebid?.creative,
-        }
+        };
       });
     }
     return [];
@@ -196,5 +196,5 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses) => [],
-}
+};
 registerBidder(spec);

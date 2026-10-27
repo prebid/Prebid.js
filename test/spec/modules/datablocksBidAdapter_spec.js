@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { spec, BotClientTests } from '../../../modules/datablocksBidAdapter.js';
 
-import { getStorageManager } from '../../../src/storageManager.js';
-import {deepClone} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 
 const bid = {
   bidId: '2dd581a2b6281d',
@@ -85,7 +84,7 @@ const nativeBid = {
     host: 'v5demo.datablocks.net'
   },
   transactionId: '0a4e9788-4def-4b94-bc25-564d7cac99f6'
-}
+};
 
 const bidderRequest = {
   auctionId: '8bfef1be-d3ac-4d18-8859-754c7b4cf017',
@@ -175,7 +174,7 @@ const res_object = {
       ]
     }
   }
-}
+};
 
 const bid_request = {
   method: 'POST',
@@ -302,7 +301,7 @@ const bid_request = {
       }
     }
   }
-}
+};
 
 describe('DatablocksAdapter', function() {
   before(() => {
@@ -316,59 +315,59 @@ describe('DatablocksAdapter', function() {
 
   describe('All needed functions are available', function() {
     it(`isBidRequestValid is present and type function`, function () {
-      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function')
+      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function');
     });
 
     it(`buildRequests is present and type function`, function () {
-      expect(spec.buildRequests).to.exist.and.to.be.a('function')
+      expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
     it(`getUserSyncs is present and type function`, function () {
-      expect(spec.getUserSyncs).to.exist.and.to.be.a('function')
+      expect(spec.getUserSyncs).to.exist.and.to.be.a('function');
     });
 
     it(`onBidWon is present and type function`, function () {
-      expect(spec.onBidWon).to.exist.and.to.be.a('function')
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
     });
 
     it(`onSetTargeting is present and type function`, function () {
-      expect(spec.onSetTargeting).to.exist.and.to.be.a('function')
+      expect(spec.onSetTargeting).to.exist.and.to.be.a('function');
     });
 
     it(`interpretResponse is present and type function`, function () {
-      expect(spec.interpretResponse).to.exist.and.to.be.a('function')
+      expect(spec.interpretResponse).to.exist.and.to.be.a('function');
     });
 
     it(`store_dbid is present and type function`, function () {
-      expect(spec.store_dbid).to.exist.and.to.be.a('function')
+      expect(spec.store_dbid).to.exist.and.to.be.a('function');
     });
 
     it(`get_dbid is present and type function`, function () {
-      expect(spec.get_dbid).to.exist.and.to.be.a('function')
+      expect(spec.get_dbid).to.exist.and.to.be.a('function');
     });
 
     it(`store_syncs is present and type function`, function () {
-      expect(spec.store_syncs).to.exist.and.to.be.a('function')
+      expect(spec.store_syncs).to.exist.and.to.be.a('function');
     });
 
     it(`get_syncs is present and type function`, function () {
-      expect(spec.get_syncs).to.exist.and.to.be.a('function')
+      expect(spec.get_syncs).to.exist.and.to.be.a('function');
     });
 
     it(`queue_metric is present and type function`, function () {
-      expect(spec.queue_metric).to.exist.and.to.be.a('function')
+      expect(spec.queue_metric).to.exist.and.to.be.a('function');
     });
 
     it(`send_metrics is present and type function`, function () {
-      expect(spec.send_metrics).to.exist.and.to.be.a('function')
+      expect(spec.send_metrics).to.exist.and.to.be.a('function');
     });
 
     it(`get_client_info is present and type function`, function () {
-      expect(spec.get_client_info).to.exist.and.to.be.a('function')
+      expect(spec.get_client_info).to.exist.and.to.be.a('function');
     });
 
     it(`get_viewability is present and type function`, function () {
-      expect(spec.get_viewability).to.exist.and.to.be.a('function')
+      expect(spec.get_viewability).to.exist.and.to.be.a('function');
     });
   });
 
@@ -377,24 +376,24 @@ describe('DatablocksAdapter', function() {
       expect(spec.store_dbid('12345')).to.be.true;
       expect(spec.get_dbid()).to.be.a('string');
     });
-  })
+  });
 
   describe('get / store syncs', function() {
     it('Should return true / array', function() {
-      expect(spec.store_syncs([{id: 1, uid: 'test'}])).to.be.true;
+      expect(spec.store_syncs([{ id: 1, uid: 'test' }])).to.be.true;
       expect(spec.get_syncs()).to.be.a('object');
     });
-  })
+  });
 
   describe('get_viewability', function() {
     it('Should return undefined', function() {
       expect(spec.get_viewability()).to.equal(undefined);
     });
-  })
+  });
 
   describe('get client info', function() {
     it('Should return object', function() {
-      const client_info = spec.get_client_info()
+      const client_info = spec.get_client_info();
       expect(client_info).to.be.a('object');
       expect(client_info).to.have.all.keys('wiw', 'wih', 'saw', 'sah', 'scd', 'sw', 'sh', 'whl', 'wxo', 'wyo', 'wpr', 'is_bot', 'is_hid', 'vs');
     });
@@ -403,7 +402,7 @@ describe('DatablocksAdapter', function() {
       const bot_test = new BotClientTests();
       expect(bot_test.doTests()).to.be.a('boolean');
     });
-  })
+  });
 
   describe('isBidRequestValid', function() {
     it('Should return true when source_id and Host are set', function() {
@@ -421,11 +420,11 @@ describe('DatablocksAdapter', function() {
       spec.isBidRequestValid(moddedBid);
       expect(spec.db_obj.vis_optout).to.be.true;
     });
-  })
+  });
 
   describe('getUserSyncs', function() {
     it('Should return array of syncs', function() {
-      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [res_object], {gdprApplies: true, gdpr: 1, gdpr_consent: 'consent_string'}, {})).to.be.an('array');
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [res_object], { gdprApplies: true, gdpr: 1, gdpr_consent: 'consent_string' }, {})).to.be.an('array');
     });
   });
 
@@ -437,7 +436,7 @@ describe('DatablocksAdapter', function() {
 
   describe('onBidWon', function() {
     it('Should return undefined', function() {
-      const won_bid = {params: [{source_id: 1}], requestId: 1, adUnitCode: 'unit', auctionId: 1, size: '300x250', cpm: 10, adserverTargeting: {hb_pb: 10}, timeToRespond: 10, ttl: 10};
+      const won_bid = { params: [{ source_id: 1 }], requestId: 1, adUnitCode: 'unit', auctionId: 1, size: '300x250', cpm: 10, adserverTargeting: { hb_pb: 10 }, timeToRespond: 10, ttl: 10 };
       expect(spec.onBidWon(won_bid)).to.equal(undefined);
     });
   });
@@ -447,7 +446,7 @@ describe('DatablocksAdapter', function() {
     before(() => {
       request = spec.buildRequests([bid, bid2, nativeBid], bidderRequest);
       expect(request).to.exist;
-    })
+    });
 
     it('Returns POST method', function() {
       expect(request.method).to.exist;
@@ -491,7 +490,7 @@ describe('DatablocksAdapter', function() {
         expect(imp.tagid).to.be.a('string');
         expect(imp.tagid).to.equal(curBid.adUnitCode);
         expect(imp.secure).to.equal(false);
-      })
+      });
     });
 
     it('Returns empty data if no valid requests are passed', function() {
@@ -522,10 +521,10 @@ describe('DatablocksAdapter', function() {
         } else if (bid.mediaType === 'native') {
           expect(bid.native).to.be.a('object');
         }
-      })
+      });
 
       it('Returns an empty array if invalid response is passed', function() {
-        serverResponses = spec.interpretResponse('invalid_response');
+        const serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });
     });

@@ -1,15 +1,15 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { deepAccess, getBidIdParameter, logError } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
 const BIDDER_CODE = 'viant';
-const ENDPOINT = 'https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder'
+const ENDPOINT = 'https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder';
 const ADAPTER_VERSION = '2.0.0';
 
 const DEFAULT_BID_TTL = 300;
@@ -44,9 +44,9 @@ export const spec = {
 
   interpretResponse(response, request) {
     if (!response.body) {
-      response.body = {nbr: 0};
+      response.body = { nbr: 0 };
     }
-    const bids = converter.fromORTB({request: request.data, response: response.body}).bids;
+    const bids = converter.fromORTB({ request: request.data, response: response.body }).bids;
     return bids;
   },
 
@@ -63,7 +63,7 @@ export const spec = {
       utils.triggerPixel(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm));
     }
   }
-}
+};
 
 function buildRequests(bids, bidderRequest) {
   const videoBids = bids.filter(bid => isVideoBid(bid));
@@ -80,7 +80,7 @@ function buildRequests(bids, bidderRequest) {
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
-  const data = converter.toORTB({bidRequests, bidderRequest, context: {mediaType}});
+  const data = converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } });
   if (bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
     if (!data.regs) data.regs = {};
     if (!data.regs.ext) data.regs.ext = {};
@@ -114,7 +114,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: ENDPOINT,
     data: data
-  }
+  };
 }
 
 function isVideoBid(bid) {

@@ -27,7 +27,7 @@ function getUserId(eids, id, source, uidExt) {
     }
     eids.push({
       source,
-      uids: [ uid ]
+      uids: [uid]
     });
   }
 }
@@ -71,6 +71,7 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   }
 
   delete placement.bidfloor;
+  delete placement.floors;
   delete placement.plcmt;
   delete placement.ext;
 };

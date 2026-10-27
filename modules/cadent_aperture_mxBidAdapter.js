@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess, getBidIdParameter,
@@ -9,21 +8,23 @@ import {
   logError,
   logWarn
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {parseDomain} from '../src/refererDetection.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { parseDomain } from '../src/refererDetection.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
-const ENDPOINT = 'hb.emxdgt.com';
-const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
+const ACP_ID = 1329; // Google Additional Consent provider ID
+const ENDPOINT = 'hb-pub.ssp.cadent.com';
+const RENDERER_URL = 'https://js.ssp.cadent.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 const ALIASES = [
-  { code: 'emx_digital'},
-  { code: 'cadent'},
-  { code: 'emxdigital'},
-  { code: 'cadentaperturemx'},
+  { code: 'emx_digital', acpId: ACP_ID },
+  { code: 'cadent', acpId: ACP_ID },
+  { code: 'emxdigital', acpId: ACP_ID },
+  { code: 'cadentaperturemx', acpId: ACP_ID },
 ];
 
 const EIDS_SUPPORTED = [
@@ -43,11 +44,11 @@ export const cadentAdapter = {
     return ((bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context) && ((bid.mediaTypes.video.context === 'instream') || (bid.mediaTypes.video.context === 'outstream')));
   },
   buildBanner: (bid) => {
-    let sizes = [];
+    let sizes;
     bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? sizes = bid.mediaTypes.banner.sizes : sizes = bid.sizes;
     if (!cadentAdapter.validateSizes(sizes)) {
       logWarn(BIDDER_CODE + ': could not detect mediaType banner sizes. Assigning to bid sizes instead');
-      sizes = bid.sizes
+      sizes = bid.sizes;
     }
     return {
       format: sizes.map((size) => {
@@ -87,7 +88,8 @@ export const cadentAdapter = {
       h: screen.height,
       w: screen.width,
       devicetype: cadentAdapter.isMobile() ? 1 : cadentAdapter.isConnectedTV() ? 3 : 2,
-      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)};
+      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)
+    };
   },
   cleanProtocols: (video) => {
     if (video.protocols && video.protocols.includes(7)) {
@@ -150,7 +152,7 @@ export const cadentAdapter = {
       domain: refInfo.domain || parseDomain(refInfo.topmostLocation),
       page: refInfo.page || refInfo.topmostLocation,
       ref: refInfo.ref || window.document.referrer
-    }
+    };
   },
   getGdpr: (bidRequests, cadentData) => {
     if (bidRequests.gdprConsent) {
@@ -173,7 +175,7 @@ export const cadentAdapter = {
 
   getGpp: (bidRequest, cadentData) => {
     if (bidRequest.gppConsent) {
-      const {gppString: gpp, applicableSections: gppSid} = bidRequest.gppConsent;
+      const { gppString: gpp, applicableSections: gppSid } = bidRequest.gppConsent;
       if (cadentData.regs) {
         cadentData.regs.gpp = gpp;
         cadentData.regs.gpp_sid = gppSid;
@@ -181,7 +183,7 @@ export const cadentAdapter = {
         cadentData.regs = {
           gpp: gpp,
           gpp_sid: gppSid
-        }
+        };
       }
     }
     return cadentData;
@@ -223,6 +225,7 @@ export const cadentAdapter = {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
@@ -280,7 +283,7 @@ export const spec = {
       // adding gpid support
       const gpid =
         deepAccess(bid, 'ortb2Imp.ext.gpid') ||
-        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot')
+        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
 
       if (gpid) {
         data.ext = { gpid: gpid.toString() };
@@ -315,7 +318,7 @@ export const spec = {
           cadentData.user.ext.eids = eids;
         } else {
           cadentData.user = {
-            ext: {eids}
+            ext: { eids }
           };
         }
       }
@@ -373,7 +376,7 @@ export const spec = {
     const syncs = [];
     const consentParams = [];
     if (syncOptions.iframeEnabled) {
-      let url = 'https://biddr.brealtime.com/check.html';
+      let url = 'https://js.ssp.cadent.com/check.html';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined
         if (typeof gdprConsent.gdprApplies === 'boolean') {

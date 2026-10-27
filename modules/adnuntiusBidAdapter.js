@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   convertObjectToArray,
   deepAccess,
@@ -7,13 +7,14 @@ import {
   getUnixTimestampFromNow,
   getWinDimensions,
   isArray,
+  isPlainObject,
   isEmpty,
   isStr
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { toLegacyResponse, toOrtbNativeRequest } from '../src/native.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
@@ -26,6 +27,7 @@ const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
 const METADATA_KEY_SEPARATOR = '@@@';
+const UNSPECIFIED_NETWORK = 'unspecified-network-id';
 
 const ENVS = {
   localhost: {
@@ -67,7 +69,7 @@ export const misc = {
   findHighestPrice: function(arr, bidType) {
     return arr.reduce((highest, cur) => {
       const currentBid = cur[bidType];
-      const highestBid = highest[bidType]
+      const highestBid = highest[bidType];
       return currentBid.currency === highestBid.currency && currentBid.amount > highestBid.amount ? cur : highest;
     }, arr[0]);
   }
@@ -126,7 +128,7 @@ const storageTool = (function () {
         return { exp: oneDayFromNow, auId: auId };
       }) || [];
       return notNewExistingAuIds.concat(apiIdsArray) || [];
-    }
+    };
 
     // use the metadata key separator to distinguish the same key for different networks.
     const metaAsObj = getMetaDataFromLocalStorage().reduce((a, entry) => ({ ...a, [entry.key + METADATA_KEY_SEPARATOR + (entry.network ? entry.network : '')]: { value: entry.value, exp: entry.exp, network: entry.network } }), {});
@@ -136,7 +138,7 @@ const storageTool = (function () {
           value: apiRespMetadata[key],
           exp: getUnixTimestampFromNow(100),
           network: network
-        }
+        };
       }
     }
     const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiRespMetadata.voidAuIds);
@@ -159,7 +161,7 @@ const storageTool = (function () {
         value: entrySet[1].value,
         exp: entrySet[1].exp,
         network: entrySet[1].network
-      }
+      };
     }).filter(entry => entry.key);
     storage.setDataInLocalStorage(METADATA_KEY, JSON.stringify(metaDataForSaving));
   };
@@ -232,7 +234,7 @@ const targetingTool = (function() {
         }
       });
     }
-    return segments
+    return segments;
   };
 
   const getKvsFromOrtb = function(bidderRequest, path) {
@@ -254,10 +256,25 @@ const targetingTool = (function() {
 
       existingUrlRelatedData.segments = segments;
     },
-    mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
-      const siteKvs = getKvsFromOrtb(bidderRequest || {}, 'site.ext.data');
-      const userKvs = getKvsFromOrtb(bidderRequest || {}, 'user.ext.data');
-      if (isEmpty(siteKvs) && isEmpty(userKvs)) {
+    mergeKvsFromOrtb: function(bidTargeting, bidderRequest, bid) {
+      function sanitizeKeyValues(kvs) {
+        return Object.keys(kvs || {}).reduce((acc, key) => {
+          const value = kvs[key];
+          if (isArray(value)) {
+            acc[key] = value.map(v => {
+              return isPlainObject(v) ? JSON.stringify(v) : v;
+            });
+            return acc;
+          }
+          acc[key] = value;
+          return acc;
+        }, {});
+      }
+
+      const siteKvs = sanitizeKeyValues(getKvsFromOrtb(bidderRequest || {}, 'site.ext.data'));
+      const userKvs = sanitizeKeyValues(getKvsFromOrtb(bidderRequest || {}, 'user.ext.data'));
+      const impKvs = sanitizeKeyValues(deepAccess(bid, 'ortb2Imp.ext.data'));
+      if (isEmpty(siteKvs) && isEmpty(userKvs) && isEmpty(impKvs)) {
         return;
       }
       if (bidTargeting.kv && !Array.isArray(bidTargeting.kv)) {
@@ -270,13 +287,16 @@ const targetingTool = (function() {
       if (!isEmpty(userKvs)) {
         bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(userKvs));
       }
+      if (!isEmpty(impKvs)) {
+        bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(impKvs));
+      }
     }
-  }
+  };
 })();
 
 const validateBidType = function (bidTypeOption) {
   return VALID_BID_TYPES.indexOf(bidTypeOption || '') > -1 ? bidTypeOption : 'bid';
-}
+};
 
 const AU_ID_REGEX = new RegExp('^[0-9A-Fa-f]{1,20}$');
 
@@ -293,13 +313,13 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const queryParamsAndValues = [];
-    queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset())
-    queryParamsAndValues.push('format=prebid')
+    queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset());
+    queryParamsAndValues.push('format=prebid');
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
     queryParamsAndValues.push('pbv=' + getGlobal().version);
     if (gdprApplies !== undefined) {
-      const flag = gdprApplies ? '1' : '0'
+      const flag = gdprApplies ? '1' : '0';
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
     }
@@ -338,7 +358,7 @@ export const spec = {
         continue;
       }
 
-      const network = bid.params.network || 'network';
+      const network = bid.params.network || UNSPECIFIED_NETWORK;
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
@@ -358,8 +378,8 @@ export const spec = {
         networks[network].metaData = payloadRelatedData;
       }
 
-      const bidTargeting = {...bid.params.targeting || {}};
-      targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest);
+      const bidTargeting = { ...bid.params.targeting || {} };
+      targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest, bid);
       const mediaTypes = bid.mediaTypes || {};
       const validMediaTypes = SUPPORTED_MEDIA_TYPES.filter(mt => {
         return mediaTypes[mt];
@@ -375,7 +395,7 @@ export const spec = {
           return;
         }
         const targetId = (bid.params.targetId || bid.bidId) + (isSingleFormat || mediaType === BANNER ? '' : ('-' + mediaType));
-        const adUnit = {...bidTargeting, auId: bid.params.auId, targetId: targetId};
+        const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: targetId };
         if (mediaType === VIDEO) {
           adUnit.adType = 'VAST';
         } else if (mediaType === NATIVE) {
@@ -395,9 +415,9 @@ export const spec = {
                 'methods': [1]
               }
             ];
-            adUnit.nativeRequest = {ortb: nativeOrtb}
+            adUnit.nativeRequest = { ortb: nativeOrtb };
           } else {
-            adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
+            adUnit.nativeRequest = { ortb: mediaTypeData.ortb };
           }
         }
         const dealId = deepAccess(bid, 'params.dealId') || deepAccess(bid, 'params.inventory.pmp.deals');
@@ -425,9 +445,10 @@ export const spec = {
         requestURL = ENVS[bidderConfig.env][bidderConfig.endPointType || 'as'];
       }
       requestURL = (bidderConfig.protocol || 'https') + '://' + requestURL + '/i';
+      const requestQueryParams = network === UNSPECIFIED_NETWORK ? queryParamsAndValues : queryParamsAndValues.concat('network=' + encodeURIComponent(network));
       requests.push({
         method: 'POST',
-        url: requestURL + '?' + queryParamsAndValues.join('&'),
+        url: requestURL + '?' + requestQueryParams.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
@@ -456,7 +477,7 @@ export const spec = {
       if (advertiserDomains.length === 0) {
         const destinationUrls = ad.destinationUrls || {};
         for (const value of Object.values(destinationUrls)) {
-          advertiserDomains.push(value.split('/')[2])
+          advertiserDomains.push(value.split('/')[2]);
         }
       }
       const adResponse = {
@@ -565,5 +586,5 @@ export const spec = {
 
     return [...dealAdResponses, ...bidAdResponses];
   }
-}
+};
 registerBidder(spec);

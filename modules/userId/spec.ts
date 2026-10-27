@@ -1,10 +1,12 @@
-import type {BidderCode, StorageDisclosure} from "../../src/types/common";
-import {STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType} from "../../src/storageManager.ts";
-import type {AllConsentData} from "../../src/consentHandler.ts";
-import type {Ext} from '../../src/types/ortb/common';
-import type {ORTBRequest} from "../../src/types/ortb/request";
+import type { BidderCode, StorageDisclosure } from "../../src/types/common";
+import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts";
+import type { AllConsentData, VENDORLESS_GVLID } from "../../src/consentHandler.ts";
+import type { Ext } from '../../src/types/ortb/common';
+import type { ORTBRequest } from "../../src/types/ortb/request";
 
 export type UserIdProvider = string;
+
+export type EID = NonNullable<NonNullable<ORTBRequest['user']>['eids']>[number];
 
 export interface UserId {
   [idName: string]: unknown;
@@ -69,7 +71,7 @@ export interface UserIdConfig<P extends UserIdProvider> {
    * Used only if the page has a separate mechanism for storing a User ID.
    * The value is an object containing the values to be sent to the adapters.
    */
-  value?: UserIdFor<P>;
+  value?: DecodedId<P>;
 }
 
 type SerializableId = string | Record<string, unknown>;
@@ -89,7 +91,7 @@ export type ProviderResponse = {
    * If provided, will be invoked at a later point.
    */
   callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
-}
+};
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
 
@@ -123,9 +125,9 @@ type EIDConfig<K extends keyof UserId> = {
    * Returns an object to use for eids.uid.ext
    */
   getUidExt?: (id: IdValue<K>) => Ext;
-}
+};
 
-type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => ORTBRequest['user']['eids'] | ORTBRequest['user']['eids'][number];
+type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[];
 
 export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   /**
@@ -136,7 +138,14 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   /**
    * GVL ID to use for TCF. If omitted your module may be excluded when TCF is in scope.
    */
-  gvlid?: number;
+  gvlid?: number | typeof VENDORLESS_GVLID;
+  /**
+   * Google Additional Consent provider ID, for vendors that are not on the GVL.
+   * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
+   * when the module has no GVL ID. This is a different ID space from GVL IDs.
+   * @see https://support.google.com/admanager/answer/9681920
+   */
+  acpId?: number;
   disclosureURL?: string;
   /**
    * Invoked when:
@@ -177,7 +186,7 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   eids?: {
     [K in keyof UserId]?: K extends string ? EIDConfig<K> | EIDFn<K, P> : never;
   }
-}
+};
 
 declare module '../../src/hook' {
   interface Submodules {

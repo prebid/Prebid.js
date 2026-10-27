@@ -1,33 +1,44 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   createBuildRequestsFn,
   createInterpretResponseFn,
   createUserSyncGetter,
-  isBidRequestValid,
-  tryParseJSON
+  isBidRequestValid, onBidBillable, onBidWon,
+  tryParseJSON,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./kueezRtbBidAdapter.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
+ */
 
 const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'kueezrtb';
 const BIDDER_VERSION = '1.0.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const NATIVE_OPTIONS = { supportNative: true };
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
-  buildRequests: createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false),
-  interpretResponse: createInterpretResponseFn(BIDDER_CODE, false),
+  buildRequests: createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false, NATIVE_OPTIONS),
+  interpretResponse: createInterpretResponseFn(BIDDER_CODE, false, NATIVE_OPTIONS),
   getUserSyncs: createUserSyncGetter({
     iframeSyncUrl: 'https://sync.kueezrtb.com/api/sync/iframe',
     imageSyncUrl: 'https://sync.kueezrtb.com/api/sync/image'
   }),
   createFirstPartyData,
+  onBidWon,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
@@ -59,10 +70,10 @@ function getFirstPartyUUID() {
     d = Math.floor(d / 16);
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
-};
+}
 
 function createUniqueRequestData(hashUrl, bid) {
-  const {auctionId, transactionId} = bid;
+  const { auctionId, transactionId } = bid;
   const fdata = getAndSetFirstPartyData();
   return {
     auctionId,

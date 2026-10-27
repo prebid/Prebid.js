@@ -6,9 +6,9 @@ import {
   deepSetValue,
   mergeDeep
 } from '../../src/utils.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import { Renderer } from '../../src/Renderer.js';
-import {ortbConverter} from '../ortbConverter/converter.js';
+import { ortbConverter } from '../ortbConverter/converter.js';
 
 /**
  * @typedef {import('../../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -67,7 +67,7 @@ export function createDxConverter(config) {
     },
     bidResponse(buildBidResponse, bid, context) {
       let resMediaType;
-      const {bidRequest} = context;
+      const { bidRequest } = context;
 
       if (bid.adm && bid.adm.trim().startsWith('<VAST')) {
         resMediaType = VIDEO;

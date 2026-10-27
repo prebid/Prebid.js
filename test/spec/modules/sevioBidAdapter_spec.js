@@ -1,6 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sevioBidAdapter.js';
 import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
+import * as deviceInfo from 'libraries/fpdUtils/deviceInfo.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 const ENDPOINT_URL = 'https://req.adx.ws/prebid';
 
 describe('sevioBidAdapter', function () {
@@ -133,11 +136,57 @@ describe('sevioBidAdapter', function () {
         'ttl': 3000,
         'ad': '<html lang="en"><h3>I am an ad</h3></html>',
         'mediaType': 'banner',
-        'meta': {'advertiserDomains': ['none.com']}
+        'meta': { 'advertiserDomains': ['none.com'] }
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
 
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+    });
+
+    describe('X-Adshield response header', function () {
+      const responseWithHeaders = (headers) => ({
+        body: { bids: [{ requestId: 'r1', cpm: 1, meta: { advertiserDomains: ['none.com'] } }] },
+        headers: { get: (name) => (name in headers ? headers[name] : null) }
+      });
+
+      it('sets meta.adshield to 1 when the header is present without a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 1 when the header carries a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': 'anything' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 0 when the header is absent', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({}));
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('keeps the existing meta fields', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta).to.deep.equal({ advertiserDomains: ['none.com'], adshield: 1 });
+      });
+
+      it('creates meta when the bid has none', function () {
+        const response = responseWithHeaders({});
+        delete response.body.bids[0].meta;
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta).to.deep.equal({ adshield: 0 });
+      });
+
+      it('sets meta.adshield to 0 when the response has no headers accessor', function () {
+        const [bid] = spec.interpretResponse({ body: { bids: [{ requestId: 'r1' }] } });
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('sets meta.adshield to 0 when reading headers throws', function () {
+        const response = responseWithHeaders({});
+        response.headers.get = () => { throw new Error('unreadable'); };
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta.adshield).to.equal(0);
+      });
     });
 
     it('should get the correct bid response for the native case', function () {
@@ -204,7 +253,7 @@ describe('sevioBidAdapter', function () {
 
       let result = spec.interpretResponse(serverResponseNative);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponseNative));
-    })
+    });
 
     it('should use bidRequest.params.keywords when provided', function () {
       const singleBidRequest = [
@@ -370,7 +419,8 @@ describe('sevioBidAdapter', function () {
 
       const original = perfTop.getEntriesByType;
       Object.defineProperty(perfTop, 'getEntriesByType', {
-        configurable: true, writable: true,
+        configurable: true,
+        writable: true,
         value: (type) => (type === 'navigation' ? [{ responseStart: 152, requestStart: 100 }] : [])
       });
 
@@ -522,6 +572,72 @@ describe('sevioBidAdapter', function () {
     });
   });
 
+  describe('Global Privacy Control', function () {
+    const bidRequests = [{
+      bidder: 'sevio',
+      params: { zone: 'zoneId' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      bidId: 'bid-gpc'
+    }];
+
+    const withRegs = (regs) => ({
+      ...baseBidderRequest,
+      ortb2: { ...baseBidderRequest.ortb2, regs }
+    });
+
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      window.ethereum = {};
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      delete window.ethereum;
+    });
+
+    ['1', 1].forEach((gpc) => {
+      it(`flags the opt-out, turns syncs off and drops the wallet flag when regs.ext.gpc is ${JSON.stringify(gpc)}`, function () {
+        const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc } }))[0].data;
+
+        expect(payload.privacy).to.deep.equal({
+          gpp: 'GPP-STRING',
+          tcfeu: 'TCF-STRING',
+          usp: '1NYN',
+          gpc: 1
+        });
+        expect(payload.userSyncOption).to.equal('OFF');
+        expect(payload.wdb).to.equal(0);
+      });
+    });
+
+    it('sends no opt-out and keeps syncs and the wallet flag when GPC is absent', function () {
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+      expect(payload.wdb).to.equal(1);
+    });
+
+    it('sends no opt-out when regs.ext.gpc is not "1"', function () {
+      const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc: '0' } }))[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+    });
+
+    it('turns syncs off without GPC when user syncs are disabled', function () {
+      sandbox.stub(config, 'getConfig').callThrough()
+        .withArgs('userSync.syncEnabled').returns(false);
+
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('OFF');
+    });
+  });
+
   describe('native parsing', function () {
     it('parses native assets: title, data->desc (type 2), image (asset.img), clickUrl and trackers', function () {
       const serverResponseNative = {
@@ -623,6 +739,325 @@ describe('sevioBidAdapter', function () {
       expect(native.image).to.equal('https://img.example/img.png');
       expect(native.image_width).to.equal(200);
       expect(native.image_height).to.equal(100);
+    });
+  });
+  describe('screen dimensions resolution', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      // buildRequests also reads the viewport through this accessor
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        screen: { width: 1024, height: 768 },
+        visualViewport: { width: 800, height: 600 }
+      });
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    function bid() {
+      return {
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'bid-screen',
+        bidderRequestId: 'br-screen',
+        auctionId: 'auc-screen'
+      };
+    }
+
+    it('prefers ortb2.device.w/h, which core FPD resolves from the top window', function () {
+      const out = spec.buildRequests([bid()], { ortb2: { device: { w: 2560, h: 1440 } } });
+
+      expect(out[0].data.deviceWidth).to.equal(2560);
+      expect(out[0].data.deviceHeight).to.equal(1440);
+    });
+
+    it('falls back to the shared window dimensions accessor', function () {
+      const out = spec.buildRequests([bid()], {});
+
+      expect(out[0].data.deviceWidth).to.equal(1024);
+      expect(out[0].data.deviceHeight).to.equal(768);
+      // the viewport fields keep reading the same accessor
+      expect(out[0].data.viewportWidth).to.equal(800);
+      expect(out[0].data.viewportHeight).to.equal(600);
+    });
+
+    it('takes both dimensions from one source rather than mixing them', function () {
+      // only one of the pair is usable, so neither is taken from ortb2
+      const out = spec.buildRequests([bid()], { ortb2: { device: { w: 2560 } } });
+
+      expect(out[0].data.deviceWidth).to.equal(1024);
+      expect(out[0].data.deviceHeight).to.equal(768);
+    });
+
+    it('ignores non-numeric and non-positive ortb2 dimensions', function () {
+      [{ w: '2560', h: '1440' }, { w: 0, h: 0 }, { w: -1, h: -1 }, { w: NaN, h: NaN }].forEach((device) => {
+        const out = spec.buildRequests([bid()], { ortb2: { device } });
+        expect(out[0].data.deviceWidth).to.equal(1024);
+        expect(out[0].data.deviceHeight).to.equal(768);
+      });
+    });
+  });
+
+  describe('page referrer resolution', function () {
+    function bid() {
+      return {
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'bid-ref',
+        bidderRequestId: 'br-ref',
+        auctionId: 'auc-ref'
+      };
+    }
+
+    it('sends refererInfo.ref, the top document referrer, as pageReferer', function () {
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://example.com/page', ref: 'https://search.example/?q=x' }
+      });
+      expect(out[0].data.pageReferer).to.equal('https://search.example/?q=x');
+    });
+
+    it('sends an empty string when the top document referrer is unreadable or absent', function () {
+      let out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://example.com/page', ref: null }
+      });
+      expect(out[0].data.pageReferer).to.equal('');
+
+      out = spec.buildRequests([bid()], { refererInfo: { page: 'https://example.com/page' } });
+      expect(out[0].data.pageReferer).to.equal('');
+
+      out = spec.buildRequests([bid()], {});
+      expect(out[0].data.pageReferer).to.equal('');
+    });
+  });
+
+  describe('page domain resolution', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    function bid() {
+      return {
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'bid-domain',
+        bidderRequestId: 'br-domain',
+        auctionId: 'auc-domain'
+      };
+    }
+
+    it('sends refererInfo.domain as pageDomain', function () {
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://www.example.com/article?a=1', domain: 'www.example.com' }
+      });
+      expect(out[0].data.pageDomain).to.equal('www.example.com');
+    });
+
+    it('derives the domain from the resolved page URL when referer detection reports none', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      sandbox.stub(utils, 'getWindowTop').returns({ location: { href: 'https://host.example.com/page' } });
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', domain: null }
+      });
+      expect(out[0].data.pageUrl).to.equal('https://host.example.com/page');
+      expect(out[0].data.pageDomain).to.equal('host.example.com');
+    });
+
+    it('sends an empty string when there is no page to take a domain from', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc', domain: null }
+      });
+      expect(out[0].data.pageUrl).to.equal('');
+      expect(out[0].data.pageDomain).to.equal('');
+    });
+  });
+
+  describe('user language resolution', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    function bid() {
+      return {
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'bid-lang',
+        bidderRequestId: 'br-lang',
+        auctionId: 'auc-lang'
+      };
+    }
+
+    it('sends ortb2.device.language, which core FPD resolves from the top window', function () {
+      const out = spec.buildRequests([bid()], { ortb2: { device: { language: 'de' } } });
+      expect(out[0].data.userLanguage).to.equal('de');
+    });
+
+    it('prefers the BCP-47 langb field when the publisher supplies it', function () {
+      const out = spec.buildRequests([bid()], {
+        ortb2: { device: { langb: 'pt-BR', language: 'pt' } }
+      });
+      expect(out[0].data.userLanguage).to.equal('pt-BR');
+    });
+
+    it('honours a publisher override of ortb2.device.language', function () {
+      const getBrowserLanguage = sandbox.stub(deviceInfo, 'getBrowserLanguage').returns('en-US');
+
+      const out = spec.buildRequests([bid()], { ortb2: { device: { language: 'fr' } } });
+
+      expect(out[0].data.userLanguage).to.equal('fr');
+      expect(getBrowserLanguage.called).to.equal(false);
+    });
+
+    it('falls back to the browser language when ortb2 carries none', function () {
+      sandbox.stub(deviceInfo, 'getBrowserLanguage').returns('es-ES');
+
+      expect(spec.buildRequests([bid()], { ortb2: { device: {} } })[0].data.userLanguage).to.equal('es-ES');
+      expect(spec.buildRequests([bid()], {})[0].data.userLanguage).to.equal('es-ES');
+    });
+
+    it('ignores blank and non-string ortb2 language values', function () {
+      sandbox.stub(deviceInfo, 'getBrowserLanguage').returns('es-ES');
+
+      const out = spec.buildRequests([bid()], {
+        ortb2: { device: { langb: '   ', language: 42 } }
+      });
+      expect(out[0].data.userLanguage).to.equal('es-ES');
+    });
+
+    it('sends an empty string when no language is available at all', function () {
+      sandbox.stub(deviceInfo, 'getBrowserLanguage').returns('');
+
+      const out = spec.buildRequests([bid()], {});
+      expect(out[0].data.userLanguage).to.equal('');
+    });
+  });
+
+  describe('page URL resolution', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      // buildRequests also reads the viewport through this accessor, which calls
+      // canAccessWindowTop whenever a value is not already cached
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        screen: { width: 1024, height: 768 },
+        visualViewport: { width: 800, height: 600 }
+      });
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    function bid() {
+      return {
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'bid-page-url',
+        bidderRequestId: 'br-page-url',
+        auctionId: 'auc-page-url'
+      };
+    }
+
+    it('sends refererInfo.page as pageUrl and xPageUrl', function () {
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://example.com/article?a=1' }
+      });
+      expect(out[0].data.pageUrl).to.equal('https://example.com/article?a=1');
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/article?a=1');
+    });
+
+    it('does not touch the window chain when refererInfo.page is usable', function () {
+      const canAccessWindowTop = sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'https://example.com/article' }
+      });
+
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/article');
+      expect(canAccessWindowTop.called).to.equal(false);
+    });
+
+    it('reads the top window when page is an about: URL (srcdoc/blank iframe)', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      sandbox.stub(utils, 'getWindowTop').returns({ location: { href: 'https://example.com/host-page' } });
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc' }
+      });
+      expect(out[0].data.pageUrl).to.equal('https://example.com/host-page');
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/host-page');
+    });
+
+    it('reads the top window when referer detection reports no page', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      sandbox.stub(utils, 'getWindowTop').returns({ location: { href: 'https://example.com/host-page' } });
+
+      const out = spec.buildRequests([bid()], { refererInfo: { page: null } });
+      expect(out[0].data.xPageUrl).to.equal('https://example.com/host-page');
+    });
+
+    it('ignores topmostLocation, which may be an intermediate frame rather than the page', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: {
+          page: null,
+          location: null,
+          topmostLocation: 'https://intermediate.example/nested-frame',
+          reachedTop: false
+        }
+      });
+      expect(out[0].data.xPageUrl).to.equal('');
+      expect(out[0].data.pageUrl).to.equal('');
+    });
+
+    it('sends an empty string rather than an about: URL when the top window is unreachable', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc' }
+      });
+      expect(out[0].data.xPageUrl).to.equal('');
+    });
+
+    it('tolerates a throwing top window', function () {
+      sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+      sandbox.stub(utils, 'getWindowTop').throws(new Error('cross-origin'));
+
+      const out = spec.buildRequests([bid()], {
+        refererInfo: { page: 'about:srcdoc' }
+      });
+      expect(utils.getWindowTop.threw()).to.equal(true);
+      expect(out[0].data.xPageUrl).to.equal('');
+    });
+
+    it('does not throw when refererInfo is missing', function () {
+      const out = spec.buildRequests([bid()], {});
+      expect(out[0].data.xPageUrl).to.be.a('string');
+      expect(out[0].data.xPageUrl).to.not.match(/^about:/);
     });
   });
 });

@@ -25,7 +25,7 @@ export const getProfileConfigs = () => getConfigJsonManager()?.getYMConfig();
 
 let _configJsonManager = null;
 export const getConfigJsonManager = () => _configJsonManager;
-export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager; }
+export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager; };
 
 /**
  * Initialize the floor provider

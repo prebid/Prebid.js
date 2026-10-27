@@ -1,5 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/risemediatechBidAdapter.js';
+import sinon from 'sinon';
+import { spec, disableAdapter } from 'modules/risemediatechBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('RiseMediaTech adapter', () => {
   const validBidRequest = {
@@ -51,119 +53,26 @@ describe('RiseMediaTech adapter', () => {
     },
   };
 
+  describe('disableAdapter', () => {
+    it('should log a deprecation warning', () => {
+      const warnStub = sinon.stub(utils, 'logWarn');
+      try {
+        disableAdapter();
+        expect(warnStub.calledOnce).to.be.true;
+        expect(warnStub.firstCall.args[0]).to.include('deprecated');
+      } finally {
+        warnStub.restore();
+      }
+    });
+
+    it('should return false', () => {
+      expect(disableAdapter()).to.equal(false);
+    });
+  });
+
   describe('isBidRequestValid', () => {
-    it('should return true for valid bid request', () => {
-      expect(spec.isBidRequestValid(validBidRequest)).to.equal(true);
-    });
-
-    it('should return false for invalid video bid request', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: [],
-          },
-        },
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
-    });
-
-    it('should return false for video bid request with missing mimes', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            w: 640,
-            h: 480
-            // mimes missing
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
-    });
-
-    it('should return false for video request with invalid mimes (not an array)', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: 'video/mp4', // Not an array
-            w: 640,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video request with empty mimes array', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: [],
-            w: 640,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video request with width <= 0', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 0,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video request with height <= 0', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 640,
-            h: -10
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video bid request with invalid width', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 0,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
-    });
-
-    it('should return false for video bid request with invalid height', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 640,
-            h: 0
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
+    it('should be false because the adapter is disabled/deprecated', () => {
+      expect(spec.isBidRequestValid).to.equal(false);
     });
   });
 
@@ -179,8 +88,8 @@ describe('RiseMediaTech adapter', () => {
     it('should include GDPR and USP consent in the request', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const { regs, user } = request.data;
-      expect(regs.ext).to.have.property('gdpr', 1);
-      expect(user.ext).to.have.property('consent', 'consent123');
+      expect(regs).to.have.property('gdpr', 1);
+      expect(user).to.have.property('consent', 'consent123');
       expect(regs.ext).to.have.property('us_privacy', '1YNN');
     });
 
@@ -241,8 +150,8 @@ describe('RiseMediaTech adapter', () => {
         }
       };
       const request = spec.buildRequests([validBidRequest], noGdprBidderRequest);
-      expect(request.data.regs.ext).to.have.property('gdpr', 0);
-      expect(request.data.user.ext).to.have.property('consent', 'consent123');
+      expect(request.data.regs).to.have.property('gdpr', 0);
+      expect(request.data.user).to.have.property('consent', 'consent123');
     });
 
     it('should set regs and regs.ext to {} if not already set when only USP consent is present', () => {
@@ -403,7 +312,7 @@ describe('RiseMediaTech adapter', () => {
       expect(bids).to.be.an('array').with.lengthOf(1);
     });
 
-    it('should log a warning and not set mediaType for unknown mtype', () => {
+    it('should log a warning and default mediaType to banner for unknown mtype', () => {
       const responseWithUnknownMtype = {
         body: {
           id: '2def',
@@ -429,7 +338,7 @@ describe('RiseMediaTech adapter', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const bids = spec.interpretResponse(responseWithUnknownMtype, request);
       expect(bids).to.be.an('array').with.lengthOf(1);
-      expect(bids[0].meta).to.not.have.property('mediaType');
+      expect(bids[0].mediaType).to.equal('banner');
     });
 
     it('should include dealId if present in the bid response', () => {
@@ -484,14 +393,14 @@ describe('RiseMediaTech adapter', () => {
       };
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const bids = spec.interpretResponse(responseWithoutPrice, request);
-      expect(bids).to.be.an('array').that.is.not.empty;
+      expect(bids).to.be.an('array').that.is.empty;
     });
   });
 
   describe('getUserSyncs', () => {
-    it('should return null as user syncs are not implemented', () => {
+    it('should return empty array as user syncs are not implemented', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
-      expect(syncs).to.be.null;
+      expect(syncs).to.be.an('array').that.is.empty;
     });
   });
 });

@@ -10,7 +10,7 @@ import {
   SEENTHIS_EVENTS,
 } from "modules/seenthisBrandStories.ts";
 import * as boundingClientRect from "../../../libraries/boundingClientRect/boundingClientRect.js";
-import * as utils from "../../../src/utils.js";
+import "../../../src/utils.js";
 import * as winDimensions from "src/utils/winDimensions.js";
 
 describe("seenthisBrandStories", function () {
@@ -291,20 +291,16 @@ describe("seenthisBrandStories", function () {
   });
 
   describe("applyFullWidth", function () {
-    let findAdWrapperStub;
-    let addStyleToSingleChildAncestorsStub;
-
-    beforeEach(function () {
-      findAdWrapperStub = sinon.stub();
-      addStyleToSingleChildAncestorsStub = sinon.stub();
-    });
-
     afterEach(function () {
       sinon.restore();
     });
 
     it("should call addStyleToSingleChildAncestors with width 100% when adWrapper exists", function () {
-      const mockTarget = {};
+      const adWrapper = document.createElement("div");
+      const parent = document.createElement("div");
+      const mockTarget = document.createElement("div");
+      parent.appendChild(mockTarget);
+      adWrapper.appendChild(parent);
 
       expect(() => applyFullWidth(mockTarget)).to.not.throw();
     });

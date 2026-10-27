@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {attachIdSystem} from 'modules/userId/index.js';
-import {getStorage, storage, zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
+import { expect } from 'chai';
+import { attachIdSystem } from 'modules/userId/index.js';
+import { getStorage, storage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
 import * as storageManager from 'src/storageManager.js';
-import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 import 'src/prebid.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
@@ -29,7 +29,7 @@ describe('Zeotap ID System', function() {
     it('when a stored Zeotap ID exists it is added to bids', function() {
       getStorage();
       expect(getStorageManagerSpy.calledOnce).to.be.true;
-      sinon.assert.calledWith(getStorageManagerSpy, {moduleType: MODULE_TYPE_UID, moduleName: 'zeotapIdPlus'});
+      sinon.assert.calledWith(getStorageManagerSpy, { moduleType: MODULE_TYPE_UID, moduleName: 'zeotapIdPlus' });
     });
   });
 
@@ -56,13 +56,15 @@ describe('Zeotap ID System', function() {
     });
 
     it('should check if cookies are enabled', function() {
-      const id = zeotapIdPlusSubmodule.getId();
+      zeotapIdPlusSubmodule.getId();
+
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
     });
 
     it('should call getCookie if cookies are enabled', function() {
       cookiesAreEnabledStub.returns(true);
-      const id = zeotapIdPlusSubmodule.getId();
+      zeotapIdPlusSubmodule.getId();
+
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
       expect(getCookieStub.calledOnce).to.be.true;
       sinon.assert.calledWith(getCookieStub, 'IDP');
@@ -70,8 +72,9 @@ describe('Zeotap ID System', function() {
 
     it('should check for localStorage if cookies are disabled', function() {
       cookiesAreEnabledStub.returns(false);
-      localStorageIsEnabledStub.returns(true)
-      const id = zeotapIdPlusSubmodule.getId();
+      localStorageIsEnabledStub.returns(true);
+      zeotapIdPlusSubmodule.getId();
+
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
       expect(getCookieStub.called).to.be.false;
       expect(localStorageIsEnabledStub.calledOnce).to.be.true;
@@ -104,8 +107,8 @@ describe('Zeotap ID System', function() {
 
     it('returns undefined if both cookie and local storage are empty', function() {
       const id = zeotapIdPlusSubmodule.getId();
-      expect(id).to.be.undefined
-    })
+      expect(id).to.be.undefined;
+    });
   });
 
   describe('test method: decode', function() {

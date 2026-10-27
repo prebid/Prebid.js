@@ -2,14 +2,14 @@ import { deepAccess, generateUUID, isArray, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 // import { config } from 'src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 // import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'brainx';
 const METHOD = 'POST';
 const TTL = 200;
 const NET_REV = true;
-let ENDPOINT = 'https://dsp.brainx.tech/bid'
+let ENDPOINT = 'https://dsp.brainx.tech/bid';
 // let ENDPOINT = 'http://adx-engine-gray.tec-do.cn/bid'
 
 const converter = ortbConverter({
@@ -43,16 +43,16 @@ export const spec = {
     return true;
   },
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidRequests, bidderRequest })
-    ENDPOINT = String(deepAccess(bidRequests[0], 'params.endpoint')) ? deepAccess(bidRequests[0], 'params.endpoint') : ENDPOINT
+    const data = converter.toORTB({ bidRequests, bidderRequest });
+    ENDPOINT = String(deepAccess(bidRequests[0], 'params.endpoint')) ? deepAccess(bidRequests[0], 'params.endpoint') : ENDPOINT;
     data.user = {
       buyeruid: generateUUID()
-    }
+    };
     return {
       method: METHOD,
       url: `${ENDPOINT}?token=${String(deepAccess(bidRequests[0], 'params.pubId'))}`,
       data
-    }
+    };
   },
   interpretResponse(response, request) {
     const bids = [];
@@ -63,7 +63,7 @@ export const spec = {
             const serverBody = response.body;
             // bidRequest = request.originalBidRequest,
             const mediaType = BANNER;
-            const currency = serverBody.cur || 'USD'
+            const currency = serverBody.cur || 'USD';
 
             const cpm = (parseFloat(bid.price) || 0).toFixed(2);
             const categories = deepAccess(bid, 'cat', []);
@@ -92,7 +92,7 @@ export const spec = {
               bidRes.meta.clickUrl = bid.adomain[0];
             }
             bids.push(bidRes);
-          })
+          });
         }
       });
     }
@@ -106,7 +106,7 @@ export const spec = {
   // onBidderError: function ({ error, bidderRequest }) { },
   // onAdRenderSucceeded: function (bid) { },
   supportedMediaTypes: [BANNER]
-}
+};
 function hasBanner(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }

@@ -106,7 +106,7 @@ describe('Digital Garage Keyword Module', function () {
       for (const test of keywordsTest) {
         expect(dgRtd.convertKeywordsToString(test.keywords)).equal(test.result);
       }
-    })
+    });
     it('should have targets', function () {
       const adUnits_targets = [
         {
@@ -367,7 +367,7 @@ describe('Digital Garage Keyword Module', function () {
       );
     });
     it('change url.', function (done) {
-      const dummyUrl = 'https://www.test.com/test'
+      const dummyUrl = 'https://www.test.com/test';
       const pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       if (IGNORE_SET_ORTB2) {

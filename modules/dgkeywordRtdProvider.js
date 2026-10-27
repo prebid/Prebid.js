@@ -10,6 +10,8 @@ import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -33,7 +35,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
         done = true;
         return cb.apply(this, arguments);
       }
-    }
+    };
   })(callback);
   let isFinish = false;
   logMessage('[dgkeyword sub module]', adUnits, timeout);
@@ -101,9 +103,7 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
 
 export function readFpidFromLocalStrage() {
   try {
-    // TODO: use storageManager
-    // eslint-disable-next-line no-restricted-properties
-    const fpid = window.localStorage.getItem('ope_fpid');
+    const fpid = storageManager.getDataFromLocalStorage('ope_fpid');
     if (fpid) {
       return fpid;
     }
@@ -146,6 +146,8 @@ export const dgkeywordSubmodule = {
   init: init,
 };
 
+const storageManager = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: dgkeywordSubmodule.name });
+
 function init(moduleConfig) {
   return true;
 }
@@ -161,23 +163,23 @@ export function convertKeywordsToString(keywords) {
     // if 'text' or ''
     if (isStr(keywords[key])) {
       if (keywords[key] !== '') {
-        result += `${key}=${keywords[key]},`
+        result += `${key}=${keywords[key]},`;
       } else {
         result += `${key},`;
       }
     } else if (isArray(keywords[key])) {
-      let isValSet = false
+      let isValSet = false;
       keywords[key].forEach(val => {
         if (isStr(val) && val) {
-          result += `${key}=${val},`
-          isValSet = true
+          result += `${key}=${val},`;
+          isValSet = true;
         }
       });
       if (!isValSet) {
-        result += `${key},`
+        result += `${key},`;
       }
     } else {
-      result += `${key},`
+      result += `${key},`;
     }
   });
 

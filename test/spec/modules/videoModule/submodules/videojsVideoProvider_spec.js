@@ -4,7 +4,7 @@ import {
 } from 'libraries/video/constants/events.js';
 import { getWinDimensions } from '../../../../../src/utils.js';
 
-const {VideojsProvider, utils, adStateFactory, timeStateFactory} = require('modules/videojsVideoProvider');
+const { VideojsProvider, utils, adStateFactory, timeStateFactory } = require('modules/videojsVideoProvider');
 
 const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION
@@ -42,7 +42,7 @@ describe('videojsProvider', function () {
     });
 
     it('should trigger failure when videojs version is under min supported version', function () {
-      const provider = VideojsProvider(config, {...videojs, VERSION: '0.0.0'}, adState, timeState, callbackStorage, utils);
+      const provider = VideojsProvider(config, { ...videojs, VERSION: '0.0.0' }, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
       provider.onEvent(SETUP_FAILED, setupFailed, {});
       provider.init();
@@ -52,7 +52,7 @@ describe('videojsProvider', function () {
     });
 
     it('should trigger failure when the div is not found', function () {
-      config.divId = 'fake-div'
+      config.divId = 'fake-div';
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
       provider.onEvent(SETUP_FAILED, setupFailed, {});
@@ -63,8 +63,8 @@ describe('videojsProvider', function () {
     });
 
     it('should instantiate the player when uninstantied', function () {
-      config.playerConfig = {testAttr: true};
-      config.divId = 'test-div'
+      config.playerConfig = { testAttr: true };
+      config.divId = 'test-div';
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
@@ -72,7 +72,7 @@ describe('videojsProvider', function () {
       const mockVideojs = sinon.spy();
       const provider = VideojsProvider(config, mockVideojs, adState, timeState, callbackStorage, utils);
       provider.init();
-      expect(mockVideojs.calledOnce).to.be.true
+      expect(mockVideojs.calledOnce).to.be.true;
     });
 
     it('should not reinstantiate the player', function (done) {
@@ -95,15 +95,15 @@ describe('videojsProvider', function () {
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
-      videojs(div, {})
+      videojs(div, {});
       config.playerConfig = {};
-      config.divId = 'test-div'
+      config.divId = 'test-div';
       const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
       const setupComplete = sinon.spy();
       provider.onEvent(SETUP_COMPLETE, setupComplete, {});
       provider.init();
       expect(setupComplete.called).to.be.true;
-      videojs.getPlayer('test-div').dispose()
+      videojs.getPlayer('test-div').dispose();
     });
   });
 
@@ -116,7 +116,7 @@ describe('videojsProvider', function () {
 
   describe('getOrtbParams', function () {
     beforeEach(() => {
-      config = {divId: 'test'};
+      config = { divId: 'test' };
       // initialize videojs element
       document.body.innerHTML = `
       <video preload id='test' width="${200}" height="${100}">
@@ -174,7 +174,7 @@ describe('videojsProvider', function () {
             }
           }
         }
-      }
+      };
 
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
@@ -188,17 +188,17 @@ describe('videojsProvider', function () {
     // We can't determine what type of outstream play is occurring
     // if the src is absent so we should not set placement
     it('should not set placement when src is absent', function() {
-      document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
+      document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`;
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const video = provider.getOrtbVideo();
-      expect(video).to.not.have.property('placement')
-    })
+      expect(video).to.not.have.property('placement');
+    });
     //
     it('should populate position when fullscreen', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      const player = videojs.getPlayer('test')
+      const player = videojs.getPlayer('test');
       player.isFullscreen = () => true;
       const video = provider.getOrtbVideo();
       expect(video.pos).to.equal(7);
@@ -207,9 +207,9 @@ describe('videojsProvider', function () {
     it('should populate length when loaded', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      const player = videojs.getPlayer('test')
-      player.readyState = () => 1
-      player.duration = () => 100
+      const player = videojs.getPlayer('test');
+      player.readyState = () => 1;
+      player.duration = () => 100;
       const content = provider.getOrtbContent();
       expect(content.len).to.equal(100);
     });
@@ -217,8 +217,8 @@ describe('videojsProvider', function () {
     it('should return the correct playback method for autoplay', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      const player = videojs.getPlayer('test')
-      player.autoplay(true)
+      const player = videojs.getPlayer('test');
+      player.autoplay(true);
       const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY);
     });
@@ -226,9 +226,9 @@ describe('videojsProvider', function () {
     it('should return the correct playback method for autoplay muted', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      const player = videojs.getPlayer('test')
-      player.muted = () => true
-      player.autoplay = () => true
+      const player = videojs.getPlayer('test');
+      player.muted = () => true;
+      player.autoplay = () => true;
       const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
@@ -236,8 +236,8 @@ describe('videojsProvider', function () {
     it('should return the correct playback method for the other autoplay muted', function () {
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
-      const player = videojs.getPlayer('test')
-      player.autoplay = () => 'muted'
+      const player = videojs.getPlayer('test');
+      player.autoplay = () => 'muted';
       const video = provider.getOrtbVideo();
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
@@ -304,36 +304,36 @@ describe('utils', function() {
 
   describe('getPositionCode', function() {
     it('should return the correct position when video is above the fold', function () {
-      const {innerWidth, innerHeight} = getWinDimensions();
+      const { innerWidth, innerHeight } = getWinDimensions();
       const code = utils.getPositionCode({
         left: innerWidth / 10,
         top: 0,
         width: innerWidth - innerWidth / 10,
         height: innerHeight,
-      })
-      expect(code).to.equal(AD_POSITION.ABOVE_THE_FOLD)
+      });
+      expect(code).to.equal(AD_POSITION.ABOVE_THE_FOLD);
     });
 
     it('should return the correct position when video is below the fold', function () {
-      const {innerWidth, innerHeight} = getWinDimensions();
+      const { innerWidth, innerHeight } = getWinDimensions();
       const code = utils.getPositionCode({
         left: innerWidth / 10,
         top: innerHeight,
         width: innerWidth - innerWidth / 10,
         height: innerHeight / 2,
-      })
-      expect(code).to.equal(AD_POSITION.BELOW_THE_FOLD)
+      });
+      expect(code).to.equal(AD_POSITION.BELOW_THE_FOLD);
     });
 
     it('should return the unkown position when the video is out of bounds', function () {
-      const {innerWidth, innerHeight} = getWinDimensions();
+      const { innerWidth, innerHeight } = getWinDimensions();
       const code = utils.getPositionCode({
         left: innerWidth / 10,
         top: innerHeight,
         width: innerWidth,
         height: innerHeight,
-      })
-      expect(code).to.equal(AD_POSITION.UNKNOWN)
+      });
+      expect(code).to.equal(AD_POSITION.UNKNOWN);
     });
   });
 
@@ -410,7 +410,7 @@ describe('utils', function() {
       document.body.appendChild(div);
 
       const stubPlayer = {
-        ima: {changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: {settings: {}}},
+        ima: { changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: { settings: {} } },
         ready: (cb) => cb(),
         on: () => {},
         off: () => {},
@@ -425,7 +425,7 @@ describe('utils', function() {
       const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
       stubVjs.VERSION = '7.20.0';
       stubVjs.players = {};
-      const provider = VideojsProvider({divId: 'test-ad'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
+      const provider = VideojsProvider({ divId: 'test-ad' }, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
       provider.init();
       provider.setAdTagUrl('tag');
       expect(stubPlayer.ima.changeAdTag.calledWith('tag')).to.be.true;
@@ -438,7 +438,7 @@ describe('utils', function() {
       document.body.appendChild(div);
 
       const stubPlayer = {
-        ima: {changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: {settings: {}}},
+        ima: { changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: { settings: {} } },
         ready: (cb) => cb(),
         on: () => {},
         off: () => {},
@@ -453,7 +453,7 @@ describe('utils', function() {
       const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
       stubVjs.VERSION = '7.20.0';
       stubVjs.players = {};
-      const provider = VideojsProvider({divId: 'test-xml'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
+      const provider = VideojsProvider({ divId: 'test-xml' }, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
       provider.init();
       provider.setAdXml('<VAST/>');
       expect(stubPlayer.ima.controller.settings.adsResponse).to.equal('<VAST/>');
@@ -464,11 +464,11 @@ describe('utils', function() {
   describe('State Factories', function () {
     it('should set playback mode based on duration', function () {
       const ts = timeStateFactory();
-      ts.updateForTimeEvent({currentTime: 1, duration: 10});
+      ts.updateForTimeEvent({ currentTime: 1, duration: 10 });
       expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.VOD);
-      ts.updateForTimeEvent({currentTime: 1, duration: 0});
+      ts.updateForTimeEvent({ currentTime: 1, duration: 0 });
       expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.LIVE);
-      ts.updateForTimeEvent({currentTime: 1, duration: -1});
+      ts.updateForTimeEvent({ currentTime: 1, duration: -1 });
       expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.DVR);
     });
 
@@ -490,14 +490,11 @@ describe('utils', function() {
         adWrapperIds: ['w1'],
         skippable: true,
         skipTimeOffset: 5,
-        adPodInfo: {podIndex: 0, totalAds: 2, adPosition: 1, timeOffset: 0}
       });
       const state = as.getState();
       expect(state.adId).to.equal('1');
       expect(state.skipafter).to.equal(5);
-      expect(state.adPodCount).to.equal(2);
-      expect(state.adPodIndex).to.equal(0);
       expect(state.offset).to.be.undefined;
     });
   });
-})
+});

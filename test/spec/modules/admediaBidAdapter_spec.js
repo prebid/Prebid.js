@@ -1,18 +1,17 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/admediaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import * as utils from 'src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/admediaBidAdapter.js';
+
+import 'src/utils.js';
 
 const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
 
 describe('admediaBidAdapter', function () {
-  const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
     const bid = {
       adUnitCode: 'adunit-code',
       bidder: 'admedia',
       bidId: 'g7ghhs78',
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
       params: {
         placementId: '782332',
         aid: '86858',
@@ -31,7 +30,7 @@ describe('admediaBidAdapter', function () {
         adUnitCode: 'adunit-code',
         bidder: 'admedia',
         bidId: 'g7ghhs78',
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         params: {
           placementId: '782332',
           aid: '86858'
@@ -119,7 +118,7 @@ describe('admediaBidAdapter', function () {
             }
           }
         ]
-      }
+      };
       let result = spec.interpretResponse(serverResponse, bidRequest);
       expect(result).to.be.an('array').that.is.not.empty;
       expect(Object.keys(result[0])).to.have.members(

@@ -3,7 +3,7 @@ import {
   ANALYTICS_VERSION, BIDDER_STATUS
 } from 'modules/ucfunnelAnalyticsAdapter.js';
 
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 const events = require('src/events');
 const constants = require('src/constants.js');
@@ -89,7 +89,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
     });
 
     describe('#getCachedAuction()', function() {
-      const existing = {timeoutBids: [{}]};
+      const existing = { timeoutBids: [{}] };
       ucfunnelAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
 
       it('should get the existing cached object if it exists', function() {
@@ -372,7 +372,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
               currency: 'USD',
               ad: '<html>fake ad1</html>'
             },
-          ]
+          ];
 
           ucfunnelAnalyticsAdapter.handleBidWon(receivedBids[0]);
           sinon.assert.callCount(ucfunnelAnalyticsAdapter.createImpressionMessage, 1);

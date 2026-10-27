@@ -2,7 +2,7 @@
 import { assert } from 'chai';
 import { spec } from 'modules/carodaBidAdapter.js';
 import { config } from 'src/config.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
@@ -55,7 +55,7 @@ describe('Caroda adapter', function () {
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://prebid.caroda.io/api/hb?entry_id=12345');
       assert.equal(request.options, undefined);
-      const data = JSON.parse(request.data)
+      const data = JSON.parse(request.data);
       assert.equal(data.ctok, 'adf232eef344');
       assert.ok(data.site);
       assert.ok(data.hb_version);
@@ -73,7 +73,7 @@ describe('Caroda adapter', function () {
       }];
       window.top.carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
-      const data = JSON.parse(request.data)
+      const data = JSON.parse(request.data);
       assert.equal(data.test, 1);
     });
 
@@ -208,8 +208,8 @@ describe('Caroda adapter', function () {
         bid_id: 'bidId',
         params: {},
         userIdAsEids: [
-          { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
-          { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
+          { source: 'adserver.org', uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }] },
+          { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] }
         ]
       }];
 
@@ -297,21 +297,21 @@ describe('Caroda adapter', function () {
 
       describe('price floors', function () {
         it('should not add if floors module not configured', function () {
-          const validBidRequests = [{ bid_id: 'bidId', params: {ctok: 'ctok1'}, mediaTypes: {video: {}} }];
+          const validBidRequests = [{ bid_id: 'bidId', params: { ctok: 'ctok1' }, mediaTypes: { video: {} } }];
           const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
           assert.equal(imp.bidfloor, undefined);
           assert.equal(imp.bidfloorcur, undefined);
         });
 
         it('should not add if floor price not defined', function () {
-          const validBidRequests = [ getBidWithFloor() ];
+          const validBidRequests = [getBidWithFloor()];
           const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
           assert.equal(imp.bidfloor, undefined);
           assert.equal(imp.bidfloorcur, 'EUR');
         });
 
         it('should request floor price in adserver currency', function () {
-          const validBidRequests = [ getBidWithFloor() ];
+          const validBidRequests = [getBidWithFloor()];
           setCurrencyConfig({ adServerCurrency: 'DKK' });
           const bidderRequest = { refererInfo: { page: 'page' } };
           return addFPDToBidderRequest(bidderRequest).then(res => {
@@ -323,7 +323,7 @@ describe('Caroda adapter', function () {
         });
 
         it('should add correct floor values', function () {
-          const expectedFloors = [ 1, 1.3, 0.5 ];
+          const expectedFloors = [1, 1.3, 0.5];
           const validBidRequests = expectedFloors.map(getBidWithFloor);
           const imps = spec
             .buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
@@ -367,7 +367,7 @@ describe('Caroda adapter', function () {
               native: {}
             }
           }];
-          const [ first, second ] = spec
+          const [first, second] = spec
             .buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
             .map(r => JSON.parse(r.data));
 
@@ -392,7 +392,7 @@ describe('Caroda adapter', function () {
           }];
           const { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
           assert.deepEqual(banner, {
-            format: [ { w: 100, h: 100 }, { w: 200, h: 300 } ]
+            format: [{ w: 100, h: 100 }, { w: 200, h: 300 }]
           });
         });
       });

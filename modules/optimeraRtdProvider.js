@@ -9,17 +9,14 @@
  */
 
 /**
- * @typedef {Object} ModuleParams
- * @property {string} clientID
- * @property {string} optimeraKeyName
- * @property {string} device
- * @property {string} apiVersion
- * @property {string} transmitWithBidRequests
+ * @typedef {import('./optimeraRtdProvider.d.ts').OptimeraRtdParams} ModuleParams
  */
 
 import { logInfo, logError, mergeDeep } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -53,6 +50,12 @@ export let apiVersion = 'v0';
 /** @type {string} */
 export let transmitWithBidRequests = 'allow';
 
+/** Base URL for the optional Optimera oPS script. @type {string} */
+export const opsBaseURL = 'https://d15kdpgjg3unno.cloudfront.net/oPS.js';
+
+/** Whether the oPS script should be requested. @type {boolean} */
+export let callOPS = false;
+
 /** @type {Object<string, any>} */
 export let optimeraTargeting = {};
 
@@ -81,10 +84,41 @@ export function init(moduleConfig) {
     if (_moduleParams.transmitWithBidRequests) {
       transmitWithBidRequests = _moduleParams.transmitWithBidRequests;
     }
+    callOPS = _moduleParams.callOPS === true || _moduleParams.callOPS === 'true';
+    if (callOPS) {
+      loadOPS();
+    }
     return true;
   }
   logError('Optimera clientID is missing in the Optimera RTD configuration.');
   return false;
+}
+
+/**
+ * Requests the optional Optimera oPS script and appends it to the document body.
+ * Only called when the `callOPS` param is set to true.
+ * @returns {HTMLScriptElement|undefined}
+ */
+export function loadOPS() {
+  if (!clientID) {
+    logError('Client ID is not set for the Optimera RTDM. Please set the client id properly or contact Optimera for assistance.');
+    return;
+  }
+  const opsURL = `${opsBaseURL}?cid=${encodeURIComponent(clientID)}`;
+  const script = loadExternalScript(opsURL, MODULE_TYPE_RTD, 'optimeraRTD', undefined, undefined, {
+    id: 'optimera-ops',
+    'data-cid': clientID,
+  });
+  // loadExternalScript inserts the tag into the head; the oPS script is meant to
+  // live on the body, so move it there once the body is available.
+  if (script) {
+    if (document.body) {
+      document.body.appendChild(script);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => document.body?.appendChild(script), { once: true });
+    }
+  }
+  return script;
 }
 
 /**
@@ -161,6 +195,10 @@ export function setScores(result) {
   let scores = {};
   try {
     scores = JSON.parse(result);
+    let pagelevel;
+    if (scores.pagelevel) {
+      pagelevel = scores.pagelevel;
+    }
     if (device !== 'default' && scores.device && scores.device[device]) {
       scores = scores.device[device];
     }
@@ -169,6 +207,7 @@ export function setScores(result) {
     window.optimera = window.optimera || {};
     window.optimera.data = window.optimera.data || {};
     window.optimera.insights = window.optimera.insights || {};
+    window.optimera.pagelevel = window.optimera.pagelevel || [];
     Object.keys(scores).forEach((key) => {
       if (key !== 'insights') {
         window.optimera.data[key] = scores[key];
@@ -176,6 +215,9 @@ export function setScores(result) {
     });
     if (scores.insights) {
       window.optimera.insights = scores.insights;
+    }
+    if (pagelevel !== undefined) {
+      window.optimera.pagelevel = pagelevel;
     }
   } catch (e) {
     logError('Optimera score file could not be parsed.');

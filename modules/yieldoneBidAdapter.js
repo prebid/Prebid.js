@@ -1,10 +1,10 @@
-import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
-import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
-import {BOL_LIKE_USER_AGENTS} from '../libraries/userAgentUtils/constants.js';
+import { deepAccess, isEmpty, isStr, logWarn, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
+import { browserTypes, osTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
+import { BOL_LIKE_USER_AGENTS } from '../libraries/userAgentUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -18,18 +18,20 @@ import {BOL_LIKE_USER_AGENTS} from '../libraries/userAgentUtils/constants.js';
  */
 
 const BIDDER_CODE = 'yieldone';
+const ACP_ID = 385; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
-const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
+const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['y1'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'y1', acpId: ACP_ID }],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -252,7 +254,7 @@ export const spec = {
       }];
     }
   },
-}
+};
 
 /**
  * NOTE: server side does not yet support multiple formats.
@@ -327,7 +329,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
     }
 
     const splited = size.split('x');
-    const sizeObj = {w: parseInt(splited[0], 10), h: parseInt(splited[1], 10)};
+    const sizeObj = { w: parseInt(splited[0], 10), h: parseInt(splited[1], 10) };
     const _isValidPlayerSize = !(isEmpty(sizeObj)) && (isFinite(sizeObj.w) && isFinite(sizeObj.h));
     if (!_isValidPlayerSize) {
       return result;
@@ -335,7 +337,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
 
     result = sizeObj;
     return result;
-  }
+  };
 
   let playerSize = _getPlayerSize(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
 

@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const ENDPOINT = '//prebid.vlyby.com/';
 const BIDDER_CODE = 'vlyby';
@@ -13,9 +13,9 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.publisherId) {
-      return true
+      return true;
     }
-    return false
+    return false;
   },
 
   buildRequests: function (validBidRequests, bidderRequest = {}) {
@@ -44,7 +44,7 @@ export const spec = {
         contentType: 'application/json'
       },
       validBidRequests: validBidRequests,
-    }
+    };
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];

@@ -1,9 +1,9 @@
-import {config} from '../src/config.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import { config } from '../src/config.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { timedBidResponseHook } from '../src/utils/perfMetrics.js';
 import { REJECTION_REASON } from '../src/constants.js';
-import {getHook} from '../src/hook.js';
-import {logInfo, logWarn} from '../src/utils.js';
+import { getHook } from '../src/hook.js';
+import { logInfo, logWarn } from '../src/utils.js';
 
 let expiryHandle;
 let dsaAuctions = {};
@@ -46,12 +46,12 @@ function toggleHooks(enabled) {
     expiryHandle = auctionManager.onExpiry(auction => {
       delete dsaAuctions[auction.getAuctionId()];
     });
-    logInfo('dsaControl: DSA bid validation is enabled')
+    logInfo('dsaControl: DSA bid validation is enabled');
   } else if (!enabled && expiryHandle != null) {
-    getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+    getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
     expiryHandle();
     expiryHandle = null;
-    logInfo('dsaControl: DSA bid validation is disabled')
+    logInfo('dsaControl: DSA bid validation is disabled');
   }
 }
 

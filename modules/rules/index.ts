@@ -4,7 +4,7 @@ import { ACTIVITY_ADD_BID_RESPONSE, ACTIVITY_FETCH_BIDS } from "../../src/activi
 import { MODULE_TYPE_BIDDER } from "../../src/activities/modules.ts";
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from "../../src/activities/params.js";
 import { registerActivityControl } from "../../src/activities/rules.js";
-import { ajax } from "../../src/ajax.ts";
+import { noCredsAjax as ajax } from "../../src/ajax.ts";
 import { AuctionIndex } from "../../src/auctionIndex.js";
 import { auctionManager } from "../../src/auctionManager.js";
 import { config } from "../../src/config.ts";
@@ -55,7 +55,7 @@ interface ModelGroupSchema {
   /** Function name inside the schema */
   function: string;
   /** Arguments for the schema function */
-  args: any[];
+  args?: any[];
 }
 
 /**
@@ -66,7 +66,7 @@ interface ModelGroup {
   /** Determines selection probability; only one object within the group is chosen */
   weight: number;
   /** Indicates whether this model group is selected (set automatically based on weight) */
-  selected: boolean;
+  selected?: boolean;
   /** Optional key used to produce aTags, identifying experiments or optimization targets */
   analyticsKey: string;
   /** Version identifier for analytics */
@@ -82,7 +82,7 @@ interface ModelGroup {
    */
   rules: [{
     /** Conditions that must be met for the rule to apply */
-    condition: string[];
+    conditions: string[];
     /** Resulting actions triggered when conditions are met */
     results: [
       {
@@ -138,7 +138,7 @@ interface RulesConfig {
   /** One or more independent sets of rules */
   ruleSets: RuleSet[];
   /** Optional timestamp of the last update (ISO 8601 format: `YYYY-MM-DDThh:mm:ss[.sss][Z or ±hh:mm]`) */
-  timestamp: string;
+  timestamp?: string;
   /** Enables or disables the module. Default: `true` */
   enabled: boolean;
 }
@@ -151,7 +151,7 @@ declare module '../../src/config' {
 
 const MODULE_NAME = 'shapingRules';
 
-const globalRandomStore = new WeakMap<{ auctionId: string }, number>();
+const globalRandomStore = new WeakMap<object, number>();
 
 let auctionConfigStore = new Map<string, any>();
 
@@ -163,14 +163,14 @@ function getGlobalRandom(auctionId: string, auctionIndex: AuctionIndex = auction
   if (!auctionId) {
     return Math.random();
   }
-  const auction = auctionIndex.getAuction({auctionId});
+  const auction = auctionIndex.getAuction({ auctionId });
   if (!globalRandomStore.has(auction)) {
     globalRandomStore.set(auction, Math.random());
   }
   return globalRandomStore.get(auction);
 }
 
-const unregisterFunctions: Array<() => void> = []
+const unregisterFunctions: Array<() => void> = [];
 
 let moduleConfig: ShapingRulesConfig = {
   endpoint: {
@@ -270,7 +270,7 @@ function evaluateRules(rules, schema, stage, analyticsKey, auctionId: string, de
 const schemaEvaluators = {
   percent: (args, context) => () => {
     const auctionId = context.auctiondId || context.bid?.auctionId;
-    return dep.getGlobalRandom(auctionId) * 100 < args[0]
+    return dep.getGlobalRandom(auctionId) * 100 < args[0];
   },
   adUnitCode: (args, context) => () => context.adUnit.code,
   adUnitCodeIn: (args, context) => () => args[0].includes(context.adUnit.code),
@@ -328,7 +328,7 @@ const schemaEvaluators = {
   },
   bidPrice: (args, context) => () => {
     const [operator, currency, value] = args || [];
-    const {cpm: bidPrice, currency: bidCurrency} = context.bid || {};
+    const { cpm: bidPrice, currency: bidCurrency } = context.bid || {};
     if (bidCurrency !== currency) {
       return false;
     }
@@ -358,7 +358,7 @@ export function evaluateSchema(func, args, context) {
 function evaluateCondition(condition, func) {
   switch (condition) {
     case '*':
-      return true
+      return true;
     case 'true':
       return func() === true;
     case 'false':
@@ -404,7 +404,7 @@ export function registerActivities() {
         if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
         if (!auctionId) return;
 
-        const checkConditions = ({schema, conditions, stage}) => {
+        const checkConditions = ({ schema, conditions, stage }) => {
           for (const [index, schemaEntry] of schema.entries()) {
             const schemaFunction = evaluateSchema(schemaEntry.function, schemaEntry.args || [], params);
             if (evaluateCondition(conditions[index], schemaFunction)) {
@@ -412,7 +412,7 @@ export function registerActivities() {
             }
           }
           return false;
-        }
+        };
 
         const results = [];
         let modelGroups = auctionConfigStore.get(auctionId) || [];
@@ -421,11 +421,11 @@ export function registerActivities() {
         // evaluate applicable results for each model group
         for (const modelGroup of modelGroups) {
           // find first rule that matches conditions
-          const selectedRule = modelGroup.rules.find(rule => checkConditions({...rule, schema: modelGroup.schema}));
+          const selectedRule = modelGroup.rules.find(rule => checkConditions({ ...rule, schema: modelGroup.schema }));
           if (selectedRule) {
             results.push(...selectedRule.results);
           } else if (Array.isArray(modelGroup.defaultResults)) {
-            const defaults = modelGroup.defaultResults.map(result => ({...result, analyticsKey: modelGroup.analyticsKey}));
+            const defaults = modelGroup.defaultResults.map(result => ({ ...result, analyticsKey: modelGroup.analyticsKey }));
             results.push(...defaults);
           }
         }
@@ -441,7 +441,7 @@ export function registerActivities() {
         const allow = results
           .filter(result => ['excludeBidders', 'includeBidders'].includes(result.function))
           .every((result) => {
-            return result.args.every(({bidders}) => {
+            return result.args.every(({ bidders }) => {
               const bidderIncluded = bidders.includes(params[ACTIVITY_PARAM_COMPONENT_NAME]);
               return result.function === 'excludeBidders' ? !bidderIncluded : bidderIncluded;
             });
@@ -467,7 +467,7 @@ export const requestBidsHook = timedAuctionHook('rules', function requestBidsHoo
 
   if (!rulesLoaded && auctionDelay > 0) {
     delayedAuctions.submit(auctionDelay, continueAuction, () => {
-      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`)
+      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`);
       continueAuction();
     });
   } else {
@@ -493,8 +493,8 @@ function init(config: ShapingRulesConfig) {
 
 export function reset() {
   try {
-    getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
-    getHook('startAuction').getHooks({hook: startAuctionHook}).remove();
+    getHook('requestBids').getHooks({ hook: requestBidsHook }).remove();
+    getHook('startAuction').getHooks({ hook: startAuctionHook }).remove();
     unregisterFunctions.forEach(unregister => unregister());
     unregisterFunctions.length = 0;
     auctionConfigStore.clear();

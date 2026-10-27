@@ -1,9 +1,10 @@
 import { timestamp, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';
@@ -17,21 +18,20 @@ const ADRENDERFAILEDSENT = 16;
 let initOptions;
 const prebidGlobal = getGlobal();
 export const BID_WON_TIMEOUT = 500;
-const CACHE_CLEANUP_DELAY = BID_WON_TIMEOUT * 3;
 
 const cache = {
   auctions: {}
 };
 
-const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
-  track({eventType, args}) {
+const livewrappedAnalyticsAdapter = Object.assign(adapter({ EMPTYURL, ANALYTICSTYPE }), {
+  track({ eventType, args }) {
     const time = timestamp();
     logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case EVENTS.AUCTION_INIT:
         logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
+        cache.auctions[args.auctionId] = { bids: {}, bidAdUnits: {} };
         break;
       case EVENTS.BID_REQUESTED:
         logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
@@ -41,7 +41,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
           let lwFloor;
-          const container = document.getElementById(bidRequest.adUnitCode);
+          const container = getAdUnitElement(bidRequest);
           let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
           adUnitId = adUnitId != null ? adUnitId : undefined;
 
@@ -159,6 +159,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
 // save the base class function
 livewrappedAnalyticsAdapter.originEnableAnalytics = livewrappedAnalyticsAdapter.enableAnalytics;
 livewrappedAnalyticsAdapter.allRequestEvents = [];
+const baseClearAllAuctions = prebidGlobal.clearAllAuctions;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 livewrappedAnalyticsAdapter.enableAnalytics = function (config) {
@@ -189,13 +190,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     return;
   }
 
-  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
-
-  setTimeout(() => {
-    sentRequests.auctionIds.forEach(id => {
-      delete cache.auctions[id];
-    });
-  }, CACHE_CLEANUP_DELAY);
+  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
 };
 
 function getMediaTypeEnum(mediaType) {
@@ -233,7 +228,7 @@ function getSentRequests() {
     });
   });
 
-  return {gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests};
+  return { gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests };
 }
 
 function getResponses(gdpr, auctionIds) {
@@ -243,7 +238,7 @@ function getResponses(gdpr, auctionIds) {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       const auction = cache.auctions[auctionId];
       const gdprPos = getGdprPos(gdpr, auction);
-      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
+      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
       const bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
@@ -300,7 +295,7 @@ function getWins(gdpr, auctionIds) {
 }
 
 function getGdprPos(gdpr, auction) {
-  var gdprPos = 0;
+  var gdprPos;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
     if (gdpr[gdprPos].gdprApplies === auction.gdprApplies &&
         gdpr[gdprPos].gdprConsent === auction.gdprConsent) {
@@ -309,14 +304,14 @@ function getGdprPos(gdpr, auction) {
   }
 
   if (gdprPos === gdpr.length) {
-    gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+    gdpr[gdprPos] = { gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent };
   }
 
   return gdprPos;
 }
 
 function getAuctionIdPos(auctionIds, auctionId) {
-  var auctionIdPos = 0;
+  var auctionIdPos;
   for (auctionIdPos = 0; auctionIdPos < auctionIds.length; auctionIdPos++) {
     if (auctionIds[auctionIdPos] === auctionId) {
       break;
@@ -429,6 +424,11 @@ function getbidAdUnits() {
   return bidAdUnits;
 }
 
+prebidGlobal.clearAllAuctions = function() {
+  cache.auctions = {};
+  baseClearAllAuctions();
+};
+
 adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
   code: 'livewrapped'
@@ -437,7 +437,5 @@ adapterManager.registerAnalyticsAdapter({
 export function getAuctionCache() {
   return cache.auctions;
 }
-
-export { CACHE_CLEANUP_DELAY };
 
 export default livewrappedAnalyticsAdapter;

@@ -1,8 +1,8 @@
-import {config} from '../src/config.js';
-import {deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn} from '../src/utils.js';
+import { config } from '../src/config.js';
+import { deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn } from '../src/utils.js';
 
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { setupAdUnitMediaTypes } from '../src/adapterManager.js';
 
 let sizeConfig = [];
 
@@ -36,9 +36,9 @@ config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
  */
 export function getLabels(bidOrAdUnit, activeLabels) {
   if (bidOrAdUnit.labelAll) {
-    return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
+    return { labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels };
   }
-  return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
+  return { labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels };
 }
 
 /**
@@ -57,9 +57,9 @@ export function sizeSupported(size, configs = sizeConfig) {
 
 const SIZE_PROPS = {
   [BANNER]: 'banner.sizes'
-}
+};
 if (FEATURES.VIDEO) {
-  SIZE_PROPS[VIDEO] = 'video.playerSize'
+  SIZE_PROPS[VIDEO] = 'video.playerSize';
 }
 
 /**
@@ -76,12 +76,12 @@ if (FEATURES.VIDEO) {
  * @returns {Object} return.mediaTypes - The media types object.
  * @returns {Object} [return.filterResults] - The filter results before and after applying size filtering.
  */
-export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
+export function resolveStatus({ labels = [], labelAll = false, activeLabels = [] } = {}, mediaTypes, configs = sizeConfig) {
   const maps = evaluateSizeConfig(configs);
 
   let filtered = false;
   let hasSize = false;
-  const filterResults = {before: {}, after: {}};
+  const filterResults = { before: {}, after: {} };
 
   if (maps.shouldFilter) {
     Object.entries(SIZE_PROPS).forEach(([mediaType, sizeProp]) => {
@@ -96,12 +96,12 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
         hasSize = hasSize || newSizes.length > 0;
         if (oldSizes.length !== newSizes.length) {
           filterResults.before[mediaType] = oldSizes;
-          filterResults.after[mediaType] = newSizes
+          filterResults.after[mediaType] = newSizes;
         }
       }
-    })
+    });
   } else {
-    hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null
+    hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null;
   }
 
   const results = {
@@ -138,7 +138,7 @@ function evaluateSizeConfig(configs) {
       typeof config.mediaQuery === 'string' &&
       config.mediaQuery.length > 0
     ) {
-      let ruleMatch = false;
+      let ruleMatch;
 
       try {
         ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
@@ -155,7 +155,7 @@ function evaluateSizeConfig(configs) {
         ['labels', 'sizesSupported'].forEach(
           type => (config[type] || []).forEach(
             thing => {
-              results[type][thing] = true
+              results[type][thing] = true;
             }
           )
         );

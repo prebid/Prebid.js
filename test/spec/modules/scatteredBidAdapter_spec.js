@@ -104,7 +104,7 @@ describe('Scattered adapter', function () {
     it('should configure the site object', function () {
       const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
       const site = request.data.site;
-      assert.equal(site.publisher.name, validBidderRequest.ortb2.site.publisher.name)
+      assert.equal(site.publisher.name, validBidderRequest.ortb2.site.publisher.name);
     });
 
     it('should configure site with ortb2', function () {
@@ -142,9 +142,9 @@ describe('Scattered adapter', function () {
         assert.equal(request.device.w, 375);
         assert.equal(request.device.h, 273);
       });
-    })
-  })
-})
+    });
+  });
+});
 
 describe('interpretResponse', function () {
   const serverResponse = {

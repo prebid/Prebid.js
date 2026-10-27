@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec, helper} from 'modules/gamoshiBidAdapter.js';
+import { expect } from 'chai';
+import { spec, helper } from 'modules/gamoshiBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
@@ -12,7 +12,6 @@ describe('GamoshiAdapter', () => {
   let schainConfig,
     bidRequest,
     bannerBidRequest,
-    bannerRequestWithEids,
     videoBidRequest,
     rtbResponse,
     videoResponse,
@@ -55,7 +54,7 @@ describe('GamoshiAdapter', () => {
           tid: 'a123456789',
         }
       },
-      refererInfo: {referer: 'http://examplereferer.com'},
+      refererInfo: { referer: 'http://examplereferer.com' },
       gdprConsent: {
         consentString: 'some string',
         gdprApplies: true
@@ -68,7 +67,7 @@ describe('GamoshiAdapter', () => {
         }
       },
       uspConsent: 'gamoshiCCPA',
-    }
+    };
     bannerBidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': 'auction-id-12345',
@@ -81,38 +80,7 @@ describe('GamoshiAdapter', () => {
       'sizes': [[300, 250], [300, 600]],
       'transactionId': '1d1a030790a475',
       'bidId': 'request-id-12345',
-      refererInfo: {referer: 'http://examplereferer.com'}
-    };
-
-    bannerRequestWithEids = {
-      'adUnitCode': 'adunit-code',
-      'auctionId': 'auction-id-12345',
-      'mediaTypes': {
-        banner: {}
-      },
-      'params': {
-        'supplyPartnerId': supplyPartnerId
-      },
-      userIdAsEids: [
-        {
-          source: '1.test.org',
-          uids: [{
-            id: '11111',
-            atype: 1,
-          }]
-        },
-        {
-          source: '2.test.org',
-          uids: [{
-            id: '11111',
-            atype: 1,
-          }]
-        }
-      ],
-      'sizes': [[300, 250], [300, 600]],
-      'transactionId': '1d1a030790a475',
-      'bidId': 'request-id-12345',
-      refererInfo: {referer: 'http://examplereferer.com'}
+      refererInfo: { referer: 'http://examplereferer.com' }
     };
 
     videoBidRequest = {
@@ -127,7 +95,7 @@ describe('GamoshiAdapter', () => {
       'sizes': [[300, 250], [300, 600]],
       'transactionId': 'a123456789',
       'bidId': '111',
-      refererInfo: {referer: 'http://examplereferer.com'}
+      refererInfo: { referer: 'http://examplereferer.com' }
     };
     rtbResponse = {
       'id': 'request-id-12345',
@@ -135,8 +103,8 @@ describe('GamoshiAdapter', () => {
       'cur': 'USD',
       'ext': {
         'utrk': [
-          {'type': 'iframe', 'url': '//rtb.gamoshi.io/user/sync/1?gdpr=[GDPR]&consent=[CONSENT]&usp=[US_PRIVACY]'},
-          {'type': 'image', 'url': '//rtb.gamoshi.io/user/sync/2'}
+          { 'type': 'iframe', 'url': '//rtb.gamoshi.io/user/sync/1?gdpr=[GDPR]&consent=[CONSENT]&usp=[US_PRIVACY]' },
+          { 'type': 'image', 'url': '//rtb.gamoshi.io/user/sync/2' }
         ]
       },
       'seatbid': [
@@ -160,7 +128,7 @@ describe('GamoshiAdapter', () => {
               'ext': {
                 'vast_url': 'http://my.vast.com',
                 'utrk': [
-                  {'type': 'iframe', 'url': '//p.partner1.io/user/sync/1'}
+                  { 'type': 'iframe', 'url': '//p.partner1.io/user/sync/1' }
                 ]
               }
             }
@@ -185,7 +153,7 @@ describe('GamoshiAdapter', () => {
               'w': 300,
               'ext': {
                 'utrk': [
-                  {'type': 'image', 'url': '//p.partner2.io/user/sync/1'}
+                  { 'type': 'image', 'url': '//p.partner2.io/user/sync/1' }
                 ]
               }
             }
@@ -241,7 +209,7 @@ describe('GamoshiAdapter', () => {
   });
 
   afterEach(() => {
-    sandBox.restore()
+    sandBox.restore();
     config.resetConfig();
   });
 
@@ -289,19 +257,19 @@ describe('GamoshiAdapter', () => {
 
   describe('isBidRequestValid', () => {
     it('should validate supply-partner ID', () => {
-      expect(spec.isBidRequestValid({params: {}})).to.equal(false);
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: 123}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {supply_partner_id: 123}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {supply_partner_id: '123'}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {inventory_id: 123}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {inventory_id: '123'}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {inventory_id: 'kukuk1212'}})).to.equal(false);
+      expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: 123 } })).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { supply_partner_id: 123 } })).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { supply_partner_id: '123' } })).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { inventory_id: 123 } })).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { inventory_id: '123' } })).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { inventory_id: 'kukuk1212' } })).to.equal(false);
     });
 
     it('should validate RTB endpoint', () => {
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true); // RTB endpoint has a default
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', rtbEndpoint: 123}})).to.equal(false);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true); // RTB endpoint has a default
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', rtbEndpoint: 123 } })).to.equal(false);
       expect(spec.isBidRequestValid({
         params: {
           supplyPartnerId: '123',
@@ -312,20 +280,20 @@ describe('GamoshiAdapter', () => {
 
     it('should validate bid floor', () => {
       // bidfloor can be omitted - should be valid
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })).to.equal(true);
 
       // bidfloor as string should be invalid
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: '123'}})).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', bidfloor: '123' } })).to.equal(true);
 
       // bidfloor as zero should be invalid (not positive)
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: 0}})).to.equal(false);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', bidfloor: 0 } })).to.equal(false);
 
       // bidfloor as negative number should be invalid
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: -0.5}})).to.equal(false);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', bidfloor: -0.5 } })).to.equal(false);
 
       // bidfloor as positive number should be valid
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: 0.1}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: 1.5}})).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', bidfloor: 0.1 } })).to.equal(true);
+      expect(spec.isBidRequestValid({ params: { supplyPartnerId: '123', bidfloor: 1.5 } })).to.equal(true);
       //
       // const getFloorResponse = {currency: 'USD', floor: 5};
       // let testBidRequest = deepClone(bidRequest);
@@ -372,8 +340,8 @@ describe('GamoshiAdapter', () => {
       response = spec.buildRequests([bidRequest], bidRequest);
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(1);
-      const adUnit1 = Object.assign({}, utils.deepClone(bidRequest), {auctionId: '1', adUnitCode: 'a'});
-      const adUnit2 = Object.assign({}, utils.deepClone(bidRequest), {auctionId: '1', adUnitCode: 'b'});
+      const adUnit1 = Object.assign({}, utils.deepClone(bidRequest), { auctionId: '1', adUnitCode: 'a' });
+      const adUnit2 = Object.assign({}, utils.deepClone(bidRequest), { auctionId: '1', adUnitCode: 'b' });
       response = spec.buildRequests([adUnit1, adUnit2], bidRequest);
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(2);
@@ -396,7 +364,7 @@ describe('GamoshiAdapter', () => {
         page: 'http://www.test.com/page.html',
         domain: 'www.test.com',
         ref: 'http://referrer.com'
-      })
+      });
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
 
       expect(response.data.imp.length).to.equal(1);
@@ -548,11 +516,11 @@ describe('GamoshiAdapter', () => {
 
   describe('interpretResponse', () => {
     it('returns an empty array on missing response', () => {
-      let response = spec.interpretResponse(undefined, {bidRequest: bannerBidRequest});
+      let response = spec.interpretResponse(undefined, { bidRequest: bannerBidRequest });
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(0);
 
-      response = spec.interpretResponse({}, {bidRequest: bannerBidRequest});
+      response = spec.interpretResponse({}, { bidRequest: bannerBidRequest });
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(0);
 
@@ -578,7 +546,7 @@ describe('GamoshiAdapter', () => {
       const mockOrtbRequest = {
         imp: [{ id: '1', tagid: bannerBidRequest.adUnitCode }]
       };
-      const response = spec.interpretResponse({body: rtbResponse}, {data: mockOrtbRequest, bidRequest: bannerBidRequest});
+      const response = spec.interpretResponse({ body: rtbResponse }, { data: mockOrtbRequest, bidRequest: bannerBidRequest });
       expect(Array.isArray(response)).to.equal(true);
       // The ORTB converter handles response processing, just verify it returns an array
     });
@@ -587,13 +555,13 @@ describe('GamoshiAdapter', () => {
       const mockOrtbRequest = {
         imp: [{ id: '1', tagid: videoBidRequest.adUnitCode }]
       };
-      const response = spec.interpretResponse({body: videoResponse}, {data: mockOrtbRequest, bidRequest: videoBidRequest});
+      const response = spec.interpretResponse({ body: videoResponse }, { data: mockOrtbRequest, bidRequest: videoBidRequest });
       expect(Array.isArray(response)).to.equal(true);
       // The ORTB converter handles response processing, just verify it returns an array
     });
 
     it('aggregates user-sync pixels', () => {
-      const response = spec.getUserSyncs({}, [{body: rtbResponse}]);
+      const response = spec.getUserSyncs({}, [{ body: rtbResponse }]);
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(4);
       expect(response[0].type).to.equal(rtbResponse.ext.utrk[0].type);
@@ -612,12 +580,12 @@ describe('GamoshiAdapter', () => {
       const mockOrtbRequest = {
         imp: [{ id: '1', tagid: videoRequest.adUnitCode }]
       };
-      const result = spec.interpretResponse({body: videoResponse}, {data: mockOrtbRequest, bidRequest: videoRequest});
+      const result = spec.interpretResponse({ body: videoResponse }, { data: mockOrtbRequest, bidRequest: videoRequest });
       expect(Array.isArray(result)).to.equal(true);
     });
 
     it('validates in/existing of gdpr consent', () => {
-      let result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, 'gamoshiCCPA');
+      let result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent, 'gamoshiCCPA');
       // print result
 
       expect(result).to.be.an('array');
@@ -626,14 +594,14 @@ describe('GamoshiAdapter', () => {
       expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=1&consent=consent%20string&us_privacy=gamoshiCCPA');
 
       gdprConsent.gdprApplies = false;
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, 'gamoshiCCPA');
+      result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent, 'gamoshiCCPA');
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=0&consent=&us_privacy=gamoshiCCPA');
 
       videoResponse.ext.utrk[0].url = 'https://rtb.gamoshi.io/pix/1275/scm';
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent);
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
@@ -641,21 +609,21 @@ describe('GamoshiAdapter', () => {
     });
 
     it('validates existence of gdpr, gdpr consent and usp consent', () => {
-      let result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, 'gamoshiCCPA');
+      let result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent, 'gamoshiCCPA');
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=1&consent=consent%20string&us_privacy=gamoshiCCPA');
 
       gdprConsent.gdprApplies = false;
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, '');
+      result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent, '');
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=0&consent=&us_privacy=');
 
       videoResponse.ext.utrk[0].url = 'https://rtb.gamoshi.io/pix/1275/scm';
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent);
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
@@ -687,7 +655,7 @@ describe('GamoshiAdapter', () => {
       const mockOrtbRequest = {
         imp: [{ id: '1', tagid: videoBidRequest.adUnitCode }]
       };
-      const response = spec.interpretResponse({body: videoResponseWithMeta}, {data: mockOrtbRequest, bidRequest: videoBidRequest});
+      const response = spec.interpretResponse({ body: videoResponseWithMeta }, { data: mockOrtbRequest, bidRequest: videoBidRequest });
       expect(Array.isArray(response)).to.equal(true);
     });
 

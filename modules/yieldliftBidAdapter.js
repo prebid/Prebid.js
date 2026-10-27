@@ -1,6 +1,6 @@
-import {deepAccess, deepSetValue, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.yieldlift.com/pbjs';
 
@@ -104,8 +104,8 @@ export const spec = {
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
           meta: { advertiserDomains: bid && bid.advertiserDomains ? bid.advertiserDomains : [] }
-        })
-      })
+        });
+      });
     } else {
       logInfo('yieldlift.interpretResponse :: no valid responses to interpret');
     }
@@ -137,10 +137,10 @@ export const spec = {
         });
 
         if (!syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type !== 'iframe')
+          syncs = syncs.filter(s => s.type !== 'iframe');
         }
         if (!syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type !== 'image')
+          syncs = syncs.filter(s => s.type !== 'image');
         }
       }
     });

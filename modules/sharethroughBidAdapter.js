@@ -1,4 +1,3 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { handleCookieSync, PID_STORAGE_NAME, prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -6,6 +5,13 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import { getDNT } from '../libraries/dnt/index.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./sharethroughBidAdapter.d.ts').SharethroughBidderParams} SharethroughBidderParams
+ * @typedef {BidRequest & {params: SharethroughBidderParams}} SharethroughBidRequest
+ */
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -53,6 +59,10 @@ export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
   gvlid: 80,
+  /**
+   * @param {SharethroughBidRequest} bid
+   * @returns {boolean}
+   */
   isBidRequestValid: (bid) => !!bid.params.pkey,
 
   buildRequests: (bidRequests, bidderRequest) => {
@@ -83,7 +93,7 @@ export const sharethroughAdapterSpec = {
         ext: {},
       },
       regs: {
-        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        coppa: bidderRequest.ortb2?.regs?.coppa === 1 ? 1 : 0,
         ext: {},
       },
       source: {
@@ -158,10 +168,6 @@ export const sharethroughAdapterSpec = {
 
         const nativeRequest = deepAccess(bidReq, 'mediaTypes.native');
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
-
-        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
-          mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
-        }
 
         if (videoRequest) {
           // default playerSize, only change this if we know width and height are properly defined in the request
@@ -292,8 +298,6 @@ export const sharethroughAdapterSpec = {
       return [];
     }
 
-    const fledgeAuctionEnabled = body.ext?.auctionConfigs;
-
     const imp = req.data.imp[0];
 
     const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
@@ -340,15 +344,7 @@ export const sharethroughAdapterSpec = {
 
       return response;
     });
-
-    if (fledgeAuctionEnabled && !isEqtvTest) {
-      return {
-        bids: bidsFromExchange,
-        paapi: body.ext?.auctionConfigs || {},
-      };
-    } else {
-      return bidsFromExchange;
-    }
+    return bidsFromExchange;
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {

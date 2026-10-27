@@ -16,7 +16,7 @@ runs:
       run: sleep 10
     - name: 'Download artifact'
       id: download
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         result-encoding: string
         script: |

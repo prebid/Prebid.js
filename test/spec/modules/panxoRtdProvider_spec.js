@@ -13,8 +13,7 @@ const {
   load,
   onImplLoaded,
   onImplMessage,
-  onGetBidRequestData,
-  flushPendingCallbacks
+  onGetBidRequestData
 } = __TEST__;
 
 describe('panxo RTD module', function () {

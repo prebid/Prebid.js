@@ -2,12 +2,12 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import {deepAccess, logError, logWarn} from '../src/utils.js';
-import {config} from '../src/config.js';
-import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
+import { deepAccess, logError, logWarn } from '../src/utils.js';
+import { config } from '../src/config.js';
+import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import * as events from '../src/events.js';
-import {EVENTS} from '../src/constants.js';
-import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
+import { EVENTS } from '../src/constants.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS, VENDORLESS_GVLID } from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
@@ -20,7 +20,7 @@ import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE
 } from '../src/activities/params.js';
-import {registerActivityControl} from '../src/activities/rules.js';
+import { registerActivityControl } from '../src/activities/rules.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
   ACTIVITY_ACCESS_REQUEST_CREDENTIALS,
@@ -33,18 +33,31 @@ import {
   ACTIVITY_TRANSMIT_PRECISE_GEO,
   ACTIVITY_TRANSMIT_UFPD
 } from '../src/activities/activities.js';
-import {processRequestOptions} from '../src/ajax.js';
+// @ts-expect-error the ts compiler is confused by build-time renaming of validate.mjs to validate.js
+import { validatePurposeDeclarations } from '../libraries/purposeDeclarations/validate.js';
+import {
+  DEFAULT_PURPOSE_DECLARATION,
+  NO_PURPOSE_DECLARATION,
+  getConsent,
+  hasAddtlConsent,
+  setDefaultPurposeDeclaration,
+  setGvlLegalBasisMapping,
+  type PurposeDeclarations,
+} from '../libraries/consentManagement/consentUtils.js';
+
+export {
+  DEFAULT_PURPOSE_DECLARATION,
+  NO_PURPOSE_DECLARATION,
+  getAcceptableFlags,
+  getPurposeDeclarations,
+  type PurposeDeclarations,
+} from '../libraries/consentManagement/consentUtils.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
 export const ACTIVE_RULES = {
   purpose: {},
   feature: {}
-};
-
-const CONSENT_PATHS = {
-  purpose: false,
-  feature: 'specialFeatureOptins'
 };
 
 const CONFIGURABLE_RULES = {
@@ -121,11 +134,6 @@ const GVLID_LOOKUP_PRIORITY = [
 
 const RULE_NAME = 'TCF2';
 const RULE_HANDLES = [];
-
-// in JS we do not have access to the GVL; assume that everyone declares legitimate interest for basic ads
-const LI_PURPOSES = [2];
-const PUBLISHER_LI_PURPOSES = [2, 7, 9, 10];
-
 declare module '../src/config' {
   interface Config {
     /**
@@ -133,8 +141,56 @@ declare module '../src/config' {
      * by the modules themselves.
      */
     gvlMapping?: { [moduleName: string]: number }
+    /**
+     * Map from module name to that module's Google Additional Consent provider ID. This overrides the ID provided
+     * by the modules themselves. It is used to check vendor consent for modules that have no GVL ID, against the
+     * CMP's Additional Consent string.
+     * @see https://support.google.com/admanager/answer/9681920
+     */
+    acpMapping?: { [moduleName: string]: number }
+    /**
+     * Map from GVL ID to an object describing the legal basis (consent or legitimate interest) that applies to each purpose or feature. This follows the same format as the GVL -
+     *  see https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20Consent%20string%20and%20vendor%20list%20formats%20v2.md -
+     *  and by default is taken from it, for those GVL IDs that are known to Prebid (i.e. declared by adapters, not set through gvlMapping).
+     *  When the GVL ID is not known, the default can be configured with `consentManagement.gdpr.defaultLegalBasis`.
+     */
+    gvlLegalBasisMapping?: { [gvlId: number]: PurposeDeclarations }
   }
 }
+
+config.getConfig('gvlLegalBasisMapping', (cfg) => {
+  // validate now to give warnings regardless of whether the mapping will actually be used
+  const mapping = cfg.gvlLegalBasisMapping ?? {};
+  Object.entries(mapping).forEach(([key, value]) => {
+    value = Object.assign({}, NO_PURPOSE_DECLARATION, value);
+    const errorMessage = validatePurposeDeclarations(value);
+    if (errorMessage != null) {
+      logWarn(`gvlLegalBasisMapping for GVL ID ${key} is invalid: ${errorMessage}; assuming no legal basis for any purpose`, value);
+      value = NO_PURPOSE_DECLARATION;
+    }
+    mapping[key] = value;
+  });
+  setGvlLegalBasisMapping(mapping);
+});
+
+function lookupId<T>(registry: { get(moduleName: string): { gvlid?: T, modules: { [moduleType: string]: T } } }, label: string, moduleType, moduleName): T | undefined {
+  let { gvlid: id, modules } = registry.get(moduleName);
+  if (id == null && Object.keys(modules).length > 0) {
+    // this behavior is for backwards compatibility; if multiple modules with the same
+    // name declare different IDs, pick the bidder's first, then userId, then analytics
+    for (const type of GVLID_LOOKUP_PRIORITY) {
+      if (modules.hasOwnProperty(type)) {
+        id = modules[type];
+        if (type !== moduleType) {
+          logWarn(`Multiple ${label} IDs found for module '${moduleName}'; using the ${type} module's ID (${String(id)}) instead of the ${moduleType}'s ID (${String(modules[moduleType])})`);
+        }
+        break;
+      }
+    }
+  }
+  return id;
+}
+
 /**
  * Retrieve a module's GVL ID.
  */
@@ -149,25 +205,26 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
     } else if (moduleType === MODULE_TYPE_PREBID) {
       return VENDORLESS_GVLID;
     } else {
-      let {gvlid, modules} = GDPR_GVLIDS.get(moduleName);
-      if (gvlid == null && Object.keys(modules).length > 0) {
-        // this behavior is for backwards compatibility; if multiple modules with the same
-        // name declare different GVL IDs, pick the bidder's first, then userId, then analytics
-        for (const type of GVLID_LOOKUP_PRIORITY) {
-          if (modules.hasOwnProperty(type)) {
-            gvlid = modules[type];
-            if (type !== moduleType) {
-              logWarn(`Multiple GVL IDs found for module '${moduleName}'; using the ${type} module's ID (${gvlid}) instead of the ${moduleType}'s ID (${modules[moduleType]})`);
-            }
-            break;
-          }
-        }
-      }
+      let gvlid = lookupId(GDPR_GVLIDS, 'GVL', moduleType, moduleName);
       if (gvlid == null && fallbackFn) {
         gvlid = fallbackFn();
       }
       return gvlid || null;
     }
+  }
+  return null;
+}
+
+/**
+ * Retrieve a module's Google Additional Consent provider ID.
+ */
+export function getAcpId(moduleType, moduleName): number | null {
+  if (moduleName && moduleType !== MODULE_TYPE_PREBID) {
+    const acpMapping = config.getConfig('acpMapping');
+    if (acpMapping && acpMapping[moduleName]) {
+      return acpMapping[moduleName];
+    }
+    return lookupId(GDPR_ACPIDS, 'Additional Consent provider', moduleType, moduleName) || null;
   }
   return null;
 }
@@ -199,27 +256,6 @@ export function shouldEnforce(consentData, purpose, name) {
   return consentData && consentData.gdprApplies;
 }
 
-function getConsentOrLI(consentData, path, id, acceptLI) {
-  const data = deepAccess(consentData, `vendorData.${path}`);
-  return !!data?.consents?.[id] || (acceptLI && !!data?.legitimateInterests?.[id]);
-}
-
-function getConsent(consentData, type, purposeNo, gvlId) {
-  let purpose;
-  if (CONSENT_PATHS[type] !== false) {
-    purpose = !!deepAccess(consentData, `vendorData.${CONSENT_PATHS[type]}.${purposeNo}`);
-  } else {
-    const [path, liPurposes] = gvlId === VENDORLESS_GVLID
-      ? ['publisher', PUBLISHER_LI_PURPOSES]
-      : ['purpose', LI_PURPOSES];
-    purpose = getConsentOrLI(consentData, path, purposeNo, liPurposes.includes(purposeNo));
-  }
-  return {
-    purpose,
-    vendor: getConsentOrLI(consentData, 'vendor', gvlId, LI_PURPOSES.includes(purposeNo))
-  }
-}
-
 /**
  * This function takes in a rule and consentData and validates against the consentData provided. Depending on what it returns,
  * the caller may decide to suppress a TCF-sensitive activity.
@@ -227,19 +263,29 @@ function getConsent(consentData, type, purposeNo, gvlId) {
  * @param {Object} consentData - gdpr consent data
  * @param {string=} currentModule - Bidder code of the current module
  * @param {number=} gvlId - GVL ID for the module
+ * @param {number=} acpId - Google Additional Consent provider ID for the module; used for vendor consent only when there is no GVL ID
+ * @param {Object=} params - activity params
  * @returns {boolean}
  */
-export function validateRules(rule, consentData, currentModule, gvlId, params = {}) {
+export function validateRules(rule, consentData, currentModule, gvlId, acpId = null, params = {}) {
   const ruleOptions = CONFIGURABLE_RULES[rule.purpose];
 
   // return 'true' if vendor present in 'vendorExceptions'
   if ((rule.vendorExceptions || []).includes(currentModule)) {
     return true;
   }
-  const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
-  const deferS2Sbidders = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders && !gvlId;
-  const {purpose, vendor} = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
-  return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || deferS2Sbidders || vendor);
+  const deferToS2S = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders && !gvlId;
+  const useVendorsLegalBasis = !deferToS2S && rule.enforceVendor && !(rule.softVendorExceptions || []).includes(currentModule);
+  const { purpose, vendor } = getConsent(consentData, ruleOptions.type, ruleOptions.id, useVendorsLegalBasis ? gvlId : null);
+  return (!rule.enforcePurpose || purpose) && (!useVendorsLegalBasis || gvlId === VENDORLESS_GVLID || vendor || hasAcpVendorConsent(consentData, gvlId, acpId));
+}
+
+/**
+ * Vendor consent for modules that are not on the GVL, but are on Google's Additional Consent provider list.
+ * GVL IDs take precedence: a module that has one is never checked against Additional Consent.
+ */
+function hasAcpVendorConsent(consentData, gvlId, acpId) {
+  return gvlId == null && acpId != null && hasAddtlConsent(consentData, acpId);
 }
 
 function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = () => null) {
@@ -249,17 +295,18 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = 
 
     if (shouldEnforce(consentData, purposeNo, modName)) {
       const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
-      const allow = !!checkConsent(consentData, modName, gvlid, params);
+      const acpId = gvlid == null ? getAcpId(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName) : null;
+      const allow = !!checkConsent(consentData, modName, gvlid, acpId, params);
       if (!allow) {
         blocked && blocked.add(modName);
-        return {allow};
+        return { allow };
       }
     }
   };
 }
 
 function singlePurposeGdprRule(purposeNo, blocked = null, gvlidFallback: any = () => null) {
-  return gdprRule(purposeNo, (cd, modName, gvlid, params) => !!validateRules(ACTIVE_RULES.purpose[purposeNo], cd, modName, gvlid, params), blocked, gvlidFallback);
+  return gdprRule(purposeNo, (cd, modName, gvlid, acpId, params) => !!validateRules(ACTIVE_RULES.purpose[purposeNo], cd, modName, gvlid, acpId, params), blocked, gvlidFallback);
 }
 
 function exceptPrebidModules(ruleFn) {
@@ -287,18 +334,20 @@ export const enrichEidsRule = singlePurposeGdprRule(1, storageBlocked);
 export const fetchBidsRule = exceptPrebidModules(singlePurposeGdprRule(2, biddersBlocked));
 export const reportAnalyticsRule = singlePurposeGdprRule(7, analyticsBlocked, (params) => getGvlidFromAnalyticsAdapter(params[ACTIVITY_PARAM_COMPONENT_NAME], params[ACTIVITY_PARAM_ANL_CONFIG]));
 export const ufpdRule = singlePurposeGdprRule(4, ufpdBlocked);
+export const accessRequestCredentialsRule = singlePurposeGdprRule(1, storageBlocked);
 
 export const transmitEidsRule = exceptPrebidModules((() => {
   // Transmit EID special case:
   // by default, legal basis or vendor exceptions for any purpose between 2 and 10
   // (but disregarding enforcePurpose and enforceVendor config) is enough to allow EIDs through
-  function check2to10Consent(consentData, modName, gvlId) {
+  function check2to10Consent(consentData, modName, gvlId, acpId) {
+    const acpConsent = hasAcpVendorConsent(consentData, gvlId, acpId);
     for (let pno = 2; pno <= 10; pno++) {
       if (ACTIVE_RULES.purpose[pno]?.vendorExceptions?.includes(modName)) {
         return true;
       }
-      const {purpose, vendor} = getConsent(consentData, 'purpose', pno, gvlId);
-      if (purpose && (vendor || ACTIVE_RULES.purpose[pno]?.softVendorExceptions?.includes(modName))) {
+      const { purpose, vendor } = getConsent(consentData, 'purpose', pno, gvlId);
+      if (purpose && (vendor || acpConsent || ACTIVE_RULES.purpose[pno]?.softVendorExceptions?.includes(modName))) {
         return true;
       }
     }
@@ -313,7 +362,7 @@ export const transmitEidsRule = exceptPrebidModules((() => {
   };
 })());
 
-export const transmitPreciseGeoRule = gdprRule('Special Feature 1', (cd, modName, gvlId) => validateRules(ACTIVE_RULES.feature[1], cd, modName, gvlId), geoBlocked);
+export const transmitPreciseGeoRule = gdprRule('Special Feature 1', (cd, modName, gvlId, acpId) => validateRules(ACTIVE_RULES.feature[1], cd, modName, gvlId, acpId), geoBlocked);
 
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
@@ -361,11 +410,15 @@ type TCFControlRule = {
   softVendorExceptions?: string[]
   /**
    * Only relevant when `purpose` is  `'personalizedAds'`.
-   * If true, user IDs and EIDs will not be shared without evidence of consent for TCF Purpose 4.
    * If false (the default), evidence of consent for any of Purposes 2-10 is sufficient for sharing user IDs and EIDs.
    */
   eidsRequireP4Consent?: boolean;
-}
+  /**
+   * Only relevant when `purpose` is 'basicAds'.
+   * If true, allows bidders with unknown GVL ID to be included in Prebid Server auctions.
+   */
+  deferS2Sbidders?: boolean
+};
 
 declare module '../src/consentHandler' {
   interface ConsentManagementConfig {
@@ -376,8 +429,24 @@ declare module '../src/consentHandler' {
   }
 
 }
+/**
+ * These options live under the TCF consent module's configuration, so they only mean anything to a
+ * publisher who has included that module: the augmentation is meant to apply only then.
+ * @augmentationOptional
+ */
 declare module './consentManagementTcf' {
   interface TCFConfig {
+    /**
+     * Legal basis to use when it cannot be determined from on a vendor's GVL declaration.
+     * Normally, Prebid decides whether to accept purpose consent and/or LI transparency based on what the vendor declared
+     * in the Global Vendor List, falling back to the `gvlLegalBasisMapping` config. This configuration is used instead when:
+     *  - `enforceVendor` is false, or
+     *  - the vendor is listed in `softVendorExceptions`, or
+     *  - the vendor's declaration is unknown (for example, it has a `gvlMapping` without a corresponding `gvlLegalBasisMapping`)
+     *
+     *  The default is {purposes: [1,2,4,7], flexiblePurposes: [2], legIntPurposes: [], specialFeatures: [1]}.
+     */
+    defaultLegalBasis?: PurposeDeclarations
     rules?: TCFControlRule[];
   }
 }
@@ -389,10 +458,11 @@ declare module './consentManagementTcf' {
 export function setEnforcementConfig(config) {
   let rules: Record<keyof typeof CONFIGURABLE_RULES, TCFControlRule> = deepAccess(config, 'gdpr.rules');
   if (!rules) {
-    logWarn('TCF2: enforcing P1 and P2 by default');
+    logWarn('TCF2: enforcing P1, P2, P4, P7 and SP1 by default');
   }
   rules = Object.fromEntries((rules as any || []).map(r => [r.purpose, r])) as any;
   strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
+  setDefaultPurposeDeclaration(Object.assign({}, NO_PURPOSE_DECLARATION, config?.gdpr?.defaultLegalBasis ?? DEFAULT_PURPOSE_DECLARATION));
 
   Object.entries(CONFIGURABLE_RULES).forEach(([name, opts]) => {
     ACTIVE_RULES[opts.type][opts.id] = rules[name] ?? opts.default;
@@ -404,7 +474,7 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
-      processRequestOptions.after(checkIfCredentialsAllowed);
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, RULE_NAME, accessRequestCredentialsRule));
     }
     if (ACTIVE_RULES.purpose[2] != null) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
@@ -425,26 +495,8 @@ export function setEnforcementConfig(config) {
   }
 }
 
-export function checkIfCredentialsAllowed(next, options: { withCredentials?: boolean } = {}, moduleType?: string, moduleName?: string) {
-  if (!options.withCredentials || (moduleType && moduleName)) {
-    next(options);
-    return;
-  }
-  const consentData = gdprDataHandler.getConsentData();
-  const rule = ACTIVE_RULES.purpose[1];
-  const ruleOptions = CONFIGURABLE_RULES[rule.purpose];
-  const {purpose} = getConsent(consentData, ruleOptions.type, ruleOptions.id, null);
-
-  if (!purpose && rule.enforcePurpose) {
-    options.withCredentials = false;
-    logWarn(`${RULE_NAME} denied ${ACTIVITY_ACCESS_REQUEST_CREDENTIALS}`);
-  }
-  next(options);
-}
-
 export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
-  processRequestOptions.getHooks({hook: checkIfCredentialsAllowed}).remove();
   hooksAdded = false;
 }
 

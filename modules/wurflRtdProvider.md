@@ -48,14 +48,14 @@ pbjs.setConfig({
 
 ### Parameters
 
-| Name           | Type    | Description                                | Default        |
-| :------------- | :------ | :----------------------------------------- | :------------- |
-| name           | String  | Real time data module name                 | Always 'wurfl' |
-| params         | Object  |                                            |                |
-| params.altHost | String  | Alternate host to connect to WURFL.js      |                |
-| params.abTest  | Boolean | Enable A/B testing mode                    | `false`        |
-| params.abName  | String  | A/B test name identifier                   | `'unknown'`    |
-| params.abSplit | Number  | Fraction of users in treatment group (0-1) | `0.5`          |
+| Name           | Type    | Description                                   | Default        |
+| :------------- | :------ | :-------------------------------------------- | :------------- |
+| name           | String  | Real time data module name                    | Always 'wurfl' |
+| params         | Object  |                                               |                |
+| params.altHost | String  | Alternate host to connect to WURFL.js         |                |
+| params.abTest  | Boolean | Enable A/B testing mode                       | `false`        |
+| params.abName  | String  | A/B test name identifier                      | `'unknown'`    |
+| params.abSplit | Number  | Fraction of auctions in treatment group (0-1) | `0.5`          |
 
 ### A/B Testing
 
@@ -78,10 +78,10 @@ pbjs.setConfig({
 });
 ```
 
-- **Treatment group** (`abSplit` \* 100%): Module enabled, bid requests enriched with WURFL device data
-- **Control group** ((1 - `abSplit`) \* 100%): Module disabled, no enrichment occurs
-- Assignment is random on each page load based on `Math.random()`
-- Example: `abSplit: 0.75` means 75% get WURFL enrichment, 25% don't
+- **Treatment group** (`abSplit` \* 100% of auctions): bid requests are enriched with WURFL device data
+- **Control group** ((1 - `abSplit`) \* 100% of auctions): bid requests are not enriched; the module still loads WURFL.js and keeps its cache up to date
+- Assignment is random for each auction based on `Math.random()`, so auctions on the same page can fall in different groups
+- Example: `abSplit: 0.75` means 75% of auctions get WURFL enrichment, 25% don't
 
 ## Testing
 

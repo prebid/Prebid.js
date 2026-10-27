@@ -6,6 +6,9 @@ master branch.
 Pull requests must have 80% code coverage before being considered for merge.
 Additional details about the process can be found [here](./PR_REVIEW.md).
 
+Whenever possible, new modules should provide Typescript types for their public interface.
+Examples of public interface are bid parameters and configuration (including configuration for analytics, userId, or real time data modules). 
+
 There are more details available if you'd like to contribute a [bid adapter](https://docs.prebid.org/dev-docs/bidder-adaptor.html) or [analytics adapter](https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
 
 ## Issues

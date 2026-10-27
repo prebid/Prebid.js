@@ -10,8 +10,8 @@ runs:
     - name: Set up Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: '20'
-    - uses: actions/github-script@v8
+        node-version-file: '.nvmrc'
+    - uses: actions/github-script@v9
       id: platform
       with:
         result-encoding: string
@@ -21,22 +21,30 @@ runs:
     - name: 'Clear working directory'
       shell: bash
       run: |
-        rm -r "$(pwd)"/*
-
+        # remove hidden checkout files too; symlinks there can block tar on macOS.
+        find "$(pwd)" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
     - name: Download artifact
-      uses: Wandalen/wretry.action@v3.8.0
+      id: download
+      continue-on-error: true
+      uses: actions/download-artifact@v8
       with:
-        action: actions/download-artifact@v7
-        attempt_limit: 2
-        attempt_delay: 10000
-        with: |
-          path: '${{ runner.temp }}'
-          name: '${{ inputs.name }}'
-
+        path: '${{ runner.temp }}'
+        name: '${{ inputs.name }}'
+    - name: Delay before retrying download
+      if: steps.download.outcome != 'success'
+      shell: bash
+      run: sleep 10
+    - name: Retry downloading artifact
+      if: steps.download.outcome != 'success'
+      uses: actions/download-artifact@v8
+      with:
+        path: '${{ runner.temp }}'
+        name: '${{ inputs.name }}'
     - name: 'Untar working directory'
       shell: bash
       run: |
         wdir="$(pwd)"
         parent="$(dirname "$wdir")"
         target="$(basename "$wdir")"
+        export MSYS=winsymlinks:lnk
         tar ${{ steps.platform.outputs.result == 'win32' && '--force-local' || '' }} -C "$parent" -xf '${{ runner.temp }}/${{ inputs.name }}.tar' "$target"

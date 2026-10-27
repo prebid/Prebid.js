@@ -1,6 +1,6 @@
-import {_each, deepSetValue, inIframe} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { _each, deepSetValue, inIframe } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -9,11 +9,13 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  */
 
 const BIDDER_CODE = 'bridgewell';
+const ACP_ID = 1166; // Google Additional Consent provider ID
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
 const BIDDER_VERSION = '1.1.0';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, NATIVE],
 
   /**
@@ -107,7 +109,7 @@ export const spec = {
         const mediaType = bid.mediaTypes?.banner ? BANNER : (bid.mediaTypes?.native ? NATIVE : '*');
         const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
         const size = sizes.length === 1 ? sizes[0] : '*';
-        floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
+        floorInfo = bid.getFloor({ currency: 'USD', mediaType: mediaType, size: size }) || {};
       }
       adUnit.floor = floorInfo.floor;
       adUnit.currency = floorInfo.currency;

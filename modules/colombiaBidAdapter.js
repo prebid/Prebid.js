@@ -1,12 +1,16 @@
 import { ajax } from '../src/ajax.js';
 import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'colombia';
 const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
 const ENDPOINT_TIMEOUT = "https://ade.clmbtech.com/cde/bidNotify.htm";
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
+
+export const dep = {
+  ajax
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -19,7 +23,7 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return [];
     }
-    const payloadArr = []
+    const payloadArr = [];
     let ctr = 1;
     validBidRequests.forEach(bidRequest => {
       const params = bidRequest.params;
@@ -30,7 +34,7 @@ export const spec = {
       const cb = Math.floor(Math.random() * 99999999999);
       const bidId = bidRequest.bidId;
       const referrer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : '';
-      const mediaTypes = {}
+      const mediaTypes = {};
       const payload = {
         v: 'hb1',
         p: placementId,
@@ -63,7 +67,7 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadArr,
-    }]
+    }];
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
@@ -124,7 +128,7 @@ export const spec = {
     payload.bidNotifyType = 1;
     payload.evt = bid.ext && bid.ext.evtData;
 
-    ajax(ENDPOINT_BIDWON, null, JSON.stringify(payload), {
+    dep.ajax(ENDPOINT_BIDWON, null, JSON.stringify(payload), {
       method: 'POST',
       withCredentials: false
     });
@@ -145,10 +149,10 @@ export const spec = {
     payload.bidNotifyType = 2;
     payload.pubAdCodeNames = pubAdCodesString;
 
-    ajax(ENDPOINT_TIMEOUT, null, JSON.stringify(payload), {
+    dep.ajax(ENDPOINT_TIMEOUT, null, JSON.stringify(payload), {
       method: 'POST',
       withCredentials: false
     });
   }
-}
+};
 registerBidder(spec);

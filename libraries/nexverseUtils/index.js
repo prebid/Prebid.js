@@ -24,7 +24,7 @@ export const NV_ORTB_NATIVE_TYPE_MAPPING = {
     '11': 'displayUrl',
     '12': 'cta'
   }
-}
+};
 
 /**
  * Determines the device model (if possible).
@@ -107,21 +107,21 @@ export function parseNativeResponse(adm) {
     if (isArray(assets)) {
       assets.forEach(asset => {
         if (!isEmpty(asset.title) && !isEmpty(asset.title.text)) {
-          result.title = asset.title.text
+          result.title = asset.title.text;
         } else if (!isEmpty(asset.img)) {
           result[NV_ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
             url: asset.img.url,
             height: asset.img.h,
             width: asset.img.w
-          }
+          };
         } else if (!isEmpty(asset.data)) {
-          result[NV_ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
+          result[NV_ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value;
         }
       });
     }
     return result;
   } catch (e) {
-    printLog('error', `Error parsing native response: `, e)
+    printLog('error', `Error parsing native response: `, e);
     logError(`${LOG_ERROR_PREFIX} Error parsing native response: `, e);
     return {};
   }
@@ -178,10 +178,10 @@ export const getUid = (storage) => {
 export const getBidFloor = (bid, creative) => {
   let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
   if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor)) {
-    return floorInfo.floor
+    return floorInfo.floor;
   }
   return (bid.params.bidFloor ? bid.params.bidFloor : 0.0);
-}
+};
 
 /**
  * Detects the OS and version from the browser and formats them for ORTB 2.5.
@@ -224,4 +224,4 @@ export const getOsInfo = () => {
   }
 
   return { os: "Unknown", osv: undefined };
-}
+};

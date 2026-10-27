@@ -1,8 +1,8 @@
-import {deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
+import { deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -59,7 +59,7 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  const {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
+  const { gdprConsent, uspConsent, refererInfo, ortb2 } = bidderRequest;
   const req = {
     id: bidderRequest.bidderRequestId,
     // TODO: root-level `tid` is not ORTB; is this intentional?
@@ -78,7 +78,7 @@ function buildRequestParams(tags, bidderRequest) {
   if (uspConsent) {
     deepSetValue(req, 'user.us_privacy', uspConsent);
   }
-  if (config.getConfig('coppa')) {
+  if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
     deepSetValue(req, 'user.coppa', 1);
   }
   return req;
@@ -89,7 +89,7 @@ function buildSite(refInfo) {
     page: refInfo.page,
     secure: ~~(refInfo.page && refInfo.page.startsWith('https')),
     ref: refInfo.ref
-  }
+  };
   const keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
     result.keywords = keywords.content;
@@ -178,7 +178,7 @@ export const spec = {
           method: 'POST',
           url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(bidderRequest.refererInfo) ? '&debug=1' : ''}`,
           data: JSON.stringify(request)
-        })
+        });
       });
     });
     return requests;
@@ -213,7 +213,7 @@ function buildSyncs(serverResponses, propName, type) {
   return serverResponses.filter(rps => rps.body && rps.body[propName])
     .map(rsp => rsp.body[propName])
     .reduce((a, b) => a.concat(b), [])
-    .map(syncUrl => ({type: type, url: syncUrl}));
+    .map(syncUrl => ({ type: type, url: syncUrl }));
 }
 
 registerBidder(spec);

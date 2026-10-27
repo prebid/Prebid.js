@@ -1,8 +1,8 @@
-import {_each, deepAccess, getDefinedParams, isFn, isPlainObject, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
-import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
+import { _each, deepAccess, getDefinedParams, isFn, isPlainObject, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag } from '../libraries/targetVideoUtils/bidderUtils.js';
+import { SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE } from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -54,7 +54,7 @@ export const spec = {
       version: '$prebid.version$'
     };
 
-    for (let {bidId, sizes, mediaTypes, ...bid} of bidRequests) {
+    for (let { bidId, sizes, mediaTypes, ...bid } of bidRequests) {
       for (const mediaType in mediaTypes) {
         switch (mediaType) {
           case VIDEO: {
@@ -73,7 +73,7 @@ export const spec = {
               device: deepAccess(bidderRequest, 'ortb2.device'),
               user: { ext: {} },
               imp: []
-            }
+            };
 
             const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
             const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
@@ -87,7 +87,7 @@ export const spec = {
                 tid,
               },
               video: getDefinedParams(video, VIDEO_PARAMS)
-            }
+            };
 
             const bidFloor = typeof floor === 'string' ? Number(floor.trim())
               : typeof floor === 'number' ? floor
@@ -144,7 +144,7 @@ export const spec = {
               };
             }
 
-            const {ortb2} = bid;
+            const { ortb2 } = bid;
 
             if (ortb2?.source?.tid) {
               if (!payload.source) {
@@ -184,7 +184,7 @@ export const spec = {
             }
 
             if (bidderRequest && bidderRequest.uspConsent) {
-              payload.us_privacy = bidderRequest.uspConsent
+              payload.us_privacy = bidderRequest.uspConsent;
             }
 
             return formatRequest({ payload, url: BANNER_ENDPOINT_URL, bidderRequest });
@@ -241,6 +241,6 @@ export const spec = {
     return getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, 'targetvideo');
   }
 
-}
+};
 
 registerBidder(spec);
