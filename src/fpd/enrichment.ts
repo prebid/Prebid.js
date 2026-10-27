@@ -37,7 +37,7 @@ export interface FirstPartyDataConfig {
    */
   uaHints?: string[]
   /**
-   * If true, a bidder-specific schain (`ortb2.source.schain` or `ortb2.source.ext.schain` in `setBidderConfig`)
+   * If true, a bidder-specific schain (`ortb2.source.ext.schain` in `setBidderConfig`)
    * replaces the global schain for that bidder. By default (false), bidder-specific FPD is deep-merged into global
    * FPD, so the bidder's schain nodes are appended to the global schain's nodes.
    */
