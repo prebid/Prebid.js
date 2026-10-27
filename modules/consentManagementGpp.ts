@@ -45,6 +45,12 @@ class GPPError {
   }
 }
 
+const GPP_API = {
+  apiName: '__gpp',
+  apiArgs: ['command', 'callback', 'parameter'], // do not pass version - not clear what it's for (or what we should use),
+  mode: MODE_CALLBACK
+};
+
 export class GPPClient {
   apiVersion = '1.1';
   cmp;
@@ -52,11 +58,7 @@ export class GPPClient {
 
   static get(mkCmp = cmpClient) {
     if (this.INST == null) {
-      const cmp = mkCmp({
-        apiName: '__gpp',
-        apiArgs: ['command', 'callback', 'parameter'], // do not pass version - not clear what it's for (or what we should use),
-        mode: MODE_CALLBACK
-      });
+      const cmp = mkCmp(GPP_API);
       if (cmp == null) {
         throw new GPPError('GPP CMP not found');
       }
@@ -179,13 +181,20 @@ export class GPPClient {
   }
 }
 
-function lookupIabConsent() {
-  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()));
+function lookupIabConsent(_setProvisionalConsent, cmp) {
+  return new PbPromise((resolve) => {
+    const client = GPPClient.get(() => cmp);
+    if (client.cmp !== cmp) {
+      // GPPClient keeps the first CMP client it was given; this one would otherwise leak its message listener
+      cmp.close();
+    }
+    resolve(client.refresh());
+  });
 }
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
-  'iab': lookupIabConsent,
+  'iab': { api: GPP_API, lookup: lookupIabConsent },
 };
 
 function parseConsentData(cmpData) {
