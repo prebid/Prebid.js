@@ -55,6 +55,7 @@ const ALIASES = [
   { code: 'ybidder', gvlid: 1253 },
   { code: 'netads', gvlid: 965 },
   { code: 'stmbidder', gvlid: 965 },
+  { code: 'wovenwn' },
 ];
 
 export const STORAGE = getStorageManager({
