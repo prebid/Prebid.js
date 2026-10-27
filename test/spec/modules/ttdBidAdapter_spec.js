@@ -174,10 +174,16 @@ describe('ttdBidAdapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
-      it('should return false if api is missing', function () {
+      it('should return true if api is missing', function () {
         const bid = makeBid();
         delete bid.mediaTypes.video.api;
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+
+      it('should return true if api is an empty array', function () {
+        const bid = makeBid();
+        bid.mediaTypes.video.api = [];
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
       it('should return false if mimes is missing', function () {
@@ -1028,6 +1034,22 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.api[0]).to.equal(1);
       expect(requestBody.imp[0].video.api[1]).to.equal(3);
+    });
+
+    it('omits the api frameworks from the bid request if api is missing', function () {
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
+      delete clonedVideoRequests[0].mediaTypes.video.api;
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video).to.not.have.property('api');
+    });
+
+    it('omits the api frameworks from the bid request if api is an empty array', function () {
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
+      clonedVideoRequests[0].mediaTypes.video.api = [];
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video).to.not.have.property('api');
     });
 
     it('includes the protocols in the bid request', function () {

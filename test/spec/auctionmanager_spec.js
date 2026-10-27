@@ -12,7 +12,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import { _internal as store, updateVast } from 'src/videoCache.js';
+import { _internal as store, updateVast, vastLocalCache } from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
 import { hook } from '../../src/hook.js';
@@ -21,6 +21,7 @@ import 'modules/debugging/index.js'; // some tests look for debugging side effec
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import { expect } from 'chai';
 import { deepClone } from '../../src/utils.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../src/utils/desirability.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
 
@@ -787,6 +788,162 @@ describe('auctionmanager.js', function () {
 
       // reset bidderSettings so we don't mess up further tests
       getGlobal().bidderSettings = {};
+    });
+
+    it('should rank bids answering a request with allowPriorityBids on meta.deal.priorityAdjustedCpm', function () {
+      const bid = Object.assign({}, createBid(), fixtures.getBidResponses()[5], {
+        meta: { deal: { type: 2, priorityAdjustedCpm: 4 } }
+      });
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+
+      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+      assert.equal(bid.cpm, 0.5);
+      assert.equal(bid.desirability, 4);
+
+      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: false }) });
+      assert.equal(bid.desirability, 0.5);
+    });
+
+    describe('sets .priority', () => {
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+      const HIGH_PRIORITY = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+
+      function mkBid(meta) {
+        return Object.assign({}, createBid(), fixtures.getBidResponses()[5], { meta });
+      }
+
+      afterEach(() => {
+        getGlobal().bidderSettings = {};
+      });
+
+      Object.entries({
+        'there is no bidder request': undefined,
+        'the bidder request does not set allowPriorityBids': { bidderCode: 'brealtime' },
+        'the bidder request sets allowPriorityBids = false': { bidderCode: 'brealtime', allowPriorityBids: false },
+      }).forEach(([t, bidderRequest]) => {
+        describe(`when ${t}`, () => {
+          Object.entries({
+            'no meta': undefined,
+            'no meta.deal.priority': { deal: {} },
+            'meta.deal.priority': { deal: { priority: HIGH_PRIORITY } },
+          }).forEach(([t, meta]) => {
+            it(`to the default on bids with ${t}`, () => {
+              const bid = mkBid(meta);
+              adjustBids(bid, { index: index(bidderRequest) });
+              expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+            });
+          });
+        });
+      });
+
+      describe('when the bidder request sets allowPriorityBids = true', () => {
+        const bidderRequest = { src: 's2s', bidderCode: 'brealtime', allowPriorityBids: true };
+
+        Object.entries({
+          'no meta': undefined,
+          'no meta.deal.priority': { deal: {} },
+          'non-numeric meta.deal.priority': { deal: { priority: 'high' } },
+        }).forEach(([t, meta]) => {
+          it(`to the default on bids with ${t}`, () => {
+            const bid = mkBid(meta);
+            adjustBids(bid, { index: index(bidderRequest) });
+            expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+          });
+        });
+
+        it('to meta.deal.priority', () => {
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index(bidderRequest) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+
+        it('replacing any .priority the adapter set', () => {
+          const bid = Object.assign(mkBid({ deal: { priority: HIGH_PRIORITY } }), { priority: 0 });
+          adjustBids(bid, { index: index(bidderRequest) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+      });
+
+      it('to the default, replacing any .priority the adapter set, when priority bids are not allowed', () => {
+        const bid = Object.assign(mkBid(), { priority: 0 });
+        adjustBids(bid, { index: index({ bidderCode: 'brealtime' }) });
+        expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+      });
+
+      Object.entries({
+        'discarded for being negative': (cpm) => cpm * -1,
+        'zero': () => 0,
+        'positive': (cpm) => cpm * 2,
+      }).forEach(([t, bidCpmAdjustment]) => {
+        it(`even when the cpm adjustment is ${t}`, () => {
+          getGlobal().bidderSettings = { brealtime: { bidCpmAdjustment } };
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index({ bidderCode: 'brealtime', allowPriorityBids: true }) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+      });
+
+      it('even when bidDesirabilityAdjustment throws', () => {
+        const logError = sinon.stub(utils, 'logError');
+        try {
+          getGlobal().bidderSettings = { brealtime: { bidDesirabilityAdjustment: () => { throw new Error(); } } };
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index({ bidderCode: 'brealtime', allowPriorityBids: true }) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        } finally {
+          logError.restore();
+        }
+      });
+    });
+
+    describe('house bids', () => {
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+      function mkHouseBid(deal = {}) {
+        return Object.assign({}, createBid(), fixtures.getBidResponses()[5], { cpm: 0, meta: { deal: { priority: 14, ...deal } } });
+      }
+      function allowHouseBids(bid) {
+        getGlobal().bidderSettings = { [bid.bidderCode]: { allowHouseBids: true } };
+      }
+
+      afterEach(() => {
+        getGlobal().bidderSettings = {};
+      });
+
+      it('are flagged when the adapter is allowed house and priority bids and the trusted priority is above the default', () => {
+        const bid = mkHouseBid();
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.true;
+        expect(bid.priority).to.equal(14);
+      });
+
+      it('are not flagged when the adapter is not allowed house bids', () => {
+        const bid = mkHouseBid();
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+      });
+
+      it('are not flagged when the bidder request does not allow priority bids', () => {
+        const bid = mkHouseBid();
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode }) });
+        expect(bid.houseBid).to.be.false;
+      });
+
+      it('are not flagged for declaring the house deal type without a low priority', () => {
+        const bid = mkHouseBid({ type: 4, priority: undefined });
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+        expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+      });
+
+      it('overwrite a houseBid flag set by the adapter', () => {
+        const bid = Object.assign(mkHouseBid({ priority: DEFAULT_PRIORITY }), { houseBid: true });
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+      });
     });
   });
 
@@ -2321,7 +2478,84 @@ describe('auctionmanager.js', function () {
           server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
           assert.equal(doneSpy.callCount, 1);
         });
+
+        it('preserves a supplied video cache URL and key when opting out despite ignoreBidderCacheKey', async () => {
+          config.setConfig({ cache: { url: 'https://test.cache.url/endpoint', ignoreBidderCacheKey: true } });
+          const vastUrl = 'https://bidder.example/cache?uuid=supplied-key';
+          const videoCacheKey = 'supplied-key';
+          const bid = { ...mockBid(), mediaType: 'video', vastUrl, videoCacheKey };
+          bidRequests = [mockBidRequest(bid, {
+            mediaType: { video: { context: 'instream', cache: false } }
+          })];
+          auction.addBidReceived = sinon.spy();
+          const cbs = auctionCallbacks(doneSpy, auction);
+
+          cbs.addBidResponse(ADUNIT_CODE, bid);
+          cbs.adapterDone.call(bidRequests[0]);
+          await ready;
+
+          expect(server.requests).to.have.lengthOf(0);
+          sinon.assert.calledOnce(auction.addBidReceived);
+          sinon.assert.calledOnce(doneSpy);
+          const accepted = auction.addBidReceived.firstCall.args[0];
+          expect(accepted.vastUrl).to.equal(vastUrl);
+          expect(accepted.videoCacheKey).to.equal(videoCacheKey);
+        });
       }
+
+      Object.entries({ audio: FEATURES.AUDIO, video: FEATURES.VIDEO }).forEach(([mediaType, enabled]) => {
+        if (!enabled) return;
+        [false, true].forEach(useLocal => {
+          it(`keeps ${mediaType} caching independent of the video opt-out with ${useLocal ? 'local' : 'remote'} cache`, async () => {
+            config.setConfig({ cache: useLocal ? { useLocal: true } : { url: 'https://test.cache.url/endpoint' } });
+            const bid = {
+              ...mockBid(),
+              mediaType,
+              vastXml: '<VAST version="3.0"></VAST>'
+            };
+            bidRequests = [mockBidRequest(bid, {
+              mediaType: {
+                audio: {},
+                video: { context: 'instream', cache: false }
+              }
+            })];
+            auction.addBidReceived = sinon.spy();
+            const cbs = auctionCallbacks(doneSpy, auction);
+            try {
+              cbs.addBidResponse(ADUNIT_CODE, bid);
+              cbs.adapterDone.call(bidRequests[0]);
+              await ready;
+
+              if (mediaType === 'audio' && !useLocal) {
+                expect(server.requests).to.have.lengthOf(1);
+                sinon.assert.notCalled(auction.addBidReceived);
+                sinon.assert.notCalled(doneSpy);
+                server.requests[0].respond(200, { 'Content-Type': 'application/json' },
+                  JSON.stringify({ responses: [{ uuid: 'audio-cache-key' }] }));
+              } else {
+                expect(server.requests).to.have.lengthOf(0);
+              }
+              sinon.assert.calledOnce(auction.addBidReceived);
+              sinon.assert.calledOnce(doneSpy);
+              const accepted = auction.addBidReceived.firstCall.args[0];
+              if (mediaType === 'audio') {
+                expect(accepted.videoCacheKey).to.be.a('string').and.not.be.empty;
+                expect(accepted.vastUrl).to.include(useLocal ? 'blob:' : 'https://test.cache.url/endpoint');
+              } else {
+                expect(accepted.videoCacheKey).to.not.exist;
+                expect(accepted.vastUrl).to.not.exist;
+              }
+            } finally {
+              const accepted = auction.addBidReceived.firstCall?.args[0];
+              const localUrl = vastLocalCache.get(accepted?.videoCacheKey);
+              if (localUrl) {
+                URL.revokeObjectURL(localUrl);
+                vastLocalCache.delete(accepted.videoCacheKey);
+              }
+            }
+          });
+        });
+      });
 
       it('should convert cpm to number', () => {
         auction.addBidReceived = sinon.spy();

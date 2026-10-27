@@ -54,6 +54,7 @@
       "pubmaticIdSystem",
       "rediadsIdSystem",
       "rewardedInterestIdSystem",
+      "sevioIdSystem",
       "sharedIdSystem",
       "startioIdSystem",
       "taboolaIdSystem",
@@ -149,6 +150,9 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
+    ],
+    "genericAnalyticsAdapter": [
+      "genericAnalyticsSkinnyEvents"
     ]
   }
 }

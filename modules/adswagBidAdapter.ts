@@ -44,6 +44,14 @@ declare const FEATURES: { AUDIO?: boolean };
 
 // --- types -------------------------------------------------------------------
 
+/**
+ * Impression-scoped publisher key/values (`params.kv`). Values are tokens
+ * (string or number) or arrays of those; nested objects are dropped. Keys
+ * must be declared in the publisher's key-space registry — undeclared keys
+ * are dropped at the edge as `kv.undeclared`. Mapped into `imp.ext.data`.
+ */
+export type AdswagKvValue = string | number | Array<string | number>;
+
 /** Bidder params on `bids[].params` (documented in adswagBidAdapter.md). */
 export interface AdswagBidParams {
   /** Adswag publisher id (issued at onboarding). Required. */
@@ -53,12 +61,18 @@ export interface AdswagBidParams {
   /** Static floor (EUR), used only when the floors module isn't configured. */
   bidFloor?: number;
   /**
-   * Adswag bid endpoint URL (in-repo/self-distributed builds; the upstream
-   * variant hardcodes the production endpoint — see resolveEndpoint).
+   * Adswag bid endpoint override, for Adswag-operated test/staging hosts.
+   * Honored only for hosts on the `adswag.ai` domain — see resolveEndpoint.
    */
   endpoint?: string;
   /** Overrides for mediaTypes.video ad-unit params. */
   video?: Record<string, unknown>;
+  /**
+   * Impression-scoped publisher key/values. Merged into `imp.ext.data`
+   * after `ortb2Imp.ext.data` (≤ 32 keys total; reserved names never
+   * overwritten). See adswagBidAdapter.md.
+   */
+  kv?: Record<string, AdswagKvValue>;
 }
 
 /**
@@ -68,7 +82,7 @@ export interface AdswagConfig {
   /**
    * Adswag bid endpoint URL, applied to every Adswag ad unit on the page
    * (a per-bid `params.endpoint` wins over it). Honored only for hosts on
-   * the `adswag.ai` domain in the upstream build — see resolveEndpoint.
+   * the `adswag.ai` domain — see resolveEndpoint.
    */
   endpoint?: string;
 }
@@ -182,6 +196,24 @@ const SYNC_PIXEL_URL = "https://ev.adswag.ai/sync/pixel";
 // immutable player build. `v1` versions the renderer's contract with this
 // adapter — a breaking change there gets a new path and a new adapter PR.
 const RENDERER_URL = "https://player.adswag.ai/outstream/v1/renderer.js";
+
+// Reserved imp.ext.data / FPD names that never match a publisher key-space
+// declaration (bid-edge decision record #22 / design §1). Placement
+// identity keys (adunitcode, pbadslot) are still set by the adapter; the
+// rest are skipped so params.kv cannot overwrite platform fields.
+const RESERVED_IMP_DATA_KEYS = new Set([
+  "adunitcode",
+  "pbadslot",
+  "adserver",
+  "gpid",
+  "tid",
+  "adswag",
+  "kv",
+  "ukv",
+]);
+// Bound on imp.ext.data key count (design §4.10). Surplus dropped silently
+// on the page; the edge observes its own caps server-side.
+const MAX_IMP_DATA_KEYS = 32;
 
 // In real Prebid builds every StorageManager access runs through core's
 // activity controls (deviceAccess + TCF enforcement on gvlid 1417); the
@@ -403,28 +435,15 @@ function buildAudio(audio) {
   return out;
 }
 
-// DEFAULT_ENDPOINT differs between the two distributions of this module:
-//   - self-distributed (authoritative source): null — no dev-host fallback,
-//     an unconfigured adapter fails open to a no-bid rather than silently
-//     phoning home to a host the publisher never opted into.
-//   - upstream prebid/Prebid.js artifact: the production endpoint constant.
-//     Publishers installing from the Prebid download page opt into the
-//     Adswag production host by including the adapter (Prebid convention),
-//     and Module Rules require a working default. The endpoint is frozen.
-// The Adswag release tooling swaps exactly the marked line below; both
-// variants share every other line of this file.
-// UPSTREAM-ENDPOINT (do not edit this marker; the export script matches it)
-const DEFAULT_ENDPOINT: string | null = "https://bid.adswag.ai/prebid/bid";
+// Production endpoint. Publishers opt into the Adswag host by including the
+// adapter, and Module Rules require a working default.
+const DEFAULT_ENDPOINT = "https://bid.adswag.ai/prebid/bid";
 
 // isPermittedEndpoint enforces the review-checklist rule that endpoint
-// domains cannot be fully variable: in the upstream distribution (which has
-// a built-in default) an override is honored only for Adswag-operated hosts
-// (our dev/staging test integrations); anything else is ignored and the
-// request goes to the production endpoint. The self-distributed in-repo
-// build has no default to protect — the endpoint is always an explicit,
-// deliberate configuration — so any host is accepted there.
+// domains cannot be fully variable: an override is honored only for
+// Adswag-operated hosts (dev/staging test integrations); anything else is
+// ignored and the request goes to the production endpoint.
 function isPermittedEndpoint(url: string): boolean {
-  if (DEFAULT_ENDPOINT === null) return true;
   try {
     const host = new URL(url).hostname;
     return host === "adswag.ai" || host.endsWith(".adswag.ai");
@@ -435,9 +454,8 @@ function isPermittedEndpoint(url: string): boolean {
 
 // resolveEndpoint: per-bid params.endpoint, then global config
 // (config.setConfig({ adswag: { endpoint } })), then DEFAULT_ENDPOINT —
-// overrides subject to isPermittedEndpoint. Returns null when nothing is
-// configured — callers treat that as a no-bid.
-function resolveEndpoint(bid): string | null {
+// overrides subject to isPermittedEndpoint.
+function resolveEndpoint(bid): string {
   const paramEndpoint = deepAccess(bid, "params.endpoint");
   if (isNonEmptyStr(paramEndpoint) && isPermittedEndpoint(paramEndpoint)) {
     return paramEndpoint;
@@ -486,6 +504,78 @@ function resolveFloor(bid, sizes, mediaType) {
   return null;
 }
 
+// isKvWireValue: the value shapes the edge admits on ext.data (design §1:
+// string, number, or an array of either). Nested objects, booleans, null
+// and non-finite numbers are refused here so a poison params.kv cannot
+// put a cycle on the wire and take down JSON.stringify.
+function isKvWireValue(v: unknown): boolean {
+  if (typeof v === "string") return true;
+  if (typeof v === "number") return Number.isFinite(v);
+  // Array.isArray, not utils' isArray: against an upstream Prebid.js
+  // checkout the re-export through src/utils.js does not narrow `unknown`
+  // (tsc: "Type 'unknown' must have a '[Symbol.iterator]()'", 11.35.0).
+  if (!Array.isArray(v)) return false;
+  for (const item of v) {
+    if (typeof item === "string") continue;
+    if (typeof item === "number" && Number.isFinite(item)) continue;
+    return false;
+  }
+  return true;
+}
+
+// placementImpData seeds the reserved placement-identity keys the edge
+// has always read. Isolated so the fail-open path can rebuild them after
+// a poison params.kv without re-entering the merge. Null-prototype so a
+// publisher key named like an Object.prototype member (`__proto__`,
+// `constructor`) is stored as an ordinary own property instead of hitting
+// an inherited setter.
+function placementImpData(bid): Record<string, any> {
+  const data: Record<string, any> = Object.create(null);
+  if (isNonEmptyStr(bid.adUnitCode)) data.adunitcode = bid.adUnitCode;
+  const pbadslot = deepAccess(bid, "ortb2Imp.ext.data.pbadslot");
+  if (isNonEmptyStr(pbadslot)) data.pbadslot = pbadslot;
+  return data;
+}
+
+// mergeImpDataKeys copies eligible keys from `src` into `data` until the
+// 32-key bound, skipping reserved names and keys already present. Sources
+// are merged in precedence order, so the first source wins a collision.
+function mergeImpDataKeys(data: Record<string, any>, src: unknown) {
+  if (!isPlainObject(src)) return;
+  const obj = src as Record<string, unknown>;
+  for (const key of Object.keys(obj)) {
+    if (Object.keys(data).length >= MAX_IMP_DATA_KEYS) return;
+    if (RESERVED_IMP_DATA_KEYS.has(key)) continue;
+    if (Object.prototype.hasOwnProperty.call(data, key)) continue;
+    const val = obj[key];
+    if (!isKvWireValue(val)) continue;
+    data[key] = val;
+  }
+}
+
+// buildImpData merges params.kv then ortb2Imp.ext.data (non-reserved)
+// into imp.ext.data, bounded to 32 keys, never overwriting reserved
+// placement/platform names. The bidder param is the override (Prebid
+// convention: params only override what the request already carries), so
+// on a key collision params.kv wins. Fail-open: any exception yields
+// placement keys only (contextual-only), never a thrown error.
+function buildImpData(bid): Record<string, any> | undefined {
+  try {
+    const data = placementImpData(bid);
+    mergeImpDataKeys(data, deepAccess(bid, "params.kv"));
+    mergeImpDataKeys(data, deepAccess(bid, "ortb2Imp.ext.data"));
+    return Object.keys(data).length ? data : undefined;
+  } catch (e) {
+    logWarn("adswag: imp key/value merge failed, sending contextual-only", e);
+    try {
+      const data = placementImpData(bid);
+      return Object.keys(data).length ? data : undefined;
+    } catch (e2) {
+      return undefined;
+    }
+  }
+}
+
 // buildImp emits ONE imp per ad unit with every media-type object the bid
 // validly carries (mixed banner+video+audio units are one imp with all
 // applicable objects present — the server normalizes per-imp).
@@ -512,17 +602,15 @@ function buildImp(bid) {
   // Placement identity: GPID (preferred) + adUnitCode derivation key;
   // optional explicit placementId override. The server resolves the
   // canonical placement from these — the adapter never invents a
-  // placement id.
+  // placement id. Publisher key/values (ortb2Imp.ext.data + params.kv)
+  // ride imp.ext.data alongside adunitcode/pbadslot (design §4.10).
   const ext: Record<string, any> = {};
   const gpid = deepAccess(bid, "ortb2Imp.ext.gpid");
   if (isNonEmptyStr(gpid)) ext.gpid = gpid;
   const tid = deepAccess(bid, "ortb2Imp.ext.tid");
   if (isNonEmptyStr(tid)) ext.tid = tid;
-  const data: Record<string, any> = {};
-  if (isNonEmptyStr(bid.adUnitCode)) data.adunitcode = bid.adUnitCode;
-  const pbadslot = deepAccess(bid, "ortb2Imp.ext.data.pbadslot");
-  if (isNonEmptyStr(pbadslot)) data.pbadslot = pbadslot;
-  if (Object.keys(data).length) ext.data = data;
+  const data = buildImpData(bid);
+  if (data) ext.data = data;
   const placementId = deepAccess(bid, "params.placementId");
   if (isNonEmptyStr(placementId)) ext.adswag = { placement_id: placementId };
   if (Object.keys(ext).length) imp.ext = ext;
@@ -714,6 +802,34 @@ function applyIdentity(request, validBidRequests, ortb2, perms) {
     if (out.length) deepSetValue(request, "user.eids", out);
   } catch (e) {
     logWarn("adswag: identity attach failed, sending contextual-only", e);
+  }
+}
+
+// applyUserKeyValues forwards ortb2.user.data[] and ortb2.user.ext.data
+// ONLY when perms.identity holds (the same gate that attaches eids —
+// design §4.10). Consentless traffic omits both surfaces entirely (not
+// emptied). Both surfaces are reduced to their JSON wire form here, inside
+// the try, so a cycle, a BigInt or a throwing getter in publisher FPD is
+// caught now rather than at the final JSON.stringify of the request (which
+// would drop every bid). Fail-open: any exception leaves the request
+// without user KV, and neither surface is attached unless both serialize.
+function applyUserKeyValues(request, ortb2, perms) {
+  try {
+    if (!perms.identity) return;
+    const userData = deepAccess(ortb2, "user.data");
+    const userExtData = deepAccess(ortb2, "user.ext.data");
+    const wireData = isArray(userData) ? JSON.parse(JSON.stringify(userData)) : undefined;
+    const wireExtData = isPlainObject(userExtData)
+      ? JSON.parse(JSON.stringify(userExtData))
+      : undefined;
+    if (wireData !== undefined) {
+      deepSetValue(request, "user.data", wireData);
+    }
+    if (wireExtData !== undefined) {
+      deepSetValue(request, "user.ext.data", wireExtData);
+    }
+  } catch (e) {
+    logWarn("adswag: user key/value forward failed, sending contextual-only", e);
   }
 }
 
@@ -951,25 +1067,11 @@ interface BidGroup {
 // multi-publisher property, or a site handing sections to different sellers),
 // and folding them into one request would attribute — and pay out — every
 // impression under whichever account happened to come first.
-//
-// A bid whose endpoint does not resolve is dropped from the batch on its own;
-// sibling groups still bid (publisher-side fail-open is per ad unit, never
-// "one misconfigured unit silences the page").
 function groupBids(bids): BidGroup[] {
   const groups: BidGroup[] = [];
   const byKey = new Map<string, BidGroup>();
   for (const bid of bids) {
-    // No dev-default fallback (publisher-side fail-open: an unconfigured
-    // adapter must no-bid, never silently phone home to a hard-coded host
-    // the publisher never opted into).
     const endpoint = resolveEndpoint(bid);
-    if (!isNonEmptyStr(endpoint)) {
-      logWarn(
-        "adswag: no endpoint configured (params.endpoint or adswag.endpoint), no-bid for",
-        bid && bid.adUnitCode,
-      );
-      continue;
-    }
     const publisherId = deepAccess(bid, "params.publisherId");
     const key = `${endpoint}\u0000${publisherId}`;
     let group = byKey.get(key);
@@ -1010,6 +1112,7 @@ function buildGroupRequest(
 
   applyConsent(request, bidderRequest, ortb2);
   applyIdentity(request, group.bids, ortb2, perms);
+  applyUserKeyValues(request, ortb2, perms);
 
   // Supply chain: read ONLY the conventional ortb2 location (Prebid
   // review checklist: "adapters cannot accept an schain parameter" — the

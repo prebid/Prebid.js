@@ -143,6 +143,52 @@ describe('sevioBidAdapter', function () {
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
+    describe('X-Adshield response header', function () {
+      const responseWithHeaders = (headers) => ({
+        body: { bids: [{ requestId: 'r1', cpm: 1, meta: { advertiserDomains: ['none.com'] } }] },
+        headers: { get: (name) => (name in headers ? headers[name] : null) }
+      });
+
+      it('sets meta.adshield to 1 when the header is present without a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 1 when the header carries a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': 'anything' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 0 when the header is absent', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({}));
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('keeps the existing meta fields', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta).to.deep.equal({ advertiserDomains: ['none.com'], adshield: 1 });
+      });
+
+      it('creates meta when the bid has none', function () {
+        const response = responseWithHeaders({});
+        delete response.body.bids[0].meta;
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta).to.deep.equal({ adshield: 0 });
+      });
+
+      it('sets meta.adshield to 0 when the response has no headers accessor', function () {
+        const [bid] = spec.interpretResponse({ body: { bids: [{ requestId: 'r1' }] } });
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('sets meta.adshield to 0 when reading headers throws', function () {
+        const response = responseWithHeaders({});
+        response.headers.get = () => { throw new Error('unreadable'); };
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta.adshield).to.equal(0);
+      });
+    });
+
     it('should get the correct bid response for the native case', function () {
       let expectedResponseNative = [{
         requestId: '36e835f6cbfca38',
@@ -526,6 +572,72 @@ describe('sevioBidAdapter', function () {
     });
   });
 
+  describe('Global Privacy Control', function () {
+    const bidRequests = [{
+      bidder: 'sevio',
+      params: { zone: 'zoneId' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      bidId: 'bid-gpc'
+    }];
+
+    const withRegs = (regs) => ({
+      ...baseBidderRequest,
+      ortb2: { ...baseBidderRequest.ortb2, regs }
+    });
+
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      window.ethereum = {};
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      delete window.ethereum;
+    });
+
+    ['1', 1].forEach((gpc) => {
+      it(`flags the opt-out, turns syncs off and drops the wallet flag when regs.ext.gpc is ${JSON.stringify(gpc)}`, function () {
+        const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc } }))[0].data;
+
+        expect(payload.privacy).to.deep.equal({
+          gpp: 'GPP-STRING',
+          tcfeu: 'TCF-STRING',
+          usp: '1NYN',
+          gpc: 1
+        });
+        expect(payload.userSyncOption).to.equal('OFF');
+        expect(payload.wdb).to.equal(0);
+      });
+    });
+
+    it('sends no opt-out and keeps syncs and the wallet flag when GPC is absent', function () {
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+      expect(payload.wdb).to.equal(1);
+    });
+
+    it('sends no opt-out when regs.ext.gpc is not "1"', function () {
+      const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc: '0' } }))[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+    });
+
+    it('turns syncs off without GPC when user syncs are disabled', function () {
+      sandbox.stub(config, 'getConfig').callThrough()
+        .withArgs('userSync.syncEnabled').returns(false);
+
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('OFF');
+    });
+  });
+
   describe('native parsing', function () {
     it('parses native assets: title, data->desc (type 2), image (asset.img), clickUrl and trackers', function () {
       const serverResponseNative = {
@@ -846,6 +958,12 @@ describe('sevioBidAdapter', function () {
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
+      // buildRequests also reads the viewport through this accessor, which calls
+      // canAccessWindowTop whenever a value is not already cached
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        screen: { width: 1024, height: 768 },
+        visualViewport: { width: 800, height: 600 }
+      });
     });
 
     afterEach(function () {

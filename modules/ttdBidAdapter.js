@@ -256,7 +256,7 @@ function video(bid) {
     const video = {
       minduration,
       ...(maxduration !== undefined && { maxduration }),
-      ...(api && { api }),
+      ...(api?.length > 0 && { api }),
       ...(mimes && { mimes }),
       ...(placement !== undefined && { placement }),
       ...(plcmt !== undefined && { plcmt }),
@@ -396,10 +396,6 @@ export const spec = {
     if (FEATURES.VIDEO && mediaTypesVideo) {
       if (!mediaTypesVideo.maxduration || !utils.isInteger(mediaTypesVideo.maxduration)) {
         utils.logWarn(BIDDER_CODE + ': mediaTypes.video.maxduration must be set to the maximum video ad duration in seconds');
-        return false;
-      }
-      if (!mediaTypesVideo.api || mediaTypesVideo.api.length === 0) {
-        utils.logWarn(BIDDER_CODE + ': mediaTypes.video.api should be an array of supported api frameworks. See the Open RTB v2.5 spec for valid values');
         return false;
       }
       if (!mediaTypesVideo.mimes || mediaTypesVideo.mimes.length === 0) {

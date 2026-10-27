@@ -1,13 +1,31 @@
 {
   "name": "prebid.js",
-  "version": "11.42.0-pre",
+  "version": "11.45.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/src/prebid.public.js",
   "types": "dist/src/src/prebid.public.d.ts",
   "exports": {
-    ".": "./dist/src/src/prebid.public.js",
-    "./prebid.js": "./dist/src/src/prebid.public.js",
-    "./prebid": "./dist/src/src/prebid.public.js",
+    ".": {
+      "import": {
+        "types": "./dist/src/src/prebid.public.d.mts",
+        "default": "./dist/src/src/prebid.public.js"
+      },
+      "default": "./dist/src/src/prebid.public.js"
+    },
+    "./prebid.js": {
+      "import": {
+        "types": "./dist/src/src/prebid.public.d.mts",
+        "default": "./dist/src/src/prebid.public.js"
+      },
+      "default": "./dist/src/src/prebid.public.js"
+    },
+    "./prebid": {
+      "import": {
+        "types": "./dist/src/src/prebid.public.d.mts",
+        "default": "./dist/src/src/prebid.public.js"
+      },
+      "default": "./dist/src/src/prebid.public.js"
+    },
     "./types.d.ts": "./dist/src/src/types/summary/types.d.ts",
     "./global.d.ts": "./dist/src/src/types/summary/global.d.ts",
     "./modules/*.js": "./dist/src/public/*.js",
@@ -115,7 +133,7 @@
     "karma-webpack": "^5.0.0",
     "lodash": "^4.17.21",
     "merge-stream": "^2.0.0",
-    "mocha": "^11.8.0",
+    "mocha": "^12.0.3",
     "morgan": "^1.10.0",
     "neostandard": "^0.12.2",
     "nise": "^6.1.1",
@@ -127,6 +145,7 @@
     "terser-webpack-plugin": "^5.6.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
+    "typescript-min": "npm:typescript@5.7.2",
     "url": "^0.11.0",
     "url-parse": "^1.0.5",
     "video.js": "^7.21.7",
@@ -160,7 +179,8 @@
     "gulp-connect": {
       "send": "0.19.0"
     },
-    "send": "0.19.0"
+    "send": "0.19.0",
+    "serialize-javascript": "^7.1.4"
   },
   "peerDependencies": {
     "schema-utils": "^4.3.2"
