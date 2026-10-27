@@ -896,7 +896,7 @@ describe('S2S Adapter', function () {
           });
 
           it('should be set to 0.75 * requestTimeout, if lower than maxTimeout', () => {
-            adapter.callBids({ ...REQUEST, requestBidsTimeout: maxTimeout / 2 }, BID_REQUESTS, addBidResponse, done, ajax);
+            adapter.callBids({ ...REQUEST, requestBidsTimeout: maxTimeout / 2, s2sConfig: cfg }, BID_REQUESTS, addBidResponse, done, ajax);
             const req = JSON.parse(server.requests[0].requestBody);
             expect(req.tmax).to.eql(Math.floor(maxTimeout / 2 * 0.75));
           });
@@ -1824,7 +1824,7 @@ describe('S2S Adapter', function () {
           });
         });
 
-        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
+        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define ratio_width and ratio_height', () => {
           const req = deepClone(REQUEST);
           req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = { 'min_width': 1, 'min_height': 2 };
           prepRequest(req);
@@ -3105,8 +3105,6 @@ describe('S2S Adapter', function () {
         ortb2Fragments
       }, bidRequests), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      // eslint-disable-next-line no-console
-      console.log(parsedRequestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
       expect(parsedRequestBody.user).to.deep.equal(commonUser);
@@ -3573,11 +3571,10 @@ describe('S2S Adapter', function () {
     });
 
     it('emits the PBS_ANALYTICS event and captures atag responses', function () {
-      const original = CONFIG;
-      CONFIG.extPrebid = { returnallbidstatus: true };
+      const localConfig = deepClone(CONFIG);
+      localConfig.extPrebid = { returnallbidstatus: true };
       const atagResponse = { ...RESPONSE_OPENRTB, ext: { prebid: { analytics: { tags: ['data'] } } } };
-      config.setConfig({ CONFIG });
-      CONFIG = original;
+      config.setConfig({ s2sConfig: localConfig });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const responding = deepClone(atagResponse);
       Object.assign(responding.ext.prebid.analytics.tags, ['stuff']);
