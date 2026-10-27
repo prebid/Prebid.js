@@ -18,7 +18,10 @@ export function consentManagementHook(name, loadConsentData) {
     }).catch((error) => {
       logError(`${error?.message} Canceling auction as per consentManagement config.`, ...(error?.args || []));
       fn.stopTiming();
-      reqBidsConfigObj.defer.reject(error);
+      const reject = reqBidsConfigObj?.defer?.reject;
+      if (typeof reject === 'function') {
+        reject(error);
+      }
     });
   });
 }

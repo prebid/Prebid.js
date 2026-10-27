@@ -250,6 +250,7 @@ function storeUspConsentData(consentObject) {
  */
 export function resetConsentData() {
   consentData = undefined;
+  staticConsentData = undefined;
   consentAPI = undefined;
   consentTimeout = undefined;
   uspDataHandler.reset();
@@ -263,6 +264,7 @@ export function resetConsentData() {
  */
 export function setConsentConfig(config) {
   config = config && config.usp;
+  staticConsentData = undefined;
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');
   }

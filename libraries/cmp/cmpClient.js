@@ -86,7 +86,15 @@ export function cmpClient(
   const cmpDataPkgName = `${apiName}Return`;
 
   function handleMessage(event) {
-    const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
+    let json = event.data;
+    if (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) {
+      try {
+        json = JSON.parse(event.data);
+      } catch (e) {
+        return;
+      }
+    }
+
     if (json?.[cmpDataPkgName]?.callId) {
       const payload = json[cmpDataPkgName];
 
