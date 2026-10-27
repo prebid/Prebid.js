@@ -3620,6 +3620,22 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('ttl', 30);
     });
 
+    it('respects defaultTTL', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        defaultTTL: 30
+      });
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('ttl', 30);
+    });
+
     if (FEATURES.VIDEO) {
       it('handles OpenRTB video responses', function () {
         const s2sConfig = Object.assign({}, CONFIG, {
