@@ -102,7 +102,7 @@ describe('consentManagement', function () {
         expect(consentConfig.cmpTimeout).to.be.equal(5000);
       });
 
-      it('should ignore config.usp and use config.gdpr, with default cmpAip and timeout', async function () {
+      it('should ignore config.usp and use config.gdpr, with default cmpApi and timeout', async function () {
         await setConsentConfig({
           gdpr: {},
           usp: { cmpApi: 'daa', timeout: 50 }
