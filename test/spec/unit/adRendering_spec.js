@@ -441,6 +441,11 @@ describe('adRendering', () => {
         expect(bidResponse.viewUrl).to.eql('https://view.example.com');
         sinon.assert.called(doRenderStub);
       });
+      it('stores clickUrl on the bid response before rendering hooks run', () => {
+        handleRender({ adId, bidResponse, options: { clickUrl: 'https://click.example.com' } });
+        expect(bidResponse.clickUrl).to.eql('https://click.example.com');
+        sinon.assert.called(doRenderStub);
+      });
 
       describe('should emit AD_RENDER_FAILED', () => {
         it('when bidResponse is missing', () => {
