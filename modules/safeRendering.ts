@@ -8,6 +8,7 @@ import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
 import { getBidForMessage, isMessageAllowed } from "../src/secureCreatives.js";
 import { config } from "../src/config.ts";
+import { isRenderSuppressed } from "../src/adRendering.ts";
 
 declare module '../src/prebidGlobal.ts' {
   interface PrebidJS {
@@ -85,21 +86,31 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
   const element = getAdUnitElement(actualBid);
   if (
     typeof element?.appendChild !== 'function' ||
-    typeof element.ownerDocument?.createElement !== 'function' ||
-    element.ownerDocument.defaultView == null
+    typeof element.ownerDocument?.createElement !== 'function'
   ) {
     logError('renderBid: bid has invalid .element', { bid: actualBid, element });
     return;
   }
+  if (element.ownerDocument.defaultView == null) {
+    logError('renderBid: bid.element is not attached to any window', { bid: actualBid, element });
+    return;
+  }
   const doc = element.ownerDocument;
-  try {
+  const parent = findDepth(doc.defaultView);
+  if (parent == null) {
+    logError('renderBid: bid.element must be in a descendant of prebid\'s window', { bid: actualBid, element, elementWindow: doc.defaultView, prebidWindow: window });
+    return;
+  }
+  if (!isRenderSuppressed(actualBid).suppress) {
     element.innerHTML = '';
+  }
+  try {
     const { clickThrough: clickUrl, ...rest } = options ?? {};
     const token = generateUUID();
     const renderArgs = JSON.stringify({
       ...rest,
       adId: actualBid.adId,
-      pubUrl: doc.defaultView.location.href,
+      pubUrl: window.location.href,
       clickUrl,
       allowNullOrigin: true,
       token,

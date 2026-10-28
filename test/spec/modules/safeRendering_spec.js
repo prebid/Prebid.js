@@ -162,15 +162,24 @@ describe('safeRendering', () => {
           return iframe.contentDocument;
         }
       }).forEach(([t, getDoc]) => {
-        it(`can populate an element in a ${t}`, async () => {
+        it(`refuses an element in a ${t}`, () => {
           const doc = getDoc();
           bid.element = doc.createElement('div');
           doc.body.appendChild(bid.element);
           cleanup.push(bid.element);
+          sandbox.spy(utils, 'logError');
           renderBid(bidHandle);
-          await expectMessage();
+          sinon.assert.called(utils.logError);
+          expect(bid.element.querySelector('iframe')).to.not.exist;
         });
       });
+    });
+
+    it('replaces the contents of the element', async () => {
+      bid.element.appendChild(document.createElement('span'));
+      renderBid(bidHandle);
+      await expectMessage();
+      expect(Array.from(bid.element.children).map(el => el.tagName)).to.eql(['IFRAME']);
     });
 
     describe('when rendering would be suppressed', () => {
