@@ -302,8 +302,9 @@ doRender.before(function (next, args) {
 }, 100);
 
 export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
-  if (bidResponse != null && options?.viewUrl != null) {
-    bidResponse.viewUrl = options.viewUrl;
+  if (bidResponse != null) {
+    if (options?.viewUrl != null) bidResponse.viewUrl = options.viewUrl;
+    if (options?.clickUrl != null) bidResponse.clickUrl = options.clickUrl;
   }
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
