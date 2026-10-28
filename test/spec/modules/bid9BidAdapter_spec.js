@@ -10,6 +10,7 @@ import {
   getBidMediaType
 } from 'modules/bid9BidAdapter.ts';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { server } from 'test/mocks/xhr.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -768,34 +769,37 @@ describe('bid9BidAdapter', function () {
   });
 
   describe('notifications', function () {
-    let pixel;
-    beforeEach(function () {
-      pixel = sandbox.stub(utils, 'triggerPixel');
-    });
+    // `ajax` is rewritten at build time, so assert on the fetch mock's recorded requests
+    const noticesTo = url => server.requests.filter(req => req.url === url);
 
-    it('fires nurl with the original cpm on win', function () {
+    it('calls nurl with the original cpm and keepalive on win', function () {
       spec.onBidWon({ nurl: 'https://win.example/?p=${AUCTION_PRICE}', cpm: 3, originalCpm: 4 });
-      expect(pixel.calledOnceWith('https://win.example/?p=4')).to.equal(true);
+      const requests = noticesTo('https://win.example/?p=4');
+      expect(requests).to.have.length(1);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].fetch.request.keepalive).to.equal(true);
     });
 
     it('falls back to cpm when originalCpm is absent', function () {
       spec.onBidWon({ nurl: 'https://win.example/?p=${AUCTION_PRICE}', cpm: 3 });
-      expect(pixel.calledOnceWith('https://win.example/?p=3')).to.equal(true);
+      expect(noticesTo('https://win.example/?p=3')).to.have.length(1);
     });
 
-    it('does not fire on win without nurl', function () {
+    it('does not call anything on win without nurl', function () {
       spec.onBidWon({ cpm: 3 });
-      expect(pixel.called).to.equal(false);
+      expect(server.requests).to.have.length(0);
     });
 
-    it('fires burl when the bid becomes billable', function () {
+    it('calls burl with keepalive when the bid becomes billable', function () {
       spec.onBidBillable({ burl: 'https://b.example/?p=${AUCTION_PRICE}', cpm: 1.5 });
-      expect(pixel.calledOnceWith('https://b.example/?p=1.5')).to.equal(true);
+      const requests = noticesTo('https://b.example/?p=1.5');
+      expect(requests).to.have.length(1);
+      expect(requests[0].fetch.request.keepalive).to.equal(true);
     });
 
-    it('does not fire when billable bid has no burl', function () {
+    it('does not call anything when a billable bid has no burl', function () {
       spec.onBidBillable({ cpm: 1.5, burl: '' });
-      expect(pixel.called).to.equal(false);
+      expect(server.requests).to.have.length(0);
     });
   });
 

@@ -1,4 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ajax } from '../src/ajax.js';
 import { toOrtb26 } from '../libraries/ortb2.5Translator/translator.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -16,13 +17,12 @@ import {
   isStr,
   logInfo,
   logWarn,
-  replaceAuctionPrice,
-  triggerPixel
+  replaceAuctionPrice
 } from '../src/utils.js';
 
 const BIDDER_CODE = 'bid9';
 
-interface Bid9BidParams {
+export interface Bid9BidParams {
   /**
    * bid9 channel ID. Required; sent as the endpoint's `tagid` query parameter and as `imp.tagid`.
    */
@@ -42,7 +42,7 @@ interface Bid9BidParams {
   bidFloorCur?: string;
 }
 
-interface Bid9Config {
+export interface Bid9Config {
   /**
    * Overrides the bidder endpoint URL. Honoured only for approved endpoints, or when Prebid debug mode is on.
    */
@@ -299,9 +299,12 @@ const interpretResponse: BidderSpec<typeof BIDDER_CODE>['interpretResponse'] = (
   }
 };
 
-function firePixel(url: unknown, cpm: number) {
+/**
+ * Calls a win or billing notice URL. keepalive lets the request finish even if the page is being closed.
+ */
+function sendNotice(url: unknown, cpm: number) {
   if (isStr(url) && url !== '') {
-    triggerPixel(replaceAuctionPrice(url, cpm));
+    ajax(replaceAuctionPrice(url, cpm), undefined, undefined, { method: 'GET', keepalive: true });
   }
 }
 
@@ -313,11 +316,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   interpretResponse,
 
   onBidWon(bid) {
-    firePixel((bid as any).nurl, bid.originalCpm ?? bid.cpm);
+    sendNotice((bid as any).nurl, bid.originalCpm ?? bid.cpm);
   },
 
   onBidBillable(bid) {
-    firePixel((bid as any).burl, bid.originalCpm ?? bid.cpm);
+    sendNotice((bid as any).burl, bid.originalCpm ?? bid.cpm);
   },
 
   onTimeout(timeoutData) {
