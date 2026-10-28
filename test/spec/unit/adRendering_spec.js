@@ -531,6 +531,23 @@ describe('adRendering', () => {
           handleRender({ adId, bidResponse });
           sinon.assert.notCalled(doRenderStub);
         });
+        it('preserves click and view URLs when a repeated render is suppressed', () => {
+          bidResponse.clickUrl = 'https://first.example/click';
+          bidResponse.viewUrl = 'https://first.example/view';
+          config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+          handleRender({
+            adId,
+            bidResponse,
+            options: {
+              clickUrl: 'https://second.example/click',
+              viewUrl: 'https://second.example/view'
+            }
+          });
+          expect(bidResponse.clickUrl).to.equal('https://first.example/click');
+          expect(bidResponse.viewUrl).to.equal('https://first.example/view');
+          sinon.assert.notCalled(doRenderStub);
+        });
+
       });
 
       describe('when bid has already expired', () => {
