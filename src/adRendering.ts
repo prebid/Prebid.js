@@ -29,22 +29,6 @@ import { PbPromise } from "./utils/promise.ts";
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
-declare module './config' {
-  interface Config {
-    /**
-     * Optional banner and native click tracking.
-     * `fireTrackers` applies to banner click URLs; native bidder trackers are
-     * handled by native creative tracking.
-     */
-    bidClickTracking?: {
-      enabled?: boolean;
-      desktopFallback?: boolean;
-      fireTrackers?: boolean;
-      dedupeNativeClicks?: boolean;
-    };
-  }
-}
-
 declare module './events' {
   interface Events {
     /**
