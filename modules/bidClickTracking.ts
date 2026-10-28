@@ -93,7 +93,10 @@ function onRender({ bid }: { bid: Bid }): void {
   if (!slot) return;
   clearSlot(slot);
   const state: TrackedSlot = {
-    bid, slot, fired: false, timer: null,
+    bid,
+    slot,
+    fired: false,
+    timer: null,
     enter: () => { hovered = state; },
     leave: () => { if (hovered === state) hovered = null; }
   };
