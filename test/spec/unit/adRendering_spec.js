@@ -604,6 +604,20 @@ describe('adRendering', () => {
       sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({ bid }));
     });
 
+    it('emits an observed click only when tracking is enabled for banners', () => {
+      bid.adId = 'click-id';
+      bid.adUnitCode = 'banner-slot';
+      bid.bidder = 'test';
+      bid.mediaType = 'banner';
+      config.setConfig({ bidClickTracking: { enabled: true } });
+      handleCreativeEvent({ event: EVENTS.BID_CLICK, method: 'creativeClick' }, bid);
+      sinon.assert.calledWith(events.emit, EVENTS.BID_CLICK, sinon.match({ adId: 'click-id', method: 'creativeClick' }));
+      events.emit.resetHistory();
+      config.setConfig({ bidClickTracking: { enabled: false } });
+      handleCreativeEvent({ event: EVENTS.BID_CLICK, method: 'creativeClick' }, bid);
+      sinon.assert.notCalled(events.emit);
+    });
+
     it('logs an error on other events', () => {
       handleCreativeEvent({ event: 'unsupported' }, bid);
       sinon.assert.called(utils.logError);
