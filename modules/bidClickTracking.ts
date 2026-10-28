@@ -28,8 +28,8 @@ export interface BidClickTrackingConfig {
    */
   fireTrackers?: boolean;
   /**
-   * Report native clicks and their bidder trackers only once per bid.
-   * Defaults to true; set false to allow repeated native clicks.
+   * Report the bidClick event for native clicks only once per bid. Defaults to true; set false to report
+   * every native click. The bidder's native click trackers fire on every click either way.
    */
   dedupeNativeClicks?: boolean;
 }

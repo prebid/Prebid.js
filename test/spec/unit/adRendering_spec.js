@@ -725,7 +725,7 @@ describe('adRendering', () => {
       };
     });
 
-    it('reports native clicks once and preserves the asset ID when enabled', () => {
+    it('reports the native click event once, preserves the asset ID, and fires bidder trackers on every click', () => {
       bid.mediaType = 'native';
       bid.bidder = 'nativeBidder';
       bid.native = { clickUrl: 'https://advertiser.example/landing' };
@@ -735,12 +735,13 @@ describe('adRendering', () => {
       const click = { action: 'click', assetId: 3 };
       handleNativeMessage(click, bid, { fireTrackers });
       handleNativeMessage(click, bid, { fireTrackers });
-      sinon.assert.calledOnceWithExactly(fireTrackers, click, bid);
+      sinon.assert.calledTwice(fireTrackers);
+      sinon.assert.alwaysCalledWithExactly(fireTrackers, click, bid);
       sinon.assert.calledOnceWithExactly(emit, EVENTS.BID_CLICK, sinon.match({ method: 'nativeClick', assetId: 3, adId: '123' }));
       config.setConfig({ bidClickTracking: { enabled: false } });
     });
 
-    it('permits repeated native clicks when deduplication is explicitly disabled', () => {
+    it('reports every native click event when deduplication is explicitly disabled', () => {
       bid.mediaType = 'native';
       bid.native = { clickUrl: 'https://advertiser.example/landing' };
       const fireTrackers = sinon.stub();

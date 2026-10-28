@@ -186,8 +186,9 @@ export function handleNativeMessage(data, bidResponse, { resizeFn, fireTrackers 
       break;
     default:
       if (data.action === 'click' && bidResponse?.native != null) {
-        const settings = config.getConfig('bidClickTracking');
-        if (settings?.enabled === true && !reportBidClick(bidResponse, 'nativeClick', data.assetId)) return;
+        // only reports the bidClick event: the bidder's click trackers below fire on every click, as they do
+        // without bidClickTracking, so enabling it never changes what bidders (or the ad server) receive
+        reportBidClick(bidResponse, 'nativeClick', data.assetId);
       }
       fireTrackers(data, bidResponse);
   }
