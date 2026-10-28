@@ -2,6 +2,17 @@
 
 The optional `bidClickTracking` module observes real user link clicks in **accessible inline banner creatives**, on mobile and desktop. For `ad` markup rendered through the dynamic display renderer, Prebid listens inside the rendered same-origin `srcdoc` iframe for trusted clicks on links and sends a `bidClick` event through the existing creative messaging channel. It does not alter navigation or insert overlays.
 
+## Goals
+
+- **Register Prebid clicks in GAM for `creative.html` users.** The [dynamic creative](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/x-domain/creative.html) already passes GAM's `%%CLICK_URL_UNESC%%` to Prebid as `clickUrl`. With `fireTrackers: true`, Prebid requests that URL when it observes a click on the winning creative, so GAM can count the click on the Prebid line item.
+- **Click analytics when the ad server bids into Prebid.** When Prebid chooses the winner and renders it (for example with `pbjs.getBestBids()` and `pbjs.renderAd`), there is no ad server creative to count clicks. `bidClick` gives analytics adapters, and the ad server's own analytics, a click event for the winning bid. `renderAd` also accepts a `clickThrough` URL to request with `fireTrackers`.
+
+## Supported creatives
+
+Click observation works for creatives rendered by Prebid.js itself: the dynamic creative (`creative.html`) and `pbjs.renderAd`. It is not intended to work with the [Prebid Universal Creative](https://docs.prebid.org/overview/prebid-universal-creative.html), which only receives minimal maintenance; switch Prebid line items to the dynamic creative to use it.
+
+## Setup
+
 Observed banner and native clicks are handled by Prebid core whenever `bidClickTracking.enabled` is set. Include the `bidClickTracking` module in the build only if you also want the desktop fallback (`desktopFallback`). To opt in:
 
 ```js
