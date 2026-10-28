@@ -1,4 +1,4 @@
-// @ts-expect-error creative.js is the compiled creative/crossDomain.js, generated during precompilation.js
+// @ts-expect-error creative.js is the compiled creative/crossDomain.js, generated during precompilation
 // eslint-disable-next-line import/no-unresolved
 import { RENDERER } from '../creative-renderers/creative.js';
 import { addApiMethod, type RenderAdOptions } from "../src/prebid.ts";
@@ -7,6 +7,7 @@ import { createIframe, logError, logWarn } from "../src/utils.js";
 import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
 import { isMessageAllowed } from "../src/secureCreatives.js";
+import { config } from "../src/config.ts";
 
 declare module '../src/prebidGlobal.ts' {
   interface PrebidJS {
@@ -18,8 +19,9 @@ declare module '../src/config.ts' {
   interface Config {
     safeRendering?: {
       /**
-       * If true, allow only renderBid to set up cross-origin rendering; requests from other channels
-       * (e.g. GAM safeframes) are ignored.
+       * If true, allow only renderBid to set up cross-origin rendering; requests coming from any other source are
+       * ignored.
+       * If false, Prebid will accept any postMessage carrying a valid adId; typically these come from GAM safeframes.
        *
        * Default is false.
        */
@@ -28,6 +30,11 @@ declare module '../src/config.ts' {
   }
 }
 
+let exclusive = false;
+config.getConfig('safeRendering', (cfg) => {
+  exclusive = cfg.safeRendering?.exclusive ?? false;
+});
+
 function escapeInlineHtml(src) {
   // the source is inlined in a <script> tag, so </script and <!-- must be escaped
   return src
@@ -35,13 +42,13 @@ function escapeInlineHtml(src) {
     .replace(/<!--/gi, '<\\!--');
 }
 
-const getCreativeSource = (() => {
-  let src;
+const getCreativeTag = (() => {
+  let tag;
   return () => {
-    if (!src) {
-      src = escapeInlineHtml(RENDERER);
+    if (!tag) {
+      tag = encodeURIComponent(`<script>${escapeInlineHtml(RENDERER)}</script>`);
     }
-    return src;
+    return tag;
   };
 })();
 
@@ -70,12 +77,16 @@ export function renderBid(bid: Bid, options?: RenderAdOptions) {
     typeof element?.appendChild !== 'function' ||
     typeof element?.ownerDocument?.createElement !== 'function'
   ) {
-    logError('renderBid: bid has invalid .element', bid);
+    logError('renderBid: bid has invalid .element', { bid, element });
+    return;
+  }
+  const doc = element.ownerDocument;
+  if (!doc.body?.contains?.(element)) {
+    logError('renderBid: bid.element is not in the DOM', { bid, element });
     return;
   }
   try {
     element.innerHTML = '';
-    const doc = element.ownerDocument;
     const { clickThrough: clickUrl, ...rest } = options ?? {};
     const renderArgs = JSON.stringify({
       ...rest,
@@ -83,7 +94,7 @@ export function renderBid(bid: Bid, options?: RenderAdOptions) {
       pubUrl: doc.defaultView.location.href,
       clickUrl
     }).replace(/</g, '\\u003c'); // handle HTML strings
-    const srcdoc = `<script>${getCreativeSource()}</script>\n<script>window.pbRender(${renderArgs});</script>`;
+    const srcdoc = getCreativeTag() + encodeURIComponent(`<script>window.pbRender(${renderArgs});</script>`);
     // use a data url instead of srcdoc
     // srcdoc is not isolated unless in a sandbox without `allow-same-origin`, which would break anything that needs an origin
     // in the creative (e.g. storage)
@@ -91,7 +102,7 @@ export function renderBid(bid: Bid, options?: RenderAdOptions) {
     // to use a real origin (as long as allow-same-origin)
     const frame = createIframe(doc, {
       sandbox: 'allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation',
-      src: `data:text/html;charset=utf-8,${encodeURIComponent(srcdoc)}`
+      src: 'data:text/html;charset=utf-8,' + srcdoc
     });
     frame.onload = () => RENDERED.set(frame.contentWindow, bid.adId);
     element.appendChild(frame);

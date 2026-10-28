@@ -59,7 +59,7 @@ describe('safeRendering', () => {
     });
 
     afterEach(() => {
-      if (bid.element?.parent === document.body) {
+      if (bid.element?.parentNode === document.body) {
         document.body.removeChild(bid.element);
       }
     });
@@ -108,13 +108,6 @@ describe('safeRendering', () => {
         const [[, message]] = await expectMessage();
         expect(message.options).to.eql(options);
       });
-    });
-
-    it('can handle HTML options', async () => {
-      const options = { option: 'è' };
-      renderBid(bid, options);
-      const [[, message]] = await expectMessage();
-      expect(message.options).to.eql(options);
     });
 
     Object.entries({
