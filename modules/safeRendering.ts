@@ -162,18 +162,15 @@ addApiMethod('renderBid', renderBid);
 export function allowMessageHook(tokenIsValid = validateToken) {
   return (next, event, message) => {
     let err = null;
-
     const bid = getBidForMessage(message);
     const { token } = message ?? {};
     if (exclusive && !token) {
       err = 'not requested by renderBid, and safeRendering.exclusive is enabled';
-    } else if (bid) {
-      if (token) {
-        if (event.ports.length < 1) {
-          err = 'without a MessageChannel port';
-        } else if (!tokenIsValid(bid, message.token, event.source)) {
-          err = 'from a frame not authorized for this bid';
-        }
+    } else if (bid && (token || TOKENS.has(bid))) {
+      if (event.ports.length < 1) {
+        err = 'without a MessageChannel port';
+      } else if (!tokenIsValid(bid, message.token, event.source)) {
+        err = 'from a frame not authorized for this bid';
       }
     }
     if (err) {

@@ -154,7 +154,7 @@ describe('safeRendering', () => {
         cleanup = [];
       });
       afterEach(() => {
-        cleanup.forEach(node => node.parentNode?.removeChild(node));
+        cleanup?.forEach(node => node.parentNode?.removeChild(node));
       });
 
       Object.entries({
