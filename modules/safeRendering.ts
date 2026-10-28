@@ -76,7 +76,8 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
   const element = getAdUnitElement(actualBid);
   if (
     typeof element?.appendChild !== 'function' ||
-    typeof element?.ownerDocument?.createElement !== 'function'
+    typeof element.ownerDocument?.createElement !== 'function' ||
+    element.ownerDocument.defaultView == null
   ) {
     logError('renderBid: bid has invalid .element', { bid: actualBid, element });
     return;

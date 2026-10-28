@@ -132,8 +132,17 @@ describe('safeRendering', () => {
       'null element': { adId: 'adId', element: null },
       'invalid element': { adId: 'adId', element: {} },
       'unknown adId': { adId: 'other', adUnitCode: 'au' },
+      'windowless element': {
+        adId: 'adId',
+        element: (() => {
+          const doc = document.implementation.createHTMLDocument("test");
+          return doc.createElement('div');
+        })(),
+        adUnitCode: 'au',
+      }
     }).forEach(([description, bid]) => {
       it(`refuses a bid with ${description}`, () => {
+        secureCreatives.getBidForMessage.callsFake((req) => req?.adId === bid?.adId && bid);
         sandbox.spy(utils, 'logError');
         sandbox.spy(document, 'createElement');
         renderBid(bid);
