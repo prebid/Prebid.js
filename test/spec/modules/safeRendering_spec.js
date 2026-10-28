@@ -100,8 +100,8 @@ describe('safeRendering', () => {
       renderBid(bidHandle);
       document.body.appendChild(bid.element);
       try {
-        const [[, { token }]] = await expectMessage();
-        expect(validateToken(bid, token)).to.be.true;
+        const [[{ source }, { token }]] = await expectMessage();
+        expect(validateToken(bid, token, source)).to.be.true;
       } finally {
         document.body.removeChild(bid.element);
       }
@@ -118,7 +118,7 @@ describe('safeRendering', () => {
       } finally {
         document.body.removeChild(iframe);
       }
-    })
+    });
 
     function getRenderArgs(element) {
       const src = decodeURIComponent(element.querySelector('iframe').src);
@@ -263,11 +263,11 @@ describe('safeRendering', () => {
     it('registers the token with the bid', async () => {
       sandbox.spy(document, 'createElement');
       renderBid(bidHandle);
-      const [[, { token }]] = await expectMessage();
-      expect(validateToken(bid, token)).to.be.true;
+      const [[{ source }, { token }]] = await expectMessage();
+      expect(validateToken(bid, token, source)).to.be.true;
     });
 
-    it('does not accept the same token for more than one render request', async () => {
+    it('does not accept the token from a window other than the first to use it', async () => {
       renderBid(bidHandle);
       const [[event, message]] = await expectMessage();
       const hook = allowMessageHook();
@@ -276,9 +276,42 @@ describe('safeRendering', () => {
       hook(next, event, message);
       sinon.assert.calledOnce(next);
       sinon.assert.notCalled(next.bail);
-      hook(next, event, message);
+      hook(next, { ports: event.ports, source: window }, message);
       sinon.assert.calledOnce(next);
       sinon.assert.calledWith(next.bail, false);
+    });
+
+    it('does not accept a token for a bid that was not rendered through renderBid', async () => {
+      renderBid(bidHandle);
+      const [[{ source }, { token }]] = await expectMessage();
+      expect(validateToken({ adId: 'other' }, token, source)).to.be.false;
+    });
+
+    Object.entries({
+      'missing bid': [null, 'token'],
+      'missing token': [{}, null],
+    }).forEach(([t, [bid, token]]) => {
+      it(`does not accept a ${t}`, () => {
+        expect(validateToken(bid, token, window)).to.be.false;
+      });
+    });
+
+    it('accepts follow-up messages with the same token after the render request', async () => {
+      renderBid(bidHandle);
+      const [[event, message]] = await expectMessage();
+      const hook = allowMessageHook();
+      const next = sinon.stub();
+      next.bail = sinon.stub();
+      hook(next, event, message);
+      [
+        { message: 'Prebid Event', event: 'adRenderSucceeded' },
+        { message: 'Prebid Native', action: 'click' },
+        { message: 'Prebid Native', action: 'click' },
+      ].forEach(followUp => {
+        hook(next, event, { ...followUp, adId: message.adId, token: message.token });
+      });
+      sinon.assert.callCount(next, 4);
+      sinon.assert.notCalled(next.bail);
     });
   });
 

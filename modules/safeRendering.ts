@@ -46,9 +46,23 @@ export function escapeInlineHtml(src) {
 const getCreativeTag = memoize(() => encodeURIComponent(`<script>${escapeInlineHtml(RENDERER)}</script>`));
 
 const TOKENS = new WeakMap();
+const UNCLAIMED = {};
 
-export function validateToken(bid: Bid, token: Identifier): boolean {
-  return bid != null && token != null && TOKENS.get(bid)?.has(token);
+export function validateToken(bid: Bid, token: Identifier, source: Window): boolean {
+  if (bid == null || token == null) {
+    return false;
+  }
+  const issued = TOKENS.get(bid);
+  if (!issued?.has(token)) {
+    // bid was never sent through renderBid
+    return false;
+  }
+  if (issued.get(token) === UNCLAIMED) {
+    // first message with this token
+    issued.set(token, source);
+  }
+  // later message coming from some other window
+  return issued.get(token) === source;
 }
 
 function findDepth(win) {
@@ -95,6 +109,7 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
   }
   const { suppress, logReasons } = isRenderSuppressed(actualBid);
   if (suppress) {
+    // stop early so that the element's contents are not disturbed
     logReasons();
     return;
   }
@@ -120,9 +135,9 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     });
     element.appendChild(frame);
     if (!TOKENS.has(actualBid)) {
-      TOKENS.set(actualBid, new Set());
+      TOKENS.set(actualBid, new Map());
     }
-    TOKENS.get(actualBid).add(token);
+    TOKENS.get(actualBid).set(token, UNCLAIMED);
   } catch (e) {
     logError('renderBid: error rendering bid', actualBid, e);
   }
@@ -142,7 +157,7 @@ export function allowMessageHook(tokenIsValid = validateToken) {
       if (token) {
         if (event.ports.length < 1) {
           err = 'without a MessageChannel port';
-        } else if (!tokenIsValid(bid, message.token)) {
+        } else if (!tokenIsValid(bid, message.token, event.source)) {
           err = 'for the wrong bid';
         }
       }
