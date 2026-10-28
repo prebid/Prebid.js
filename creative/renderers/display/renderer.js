@@ -31,8 +31,11 @@ export function render({ ad, adUrl, width, height, instl, trackClicks }, { mkFra
       attrs.srcdoc = ad;
     }
     const frame = mkFrame(doc, attrs);
-    // Only same-origin inline creative documents can be observed. Never
-    // interfere with navigation or inspect cross-origin ad URLs.
+    // This observes trusted link clicks only when the inline creative
+    // document is accessible. It cannot see clicks inside nested cross-origin
+    // ad iframes, adUrl creatives, or JavaScript-driven clickthroughs. The
+    // separate opt-in desktop focus heuristic covers some of those gaps.
+    // Do not interfere with navigation or inspect cross-origin ad URLs.
     if (ad && trackClicks && frame.addEventListener) {
       frame.addEventListener('load', () => {
         try {
