@@ -111,8 +111,6 @@ export function bidClickInferred(args: Events[typeof EVENTS.BID_CLICK_INFERRED][
   };
 }
 
-
-
 type BidWithExtras = Bid & AnalyticsLabels & { floorData?: BidFloorData };
 
 function bidFields(bid: BidWithExtras): SkinnyBidFields {
