@@ -1,8 +1,10 @@
-import { allowMessageHook, validateToken, renderBid } from '../../../modules/safeRendering.js';
+import { allowMessageHook, validateToken, renderBid, escapeInlineHtml } from '../../../modules/safeRendering.js';
 import { isMessageAllowed, parseMessage } from '../../../src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import * as secureCreatives from 'src/secureCreatives.js';
 import { config } from 'src/config.js';
+// eslint-disable-next-line import/no-unresolved
+import { RENDERER } from 'creative-renderers/creative.js';
 
 describe('safeRendering', () => {
   let disableSecureCreatives, onMessage, messages, sandbox;
@@ -48,6 +50,11 @@ describe('safeRendering', () => {
       }, timeout);
     });
   }
+
+  it('escaped creative source is valid JS', () => {
+    // eslint-disable-next-line no-new-func,no-new
+    new Function(escapeInlineHtml(RENDERER));
+  });
 
   describe('renderBid', () => {
     let bid, bidHandle;

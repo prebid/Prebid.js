@@ -35,7 +35,7 @@ config.getConfig('safeRendering', (cfg) => {
   exclusive = cfg.safeRendering?.exclusive ?? false;
 });
 
-function escapeInlineHtml(src) {
+export function escapeInlineHtml(src) {
   // the source is inlined in a <script> tag, so </script and <!-- must be escaped
   return src
     .replace(/<\/script/gi, '<\\/script')
