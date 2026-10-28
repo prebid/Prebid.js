@@ -21,7 +21,7 @@ import adapterManager from './adapterManager.js';
 import { useMetrics } from './utils/perfMetrics.js';
 import { bidFilters } from './targeting/filters.ts';
 import { EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG } from './eventTrackers.js';
-import type { Bid, BidResponse } from "./bidfactory.ts";
+import type { Bid } from "./bidfactory.ts";
 import type { SafeRendererConfig } from "./adUnits.ts";
 import { yieldsIf } from "./utils/yield.ts";
 import { PbPromise } from "./utils/promise.ts";
@@ -301,7 +301,7 @@ doRender.before(function (next, args) {
   }
 }, 100);
 
-export function isRenderSuppressed(bidResponse) {
+export function isRenderSuppressed(bidResponse: Bid) {
   const { adId } = bidResponse;
   const { suppressStaleRender, suppressExpiredRender } = config.getConfig('auctionOptions') ?? {};
   const reasons = [];
@@ -325,7 +325,6 @@ export function isRenderSuppressed(bidResponse) {
   }
   return { suppress: false, logReasons };
 }
-
 
 export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
   if (bidResponse != null && options?.viewUrl != null) {

@@ -266,6 +266,20 @@ describe('safeRendering', () => {
       const [[, { token }]] = await expectMessage();
       expect(validateToken(bid, token)).to.be.true;
     });
+
+    it('does not accept the same token for more than one render request', async () => {
+      renderBid(bidHandle);
+      const [[event, message]] = await expectMessage();
+      const hook = allowMessageHook();
+      const next = sinon.stub();
+      next.bail = sinon.stub();
+      hook(next, event, message);
+      sinon.assert.calledOnce(next);
+      sinon.assert.notCalled(next.bail);
+      hook(next, event, message);
+      sinon.assert.calledOnce(next);
+      sinon.assert.calledWith(next.bail, false);
+    });
   });
 
   describe('allowMessageHook', () => {
