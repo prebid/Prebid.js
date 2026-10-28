@@ -138,6 +138,11 @@ export interface BaseBidResponse {
    * View tracker URL supplied by the GAM creative.
    */
   viewUrl?: string;
+  /**
+   * Click URL supplied by the ad server creative (e.g. GAM).
+   * Does not imply that the creative uses the CLICKTHROUGH macro.
+   */
+  clickUrl?: string;
 }
 
 // <format>BidResponesProperties - adapter interpretResponse properties specific to the format.
