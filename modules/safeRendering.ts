@@ -8,7 +8,8 @@ import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
 import { getBidForMessage, isMessageAllowed } from "../src/secureCreatives.js";
 import { config } from "../src/config.ts";
-import { isRenderSuppressed } from "../src/adRendering.ts";
+import { emitAdRenderFail, isRenderSuppressed } from "../src/adRendering.ts";
+import { AD_RENDER_FAILED_REASON } from "../src/constants.ts";
 
 declare module '../src/prebidGlobal.ts' {
   interface PrebidJS {
@@ -84,9 +85,22 @@ function findDepth(win) {
  * @param options
  */
 export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) {
-  const actualBid = getBidForMessage(bid);
+  let actualBid = null;
+  function fail(reason, message) {
+    emitAdRenderFail({
+      bid: actualBid,
+      reason,
+      id: bid?.adId,
+      message
+    });
+  }
+  if (bid?.adId == null) {
+    fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, 'missing adId');
+    return;
+  }
+  actualBid = getBidForMessage(bid);
   if (actualBid?.adId == null) {
-    logError('renderBid: not a valid bid', bid);
+    fail(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD, `Cannot find ad '${bid.adId}'`)
     return;
   }
   const element = getAdUnitElement(actualBid);
@@ -94,17 +108,17 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     typeof element?.appendChild !== 'function' ||
     typeof element.ownerDocument?.createElement !== 'function'
   ) {
-    logError('renderBid: bid has invalid .element', { bid: actualBid, element });
+    fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid has invalid .element');
     return;
   }
   if (element.ownerDocument.defaultView == null) {
-    logError('renderBid: bid.element is not attached to any window', { bid: actualBid, element });
+    fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid.element is not attached to any window');
     return;
   }
   const doc = element.ownerDocument;
   const parent = findDepth(doc.defaultView);
   if (parent == null) {
-    logError('renderBid: bid.element must be in a descendant of prebid\'s window', { bid: actualBid, element, elementWindow: doc.defaultView, prebidWindow: window });
+    fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid.element must be in a descendant of prebid\'s window');
     return;
   }
   const { suppress, logReasons } = isRenderSuppressed(actualBid);
@@ -139,7 +153,7 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     }
     TOKENS.get(actualBid).set(token, UNCLAIMED);
   } catch (e) {
-    logError('renderBid: error rendering bid', actualBid, e);
+    fail(AD_RENDER_FAILED_REASON.EXCEPTION, e.message);
   }
 }
 
@@ -158,7 +172,7 @@ export function allowMessageHook(tokenIsValid = validateToken) {
         if (event.ports.length < 1) {
           err = 'without a MessageChannel port';
         } else if (!tokenIsValid(bid, message.token, event.source)) {
-          err = 'for the wrong bid';
+          err = 'from a frame not authorized for this bid';
         }
       }
     }
