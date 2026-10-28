@@ -54,6 +54,7 @@ declare module './events' {
     [EVENTS.EXPIRED_RENDER]: [Bid];
 
     [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
+    [EVENTS.BID_CLICK]: [BidClickData];
   }
 }
 
@@ -160,6 +161,11 @@ export function handleCreativeEvent(data, bidResponse) {
         id: bidResponse.adId
       });
       break;
+    case EVENTS.BID_CLICK:
+      if (config.getConfig('bidClickTracking')?.enabled === true && bidResponse.mediaType === 'banner' && data.method === 'creativeClick') {
+        events.emit(EVENTS.BID_CLICK, { bid: bidResponse, adId: bidResponse.adId, adUnitCode: bidResponse.adUnitCode, bidder: bidResponse.bidder, method: 'creativeClick' });
+      }
+      break;
     case EVENTS.BROWSER_INTERVENTION:
       emitBrowserIntervention({
         bid: bidResponse,
@@ -198,6 +204,8 @@ function creativeMessageHandler(deps) {
   };
 }
 
+type BidClickData = { bid: Bid; adId: string; adUnitCode: string; bidder: string; method: 'creativeClick' };
+
 type RenderOptions = {
   clickUrl?: string;
   viewUrl?: string;
@@ -211,6 +219,7 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
     width,
     height,
     instl,
+    trackClicks: bidResponse.mediaType === 'banner' && config.getConfig('bidClickTracking')?.enabled === true,
   };
 });
 
