@@ -85,7 +85,7 @@ describe('adRendering', () => {
     it('emits and fires a tracker only once if observed click precedes inference', () => {
       expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
       expect(reportBidClick(bid, 'iframeFocus')).to.equal(false);
-      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl);
+      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl, 'include', true);
       sinon.assert.calledOnceWithExactly(events.emit, EVENTS.BID_CLICK, sinon.match({ adId: bid.adId, method: 'creativeClick' }));
     });
 
