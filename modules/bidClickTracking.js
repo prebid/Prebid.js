@@ -10,6 +10,8 @@ let enabled = false;
 let fireTrackers = false;
 let hovered = null;
 let listening = false;
+let desktopFallback = false;
+const observed = new Set();
 
 export function validClickUrl(url) {
   if (typeof url !== 'string' || /%%|\$\{/.test(url)) return false;
@@ -44,7 +46,7 @@ function clearAll() {
 
 function onBlur() {
   const state = hovered;
-  if (!state || !enabled || state.fired || !state.slot.isConnected || document.visibilityState === 'hidden') return;
+  if (!desktopFallback || !state || observed.has(state.bid.adId) || !enabled || state.fired || !state.slot.isConnected || document.visibilityState === 'hidden') return;
   // An iframe can become the document's active element when clicked. Do not
   // infer clicks if focus went to another control, tab or browser window.
   const active = document.activeElement;
@@ -62,8 +64,17 @@ function onBlur() {
   }
 }
 
+function onClick({ bid }) {
+  if (!enabled || !bid || observed.has(bid.adId)) return;
+  observed.add(bid.adId);
+  for (const [slot, state] of tracked) {
+    if (state.bid.adId === bid.adId) clearSlot(slot);
+  }
+  if (fireTrackers && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) politeTriggerPixel(bid.clickUrl);
+}
+
 function onRender({ bid }) {
-  if (!enabled || !eligible(bid)) return;
+  if (!enabled || !desktopFallback || !eligible(bid)) return;
   const slot = getAdUnitElement(bid);
   if (!slot) return;
   clearSlot(slot);
@@ -81,6 +92,8 @@ function onRender({ bid }) {
 
 function onRequest({ adUnitCodes, adUnits } = {}) {
   const codes = adUnitCodes || adUnits?.map(unit => unit.code);
+  // Each auction can replace previously rendered creative instances.
+  observed.clear();
   for (const [slot, state] of tracked) {
     if (!codes || codes.includes(state.bid.adUnitCode)) clearSlot(slot);
   }
@@ -91,6 +104,7 @@ function enable() {
   listening = true;
   window.addEventListener('blur', onBlur);
   events.on(EVENTS.AD_RENDER_SUCCEEDED, onRender);
+  events.on(EVENTS.BID_CLICK, onClick);
   events.on(EVENTS.BEFORE_REQUEST_BIDS, onRequest);
 }
 
@@ -99,6 +113,8 @@ function disable() {
   listening = false;
   window.removeEventListener('blur', onBlur);
   events.off(EVENTS.AD_RENDER_SUCCEEDED, onRender);
+  events.off(EVENTS.BID_CLICK, onClick);
+  observed.clear();
   events.off(EVENTS.BEFORE_REQUEST_BIDS, onRequest);
   clearAll();
 }
@@ -107,5 +123,6 @@ config.getConfig(NAME, cfg => {
   const settings = cfg[NAME] || {};
   enabled = settings.enabled === true;
   fireTrackers = settings.fireTrackers === true;
+  desktopFallback = settings.desktopFallback === true;
   enabled ? enable() : disable();
 });
