@@ -215,6 +215,12 @@ describe('secureCreatives', () => {
         req.adId = 'other';
         expect(getBidForMessage(req).foo).to.equal('baz');
       });
+      it('does not return a stale bid when the same object is reused with an unknown adId', () => {
+        const req = { adId: 'test' };
+        getBidForMessage(req);
+        req.adId = 'unknown';
+        expect(getBidForMessage(req)).to.not.exist;
+      });
     });
     describe('Prebid Request', function() {
       it('should render', function () {
