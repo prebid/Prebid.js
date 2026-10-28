@@ -305,20 +305,27 @@ export function isRenderSuppressed(bidResponse) {
   const { adId } = bidResponse;
   const { suppressStaleRender, suppressExpiredRender } = config.getConfig('auctionOptions') ?? {};
   const reasons = [];
+  function logReasons() {
+    reasons.forEach(([event, msg]) => {
+      logWarn(msg);
+      events.emit(event, bidResponse);
+    });
+  }
   if (bidResponse.status === BID_STATUS.RENDERED) {
     reasons.push([STALE_RENDER, `Ad id ${adId} has been rendered before`]);
     if (suppressStaleRender) {
-      return { suppress: true, reasons };
+      return { suppress: true, logReasons };
     }
   }
   if (!bidFilters.isBidNotExpired(bidResponse)) {
     reasons.push([EXPIRED_RENDER, `Ad id ${adId} has been expired`]);
     if (suppressExpiredRender) {
-      return { suppress: true, reasons };
+      return { suppress: true, logReasons };
     }
   }
-  return { suppress: false, reasons };
+  return { suppress: false, logReasons };
 }
+
 
 export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
   if (bidResponse != null && options?.viewUrl != null) {
@@ -333,11 +340,8 @@ export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, d
       });
       return;
     }
-    const { suppress, reasons } = isRenderSuppressed(bidResponse);
-    reasons.forEach(([event, msg]) => {
-      logWarn(msg);
-      events.emit(event, bidResponse);
-    });
+    const { suppress, logReasons } = isRenderSuppressed(bidResponse);
+    logReasons();
     if (suppress) return;
 
     try {

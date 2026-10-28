@@ -93,9 +93,12 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     logError('renderBid: bid.element must be in a descendant of prebid\'s window', { bid: actualBid, element, elementWindow: doc.defaultView, prebidWindow: window });
     return;
   }
-  if (!isRenderSuppressed(actualBid).suppress) {
-    element.innerHTML = '';
+  const { suppress, logReasons } = isRenderSuppressed(actualBid);
+  if (suppress) {
+    logReasons();
+    return;
   }
+  element.innerHTML = '';
   try {
     const { clickThrough: clickUrl, ...rest } = options ?? {};
     const token = generateUUID();
