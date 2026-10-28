@@ -56,12 +56,44 @@ describe('bidClickTracking', () => {
     expect(emitted.getCalls().filter(call => call.args[0] === EVENTS.BID_CLICK_INFERRED).length).to.equal(0);
   });
 
-  it('cleans up tracking on refresh', () => {
+  function focusRenderedFrame() {
+    slot.dispatchEvent(new Event('pointerenter'));
+    frame.focus();
+    // Prove that the desktop focus heuristic has its necessary precondition.
+    expect(document.activeElement).to.equal(frame);
+    window.dispatchEvent(new Event('blur'));
+  }
+
+  function inferredClicks() {
+    return emitted.getCalls().filter(call => call.args[0] === EVENTS.BID_CLICK_INFERRED);
+  }
+
+  it('infers a click from focus entering a hovered creative iframe', () => {
+    const clock = sandbox.useFakeTimers();
+    config.setConfig({ bidClickTracking: { enabled: true, desktopFallback: true, fireTrackers: false } });
     events.emit(EVENTS.AD_RENDER_SUCCEEDED, { bid, adId: bid.adId });
-    events.emit(EVENTS.BEFORE_REQUEST_BIDS, { adUnitCodes: [bid.adUnitCode] });
+    focusRenderedFrame();
+    clock.tick(101);
+    expect(inferredClicks().length).to.equal(1);
+    expect(inferredClicks()[0].args[1]).to.include({ adId: bid.adId, method: 'iframeFocus' });
+  });
+
+  it('cleans up pending inference when the ad unit is requested again', () => {
+    const clock = sandbox.useFakeTimers();
+    config.setConfig({ bidClickTracking: { enabled: true, desktopFallback: true, fireTrackers: false } });
+    events.emit(EVENTS.AD_RENDER_SUCCEEDED, { bid, adId: bid.adId });
+    focusRenderedFrame();
+
+    // BEFORE_REQUEST_BIDS carries an array of ad units, not an options object.
+    // Refresh must remove listeners and cancel an already scheduled click inference.
+    events.emit(EVENTS.BEFORE_REQUEST_BIDS, [{ code: bid.adUnitCode }]);
+    clock.tick(101);
+    expect(inferredClicks().length).to.equal(0);
+
     slot.dispatchEvent(new Event('pointerenter'));
     window.dispatchEvent(new Event('blur'));
-    expect(emitted.getCalls().filter(call => call.args[0] === EVENTS.BID_CLICK_INFERRED).length).to.equal(0);
+    clock.tick(101);
+    expect(inferredClicks().length).to.equal(0);
   });
 
   it('does not track bidders that already supply a click macro', () => {
