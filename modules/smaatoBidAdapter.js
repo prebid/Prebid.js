@@ -27,12 +27,6 @@ const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p';
 const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p';
-const SMT_AD_TYPES = {
-  Img: BANNER,
-  Richmedia: BANNER,
-  Video: VIDEO,
-  Native: NATIVE
-};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -118,7 +112,6 @@ export const spec = {
     const response = serverResponse.body;
     logInfo('[SMAATO] OpenRTB Response:', response);
 
-    const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
     const bids = [];
     response.seatbid.forEach(seatbid => {
       seatbid.bid.forEach(bid => {
@@ -140,7 +133,7 @@ export const spec = {
           }
         };
 
-        switch (ORTB_MTYPES[bid.mtype] || SMT_AD_TYPES[smtAdType]) {
+        switch (ORTB_MTYPES[bid.mtype]) {
           case BANNER:
             resultingBid.ad = createBannerAd(bid);
             resultingBid.mediaType = BANNER;
@@ -157,7 +150,7 @@ export const spec = {
             bids.push(resultingBid);
             break;
           default:
-            logInfo('[SMAATO] Invalid ad type:', bid.mtype, smtAdType);
+            logInfo('[SMAATO] Invalid mtype:', bid.mtype);
         }
         resultingBid.meta.mediaType = resultingBid.mediaType;
       });

@@ -14,9 +14,9 @@ import 'modules/consentManagementUsp.js';
 const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p';
 const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p';
 
-const ADTYPE_IMG = 'Img';
-const ADTYPE_VIDEO = 'Video';
-const ADTYPE_NATIVE = 'Native';
+const MTYPE_BANNER = 1;
+const MTYPE_VIDEO = 2;
+const MTYPE_NATIVE = 4;
 
 const REFERRER = 'http://example.com/page.html';
 const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU';
@@ -1116,21 +1116,21 @@ describe('smaatoBidAdapterTest', () => {
       privacy: 'https://privacy.com/'
     };
 
-    const buildOpenRtbBidResponse = (adType) => {
+    const buildOpenRtbBidResponse = (mtype) => {
       let adm;
 
-      switch (adType) {
-        case ADTYPE_IMG:
+      switch (mtype) {
+        case MTYPE_BANNER:
           adm = '<a rel="nofollow" href="https://prebid.net/click"><img src="https://prebid.net/images/image.png" alt="" width="480" height="320" /></a>';
           break;
-        case ADTYPE_VIDEO:
+        case MTYPE_VIDEO:
           adm = '<VAST version="2.0"></VAST>';
           break;
-        case ADTYPE_NATIVE:
+        case MTYPE_NATIVE:
           adm = JSON.stringify({ native: NATIVE_RESPONSE });
           break;
         default:
-          throw Error('Invalid AdType');
+          throw Error('Invalid mtype');
       }
 
       return {
@@ -1154,6 +1154,7 @@ describe('smaatoBidAdapterTest', () => {
                   'id': '6906aae8-7f74-4edd-9a4f-f49379a3cadd',
                   'impid': '226416e6e6bf41',
                   'iurl': 'https://prebid/iurl',
+                  'mtype': mtype,
                   'nurl': 'https://prebid/nurl',
                   'price': 0.01,
                   'w': 350,
@@ -1168,11 +1169,7 @@ describe('smaatoBidAdapterTest', () => {
           ],
         },
         headers: {
-          get: function (header) {
-            if (header === 'X-SMT-ADTYPE') {
-              return adType;
-            }
-          }
+          get: () => undefined
         }
       };
     };
@@ -1187,7 +1184,7 @@ describe('smaatoBidAdapterTest', () => {
 
     describe('non ad pod', () => {
       it('single banner response', () => {
-        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_IMG), buildBidRequest());
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(MTYPE_BANNER), buildBidRequest());
 
         expect(bids).to.deep.equal([
           {
@@ -1213,7 +1210,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('single video response', () => {
-        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_VIDEO), buildBidRequest());
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(MTYPE_VIDEO), buildBidRequest());
 
         expect(bids).to.deep.equal([
           {
@@ -1239,7 +1236,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('single native response', () => {
-        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_NATIVE), buildBidRequest());
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(MTYPE_NATIVE), buildBidRequest());
 
         expect(bids).to.deep.equal([
           {
@@ -1266,68 +1263,27 @@ describe('smaatoBidAdapterTest', () => {
         ]);
       });
 
-      it('ignores bid response with invalid ad type', () => {
-        const serverResponse = buildOpenRtbBidResponse(ADTYPE_IMG);
-        serverResponse.headers.get = (header) => {
-          if (header === 'X-SMT-ADTYPE') {
-            return undefined;
-          }
-        };
+      it('ignores a bid without mtype', () => {
+        const serverResponse = buildOpenRtbBidResponse(MTYPE_BANNER);
+        delete serverResponse.body.seatbid[0].bid[0].mtype;
 
         const bids = spec.interpretResponse(serverResponse, buildBidRequest());
 
         expect(bids).to.be.empty;
       });
 
-      describe('with mtype and no ad type header', () => {
-        const buildMtypeResponse = (adType, mtype) => {
-          const serverResponse = buildOpenRtbBidResponse(adType);
-          serverResponse.body.seatbid[0].bid[0].mtype = mtype;
-          serverResponse.headers.get = () => undefined;
-          return serverResponse;
-        };
-
-        it('returns a banner bid for mtype 1', () => {
-          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_IMG, 1), buildBidRequest());
-
-          expect(bids[0].mediaType).to.equal('banner');
-          expect(bids[0].ad).to.contain('https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1');
-        });
-
-        it('returns a video bid for mtype 2', () => {
-          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_VIDEO, 2), buildBidRequest());
-
-          expect(bids[0].mediaType).to.equal('video');
-          expect(bids[0].vastXml).to.equal('<VAST version="2.0"></VAST>');
-        });
-
-        it('returns a native bid for mtype 4', () => {
-          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_NATIVE, 4), buildBidRequest());
-
-          expect(bids[0].mediaType).to.equal('native');
-          expect(bids[0].native).to.deep.equal({ ortb: NATIVE_RESPONSE });
-        });
-
-        it('ignores a bid with an unsupported mtype', () => {
-          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_IMG, 3), buildBidRequest());
-
-          expect(bids).to.be.empty;
-        });
-      });
-
-      it('prefers mtype over the ad type header', () => {
-        const serverResponse = buildOpenRtbBidResponse(ADTYPE_IMG);
-        serverResponse.body.seatbid[0].bid[0].mtype = 2;
-        serverResponse.body.seatbid[0].bid[0].adm = '<VAST version="2.0"></VAST>';
+      it('ignores a bid with an unsupported mtype', () => {
+        const serverResponse = buildOpenRtbBidResponse(MTYPE_BANNER);
+        serverResponse.body.seatbid[0].bid[0].mtype = 3;
 
         const bids = spec.interpretResponse(serverResponse, buildBidRequest());
 
-        expect(bids[0].mediaType).to.equal('video');
+        expect(bids).to.be.empty;
       });
 
       it('escapes single quotes in click tracking urls', () => {
         const clickUrl = "https://prebid/track/click?q=it's";
-        const serverResponse = buildOpenRtbBidResponse(ADTYPE_IMG);
+        const serverResponse = buildOpenRtbBidResponse(MTYPE_BANNER);
         serverResponse.body.seatbid[0].bid[0].ext.curls = [clickUrl];
 
         const bids = spec.interpretResponse(serverResponse, buildBidRequest());
@@ -1340,11 +1296,8 @@ describe('smaatoBidAdapterTest', () => {
     it('uses correct TTL when expire header exists', () => {
       const clock = sinon.useFakeTimers();
       clock.tick(2000);
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
       resp.headers.get = (header) => {
-        if (header === 'X-SMT-ADTYPE') {
-          return ADTYPE_IMG;
-        }
         if (header === 'X-SMT-Expires') {
           return 2000 + (400 * 1000);
         }
@@ -1358,7 +1311,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('uses net revenue flag send from server', () => {
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
       resp.body.seatbid[0].bid[0].ext = { net: false };
 
       const bids = spec.interpretResponse(resp, buildBidRequest());
@@ -1367,7 +1320,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('uses dsa object sent from server', () => {
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
       const dsa = {
         behalf: 'advertiser',
         paid: 'advertiser',
@@ -1387,7 +1340,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('does not use dsa object if not sent from server', () => {
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
       resp.body.seatbid[0].bid[0].ext = {};
 
       const bids = spec.interpretResponse(resp, buildBidRequest());
