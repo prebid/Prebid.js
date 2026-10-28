@@ -185,7 +185,7 @@ export function handleNativeMessage(data, bidResponse, { resizeFn, fireTrackers 
       resizeFn(data.width, data.height);
       break;
     default:
-      if (data.action === 'click' && bidResponse?.mediaType === 'native') {
+      if (data.action === 'click' && bidResponse?.native != null) {
         const settings = config.getConfig('bidClickTracking');
         if (settings?.enabled === true && !reportBidClick(bidResponse, 'nativeClick', data.assetId)) return;
       }
@@ -223,7 +223,7 @@ const reportedBidClicks = new WeakSet<Bid>();
 /** The two detection paths share this one once-per-bid gate. */
 export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId?: number | string): boolean {
   const settings = config.getConfig('bidClickTracking');
-  if (settings?.enabled !== true || (bid?.mediaType !== 'banner' && bid?.mediaType !== 'native')) return false;
+  if (settings?.enabled !== true || (bid?.mediaType !== 'banner' && bid?.native == null)) return false;
   if (reportedBidClicks.has(bid) && !(method === 'nativeClick' && settings.dedupeNativeClicks === false)) return false;
 
   reportedBidClicks.add(bid);
@@ -241,7 +241,7 @@ export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId
     events.emit(EVENTS.BID_CLICK_INFERRED, { ...data, method });
   }
 
-  if (bid.mediaType === 'banner' && settings.fireTrackers === true && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
+  if (method !== 'nativeClick' && bid.mediaType === 'banner' && settings.fireTrackers === true && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
     // Start the keepalive GET before the click can navigate away.
     politeTriggerPixel(bid.clickUrl, 'include', true);
   }
