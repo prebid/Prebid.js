@@ -23,6 +23,7 @@ describe('safeRendering', () => {
   });
   after(() => {
     isMessageAllowed.getHooks({ hook: disableHook }).remove();
+    config.setConfig({ safeRendering: { exclusive: false } });
   });
 
   beforeEach(() => {
