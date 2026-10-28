@@ -2,7 +2,7 @@ import { registerReportingObserver } from '../../reporting.js';
 import { BROWSER_INTERVENTION, MESSAGE_EVENT } from '../../constants.js';
 import { ERROR_NO_AD } from './constants.js';
 
-export function render({ ad, adUrl, width, height, instl }, { mkFrame, sendMessage }, win) {
+export function render({ ad, adUrl, width, height, instl, trackClicks }, { mkFrame, sendMessage }, win) {
   registerReportingObserver((report) => {
     sendMessage(MESSAGE_EVENT, {
       event: BROWSER_INTERVENTION,
@@ -30,7 +30,24 @@ export function render({ ad, adUrl, width, height, instl }, { mkFrame, sendMessa
     } else {
       attrs.srcdoc = ad;
     }
-    doc.body.appendChild(mkFrame(doc, attrs));
+    const frame = mkFrame(doc, attrs);
+    // Only same-origin inline creative documents can be observed. Never
+    // interfere with navigation or inspect cross-origin ad URLs.
+    if (ad && trackClicks && frame.addEventListener) {
+      frame.addEventListener('load', () => {
+        try {
+          frame.contentDocument?.addEventListener('click', (event) => {
+            const link = event.target?.closest?.('a[href],area[href]');
+            if (event.isTrusted && link) {
+              sendMessage(MESSAGE_EVENT, { event: 'bidClick', method: 'creativeClick' });
+            }
+          }, true);
+        } catch (e) {
+          // Sandboxed or cross-origin creative.
+        }
+      });
+    }
+    doc.body.appendChild(frame);
     if (instl && win.frameElement) {
       // interstitials are rendered in a nested iframe that needs to be sized
       const style = win.frameElement.style;
