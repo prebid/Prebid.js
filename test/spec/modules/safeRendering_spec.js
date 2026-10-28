@@ -145,14 +145,14 @@ describe('safeRendering', () => {
       return JSON.parse(src.slice(start, src.lastIndexOf(');</script>')));
     }
 
-    it('uses Prebid\'s location as pubUrl when the element is in an about:blank frame', () => {
+    it('uses Prebid\'s origin as pubUrl when the element is in an about:blank frame', () => {
       const iframe = createIframe(document);
       document.body.appendChild(iframe);
       try {
         bid.element = iframe.contentDocument.createElement('div');
         iframe.contentDocument.body.appendChild(bid.element);
         renderBid(bidHandle);
-        expect(getRenderArgs(bid.element).pubUrl).to.eql(window.location.href);
+        expect(getRenderArgs(bid.element).pubUrl).to.eql(window.location.origin);
       } finally {
         document.body.removeChild(iframe);
       }
