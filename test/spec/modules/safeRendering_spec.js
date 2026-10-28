@@ -1,6 +1,8 @@
-import { allowMessageHook, getAdIdForFrame, renderBid } from '../../../modules/safeRendering.js';
+import { allowMessageHook, validateToken, renderBid } from '../../../modules/safeRendering.js';
 import { isMessageAllowed, parseMessage } from '../../../src/secureCreatives.js';
 import * as utils from 'src/utils.js';
+import * as secureCreatives from 'src/secureCreatives.js';
+import { config } from 'src/config.js';
 
 describe('safeRendering', () => {
   let disableSecureCreatives, onMessage, messages, sandbox;
@@ -52,10 +54,17 @@ describe('safeRendering', () => {
     beforeEach(() => {
       const element = document.createElement('div');
       document.body.appendChild(element);
+
       bid = {
         adId: 'mock-adid',
         element
       };
+
+      sandbox.stub(secureCreatives, 'getBidForMessage').callsFake((msg) => {
+        if (msg?.adId === bid.adId) {
+          return bid;
+        }
+      });
     });
 
     afterEach(() => {
@@ -78,8 +87,8 @@ describe('safeRendering', () => {
       renderBid(bid);
       document.body.appendChild(bid.element);
       try {
-        const [[event,]] = await expectMessage();
-        expect(getAdIdForFrame(event.source)).to.eql(bid.adId);
+        const [[, { token }]] = await expectMessage();
+        expect(validateToken(bid, token)).to.be.true;
       } finally {
         document.body.removeChild(bid.element);
       }
@@ -117,7 +126,8 @@ describe('safeRendering', () => {
       'undefined adId': { adUnitCode: 'au' },
       'unresolvable element': { adId: 'adId' },
       'null element': { adId: 'adId', element: null },
-      'invalid element': { adId: 'adId', element: {} }
+      'invalid element': { adId: 'adId', element: {} },
+      'unknown adId': { adId: 'other', adUnitCode: 'au' },
     }).forEach(([description, bid]) => {
       it(`refuses a bid with ${description}`, () => {
         sandbox.spy(utils, 'logError');
@@ -128,43 +138,99 @@ describe('safeRendering', () => {
       });
     });
 
-    it('registers the adId/iframe pair with getAdIdForFrame', async () => {
+    it('registers the token with the bid', async () => {
       sandbox.spy(document, 'createElement');
       renderBid(bid);
-      const [[event,]] = await expectMessage();
-      expect(getAdIdForFrame(document.createElement.returnValues[0].contentWindow)).to.eql(bid.adId);
-      expect(getAdIdForFrame(event.source)).to.eql(bid.adId);
+      const [[, { token }]] = await expectMessage();
+      expect(validateToken(bid, token)).to.be.true;
     });
   });
 
   describe('allowMessageHook', () => {
-    let next, hook, getAdId, source;
+    let next, hook, tokenIsValid, getBidForMessage;
     beforeEach(() => {
       next = sinon.stub();
       next.bail = sinon.stub();
-      getAdId = sinon.stub();
-      source = 'mock-source';
-      hook = allowMessageHook(getAdId);
+      tokenIsValid = sinon.stub();
+      hook = allowMessageHook(tokenIsValid);
+      getBidForMessage = sinon.stub();
+      sandbox.stub(secureCreatives, 'getBidForMessage').callsFake(getBidForMessage);
     });
+    [true, false].forEach((exclusive) => {
+      describe(`and safeRendering.exclusive = ${exclusive}`, () => {
+        beforeEach(() => {
+          config.setConfig({ safeRendering: { exclusive } });
+        });
 
-    [
-      {
-        desc: 'wrong adid',
-        event: () => ({ source, ports: ['mock-source'] }),
-        message: { adId: 'wrong' }
-      },
-      {
-        desc: 'missing port',
-        event: () => ({ source, ports: [] }),
-        message: { adId: 'right' }
-      }
-    ].forEach(({ desc, event, message }) => {
-      it(`rejects ${desc}`, () => {
-        getAdId.returns('right');
-        hook(next, event(), message);
-        sinon.assert.calledWith(getAdId, source);
-        sinon.assert.notCalled(next);
-        sinon.assert.calledWith(next.bail, false);
+        afterEach(() => {
+          config.resetConfig();
+        });
+
+        [
+          {
+            desc: 'wrong adId, no token',
+            shouldAllow: !exclusive,
+            bid: null,
+            event: { ports: ['mock-source'] },
+            message: { adId: 'wrong' },
+          },
+          {
+            desc: 'missing adId, no token',
+            shouldAllow: !exclusive,
+            bid: null,
+            event: { ports: ['mock-source'] },
+            message: { adId: 'wrong' },
+          },
+          {
+            desc: 'good adId, wrong token',
+            shouldAllow: false,
+            bid: {},
+            event: { ports: ['mock-source'] },
+            message: { adId: 'right', token: 'wrong' }
+          },
+          {
+            desc: 'good adId, good token',
+            shouldAllow: true,
+            bid: {},
+            event: { ports: ['mock-source'] },
+            message: { adId: 'right', token: 'right' },
+          },
+          {
+            desc: 'missing port, good token',
+            shouldAllow: false,
+            bid: {},
+            event: { ports: [] },
+            message: { adId: 'right', token: 'right' }
+          },
+          {
+            desc: 'missing port, no token',
+            shouldAllow: !exclusive,
+            bid: {},
+            event: { ports: [] },
+            message: { adId: 'right' }
+          }
+        ].forEach(({ desc, shouldAllow, bid, event, message }) => {
+          describe(`when an incoming message has ${desc}`, () => {
+            beforeEach(() => {
+              secureCreatives.getBidForMessage.returns(bid);
+              tokenIsValid.callsFake((bid, token) => token === 'right');
+            });
+
+            if (shouldAllow) {
+              it('should allow', () => {
+                hook(next, event, message);
+                sinon.assert.calledWith(next, event, message);
+                sinon.assert.notCalled(next.bail);
+              });
+            } else {
+              it('should reject', () => {
+                hook(next, event, message);
+                sinon.assert.notCalled(next);
+                sinon.assert.calledWith(next.bail, false);
+              });
+            }
+          });
+        });
       });
     });
   });

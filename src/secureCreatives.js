@@ -70,12 +70,23 @@ export function parseMessage(ev) {
   }
 }
 
+export const getBidForMessage = (() => {
+  const bids = new WeakMap();
+  return (message) => {
+    if (message == null || typeof message !== 'object') return;
+    if (!bids.has(message)) {
+      bids.set(message, auctionManager.findBidByAdId(message.adId) ?? null);
+    }
+    return bids.get(message);
+  };
+})();
+
 export const isMessageAllowed = hook('sync', (event, data) => true);
 
 export function receiveMessage(ev, cb) {
   const data = parseMessage(ev);
   if (data && isMessageAllowed(ev, data)) {
-    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, auctionManager.findBidByAdId(data.adId));
+    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, getBidForMessage(data));
     cb && cb();
   }
 }
@@ -88,6 +99,7 @@ function getResizer(adId, bidResponse) {
     resizeRemoteCreative({ ...bidResponse, width, height, adId });
   };
 }
+
 function handleRenderRequest(reply, message, bidResponse) {
   handleRender({
     renderFn(adData) {

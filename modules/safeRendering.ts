@@ -3,10 +3,10 @@
 import { RENDERER } from '../creative-renderers/creative.js';
 import { addApiMethod, type RenderAdOptions } from "../src/prebid.ts";
 import type { Bid } from "../src/bidfactory.ts";
-import { createIframe, logError, logWarn } from "../src/utils.js";
+import { createIframe, generateUUID, logError, logWarn } from "../src/utils.js";
 import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
-import { isMessageAllowed } from "../src/secureCreatives.js";
+import { getBidForMessage, isMessageAllowed } from "../src/secureCreatives.js";
 import { config } from "../src/config.ts";
 
 declare module '../src/prebidGlobal.ts' {
@@ -52,10 +52,10 @@ const getCreativeTag = (() => {
   };
 })();
 
-const RENDERED = new WeakMap();
+const TOKENS = new WeakMap();
 
-export function getAdIdForFrame(source: WindowProxy): Identifier {
-  return RENDERED.get(source);
+export function validateToken(bid: Bid, token: Identifier): boolean {
+  return bid != null && token != null && TOKENS.get(bid)?.has(token);
 }
 
 /**
@@ -67,67 +67,73 @@ export function getAdIdForFrame(source: WindowProxy): Identifier {
  * @param bid
  * @param options
  */
-export function renderBid(bid: Bid, options?: RenderAdOptions) {
-  if (bid?.adId == null) {
+export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) {
+  const actualBid = getBidForMessage(bid);
+  if (actualBid?.adId == null) {
     logError('renderBid: not a valid bid', bid);
     return;
   }
-  const element = getAdUnitElement(bid);
+  const element = getAdUnitElement(actualBid);
   if (
     typeof element?.appendChild !== 'function' ||
     typeof element?.ownerDocument?.createElement !== 'function'
   ) {
-    logError('renderBid: bid has invalid .element', { bid, element });
+    logError('renderBid: bid has invalid .element', { bid: actualBid, element });
     return;
   }
   const doc = element.ownerDocument;
-  if (!doc.body?.contains?.(element)) {
-    logError('renderBid: bid.element is not in the DOM', { bid, element });
-    return;
-  }
   try {
     element.innerHTML = '';
     const { clickThrough: clickUrl, ...rest } = options ?? {};
+    const token = generateUUID();
     const renderArgs = JSON.stringify({
       ...rest,
-      adId: bid.adId,
+      adId: actualBid.adId,
       pubUrl: doc.defaultView.location.href,
-      clickUrl
+      clickUrl,
+      allowNullOrigin: true,
+      token
     }).replace(/</g, '\\u003c'); // handle HTML strings
-    const srcdoc = getCreativeTag() + encodeURIComponent(`<script>window.pbRender(${renderArgs});</script>`);
-    // use a data url instead of srcdoc
-    // srcdoc is not isolated unless in a sandbox without `allow-same-origin`, which would break anything that needs an origin
-    // in the creative (e.g. storage)
-    // data URLs set an opaque origin regardless of sandbox, keeping the frame isolated but allowing nested iframes
-    // to use a real origin (as long as allow-same-origin)
     const frame = createIframe(doc, {
+      // GPT's sandbox attr
       sandbox: 'allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation',
-      src: 'data:text/html;charset=utf-8,' + srcdoc
+      // data URLs set an opaque origin regardless of sandbox, keeping the frame isolated but allowing nested iframes
+      // to use a real origin (as long as allow-same-origin)
+      src: 'data:text/html;charset=utf-8,' + getCreativeTag() + encodeURIComponent(`<script>window.pbRender(${renderArgs});</script>`)
     });
-    frame.onload = () => RENDERED.set(frame.contentWindow, bid.adId);
     element.appendChild(frame);
+    if (!TOKENS.has(bid)) {
+      TOKENS.set(bid, new Set());
+    }
+    TOKENS.get(bid).add(token);
   } catch (e) {
-    logError('renderBid: error rendering bid', bid, e);
+    logError('renderBid: error rendering bid', actualBid, e);
   }
 }
 
 addApiMethod('renderBid', renderBid);
 
-export function allowMessageHook(getAdId = getAdIdForFrame) {
+export function allowMessageHook(tokenIsValid = validateToken) {
   return (next, event, message) => {
-    const adId = getAdId(event.source);
     let err = null;
-    if (adId) {
-      if (event.ports.length < 1) {
-        err = 'without a MessageChannel port';
-      } else if (adId !== message?.adId) {
-        err = 'for the wrong adId';
+
+    const bid = getBidForMessage(message);
+    const { token } = message ?? {};
+    if (exclusive && !token) {
+      err = 'not requested by renderBid, and safeRendering.exclusive is enabled';
+    } else if (bid) {
+      if (token) {
+        if (event.ports.length < 1) {
+          err = 'without a MessageChannel port';
+        } else if (!tokenIsValid(bid, message.token)) {
+          err = 'for the wrong bid';
+        }
       }
     }
     if (err) {
       logWarn(`Received x-origin request ${err}, request will be ignored`, {
         adFrame: event.source,
-        adId,
+        bid,
         message
       });
       next.bail(false);
