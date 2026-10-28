@@ -54,7 +54,7 @@ declare module './events' {
     [EVENTS.EXPIRED_RENDER]: [Bid];
 
     [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
-    [EVENTS.BID_CLICK]: [BidClickData & { method: 'creativeClick' }];
+    [EVENTS.BID_CLICK]: [BidClickData & { method: 'creativeClick' | 'nativeClick' }];
     [EVENTS.BID_CLICK_INFERRED]: [BidClickData & { method: 'iframeFocus' }];
   }
 }
@@ -185,6 +185,10 @@ export function handleNativeMessage(data, bidResponse, { resizeFn, fireTrackers 
       resizeFn(data.width, data.height);
       break;
     default:
+      if (data.action === 'click' && bidResponse?.mediaType === 'native') {
+        const settings = config.getConfig('bidClickTracking');
+        if (settings?.enabled === true && !reportBidClick(bidResponse, 'nativeClick', data.assetId)) return;
+      }
       fireTrackers(data, bidResponse);
   }
 }
@@ -210,15 +214,17 @@ type BidClickData = {
   adId: string;
   adUnitCode: string;
   bidder: string;
-  method: 'creativeClick' | 'iframeFocus';
+  method: 'creativeClick' | 'iframeFocus' | 'nativeClick';
+  assetId?: number | string;
 };
 
 const reportedBidClicks = new WeakSet<Bid>();
 
 /** The two detection paths share this one once-per-bid gate. */
-export function reportBidClick(bid: Bid, method: BidClickData['method']): boolean {
+export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId?: number | string): boolean {
   const settings = config.getConfig('bidClickTracking');
-  if (settings?.enabled !== true || bid?.mediaType !== 'banner' || reportedBidClicks.has(bid)) return false;
+  if (settings?.enabled !== true || (bid?.mediaType !== 'banner' && bid?.mediaType !== 'native')) return false;
+  if (reportedBidClicks.has(bid) && !(method === 'nativeClick' && settings.dedupeNativeClicks === false)) return false;
 
   reportedBidClicks.add(bid);
   const data = {
@@ -226,15 +232,16 @@ export function reportBidClick(bid: Bid, method: BidClickData['method']): boolea
     adId: bid.adId,
     adUnitCode: bid.adUnitCode,
     bidder: bid.bidder,
-    method
+    method,
+    ...(assetId != null ? { assetId } : {})
   };
-  if (method === 'creativeClick') {
+  if (method === 'creativeClick' || method === 'nativeClick') {
     events.emit(EVENTS.BID_CLICK, { ...data, method });
   } else {
     events.emit(EVENTS.BID_CLICK_INFERRED, { ...data, method });
   }
 
-  if (settings.fireTrackers === true && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
+  if (bid.mediaType === 'banner' && settings.fireTrackers === true && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
     // Start the keepalive GET before the click can navigate away.
     politeTriggerPixel(bid.clickUrl, 'include', true);
   }
