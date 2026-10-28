@@ -187,7 +187,7 @@ const adUnits = [
 ];
 ```
 
-## Native asset overview
+## Native asset overview 
 
 The asset IDs in the example are conventions used by this configuration:
 
