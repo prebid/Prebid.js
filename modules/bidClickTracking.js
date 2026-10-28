@@ -65,8 +65,8 @@ function onRender({ bid }) {
   tracked.set(slot, state);
 }
 
-function onRequest({ adUnitCodes, adUnits } = {}) {
-  const codes = adUnitCodes || adUnits?.map(unit => unit.code);
+function onRequest(adUnits = []) {
+  const codes = Array.isArray(adUnits) ? adUnits.map(unit => unit.code) : adUnits?.adUnitCodes;
   for (const [slot, state] of tracked) {
     if (!codes || codes.includes(state.bid.adUnitCode)) clearSlot(slot);
   }
