@@ -705,6 +705,7 @@ describe('adRendering', () => {
 
     it('permits repeated native clicks when deduplication is explicitly disabled', () => {
       bid.mediaType = 'native';
+      bid.native = { clickUrl: 'https://advertiser.example/landing' };
       const fireTrackers = sinon.stub();
       sandbox.stub(events, 'emit');
       config.setConfig({ bidClickTracking: { enabled: true, dedupeNativeClicks: false } });
