@@ -366,10 +366,6 @@ doRender.before(function (next, args) {
 }, 100);
 
 export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
-  if (bidResponse != null) {
-    if (options?.viewUrl != null) bidResponse.viewUrl = options.viewUrl;
-    if (options?.clickUrl != null) bidResponse.clickUrl = options.clickUrl;
-  }
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
       emitAdRenderFail({
@@ -394,6 +390,10 @@ export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, d
       }
     }
 
+    // A second render can be rejected by the stale/expired bid guards above.
+    // Keep the click and view URLs tied to the creative that was actually rendered.
+    if (options?.viewUrl != null) bidResponse.viewUrl = options.viewUrl;
+    if (options?.clickUrl != null) bidResponse.clickUrl = options.clickUrl;
     try {
       doRender({ renderFn, resizeFn, bidResponse, options, doc });
     } catch (e) {
