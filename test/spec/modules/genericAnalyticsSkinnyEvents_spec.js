@@ -75,8 +75,6 @@ describe('Generic analytics skinny events', () => {
       events.emit(EVENTS.BID_CLICK_INFERRED, { bid, adId: 'ad', adUnitCode: 'slot', bidder: 'bidder', method: 'iframeFocus' });
       sinon.assert.calledWith(handler, [sinon.match({ eventType: EVENTS.BID_CLICK_INFERRED, method: 'iframeFocus' })]);
     });
-
-
   });
 
   describe('noBid', () => {
@@ -212,8 +210,6 @@ describe('Generic analytics skinny events', () => {
       expect(result).to.not.have.property('bid');
       expect(result.analyticsLabels).to.eql({ label: 'value' });
     });
-
-
   });
 
   describe('request events', () => {
