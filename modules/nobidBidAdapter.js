@@ -229,6 +229,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (adunitObject.params) {
       a.params = adunitObject.params;
     }
+    if (adunitObject.ortb2Imp) {
+      a.ortb2Imp = adunitObject.ortb2Imp;
+    }
     adunits.push(a);
     return adunits;
   }
@@ -275,6 +278,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         ad_type: adType,
         params: bid.params,
         floor: floor,
+        ortb2Imp: bid.ortb2Imp,
         ctx: context
       },
       adunits);
@@ -418,7 +422,10 @@ export const spec = {
     const payload = nobidBuildRequests(validBidRequests, bidderRequest);
     if (!payload) return;
     window.nobid.refreshCount++;
-    const payloadString = JSON.stringify(payload).replace(/'|&|#/g, '');
+    const payloadString = JSON.stringify(payload)
+      .replace(/'/g, '\\u0027')
+      .replace(/&/g, '\\u0026')
+      .replace(/#/g, '\\u0023');
     const endpoint = buildEndpoint();
 
     let options = {};

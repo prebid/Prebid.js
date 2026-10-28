@@ -42,6 +42,40 @@ describe('Nobid Adapter', function () {
     });
   });
 
+  describe('buildRequestsWithOrtb2Imp', function () {
+    const bidderRequest = { refererInfo: { page: 'https://www.examplereferer.com' } };
+    const bidRequest = (ortb2Imp) => [{
+      bidder: 'nobid',
+      params: { siteId: 2 },
+      adUnitCode: 'adunit-code',
+      sizes: [[300, 250]],
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      ortb2Imp
+    }];
+
+    it('should forward ortb2Imp including gpid', function () {
+      const ortb2Imp = { ext: { gpid: '/1234/home#div-1', data: { pbadslot: '/1234/home' } } };
+      const request = spec.buildRequests(bidRequest(ortb2Imp), bidderRequest);
+      const adunit = JSON.parse(request.data).a[0];
+      expect(adunit.ortb2Imp).to.deep.equal(ortb2Imp);
+      expect(adunit.ortb2Imp.ext.gpid).to.equal('/1234/home#div-1');
+    });
+
+    it('should omit ortb2Imp when absent', function () {
+      const request = spec.buildRequests(bidRequest(undefined), bidderRequest);
+      expect(JSON.parse(request.data).a[0]).to.not.have.property('ortb2Imp');
+    });
+
+    it('should not send raw quote, ampersand or hash in the body', function () {
+      const ortb2Imp = { ext: { gpid: "/1/a#b", data: { kw: "x&y'z" } } };
+      const request = spec.buildRequests(bidRequest(ortb2Imp), bidderRequest);
+      expect(request.data).to.not.match(/['&#]/);
+      expect(JSON.parse(request.data).a[0].ortb2Imp.ext.data.kw).to.equal("x&y'z");
+    });
+  });
+
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'nobid',
