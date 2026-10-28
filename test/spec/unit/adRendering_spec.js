@@ -6,6 +6,7 @@ import {
   emitAdRenderSucceeded,
   getRenderingData,
   handleCreativeEvent,
+  reportBidClick,
   handleNativeMessage,
   handleRender, markWinningBid, renderAdDirect, renderIfDeferred,
 } from '../../../src/adRendering.js';
@@ -68,6 +69,59 @@ describe('adRendering', () => {
           expect(result[prop]).to.eql('prepost');
         });
       });
+    });
+  });
+
+  describe('bid click deduplication', () => {
+    let bid;
+    beforeEach(() => {
+      bid = { adId: 'bid-click-' + Math.random(), adUnitCode: 'slot', bidder: 'test', mediaType: 'banner', clickUrl: 'https://click.example.com' };
+      sandbox.stub(events, 'emit');
+      sandbox.stub(utils, 'politeTriggerPixel');
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
+    });
+    afterEach(() => config.setConfig({ bidClickTracking: { enabled: false } }));
+
+    it('emits and fires a tracker only once if observed click precedes inference', () => {
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(false);
+      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl);
+      sinon.assert.calledOnceWithExactly(events.emit, EVENTS.BID_CLICK, sinon.match({ adId: bid.adId, method: 'creativeClick' }));
+    });
+
+    it('emits and fires a tracker only once if inference precedes observed click', () => {
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(true);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl);
+      sinon.assert.calledOnceWithExactly(events.emit, EVENTS.BID_CLICK_INFERRED, sinon.match({ adId: bid.adId, method: 'iframeFocus' }));
+    });
+
+    it('does not fire a second tracker or event for repeated clicks', () => {
+      reportBidClick(bid, 'creativeClick');
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(utils.politeTriggerPixel);
+      sinon.assert.calledOnce(events.emit);
+    });
+
+    it('emits analytics event but does not fire a tracker in event-only mode', () => {
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: false } });
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('does not report when disabled', () => {
+      config.setConfig({ bidClickTracking: { enabled: false } });
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      sinon.assert.notCalled(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('does not fire click URL if creative has CLICKTHROUGH macro', () => {
+      bid.ad = '<a href="${CLICKTHROUGH}">Ad</a>';
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
     });
   });
 
