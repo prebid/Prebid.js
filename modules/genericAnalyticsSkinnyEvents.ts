@@ -11,6 +11,7 @@ import { deepClone } from '../src/utils/objects.js';
 import type { EventMapping } from './genericAnalyticsAdapter.ts';
 import type { BidderRequest, BidRequest } from '../src/adapterManager.ts';
 import type { Bid } from '../src/bidfactory.ts';
+import type { Events } from '../src/events.ts';
 import type { BidFloorData } from './priceFloors.ts';
 
 export const PRESET_NAME = 'skinny';
@@ -58,6 +59,59 @@ export type SkinnyBidWon = SkinnyBidFields & {
   eventType: typeof EVENTS.BID_WON;
   status: Bid['status'];
 };
+
+export type SkinnyClickFields = Pick<Bid,
+  'auctionId' | 'adUnitCode' | 'transactionId' | 'requestId' | 'adId' |
+  'bidder' | 'bidderCode' | 'cpm' | 'currency' | 'mediaType' | 'source'
+> & {
+  method: 'creativeClick' | 'nativeClick' | 'iframeFocus';
+  assetId?: number | string;
+} & AnalyticsLabels;
+
+export type SkinnyBidClick = SkinnyClickFields & {
+  eventType: typeof EVENTS.BID_CLICK;
+};
+
+export type SkinnyBidClickInferred = SkinnyClickFields & {
+  eventType: typeof EVENTS.BID_CLICK_INFERRED;
+};
+
+type ClickPayload = (Events[typeof EVENTS.BID_CLICK][0] | Events[typeof EVENTS.BID_CLICK_INFERRED][0]) & AnalyticsLabels;
+
+function clickFields({ bid, method, assetId, analyticsLabels }: ClickPayload): SkinnyClickFields {
+  return {
+    auctionId: bid.auctionId,
+    adUnitCode: bid.adUnitCode,
+    transactionId: bid.transactionId,
+    requestId: bid.requestId,
+    adId: bid.adId,
+    bidder: bid.bidder,
+    bidderCode: bid.bidderCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    mediaType: bid.mediaType,
+    source: bid.source,
+    method,
+    ...(assetId != null ? { assetId } : {}),
+    analyticsLabels,
+  };
+}
+
+export function bidClick(args: Events[typeof EVENTS.BID_CLICK][0] & AnalyticsLabels): SkinnyBidClick {
+  return {
+    eventType: EVENTS.BID_CLICK,
+    ...clickFields(args),
+  };
+}
+
+export function bidClickInferred(args: Events[typeof EVENTS.BID_CLICK_INFERRED][0] & AnalyticsLabels): SkinnyBidClickInferred {
+  return {
+    eventType: EVENTS.BID_CLICK_INFERRED,
+    ...clickFields(args),
+  };
+}
+
+
 
 type BidWithExtras = Bid & AnalyticsLabels & { floorData?: BidFloorData };
 
@@ -234,6 +288,8 @@ export const skinnyEvents = {
   [EVENTS.NO_BID]: noBid,
   [EVENTS.BID_RESPONSE]: bidResponse,
   [EVENTS.BID_WON]: bidWon,
+  [EVENTS.BID_CLICK]: bidClick,
+  [EVENTS.BID_CLICK_INFERRED]: bidClickInferred,
   [EVENTS.BID_REQUESTED]: bidRequested,
   [EVENTS.BID_TIMEOUT]: bidTimeout,
 } satisfies EventMapping;
