@@ -54,7 +54,8 @@ declare module './events' {
     [EVENTS.EXPIRED_RENDER]: [Bid];
 
     [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
-    [EVENTS.BID_CLICK]: [BidClickData];
+    [EVENTS.BID_CLICK]: [BidClickData & { method: 'creativeClick' }];
+    [EVENTS.BID_CLICK_INFERRED]: [BidClickData & { method: 'iframeFocus' }];
   }
 }
 
@@ -163,7 +164,7 @@ export function handleCreativeEvent(data, bidResponse) {
       break;
     case EVENTS.BID_CLICK:
       if (config.getConfig('bidClickTracking')?.enabled === true && bidResponse.mediaType === 'banner' && data.method === 'creativeClick') {
-        events.emit(EVENTS.BID_CLICK, { bid: bidResponse, adId: bidResponse.adId, adUnitCode: bidResponse.adUnitCode, bidder: bidResponse.bidder, method: 'creativeClick' });
+        reportBidClick(bidResponse, 'creativeClick');
       }
       break;
     case EVENTS.BROWSER_INTERVENTION:
@@ -204,7 +205,53 @@ function creativeMessageHandler(deps) {
   };
 }
 
-type BidClickData = { bid: Bid; adId: string; adUnitCode: string; bidder: string; method: 'creativeClick' };
+type BidClickData = {
+  bid: Bid;
+  adId: string;
+  adUnitCode: string;
+  bidder: string;
+  method: 'creativeClick' | 'iframeFocus';
+};
+
+const reportedBidClicks = new WeakSet<Bid>();
+
+/** The two detection paths share this one once-per-bid gate. */
+export function reportBidClick(bid: Bid, method: BidClickData['method']): boolean {
+  const settings = config.getConfig('bidClickTracking');
+  if (settings?.enabled !== true || bid?.mediaType !== 'banner' || reportedBidClicks.has(bid)) return false;
+
+  reportedBidClicks.add(bid);
+  const data = {
+    bid,
+    adId: bid.adId,
+    adUnitCode: bid.adUnitCode,
+    bidder: bid.bidder,
+    method
+  };
+  if (method === 'creativeClick') {
+    events.emit(EVENTS.BID_CLICK, { ...data, method });
+  } else {
+    events.emit(EVENTS.BID_CLICK_INFERRED, { ...data, method });
+  }
+
+  if (settings.fireTrackers === true && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
+    politeTriggerPixel(bid.clickUrl);
+  }
+  return true;
+}
+
+export function hasClickthroughMacro(bid: Bid): boolean {
+  return [bid?.ad, bid?.adUrl].some(value => typeof value === 'string' && value.includes('${CLICKTHROUGH}'));
+}
+
+export function validClickUrl(url: unknown): url is string {
+  if (typeof url !== 'string' || /%%|\$\{/.test(url)) return false;
+  try {
+    return new URL(url).protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
 
 type RenderOptions = {
   clickUrl?: string;
