@@ -31,7 +31,6 @@ function isPrebidWindow(win) {
 }
 
 export function renderer(win) {
-
   /**
    * Return the window to postMessage into. In order of precedence, this is:
    *  - the `targetDepth`-th ancestor, if provided;

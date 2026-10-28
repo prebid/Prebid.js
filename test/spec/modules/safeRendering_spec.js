@@ -54,6 +54,7 @@ describe('safeRendering', () => {
   }
 
   it('escaped creative source is valid JS', () => {
+    // our escaping logic does not work in general, so make sure that it does in particular
     // eslint-disable-next-line no-new-func,no-new
     new Function(escapeInlineHtml(RENDERER));
   });
