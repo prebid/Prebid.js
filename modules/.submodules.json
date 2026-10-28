@@ -150,6 +150,9 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
+    ],
+    "genericAnalyticsAdapter": [
+      "genericAnalyticsSkinnyEvents"
     ]
   }
 }

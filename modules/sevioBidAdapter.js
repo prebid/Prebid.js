@@ -9,7 +9,7 @@ import { getBrowserLanguage } from "../libraries/fpdUtils/deviceInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const ORTB = converter.ortbConverter({
   context: { ttl: 300 }
 });
@@ -311,7 +311,8 @@ export const spec = {
     const gdpr = bidderRequest?.gdprConsent;
     const usp = bidderRequest?.uspConsent;
     const gpp = bidderRequest?.gppConsent;
-    const hasWallet = detectWalletsPresence();
+    const gpc = String(bidderRequest?.ortb2?.regs?.ext?.gpc) === '1';
+    const hasWallet = gpc ? 0 : detectWalletsPresence();
 
     return bidRequests.map((bidRequest) => {
       const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native';
@@ -368,11 +369,12 @@ export const spec = {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
           usp: usp?.uspString || "",
+          gpc: gpc ? 1 : 0,
         },
         xPageUrl: pageUrl,
         wdb: hasWallet,
         externalRef: bidRequest.bidId,
-        userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
+        userSyncOption: userSyncEnabled === false || gpc ? "OFF" : "BIDDERS",
         referer: getReferrerInfo(bidderRequest),
         pageReferer,
         context: [{

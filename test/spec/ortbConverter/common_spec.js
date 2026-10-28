@@ -50,10 +50,10 @@ describe('common processors', () => {
           dealid: 'deal-1',
           ext: {
             prebid: {
-              deal: { type: 2, cpm: 5, pacing_adjusted_cpm: 10, on_schedule: 0.8, priority: 3 }
+              deal: { type: 2, cpm: 5, priority_adjusted_cpm: 10, on_schedule: 0.8, priority: 3 }
             }
           }
-        })).to.eql({ type: 2, cpm: 5, pacingAdjustedCpm: 10, onSchedule: 0.8, priority: 3 });
+        })).to.eql({ type: 2, cpm: 5, priorityAdjustedCpm: 10, onSchedule: 0.8, priority: 3 });
       });
 
       [
@@ -75,7 +75,7 @@ describe('common processors', () => {
           dealid: 'deal-1',
           ext: {
             prebid: {
-              deal: { type: 1, cpm: -1, pacing_adjusted_cpm: Infinity, on_schedule: '0.5', priority: 1.5, extra: 'ignored' }
+              deal: { type: 1, cpm: -1, priority_adjusted_cpm: Infinity, on_schedule: '0.5', priority: 1.5, extra: 'ignored' }
             }
           }
         })).to.eql({ type: 1 });

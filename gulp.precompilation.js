@@ -44,6 +44,7 @@ const {Transform} = require('node:stream');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
+const {tsConsumer, TS_MIN} = require('./gulp.consumerTypes.js');
 const {
   cachedPipeline,
   getDefaults,
@@ -238,6 +239,7 @@ function copyVerbatim() {
   return gulp.src(helpers.getSourceFolders().flatMap(name => [
     `${name}/**/*.json`,
     `${name}/**/*.d.ts`,
+    `${name}/**/*.d.mts`,
   ]).concat([
     '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
   ]), {base: '.', since: gulp.lastRun(copyVerbatim)})
@@ -436,7 +438,7 @@ function precompile(options = {}) {
       generateGlobalDef(options),
     ]),
   ].concat(options.dev ? [] : [
-    gulp.parallel(['ts-strict', 'check-declarations'])
+    gulp.parallel(['ts-strict', 'check-declarations', 'ts-consumer'])
   ]));
 }
 
@@ -447,6 +449,7 @@ function precompile(options = {}) {
 // before does.
 gulp.task('ts', helpers.execaTask('tsc --incremental'));
 gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
+gulp.task('ts-consumer', tsConsumer('link', [TS_MIN]));
 gulp.task('check-declarations', checkDeclarations);
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));

@@ -24,6 +24,7 @@ import { setSizeConfig } from 'modules/sizeMapping.js';
 import s2sTestingMod from 'modules/s2sTesting.js';
 import { hook } from '../../../../src/hook.js';
 import { auctionManager } from '../../../../src/auctionManager.js';
+import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../../../src/consentHandler.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
 import { server } from '../../../mocks/xhr.js';
@@ -1894,6 +1895,30 @@ describe('adapterManager tests', function () {
       });
     });
 
+    describe('allowPriorityBids on client requests', () => {
+      let origBidderSettings;
+      beforeEach(() => {
+        origBidderSettings = getGlobal().bidderSettings;
+      });
+      afterEach(() => {
+        getGlobal().bidderSettings = origBidderSettings;
+      });
+
+      function allowedByBidder() {
+        return Object.fromEntries(makeBidRequests().map(req => [req.bidderCode, req.allowPriorityBids]));
+      }
+
+      it('is set from the adapter\'s own bidderSettings', () => {
+        getGlobal().bidderSettings = { appnexus: { allowPriorityBids: true } };
+        expect(allowedByBidder()).to.eql({ appnexus: true, rubicon: false });
+      });
+
+      it('is not taken from the standard settings', () => {
+        getGlobal().bidderSettings = { standard: { allowPriorityBids: true } };
+        expect(allowedByBidder()).to.eql({ appnexus: false, rubicon: false });
+      });
+    });
+
     it('should transfer deferBilling from ad unit', () => {
       adUnits[0].deferBilling = true;
       const requests = makeBidRequests();
@@ -2095,6 +2120,34 @@ describe('adapterManager tests', function () {
           ]);
         });
 
+        it('should set allowPriorityBids on requests for bidders listed in the s2s config they were routed through', () => {
+          config.setConfig({
+            s2sConfig: config.getConfig('s2sConfig').map(cfg => cfg.name === 'mock1' ? { ...cfg, allowPriorityBids: ['mockBidder2'] } : cfg)
+          });
+          adUnits = [
+            {
+              code: 'one',
+              bids: [
+                { bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2'] },
+                { bidder: 'mockBidder2', s2sConfigName: 'mock1' },
+                { bidder: 'mockBidder3' }
+              ]
+            },
+          ];
+          dep.isAllowed.returns(true);
+          const allowed = makeBidRequests().map(request => [
+            request.adUnitsS2SCopy.flatMap(au => au.bids).map(bid => bid.bidder).join(','),
+            request.bidderCode,
+            request.allowPriorityBids
+          ]);
+          expect(allowed).to.have.deep.members([
+            ['mockBidder3', 'mockBidder3', false],
+            ['mockBidder1,mockBidder2', 'mockBidder1', false],
+            ['mockBidder1,mockBidder2', 'mockBidder2', true],
+            ['mockBidder1', 'mockBidder1', false],
+          ]);
+        });
+
         it('should keep stored impressions, even if everything else is denied', () => {
           adUnits = [
             { code: 'one', bids: [{ bidder: null }] },
@@ -2163,6 +2216,36 @@ describe('adapterManager tests', function () {
       });
       requests.rubicon.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.rubicon.ortb2));
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
+    });
+
+    describe('bidder-specific schain', () => {
+      const schain = (asi) => ({ ver: '1.0', complete: 1, nodes: [{ asi, sid: '1', hp: 1 }] });
+      function requestsWithSchains() {
+        return Object.fromEntries(
+          adapterManager.makeBidRequests(adUnits, 123, 'auction-id', 123, [], {
+            global: { source: { ext: { schain: schain('global') } } },
+            bidder: { appnexus: { source: { ext: { schain: schain('appnexus') } } } }
+          }).map((r) => [r.bidderCode, r])
+        );
+      }
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('should append the bidder schain nodes to the global ones by default', () => {
+        const requests = requestsWithSchains();
+        expect(requests.appnexus.ortb2.source.ext.schain.nodes.map(n => n.asi)).to.eql(['global', 'appnexus']);
+        expect(requests.rubicon.ortb2.source.ext.schain).to.eql(schain('global'));
+      });
+
+      it('should give bidders their own schain with firstPartyData.replaceGlobalSchain', () => {
+        config.setConfig({ firstPartyData: { replaceGlobalSchain: true } });
+        const requests = requestsWithSchains();
+        expect(requests.appnexus.ortb2.source.ext.schain).to.eql(schain('appnexus'));
+        expect(requests.rubicon.ortb2.source.ext.schain).to.eql(schain('global'));
+        requests.appnexus.bids.forEach((bid) => expect(bid.ortb2.source.ext.schain).to.eql(schain('appnexus')));
+      });
     });
 
     describe('transaction IDs', () => {

@@ -11,8 +11,19 @@ type IndexQuery = {
   auctionId?: Identifier;
   adUnitId?: Identifier;
   requestId?: Identifier;
+  /**
+   * Set by the multibid module, which replaces `requestId` with a fresh identifier.
+   * When present, it is used in place of `requestId` to look up the bid's request.
+   */
+  originalRequestId?: Identifier;
   bidderRequestId?: Identifier;
 };
+
+type RequestQuery = Pick<IndexQuery, 'requestId' | 'originalRequestId'>;
+
+function resolveRequestId({ requestId, originalRequestId }: RequestQuery): Identifier | undefined {
+  return originalRequestId ?? requestId;
+}
 
 /**
  * Retrieves request-related bid data.
@@ -52,7 +63,9 @@ export class AuctionIndex {
    * The bidRequest is given precedence because its mediaTypes can differ from the adUnit's (if bidder-specific labels
    * are in use). Bids that have no associated request do not have labels either, and use the adUnit's mediaTypes.
    */
-  getMediaTypes({ adUnitId, requestId }: Pick<IndexQuery, 'adUnitId' | 'requestId'>): MediaTypes | undefined {
+  getMediaTypes(query: Pick<IndexQuery, 'adUnitId'> & RequestQuery): MediaTypes | undefined {
+    const { adUnitId } = query;
+    const requestId = resolveRequestId(query);
     if (requestId != null) {
       const req = this.getBidRequest({ requestId });
       if (req != null && (adUnitId == null || req.adUnitId === adUnitId)) {
@@ -70,7 +83,9 @@ export class AuctionIndex {
    * Returns bidderRequest that matches both requestId and bidderRequestId (if either or both are provided).
    * Bid responses are not guaranteed to have a corresponding request.
    */
-  getBidderRequest({ requestId, bidderRequestId }: Pick<IndexQuery, 'requestId' | 'bidderRequestId'>): AuctionBidderRequest | undefined {
+  getBidderRequest(query: Pick<IndexQuery, 'bidderRequestId'> & RequestQuery): AuctionBidderRequest | undefined {
+    const { bidderRequestId } = query;
+    const requestId = resolveRequestId(query);
     if (requestId != null || bidderRequestId != null) {
       let bers = this.#getAuctions().flatMap(a => a.getBidRequests());
       if (bidderRequestId != null) {
@@ -88,7 +103,8 @@ export class AuctionIndex {
    * Returns bidRequest object for requestId.
    * Bid responses are not guaranteed to have a corresponding request.
    */
-  getBidRequest({ requestId }: Pick<IndexQuery, 'requestId'>): AuctionBidRequest | undefined {
+  getBidRequest(query: RequestQuery): AuctionBidRequest | undefined {
+    const requestId = resolveRequestId(query);
     if (requestId != null) {
       return this.#getAuctions()
         .flatMap(a => a.getBidRequests())
@@ -100,7 +116,7 @@ export class AuctionIndex {
   /**
    * Returns ortb2 object for bid
    */
-  getOrtb2(bid: Pick<IndexQuery, 'requestId' | 'bidderRequestId' | 'auctionId'>): ORTBFragments['global'] | undefined {
+  getOrtb2(bid: Pick<IndexQuery, 'bidderRequestId' | 'auctionId'> & RequestQuery): ORTBFragments['global'] | undefined {
     return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global;
   }
 }
