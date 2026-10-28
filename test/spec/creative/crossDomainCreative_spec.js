@@ -77,6 +77,18 @@ describe('cross-domain creative', () => {
     expect(messages[0].targetOrigin).to.eql('https://domain.com:123');
   });
 
+  [null, undefined, 'null'].forEach(pubUrl => {
+    it(`uses * if allowNullOrigin and pubUrl is ${pubUrl}`, () => {
+      renderAd({ pubUrl, allowNullOrigin: true });
+      expect(messages[0].targetOrigin).to.eql('*');
+    });
+  });
+
+  it('echoes back token, if provided', () => {
+    renderAd({ pubUrl: 'https://domain.com:123/path', token: 'foo' });
+    expect(messages[0].payload.token).to.eql('foo');
+  });
+
   describe('when there are multiple ancestors', () => {
     let target;
     beforeEach(() => {
@@ -260,6 +272,19 @@ describe('cross-domain creative', () => {
           sinon.assert.calledWith(window._reply, sinon.match({ data: JSON.stringify('response') }));
         }).finally(() => {
           delete window._reply;
+        });
+      });
+
+      it('is provided a sendMessage that includes the token, if provided', () => {
+        renderAd({ adId: '123', pubUrl: ORIGIN, token: 'foo' });
+        window._reply = sinon.stub();
+        reply({
+          adId: '123',
+          message: MESSAGE_RESPONSE,
+          renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", {d: "bar"} }) }'
+        });
+        return waitFor(() => messages[1]?.payload).then(() => {
+          expect(messages[1].payload.token).to.eql('foo');
         });
       });
     });

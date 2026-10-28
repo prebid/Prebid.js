@@ -40,13 +40,15 @@ export function renderer(win) {
   } catch (e) {
   }
 
-  return function ({ adId, pubUrl, ...rest }) {
-    const pubDomain = new URL(pubUrl, window.location).origin;
+  return function ({ adId, pubUrl, allowNullOrigin, token, ...rest }) {
+    const pubDomain = (allowNullOrigin && ((pubUrl == null) || (pubUrl === 'null')))
+      ? '*'
+      : new URL(pubUrl, window.location).origin;
 
     function sendMessage(type, payload, responseListener) {
       const channel = new MessageChannel();
       channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({ message: type, adId }, payload)), pubDomain, [channel.port2]);
+      target.postMessage(JSON.stringify(Object.assign({ message: type, adId, token }, payload)), pubDomain, [channel.port2]);
     }
 
     function onError(e) {
