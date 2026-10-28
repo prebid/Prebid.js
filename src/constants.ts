@@ -39,6 +39,7 @@ export const EVENTS = {
   AUCTION_DEBUG: 'auctionDebug',
   BID_VIEWABLE: 'bidViewable',
   BID_CLICK_INFERRED: 'bidClickInferred',
+  BID_CLICK: 'bidClick',
   STALE_RENDER: 'staleRender',
   EXPIRED_RENDER: 'expiredRender',
   BILLABLE_EVENT: 'billableEvent',
