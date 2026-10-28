@@ -33,7 +33,7 @@ Instead of EIDs, `eidsSources` lists which ID sources were present (for example 
 
 Every payload also includes `eventType` (the name of the event) and `analyticsLabels`, if any are configured.
 
-The click events come from the optional `bidClickTracking` module. Both preserve only lightweight bid correlation fields; the full bid, creative markup, and the ad-server click URL are omitted. The inferred click event is deliberately distinct from observed clicks.
+The click events are emitted when `bidClickTracking` is enabled (`bidClickInferred` also needs the `bidClickTracking` module). Both preserve only lightweight bid correlation fields; the full bid, creative markup, and the ad-server click URL are omitted. The inferred click event is deliberately distinct from observed clicks.
 
 #### Build
 

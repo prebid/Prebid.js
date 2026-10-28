@@ -8,7 +8,7 @@ import {
   handleCreativeEvent,
   reportBidClick,
   handleNativeMessage,
-  handleRender, markWinningBid, renderAdDirect, renderIfDeferred,
+  handleRender, markWinningBid, renderAdDirect, renderIfDeferred, userActivation,
 } from '../../../src/adRendering.js';
 import { getPreparedBidForAuction } from '../../../src/auction.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
@@ -78,6 +78,7 @@ describe('adRendering', () => {
       bid = { adId: 'bid-click-' + Math.random(), adUnitCode: 'slot', bidder: 'test', mediaType: 'banner', clickUrl: 'https://click.example.com' };
       sandbox.stub(events, 'emit');
       sandbox.stub(utils, 'politeTriggerPixel');
+      sandbox.stub(userActivation, 'hasBeenActive').returns(true);
       config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
     });
     afterEach(() => config.setConfig({ bidClickTracking: { enabled: false } }));
@@ -114,6 +115,25 @@ describe('adRendering', () => {
       config.setConfig({ bidClickTracking: { enabled: false } });
       expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
       sinon.assert.notCalled(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('ignores banner clicks before the user has interacted with the page, without using up the bid', () => {
+      userActivation.hasBeenActive.returns(false);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(false);
+      sinon.assert.notCalled(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+      userActivation.hasBeenActive.returns(true);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.calledOnce(utils.politeTriggerPixel);
+    });
+
+    it('emits the event but does not fire a tracker when user activation is not supported', () => {
+      userActivation.hasBeenActive.returns(undefined);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      sinon.assert.calledOnce(events.emit);
       sinon.assert.notCalled(utils.politeTriggerPixel);
     });
 
@@ -675,6 +695,7 @@ describe('adRendering', () => {
     });
 
     it('emits an observed click only when tracking is enabled for banners', () => {
+      sandbox.stub(userActivation, 'hasBeenActive').returns(true);
       bid.adId = 'click-id';
       bid.adUnitCode = 'banner-slot';
       bid.bidder = 'test';

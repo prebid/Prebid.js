@@ -220,10 +220,28 @@ type BidClickData = {
 
 const reportedBidClicks = new WeakSet<Bid>();
 
+export const userActivation = {
+  /**
+   * Sticky user activation of the top page (`navigator.userActivation.hasBeenActive`): true once the user has
+   * interacted with the page, including by clicking inside a nested ad frame. Transient activation can't be used,
+   * because a click that opens a new tab consumes it before the creative's message arrives.
+   * `undefined` when the browser doesn't support the API.
+   */
+  hasBeenActive(): boolean | undefined {
+    return (navigator as any).userActivation?.hasBeenActive;
+  }
+};
+
 /** The two detection paths share this one once-per-bid gate. */
 export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId?: number | string): boolean {
   const settings = config.getConfig('bidClickTracking');
   if (settings?.enabled !== true || (bid?.mediaType !== 'banner' && bid?.native == null)) return false;
+  // Banner click reports come from messages that any frame on the page, including the creative itself, can send
+  // without a user click. Ignore them until the user has interacted with the page at all, so that clicks can't be
+  // forged on impressions nobody touched; this is checked before the once-per-bid gate so a forged report can't
+  // use it up. Browsers without the API still get the event, but not tracker requests (see below).
+  const activation = userActivation.hasBeenActive();
+  if (method !== 'nativeClick' && activation === false) return false;
   if (reportedBidClicks.has(bid) && !(method === 'nativeClick' && settings.dedupeNativeClicks === false)) return false;
 
   reportedBidClicks.add(bid);
@@ -241,7 +259,8 @@ export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId
     events.emit(EVENTS.BID_CLICK_INFERRED, { ...data, method });
   }
 
-  if (method !== 'nativeClick' && bid.mediaType === 'banner' && settings.fireTrackers === true && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
+  if (method !== 'nativeClick' && bid.mediaType === 'banner' && settings.fireTrackers === true && activation === true &&
+    !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
     // Start the keepalive GET before the click can navigate away.
     politeTriggerPixel(bid.clickUrl, 'include', true);
   }
