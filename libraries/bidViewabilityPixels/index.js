@@ -1,40 +1,17 @@
-import { EVENT_TYPE_VIEWABLE, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from '../../src/eventTrackers.js';
-import { filterEventTrackers, legacyPropertiesToOrtbNative } from '../../src/native.js';
-import { triggerPixel, insertHtmlIntoIframe } from '../../src/utils.js';
-import { attributeValue } from '../../src/utils/xml.js';
-import * as events from '../../src/events.js';
-import { EVENTS } from '../../src/constants.js';
-import adapterManager from '../../src/adapterManager.js';
-
 /**
- * Collects viewable tracking URLs from bid.eventtrackers for EVENT_TYPE_VIEWABLE (IMG and JS methods).
- * @param {Object} bid - bid object that may have eventtrackers array
- * @returns {{ img: string[], js: string[] }} img and js URLs to fire
- */
-export function getViewabilityTrackersFromBid(bid) {
-  const eventTrackers = bid?.eventtrackers;
-  if (!eventTrackers || !Array.isArray(eventTrackers)) return { img: [], js: [] };
-  const parsed = parseEventTrackers(eventTrackers);
-  const viewableTrackers = parsed[EVENT_TYPE_VIEWABLE];
-  if (!viewableTrackers || typeof viewableTrackers !== 'object') return { img: [], js: [] };
-  const img = viewableTrackers[TRACKER_METHOD_IMG];
-  const js = viewableTrackers[TRACKER_METHOD_JS];
-  return {
-    img: Array.isArray(img) ? img : [],
-    js: Array.isArray(js) ? js : []
-  };
-}
-
-/**
- * Only absolute http(s) URLs with a host are allowed; no base URL is supplied, so missing or relative values are rejected.
+ * Checks if a value is a valid, fully-formed absolute HTTP(S) URL with a host.
+ * Rejects protocol-relative URLs, malformed URLs, and URLs that require normalization
+ * (e.g., "https:tracker.example" normalizes to "https://tracker.example" but the original string is unsafe).
  * @param {*} url
  * @returns {boolean}
  */
 function isAbsoluteHttpUrl(url) {
   if (typeof url !== 'string') return false;
   try {
-    const { protocol, hostname } = new URL(url);
-    return (protocol === 'http:' || protocol === 'https:') && !!hostname;
+    const normalized = new URL(url);
+    // Ensure the original string matches the normalized form - reject if URL parser had to fill in missing parts
+    if (normalized.href !== url) return false;
+    return (normalized.protocol === 'http:' || normalized.protocol === 'https:') && !!normalized.hostname;
   } catch (e) {
     return false;
   }
@@ -43,19 +20,13 @@ function isAbsoluteHttpUrl(url) {
 /**
  * Fires viewability trackers for a bid. IMG URLs via triggerPixel, JS URLs via insertHtmlIntoIframe (script tag).
  * Uses EVENT_TYPE_VIEWABLE trackers only (both TRACKER_METHOD_IMG and TRACKER_METHOD_JS).
- * @param {Object} bid - bid with eventtrackers
+ * @param {object} bid
  */
 export function fireViewabilityPixels(bid) {
-  let { img, js } = getViewabilityTrackersFromBid(bid);
+  const { img, js } = parseEventTrackers(bid);
 
-  const nativeResponse = bid.native && (bid?.native?.ortb || legacyPropertiesToOrtbNative(bid.native));
-  if (nativeResponse && nativeResponse.eventtrackers) {
-    const filteredEventTrackers = filterEventTrackers(nativeResponse, bid);
-    const { [TRACKER_METHOD_IMG]: nativeImg = [], [TRACKER_METHOD_JS]: nativeJs = [] } = parseEventTrackers(
-      filteredEventTrackers || []
-    )[EVENT_TYPE_VIEWABLE] || {};
-    img = img.concat(Array.isArray(nativeImg) ? nativeImg : []);
-    js = js.concat(Array.isArray(nativeJs) ? nativeJs : []);
+  if (!img.length && !js.length) {
+    return;
   }
 
   img.forEach(triggerPixel);
@@ -66,12 +37,6 @@ export function fireViewabilityPixels(bid) {
   }
 }
 
-export function triggerBidViewable(bid) {
-  fireViewabilityPixels(bid);
-  // trigger respective bidder's onBidViewable handler
-  adapterManager.callBidViewableBidder(bid.adapterCode || bid.bidder, bid);
-  if (bid.deferBilling) {
-    adapterManager.triggerBilling(bid);
-  }
-  events.emit(EVENTS.BID_VIEWABLE, bid);
+export function getViewabilityTrackersFromBid(bid) {
+  return parseEventTrackers(bid);
 }
