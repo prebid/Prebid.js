@@ -6,7 +6,8 @@ import { config } from 'src/config.js';
 // eslint-disable-next-line import/no-unresolved
 import { RENDERER } from 'creative-renderers/creative.js';
 import { createIframe } from 'src/utils.js';
-import { BID_STATUS } from 'src/constants.js';
+import { BID_STATUS, EVENTS } from 'src/constants.js';
+import * as events from 'src/events.js';
 
 describe('safeRendering', () => {
   let disableSecureCreatives, onMessage, messages, sandbox;
@@ -73,6 +74,8 @@ describe('safeRendering', () => {
       bidHandle = {
         adId: bid.adId
       };
+
+      sandbox.spy(events, 'emit');
 
       sandbox.stub(secureCreatives, 'getBidForMessage').callsFake((msg) => {
         if (msg?.adId === bid.adId) {
@@ -171,6 +174,7 @@ describe('safeRendering', () => {
           sandbox.spy(utils, 'logError');
           renderBid(bidHandle);
           sinon.assert.called(utils.logError);
+          sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({ adId: bid.adId }));
           expect(bid.element.querySelector('iframe')).to.not.exist;
         });
       });
@@ -189,21 +193,36 @@ describe('safeRendering', () => {
       });
 
       Object.entries({
-        stale: () => {
-          bid.status = BID_STATUS.RENDERED;
-          config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+        stale: {
+          event: EVENTS.STALE_RENDER,
+          setup() {
+            bid.status = BID_STATUS.RENDERED;
+            config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+          }
         },
-        expired: () => {
-          Object.assign(bid, { responseTimestamp: 0, ttl: 1 });
-          config.setConfig({ auctionOptions: { suppressExpiredRender: true } });
+        expired: {
+          event: EVENTS.EXPIRED_RENDER,
+          setup() {
+            Object.assign(bid, { responseTimestamp: 0, ttl: 1 });
+            config.setConfig({ auctionOptions: { suppressExpiredRender: true } });
+          }
         }
-      }).forEach(([t, setup]) => {
-        it(`does not clear the element if the bid is ${t}`, () => {
-          setup();
-          const existing = document.createElement('span');
-          bid.element.appendChild(existing);
-          renderBid(bidHandle);
-          expect(existing.parentNode).to.equal(bid.element);
+      }).forEach(([t, { event, setup }]) => {
+        describe(`and the bid is ${t}`, () => {
+          beforeEach(setup);
+
+          it('does not clear the element', () => {
+            const existing = document.createElement('span');
+            bid.element.appendChild(existing);
+            renderBid(bidHandle);
+            expect(existing.parentNode).to.equal(bid.element);
+          });
+
+          it(`emits ${event}`, () => {
+            renderBid(bidHandle);
+            sinon.assert.calledWith(events.emit, event, bid);
+            sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED);
+          });
         });
       });
     });
@@ -258,6 +277,7 @@ describe('safeRendering', () => {
         renderBid(bid);
         sinon.assert.called(utils.logError);
         sinon.assert.notCalled(document.createElement);
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED);
       });
     });
 
