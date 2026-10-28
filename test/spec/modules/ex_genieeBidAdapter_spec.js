@@ -181,6 +181,27 @@ describe('Geniee Exchange bid adapter', () => {
             expect(spec.isBidRequestValid(bid)).to.equal(true);
           });
 
+        it('is invalid when the bidder-level ortb2Imp.video.mimes has a non-string entry',
+          () => {
+            [undefined, ['video/mp4']].forEach((mimes) => {
+              const bid = makeBid({
+                mediaTypes: { video: { context: 'instream', mimes } },
+                ortb2Imp: { video: { mimes: [1] } },
+              });
+              expect(spec.isBidRequestValid(bid),
+                `mediaTypes.video.mimes: ${JSON.stringify(mimes)}`).to.equal(false);
+            });
+          });
+
+        it('is valid when the bidder-level ortb2Imp.video.mimes is empty and mediaTypes.video.mimes is set',
+          () => {
+            const bid = makeBid({
+              mediaTypes: { video: { context: 'instream', mimes: ['video/mp4'] } },
+              ortb2Imp: { video: { mimes: [] } },
+            });
+            expect(spec.isBidRequestValid(bid)).to.equal(true);
+          });
+
         // whether an outstream bid can be rendered is left to core
         it('is valid for an outstream video without a renderer', () => {
           expect(spec.isBidRequestValid(makeBid({
@@ -299,6 +320,20 @@ describe('Geniee Exchange bid adapter', () => {
             );
 
             expect(imp.video.mimes).to.deep.equal(MIMES);
+          });
+
+        it('sends only the banner part when the bidder-level ortb2Imp.video.mimes has a non-string entry',
+          () => {
+            const imp = buildImp(
+              {
+                banner: { sizes: [[300, 250]] },
+                video: { context: 'instream', mimes: ['video/mp4'], playerSize: [[640, 480]] },
+              },
+              { ortb2Imp: { video: { mimes: [1] } } },
+            );
+
+            expect(imp.banner).to.be.an('object');
+            expect(imp.video, 'imp.video').to.equal(undefined);
           });
       });
     }

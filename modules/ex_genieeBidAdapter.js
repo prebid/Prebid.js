@@ -3,7 +3,8 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isArray, isStr, logError, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, isArray, isStr, logError, logWarn, mergeDeep } from '../src/utils.js';
+import { ORTB_VIDEO_PARAMS } from '../src/video.js';
 
 /**
  * @typedef {import('../src/adapterManager.js').BidRequest<'ex_geniee'>} BidRequest
@@ -207,8 +208,8 @@ function validatePlacementId(bid) {
 
 /**
  * Validates that the bid's video part can be sent to the Exchange: the build
- * includes video and a non-empty mimes is set (in mediaTypes.video or
- * ortb2Imp.video).
+ * includes video and the mimes sent (mediaTypes.video.mimes merged with
+ * ortb2Imp.video.mimes) is a non-empty array of strings.
  *
  * @param {BidRequest} bid - a bid that declares mediaTypes.video.
  * @return {string|null} the reason the video part cannot be sent, or null when
@@ -220,14 +221,17 @@ function validateVideo(bid) {
   if (!FEATURES.VIDEO) {
     return 'video is not included in this Prebid.js build';
   }
-  const video = deepAccess(bid, 'mediaTypes.video');
   // Core only drops mimes when it is malformed, so a missing mimes reaches the
-  // adapter. A bidder-level ortb2Imp.video is not synced into
-  // mediaTypes.video, but the converter merges both into imp.video.
-  const hasMimes = [video.mimes, deepAccess(bid, 'ortb2Imp.video.mimes')]
-    .some((mimes) => isArray(mimes) && mimes.length > 0);
-  if (!hasMimes) {
-    return 'mediaTypes.video.mimes (or ortb2Imp.video.mimes) is required by the Exchange';
+  // adapter. Core also checks only what mediaTypes.video sets before the
+  // ad-unit-level ortb2Imp.video is synced into it, and never syncs the
+  // bidder-level one. The converter merges ortb2Imp.video into
+  // mediaTypes.video with mergeDeep, so the same merge gives the mimes sent.
+  const { mimes } = mergeDeep({},
+    { mimes: deepAccess(bid, 'mediaTypes.video.mimes') },
+    deepAccess(bid, 'ortb2Imp.video'));
+  if (!ORTB_VIDEO_PARAMS.get('mimes')(mimes)) {
+    return `mediaTypes.video.mimes (or ortb2Imp.video.mimes) is required by the Exchange as a non-empty array of strings (got ${
+        formatForLog(mimes)})`;
   }
   return null;
 }
