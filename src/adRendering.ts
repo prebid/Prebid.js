@@ -235,7 +235,8 @@ export function reportBidClick(bid: Bid, method: BidClickData['method']): boolea
   }
 
   if (settings.fireTrackers === true && !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
-    politeTriggerPixel(bid.clickUrl);
+    // Start the keepalive GET before the click can navigate away.
+    politeTriggerPixel(bid.clickUrl, 'include', true);
   }
   return true;
 }
