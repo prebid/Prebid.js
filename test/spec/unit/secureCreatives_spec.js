@@ -78,12 +78,6 @@ describe('secureCreatives', () => {
       sinon.assert.notCalled(cb);
       sinon.assert.calledWith(isAllowed, ev, message);
     });
-
-    Object.entries({
-      'can allow': true,
-      'can disallow': false
-    }).forEach(([desc, allowed]) => {
-    });
   });
 
   describe('getReplier', () => {
