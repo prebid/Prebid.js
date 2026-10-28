@@ -109,7 +109,7 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
   }
   const { suppress, logReasons } = isRenderSuppressed(actualBid);
   if (suppress) {
-    // stop early so that the element's contents are not disturbed
+    // stop early so that the element's current contents are not disturbed
     logReasons();
     return;
   }
@@ -124,7 +124,7 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
       clickUrl,
       allowNullOrigin: true,
       token,
-      parent: findDepth(doc.defaultView),
+      parent,
     }).replace(/</g, '\\u003c'); // handle HTML strings
     const frame = createIframe(doc, {
       // GPT's sandbox attr
