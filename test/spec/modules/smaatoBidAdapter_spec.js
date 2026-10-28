@@ -4,7 +4,7 @@ import { config } from 'src/config.js';
 
 // load modules that register ORTB processors
 import 'src/prebid.js';
-import 'modules/currency.js';
+import { setConfig as setCurrencyConfig } from 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
@@ -247,6 +247,49 @@ describe('smaatoBidAdapterTest', () => {
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.imp[0].bidfloor).to.be.undefined;
+      });
+
+      it('sends the bidfloor set in ortb2Imp when getFloor is not available', () => {
+        const bidRequestWithImpFloor = Object.assign({}, singleBannerBidRequest, {
+          ortb2Imp: { bidfloor: 0.5, bidfloorcur: 'USD' }
+        });
+
+        const reqs = spec.buildRequests([bidRequestWithImpFloor], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0]).to.include({ bidfloor: 0.5, bidfloorcur: 'USD' });
+      });
+
+      describe('with currency conversion rates', () => {
+        beforeEach(() => {
+          setCurrencyConfig({ adServerCurrency: 'USD', rates: { USD: { EUR: 0.5 } } });
+        });
+
+        afterEach(() => {
+          setCurrencyConfig({});
+        });
+
+        it('converts a bidfloor in another currency to USD', () => {
+          const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest, {
+            getFloor: () => ({ currency: 'EUR', floor: 1 })
+          });
+
+          const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
+
+          const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+          expect(req.imp[0]).to.include({ bidfloor: 2, bidfloorcur: 'USD' });
+        });
+
+        it('converts an ortb2Imp bidfloor in another currency to USD', () => {
+          const bidRequestWithImpFloor = Object.assign({}, singleBannerBidRequest, {
+            ortb2Imp: { bidfloor: 1, bidfloorcur: 'EUR' }
+          });
+
+          const reqs = spec.buildRequests([bidRequestWithImpFloor], defaultBidderRequest);
+
+          const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+          expect(req.imp[0]).to.include({ bidfloor: 2, bidfloorcur: 'USD' });
+        });
       });
 
       it('sends correct site', () => {
@@ -975,6 +1018,16 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.source.ext.schain).to.deep.equal(schain);
       });
+
+      it('keeps the other source fields', () => {
+        const ortb2 = { source: { tid: 'sourceTid', ext: { schain: { ver: '1.0', complete: 1, nodes: [] } } } };
+        const bidRequestWithSource = Object.assign({}, singleBannerBidRequest, { ortb2 });
+
+        const reqs = spec.buildRequests([bidRequestWithSource], { ...defaultBidderRequest, ortb2 });
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.source.tid).to.equal('sourceTid');
+      });
     });
   });
 
@@ -1225,6 +1278,63 @@ describe('smaatoBidAdapterTest', () => {
 
         expect(bids).to.be.empty;
       });
+
+      describe('with mtype and no ad type header', () => {
+        const buildMtypeResponse = (adType, mtype) => {
+          const serverResponse = buildOpenRtbBidResponse(adType);
+          serverResponse.body.seatbid[0].bid[0].mtype = mtype;
+          serverResponse.headers.get = () => undefined;
+          return serverResponse;
+        };
+
+        it('returns a banner bid for mtype 1', () => {
+          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_IMG, 1), buildBidRequest());
+
+          expect(bids[0].mediaType).to.equal('banner');
+          expect(bids[0].ad).to.contain('https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1');
+        });
+
+        it('returns a video bid for mtype 2', () => {
+          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_VIDEO, 2), buildBidRequest());
+
+          expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].vastXml).to.equal('<VAST version="2.0"></VAST>');
+        });
+
+        it('returns a native bid for mtype 4', () => {
+          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_NATIVE, 4), buildBidRequest());
+
+          expect(bids[0].mediaType).to.equal('native');
+          expect(bids[0].native).to.deep.equal({ ortb: NATIVE_RESPONSE });
+        });
+
+        it('ignores a bid with an unsupported mtype', () => {
+          const bids = spec.interpretResponse(buildMtypeResponse(ADTYPE_IMG, 3), buildBidRequest());
+
+          expect(bids).to.be.empty;
+        });
+      });
+
+      it('prefers mtype over the ad type header', () => {
+        const serverResponse = buildOpenRtbBidResponse(ADTYPE_IMG);
+        serverResponse.body.seatbid[0].bid[0].mtype = 2;
+        serverResponse.body.seatbid[0].bid[0].adm = '<VAST version="2.0"></VAST>';
+
+        const bids = spec.interpretResponse(serverResponse, buildBidRequest());
+
+        expect(bids[0].mediaType).to.equal('video');
+      });
+
+      it('escapes single quotes in click tracking urls', () => {
+        const clickUrl = "https://prebid/track/click?q=it's";
+        const serverResponse = buildOpenRtbBidResponse(ADTYPE_IMG);
+        serverResponse.body.seatbid[0].bid[0].ext.curls = [clickUrl];
+
+        const bids = spec.interpretResponse(serverResponse, buildBidRequest());
+
+        const [, quotedUrl] = bids[0].ad.match(/decodeURIComponent\('([^']*)'\)/);
+        expect(decodeURIComponent(quotedUrl)).to.equal(clickUrl);
+      });
     });
 
     it('uses correct TTL when expire header exists', () => {
@@ -1379,6 +1489,51 @@ describe('smaatoBidAdapterTest', () => {
           {
             type: 'iframe',
             url: `${IFRAME_SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
+      );
+    });
+
+    it('when pixelEnabled true and uspConsent then returns image sync with us_privacy', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, '1YNN')).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&us_privacy=1YNN`
+          }
+        ]
+      );
+    });
+
+    it('when pixelEnabled true and gppConsent then returns image sync with gpp params', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, null, { gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [7, 8] })).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&gpp=DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA&gpp_sid=7%2C8`
+          }
+        ]
+      );
+    });
+
+    it('when pixelEnabled true and coppa then returns image sync with coppa', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, null, null, true)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&coppa=1`
+          }
+        ]
+      );
+    });
+
+    it('when iframeEnabled true and all consent signals then returns iframe sync with all consent params', () => {
+      config.setConfig({ userSync: { syncsPerBidder: 5 } });
+      expect(spec.getUserSyncs({ iframeEnabled: true }, null, { gdprApplies: true, consentString: CONSENT_STRING }, '1YNN', { gppString: 'GPP', applicableSections: [2] }, true)).to.deep.equal(
+        [
+          {
+            type: 'iframe',
+            url: `${IFRAME_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}&us_privacy=1YNN&gpp=GPP&gpp_sid=2&coppa=1&maxUrls=5`
           }
         ]
       );
