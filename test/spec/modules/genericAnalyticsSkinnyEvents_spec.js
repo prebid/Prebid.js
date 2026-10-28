@@ -1,5 +1,5 @@
 import { GenericAnalytics } from '../../../modules/genericAnalyticsAdapter.js';
-import { bidRequested, bidResponse, bidTimeout, bidWon, eidsSources, noBid, PRESET_NAME, stripEids } from '../../../modules/genericAnalyticsSkinnyEvents.js';
+import { bidClick, bidClickInferred, bidRequested, bidResponse, bidTimeout, bidWon, eidsSources, noBid, PRESET_NAME, stripEids } from '../../../modules/genericAnalyticsSkinnyEvents.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
 
@@ -42,6 +42,41 @@ describe('Generic analytics skinny events', () => {
       sinon.assert.calledWith(handler, [sinon.match({ eventType: EVENTS.NO_BID, auctionId: 'a1', bidder: 'b1' })]);
       expect(handler.args[0][0][0]).to.not.have.property('extra');
     });
+
+    it('forwards click events in skinny format through the adapter', () => {
+      adapter.enableAnalytics({
+        options: {
+          handler,
+          preset: PRESET_NAME
+        }
+      });
+      const bid = {
+        auctionId: 'auction',
+        adUnitCode: 'slot',
+        transactionId: 'tid',
+        requestId: 'request',
+        adId: 'ad',
+        bidder: 'bidder',
+        bidderCode: 'bidder',
+        cpm: 1.25,
+        currency: 'USD',
+        mediaType: 'banner',
+        source: 'client',
+        ad: '<script>large creative</script>',
+        clickUrl: 'https://example.com/click'
+      };
+      events.emit(EVENTS.BID_CLICK, { bid, adId: 'ad', adUnitCode: 'slot', bidder: 'bidder', method: 'creativeClick' });
+      sinon.assert.calledWith(handler, [sinon.match({ eventType: EVENTS.BID_CLICK, adId: 'ad', method: 'creativeClick' })]);
+      const reported = handler.lastCall.args[0][0];
+      expect(reported).to.not.have.property('bid');
+      expect(reported).to.not.have.property('clickUrl');
+      expect(reported).to.not.have.property('ad');
+
+      events.emit(EVENTS.BID_CLICK_INFERRED, { bid, adId: 'ad', adUnitCode: 'slot', bidder: 'bidder', method: 'iframeFocus' });
+      sinon.assert.calledWith(handler, [sinon.match({ eventType: EVENTS.BID_CLICK_INFERRED, method: 'iframeFocus' })]);
+    });
+
+
   });
 
   describe('noBid', () => {
@@ -124,6 +159,61 @@ describe('Generic analytics skinny events', () => {
         status: 'rendered'
       });
     });
+
+    it('formats observed native clicks without leaking the bid, creative or click URLs', () => {
+      bid.clickUrl = 'https://adserver.example/click';
+      bid.native = { ortb: { link: { url: 'https://advertiser.example' } } };
+      const result = bidClick({
+        bid,
+        adId: bid.adId,
+        adUnitCode: bid.adUnitCode,
+        bidder: bid.bidder,
+        method: 'nativeClick',
+        assetId: 3,
+        analyticsLabels: { label: 'click' }
+      });
+      expect(result).to.eql({
+        eventType: EVENTS.BID_CLICK,
+        auctionId: 'auction',
+        adUnitCode: 'adUnit',
+        transactionId: 'tid',
+        requestId: 'request',
+        adId: 'ad',
+        bidder: 'bidder',
+        bidderCode: 'bidderCode',
+        cpm: 1.5,
+        currency: 'USD',
+        mediaType: 'banner',
+        source: 'client',
+        method: 'nativeClick',
+        assetId: 3,
+        analyticsLabels: { label: 'click' }
+      });
+      expect(result).to.not.have.any.keys('bid', 'ad', 'clickUrl', 'native');
+    });
+
+    it('formats inferred clicks separately and omits absent asset IDs', () => {
+      const result = bidClickInferred({
+        bid,
+        adId: bid.adId,
+        adUnitCode: bid.adUnitCode,
+        bidder: bid.bidder,
+        method: 'iframeFocus',
+        analyticsLabels: { label: 'value' }
+      });
+      expect(result).to.include({
+        eventType: EVENTS.BID_CLICK_INFERRED,
+        auctionId: 'auction',
+        adId: 'ad',
+        bidder: 'bidder',
+        method: 'iframeFocus'
+      });
+      expect(result).to.not.have.property('assetId');
+      expect(result).to.not.have.property('bid');
+      expect(result.analyticsLabels).to.eql({ label: 'value' });
+    });
+
+
   });
 
   describe('request events', () => {
