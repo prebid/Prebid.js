@@ -74,7 +74,7 @@ export const getBidForMessage = (() => {
   const bids = new WeakMap();
   return (message) => {
     if (message == null || typeof message !== 'object') return;
-    if (!bids.has(message)) {
+    if (bids.get(message)?.adId !== message.adId) {
       const bid = auctionManager.findBidByAdId(message.adId);
       bid != null && bids.set(message, bid);
     }
