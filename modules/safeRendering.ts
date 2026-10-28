@@ -3,7 +3,7 @@
 import { RENDERER } from '../creative-renderers/creative.js';
 import { addApiMethod, type RenderAdOptions } from "../src/prebid.ts";
 import type { Bid } from "../src/bidfactory.ts";
-import { createIframe, generateUUID, logError, logWarn, memoize } from "../src/utils.js";
+import { createIframe, generateUUID, logWarn, memoize } from "../src/utils.js";
 import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
 import { getBidForMessage, isMessageAllowed } from "../src/secureCreatives.js";
@@ -100,7 +100,7 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
   }
   actualBid = getBidForMessage(bid);
   if (actualBid?.adId == null) {
-    fail(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD, `Cannot find ad '${bid.adId}'`)
+    fail(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD, `Cannot find ad '${bid.adId}'`);
     return;
   }
   const element = getAdUnitElement(actualBid);
