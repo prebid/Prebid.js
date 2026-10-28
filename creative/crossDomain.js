@@ -41,14 +41,20 @@ export function renderer(win) {
   }
 
   return function ({ adId, pubUrl, allowNullOrigin, token, ...rest }) {
-    const pubDomain = (allowNullOrigin && ((pubUrl == null) || (pubUrl === 'null')))
-      ? '*'
-      : new URL(pubUrl, window.location).origin;
+    const targetOrigin = (() => {
+      let origin;
+      try {
+        origin = new URL(pubUrl).origin;
+      } catch (e) {
+        origin = 'null';
+      }
+      return origin === 'null' && allowNullOrigin ? '*' : origin;
+    })();
 
     function sendMessage(type, payload, responseListener) {
       const channel = new MessageChannel();
       channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({ message: type, adId, token }, payload)), pubDomain, [channel.port2]);
+      target.postMessage(JSON.stringify(Object.assign({ message: type, adId, token }, payload)), targetOrigin, [channel.port2]);
     }
 
     function onError(e) {

@@ -77,7 +77,7 @@ describe('cross-domain creative', () => {
     expect(messages[0].targetOrigin).to.eql('https://domain.com:123');
   });
 
-  [null, undefined, 'null'].forEach(pubUrl => {
+  [null, undefined, 'about:blank'].forEach(pubUrl => {
     it(`uses * if allowNullOrigin and pubUrl is ${pubUrl}`, () => {
       renderAd({ pubUrl, allowNullOrigin: true });
       expect(messages[0].targetOrigin).to.eql('*');
