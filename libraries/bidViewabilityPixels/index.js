@@ -26,6 +26,21 @@ export function getViewabilityTrackersFromBid(bid) {
 }
 
 /**
+ * Only absolute http(s) URLs with a host are allowed; no base URL is supplied, so missing or relative values are rejected.
+ * @param {*} url
+ * @returns {boolean}
+ */
+function isAbsoluteHttpUrl(url) {
+  if (typeof url !== 'string') return false;
+  try {
+    const { protocol, hostname } = new URL(url);
+    return (protocol === 'http:' || protocol === 'https:') && !!hostname;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * Fires viewability trackers for a bid. IMG URLs via triggerPixel, JS URLs via insertHtmlIntoIframe (script tag).
  * Uses EVENT_TYPE_VIEWABLE trackers only (both TRACKER_METHOD_IMG and TRACKER_METHOD_JS).
  * @param {Object} bid - bid with eventtrackers
@@ -44,16 +59,7 @@ export function fireViewabilityPixels(bid) {
   }
 
   img.forEach(triggerPixel);
-  const safeJs = js
-    .map(url => {
-      try {
-        const parsed = new URL(url, window.location.href);
-        return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : null;
-      } catch (e) {
-        return null;
-      }
-    })
-    .filter(url => url != null);
+  const safeJs = js.filter(isAbsoluteHttpUrl);
   if (safeJs.length > 0) {
     const markup = safeJs.map(url => `<script async src="${attributeValue(url)}"></script>`).join('\n');
     insertHtmlIntoIframe(markup);

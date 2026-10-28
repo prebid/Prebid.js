@@ -133,6 +133,49 @@ describe('bidViewabilityPixels library', function () {
       expect(markup).to.not.include('"></script><script>');
     });
 
+    function jsBid(...urls) {
+      return {
+        eventtrackers: urls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_JS, url }))
+      };
+    }
+
+    ['https://tracker.example/pixel', 'http://tracker.example/pixel'].forEach(url => {
+      it(`should accept absolute JS tracker URL ${url} unchanged`, function () {
+        fireViewabilityPixels(jsBid(url));
+        expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
+        expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.equal(`<script async src="${url}"></script>`);
+      });
+    });
+
+    [
+      'javascript:alert(1)',
+      'data:text/html,<script>alert(1)</script>',
+      '',
+      '   ',
+      undefined,
+      null,
+      '/pixel',
+      'pixel',
+      '//tracker.example/pixel',
+      'http://',
+      'https://',
+      'http://[bad'
+    ].forEach(url => {
+      it(`should not fire JS tracker with invalid URL ${JSON.stringify(url)}`, function () {
+        fireViewabilityPixels(jsBid(url));
+        expect(insertHtmlIntoIframeSpy.callCount).to.equal(0);
+        expect(triggerPixelSpy.callCount).to.equal(0);
+      });
+    });
+
+    it('should still fire valid JS trackers when others in the list are invalid', function () {
+      fireViewabilityPixels(jsBid('https://a.example/x', '/relative', undefined, 'javascript:alert(1)', 'https://b.example/y'));
+      expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
+      expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.equal(
+        '<script async src="https://a.example/x"></script>\n<script async src="https://b.example/y"></script>'
+      );
+    });
+
     it('should fire both img (triggerPixel) and js (insertHtmlIntoIframe) viewable trackers', function () {
       const bid = {
         eventtrackers: [
