@@ -31,6 +31,14 @@ function isPrebidWindow(win) {
 }
 
 export function renderer(win) {
+
+  /**
+   * Return the window to postMessage into. In order of precedence, this is:
+   *  - the `targetDepth`-th ancestor, if provided;
+   *  - the first ancestor that has a frame named '__pb_locator__',
+   *  - the first ancestor whose `frames` are not readable,
+   *  - the immediate parent.
+   */
   function locatePrebid(targetDepth) {
     if (!Number.isFinite(targetDepth)) {
       targetDepth = 0;

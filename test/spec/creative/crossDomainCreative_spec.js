@@ -84,6 +84,16 @@ describe('cross-domain creative', () => {
     });
   });
 
+  Object.entries({
+    relative: '/path',
+    missing: undefined
+  }).forEach(([t, pubUrl]) => {
+    it(`resolves ${t} pubUrl against the creative's location`, () => {
+      renderAd({ pubUrl });
+      expect(messages[0].targetOrigin).to.eql(window.location.origin);
+    });
+  });
+
   it('echoes back token, if provided', () => {
     renderAd({ pubUrl: 'https://domain.com:123/path', token: 'foo' });
     expect(messages[0].payload.token).to.eql('foo');

@@ -6,6 +6,7 @@ import { config } from 'src/config.js';
 // eslint-disable-next-line import/no-unresolved
 import { RENDERER } from 'creative-renderers/creative.js';
 import { createIframe } from 'src/utils.js';
+import { BID_STATUS } from 'src/constants.js';
 
 describe('safeRendering', () => {
   let disableSecureCreatives, onMessage, messages, sandbox;
@@ -118,6 +119,84 @@ describe('safeRendering', () => {
         document.body.removeChild(iframe);
       }
     })
+
+    function getRenderArgs(element) {
+      const src = decodeURIComponent(element.querySelector('iframe').src);
+      const start = src.lastIndexOf('window.pbRender(') + 'window.pbRender('.length;
+      return JSON.parse(src.slice(start, src.lastIndexOf(');</script>')));
+    }
+
+    it('uses Prebid\'s location as pubUrl when the element is in an about:blank frame', () => {
+      const iframe = createIframe(document);
+      document.body.appendChild(iframe);
+      try {
+        bid.element = iframe.contentDocument.createElement('div');
+        iframe.contentDocument.body.appendChild(bid.element);
+        renderBid(bidHandle);
+        expect(getRenderArgs(bid.element).pubUrl).to.eql(window.location.href);
+      } finally {
+        document.body.removeChild(iframe);
+      }
+    });
+
+    describe('when the element is not in a descendant of Prebid\'s window', () => {
+      let parentDoc, cleanup;
+      beforeEach(function () {
+        try {
+          parentDoc = window.parent !== window && window.parent.document;
+        } catch (e) {
+        }
+        if (!parentDoc) this.skip();
+        cleanup = [];
+      });
+      afterEach(() => {
+        cleanup.forEach(node => node.parentNode?.removeChild(node));
+      });
+
+      Object.entries({
+        'parent window': () => parentDoc,
+        'sibling frame': () => {
+          const iframe = createIframe(parentDoc);
+          parentDoc.body.appendChild(iframe);
+          cleanup.push(iframe);
+          return iframe.contentDocument;
+        }
+      }).forEach(([t, getDoc]) => {
+        it(`can populate an element in a ${t}`, async () => {
+          const doc = getDoc();
+          bid.element = doc.createElement('div');
+          doc.body.appendChild(bid.element);
+          cleanup.push(bid.element);
+          renderBid(bidHandle);
+          await expectMessage();
+        });
+      });
+    });
+
+    describe('when rendering would be suppressed', () => {
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      Object.entries({
+        stale: () => {
+          bid.status = BID_STATUS.RENDERED;
+          config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+        },
+        expired: () => {
+          Object.assign(bid, { responseTimestamp: 0, ttl: 1 });
+          config.setConfig({ auctionOptions: { suppressExpiredRender: true } });
+        }
+      }).forEach(([t, setup]) => {
+        it(`does not clear the element if the bid is ${t}`, () => {
+          setup();
+          const existing = document.createElement('span');
+          bid.element.appendChild(existing);
+          renderBid(bidHandle);
+          expect(existing.parentNode).to.equal(bid.element);
+        });
+      });
+    });
 
     it('passes options back', async () => {
       const options = { option: 'test' };
