@@ -133,8 +133,9 @@ var adUnits = [
 | `plcmt`                                   | recommended | Passed to demand partners as is; the Exchange does not fill it in. |
 | `minduration`, `maxduration`, `protocols` | recommended | Some demand partners require them.                                 |
 
-- When the video part of an ad unit cannot be sent (no `mimes`), a multiformat ad unit is sent
-  as banner only, and a video-only ad unit is rejected by `isBidRequestValid`.
+- When the video part of an ad unit cannot be sent (no `mimes`, or a `mimes` entry, including
+  one set in `bids[].ortb2Imp.video.mimes`, that is not a string), a multiformat ad unit is
+  sent as banner only, and a video-only ad unit is rejected by `isBidRequestValid`.
 - Video is sent only for ad units that declare `mediaTypes.video`. A video set up through
   `ortb2Imp.video` alone is not sent: the adapter drops that `imp.video` and sends the banner
   part, if any.
