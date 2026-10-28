@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { DEFAULT_ENDPOINT, spec } from 'modules/ex_genieeBidAdapter.js';
 import { config } from 'src/config.js';
+import 'modules/priceFloors.js';
 
 describe('Geniee Exchange bid adapter', () => {
   const PARTNER_ID = 123;
@@ -376,21 +377,16 @@ describe('Geniee Exchange bid adapter', () => {
         expect(imp.bidfloor, 'imp.bidfloor').to.equal(undefined);
       });
 
-      // priceFloors' own processor may already have set imp.bidfloor from a '*'
-      // rule (e.g. when the per-media-type rule is 0); the ortb2Imp floor
-      // stands in for it here.
-      it('removes an imp.bidfloor set earlier when the media type sent has no floor',
-        () => {
-          const bid = makeBid({
-            getFloor: getFloorReturning({}),
-            ortb2Imp: { bidfloor: 5, bidfloorcur: 'USD' },
-          });
-          const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
-
-          expect(request.data.imp[0].bidfloor, 'imp.bidfloor').to.equal(undefined);
-          expect(request.data.imp[0].bidfloorcur, 'imp.bidfloorcur')
-            .to.equal(undefined);
+      it('keeps the ortb2Imp floor when the media type sent has no floor', () => {
+        const bid = makeBid({
+          getFloor: getFloorReturning({}),
+          ortb2Imp: { bidfloor: 5, bidfloorcur: 'USD' },
         });
+        const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+        expect(request.data.imp[0].bidfloor).to.equal(5);
+        expect(request.data.imp[0].bidfloorcur).to.equal('USD');
+      });
 
       // priceFloors' getFloor returns null for a rule whose floor value is null
       it('is left unset when getFloor returns null', () => {
@@ -435,6 +431,27 @@ describe('Geniee Exchange bid adapter', () => {
 
           expect(imp.bidfloor, 'imp.bidfloor').to.equal(undefined);
         });
+
+        it('removes the floor priceFloors set from a \'*\' rule when one of the media types sent has no floor',
+          () => {
+            const imp = buildImpWithFloors(MULTIFORMAT, { '*': 4, banner: 3 });
+
+            expect(imp.bidfloor, 'imp.bidfloor').to.equal(undefined);
+            expect(imp.bidfloorcur, 'imp.bidfloorcur').to.equal(undefined);
+          });
+
+        it('keeps the ortb2Imp floor when one of the media types sent has no floor',
+          () => {
+            const bid = makeBid({
+              mediaTypes: MULTIFORMAT,
+              getFloor: getFloorReturning({ '*': 4, banner: 3 }),
+              ortb2Imp: { bidfloor: 5, bidfloorcur: 'USD' },
+            });
+            const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+            expect(request.data.imp[0].bidfloor).to.equal(5);
+            expect(request.data.imp[0].bidfloorcur).to.equal('USD');
+          });
       }
     });
 

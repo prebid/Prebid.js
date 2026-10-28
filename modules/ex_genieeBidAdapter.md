@@ -286,9 +286,9 @@ For the instream ad unit (`ex-geniee-test-instream`), `imp` carries `video` inst
   it is dropped.
 - Floors (banner and video alike): the Exchange reads only `imp.bidfloor`. With the Price
   Floors module, the adapter sets it to the lowest floor among the media types sent in the
-  `imp` (banner / video); if any of them has no floor, no `imp.bidfloor` is set. If looking up
-  the floors fails (`getFloor` throws), `imp.bidfloor` is left as the Price Floors module
-  itself set it.
+  `imp` (banner / video); if any of them has no floor, `imp.bidfloor` is the one set in the ad
+  unit's `ortb2Imp`, or none when it has none. If looking up the floors fails (`getFloor`
+  throws), `imp.bidfloor` is left as the Price Floors module itself set it.
 - Auction type: the Exchange runs a first price auction and Prebid.js does not populate `at`,
   so the adapter defaults it to `1`. If the publisher forces any other value through `ortb2`,
   no request is sent for that ad unit.

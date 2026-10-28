@@ -254,10 +254,28 @@ function getMediaTypeFloor(bidRequest, currency, mediaType) {
 }
 
 /**
+ * Sets imp.bidfloor / imp.bidfloorcur to what the bid's ortb2Imp sets,
+ * removing each one ortb2Imp leaves unset.
+ *
+ * @param {Object} imp - the ORTB imp to update.
+ * @param {BidRequest} bidRequest - the bid the imp was built from.
+ */
+function resetFloorToOrtb2Imp(imp, bidRequest) {
+  ['bidfloor', 'bidfloorcur'].forEach((field) => {
+    const value = deepAccess(bidRequest, `ortb2Imp.${field}`);
+    if (value === undefined) {
+      delete imp[field];
+    } else {
+      imp[field] = value;
+    }
+  });
+}
+
+/**
  * Sets imp.bidfloor / imp.bidfloorcur to the lowest floor among the media
- * types the imp carries (imp.banner / imp.video), and removes them when any of
- * those media types has no floor. Leaves the imp as it is when the priceFloors
- * module is not installed or when getFloor throws.
+ * types the imp carries (imp.banner / imp.video), and resets them to the bid's
+ * ortb2Imp floor when any of those media types has no floor. Leaves the imp as
+ * it is when the priceFloors module is not installed or when getFloor throws.
  *
  * @param {Object} imp - the ORTB imp to update.
  * @param {BidRequest} bidRequest - the bid the imp was built from.
@@ -284,12 +302,12 @@ function setLowestFloor(imp, bidRequest, currency) {
   // The Exchange reads only imp.bidfloor. A floor above the cheapest media
   // type's would shut out that media type's bids, and a media type without a
   // floor takes any bid. Both lookups request the same currency from the same
-  // floor data, so they come back in the same currency. priceFloors' own
-  // processor may already have set imp.bidfloor from a '*' rule, so a media
-  // type without a floor has to clear it rather than leave it.
+  // floor data, so they come back in the same currency. A media type without a
+  // floor falls back to the publisher's ortb2Imp floor, as priceFloors does
+  // when it has no floor. That floor is read from the bid, since priceFloors'
+  // own processor may already have overwritten imp.bidfloor from a '*' rule.
   if (!floors.length || floors.includes(null)) {
-    delete imp.bidfloor;
-    delete imp.bidfloorcur;
+    resetFloorToOrtb2Imp(imp, bidRequest);
     return;
   }
   const lowest =
