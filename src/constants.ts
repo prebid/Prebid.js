@@ -38,6 +38,7 @@ export const EVENTS = {
   TCF2_ENFORCEMENT: 'tcf2Enforcement',
   AUCTION_DEBUG: 'auctionDebug',
   BID_VIEWABLE: 'bidViewable',
+  BID_CLICK_INFERRED: 'bidClickInferred',
   STALE_RENDER: 'staleRender',
   EXPIRED_RENDER: 'expiredRender',
   BILLABLE_EVENT: 'billableEvent',
