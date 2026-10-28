@@ -3,7 +3,7 @@
 import { RENDERER } from '../creative-renderers/creative.js';
 import { addApiMethod, type RenderAdOptions } from "../src/prebid.ts";
 import type { Bid } from "../src/bidfactory.ts";
-import { createIframe, generateUUID, logError, logWarn } from "../src/utils.js";
+import { createIframe, generateUUID, logError, logWarn, memoize } from "../src/utils.js";
 import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
 import { getBidForMessage, isMessageAllowed } from "../src/secureCreatives.js";
@@ -43,15 +43,7 @@ export function escapeInlineHtml(src) {
     .replace(/<!--/gi, '<\\!--');
 }
 
-const getCreativeTag = (() => {
-  let tag;
-  return () => {
-    if (!tag) {
-      tag = encodeURIComponent(`<script>${escapeInlineHtml(RENDERER)}</script>`);
-    }
-    return tag;
-  };
-})();
+const getCreativeTag = memoize(() => encodeURIComponent(`<script>${escapeInlineHtml(RENDERER)}</script>`));
 
 const TOKENS = new WeakMap();
 

@@ -301,7 +301,6 @@ doRender.before(function (next, args) {
   }
 }, 100);
 
-
 export function isRenderSuppressed(bidResponse) {
   const { adId } = bidResponse;
   const { suppressStaleRender, suppressExpiredRender } = config.getConfig('auctionOptions') ?? {};

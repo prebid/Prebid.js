@@ -65,7 +65,8 @@ export function renderer(win) {
       } catch (e) {
         origin = 'null';
       }
-      return origin === 'null' && allowNullOrigin ? '*' : origin;
+      if (origin === 'null' && allowNullOrigin) return '*';
+      return new URL(pubUrl, window.location).origin;
     })();
 
     const target = locatePrebid(parent);
