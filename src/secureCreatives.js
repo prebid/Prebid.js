@@ -16,15 +16,13 @@ import { hook } from './hook.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
-const HANDLER_MAP = {
-  [REQUEST]: handleRenderRequest,
-  [EVENT]: handleEventRequest,
-};
+const HANDLER_MAP = new Map([
+  [REQUEST, handleRenderRequest],
+  [EVENT, handleEventRequest]
+]);
 
 if (FEATURES.NATIVE) {
-  Object.assign(HANDLER_MAP, {
-    [NATIVE]: handleNativeRequest,
-  });
+  HANDLER_MAP.set(NATIVE, handleNativeRequest);
 }
 
 export function listenMessagesFromCreative() {
@@ -65,7 +63,7 @@ export function parseMessage(ev) {
   } catch (e) {
     return;
   }
-  if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
+  if (data && data.adId && data.message && HANDLER_MAP.has(data.message)) {
     return data;
   }
 }
@@ -87,7 +85,7 @@ export const isMessageAllowed = hook('sync', (event, data) => true);
 export function receiveMessage(ev, cb) {
   const data = parseMessage(ev);
   if (data && isMessageAllowed(ev, data)) {
-    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, getBidForMessage(data));
+    HANDLER_MAP.get(data.message)(ensureAdId(data.adId, getReplier(ev)), data, getBidForMessage(data));
     cb && cb();
   }
 }
