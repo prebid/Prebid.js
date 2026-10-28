@@ -77,9 +77,6 @@ function findDepth(win) {
  *
  * The contents of the bid's element are replaced with a single iframe and the ad is rendered into that iframe.
  * By default, a bid's element is document.getElementById(bid.adUnitCode); override this with adUnit.element.
- *
- * @param bid
- * @param options
  */
 export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) {
   let actualBid = null;
@@ -131,7 +128,7 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     const renderArgs = JSON.stringify({
       ...rest,
       adId: actualBid.adId,
-      pubUrl: window.location.href,
+      pubUrl: window.location.origin,
       clickUrl,
       allowNullOrigin: true,
       token,
