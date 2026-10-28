@@ -547,7 +547,6 @@ describe('adRendering', () => {
           expect(bidResponse.viewUrl).to.equal('https://first.example/view');
           sinon.assert.notCalled(doRenderStub);
         });
-
       });
 
       describe('when bid has already expired', () => {
