@@ -688,6 +688,33 @@ describe('adRendering', () => {
       };
     });
 
+    it('reports native clicks once and preserves the asset ID when enabled', () => {
+      bid.mediaType = 'native';
+      bid.bidder = 'nativeBidder';
+      bid.native = { clickUrl: 'https://advertiser.example/landing' };
+      const fireTrackers = sinon.stub();
+      const emit = sandbox.stub(events, 'emit');
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
+      const click = { action: 'click', assetId: 3 };
+      handleNativeMessage(click, bid, { fireTrackers });
+      handleNativeMessage(click, bid, { fireTrackers });
+      sinon.assert.calledOnceWithExactly(fireTrackers, click, bid);
+      sinon.assert.calledOnceWithExactly(emit, EVENTS.BID_CLICK, sinon.match({ method: 'nativeClick', assetId: 3, adId: '123' }));
+      config.setConfig({ bidClickTracking: { enabled: false } });
+    });
+
+    it('permits repeated native clicks when deduplication is explicitly disabled', () => {
+      bid.mediaType = 'native';
+      const fireTrackers = sinon.stub();
+      sandbox.stub(events, 'emit');
+      config.setConfig({ bidClickTracking: { enabled: true, dedupeNativeClicks: false } });
+      handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+      handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+      sinon.assert.calledTwice(fireTrackers);
+      sinon.assert.calledTwice(events.emit);
+      config.setConfig({ bidClickTracking: { enabled: false } });
+    });
+
     it('should resize', () => {
       const resizeFn = sinon.stub();
       handleNativeMessage({ action: 'resizeNativeHeight', height: 100 }, bid, { resizeFn });
