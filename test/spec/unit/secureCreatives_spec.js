@@ -1,4 +1,5 @@
 import {
+  getBidForMessage,
   getReplier,
   isMessageAllowed,
   receiveMessage,
@@ -138,11 +139,11 @@ describe('secureCreatives', () => {
         height: 250,
         renderer: null
       }, obj);
-      auction.getBidsReceived = function() {
+      auction.getBidsReceived = sinon.stub().callsFake(function() {
         const bidsReceived = getBidResponses();
         bidsReceived.push(adResponse);
         return bidsReceived;
-      };
+      });
       auction.getAuctionId = () => 1;
     }
 
@@ -192,7 +193,28 @@ describe('secureCreatives', () => {
       resetAuction();
       adResponse.adId = bidId;
     });
-
+    describe('getBidForMessage', () => {
+      beforeEach(() => {
+        pushBidResponseToAuction({ adId: 'test', foo: 'bar' });
+      });
+      it('delegates to auctionManager', () => {
+        expect(getBidForMessage({ adId: 'test' }).foo).to.equal('bar');
+      });
+      it('caches hits', () => {
+        const req = { adId: 'test' };
+        getBidForMessage(req);
+        getBidForMessage(req);
+        sinon.assert.calledOnce(auction.getBidsReceived);
+      });
+      it('does not cache misses', () => {
+        const req = {
+          adId: 'other'
+        };
+        getBidForMessage(req);
+        pushBidResponseToAuction({ adId: 'other', foo: 'bar' });
+        expect(getBidForMessage(req).foo).to.equal('bar');
+      });
+    });
     describe('Prebid Request', function() {
       it('should render', function () {
         pushBidResponseToAuction({

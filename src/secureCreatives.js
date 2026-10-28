@@ -75,7 +75,8 @@ export const getBidForMessage = (() => {
   return (message) => {
     if (message == null || typeof message !== 'object') return;
     if (!bids.has(message)) {
-      bids.set(message, auctionManager.findBidByAdId(message.adId) ?? null);
+      const bid = auctionManager.findBidByAdId(message.adId);
+      bid != null && bids.set(message, bid);
     }
     return bids.get(message);
   };
