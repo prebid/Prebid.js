@@ -37,6 +37,18 @@ describe('bidClickTracking', () => {
     expect(hasClickthroughMacro(bid)).to.equal(false);
   });
 
+  it('does not fire the click URL in event-only mode', () => {
+    events.emit(EVENTS.BID_CLICK, { bid, adId: bid.adId, method: 'creativeClick' });
+    expect(emitted.calledWith(EVENTS.BID_CLICK)).to.equal(true);
+  });
+
+  it('does not run desktop focus inference without desktopFallback', () => {
+    events.emit(EVENTS.AD_RENDER_SUCCEEDED, { bid, adId: bid.adId });
+    slot.dispatchEvent(new Event('pointerenter'));
+    window.dispatchEvent(new Event('blur'));
+    expect(emitted.getCalls().filter(call => call.args[0] === EVENTS.BID_CLICK_INFERRED).length).to.equal(0);
+  });
+
   it('does not emit a click merely on hover or window blur', () => {
     events.emit(EVENTS.AD_RENDER_SUCCEEDED, { bid, adId: bid.adId });
     slot.dispatchEvent(new Event('pointerenter'));
