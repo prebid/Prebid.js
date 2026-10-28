@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import * as events from 'src/events.js';
-import * as utils from 'src/utils.js';
 import { EVENTS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { validClickUrl, hasClickthroughMacro } from 'modules/bidClickTracking.js';
