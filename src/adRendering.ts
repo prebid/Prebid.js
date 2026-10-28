@@ -249,7 +249,7 @@ export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId
 }
 
 export function hasClickthroughMacro(bid: Bid): boolean {
-  return [bid?.ad, bid?.adUrl].some(value => typeof value === 'string' && value.includes('${CLICKTHROUGH}'));
+  return [bid?.ad, bid?.adUrl].some(value => typeof value === 'string' && /\$\{CLICKTHROUGH\}/.test(value));
 }
 
 export function validClickUrl(url: unknown): url is string {
