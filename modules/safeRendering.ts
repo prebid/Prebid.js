@@ -102,10 +102,10 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
       src: 'data:text/html;charset=utf-8,' + getCreativeTag() + encodeURIComponent(`<script>window.pbRender(${renderArgs});</script>`)
     });
     element.appendChild(frame);
-    if (!TOKENS.has(bid)) {
-      TOKENS.set(bid, new Set());
+    if (!TOKENS.has(actualBid)) {
+      TOKENS.set(actualBid, new Set());
     }
-    TOKENS.get(bid).add(token);
+    TOKENS.get(actualBid).add(token);
   } catch (e) {
     logError('renderBid: error rendering bid', actualBid, e);
   }

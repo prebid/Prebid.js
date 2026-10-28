@@ -50,7 +50,7 @@ describe('safeRendering', () => {
   }
 
   describe('renderBid', () => {
-    let bid;
+    let bid, bidHandle;
     beforeEach(() => {
       const element = document.createElement('div');
       document.body.appendChild(element);
@@ -58,6 +58,10 @@ describe('safeRendering', () => {
       bid = {
         adId: 'mock-adid',
         element
+      };
+
+      bidHandle = {
+        adId: bid.adId
       };
 
       sandbox.stub(secureCreatives, 'getBidForMessage').callsFake((msg) => {
@@ -74,7 +78,7 @@ describe('safeRendering', () => {
     });
 
     it('drops an iframe that posts a cross-domain request', async () => {
-      renderBid(bid);
+      renderBid(bidHandle);
       const [[event, message]] = await expectMessage();
       sinon.assert.match(message, {
         message: 'Prebid Request'
@@ -84,7 +88,7 @@ describe('safeRendering', () => {
 
     it('can populate a detached element', async () => {
       bid.element = document.createElement('div');
-      renderBid(bid);
+      renderBid(bidHandle);
       document.body.appendChild(bid.element);
       try {
         const [[, { token }]] = await expectMessage();
@@ -96,14 +100,14 @@ describe('safeRendering', () => {
 
     it('passes options back', async () => {
       const options = { option: 'test' };
-      renderBid(bid, options);
+      renderBid(bidHandle, options);
       const [[, message]] = await expectMessage();
       expect(message.options).to.eql(options);
     });
 
     it('translates clickThrough to clickUrl', async () => {
       const options = { clickThrough: 'test' };
-      renderBid(bid, options);
+      renderBid(bidHandle, options);
       const [[, message]] = await expectMessage();
       expect(message.options.clickUrl).to.eql('test');
     });
@@ -113,7 +117,7 @@ describe('safeRendering', () => {
       'HTML': { option: '</script>' }
     }).forEach(([desc, options]) => {
       it(`can handle ${desc} in options`, async () => {
-        renderBid(bid, options);
+        renderBid(bidHandle, options);
         const [[, message]] = await expectMessage();
         expect(message.options).to.eql(options);
       });
@@ -140,7 +144,7 @@ describe('safeRendering', () => {
 
     it('registers the token with the bid', async () => {
       sandbox.spy(document, 'createElement');
-      renderBid(bid);
+      renderBid(bidHandle);
       const [[, { token }]] = await expectMessage();
       expect(validateToken(bid, token)).to.be.true;
     });
