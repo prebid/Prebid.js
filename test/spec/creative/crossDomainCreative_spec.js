@@ -121,16 +121,70 @@ describe('cross-domain creative', () => {
           renderAd({ pubUrl: 'https://www.example.com' });
           expect(messages.length).to.eql(1);
         });
+
+        it('posts message to the given parent, if provided', () => {
+          delete win.parent.parent.frames['__pb_locator__'];
+          renderAd({ pubUrl: 'https://www.example.com', parent: 2 });
+          expect(messages.length).to.eql(1);
+        });
       });
     });
-    it('posts to first restricted parent, if __pb_locator__ cannot be found', () => {
-      Object.defineProperty(win.parent.parent.parent, 'frames', {
-        get() {
-          throw new DOMException();
-        }
+    describe('__pb_locator__ cannot be found', () => {
+      beforeEach(() => {
+        Object.defineProperty(win.parent.parent, 'frames', {
+          get() {
+            throw new DOMException();
+          }
+        });
       });
-      renderAd({ pubUrl: 'https://www.example.com' });
-      expect(messages.length).to.eql(1);
+      it('posts to first restricted parent', () => {
+        renderAd({ pubUrl: 'https://www.example.com' });
+        expect(messages.length).to.eql(1);
+      });
+      it('posts to given target, if provided', () => {
+        renderAd({ pubUrl: 'https://www.example.com', parent: 2 });
+        expect(messages.length).to.eql(1);
+      });
+    });
+
+    describe('when parent is given', () => {
+      let received;
+
+      // cross-origin windows throw on lookups of names that are not child frames
+      function crossOrigin(frames) {
+        return new Proxy(frames, {
+          get(target, prop) {
+            if (!Object.prototype.hasOwnProperty.call(target, prop)) {
+              throw new DOMException('Blocked a frame from accessing a cross-origin frame', 'SecurityError');
+            }
+            return target[prop];
+          }
+        });
+      }
+
+      Object.entries({
+        'same-origin': (frames) => frames,
+        'cross-origin': crossOrigin
+      }).forEach(([t, wrapFrames]) => {
+        describe(`and ancestors are ${t}`, () => {
+          beforeEach(() => {
+            received = [];
+            let depth = 0;
+            for (let w = win.parent; w != null; w = w.parent) {
+              const d = ++depth;
+              w.frames = wrapFrames(w.frames);
+              w.postMessage = () => received.push(d);
+            }
+          });
+
+          [1, 2, 3].forEach(parent => {
+            it(`posts to ancestor #${parent}`, () => {
+              renderAd({ pubUrl: ORIGIN, parent });
+              expect(received).to.eql([parent]);
+            });
+          });
+        });
+      });
     });
   });
 

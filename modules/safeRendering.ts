@@ -58,6 +58,15 @@ export function validateToken(bid: Bid, token: Identifier): boolean {
   return bid != null && token != null && TOKENS.get(bid)?.has(token);
 }
 
+function findDepth(win) {
+  let depth = 1;
+  while (win !== window && win.parent !== win) {
+    win = win.parent;
+    depth++;
+  }
+  return win === window ? depth : null;
+}
+
 /**
  * Render a bid in an isolated iframe.
  *
@@ -93,7 +102,8 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
       pubUrl: doc.defaultView.location.href,
       clickUrl,
       allowNullOrigin: true,
-      token
+      token,
+      parent: findDepth(doc.defaultView),
     }).replace(/</g, '\\u003c'); // handle HTML strings
     const frame = createIframe(doc, {
       // GPT's sandbox attr

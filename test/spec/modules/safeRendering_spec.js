@@ -5,6 +5,7 @@ import * as secureCreatives from 'src/secureCreatives.js';
 import { config } from 'src/config.js';
 // eslint-disable-next-line import/no-unresolved
 import { RENDERER } from 'creative-renderers/creative.js';
+import { createIframe } from 'src/utils.js';
 
 describe('safeRendering', () => {
   let disableSecureCreatives, onMessage, messages, sandbox;
@@ -104,6 +105,19 @@ describe('safeRendering', () => {
         document.body.removeChild(bid.element);
       }
     });
+
+    it('can populate a nested iframe', async () => {
+      const iframe = createIframe(document);
+      document.body.appendChild(iframe);
+      try {
+        bid.element = iframe.contentDocument.createElement('div');
+        iframe.contentDocument.body.appendChild(bid.element);
+        renderBid(bidHandle);
+        await expectMessage();
+      } finally {
+        document.body.removeChild(iframe);
+      }
+    })
 
     it('passes options back', async () => {
       const options = { option: 'test' };

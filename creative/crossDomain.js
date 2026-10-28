@@ -31,16 +31,25 @@ function isPrebidWindow(win) {
 }
 
 export function renderer(win) {
-  let target = win.parent;
-  try {
-    while (target !== win.top && !isPrebidWindow(target)) {
-      target = target.parent;
+  function locatePrebid(targetDepth) {
+    if (!Number.isFinite(targetDepth)) {
+      targetDepth = 0;
     }
-    if (!isPrebidWindow(target)) target = win.parent;
-  } catch (e) {
+    let target = win.parent;
+    targetDepth--;
+    try {
+      while (target !== win.top && ((targetDepth < 0 && !isPrebidWindow(target)) || targetDepth > 0)) {
+        targetDepth--;
+        target = target.parent;
+        if (targetDepth === 0) return target;
+      }
+      if (!isPrebidWindow(target)) target = win.parent;
+    } catch (e) {
+    }
+    return target;
   }
 
-  return function ({ adId, pubUrl, allowNullOrigin, token, ...rest }) {
+  return function ({ adId, pubUrl, allowNullOrigin, token, parent, ...rest }) {
     const targetOrigin = (() => {
       let origin;
       try {
@@ -50,6 +59,8 @@ export function renderer(win) {
       }
       return origin === 'null' && allowNullOrigin ? '*' : origin;
     })();
+
+    const target = locatePrebid(parent);
 
     function sendMessage(type, payload, responseListener) {
       const channel = new MessageChannel();
