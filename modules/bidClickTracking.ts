@@ -14,8 +14,12 @@ export interface BidClickTrackingConfig {
    */
   enabled?: boolean;
   /**
-   * Also infer desktop banner clicks from hover and iframe focus.
-   * Inferred clicks are less reliable than observed clicks.
+   * Optional desktop fallback for creatives whose clicks cannot be observed.
+   * The display renderer only sees DOM link clicks in an accessible inline
+   * creative document. Clicks inside cross-origin nested iframes, adUrl
+   * creatives, or creatives that navigate via JavaScript are invisible to it.
+   * Hover + iframe focus can still provide a best-effort signal in those cases,
+   * but it is less reliable than an observed click.
    */
   desktopFallback?: boolean;
   /**
@@ -71,6 +75,13 @@ function clearAll(): void {
   Array.from(tracked.keys()).forEach(clearSlot);
 }
 
+// A click inside a cross-origin creative iframe does not bubble up to the
+// publisher or to our display renderer. On desktop, however, clicking into
+// an iframe often moves document focus to that iframe and blurs the window.
+// Combining that transition with pointer hover gives us partial coverage for
+// otherwise opaque creatives (including many third-party iframe ads).
+// It is only a heuristic: other focus changes can look like clicks, and some
+// actual clicks will not change focus.
 function onBlur(): void {
   const state = hovered;
   if (!desktopFallback || !state || !enabled || state.fired || !state.slot.isConnected || document.visibilityState === 'hidden') return;
@@ -79,8 +90,9 @@ function onBlur(): void {
   const active = document.activeElement;
   if (!active || active.tagName !== 'IFRAME' || !state.slot.contains(active)) return;
   state.fired = true;
-  // The direct creative click message may arrive just after window blur.
-  // Allow it to win before reporting the less reliable inference.
+  // A real click event can arrive asynchronously from an accessible creative
+  // after the blur. Give it priority; reportBidClick's shared per-bid guard
+  // prevents this fallback from firing a second tracker or analytics event.
   state.timer = setTimeout(() => {
     state.timer = null;
     if (enabled && desktopFallback && state.slot.isConnected) reportBidClick(state.bid, 'iframeFocus');
