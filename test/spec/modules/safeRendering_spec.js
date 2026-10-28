@@ -302,6 +302,16 @@ describe('safeRendering', () => {
       sinon.assert.calledWith(next.bail, false);
     });
 
+    it('does not accept messages without a token for a bid rendered through renderBid', async () => {
+      renderBid(bidHandle);
+      const [[event, { token, ...message }]] = await expectMessage();
+      const next = sinon.stub();
+      next.bail = sinon.stub();
+      allowMessageHook()(next, event, message);
+      sinon.assert.notCalled(next);
+      sinon.assert.calledWith(next.bail, false);
+    });
+
     it('does not accept a token for a bid that was not rendered through renderBid', async () => {
       renderBid(bidHandle);
       const [[{ source }, { token }]] = await expectMessage();

@@ -214,6 +214,13 @@ describe('secureCreatives', () => {
         pushBidResponseToAuction({ adId: 'other', foo: 'bar' });
         expect(getBidForMessage(req).foo).to.equal('bar');
       });
+      it('does not return a stale bid when the same object is reused with a different adId', () => {
+        const req = { adId: 'test' };
+        getBidForMessage(req);
+        pushBidResponseToAuction({ adId: 'other', foo: 'baz' });
+        req.adId = 'other';
+        expect(getBidForMessage(req).foo).to.equal('baz');
+      });
     });
     describe('Prebid Request', function() {
       it('should render', function () {
