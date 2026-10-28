@@ -65,7 +65,8 @@ export function renderer(win) {
       } catch (e) {
         origin = 'null';
       }
-      if (origin === 'null' && allowNullOrigin) return '*';
+      if (origin !== 'null') return origin;
+      if (allowNullOrigin) return '*';
       return new URL(pubUrl, window.location).origin;
     })();
 
