@@ -33,22 +33,22 @@ function isPrebidWindow(win) {
 export function renderer(win) {
   /**
    * Return the window to postMessage into. In order of precedence, this is:
-   *  - the `targetDepth`-th ancestor, if provided;
+   *  - the `depth`-th ancestor, if provided;
    *  - the first ancestor that has a frame named '__pb_locator__',
    *  - the first ancestor whose `frames` are not readable,
    *  - the immediate parent.
    */
-  function locatePrebid(targetDepth) {
-    if (!Number.isFinite(targetDepth)) {
-      targetDepth = 0;
-    }
+  function locatePrebid(depth) {
     let target = win.parent;
-    targetDepth--;
-    try {
-      while (target !== win.top && ((targetDepth < 0 && !isPrebidWindow(target)) || targetDepth > 0)) {
-        targetDepth--;
+    if (depth > 0) {
+      for (let i = 1; i < depth && target !== win.top; i++) {
         target = target.parent;
-        if (targetDepth === 0) return target;
+      }
+      return target;
+    }
+    try {
+      while (target !== win.top && !isPrebidWindow(target)) {
+        target = target.parent;
       }
       if (!isPrebidWindow(target)) target = win.parent;
     } catch (e) {
@@ -56,7 +56,7 @@ export function renderer(win) {
     return target;
   }
 
-  return function ({ adId, pubUrl, allowNullOrigin, token, parent, ...rest }) {
+  return function ({ adId, pubUrl, allowNullOrigin, token, parent: depth, ...rest }) {
     const targetOrigin = (() => {
       let origin;
       try {
@@ -69,7 +69,7 @@ export function renderer(win) {
       return new URL(pubUrl, window.location).origin;
     })();
 
-    const target = locatePrebid(parent);
+    const target = locatePrebid(depth);
 
     function sendMessage(type, payload, responseListener) {
       const channel = new MessageChannel();

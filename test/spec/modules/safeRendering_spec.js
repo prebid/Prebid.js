@@ -60,6 +60,20 @@ describe('safeRendering', () => {
     new Function(escapeInlineHtml(RENDERER));
   });
 
+  Object.entries({
+    'string': `'<!--'`,
+    'template': '`<!--`',
+    'regex': `'<!--'.match(/<!--/)[0]`,
+    'unicode regex': `'<!--'.match(/<!--/u)[0]`,
+  }).forEach(([t, expr]) => {
+    it(`escapes <!-- in a ${t} without changing its value`, () => {
+      const src = escapeInlineHtml(`return ${expr}`);
+      expect(src).to.not.include('<!--');
+      // eslint-disable-next-line no-new-func
+      expect(new Function(src)()).to.eql('<!--');
+    });
+  });
+
   describe('renderBid', () => {
     let bid, bidHandle;
     beforeEach(() => {

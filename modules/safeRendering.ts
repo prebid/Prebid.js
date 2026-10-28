@@ -41,7 +41,7 @@ export function escapeInlineHtml(src) {
   // the source is inlined in a <script> tag, so </script and <!-- must be escaped
   return src
     .replace(/<\/script/gi, '<\\/script')
-    .replace(/<!--/gi, '<\\!--');
+    .replace(/<!--/g, '\\x3C!--');
 }
 
 const getCreativeTag = memoize(() => encodeURIComponent(`<script>${escapeInlineHtml(RENDERER)}</script>`));
@@ -55,14 +55,11 @@ export function validateToken(bid: Bid, token: Identifier, source: Window): bool
   }
   const issued = TOKENS.get(bid);
   if (!issued?.has(token)) {
-    // bid was never sent through renderBid
     return false;
   }
   if (issued.get(token) === UNCLAIMED) {
-    // first message with this token
     issued.set(token, source);
   }
-  // later message coming from some other window
   return issued.get(token) === source;
 }
 
