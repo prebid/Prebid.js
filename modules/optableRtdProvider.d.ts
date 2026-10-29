@@ -119,10 +119,10 @@ export interface OptableRtdProviderParams {
    */
   cookies?: boolean;
   /**
-   * Targeting API timeout hint, e.g. `'500ms'`. Overridden by `auctionDelay` minus 100ms
-   * when the auction is delayed. `enableTargeting` only.
+   * Targeting API timeout as a duration, e.g. `'500ms'`. Defaults to `auctionDelay` minus
+   * 100ms when the auction is delayed. `enableTargeting` only.
    */
-  timeout?: number | string | null;
+  timeout?: string | null;
   /**
    * Optable identifiers sent as `id` (e.g. `'e:<sha256>'`, `'c:<ppid>'`). Defaults to
    * `['__passport__']`. `enableTargeting` only.

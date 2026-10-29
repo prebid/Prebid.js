@@ -5,6 +5,7 @@ import { submodule } from '../src/hook.js';
 import { deepAccess, mergeDeep, prefixLog } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('./optableRtdProvider.d.ts').OptableRtdProviderConfig} OptableRtdProviderConfig
@@ -19,9 +20,13 @@ const MODULE_NAME = 'optable';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD]:`;
 const optableLog = prefixLog(LOG_PREFIX);
 const { logMessage, logWarn, logError } = optableLog;
-const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
-const RTD_MODULE_VARIANT = 'optable-rtd-1.0.0-pr14405-v1';
+export const dep = {
+  ajax
+};
+
+const RTD_MODULE_VARIANT = 'optable-rtd-1.0.0';
 const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
 const PASSPORT_KEY_PREFIX = 'OPTABLE_PASSPORT_';
 const UID2_SOURCE = 'uidapi.com';
@@ -82,7 +87,7 @@ export const parseTargetingConfig = (moduleConfig) => {
   const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
   const instance = deepAccess(moduleConfig, 'params.instance', null);
 
-  const hasDirectApiConfig = host && node && site;
+  const hasDirectApiConfig = !!(host && node && site);
 
   if (host !== null && (typeof host !== 'string' || !host.trim())) {
     logError('host parameter must be a non-empty string');
@@ -143,7 +148,7 @@ export const parseTargetingConfig = (moduleConfig) => {
 const waitForOptableEvent = (eventName, instance = null) => {
   return new Promise((resolve) => {
     const optableBundle = /** @type {Object} */ (window.optable);
-    const cachedData = optableBundle?.[instance || 'instance']?.targetingFromCache();
+    const cachedData = optableBundle?.[instance || 'instance']?.targetingFromCache?.();
 
     if (cachedData && cachedData.ortb2) {
       logMessage('Optable SDK already has cached data');
@@ -200,7 +205,7 @@ export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExt
 };
 
 let sessionID = null;
-let targetingCallMade = false;
+let targetingRequest = null;
 
 /**
  * Generates a random session ID (base64url encoded 16-byte random value), once per page load
@@ -270,10 +275,11 @@ export const setPassport = (host, node, passport) => {
 const generateSDKTargetingKey = (host, node) => `OPTABLE_TARGETING_${encodeBase64(`${host}/${node}`)}`;
 
 /**
- * @param {Object} targetingData Targeting response
- * @returns {boolean} True when the response is worth caching
+ * @param {Object|null} targetingData Targeting response, or null when the call failed
+ * @returns {boolean} True when the response should replace the cache: any successful
+ * response does, even an empty one; a failed call keeps the previous entry
  */
-const isCacheable = (targetingData) => !!(targetingData && (targetingData.ortb2 || targetingData.split_test_assignment));
+const isCacheable = (targetingData) => !!targetingData;
 
 /**
  * Write targeting data to the Web SDK cache key so targetingFromCache() can read it
@@ -291,8 +297,8 @@ const setSDKTargetingCache = (host, node, targetingData) => {
 };
 
 /**
- * Get cached targeting data from localStorage. A response with a split test assignment
- * but no EIDs is still served, since the assignment itself is the useful part.
+ * Get cached targeting data from localStorage. Any cached response is served, empty
+ * included, so the last successful answer never blocks the auction.
  * @returns {Object|null} Cached targeting data or null
  */
 const getCachedTargeting = () => {
@@ -300,19 +306,11 @@ const getCachedTargeting = () => {
   if (cacheData) {
     try {
       const parsedData = JSON.parse(cacheData);
-      const eidCount = parsedData?.ortb2?.user?.eids?.length || 0;
-      const splitTestAssignment = parsedData?.split_test_assignment;
-
-      if (eidCount > 0) {
+      if (parsedData && typeof parsedData === 'object') {
+        const eidCount = parsedData.ortb2?.user?.eids?.length || 0;
         logMessage(`Found cached targeting with ${eidCount} EIDs`);
         return parsedData;
-      } else if (splitTestAssignment) {
-        logMessage(`Found cached targeting with split_test_assignment="${splitTestAssignment}" (no EIDs)`);
-        return parsedData;
       }
-
-      logMessage(`Ignoring cached targeting: ${eidCount} EIDs, split_test_assignment="${splitTestAssignment || 'none'}"`);
-      return null;
     } catch (e) {
       logWarn('Failed to parse cached targeting', e);
     }
@@ -452,13 +450,9 @@ const extractConsent = (userConsent) => {
     consent.gdprApplies = userConsent.gdpr.gdprApplies;
     consent.gdpr = userConsent.gdpr.consentString || null;
 
-    // deviceAccess follows TCF Purpose 1
-    if (userConsent.gdpr.vendorData) {
-      const purpose1Consent = userConsent.gdpr.vendorData.purpose?.consents?.[1] ||
-                              userConsent.gdpr.vendorData.publisher?.consents?.[1];
-      if (purpose1Consent !== undefined) {
-        consent.deviceAccess = purpose1Consent;
-      }
+    // deviceAccess follows TCF Purpose 1 when GDPR applies
+    if (userConsent.gdpr.gdprApplies) {
+      consent.deviceAccess = userConsent.gdpr.vendorData?.purpose?.consents?.[1] === true;
     }
   }
 
@@ -541,7 +535,7 @@ const callTargetingAPI = (params) => {
 
     logMessage(`Calling targeting API: ${url.split('?')[0]}`);
 
-    ajax(url, {
+    dep.ajax(url, {
       success: (responseText) => {
         try {
           const response = JSON.parse(responseText);
@@ -569,6 +563,31 @@ const callTargetingAPI = (params) => {
 };
 
 /**
+ * Call the targeting API once per page load and update both caches. Concurrent
+ * auctions share the request; a failed call is retried by the next auction.
+ * @param {Object} apiParams Targeting API parameters
+ * @returns {Promise<Object|null>} Targeting response or null
+ */
+const fetchTargeting = (apiParams) => {
+  if (!targetingRequest) {
+    targetingRequest = callTargetingAPI(apiParams).then(data => {
+      if (data) {
+        setCachedTargeting(data);
+        setSDKTargetingCache(apiParams.host, apiParams.node, data);
+      } else {
+        targetingRequest = null;
+      }
+      return data;
+    });
+  }
+  return targetingRequest;
+};
+
+export function resetTargetingRequest() {
+  targetingRequest = null;
+}
+
+/**
  * Check if UID2 EID exists in the given EIDs array
  * @param {Array} eids Array of EIDs to check
  * @returns {boolean} True if UID2 EID is present
@@ -585,60 +604,32 @@ export const hasUid2Eid = (eids) => {
  * @type {OptableTargetingHandleRtd}
  */
 export const targetingHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, options = {}) => {
-  if (!targetingData || !targetingData.ortb2) {
+  if (!targetingData) {
     logWarn('No targeting data found');
     return;
   }
 
-  targetingData = toCacheFormat(targetingData);
-  const eidCount = targetingData.ortb2?.user?.eids?.length || 0;
-  logMessage(`targetingHandleRtd: received targeting data with ${eidCount} EIDs`);
+  if (targetingData.ortb2) {
+    targetingData = toCacheFormat(targetingData);
+    const { eids: optableEids, ...user } = targetingData.ortb2.user ?? {};
+    const eidCount = optableEids?.length || 0;
+    logMessage(`targetingHandleRtd: received targeting data with ${eidCount} EIDs`);
 
-  let filteredTargetingData = targetingData;
-  if (options.skipMergeIfUid2Exists && targetingData.ortb2.user?.eids) {
-    const existingEids = reqBidsConfigObj.ortb2Fragments?.global?.user?.eids;
-    if (hasUid2Eid(existingEids)) {
-      const filteredEids = targetingData.ortb2.user.eids.filter(eid => eid.source !== UID2_SOURCE);
-      logMessage(`UID2 EID already present, skipping ${eidCount - filteredEids.length} Optable UID2 EID(s)`);
-
-      filteredTargetingData = {
-        ...targetingData,
-        ortb2: {
-          ...targetingData.ortb2,
-          user: {
-            ...targetingData.ortb2.user,
-            eids: filteredEids
-          }
-        }
-      };
+    let eids = optableEids;
+    if (options.skipMergeIfUid2Exists && eids) {
+      const globalUser = reqBidsConfigObj.ortb2Fragments?.global?.user;
+      if (hasUid2Eid(globalUser?.ext?.eids) || hasUid2Eid(globalUser?.eids)) {
+        eids = eids.filter(eid => eid.source !== UID2_SOURCE);
+        logMessage(`UID2 EID already present, skipping ${eidCount - eids.length} Optable UID2 EID(s)`);
+      }
     }
-  }
 
-  mergeFn(
-    reqBidsConfigObj.ortb2Fragments.global,
-    filteredTargetingData.ortb2,
-  );
-
-  const finalEidCount = filteredTargetingData.ortb2?.user?.eids?.length || 0;
-  logMessage(`EIDs merged into ortb2Fragments.global.user.eids (${finalEidCount} EIDs)`);
-
-  if (filteredTargetingData.ortb2.user?.eids) {
-    const targetORTB2 = reqBidsConfigObj.ortb2Fragments.global;
-    targetORTB2.user = targetORTB2.user ?? {};
-    targetORTB2.user.ext = targetORTB2.user.ext ?? {};
-
-    // ortb2Fragments are wrapped in Proxies that intercept eids; read and write the property directly
-    const eidsDesc = Object.getOwnPropertyDescriptor(targetORTB2.user.ext, 'eids');
-    const currentEids = Array.isArray(eidsDesc?.value) ? eidsDesc.value : [];
-
-    Object.defineProperty(targetORTB2.user.ext, 'eids', {
-      value: [...currentEids, ...filteredTargetingData.ortb2.user.eids],
-      writable: true,
-      enumerable: true,
-      configurable: true,
+    // Prebid has already normalized EIDs to user.ext.eids by the time RTD runs
+    mergeFn(reqBidsConfigObj.ortb2Fragments.global, {
+      ...targetingData.ortb2,
+      user: eids ? { ...user, ext: { ...user.ext, eids } } : user,
     });
-
-    logMessage(`EIDs also available in ortb2.user.ext.eids (${finalEidCount} EIDs)`);
+    logMessage(`EIDs merged into ortb2Fragments.global.user.ext.eids (${eids?.length || 0} EIDs)`);
   }
 
   if (reqBidsConfigObj.adUnits && Array.isArray(reqBidsConfigObj.adUnits)) {
@@ -690,8 +681,8 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
       return;
     }
 
-    // Leave 100ms of the auction delay for the merge
-    const effectiveTimeout = (timeout && timeout > 100) ? timeout - 100 : configTimeout;
+    // Leave 100ms of the auction delay for the merge; the DCN expects a Go duration
+    const effectiveTimeout = configTimeout ?? ((timeout && timeout > 100) ? `${timeout - 100}ms` : null);
     const sessionId = generateSessionID();
     const consent = extractConsent(userConsent);
     const { ids, hids } = extractIdentifiers(configIds, configHids);
@@ -703,26 +694,14 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     // Serve the cache immediately and refresh it in the background, once per page load
     const cachedData = getCachedTargeting();
     if (cachedData) {
-      handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options);
+      fetchTargeting(apiParams);
+      await handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options);
       callback();
-
-      if (!targetingCallMade) {
-        targetingCallMade = true;
-        callTargetingAPI(apiParams).then(data => {
-          if (data) {
-            logMessage('Background API call completed, cache updated');
-            setCachedTargeting(data);
-            setSDKTargetingCache(host, node, data);
-          }
-        }).catch(error => {
-          logWarn('Background API call failed:', error);
-        });
-      }
       return;
     }
 
-    targetingCallMade = true;
-    const targetingData = await callTargetingAPI(apiParams);
+    const startedAt = Date.now();
+    const targetingData = await fetchTargeting(apiParams);
 
     if (!targetingData) {
       logWarn('No targeting data returned from API');
@@ -730,10 +709,14 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
       return;
     }
 
-    setCachedTargeting(targetingData);
-    setSDKTargetingCache(host, node, targetingData);
-    handleRtdFn(reqBidsConfigObj, targetingData, mergeDeep, options);
+    // The RTD framework stops waiting after auctionDelay
+    if (timeout && Date.now() - startedAt >= timeout) {
+      logWarn('Targeting API answered after auctionDelay, cached for the next auction');
+      callback();
+      return;
+    }
 
+    await handleRtdFn(reqBidsConfigObj, targetingData, mergeDeep, options);
     callback();
   } catch (error) {
     logError('getBidRequestData error: ', error);
@@ -813,7 +796,8 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
   const instanceKey = instance || 'instance';
   const sdkInstance = window?.optable?.[instanceKey];
   if (!sdkInstance) {
-    logWarn(`No Optable SDK instance found for: ${instanceKey}`);
+    const log = isTargetingEnabled(moduleConfig) ? logMessage : logWarn;
+    log(`No Optable SDK instance found for: ${instanceKey}`);
     return targetingData;
   }
 
@@ -857,9 +841,7 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
  */
 const init = (config, userConsent) => {
   if (isTargetingEnabled(config)) {
-    if (window.pbjs) {
-      window.pbjs._optableRtdVariant = RTD_MODULE_VARIANT;
-    }
+    getGlobal()._optableRtdVariant = RTD_MODULE_VARIANT;
     if (window.optable) {
       window.optable.optableRtdVariant = RTD_MODULE_VARIANT;
     }
@@ -871,6 +853,7 @@ const init = (config, userConsent) => {
 // Optable RTD submodule
 export const optableSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/optableRtdProvider.json',
   init,
   getBidRequestData,
   getTargetingData,
