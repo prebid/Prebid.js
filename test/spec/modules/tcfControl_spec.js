@@ -500,7 +500,13 @@ describe('gdpr enforcement', function () {
             }]
           }
         });
-        setupConsentData();
+        setupConsentData({
+          gdprApplies: false,
+          tcDataMutator: (tcData) => {
+            tcData.purpose = { consents: {} };
+            tcData.vendor = { consents: {} };
+          }
+        });
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
       });
 
