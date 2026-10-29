@@ -44,6 +44,7 @@ const {Transform} = require('node:stream');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
+const {PUBLIC_MODULE_EXTENSIONS, getPublicModule} = require('./gulp.publicModules.js');
 const {
   cachedPipeline,
   getDefaults,
@@ -244,36 +245,6 @@ function copyVerbatim() {
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 
-/**
- * Generate "public" versions of module files (used in  package.json "exports") that
- * just import the "real" module
- *
- * This achieves three things:
- *
- *   - removes the need for awkward "index" imports, e.g. userId/index
- *   - hides their exports from NPM consumers
- *   - pulls in parent modules (from .submodules.json), so that e.g. importing 'prebid.js/modules/sharedIdSystem'
- *     also includes userId, as `gulp build --modules=sharedIdSystem` does - along with its types
- */
-const PUBLIC_MODULE_TEMPLATES = {
-  'js': _.template(`<% if (parentPath) { %>import '<%= parentPath %>';\n<% } %>import '<%= modulePath %>';`),
-  // `export type {}` adds no exports, but brings in the parent's declarations, which include its augmentations of
-  // the public API (e.g. `getUserIds` from userId)
-  'd.ts': _.template(`<% if (parentPath) { %>export type {} from '<%= parentPath %>';\n<% } %>export type * from '<%= modulePath %>'`)
-};
-
-/**
- * Contents of the public version of `moduleName`, which imports the real module from `modulePath`.
- * For submodules, both the JS and the type declaration versions first import the public version of their parent module.
- */
-function renderPublicModule(ext, moduleName, modulePath) {
-  const parent = helpers.getParentModule(moduleName);
-  return PUBLIC_MODULE_TEMPLATES[ext]({
-    modulePath,
-    parentPath: parent != null ? `./${parent}.${ext}` : null
-  });
-}
-
 const generatePublicModules = _.memoize(
   function (ext) {
     const publicDir = helpers.getPrecompiledPath('public');
@@ -288,24 +259,39 @@ const generatePublicModules = _.memoize(
       return {moduleName, modulePath, publicPath}
     }
 
-    function publicVersionDoesNotExist(file) {
-      // allow manual definition of a module's public version by leaving it
-      // alone if it exists under `public`
-      return !fs.existsSync(getNames(file).publicPath)
+    const generated = new Set();
+
+    function isNotOverridden(file) {
+      // a public version that is already there is a manual override from `public`, unless this process generated it -
+      // `dist/src` is emptied once per process
+      const {publicPath} = getNames(file);
+      return generated.has(publicPath) || !fs.existsSync(publicPath)
     }
 
     return function (done) {
       filter.then(({default: filter}) => {
-        gulp.src([
+        const exts = ext === 'd.ts' ? [ext, 'js'] : [ext];
+        gulp.src(exts.flatMap(ext => [
           helpers.getPrecompiledPath(`modules/*.${ext}`),
           helpers.getPrecompiledPath(`modules/**/index.${ext}`),
+        ]).concat([
           `!${publicDir}/**/*`
-        ], {since: gulp.lastRun(generatePublicModules(ext))})
-          .pipe(filter(publicVersionDoesNotExist))
-          .pipe(tap((file) => {
-            const {moduleName, modulePath, publicPath} = getNames(file);
-            file.contents = Buffer.from(renderPublicModule(ext, moduleName, toModulePath(modulePath)));
-            file.path = publicPath;
+        ]), {since: gulp.lastRun(generatePublicModules(ext))})
+          .pipe(filter(isNotOverridden))
+          .pipe(new Transform({
+            objectMode: true,
+            transform(file, enc, cb) {
+              const {moduleName, modulePath, publicPath} = getNames(file);
+              const contents = getPublicModule(ext, file.path, moduleName, toModulePath(modulePath), helpers.getPrecompiledPath());
+              if (contents == null) {
+                cb();
+              } else {
+                file.contents = Buffer.from(contents);
+                file.path = publicPath;
+                generated.add(publicPath);
+                cb(null, file);
+              }
+            }
           }))
           .pipe(gulp.dest(publicDir))
           .on('end', done);
@@ -337,7 +323,7 @@ const generateCoreSummary = generateTypeSummary(
   helpers.getPrecompiledPath('src/types/summary/**/*')
 );
 const generateModuleSummary = generateTypeSummary(helpers.getPrecompiledPath('modules'), helpers.getPrecompiledPath('src/types/summary/modules.d.ts'))
-const publicModules = gulp.parallel(Object.keys(PUBLIC_MODULE_TEMPLATES).map(ext => generatePublicModules(ext)));
+const publicModules = gulp.parallel(PUBLIC_MODULE_EXTENSIONS.map(ext => generatePublicModules(ext)));
 
 
 /**
@@ -476,6 +462,5 @@ gulp.task('verbatim', copyVerbatim)
 module.exports = {
   precompile,
   babelPrecomp,
-  copyDeclarations,
-  renderPublicModule
+  copyDeclarations
 }
