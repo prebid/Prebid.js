@@ -424,7 +424,7 @@ describe('safeRendering', () => {
         }`;
         await render();
         await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
-        sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({ bid: otherBid }));
+        sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED);
       });
     });
 
