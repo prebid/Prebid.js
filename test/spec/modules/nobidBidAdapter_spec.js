@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
@@ -1091,5 +1092,113 @@ describe('Nobid Adapter', function () {
       const bidWonTotal = spec.onBidWon();
       expect(bidWonTotal).to.equal(1);
     });
+  });
+});
+
+describe('coverage: request building', function () {
+  const bidderRequest = { refererInfo: { page: 'https://www.examplereferer.com' } };
+  const bid = (overrides) => Object.assign({
+    bidder: 'nobid',
+    params: { siteId: 2 },
+    adUnitCode: 'adunit-code',
+    sizes: [[300, 250]],
+    bidId: '30b31c1838de1e',
+    bidderRequestId: '22edbae2733bf6',
+    auctionId: '1d1a030790a475'
+  }, overrides);
+
+  beforeEach(function () {
+    // Earlier tests in this file leave a refresh limit and a _ublock cookie behind,
+    // either of which makes buildRequests return nothing.
+    delete window.nobid.refreshLimit;
+    window.nobid.refreshCount = 0;
+    document.cookie = '_ublock=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  });
+
+  it('should flag COPPA from ortb2.regs.coppa', function () {
+    const request = spec.buildRequests([bid()], Object.assign({ ortb2: { regs: { coppa: 1 } } }, bidderRequest));
+    expect(JSON.parse(request.data).coppa).to.deep.equal({ coppa: true });
+  });
+
+  it('should fall back to the bid-level coppa value', function () {
+    const request = spec.buildRequests([bid({ coppa: { coppa: true } })], bidderRequest);
+    expect(JSON.parse(request.data).coppa).to.deep.equal({ coppa: true });
+  });
+
+  it('should not send coppa when nothing sets it', function () {
+    const request = spec.buildRequests([bid()], bidderRequest);
+    expect(JSON.parse(request.data)).to.not.have.property('coppa');
+  });
+
+  it('should collapse two bids for the same ad unit into one', function () {
+    const request = spec.buildRequests([
+      bid({ bidId: 'a', sizes: [[300, 250]] }),
+      bid({ bidId: 'b', sizes: [[728, 90]] })
+    ], bidderRequest);
+    const adunits = JSON.parse(request.data).a;
+    expect(adunits.length).to.equal(1);
+    expect(adunits[0].z).to.deep.equal([[728, 90]]);
+  });
+
+  it('should not build a request without a siteId', function () {
+    expect(spec.buildRequests([bid({ params: {} })], bidderRequest)).to.equal(undefined);
+  });
+
+  it('should not build a request for an empty bid list', function () {
+    expect(spec.buildRequests([], bidderRequest)).to.equal(undefined);
+  });
+
+  describe('when the user is blocked', function () {
+    beforeEach(function () {
+      // Prebid only lets a bidder use cookies when the publisher allows it.
+      getGlobal().bidderSettings = { nobid: { storageAllowed: true } };
+      // Block the user the way production does: a server response carrying ublock (hours).
+      spec.interpretResponse({ body: { ublock: 1, bids: [] } }, { bidderRequest: { bids: [] } });
+    });
+    afterEach(function () {
+      document.cookie = '_ublock=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      getGlobal().bidderSettings = {};
+    });
+
+    it('should not build a request', function () {
+      expect(spec.buildRequests([bid()], bidderRequest)).to.equal(undefined);
+    });
+  });
+});
+
+describe('coverage: video bid response', function () {
+  it('should copy vastUrl, vastXml and videoCacheKey onto the bid', function () {
+    const response = {
+      bids: [{
+        id: 2,
+        bdrid: 101,
+        divid: 'video-unit',
+        size: { w: 640, h: 480 },
+        price: '1.5',
+        atype: 'video',
+        vastUrl: 'https://vast.example/v.xml',
+        vastXml: '<VAST version="4.0"></VAST>',
+        videoCacheKey: 'cache-key-1'
+      }]
+    };
+    const bidderRequest = { bids: [{ bidId: 'video-req', adUnitCode: 'video-unit' }] };
+    const result = spec.interpretResponse({ body: response }, { bidderRequest });
+    expect(result.length).to.equal(1);
+    expect(result[0].mediaType).to.equal('video');
+    expect(result[0].vastUrl).to.equal('https://vast.example/v.xml');
+    expect(result[0].vastXml).to.equal('<VAST version="4.0"></VAST>');
+    expect(result[0].videoCacheKey).to.equal('cache-key-1');
+  });
+});
+
+describe('coverage: user sync consent', function () {
+  it('should send gdpr_consent without gdpr when gdprApplies is unknown', function () {
+    const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, { consentString: 'CONSENT' });
+    expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?gdpr_consent=CONSENT');
+  });
+
+  it('should send usp_consent alone with a ?', function () {
+    const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1YNN');
+    expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?usp_consent=1YNN');
   });
 });
