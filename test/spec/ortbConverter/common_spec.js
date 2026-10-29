@@ -75,10 +75,14 @@ describe('common processors', () => {
           dealid: 'deal-1',
           ext: {
             prebid: {
-              deal: { type: 1, cpm: -1, priority_adjusted_cpm: Infinity, on_schedule: '0.5', priority: 1.5, extra: 'ignored' }
+              deal: { type: 1, cpm: -1, priority_adjusted_cpm: Infinity, on_schedule: '0.5', priority: 1.5, source: 1, extra: 'ignored' }
             }
           }
         })).to.eql({ type: 1 });
+      });
+
+      it('drops an empty source', () => {
+        expect(dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: { type: 1, source: '' } } } })).to.eql({ type: 1 });
       });
 
       it('allows negative integer priority', () => {
