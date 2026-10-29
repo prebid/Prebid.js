@@ -1,5 +1,5 @@
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'mul';
 // Production endpoint
@@ -10,6 +10,8 @@ export interface MulBidParams {
   placementId?: string;
   placement?: string;
   zoneId?: string;
+  bidfloor?: number;
+  bidfloorcur?: string;
   [key: string]: unknown;
 }
 
@@ -21,7 +23,7 @@ declare module '../src/adUnits' {
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Validates whether or not the bid request has required publisher params.
@@ -35,24 +37,77 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    */
   buildRequests: function (validBidRequests: any[], bidderRequest: any) {
     const bids = validBidRequests.map((bid) => {
-      const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
-      const floorInfo = typeof bid.getFloor === 'function' ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
+      const bannerMedia = bid.mediaTypes?.banner;
+      const videoMedia = bid.mediaTypes?.video;
+      const sizes = bannerMedia?.sizes || bid.sizes || [];
 
-      return {
+      // Determine floor across supported media types
+      let floor = 0;
+      let floorCurrency = 'USD';
+      if (typeof bid.getFloor === 'function') {
+        const queryMediaType = videoMedia && !bannerMedia ? VIDEO : (bannerMedia ? BANNER : '*');
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: queryMediaType, size: '*' });
+        floor = floorInfo?.floor || 0;
+        floorCurrency = floorInfo?.currency || 'USD';
+      } else if (bid.params?.bidfloor) {
+        floor = bid.params.bidfloor;
+        floorCurrency = bid.params.bidfloorcur || 'USD';
+      }
+
+      const bidItem: any = {
         bidId: bid.bidId,
         placementId: bid.params.placement || bid.params.placementId || bid.params.zoneId,
         sizes: sizes,
-        floor: floorInfo?.floor || 0,
-        floorCurrency: floorInfo?.currency || 'USD',
+        floor: floor,
+        floorCurrency: floorCurrency,
         params: bid.params
       };
+
+      if (bannerMedia) {
+        bidItem.banner = {
+          sizes: sizes
+        };
+      }
+
+      if (videoMedia) {
+        bidItem.video = {
+          playerSize: videoMedia.playerSize || sizes,
+          context: videoMedia.context || 'instream',
+          mimes: videoMedia.mimes || ['video/mp4'],
+          protocols: videoMedia.protocols || [2, 3, 5, 6],
+          minduration: videoMedia.minduration,
+          maxduration: videoMedia.maxduration,
+          startdelay: videoMedia.startdelay ?? 0,
+          playbackmethod: videoMedia.playbackmethod || [1, 2],
+          api: videoMedia.api || [1, 2],
+          skip: videoMedia.skip ?? 0,
+          skipafter: videoMedia.skipafter,
+          placement: videoMedia.placement,
+          plcmt: videoMedia.plcmt,
+          linearity: videoMedia.linearity
+        };
+      }
+
+      if (bid.ortb2Imp?.ext?.gpid) {
+        bidItem.gpid = bid.ortb2Imp.ext.gpid;
+      }
+
+      return bidItem;
     });
 
-    const payload = {
-      id: bidderRequest.ortb2?.source?.tid || bidderRequest.auctionId,
+    const ortb2 = bidderRequest.ortb2 || {};
+
+    const payload: any = {
+      id: ortb2.source?.tid || bidderRequest.auctionId,
       page: bidderRequest.refererInfo?.page,
       domain: bidderRequest.refererInfo?.domain,
       referer: bidderRequest.refererInfo?.ref,
+      site: ortb2.site,
+      device: ortb2.device,
+      eids: ortb2.user?.ext?.eids || [],
+      schain: ortb2.source?.ext?.schain || validBidRequests[0]?.ortb2?.source?.ext?.schain,
+      bcat: ortb2.bcat,
+      badv: ortb2.badv,
       consent: {
         gdprApplies: bidderRequest.gdprConsent?.gdprApplies,
         consentString: bidderRequest.gdprConsent?.consentString,
@@ -77,7 +132,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * Parses server response and returns array of valid Prebid bidResponse objects.
    */
   interpretResponse: function (serverResponse: any, request: any) {
-    const responses = serverResponse.body;
+    const responses = serverResponse?.body;
     if (!responses || !Array.isArray(responses) || responses.length === 0) {
       return [];
     }
@@ -85,11 +140,22 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     const bidResponses = [];
 
     for (const bid of responses) {
-      if (!bid.cpm || !bid.adHtml) {
+      if (!bid.cpm) {
         continue;
       }
 
-      bidResponses.push({
+      const isVideo = !!(bid.vastUrl || bid.vastXml || bid.mediaType === VIDEO);
+
+      if (!isVideo && !bid.adHtml) {
+        continue;
+      }
+      if (isVideo && !bid.vastUrl && !bid.vastXml) {
+        continue;
+      }
+
+      const mediaType = isVideo ? VIDEO : BANNER;
+
+      const bidResponse: any = {
         requestId: bid.bidId,
         cpm: bid.cpm,
         currency: bid.currency || 'USD',
@@ -98,15 +164,28 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         creativeId: bid.creativeId || `crid_${bid.bidId}`,
         dealId: bid.dealId,
         netRevenue: true,
-        ttl: 300,
-        ad: bid.adHtml,
-        mediaType: BANNER,
+        ttl: bid.ttl || 300,
+        mediaType: mediaType,
         meta: {
           advertiserDomains: bid.adomain && bid.adomain.length > 0 ? bid.adomain : ['monetiseup.com'],
           demandSource: bid.demandSource || 'MonetiseUp',
-          mediaType: BANNER
+          mediaType: mediaType
         }
-      });
+      };
+
+      if (isVideo) {
+        if (bid.vastUrl) {
+          bidResponse.vastUrl = bid.vastUrl;
+        }
+        if (bid.vastXml) {
+          bidResponse.vastXml = bid.vastXml;
+        }
+        bidResponse.playerSize = [bid.width, bid.height];
+      } else {
+        bidResponse.ad = bid.adHtml;
+      }
+
+      bidResponses.push(bidResponse);
     }
 
     return bidResponses;
