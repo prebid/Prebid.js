@@ -795,7 +795,7 @@ describe('smaatoBidAdapterTest', () => {
             },
             {
               id: 12,
-              require: 0,
+              required: 0,
               data: {
                 type: 10
               }
