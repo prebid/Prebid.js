@@ -288,10 +288,15 @@ const getBidRequestData = (
       logWarn(LOG_PREFIX, 'No ad units found in the request');
       isDone = true;
       onDone();
+      return;
     }
 
     getKeywords(params)
       .then((keywords) => {
+        if (isDone) {
+          return;
+        }
+
         const ortbKeywords = getOrtbKeywords(keywords);
         const siteKeywords = reqBidsConfigObj.ortb2Fragments?.global?.site?.keywords;
         const updatedGlobalOrtb = { site: { keywords: [siteKeywords, ortbKeywords].filter(Boolean).join(',') } };
@@ -302,6 +307,10 @@ const getBidRequestData = (
         // The keyword request already logged the failure.
       })
       .finally(() => {
+        if (isDone) {
+          return;
+        }
+
         isDone = true;
         onDone();
       });
