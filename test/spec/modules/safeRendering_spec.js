@@ -1,5 +1,5 @@
 import { allowMessageHook, validateToken, renderBid, escapeInlineHtml } from '../../../modules/safeRendering.js';
-import { isMessageAllowed, parseMessage } from '../../../src/secureCreatives.js';
+import { isMessageAllowed, parseMessage, receiveMessage } from '../../../src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import * as secureCreatives from 'src/secureCreatives.js';
 import { config } from 'src/config.js';
@@ -8,13 +8,17 @@ import { RENDERER } from 'creative-renderers/creative.js';
 import { createIframe } from 'src/utils.js';
 import { BID_STATUS, EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
+import { getCreativeDefaultRendererSource } from 'src/creativeRenderers.js';
+import { auctionManager } from 'src/auctionManager.js';
 
 describe('safeRendering', () => {
   let disableSecureCreatives, onMessage, messages, sandbox;
 
-  function disableHook(next) {
-    if (disableSecureCreatives) {
+  function disableHook(next, event, message) {
+    if (disableSecureCreatives && event?.target === window) {
       next.bail(false);
+    } else {
+      next(event, message);
     }
   }
 
@@ -339,6 +343,88 @@ describe('safeRendering', () => {
     }).forEach(([t, [bid, token]]) => {
       it(`does not accept a ${t}`, () => {
         expect(validateToken(bid, token)).to.be.false;
+      });
+    });
+
+    describe('when Prebid handles the request', () => {
+      let rendererSrc, otherBid;
+
+      function rendererHook(next) {
+        next.bail(rendererSrc);
+      }
+
+      before(() => {
+        getCreativeDefaultRendererSource.before(rendererHook);
+      });
+
+      after(() => {
+        getCreativeDefaultRendererSource.getHooks({ hook: rendererHook }).remove();
+      });
+
+      beforeEach(() => {
+        rendererSrc = 'window.render = function() {}';
+        Object.assign(bid, { ad: '<div></div>', responseTimestamp: Date.now(), ttl: 300 });
+        otherBid = { adId: 'other-adid', status: BID_STATUS.RENDERED };
+        const findBid = (adId) => [bid, otherBid].find(b => b.adId === adId);
+        sandbox.stub(auctionManager, 'findBidByAdId').callsFake(findBid);
+        secureCreatives.getBidForMessage.callsFake((msg) => findBid(msg?.adId));
+      });
+
+      function waitForEvent(event, bid) {
+        const emit = events.emit;
+        return new Promise((resolve, reject) => {
+          let timedOut = false;
+          const timeout = setTimeout(() => {
+            timedOut = true;
+            reject(new Error(`timed out waiting for ${event}`));
+          }, 2000);
+          (function poll() {
+            if (timedOut) return;
+            const call = emit.getCalls().find(call => call.args[0] === event && call.args[1]?.bid === bid);
+            if (call) {
+              clearTimeout(timeout);
+              resolve(call.args[1]);
+            } else {
+              setTimeout(poll, 50);
+            }
+          })();
+        });
+      }
+
+      async function render() {
+        renderBid(bidHandle);
+        const [[{ data, ports, source, origin }]] = await expectMessage();
+        receiveMessage({ data, ports, source, origin });
+      }
+
+      it('handles AD_RENDER_SUCCEEDED sent over the port', async () => {
+        await render();
+        await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
+      });
+
+      it('handles AD_RENDER_FAILED sent over the port when the renderer throws', async () => {
+        rendererSrc = 'window.render = function() { throw new Error("renderer error") }';
+        await render();
+        const args = await waitForEvent(EVENTS.AD_RENDER_FAILED, bid);
+        sinon.assert.match(args, { reason: 'exception', message: 'renderer error' });
+      });
+
+      it('handles messages sent by the renderer over the port', async () => {
+        rendererSrc = `window.render = function(_, {sendMessage}) {
+          sendMessage('Prebid Event', { event: 'browserIntervention', intervention: { type: 'test' } });
+        }`;
+        await render();
+        await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
+        sinon.assert.calledWith(events.emit, EVENTS.BROWSER_INTERVENTION, sinon.match({ bid, intervention: { type: 'test' } }));
+      });
+
+      it('ignores messages over the port for a different adId', async () => {
+        rendererSrc = `window.render = function(_, {sendMessage}) {
+          sendMessage('Prebid Event', { adId: 'other-adid', event: 'adRenderFailed', info: { reason: 'exception', message: 'spoofed' } });
+        }`;
+        await render();
+        await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
+        sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({ bid: otherBid }));
       });
     });
 
