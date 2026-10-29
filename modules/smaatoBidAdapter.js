@@ -40,7 +40,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    if (typeof bid.params !== 'object') {
+    if (bid.params == null || typeof bid.params !== 'object') {
       logError('[SMAATO] Missing params object');
       return false;
     }
