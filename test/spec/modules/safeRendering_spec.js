@@ -342,22 +342,56 @@ describe('safeRendering', () => {
       });
     });
 
-    it('accepts follow-up messages with the same token after the render request', async () => {
+    function mockNext() {
+      const next = sinon.stub();
+      next.bail = sinon.stub();
+      return next;
+    }
+
+    it('does not accept a token more than once', async () => {
       renderBid(bidHandle);
       const [[event, message]] = await expectMessage();
       const hook = allowMessageHook();
-      const next = sinon.stub();
-      next.bail = sinon.stub();
+      const next = mockNext();
       hook(next, event, message);
+      sinon.assert.calledOnce(next);
       [
-        { message: 'Prebid Event', event: 'adRenderSucceeded' },
-        { message: 'Prebid Native', action: 'click' },
-        { message: 'Prebid Native', action: 'click' },
+        message,
+        { message: 'Prebid Event', event: 'adRenderSucceeded', adId: message.adId, token: message.token },
+        { message: 'Prebid Native', action: 'click', adId: message.adId, token: message.token },
       ].forEach(followUp => {
-        hook(next, event, { ...followUp, adId: message.adId, token: message.token });
+        hook(next, event, followUp);
       });
-      sinon.assert.callCount(next, 4);
-      sinon.assert.notCalled(next.bail);
+      sinon.assert.calledOnce(next);
+      sinon.assert.alwaysCalledWith(next.bail, false);
+      sinon.assert.callCount(next.bail, 3);
+    });
+
+    it('does not accept messages without a token after the token has been used', async () => {
+      renderBid(bidHandle);
+      const [[event, { token, ...message }]] = await expectMessage();
+      const hook = allowMessageHook();
+      const next = mockNext();
+      hook(next, event, { ...message, token });
+      hook(next, event, message);
+      hook(next, { ...event, ports: [] }, { message: 'Prebid Event', event: 'adRenderSucceeded', adId: message.adId });
+      sinon.assert.calledOnce(next);
+      sinon.assert.callCount(next.bail, 2);
+    });
+
+    it('accepts the token issued by each renderBid call once', async () => {
+      const hook = allowMessageHook();
+      const next = mockNext();
+      renderBid(bidHandle);
+      const [[event1, message1]] = await expectMessage();
+      hook(next, event1, message1);
+      renderBid(bidHandle);
+      const [[event2, message2]] = await expectMessage((ev, msg) => msg?.token !== message1.token);
+      hook(next, event2, message2);
+      hook(next, event1, message1);
+      hook(next, event2, message2);
+      sinon.assert.calledTwice(next);
+      sinon.assert.callCount(next.bail, 2);
     });
   });
 
