@@ -3,6 +3,8 @@ import { expect } from 'chai';
 // the .js specifier to it, same as every core import.
 import { dep, spec } from 'modules/publinkioBidAdapter.js';
 import sinon from 'sinon';
+import { getPriority, adjustDesirability } from 'src/utils/desirability.js';
+import { highestDesirabilityFirst } from 'src/utils/reducers.js';
 import 'modules/priceFloors.js';
 
 describe('publinkioBidAdapter', function () {
@@ -134,6 +136,58 @@ describe('publinkioBidAdapter', function () {
       },
     };
   }
+
+  describe('publisher-authorized campaign priorities', function () {
+    [true, false].forEach(trusted => it(`uses core ranking with publisher trust=${trusted} while keeping the paid CPM`, function () {
+      const request = spec.buildRequests([validBid], { ...bidderRequest, allowPriorityBids: trusted })[0];
+      const [bid] = spec.interpretResponse(respond(request, { price: 2, adm: '<div>ad</div>', mtype: 1, dealid: 'opaque-campaign', ext: { prebid: { deal: { type: 0, priority: 6 } } } }), request);
+      bid.priority = getPriority(bid, { ...bidderRequest, allowPriorityBids: trusted });
+      bid.desirability = adjustDesirability(bid, validBid, { bidderRequest: { ...bidderRequest, allowPriorityBids: trusted } });
+      const ordinary = { cpm: 100, priority: 12, desirability: 100 };
+      expect([ordinary, bid].sort(highestDesirabilityFirst)[0]).to.equal(trusted ? bid : ordinary);
+      expect(bid.cpm).to.equal(2);
+      expect(bid.desirability).to.equal(2);
+    }));
+
+    it('signals only this requested bidder when core grants priority trust', function () {
+      const ortb2 = { ext: { prebid: { custom: 'kept', as: { ap: true, apb: ['another'] } } } };
+      const before = JSON.stringify(ortb2);
+      const [request] = spec.buildRequests([validBid], { ...bidderRequest, ortb2, allowPriorityBids: true });
+      expect(request.data.ext.prebid).to.deep.equal({ custom: 'kept', as: { ap: true, apb: ['publinkio'] } });
+      expect(JSON.stringify(ortb2)).to.equal(before);
+    });
+    [undefined, false, 'true', 1, null].forEach(allowPriorityBids => {
+      it(`does not grant trust from FPD when core permission is ${allowPriorityBids}`, function () {
+        const ortb2 = { ext: { prebid: { custom: 'kept', as: { ap: true, apb: ['publinkio'] } } } };
+        const before = JSON.stringify(ortb2);
+        const [request] = spec.buildRequests([validBid], { ...bidderRequest, ortb2, allowPriorityBids });
+        expect(request.data.ext.prebid).to.deep.equal({ custom: 'kept' });
+        expect(JSON.stringify(ortb2)).to.equal(before);
+      });
+    });
+    it('does not invent permission extensions on ordinary requests', function () {
+      const [request] = spec.buildRequests([validBid], bidderRequest);
+      expect(request.data.ext?.prebid?.as).to.equal(undefined);
+    });
+    [['banner', 1, true], ['video', 2, FEATURES.VIDEO], ['audio', 3, FEATURES.AUDIO]].forEach(([format, mtype, enabled]) => {
+      if (!enabled) return;
+      it(`preserves normalized ${format} deal metadata and the price used by notices`, function () {
+        const types = { banner: { sizes: [[300, 250]] }, video: { context: 'instream', mimes: ['video/mp4'], playerSize: [[640, 360]] }, audio: { mimes: ['audio/mpeg'] } };
+        const [request] = spec.buildRequests([{ ...validBid, mediaTypes: { [format]: types[format] } }], { ...bidderRequest, allowPriorityBids: true });
+        const [bid] = spec.interpretResponse(respond(request, { price: 2, adm: format === 'banner' ? '<div>ad</div>' : '<VAST/>', mtype, dealid: 'campaign-public-id', ext: { prebid: { deal: { type: 0, priority: 6, priority_adjusted_cpm: 3 } } } }), request);
+        expect(bid.dealId).to.equal('campaign-public-id');
+        expect(bid.meta.deal).to.deep.equal({ type: 0, priority: 6, priorityAdjustedCpm: 3 });
+        expect(bid.cpm).to.equal(2);
+        expect(bid.mediaType).to.equal(format);
+      });
+    });
+    it('does not manufacture metadata when a response has no deal id', function () {
+      const [request] = spec.buildRequests([validBid], { ...bidderRequest, allowPriorityBids: true });
+      const [bid] = spec.interpretResponse(respond(request, { price: 2, adm: '<div>ad</div>', mtype: 1, ext: { prebid: { deal: { priority: 6 } } } }), request);
+      expect(bid.meta?.deal).to.equal(undefined);
+      expect(bid.cpm).to.equal(2);
+    });
+  });
 
   describe('onBidWon', function () {
     let ajax, background;
