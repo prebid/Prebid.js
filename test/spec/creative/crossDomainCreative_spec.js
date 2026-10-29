@@ -44,7 +44,7 @@ describe('cross-domain creative', () => {
           messages.push({ payload: JSON.parse(payload), targetOrigin, transfer });
           if (messages.length === 1) {
             transfer[0].onmessage = sinon.stub().callsFake((ev) => {
-              channelMessages.push({ payload: JSON.parse(ev.data)});
+              channelMessages.push({ payload: JSON.parse(ev.data) });
             });
           }
         })
@@ -363,6 +363,30 @@ describe('cross-domain creative', () => {
               });
             });
           });
+
+          it('is provided an onMessage that receives every message following the response', () => {
+            const listener = window._listener = sinon.stub();
+            const response = {
+              adId: '123',
+              message: MESSAGE_RESPONSE,
+              renderer: 'window.render = function(_, {onMessage}) { onMessage(function(data) { window.parent._listener(data) }) }'
+            };
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply(response);
+            return waitFor(() => getMessage(1)?.payload).then(() => {
+              reply({ message: 'other', foo: 'bar' });
+              reply(response);
+              return waitFor(() => listener.callCount === 2);
+            }).then(() => {
+              expect(listener.args.map(([data]) => data)).to.eql([
+                { message: 'other', foo: 'bar' },
+                response
+              ]);
+              sinon.assert.calledOnce(win.document.body.appendChild);
+            }).finally(() => {
+              delete window._listener;
+            });
+          });
         });
       });
     });
@@ -389,6 +413,24 @@ describe('cross-domain creative', () => {
         expect(messages.length).to.equal(1);
         expect(messages[0].payload.token).to.equal('test');
         channelMessages.forEach(({ payload }) => expect(payload).to.not.have.property('token'));
+      });
+    });
+
+    it('accepts replies through the sendMessage callback when no token is provided', () => {
+      const replyListener = window._reply = sinon.stub();
+      renderAd({ adId: '123', pubUrl: ORIGIN });
+      messages[0].transfer[0].postMessage(JSON.stringify({
+        adId: '123',
+        message: MESSAGE_RESPONSE,
+        renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", {}, function(ev) { window.parent._reply(ev.data) }) }'
+      }));
+      return waitFor(() => messages[1]?.payload).then(() => {
+        messages[1].transfer[0].postMessage(JSON.stringify('response'));
+        return waitFor(() => replyListener.called);
+      }).then(() => {
+        sinon.assert.calledWith(replyListener, JSON.stringify('response'));
+      }).finally(() => {
+        delete window._reply;
       });
     });
 
