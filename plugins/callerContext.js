@@ -9,6 +9,16 @@ const NAMES = {
   }
 }
 
+/**
+ * Count the distinct GVL ID declarations among `components`. A declaration may be a list of IDs;
+ * lists with the same IDs count as one.
+ */
+function countGvlids(components) {
+  return new Set(
+    components.map(({gvlid}) => JSON.stringify(Array.isArray(gvlid) ? [...gvlid].sort((a, b) => a - b) : gvlid ?? null))
+  ).size;
+}
+
 const getCallers = (() => {
   const cache = {};
   return function (filename, message) {
@@ -16,18 +26,14 @@ const getCallers = (() => {
       const moduleName = getModuleName(osPath.resolve(PREBID_ROOT, filename));
       const metadata = getMetadata(moduleName);
       if (moduleName != null && metadata != null) {
-        const callers = metadata.components.reduce((summary, {gvlid, componentName, componentType}) => {
-          summary.gvlids.add(gvlid)
-          summary.callers.push([componentType, componentName])
-          return summary;
-        }, {gvlids: new Set(), callers: []});
-        if (!callers.callers.length) {
+        const callers = metadata.components.map(({componentName, componentType}) => [componentType, componentName]);
+        if (!callers.length) {
           throw new Error(`Unexpected empty component list from metadata for '${moduleName}'`);
         }
-        if (callers.gvlids.size > 1) {
+        if (countGvlids(metadata.components) > 1) {
           console.warn(`WARNING: more than one GVL ID is associated with '${filename}'. ${message}`)
         }
-        cache[filename] = callers.callers;
+        cache[filename] = callers;
       } else {
         console.warn(`WARNING: cannot determine moduleType/moduleName to associate with '${filename}'. If this is a new adapter it may need metadata to be updated.  ${message}`)
         cache[filename] = [];
@@ -85,3 +91,4 @@ module.exports = function (api, options) {
   };
 };
 
+module.exports.countGvlids = countGvlids;

@@ -120,4 +120,30 @@ describe('PBS - ortb ext.prebid.aliases', () => {
       }
     });
   });
+
+  it('sets ext.prebid.aliasgvlids.BIDDER when the GVL ID list has a single element', () => {
+    initAlias({ gvlid: [24] });
+    expect(setAliases({ bidderCode: 'alias' }).ext.prebid.aliasgvlids).to.eql({ alias: 24 });
+  });
+
+  Object.entries({
+    'spec': () => initAlias({ gvlid: [24, 25] }),
+    'config': () => {
+      config.setConfig({ gvlMapping: { alias: [24, 25] } });
+      initAlias({ gvlid: 24 });
+    }
+  }).forEach(([t, setup]) => {
+    it(`does not set ext.prebid.aliasgvlids.BIDDER when ${t} has multiple GVL IDs`, () => {
+      setup();
+      expect(setAliases({ bidderCode: 'alias' })).to.eql({
+        ext: {
+          prebid: {
+            aliases: {
+              alias: 'bidder'
+            }
+          }
+        }
+      });
+    });
+  });
 });
