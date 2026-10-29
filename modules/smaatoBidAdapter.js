@@ -113,8 +113,8 @@ export const spec = {
     logInfo('[SMAATO] OpenRTB Response:', response);
 
     const bids = [];
-    response.seatbid.forEach(seatbid => {
-      seatbid.bid.forEach(bid => {
+    (response.seatbid || []).forEach(seatbid => {
+      (seatbid.bid || []).forEach(bid => {
         const resultingBid = {
           requestId: bid.impid,
           cpm: bid.price || 0,
