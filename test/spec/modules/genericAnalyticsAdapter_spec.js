@@ -2,6 +2,7 @@ import { defaultHandler, GenericAnalytics } from '../../../modules/genericAnalyt
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
 import { submodule } from 'src/hook.js';
+import { setDebounceDelay } from 'libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 const { AUCTION_INIT, AUCTION_END, BID_RESPONSE } = EVENTS;
 
@@ -238,6 +239,25 @@ describe('Generic analytics', () => {
         adapter.disableAnalytics();
         clock.tick(100);
         sinon.assert.notCalled(handler);
+      });
+
+      describe('with the analytics debounce delay', () => {
+        before(() => setDebounceDelay(100));
+        after(() => setDebounceDelay(0));
+
+        it('does not send events still queued by the base adapter after being disabled', () => {
+          adapter.enableAnalytics({
+            options: {
+              batchDelay: 100,
+              batchSize: 10,
+              handler
+            }
+          });
+          events.emit(BID_RESPONSE, { i: 0 });
+          adapter.disableAnalytics();
+          clock.tick(500);
+          sinon.assert.notCalled(handler);
+        });
       });
 
       it('does not send events queued before being disabled once re-enabled', () => {

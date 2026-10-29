@@ -307,4 +307,11 @@ describe('Analytics asynchronous event tracking', () => {
     sinon.assert.calledWith(adapter.track.firstCall, sinon.match({ eventType: BID_WON, args: { i: 0 } }));
     sinon.assert.calledWith(adapter.track.secondCall, sinon.match({ eventType: BID_WON, args: { i: 1 } }));
   });
+
+  it('does not call track for queued events after being disabled', () => {
+    events.emit(BID_WON, { i: 0 });
+    adapter.disableAnalytics();
+    clock.tick(200);
+    sinon.assert.notCalled(adapter.track);
+  });
 });
