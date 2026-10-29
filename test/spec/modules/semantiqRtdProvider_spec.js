@@ -187,6 +187,56 @@ describe('semantiqRtdProvider', () => {
       expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('13,23');
     });
 
+    it('drops a falsy company id from a list that also has a real id', async () => {
+      const reqBidsConfigObj = {
+        adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+      };
+
+      const promise = new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData(
+        reqBidsConfigObj,
+        resolve,
+        { params: { companyId: [0, 5] } },
+        {}
+      ));
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify({})
+      );
+
+      await promise;
+
+      const requestUrl = new URL(server.requests[0].url);
+
+      expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('5');
+    });
+
+    it('falls back when every company id is falsy', async () => {
+      const reqBidsConfigObj = {
+        adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+      };
+
+      const promise = new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData(
+        reqBidsConfigObj,
+        resolve,
+        { params: { companyId: 0 } },
+        {}
+      ));
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify({})
+      );
+
+      await promise;
+
+      const requestUrl = new URL(server.requests[0].url);
+
+      expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('1');
+    });
+
     it('gets keywords from the cache if the data is present in the storage', async () => {
       getDataFromSessionStorage.returns(JSON.stringify({ url: 'https://example.com/article', keywords: { sentiment: 'negative', ctx_segment: ['C001', 'C002'] } }));
 
