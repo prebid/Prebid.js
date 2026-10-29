@@ -83,7 +83,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       ? { ...(publisherPrebid as Record<string, unknown>) } : {};
     delete prebid.as;
     if (bidderRequest.allowPriorityBids === true) {
-      prebid.as = { ap: true, apb: [BIDDER_CODE] };
+      prebid.as = { ap: true, apb: [bidderRequest.bidderCode] };
     }
     if (bidderRequest.allowPriorityBids === true || isPlainObject(publisherPrebid)) {
       deepSetValue(request, 'ext.prebid', prebid);

@@ -87,10 +87,9 @@ When a custom player selects a winning video/audio bid, report the win through
 Prebid, for example `pbjs.markWinningBidAsUsed({ adId: bid.adId, events: true })`.
 This triggers the win-notice lifecycle separately from VAST render events.
 
-# Optional campaign priority (client-to-server)
+# Campaign priority
 
-On a Prebid.js build containing the priority support from #15816 and this
-adapter update, a publisher can explicitly trust Publink's campaign priority:
+To let Publink's direct campaigns rank by priority, trust this bidder:
 
 ```javascript
 pbjs.bidderSettings = pbjs.bidderSettings || {};
@@ -99,25 +98,5 @@ pbjs.bidderSettings.publinkio = Object.assign({}, pbjs.bidderSettings.publinkio,
 });
 ```
 
-This is a publisher choice for this bidder; setting it under `standard` does
-not grant trust. The adapter signals that choice to Publink using
-`ext.prebid.as: { ap: true, apb: ['publinkio'] }`.
-
-With the corresponding gateway update, a winning direct campaign with a
-configured positive integer priority supplies `dealid` and
-`ext.prebid.deal: { type: 0, priority: <campaign priority> }`. An existing deal ID
-is retained; otherwise an opaque stable campaign identifier is used. Type 0
-means unknown: campaign contract types are not inferred. The standard ORTB
-converter reads this into `meta.deal`; Prebid core enforces publisher trust and
-uses lower numbers first, with a default priority of 12 for ordinary bids.
-
-The bid's CPM, currency, floors, price buckets and win/billing notice prices
-remain the transaction values. This extension does not add a ranking CPM,
-zero-CPM house bids or floor bypass. Without the opt-in or a configured campaign
-priority, Publink sends an ordinary bid.
-
-The existing Prebid Server integration continues to support ordinary bids.
-Priority support through S2S additionally requires the PBS host to preserve
-`ext.prebid.as` on requests and `ext.prebid.deal` on responses. The current PBS
-submission does not implement that core forwarding, so enabling
-`s2sConfig.allowPriorityBids` alone does not enable Publink campaign priorities.
+See [bidderSettings `allowPriorityBids`](https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html#212-allowprioritybids)
+for how priority bids are ranked.
