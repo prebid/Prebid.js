@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import publicModules from '../../gulp.publicModules.js';
 
-const { renderPublicModule, getPublicParent, getPublicModule } = publicModules;
+const { renderPublicModule, getPublicParent, getPublicModule, isOverridden } = publicModules;
 
 /**
  * The public module files are what NPM consumers import (`prebid.js/modules/<name>`, through package.json "exports").
@@ -41,8 +41,9 @@ describe('renderPublicModule', () => {
  * Directory with empty `files`, for the duration of the enclosing suite
  */
 function useFiles(files) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publicModules-'));
+  let dir;
   before(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publicModules-'));
     files.forEach(file => {
       fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
       fs.writeFileSync(path.join(dir, file), '');
@@ -51,7 +52,7 @@ function useFiles(files) {
   after(() => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
-  return dir;
+  return () => dir;
 }
 
 describe('getPublicParent', () => {
@@ -69,7 +70,7 @@ describe('getPublicParent', () => {
   ]);
 
   it('is null for modules that are not submodules', () => {
-    expect(getPublicParent('other', 'js', dir, getParentModule)).to.equal(null);
+    expect(getPublicParent('other', 'js', dir(), getParentModule)).to.equal(null);
   });
 
   Object.entries({
@@ -78,16 +79,16 @@ describe('getPublicParent', () => {
     'single file parents': ['fileSub', 'fileParent', 'js'],
   }).forEach(([t, [sub, parent, ext]]) => {
     it(`finds ${t}`, () => {
-      expect(getPublicParent(sub, ext, dir, getParentModule)).to.equal(parent);
+      expect(getPublicParent(sub, ext, dir(), getParentModule)).to.equal(parent);
     });
   });
 
   it('finds parents with a public override', () => {
-    expect(getPublicParent('overrideSub', 'd.ts', dir, getParentModule)).to.equal('overrideParent');
+    expect(getPublicParent('overrideSub', 'd.ts', dir(), getParentModule)).to.equal('overrideParent');
   });
 
   it('is null when the parent has no version for the extension', () => {
-    expect(getPublicParent('fileSub', 'd.ts', dir, getParentModule)).to.equal(null);
+    expect(getPublicParent('fileSub', 'd.ts', dir(), getParentModule)).to.equal(null);
   });
 });
 
@@ -106,7 +107,7 @@ describe('getPublicModule', () => {
 
   function publicModule(ext, file) {
     const moduleName = path.basename(file).replace(/\..*$/, '');
-    return getPublicModule(ext, path.join(dir, file), moduleName, `../${file}`, dir, getParentModule);
+    return getPublicModule(ext, path.join(dir(), file), moduleName, `../${file}`, dir(), getParentModule);
   }
 
   it('renders the version for the same extension', () => {
@@ -125,6 +126,27 @@ describe('getPublicModule', () => {
   }).forEach(([t, file]) => {
     it(`gives no declarations from the JS of ${t}`, () => {
       expect(publicModule('d.ts', file)).to.equal(null);
+    });
+  });
+});
+
+describe('isOverridden', () => {
+  const dir = useFiles([
+    'jsOverride.js',
+    'tsOverride.ts',
+    'declarationOverride.d.ts',
+  ]);
+
+  Object.entries({
+    'jsOverride': { 'js': true, 'd.ts': false },
+    'tsOverride': { 'js': true, 'd.ts': true },
+    'declarationOverride': { 'js': false, 'd.ts': true },
+    'other': { 'js': false, 'd.ts': false },
+  }).forEach(([moduleName, expected]) => {
+    Object.entries(expected).forEach(([ext, overridden]) => {
+      it(`is ${overridden} for the ${ext} version of ${moduleName}`, () => {
+        expect(isOverridden(moduleName, ext, dir())).to.equal(overridden);
+      });
     });
   });
 });

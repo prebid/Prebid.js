@@ -47,7 +47,6 @@ function getPublicParent(moduleName, ext, precompiledDir, getParentModule = help
 
 /**
  * Contents of the public `ext` version of `moduleName`, given one of its precompiled files - null if it should have none.
- * JS-only modules have no declarations, but submodules among them still get a public one, to bring in their parent's.
  */
 function getPublicModule(ext, file, moduleName, modulePath, precompiledDir, getParentModule = helpers.getParentModule) {
   const parent = getPublicParent(moduleName, ext, precompiledDir, getParentModule);
@@ -60,9 +59,22 @@ function getPublicModule(ext, file, moduleName, modulePath, precompiledDir, getP
   return null;
 }
 
+const OVERRIDE_SOURCES = {
+  'js': ['js', 'ts'],
+  'd.ts': ['d.ts', 'ts'],
+};
+
+/**
+ * Whether `moduleName` has a hand-written public `ext` version in the source `public` folder, to use instead of the generated one.
+ */
+function isOverridden(moduleName, ext, overrideDir = path.join(__dirname, 'public')) {
+  return OVERRIDE_SOURCES[ext].some(srcExt => fs.existsSync(path.join(overrideDir, `${moduleName}.${srcExt}`)));
+}
+
 module.exports = {
   PUBLIC_MODULE_EXTENSIONS: Object.keys(PUBLIC_MODULE_TEMPLATES),
   renderPublicModule,
   getPublicParent,
   getPublicModule,
+  isOverridden,
 };

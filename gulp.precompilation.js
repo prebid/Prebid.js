@@ -41,10 +41,9 @@ const tap = require('gulp-tap');
 const _ = require('lodash');
 const fs = require('fs');
 const {Transform} = require('node:stream');
-const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
-const {PUBLIC_MODULE_EXTENSIONS, getPublicModule} = require('./gulp.publicModules.js');
+const {PUBLIC_MODULE_EXTENSIONS, getPublicModule, isOverridden} = require('./gulp.publicModules.js');
 const {
   cachedPipeline,
   getDefaults,
@@ -259,43 +258,31 @@ const generatePublicModules = _.memoize(
       return {moduleName, modulePath, publicPath}
     }
 
-    const generated = new Set();
-
-    function isNotOverridden(file) {
-      // a public version that is already there is a manual override from `public`, unless this process generated it -
-      // `dist/src` is emptied once per process
-      const {publicPath} = getNames(file);
-      return generated.has(publicPath) || !fs.existsSync(publicPath)
-    }
-
-    return function (done) {
-      filter.then(({default: filter}) => {
-        const exts = ext === 'd.ts' ? [ext, 'js'] : [ext];
-        gulp.src(exts.flatMap(ext => [
-          helpers.getPrecompiledPath(`modules/*.${ext}`),
-          helpers.getPrecompiledPath(`modules/**/index.${ext}`),
-        ]).concat([
-          `!${publicDir}/**/*`
-        ]), {since: gulp.lastRun(generatePublicModules(ext))})
-          .pipe(filter(isNotOverridden))
-          .pipe(new Transform({
-            objectMode: true,
-            transform(file, enc, cb) {
-              const {moduleName, modulePath, publicPath} = getNames(file);
-              const contents = getPublicModule(ext, file.path, moduleName, toModulePath(modulePath), helpers.getPrecompiledPath());
-              if (contents == null) {
-                cb();
-              } else {
-                file.contents = Buffer.from(contents);
-                file.path = publicPath;
-                generated.add(publicPath);
-                cb(null, file);
-              }
+    return function () {
+      const exts = ext === 'd.ts' ? [ext, 'js'] : [ext];
+      return gulp.src(exts.flatMap(ext => [
+        helpers.getPrecompiledPath(`modules/*.${ext}`),
+        helpers.getPrecompiledPath(`modules/**/index.${ext}`),
+      ]).concat([
+        `!${publicDir}/**/*`
+      ]), {since: gulp.lastRun(generatePublicModules(ext))})
+        .pipe(new Transform({
+          objectMode: true,
+          transform(file, enc, cb) {
+            const {moduleName, modulePath, publicPath} = getNames(file);
+            const contents = isOverridden(moduleName, ext)
+              ? null
+              : getPublicModule(ext, file.path, moduleName, toModulePath(modulePath), helpers.getPrecompiledPath());
+            if (contents == null) {
+              cb();
+            } else {
+              file.contents = Buffer.from(contents);
+              file.path = publicPath;
+              cb(null, file);
             }
-          }))
-          .pipe(gulp.dest(publicDir))
-          .on('end', done);
-      })
+          }
+        }))
+        .pipe(gulp.dest(publicDir));
     }
   },
 )
