@@ -6,6 +6,8 @@ import { NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
+import { convertCurrency } from '../libraries/currencyUtils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,11 +15,13 @@ import { getDNT } from '../libraries/dnt/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('./smaatoBidAdapter.d.ts').SmaatoBidderParams} SmaatoBidderParams
+ * @typedef {BidRequest & {params: SmaatoBidderParams}} SmaatoBidRequest
  */
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.3';
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.4';
 const TTL = 300;
 const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
@@ -32,7 +36,7 @@ export const spec = {
   /**
    * Determines whether the given bid request is valid.
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {SmaatoBidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
@@ -108,7 +112,6 @@ export const spec = {
     const response = serverResponse.body;
     logInfo('[SMAATO] OpenRTB Response:', response);
 
-    const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
     const bids = [];
     response.seatbid.forEach(seatbid => {
       seatbid.bid.forEach(bid => {
@@ -130,25 +133,24 @@ export const spec = {
           }
         };
 
-        switch (smtAdType) {
-          case 'Img':
-          case 'Richmedia':
+        switch (ORTB_MTYPES[bid.mtype]) {
+          case BANNER:
             resultingBid.ad = createBannerAd(bid);
             resultingBid.mediaType = BANNER;
             bids.push(resultingBid);
             break;
-          case 'Video':
+          case VIDEO:
             resultingBid.vastXml = bid.adm;
             resultingBid.mediaType = VIDEO;
             bids.push(resultingBid);
             break;
-          case 'Native':
+          case NATIVE:
             resultingBid.native = createNativeAd(bid.adm);
             resultingBid.mediaType = NATIVE;
             bids.push(resultingBid);
             break;
           default:
-            logInfo('[SMAATO] Invalid ad type:', smtAdType);
+            logInfo('[SMAATO] Invalid mtype:', bid.mtype);
         }
         resultingBid.meta.mediaType = resultingBid.mediaType;
       });
@@ -165,15 +167,25 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
     if (syncOptions) {
-      let gdprParams = '';
+      let consentParams = '';
       if (gdprConsent && gdprConsent.consentString) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          gdprParams = `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+          consentParams = `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
         } else {
-          gdprParams = `&gdpr_consent=${gdprConsent.consentString}`;
+          consentParams = `&gdpr_consent=${gdprConsent.consentString}`;
         }
+      }
+      if (uspConsent) {
+        consentParams += `&us_privacy=${encodeURIComponent(uspConsent)}`;
+      }
+      if (gppConsent?.gppString) {
+        consentParams += `&gpp=${encodeURIComponent(gppConsent.gppString)}`;
+        consentParams += `&gpp_sid=${encodeURIComponent((gppConsent.applicableSections || []).join(','))}`;
+      }
+      if (coppa) {
+        consentParams += '&coppa=1';
       }
 
       if (syncOptions.iframeEnabled) {
@@ -184,12 +196,12 @@ export const spec = {
 
         return [{
           type: 'iframe',
-          url: IFRAME_SYNC_URL + gdprParams + maxUrlsParam
+          url: IFRAME_SYNC_URL + consentParams + maxUrlsParam
         }];
       } else if (syncOptions.pixelEnabled) {
         return [{
           type: 'image',
-          url: IMAGE_SYNC_URL + gdprParams
+          url: IMAGE_SYNC_URL + consentParams
         }];
       }
     }
@@ -291,11 +303,7 @@ const converter = ortbConverter({
       }
     }
 
-    request.source = {
-      ext: {
-        schain: bidRequest?.ortb2?.source?.ext?.schain
-      }
-    };
+    deepSetValue(request, 'source.ext.schain', bidRequest?.ortb2?.source?.ext?.schain);
     request.ext = {
       client: SMAATO_CLIENT
     };
@@ -304,10 +312,15 @@ const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, 'tagid', bidRequest.params.adbreakId || bidRequest.params.adspaceId);
+    deepSetValue(imp, 'tagid', bidRequest.params.adspaceId);
     if (imp.bidfloorcur && imp.bidfloorcur !== CURRENCY) {
-      delete imp.bidfloor;
-      delete imp.bidfloorcur;
+      try {
+        imp.bidfloor = convertCurrency(imp.bidfloor, imp.bidfloorcur, CURRENCY, false);
+        imp.bidfloorcur = CURRENCY;
+      } catch (e) {
+        delete imp.bidfloor;
+        delete imp.bidfloorcur;
+      }
     }
     return imp;
   },
@@ -317,7 +330,7 @@ const converter = ortbConverter({
       banner(orig, imp, bidRequest, context) {
         const mediaType = context.mediaType;
         if (mediaType === BANNER) {
-          imp.bidfloor = getBidFloor(bidRequest, BANNER, getAdUnitSizes(bidRequest));
+          setBidFloor(imp, bidRequest, BANNER, getAdUnitSizes(bidRequest));
         }
 
         orig(imp, bidRequest, context);
@@ -327,7 +340,7 @@ const converter = ortbConverter({
         const mediaType = context.mediaType;
         if (mediaType === VIDEO) {
           const videoParams = bidRequest.mediaTypes[VIDEO];
-          imp.bidfloor = getBidFloor(bidRequest, VIDEO, videoParams.playerSize);
+          setBidFloor(imp, bidRequest, VIDEO, videoParams.playerSize);
           deepSetValue(imp, 'video.ext', {
             rewarded: videoParams.ext && videoParams.ext.rewarded ? videoParams.ext.rewarded : 0
           });
@@ -339,7 +352,7 @@ const converter = ortbConverter({
       native(orig, imp, bidRequest, context) {
         const mediaType = context.mediaType;
         if (mediaType === NATIVE) {
-          imp.bidfloor = getBidFloor(bidRequest, NATIVE, getNativeMainImageSize(bidRequest.nativeOrtbRequest));
+          setBidFloor(imp, bidRequest, NATIVE, getNativeMainImageSize(bidRequest.nativeOrtbRequest));
         }
 
         orig(imp, bidRequest, context);
@@ -353,7 +366,7 @@ const createBannerAd = (bid) => {
   if (bid.ext && bid.ext.curls) {
     let clicks = '';
     bid.ext.curls.forEach(src => {
-      clicks += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
+      clicks += `fetch(decodeURIComponent('${encodeURIComponent(src).replace(/'/g, '%27')}'), {cache: 'no-cache'});`;
     });
     clickEvent = `onclick="${clicks}"`;
   }
@@ -379,6 +392,14 @@ function getNativeMainImageSize(nativeRequest) {
     }
   }
   return [];
+}
+
+function setBidFloor(imp, bidRequest, mediaType, sizes) {
+  const floor = getBidFloor(bidRequest, mediaType, sizes);
+  if (floor !== undefined) {
+    imp.bidfloor = floor;
+    imp.bidfloorcur = CURRENCY;
+  }
 }
 
 function getBidFloor(bidRequest, mediaType, sizes) {

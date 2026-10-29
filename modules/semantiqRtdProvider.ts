@@ -1,15 +1,16 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { ajax, fetch } from '../src/ajax.js';
+import type { XHR } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { generateUUID, getWindowLocation, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.ts';
+import type { AllConsentData } from '../src/consentHandler.ts';
+import type { StartAuctionOptions } from '../src/prebid.ts';
+import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 
-/**
- * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- */
-
-const MODULE_NAME = 'realTimeData';
-const SUBMODULE_NAME = 'semantiq';
+const MODULE_NAME = 'realTimeData' as const;
+const SUBMODULE_NAME = 'semantiq' as const;
 const LOG_PREFIX = '[SemantIQ RTD Module]: ';
 const KEYWORDS_URL = 'https://api.adnz.co/api/ws-semantiq/page-keywords';
 const EVENT_COLLECTOR_URL = 'https://api.adnz.co/api/ws-clickstream-collector/submit';
@@ -19,6 +20,76 @@ const FALLBACK_TENANT_IDS = [AUDIENZZ_COMPANY_ID];
 const AUDIENZZ_GLOBAL_VENDOR_ID = 783;
 const DEFAULT_TIMEOUT = 1000;
 
+/**
+ * Keyword value returned by the SemantIQ page-keywords API.
+ * A missing or empty value is omitted from the ORTB keyword string.
+ */
+export type SemantiqKeywordValue = string | string[] | null | undefined;
+
+/**
+ * Keywords keyed by the SemantIQ field name.
+ */
+export type SemantiqKeywords = Record<string, SemantiqKeywordValue>;
+
+/**
+ * Publisher configuration for the SemantIQ RTD module.
+ */
+export interface SemantiqRtdParams {
+  /**
+   * Company ID or IDs obtained from Audienzz.
+   */
+  companyId?: number | number[];
+  /**
+   * The maximum time to wait for a response, in milliseconds.
+   */
+  timeout?: number;
+}
+
+declare module './rtdModule/spec.ts' {
+  interface ProviderConfig {
+    semantiq: {
+      params?: SemantiqRtdParams;
+    };
+  }
+}
+
+declare global {
+  interface Window {
+    audienzz?: {
+      collectorPageImpressionId?: string;
+    };
+  }
+}
+
+interface StoredSemantiqKeywords {
+  url: string;
+  keywords: SemantiqKeywords;
+}
+
+function isKeywordValue(value: unknown): value is SemantiqKeywordValue {
+  if (value == null || typeof value === 'string') {
+    return true;
+  }
+
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function isSemantiqKeywords(value: unknown): value is SemantiqKeywords {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+
+  return Object.values(value).every(isKeywordValue);
+}
+
+function isStoredSemantiqKeywords(value: unknown): value is StoredSemantiqKeywords {
+  if (!isPlainObject(value) || typeof value.url !== 'string') {
+    return false;
+  }
+
+  return isSemantiqKeywords(value.keywords);
+}
+
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: SUBMODULE_NAME,
@@ -26,18 +97,16 @@ export const storage = getStorageManager({
 
 /**
  * Gets SemantIQ keywords from session storage.
- * @param {string} pageUrl
- * @returns {Object.<string, string | string[]>}
  */
-const getStorageKeywords = (pageUrl) => {
+const getStorageKeywords = (pageUrl: string): SemantiqKeywords | null => {
   try {
-    const storageValue = JSON.parse(storage.getDataFromSessionStorage(STORAGE_KEY));
+    const storageValue: unknown = JSON.parse(storage.getDataFromSessionStorage(STORAGE_KEY));
 
-    if (storageValue?.url === pageUrl) {
-      return storageValue.keywords;
+    if (!isStoredSemantiqKeywords(storageValue) || storageValue.url !== pageUrl) {
+      return null;
     }
 
-    return null;
+    return storageValue.keywords;
   } catch (error) {
     logError('Unable to get SemantiQ keywords from session storage', error);
 
@@ -47,28 +116,40 @@ const getStorageKeywords = (pageUrl) => {
 
 /**
  * Gets URL of the current page.
- * @returns {string}
  */
-const getPageUrl = () => getWindowLocation().href;
+const getPageUrl = (): string => getWindowLocation().href;
+
+function toCompanyIds(companyIdOrIds: number | number[] | undefined): number[] {
+  if (Array.isArray(companyIdOrIds)) {
+    return companyIdOrIds;
+  }
+
+  if (companyIdOrIds == null) {
+    return [];
+  }
+
+  return [companyIdOrIds];
+}
 
 /**
- * Gets tenant IDs based on the module params
- * @param {Object} params
- * @returns {number[]}
+ * Gets tenant IDs from the module params.
+ * A missing or all-falsy company id falls back to the Audienzz company id.
+ * A list that contains any real id is returned unchanged, including falsy entries.
  */
-const getTenantIds = (params = {}) => {
-  const { companyId } = params;
-  const companyIdArray = Array.isArray(companyId) ? companyId : [companyId];
+const getTenantIds = (params: SemantiqRtdParams = {}): number[] => {
+  const companyIds = toCompanyIds(params.companyId);
 
-  return companyIdArray.filter(Boolean).length ? companyIdArray : FALLBACK_TENANT_IDS;
+  if (companyIds.some(Boolean)) {
+    return companyIds;
+  }
+
+  return FALLBACK_TENANT_IDS;
 };
 
 /**
- * Gets keywords from cache or SemantIQ service.
- * @param {Object} params
- * @returns {Promise<Object.<string, string | string[]>>}
+ * Gets keywords from cache or the SemantIQ service.
  */
-const getKeywords = (params) => new Promise((resolve, reject) => {
+const getKeywords = (params: SemantiqRtdParams): Promise<SemantiqKeywords> => new Promise((resolve, reject) => {
   const pageUrl = getPageUrl();
   const storageKeywords = getStorageKeywords(pageUrl);
 
@@ -85,15 +166,15 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
   const requestUrl = `${KEYWORDS_URL}?${searchParams.toString()}`;
 
   const callbacks = {
-    success(responseText, response) {
+    success(responseText: string, response: XHR) {
       try {
         if (response.status !== 200) {
           throw new Error('Invalid response status');
         }
 
-        const data = JSON.parse(responseText);
+        const data: unknown = JSON.parse(responseText);
 
-        if (!data) {
+        if (!isSemantiqKeywords(data)) {
           throw new Error('Failed to parse the response');
         }
 
@@ -103,7 +184,7 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
         reject(error);
       }
     },
-    error(error) {
+    error(error: string) {
       reject(error);
     }
   };
@@ -113,12 +194,13 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
 
 /**
  * Converts a single key-value pair to an ORTB keyword string.
- * @param {string} key
- * @param {string | string[]} value
- * @returns {string}
  */
-export const convertSemantiqKeywordToOrtb = (key, value) => {
-  if (!value || !value.length) {
+export const convertSemantiqKeywordToOrtb = (key: string, value: SemantiqKeywordValue): string => {
+  if (typeof value !== 'string' && !Array.isArray(value)) {
+    return '';
+  }
+
+  if (!value.length) {
     return '';
   }
 
@@ -131,10 +213,8 @@ export const convertSemantiqKeywordToOrtb = (key, value) => {
 
 /**
  * Converts SemantIQ keywords to ORTB format.
- * @param {Object.<string, string | string[]>} keywords
- * @returns {string}
  */
-export const getOrtbKeywords = (keywords) => Object.entries(keywords).reduce((acc, entry) => {
+export const getOrtbKeywords = (keywords: SemantiqKeywords): string => Object.entries(keywords).reduce<string[]>((acc, entry) => {
   const [key, values] = entry;
   const ortbKeywordString = convertSemantiqKeywordToOrtb(key, values);
 
@@ -143,11 +223,8 @@ export const getOrtbKeywords = (keywords) => Object.entries(keywords).reduce((ac
 
 /**
  * Dispatches a page impression event to the SemantIQ service.
- *
- * @param {number} companyId
- * @returns {Promise<void>}
  */
-const dispatchPageImpressionEvent = (companyId) => {
+const dispatchPageImpressionEvent = (companyId: number) => {
   window.audienzz = window.audienzz || {};
   window.audienzz.collectorPageImpressionId = window.audienzz.collectorPageImpressionId || generateUUID();
   const pageImpressionId = window.audienzz.collectorPageImpressionId;
@@ -174,12 +251,9 @@ const dispatchPageImpressionEvent = (companyId) => {
 };
 
 /**
- * Module init
- * @param {Object} config
- * @param {Object} userConsent
- * @return {boolean}
+ * Module init.
  */
-const init = (config, userConsent) => {
+const init = (config: RTDProviderConfig<'semantiq'>, userConsent: AllConsentData): boolean => {
   const { params = {} } = config;
   const [mainCompanyId] = getTenantIds(params);
 
@@ -189,15 +263,12 @@ const init = (config, userConsent) => {
 };
 
 /**
- * Receives real-time data from SemantIQ service.
- * @param {Object} reqBidsConfigObj
- * @param {function} onDone
- * @param {Object} moduleConfig
+ * Receives real-time data from the SemantIQ service.
  */
 const getBidRequestData = (
-  reqBidsConfigObj,
-  onDone,
-  moduleConfig,
+  reqBidsConfigObj: StartAuctionOptions,
+  onDone: () => void,
+  moduleConfig?: RTDProviderConfig<'semantiq'>,
 ) => {
   let isDone = false;
 
@@ -245,8 +316,7 @@ const getBidRequestData = (
   }, timeout);
 };
 
-/** @type {RtdSubmodule} */
-export const semantiqRtdSubmodule = {
+export const semantiqRtdSubmodule: RtdProviderSpec<'semantiq'> = {
   name: SUBMODULE_NAME,
   getBidRequestData,
   init,
