@@ -34,6 +34,15 @@ describe('Generic analytics', () => {
         expect(adapter.enabled).to.be.true;
       });
 
+      [123, [123, 456]].forEach(gvlid => {
+        it(`should accept gvlid ${JSON.stringify(gvlid)}`, () => {
+          const config = { options: { url: 'mock', gvlid } };
+          adapter.enableAnalytics(config);
+          expect(adapter.enabled).to.be.true;
+          expect(adapter.gvlid(config)).to.eql(gvlid);
+        });
+      });
+
       describe('should not work if', () => {
         afterEach(function() {
           expect(adapter.enabled).to.equal(false, this.currentTest.title);
@@ -49,6 +58,21 @@ describe('Generic analytics', () => {
               options: {
                 url: 'mock',
                 [option]: false
+              }
+            });
+          });
+        });
+
+        Object.entries({
+          'a string': '123',
+          'an empty array': [],
+          'an array with non-numbers': [123, '456'],
+        }).forEach(([t, gvlid]) => {
+          it(`gvlid is ${t}`, () => {
+            adapter.enableAnalytics({
+              options: {
+                url: 'mock',
+                gvlid
               }
             });
           });
