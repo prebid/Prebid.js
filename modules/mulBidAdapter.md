@@ -95,6 +95,12 @@ var adUnits = [
 ];
 ```
 
+# Video Support
+
+The MonetiseUp adapter supports Video ads via both direct VAST XML (`vastXml`) and VAST URLs (`vastUrl`).
+- **Instream**: Video ads support standard `instream` player contexts.
+- **Outstream**: For `outstream` context, a publisher-defined renderer (e.g. `renderer: { url, render }`) or `useCacheKey` must be supplied on the ad unit.
+
 # User Sync and Device Storage Disclosure
 
 When user syncing is enabled in Prebid (`userSync.filterSettings`), the adapter triggers user synchronization via the endpoint `https://bid5up.monetiseup.com/api/usersync`.

@@ -13,6 +13,12 @@ describe('mulBidAdapter', function () {
         sizes: [[300, 250]]
       }
     },
+    ortb2Imp: {
+      instl: 1,
+      ext: {
+        gpid: '/1234/homepage#slot1'
+      }
+    },
     bidId: '22c4871113f461'
   };
 
@@ -49,6 +55,7 @@ describe('mulBidAdapter', function () {
       consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA'
     },
     uspConsent: '1---',
+    bids: [bannerBid, videoBid],
     ortb2: {
       site: {
         name: 'Publisher Site'
@@ -86,10 +93,51 @@ describe('mulBidAdapter', function () {
       expect(spec.isBidRequestValid({})).to.be.false;
       expect(spec.isBidRequestValid({ params: {} })).to.be.false;
     });
+
+    it('should return false for outstream video when no renderer or useCacheKey is provided', function () {
+      const outstreamBid = {
+        params: { placementId: 'test-outstream' },
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(outstreamBid)).to.be.false;
+    });
+
+    it('should return true for outstream video when renderer is provided', function () {
+      const outstreamBidWithRenderer = {
+        params: { placementId: 'test-outstream' },
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        },
+        renderer: { render: () => {} }
+      };
+      expect(spec.isBidRequestValid(outstreamBidWithRenderer)).to.be.true;
+    });
+
+    it('should return true for outstream video when useCacheKey is true', function () {
+      const outstreamBidWithCacheKey = {
+        params: { placementId: 'test-outstream' },
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]],
+            useCacheKey: true
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(outstreamBidWithCacheKey)).to.be.true;
+    });
   });
 
   describe('buildRequests', function () {
-    it('should build a valid POST request with banner and video payloads and FPD', function () {
+    it('should build a valid POST request with banner, video, instl, gpid, and FPD', function () {
       const serverRequest = spec.buildRequests([bannerBid, videoBid], bidderRequest);
       expect(serverRequest.method).to.equal('POST');
       expect(serverRequest.url).to.contain('/api/bid');
@@ -110,6 +158,8 @@ describe('mulBidAdapter', function () {
       expect(data.bids[0].bidId).to.equal('22c4871113f461');
       expect(data.bids[0].placementId).to.equal('test-placement-123');
       expect(data.bids[0].banner.sizes).to.deep.equal([[300, 250]]);
+      expect(data.bids[0].instl).to.equal(1);
+      expect(data.bids[0].gpid).to.equal('/1234/homepage#slot1');
 
       // Video bid check
       expect(data.bids[1].bidId).to.equal('33d5982224e572');
@@ -122,7 +172,7 @@ describe('mulBidAdapter', function () {
       expect(data.bids[1].video.maxduration).to.equal(30);
     });
 
-    it('should respect getFloor and custom bidfloor params', function () {
+    it('should respect getFloor and fallback bidfloor params', function () {
       const floorBid = {
         ...bannerBid,
         getFloor: () => ({ currency: 'USD', floor: 1.75 })
@@ -130,6 +180,15 @@ describe('mulBidAdapter', function () {
       const req = spec.buildRequests([floorBid], bidderRequest);
       const data = JSON.parse(req.data);
       expect(data.bids[0].floor).to.equal(1.75);
+
+      const fallbackFloorBid = {
+        bidder: 'mul',
+        params: { placementId: 'test-placement-123', bidfloor: 0.85, bidfloorcur: 'EUR' }
+      };
+      const reqFallback = spec.buildRequests([fallbackFloorBid], bidderRequest);
+      const dataFallback = JSON.parse(reqFallback.data);
+      expect(dataFallback.bids[0].floor).to.equal(0.85);
+      expect(dataFallback.bids[0].floorCurrency).to.equal('EUR');
     });
   });
 
@@ -151,7 +210,7 @@ describe('mulBidAdapter', function () {
         ]
       };
 
-      const result = spec.interpretResponse(mockServerResponse, {});
+      const result = spec.interpretResponse(mockServerResponse, { bidderRequest });
       expect(result).to.have.lengthOf(1);
       const bidResponse = result[0];
 
@@ -169,7 +228,17 @@ describe('mulBidAdapter', function () {
       expect(bidResponse.meta.mediaType).to.equal(BANNER);
     });
 
-    it('should map video server response with vastUrl and vastXml to Prebid video response', function () {
+    it('should map video server response with vastUrl and vastXml to Prebid video response and attach renderer if available', function () {
+      const mockRenderer = { render: () => {} };
+      const outstreamVideoBid = {
+        ...videoBid,
+        renderer: mockRenderer
+      };
+      const customBidderRequest = {
+        ...bidderRequest,
+        bids: [outstreamVideoBid]
+      };
+
       const mockVideoServerResponse = {
         body: [
           {
@@ -188,7 +257,7 @@ describe('mulBidAdapter', function () {
         ]
       };
 
-      const result = spec.interpretResponse(mockVideoServerResponse, {});
+      const result = spec.interpretResponse(mockVideoServerResponse, { bidderRequest: customBidderRequest });
       expect(result).to.have.lengthOf(1);
       const videoResponse = result[0];
 
@@ -198,6 +267,7 @@ describe('mulBidAdapter', function () {
       expect(videoResponse.vastUrl).to.equal('https://bid5up.monetiseup.com/vast/123.xml');
       expect(videoResponse.vastXml).to.equal('<VAST version="3.0"></VAST>');
       expect(videoResponse.playerSize).to.deep.equal([640, 480]);
+      expect(videoResponse.renderer).to.equal(mockRenderer);
       expect(videoResponse.meta.mediaType).to.equal(VIDEO);
     });
 
@@ -216,6 +286,12 @@ describe('mulBidAdapter', function () {
       expect(syncs[0].url).to.contain('gdpr=1');
       expect(syncs[0].url).to.contain('consent_123');
       expect(syncs[0].url).to.contain('us_privacy=1---');
+    });
+
+    it('should format gdpr_consent when gdprApplies is undefined but consentString exists', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], { consentString: 'consent_only' }, '', null, false);
+      expect(syncs[0].url).to.contain('gdpr_consent=consent_only');
+      expect(syncs[0].url).to.not.contain('gdpr=');
     });
 
     it('should return image sync when pixelEnabled is true', function () {

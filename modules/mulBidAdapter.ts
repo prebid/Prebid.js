@@ -27,9 +27,22 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 
   /**
    * Validates whether or not the bid request has required publisher params.
+   * For outstream video, enforces that a publisher-defined renderer or useCacheKey is provided.
    */
-  isBidRequestValid: function (bid: { params?: MulBidParams }): boolean {
-    return !!(bid && bid.params && (bid.params.placement || bid.params.placementId || bid.params.zoneId));
+  isBidRequestValid: function (bid: { params?: MulBidParams; mediaTypes?: any; renderer?: any }): boolean {
+    const hasRequiredParams = !!(bid && bid.params && (bid.params.placement || bid.params.placementId || bid.params.zoneId));
+    if (!hasRequiredParams) {
+      return false;
+    }
+
+    if (bid.mediaTypes?.video?.context === 'outstream') {
+      const hasRenderer = !!(bid.renderer || bid.mediaTypes?.video?.renderer);
+      if (!hasRenderer && !bid.mediaTypes?.video?.useCacheKey) {
+        return false;
+      }
+    }
+
+    return true;
   },
 
   /**
@@ -88,6 +101,10 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         };
       }
 
+      if (bid.ortb2Imp?.instl != null) {
+        bidItem.instl = bid.ortb2Imp.instl;
+      }
+
       if (bid.ortb2Imp?.ext?.gpid) {
         bidItem.gpid = bid.ortb2Imp.ext.gpid;
       }
@@ -122,6 +139,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: JSON.stringify(payload),
+      bidderRequest: bidderRequest,
       options: {
         contentType: 'text/plain' // Simple request prevents CORS preflight
       }
@@ -181,6 +199,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           bidResponse.vastXml = bid.vastXml;
         }
         bidResponse.playerSize = [bid.width, bid.height];
+
+        // Attach renderer from matching bid request if available (for outstream)
+        const matchingBid = request?.bidderRequest?.bids?.find((b: any) => b.bidId === bid.bidId);
+        if (matchingBid?.renderer) {
+          bidResponse.renderer = matchingBid.renderer;
+        }
       } else {
         bidResponse.ad = bid.adHtml;
       }
