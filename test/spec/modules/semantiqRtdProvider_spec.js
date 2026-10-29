@@ -3,6 +3,13 @@ import { expect } from 'chai';
 import { server } from '../../mocks/xhr.js';
 import * as utils from '../../../src/utils.js';
 
+const flushPromises = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
 describe('semantiqRtdProvider', () => {
   let clock;
   let getDataFromSessionStorage;
@@ -315,17 +322,23 @@ describe('semantiqRtdProvider', () => {
     it("won't modify ortb2 if if no ad units are provided", async () => {
       const reqBidsConfigObj = {
         adUnits: [],
-        ortb2Fragments: {}
+        ortb2Fragments: {
+          global: {}
+        }
       };
 
       const onDoneSpy = sinon.spy();
 
       semantiqRtdSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, { params: {} }, {});
+      await flushPromises();
 
       expect(onDoneSpy.calledOnce).to.be.true;
+      expect(server.requests).to.have.lengthOf(0);
       expect(reqBidsConfigObj).to.deep.equal({
         adUnits: [],
-        ortb2Fragments: {}
+        ortb2Fragments: {
+          global: {}
+        }
       });
     });
 
@@ -418,7 +431,9 @@ describe('semantiqRtdProvider', () => {
     it("won't modify ortb2 if response time hits timeout", async () => {
       const reqBidsConfigObj = {
         adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
-        ortb2Fragments: {},
+        ortb2Fragments: {
+          global: {}
+        },
       };
       const onDoneSpy = sinon.spy();
 
@@ -431,10 +446,19 @@ describe('semantiqRtdProvider', () => {
 
       await promise;
 
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify({ sentiment: 'negative' })
+      );
+      await flushPromises();
+
       expect(onDoneSpy.calledOnce).to.be.true;
       expect(reqBidsConfigObj).to.deep.equal({
         adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
-        ortb2Fragments: {},
+        ortb2Fragments: {
+          global: {}
+        },
       });
     });
   });
