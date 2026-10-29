@@ -1040,6 +1040,27 @@ describe('Nobid Adapter', function () {
       expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING);
     });
 
+    it('should add gpp and gpp_sid as separate params', function () {
+      const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined,
+        { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [7, 8] });
+      expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html' +
+        '?gpp=DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA&gpp_sid=7%2C8');
+    });
+
+    it('should append gpp after gdpr and usp with &', function () {
+      const pixel = spec.getUserSyncs({ iframeEnabled: true }, {},
+        { gdprApplies: true, consentString: GDPR_CONSENT_STRING }, '1YNN',
+        { gppString: 'GPP', applicableSections: [2] });
+      expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html' +
+        '?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&usp_consent=1YNN&gpp=GPP&gpp_sid=2');
+    });
+
+    it('should omit gpp when there are no applicable sections', function () {
+      const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined,
+        { gppString: 'GPP', applicableSections: [] });
+      expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html');
+    });
+
     it('should get correct user sync when !iframeEnabled', function () {
       const pixel = spec.getUserSyncs({ iframeEnabled: false });
       expect(pixel.length).to.equal(0);

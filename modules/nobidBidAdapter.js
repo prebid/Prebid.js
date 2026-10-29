@@ -17,7 +17,7 @@ import { coppaDataHandler } from '../src/consentHandler.js';
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-window.nobidVersion = '1.3.4';
+window.nobidVersion = '1.4.2';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -480,7 +480,7 @@ export const spec = {
         if (params.length > 0) params += '&';
         else params += '?';
         params += 'gpp=' + encodeURIComponent(gppConsent.gppString);
-        params += 'gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(','));
+        params += '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(','));
       }
       return [{
         type: 'iframe',
