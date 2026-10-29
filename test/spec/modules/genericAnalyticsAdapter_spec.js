@@ -226,6 +226,46 @@ describe('Generic analytics', () => {
         sinon.assert.calledTwice(handler);
       });
 
+      it('does not send a pending batch after being disabled', () => {
+        adapter.enableAnalytics({
+          options: {
+            batchDelay: 100,
+            batchSize: 10,
+            handler
+          }
+        });
+        events.emit(BID_RESPONSE, { i: 0 });
+        adapter.disableAnalytics();
+        clock.tick(100);
+        sinon.assert.notCalled(handler);
+      });
+
+      it('does not send events queued before being disabled once re-enabled', () => {
+        adapter.enableAnalytics({
+          options: {
+            batchDelay: 100,
+            batchSize: 10,
+            handler
+          }
+        });
+        events.emit(BID_RESPONSE, { i: 0 });
+        adapter.disableAnalytics();
+        const newHandler = sinon.stub();
+        adapter.enableAnalytics({
+          options: {
+            batchDelay: 100,
+            batchSize: 10,
+            handler: newHandler
+          }
+        });
+        events.emit(BID_RESPONSE, { i: 1 });
+        clock.tick(100);
+        sinon.assert.notCalled(handler);
+        sinon.assert.calledOnce(newHandler);
+        sinon.assert.calledWith(newHandler, sinon.match((arg) =>
+          arg.length === 1 && sinon.match({ eventType: BID_RESPONSE, args: { i: 1 } }).test(arg[0])));
+      });
+
       describe('and options.events is specified', () => {
         it('filters out other events', () => {
           adapter.enableAnalytics({
