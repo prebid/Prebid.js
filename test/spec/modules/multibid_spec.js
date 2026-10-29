@@ -10,7 +10,6 @@ import {
 import { config } from 'src/config.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { AuctionIndex } from 'src/auctionIndex.js';
-import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { getHighestCpm, getHighestDesirability } from '../../../src/utils/reducers.js';
 
 describe('multibid adapter', function () {
@@ -193,9 +192,8 @@ describe('multibid adapter', function () {
 
     beforeEach(function() {
       result = null;
-      indexStub = sinon.stub(auctionManager, 'index').value(stubAuctionIndex({
-        bidRequests: ['1c5f0a05d3629a', '2e6j8s05r4363h', '1j8s5f89y2345l'].map(bidId => ({ bidId }))
-      }));
+      const auction = {};
+      indexStub = sinon.stub(auctionManager, 'index').value({ getAuction: () => auction });
     });
 
     afterEach(function () {
@@ -206,55 +204,48 @@ describe('multibid adapter', function () {
       const adUnitCode = 'test.div';
       let added;
 
-      function mockAuction(auctionId, bidIds) {
-        const bidderRequests = [{ bidderRequestId: `${auctionId}-${bidIds[0]}`, bids: bidIds.map(bidId => ({ bidId })) }];
-        return {
-          getAuctionId: () => auctionId,
-          getBidRequests: () => bidderRequests,
-          getAdUnits: () => []
-        };
-      }
+      const mockAuction = (auctionId) => ({ getAuctionId: () => auctionId });
 
       function setAuctions(...auctions) {
         indexStub.value(new AuctionIndex(() => auctions));
       }
 
-      const bidIn = (requestId, auctionId = 'auction') => ({ ...bidArray[0], requestId, auctionId });
+      const bidIn = (auctionId, props = {}) => ({ ...bidArray[0], auctionId, ...props });
 
       beforeEach(function () {
         added = sinon.spy();
         config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 1 }] });
       });
 
-      it('counts bids separately for auctions that share an auctionId', function () {
-        setAuctions(mockAuction('auction', ['r1']), mockAuction('auction', ['r2']));
-        addBidResponseHook(added, adUnitCode, bidIn('r1'));
-        addBidResponseHook(added, adUnitCode, bidIn('r1'));
-        addBidResponseHook(added, adUnitCode, bidIn('r2'));
-        expect(added.args.map(([, bid]) => bid.requestId)).to.eql(['r1', 'r2']);
+      it('counts bids separately for each auction', function () {
+        setAuctions(mockAuction('auction-1'), mockAuction('auction-2'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-2'));
+        expect(added.args.map(([, bid]) => bid.auctionId)).to.eql(['auction-1', 'auction-2']);
       });
 
       it('still counts late bids after another auction has started', function () {
-        const first = mockAuction('auction-1', ['r1']);
+        const first = mockAuction('auction-1');
         setAuctions(first);
-        addBidResponseHook(added, adUnitCode, bidIn('r1', 'auction-1'));
-        setAuctions(first, mockAuction('auction-2', ['r2']));
-        addBidResponseHook(added, adUnitCode, bidIn('r2', 'auction-2'));
-        addBidResponseHook(added, adUnitCode, bidIn('r1', 'auction-1'));
-        expect(added.args.map(([, bid]) => bid.requestId)).to.eql(['r1', 'r2']);
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        setAuctions(first, mockAuction('auction-2'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-2'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        expect(added.args.map(([, bid]) => bid.auctionId)).to.eql(['auction-1', 'auction-2']);
       });
 
-      it('counts bids that have no request against their auction', function () {
-        setAuctions(mockAuction('auction', ['r1']));
-        addBidResponseHook(added, adUnitCode, bidIn('unknown-1'));
-        addBidResponseHook(added, adUnitCode, bidIn('unknown-2'));
+      it('shares the count between bids for different requests in the same auction', function () {
+        setAuctions(mockAuction('auction-1'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1', { requestId: 'client-request' }));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1', { requestId: 's2s-request' }));
         sinon.assert.calledOnce(added);
       });
 
       it('does not limit bids for auctions it cannot find', function () {
         setAuctions();
-        addBidResponseHook(added, adUnitCode, bidIn('r1'));
-        addBidResponseHook(added, adUnitCode, bidIn('r1'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
         sinon.assert.calledTwice(added);
       });
     });
@@ -790,6 +781,18 @@ describe('multibid adapter', function () {
       const conf = [{ bidder: 'bidderA', maxBids: 2.5 }];
       expect(validateMultibid(conf)).to.equal(false);
       expect(conf[0].maxBids).to.equal(2);
+    });
+
+    it('should cap an infinite maxBids at 9 and fail validation', function () {
+      const conf = [{ bidder: 'bidderA', maxBids: Infinity }];
+      expect(validateMultibid(conf)).to.equal(false);
+      expect(conf[0].maxBids).to.equal(9);
+    });
+
+    it('should reset a NaN maxBids to 1 and fail validation', function () {
+      const conf = [{ bidder: 'bidderA', maxBids: NaN }];
+      expect(validateMultibid(conf)).to.equal(false);
+      expect(conf[0].maxBids).to.equal(1);
     });
 
     it('should fail validation for maxbids greater than 9 in entry', function () {

@@ -9,7 +9,7 @@ import {
   logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
 } from '../../src/utils.js';
 import { addBidderRequests } from '../../src/auction.js';
-import { auctionManager } from '../../src/auctionManager.js';
+import { auctionStore } from '../../libraries/weakStore/weakStore.js';
 import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrDesirability } from '../../src/targeting.js';
 import { PBS, registerOrtbProcessor, REQUEST } from '../../src/pbjsORTB.js';
 import { timedBidResponseHook } from '../../src/utils/perfMetrics.js';
@@ -20,16 +20,7 @@ const MODULE_NAME = 'multibid';
 let hasMultibid = false;
 let multiConfig = {};
 type MultibidUnit = { count: number, maxReached?: boolean };
-// Keyed by bidderRequest (or auction, for bids with no request) so that counts are dropped with the auction
-// and auctions sharing a publisher-supplied auctionId don't share counts.
-const multibidUnits = new WeakMap<object, Record<string, Record<BidderCode, MultibidUnit>>>();
-
-function getMultibidUnits(bid) {
-  const owner = auctionManager.index.getBidderRequest(bid) ?? auctionManager.index.getAuction(bid);
-  if (owner == null) return {};
-  if (!multibidUnits.has(owner)) multibidUnits.set(owner, {});
-  return multibidUnits.get(owner);
-}
+const getMultibidUnits: (auctionId: string) => Record<string, Record<BidderCode, MultibidUnit>> | undefined = auctionStore();
 
 type MultiBidConfig = ({
   /**
@@ -102,10 +93,8 @@ export function validateMultibid(conf) {
 
     return true;
   }).map(entry => {
-    // Check if entry.maxBids is not a finite integer in range [1, 9], normalize and reset configuration
-    if (!Number.isFinite(entry.maxBids) || !Number.isInteger(entry.maxBids) || entry.maxBids < 1 || entry.maxBids > 9) {
-      const normalizedMaxBids = Number.isFinite(entry.maxBids) ? Math.floor(entry.maxBids) : 1;
-      entry.maxBids = normalizedMaxBids < 1 ? 1 : (normalizedMaxBids > 9 ? 9 : normalizedMaxBids);
+    if (!Number.isInteger(entry.maxBids) || entry.maxBids < 1 || entry.maxBids > 9) {
+      entry.maxBids = typeof entry.maxBids !== 'number' || Number.isNaN(entry.maxBids) || entry.maxBids < 1 ? 1 : Math.min(9, Math.floor(entry.maxBids));
       check = false;
     }
 
@@ -162,13 +151,10 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
-    const units = getMultibidUnits(bid);
+    const units = getMultibidUnits(bid.auctionId) ?? {};
     const unitPath = [adUnitCode, bid.bidderCode];
     const unit: MultibidUnit = deepAccess(units, unitPath);
-    // Check if stored bids for auction include adUnitCode.bidder and max limit not reach for ad unit
     if (unit) {
-      // Store request id under new property originalRequestId, create new unique bidId,
-      // and push bid into multibid stored bids for auction if max not reached and bid cpm above floor
       if (!unit.maxReached && (!floor || floor <= bid.cpm)) {
         bid.originalRequestId = bid.requestId;
 
