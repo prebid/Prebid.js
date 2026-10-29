@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
   addBidResponseHook,
   adjustBidderRequestsHook,
+  clearMultibidUnitsForAuction,
   resetMultibidUnits,
   resetMultiConfig,
   sortByMultibid,
@@ -212,10 +213,18 @@ describe('multibid adapter', function () {
         expect(added.args.map(([, bid]) => bid.auctionId)).to.eql(['auction-1', 'auction-2']);
       });
 
-      it('forgets an auction once it ends', function () {
+      it('still counts bids received after the auction ends', function () {
         const added = sinon.spy();
         addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
         events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-1' });
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        sinon.assert.calledOnce(added);
+      });
+
+      it('forgets an auction once it expires', function () {
+        const added = sinon.spy();
+        addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
+        clearMultibidUnitsForAuction({ getAuctionId: () => 'auction-1' });
         addBidResponseHook(added, adUnitCode, bidIn('auction-1'));
         sinon.assert.calledTwice(added);
       });
