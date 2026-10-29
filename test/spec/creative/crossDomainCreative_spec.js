@@ -367,4 +367,39 @@ describe('cross-domain creative', () => {
       });
     });
   });
+
+  describe('message routing', () => {
+    beforeEach(() => {
+      win.document.createElement.callsFake(document.createElement.bind(document));
+      win.document.body.appendChild.callsFake(document.body.appendChild.bind(document.body));
+    });
+
+    function renderAndSend(token) {
+      renderAd({ adId: '123', pubUrl: ORIGIN, token });
+      messages[0].transfer[0].postMessage(JSON.stringify({
+        adId: '123',
+        message: MESSAGE_RESPONSE,
+        renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", {foo: "bar"}) }'
+      }));
+    }
+
+    it('sends follow-up messages over the request channel, without the token, when a token is provided', () => {
+      renderAndSend('test');
+      return waitFor(() => channelMessages.length === 2).then(() => {
+        expect(messages.length).to.equal(1);
+        expect(messages[0].payload.token).to.equal('test');
+        channelMessages.forEach(({ payload }) => expect(payload).to.not.have.property('token'));
+      });
+    });
+
+    it('sends each message on its own channel when no token is provided', () => {
+      renderAndSend();
+      return waitFor(() => messages.length === 3).then(() => {
+        expect(channelMessages).to.eql([]);
+        const ports = messages.map(({ transfer }) => transfer[0]);
+        expect(new Set(ports).size).to.equal(3);
+        messages.forEach(({ payload }) => expect(payload).to.not.have.property('token'));
+      });
+    });
+  });
 });
