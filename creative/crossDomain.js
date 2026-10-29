@@ -75,7 +75,9 @@ export function renderer(win) {
 
     function setupChannel(type, payload, onResponse) {
       const channel = new MessageChannel();
-      channel.port1.onmessage = guard(onResponse);
+      if (typeof onResponse === 'function') {
+        channel.port1.onmessage = guard(onResponse);
+      }
       target.postMessage(makeMessage(type, Object.assign({ token }, payload)), targetOrigin, [channel.port2]);
       return (type, payload) => channel.port1.postMessage(makeMessage(type, payload));
     }
@@ -108,7 +110,7 @@ export function renderer(win) {
     }
 
     const forward = [];
-    let hanshakeComplete;
+    let handshakeComplete;
 
     function onMessage(ev) {
       let data;
@@ -117,8 +119,8 @@ export function renderer(win) {
       } catch (e) {
         return;
       }
-      if (!hanshakeComplete && data.message === MESSAGE_RESPONSE && data.adId === adId) {
-        hanshakeComplete = true;
+      if (!handshakeComplete && data.message === MESSAGE_RESPONSE && data.adId === adId) {
+        handshakeComplete = true;
         const renderer = mkFrame(win.document, {
           width: 0,
           height: 0,
@@ -137,7 +139,7 @@ export function renderer(win) {
         // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
         renderer.srcdoc = `<script>${data.renderer}</script>`;
         win.document.body.appendChild(renderer);
-      } else if (hanshakeComplete) {
+      } else if (handshakeComplete) {
         forward.forEach(cb => cb(data));
       }
     }
