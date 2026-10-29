@@ -39,9 +39,7 @@ function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
     var filterAdUnitsByIds = function(divIds, adUnits) {
       var filtered = [];
-      if (!divIds.length) {
-        filtered = adUnits;
-      } else if (adUnits) {
+      if (adUnits) {
         var a = [];
         if (!(divIds instanceof Array)) a.push(divIds);
         else a = divIds;
@@ -194,9 +192,6 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
     };
     var a = getAdUnit(adunitObject.div, adunits) || {};
-    if (adunitObject.account) {
-      a.s = adunitObject.account;
-    }
     if (adunitObject.sizes) {
       a.z = adunitObject.sizes;
     }
@@ -206,16 +201,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (adunitObject.floor) {
       a.floor = adunitObject.floor;
     }
-    if (adunitObject.targeting) {
-      a.g = adunitObject.targeting;
-    } else {
-      a.g = {};
-    }
+    a.g = {};
     if (adunitObject.div) {
       removeByAttrValue(adunits, 'd', adunitObject.div);
-    }
-    if (adunitObject.sizeMapping) {
-      a.sm = adunitObject.sizeMapping;
     }
     if (adunitObject.siteId) {
       a.sid = adunitObject.siteId;

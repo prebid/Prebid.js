@@ -1148,6 +1148,11 @@ describe('coverage: request building', function () {
     expect(spec.buildRequests([], bidderRequest)).to.equal(undefined);
   });
 
+  it('should send the placementId', function () {
+    const request = spec.buildRequests([bid({ params: { siteId: 2, placementId: 'p-1' } })], bidderRequest);
+    expect(JSON.parse(request.data).a[0].pid).to.equal('p-1');
+  });
+
   describe('when the user is blocked', function () {
     beforeEach(function () {
       // Prebid only lets a bidder use cookies when the publisher allows it.
@@ -1200,5 +1205,52 @@ describe('coverage: user sync consent', function () {
   it('should send usp_consent alone with a ?', function () {
     const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1YNN');
     expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?usp_consent=1YNN');
+  });
+});
+
+describe('coverage: tag renderer', function () {
+  const doc = () => {
+    const d = { written: [], closed: 0 };
+    d.write = (m) => d.written.push(m);
+    d.close = () => { d.closed++; };
+    return d;
+  };
+
+  beforeEach(function () {
+    window.nobid.bidResponses['render-1'] = { adm2: '<div>ad</div>' };
+  });
+
+  afterEach(function () {
+    delete window.nobid.bidResponses['render-1'];
+  });
+
+  it('renderTag should write the stored markup', function () {
+    const d = doc();
+    window.nobid.renderTag(d, 'render-1', window);
+    expect(d.written).to.deep.equal(['<div>ad</div>']);
+    expect(d.closed).to.equal(1);
+  });
+
+  it('renderTag should write nothing for an unknown id', function () {
+    const d = doc();
+    window.nobid.renderTag(d, 'missing', window);
+    expect(d.written).to.deep.equal([]);
+  });
+
+  const requestMarkup = (adId) => {
+    const posted = [];
+    const event = new Event('message');
+    event.data = 'nbTagRenderer.requestAdMarkup|' + adId;
+    event.source = { postMessage: (msg) => posted.push(msg) };
+    window.dispatchEvent(event);
+    return posted;
+  };
+
+  it('should post the markup back to a safe frame that asks for it', function () {
+    expect(requestMarkup('render-1')).to.deep.equal(['nbTagRenderer.renderAdInSafeFrame|<div>ad</div>']);
+  });
+
+  it('should post nothing for an unknown ad id', function () {
+    expect(requestMarkup('missing')).to.deep.equal([]);
   });
 });
