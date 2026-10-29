@@ -8,7 +8,7 @@ import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
 import { getBidForMessage, isMessageAllowed, parseMessage, processMessage } from "../src/secureCreatives.js";
 import { config } from "../src/config.ts";
-import { emitAdRenderFail, isRenderSuppressed } from "../src/adRendering.ts";
+import { emitAdRenderFail, isRenderSuppressed, usesLegacyRenderer } from "../src/adRendering.ts";
 import { AD_RENDER_FAILED_REASON } from "../src/constants.ts";
 
 declare module '../src/prebidGlobal.ts' {
@@ -92,6 +92,10 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
   actualBid = getBidForMessage(bid);
   if (actualBid?.adId == null) {
     fail(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD, `Cannot find ad '${bid.adId}'`);
+    return;
+  }
+  if (usesLegacyRenderer(actualBid)) {
+    fail(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, 'bid has a renderer that would run outside of the ad frame');
     return;
   }
   const element = getAdUnitElement(actualBid);

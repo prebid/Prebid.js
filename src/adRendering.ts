@@ -292,7 +292,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
+  if (usesLegacyRenderer(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId });
     next.bail();
@@ -303,7 +303,7 @@ doRender.before(function (next, args) {
 
 export function isRenderSuppressed(bidResponse: Bid) {
   const { adId } = bidResponse;
-  const { suppressStaleRender, suppressExpiredRender } = config.getConfig('auctionOptions') ?? {};
+  const { suppressStaleRender, suppressExpiredRender } = config.getConfig('auctionOptions');
   const reasons = [];
   function logReasons() {
     reasons.forEach(([event, msg]) => {
@@ -495,4 +495,11 @@ export function insertLocatorFrame() {
 
 export function getSafeRenderer(bidResponse: Bid): SafeRendererConfig | undefined {
   return bidResponse.safeRenderer;
+}
+
+/**
+ * True if the bid is rendered by running its renderer in the publisher's document, outside any creative frame.
+ */
+export function usesLegacyRenderer(bidResponse: Bid): boolean {
+  return isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse);
 }

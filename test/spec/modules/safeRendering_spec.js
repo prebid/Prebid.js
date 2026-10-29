@@ -6,7 +6,7 @@ import { config } from 'src/config.js';
 // eslint-disable-next-line import/no-unresolved
 import { RENDERER } from 'creative-renderers/creative.js';
 import { createIframe } from 'src/utils.js';
-import { BID_STATUS, EVENTS } from 'src/constants.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import { getCreativeDefaultRendererSource } from 'src/creativeRenderers.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -300,6 +300,51 @@ describe('safeRendering', () => {
       });
     });
 
+    it('emits AD_RENDER_FAILED when the bid cannot be found', () => {
+      renderBid({ adId: 'unknown' });
+      sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+        adId: 'unknown',
+        reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD
+      }));
+    });
+
+    it('emits AD_RENDER_FAILED when the frame cannot be created', () => {
+      sandbox.stub(utils, 'createIframe').throws(new Error('frame error'));
+      renderBid(bidHandle);
+      sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+        adId: bid.adId,
+        reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+        message: 'frame error'
+      }));
+    });
+
+    Object.entries({
+      'url': { url: 'https://renderer.example/r.js' },
+      'renderNow': { renderNow: true },
+    }).forEach(([t, renderer]) => {
+      it(`refuses a bid with a renderer (${t}) that would run outside the ad frame`, () => {
+        bid.renderer = renderer;
+        const existing = document.createElement('span');
+        bid.element.appendChild(existing);
+        renderBid(bidHandle);
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+          adId: bid.adId,
+          reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT
+        }));
+        expect(Array.from(bid.element.children)).to.eql([existing]);
+      });
+    });
+
+    it('accepts a bid with both a renderer and a safeRenderer', () => {
+      Object.assign(bid, {
+        renderer: { url: 'https://renderer.example/r.js' },
+        safeRenderer: { url: 'https://renderer.example/safe.js' }
+      });
+      renderBid(bidHandle);
+      sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED);
+      expect(bid.element.querySelector('iframe')).to.exist;
+    });
+
     it('registers the token with the bid', async () => {
       sandbox.spy(document, 'createElement');
       renderBid(bidHandle);
@@ -543,6 +588,13 @@ describe('safeRendering', () => {
             bid: {},
             event: { ports: [] },
             message: { adId: 'right' }
+          },
+          {
+            desc: 'no message',
+            shouldAllow: !exclusive,
+            bid: null,
+            event: { ports: [] },
+            message: null
           }
         ].forEach(({ desc, shouldAllow, bid, event, message }) => {
           describe(`when an incoming message has ${desc}`, () => {

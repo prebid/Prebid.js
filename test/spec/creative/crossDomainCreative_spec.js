@@ -145,6 +145,15 @@ describe('cross-domain creative', () => {
         });
       });
     });
+    it('posts to the immediate parent when no ancestor has __pb_locator__', () => {
+      win.parent.parent.frames = {};
+      delete win.parent.parent.parent.frames['__pb_locator__'];
+      win.parent.parent.parent.parent.parent = top;
+      const parentMessages = [];
+      win.parent.postMessage = (payload) => parentMessages.push(payload);
+      renderAd({ pubUrl: 'https://www.example.com' });
+      expect(parentMessages.length).to.eql(1);
+    });
     describe('__pb_locator__ cannot be found', () => {
       beforeEach(() => {
         Object.defineProperty(win.parent.parent, 'frames', {

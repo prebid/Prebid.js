@@ -215,6 +215,11 @@ describe('secureCreatives', () => {
         req.adId = 'other';
         expect(getBidForMessage(req).foo).to.equal('baz');
       });
+      [null, 'adId'].forEach(message => {
+        it(`returns nothing for ${message}`, () => {
+          expect(getBidForMessage(message)).to.not.exist;
+        });
+      });
       it('does not return a stale bid when the same object is reused with an unknown adId', () => {
         const req = { adId: 'test' };
         getBidForMessage(req);
