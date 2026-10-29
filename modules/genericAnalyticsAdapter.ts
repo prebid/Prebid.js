@@ -3,10 +3,11 @@ import { prefixLog, isPlainObject } from '../src/utils.js';
 import { type Events, has as hasEvent } from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajaxBuilder } from '../src/ajax.js';
+import { module } from '../src/hook.js';
 import type { AnyFunction } from "../src/types/functions";
 import type { GVLIDs } from '../src/consentHandler.js';
 
-type EventMapping = { [E in keyof Events]?: (payload: Events[E][0]) => any };
+export type EventMapping = { [E in keyof Events]?: (payload: Events[E][0]) => any };
 
 type BaseOptions = {
   /**
@@ -29,6 +30,11 @@ type BaseOptions = {
    * using the data returned by their corresponding function.
    */
   events?: EventMapping;
+  /**
+   * Name of a preset event mapping, provided by a separate module (that must be included in the build).
+   * Events in the preset are formatted by its functions; any function in `events` overrides the preset's for the same event.
+   */
+  preset?: string;
 };
 
 type Payloads<M extends EventMapping> = {
@@ -77,6 +83,18 @@ declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
   }
 }
 
+declare module '../src/hook' {
+  interface Submodules {
+    genericAnalytics: [name: string, events: EventMapping];
+  }
+}
+
+const presets: { [name: string]: EventMapping } = {};
+
+module('genericAnalytics', function (name: string, events: EventMapping) {
+  presets[name] = events;
+}, { postInstallAllowed: true });
+
 const DEFAULTS = {
   batchSize: 1,
   batchDelay: 100,
@@ -87,6 +105,7 @@ const TYPES = {
   handler: 'function',
   batchSize: 'number',
   batchDelay: 'number',
+  preset: 'string',
 };
 
 const MAX_CALL_DEPTH = 20;
@@ -131,6 +150,10 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
     }
     if (options.hasOwnProperty('gvlid') && !isGvlid(options.gvlid)) {
       logError('options.gvlid must be a number or a non-empty array of numbers');
+      return false;
+    }
+    if (options.hasOwnProperty('preset') && !presets.hasOwnProperty(options.preset)) {
+      logError(`options.preset "${options.preset}" is not available; make sure the module that provides it is included`);
       return false;
     }
     if (options.hasOwnProperty('events')) {
@@ -201,7 +224,7 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
         if (optionsAreValid(config?.options || {})) {
           options = Object.assign({}, DEFAULTS, config.options);
           handler = options.handler || defaultHandler(options);
-          translate = translator(options.events);
+          translate = translator(options.preset ? { ...presets[options.preset], ...options.events } : options.events);
           parent.enableAnalytics.call(this, config);
         }
       },

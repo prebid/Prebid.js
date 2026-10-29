@@ -34,10 +34,38 @@ const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-/* Capping state written by the Missena renderer on the publisher's page, one key per api key.
-   It is sent back as the `local` field of the bid request so the bid endpoint can apply the capping. */
+/* Capping state written by the Missena renderer, one key per api key */
 const LOCAL_STORAGE_KEY_PREFIX = 'msna-local.';
+const CLOSE_COUNTER = 'remove-bubble';
 window.msna_ik = window.msna_ik || generateUUID();
+
+function readCapping(apiKey) {
+  const local = safeJSONParse(
+    storage.getDataFromLocalStorage(LOCAL_STORAGE_KEY_PREFIX + apiKey),
+  );
+  return local?.capping || {};
+}
+
+function isLive(entry) {
+  return typeof entry?.expiry === 'number' && entry.expiry > Date.now();
+}
+
+function cappedProviders(apiKey) {
+  const providers = readCapping(apiKey).providers || {};
+  const names = Object.keys(providers);
+  const capped = [];
+  for (let i = 0; i < names.length; i++) {
+    if (isLive(providers[names[i]])) {
+      capped.push(names[i]);
+    }
+  }
+  return capped;
+}
+
+function isClosed(apiKey, referer) {
+  const closed = readCapping(apiKey).counters?.[CLOSE_COUNTER];
+  return isLive(closed) && (!closed.referer || closed.referer === referer);
+}
 
 /* Get Floor price information */
 function getFloor(bidRequest) {
@@ -79,13 +107,9 @@ function toPayload(bidRequest, bidderRequest) {
   payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
   payload.viewport = getViewportSize();
   payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
-  const local = safeJSONParse(
-    storage.getDataFromLocalStorage(
-      LOCAL_STORAGE_KEY_PREFIX + bidRequest.params.apiKey,
-    ),
-  );
-  if (local) {
-    payload.local = local;
+  const providers = cappedProviders(bidRequest.params.apiKey);
+  if (providers.length > 0) {
+    payload.local = { capping: { providers } };
   }
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
@@ -117,7 +141,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid === 'object' && !!bid.params.apiKey;
+    return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);
   },
 
   /**
@@ -128,9 +152,19 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    this.msnaApiKey = validBidRequests[0]?.params.apiKey;
+    const referer = bidderRequest?.refererInfo?.topmostLocation;
+    const bidRequests = [];
+    for (let i = 0; i < validBidRequests.length; i++) {
+      if (isClosed(validBidRequests[i].params.apiKey, referer)) {
+        logInfo('Missena - Capped', validBidRequests[i].params.apiKey);
+      } else {
+        bidRequests.push(validBidRequests[i]);
+      }
+    }
 
-    return validBidRequests.map((bidRequest) =>
+    this.msnaApiKey = bidRequests[0]?.params.apiKey;
+
+    return bidRequests.map((bidRequest) =>
       toPayload(bidRequest, bidderRequest),
     );
   },
@@ -191,7 +225,7 @@ export const spec = {
   },
 
   /**
-   * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function (bid) {
