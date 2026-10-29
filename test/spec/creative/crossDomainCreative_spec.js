@@ -497,6 +497,21 @@ describe('cross-domain creative', () => {
       });
     });
 
+    it('ignores replies to messages sent without a callback, when no token is provided', () => {
+      renderAd({ adId: '123', pubUrl: ORIGIN });
+      messages[0].transfer[0].postMessage(JSON.stringify({
+        adId: '123',
+        message: MESSAGE_RESPONSE,
+        renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", {}) }'
+      }));
+      return waitFor(() => messages.length === 3).then(() => {
+        messages[1].transfer[0].postMessage(JSON.stringify('response'));
+        return new Promise((resolve) => setTimeout(resolve, 200));
+      }).then(() => {
+        expect(messages.length).to.equal(3);
+      });
+    });
+
     it('sends each message on its own channel when no token is provided', () => {
       renderAndSend();
       return waitFor(() => messages.length === 3).then(() => {
