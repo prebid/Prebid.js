@@ -69,13 +69,19 @@ export function renderer(win) {
       return new URL(pubUrl, window.location).origin;
     })();
 
+    const makeMessage = (type, payload) => JSON.stringify(Object.assign({ message: type, adId }, payload));
+
     const target = locatePrebid(depth);
 
-    function sendMessage(type, payload, responseListener) {
+    function setupChannel(type, payload, onResponse) {
       const channel = new MessageChannel();
-      channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({ message: type, adId, token }, payload)), targetOrigin, [channel.port2]);
+      channel.port1.onmessage = guard(onResponse);
+      target.postMessage(makeMessage(type, Object.assign({ token }, payload)), targetOrigin, [channel.port2]);
+      return (type, payload) => channel.port1.postMessage(makeMessage(type, payload));
     }
+
+    const requestChannel = setupChannel(MESSAGE_REQUEST, { options: rest }, onMessage);
+    const sendMessage = token != null ? requestChannel : (type, payload) => setupChannel(type, payload);
 
     function onError(e) {
       sendMessage(MESSAGE_EVENT, {
@@ -127,10 +133,6 @@ export function renderer(win) {
         win.document.body.appendChild(renderer);
       }
     }
-
-    sendMessage(MESSAGE_REQUEST, {
-      options: rest
-    }, onMessage);
   };
 }
 

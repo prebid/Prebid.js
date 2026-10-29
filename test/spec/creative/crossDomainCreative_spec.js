@@ -9,11 +9,12 @@ import {
 
 describe('cross-domain creative', () => {
   const ORIGIN = 'https://example.com';
-  let win, top, renderAd, messages, mkIframe, consoleErrorStub;
+  let win, top, renderAd, messages, channelMessages, mkIframe, consoleErrorStub;
 
   beforeEach(() => {
     consoleErrorStub = sinon.stub(console, 'error');
     messages = [];
+    channelMessages = [];
     mkIframe = sinon.stub();
     top = {
       frames: {}
@@ -41,6 +42,11 @@ describe('cross-domain creative', () => {
         frames: { '__pb_locator__': {} },
         postMessage: sinon.stub().callsFake((payload, targetOrigin, transfer) => {
           messages.push({ payload: JSON.parse(payload), targetOrigin, transfer });
+          if (messages.length === 1) {
+            transfer[0].onmessage = sinon.stub().callsFake((ev) => {
+              channelMessages.push({ payload: JSON.parse(ev.data)});
+            });
+          }
         })
       }
     };
@@ -221,134 +227,142 @@ describe('cross-domain creative', () => {
     document.body.appendChild(iframe);
   });
 
-  describe('listens and', () => {
-    function reply(msg, index = 0) {
-      messages[index].transfer[0].postMessage(JSON.stringify(msg));
+  [
+    {
+      desc: 'a token',
+      token: 'test',
+      getMessage(index) {
+        return index === 0 ? messages[0] : channelMessages[index - 1];
+      },
+      reply(msg) {
+        messages[0].transfer[0].postMessage(JSON.stringify(msg));
+      }
+    },
+    {
+      desc: 'no token',
+      getMessage(index) {
+        return messages[index];
+      },
+      reply(msg, index = 0) {
+        messages[index].transfer[0].postMessage(JSON.stringify(msg));
+      }
     }
-
-    it('ignores messages that are not a prebid response message', () => {
-      renderAd({ adId: '123', pubUrl: ORIGIN });
-      reply({ adId: '123', ad: 'markup' });
-      sinon.assert.notCalled(mkIframe);
-    });
-
-    it('signals AD_RENDER_FAILED on exceptions', () => {
-      mkIframe.callsFake(() => { throw new Error('error message'); });
-      renderAd({ adId: '123', pubUrl: ORIGIN });
-      reply({ message: MESSAGE_RESPONSE, adId: '123', ad: 'markup' });
-      return waitFor(() => messages[1]?.payload).then(() => {
-        expect(messages[1].payload).to.eql({
-          message: MESSAGE_EVENT,
-          adId: '123',
-          event: EVENT_AD_RENDER_FAILED,
-          info: {
-            reason: ERROR_EXCEPTION,
-            message: 'error message'
-          }
+  ].forEach(({ desc, getMessage, reply, token }) => {
+    describe(`when ${desc} is provided`, () => {
+      function render(args) {
+        return renderAd(Object.assign({ token }, args));
+      }
+      describe('listens and', () => {
+        it('ignores messages that are not a prebid response message', () => {
+          render({ adId: '123', pubUrl: ORIGIN });
+          reply({ adId: '123', ad: 'markup' });
+          sinon.assert.notCalled(mkIframe);
         });
-      });
-    });
 
-    describe('renderer', () => {
-      beforeEach(() => {
-        win.document.createElement.callsFake(document.createElement.bind(document));
-        win.document.body.appendChild.callsFake(document.body.appendChild.bind(document.body));
-      });
-
-      it('sets up and runs renderer', () => {
-        window._render = sinon.stub();
-        const data = {
-          message: MESSAGE_RESPONSE,
-          adId: '123',
-          renderer: 'window.render = window.parent._render'
-        };
-        renderAd({ adId: '123', pubUrl: ORIGIN });
-        reply(data);
-        return waitFor(() => window._render.args.length).then(() => {
-          sinon.assert.calledWith(window._render, data, sinon.match.any, win);
-        }).finally(() => {
-          delete window._render;
-        });
-      });
-
-      Object.entries({
-        'throws (w/error)': ['window.render = function() { throw new Error("msg") }'],
-        'throws (w/reason)': ['window.render = function() { throw {reason: "other", message: "msg"}}', 'other'],
-        'is missing': [null, ERROR_EXCEPTION, null],
-        'rejects (w/error)': ['window.render = function() { return Promise.reject(new Error("msg")) }'],
-        'rejects (w/reason)': ['window.render = function() { return Promise.reject({reason: "other", message: "msg"}) }', 'other'],
-      }).forEach(([t, [renderer, reason = ERROR_EXCEPTION, message = 'msg']]) => {
-        it(`signals AD_RENDER_FAILED on renderer that ${t}`, () => {
-          renderAd({ adId: '123', pubUrl: ORIGIN });
-          reply({
-            message: MESSAGE_RESPONSE,
-            adId: '123',
-            renderer
-          });
-          return waitFor(() => messages[1]?.payload).then(() => {
-            sinon.assert.match(messages[1].payload, {
-              adId: '123',
+        it('signals AD_RENDER_FAILED on exceptions', () => {
+          mkIframe.callsFake(() => { throw new Error('error message'); });
+          render({ adId: '123', pubUrl: ORIGIN });
+          reply({ message: MESSAGE_RESPONSE, adId: '123', ad: 'markup' });
+          return waitFor(() => getMessage(1)?.payload).then(() => {
+            expect(getMessage(1).payload).to.eql({
               message: MESSAGE_EVENT,
+              adId: '123',
               event: EVENT_AD_RENDER_FAILED,
               info: {
-                reason,
-                message: sinon.match(val => message == null || message === val)
+                reason: ERROR_EXCEPTION,
+                message: 'error message'
               }
             });
           });
         });
-      });
 
-      it('signals AD_RENDER_SUCCEEDED when renderer resolves', () => {
-        renderAd({ adId: '123', pubUrl: ORIGIN });
-        reply({
-          message: MESSAGE_RESPONSE,
-          adId: '123',
-          renderer: 'window.render = function() { return new Promise((resolve) => { window.parent._resolve = resolve })}'
-        });
-        return waitFor(() => window._resolve).then(() => {
-          expect(messages[1]).to.not.exist;
-          window._resolve();
-          return waitFor(() => messages[1]?.payload);
-        }).then(() => {
-          sinon.assert.match(messages[1].payload, {
-            adId: '123',
-            message: MESSAGE_EVENT,
-            event: EVENT_AD_RENDER_SUCCEEDED
+        describe('renderer', () => {
+          beforeEach(() => {
+            win.document.createElement.callsFake(document.createElement.bind(document));
+            win.document.body.appendChild.callsFake(document.body.appendChild.bind(document.body));
           });
-        }).finally(() => {
-          delete window._resolve;
-        });
-      });
 
-      it('is provided a sendMessage that accepts replies', () => {
-        renderAd({ adId: '123', pubUrl: ORIGIN });
-        window._reply = sinon.stub();
-        reply({
-          adId: '123',
-          message: MESSAGE_RESPONSE,
-          renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", "data", function(reply) { window.parent._reply(reply) }) }'
-        });
-        return waitFor(() => messages[1]?.payload).then(() => {
-          reply('response', 1);
-          return waitFor(() => window._reply.args.length);
-        }).then(() => {
-          sinon.assert.calledWith(window._reply, sinon.match({ data: JSON.stringify('response') }));
-        }).finally(() => {
-          delete window._reply;
-        });
-      });
+          it('sets up and runs renderer', () => {
+            window._render = sinon.stub();
+            const data = {
+              message: MESSAGE_RESPONSE,
+              adId: '123',
+              renderer: 'window.render = window.parent._render'
+            };
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply(data);
+            return waitFor(() => window._render.args.length).then(() => {
+              sinon.assert.calledWith(window._render, data, sinon.match.any, win);
+            }).finally(() => {
+              delete window._render;
+            });
+          });
 
-      it('is provided a sendMessage that includes the token, if provided', () => {
-        renderAd({ adId: '123', pubUrl: ORIGIN, token: 'foo' });
-        window._reply = sinon.stub();
-        reply({
-          adId: '123',
-          message: MESSAGE_RESPONSE,
-          renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", {d: "bar"} }) }'
-        });
-        return waitFor(() => messages[1]?.payload).then(() => {
-          expect(messages[1].payload.token).to.eql('foo');
+          Object.entries({
+            'throws (w/error)': ['window.render = function() { throw new Error("msg") }'],
+            'throws (w/reason)': ['window.render = function() { throw {reason: "other", message: "msg"}}', 'other'],
+            'is missing': [null, ERROR_EXCEPTION, null],
+            'rejects (w/error)': ['window.render = function() { return Promise.reject(new Error("msg")) }'],
+            'rejects (w/reason)': ['window.render = function() { return Promise.reject({reason: "other", message: "msg"}) }', 'other'],
+          }).forEach(([t, [renderer, reason = ERROR_EXCEPTION, message = 'msg']]) => {
+            it(`signals AD_RENDER_FAILED on renderer that ${t}`, () => {
+              render({ adId: '123', pubUrl: ORIGIN });
+              reply({
+                message: MESSAGE_RESPONSE,
+                adId: '123',
+                renderer
+              });
+              return waitFor(() => getMessage(1)?.payload).then(() => {
+                sinon.assert.match(getMessage(1).payload, {
+                  adId: '123',
+                  message: MESSAGE_EVENT,
+                  event: EVENT_AD_RENDER_FAILED,
+                  info: {
+                    reason,
+                    message: sinon.match(val => message == null || message === val)
+                  }
+                });
+              });
+            });
+          });
+
+          it('signals AD_RENDER_SUCCEEDED when renderer resolves', () => {
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply({
+              message: MESSAGE_RESPONSE,
+              adId: '123',
+              renderer: 'window.render = function() { return new Promise((resolve) => { window.parent._resolve = resolve })}'
+            });
+            return waitFor(() => window._resolve).then(() => {
+              expect(getMessage(1)).to.not.exist;
+              window._resolve();
+              return waitFor(() => getMessage(1)?.payload);
+            }).then(() => {
+              sinon.assert.match(getMessage(1).payload, {
+                adId: '123',
+                message: MESSAGE_EVENT,
+                event: EVENT_AD_RENDER_SUCCEEDED
+              });
+            }).finally(() => {
+              delete window._resolve;
+            });
+          });
+
+          it('is provided a sendMessage', () => {
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply({
+              adId: '123',
+              message: MESSAGE_RESPONSE,
+              renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", {"foo": "bar"}) }'
+            });
+            return waitFor(() => getMessage(1)?.payload).then(() => {
+              sinon.assert.match(getMessage(1).payload, {
+                adId: '123',
+                message: 'test',
+                foo: 'bar'
+              });
+            });
+          });
         });
       });
     });
