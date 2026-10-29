@@ -80,8 +80,10 @@ export function renderer(win) {
       return (type, payload) => channel.port1.postMessage(makeMessage(type, payload));
     }
 
-    const requestChannel = setupChannel(MESSAGE_REQUEST, { options: rest }, onMessage);
-    const sendMessage = token != null ? requestChannel : (type, payload) => setupChannel(type, payload);
+    const handshakeChannel = setupChannel(MESSAGE_REQUEST, { options: rest }, onMessage);
+    const sendMessage = token != null
+      ? handshakeChannel
+      : setupChannel;
 
     function onError(e) {
       sendMessage(MESSAGE_EVENT, {
@@ -105,6 +107,9 @@ export function renderer(win) {
       };
     }
 
+    const forward = [];
+    let hanshakeComplete;
+
     function onMessage(ev) {
       let data;
       try {
@@ -112,7 +117,8 @@ export function renderer(win) {
       } catch (e) {
         return;
       }
-      if (data.message === MESSAGE_RESPONSE && data.adId === adId) {
+      if (!hanshakeComplete && data.message === MESSAGE_RESPONSE && data.adId === adId) {
+        hanshakeComplete = true;
         const renderer = mkFrame(win.document, {
           width: 0,
           height: 0,
@@ -122,7 +128,7 @@ export function renderer(win) {
           const W = renderer.contentWindow;
           // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
           // does not appear to work if P comes from another frame
-          W.Promise.resolve(W.render(data, { sendMessage, mkFrame }, win)).then(
+          W.Promise.resolve(W.render(data, { sendMessage, mkFrame, onMessage: (cb) => forward.push(guard(cb)) }, win)).then(
             () => sendMessage(MESSAGE_EVENT, { event: EVENT_AD_RENDER_SUCCEEDED }),
             onError
           );
@@ -131,6 +137,8 @@ export function renderer(win) {
         // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
         renderer.srcdoc = `<script>${data.renderer}</script>`;
         win.document.body.appendChild(renderer);
+      } else if (hanshakeComplete) {
+        forward.forEach(cb => cb(data));
       }
     }
   };
