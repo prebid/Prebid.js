@@ -84,10 +84,14 @@ export const getBidForMessage = (() => {
 
 export const isMessageAllowed = hook('sync', (event, data) => true);
 
+export function processMessage(data, bid, replier) {
+  HANDLER_MAP.hasOwnProperty(data.message) && HANDLER_MAP[data.message](ensureAdId(data.adId, replier), data, bid);
+}
+
 export function receiveMessage(ev, cb) {
   const data = parseMessage(ev);
   if (data && isMessageAllowed(ev, data)) {
-    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, getBidForMessage(data));
+    processMessage(data, getBidForMessage(data), getReplier(ev));
     cb && cb();
   }
 }

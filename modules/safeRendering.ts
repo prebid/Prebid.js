@@ -6,7 +6,7 @@ import type { Bid } from "../src/bidfactory.ts";
 import { createIframe, generateUUID, logWarn, memoize } from "../src/utils.js";
 import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
-import { getBidForMessage, isMessageAllowed } from "../src/secureCreatives.js";
+import { getBidForMessage, isMessageAllowed, parseMessage, processMessage } from "../src/secureCreatives.js";
 import { config } from "../src/config.ts";
 import { emitAdRenderFail, isRenderSuppressed } from "../src/adRendering.ts";
 import { AD_RENDER_FAILED_REASON } from "../src/constants.ts";
@@ -150,6 +150,27 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
 
 addApiMethod('renderBid', renderBid);
 
+function logRejection(err, event, bid, message) {
+  logWarn(`Received x-origin request ${err}, request will be ignored`, {
+    adFrame: event.source,
+    bid,
+    message
+  });
+}
+
+function attach(port, bid) {
+  port.onmessage = (event) => {
+    const data = parseMessage(event);
+    if (data) {
+      if (data.adId !== bid.adId) {
+        logRejection('for the wrong adId', event, bid, data);
+      } else {
+        processMessage(data, bid, (message) => port.postMessage(JSON.stringify(message)));
+      }
+    }
+  };
+}
+
 export function allowMessageHook(tokenIsValid = validateToken) {
   return (next, event, message) => {
     let err = null;
@@ -162,14 +183,12 @@ export function allowMessageHook(tokenIsValid = validateToken) {
         err = 'without a MessageChannel port';
       } else if (!tokenIsValid(bid, message.token)) {
         err = 'from a frame not authorized for this bid';
+      } else {
+        attach(event.ports[0], bid);
       }
     }
     if (err) {
-      logWarn(`Received x-origin request ${err}, request will be ignored`, {
-        adFrame: event.source,
-        bid,
-        message
-      });
+      logRejection(err, event, bid, message);
       next.bail(false);
     } else {
       next(event, message);

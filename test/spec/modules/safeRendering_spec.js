@@ -506,28 +506,28 @@ describe('safeRendering', () => {
             desc: 'wrong adId, no token',
             shouldAllow: !exclusive,
             bid: null,
-            event: { ports: ['mock-source'] },
+            event: { ports: [{}] },
             message: { adId: 'wrong' },
           },
           {
             desc: 'missing adId, no token',
             shouldAllow: !exclusive,
             bid: null,
-            event: { ports: ['mock-source'] },
+            event: { ports: [{}] },
             message: { adId: 'wrong' },
           },
           {
             desc: 'good adId, wrong token',
             shouldAllow: false,
             bid: {},
-            event: { ports: ['mock-source'] },
+            event: { ports: [{}] },
             message: { adId: 'right', token: 'wrong' }
           },
           {
             desc: 'good adId, good token',
             shouldAllow: true,
             bid: {},
-            event: { ports: ['mock-source'] },
+            event: { ports: [{}] },
             message: { adId: 'right', token: 'right' },
           },
           {
