@@ -41,11 +41,12 @@ import {
   incrementRequestsCounter
 } from './adUnits.js';
 import { getRefererInfo, type RefererInfo } from './refererDetection.js';
-import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
+import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, type GVLIDs } from './consentHandler.js';
 import * as events from './events.js';
 import { EVENTS, S2S } from './constants.js';
 import { type Metrics, useMetrics } from './utils/perfMetrics.js';
 import { auctionManager } from './auctionManager.js';
+import { bidderSettings } from './bidderSettings.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID } from './activities/modules.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS } from './activities/activities.js';
@@ -63,6 +64,7 @@ import type {
 } from "./types/common.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
+import { mergeBidderOrtb2 } from './fpd/merge.js';
 import type {
   AnalyticsConfig,
   AnalyticsProvider,
@@ -86,7 +88,7 @@ export const dep = {
 
 const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
-const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
+const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: GVLIDs, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
 
 let _s2sConfigs : any[] | any = [];
 config.getConfig('s2sConfig', config => {
@@ -198,6 +200,12 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
   gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
   alwaysHasCapacity?: boolean;
+  /**
+   * Whether the publisher trusts the deal metadata (`bid.meta.deal`) of bids answering this request:
+   * from `s2sConfig.allowPriorityBids` for Prebid Server requests, `bidderSettings[bidderCode].allowPriorityBids` otherwise.
+   * Absent or false means the deal metadata is not trusted.
+   */
+  allowPriorityBids?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
@@ -231,9 +239,9 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
 
 export type AliasBidderOptions = {
   /**
-   * IAB Global Vendor List ID for this alias for use with the TCF control module.
+   * IAB Global Vendor List ID (or IDs) for this alias for use with the TCF control module.
    */
-  gvlid?: number;
+  gvlid?: GVLIDs;
   /**
    * Google Additional Consent provider ID for this alias for use with the TCF control module.
    */
@@ -252,7 +260,7 @@ export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & 
   code?: P;
   enableAnalytics(config: AnalyticsConfig<P>): void;
   disableAnalytics?: () => void;
-  gvlid?: number | ((config: AnalyticsConfig<P>) => number);
+  gvlid?: GVLIDs | ((config: AnalyticsConfig<P>) => GVLIDs);
 };
 
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, getTid }: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
@@ -542,9 +550,7 @@ const adapterManager = {
         }
         const [tid, tidSource] = getTid(bidderCode, auctionId, bidderOrtb2[bidderCode]?.source?.tid ?? ortb2.source?.tid);
         const fpd = Object.freeze(redact.ortb2(mergeDeep(
-          {},
-          ortb2,
-          bidderOrtb2[bidderCode],
+          mergeBidderOrtb2(ortb2, bidderOrtb2[bidderCode]),
           {
             source: {
               tid,
@@ -650,6 +656,7 @@ const adapterManager = {
             refererInfo,
             metrics,
             alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
+            allowPriorityBids: bidderCode != null && Array.isArray(s2sConfig.allowPriorityBids) && s2sConfig.allowPriorityBids.includes(bidderCode),
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);
@@ -700,6 +707,8 @@ const adapterManager = {
         metrics,
         src: 'client',
         alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
+        // adapter-specific settings only: `standard` must not opt every adapter in
+        allowPriorityBids: bidderSettings.getOwn(bidderCode, 'allowPriorityBids') === true,
       });
       if (!adapter) {
         logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
@@ -925,7 +934,7 @@ const adapterManager = {
   registerAnalyticsAdapter<P extends AnalyticsProvider>({ adapter, code, gvlid, acpId }: {
     adapter: AnalyticsAdapter<P>,
     code: P,
-    gvlid?: number,
+    gvlid?: GVLIDs,
     /**
      * Google Additional Consent provider ID, for vendors that are not on the GVL.
      */

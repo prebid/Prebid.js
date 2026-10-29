@@ -16,7 +16,7 @@ function jsPattern(name) {
 }
 
 function tsPattern(name) {
-  return [`${name}/**/*.ts`]
+  return [`${name}/**/*.ts`, `${name}/**/*.mts`]
 }
 
 function sourcePattern(name) {

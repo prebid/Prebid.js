@@ -906,6 +906,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mul",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "my6sense",
       "aliasOf": null,
       "gvlid": null,
@@ -1005,13 +1012,6 @@
     {
       "componentType": "bidder",
       "componentName": "padsquad",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "pigeoon",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -1354,13 +1354,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "yieldlab",
-      "aliasOf": null,
-      "gvlid": 70,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "yieldlift",
       "aliasOf": null,
       "gvlid": null,
@@ -1455,6 +1448,13 @@
       "componentName": "adfusion",
       "aliasOf": null,
       "gvlid": 844,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adhouse",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2173,6 +2173,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "publinkio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "pulsepoint",
       "aliasOf": null,
       "gvlid": 81,
@@ -2243,6 +2250,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "roockmobile",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "rumble",
       "aliasOf": null,
       "gvlid": null,
@@ -2267,6 +2281,13 @@
       "componentName": "setupad",
       "aliasOf": null,
       "gvlid": 1241,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "shopnomix",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2355,9 +2376,23 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "visionforgex",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "vuukle",
       "aliasOf": null,
       "gvlid": 1004,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "yieldlab",
+      "aliasOf": null,
+      "gvlid": 70,
       "disclosureURL": null
     },
     {
@@ -2391,6 +2426,13 @@
     {
       "componentType": "bidder",
       "componentName": "mantis",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pigeoon",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -5508,6 +5550,13 @@
       "componentName": "stn",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "onebidtech",
+      "aliasOf": null,
+      "gvlid": 149,
       "disclosureURL": null
     },
     {

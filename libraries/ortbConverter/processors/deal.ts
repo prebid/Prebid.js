@@ -23,8 +23,8 @@ export function getDealMeta(bid: ORTBBid): DealMeta | undefined {
   if (isNonNegativeNumber(deal.cpm)) {
     dealMeta.cpm = deal.cpm;
   }
-  if (isNonNegativeNumber(deal.pacing_adjusted_cpm)) {
-    dealMeta.pacingAdjustedCpm = deal.pacing_adjusted_cpm;
+  if (isNonNegativeNumber(deal.priority_adjusted_cpm)) {
+    dealMeta.priorityAdjustedCpm = deal.priority_adjusted_cpm;
   }
   if (isNonNegativeNumber(deal.on_schedule)) {
     dealMeta.onSchedule = deal.on_schedule;
