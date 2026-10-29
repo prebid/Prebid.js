@@ -133,13 +133,12 @@ function toCompanyIds(companyIdOrIds: number | number[] | undefined): number[] {
 
 /**
  * Gets tenant IDs from the module params.
- * A missing or all-falsy company id falls back to the Audienzz company id.
- * A list that contains any real id is returned unchanged, including falsy entries.
+ * Falsy company ids are dropped. When none remain, the Audienzz company id is used.
  */
 const getTenantIds = (params: SemantiqRtdParams = {}): number[] => {
-  const companyIds = toCompanyIds(params.companyId);
+  const companyIds = toCompanyIds(params.companyId).filter(Boolean);
 
-  if (companyIds.some(Boolean)) {
+  if (companyIds.length > 0) {
     return companyIds;
   }
 
@@ -165,28 +164,33 @@ const getKeywords = (params: SemantiqRtdParams): Promise<SemantiqKeywords> => ne
 
   const requestUrl = `${KEYWORDS_URL}?${searchParams.toString()}`;
 
+  const rejectKeywords = (error: unknown) => {
+    logError(LOG_PREFIX, error);
+    reject(error);
+  };
+
   const callbacks = {
     success(responseText: string, response: XHR) {
-      try {
-        if (response.status !== 200) {
-          throw new Error('Invalid response status');
-        }
+      if (response.status !== 200) {
+        rejectKeywords('Invalid response status');
+        return;
+      }
 
+      try {
         const data: unknown = JSON.parse(responseText);
 
         if (!isSemantiqKeywords(data)) {
-          throw new Error('Failed to parse the response');
+          rejectKeywords('Failed to parse the response');
+          return;
         }
 
         storage.setDataInSessionStorage(STORAGE_KEY, JSON.stringify({ url: pageUrl, keywords: data }));
         resolve(data);
       } catch (error) {
-        reject(error);
+        rejectKeywords(error);
       }
     },
-    error(error: string) {
-      reject(error);
-    }
+    error: rejectKeywords,
   };
 
   ajax(requestUrl, callbacks);
@@ -294,8 +298,8 @@ const getBidRequestData = (
 
         mergeDeep(reqBidsConfigObj.ortb2Fragments.global, updatedGlobalOrtb);
       })
-      .catch((error) => {
-        logError(LOG_PREFIX, error);
+      .catch(() => {
+        // The keyword request already logged the failure.
       })
       .finally(() => {
         isDone = true;
