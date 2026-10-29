@@ -47,9 +47,8 @@ export function escapeInlineHtml(src) {
 const getCreativeTag = memoize(() => encodeURIComponent(`<script>${escapeInlineHtml(RENDERER)}</script>`));
 
 const TOKENS = new WeakMap();
-const UNCLAIMED = {};
 
-export function validateToken(bid: Bid, token: Identifier, source: Window): boolean {
+export function validateToken(bid: Bid, token: Identifier): boolean {
   if (bid == null || token == null) {
     return false;
   }
@@ -57,10 +56,8 @@ export function validateToken(bid: Bid, token: Identifier, source: Window): bool
   if (!issued?.has(token)) {
     return false;
   }
-  if (issued.get(token) === UNCLAIMED) {
-    issued.set(token, source);
-  }
-  return issued.get(token) === source;
+  issued.delete(token);
+  return true;
 }
 
 function findDepth(win) {
@@ -143,9 +140,9 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     });
     element.appendChild(frame);
     if (!TOKENS.has(actualBid)) {
-      TOKENS.set(actualBid, new Map());
+      TOKENS.set(actualBid, new Set());
     }
-    TOKENS.get(actualBid).set(token, UNCLAIMED);
+    TOKENS.get(actualBid).add(token);
   } catch (e) {
     fail(AD_RENDER_FAILED_REASON.EXCEPTION, e.message);
   }
@@ -163,7 +160,7 @@ export function allowMessageHook(tokenIsValid = validateToken) {
     } else if (bid && (token || TOKENS.has(bid))) {
       if (event.ports.length < 1) {
         err = 'without a MessageChannel port';
-      } else if (!tokenIsValid(bid, message.token, event.source)) {
+      } else if (!tokenIsValid(bid, message.token)) {
         err = 'from a frame not authorized for this bid';
       }
     }

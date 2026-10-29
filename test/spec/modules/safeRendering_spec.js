@@ -119,8 +119,8 @@ describe('safeRendering', () => {
       renderBid(bidHandle);
       document.body.appendChild(bid.element);
       try {
-        const [[{ source }, { token }]] = await expectMessage();
-        expect(validateToken(bid, token, source)).to.be.true;
+        const [[, { token }]] = await expectMessage();
+        expect(validateToken(bid, token)).to.be.true;
       } finally {
         document.body.removeChild(bid.element);
       }
@@ -299,8 +299,8 @@ describe('safeRendering', () => {
     it('registers the token with the bid', async () => {
       sandbox.spy(document, 'createElement');
       renderBid(bidHandle);
-      const [[{ source }, { token }]] = await expectMessage();
-      expect(validateToken(bid, token, source)).to.be.true;
+      const [[, { token }]] = await expectMessage();
+      expect(validateToken(bid, token)).to.be.true;
     });
 
     it('does not accept the token from a window other than the first to use it', async () => {
@@ -329,8 +329,8 @@ describe('safeRendering', () => {
 
     it('does not accept a token for a bid that was not rendered through renderBid', async () => {
       renderBid(bidHandle);
-      const [[{ source }, { token }]] = await expectMessage();
-      expect(validateToken({ adId: 'other' }, token, source)).to.be.false;
+      const [[, { token }]] = await expectMessage();
+      expect(validateToken({ adId: 'other' }, token)).to.be.false;
     });
 
     Object.entries({
@@ -338,7 +338,7 @@ describe('safeRendering', () => {
       'missing token': [{}, null],
     }).forEach(([t, [bid, token]]) => {
       it(`does not accept a ${t}`, () => {
-        expect(validateToken(bid, token, window)).to.be.false;
+        expect(validateToken(bid, token)).to.be.false;
       });
     });
 
