@@ -1018,13 +1018,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pigeoon",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "pilotx",
       "aliasOf": "pilotx",
       "gvlid": null,
@@ -1357,13 +1350,6 @@
       "componentName": "yahooAdvertising",
       "aliasOf": "yahooAds",
       "gvlid": 25,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "yieldlab",
-      "aliasOf": null,
-      "gvlid": 70,
       "disclosureURL": null
     },
     {
@@ -2187,6 +2173,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "publinkio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "pulsepoint",
       "aliasOf": null,
       "gvlid": 81,
@@ -2397,6 +2390,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "yieldlab",
+      "aliasOf": null,
+      "gvlid": 70,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "zeta_global_ssp",
       "aliasOf": null,
       "gvlid": 469,
@@ -2426,6 +2426,13 @@
     {
       "componentType": "bidder",
       "componentName": "mantis",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pigeoon",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
