@@ -50,10 +50,10 @@ describe('common processors', () => {
           dealid: 'deal-1',
           ext: {
             prebid: {
-              deal: { type: 2, cpm: 5, priority_adjusted_cpm: 10, on_schedule: 0.8, priority: 3 }
+              deal: { type: 2, cpm: 5, priority_adjusted_cpm: 10, on_schedule: 0.8, priority: 3, source: 'adserver' }
             }
           }
-        })).to.eql({ type: 2, cpm: 5, priorityAdjustedCpm: 10, onSchedule: 0.8, priority: 3 });
+        })).to.eql({ type: 2, cpm: 5, priorityAdjustedCpm: 10, onSchedule: 0.8, priority: 3, source: 'adserver' });
       });
 
       [
