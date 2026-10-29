@@ -19,7 +19,17 @@ import { highestDesirabilityFirst } from '../../src/utils/reducers.js';
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
 let multiConfig = {};
-let multibidUnits = {};
+type MultibidUnit = { count: number, maxReached?: boolean };
+// Keyed by bidderRequest (or auction, for bids with no request) so that counts are dropped with the auction
+// and auctions sharing a publisher-supplied auctionId don't share counts.
+const multibidUnits = new WeakMap<object, Record<string, Record<BidderCode, MultibidUnit>>>();
+
+function getMultibidUnits(bid) {
+  const owner = auctionManager.index.getBidderRequest(bid) ?? auctionManager.index.getAuction(bid);
+  if (owner == null) return {};
+  if (!multibidUnits.has(owner)) multibidUnits.set(owner, {});
+  return multibidUnits.get(owner);
+}
 
 type MultiBidConfig = ({
   /**
@@ -152,10 +162,9 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
-    // Bid counts are kept per auction, so that concurrent auctions don't share limits, until the auction expires
-    // (late bids received after the auction ends still count)
-    const unitPath = [bid.auctionId, adUnitCode, bid.bidderCode];
-    const unit = deepAccess(multibidUnits, unitPath);
+    const units = getMultibidUnits(bid);
+    const unitPath = [adUnitCode, bid.bidderCode];
+    const unit: MultibidUnit = deepAccess(units, unitPath);
     // Check if stored bids for auction include adUnitCode.bidder and max limit not reach for ad unit
     if (unit) {
       // Store request id under new property originalRequestId, create new unique bidId,
@@ -174,8 +183,7 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
         logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((unit.maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
     } else {
-      deepSetValue(multibidUnits, unitPath, { count: 1 });
-      if (multiConfig[bid.bidderCode].maxbids === 1) deepAccess(multibidUnits, unitPath).maxReached = true;
+      deepSetValue(units, unitPath, { count: 1, maxReached: multiConfig[bid.bidderCode].maxbids === 1 });
 
       fn.call(this, adUnitCode, bid, reject);
     }
@@ -260,24 +268,9 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
 export const resetMultiConfig = () => { hasMultibid = false; multiConfig = {}; };
 
 /**
- * Resets globally stored multibid ad unit bids
- */
-export const resetMultibidUnits = () => {
-  multibidUnits = {};
-};
-
-/**
- * Drops the bid counts of an expired auction
- */
-export function clearMultibidUnitsForAuction(auction) {
-  delete multibidUnits[auction.getAuctionId()];
-}
-
-/**
  * Set up hooks on init
  */
 function init() {
-  auctionManager.onExpiry(clearMultibidUnitsForAuction);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
   getHook('addBidResponse').before(addBidResponseHook, 3);
   setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, targetBidPoolHook);
