@@ -364,6 +364,23 @@ describe('cross-domain creative', () => {
             });
           });
 
+          it('does not render again on a second response', () => {
+            const response = {
+              adId: '123',
+              message: MESSAGE_RESPONSE,
+              renderer: 'window.render = function() {}'
+            };
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply(response);
+            return waitFor(() => getMessage(1)?.payload).then(() => {
+              reply(response);
+              return new Promise((resolve) => setTimeout(resolve, 200));
+            }).then(() => {
+              sinon.assert.calledOnce(win.document.body.appendChild);
+              expect(getMessage(2)).to.not.exist;
+            });
+          });
+
           it('is provided an onMessage that receives every message following the response', () => {
             const listener = window._listener = sinon.stub();
             const response = {
