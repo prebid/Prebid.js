@@ -381,6 +381,29 @@ describe('cross-domain creative', () => {
             });
           });
 
+          it('signals AD_RENDER_FAILED when an onMessage listener throws', () => {
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply({
+              adId: '123',
+              message: MESSAGE_RESPONSE,
+              renderer: 'window.render = function(_, {onMessage}) { onMessage(function() { throw new Error("listener error") }) }'
+            });
+            return waitFor(() => getMessage(1)?.payload).then(() => {
+              reply({ message: 'other' });
+              return waitFor(() => getMessage(2)?.payload);
+            }).then(() => {
+              expect(getMessage(2).payload).to.eql({
+                message: MESSAGE_EVENT,
+                adId: '123',
+                event: EVENT_AD_RENDER_FAILED,
+                info: {
+                  reason: ERROR_EXCEPTION,
+                  message: 'listener error'
+                }
+              });
+            });
+          });
+
           it('is provided an onMessage that receives every message following the response', () => {
             const listener = window._listener = sinon.stub();
             const response = {
@@ -448,6 +471,29 @@ describe('cross-domain creative', () => {
         sinon.assert.calledWith(replyListener, JSON.stringify('response'));
       }).finally(() => {
         delete window._reply;
+      });
+    });
+
+    it('signals AD_RENDER_FAILED when a sendMessage callback throws, when no token is provided', () => {
+      renderAd({ adId: '123', pubUrl: ORIGIN });
+      messages[0].transfer[0].postMessage(JSON.stringify({
+        adId: '123',
+        message: MESSAGE_RESPONSE,
+        renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", {}, function() { throw new Error("reply error") }) }'
+      }));
+      return waitFor(() => messages.length === 3).then(() => {
+        messages[1].transfer[0].postMessage(JSON.stringify('response'));
+        return waitFor(() => messages.length === 4);
+      }).then(() => {
+        expect(messages[3].payload).to.eql({
+          message: MESSAGE_EVENT,
+          adId: '123',
+          event: EVENT_AD_RENDER_FAILED,
+          info: {
+            reason: ERROR_EXCEPTION,
+            message: 'reply error'
+          }
+        });
       });
     });
 
