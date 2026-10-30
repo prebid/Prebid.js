@@ -369,7 +369,7 @@ describe('semantiqRtdProvider', () => {
       expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({ site: { keywords: 'iab_category=politics,sentiment=negative,ctx_segment=C001,ctx_segment=C002' } });
     });
 
-    it("won't modify ortb2 if if no ad units are provided", async () => {
+    it("won't modify ortb2 if no ad units are provided", async () => {
       const reqBidsConfigObj = {
         adUnits: [],
         ortb2Fragments: {
