@@ -152,6 +152,7 @@ def chunk_patch(patch, max_chars=MAX_CHUNK_CHARS):
 
 
 CONDITIONS = ("if (", "} else if (", "else if (", "while (")
+STRING_LITERAL = re.compile(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"|`(?:[^`\\]|\\.)*`")
 
 
 def meaningful_fix(quote, fix, allow_condition=False):
@@ -160,7 +161,13 @@ def meaningful_fix(quote, fix, allow_condition=False):
     quote = quote.strip()
     if not fix or "\n" in fix or "\r" in fix or len(fix) > 350:
         return False
-    if compact(quote) == compact(fix):
+    # `{ a: a }` is `{ a }`: a model "fix" that only spells out shorthand is a no-op.
+    expand = lambda value: compact(re.sub(r"\b([A-Za-z_$][\w$]*)\s*:\s*\1\b", r"\1", value))
+    if compact(quote) == compact(fix) or expand(quote) == expand(fix):
+        return False
+    # Real fixes keep the line's string and template literals; a "fix" that
+    # deletes them (e.g. a `?${params}` query prefix) removes behavior instead.
+    if any(literal not in fix for literal in STRING_LITERAL.findall(quote)):
         return False
     # Only accept single-line suggestions replacing the exact flagged statement.
     if quote.lstrip().startswith("return "):

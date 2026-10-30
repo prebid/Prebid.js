@@ -243,6 +243,22 @@ class ReviewTests(unittest.TestCase):
                                         ["        spec.isBidRequestValid({ ...bid, params: {} }),"]))
         self.assertFalse(review.validate(finding, lines, replaced, []))
 
+    def test_new_adapter_false_positives_rejected(self):
+        # patmmccann/Prebid.js#349 (Ad Spiro replay): both "fixes" were wrong.
+        self.assertFalse(review.meaningful_fix(
+            "const data = converter.toORTB({ bidRequests, bidderRequest });",
+            "const data = converter.toORTB({ bidRequests, bidderRequest: bidderRequest });"))
+        self.assertFalse(review.meaningful_fix(
+            "const query = params.toString() ? `?${params}` : '';",
+            "const query = params.toString();"))
+
+    def test_literal_preserving_fixes_still_accepted(self):
+        self.assertTrue(review.meaningful_fix(
+            "return typeof bid === 'object' && !!bid.params.apiKey;",
+            "return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);"))
+        self.assertTrue(review.meaningful_fix("const sep = url.includes('?') ? '?' : '&';",
+                                              "const sep = url.includes('?') ? '&' : '?';"))
+
     def test_ambiguous_partial_quote_not_reanchored(self):
         lines = {1: "  if (a && b) { x(); }", 2: "  if (a && b) { y(); }"}
         finding = dict(FINDING, line=7, quote="if (a && b) {", fix="if (a || b) {")
