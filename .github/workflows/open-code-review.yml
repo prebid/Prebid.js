@@ -137,6 +137,7 @@ jobs:
           llm_extra_body: '{"reasoning_effort":"none"}'
           ocr_version: '1.13.3'
           language: English
+          rule: .opencodereview/rule.json
           # CPU runner: do not generate multiple competing model requests.
           review_concurrency: '1'
           effort: low
@@ -152,3 +153,13 @@ jobs:
           # Keep minor feedback in the summary instead of numerous inline threads.
           route_severity_below: low
           route_categories: style,documentation
+
+      - name: Upload OCR preflight diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ocr-9b-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/ocr-tool-preflight-response.json
+            ${{ runner.temp }}/ollama.log
+          if-no-files-found: ignore
