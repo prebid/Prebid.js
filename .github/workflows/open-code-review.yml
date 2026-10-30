@@ -22,10 +22,14 @@ jobs:
     if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/ocr-agent-') }}
     name: Experimental OpenCodeReview (Qwen3.5 9B)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # CPU prefill runs at roughly 13-25 tokens/s, and every agent turn sends
+    # a 3K+ token prompt, so even a tiny diff needs several minutes per turn.
+    timeout-minutes: 75
     env:
       OCR_EXPERIMENT: 'true'
-      OCR_MODEL: qwen3.5:9b-q4_K_M
+      OCR_BASE_MODEL: qwen3.5:9b-q4_K_M
+      # Local alias of the base model that uses every runner vCPU (see below).
+      OCR_MODEL: ocr-qwen3.5-9b
 
     steps:
       - name: Set runner-writable npm installation prefix
@@ -83,7 +87,12 @@ jobs:
           fi
 
           # Experimental only: Qwen3.5 9B; bounded review owns ordinary PRs.
-          ollama pull "$OCR_MODEL"
+          ollama pull "$OCR_BASE_MODEL"
+          # Ollama defaults to physical cores (2 of the 4 vCPUs on ubuntu-latest).
+          # The OpenAI-compatible endpoint cannot pass num_thread per request,
+          # so bake it into a local model alias instead.
+          printf 'FROM %s\nPARAMETER num_thread %s\n' "$OCR_BASE_MODEL" "$(nproc)" > "$RUNNER_TEMP/Modelfile"
+          ollama create "$OCR_MODEL" -f "$RUNNER_TEMP/Modelfile"
 
           # This preflight uses the real OCR tool schemas, not a toy report_bug tool.
           # Fail before launching a long review if the model cannot emit structured calls.
@@ -118,7 +127,7 @@ jobs:
               stream:false
             } + (if $experimental then {reasoning_effort:"none"} else {} end)' \
             > "$RUNNER_TEMP/ocr-tool-preflight.json"
-          curl --fail --silent --show-error --max-time 180 \
+          curl --fail --silent --show-error --max-time 300 \
             http://127.0.0.1:11434/v1/chat/completions \
             --header 'Content-Type: application/json' \
             --data-binary @"$RUNNER_TEMP/ocr-tool-preflight.json" \
@@ -170,8 +179,10 @@ jobs:
           effort: low
           # Publish agent progress to the Actions log during long CPU reviews.
           stream_progress: 'true'
-          llm_timeout: '180'
-          review_task_timeout: '5'
+          # One OCR agent turn re-sends a 3K+ token prompt; at CPU prefill speed
+          # that alone takes 2-4 minutes, and a review needs several turns.
+          llm_timeout: '600'
+          review_task_timeout: '60'
           # Leave the whole-run budget unlimited: OCR estimates even a tiny
           # review group at >16K tokens before making its first model call.
           # The 8,192-token per-prompt ceiling above still limits context.
