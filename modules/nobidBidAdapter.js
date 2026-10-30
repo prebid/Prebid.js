@@ -17,7 +17,7 @@ import { coppaDataHandler } from '../src/consentHandler.js';
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-window.nobidVersion = '1.3.4';
+window.nobidVersion = '1.4.2';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -39,9 +39,7 @@ function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
     var filterAdUnitsByIds = function(divIds, adUnits) {
       var filtered = [];
-      if (!divIds.length) {
-        filtered = adUnits;
-      } else if (adUnits) {
+      if (adUnits) {
         var a = [];
         if (!(divIds instanceof Array)) a.push(divIds);
         else a = divIds;
@@ -194,9 +192,6 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
     };
     var a = getAdUnit(adunitObject.div, adunits) || {};
-    if (adunitObject.account) {
-      a.s = adunitObject.account;
-    }
     if (adunitObject.sizes) {
       a.z = adunitObject.sizes;
     }
@@ -206,16 +201,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (adunitObject.floor) {
       a.floor = adunitObject.floor;
     }
-    if (adunitObject.targeting) {
-      a.g = adunitObject.targeting;
-    } else {
-      a.g = {};
-    }
+    a.g = {};
     if (adunitObject.div) {
       removeByAttrValue(adunits, 'd', adunitObject.div);
-    }
-    if (adunitObject.sizeMapping) {
-      a.sm = adunitObject.sizeMapping;
     }
     if (adunitObject.siteId) {
       a.sid = adunitObject.siteId;
@@ -228,6 +216,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     }
     if (adunitObject.params) {
       a.params = adunitObject.params;
+    }
+    if (adunitObject.ortb2Imp) {
+      a.ortb2Imp = adunitObject.ortb2Imp;
     }
     adunits.push(a);
     return adunits;
@@ -275,6 +266,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         ad_type: adType,
         params: bid.params,
         floor: floor,
+        ortb2Imp: bid.ortb2Imp,
         ctx: context
       },
       adunits);
@@ -418,7 +410,10 @@ export const spec = {
     const payload = nobidBuildRequests(validBidRequests, bidderRequest);
     if (!payload) return;
     window.nobid.refreshCount++;
-    const payloadString = JSON.stringify(payload).replace(/'|&|#/g, '');
+    const payloadString = JSON.stringify(payload)
+      .replace(/'/g, '\\u0027')
+      .replace(/&/g, '\\u0026')
+      .replace(/#/g, '\\u0023');
     const endpoint = buildEndpoint();
 
     let options = {};
@@ -473,7 +468,7 @@ export const spec = {
         if (params.length > 0) params += '&';
         else params += '?';
         params += 'gpp=' + encodeURIComponent(gppConsent.gppString);
-        params += 'gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(','));
+        params += '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(','));
       }
       return [{
         type: 'iframe',
