@@ -168,6 +168,7 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
     gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>,
     coppa: boolean
   ) => UserSync[];
+  supportsPreloadSync?: boolean;
   alwaysHasCapacity?: boolean;
 }
 
