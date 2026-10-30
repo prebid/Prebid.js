@@ -1,0 +1,61 @@
+# AI review is deliberately separate from the normal PR build/test jobs.
+# Setup (Settings > Secrets and variables > Actions):
+#   secrets: OCR_LLM_URL, OCR_LLM_AUTH_TOKEN
+#   variables: OCR_LLM_MODEL, OCR_LLM_USE_ANTHROPIC (true/false; defaults to false)
+#
+# pull_request_target makes credentials available for PRs from forks.
+# Do not check out or execute PR code in this privileged workflow:
+# the pinned OpenCodeReview action checks out the trusted base commit,
+# fetches PR Git objects, and reviews their diff without running PR scripts.
+name: OpenCodeReview PR Review
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: open-code-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: AI code review
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check model configuration
+        env:
+          LLM_URL: ${{ secrets.OCR_LLM_URL }}
+          LLM_TOKEN: ${{ secrets.OCR_LLM_AUTH_TOKEN }}
+          LLM_MODEL: ${{ vars.OCR_LLM_MODEL }}
+        run: |
+          if [[ -z "$LLM_URL" || -z "$LLM_TOKEN" || -z "$LLM_MODEL" ]]; then
+            echo "::error::Set OCR_LLM_URL and OCR_LLM_AUTH_TOKEN (Actions secrets) and OCR_LLM_MODEL (Actions variable)."
+            exit 1
+          fi
+
+      - name: Review PR and publish comments
+        # Pinned to Alibaba OpenCodeReview v1.13.3, not the mutable main branch.
+        uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb
+        with:
+          llm_url: ${{ secrets.OCR_LLM_URL }}
+          llm_auth_token: ${{ secrets.OCR_LLM_AUTH_TOKEN }}
+          llm_model: ${{ vars.OCR_LLM_MODEL }}
+          llm_use_anthropic: ${{ vars.OCR_LLM_USE_ANTHROPIC || 'false' }}
+          ocr_version: '1.13.3'
+          language: English
+          effort: medium
+          sticky_summary: 'true'
+          incremental: 'true'
+          # Keep lower-value feedback in the summary instead of flooding inline threads.
+          route_severity_below: low
+          route_categories: style,documentation
+          background: >-
+            Prebid.js is a performance-sensitive, browser-side header bidding library.
+            Prioritize correctness, bid lifecycle and auction behavior, privacy and
+            consent, performance, API compatibility, and meaningful test coverage.
+            Avoid superficial style issues already handled by linting.
