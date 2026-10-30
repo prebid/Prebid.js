@@ -319,7 +319,7 @@ def main():
     if not report["reviewed"]:
         print("::warning::Bounded Qwen reviewed no eligible files; success does not imply code coverage.", flush=True)
     if report["chunks_unreviewed"]:
-        print(f"::warning::{report[\'chunks_unreviewed\']} chunks have no review coverage", flush=True)
+        print("::warning::" + str(report["chunks_unreviewed"]) + " chunks have no review coverage", flush=True)
     if report["errors"]:
         raise RuntimeError("; ".join(report["errors"]))
 
