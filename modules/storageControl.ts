@@ -1,5 +1,5 @@
 import { config } from '../src/config.js';
-import { metadata } from '../libraries/metadata/metadata.js';
+import { disclosureURLList, metadata } from '../libraries/metadata/metadata.js';
 import {
   ACTIVITY_PARAM_COMPONENT,
   ACTIVITY_PARAM_COMPONENT_NAME,
@@ -54,17 +54,20 @@ export function getDisclosures(params, meta = metadata) {
       disclosureURLs[data.aliasOf] = parent.disclosureURL;
     }
   }
-  Object.entries(disclosureURLs).forEach(([componentName, disclosureURL]) => {
-    meta.getStorageDisclosure(disclosureURL)
-      ?.disclosures
-      ?.filter(disclosure => matches(params, disclosure))
-      ?.forEach(disclosure => {
-        matchingDisclosures.push({
-          [ACTIVITY_PARAM_COMPONENT_NAME]: componentName,
-          disclosureURL,
-          disclosure
+  Object.entries(disclosureURLs).forEach(([componentName, urls]) => {
+    // a component with multiple disclosures (one for each of its GVL IDs) discloses a key if any of them does
+    disclosureURLList(urls).forEach(disclosureURL => {
+      meta.getStorageDisclosure(disclosureURL)
+        ?.disclosures
+        ?.filter(disclosure => matches(params, disclosure))
+        ?.forEach(disclosure => {
+          matchingDisclosures.push({
+            [ACTIVITY_PARAM_COMPONENT_NAME]: componentName,
+            disclosureURL,
+            disclosure
+          });
         });
-      });
+    });
   });
   return {
     matches: matchingDisclosures,
@@ -96,8 +99,9 @@ export function checkDisclosure(params, getMatchingDisclosures = getDisclosures)
       }
       if (!disclosed && !parent) {
         reason = `Storage key "${key}" (for ${params[ACTIVITY_PARAM_STORAGE_TYPE]} storage) is not disclosed by "${component}"`;
-        if (disclosureURLs[moduleName]) {
-          reason += ` @ ${disclosureURLs[moduleName]}`;
+        const urls = disclosureURLList(disclosureURLs[moduleName]);
+        if (urls.length > 0) {
+          reason += ` @ ${urls.join(', ')}`;
         } else {
           reason += ` - no disclosure URL was provided, or it could not be retrieved`;
         }

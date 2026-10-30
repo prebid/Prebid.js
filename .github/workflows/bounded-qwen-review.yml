@@ -1,0 +1,67 @@
+name: Bounded Qwen PR review
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: bounded-qwen-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out trusted base branch only
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Validate diff parsing and finding guardrails
+        run: python3 -m unittest discover -s .github/scripts -p 'test_bounded_qwen_review.py' -v
+
+      - name: Install Ollama
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            --output "$RUNNER_TEMP/ollama-install.sh" \
+            https://github.com/ollama/ollama/releases/download/v0.40.13/install.sh
+          echo "25f64b810b947145095956533e1bdf56eacea2673c55a7e586be4515fc882c9f  $RUNNER_TEMP/ollama-install.sh" | sha256sum --check
+          sh "$RUNNER_TEMP/ollama-install.sh"
+
+      - name: Start Ollama and load Qwen3.5 9B
+        env:
+          OLLAMA_HOST: 127.0.0.1:11434
+          OLLAMA_NO_CLOUD: '1'
+          OLLAMA_NUM_PARALLEL: '1'
+          OLLAMA_CONTEXT_LENGTH: '16384'
+        run: |
+          sudo systemctl stop ollama 2>/dev/null || true
+          nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          for n in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull qwen3.5:9b-q4_K_M
+
+      - name: One-pass review and publish validated comments
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_MODEL: qwen3.5:9b-q4_K_M
+        run: python3 .github/scripts/bounded_qwen_review.py
+
+      - name: Upload review diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bounded-qwen-${{ github.run_id }}
+          path: ${{ runner.temp }}/bounded-qwen-result.json
+          if-no-files-found: ignore
