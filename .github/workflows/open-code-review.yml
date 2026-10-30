@@ -96,6 +96,8 @@ jobs:
 
           # This preflight uses the real OCR tool schemas, not a toy report_bug tool.
           # Fail before launching a long review if the model cannot emit structured calls.
+          # temperature 0 keeps the answer repeatable, so a lucky or unlucky sample
+          # does not decide whether the review runs.
           curl --fail --silent --show-error --max-time 180 \
             https://raw.githubusercontent.com/alibaba/open-code-review/375f64cd6f67a48a135da83cfcf59c52669a09cb/internal/config/toolsconfig/tools.json \
             --output "$RUNNER_TEMP/ocr-tools.json"
@@ -123,6 +125,7 @@ jobs:
               ],
               tools: ($defs[0] | map(select(.name == "code_comment" or .name == "task_done") | {type:"function",function:.definition})),
               tool_choice:"required",
+              temperature:0,
               max_tokens:1024,
               stream:false
             } + (if $experimental then {reasoning_effort:"none"} else {} end)' \

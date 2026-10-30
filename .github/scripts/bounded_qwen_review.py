@@ -200,10 +200,21 @@ def predict(model, filename, patch):
         print("[bounded-qwen] response received", flush=True)
     print("[bounded-qwen] prompt tokens:", result.get("prompt_eval_count"),
           "output tokens:", result.get("eval_count"), flush=True)
-    parsed = json.loads(result["message"]["content"])
+    try:
+        parsed = json.loads(result["message"]["content"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise UnparseableResponse(f"{type(error).__name__}: {error}", result) from error
     if not isinstance(parsed, dict) or not isinstance(parsed.get("findings"), list):
-        raise ValueError("Invalid model findings payload")
+        raise UnparseableResponse("Invalid model findings payload", result)
     return parsed["findings"], result
+
+
+class UnparseableResponse(ValueError):
+    """Model output that is not a findings object, e.g. JSON cut off at num_predict."""
+
+    def __init__(self, message, raw):
+        super().__init__(message)
+        self.raw = raw
 
 
 def review_chunk(model, filename, patch, index, total, sha, repo, number,
@@ -229,6 +240,17 @@ def review_chunk(model, filename, patch, index, total, sha, repo, number,
             diagnostic["outcome"] = "inference_error"
             report["errors"].append(f"{filename} chunk {index}: HTTP {error.code}")
         diagnostic["error"] = body
+        output_path.write_text(json.dumps(report, indent=2) + "\n")
+        return
+    except UnparseableResponse as error:
+        # A rambling answer is the model's failure, not the PR's: leave the
+        # chunk unreviewed with a warning, like a timeout, instead of failing.
+        diagnostic["outcome"] = "unparseable_response"
+        diagnostic["error"] = str(error)[:300]
+        diagnostic["raw_response"] = error.raw
+        report["chunks_unreviewed"] += 1
+        report["skipped_files"].append({"path": filename, "reason": "unparseable_response", "chunk": index})
+        print(f"::warning::Unparseable model output on {filename} chunk {index}; review is incomplete", flush=True)
         output_path.write_text(json.dumps(report, indent=2) + "\n")
         return
     except TimeoutError as error:

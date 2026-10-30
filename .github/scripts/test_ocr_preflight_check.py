@@ -42,6 +42,11 @@ class Tests(unittest.TestCase):
             "both comparisons, AND (&&), to reject values outside the bounds.")}
         self.assertTrue(valid(response(comment)))
 
+    def test_copied_diff_plus_prefix(self):
+        # Fork replay run 41087339676: correct fix, but with the diff's "+".
+        self.assertTrue(valid(response({**COMMENT, "existing_code": "+  " + BUG,
+                                        "suggestion_code": "+  " + FIX})))
+
     def test_extra_tool_call(self):
         item = response()
         item["choices"][0]["message"]["tool_calls"].append(

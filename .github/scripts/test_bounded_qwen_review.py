@@ -116,6 +116,23 @@ class ReviewTests(unittest.TestCase):
             self.assertEqual(report["chunks_unreviewed"], 1)
             self.assertEqual(report["files"][0]["outcome"], "inference_timeout")
 
+    def test_truncated_json_is_unreviewed_not_error(self):
+        # Fork replay run 41087339834: output hit num_predict mid-string.
+        raw = {"message": {"content": '{"findings": [{"line": 2, "problem": "unterminated'},
+               "eval_count": 650}
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            review, "api", return_value=raw
+        ):
+            report = {"files": [], "chunks_unreviewed": 0, "skipped_files": [],
+                      "errors": [], "rejected": 0, "posted": 0}
+            review.review_chunk("test-model", "src/test.ts", PATCH, 1, 1,
+                                "a" * 40, "prebid/Prebid.js", "1", "token",
+                                set(), report, pathlib.Path(directory) / "result.json")
+            self.assertEqual(report["errors"], [])
+            self.assertEqual(report["chunks_unreviewed"], 1)
+            self.assertEqual(report["files"][0]["outcome"], "unparseable_response")
+            self.assertEqual(report["files"][0]["raw_response"], raw)
+
     def test_production_first_file_limit_skip_diagnostics(self):
         # GitHub can return test files before production files.
         files = [{"filename": f"test/spec/file{i}.js", "status": "modified", "patch": PATCH}
