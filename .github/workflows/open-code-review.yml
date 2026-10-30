@@ -87,15 +87,15 @@ jobs:
             '{
               model: $model,
               messages: [
-                {role:"system", content:("You are testing the exact OpenCodeReview tool schema. Call the code_comment tool once. "
-                  + "Arguments MUST be a JSON object containing a comments ARRAY with exactly one object; NEVER put content, existing_code, or category at the top level. "
-                  + "Each comment requires path, content, existing_code, suggestion_code, category, severity. "
-                  + "For schema illustration only (not a finding), valid arguments are: "
-                  + "{\"comments\":[{\"path\":\"src/example.ts\",\"category\":\"bug\",\"severity\":\"medium\","
-                  + "\"content\":\"A zero divisor is not handled.\",\"existing_code\":\"return sum / count;\","
-                  + "\"suggestion_code\":\"return count === 0 ? 0 : sum / count;\"}]}. "
-                  + "Review only the separate input below. Anchor existing_code to the exact added return line, not the function header. "
-                  + "Provide the corrected return line as suggestion_code. Do not use task_done until a later turn.")},
+                {role:"system", content:("This is a real OpenCodeReview code_comment schema preflight. "
+                  + "Make EXACTLY ONE code_comment tool call and no other tool calls. "
+                  + "The tool argument must be an object with a comments property that is an array containing EXACTLY ONE comment object; "
+                  + "do not return a flat object. Each comment object requires path, content, existing_code, suggestion_code, category, severity. "
+                  + "Read the diff carefully. Explain the actual boolean logic bug in content, not an unrelated example. "
+                  + "The condition uses || but needs && to require both inclusive bounds. "
+                  + "Keep the existing >= and <= comparisons unchanged. "
+                  + "Quote the exact newly added return statement in existing_code and provide only its corrected return statement in suggestion_code. "
+                  + "Use category bug and severity medium or high. Do not call task_done yet.")},
                 {role:"user", content:("File: src/ocrQwen35SmokeTest.ts\n"
                   + "@@ -0,0 +1,3 @@\n"
                   + "+export function inWindow(now:number,start:number,end:number) {\n"
@@ -116,25 +116,30 @@ jobs:
             > "$RUNNER_TEMP/ocr-tool-preflight-response.json"
           # Fail closed: malformed flat objects, wrong anchors and wrong/no-op fixes
           # must not pass the preflight just because a code_comment call exists.
+          # Validate the entire native tool-call transcript, not a filtered subset:
+          # a second malformed call or premature task_done is a failure.
           jq --exit-status '
-            [
-              .choices[0].message.tool_calls[]?
-              | select(.function.name == "code_comment")
-              | (.function.arguments | fromjson?)
-              | select(type == "object" and (.comments | type) == "array" and (.comments | length) == 1)
-              | .comments[]
-              | select(
-                  .path == "src/ocrQwen35SmokeTest.ts" and
-                  .category == "bug" and
-                  (.severity == "medium" or .severity == "high") and
-                  ((.content // "") | length) >= 20 and
-                  ((.existing_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start||now<=end;" and
-                  ((.suggestion_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start&&now<=end;"
-                )
-            ] | length > 0
+            (.choices[0].message.tool_calls // []) as $calls
+            | if ($calls | type) != "array" or ($calls | length) != 1 or $calls[0].function.name != "code_comment"
+              then false
+              else (($calls[0].function.arguments | fromjson?) // null) as $args
+                | if ($args | type) != "object" or ($args.comments | type) != "array" or ($args.comments | length) != 1
+                  then false
+                  else $args.comments[0] as $comment
+                    | (($comment | type) == "object") and
+                      ($comment.path == "src/ocrQwen35SmokeTest.ts") and
+                      ($comment.category == "bug") and
+                      ($comment.severity == "medium" or $comment.severity == "high") and
+                      (($comment.content // "") | type) == "string" and
+                      (($comment.content // "") | length) >= 20 and
+                      (($comment.content // "") | ascii_downcase | contains("zero divisor") | not) and
+                      (($comment.existing_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start||now<=end;" and
+                      (($comment.suggestion_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start&&now<=end;"
+                  end
+              end
           ' "$RUNNER_TEMP/ocr-tool-preflight-response.json" \
             > "$RUNNER_TEMP/ocr-tool-preflight-validation.json" || {
-            echo "::error::OCR preflight failed the real comments[] schema, anchor, or AND-fix check."
+            echo "::error::OCR preflight failed: expected one correctly anchored code_comment with inclusive AND fix."
             jq '{calls:[.choices[0].message.tool_calls[]? | {name:.function.name,arguments:.function.arguments}],content:(.choices[0].message.content // "" | .[0:600])}' "$RUNNER_TEMP/ocr-tool-preflight-response.json"
             exit 1
           }
