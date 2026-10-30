@@ -357,6 +357,24 @@ describe('monetsiteBidAdapter', () => {
     });
 
     if (FEATURES.VIDEO) {
+      it('keeps an inferred media type local to its bid', () => {
+        const multiFormat = makeBid({
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] },
+            video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] },
+          },
+        });
+        const response = makeServerResponse();
+        response.body.seatbid[0].bid = [
+          { id: 'b-1', impid: BID_ID, price: 1, w: 300, h: 250, crid: 'cr-1', adm: '<div>ad</div>' },
+          { id: 'b-2', impid: BID_ID, price: 2, w: 640, h: 480, crid: 'cr-2', mtype: 2, adm: '<VAST version="4.0"></VAST>' },
+        ];
+        const bids = interpret(response, [multiFormat]);
+        expect(bids.map((bid) => bid.mediaType)).to.deep.equal(['banner', 'video']);
+      });
+    }
+
+    if (FEATURES.VIDEO) {
       it('converts a video bid', () => {
         const videoBid = makeBid({
           mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } },
