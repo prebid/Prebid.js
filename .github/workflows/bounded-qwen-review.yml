@@ -15,7 +15,7 @@ concurrency:
 jobs:
   review:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Check out trusted base branch only
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
           OLLAMA_HOST: 127.0.0.1:11434
           OLLAMA_NO_CLOUD: '1'
           OLLAMA_NUM_PARALLEL: '1'
-          OLLAMA_CONTEXT_LENGTH: '8192'
+          OLLAMA_CONTEXT_LENGTH: '16384'
         run: |
           sudo systemctl stop ollama 2>/dev/null || true
           nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
