@@ -21,16 +21,16 @@ jobs:
     name: AI code review (local Qwen3 4B)
     runs-on: ubuntu-latest
     timeout-minutes: 65
-    env:
-      # Keep npm global installs writable, including those inside the
-      # upstream composite action. Never use sudo for npm installs.
-      NPM_CONFIG_PREFIX: ${{ runner.temp }}/ocr-npm
 
     steps:
-      - name: Make user-local npm binaries available to subsequent steps
+      - name: Set runner-writable npm installation prefix
         run: |
-          mkdir -p "$NPM_CONFIG_PREFIX/bin"
-          echo "$NPM_CONFIG_PREFIX/bin" >> "$GITHUB_PATH"
+          # runner.temp is only available in steps, not in job-level env.
+          # Export the prefix and PATH for later steps and the composite action.
+          npm_prefix="$RUNNER_TEMP/ocr-npm"
+          mkdir -p "$npm_prefix/bin"
+          echo "NPM_CONFIG_PREFIX=$npm_prefix" >> "$GITHUB_ENV"
+          echo "$npm_prefix/bin" >> "$GITHUB_PATH"
       - name: Install Ollama v0.40.13
         env:
           OLLAMA_VERSION: '0.40.13'
