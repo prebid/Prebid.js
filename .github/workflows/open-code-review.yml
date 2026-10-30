@@ -22,7 +22,7 @@ jobs:
     if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/ocr-agent-') }}
     name: Experimental OpenCodeReview (Qwen3.5 9B)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     env:
       OCR_EXPERIMENT: 'true'
       OCR_MODEL: qwen3.5:9b-q4_K_M
@@ -140,11 +140,14 @@ jobs:
           rule: .opencodereview/rule.json
           # CPU runner: do not generate multiple competing model requests.
           review_concurrency: '1'
+          # Limits aggregate model tokens inside the agent loop, not just across groups.
+          # OCR v1.13.3 cannot reduce --max-tools below its 100-round template default.
+          max_tokens_budget: '50000'
           effort: low
           # Publish agent progress to the Actions log during long CPU reviews.
           stream_progress: 'true'
-          llm_timeout: '180'
-          review_task_timeout: '7'
+          llm_timeout: '120'
+          review_task_timeout: '5'
           # Leave the whole-run budget unlimited: OCR estimates even a tiny
           # review group at >16K tokens before making its first model call.
           # The 8,192-token per-prompt ceiling above still limits context.
