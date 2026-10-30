@@ -2,7 +2,7 @@ import { type BidderSpec, type ExtendedResponse, registerBidder } from '../src/a
 import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { AUDIO, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, logWarn, runBackgroundTask } from '../src/utils.js';
+import { deepAccess, deepSetValue, isPlainObject, logWarn, runBackgroundTask } from '../src/utils.js';
 import type { BidRequest } from '../src/adapterManager.js';
 
 const BIDDER_CODE = 'publinkio';
@@ -75,6 +75,18 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       deepAccess(context, 'bidRequests.0.schain');
     if (schain && deepAccess(request, 'source.schain') == null) {
       deepSetValue(request, 'source.schain', schain);
+    }
+    // Only the bidder-request flag computed by core grants trust. Publisher
+    // FPD cannot independently grant it through an ORTB extension.
+    const publisherPrebid = deepAccess(request, 'ext.prebid');
+    const prebid: Record<string, unknown> = isPlainObject(publisherPrebid)
+      ? { ...(publisherPrebid as Record<string, unknown>) } : {};
+    delete prebid.as;
+    if (bidderRequest.allowPriorityBids === true) {
+      prebid.as = { ap: true, apb: [bidderRequest.bidderCode] };
+    }
+    if (bidderRequest.allowPriorityBids === true || isPlainObject(publisherPrebid)) {
+      deepSetValue(request, 'ext.prebid', prebid);
     }
     request.cur = request.cur || [DEFAULT_CURRENCY];
     return request;
