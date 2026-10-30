@@ -116,6 +116,29 @@ class ReviewTests(unittest.TestCase):
             self.assertEqual(report["chunks_unreviewed"], 1)
             self.assertEqual(report["files"][0]["outcome"], "inference_timeout")
 
+    def test_production_first_file_limit_skip_diagnostics(self):
+        # GitHub can return test files before production files.
+        files = [{"filename": f"test/spec/file{i}.js", "status": "modified", "patch": PATCH}
+                 for i in range(8)]
+        files.append({"filename": "modules/production.ts", "status": "modified", "patch": PATCH})
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {
+            "GITHUB_REPOSITORY": "prebid/Prebid.js",
+            "PR_NUMBER": "15942",
+            "PR_HEAD_SHA": "a" * 40,
+            "GITHUB_TOKEN": "test-only",
+            "RUNNER_TEMP": directory,
+            "REVIEW_MODEL": "test-model",
+        }), patch.object(review, "paged", side_effect=lambda repo, number, token, endpoint: (
+            files if endpoint == "files" else []
+        )), patch.object(review, "predict", return_value=([], {"message": {"content": '{"findings":[]}'}})):
+            review.main()
+            report = json.loads((pathlib.Path(directory) / "bounded-qwen-result.json").read_text())
+            skipped = [item["path"] for item in report["skipped_files"]
+                       if item["reason"] == "file_count_limit"]
+            self.assertEqual(skipped, ["test/spec/file7.js"])
+            self.assertNotIn("modules/production.ts", skipped)
+            self.assertIn("modules/production.ts", [item["path"] for item in report["files"]])
+
     def test_reject_incomplete_finding(self):
         finding = dict(FINDING, failure_case="")
         self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
