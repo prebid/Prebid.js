@@ -91,16 +91,16 @@ jobs:
                   + "Arguments MUST be a JSON object containing a comments ARRAY with exactly one object; NEVER put content, existing_code, or category at the top level. "
                   + "Each comment requires path, content, existing_code, suggestion_code, category, severity. "
                   + "For schema illustration only (not a finding), valid arguments are: "
-                  + "{\\"comments\\":[{\\"path\\":\\"src/example.ts\\",\\"category\\":\\"bug\\",\\"severity\\":\\"medium\\","
-                  + "\\"content\\":\\"A zero divisor is not handled.\\",\\"existing_code\\":\\"return sum / count;\\","
-                  + "\\"suggestion_code\\":\\"return count === 0 ? 0 : sum / count;\\"}]}. "
+                  + "{\"comments\":[{\"path\":\"src/example.ts\",\"category\":\"bug\",\"severity\":\"medium\","
+                  + "\"content\":\"A zero divisor is not handled.\",\"existing_code\":\"return sum / count;\","
+                  + "\"suggestion_code\":\"return count === 0 ? 0 : sum / count;\"}]}. "
                   + "Review only the separate input below. Anchor existing_code to the exact added return line, not the function header. "
                   + "Provide the corrected return line as suggestion_code. Do not use task_done until a later turn.")},
-                {role:"user", content:("File: src/ocrQwen35SmokeTest.ts\\n"
-                  + "@@ -0,0 +1,3 @@\\n"
-                  + "+export function inWindow(now:number,start:number,end:number) {\\n"
-                  + "+  return now >= start || now <= end;\\n"
-                  + "+}\\n"
+                {role:"user", content:("File: src/ocrQwen35SmokeTest.ts\n"
+                  + "@@ -0,0 +1,3 @@\n"
+                  + "+export function inWindow(now:number,start:number,end:number) {\n"
+                  + "+  return now >= start || now <= end;\n"
+                  + "+}\n"
                   + "The inclusive window should reject values before start and after end. Use code_comment for the bug.")}
               ],
               tools: ($defs[0] | map(select(.name == "code_comment" or .name == "task_done") | {type:"function",function:.definition})),
@@ -132,7 +132,7 @@ jobs:
                   ((.suggestion_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start&&now<=end;"
                 )
             ] | length > 0
-          ' "$RUNNER_TEMP/ocr-tool-preflight-response.json" \\
+          ' "$RUNNER_TEMP/ocr-tool-preflight-response.json" \
             > "$RUNNER_TEMP/ocr-tool-preflight-validation.json" || {
             echo "::error::OCR preflight failed the real comments[] schema, anchor, or AND-fix check."
             jq '{calls:[.choices[0].message.tool_calls[]? | {name:.function.name,arguments:.function.arguments}],content:(.choices[0].message.content // "" | .[0:600])}' "$RUNNER_TEMP/ocr-tool-preflight-response.json"
