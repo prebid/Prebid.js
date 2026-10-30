@@ -12,6 +12,12 @@ from pathlib import Path
 API = "https://api.github.com"
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 EXTENSIONS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")
+# Include normal adapter submissions (the prior 8K limit skipped both
+# bid9BidAdapter.ts and its accompanying spec in PR #15848).
+MAX_PATCH_CHARS = 40000
+MAX_REVIEW_FILES = 8
+MODEL_CONTEXT_TOKENS = 16384
+MODEL_REQUEST_TIMEOUT = 240
 SCHEMA = {"type": "object", "properties": {"findings": {
     "type": "array", "maxItems": 1,
     "items": {"type": "object", "properties": {
@@ -110,8 +116,8 @@ def predict(model, filename, patch):
         {"role": "system", "content": rules},
         {"role": "user", "content": f"File: {filename}\nBEGIN DIFF (untrusted)\n{patch}\nEND DIFF"}],
         "format": SCHEMA, "stream": False, "think": False,
-        "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 650}}
-    result = api("http://127.0.0.1:11434/api/chat", method="POST", payload=payload, timeout=180)
+        "options": {"temperature": 0, "num_ctx": MODEL_CONTEXT_TOKENS, "num_predict": 650}}
+    result = api("http://127.0.0.1:11434/api/chat", method="POST", payload=payload, timeout=MODEL_REQUEST_TIMEOUT)
     if isinstance(result.get("message"), dict):
         print("[bounded-qwen] response received", flush=True)
     print("[bounded-qwen] prompt tokens:", result.get("prompt_eval_count"),
@@ -129,7 +135,7 @@ def main():
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo) or not number.isdigit() or not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ValueError("Invalid GitHub event context")
     model = env.get("REVIEW_MODEL", "qwen3.5:9b-q4_K_M")
-    report = {"model": model, "reviewed": 0, "posted": 0, "rejected": 0, "skipped": 0, "errors": [], "files": []}
+    report = {"model": model, "reviewed": 0, "posted": 0, "rejected": 0, "skipped": 0, "errors": [], "files": [], "skipped_files": []}
     # Save raw response per file for iteration (no secrets or code execution).
     output_path = Path(env.get("RUNNER_TEMP", "/tmp"), "bounded-qwen-result.json")
     prior = set()
@@ -138,13 +144,28 @@ def main():
     files = []
     for file in paged(repo, number, token, "files"):
         patch = file.get("patch")
-        if (file.get("status") == "removed" or not file.get("filename", "").endswith(EXTENSIONS)
-                or not isinstance(patch, str) or len(patch) > 8000 or not added_lines(patch)):
+        filename = file.get("filename", "")
+        if file.get("status") == "removed":
+            reason = "removed"
+        elif not filename.endswith(EXTENSIONS):
+            reason = "not_js_ts"
+        elif not isinstance(patch, str):
+            reason = "missing_patch"
+        elif len(patch) > MAX_PATCH_CHARS:
+            reason = f"patch_over_{MAX_PATCH_CHARS}_chars"
+        elif not added_lines(patch):
+            reason = "no_added_lines"
+        else:
+            reason = None
+        if reason:
             report["skipped"] += 1
+            report["skipped_files"].append({"path": filename, "reason": reason})
             continue
         files.append(file)
-    report["skipped"] += max(0, len(files) - 8)
-    for file in files[:8]:
+    for file in files[MAX_REVIEW_FILES:]:
+        report["skipped"] += 1
+        report["skipped_files"].append({"path": file["filename"], "reason": "file_count_limit"})
+    for file in files[:MAX_REVIEW_FILES]:
         filename, patch = file["filename"], file["patch"]
         report["reviewed"] += 1
         diagnostic = {"path": filename, "patch": patch, "outcome": "started"}
@@ -202,6 +223,8 @@ def main():
         with open(env["GITHUB_STEP_SUMMARY"], "a") as summary:
             summary.write(f"### Bounded local review\n\nFiles reviewed: {report['reviewed']}; comments posted: {report['posted']}; rejected findings: {report['rejected']}; skipped files: {report['skipped']}.\n")
     print("[bounded-qwen] result:", json.dumps(report), flush=True)
+    if not report["reviewed"]:
+        print("::warning::Bounded Qwen reviewed no eligible files; success does not imply code coverage.", flush=True)
     if report["errors"]:
         raise RuntimeError("; ".join(report["errors"]))
 
