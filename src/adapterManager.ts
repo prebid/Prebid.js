@@ -41,7 +41,7 @@ import {
   incrementRequestsCounter
 } from './adUnits.js';
 import { getRefererInfo, type RefererInfo } from './refererDetection.js';
-import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
+import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, type GVLIDs } from './consentHandler.js';
 import * as events from './events.js';
 import { EVENTS, S2S } from './constants.js';
 import { type Metrics, useMetrics } from './utils/perfMetrics.js';
@@ -88,7 +88,7 @@ export const dep = {
 
 const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
-const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
+const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: GVLIDs, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
 
 let _s2sConfigs : any[] | any = [];
 config.getConfig('s2sConfig', config => {
@@ -239,9 +239,9 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
 
 export type AliasBidderOptions = {
   /**
-   * IAB Global Vendor List ID for this alias for use with the TCF control module.
+   * IAB Global Vendor List ID (or IDs) for this alias for use with the TCF control module.
    */
-  gvlid?: number;
+  gvlid?: GVLIDs;
   /**
    * Google Additional Consent provider ID for this alias for use with the TCF control module.
    */
@@ -260,7 +260,7 @@ export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & 
   code?: P;
   enableAnalytics(config: AnalyticsConfig<P>): void;
   disableAnalytics?: () => void;
-  gvlid?: number | ((config: AnalyticsConfig<P>) => number);
+  gvlid?: GVLIDs | ((config: AnalyticsConfig<P>) => GVLIDs);
 };
 
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, getTid }: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
@@ -934,7 +934,7 @@ const adapterManager = {
   registerAnalyticsAdapter<P extends AnalyticsProvider>({ adapter, code, gvlid, acpId }: {
     adapter: AnalyticsAdapter<P>,
     code: P,
-    gvlid?: number,
+    gvlid?: GVLIDs,
     /**
      * Google Additional Consent provider ID, for vendors that are not on the GVL.
      */

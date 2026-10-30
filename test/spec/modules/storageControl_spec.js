@@ -142,6 +142,79 @@ describe('storageControl', () => {
         });
       });
 
+      describe('when a component has more than one disclosure', () => {
+        beforeEach(() => {
+          metadata.register('multiModule', {
+            disclosures: {
+              'other.url': {
+                disclosures: [
+                  {
+                    identifier: 'otherCookie',
+                    type: 'cookie'
+                  }
+                ]
+              }
+            },
+            components: [
+              {
+                [ACTIVITY_PARAM_COMPONENT_TYPE]: MODULE_TYPE_BIDDER,
+                [ACTIVITY_PARAM_COMPONENT_NAME]: 'multiBidder',
+                disclosureURL: ['mock.url', 'other.url']
+              },
+              {
+                [ACTIVITY_PARAM_COMPONENT_TYPE]: MODULE_TYPE_BIDDER,
+                [ACTIVITY_PARAM_COMPONENT_NAME]: 'multiAlias',
+                disclosureURL: null,
+                aliasOf: 'multiBidder'
+              }
+            ]
+          });
+        });
+
+        Object.entries({
+          mockCookie: 'mock.url',
+          otherCookie: 'other.url'
+        }).forEach(([key, url]) => {
+          it(`should match keys disclosed in any of them (${key})`, () => {
+            expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, key, 'multiBidder'), metadata)).to.eql({
+              disclosureURLs: {
+                multiBidder: ['mock.url', 'other.url']
+              },
+              matches: [
+                {
+                  componentName: 'multiBidder',
+                  disclosureURL: url,
+                  disclosure: {
+                    identifier: key,
+                    type: 'cookie'
+                  }
+                }
+              ]
+            });
+          });
+
+          it(`should match keys disclosed in any of the parent's (${key})`, () => {
+            const { disclosed, parent } = checkDisclosure(mkParams(STORAGE_TYPE_COOKIES, key, 'multiAlias'), (params) => getDisclosures(params, metadata));
+            expect(disclosed).to.be.false;
+            expect(parent).to.be.true;
+          });
+        });
+
+        it('should consider keys disclosed if any of them disclose it', () => {
+          expect(checkDisclosure(mkParams(STORAGE_TYPE_COOKIES, 'otherCookie', 'multiBidder'), (params) => getDisclosures(params, metadata))).to.eql({
+            disclosed: true,
+            parent: false,
+            reason: null
+          });
+        });
+
+        it('should list all of them when a key is not disclosed', () => {
+          const { disclosed, reason } = checkDisclosure(mkParams(STORAGE_TYPE_COOKIES, 'undisclosed', 'multiBidder'), (params) => getDisclosures(params, metadata));
+          expect(disclosed).to.be.false;
+          expect(reason).to.contain('@ mock.url, other.url');
+        });
+      });
+
       it('should not match when storage type differs', () => {
         expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'mockKey'), metadata)).to.eql({
           disclosureURLs: {
