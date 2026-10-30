@@ -1188,7 +1188,7 @@
       "componentType": "bidder",
       "componentName": "tne_catalyst",
       "aliasOf": null,
-      "gvlid": 1494,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3428,7 +3428,10 @@
       "componentType": "bidder",
       "componentName": "easybid",
       "aliasOf": "nexx360",
-      "gvlid": 1068,
+      "gvlid": [
+        965,
+        1068
+      ],
       "disclosureURL": null
     },
     {
@@ -3519,7 +3522,7 @@
       "componentType": "bidder",
       "componentName": "escalax",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1435,
       "disclosureURL": null
     },
     {
@@ -4665,13 +4668,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "smaato",
-      "aliasOf": null,
-      "gvlid": 82,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "smartx",
       "aliasOf": null,
       "gvlid": 115,
@@ -5242,6 +5238,13 @@
       "componentName": "prebidServer",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "smaato",
+      "aliasOf": null,
+      "gvlid": 82,
       "disclosureURL": null
     },
     {
@@ -5941,6 +5944,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "transfonSecurity",
+      "gvlid": 1370,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "wurfl",
       "gvlid": 1655,
       "disclosureURL": null
@@ -6332,7 +6341,10 @@
     {
       "componentType": "userId",
       "componentName": "pairId",
-      "gvlid": 755,
+      "gvlid": [
+        97,
+        755
+      ],
       "disclosureURL": null,
       "aliasOf": null
     },
