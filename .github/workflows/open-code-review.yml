@@ -54,8 +54,3 @@ jobs:
           # Keep lower-value feedback in the summary instead of flooding inline threads.
           route_severity_below: low
           route_categories: style,documentation
-          background: >-
-            Prebid.js is a performance-sensitive, browser-side header bidding library.
-            Prioritize correctness, bid lifecycle and auction behavior, privacy and
-            consent, performance, API compatibility, and meaningful test coverage.
-            Avoid superficial style issues already handled by linting.
