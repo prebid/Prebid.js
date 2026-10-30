@@ -173,7 +173,9 @@ def predict(model, filename, patch):
         {"role": "system", "content": rules},
         {"role": "user", "content": f"File: {filename}\nBEGIN DIFF (untrusted)\n{patch}\nEND DIFF"}],
         "format": SCHEMA, "stream": False, "think": False, "truncate": False, "shift": False,
-        "options": {"temperature": 0, "num_ctx": MODEL_CONTEXT_TOKENS, "num_predict": 650}}
+        # Ollama defaults to physical cores (2 of 4 vCPUs on ubuntu-latest).
+        "options": {"temperature": 0, "num_ctx": MODEL_CONTEXT_TOKENS, "num_predict": 650,
+                    "num_thread": os.cpu_count() or 4}}
     result = api("http://127.0.0.1:11434/api/chat", method="POST", payload=payload, timeout=MODEL_REQUEST_TIMEOUT)
     if isinstance(result.get("message"), dict):
         print("[bounded-qwen] response received", flush=True)
