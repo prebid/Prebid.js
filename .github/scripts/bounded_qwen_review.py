@@ -81,7 +81,7 @@ def chunk_patch(patch, max_chars=MAX_CHUNK_CHARS):
         if part and any(line.startswith("+") for line in part):
             header = f"@@ -{old_start},{old_count} +{new_start},{new_count} @@"
             chunks.append(header + "\n" + "\n".join(part))
-        part, old_count, new_count, size = [], 0, 0, 0, 0
+        part, old_count, new_count, size = [], 0, 0, 0
 
     for line in patch.splitlines():
         match = HUNK_RANGES.match(line)
@@ -284,12 +284,12 @@ def main():
             report["skipped_files"].append({"path": filename, "reason": reason})
             continue
         files.append(file)
+    # Prioritize production before tests for both selection and skip diagnostics.
+    files.sort(key=lambda item: (item["filename"].startswith(("test/", "tests/")),
+                                 item["filename"]))
     for file in files[MAX_REVIEW_FILES:]:
         report["skipped"] += 1
         report["skipped_files"].append({"path": file["filename"], "reason": "file_count_limit"})
-    # Prioritize production files over tests, then cap all CPU inference calls.
-    files.sort(key=lambda item: (item["filename"].startswith(("test/", "tests/")),
-                                 item["filename"]))
     total_chunks = 0
     report["chunks_unreviewed"] = 0
     report["chunks_attempted"] = 0
