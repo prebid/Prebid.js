@@ -184,7 +184,8 @@ def main():
             + "**Failure case:** " + finding["failure_case"] + "\n\n"
             + "**Suggested fix:** `" + finding["fix"].replace("`", "'") + "`\n\n"
             + f"<!-- bounded-qwen:{marker} -->")
-        output_path.write_text(json.dumps(report, indent=2) + "\n")\n        api(f"{API}/repos/{repo}/pulls/{number}/comments", token, "POST", {
+        output_path.write_text(json.dumps(report, indent=2) + "\n")
+        api(f"{API}/repos/{repo}/pulls/{number}/comments", token, "POST", {
             "body": body, "commit_id": sha, "path": filename, "line": finding["line"], "side": "RIGHT"})
         prior.add(marker)
         diagnostic["outcome"] = "posted"
