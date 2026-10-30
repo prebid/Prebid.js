@@ -1,0 +1,9 @@
+{
+  "rules": [
+    {
+      "path": "**/*.{js,jsx,ts,tsx,mjs,cjs}",
+      "rule": "Lightweight, high-precision correctness review for Prebid.js. Review changed code for clear, reproducible defects: incorrect boolean expressions or boundary conditions; definite null/undefined dereferences; incorrect property names or defaults; obvious unhandled promises, asynchronous ordering or cleanup mistakes; duplicate callbacks or event emissions; and concrete API compatibility or security regressions directly supported by the diff. Report only findings with a specific changed line, a realistic failure scenario, and a clear explanation of the resulting wrong behavior. Focus on issues unlikely to be caught by ESLint, TypeScript, or existing tests. Do not report style, naming, documentation, speculative architecture, broad refactoring, or hypothetical cross-module risks. Do not assume missing context proves a bug. When uncertain, abstain; zero findings is a successful outcome. Prioritize precision over recall.",
+      "merge_system_rule": false
+    }
+  ]
+}

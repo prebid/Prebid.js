@@ -120,6 +120,8 @@ jobs:
           # CPU runner: do not generate multiple competing model requests.
           review_concurrency: '1'
           effort: low
+          # Publish agent progress to the Actions log during long CPU reviews.
+          stream_progress: 'true'
           llm_timeout: '900'
           review_task_timeout: '35'
           # Leave the whole-run budget unlimited: OCR estimates even a tiny
