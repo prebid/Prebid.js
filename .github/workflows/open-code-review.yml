@@ -122,7 +122,9 @@ jobs:
           effort: low
           llm_timeout: '900'
           review_task_timeout: '35'
-          max_tokens_budget: '16000'
+          # Leave the whole-run budget unlimited: OCR estimates even a tiny
+          # review group at >16K tokens before making its first model call.
+          # The 8,192-token per-prompt ceiling above still limits context.
           sticky_summary: 'true'
           incremental: 'true'
           # Keep minor feedback in the summary instead of numerous inline threads.
