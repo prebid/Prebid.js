@@ -37,7 +37,7 @@ jobs:
           echo "NPM_CONFIG_PREFIX=$npm_prefix" >> "$GITHUB_ENV"
           echo "$npm_prefix/bin" >> "$GITHUB_PATH"
       - name: Checkout trusted base and test OCR validator
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
