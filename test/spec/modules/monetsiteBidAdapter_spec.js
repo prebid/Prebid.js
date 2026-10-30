@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import { spec } from 'modules/monetizeBidAdapter.js';
+import { spec } from 'modules/monetsiteBidAdapter.js';
 import 'modules/priceFloors.js';
 
 const ZONE_ID = '123456';
@@ -8,7 +8,7 @@ const BID_ID = '2f9c1e7a5b3d4c';
 
 function makeBid({ params = { zoneID: ZONE_ID }, mediaTypes, bidId = BID_ID, ...rest } = {}) {
   return {
-    bidder: 'monetize',
+    bidder: 'monetsite',
     bidId,
     adUnitCode: 'div-gpt-ad-1',
     auctionId: 'a1b2c3d4-0000-4000-8000-000000000001',
@@ -23,7 +23,7 @@ function makeBid({ params = { zoneID: ZONE_ID }, mediaTypes, bidId = BID_ID, ...
 
 function makeBidderRequest(bids, overrides = {}) {
   return {
-    bidderCode: 'monetize',
+    bidderCode: 'monetsite',
     auctionId: bids[0]?.auctionId,
     bids,
     timeout: 1000,
@@ -65,13 +65,13 @@ function makeServerResponse(bid = {}, body = {}) {
   };
 }
 
-describe('monetizeBidAdapter', () => {
+describe('monetsiteBidAdapter', () => {
   afterEach(() => {
     config.resetConfig();
   });
 
   it('registers bidder code and media types', () => {
-    expect(spec.code).to.equal('monetize');
+    expect(spec.code).to.equal('monetsite');
     expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video', 'native']);
   });
 
@@ -171,7 +171,7 @@ describe('monetizeBidAdapter', () => {
     });
 
     it('allows overriding the endpoint via setConfig', () => {
-      config.setConfig({ monetize: { endpoint: 'https://test.monetize.site/ssp?z=' } });
+      config.setConfig({ monetsite: { endpoint: 'https://test.monetize.site/ssp?z=' } });
       expect(build()[0].url).to.equal('https://test.monetize.site/ssp?z=123456');
     });
 
@@ -181,7 +181,7 @@ describe('monetizeBidAdapter', () => {
     });
 
     it('lets params.mirror override the endpoint config, per bid', () => {
-      config.setConfig({ monetize: { endpoint: 'https://test.monetize.site/ssp?z=' } });
+      config.setConfig({ monetsite: { endpoint: 'https://test.monetize.site/ssp?z=' } });
       const requests = build([
         makeBid({ bidId: 'a', params: { zoneID: '1', mirror: 'rtb.example.com' } }),
         makeBid({ bidId: 'b', params: { zoneID: '2' } }),
@@ -341,13 +341,13 @@ describe('monetizeBidAdapter', () => {
     });
 
     it('applies the configured ttl and ignores out of range values', () => {
-      config.setConfig({ monetize: { ttl: 600 } });
+      config.setConfig({ monetsite: { ttl: 600 } });
       expect(interpret(makeServerResponse())[0].ttl).to.equal(600);
-      config.setConfig({ monetize: { ttl: 5000 } });
+      config.setConfig({ monetsite: { ttl: 5000 } });
       expect(interpret(makeServerResponse())[0].ttl).to.equal(5000);
-      config.setConfig({ monetize: { ttl: 5001 } });
+      config.setConfig({ monetsite: { ttl: 5001 } });
       expect(interpret(makeServerResponse())[0].ttl).to.equal(500);
-      config.setConfig({ monetize: { ttl: 0 } });
+      config.setConfig({ monetsite: { ttl: 0 } });
       expect(interpret(makeServerResponse())[0].ttl).to.equal(500);
     });
 
@@ -414,6 +414,21 @@ describe('monetizeBidAdapter', () => {
       expect(second.url).to.equal(
         'https://sync.monetize.site/frame?gdpr=1&gdpr_consent=abc%3D&us_privacy=1YNN&gpp=DBA&gpp_sid=7%2C8'
       );
+    });
+
+    it('registers each sync once across per-bid responses', () => {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [...responses, ...responses]);
+      expect(syncs.map(({ type, url }) => `${type} ${url}`)).to.deep.equal([
+        'image https://sync.monetize.site/img?x=1',
+        'iframe https://sync.monetize.site/frame',
+        'image https://sync.monetize.site/img2',
+      ]);
+    });
+
+    it('returns no syncs when COPPA applies', () => {
+      const options = { pixelEnabled: true, iframeEnabled: true };
+      expect(spec.getUserSyncs(options, responses, undefined, undefined, undefined, true)).to.deep.equal([]);
+      expect(spec.getUserSyncs(options, responses, undefined, undefined, undefined, false)).to.have.length(3);
     });
 
     it('sends gdpr=0 and an empty consent string when gdpr does not apply', () => {

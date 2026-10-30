@@ -7,10 +7,10 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { resolveResponseMediaType } from '../libraries/ortb2Utils/mediaType.js';
 
 /**
- * @typedef {import('./monetizeBidAdapter.d.ts').MonetizeBidderParams} MonetizeBidderParams
+ * @typedef {import('./monetsiteBidAdapter.d.ts').MonetsiteBidderParams} MonetsiteBidderParams
  */
 
-const BIDDER_CODE = 'monetize';
+const BIDDER_CODE = 'monetsite';
 const ADAPTER_VERSION = '1.0.0';
 const DEFAULT_HOST = 'rtb.monetize.site';
 const ENDPOINT_PATH = '/ssp?z=';
@@ -201,8 +201,14 @@ export const spec = {
     return converter.fromORTB({ response: serverResponse.body, request: request.data }).bids;
   },
 
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
+    // no identifier syncs on child-directed traffic
+    if (coppa) {
+      return [];
+    }
     const syncs = [];
+    // one request per bid means the same pixels can come back in several responses
+    const seen = new Set();
     (serverResponses || []).forEach((response) => {
       const pixels = response?.body?.ext?.pixels;
       if (!isArray(pixels)) {
@@ -211,7 +217,9 @@ export const spec = {
       pixels.forEach(([kind, url]) => {
         const type = SYNC_TYPES[String(kind).toLowerCase()];
         const enabled = type === 'image' ? syncOptions.pixelEnabled : type === 'iframe' && syncOptions.iframeEnabled;
-        if (enabled && isStr(url) && url.startsWith('https://')) {
+        const key = `${type}|${url}`;
+        if (enabled && isStr(url) && url.startsWith('https://') && !seen.has(key)) {
+          seen.add(key);
           syncs.push({ type, url: appendConsentParams(url, gdprConsent, uspConsent, gppConsent) });
         }
       });

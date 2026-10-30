@@ -39,7 +39,7 @@ const adUnits = [
   {
     code: 'banner-div',
     mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-    bids: [{ bidder: 'monetize', params: { zoneID: '123456' } }]
+    bids: [{ bidder: 'monetsite', params: { zoneID: '123456' } }]
   },
   {
     code: 'video-div',
@@ -52,7 +52,7 @@ const adUnits = [
         maxduration: 30
       }
     },
-    bids: [{ bidder: 'monetize', params: { zoneID: '123457' } }]
+    bids: [{ bidder: 'monetsite', params: { zoneID: '123457' } }]
   },
   {
     code: 'native-div',
@@ -66,7 +66,7 @@ const adUnits = [
         }
       }
     },
-    bids: [{ bidder: 'monetize', params: { zoneID: '123458' } }]
+    bids: [{ bidder: 'monetsite', params: { zoneID: '123458' } }]
   }
 ];
 ```
@@ -80,7 +80,7 @@ Every impression is sent with `bidfloor`/`bidfloorcur`, resolved in this order:
 3. `bidfloor: 0`, `bidfloorcur: 'USD'`.
 
 ```javascript
-bids: [{ bidder: 'monetize', params: { zoneID: '123456', bidfloor: 0.5, cur: 'EUR' } }]
+bids: [{ bidder: 'monetsite', params: { zoneID: '123456', bidfloor: 0.5, cur: 'EUR' } }]
 ```
 
 The request-level `cur` follows the floor currency.
@@ -89,7 +89,7 @@ The request-level `cur` follows the floor currency.
 
 ```javascript
 pbjs.setConfig({
-  monetize: {
+  monetsite: {
     ttl: 360,                                  // bid TTL in seconds (0 < ttl <= 5000), default 500
     endpoint: 'https://rtb.monetize.site/ssp?z=' // endpoint override; the zone id is appended
   }
@@ -101,4 +101,5 @@ pbjs.setConfig({
 The adapter does not store anything in the browser itself. Sync pixels are returned by the server in
 `response.ext.pixels` as `[type, url]` pairs (`image`/`img` or `iframe`) and are only fired when the
 publisher enables that sync type. Consent parameters (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`,
-`gpp_sid`) are appended to every sync URL.
+`gpp_sid`) are appended to every sync URL. Duplicate pixels across responses are registered once, and no syncs are
+registered when COPPA applies.
