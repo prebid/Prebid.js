@@ -157,6 +157,10 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
    * FPD is in `ortb2Imp`.
    */
   ortb2: DeepPartial<ORTBRequest>;
+  /** Effective publisher Safe Renderer configuration, inherited from the ad unit when not overridden. */
+  safeRenderer?: AdUnit['safeRenderer'];
+  /** Core supplies the effective top-window renderer policy before client bid validation. */
+  allowTopWindowRenderers?: boolean;
 }
 
 export interface StoredBidRequest extends BaseBidRequest, Omit<{ [K in keyof AdUnitBidderBid<BidderCode>]?: undefined | null }, keyof BaseBidRequest> {
@@ -294,6 +298,9 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
             `mediaTypes is not correctly configured for adunit ${adUnit.code}`
           );
         }
+
+        const safeRenderer = bid.safeRenderer || adUnit.safeRenderer;
+        if (safeRenderer) bid.safeRenderer = safeRenderer;
 
         if (src === 'client') {
           incrementBidderRequestsCounter(adUnit.code, bidderCode);

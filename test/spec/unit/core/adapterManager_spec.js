@@ -1927,6 +1927,105 @@ describe('adapterManager tests', function () {
       });
     });
 
+    describe('renderer configuration', () => {
+      let adUnit;
+
+      beforeEach(() => {
+        adUnit = adUnits[0];
+      });
+
+      function makeRequest() {
+        const original = utils.deepClone(adUnit);
+        const requests = makeBidRequests([adUnit]);
+        expect(adUnit).to.deep.equal(original);
+        expect(requests).to.have.lengthOf(1);
+        expect(requests[0].bids).to.have.lengthOf(1);
+        return requests[0].bids[0];
+      }
+
+      [undefined, null, false, '', 0].forEach(safeRenderer => {
+        it(`should inherit the ad unit safeRenderer when the bid value is ${String(safeRenderer)}`, () => {
+          adUnit.safeRenderer = { url: 'https://publisher.example/safe-renderer.js', config: { placement: 'adUnit' } };
+          if (safeRenderer !== undefined) {
+            adUnit.bids[0].safeRenderer = safeRenderer;
+          }
+
+          const request = makeRequest();
+
+          expect(request.safeRenderer).to.deep.equal(adUnit.safeRenderer);
+          expect(request.mediaTypes).to.deep.equal(adUnit.mediaTypes);
+          expect(request.sizes).to.deep.equal(adUnit.mediaTypes.banner.sizes);
+          expect(request).to.not.have.property('renderer');
+        });
+      });
+
+      it('should keep a truthy bid safeRenderer override', () => {
+        adUnit.safeRenderer = { url: 'https://publisher.example/adunit.js' };
+        adUnit.bids[0].safeRenderer = { url: 'https://publisher.example/bid.js', config: { placement: 'bid' } };
+
+        expect(makeRequest().safeRenderer).to.deep.equal(adUnit.bids[0].safeRenderer);
+      });
+
+      ['not-a-url', ''].forEach(url => {
+        it(`should pass through a safeRenderer object with an invalid URL (${JSON.stringify(url)})`, () => {
+          adUnit.safeRenderer = { url, config: { placement: 'adUnit' } };
+
+          expect(makeRequest().safeRenderer).to.deep.equal(adUnit.safeRenderer);
+        });
+      });
+
+      it('should preserve media-level renderers alongside the inherited safeRenderer', () => {
+        adUnit.safeRenderer = { url: 'https://publisher.example/adunit-safe.js' };
+        adUnit.renderer = { url: 'https://publisher.example/adunit-renderer.js' };
+        adUnit.mediaTypes.banner.safeRenderer = { url: 'https://publisher.example/banner-safe.js' };
+        adUnit.mediaTypes.banner.renderer = { url: 'https://publisher.example/banner-renderer.js' };
+
+        const request = makeRequest();
+
+        expect(request.safeRenderer).to.deep.equal(adUnit.safeRenderer);
+        expect(request.renderer).to.deep.equal(adUnit.renderer);
+        expect(request.mediaTypes).to.deep.equal(adUnit.mediaTypes);
+      });
+
+      it('should preserve existing renderer and bid-level mediaTypes precedence', () => {
+        adUnit.safeRenderer = { url: 'https://publisher.example/adunit-safe.js' };
+        adUnit.renderer = { url: 'https://publisher.example/adunit-renderer.js' };
+        adUnit.mediaTypes.banner.safeRenderer = { url: 'https://publisher.example/adunit-banner-safe.js' };
+        adUnit.bids[0].renderer = { url: 'https://publisher.example/bid-renderer.js' };
+        adUnit.bids[0].mediaTypes = {
+          banner: {
+            sizes: [[300, 250]],
+            safeRenderer: { url: 'https://publisher.example/bid-banner-safe.js' },
+            renderer: { url: 'https://publisher.example/bid-banner-renderer.js' }
+          }
+        };
+
+        const request = makeRequest();
+
+        expect(request.safeRenderer).to.deep.equal(adUnit.safeRenderer);
+        expect(request.renderer).to.deep.equal(adUnit.renderer);
+        expect(request.mediaTypes).to.deep.equal(adUnit.bids[0].mediaTypes);
+        expect(request.sizes).to.deep.equal([[300, 250]]);
+      });
+
+      it('should keep the bid renderer when no ad unit renderer is set', () => {
+        adUnit.safeRenderer = { url: 'https://publisher.example/safe-renderer.js' };
+        adUnit.bids[0].renderer = { url: 'https://publisher.example/bid-renderer.js' };
+
+        expect(makeRequest().renderer).to.deep.equal(adUnit.bids[0].renderer);
+      });
+
+      it('should not add safeRenderer to an ordinary banner request', () => {
+        const request = makeRequest();
+
+        expect(request).to.not.have.property('safeRenderer');
+        expect(request).to.not.have.property('renderer');
+        expect(request.mediaTypes).to.deep.equal(adUnit.mediaTypes);
+        expect(request.sizes).to.deep.equal(adUnit.mediaTypes.banner.sizes);
+        expect(request.params).to.deep.equal(adUnit.bids[0].params);
+      });
+    });
+
     it('should set and increment bidRequestsCounter', () => {
       const [au1, au2] = adUnits;
       makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
