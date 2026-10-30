@@ -81,8 +81,9 @@ def validate(finding, lines):
         return False
     if not lines[line].strip() or lines[line].lstrip().startswith(("//", "*", "/*")):
         return False
-    return all(isinstance(finding.get(k), str) and 10 <= len(finding[k].strip()) <= 700
-               for k in ("problem", "failure_case", "fix"))
+    return (all(isinstance(finding.get(k), str) and 10 <= len(finding[k].strip()) <= 700
+                for k in ("problem", "failure_case", "fix"))
+            and meaningful_fix(quote, finding["fix"]))
 
 
 def paged(repo, number, token, endpoint):
@@ -146,6 +147,9 @@ def main():
     for file in files[:8]:
         filename, patch = file["filename"], file["patch"]
         report["reviewed"] += 1
+        diagnostic = {"path": filename, "patch": patch, "outcome": "started"}
+        report["files"].append(diagnostic)
+        output_path.write_text(json.dumps(report, indent=2) + "\n")
         print(f"[bounded-qwen] reviewing {filename}", flush=True)
         started = time.monotonic()
         try:
@@ -156,6 +160,7 @@ def main():
             diagnostic["outcome"] = "inference_error"
             diagnostic["error"] = f"{type(error).__name__}: {str(error)[:300]}"
             report["errors"].append(f"{filename}: {type(error).__name__}: {str(error)[:160]}")
+            output_path.write_text(json.dumps(report, indent=2) + "\n")
             continue
         print(f"[bounded-qwen] inference {time.monotonic() - started:.1f}s", flush=True)
         if not findings:
@@ -178,6 +183,7 @@ def main():
         if marker in prior:
             diagnostic["outcome"] = "duplicate"
             print("[bounded-qwen] already posted", flush=True)
+            output_path.write_text(json.dumps(report, indent=2) + "\n")
             continue
         body = ("**Automated local Qwen correctness check (unverified)**\n\n"
             + "**Issue:** " + finding["problem"] + "\n\n"
