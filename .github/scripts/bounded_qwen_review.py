@@ -53,6 +53,24 @@ def added_lines(patch):
     return lines
 
 
+def meaningful_fix(quote, fix):
+    """Reject identical, formatting-only and unrelated whole-function fixes."""
+    fix = fix.strip()
+    quote = quote.strip()
+    if not fix or "\n" in fix or "\r" in fix or len(fix) > 350:
+        return False
+    # Ignore formatting changes without conflating distinct identifiers/operators.
+    compact = lambda value: re.sub(r"\s+", "", value).rstrip(";")
+    if compact(quote) == compact(fix):
+        return False
+    # Only accept single-line suggestions replacing the exact flagged statement.
+    if quote.lstrip().startswith("return "):
+        return fix.lstrip().startswith("return ")
+    if quote.lstrip().startswith(("const ", "let ", "var ")):
+        return fix.lstrip().startswith(("const ", "let ", "var "))
+    return False
+
+
 def validate(finding, lines):
     if not isinstance(finding, dict):
         return False
@@ -93,12 +111,14 @@ def predict(model, filename, patch):
         "format": SCHEMA, "stream": False, "think": False,
         "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 650}}
     result = api("http://127.0.0.1:11434/api/chat", method="POST", payload=payload, timeout=180)
+    if isinstance(result.get("message"), dict):
+        print("[bounded-qwen] response received", flush=True)
     print("[bounded-qwen] prompt tokens:", result.get("prompt_eval_count"),
           "output tokens:", result.get("eval_count"), flush=True)
     parsed = json.loads(result["message"]["content"])
     if not isinstance(parsed, dict) or not isinstance(parsed.get("findings"), list):
         raise ValueError("Invalid model findings payload")
-    return parsed["findings"]
+    return parsed["findings"], result
 
 
 def main():
@@ -107,8 +127,10 @@ def main():
                                ("GITHUB_REPOSITORY", "PR_NUMBER", "PR_HEAD_SHA", "GITHUB_TOKEN")]
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo) or not number.isdigit() or not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ValueError("Invalid GitHub event context")
-    model = env.get("REVIEW_MODEL", "qwen3.5:2b-q4_K_M")
-    report = {"model": model, "reviewed": 0, "posted": 0, "rejected": 0, "skipped": 0, "errors": []}
+    model = env.get("REVIEW_MODEL", "qwen3.5:9b-q4_K_M")
+    report = {"model": model, "reviewed": 0, "posted": 0, "rejected": 0, "skipped": 0, "errors": [], "files": []}
+    # Save raw response per file for iteration (no secrets or code execution).
+    output_path = Path(env.get("RUNNER_TEMP", "/tmp"), "bounded-qwen-result.json")
     prior = set()
     for comment in paged(repo, number, token, "comments"):
         prior.update(re.findall(r"<!-- bounded-qwen:([0-9a-f]{64}) -->", comment.get("body", "")))
@@ -127,21 +149,34 @@ def main():
         print(f"[bounded-qwen] reviewing {filename}", flush=True)
         started = time.monotonic()
         try:
-            findings = predict(model, filename, patch)
+            findings, raw = predict(model, filename, patch)
+            diagnostic["raw_response"] = raw
+            diagnostic["parsed_findings"] = findings
         except Exception as error:
+            diagnostic["outcome"] = "inference_error"
+            diagnostic["error"] = f"{type(error).__name__}: {str(error)[:300]}"
             report["errors"].append(f"{filename}: {type(error).__name__}: {str(error)[:160]}")
             continue
         print(f"[bounded-qwen] inference {time.monotonic() - started:.1f}s", flush=True)
         if not findings:
+            diagnostic["outcome"] = "clean"
             print("[bounded-qwen] no findings", flush=True)
+            output_path.write_text(json.dumps(report, indent=2) + "\n")
             continue
         finding = findings[0]
         if not validate(finding, added_lines(patch)):
             report["rejected"] += 1
-            print("[bounded-qwen] rejected unanchored finding", flush=True)
+            diagnostic["outcome"] = "rejected"
+            diagnostic["rejection_reason"] = (
+                "invalid added line/quote" if not isinstance(finding, dict) or type(finding.get("line")) is not int
+                or finding.get("quote", "").strip() != added_lines(patch).get(finding.get("line"), "").strip()
+                else "missing evidence or no-op/nonlocal fix")
+            print("[bounded-qwen] rejected finding:", diagnostic["rejection_reason"], flush=True)
+            output_path.write_text(json.dumps(report, indent=2) + "\n")
             continue
         marker = hashlib.sha256(f"{sha}:{filename}:{finding['line']}".encode()).hexdigest()
         if marker in prior:
+            diagnostic["outcome"] = "duplicate"
             print("[bounded-qwen] already posted", flush=True)
             continue
         body = ("**Automated local Qwen correctness check (unverified)**\n\n"
@@ -149,12 +184,14 @@ def main():
             + "**Failure case:** " + finding["failure_case"] + "\n\n"
             + "**Suggested fix:** `" + finding["fix"].replace("`", "'") + "`\n\n"
             + f"<!-- bounded-qwen:{marker} -->")
+        output_path.write_text(json.dumps(report, indent=2) + "\n")
         api(f"{API}/repos/{repo}/pulls/{number}/comments", token, "POST", {
             "body": body, "commit_id": sha, "path": filename, "line": finding["line"], "side": "RIGHT"})
         prior.add(marker)
+        diagnostic["outcome"] = "posted"
         report["posted"] += 1
         print(f"[bounded-qwen] posted {filename}:{finding['line']}", flush=True)
-    Path(env.get("RUNNER_TEMP", "/tmp"), "bounded-qwen-result.json").write_text(json.dumps(report, indent=2) + "\n")
+    output_path.write_text(json.dumps(report, indent=2) + "\n")
     if env.get("GITHUB_STEP_SUMMARY"):
         with open(env["GITHUB_STEP_SUMMARY"], "a") as summary:
             summary.write(f"### Bounded local review\n\nFiles reviewed: {report['reviewed']}; comments posted: {report['posted']}; rejected findings: {report['rejected']}; skipped files: {report['skipped']}.\n")

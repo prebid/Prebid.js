@@ -16,7 +16,7 @@ jobs:
   review:
     if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/ocr-bounded-') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out trusted base branch only
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
           echo "25f64b810b947145095956533e1bdf56eacea2673c55a7e586be4515fc882c9f  $RUNNER_TEMP/ollama-install.sh" | sha256sum --check
           sh "$RUNNER_TEMP/ollama-install.sh"
 
-      - name: Start Ollama and load Qwen3.5 2B
+      - name: Start Ollama and load Qwen3.5 9B
         env:
           OLLAMA_HOST: 127.0.0.1:11434
           OLLAMA_NO_CLOUD: '1'
@@ -49,14 +49,14 @@ jobs:
             sleep 2
           done
           curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
-          ollama pull qwen3.5:2b-q4_K_M
+          ollama pull qwen3.5:9b-q4_K_M
 
       - name: One-pass review and publish validated comments
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          REVIEW_MODEL: qwen3.5:2b-q4_K_M
+          REVIEW_MODEL: qwen3.5:9b-q4_K_M
         run: python3 .github/scripts/bounded_qwen_review.py
 
       - name: Upload review diagnostics
