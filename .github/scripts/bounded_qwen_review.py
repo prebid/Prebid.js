@@ -65,6 +65,23 @@ def added_lines(patch):
     return lines
 
 
+def removed_lines(patch):
+    """Old-side lines this patch deletes (used to recognize revert fixes)."""
+    started = False
+    removed = []
+    for line in patch.splitlines():
+        if HUNK.match(line):
+            started = True
+        elif started and line.startswith("-"):
+            removed.append(line[1:])
+    return removed
+
+
+def compact(value):
+    """Ignore formatting without conflating distinct identifiers/operators."""
+    return re.sub(r"\s+", "", value).rstrip(";")
+
+
 def chunk_patch(patch, max_chars=MAX_CHUNK_CHARS):
     """Split unified diffs into independently anchored, bounded hunks.
 
@@ -122,8 +139,6 @@ def meaningful_fix(quote, fix):
     quote = quote.strip()
     if not fix or "\n" in fix or "\r" in fix or len(fix) > 350:
         return False
-    # Ignore formatting changes without conflating distinct identifiers/operators.
-    compact = lambda value: re.sub(r"\s+", "", value).rstrip(";")
     if compact(quote) == compact(fix):
         return False
     # Only accept single-line suggestions replacing the exact flagged statement.
@@ -134,8 +149,12 @@ def meaningful_fix(quote, fix):
     return False
 
 
-def validate(finding, lines):
+def validate(finding, lines, removed=()):
     if not isinstance(finding, dict):
+        return False
+    # A fix that restores a deleted line reverts the author's change; a
+    # one-pass reviewer cannot know the intent well enough to suggest that.
+    if isinstance(finding.get("fix"), str) and compact(finding["fix"]) in {compact(r) for r in removed}:
         return False
     line, quote = finding.get("line"), finding.get("quote")
     if type(line) is not int or line not in lines or not isinstance(quote, str):
@@ -229,7 +248,7 @@ def review_chunk(model, filename, patch, index, total, sha, repo, number,
     print(f"[bounded-qwen] inference {time.monotonic() - started:.1f}s", flush=True)
     if not findings:
         diagnostic["outcome"] = "clean"
-    elif not validate(findings[0], added_lines(patch)):
+    elif not validate(findings[0], added_lines(patch), removed_lines(patch)):
         report["rejected"] += 1
         diagnostic["outcome"] = "rejected"
     else:

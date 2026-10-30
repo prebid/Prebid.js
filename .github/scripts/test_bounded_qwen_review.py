@@ -139,6 +139,20 @@ class ReviewTests(unittest.TestCase):
             self.assertNotIn("modules/production.ts", skipped)
             self.assertIn("modules/production.ts", [item["path"] for item in report["files"]])
 
+    def test_reject_fix_that_reverts_removed_line(self):
+        # prebid.github.io#6894: the model "fixed" an intended change back.
+        diff = ("@@ -91,3 +91,3 @@\n"
+                "             var filename = \"prebid\" + form_data[\"version\"] + \".js\";\n"
+                "-            var jsBlob = new Blob([data], { type: \"text/javascript\" });\n"
+                "+            var jsBlob = new Blob([data.source], { type: \"text/javascript\" });\n")
+        finding = dict(FINDING, line=92,
+                       quote="            var jsBlob = new Blob([data.source], { type: \"text/javascript\" });",
+                       fix="var jsBlob = new Blob([data], {type: \"text/javascript\"});")
+        self.assertEqual(review.removed_lines(diff),
+                         ["            var jsBlob = new Blob([data], { type: \"text/javascript\" });"])
+        self.assertTrue(review.validate(finding, review.added_lines(diff)))
+        self.assertFalse(review.validate(finding, review.added_lines(diff), review.removed_lines(diff)))
+
     def test_reject_incomplete_finding(self):
         finding = dict(FINDING, failure_case="")
         self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
