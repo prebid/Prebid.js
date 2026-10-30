@@ -21,6 +21,10 @@ const SYNC_PATH = '/sync';
 const TELEMETRY_PATH = '/event';
 const ID_COOKIE_EXP = 2592000000; // 30 days
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const BID_ID_REGEX = /^[A-Za-z0-9_-]{1,64}$/;
+const MAX_TIMEOUT_BID_IDS = 32;
+const MAX_TRACKED_BID_IDS = 1024;
+const MAX_AUCTION_ELAPSED_MS = 60000;
 
 // partner/region are interpolated into the request host, so they must be valid DNS labels —
 // otherwise a value with URL delimiters (e.g. 'evil.com/x?') would change the request origin.
@@ -131,6 +135,28 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     }
   }
 
+  // bidId (the imp.id sent) -> the seat|region it was sent to. Core rewrites a timed-out bid's params to every
+  // param set the bidder has on the ad unit, so the timeout hook cannot attribute a bid to its seat on its own.
+  const sentBidTargets = new Map<string, string>();
+
+  function trackSentBid(bidId: unknown, target: string) {
+    if (typeof bidId !== 'string' || !BID_ID_REGEX.test(bidId)) return;
+    sentBidTargets.delete(bidId);
+    sentBidTargets.set(bidId, target);
+    if (sentBidTargets.size > MAX_TRACKED_BID_IDS) {
+      sentBidTargets.delete(sentBidTargets.keys().next().value as string);
+    }
+  }
+
+  // Sent at once rather than on the background task queue, which loses beacons from pages whose main thread is
+  // busy; credentials are omitted and there is no image fallback, so the beacon never carries cookies.
+  function sendBeaconNow(url: string) {
+    if (!window.fetch || !window.Request) return;
+    try {
+      window.fetch(new Request(url, { method: 'GET', mode: 'no-cors', credentials: 'omit', keepalive: true })).catch(() => {});
+    } catch (e) { }
+  }
+
   function isValidStoredId(id: string | null): boolean {
     return typeof id === 'string' && UUID_REGEX.test(id);
   }
@@ -221,6 +247,14 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
           }
         }
       });
+      // Client time spent before this request was built, so the exchange can tell it apart from network time.
+      const auctionStart = bidderRequest.auctionStart;
+      if (typeof auctionStart === 'number' && Number.isFinite(auctionStart)) {
+        const elapsed = Math.round(Date.now() - auctionStart);
+        if (elapsed >= 0 && elapsed <= MAX_AUCTION_ELAPSED_MS) {
+          mergeDeep(req, { ext: { auction_elapsed_ms: elapsed } });
+        }
+      }
       const identityParams = activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode || code);
       const canTransmitId = isActivityAllowed(ACTIVITY_TRANSMIT_EIDS, identityParams) &&
         isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, identityParams);
@@ -285,6 +319,7 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
         const { seat, region, partner } = groupedBidRequests[0].params;
         const url = getEndpointUrl(seat, region, partner);
         if (!url) return null;
+        groupedBidRequests.forEach((bidRequest) => trackSentBid(bidRequest.bidId, `${seat}|${region}`));
         return {
           method: 'POST',
           url,
@@ -362,7 +397,7 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
       // One beacon per distinct (seat, region); no consent exposed in timeout entries.
       try {
         if (!isTelemetryEnabled() || !Array.isArray(timeoutData)) return;
-        const seen = {};
+        const beacons = new Map<string, { seat: string; region: string; timeout: number | undefined; bidIds: string[] }>();
         timeoutData.forEach((entry) => {
           if (!entry) return;
           const bidParams = Array.isArray(entry.params) ? entry.params : [entry.params];
@@ -371,14 +406,23 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
             const { seat, region } = normalizeBidParams(params);
             if (!seat) return;
             const key = `${seat}|${region}`;
-            if (seen[key]) return;
-            seen[key] = true;
-            const extras = {
-              ...(entry.timeout != null ? { duration: entry.timeout } : {})
-            };
-            // 'omit' keeps this beacon cookieless — the sync cookie never rides along.
-            politeTriggerPixel(buildEventUrl('timeout', { seat, region }, extras, ''), 'omit');
+            if (!beacons.has(key)) beacons.set(key, { seat, region, timeout: entry.timeout, bidIds: [] });
           });
+        });
+        timeoutData.forEach((entry) => {
+          const bidId = entry?.bidId;
+          const target = typeof bidId === 'string' ? sentBidTargets.get(bidId) : undefined;
+          const beacon = target != null ? beacons.get(target) : undefined;
+          if (!beacon) return;
+          sentBidTargets.delete(bidId);
+          if (beacon.bidIds.length < MAX_TIMEOUT_BID_IDS && !beacon.bidIds.includes(bidId)) beacon.bidIds.push(bidId);
+        });
+        beacons.forEach(({ seat, region, timeout, bidIds }) => {
+          const extras = {
+            ...(timeout != null ? { duration: timeout } : {}),
+            ...(bidIds.length ? { bidIds: bidIds.join(',') } : {})
+          };
+          sendBeaconNow(buildEventUrl('timeout', { seat, region }, extras, ''));
         });
       } catch (e) { }
     },

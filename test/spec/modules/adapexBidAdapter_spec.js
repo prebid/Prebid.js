@@ -800,35 +800,43 @@ describe('adapexBidAdapter', function () {
 
   describe('telemetry', function () {
     let politeStub;
+    let fetchStub;
 
     beforeEach(function () {
       politeStub = sinon.stub(utils, 'politeTriggerPixel');
+      fetchStub = sinon.stub(window, 'fetch').resolves();
     });
 
     afterEach(function () {
       politeStub.restore();
+      fetchStub.restore();
       config.resetConfig();
     });
+
+    const timeoutUrls = () => fetchStub.getCalls().map(({ args }) => args[0].url);
 
     it('sends no telemetry when the publisher disables it', function () {
       config.setConfig({ adapex: { enableTelemetry: false } });
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
       spec.onBidderError({ error: { status: 500 }, bidderRequest: { bids: [validBannerBid] } });
       expect(politeStub.called).to.be.false;
+      expect(fetchStub.called).to.be.false;
       expect(spec.buildRequests([validBannerBid], bidderRequest)).to.have.lengthOf(1);
     });
 
     it('sends telemetry by default', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
       spec.onBidderError({ error: { status: 500 }, bidderRequest: { bids: [validBannerBid] } });
-      expect(politeStub.calledTwice).to.be.true;
-      expect(politeStub.firstCall.args[0]).to.include('https://sync.adapex.io/event?event=timeout');
+      expect(timeoutUrls()).to.have.lengthOf(1);
+      expect(timeoutUrls()[0]).to.include('https://sync.adapex.io/event?event=timeout');
+      expect(politeStub.calledOnce).to.be.true;
+      expect(politeStub.firstCall.args[0]).to.include('https://sync.adapex.io/event?event=bidder-error');
     });
 
     it('sends telemetry when the publisher enables it explicitly', function () {
       config.setConfig({ adapex: { enableTelemetry: true } });
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
-      expect(politeStub.calledOnce).to.be.true;
+      expect(fetchStub.calledOnce).to.be.true;
     });
 
     [false, true].forEach((enableTIDs) => {
@@ -838,15 +846,18 @@ describe('adapexBidAdapter', function () {
           const unregister = registerActivityControl(ACTIVITY_TRANSMIT_TID, 'adapex test', () => ({ allow: false }));
           const rawId = 'private-auction-id';
           try {
+            let urls;
             if (event === 'timeout') {
               adapterManager.callTimedOutBidders([{ code: validBannerBid.adUnitCode, bids: [{ bidder: 'adapex', params: validBannerBid.params }] }],
                 [{ bidder: 'adapex', adUnitCode: validBannerBid.adUnitCode, auctionId: rawId }], 2000);
+              urls = timeoutUrls();
             } else {
               adapterManager.callBidderError('adapex', { status: 500 }, { auctionId: rawId, bids: [validBannerBid] });
+              urls = politeStub.getCalls().map(({ args }) => args[0]);
             }
-            expect(politeStub.calledOnce).to.be.true;
-            expect(politeStub.firstCall.args[0]).not.to.include(rawId);
-            expect(politeStub.firstCall.args[0]).not.to.match(/[?&]auctionId=/);
+            expect(urls).to.have.lengthOf(1);
+            expect(urls[0]).not.to.include(rawId);
+            expect(urls[0]).not.to.match(/[?&]auctionId=/);
           } finally {
             unregister();
           }
@@ -870,24 +881,34 @@ describe('adapexBidAdapter', function () {
           { code: 'timeout-unit-2', bids: [{ bidder: 'adapex', params: { seat: 'Seat2' } }] }
         ];
         adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'adapex', adUnitCode: code, auctionId: 'private-auction' })), 2000);
-        expect(politeStub.getCalls().map(({ args }) => args)).to.deep.equal([
-          ['https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000', 'omit'],
-          ['https://sync.adapex.io/event?event=timeout&seat=Seat2&region=us-e&duration=2000', 'omit']
+        expect(timeoutUrls()).to.deep.equal([
+          'https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000',
+          'https://sync.adapex.io/event?event=timeout&seat=Seat2&region=us-e&duration=2000'
         ]);
       });
 
       it('beacons cookieless to sync.adapex.io', function () {
         spec.onTimeout([{ params: { seat: 'Gmtb', region: 'eu' }, timeout: 2000, auctionId: 'a1' }]);
-        expect(politeStub.calledOnce).to.be.true;
-        expect(politeStub.firstCall.args).to.deep.equal([
-          'https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000',
-          'omit'
+        expect(fetchStub.calledOnce).to.be.true;
+        const request = fetchStub.firstCall.args[0];
+        expect(request.url).to.equal('https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000');
+        expect(request.credentials).to.equal('omit');
+        expect(request.keepalive).to.be.true;
+        expect(politeStub.called).to.be.false;
+      });
+
+      it('carries the timed-out bidIds it sent', function () {
+        const bid = { ...validBannerBid, bidId: 'adpx-t-1' };
+        spec.buildRequests([bid], bidderRequest);
+        spec.onTimeout([{ bidId: bid.bidId, params: [bid.params], timeout: 2000 }]);
+        expect(timeoutUrls()).to.deep.equal([
+          'https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000&bidIds=adpx-t-1'
         ]);
       });
 
       it('omits absent dimensions', function () {
         spec.onTimeout([{ params: { seat: 'Gmtb' } }]);
-        expect(politeStub.firstCall.args[0]).to.equal('https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e');
+        expect(timeoutUrls()[0]).to.equal('https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e');
       });
 
       it('dedupes per seat and skips entries without a seat', function () {
@@ -898,13 +919,13 @@ describe('adapexBidAdapter', function () {
           { params: {}, timeout: 1 },
           { timeout: 1 }
         ]);
-        expect(politeStub.callCount).to.equal(2);
+        expect(fetchStub.callCount).to.equal(2);
       });
 
       it('tolerates non-array input', function () {
         expect(() => spec.onTimeout(null)).to.not.throw();
         expect(() => spec.onTimeout([null])).to.not.throw();
-        expect(politeStub.called).to.be.false;
+        expect(fetchStub.called).to.be.false;
       });
     });
 
