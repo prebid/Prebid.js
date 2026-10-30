@@ -572,6 +572,72 @@ describe('sevioBidAdapter', function () {
     });
   });
 
+  describe('Global Privacy Control', function () {
+    const bidRequests = [{
+      bidder: 'sevio',
+      params: { zone: 'zoneId' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      bidId: 'bid-gpc'
+    }];
+
+    const withRegs = (regs) => ({
+      ...baseBidderRequest,
+      ortb2: { ...baseBidderRequest.ortb2, regs }
+    });
+
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      window.ethereum = {};
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      delete window.ethereum;
+    });
+
+    ['1', 1].forEach((gpc) => {
+      it(`flags the opt-out, turns syncs off and drops the wallet flag when regs.ext.gpc is ${JSON.stringify(gpc)}`, function () {
+        const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc } }))[0].data;
+
+        expect(payload.privacy).to.deep.equal({
+          gpp: 'GPP-STRING',
+          tcfeu: 'TCF-STRING',
+          usp: '1NYN',
+          gpc: 1
+        });
+        expect(payload.userSyncOption).to.equal('OFF');
+        expect(payload.wdb).to.equal(0);
+      });
+    });
+
+    it('sends no opt-out and keeps syncs and the wallet flag when GPC is absent', function () {
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+      expect(payload.wdb).to.equal(1);
+    });
+
+    it('sends no opt-out when regs.ext.gpc is not "1"', function () {
+      const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc: '0' } }))[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+    });
+
+    it('turns syncs off without GPC when user syncs are disabled', function () {
+      sandbox.stub(config, 'getConfig').callThrough()
+        .withArgs('userSync.syncEnabled').returns(false);
+
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('OFF');
+    });
+  });
+
   describe('native parsing', function () {
     it('parses native assets: title, data->desc (type 2), image (asset.img), clickUrl and trackers', function () {
       const serverResponseNative = {
@@ -893,7 +959,7 @@ describe('sevioBidAdapter', function () {
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       // buildRequests also reads the viewport through this accessor, which calls
-      // canAccessWindowTop whenever its 20ms cache has expired
+      // canAccessWindowTop whenever a value is not already cached
       sandbox.stub(winDimensions, 'getWinDimensions').returns({
         screen: { width: 1024, height: 768 },
         visualViewport: { width: 800, height: 600 }

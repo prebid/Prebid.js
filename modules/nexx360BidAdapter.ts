@@ -45,7 +45,8 @@ const ALIASES = [
   { code: 'prjads' },
   { code: 'pubtech' },
   { code: '1accord', gvlid: 965 },
-  { code: 'easybid', gvlid: 1068 },
+  // the alias' own GVL ID, plus Nexx360's, which owns the endpoint
+  { code: 'easybid', gvlid: [1068, GVLID] },
   { code: 'prismassp', gvlid: 1185 },
   { code: 'spm', gvlid: 965 },
   { code: 'bidstailamedia', gvlid: 965 },

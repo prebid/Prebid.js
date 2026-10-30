@@ -356,14 +356,36 @@ describe('The video cache', function () {
       storeBatch([]);
       sinon.assert.called(utils.logError);
     });
+    it('should discard every bid in the batch, but let the auction continue, when store replies with an error', () => {
+      err = new Error('err');
+      const batch = [{ auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() }, { auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() }];
+      storeBatch(batch);
+      batch.forEach(({ auctionInstance, bidResponse, afterBidAdded }) => {
+        expect(bidResponse.videoCacheKey).to.not.exist;
+        sinon.assert.notCalled(auctionInstance.addBidReceived);
+        sinon.assert.calledOnce(afterBidAdded);
+      });
+    });
     it('should not process returned uuids if they do not match the batch size', () => {
-      const el = { auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub() };
-      const batch = [el, el];
+      const batch = [{ auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() }, { auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() }];
       cacheIds = [{ uuid: 'mock-id' }];
       storeBatch(batch);
-      expect(el.bidResponse.videoCacheKey).to.not.exist;
-      sinon.assert.notCalled(batch[0].afterBidAdded);
+      batch.forEach(({ auctionInstance, bidResponse, afterBidAdded }) => {
+        expect(bidResponse.videoCacheKey).to.not.exist;
+        sinon.assert.notCalled(auctionInstance.addBidReceived);
+        // the bids are discarded, but the auction must still be told they're done
+        sinon.assert.calledOnce(afterBidAdded);
+      });
       sinon.assert.called(utils.logError);
+    });
+    it('should discard a bid whose cache key was rejected, but let the auction continue', () => {
+      sandbox.stub(utils, 'logWarn');
+      const el = { auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() };
+      cacheIds = [{ uuid: '' }];
+      storeBatch([el]);
+      expect(el.bidResponse.videoCacheKey).to.not.exist;
+      sinon.assert.notCalled(el.auctionInstance.addBidReceived);
+      sinon.assert.calledOnce(el.afterBidAdded);
     });
     it('should set bids\' videoCacheKey, vastUrl, and cacheUrl', () => {
       config.setConfig({

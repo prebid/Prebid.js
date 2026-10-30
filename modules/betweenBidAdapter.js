@@ -51,7 +51,7 @@ export const spec = {
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
-        fl: getFl(),
+        fl: 0,
         rr: getRr(),
         s: i.params && i.params.s,
         bidid: i.bidId,
@@ -201,21 +201,6 @@ function getRr() {
   } else if (typeof rr !== 'undefined' && rr === '') {
     return 'direct';
   }
-}
-
-function getFl() {
-  if (navigator.plugins !== undefined && navigator.plugins !== null) {
-    if (navigator.plugins['Shockwave Flash'] !== undefined && navigator.plugins['Shockwave Flash'] !== null && typeof navigator.plugins['Shockwave Flash'] === 'object') {
-      var description = navigator.plugins['Shockwave Flash'].description;
-      if (description && !(navigator.mimeTypes !== undefined && navigator.mimeTypes['application/x-shockwave-flash'] && !navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin)) {
-        description = description.replace(/^.*\s+(\S+\s+\S+$)/, '$1').replace(/^(.*)\..*$/, '$1');
-
-        return parseInt(description, 10);
-      }
-    }
-  }
-
-  return 0;
 }
 
 function getTz() {

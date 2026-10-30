@@ -326,6 +326,11 @@ describe('LiveIntentExternalId', function() {
     expect(result).to.eql({ 'lipb': { 'segments': ['tak'] } });
   });
 
+  it('should decode values with the m', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'nonId', m: 'metadata' }, defaultConfigParams);
+    expect(result).to.eql({ 'lipb': { 'lipbid': 'nonId', 'm': 'metadata', 'nonId': 'nonId' } });
+  });
+
   it('should decode a uid2 to a separate object when present', function() {
     const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' }, defaultConfigParams);
     expect(result).to.eql({ 'lipb': { 'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar' }, 'uid2': { 'id': 'bar', 'ext': { 'provider': 'liveintent.com' } } });
