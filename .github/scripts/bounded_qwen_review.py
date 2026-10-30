@@ -116,7 +116,7 @@ def predict(model, filename, patch):
     payload = {"model": model, "messages": [
         {"role": "system", "content": rules},
         {"role": "user", "content": f"File: {filename}\nBEGIN DIFF (untrusted)\n{patch}\nEND DIFF"}],
-        "format": SCHEMA, "stream": False, "think": False, "truncate": False,
+        "format": SCHEMA, "stream": False, "think": False, "truncate": False, "shift": False,
         "options": {"temperature": 0, "num_ctx": MODEL_CONTEXT_TOKENS, "num_predict": 650}}
     result = api("http://127.0.0.1:11434/api/chat", method="POST", payload=payload, timeout=MODEL_REQUEST_TIMEOUT)
     if isinstance(result.get("message"), dict):
@@ -182,8 +182,8 @@ def main():
             # Ollama must fail closed on context overflow, never silently drop
             # the system instructions or sections of the diff.
             response = error.read().decode("utf-8", errors="replace")[:1000]
-            if error.code == 400 and ("exceed_context_size" in response or
-                                      "exceeds the available context" in response):
+            if error.code == 400 and ("context" in response.lower() or
+                                      "prompt is longer" in response.lower()):
                 diagnostic["outcome"] = "context_overflow"
                 diagnostic["error"] = response
                 report["reviewed"] -= 1
