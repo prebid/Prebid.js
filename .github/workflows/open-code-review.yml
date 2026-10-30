@@ -1,12 +1,7 @@
-# AI review is deliberately separate from the normal PR build/test jobs.
-# Setup (Settings > Secrets and variables > Actions):
-#   secrets: OCR_LLM_URL, OCR_LLM_AUTH_TOKEN
-#   variables: OCR_LLM_MODEL, OCR_LLM_USE_ANTHROPIC (true/false; defaults to false)
-#
-# pull_request_target makes credentials available for PRs from forks.
-# Do not check out or execute PR code in this privileged workflow:
-# the pinned OpenCodeReview action checks out the trusted base commit,
-# fetches PR Git objects, and reviews their diff without running PR scripts.
+# GitHub-hosted CPU-only, local-model review. No external LLM provider/API key.
+# The runner downloads Ollama and open weights, then performs inference on loopback.
+# pull_request_target: never check out or execute untrusted PR code with a write token.
+# The pinned Alibaba action checks out the trusted base and reads PR Git objects.
 name: OpenCodeReview PR Review
 
 on:
@@ -23,34 +18,93 @@ concurrency:
 
 jobs:
   review:
-    name: AI code review
+    name: AI code review (local Qwen3 4B)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 65
+
     steps:
-      - name: Check model configuration
+      - name: Install Ollama v0.40.13
         env:
-          LLM_URL: ${{ secrets.OCR_LLM_URL }}
-          LLM_TOKEN: ${{ secrets.OCR_LLM_AUTH_TOKEN }}
-          LLM_MODEL: ${{ vars.OCR_LLM_MODEL }}
+          OLLAMA_VERSION: '0.40.13'
         run: |
-          if [[ -z "$LLM_URL" || -z "$LLM_TOKEN" || -z "$LLM_MODEL" ]]; then
-            echo "::error::Set OCR_LLM_URL and OCR_LLM_AUTH_TOKEN (Actions secrets) and OCR_LLM_MODEL (Actions variable)."
+          # Verify the pinned upstream release installer before running it.
+          curl --fail --silent --show-error --location --retry 3 \
+            --output "$RUNNER_TEMP/ollama-install.sh" \
+            https://github.com/ollama/ollama/releases/download/v0.40.13/install.sh
+          echo "25f64b810b947145095956533e1bdf56eacea2673c55a7e586be4515fc882c9f  $RUNNER_TEMP/ollama-install.sh" | sha256sum --check
+          sh "$RUNNER_TEMP/ollama-install.sh"
+          ollama --version
+
+      - name: Start local Ollama and download Qwen3 4B
+        env:
+          OLLAMA_HOST: '127.0.0.1:11434'
+          OLLAMA_NO_CLOUD: '1'
+          OLLAMA_NUM_PARALLEL: '1'
+          OLLAMA_MAX_LOADED_MODELS: '1'
+          OLLAMA_CONTEXT_LENGTH: '16384'
+          OLLAMA_KEEP_ALIVE: '-1'
+        run: |
+          # The installer may start a systemd service without our local-only
+          # environment. Stop it and launch a loopback-only server ourselves.
+          sudo systemctl stop ollama 2>/dev/null || true
+          nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:11434/api/tags > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          if ! curl --fail --silent http://127.0.0.1:11434/api/tags > /dev/null; then
+            tail -n 100 "$RUNNER_TEMP/ollama.log"
+            exit 1
+          fi
+
+          # Non-thinking, instruction-tuned, tool-calling model (~2.5 GB Q4).
+          ollama pull qwen3:4b-instruct-2507-q4_K_M
+
+          # OCR requires *structured* tool calls, not mentions of tools in prose.
+          curl --fail --silent --show-error --max-time 900 \
+            http://127.0.0.1:11434/v1/chat/completions \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "model": "qwen3:4b-instruct-2507-q4_K_M",
+              "messages": [{"role": "user", "content": "Call report_bug to report the bug in function add(a,b) { return a-b; }."}],
+              "tools": [{"type": "function", "function": {
+                "name": "report_bug",
+                "description": "Report a bug",
+                "parameters": {"type": "object", "properties": {"description": {"type": "string"}}, "required": ["description"]}
+              }}],
+              "max_tokens": 256,
+              "stream": false
+            }' > "$RUNNER_TEMP/ollama-tool-test.json"
+          if ! jq --exit-status '((.choices[0].message.tool_calls // []) | length) > 0' "$RUNNER_TEMP/ollama-tool-test.json"; then
+            echo "::error::Local model did not produce native function/tool calls."
+            cat "$RUNNER_TEMP/ollama-tool-test.json"
             exit 1
           fi
 
       - name: Review PR and publish comments
-        # Pinned to Alibaba OpenCodeReview v1.13.3, not the mutable main branch.
+        # OpenCodeReview v1.13.3 (the action and installed CLI are both pinned).
         uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb
         with:
-          llm_url: ${{ secrets.OCR_LLM_URL }}
-          llm_auth_token: ${{ secrets.OCR_LLM_AUTH_TOKEN }}
-          llm_model: ${{ vars.OCR_LLM_MODEL }}
-          llm_use_anthropic: ${{ vars.OCR_LLM_USE_ANTHROPIC || 'false' }}
+          llm_url: http://127.0.0.1:11434/v1
+          llm_auth_token: ollama
+          llm_model: qwen3:4b-instruct-2507-q4_K_M
+          llm_use_anthropic: 'false'
+          llm_protocol: openai
+          # Default OCR extra_body targets other providers' thinking formats.
+          llm_extra_body: '{}'
           ocr_version: '1.13.3'
           language: English
-          effort: medium
+          # CPU runner: do not generate multiple competing model requests.
+          review_concurrency: '1'
+          effort: low
+          llm_timeout: '900'
+          review_task_timeout: '35'
+          max_tokens_budget: '16000'
           sticky_summary: 'true'
           incremental: 'true'
-          # Keep lower-value feedback in the summary instead of flooding inline threads.
+          # Keep minor feedback in the summary instead of numerous inline threads.
           route_severity_below: low
           route_categories: style,documentation
