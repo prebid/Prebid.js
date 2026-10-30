@@ -1,4 +1,11 @@
-import { getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
+import {
+  getBidForMessage,
+  getReplier,
+  isMessageAllowed,
+  receiveMessage,
+  resizeAnchor,
+  resizeRemoteCreative
+} from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -39,6 +46,39 @@ describe('secureCreatives', () => {
       receiveMessage(ev, resolve);
     });
   }
+
+  describe('isMessageAllowed', () => {
+    let isAllowed;
+    function hook(next, ...args) {
+      next.bail(isAllowed(...args));
+    }
+    before(() => {
+      isMessageAllowed.before(hook);
+    });
+    after(() => {
+      isMessageAllowed.getHooks({ hook }).remove();
+    });
+
+    it('can prevent message processing', () => {
+      isAllowed = sinon.stub().callsFake(() => false);
+      const message = {
+        adId: '123',
+        message: 'Prebid Request'
+      };
+      const ev = {
+        ports: [],
+        source: {
+          postMessage: sinon.spy()
+        },
+        origin: 'mock-origin',
+        message: JSON.stringify(message)
+      };
+      const cb = sinon.stub();
+      receiveMessage(ev, cb);
+      sinon.assert.notCalled(cb);
+      sinon.assert.calledWith(isAllowed, ev, message);
+    });
+  });
 
   describe('getReplier', () => {
     it('should use source.postMessage if no MessagePort is available', () => {
@@ -93,11 +133,11 @@ describe('secureCreatives', () => {
         height: 250,
         renderer: null
       }, obj);
-      auction.getBidsReceived = function() {
+      auction.getBidsReceived = sinon.stub().callsFake(function() {
         const bidsReceived = getBidResponses();
         bidsReceived.push(adResponse);
         return bidsReceived;
-      };
+      });
       auction.getAuctionId = () => 1;
     }
 
@@ -147,7 +187,46 @@ describe('secureCreatives', () => {
       resetAuction();
       adResponse.adId = bidId;
     });
-
+    describe('getBidForMessage', () => {
+      beforeEach(() => {
+        pushBidResponseToAuction({ adId: 'test', foo: 'bar' });
+      });
+      it('delegates to auctionManager', () => {
+        expect(getBidForMessage({ adId: 'test' }).foo).to.equal('bar');
+      });
+      it('caches hits', () => {
+        const req = { adId: 'test' };
+        getBidForMessage(req);
+        getBidForMessage(req);
+        sinon.assert.calledOnce(auction.getBidsReceived);
+      });
+      it('does not cache misses', () => {
+        const req = {
+          adId: 'other'
+        };
+        getBidForMessage(req);
+        pushBidResponseToAuction({ adId: 'other', foo: 'bar' });
+        expect(getBidForMessage(req).foo).to.equal('bar');
+      });
+      it('does not return a stale bid when the same object is reused with a different adId', () => {
+        const req = { adId: 'test' };
+        getBidForMessage(req);
+        pushBidResponseToAuction({ adId: 'other', foo: 'baz' });
+        req.adId = 'other';
+        expect(getBidForMessage(req).foo).to.equal('baz');
+      });
+      [null, 'adId'].forEach(message => {
+        it(`returns nothing for ${message}`, () => {
+          expect(getBidForMessage(message)).to.not.exist;
+        });
+      });
+      it('does not return a stale bid when the same object is reused with an unknown adId', () => {
+        const req = { adId: 'test' };
+        getBidForMessage(req);
+        req.adId = 'unknown';
+        expect(getBidForMessage(req)).to.not.exist;
+      });
+    });
     describe('Prebid Request', function() {
       it('should render', function () {
         pushBidResponseToAuction({

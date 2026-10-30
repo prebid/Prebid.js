@@ -1,0 +1,624 @@
+import { allowMessageHook, validateToken, renderBid, escapeInlineHtml } from '../../../modules/safeRendering.js';
+import { isMessageAllowed, parseMessage, receiveMessage } from '../../../src/secureCreatives.js';
+import * as utils from 'src/utils.js';
+import * as secureCreatives from 'src/secureCreatives.js';
+import { config } from 'src/config.js';
+// eslint-disable-next-line import/no-unresolved
+import { RENDERER } from 'creative-renderers/creative.js';
+import { createIframe } from 'src/utils.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
+import * as events from 'src/events.js';
+import { getCreativeDefaultRendererSource } from 'src/creativeRenderers.js';
+import { auctionManager } from 'src/auctionManager.js';
+
+describe('safeRendering', () => {
+  let disableSecureCreatives, onMessage, messages, sandbox;
+
+  function disableHook(next, event, message) {
+    if (disableSecureCreatives && event?.target === window) {
+      next.bail(false);
+    } else {
+      next(event, message);
+    }
+  }
+
+  before(() => {
+    isMessageAllowed.before(disableHook, 100);
+  });
+  after(() => {
+    isMessageAllowed.getHooks({ hook: disableHook }).remove();
+    config.setConfig({ safeRendering: { exclusive: false } });
+  });
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    disableSecureCreatives = true;
+    messages = [];
+    onMessage = sinon.stub().callsFake((ev) => messages.push(ev));
+    window.addEventListener('message', onMessage);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    window.removeEventListener('message', onMessage);
+  });
+
+  function expectMessage(matcher = (event, message) => true, interval = 50, timeout = 2000) {
+    return new Promise((resolve, reject) => {
+      const poller = setInterval(() => {
+        const filtered = messages.map(ev => [ev, parseMessage(ev)]).filter(([ev, message]) => matcher(ev, message));
+        if (filtered.length > 0) {
+          clearInterval(poller);
+          resolve(filtered);
+        }
+      }, interval);
+      setTimeout(() => {
+        clearInterval(poller);
+        reject(new Error('no matching messages before timeout'));
+      }, timeout);
+    });
+  }
+
+  it('escaped creative source is valid JS', () => {
+    // our escaping logic does not work in general, so make sure that it does in particular
+    // eslint-disable-next-line no-new-func,no-new
+    new Function(escapeInlineHtml(RENDERER));
+  });
+
+  Object.entries({
+    'string': `'<!--'`,
+    'template': '`<!--`',
+    'regex': `'<!--'.match(/<!--/)[0]`,
+    'unicode regex': `'<!--'.match(/<!--/u)[0]`,
+  }).forEach(([t, expr]) => {
+    it(`escapes <!-- in a ${t} without changing its value`, () => {
+      const src = escapeInlineHtml(`return ${expr}`);
+      expect(src).to.not.include('<!--');
+      // eslint-disable-next-line no-new-func
+      expect(new Function(src)()).to.eql('<!--');
+    });
+  });
+
+  describe('renderBid', () => {
+    let bid, bidHandle;
+    beforeEach(() => {
+      const element = document.createElement('div');
+      document.body.appendChild(element);
+
+      bid = {
+        adId: 'mock-adid',
+        element
+      };
+
+      bidHandle = {
+        adId: bid.adId
+      };
+
+      sandbox.spy(events, 'emit');
+
+      sandbox.stub(secureCreatives, 'getBidForMessage').callsFake((msg) => {
+        if (msg?.adId === bid.adId) {
+          return bid;
+        }
+      });
+    });
+
+    afterEach(() => {
+      if (bid.element?.parentNode === document.body) {
+        document.body.removeChild(bid.element);
+      }
+    });
+
+    it('drops an iframe that posts a cross-domain request', async () => {
+      renderBid(bidHandle);
+      const [[event, message]] = await expectMessage();
+      sinon.assert.match(message, {
+        message: 'Prebid Request'
+      });
+      expect(event.origin).to.eql('null');
+    });
+
+    it('can populate a detached element', async () => {
+      bid.element = document.createElement('div');
+      renderBid(bidHandle);
+      document.body.appendChild(bid.element);
+      try {
+        const [[, { token }]] = await expectMessage();
+        expect(validateToken(bid, token)).to.be.true;
+      } finally {
+        document.body.removeChild(bid.element);
+      }
+    });
+
+    it('can populate a nested iframe', async () => {
+      const iframe = createIframe(document);
+      document.body.appendChild(iframe);
+      try {
+        bid.element = iframe.contentDocument.createElement('div');
+        iframe.contentDocument.body.appendChild(bid.element);
+        renderBid(bidHandle);
+        await expectMessage();
+      } finally {
+        document.body.removeChild(iframe);
+      }
+    });
+
+    function getRenderArgs(element) {
+      const src = decodeURIComponent(element.querySelector('iframe').src);
+      const start = src.lastIndexOf('window.pbRender(') + 'window.pbRender('.length;
+      return JSON.parse(src.slice(start, src.lastIndexOf(');</script>')));
+    }
+
+    it('uses Prebid\'s origin as pubUrl when the element is in an about:blank frame', () => {
+      const iframe = createIframe(document);
+      document.body.appendChild(iframe);
+      try {
+        bid.element = iframe.contentDocument.createElement('div');
+        iframe.contentDocument.body.appendChild(bid.element);
+        renderBid(bidHandle);
+        expect(getRenderArgs(bid.element).pubUrl).to.eql(window.location.origin);
+      } finally {
+        document.body.removeChild(iframe);
+      }
+    });
+
+    describe('when the element is not in a descendant of Prebid\'s window', () => {
+      let parentDoc, cleanup;
+      beforeEach(function () {
+        try {
+          parentDoc = window.parent !== window && window.parent.document;
+        } catch (e) {
+        }
+        if (!parentDoc) this.skip();
+        cleanup = [];
+      });
+      afterEach(() => {
+        cleanup?.forEach(node => node.parentNode?.removeChild(node));
+      });
+
+      Object.entries({
+        'parent window': () => parentDoc,
+        'sibling frame': () => {
+          const iframe = createIframe(parentDoc);
+          parentDoc.body.appendChild(iframe);
+          cleanup.push(iframe);
+          return iframe.contentDocument;
+        }
+      }).forEach(([t, getDoc]) => {
+        it(`refuses an element in a ${t}`, () => {
+          const doc = getDoc();
+          bid.element = doc.createElement('div');
+          doc.body.appendChild(bid.element);
+          cleanup.push(bid.element);
+          sandbox.spy(utils, 'logError');
+          renderBid(bidHandle);
+          sinon.assert.called(utils.logError);
+          sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({ adId: bid.adId }));
+          expect(bid.element.querySelector('iframe')).to.not.exist;
+        });
+      });
+    });
+
+    it('replaces the contents of the element', async () => {
+      bid.element.appendChild(document.createElement('span'));
+      renderBid(bidHandle);
+      await expectMessage();
+      expect(Array.from(bid.element.children).map(el => el.tagName)).to.eql(['IFRAME']);
+    });
+
+    describe('when rendering would be suppressed', () => {
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      Object.entries({
+        stale: {
+          event: EVENTS.STALE_RENDER,
+          setup() {
+            bid.status = BID_STATUS.RENDERED;
+            config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+          }
+        },
+        expired: {
+          event: EVENTS.EXPIRED_RENDER,
+          setup() {
+            Object.assign(bid, { responseTimestamp: 0, ttl: 1 });
+            config.setConfig({ auctionOptions: { suppressExpiredRender: true } });
+          }
+        }
+      }).forEach(([t, { event, setup }]) => {
+        describe(`and the bid is ${t}`, () => {
+          beforeEach(setup);
+
+          it('does not clear the element', () => {
+            const existing = document.createElement('span');
+            bid.element.appendChild(existing);
+            renderBid(bidHandle);
+            expect(existing.parentNode).to.equal(bid.element);
+          });
+
+          it(`emits ${event}`, () => {
+            renderBid(bidHandle);
+            sinon.assert.calledWith(events.emit, event, bid);
+            sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED);
+          });
+        });
+      });
+    });
+
+    it('passes options back', async () => {
+      const options = { option: 'test' };
+      renderBid(bidHandle, options);
+      const [[, message]] = await expectMessage();
+      expect(message.options).to.eql(options);
+    });
+
+    it('translates clickThrough to clickUrl', async () => {
+      const options = { clickThrough: 'test' };
+      renderBid(bidHandle, options);
+      const [[, message]] = await expectMessage();
+      expect(message.options.clickUrl).to.eql('test');
+    });
+
+    Object.entries({
+      'non-ASCII': { option: 'è' },
+      'HTML': { option: '</script>' }
+    }).forEach(([desc, options]) => {
+      it(`can handle ${desc} in options`, async () => {
+        renderBid(bidHandle, options);
+        const [[, message]] = await expectMessage();
+        expect(message.options).to.eql(options);
+      });
+    });
+
+    Object.entries({
+      'null': null,
+      'undefined': undefined,
+      'null adId': { adId: null, adUnitCode: 'au' },
+      'undefined adId': { adUnitCode: 'au' },
+      'unresolvable element': { adId: 'adId' },
+      'null element': { adId: 'adId', element: null },
+      'invalid element': { adId: 'adId', element: {} },
+      'unknown adId': { adId: 'other', adUnitCode: 'au' },
+      'windowless element': {
+        adId: 'adId',
+        element: (() => {
+          const doc = document.implementation.createHTMLDocument("test");
+          return doc.createElement('div');
+        })(),
+        adUnitCode: 'au',
+      }
+    }).forEach(([description, bid]) => {
+      it(`refuses a bid with ${description}`, () => {
+        secureCreatives.getBidForMessage.callsFake((req) => req?.adId === bid?.adId && bid);
+        sandbox.spy(utils, 'logError');
+        sandbox.spy(document, 'createElement');
+        renderBid(bid);
+        sinon.assert.called(utils.logError);
+        sinon.assert.notCalled(document.createElement);
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED);
+      });
+    });
+
+    it('emits AD_RENDER_FAILED when the bid cannot be found', () => {
+      renderBid({ adId: 'unknown' });
+      sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+        adId: 'unknown',
+        reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD
+      }));
+    });
+
+    it('emits AD_RENDER_FAILED when the frame cannot be created', () => {
+      sandbox.stub(utils, 'createIframe').throws(new Error('frame error'));
+      renderBid(bidHandle);
+      sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+        adId: bid.adId,
+        reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+        message: 'frame error'
+      }));
+    });
+
+    Object.entries({
+      'url': { url: 'https://renderer.example/r.js' },
+      'renderNow': { renderNow: true },
+    }).forEach(([t, renderer]) => {
+      it(`refuses a bid with a renderer (${t}) that would run outside the ad frame`, () => {
+        bid.renderer = renderer;
+        const existing = document.createElement('span');
+        bid.element.appendChild(existing);
+        renderBid(bidHandle);
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+          adId: bid.adId,
+          reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT
+        }));
+        expect(Array.from(bid.element.children)).to.eql([existing]);
+      });
+    });
+
+    it('accepts a bid with both a renderer and a safeRenderer', () => {
+      Object.assign(bid, {
+        renderer: { url: 'https://renderer.example/r.js' },
+        safeRenderer: { url: 'https://renderer.example/safe.js' }
+      });
+      renderBid(bidHandle);
+      sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED);
+      expect(bid.element.querySelector('iframe')).to.exist;
+    });
+
+    it('registers the token with the bid', async () => {
+      sandbox.spy(document, 'createElement');
+      renderBid(bidHandle);
+      const [[, { token }]] = await expectMessage();
+      expect(validateToken(bid, token)).to.be.true;
+    });
+
+    it('does not accept the token from a window other than the first to use it', async () => {
+      renderBid(bidHandle);
+      const [[event, message]] = await expectMessage();
+      const hook = allowMessageHook();
+      const next = sinon.stub();
+      next.bail = sinon.stub();
+      hook(next, event, message);
+      sinon.assert.calledOnce(next);
+      sinon.assert.notCalled(next.bail);
+      hook(next, { ports: event.ports, source: window }, message);
+      sinon.assert.calledOnce(next);
+      sinon.assert.calledWith(next.bail, false);
+    });
+
+    it('does not accept messages without a token for a bid rendered through renderBid', async () => {
+      renderBid(bidHandle);
+      const [[event, { token, ...message }]] = await expectMessage();
+      const next = sinon.stub();
+      next.bail = sinon.stub();
+      allowMessageHook()(next, event, message);
+      sinon.assert.notCalled(next);
+      sinon.assert.calledWith(next.bail, false);
+    });
+
+    it('does not accept a token for a bid that was not rendered through renderBid', async () => {
+      renderBid(bidHandle);
+      const [[, { token }]] = await expectMessage();
+      expect(validateToken({ adId: 'other' }, token)).to.be.false;
+    });
+
+    Object.entries({
+      'missing bid': [null, 'token'],
+      'missing token': [{}, null],
+    }).forEach(([t, [bid, token]]) => {
+      it(`does not accept a ${t}`, () => {
+        expect(validateToken(bid, token)).to.be.false;
+      });
+    });
+
+    describe('when Prebid handles the request', () => {
+      let rendererSrc, otherBid;
+
+      function rendererHook(next) {
+        next.bail(rendererSrc);
+      }
+
+      before(() => {
+        getCreativeDefaultRendererSource.before(rendererHook);
+      });
+
+      after(() => {
+        getCreativeDefaultRendererSource.getHooks({ hook: rendererHook }).remove();
+      });
+
+      beforeEach(() => {
+        rendererSrc = 'window.render = function() {}';
+        Object.assign(bid, { ad: '<div></div>', responseTimestamp: Date.now(), ttl: 300 });
+        otherBid = { adId: 'other-adid', status: BID_STATUS.RENDERED };
+        const findBid = (adId) => [bid, otherBid].find(b => b.adId === adId);
+        sandbox.stub(auctionManager, 'findBidByAdId').callsFake(findBid);
+        secureCreatives.getBidForMessage.callsFake((msg) => findBid(msg?.adId));
+      });
+
+      function waitForEvent(event, bid) {
+        const emit = events.emit;
+        return new Promise((resolve, reject) => {
+          let timedOut = false;
+          const timeout = setTimeout(() => {
+            timedOut = true;
+            reject(new Error(`timed out waiting for ${event}`));
+          }, 2000);
+          (function poll() {
+            if (timedOut) return;
+            const call = emit.getCalls().find(call => call.args[0] === event && call.args[1]?.bid === bid);
+            if (call) {
+              clearTimeout(timeout);
+              resolve(call.args[1]);
+            } else {
+              setTimeout(poll, 50);
+            }
+          })();
+        });
+      }
+
+      async function render() {
+        renderBid(bidHandle);
+        const [[{ data, ports, source, origin }]] = await expectMessage();
+        receiveMessage({ data, ports, source, origin });
+      }
+
+      it('handles AD_RENDER_SUCCEEDED sent over the port', async () => {
+        await render();
+        await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
+      });
+
+      it('handles AD_RENDER_FAILED sent over the port when the renderer throws', async () => {
+        rendererSrc = 'window.render = function() { throw new Error("renderer error") }';
+        await render();
+        const args = await waitForEvent(EVENTS.AD_RENDER_FAILED, bid);
+        sinon.assert.match(args, { reason: 'exception', message: 'renderer error' });
+      });
+
+      it('handles messages sent by the renderer over the port', async () => {
+        rendererSrc = `window.render = function(_, {sendMessage}) {
+          sendMessage('Prebid Event', { event: 'browserIntervention', intervention: { type: 'test' } });
+        }`;
+        await render();
+        await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
+        sinon.assert.calledWith(events.emit, EVENTS.BROWSER_INTERVENTION, sinon.match({ bid, intervention: { type: 'test' } }));
+      });
+
+      it('ignores messages over the port for a different adId', async () => {
+        rendererSrc = `window.render = function(_, {sendMessage}) {
+          sendMessage('Prebid Event', { adId: 'other-adid', event: 'adRenderFailed', info: { reason: 'exception', message: 'spoofed' } });
+        }`;
+        await render();
+        await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
+        sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_FAILED);
+      });
+    });
+
+    function mockNext() {
+      const next = sinon.stub();
+      next.bail = sinon.stub();
+      return next;
+    }
+
+    it('does not accept a token more than once', async () => {
+      renderBid(bidHandle);
+      const [[event, message]] = await expectMessage();
+      const hook = allowMessageHook();
+      const next = mockNext();
+      hook(next, event, message);
+      sinon.assert.calledOnce(next);
+      [
+        message,
+        { message: 'Prebid Event', event: 'adRenderSucceeded', adId: message.adId, token: message.token },
+        { message: 'Prebid Native', action: 'click', adId: message.adId, token: message.token },
+      ].forEach(followUp => {
+        hook(next, event, followUp);
+      });
+      sinon.assert.calledOnce(next);
+      sinon.assert.alwaysCalledWith(next.bail, false);
+      sinon.assert.callCount(next.bail, 3);
+    });
+
+    it('does not accept messages without a token after the token has been used', async () => {
+      renderBid(bidHandle);
+      const [[event, { token, ...message }]] = await expectMessage();
+      const hook = allowMessageHook();
+      const next = mockNext();
+      hook(next, event, { ...message, token });
+      hook(next, event, message);
+      hook(next, { ...event, ports: [] }, { message: 'Prebid Event', event: 'adRenderSucceeded', adId: message.adId });
+      sinon.assert.calledOnce(next);
+      sinon.assert.callCount(next.bail, 2);
+    });
+
+    it('accepts the token issued by each renderBid call once', async () => {
+      const hook = allowMessageHook();
+      const next = mockNext();
+      renderBid(bidHandle);
+      const [[event1, message1]] = await expectMessage();
+      hook(next, event1, message1);
+      renderBid(bidHandle);
+      const [[event2, message2]] = await expectMessage((ev, msg) => msg?.token !== message1.token);
+      hook(next, event2, message2);
+      hook(next, event1, message1);
+      hook(next, event2, message2);
+      sinon.assert.calledTwice(next);
+      sinon.assert.callCount(next.bail, 2);
+    });
+  });
+
+  describe('allowMessageHook', () => {
+    let next, hook, tokenIsValid, getBidForMessage;
+    beforeEach(() => {
+      next = sinon.stub();
+      next.bail = sinon.stub();
+      tokenIsValid = sinon.stub();
+      hook = allowMessageHook(tokenIsValid);
+      getBidForMessage = sinon.stub();
+      sandbox.stub(secureCreatives, 'getBidForMessage').callsFake(getBidForMessage);
+    });
+    [true, false].forEach((exclusive) => {
+      describe(`and safeRendering.exclusive = ${exclusive}`, () => {
+        beforeEach(() => {
+          config.setConfig({ safeRendering: { exclusive } });
+        });
+
+        afterEach(() => {
+          config.resetConfig();
+        });
+
+        [
+          {
+            desc: 'wrong adId, no token',
+            shouldAllow: !exclusive,
+            bid: null,
+            event: { ports: [{}] },
+            message: { adId: 'wrong' },
+          },
+          {
+            desc: 'missing adId, no token',
+            shouldAllow: !exclusive,
+            bid: null,
+            event: { ports: [{}] },
+            message: { adId: 'wrong' },
+          },
+          {
+            desc: 'good adId, wrong token',
+            shouldAllow: false,
+            bid: {},
+            event: { ports: [{}] },
+            message: { adId: 'right', token: 'wrong' }
+          },
+          {
+            desc: 'good adId, good token',
+            shouldAllow: true,
+            bid: {},
+            event: { ports: [{}] },
+            message: { adId: 'right', token: 'right' },
+          },
+          {
+            desc: 'missing port, good token',
+            shouldAllow: false,
+            bid: {},
+            event: { ports: [] },
+            message: { adId: 'right', token: 'right' }
+          },
+          {
+            desc: 'missing port, no token',
+            shouldAllow: !exclusive,
+            bid: {},
+            event: { ports: [] },
+            message: { adId: 'right' }
+          },
+          {
+            desc: 'no message',
+            shouldAllow: !exclusive,
+            bid: null,
+            event: { ports: [] },
+            message: null
+          }
+        ].forEach(({ desc, shouldAllow, bid, event, message }) => {
+          describe(`when an incoming message has ${desc}`, () => {
+            beforeEach(() => {
+              secureCreatives.getBidForMessage.returns(bid);
+              tokenIsValid.callsFake((bid, token) => token === 'right');
+            });
+
+            if (shouldAllow) {
+              it('should allow', () => {
+                hook(next, event, message);
+                sinon.assert.calledWith(next, event, message);
+                sinon.assert.notCalled(next.bail);
+              });
+            } else {
+              it('should reject', () => {
+                hook(next, event, message);
+                sinon.assert.notCalled(next);
+                sinon.assert.calledWith(next.bail, false);
+              });
+            }
+          });
+        });
+      });
+    });
+  });
+});
