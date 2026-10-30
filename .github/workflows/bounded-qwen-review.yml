@@ -1,4 +1,4 @@
-name: Bounded Qwen review (experimental)
+name: Bounded Qwen PR review
 
 on:
   pull_request_target:
@@ -14,7 +14,6 @@ concurrency:
 
 jobs:
   review:
-    if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/ocr-bounded-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -61,7 +60,7 @@ jobs:
 
       - name: Upload review diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bounded-qwen-${{ github.run_id }}
           path: ${{ runner.temp }}/bounded-qwen-result.json
