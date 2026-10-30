@@ -57,7 +57,7 @@ def meaningful_fix(quote, fix):
     """Reject identical, formatting-only and unrelated whole-function fixes."""
     fix = fix.strip()
     quote = quote.strip()
-    if not fix or "\\n" in fix or "\\r" in fix or len(fix) > 350:
+    if not fix or "\n" in fix or "\r" in fix or len(fix) > 350:
         return False
     # Ignore formatting changes without conflating distinct identifiers/operators.
     compact = lambda value: re.sub(r"\\s+", "", value).rstrip(";")
@@ -129,7 +129,7 @@ def main():
         raise ValueError("Invalid GitHub event context")
     model = env.get("REVIEW_MODEL", "qwen3.5:9b-q4_K_M")
     report = {"model": model, "reviewed": 0, "posted": 0, "rejected": 0, "skipped": 0, "errors": [], "files": []}
-    # Keep diagnostics even if an inference request or GitHub publication fails.
+    # Save raw response per file for iteration (no secrets or code execution).
     output_path = Path(env.get("RUNNER_TEMP", "/tmp"), "bounded-qwen-result.json")
     prior = set()
     for comment in paged(repo, number, token, "comments"):
@@ -182,13 +182,13 @@ def main():
             + "**Failure case:** " + finding["failure_case"] + "\n\n"
             + "**Suggested fix:** `" + finding["fix"].replace("`", "'") + "`\n\n"
             + f"<!-- bounded-qwen:{marker} -->")
-        api(f"{API}/repos/{repo}/pulls/{number}/comments", token, "POST", {
+        output_path.write_text(json.dumps(report, indent=2) + "\n")\n        api(f"{API}/repos/{repo}/pulls/{number}/comments", token, "POST", {
             "body": body, "commit_id": sha, "path": filename, "line": finding["line"], "side": "RIGHT"})
         prior.add(marker)
         diagnostic["outcome"] = "posted"
         report["posted"] += 1
         print(f"[bounded-qwen] posted {filename}:{finding['line']}", flush=True)
-    Path(env.get("RUNNER_TEMP", "/tmp"), "bounded-qwen-result.json").write_text(json.dumps(report, indent=2) + "\n")
+    output_path.write_text(json.dumps(report, indent=2) + "\n")
     if env.get("GITHUB_STEP_SUMMARY"):
         with open(env["GITHUB_STEP_SUMMARY"], "a") as summary:
             summary.write(f"### Bounded local review\n\nFiles reviewed: {report['reviewed']}; comments posted: {report['posted']}; rejected findings: {report['rejected']}; skipped files: {report['skipped']}.\n")
