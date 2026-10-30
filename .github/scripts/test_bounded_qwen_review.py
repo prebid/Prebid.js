@@ -1,7 +1,10 @@
 import importlib.util
 import pathlib
+import os
+import tempfile
+import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 target = pathlib.Path(__file__).with_name("bounded_qwen_review.py")
 spec = importlib.util.spec_from_file_location("bounded_qwen_review", target)
@@ -52,6 +55,25 @@ class ReviewTests(unittest.TestCase):
     def test_reject_whole_function_rewrite(self):
         finding = dict(FINDING, fix="function f(x) { return x >= a && x <= b; }")
         self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
+
+    def test_review_loop_records_clean_diagnostic(self):
+        file = {"filename": "src/example.ts", "status": "added", "patch": PATCH}
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {
+            "GITHUB_REPOSITORY": "prebid/Prebid.js",
+            "PR_NUMBER": "15928",
+            "PR_HEAD_SHA": "a" * 40,
+            "GITHUB_TOKEN": "test-only",
+            "RUNNER_TEMP": directory,
+            "REVIEW_MODEL": "test-model",
+        }), patch.object(review, "paged", side_effect=lambda repo, number, token, endpoint: (
+            [file] if endpoint == "files" else []
+        )), patch.object(review, "predict", return_value=([], {"message": {"content": '{"findings":[]}'}})):
+            review.main()
+            report = json.loads((pathlib.Path(directory) / "bounded-qwen-result.json").read_text())
+            self.assertEqual(report["reviewed"], 1)
+            self.assertEqual(report["files"][0]["outcome"], "clean")
+            self.assertEqual(report["files"][0]["parsed_findings"], [])
+            self.assertIn("raw_response", report["files"][0])
 
     def test_reject_incomplete_finding(self):
         finding = dict(FINDING, failure_case="")
