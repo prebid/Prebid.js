@@ -24,6 +24,9 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
 
+      - name: Validate diff parsing and finding guardrails
+        run: python3 -m unittest discover -s .github/scripts -p 'test_bounded_qwen_review.py' -v
+
       - name: Install Ollama
         run: |
           curl --fail --silent --show-error --location --retry 3 \
