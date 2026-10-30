@@ -241,6 +241,11 @@ function prepareBid(bid: any, imp: any): any {
   if (typeof price !== 'number' || !(price > 0)) {
     return null;
   }
+  const hasMarkup = bid.adm != null && bid.adm !== '';
+  if (!hasMarkup && !(isString(bid.nurl) && bid.nurl !== '')) {
+    logWarn(`${BIDDER_CODE}: bid ${bid.id} has neither adm nor nurl, bid skipped`, bid);
+    return null;
+  }
   const mediaType = resolveMediaType(bid, imp);
   if (!mediaType) {
     logWarn(`${BIDDER_CODE}: could not determine the media type of bid ${bid.id}, bid skipped`, bid);
@@ -314,7 +319,7 @@ export function normalizeOrtbResponse(body: unknown): any {
       ...response,
       seatbid: (isArray(response.seatbid) ? response.seatbid : []).map((seatbid: any) => ({
         seat: seatbid?.seat,
-        bid: (isArray(seatbid?.bid) ? seatbid.bid : []).map(fromOrtb3Bid)
+        bid: (isArray(seatbid?.bid) ? seatbid.bid : []).filter(isPlainObject).map(fromOrtb3Bid)
       }))
     };
   }

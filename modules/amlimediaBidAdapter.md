@@ -40,6 +40,9 @@ Amli Media is not registered with the IAB TCF Global Vendor List yet.
 
 Video and audio settings are read from `mediaTypes.video` / `mediaTypes.audio`, never from bidder params.
 
+Outstream video: the adapter does not supply a renderer, so outstream ad units need a publisher
+renderer on `mediaTypes.video.renderer` or `adUnit.renderer`. Without one, Prebid rejects outstream bids.
+
 # Currency
 
 Amli Media bids in USD. Floors are requested from the floors module in USD; a floor in another

@@ -642,6 +642,20 @@ describe('amlimediaBidAdapter', function () {
       expect(bids).to.deep.equal([]);
     });
 
+    it('skips a bid that carries neither markup nor a URL to load it from', function () {
+      const request = build();
+      const warnStub = sinon.stub(utils, 'logWarn');
+      try {
+        const bids = spec.interpretResponse(respond(request, [
+          { id: 'empty', impid: 'bid-banner', price: 1, w: 300, h: 250, crid: 'c', mtype: 1 },
+          { id: 'blank', impid: 'bid-banner', price: 1, adm: '', nurl: '', w: 300, h: 250, crid: 'c', mtype: 1 }
+        ]), request);
+        expect(bids).to.deep.equal([]);
+      } finally {
+        warnStub.restore();
+      }
+    });
+
     it('skips bids for an imp that was never requested', function () {
       const request = build();
       const bids = spec.interpretResponse(respond(request, [{ impid: 'unknown', price: 1, adm: '<div></div>', w: 300, h: 250, crid: 'c' }]), request);
@@ -855,7 +869,7 @@ describe('amlimediaBidAdapter', function () {
           const request = build([bid]);
           const warnStub = sinon.stub(utils, 'logWarn');
           try {
-            const bids = spec.interpretResponse(respond(request, [{ id: 'x', impid: 'bid-banner', price: 1, crid: 'c' }]), request);
+            const bids = spec.interpretResponse(respond(request, [{ id: 'x', impid: 'bid-banner', price: 1, adm: { foo: 1 }, crid: 'c' }]), request);
             expect(bids).to.deep.equal([]);
           } finally {
             warnStub.restore();
@@ -991,6 +1005,14 @@ describe('amlimediaBidAdapter', function () {
       expect(normalized.seatbid[0].bid[0]).to.deep.equal({
         id: 'b', impid: 'i', price: 1, adm: '<a></a>', mtype: 1, burl: 'https://b', lurl: 'https://l', cid: 'camp', crid: 'ad', cat: ['IAB1'], attr: [1], w: 1, h: 2, exp: 90
       });
+    });
+
+    it('drops non-object OpenRTB 3.0 bid entries without losing their siblings', function () {
+      const normalized = normalizeOrtbResponse({
+        openrtb: { response: { seatbid: [{ bid: [null, 'x', { item: 'i', price: 1, media: { ad: { display: { adm: '<a></a>' } } } }] }] } }
+      });
+      expect(normalized.seatbid[0].bid).to.have.lengthOf(1);
+      expect(normalized.seatbid[0].bid[0]).to.deep.include({ impid: 'i', price: 1, adm: '<a></a>', mtype: 1 });
     });
 
     it('keeps an OpenRTB 3.0 bid without media for media type detection later', function () {
