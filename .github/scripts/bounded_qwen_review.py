@@ -65,16 +65,34 @@ def added_lines(patch):
     return lines
 
 
-def removed_lines(patch):
-    """Old-side lines this patch deletes (used to recognize revert fixes)."""
-    started = False
-    removed = []
-    for line in patch.splitlines():
-        if HUNK.match(line):
-            started = True
-        elif started and line.startswith("-"):
-            removed.append(line[1:])
-    return removed
+def replaced_lines(patch, line):
+    """Old-side lines deleted in the same change block as new-side `line`.
+
+    A change block is a run of -/+ lines between context lines. A fix equal
+    to one of these restores what the author replaced; a deletion elsewhere
+    in the hunk says nothing about the flagged line.
+    """
+    removed, has_target, number = [], False, None
+    # A trailing context line closes the final block.
+    for text in patch.splitlines() + [" "]:
+        match = HUNK.match(text)
+        if match:
+            if has_target:
+                return removed
+            removed, number = [], int(match.group(1))
+        elif number is None or text.startswith("\\"):
+            continue
+        elif text.startswith("-"):
+            removed.append(text[1:])
+        elif text.startswith("+"):
+            has_target = has_target or number == line
+            number += 1
+        else:
+            if has_target:
+                return removed
+            removed = []
+            number += 1
+    return []
 
 
 def compact(value):
@@ -270,7 +288,8 @@ def review_chunk(model, filename, patch, index, total, sha, repo, number,
     print(f"[bounded-qwen] inference {time.monotonic() - started:.1f}s", flush=True)
     if not findings:
         diagnostic["outcome"] = "clean"
-    elif not validate(findings[0], added_lines(patch), removed_lines(patch)):
+    elif not validate(findings[0], added_lines(patch),
+                      replaced_lines(patch, findings[0].get("line") if isinstance(findings[0], dict) else None)):
         report["rejected"] += 1
         diagnostic["outcome"] = "rejected"
     else:

@@ -165,10 +165,30 @@ class ReviewTests(unittest.TestCase):
         finding = dict(FINDING, line=92,
                        quote="            var jsBlob = new Blob([data.source], { type: \"text/javascript\" });",
                        fix="var jsBlob = new Blob([data], {type: \"text/javascript\"});")
-        self.assertEqual(review.removed_lines(diff),
+        self.assertEqual(review.replaced_lines(diff, 92),
                          ["            var jsBlob = new Blob([data], { type: \"text/javascript\" });"])
         self.assertTrue(review.validate(finding, review.added_lines(diff)))
-        self.assertFalse(review.validate(finding, review.added_lines(diff), review.removed_lines(diff)))
+        self.assertFalse(review.validate(finding, review.added_lines(diff), review.replaced_lines(diff, 92)))
+
+    def test_deletion_in_another_block_does_not_block_fix(self):
+        # The hunk deletes "return x >= a && x <= b;" elsewhere; fixing the
+        # flagged line to that text does not revert this block's change.
+        diff = ("@@ -1,6 +1,5 @@\n"
+                "-  return x >= a && x <= b;\n"
+                " }\n"
+                " export function inWindow(x, a, b) {\n"
+                "+  return x >= a || x <= b;\n"
+                " }\n")
+        lines = review.added_lines(diff)
+        finding = dict(FINDING, line=3)
+        self.assertEqual(review.replaced_lines(diff, 3), [])
+        self.assertTrue(review.validate(finding, lines, review.replaced_lines(diff, 3)))
+
+    def test_replaced_lines_cover_multi_line_block(self):
+        diff = ("@@ -1,4 +1,4 @@\n context\n-old one\n-old two\n+new one\n+new two\n context\n")
+        self.assertEqual(review.replaced_lines(diff, 3), ["old one", "old two"])
+        self.assertEqual(review.replaced_lines(diff, 1), [])
+        self.assertEqual(review.replaced_lines(diff, "2"), [])
 
     def test_reject_incomplete_finding(self):
         finding = dict(FINDING, failure_case="")
