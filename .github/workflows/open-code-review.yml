@@ -84,6 +84,18 @@ jobs:
             exit 1
           fi
 
+      - name: Bound individual review prompts to model context
+        run: |
+          # max_tokens_budget below limits the whole review, not an individual
+          # prompt. OCR otherwise defaults to a 200K-token input prompt.
+          # Reserve half of Ollama's 16K context for generation, tool calls,
+          # and tokenization differences on a small local model.
+          # The pinned action subsequently configures the same CLI and does
+          # not overwrite this persisted max_tokens setting.
+          npm install -g @alibaba-group/open-code-review@1.13.3
+          ocr config set max_tokens 8192
+          jq --exit-status '.max_tokens == 8192' "$HOME/.opencodereview/config.json"
+
       - name: Review PR and publish comments
         # OpenCodeReview v1.13.3 (the action and installed CLI are both pinned).
         uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb
