@@ -2,8 +2,9 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isArray, isStr, logError, logWarn } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue, isArray, isStr, logError, logWarn, mergeDeep } from '../src/utils.js';
+import { ORTB_VIDEO_PARAMS } from '../src/video.js';
 
 /**
  * @typedef {import('../src/adapterManager.js').BidRequest<'ex_geniee'>} BidRequest
@@ -27,10 +28,32 @@ const converter = ortbConverter({
   context: {
     ttl: DEFAULT_TTL,
     netRevenue: NET_REVENUE,
-    mediaType: BANNER,
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    // The Exchange serves banner and video only, but without a fixed
+    // context.mediaType the converter also fills imp.native / imp.audio from
+    // the ad unit.
+    delete imp.native;
+    delete imp.audio;
+    // A multiformat ad unit whose video part cannot be served still passes
+    // isBidRequestValid on its banner part; send it as banner only. imp.video
+    // can also come from ortb2Imp alone, with no mediaTypes.video for
+    // isBidRequestValid to have checked.
+    let videoError = null;
+    if (imp.video) {
+      const declaresVideo = deepAccess(bidRequest, 'mediaTypes.video') != null;
+      videoError = declaresVideo ? validateVideo(bidRequest)
+        : 'mediaTypes.video is not declared';
+    }
+    if (videoError !== null) {
+      logWarn(`[${BIDDER_CODE}] ${videoError}; sending the banner part only.`);
+      delete imp.video;
+    }
+    // priceFloors looks imp.bidfloor up with mediaType '*' when the ad unit
+    // declares several media types, which misses per-media-type floor rules;
+    // redo it for the media types actually sent.
+    setLowestFloor(imp, bidRequest, context.currency);
     // The Exchange requires banner.w/h, so mirror the first format entry into
     // w/h. Prebid's default banner processor only emits format.
     const format = deepAccess(imp, 'banner.format');
@@ -72,6 +95,23 @@ const converter = ortbConverter({
       deepSetValue(request, 'user.eids', eids);
     }
     return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    // The Exchange omits w/h on video bids. The converter then leaves
+    // width/height unset, and they end up as 0 once core merges the response,
+    // which a safeRenderer takes as the size of its frame. Fall back to the
+    // requested player size, as other adapters do; a complete w/h from the
+    // Exchange still wins. Both are replaced together so that a response size
+    // is never mixed with the player size.
+    const hasSize = Boolean(bidResponse.width && bidResponse.height);
+    const hasPlayerSize =
+        Boolean(bidResponse.playerWidth && bidResponse.playerHeight);
+    if (bidResponse.mediaType === VIDEO && !hasSize && hasPlayerSize) {
+      bidResponse.width = bidResponse.playerWidth;
+      bidResponse.height = bidResponse.playerHeight;
+    }
+    return bidResponse;
   },
 });
 
@@ -167,23 +207,122 @@ function validatePlacementId(bid) {
 }
 
 /**
- * Validates that the bid declares the banner media type (mediaTypes.banner).
+ * Validates that the bid's video part can be sent to the Exchange: the build
+ * includes video and the mimes sent (mediaTypes.video.mimes merged with
+ * ortb2Imp.video.mimes) is a non-empty array of strings.
  *
- * @param {BidRequest} bid - the bid whose mediaTypes to validate.
- * @return {string|null} the reason to reject the bid, or null when it is
- *     acceptable.
+ * @param {BidRequest} bid - a bid that declares mediaTypes.video.
+ * @return {string|null} the reason the video part cannot be sent, or null when
+ *     it can.
  */
-function validateBanner(bid) {
-  const banner = deepAccess(bid, 'mediaTypes.banner');
-  if (banner === undefined || banner === null) {
-    return 'mediaTypes.banner is required (this adapter is banner-only)';
+function validateVideo(bid) {
+  // Without the video feature the converter never fills imp.video, while core
+  // keeps mediaTypes.video, so a video-only bid would go out with an empty imp.
+  if (!FEATURES.VIDEO) {
+    return 'video is not included in this Prebid.js build';
+  }
+  // Core only drops mimes when it is malformed, so a missing mimes reaches the
+  // adapter. Core also checks only what mediaTypes.video sets before the
+  // ad-unit-level ortb2Imp.video is synced into it, and never syncs the
+  // bidder-level one. The converter merges ortb2Imp.video into
+  // mediaTypes.video with mergeDeep, so the same merge gives the mimes sent.
+  const { mimes } = mergeDeep({},
+    { mimes: deepAccess(bid, 'mediaTypes.video.mimes') },
+    deepAccess(bid, 'ortb2Imp.video'));
+  if (!ORTB_VIDEO_PARAMS.get('mimes')(mimes)) {
+    return `mediaTypes.video.mimes (or ortb2Imp.video.mimes) is required by the Exchange as a non-empty array of strings (got ${
+        formatForLog(mimes)})`;
   }
   return null;
 }
 
+/**
+ * Reads one media type's floor from the priceFloors module.
+ *
+ * @param {BidRequest} bidRequest - a bid that has priceFloors' getFloor.
+ * @param {string} currency - the currency to request the floor in.
+ * @param {string} mediaType - BANNER or VIDEO.
+ * @return {{floor: number, currency: string}|null} the floor, or null when the
+ *     media type has none.
+ */
+function getMediaTypeFloor(bidRequest, currency, mediaType) {
+  const floor = bidRequest.getFloor({ currency, mediaType, size: '*' }) || {};
+  const value = parseFloat(floor.floor);
+  // Same acceptance rule as priceFloors' own imp.bidfloor processor
+  // (setOrtbImpBidFloor).
+  if (floor.currency === undefined || floor.currency === null ||
+      !(value > 0)) {
+    return null;
+  }
+  return { floor: value, currency: floor.currency };
+}
+
+/**
+ * Sets imp.bidfloor / imp.bidfloorcur to what the bid's ortb2Imp sets,
+ * removing each one ortb2Imp leaves unset.
+ *
+ * @param {Object} imp - the ORTB imp to update.
+ * @param {BidRequest} bidRequest - the bid the imp was built from.
+ */
+function resetFloorToOrtb2Imp(imp, bidRequest) {
+  ['bidfloor', 'bidfloorcur'].forEach((field) => {
+    const value = deepAccess(bidRequest, `ortb2Imp.${field}`);
+    if (value === undefined) {
+      delete imp[field];
+    } else {
+      imp[field] = value;
+    }
+  });
+}
+
+/**
+ * Sets imp.bidfloor / imp.bidfloorcur to the lowest floor among the media
+ * types the imp carries (imp.banner / imp.video), and resets them to the bid's
+ * ortb2Imp floor when any of those media types has no floor. Leaves the imp as
+ * it is when the priceFloors module is not installed or when getFloor throws.
+ *
+ * @param {Object} imp - the ORTB imp to update.
+ * @param {BidRequest} bidRequest - the bid the imp was built from.
+ * @param {string} currency - the currency to request the floors in.
+ */
+function setLowestFloor(imp, bidRequest, currency) {
+  if (typeof bidRequest.getFloor !== 'function') {
+    return;
+  }
+  const mediaTypes = [BANNER, VIDEO].filter(
+    (mediaType) => imp[mediaType] !== undefined && imp[mediaType] !== null);
+  let floors;
+  try {
+    floors = mediaTypes.map(
+      (mediaType) => getMediaTypeFloor(bidRequest, currency, mediaType));
+  } catch (e) {
+    // Keep what priceFloors' own processor set from its '*' lookup, i.e. the
+    // floor Prebid would send without this recomputation, rather than
+    // dropping the floor altogether.
+    logWarn(`[${BIDDER_CODE}] Could not compute the floor for ${
+        mediaTypes.join(' / ')}; leaving imp.bidfloor as priceFloors set it.`, e);
+    return;
+  }
+  // The Exchange reads only imp.bidfloor. A floor above the cheapest media
+  // type's would shut out that media type's bids, and a media type without a
+  // floor takes any bid. Both lookups request the same currency from the same
+  // floor data, so they come back in the same currency. A media type without a
+  // floor falls back to the publisher's ortb2Imp floor, as priceFloors does
+  // when it has no floor. That floor is read from the bid, since priceFloors'
+  // own processor may already have overwritten imp.bidfloor from a '*' rule.
+  if (!floors.length || floors.includes(null)) {
+    resetFloorToOrtb2Imp(imp, bidRequest);
+    return;
+  }
+  const lowest =
+      floors.reduce((min, floor) => (floor.floor < min.floor ? floor : min));
+  imp.bidfloor = lowest.floor;
+  imp.bidfloorcur = lowest.currency;
+}
+
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   // Geniee is not registered in the IAB Global Vendor List (this Exchange does
   // not serve GDPR territories, see buildRequests), so the device-storage
   // disclosure is hosted on Geniee's own domain instead of referenced through a gvlid.
@@ -214,14 +353,21 @@ export const spec = {
       return false;
     }
 
-    // The Geniee Exchange requires imp.banner (banner-only adapter); core does
-    // not filter out non-banner adUnits for client-side adapters, so reject
-    // them here. No need to also check banner.sizes: core's
-    // validateBannerMediaType (src/prebid.ts) deletes mediaTypes.banner when it
-    // has no valid sizes, so a surviving banner always has non-empty sizes.
-    const bannerError = validateBanner(bid);
-    if (bannerError !== null) {
-      logError(`[${BIDDER_CODE}] ${bannerError}.`);
+    // No need to check banner.sizes: core's validateBannerMediaType
+    // (src/prebid.ts) deletes mediaTypes.banner when it has no valid sizes, so
+    // a surviving banner always has non-empty sizes.
+    const hasBanner = deepAccess(bid, 'mediaTypes.banner') != null;
+    const hasVideo = deepAccess(bid, 'mediaTypes.video') != null;
+    if (!hasBanner && !hasVideo) {
+      logError(`[${
+          BIDDER_CODE}] mediaTypes.banner or mediaTypes.video is required.`);
+      return false;
+    }
+    // With a banner part the bid stays valid even when its video part cannot
+    // be sent; the imp processor then drops the video.
+    const videoError = hasVideo ? validateVideo(bid) : null;
+    if (videoError !== null && !hasBanner) {
+      logError(`[${BIDDER_CODE}] ${videoError}.`);
       return false;
     }
 

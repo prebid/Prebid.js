@@ -22,13 +22,16 @@ be used alongside them:
 
 Please contact us before using the adapter.
 
-Supported media type: **banner** only. Bids whose ad unit does not declare
-`mediaTypes.banner` (for example video- or native-only ad units) are rejected by
-`isBidRequestValid` and never reach the Exchange.
+Supported media types: **banner** and **video**. Bids whose ad unit declares neither
+`mediaTypes.banner` nor `mediaTypes.video` (for example native-only ad units) are rejected by
+`isBidRequestValid` and never reach the Exchange. A multiformat ad unit (banner + video) is sent
+as one `imp` carrying both `banner` and `video`; native and audio are never sent. See
+[Video](#video) for the video requirements.
 
 We will provide ads when the following conditions are satisfied:
 
-- The request is a banner request, and its ad unit declares valid sizes
+- The request is a banner request whose ad unit declares valid sizes, or a video request that
+  meets the [Video](#video) requirements
 - Payment is possible in Japanese yen or US dollars (see [Currency](#currency))
 - The request contains either `site` (with `site.page`) or `app` (with `app.bundle`).
   `site` is normally auto-filled by Prebid's first-party-data enrichment; when the payload ends
@@ -68,9 +71,83 @@ var adUnits = [
                 }
             }
         ]
+    },
+    {
+        // Instream video: requires Prebid Cache, e.g.
+        // pbjs.setConfig({ cache: { url: 'https://my-pbs.example.com/cache' } });
+        code: 'ex-geniee-test-instream',
+        mediaTypes: {
+            video: {
+                context: 'instream',
+                playerSize: [[640, 480]],
+                mimes: ['video/mp4'],
+                plcmt: 1,
+                minduration: 5,
+                maxduration: 30,
+                protocols: [2, 3, 5, 6]
+            }
+        },
+        bids: [
+            {
+                bidder: 'ex_geniee',
+                params: {
+                    partnerId: 123
+                }
+            }
+        ]
+    },
+    {
+        // Outstream video: the publisher supplies the renderer.
+        code: 'ex-geniee-test-outstream',
+        mediaTypes: {
+            video: {
+                context: 'outstream',
+                playerSize: [[640, 360]],
+                mimes: ['video/mp4']
+            }
+        },
+        renderer: {
+            url: 'https://publisher.example.com/outstream-player.js',
+            render: function (bid) {
+                // hand bid.vastXml to the player loaded from the url above
+            }
+        },
+        bids: [
+            {
+                bidder: 'ex_geniee',
+                params: {
+                    partnerId: 123
+                }
+            }
+        ]
     }
 ];
 ```
+
+## Video
+
+| `mediaTypes.video` field                  | Scope       | Notes                                                              |
+|-------------------------------------------|-------------|--------------------------------------------------------------------|
+| `mimes`                                   | required    | Non-empty array of MIME types.                                     |
+| `playerSize`                              | recommended | Sent as `imp.video.w`/`imp.video.h`.                               |
+| `plcmt`                                   | recommended | Passed to demand partners as is; the Exchange does not fill it in. |
+| `minduration`, `maxduration`, `protocols` | recommended | Some demand partners require them.                                 |
+
+- When the video part of an ad unit cannot be sent (no `mimes`, or a `mimes` entry, including
+  one set in `bids[].ortb2Imp.video.mimes`, that is not a string), a multiformat ad unit is
+  sent as banner only, and a video-only ad unit is rejected by `isBidRequestValid`.
+- Video is sent only for ad units that declare `mediaTypes.video`. A video set up through
+  `ortb2Imp.video` alone is not sent: the adapter drops that `imp.video` and sends the banner
+  part, if any.
+- Instream: bids are VAST XML, so
+  [Prebid Cache](https://docs.prebid.org/dev-docs/show-video-with-a-dfp-video-tag.html) is
+  required.
+- Outstream: Geniee does not provide a renderer. Publishers must set up their own; see
+  [Show Outstream Video Ads](https://docs.prebid.org/dev-docs/show-outstream-video-ads.html).
+- Size of a video bid: only when the response carries both `w` and `h` does the bid keep them.
+  Otherwise (neither, or only one of them) the adapter sets both `width` and `height` to the
+  requested player size (`playerSize`), so that a response size is never mixed with the player
+  size.
 
 ## Currency
 
@@ -116,9 +193,10 @@ the Exchange does not serve GDPR territories (no request is sent when GDPR appli
 
 ## Example Bid Request
 
-For the ad unit above, the adapter POSTs the following OpenRTB bid request (JSON body) to
-`https://aladdin.genieesspv.jp/yie/ld/exchange?id=123`. `params.placementId` travels in the
-payload as `imp[].tagid` (absent when the param is omitted).
+For the banner ad unit above (`ex-geniee-test-ad`), the adapter POSTs the following OpenRTB bid
+request (JSON body) to `https://aladdin.genieesspv.jp/yie/ld/exchange?id=123`.
+`params.placementId` travels in the payload as `imp[].tagid` (absent when the param is
+omitted).
 
 `site` and `device` are filled automatically by Prebid.js first-party-data enrichment from the
 actual page and browser, `imp[].id` and `tmax` are generated per auction, and `id` is composed
@@ -175,6 +253,27 @@ as `<bidderRequestId>-<imp[0].id>`. The values below are an illustrative capture
 }
 ```
 
+For the instream ad unit (`ex-geniee-test-instream`), `imp` carries `video` instead of `banner`
+(and no `tagid`, as `placementId` is not set); the other fields are built the same way:
+
+```json
+"imp": [
+  {
+    "id": "3bc14e2345f2c7",
+    "secure": 1,
+    "video": {
+      "mimes": ["video/mp4"],
+      "plcmt": 1,
+      "minduration": 5,
+      "maxduration": 30,
+      "protocols": [2, 3, 5, 6],
+      "w": 640,
+      "h": 480
+    }
+  }
+]
+```
+
 ## Notes
 
 - One HTTP request per ad unit: the Exchange requires the `imp` array to have length exactly
@@ -183,6 +282,14 @@ as `<bidderRequestId>-<imp[0].id>`. The values below are an illustrative capture
   requests of an auction and tell which imp each one carries.
 - The Exchange requires `banner.w`/`banner.h`, which the adapter derives from the first size in
   `banner.format`.
+- Media type of a bid: taken from `seatbid[].bid[].mtype` in the response (`1` = banner,
+  `2` = video), for banner-only ad units too. The Exchange always sets `mtype`; a bid without
+  it is dropped.
+- Floors (banner and video alike): the Exchange reads only `imp.bidfloor`. With the Price
+  Floors module, the adapter sets it to the lowest floor among the media types sent in the
+  `imp` (banner / video); if any of them has no floor, `imp.bidfloor` is the one set in the ad
+  unit's `ortb2Imp`, or none when it has none. If looking up the floors fails (`getFloor`
+  throws), `imp.bidfloor` is left as the Price Floors module itself set it.
 - Auction type: the Exchange runs a first price auction and Prebid.js does not populate `at`,
   so the adapter defaults it to `1`. If the publisher forces any other value through `ortb2`,
   no request is sent for that ad unit.

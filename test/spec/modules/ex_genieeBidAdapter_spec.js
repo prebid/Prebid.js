@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { DEFAULT_ENDPOINT, spec } from 'modules/ex_genieeBidAdapter.js';
 import { config } from 'src/config.js';
+import 'modules/priceFloors.js';
 
 describe('Geniee Exchange bid adapter', () => {
   const PARTNER_ID = 123;
@@ -149,14 +150,92 @@ describe('Geniee Exchange bid adapter', () => {
         .to.equal(false);
     });
 
-    it('is invalid when the banner mediaType is absent', () => {
+    it('is invalid when mediaTypes declares neither banner nor video', () => {
       expect(spec.isBidRequestValid(makeBid({ mediaTypes: {} }))).to.equal(false);
     });
 
-    it('is invalid for a non-banner mediaType (e.g. video)', () => {
+    it('is invalid for a native-only ad unit', () => {
       expect(spec.isBidRequestValid(makeBid({
-        mediaTypes: { video: { context: 'outstream' } }
+        mediaTypes: { native: { title: { required: true } } }
       }))).to.equal(false);
+    });
+
+    describe('with mediaTypes.video', () => {
+      const MIMES = ['video/mp4'];
+
+      if (FEATURES.VIDEO) {
+        it('is valid for an instream video with mimes', () => {
+          expect(spec.isBidRequestValid(makeBid({
+            mediaTypes: { video: { context: 'instream', mimes: MIMES } }
+          }))).to.equal(true);
+        });
+
+        // core syncs only the ad-unit-level ortb2Imp into mediaTypes, not the
+        // bidder-level one
+        it('is valid when mimes is set only in the bidder-level ortb2Imp.video',
+          () => {
+            const bid = makeBid({
+              mediaTypes: { video: { context: 'instream' } },
+              ortb2Imp: { video: { mimes: MIMES } },
+            });
+            expect(spec.isBidRequestValid(bid)).to.equal(true);
+          });
+
+        it('is invalid when the bidder-level ortb2Imp.video.mimes has a non-string entry',
+          () => {
+            [undefined, ['video/mp4']].forEach((mimes) => {
+              const bid = makeBid({
+                mediaTypes: { video: { context: 'instream', mimes } },
+                ortb2Imp: { video: { mimes: [1] } },
+              });
+              expect(spec.isBidRequestValid(bid),
+                `mediaTypes.video.mimes: ${JSON.stringify(mimes)}`).to.equal(false);
+            });
+          });
+
+        it('is valid when the bidder-level ortb2Imp.video.mimes is empty and mediaTypes.video.mimes is set',
+          () => {
+            const bid = makeBid({
+              mediaTypes: { video: { context: 'instream', mimes: ['video/mp4'] } },
+              ortb2Imp: { video: { mimes: [] } },
+            });
+            expect(spec.isBidRequestValid(bid)).to.equal(true);
+          });
+
+        // whether an outstream bid can be rendered is left to core
+        it('is valid for an outstream video without a renderer', () => {
+          expect(spec.isBidRequestValid(makeBid({
+            mediaTypes: { video: { context: 'outstream', mimes: MIMES } }
+          }))).to.equal(true);
+        });
+      } else {
+        it('is invalid for a video-only ad unit when the build does not include video',
+          () => {
+            expect(spec.isBidRequestValid(makeBid({
+              mediaTypes: { video: { context: 'instream', mimes: MIMES } }
+            }))).to.equal(false);
+          });
+      }
+
+      it('is invalid for a video-only ad unit without mimes', () => {
+        [undefined, []].forEach((mimes) => {
+          const bid =
+              makeBid({ mediaTypes: { video: { context: 'instream', mimes } } });
+          expect(spec.isBidRequestValid(bid), `mimes: ${JSON.stringify(mimes)}`)
+            .to.equal(false);
+        });
+      });
+
+      it('is valid on the banner part when the video part of a multiformat ad unit cannot be sent',
+        () => {
+          const bid = makeBid({
+            mediaTypes: {
+              banner: { sizes: [[300, 250]] },
+              video: { context: 'instream' },
+            },
+          });
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
     });
   });
 
@@ -173,26 +252,271 @@ describe('Geniee Exchange bid adapter', () => {
       expect(request.data.imp).to.be.an('array').with.lengthOf(1);
     });
 
-    it('accepts a multiformat (banner + video) ad unit and sends only the banner part',
-      () => {
-        const bid = makeBid({
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] },
-            video: { context: 'outstream', playerSize: [[640, 480]] },
-          },
-        });
-        // Multiformat units that include banner must not be rejected: the
-        // publisher's video demand keeps flowing to other bidders on the same
-        // unit.
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
+    if (FEATURES.VIDEO) {
+      describe('with mediaTypes.video', () => {
+        const MIMES = ['video/mp4'];
 
-        const requests = spec.buildRequests([bid], makeBidderRequest([bid]));
-        expect(requests).to.be.an('array').with.lengthOf(1);
-        const imp = requests[0].data.imp[0];
-        expect(imp.banner).to.be.an('object');
-        expect(imp.video, 'imp.video').to.equal(undefined);
-        expect(imp.native, 'imp.native').to.equal(undefined);
+        function buildImp(mediaTypes, overrides = {}) {
+          const bids = [makeBid({ mediaTypes, ...overrides })];
+          const requests = spec.buildRequests(bids, makeBidderRequest(bids));
+          expect(requests).to.have.lengthOf(1);
+          return requests[0].data.imp[0];
+        }
+
+        it('sends a video-only ad unit as imp.video with w/h taken from playerSize',
+          () => {
+            const imp = buildImp({
+              video: { context: 'instream', mimes: MIMES, playerSize: [[640, 480]] },
+            });
+
+            expect(imp.video.mimes).to.deep.equal(MIMES);
+            expect(imp.video.w).to.equal(640);
+            expect(imp.video.h).to.equal(480);
+            expect(imp.banner, 'imp.banner').to.equal(undefined);
+          });
+
+        it('sends a multiformat (banner + video) ad unit as one imp carrying both',
+          () => {
+            const imp = buildImp({
+              banner: { sizes: [[300, 250]] },
+              video: { context: 'instream', mimes: MIMES, playerSize: [[640, 480]] },
+            });
+
+            expect(imp.banner.w).to.equal(300);
+            expect(imp.banner.h).to.equal(250);
+            expect(imp.video.mimes).to.deep.equal(MIMES);
+          });
+
+        it('sends only the banner part when the video of a multiformat ad unit has no mimes',
+          () => {
+            const imp = buildImp({
+              banner: { sizes: [[300, 250]] },
+              video: { context: 'instream', playerSize: [[640, 480]] },
+            });
+
+            expect(imp.banner).to.be.an('object');
+            expect(imp.video, 'imp.video').to.equal(undefined);
+          });
+
+        it('sends the video part of a multiformat ad unit with an outstream video and no renderer',
+          () => {
+            const imp = buildImp({
+              banner: { sizes: [[300, 250]] },
+              video: { context: 'outstream', mimes: MIMES, playerSize: [[640, 480]] },
+            });
+
+            expect(imp.banner).to.be.an('object');
+            expect(imp.video.mimes).to.deep.equal(MIMES);
+          });
+
+        it('sends the video part when mimes is set only in the bidder-level ortb2Imp.video',
+          () => {
+            const imp = buildImp(
+              {
+                banner: { sizes: [[300, 250]] },
+                video: { context: 'instream', playerSize: [[640, 480]] },
+              },
+              { ortb2Imp: { video: { mimes: MIMES } } },
+            );
+
+            expect(imp.video.mimes).to.deep.equal(MIMES);
+          });
+
+        it('sends only the banner part when the bidder-level ortb2Imp.video.mimes has a non-string entry',
+          () => {
+            const imp = buildImp(
+              {
+                banner: { sizes: [[300, 250]] },
+                video: { context: 'instream', mimes: ['video/mp4'], playerSize: [[640, 480]] },
+              },
+              { ortb2Imp: { video: { mimes: [1] } } },
+            );
+
+            expect(imp.banner).to.be.an('object');
+            expect(imp.video, 'imp.video').to.equal(undefined);
+          });
       });
+    }
+
+    it('drops an ortb2Imp.video that comes without mediaTypes.video', () => {
+      const bid = makeBid({ ortb2Imp: { video: { mimes: ['video/mp4'] } } });
+      const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+      expect(request.data.imp[0].banner).to.be.an('object');
+      expect(request.data.imp[0].video, 'imp.video').to.equal(undefined);
+    });
+
+    describe('imp.bidfloor', () => {
+      // Stands in for priceFloors' getFloor: a media type missing from `floors`
+      // has no floor.
+      function getFloorReturning(floors) {
+        return ({ currency, mediaType }) => (floors[mediaType] === undefined
+          ? {} : { floor: floors[mediaType], currency });
+      }
+
+      function buildImpWithFloors(mediaTypes, floors, params) {
+        const bid = makeBid({
+          mediaTypes,
+          getFloor: getFloorReturning(floors),
+          ...(params ? { params } : {}),
+        });
+        const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+        return request.data.imp[0];
+      }
+
+      const BANNER_ONLY = { banner: { sizes: [[300, 250]] } };
+      const MULTIFORMAT = {
+        banner: { sizes: [[300, 250]] },
+        video: { context: 'instream', mimes: ['video/mp4'], playerSize: [[640, 480]] },
+      };
+
+      it('is left unset when the priceFloors module is not in use', () => {
+        const bids = [makeBid()];
+        const [request] = spec.buildRequests(bids, makeBidderRequest(bids));
+
+        expect(request.data.imp[0].bidfloor, 'imp.bidfloor').to.equal(undefined);
+      });
+
+      it('takes the banner floor for a banner-only ad unit', () => {
+        const imp = buildImpWithFloors(BANNER_ONLY, { banner: 3 });
+
+        expect(imp.bidfloor).to.equal(3);
+        expect(imp.bidfloorcur).to.equal('USD');
+      });
+
+      it('takes the banner floor when the video part of a multiformat ad unit is dropped',
+        () => {
+          const imp = buildImpWithFloors(
+            {
+              banner: { sizes: [[300, 250]] },
+              video: { context: 'instream', playerSize: [[640, 480]] },
+            },
+            { banner: 3, video: 1 },
+          );
+
+          expect(imp.video, 'imp.video').to.equal(undefined);
+          expect(imp.bidfloor).to.equal(3);
+        });
+
+      it('requests the floor in the request currency', () => {
+        const imp = buildImpWithFloors(
+          BANNER_ONLY, { banner: 300 }, { partnerId: PARTNER_ID, currency: 'JPY' });
+
+        expect(imp.bidfloor).to.equal(300);
+        expect(imp.bidfloorcur).to.equal('JPY');
+      });
+
+      it('is left unset when the media type sent has no floor', () => {
+        const imp = buildImpWithFloors(BANNER_ONLY, {});
+
+        expect(imp.bidfloor, 'imp.bidfloor').to.equal(undefined);
+      });
+
+      it('keeps the ortb2Imp floor when the media type sent has no floor', () => {
+        const bid = makeBid({
+          getFloor: getFloorReturning({}),
+          ortb2Imp: { bidfloor: 5, bidfloorcur: 'USD' },
+        });
+        const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+        expect(request.data.imp[0].bidfloor).to.equal(5);
+        expect(request.data.imp[0].bidfloorcur).to.equal('USD');
+      });
+
+      // priceFloors' getFloor returns null for a rule whose floor value is null
+      it('is left unset when getFloor returns null', () => {
+        const bid = makeBid({ getFloor: () => null });
+        const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+        expect(request.data.imp[0].bidfloor, 'imp.bidfloor').to.equal(undefined);
+      });
+
+      it('still sends the request when getFloor throws', () => {
+        const bid = makeBid({
+          getFloor: () => { throw new Error('inverseBidAdjustment failed'); },
+        });
+        const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+        expect(request.data.imp[0].banner).to.be.an('object');
+        expect(request.data.imp[0].bidfloor, 'imp.bidfloor').to.equal(undefined);
+      });
+
+      it('keeps an imp.bidfloor set earlier when getFloor throws', () => {
+        const bid = makeBid({
+          getFloor: () => { throw new Error('inverseBidAdjustment failed'); },
+          ortb2Imp: { bidfloor: 5, bidfloorcur: 'USD' },
+        });
+        const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+        expect(request.data.imp[0].bidfloor).to.equal(5);
+        expect(request.data.imp[0].bidfloorcur).to.equal('USD');
+      });
+
+      if (FEATURES.VIDEO) {
+        it('takes the lower floor when the imp carries both banner and video',
+          () => {
+            expect(buildImpWithFloors(MULTIFORMAT, { banner: 3, video: 1 }).bidfloor)
+              .to.equal(1);
+            expect(buildImpWithFloors(MULTIFORMAT, { banner: 1, video: 3 }).bidfloor)
+              .to.equal(1);
+          });
+
+        it('is left unset when one of the media types sent has no floor', () => {
+          const imp = buildImpWithFloors(MULTIFORMAT, { banner: 3 });
+
+          expect(imp.bidfloor, 'imp.bidfloor').to.equal(undefined);
+        });
+
+        it('removes the floor priceFloors set from a \'*\' rule when one of the media types sent has no floor',
+          () => {
+            const imp = buildImpWithFloors(MULTIFORMAT, { '*': 4, banner: 3 });
+
+            expect(imp.bidfloor, 'imp.bidfloor').to.equal(undefined);
+            expect(imp.bidfloorcur, 'imp.bidfloorcur').to.equal(undefined);
+          });
+
+        it('keeps the ortb2Imp floor when one of the media types sent has no floor',
+          () => {
+            const bid = makeBid({
+              mediaTypes: MULTIFORMAT,
+              getFloor: getFloorReturning({ '*': 4, banner: 3 }),
+              ortb2Imp: { bidfloor: 5, bidfloorcur: 'USD' },
+            });
+            const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+            expect(request.data.imp[0].bidfloor).to.equal(5);
+            expect(request.data.imp[0].bidfloorcur).to.equal('USD');
+          });
+      }
+    });
+
+    it('does not send imp.native for an ad unit that also declares native', () => {
+      const bid = makeBid({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          native: { title: { required: true } },
+        },
+        nativeOrtbRequest:
+            { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] },
+      });
+      const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+      expect(request.data.imp[0].banner).to.be.an('object');
+      expect(request.data.imp[0].native, 'imp.native').to.equal(undefined);
+    });
+
+    it('does not send imp.audio for an ad unit that also declares audio', () => {
+      const bid = makeBid({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          audio: { mimes: ['audio/mp4'] },
+        },
+      });
+      const [request] = spec.buildRequests([bid], makeBidderRequest([bid]));
+
+      expect(request.data.imp[0].banner).to.be.an('object');
+      expect(request.data.imp[0].audio, 'imp.audio').to.equal(undefined);
+    });
 
     it('defaults the auction type to first price, which Prebid.js does not set on its own',
       () => {
@@ -446,9 +770,26 @@ describe('Geniee Exchange bid adapter', () => {
   });
 
   describe('interpretResponse', () => {
-    function buildOrtbRequest() {
-      const bids = [makeBid()];
+    function buildOrtbRequest(mediaTypes) {
+      const bids = [makeBid(mediaTypes ? { mediaTypes } : {})];
       return spec.buildRequests(bids, makeBidderRequest(bids))[0];
+    }
+
+    function responseWithBid(request, bid) {
+      return {
+        body: {
+          id: request.data.id,
+          cur: 'JPY',
+          seatbid: [{
+            bid: [{
+              impid: request.data.imp[0].id,
+              price: 100,
+              crid: 'creative-1',
+              ...bid,
+            }],
+          }],
+        },
+      };
     }
 
     it('returns [] on an empty (204) body', () => {
@@ -458,7 +799,7 @@ describe('Geniee Exchange bid adapter', () => {
         .to.deep.equal([]);
     });
 
-    it('parses a winning banner bid', () => {
+    it('parses a winning banner bid (mtype 1)', () => {
       const request = buildOrtbRequest();
       const serverResponse = {
         body: {
@@ -472,6 +813,7 @@ describe('Geniee Exchange bid adapter', () => {
               w: 300,
               h: 250,
               crid: 'creative-1',
+              mtype: 1,
             }],
           }],
         },
@@ -487,6 +829,88 @@ describe('Geniee Exchange bid adapter', () => {
       expect(bids[0].currency).to.equal('JPY');
       expect(bids[0].netRevenue).to.equal(true);
       expect(bids[0].ttl).to.equal(3600);
+      expect(bids[0].mediaType).to.equal('banner');
+    });
+
+    // The Exchange always returns mtype, so the adapter does not infer the
+    // media type.
+    it('drops a bid without mtype', () => {
+      const request = buildOrtbRequest();
+      const serverResponse = responseWithBid(
+        request, { adm: '<div>creative</div>', w: 300, h: 250 });
+
+      expect(spec.interpretResponse(serverResponse, request)).to.deep.equal([]);
+    });
+
+    if (FEATURES.VIDEO) {
+      it('parses a winning video bid (mtype 2) with adm as vastXml', () => {
+        const vastXml = '<VAST version="3.0"><Ad id="1"></Ad></VAST>';
+        const request = buildOrtbRequest({
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'instream', mimes: ['video/mp4'], playerSize: [[640, 480]] },
+        });
+        const bids = spec.interpretResponse(
+          responseWithBid(request, { adm: vastXml, mtype: 2 }), request);
+
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].mediaType).to.equal('video');
+        expect(bids[0].vastXml).to.equal(vastXml);
+        expect(bids[0].playerWidth).to.equal(640);
+        expect(bids[0].playerHeight).to.equal(480);
+        expect(bids[0].cpm).to.equal(100);
+        expect(bids[0].creativeId).to.equal('creative-1');
+      });
+
+      describe('width/height of a video bid', () => {
+        const VAST_XML = '<VAST version="3.0"><Ad id="1"></Ad></VAST>';
+
+        function buildVideoOrtbRequest() {
+          return buildOrtbRequest({
+            video: { context: 'instream', mimes: ['video/mp4'], playerSize: [[640, 480]] },
+          });
+        }
+
+        it('falls back to the requested player size when the Exchange returns no w/h',
+          () => {
+            const request = buildVideoOrtbRequest();
+            const [bid] = spec.interpretResponse(
+              responseWithBid(request, { adm: VAST_XML, mtype: 2 }), request);
+
+            expect(bid.width).to.equal(640);
+            expect(bid.height).to.equal(480);
+          });
+
+        it('uses the player size for both when the Exchange returns only one of w/h',
+          () => {
+            const request = buildVideoOrtbRequest();
+            const [bid] = spec.interpretResponse(
+              responseWithBid(request, { adm: VAST_XML, mtype: 2, w: 320 }),
+              request);
+
+            expect(bid.width).to.equal(640);
+            expect(bid.height).to.equal(480);
+          });
+
+        it('keeps the w/h the Exchange returns', () => {
+          const request = buildVideoOrtbRequest();
+          const [bid] = spec.interpretResponse(
+            responseWithBid(request, { adm: VAST_XML, mtype: 2, w: 320, h: 180 }),
+            request);
+
+          expect(bid.width).to.equal(320);
+          expect(bid.height).to.equal(180);
+        });
+      });
+    }
+
+    it('does not fill width/height of a banner bid that comes without w/h', () => {
+      const request = buildOrtbRequest();
+      const [bid] = spec.interpretResponse(
+        responseWithBid(request, { adm: '<div>creative</div>', mtype: 1 }),
+        request);
+
+      expect(bid.width, 'width').to.equal(undefined);
+      expect(bid.height, 'height').to.equal(undefined);
     });
   });
 
