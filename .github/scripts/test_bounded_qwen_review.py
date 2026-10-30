@@ -41,6 +41,18 @@ class ReviewTests(unittest.TestCase):
         finding = dict(FINDING, line=1, quote="// test comment")
         self.assertFalse(review.validate(finding, {1: "// test comment"}))
 
+    def test_reject_noop_fix(self):
+        finding = dict(FINDING, fix="  return x >= a || x <= b;")
+        self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
+
+    def test_reject_formatting_only_fix(self):
+        finding = dict(FINDING, fix="return   x>=a||x<=b ;")
+        self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
+
+    def test_reject_whole_function_rewrite(self):
+        finding = dict(FINDING, fix="function f(x) { return x >= a && x <= b; }")
+        self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
+
     def test_reject_incomplete_finding(self):
         finding = dict(FINDING, failure_case="")
         self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
