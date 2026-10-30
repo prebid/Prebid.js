@@ -60,7 +60,7 @@ def meaningful_fix(quote, fix):
     if not fix or "\n" in fix or "\r" in fix or len(fix) > 350:
         return False
     # Ignore formatting changes without conflating distinct identifiers/operators.
-    compact = lambda value: re.sub(r"\\s+", "", value).rstrip(";")
+    compact = lambda value: re.sub(r"\s+", "", value).rstrip(";")
     if compact(quote) == compact(fix):
         return False
     # Only accept single-line suggestions replacing the exact flagged statement.
@@ -160,7 +160,8 @@ def main():
         print(f"[bounded-qwen] inference {time.monotonic() - started:.1f}s", flush=True)
         if not findings:
             diagnostic["outcome"] = "clean"
-            print("[bounded-qwen] no findings", flush=True)\n            output_path.write_text(json.dumps(report, indent=2) + "\\n")
+            print("[bounded-qwen] no findings", flush=True)
+            output_path.write_text(json.dumps(report, indent=2) + "\n")
             continue
         finding = findings[0]
         if not validate(finding, added_lines(patch)):
@@ -170,7 +171,8 @@ def main():
                 "invalid added line/quote" if not isinstance(finding, dict) or type(finding.get("line")) is not int
                 or finding.get("quote", "").strip() != added_lines(patch).get(finding.get("line"), "").strip()
                 else "missing evidence or no-op/nonlocal fix")
-            print("[bounded-qwen] rejected finding:", diagnostic["rejection_reason"], flush=True)\n            output_path.write_text(json.dumps(report, indent=2) + "\\n")
+            print("[bounded-qwen] rejected finding:", diagnostic["rejection_reason"], flush=True)
+            output_path.write_text(json.dumps(report, indent=2) + "\n")
             continue
         marker = hashlib.sha256(f"{sha}:{filename}:{finding['line']}".encode()).hexdigest()
         if marker in prior:
