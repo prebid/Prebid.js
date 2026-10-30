@@ -12,11 +12,16 @@ from pathlib import Path
 
 API = "https://api.github.com"
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+HUNK_RANGES = re.compile(r"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 EXTENSIONS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")
 # Include normal adapter submissions (the prior 8K limit skipped both
 # bid9BidAdapter.ts and its accompanying spec in PR #15848).
 MAX_PATCH_CHARS = 40000
 MAX_REVIEW_FILES = 8
+# Limit model requests independently of the file-size eligibility threshold.
+MAX_CHUNK_CHARS = 5500
+MAX_CHUNKS_PER_FILE = 2
+MAX_CHUNKS_PER_PR = 6
 MODEL_CONTEXT_TOKENS = 16384
 MODEL_REQUEST_TIMEOUT = 240
 SCHEMA = {"type": "object", "properties": {"findings": {
@@ -52,12 +57,63 @@ def added_lines(patch):
             number = int(match.group(1))
         elif number is None or line.startswith("\\"):
             continue
-        elif line.startswith("+") and not line.startswith("+++"):
+        elif line.startswith("+"):
             lines[number] = line[1:]
             number += 1
         elif line.startswith(" "):
             number += 1
     return lines
+
+
+def chunk_patch(patch, max_chars=MAX_CHUNK_CHARS):
+    """Split unified diffs into independently anchored, bounded hunks.
+
+    New hunk coordinates are computed from the original old/new cursors,
+    preserving GitHub's new-side line numbers. Oversize individual lines
+    are omitted rather than truncated or misrepresented to the model.
+    """
+    chunks, skipped_lines = [], 0
+    old_cursor = new_cursor = None
+    part, old_start, new_start, old_count, new_count, size = [], 0, 0, 0, 0, 0
+
+    def flush():
+        nonlocal part, old_count, new_count, size
+        if part and any(line.startswith("+") for line in part):
+            header = f"@@ -{old_start},{old_count} +{new_start},{new_count} @@"
+            chunks.append(header + "\n" + "\n".join(part))
+        part, old_count, new_count, size = [], 0, 0, 0, 0
+
+    for line in patch.splitlines():
+        match = HUNK_RANGES.match(line)
+        if match:
+            flush()
+            old_cursor, new_cursor = map(int, match.groups())
+            continue
+        if old_cursor is None or line.startswith("\\") or not line or line[0] not in ("+", "-", " "):
+            continue
+        # Reserve room for a synthesized hunk header and separators.
+        if len(line) + 80 > max_chars:
+            flush()
+            skipped_lines += 1
+            if line[0] != "+":
+                old_cursor += 1
+            if line[0] != "-":
+                new_cursor += 1
+            continue
+        if part and size + len(line) + 1 + 80 > max_chars:
+            flush()
+        if not part:
+            old_start, new_start = old_cursor, new_cursor
+        part.append(line)
+        size += len(line) + 1
+        if line[0] != "+":
+            old_cursor += 1
+            old_count += 1
+        if line[0] != "-":
+            new_cursor += 1
+            new_count += 1
+    flush()
+    return chunks, skipped_lines
 
 
 def meaningful_fix(quote, fix):
