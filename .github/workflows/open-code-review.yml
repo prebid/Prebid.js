@@ -18,6 +18,8 @@ concurrency:
 
 jobs:
   review:
+    # The bounded experiment has its own workflow; never run both reviewers on a test PR.
+    if: ${{ !startsWith(github.event.pull_request.head.ref, 'ci/ocr-bounded-') }}
     name: AI code review (local Qwen3 4B / Qwen3.5 2B experiment)
     runs-on: ubuntu-latest
     timeout-minutes: 65
