@@ -55,7 +55,7 @@ export const spec = {
       return false;
     }
 
-    if (Object.prototype.hasOwnProperty.call(bid.params, 'adbreakId')) {
+    if (bid.params.adbreakId) {
       logError('[SMAATO] The adbreakId param is not supported');
       return false;
     }
