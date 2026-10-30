@@ -190,6 +190,69 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(review.replaced_lines(diff, 1), [])
         self.assertEqual(review.replaced_lines(diff, "2"), [])
 
+    # Fork replays of real fixes: patmmccann/Prebid.js#341 (Intenze #15766
+    # reverted), #342 (Missena #15850 reverted) and #343 (the Intenze fix).
+    INTENZE_BUG = ("@@ -55,7 +55,7 @@\n   imp(buildImp, bidRequest, context) {\n"
+                   "     const imp = buildImp(bidRequest, context);\n \n"
+                   "-    if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {\n"
+                   "+    if (!imp.bidfloor && bidRequest.params.bidfloor) {\n"
+                   "       imp.bidfloor = bidRequest.params.bidfloor;\n")
+    INTENZE_SPEC_DELETED = ['    it("sends a zero params.bidfloor", function () {',
+                            '          params: { placementId: "25", bidfloor: 0 },',
+                            '      expect(requests[0].data.imp[0].bidfloor).to.equal(0);']
+    INTENZE_FINDING = dict(FINDING, line=58,
+                           quote="if (!imp.bidfloor && bidRequest.params.bidfloor)",
+                           fix="if (imp.bidfloor == null && bidRequest.params.bidfloor != null)")
+
+    def intenze(self, spec_removed):
+        lines = review.added_lines(self.INTENZE_BUG)
+        finding = review.normalize_finding(self.INTENZE_FINDING, lines)
+        return finding, review.validate(finding, lines, review.replaced_lines(self.INTENZE_BUG, 58),
+                                        spec_removed)
+
+    def test_partial_quote_is_completed(self):
+        finding, _ = self.intenze([])
+        self.assertEqual(finding["quote"], "if (!imp.bidfloor && bidRequest.params.bidfloor) {")
+        self.assertEqual(finding["fix"], "if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {")
+
+    def test_tested_regression_restore_accepted(self):
+        self.assertTrue(self.intenze(self.INTENZE_SPEC_DELETED)[1])
+
+    def test_untested_revert_still_rejected(self):
+        self.assertFalse(self.intenze([])[1])
+        self.assertFalse(self.intenze(["  it('renders the creative', () => {"])[1])
+
+    def test_condition_fix_that_is_not_a_restore_rejected(self):
+        clean = ("@@ -55,7 +55,7 @@\n \n-    if (!imp.bidfloor && bidRequest.params.bidfloor) {\n"
+                 "+    if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {\n")
+        finding = dict(FINDING, line=56,
+                       quote="if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {",
+                       fix="if (!imp.bidfloor && bidRequest.params.bidfloor != null) {")
+        lines = review.added_lines(clean)
+        self.assertFalse(review.validate(finding, lines, review.replaced_lines(clean, 56),
+                                         self.INTENZE_SPEC_DELETED))
+
+    def test_tested_return_restore_accepted(self):
+        missena = ("@@ -142,5 +142,5 @@\n    */\n   isBidRequestValid: function (bid) {\n"
+                   "-    return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);\n"
+                   "+    return typeof bid === 'object' && !!bid.params.apiKey;\n   },\n")
+        finding = dict(FINDING, line=144, quote="return typeof bid === 'object' && !!bid.params.apiKey;",
+                       fix="return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);")
+        lines, replaced = review.added_lines(missena), review.replaced_lines(missena, 144)
+        self.assertTrue(review.validate(finding, lines, replaced,
+                                        ["        spec.isBidRequestValid({ ...bid, params: {} }),"]))
+        self.assertFalse(review.validate(finding, lines, replaced, []))
+
+    def test_ambiguous_partial_quote_not_reanchored(self):
+        lines = {1: "  if (a && b) { x(); }", 2: "  if (a && b) { y(); }"}
+        finding = dict(FINDING, line=7, quote="if (a && b) {", fix="if (a || b) {")
+        self.assertEqual(review.normalize_finding(finding, lines), finding)
+
+    def test_spec_deleted_lines_match_module(self):
+        patches = {"test/spec/modules/intenzeBidAdapter_spec.js": "@@ -1,2 +1,1 @@\n-gone\n kept",
+                   "test/spec/modules/otherBidAdapter_spec.js": "@@ -1,1 +0,0 @@\n-other"}
+        self.assertEqual(review.spec_deleted_lines("modules/intenzeBidAdapter.js", patches), ["gone"])
+
     def test_reject_incomplete_finding(self):
         finding = dict(FINDING, failure_case="")
         self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
