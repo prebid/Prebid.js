@@ -132,7 +132,10 @@ jobs:
                       ($comment.severity == "medium" or $comment.severity == "high") and
                       (($comment.content // "") | type) == "string" and
                       (($comment.content // "") | length) >= 20 and
-                      (($comment.content // "") | ascii_downcase | contains("zero divisor") | not) and
+                      (($comment.content | ascii_downcase) as $description
+                    | ((($description | contains("||")) or ($description | test("(^|[^a-z])or([^a-z]|$)"))) and
+                       (($description | contains("&&")) or ($description | test("(^|[^a-z])and([^a-z]|$)")))) and
+                       ($description | test("window|range|bounds?|between|outside|before|after|start|end")))) and
                       (($comment.existing_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start||now<=end;" and
                       (($comment.suggestion_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start&&now<=end;"
                   end
@@ -179,7 +182,7 @@ jobs:
           effort: low
           # Publish agent progress to the Actions log during long CPU reviews.
           stream_progress: 'true'
-          llm_timeout: '120'
+          llm_timeout: '180'
           review_task_timeout: '5'
           # Leave the whole-run budget unlimited: OCR estimates even a tiny
           # review group at >16K tokens before making its first model call.
