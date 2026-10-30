@@ -36,6 +36,15 @@ jobs:
           mkdir -p "$npm_prefix/bin"
           echo "NPM_CONFIG_PREFIX=$npm_prefix" >> "$GITHUB_ENV"
           echo "$npm_prefix/bin" >> "$GITHUB_PATH"
+      - name: Checkout trusted base and test OCR validator
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Fast OCR jq validator tests
+        run: python3 -m unittest discover -s .github/scripts -p 'test_ocr_preflight_check.py' -v
+
       - name: Install Ollama v0.40.13
         env:
           OLLAMA_VERSION: '0.40.13'
@@ -118,29 +127,8 @@ jobs:
           # must not pass the preflight just because a code_comment call exists.
           # Validate the entire native tool-call transcript, not a filtered subset:
           # a second malformed call or premature task_done is a failure.
-          jq --exit-status '
-            (.choices[0].message.tool_calls // []) as $calls
-            | if ($calls | type) != "array" or ($calls | length) != 1 or $calls[0].function.name != "code_comment"
-              then false
-              else (($calls[0].function.arguments | fromjson?) // null) as $args
-                | if ($args | type) != "object" or ($args.comments | type) != "array" or ($args.comments | length) != 1
-                  then false
-                  else $args.comments[0] as $comment
-                    | (($comment | type) == "object") and
-                      ($comment.path == "src/ocrQwen35SmokeTest.ts") and
-                      ($comment.category == "bug") and
-                      ($comment.severity == "medium" or $comment.severity == "high") and
-                      (($comment.content // "") | type) == "string" and
-                      (($comment.content // "") | length) >= 20 and
-                      (($comment.content | ascii_downcase) as $description
-                    | ((($description | contains("||")) or ($description | test("(^|[^a-z])or([^a-z]|$)"))) and
-                       (($description | contains("&&")) or ($description | test("(^|[^a-z])and([^a-z]|$)")))) and
-                       ($description | test("window|range|bounds?|between|outside|before|after|start|end")))) and
-                      (($comment.existing_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start||now<=end;" and
-                      (($comment.suggestion_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start&&now<=end;"
-                  end
-              end
-          ' "$RUNNER_TEMP/ocr-tool-preflight-response.json" \
+          jq --exit-status -f .github/scripts/ocr_preflight_check.jq \
+            "$RUNNER_TEMP/ocr-tool-preflight-response.json" \
             > "$RUNNER_TEMP/ocr-tool-preflight-validation.json" || {
             echo "::error::OCR preflight failed: expected one correctly anchored code_comment with inclusive AND fix."
             jq '{calls:[.choices[0].message.tool_calls[]? | {name:.function.name,arguments:.function.arguments}],content:(.choices[0].message.content // "" | .[0:600])}' "$RUNNER_TEMP/ocr-tool-preflight-response.json"
