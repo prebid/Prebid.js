@@ -96,6 +96,128 @@ Prebid.js allows you to set the following build options:
 These options can be customized via the webpack loader or the Rollup-compatible plugin.
 For details and examples, see [Customize build options](customize/README.md).
 
+<a id="bundlers"></a>
+
+### Using other compilers and bundlers
+
+The npm package contains precompiled JavaScript (under `dist/src`, which the package exports point to), so Prebid.js can be
+bundled with any toolchain - it does not need Babel, or any Prebid-specific compilation, in your project.
+
+#### Choosing modules
+
+When Prebid.js is an npm dependency, there is no `--modules` option: the modules in your bundle are the ones your code imports.
+Each one is imported by its name in Prebid's [`modules`](modules) directory (the same names `gulp build --modules` takes).
+The examples below build this entry file:
+
+```javascript
+// src/index.js
+import pbjs from 'prebid.js';
+
+// bid adapters
+import 'prebid.js/modules/appnexusBidAdapter';
+import 'prebid.js/modules/rubiconBidAdapter';
+
+// other modules
+import 'prebid.js/modules/consentManagementTcf';
+import 'prebid.js/modules/tcfControl';
+import 'prebid.js/modules/priceFloors';
+
+// submodules need their parent module, which you must import yourself
+import 'prebid.js/modules/userId';
+import 'prebid.js/modules/sharedIdSystem';
+
+pbjs.processQueue();
+```
+
+Unlike `gulp build`, importing a submodule does not pull in its parent: `sharedIdSystem` does nothing without `userId`, and the same goes for
+RTD providers (`rtdModule`), first party data submodules (`fpdModule`) and video submodules (`videoModule`). The full list is in
+[`modules/.submodules.json`](modules/.submodules.json).
+
+#### webpack + SWC
+
+A webpack project that compiles its own code with [SWC](https://swc.rs/):
+
+```bash
+npm install prebid.js
+npm install --save-dev webpack webpack-cli @swc/core swc-loader
+```
+
+```javascript
+// webpack.config.js
+module.exports = {
+  mode: 'production',
+  entry: './src/index.js', // the entry file from "Choosing modules" above
+  output: { filename: 'bundle.js', path: __dirname + '/dist' },
+  module: {
+    rules: [
+      {
+        test: /\.m?js$/,
+        // Prebid's npm files are already compiled; running them through SWC again only makes the bundle larger
+        exclude: /node_modules[\\/]prebid\.js[\\/]/,
+        use: {
+          loader: 'swc-loader',
+          options: {
+            jsc: { target: 'es2020', parser: { syntax: 'ecmascript' } }
+          }
+        }
+      }
+    ]
+  }
+};
+```
+
+Notes:
+
+- Prebid's npm files target the browsers in Prebid's `browserslist` (see `package.json`). If you need to support older browsers, remove the `exclude`
+  so SWC also compiles Prebid; expect a somewhat larger bundle.
+- If your `package.json` has `"type": "commonjs"` (the default of recent `npm init`) and your own source files use `import`, add `type: 'javascript/auto'`
+  to the rule, or webpack will reject them.
+- To set [build options](#customize-options) such as `globalVarName`, add `prebid.js/customize/webpackLoader` as described in [Customize build options](customize/README.md).
+
+#### Bun
+
+[Bun](https://bun.sh/)'s bundler needs no configuration to build the entry file above:
+
+```bash
+bun add prebid.js
+bun build ./src/index.js --outfile=dist/bundle.js --minify --target=browser
+```
+
+To set [build options](#customize-options), use `Bun.build` with a plugin that serves Prebid's build options module, using the
+helper from `prebid.js/customize/virtualBuildOptions.mjs`:
+
+```javascript
+// build.mjs - run with `bun build.mjs`
+import path from 'node:path';
+import { getBuildOptionsVirtualModuleId, renderBuildOptionsVirtualModule } from 'prebid.js/customize/virtualBuildOptions.mjs';
+
+const buildOptionsModule = path.normalize(getBuildOptionsVirtualModuleId());
+
+const result = await Bun.build({
+  entrypoints: ['./src/index.js'],
+  outdir: './dist',
+  target: 'browser',
+  minify: true,
+  plugins: [{
+    name: 'prebid-build-options',
+    setup(build) {
+      build.onLoad({ filter: /[\\/]prebid\.js[\\/]dist[\\/]src[\\/]buildOptions\.mjs$/ }, async (args) => {
+        if (path.normalize(args.path) !== buildOptionsModule) return undefined;
+        return {
+          contents: await renderBuildOptionsVirtualModule({ globalVarName: 'myPbjs' }),
+          loader: 'js'
+        };
+      });
+    }
+  }]
+});
+
+if (!result.success) {
+  console.error(result.logs);
+  process.exit(1);
+}
+```
+
 <a name="Install"></a>
 
 ## Install
