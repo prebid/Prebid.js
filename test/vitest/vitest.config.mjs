@@ -58,9 +58,50 @@ const core = [
   'unit/core/targeting'
 ];
 
-const selected = process.env.VITEST_CORE === '1'
-  ? core
-  : (process.env.VITEST_STRESS === '1' ? stress : baseline);
+// Expand /src testing without bundling known legacy ESM-stubbing failures
+// into the same first-failure diagnostic. These are all existing spec files.
+const srcUtils = [
+  'unit/utils/cpm',
+  'unit/utils/desirability',
+  'unit/utils/focusTimeout',
+  'unit/utils/gptTargeting',
+  'unit/utils/ipUtils',
+  'unit/utils/perfMetrics',
+  'unit/utils/promise',
+  'unit/utils/reducers',
+  'unit/utils/ttlCollection',
+  'unit/utils/untrustedJson'
+];
+
+const srcActivities = [
+  'activities/allowActivites',
+  'activities/objectGuard',
+  'activities/ortbGuard',
+  'activities/params',
+  'activities/redactor',
+  'activities/rules'
+];
+
+const srcHelpers = [
+  'hook',
+  'keywords',
+  'mergeConfig_regression',
+  'refererDetection',
+  'utils/adUnits',
+  'utils/cachedApiWrapper',
+  'utils/gptEvents',
+  'utils/layoutEpoch',
+  'utils/prerendering',
+  'utils/yield'
+];
+
+const selected = ({
+  stress,
+  core,
+  'src-utils': srcUtils,
+  'src-activities': srcActivities,
+  'src-helpers': srcHelpers,
+})[process.env.VITEST_SET] || baseline;
 
 export default defineConfig({
   root,
