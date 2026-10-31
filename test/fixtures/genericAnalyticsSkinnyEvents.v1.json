@@ -1,0 +1,299 @@
+{
+  "noBid": {
+    "eventType": "noBid",
+    "auctionId": "auction",
+    "bidId": "bid",
+    "bidderRequestId": "bidderRequest",
+    "adUnitCode": "adUnit",
+    "bidder": "bidder",
+    "source": "client",
+    "analyticsLabels": {
+      "label": "value"
+    }
+  },
+  "bidResponse": {
+    "eventType": "bidResponse",
+    "auctionId": "auction",
+    "adUnitCode": "adUnit",
+    "transactionId": "tid",
+    "requestId": "request",
+    "adId": "ad",
+    "bidder": "bidder",
+    "bidderCode": "bidderCode",
+    "cpm": 1.5,
+    "currency": "USD",
+    "originalCpm": 2,
+    "originalCurrency": "EUR",
+    "mediaType": "banner",
+    "width": 300,
+    "height": 250,
+    "size": "300x250",
+    "dealId": "deal",
+    "meta": {
+      "advertiserDomains": [
+        "example.com"
+      ]
+    },
+    "adserverTargeting": {
+      "hb_pb": "1.50"
+    },
+    "floorData": {
+      "floorValue": 1,
+      "floorCurrency": "USD"
+    },
+    "requestTimestamp": 1000,
+    "responseTimestamp": 1200,
+    "timeToRespond": 200,
+    "ttl": 300,
+    "source": "client",
+    "analyticsLabels": {
+      "label": "value"
+    }
+  },
+  "bidWon": {
+    "eventType": "bidWon",
+    "auctionId": "auction",
+    "adUnitCode": "adUnit",
+    "transactionId": "tid",
+    "requestId": "request",
+    "adId": "ad",
+    "bidder": "bidder",
+    "bidderCode": "bidderCode",
+    "cpm": 1.5,
+    "currency": "USD",
+    "originalCpm": 2,
+    "originalCurrency": "EUR",
+    "mediaType": "banner",
+    "width": 300,
+    "height": 250,
+    "size": "300x250",
+    "dealId": "deal",
+    "meta": {
+      "advertiserDomains": [
+        "example.com"
+      ]
+    },
+    "adserverTargeting": {
+      "hb_pb": "1.50"
+    },
+    "floorData": {
+      "floorValue": 1,
+      "floorCurrency": "USD"
+    },
+    "requestTimestamp": 1000,
+    "responseTimestamp": 1200,
+    "timeToRespond": 200,
+    "ttl": 300,
+    "source": "client",
+    "analyticsLabels": {
+      "label": "value"
+    },
+    "status": "rendered"
+  },
+  "bidRequested": {
+    "eventType": "bidRequested",
+    "auctionId": "auction",
+    "bidderRequestId": "bidderRequest",
+    "bidderCode": "bidder",
+    "auctionStart": 1000,
+    "start": 1010,
+    "timeout": 3000,
+    "ortb2": {
+      "site": {
+        "domain": "example.com"
+      },
+      "user": {
+        "ext": {
+          "other": "value"
+        }
+      }
+    },
+    "eidsSources": [
+      "a.com",
+      "b.com"
+    ],
+    "bids": [
+      {
+        "bidId": "bid",
+        "bidderRequestId": "bidderRequest",
+        "auctionId": "auction",
+        "adUnitCode": "adUnit",
+        "transactionId": "tid",
+        "bidder": "bidder",
+        "source": "client",
+        "mediaTypes": {
+          "banner": {
+            "sizes": [
+              [
+                300,
+                250
+              ]
+            ]
+          }
+        },
+        "sizes": [
+          [
+            300,
+            250
+          ]
+        ],
+        "auctionsCount": 1,
+        "bidRequestsCount": 1,
+        "bidderRequestsCount": 1,
+        "bidderWinsCount": 0,
+        "ortb2Imp": {
+          "ext": {
+            "gpid": "/slot"
+          }
+        }
+      },
+      {
+        "bidId": "bid2",
+        "bidderRequestId": "bidderRequest",
+        "auctionId": "auction",
+        "adUnitCode": "adUnit",
+        "transactionId": "tid",
+        "bidder": "bidder",
+        "source": "client",
+        "mediaTypes": {
+          "banner": {
+            "sizes": [
+              [
+                300,
+                250
+              ]
+            ]
+          }
+        },
+        "sizes": [
+          [
+            300,
+            250
+          ]
+        ],
+        "auctionsCount": 1,
+        "bidRequestsCount": 1,
+        "bidderRequestsCount": 1,
+        "bidderWinsCount": 0,
+        "ortb2Imp": {
+          "ext": {
+            "gpid": "/slot"
+          }
+        }
+      }
+    ],
+    "analyticsLabels": {
+      "label": "value"
+    }
+  },
+  "bidTimeout": {
+    "eventType": "bidTimeout",
+    "bidderRequests": [
+      {
+        "auctionId": "auction",
+        "bidderRequestId": "bidderRequest",
+        "bidderCode": "bidder",
+        "ortb2": {
+          "site": {
+            "domain": "example.com"
+          },
+          "user": {
+            "ext": {
+              "other": "value"
+            }
+          }
+        },
+        "eidsSources": [
+          "a.com",
+          "b.com"
+        ],
+        "bids": [
+          {
+            "bidId": "bid",
+            "bidderRequestId": "bidderRequest",
+            "auctionId": "auction",
+            "adUnitCode": "adUnit",
+            "transactionId": "tid",
+            "bidder": "bidder",
+            "source": "client",
+            "mediaTypes": {
+              "banner": {
+                "sizes": [
+                  [
+                    300,
+                    250
+                  ]
+                ]
+              }
+            },
+            "sizes": [
+              [
+                300,
+                250
+              ]
+            ],
+            "auctionsCount": 1,
+            "bidRequestsCount": 1,
+            "bidderRequestsCount": 1,
+            "bidderWinsCount": 0,
+            "ortb2Imp": {
+              "ext": {
+                "gpid": "/slot"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "auctionId": "auction",
+        "bidderRequestId": "bidderRequest2",
+        "bidderCode": "bidder2",
+        "ortb2": {
+          "site": {
+            "domain": "other.com"
+          }
+        },
+        "eidsSources": [],
+        "bids": [
+          {
+            "bidId": "bid2",
+            "bidderRequestId": "bidderRequest2",
+            "auctionId": "auction",
+            "adUnitCode": "adUnit",
+            "transactionId": "tid",
+            "bidder": "bidder2",
+            "source": "client",
+            "mediaTypes": {
+              "banner": {
+                "sizes": [
+                  [
+                    300,
+                    250
+                  ]
+                ]
+              }
+            },
+            "sizes": [
+              [
+                300,
+                250
+              ]
+            ],
+            "auctionsCount": 1,
+            "bidRequestsCount": 1,
+            "bidderRequestsCount": 1,
+            "bidderWinsCount": 0,
+            "ortb2Imp": {
+              "ext": {
+                "gpid": "/other"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "analyticsLabels": {
+      "label": "value"
+    }
+  }
+}
