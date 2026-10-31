@@ -38,6 +38,10 @@ npm run test:vitest -- --no-isolate
 VITEST_SET=stress npm run test:vitest -- --no-isolate --bail=1
 VITEST_SET=core npm run test:vitest -- --bail=1
 VITEST_SET=core npm run test:vitest -- --no-isolate --bail=1
+VITEST_SET=src-fpd npm run test:vitest -- --bail=1
+VITEST_SET=ortb-converter npm run test:vitest -- --bail=1
+VITEST_SET=ortb-translators npm run test:vitest -- --bail=1
+VITEST_SET=src-rendering npm run test:vitest -- --bail=1
 ```
 
 Vitest and Playwright are regular development dependencies in the root
@@ -55,10 +59,13 @@ npx gulp test-only --file test/spec/libraries/boundingClientRect_spec.js
 A single-file Karma run does not validate cross-suite global-state
 interactions; these focused runs are only for comparison with the pilot.
 
-The pilot CI runs three distinct jobs:
+The pilot CI runs multiple independent jobs:
 
 - `isolated`: the original four-spec baseline with file isolation.
 - `shared`: the same four specs without file isolation.
+- `src-fpd`, `ortb-converter`, `ortb-translators`, and `src-rendering`:
+  32 additional existing FPD, ORTB and core rendering specs, each in a
+  bounded, independently reported diagnostic job.
 - `src-utils`, `src-activities`, and `src-helpers`: 26 more existing
   `/src`-focused spec files in independent, isolated, bounded diagnostic jobs.
 - `core-isolated` and `core-shared`: 11 existing `test/spec/unit/core` suites
@@ -68,7 +75,7 @@ The pilot CI runs three distinct jobs:
   `--bail=1` and a 180-second process limit while we diagnose compatibility
   errors; it is not yet a full-suite migration gate.
 
-All three disable file parallelism. The stress job is deliberately separate
+All jobs disable file parallelism. The stress job is deliberately separate
 so failures do not obscure the known-good baseline. The shared tests can
 expose cross-file module/global-state interference, but do not exactly
 reproduce Karma's chunked Webpack bundle or browser startup semantics.
@@ -95,3 +102,7 @@ identifier is incorrect: `modules/connectIdSystem.js` declares and exports
 `dep` in module scope. Full Karma CI passed with that change. The remaining
 native ESM namespace stubbing errors in other suites are genuine compatibility
 issues, however, and are not suppressed by these additional suites.
+
+The October 31 helper-group run passed 94/94 tests across 10 files. Other
+expanded groups expose legacy ESM-stubbing and fun-hooks setup issues and
+remain diagnostic rather than required migration gates.
