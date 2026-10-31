@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/prebid/Prebid.js/blob/master/modules/genericAnalyticsSkinnyEvents.v1.schema.json",
   "title": "Prebid.js Generic Analytics skinny preset payload v1",
-  "description": "Validation contract for JSON-serialized skinny events. Fields that may be undefined in the browser are optional on the wire. Unknown nested OpenRTB and metadata extension keys remain permitted. This schema does not cover custom options.events handlers.",
+  "description": "Validation contract for JSON-serialized skinny events. Fields required by the Prebid TypeScript event payloads are required on the wire. Fields optional in the payload type, including those that can be undefined during serialization, may be omitted. Unknown nested OpenRTB and metadata extensions remain permitted. This schema does not cover custom options.events handlers.",
   "oneOf": [
     {
       "$ref": "#/$defs/noBid"
@@ -91,7 +91,21 @@
           "additionalProperties": true
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "required": [
+        "bidId",
+        "bidderRequestId",
+        "auctionId",
+        "adUnitCode",
+        "transactionId",
+        "bidder",
+        "source",
+        "sizes",
+        "auctionsCount",
+        "bidRequestsCount",
+        "bidderRequestsCount",
+        "bidderWinsCount"
+      ]
     },
     "timedOutBidderRequest": {
       "type": "object",
@@ -122,7 +136,15 @@
           }
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "required": [
+        "auctionId",
+        "bidderRequestId",
+        "bidderCode",
+        "ortb2",
+        "eidsSources",
+        "bids"
+      ]
     },
     "noBid": {
       "type": "object",
@@ -161,7 +183,13 @@
         }
       },
       "required": [
-        "eventType"
+        "eventType",
+        "auctionId",
+        "bidId",
+        "bidderRequestId",
+        "adUnitCode",
+        "bidder",
+        "source"
       ],
       "additionalProperties": false
     },
@@ -259,7 +287,26 @@
         }
       },
       "required": [
-        "eventType"
+        "eventType",
+        "auctionId",
+        "adUnitCode",
+        "transactionId",
+        "requestId",
+        "adId",
+        "bidder",
+        "bidderCode",
+        "cpm",
+        "currency",
+        "mediaType",
+        "width",
+        "height",
+        "size",
+        "meta",
+        "requestTimestamp",
+        "responseTimestamp",
+        "timeToRespond",
+        "ttl",
+        "source"
       ],
       "additionalProperties": false
     },
@@ -360,7 +407,26 @@
         }
       },
       "required": [
-        "eventType"
+        "eventType",
+        "auctionId",
+        "adUnitCode",
+        "transactionId",
+        "requestId",
+        "adId",
+        "bidder",
+        "bidderCode",
+        "cpm",
+        "currency",
+        "mediaType",
+        "width",
+        "height",
+        "size",
+        "meta",
+        "requestTimestamp",
+        "responseTimestamp",
+        "timeToRespond",
+        "ttl",
+        "source"
       ],
       "additionalProperties": false
     },
@@ -411,7 +477,15 @@
         }
       },
       "required": [
-        "eventType"
+        "eventType",
+        "auctionId",
+        "bidderRequestId",
+        "bidderCode",
+        "auctionStart",
+        "timeout",
+        "ortb2",
+        "eidsSources",
+        "bids"
       ],
       "additionalProperties": false
     },
@@ -434,7 +508,8 @@
         }
       },
       "required": [
-        "eventType"
+        "eventType",
+        "bidderRequests"
       ],
       "additionalProperties": false
     }
