@@ -35,9 +35,9 @@ npx playwright install chromium
 npx gulp precompile-all-features-disabled
 npm run test:vitest
 npm run test:vitest -- --no-isolate
-VITEST_STRESS=1 npm run test:vitest -- --no-isolate --bail=1
-VITEST_CORE=1 npm run test:vitest -- --bail=1
-VITEST_CORE=1 npm run test:vitest -- --no-isolate --bail=1
+VITEST_SET=stress npm run test:vitest -- --no-isolate --bail=1
+VITEST_SET=core npm run test:vitest -- --bail=1
+VITEST_SET=core npm run test:vitest -- --no-isolate --bail=1
 ```
 
 Vitest and Playwright are regular development dependencies in the root
@@ -59,6 +59,8 @@ The pilot CI runs three distinct jobs:
 
 - `isolated`: the original four-spec baseline with file isolation.
 - `shared`: the same four specs without file isolation.
+- `src-utils`, `src-activities`, and `src-helpers`: 26 more existing
+  `/src`-focused spec files in independent, isolated, bounded diagnostic jobs.
 - `core-isolated` and `core-shared`: 11 existing `test/spec/unit/core` suites
   exercising `/src` internals; both are bounded first-failure diagnostics.
 - `shared-stress`: 27 unchanged specs spanning browser utilities, bidders,
@@ -87,3 +89,9 @@ manual dispatch, so existing PRs do not inherit another required test.
 ConnectID's one ESM-namespace Sinon stub was updated to use a mutable
 `dep.getRefererInfo` export of that module, preserving Sinon and Karma
 compatibility. These diagnostics intentionally do not alter other legacy specs.
+
+The Qwen inline comment about `dep.getRefererInfo()` being an undefined
+identifier is incorrect: `modules/connectIdSystem.js` declares and exports
+`dep` in module scope. Full Karma CI passed with that change. The remaining
+native ESM namespace stubbing errors in other suites are genuine compatibility
+issues, however, and are not suppressed by these additional suites.
