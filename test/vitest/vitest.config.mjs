@@ -5,6 +5,7 @@ import { playwright } from '@vitest/browser-playwright';
 // Run UNMODIFIED Karma/Mocha specs against Prebid's Babel-precompiled source.
 // The adapter spec exercises Prebid's internal module imports and bidder
 // registration in addition to the existing Chai/Sinon/DOM library coverage.
+// Mygaru uses the shared nise/XHR/fetch test mock to exercise request/response behavior.
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const precompiled = fileURLToPath(new URL('../../dist/src/', import.meta.url));
 
@@ -21,7 +22,8 @@ export default defineConfig({
     include: [
       'dist/src/test/spec/libraries/sizeUtils_spec.js',
       'dist/src/test/spec/libraries/boundingClientRect_spec.js',
-      'dist/src/test/spec/modules/braveBidAdapter_spec.js'
+      'dist/src/test/spec/modules/braveBidAdapter_spec.js',
+      'dist/src/test/spec/modules/mygaruIdSystem_spec.js'
     ],
     setupFiles: ['test/vitest/setup.mjs'],
     browser: {
