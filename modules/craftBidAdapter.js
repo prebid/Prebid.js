@@ -32,7 +32,7 @@ export const spec = {
     const schain = bidRequest.ortb2?.source?.ext?.schain;
     const payload = {
       tags: [...tags],
-      ua: navigator.userAgent,
+      ua: bidderRequest.ortb2?.device?.ua,
       sdk: {
         version: '$prebid.version$',
       },
