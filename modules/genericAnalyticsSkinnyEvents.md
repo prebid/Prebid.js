@@ -51,6 +51,13 @@ objects (`ortb2`, `ortb2Imp`) and extensible metadata may contain additional fie
 `bidRequested` and `bidTimeout` keep global `ortb2` at bidder-request level,
 and `ortb2Imp` at individual bid-request level.
 
+The wire contract is regression-tested by two existing CI suites: browser tests
+compare the five formatter outputs after `JSON.stringify`/`JSON.parse` with
+`test/fixtures/genericAnalyticsSkinnyEvents.v1.json`, and the Node build-logic
+tests validate those same fixtures against this JSON Schema using Ajv 2020.
+This catches output changes independently of schema edits and rejects
+unknown event types or fields with incorrect types.
+
 **Versioning policy:** v1 describes existing output; it is not a request to add a
 `schemaVersion` field to events. Schema versions are selected out-of-band by
 collectors. Incompatible changes to the preset's serialized shape should publish
