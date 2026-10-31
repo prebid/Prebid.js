@@ -1,0 +1,38 @@
+name: Vitest browser pilot (non-blocking experiment)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'test/vitest/**'
+      - '.github/workflows/vitest-pilot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  vitest-browser-pilot:
+    name: Vitest Chromium (${{ matrix.isolation }})
+    strategy:
+      fail-fast: false
+      matrix:
+        isolation: [isolated, shared]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify Vitest module resolution
+        run: node --input-type=module -e "console.log(import.meta.resolve('vitest/config')); console.log(import.meta.resolve('@vitest/browser-playwright'))"
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Precompile tests and source
+        run: npx gulp precompile-all-features-disabled
+      - name: Run existing tests in Vitest Browser Mode
+        run: ${{ matrix.isolation == 'shared' && 'npm run test:vitest -- --no-isolate' || 'npm run test:vitest' }}
