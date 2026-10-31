@@ -6,18 +6,21 @@ It does not change `npm test`, `gulp test`, Karma, BrowserStack, or coverage.
 
 ## What is tested
 
-The Vitest config runs the **unchanged** existing specs
-`test/spec/libraries/sizeUtils_spec.js` and
-`test/spec/libraries/boundingClientRect_spec.js` from the regular
-`dist/src` precompiled tree. Together these exercise Mocha-style suite
-and lifecycle APIs, Chai assertions, Sinon spies, and real browser
-layout. This is a compatibility probe, **not** a demonstration that the
-full Prebid test suite works under Vitest.
+The Vitest config runs **unchanged** existing specs from the regular
+`dist/src` precompiled tree:
+
+- `test/spec/libraries/sizeUtils_spec.js`: Chai assertions and Mocha-style API.
+- `test/spec/libraries/boundingClientRect_spec.js`: Sinon spies and real DOM layout.
+- `test/spec/modules/braveBidAdapter_spec.js`: a real adapter, its dependent
+  Prebid modules, and internal import alias resolution.
+
+This is a compatibility probe, **not** a demonstration that the full Prebid
+test suite works under Vitest.
 
 Vitest's Browser Mode runs these tests in real headless Chromium via
-Playwright; it is not using jsdom. The normal Karma harness also sets up
-many additional globals, mocks, Webpack transforms, features, and
-BrowserStack sessions that are **not** included in this experiment.
+Playwright; it is not using jsdom. The normal Karma harness also sets up additional globals, mocks, Webpack
+transforms, feature variants, and BrowserStack sessions that are **not**
+fully included in this experiment.
 Those would require further work before replacing Karma.
 
 ## Reproduce locally
@@ -49,8 +52,8 @@ interactions; these focused runs are only for comparison with the pilot.
 ## Acceptance criteria before expanding this trial
 
 - Both unmodified suites pass in Vitest's real Chromium browser, as in Karma.
-- Prove a representative **adapter spec** works with the regular Prebid
-  mocks and module alias imports, not just standalone library modules.
+- Prove the Brave adapter suite works without modifying its existing specs;
+  expand to an adapter using the full shared Karma mocks next.
 - Evaluate coverage, performance, CI parallelism, Firefox/Safari,
   BrowserStack, and the full-suite shared-state constraints.
 - Keep Karma as the required CI test gate until a validated replacement
