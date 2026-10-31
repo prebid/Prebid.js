@@ -6,8 +6,9 @@ import {
   emitAdRenderSucceeded,
   getRenderingData,
   handleCreativeEvent,
+  reportBidClick,
   handleNativeMessage,
-  handleRender, markWinningBid, renderAdDirect, renderIfDeferred,
+  handleRender, markWinningBid, renderAdDirect, renderIfDeferred, userActivation,
 } from '../../../src/adRendering.js';
 import { getPreparedBidForAuction } from '../../../src/auction.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
@@ -68,6 +69,79 @@ describe('adRendering', () => {
           expect(result[prop]).to.eql('prepost');
         });
       });
+    });
+  });
+
+  describe('bid click deduplication', () => {
+    let bid;
+    beforeEach(() => {
+      bid = { adId: 'bid-click-' + Math.random(), adUnitCode: 'slot', bidder: 'test', mediaType: 'banner', clickUrl: 'https://click.example.com' };
+      sandbox.stub(events, 'emit');
+      sandbox.stub(utils, 'politeTriggerPixel');
+      sandbox.stub(userActivation, 'hasBeenActive').returns(true);
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
+    });
+    afterEach(() => config.setConfig({ bidClickTracking: { enabled: false } }));
+
+    it('emits and fires a tracker only once if observed click precedes inference', () => {
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(false);
+      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl, 'include', true);
+      sinon.assert.calledOnceWithExactly(events.emit, EVENTS.BID_CLICK, sinon.match({ adId: bid.adId, method: 'creativeClick' }));
+    });
+
+    it('emits and fires a tracker only once if inference precedes observed click', () => {
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(true);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl, 'include', true);
+      sinon.assert.calledOnceWithExactly(events.emit, EVENTS.BID_CLICK_INFERRED, sinon.match({ adId: bid.adId, method: 'iframeFocus' }));
+    });
+
+    it('does not fire a second tracker or event for repeated clicks', () => {
+      reportBidClick(bid, 'creativeClick');
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(utils.politeTriggerPixel);
+      sinon.assert.calledOnce(events.emit);
+    });
+
+    it('emits analytics event but does not fire a tracker in event-only mode', () => {
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: false } });
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('does not report when disabled', () => {
+      config.setConfig({ bidClickTracking: { enabled: false } });
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      sinon.assert.notCalled(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('ignores banner clicks before the user has interacted with the page, without using up the bid', () => {
+      userActivation.hasBeenActive.returns(false);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(false);
+      sinon.assert.notCalled(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+      userActivation.hasBeenActive.returns(true);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.calledOnce(utils.politeTriggerPixel);
+    });
+
+    it('emits the event but does not fire a tracker when user activation is not supported', () => {
+      userActivation.hasBeenActive.returns(undefined);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('does not fire click URL if creative has CLICKTHROUGH macro', () => {
+      bid.ad = '<a href="${CLICKTHROUGH}">Ad</a>';
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
     });
   });
 
@@ -441,6 +515,11 @@ describe('adRendering', () => {
         expect(bidResponse.viewUrl).to.eql('https://view.example.com');
         sinon.assert.called(doRenderStub);
       });
+      it('stores clickUrl on the bid response before rendering hooks run', () => {
+        handleRender({ adId, bidResponse, options: { clickUrl: 'https://click.example.com' } });
+        expect(bidResponse.clickUrl).to.eql('https://click.example.com');
+        sinon.assert.called(doRenderStub);
+      });
 
       describe('should emit AD_RENDER_FAILED', () => {
         it('when bidResponse is missing', () => {
@@ -470,6 +549,22 @@ describe('adRendering', () => {
         it('should skip rendering if suppressStaleRender', () => {
           config.setConfig({ auctionOptions: { suppressStaleRender: true } });
           handleRender({ adId, bidResponse });
+          sinon.assert.notCalled(doRenderStub);
+        });
+        it('preserves click and view URLs when a repeated render is suppressed', () => {
+          bidResponse.clickUrl = 'https://first.example/click';
+          bidResponse.viewUrl = 'https://first.example/view';
+          config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+          handleRender({
+            adId,
+            bidResponse,
+            options: {
+              clickUrl: 'https://second.example/click',
+              viewUrl: 'https://second.example/view'
+            }
+          });
+          expect(bidResponse.clickUrl).to.equal('https://first.example/click');
+          expect(bidResponse.viewUrl).to.equal('https://first.example/view');
           sinon.assert.notCalled(doRenderStub);
         });
       });
@@ -599,6 +694,21 @@ describe('adRendering', () => {
       sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({ bid }));
     });
 
+    it('emits an observed click only when tracking is enabled for banners', () => {
+      sandbox.stub(userActivation, 'hasBeenActive').returns(true);
+      bid.adId = 'click-id';
+      bid.adUnitCode = 'banner-slot';
+      bid.bidder = 'test';
+      bid.mediaType = 'banner';
+      config.setConfig({ bidClickTracking: { enabled: true } });
+      handleCreativeEvent({ event: EVENTS.BID_CLICK, method: 'creativeClick' }, bid);
+      sinon.assert.calledWith(events.emit, EVENTS.BID_CLICK, sinon.match({ adId: 'click-id', method: 'creativeClick' }));
+      events.emit.resetHistory();
+      config.setConfig({ bidClickTracking: { enabled: false } });
+      handleCreativeEvent({ event: EVENTS.BID_CLICK, method: 'creativeClick' }, bid);
+      sinon.assert.notCalled(events.emit);
+    });
+
     it('logs an error on other events', () => {
       handleCreativeEvent({ event: 'unsupported' }, bid);
       sinon.assert.called(utils.logError);
@@ -613,6 +723,35 @@ describe('adRendering', () => {
       bid = {
         adId: '123'
       };
+    });
+
+    it('reports the native click event once, preserves the asset ID, and fires bidder trackers on every click', () => {
+      bid.mediaType = 'native';
+      bid.bidder = 'nativeBidder';
+      bid.native = { clickUrl: 'https://advertiser.example/landing' };
+      const fireTrackers = sinon.stub();
+      const emit = sandbox.stub(events, 'emit');
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
+      const click = { action: 'click', assetId: 3 };
+      handleNativeMessage(click, bid, { fireTrackers });
+      handleNativeMessage(click, bid, { fireTrackers });
+      sinon.assert.calledTwice(fireTrackers);
+      sinon.assert.alwaysCalledWithExactly(fireTrackers, click, bid);
+      sinon.assert.calledOnceWithExactly(emit, EVENTS.BID_CLICK, sinon.match({ method: 'nativeClick', assetId: 3, adId: '123' }));
+      config.setConfig({ bidClickTracking: { enabled: false } });
+    });
+
+    it('reports every native click event when deduplication is explicitly disabled', () => {
+      bid.mediaType = 'native';
+      bid.native = { clickUrl: 'https://advertiser.example/landing' };
+      const fireTrackers = sinon.stub();
+      sandbox.stub(events, 'emit');
+      config.setConfig({ bidClickTracking: { enabled: true, dedupeNativeClicks: false } });
+      handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+      handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+      sinon.assert.calledTwice(fireTrackers);
+      sinon.assert.calledTwice(events.emit);
+      config.setConfig({ bidClickTracking: { enabled: false } });
     });
 
     it('should resize', () => {
