@@ -20,6 +20,7 @@ const bundle = readFileSync(resolve(dist, 'bun.js'), 'utf8');
 assert.ok(bundle.length > 0, 'Bun bundle is empty');
 assert.doesNotMatch(bundle, /\bFEATURES\.[A-Z_]+\b/, 'Unresolved FEATURES macro');
 assert.doesNotMatch(bundle, /\$\$[A-Z][A-Z_]*\$\$/, 'Unresolved Prebid macro');
+assert.doesNotMatch(bundle, /\$prebid\.version\$/, 'Unresolved Prebid version macro');
 
 const server = createServer((req, res) => {
   const pathname = new URL(req.url, 'http://127.0.0.1').pathname;
@@ -72,22 +73,39 @@ try {
       { timeout: 15000 }
     );
 
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate(async () => {
       const pbjs = window.pbjs;
       assertSupportedApi();
 
       function assertSupportedApi() {
-        if (typeof pbjs.getUserIds !== 'function') {
-          throw new Error('userId parent and sharedIdSystem submodule were not initialized');
+        if (typeof pbjs.getUserIds !== 'function' || typeof pbjs.getUserIdsAsEids !== 'function') {
+          throw new Error('User ID module APIs were not initialized');
         }
         if (typeof pbjs.onEvent !== 'function') {
           throw new Error('Prebid event listener API missing');
         }
       }
 
+      // The userId parent provides getUserIdsAsEids, but only sharedIdSystem
+      // supplies the pubcid.org EID. Verify the imported submodule actually
+      // registered, rather than just checking that the parent API exists.
+      const sharedId = 'prebid-npm-consumer-smoke-shared-id';
+      pbjs.setConfig({
+        bidderTimeout: 500,
+        userSync: {
+          syncEnabled: false,
+          userIds: [{ name: 'sharedId', value: { pubcid: sharedId } }]
+        }
+      });
+      await pbjs.refreshUserIds();
+      const eids = pbjs.getUserIdsAsEids();
+      const sharedIdEid = eids.find(eid => eid.source === 'pubcid.org');
+      if (!sharedIdEid?.uids?.some(uid => uid.id === sharedId)) {
+        throw new Error('sharedIdSystem did not register a matching pubcid.org EID: ' + JSON.stringify(eids));
+      }
+
       const requested = new Set();
       pbjs.onEvent('bidRequested', request => requested.add(request.bidderCode));
-      pbjs.setConfig({ bidderTimeout: 500, userSync: { syncEnabled: false } });
 
       return new Promise((resolveAuction, rejectAuction) => {
         const timeout = setTimeout(() => rejectAuction(new Error('Auction did not complete')), 8000);
