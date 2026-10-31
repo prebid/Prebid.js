@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [isolated, shared, shared-stress]
+        mode: [isolated, shared, shared-stress, core-isolated, core-shared]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -35,8 +35,13 @@ jobs:
       - name: Precompile tests and source
         run: npx gulp precompile-all-features-disabled
       - name: Run existing tests in Vitest Browser Mode
-        if: ${{ matrix.mode != 'shared-stress' }}
+        if: ${{ matrix.mode == 'isolated' || matrix.mode == 'shared' }}
         run: ${{ matrix.mode == 'isolated' && 'npm run test:vitest' || 'npm run test:vitest -- --no-isolate' }}
+      - name: Run src core specs (bounded diagnostic)
+        if: ${{ matrix.mode == 'core-isolated' || matrix.mode == 'core-shared' }}
+        env:
+          VITEST_CORE: '1'
+        run: ${{ matrix.mode == 'core-shared' && 'timeout --signal=TERM --kill-after=10s 180s npm run test:vitest -- --no-isolate --bail=1' || 'timeout --signal=TERM --kill-after=10s 180s npm run test:vitest -- --bail=1' }}
       # Diagnostic run: the initial stress test hit many failures, then
       # stayed alive until GitHub cancelled it. Bail early to capture the
       # first actionable stack trace and cap pathological cleanup hangs.
