@@ -4,6 +4,8 @@ import { readFileSync, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// Installed only in the isolated consumer fixture, not the root workspace.
+// eslint-disable-next-line import/no-unresolved -- Resolved from test/consumer-smoke/node_modules.
 import puppeteer from 'puppeteer-core';
 
 const cwd = fileURLToPath(new URL('.', import.meta.url));
@@ -11,7 +13,7 @@ const dist = resolve(cwd, 'dist');
 const published = JSON.parse(readFileSync(resolve(cwd, 'node_modules/prebid.js/package.json'), 'utf8'));
 mkdirSync(dist, { recursive: true });
 
-console.log('Testing published prebid.js ' + published.version);
+process.stdout.write('Testing published prebid.js ' + published.version + '\n');
 execFileSync('bun', [
   'build', './entry.js', '--outfile=./dist/bun.js', '--minify', '--target=browser'
 ], { cwd, stdio: 'inherit' });
@@ -35,7 +37,7 @@ const server = createServer((req, res) => {
     res.end('Not found');
   }
 });
-await new Promise(done => server.listen(0, '127.0.0.1', done));
+await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 
 let browser;
 try {
@@ -107,8 +109,8 @@ try {
       const requested = new Set();
       pbjs.onEvent('bidRequested', request => requested.add(request.bidderCode));
 
-      return new Promise((resolveAuction, rejectAuction) => {
-        const timeout = setTimeout(() => rejectAuction(new Error('Auction did not complete')), 8000);
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Auction did not complete')), 8000);
         pbjs.requestBids({
           timeout: 500,
           adUnits: [{
@@ -122,9 +124,9 @@ try {
           bidsBackHandler: () => {
             clearTimeout(timeout);
             if (!requested.has('magnite') || !requested.has('msft')) {
-              rejectAuction(new Error('Missing bidRequested events for Magnite or Microsoft: ' + [...requested]));
+              reject(new Error('Missing bidRequested events for Magnite or Microsoft: ' + [...requested]));
             } else {
-              resolveAuction({ version: pbjs.version, bidderCodes: [...requested] });
+              resolve({ version: pbjs.version, bidderCodes: [...requested] });
             }
           }
         });
@@ -133,12 +135,12 @@ try {
 
     assert.match(result.version, /^v?\d+\.\d+\.\d+/, 'Missing Prebid version');
     assert.deepEqual(errors, [], 'Browser page errors');
-    console.log('Bun browser smoke passed: Prebid ' + result.version
-      + '; bidRequested events: ' + result.bidderCodes.join(', '));
+    process.stdout.write('Bun browser smoke passed: Prebid ' + result.version +
+      '; bidRequested events: ' + result.bidderCodes.join(', ') + '\n');
   } finally {
     await page.close();
   }
 } finally {
   if (browser) await browser.close();
-  await new Promise(done => server.close(done));
+  await new Promise(resolve => server.close(resolve));
 }
