@@ -13,6 +13,8 @@ The Vitest config runs **unchanged** existing specs from the regular
 - `test/spec/libraries/boundingClientRect_spec.js`: Sinon spies and real DOM layout.
 - `test/spec/modules/braveBidAdapter_spec.js`: a real adapter, its dependent
   Prebid modules, and internal import alias resolution.
+- `test/spec/modules/mygaruIdSystem_spec.js`: the original network callback
+  tests using Prebid's shared `test/mocks/xhr.js` fake request server.
 
 This is a compatibility probe, **not** a demonstration that the full Prebid
 test suite works under Vitest.
@@ -52,8 +54,8 @@ interactions; these focused runs are only for comparison with the pilot.
 ## Acceptance criteria before expanding this trial
 
 - Both unmodified suites pass in Vitest's real Chromium browser, as in Karma.
-- Prove the Brave adapter suite works without modifying its existing specs;
-  expand to an adapter using the full shared Karma mocks next.
+- Prove the shared XHR mock works with the unchanged Mygaru ID suite and
+  its request/response callbacks.
 - Evaluate coverage, performance, CI parallelism, Firefox/Safari,
   BrowserStack, and the full-suite shared-state constraints.
 - Keep Karma as the required CI test gate until a validated replacement
