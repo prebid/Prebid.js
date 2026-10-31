@@ -20,6 +20,9 @@ type AnalyticsLabels = { analyticsLabels?: Record<string, unknown> };
 // Derive the formatter inputs from the events that core actually emits. This
 // keeps the preset aligned with changes to the event payload declarations.
 type NoBidInput = EventPayload<typeof EVENTS.NO_BID>;
+// Stored-impression PBS requests can carry a null bidder code, even though
+// the core event declarations currently omit that case.
+type NoBidFormatterInput = Omit<NoBidInput, 'bidder'> & { bidder: NoBidInput['bidder'] | null };
 type BidRequestedInput = EventPayload<typeof EVENTS.BID_REQUESTED>;
 type BidTimeoutInput = EventPayload<typeof EVENTS.BID_TIMEOUT>;
 
@@ -29,11 +32,11 @@ export type SkinnyNoBid = {
   bidId: NoBidInput['bidId'];
   bidderRequestId: NoBidInput['bidderRequestId'];
   adUnitCode: NoBidInput['adUnitCode'];
-  bidder: NoBidInput['bidder'];
+  bidder: NoBidFormatterInput['bidder'];
   source: NoBidInput['src'];
 } & AnalyticsLabels;
 
-export function noBid(bidRequest: NoBidInput & AnalyticsLabels): SkinnyNoBid {
+export function noBid(bidRequest: NoBidFormatterInput & AnalyticsLabels): SkinnyNoBid {
   return {
     eventType: EVENTS.NO_BID,
     auctionId: bidRequest.auctionId,
@@ -151,7 +154,7 @@ export function stripEids(ortb2: ORTB2): ORTB2 {
   return copy;
 }
 
-export type SkinnyBidRequestFields = Pick<NoBidInput,
+export type SkinnyBidRequestFields = Pick<NoBidFormatterInput,
   'bidId' | 'bidderRequestId' | 'auctionId' | 'adUnitCode' | 'transactionId' | 'bidder' |
   'mediaTypes' | 'sizes' | 'auctionsCount' | 'bidRequestsCount' | 'bidderRequestsCount' | 'bidderWinsCount' |
   'ortb2Imp'
@@ -159,7 +162,7 @@ export type SkinnyBidRequestFields = Pick<NoBidInput,
   source: NoBidInput['src'];
 };
 
-function bidRequestFields(bidRequest: NoBidInput): SkinnyBidRequestFields {
+function bidRequestFields(bidRequest: NoBidFormatterInput): SkinnyBidRequestFields {
   return {
     bidId: bidRequest.bidId,
     bidderRequestId: bidRequest.bidderRequestId,
@@ -178,7 +181,11 @@ function bidRequestFields(bidRequest: NoBidInput): SkinnyBidRequestFields {
   };
 }
 
-export type SkinnyBidRequested = Pick<BidRequestedInput,
+type BidRequestedFormatterInput = Omit<BidRequestedInput, 'bidderCode'> & {
+  bidderCode: BidRequestedInput['bidderCode'] | null;
+};
+
+export type SkinnyBidRequested = Pick<BidRequestedFormatterInput,
   'auctionId' | 'bidderRequestId' | 'bidderCode' | 'auctionStart' | 'timeout' | 'ortb2'
 > & {
   eventType: typeof EVENTS.BID_REQUESTED;
@@ -191,7 +198,7 @@ export type SkinnyBidRequested = Pick<BidRequestedInput,
  * Bid requests share the bidder request's `ortb2`, so it's sent only once, at the top level, and without EIDs
  * (only their sources are included, as `eidsSources`).
  */
-export function bidRequested(bidderRequest: BidRequestedInput & AnalyticsLabels & { start?: number }): SkinnyBidRequested {
+export function bidRequested(bidderRequest: BidRequestedFormatterInput & AnalyticsLabels & { start?: number }): SkinnyBidRequested {
   return {
     eventType: EVENTS.BID_REQUESTED,
     auctionId: bidderRequest.auctionId,

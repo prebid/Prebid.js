@@ -117,7 +117,10 @@
           "type": "string"
         },
         "bidderCode": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ortb2": {
           "type": "object",
@@ -448,7 +451,10 @@
           "type": "string"
         },
         "bidderCode": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "ortb2": {
           "type": "object",

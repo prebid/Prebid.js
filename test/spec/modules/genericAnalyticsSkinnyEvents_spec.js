@@ -237,6 +237,26 @@ describe('Generic analytics skinny events', () => {
       });
     });
 
+
+      it('preserves null bidder codes for stored-impression PBS events', () => {
+        const storedBid = makeBidRequest({ bidder: null, src: 's2s' });
+        const requested = onWire(bidRequested({
+          auctionId: 'auction',
+          bidderRequestId: 'bidderRequest',
+          bidderCode: null,
+          auctionStart: 1000,
+          timeout: 3000,
+          ortb2: ORTB2,
+          bids: [storedBid]
+        }));
+        expect(requested.bidderCode).to.equal(null);
+        expect(requested.bids[0].bidder).to.equal(null);
+
+        const timeout = onWire(bidTimeout([storedBid]));
+        expect(timeout.bidderRequests[0].bidderCode).to.equal(null);
+        expect(timeout.bidderRequests[0].bids[0].bidder).to.equal(null);
+      });
+
     describe('eidsSources', () => {
       it('collects unique sources from user.eids and user.ext.eids', () => {
         expect(eidsSources(ORTB2)).to.eql(['a.com', 'b.com']);

@@ -70,6 +70,24 @@ describe('Generic Analytics skinny events v1 JSON Schema', () => {
     expect(validate(won), JSON.stringify(validate.errors)).to.equal(true);
   });
 
+
+  it('accepts null bidder codes for stored-impression PBS requests', () => {
+    const requested = structuredClone(fixtures.bidRequested);
+    requested.bidderCode = null;
+    requested.bids[0].bidder = null;
+    expect(validate(requested), JSON.stringify(validate.errors)).to.equal(true);
+
+    const timeout = structuredClone(fixtures.bidTimeout);
+    timeout.bidderRequests[0].bidderCode = null;
+    timeout.bidderRequests[0].bids[0].bidder = null;
+    expect(validate(timeout), JSON.stringify(validate.errors)).to.equal(true);
+
+    requested.bidderCode = 123;
+    expect(validate(requested), 'numeric bidRequested bidderCode must fail').to.equal(false);
+    timeout.bidderRequests[0].bidderCode = 123;
+    expect(validate(timeout), 'numeric bidTimeout bidderCode must fail').to.equal(false);
+  });
+
   it('rejects unknown event types and invalid fields', () => {
     const badType = { ...fixtures.noBid, eventType: 'unknownEvent' };
     const badCpm = { ...fixtures.bidResponse, cpm: '1.50' };

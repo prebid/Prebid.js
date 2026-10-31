@@ -36,6 +36,23 @@ export type MapPayloads = Assert<Equal<
   }
 >>;
 
+
+export type StoredImpressionBidRequestedCode = Assert<Equal<
+  SkinnyBidRequested['bidderCode'], string | null
+>>;
+
+export type StoredImpressionTimedOutCode = Assert<Equal<
+  SkinnyTimedOutBidderRequest['bidderCode'], string | null
+>>;
+
+export type StoredImpressionNestedBidCode = Assert<Equal<
+  SkinnyBidRequestFields['bidder'], string | null
+>>;
+
+export type StoredImpressionNoBidCode = Assert<Equal<
+  SkinnyNoBid['bidder'], string | null
+>>;
+
 export type DiscriminatedUnion = Assert<Equal<
   Extract<SkinnyEventPayload, { eventType: 'bidWon' }>, SkinnyBidWon
 >>;
