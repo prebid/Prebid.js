@@ -29,6 +29,10 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
+      // File isolation is intentional by default. CI also exercises false.
+      isolate: true,
+      // Sequence specs in both modes to detect cross-file state leakage.
+      fileParallelism: false,
       provider: playwright(),
       instances: [{ browser: 'chromium' }]
     }
