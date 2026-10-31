@@ -4,7 +4,15 @@ import sinon from 'sinon';
 // Vitest provides Mocha-style describe/it/hooks and Chai-style expect with globals:true.
 globalThis.sinon = sinon;
 
-// The Karma bootstrap loads this shared mock before any specs run. Its
-// top-level hooks reset the request list between tests. Import it after
-// defining global sinon so the existing module can initialize unchanged.
-await import('test/mocks/xhr.js');
+// The Karma bootstrap initializes this shared mock, which hooks request resets
+// into Mocha at module evaluation time. With Vitest isolate:false, imports are
+// cached across spec files, so those hooks are not re-registered for later files.
+const { server } = await import('test/mocks/xhr.js');
+
+// Vitest executes setupFiles before EACH spec even with isolate:false. Register
+// the reset here rather than relying only on the imported mock's root hook.
+// Otherwise server.requests[0] can refer to the preceding test's request and
+// a test can time out waiting for a response sent to that stale request.
+beforeEach(() => {
+  server.reset();
+});
