@@ -51,8 +51,12 @@ describe('Generic analytics skinny events', () => {
   describe('noBid', () => {
     it('matches the published v1 fixture', () => {
       expect(onWire(noBid({
-        auctionId: 'auction', bidId: 'bid', bidderRequestId: 'bidderRequest',
-        adUnitCode: 'adUnit', bidder: 'bidder', src: 'client',
+        auctionId: 'auction',
+        bidId: 'bid',
+        bidderRequestId: 'bidderRequest',
+        adUnitCode: 'adUnit',
+        bidder: 'bidder',
+        src: 'client',
         analyticsLabels: { label: 'value' }
       }))).to.eql(fixtures.noBid);
     });
