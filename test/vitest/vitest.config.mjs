@@ -19,6 +19,8 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    isolate: true,
+    fileParallelism: false,
     include: [
       'dist/src/test/spec/libraries/sizeUtils_spec.js',
       'dist/src/test/spec/libraries/boundingClientRect_spec.js',
@@ -29,10 +31,6 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
-      // File isolation is intentional by default. CI also exercises false.
-      isolate: true,
-      // Sequence specs in both modes to detect cross-file state leakage.
-      fileParallelism: false,
       provider: playwright(),
       instances: [{ browser: 'chromium' }]
     }
