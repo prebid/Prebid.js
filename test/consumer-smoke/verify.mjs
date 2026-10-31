@@ -114,7 +114,7 @@ try {
       const result = await page.evaluate(() => {
         const pbjs = window.pbjs;
         const codes = pbjs.getBidderCodes();
-        if (!codes.includes('appnexus') || !codes.includes('rubicon')) {
+        if (!codes.includes('magnite') || !codes.includes('msft')) {
           throw new Error('Expected both imported bidder adapters to be registered: ' + codes);
         }
         if (typeof pbjs.getUserIds !== 'function') {
@@ -130,8 +130,8 @@ try {
               code: 'consumer-smoke-ad',
               mediaTypes: { banner: { sizes: [[300, 250]] } },
               bids: [
-                { bidder: 'appnexus', params: { placementId: 13144370 } },
-                { bidder: 'rubicon', params: { accountId: 12345, siteId: 12345, zoneId: 12345 } }
+                { bidder: 'magnite', params: { accountId: 14062, siteId: 70608, zoneId: 498816 } },
+                { bidder: 'msft', params: { placement_id: 12345 } }
               ]
             }],
             bidsBackHandler: () => {
