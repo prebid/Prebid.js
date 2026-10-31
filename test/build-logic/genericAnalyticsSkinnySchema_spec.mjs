@@ -32,6 +32,44 @@ describe('Generic Analytics skinny events v1 JSON Schema', () => {
     });
   }
 
+  it('rejects truncated top-level and nested payloads', () => {
+    // Every event and nested bid must contain the mandatory fields from the
+    // source TypeScript types. This also catches accidentally deleting a
+    // required property from the versioned JSON Schema.
+    for (const eventType of eventTypes) {
+      const payload = fixtures[eventType];
+      const definition = schema.$defs[eventType];
+      for (const field of definition.required) {
+        const truncated = { ...payload };
+        delete truncated[field];
+        expect(validate(truncated), `${eventType} must require ${field}`).to.equal(false);
+      }
+    }
+
+    for (const type of ['bidRequest', 'timedOutBidderRequest']) {
+      for (const field of schema.$defs[type].required) {
+        const truncated = structuredClone(fixtures.bidTimeout);
+        if (type === 'bidRequest') {
+          delete truncated.bidderRequests[0].bids[0][field];
+        } else {
+          delete truncated.bidderRequests[0][field];
+        }
+        expect(validate(truncated), `${type} must require ${field}`).to.equal(false);
+      }
+    }
+  });
+
+  it('permits omitted optional fields', () => {
+    const response = { ...fixtures.bidResponse };
+    for (const key of ['originalCpm', 'originalCurrency', 'dealId', 'floorData', 'analyticsLabels']) {
+      delete response[key];
+    }
+    expect(validate(response), JSON.stringify(validate.errors)).to.equal(true);
+    const won = { ...fixtures.bidWon };
+    delete won.status;
+    expect(validate(won), JSON.stringify(validate.errors)).to.equal(true);
+  });
+
   it('rejects unknown event types and invalid fields', () => {
     const badType = { ...fixtures.noBid, eventType: 'unknownEvent' };
     const badCpm = { ...fixtures.bidResponse, cpm: '1.50' };
