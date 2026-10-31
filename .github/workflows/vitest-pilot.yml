@@ -4,34 +4,64 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'package.json'
+      - 'package-lock.json'
       - 'test/vitest/**'
       - '.github/workflows/vitest-pilot.yml'
 
+# Temporary one-time lock refresh for this trial branch. Once the generated
+# lockfile is committed, this job and write permission will be removed.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  refresh-vitest-lockfile:
+    name: Generate pilot lockfile on PR branch
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - name: Generate lockfile matching root devDependencies
+        run: npm install --package-lock-only --lockfile-version=2 --ignore-scripts --no-audit --no-fund
+      - name: Commit generated lockfile if changed
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json
+            git commit -m "Build: update lockfile for Vitest alongside Karma"
+            git push origin "HEAD:$BRANCH"
+          fi
+
   vitest-browser-pilot:
     name: Two existing specs in Vitest / Chromium
+    needs: refresh-vitest-lockfile
+    if: ${{ always() && (needs.refresh-vitest-lockfile.result == 'success' || needs.refresh-vitest-lockfile.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
-      - name: Install Prebid dependencies
+      - name: Install dependencies
         run: npm ci
-      # The Vite browser server resolves modules from the repository root,
-      # so install the pilot tools into root node_modules for this job only.
-      # --no-save and --no-package-lock leave package.json / package-lock.json unchanged.
-      - name: Install trial Vitest and Playwright in root node_modules
-        run: npm install --no-save --no-package-lock --no-audit --no-fund vitest@4.1.12 @vitest/browser-playwright@4.1.12 playwright@1.64.1
-      - name: Verify root Vitest module resolution
+      - name: Verify Vitest module resolution
         run: node --input-type=module -e "console.log(import.meta.resolve('vitest/config')); console.log(import.meta.resolve('@vitest/browser-playwright'))"
       - name: Install browser
-        run: ./node_modules/.bin/playwright install --with-deps chromium
-      - name: Precompile tests and source (same pipeline as Karma)
+        run: npx playwright install --with-deps chromium
+      - name: Precompile tests and source
         run: npx gulp precompile-all-features-disabled
       - name: Run existing tests in Vitest Browser Mode
-        run: ./node_modules/.bin/vitest run --config test/vitest/vitest.config.mjs
+        run: npm run test:vitest
