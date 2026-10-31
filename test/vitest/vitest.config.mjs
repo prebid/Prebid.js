@@ -17,6 +17,8 @@ export default defineConfig({
     alias: ['src', 'modules', 'libraries', 'test', 'creative', 'metadata']
       .map(name => ({ find: new RegExp(`^${name}/`), replacement: `${precompiled}${name}/` }))
   },
+  // Prebundle Chai entrypoints to avoid mid-run Vite reloads in shared mode.
+  optimizeDeps: { include: ['chai', 'chai/index.js'] },
   test: {
     globals: true,
     isolate: true,
