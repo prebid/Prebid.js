@@ -9,7 +9,7 @@ import { submodule } from '../src/hook.js';
 import { EVENTS } from '../src/constants.js';
 import { deepClone } from '../src/utils/objects.js';
 import type { EventMapping } from './genericAnalyticsAdapter.ts';
-import type { BidderRequest, BidRequest } from '../src/adapterManager.ts';
+import type { EventPayload } from '../src/events.ts';
 import type { Bid } from '../src/bidfactory.ts';
 import type { BidFloorData } from './priceFloors.ts';
 
@@ -17,17 +17,23 @@ export const PRESET_NAME = 'skinny';
 
 type AnalyticsLabels = { analyticsLabels?: Record<string, unknown> };
 
+// Derive the formatter inputs from the events that core actually emits. This
+// keeps the preset aligned with changes to the event payload declarations.
+type NoBidInput = EventPayload<typeof EVENTS.NO_BID>;
+type BidRequestedInput = EventPayload<typeof EVENTS.BID_REQUESTED>;
+type BidTimeoutInput = EventPayload<typeof EVENTS.BID_TIMEOUT>;
+
 export type SkinnyNoBid = {
   eventType: typeof EVENTS.NO_BID;
-  auctionId: BidRequest<any>['auctionId'];
-  bidId: BidRequest<any>['bidId'];
-  bidderRequestId: BidRequest<any>['bidderRequestId'];
-  adUnitCode: BidRequest<any>['adUnitCode'];
-  bidder: BidRequest<any>['bidder'];
-  source: BidRequest<any>['src'];
+  auctionId: NoBidInput['auctionId'];
+  bidId: NoBidInput['bidId'];
+  bidderRequestId: NoBidInput['bidderRequestId'];
+  adUnitCode: NoBidInput['adUnitCode'];
+  bidder: NoBidInput['bidder'];
+  source: NoBidInput['src'];
 } & AnalyticsLabels;
 
-export function noBid(bidRequest: BidRequest<any> & AnalyticsLabels): SkinnyNoBid {
+export function noBid(bidRequest: NoBidInput & AnalyticsLabels): SkinnyNoBid {
   return {
     eventType: EVENTS.NO_BID,
     auctionId: bidRequest.auctionId,
@@ -106,42 +112,54 @@ export function bidWon(bid: BidWithExtras): SkinnyBidWon {
   };
 }
 
-type ORTB2 = BidRequest<any>['ortb2'];
+type ORTB2 = BidRequestedInput['ortb2'];
 
 /**
  * List of unique sources across the EIDs in `ortb2.user` (both `user.eids` and `user.ext.eids`).
  */
 export function eidsSources(ortb2: ORTB2): string[] {
-  const user: any = ortb2?.user;
-  const eids = [...(user?.eids ?? []), ...(user?.ext?.eids ?? [])];
-  return [...new Set(eids.map(eid => eid?.source).filter(source => source != null))] as string[];
+  const user = ortb2?.user;
+  // OpenRTB 2.6 types user.eids, while legacy user.ext.eids is an
+  // extension field and is deliberately unknown. Narrow both at runtime.
+  const eids: unknown[] = [
+    ...(Array.isArray(user?.eids) ? user.eids : []),
+    ...(Array.isArray(user?.ext?.eids) ? user.ext.eids : [])
+  ];
+  const sources = eids
+    .filter((eid): eid is { source: string } => (
+      eid != null && typeof eid === 'object' && 'source' in eid && typeof eid.source === 'string'
+    ))
+    .map(eid => eid.source);
+  return [...new Set(sources)];
 }
 
 /**
  * Copy of `ortb2` without EIDs (which tend to be the bulk of it).
  */
 export function stripEids(ortb2: ORTB2): ORTB2 {
-  const user: any = ortb2?.user;
+  const user = ortb2?.user;
   if (user?.eids == null && user?.ext?.eids == null) {
     return ortb2;
   }
-  const copy: any = deepClone(ortb2);
-  delete copy.user.eids;
-  if (copy.user.ext != null) {
-    delete copy.user.ext.eids;
+  const copy = deepClone(ortb2);
+  if (copy?.user != null) {
+    delete copy.user.eids;
+    if (copy.user.ext != null) {
+      delete copy.user.ext.eids;
+    }
   }
   return copy;
 }
 
-export type SkinnyBidRequestFields = Pick<BidRequest<any>,
+export type SkinnyBidRequestFields = Pick<NoBidInput,
   'bidId' | 'bidderRequestId' | 'auctionId' | 'adUnitCode' | 'transactionId' | 'bidder' |
   'mediaTypes' | 'sizes' | 'auctionsCount' | 'bidRequestsCount' | 'bidderRequestsCount' | 'bidderWinsCount' |
   'ortb2Imp'
 > & {
-  source: BidRequest<any>['src'];
+  source: NoBidInput['src'];
 };
 
-function bidRequestFields(bidRequest: BidRequest<any>): SkinnyBidRequestFields {
+function bidRequestFields(bidRequest: NoBidInput): SkinnyBidRequestFields {
   return {
     bidId: bidRequest.bidId,
     bidderRequestId: bidRequest.bidderRequestId,
@@ -160,7 +178,7 @@ function bidRequestFields(bidRequest: BidRequest<any>): SkinnyBidRequestFields {
   };
 }
 
-export type SkinnyBidRequested = Pick<BidderRequest<any>,
+export type SkinnyBidRequested = Pick<BidRequestedInput,
   'auctionId' | 'bidderRequestId' | 'bidderCode' | 'auctionStart' | 'timeout' | 'ortb2'
 > & {
   eventType: typeof EVENTS.BID_REQUESTED;
@@ -173,7 +191,7 @@ export type SkinnyBidRequested = Pick<BidderRequest<any>,
  * Bid requests share the bidder request's `ortb2`, so it's sent only once, at the top level, and without EIDs
  * (only their sources are included, as `eidsSources`).
  */
-export function bidRequested(bidderRequest: BidderRequest<any> & AnalyticsLabels & { start?: number }): SkinnyBidRequested {
+export function bidRequested(bidderRequest: BidRequestedInput & AnalyticsLabels & { start?: number }): SkinnyBidRequested {
   return {
     eventType: EVENTS.BID_REQUESTED,
     auctionId: bidderRequest.auctionId,
@@ -202,10 +220,10 @@ export type SkinnyBidTimeout = {
  * Timed out bids are grouped by bidder request, in the same shape as `bidRequested`: `ortb2` (without EIDs) is
  * always on the bidder request, and `ortb2Imp` always on each bid.
  */
-export function bidTimeout(args: BidRequest<any>[] | ({ [index: number]: BidRequest<any> } & AnalyticsLabels)): SkinnyBidTimeout {
+export function bidTimeout(args: BidTimeoutInput | (Record<number, NoBidInput> & AnalyticsLabels)): SkinnyBidTimeout {
   // when analytics labels are set, the analytics adapter spreads the event args into an object:
   // {analyticsLabels, 0: bidRequest, 1: bidRequest, ...}
-  const bidRequests: BidRequest<any>[] = Array.isArray(args)
+  const bidRequests: BidTimeoutInput = Array.isArray(args)
     ? args
     : Object.keys(args ?? {}).filter(key => /^\d+$/.test(key)).map(key => args[key]);
   const bidderRequests = new Map<string, SkinnyTimedOutBidderRequest>();
