@@ -2,6 +2,10 @@ import { GenericAnalytics } from '../../../modules/genericAnalyticsAdapter.js';
 import { bidRequested, bidResponse, bidTimeout, bidWon, eidsSources, noBid, PRESET_NAME, stripEids } from '../../../modules/genericAnalyticsSkinnyEvents.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
+import fixtures from '../../fixtures/genericAnalyticsSkinnyEvents.v1.json';
+
+// Test JSON as actually sent to a collector, not JS objects containing undefined.
+const onWire = (payload) => JSON.parse(JSON.stringify(payload));
 
 describe('Generic analytics skinny events', () => {
   describe('preset', () => {
@@ -45,6 +49,14 @@ describe('Generic analytics skinny events', () => {
   });
 
   describe('noBid', () => {
+    it('matches the published v1 fixture', () => {
+      expect(onWire(noBid({
+        auctionId: 'auction', bidId: 'bid', bidderRequestId: 'bidderRequest',
+        adUnitCode: 'adUnit', bidder: 'bidder', src: 'client',
+        analyticsLabels: { label: 'value' }
+      }))).to.eql(fixtures.noBid);
+    });
+
     it('keeps only the relevant fields', () => {
       expect(noBid({
         auctionId: 'auction',
@@ -108,6 +120,11 @@ describe('Generic analytics skinny events', () => {
         getSize() {},
         getStatusCode() {}
       };
+    });
+
+    it('serializes bid responses and wins according to the v1 fixtures', () => {
+      expect(onWire(bidResponse(bid))).to.eql(fixtures.bidResponse);
+      expect(onWire(bidWon(bid))).to.eql(fixtures.bidWon);
     });
 
     it('bidResponse keeps only the relevant fields', () => {
@@ -185,6 +202,36 @@ describe('Generic analytics skinny events', () => {
         ...overrides
       };
     }
+
+    describe('serialized v1 contract', () => {
+      it('matches the published bidRequested fixture', () => {
+        expect(onWire(bidRequested({
+          auctionId: 'auction',
+          bidderRequestId: 'bidderRequest',
+          bidderCode: 'bidder',
+          auctionStart: 1000,
+          start: 1010,
+          timeout: 3000,
+          ortb2: ORTB2,
+          bids: [makeBidRequest(), makeBidRequest({ bidId: 'bid2' })],
+          analyticsLabels: { label: 'value' }
+        }))).to.eql(fixtures.bidRequested);
+      });
+
+      it('matches the published grouped bidTimeout fixture with labels', () => {
+        expect(onWire(bidTimeout({
+          analyticsLabels: { label: 'value' },
+          0: makeBidRequest(),
+          1: makeBidRequest({
+            bidId: 'bid2',
+            bidderRequestId: 'bidderRequest2',
+            bidder: 'bidder2',
+            ortb2: { site: { domain: 'other.com' } },
+            ortb2Imp: { ext: { gpid: '/other' } }
+          })
+        }))).to.eql(fixtures.bidTimeout);
+      });
+    });
 
     describe('eidsSources', () => {
       it('collects unique sources from user.eids and user.ext.eids', () => {
