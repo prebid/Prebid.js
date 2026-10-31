@@ -76,9 +76,6 @@ module.exports = [
       'customize/**/*',
       // inputs for tests that run linter rules themselves, and not all of them are meant to pass
       'test/build-logic/fixtures/**/*',
-      // The Vitest pilot has its own package.json and installs dependencies separately.
-      // Main CI lint cannot resolve those imports; syntax is checked by the pilot job.
-      'test/vitest/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
       'web-bundler'
