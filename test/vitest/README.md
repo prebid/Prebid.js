@@ -36,6 +36,8 @@ npx gulp precompile-all-features-disabled
 npm run test:vitest
 npm run test:vitest -- --no-isolate
 VITEST_STRESS=1 npm run test:vitest -- --no-isolate --bail=1
+VITEST_CORE=1 npm run test:vitest -- --bail=1
+VITEST_CORE=1 npm run test:vitest -- --no-isolate --bail=1
 ```
 
 Vitest and Playwright are regular development dependencies in the root
@@ -57,6 +59,8 @@ The pilot CI runs three distinct jobs:
 
 - `isolated`: the original four-spec baseline with file isolation.
 - `shared`: the same four specs without file isolation.
+- `core-isolated` and `core-shared`: 11 existing `test/spec/unit/core` suites
+  exercising `/src` internals; both are bounded first-failure diagnostics.
 - `shared-stress`: 27 unchanged specs spanning browser utilities, bidders,
   identity, RTD and analytics adapters, also without isolation. This job uses
   `--bail=1` and a 180-second process limit while we diagnose compatibility
@@ -79,3 +83,7 @@ reproduce Karma's chunked Webpack bundle or browser startup semantics.
 
 The GitHub Actions job is scoped to the pilot files and also supports
 manual dispatch, so existing PRs do not inherit another required test.
+
+ConnectID's one ESM-namespace Sinon stub was updated to use a mutable
+`dep.getRefererInfo` export of that module, preserving Sinon and Karma
+compatibility. These diagnostics intentionally do not alter other legacy specs.
