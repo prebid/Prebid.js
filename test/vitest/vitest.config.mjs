@@ -95,12 +95,63 @@ const srcHelpers = [
   'utils/yield'
 ];
 
+// Focused groups for FPD (src/fpd), the ORTB conversion path, and the
+// public rendering / ad-unit code. These run independently of the legacy
+// ESM-stubbing failures in the existing core and bidder stress jobs.
+const srcFpd = [
+  'fpd/enrichment',
+  'fpd/gdpr',
+  'fpd/merge',
+  'fpd/normalize',
+  'fpd/oneClient',
+  'fpd/rootDomain',
+  'fpd/sua',
+  'fpd/usp'
+];
+
+const ortbConverter = [
+  'ortbConverter/banner',
+  'ortbConverter/common',
+  'ortbConverter/composer',
+  'ortbConverter/converter',
+  'ortbConverter/currency',
+  'ortbConverter/gdpr',
+  'ortbConverter/mediaTypes',
+  'ortbConverter/mergeProcessors',
+  'ortbConverter/multibid',
+  'ortbConverter/native',
+  'ortbConverter/pbjsORTB',
+  'ortbConverter/priceFloors',
+  'ortbConverter/video'
+];
+
+const ortbTranslators = [
+  'ortb2.5StrictTranslator/dsl',
+  'ortb2.5StrictTranslator/spec',
+  'ortb2.5StrictTranslator/translator',
+  'ortb2.5Translator/translator',
+  'schainSerializer/schainSerializer'
+];
+
+const srcRendering = [
+  'unit/adRendering',
+  'unit/adServerManager',
+  'unit/adUnitMediaFeatures',
+  'unit/adUnits',
+  'unit/pbjs_api',
+  'unit/secureCreatives'
+];
+
 const selected = ({
   stress,
   core,
   'src-utils': srcUtils,
   'src-activities': srcActivities,
   'src-helpers': srcHelpers,
+  'src-fpd': srcFpd,
+  'ortb-converter': ortbConverter,
+  'ortb-translators': ortbTranslators,
+  'src-rendering': srcRendering,
 })[process.env.VITEST_SET] || baseline;
 
 export default defineConfig({
