@@ -581,6 +581,77 @@ describe('adRendering', () => {
     });
   });
 
+  describe('safeRenderer selection', () => {
+    const BIDDER = { url: 'https://bidder/safe.js' };
+    const MT = { url: 'https://publisher/mediatype.js' };
+    const REQ = { url: 'https://publisher/request.js' };
+    const AU = { url: 'https://publisher/adunit.js' };
+
+    function prepare({ mediaType = {}, request = {}, adUnit = {}, bidSafeRenderer } = {}) {
+      const index = {
+        getAdUnit: sinon.stub().returns(adUnit),
+        getBidRequest: sinon.stub().returns(request),
+        getMediaTypes: sinon.stub().returns({ video: mediaType }),
+      };
+      const bid = { mediaType: 'video', ...(bidSafeRenderer && { safeRenderer: bidSafeRenderer }) };
+      return getPreparedBidForAuction(bid, { index }).safeRenderer;
+    }
+
+    beforeEach(() => {
+      sandbox.stub(events, 'emit');
+    });
+
+    Object.entries({
+      'media type': (sr) => ({ mediaType: { safeRenderer: sr } }),
+      'bid request': (sr) => ({ request: { safeRenderer: sr } }),
+      'ad unit': (sr) => ({ adUnit: { safeRenderer: sr } }),
+    }).forEach(([level, setup]) => {
+      describe(`backupOnly ${level} safeRenderer`, () => {
+        const pub = { url: 'https://publisher/backup.js', backupOnly: true };
+
+        it('yields to the bidder safeRenderer', () => {
+          expect(prepare({ ...setup(pub), bidSafeRenderer: BIDDER })).to.equal(BIDDER);
+        });
+
+        it('is used when the bidder set none', () => {
+          expect(prepare(setup(pub))).to.equal(pub);
+        });
+      });
+
+      it(`non-backupOnly ${level} safeRenderer overrides the bidder's`, () => {
+        const pub = { url: 'https://publisher/override.js' };
+        expect(prepare({ ...setup(pub), bidSafeRenderer: BIDDER })).to.equal(pub);
+      });
+    });
+
+    it('is not affected by mediaTypes renderer.backupOnly', () => {
+      expect(prepare({
+        mediaType: { renderer: { url: 'r.js', render: sinon.stub(), backupOnly: true }, safeRenderer: MT },
+        bidSafeRenderer: BIDDER,
+      })).to.equal(MT);
+    });
+
+    it('falls through from a backupOnly media type safeRenderer to a non-backupOnly request one', () => {
+      expect(prepare({
+        mediaType: { safeRenderer: { ...MT, backupOnly: true } },
+        request: { safeRenderer: REQ },
+        bidSafeRenderer: BIDDER,
+      })).to.equal(REQ);
+    });
+
+    it('falls through from a backupOnly media type safeRenderer to a non-backupOnly ad unit one', () => {
+      expect(prepare({
+        mediaType: { safeRenderer: { ...MT, backupOnly: true } },
+        adUnit: { safeRenderer: AU },
+        bidSafeRenderer: BIDDER,
+      })).to.equal(AU);
+    });
+
+    it('prefers the media type safeRenderer over the request one', () => {
+      expect(prepare({ mediaType: { safeRenderer: MT }, request: { safeRenderer: REQ } })).to.equal(MT);
+    });
+  });
+
   describe('handleCreativeEvent', () => {
     let bid;
     beforeEach(() => {
