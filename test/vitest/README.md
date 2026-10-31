@@ -26,19 +26,15 @@ From the repository root, on Node.js as specified by `.nvmrc`:
 
 ```sh
 npm ci
-npm install --no-save --no-package-lock --no-audit --no-fund vitest@4.1.12 @vitest/browser-playwright@4.1.12 playwright@1.64.1
-node --input-type=module -e "console.log(import.meta.resolve('vitest/config')); console.log(import.meta.resolve('@vitest/browser-playwright'))"
-./node_modules/.bin/playwright install chromium
+npx playwright install chromium
 npx gulp precompile-all-features-disabled
-./node_modules/.bin/vitest run --config test/vitest/vitest.config.mjs
+npm run test:vitest
 ```
 
-The pilot records exact Vitest/Playwright versions in
-`test/vitest/package.json`. The experimental job installs them with
-`--no-save --no-package-lock` into root `node_modules` so Vite can resolve
-imports from the repository root. This does **not** change the root manifests.
-If adopting this runner beyond the experiment, consolidate dependencies and
-commit a generated lockfile.
+Vitest and Playwright are regular development dependencies in the root
+`package.json` and `package-lock.json`, installed by `npm ci` alongside
+Karma. The pilot adds a separate `npm run test:vitest` script; the existing
+`npm test` (Karma) script is unchanged.
 
 For comparison, run the same suites through Karma:
 
