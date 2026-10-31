@@ -22,11 +22,16 @@ jobs:
           node-version-file: '.nvmrc'
       - name: Install Prebid dependencies
         run: npm ci
-      - name: Install isolated Vitest pilot dependencies
-        run: npm install --prefix test/vitest --no-package-lock --no-audit --no-fund
+      # The Vite browser server resolves modules from the repository root,
+      # so install the pilot tools into root node_modules for this job only.
+      # --no-save and --no-package-lock leave package.json / package-lock.json unchanged.
+      - name: Install trial Vitest and Playwright in root node_modules
+        run: npm install --no-save --no-package-lock --no-audit --no-fund vitest@4.1.12 @vitest/browser-playwright@4.1.12 playwright@1.64.1
+      - name: Verify root Vitest module resolution
+        run: node --input-type=module -e "console.log(import.meta.resolve('vitest/config')); console.log(import.meta.resolve('@vitest/browser-playwright'))"
       - name: Install browser
-        run: ./test/vitest/node_modules/.bin/playwright install --with-deps chromium
+        run: ./node_modules/.bin/playwright install --with-deps chromium
       - name: Precompile tests and source (same pipeline as Karma)
         run: npx gulp precompile-all-features-disabled
       - name: Run existing tests in Vitest Browser Mode
-        run: ./test/vitest/node_modules/.bin/vitest run --config test/vitest/vitest.config.mjs
+        run: ./node_modules/.bin/vitest run --config test/vitest/vitest.config.mjs
