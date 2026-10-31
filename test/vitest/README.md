@@ -35,7 +35,7 @@ npx playwright install chromium
 npx gulp precompile-all-features-disabled
 npm run test:vitest
 npm run test:vitest -- --no-isolate
-VITEST_STRESS=1 npm run test:vitest -- --no-isolate
+VITEST_STRESS=1 npm run test:vitest -- --no-isolate --bail=1
 ```
 
 Vitest and Playwright are regular development dependencies in the root
@@ -58,7 +58,9 @@ The pilot CI runs three distinct jobs:
 - `isolated`: the original four-spec baseline with file isolation.
 - `shared`: the same four specs without file isolation.
 - `shared-stress`: 27 unchanged specs spanning browser utilities, bidders,
-  identity, RTD and analytics adapters, also without isolation.
+  identity, RTD and analytics adapters, also without isolation. This job uses
+  `--bail=1` and a 180-second process limit while we diagnose compatibility
+  errors; it is not yet a full-suite migration gate.
 
 All three disable file parallelism. The stress job is deliberately separate
 so failures do not obscure the known-good baseline. The shared tests can
