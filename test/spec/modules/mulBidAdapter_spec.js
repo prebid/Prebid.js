@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/mulBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 describe('mulBidAdapter', function () {
-  const bid = {
+  const bannerBid = {
     bidder: 'mul',
     params: {
       placementId: 'test-placement-123'
@@ -12,7 +13,34 @@ describe('mulBidAdapter', function () {
         sizes: [[300, 250]]
       }
     },
+    ortb2Imp: {
+      instl: 1,
+      ext: {
+        gpid: '/1234/homepage#slot1'
+      }
+    },
     bidId: '22c4871113f461'
+  };
+
+  const videoBid = {
+    bidder: 'mul',
+    params: {
+      placementId: 'test-placement-video'
+    },
+    mediaTypes: {
+      video: {
+        playerSize: [[640, 480]],
+        context: 'instream',
+        mimes: ['video/mp4'],
+        protocols: [2, 3, 5, 6],
+        minduration: 5,
+        maxduration: 30,
+        startdelay: 0,
+        playbackmethod: [1, 2],
+        api: [1, 2]
+      }
+    },
+    bidId: '33d5982224e572'
   };
 
   const bidderRequest = {
@@ -26,12 +54,35 @@ describe('mulBidAdapter', function () {
       gdprApplies: true,
       consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA'
     },
-    uspConsent: '1---'
+    uspConsent: '1---',
+    bids: [bannerBid, videoBid],
+    ortb2: {
+      site: {
+        name: 'Publisher Site'
+      },
+      user: {
+        ext: {
+          eids: [{ source: 'pubcid.org', uids: [{ id: 'uid-123' }] }]
+        }
+      },
+      source: {
+        ext: {
+          schain: { ver: '1.0', complete: 1, nodes: [] }
+        }
+      }
+    }
   };
+
+  describe('spec metadata', function () {
+    it('should support both BANNER and VIDEO mediaTypes', function () {
+      expect(spec.supportedMediaTypes).to.deep.equal([BANNER, VIDEO]);
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true when placementId is specified', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+      expect(spec.isBidRequestValid(bannerBid)).to.be.true;
+      expect(spec.isBidRequestValid(videoBid)).to.be.true;
     });
 
     it('should return true when zoneId is specified', function () {
@@ -42,11 +93,52 @@ describe('mulBidAdapter', function () {
       expect(spec.isBidRequestValid({})).to.be.false;
       expect(spec.isBidRequestValid({ params: {} })).to.be.false;
     });
+
+    it('should return false for outstream video when no renderer or useCacheKey is provided', function () {
+      const outstreamBid = {
+        params: { placementId: 'test-outstream' },
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(outstreamBid)).to.be.false;
+    });
+
+    it('should return true for outstream video when renderer is provided', function () {
+      const outstreamBidWithRenderer = {
+        params: { placementId: 'test-outstream' },
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        },
+        renderer: { render: () => {} }
+      };
+      expect(spec.isBidRequestValid(outstreamBidWithRenderer)).to.be.true;
+    });
+
+    it('should return true for outstream video when useCacheKey is true', function () {
+      const outstreamBidWithCacheKey = {
+        params: { placementId: 'test-outstream' },
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]],
+            useCacheKey: true
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(outstreamBidWithCacheKey)).to.be.true;
+    });
   });
 
   describe('buildRequests', function () {
-    it('should build a valid POST request with JSON payload', function () {
-      const serverRequest = spec.buildRequests([bid], bidderRequest);
+    it('should build a valid POST request with banner, video, instl, gpid, and FPD', function () {
+      const serverRequest = spec.buildRequests([bannerBid, videoBid], bidderRequest);
       expect(serverRequest.method).to.equal('POST');
       expect(serverRequest.url).to.contain('/api/bid');
       expect(serverRequest.options.contentType).to.equal('text/plain');
@@ -57,16 +149,51 @@ describe('mulBidAdapter', function () {
       expect(data.consent.gdprApplies).to.be.true;
       expect(data.consent.consentString).to.equal('BOtmiBKOtmiBKABABAENAFAAAAACeAAA');
       expect(data.consent.uspConsent).to.equal('1---');
+      expect(data.eids).to.have.lengthOf(1);
+      expect(data.schain.ver).to.equal('1.0');
 
-      expect(data.bids).to.have.lengthOf(1);
+      expect(data.bids).to.have.lengthOf(2);
+
+      // Banner bid check
       expect(data.bids[0].bidId).to.equal('22c4871113f461');
       expect(data.bids[0].placementId).to.equal('test-placement-123');
-      expect(data.bids[0].sizes).to.deep.equal([[300, 250]]);
+      expect(data.bids[0].banner.sizes).to.deep.equal([[300, 250]]);
+      expect(data.bids[0].instl).to.equal(1);
+      expect(data.bids[0].gpid).to.equal('/1234/homepage#slot1');
+
+      // Video bid check
+      expect(data.bids[1].bidId).to.equal('33d5982224e572');
+      expect(data.bids[1].placementId).to.equal('test-placement-video');
+      expect(data.bids[1].video.context).to.equal('instream');
+      expect(data.bids[1].video.playerSize).to.deep.equal([[640, 480]]);
+      expect(data.bids[1].video.mimes).to.deep.equal(['video/mp4']);
+      expect(data.bids[1].video.protocols).to.deep.equal([2, 3, 5, 6]);
+      expect(data.bids[1].video.minduration).to.equal(5);
+      expect(data.bids[1].video.maxduration).to.equal(30);
+    });
+
+    it('should respect getFloor and fallback bidfloor params', function () {
+      const floorBid = {
+        ...bannerBid,
+        getFloor: () => ({ currency: 'USD', floor: 1.75 })
+      };
+      const req = spec.buildRequests([floorBid], bidderRequest);
+      const data = JSON.parse(req.data);
+      expect(data.bids[0].floor).to.equal(1.75);
+
+      const fallbackFloorBid = {
+        bidder: 'mul',
+        params: { placementId: 'test-placement-123', bidfloor: 0.85, bidfloorcur: 'EUR' }
+      };
+      const reqFallback = spec.buildRequests([fallbackFloorBid], bidderRequest);
+      const dataFallback = JSON.parse(reqFallback.data);
+      expect(dataFallback.bids[0].floor).to.equal(0.85);
+      expect(dataFallback.bids[0].floorCurrency).to.equal('EUR');
     });
   });
 
   describe('interpretResponse', function () {
-    it('should map server response to valid Prebid bid responses', function () {
+    it('should map banner server response to Prebid banner response', function () {
       const mockServerResponse = {
         body: [
           {
@@ -83,7 +210,7 @@ describe('mulBidAdapter', function () {
         ]
       };
 
-      const result = spec.interpretResponse(mockServerResponse, {});
+      const result = spec.interpretResponse(mockServerResponse, { bidderRequest });
       expect(result).to.have.lengthOf(1);
       const bidResponse = result[0];
 
@@ -95,10 +222,53 @@ describe('mulBidAdapter', function () {
       expect(bidResponse.ad).to.equal('<div>Ad Banner</div>');
       expect(bidResponse.netRevenue).to.be.true;
       expect(bidResponse.ttl).to.equal(300);
-      expect(bidResponse.mediaType).to.equal('banner');
+      expect(bidResponse.mediaType).to.equal(BANNER);
       expect(bidResponse.meta.advertiserDomains).to.deep.equal(['monetiseup.com']);
       expect(bidResponse.meta.demandSource).to.equal('Adagio');
-      expect(bidResponse.meta.mediaType).to.equal('banner');
+      expect(bidResponse.meta.mediaType).to.equal(BANNER);
+    });
+
+    it('should map video server response with vastUrl and vastXml to Prebid video response and attach renderer if available', function () {
+      const mockRenderer = { render: () => {} };
+      const outstreamVideoBid = {
+        ...videoBid,
+        renderer: mockRenderer
+      };
+      const customBidderRequest = {
+        ...bidderRequest,
+        bids: [outstreamVideoBid]
+      };
+
+      const mockVideoServerResponse = {
+        body: [
+          {
+            bidId: '33d5982224e572',
+            cpm: 5.50,
+            currency: 'USD',
+            width: 640,
+            height: 480,
+            creativeId: 'crid_video_1',
+            vastUrl: 'https://bid5up.monetiseup.com/vast/123.xml',
+            vastXml: '<VAST version="3.0"></VAST>',
+            mediaType: 'video',
+            adomain: ['advertiser.com'],
+            demandSource: 'PubMatic'
+          }
+        ]
+      };
+
+      const result = spec.interpretResponse(mockVideoServerResponse, { bidderRequest: customBidderRequest });
+      expect(result).to.have.lengthOf(1);
+      const videoResponse = result[0];
+
+      expect(videoResponse.requestId).to.equal('33d5982224e572');
+      expect(videoResponse.cpm).to.equal(5.50);
+      expect(videoResponse.mediaType).to.equal(VIDEO);
+      expect(videoResponse.vastUrl).to.equal('https://bid5up.monetiseup.com/vast/123.xml');
+      expect(videoResponse.vastXml).to.equal('<VAST version="3.0"></VAST>');
+      expect(videoResponse.playerSize).to.deep.equal([640, 480]);
+      expect(videoResponse.renderer).to.equal(mockRenderer);
+      expect(videoResponse.meta.mediaType).to.equal(VIDEO);
     });
 
     it('should return empty array on empty or invalid response', function () {
@@ -116,6 +286,12 @@ describe('mulBidAdapter', function () {
       expect(syncs[0].url).to.contain('gdpr=1');
       expect(syncs[0].url).to.contain('consent_123');
       expect(syncs[0].url).to.contain('us_privacy=1---');
+    });
+
+    it('should format gdpr_consent when gdprApplies is undefined but consentString exists', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], { consentString: 'consent_only' }, '', null, false);
+      expect(syncs[0].url).to.contain('gdpr_consent=consent_only');
+      expect(syncs[0].url).to.not.contain('gdpr=');
     });
 
     it('should return image sync when pixelEnabled is true', function () {
