@@ -191,6 +191,15 @@ describe('Generic analytics skinny events', () => {
         expect(eidsSources(ORTB2)).to.eql(['a.com', 'b.com']);
       });
 
+      it('ignores invalid identity entries in OpenRTB and legacy extensions', () => {
+        expect(eidsSources({
+          user: {
+            eids: [null, { source: 'valid.org' }, { source: 42 }],
+            ext: { eids: ['invalid', { source: 'legacy.org' }, { source: null }] }
+          }
+        })).to.eql(['valid.org', 'legacy.org']);
+      });
+
       [undefined, {}, { user: {} }].forEach(ortb2 => {
         it(`returns an empty list for ${JSON.stringify(ortb2)}`, () => {
           expect(eidsSources(ortb2)).to.eql([]);
