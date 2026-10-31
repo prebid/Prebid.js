@@ -35,6 +35,7 @@ npx playwright install chromium
 npx gulp precompile-all-features-disabled
 npm run test:vitest
 npm run test:vitest -- --no-isolate
+VITEST_STRESS=1 npm run test:vitest -- --no-isolate
 ```
 
 Vitest and Playwright are regular development dependencies in the root
@@ -52,11 +53,17 @@ npx gulp test-only --file test/spec/libraries/boundingClientRect_spec.js
 A single-file Karma run does not validate cross-suite global-state
 interactions; these focused runs are only for comparison with the pilot.
 
-The pilot CI runs the same four specs in two modes, separately: `isolated`
-(default `isolate: true`) and `shared` (`--no-isolate`). Both disable file
-parallelism so the comparison is sequential. Shared mode can expose
-cross-file module/global-state interference, but it is not exactly the
-same as Karma's chunked Webpack bundle or browser startup semantics.
+The pilot CI runs three distinct jobs:
+
+- `isolated`: the original four-spec baseline with file isolation.
+- `shared`: the same four specs without file isolation.
+- `shared-stress`: 27 unchanged specs spanning browser utilities, bidders,
+  identity, RTD and analytics adapters, also without isolation.
+
+All three disable file parallelism. The stress job is deliberately separate
+so failures do not obscure the known-good baseline. The shared tests can
+expose cross-file module/global-state interference, but do not exactly
+reproduce Karma's chunked Webpack bundle or browser startup semantics.
 
 ## Acceptance criteria before expanding this trial
 
