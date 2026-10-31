@@ -1,0 +1,442 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/prebid/Prebid.js/blob/master/modules/genericAnalyticsSkinnyEvents.v1.schema.json",
+  "title": "Prebid.js Generic Analytics skinny preset payload v1",
+  "description": "Validation contract for JSON-serialized skinny events. Fields that may be undefined in the browser are optional on the wire. Unknown nested OpenRTB and metadata extension keys remain permitted. This schema does not cover custom options.events handlers.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/noBid"
+    },
+    {
+      "$ref": "#/$defs/bidResponse"
+    },
+    {
+      "$ref": "#/$defs/bidWon"
+    },
+    {
+      "$ref": "#/$defs/bidRequested"
+    },
+    {
+      "$ref": "#/$defs/bidTimeout"
+    }
+  ],
+  "$defs": {
+    "bidRequest": {
+      "type": "object",
+      "properties": {
+        "bidId": {
+          "type": "string"
+        },
+        "bidderRequestId": {
+          "type": "string"
+        },
+        "auctionId": {
+          "type": "string"
+        },
+        "adUnitCode": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "bidder": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "client",
+            "s2s"
+          ]
+        },
+        "mediaTypes": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "sizes": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          ]
+        },
+        "auctionsCount": {
+          "type": "number"
+        },
+        "bidRequestsCount": {
+          "type": "number"
+        },
+        "bidderRequestsCount": {
+          "type": "number"
+        },
+        "bidderWinsCount": {
+          "type": "number"
+        },
+        "ortb2Imp": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "timedOutBidderRequest": {
+      "type": "object",
+      "properties": {
+        "auctionId": {
+          "type": "string"
+        },
+        "bidderRequestId": {
+          "type": "string"
+        },
+        "bidderCode": {
+          "type": "string"
+        },
+        "ortb2": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "eidsSources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bidRequest"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "noBid": {
+      "type": "object",
+      "description": "One bid request returned no bid.",
+      "properties": {
+        "eventType": {
+          "const": "noBid"
+        },
+        "analyticsLabels": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "auctionId": {
+          "type": "string"
+        },
+        "bidId": {
+          "type": "string"
+        },
+        "bidderRequestId": {
+          "type": "string"
+        },
+        "adUnitCode": {
+          "type": "string"
+        },
+        "bidder": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "client",
+            "s2s"
+          ]
+        }
+      },
+      "required": [
+        "eventType"
+      ],
+      "additionalProperties": false
+    },
+    "bidResponse": {
+      "type": "object",
+      "description": "Selected fields from a bidder response; creative markup is excluded.",
+      "properties": {
+        "eventType": {
+          "const": "bidResponse"
+        },
+        "analyticsLabels": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "auctionId": {
+          "type": "string"
+        },
+        "adUnitCode": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "adId": {
+          "type": "string"
+        },
+        "bidder": {
+          "type": "string"
+        },
+        "bidderCode": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "originalCurrency": {
+          "type": "string"
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string"
+        },
+        "dealId": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "client",
+            "s2s"
+          ]
+        },
+        "cpm": {
+          "type": "number"
+        },
+        "originalCpm": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "requestTimestamp": {
+          "type": "number"
+        },
+        "responseTimestamp": {
+          "type": "number"
+        },
+        "timeToRespond": {
+          "type": "number"
+        },
+        "ttl": {
+          "type": "number"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "adserverTargeting": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "floorData": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "eventType"
+      ],
+      "additionalProperties": false
+    },
+    "bidWon": {
+      "type": "object",
+      "description": "Selected fields from the winning bid, including status.",
+      "properties": {
+        "eventType": {
+          "const": "bidWon"
+        },
+        "analyticsLabels": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "auctionId": {
+          "type": "string"
+        },
+        "adUnitCode": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "adId": {
+          "type": "string"
+        },
+        "bidder": {
+          "type": "string"
+        },
+        "bidderCode": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "originalCurrency": {
+          "type": "string"
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string"
+        },
+        "dealId": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "client",
+            "s2s"
+          ]
+        },
+        "cpm": {
+          "type": "number"
+        },
+        "originalCpm": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "requestTimestamp": {
+          "type": "number"
+        },
+        "responseTimestamp": {
+          "type": "number"
+        },
+        "timeToRespond": {
+          "type": "number"
+        },
+        "ttl": {
+          "type": "number"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "adserverTargeting": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "floorData": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "eventType"
+      ],
+      "additionalProperties": false
+    },
+    "bidRequested": {
+      "type": "object",
+      "description": "One bidder request, with EID source names rather than identifier values.",
+      "properties": {
+        "eventType": {
+          "const": "bidRequested"
+        },
+        "analyticsLabels": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "auctionId": {
+          "type": "string"
+        },
+        "bidderRequestId": {
+          "type": "string"
+        },
+        "bidderCode": {
+          "type": "string"
+        },
+        "ortb2": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "eidsSources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bidRequest"
+          }
+        },
+        "auctionStart": {
+          "type": "number"
+        },
+        "start": {
+          "type": "number"
+        },
+        "timeout": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "eventType"
+      ],
+      "additionalProperties": false
+    },
+    "bidTimeout": {
+      "type": "object",
+      "description": "Timed-out bids grouped by bidder request.",
+      "properties": {
+        "eventType": {
+          "const": "bidTimeout"
+        },
+        "analyticsLabels": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "bidderRequests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/timedOutBidderRequest"
+          }
+        }
+      },
+      "required": [
+        "eventType"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
