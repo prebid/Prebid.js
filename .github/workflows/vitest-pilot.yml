@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   vitest-browser-pilot:
-    name: Two existing specs in Vitest / Chromium
+    name: Existing library and bidder specs in Vitest / Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
