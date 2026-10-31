@@ -1,0 +1,51 @@
+name: NPM consumer smoke test
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/npm-consumer-smoke.yml'
+      - 'test/consumer-smoke/**'
+      - 'package.json'
+      - 'customize/**'
+      - 'plugins/**'
+      - 'gulpfile.*'
+  workflow_dispatch:
+  schedule:
+    # Recheck the latest published npm release each week.
+    - cron: '17 9 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  consumer-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout fixtures
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+
+      - name: Install isolated consumer dependencies
+        working-directory: test/consumer-smoke
+        run: npm install --no-audit --no-fund --package-lock=false
+
+      - name: Bundle with webpack/SWC and Bun, run browser smoke
+        working-directory: test/consumer-smoke
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run smoke
