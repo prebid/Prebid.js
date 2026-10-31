@@ -26,6 +26,7 @@ import {
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
+import { setupPreloadSyncs } from './userSyncPreload.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { isBidUsable } from './targeting/filters.js';
@@ -80,6 +81,9 @@ loadSession();
 
 // load the DevTools MCP module on demand when debugging is turned on
 initDevtoolsMcp();
+
+// fire the user syncs of `userSync.preloadSyncBidders` as soon as consent is available
+setupPreloadSyncs();
 
 declare module './prebidGlobal' {
   interface PrebidJS {
