@@ -4,6 +4,12 @@ import sinon from 'sinon';
 // Vitest provides Mocha-style describe/it/hooks and Chai-style expect with globals:true.
 globalThis.sinon = sinon;
 
+// Karma uses Mocha's before()/after() names. Vitest exposes their
+// beforeAll()/afterAll() equivalents, so keep these unchanged legacy suites
+// executable without modifying their source.
+globalThis.before = beforeAll;
+globalThis.after = afterAll;
+
 // The Karma bootstrap initializes this shared mock, which hooks request resets
 // into Mocha at module evaluation time. With Vitest isolate:false, imports are
 // cached across spec files, so those hooks are not re-registered for later files.
