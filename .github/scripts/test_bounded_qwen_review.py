@@ -116,6 +116,23 @@ class ReviewTests(unittest.TestCase):
             self.assertEqual(report["chunks_unreviewed"], 1)
             self.assertEqual(report["files"][0]["outcome"], "inference_timeout")
 
+    def test_truncated_json_is_unreviewed_not_error(self):
+        # Fork replay run 41087339834: output hit num_predict mid-string.
+        raw = {"message": {"content": '{"findings": [{"line": 2, "problem": "unterminated'},
+               "eval_count": 650}
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            review, "api", return_value=raw
+        ):
+            report = {"files": [], "chunks_unreviewed": 0, "skipped_files": [],
+                      "errors": [], "rejected": 0, "posted": 0}
+            review.review_chunk("test-model", "src/test.ts", PATCH, 1, 1,
+                                "a" * 40, "prebid/Prebid.js", "1", "token",
+                                set(), report, pathlib.Path(directory) / "result.json")
+            self.assertEqual(report["errors"], [])
+            self.assertEqual(report["chunks_unreviewed"], 1)
+            self.assertEqual(report["files"][0]["outcome"], "unparseable_response")
+            self.assertEqual(report["files"][0]["raw_response"], raw)
+
     def test_production_first_file_limit_skip_diagnostics(self):
         # GitHub can return test files before production files.
         files = [{"filename": f"test/spec/file{i}.js", "status": "modified", "patch": PATCH}
@@ -138,6 +155,119 @@ class ReviewTests(unittest.TestCase):
             self.assertEqual(skipped, ["test/spec/file7.js"])
             self.assertNotIn("modules/production.ts", skipped)
             self.assertIn("modules/production.ts", [item["path"] for item in report["files"]])
+
+    def test_reject_fix_that_reverts_removed_line(self):
+        # prebid.github.io#6894: the model "fixed" an intended change back.
+        diff = ("@@ -91,3 +91,3 @@\n"
+                "             var filename = \"prebid\" + form_data[\"version\"] + \".js\";\n"
+                "-            var jsBlob = new Blob([data], { type: \"text/javascript\" });\n"
+                "+            var jsBlob = new Blob([data.source], { type: \"text/javascript\" });\n")
+        finding = dict(FINDING, line=92,
+                       quote="            var jsBlob = new Blob([data.source], { type: \"text/javascript\" });",
+                       fix="var jsBlob = new Blob([data], {type: \"text/javascript\"});")
+        self.assertEqual(review.replaced_lines(diff, 92),
+                         ["            var jsBlob = new Blob([data], { type: \"text/javascript\" });"])
+        self.assertTrue(review.validate(finding, review.added_lines(diff)))
+        self.assertFalse(review.validate(finding, review.added_lines(diff), review.replaced_lines(diff, 92)))
+
+    def test_deletion_in_another_block_does_not_block_fix(self):
+        # The hunk deletes "return x >= a && x <= b;" elsewhere; fixing the
+        # flagged line to that text does not revert this block's change.
+        diff = ("@@ -1,6 +1,5 @@\n"
+                "-  return x >= a && x <= b;\n"
+                " }\n"
+                " export function inWindow(x, a, b) {\n"
+                "+  return x >= a || x <= b;\n"
+                " }\n")
+        lines = review.added_lines(diff)
+        finding = dict(FINDING, line=3)
+        self.assertEqual(review.replaced_lines(diff, 3), [])
+        self.assertTrue(review.validate(finding, lines, review.replaced_lines(diff, 3)))
+
+    def test_replaced_lines_cover_multi_line_block(self):
+        diff = ("@@ -1,4 +1,4 @@\n context\n-old one\n-old two\n+new one\n+new two\n context\n")
+        self.assertEqual(review.replaced_lines(diff, 3), ["old one", "old two"])
+        self.assertEqual(review.replaced_lines(diff, 1), [])
+        self.assertEqual(review.replaced_lines(diff, "2"), [])
+
+    # Fork replays of real fixes: patmmccann/Prebid.js#341 (Intenze #15766
+    # reverted), #342 (Missena #15850 reverted) and #343 (the Intenze fix).
+    INTENZE_BUG = ("@@ -55,7 +55,7 @@\n   imp(buildImp, bidRequest, context) {\n"
+                   "     const imp = buildImp(bidRequest, context);\n \n"
+                   "-    if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {\n"
+                   "+    if (!imp.bidfloor && bidRequest.params.bidfloor) {\n"
+                   "       imp.bidfloor = bidRequest.params.bidfloor;\n")
+    INTENZE_SPEC_DELETED = ['    it("sends a zero params.bidfloor", function () {',
+                            '          params: { placementId: "25", bidfloor: 0 },',
+                            '      expect(requests[0].data.imp[0].bidfloor).to.equal(0);']
+    INTENZE_FINDING = dict(FINDING, line=58,
+                           quote="if (!imp.bidfloor && bidRequest.params.bidfloor)",
+                           fix="if (imp.bidfloor == null && bidRequest.params.bidfloor != null)")
+
+    def intenze(self, spec_removed):
+        lines = review.added_lines(self.INTENZE_BUG)
+        finding = review.normalize_finding(self.INTENZE_FINDING, lines)
+        return finding, review.validate(finding, lines, review.replaced_lines(self.INTENZE_BUG, 58),
+                                        spec_removed)
+
+    def test_partial_quote_is_completed(self):
+        finding, _ = self.intenze([])
+        self.assertEqual(finding["quote"], "if (!imp.bidfloor && bidRequest.params.bidfloor) {")
+        self.assertEqual(finding["fix"], "if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {")
+
+    def test_tested_regression_restore_accepted(self):
+        self.assertTrue(self.intenze(self.INTENZE_SPEC_DELETED)[1])
+
+    def test_untested_revert_still_rejected(self):
+        self.assertFalse(self.intenze([])[1])
+        self.assertFalse(self.intenze(["  it('renders the creative', () => {"])[1])
+
+    def test_condition_fix_that_is_not_a_restore_rejected(self):
+        clean = ("@@ -55,7 +55,7 @@\n \n-    if (!imp.bidfloor && bidRequest.params.bidfloor) {\n"
+                 "+    if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {\n")
+        finding = dict(FINDING, line=56,
+                       quote="if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {",
+                       fix="if (!imp.bidfloor && bidRequest.params.bidfloor != null) {")
+        lines = review.added_lines(clean)
+        self.assertFalse(review.validate(finding, lines, review.replaced_lines(clean, 56),
+                                         self.INTENZE_SPEC_DELETED))
+
+    def test_tested_return_restore_accepted(self):
+        missena = ("@@ -142,5 +142,5 @@\n    */\n   isBidRequestValid: function (bid) {\n"
+                   "-    return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);\n"
+                   "+    return typeof bid === 'object' && !!bid.params.apiKey;\n   },\n")
+        finding = dict(FINDING, line=144, quote="return typeof bid === 'object' && !!bid.params.apiKey;",
+                       fix="return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);")
+        lines, replaced = review.added_lines(missena), review.replaced_lines(missena, 144)
+        self.assertTrue(review.validate(finding, lines, replaced,
+                                        ["        spec.isBidRequestValid({ ...bid, params: {} }),"]))
+        self.assertFalse(review.validate(finding, lines, replaced, []))
+
+    def test_new_adapter_false_positives_rejected(self):
+        # patmmccann/Prebid.js#349 (Ad Spiro replay): both "fixes" were wrong.
+        self.assertFalse(review.meaningful_fix(
+            "const data = converter.toORTB({ bidRequests, bidderRequest });",
+            "const data = converter.toORTB({ bidRequests, bidderRequest: bidderRequest });"))
+        self.assertFalse(review.meaningful_fix(
+            "const query = params.toString() ? `?${params}` : '';",
+            "const query = params.toString();"))
+
+    def test_literal_preserving_fixes_still_accepted(self):
+        self.assertTrue(review.meaningful_fix(
+            "return typeof bid === 'object' && !!bid.params.apiKey;",
+            "return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);"))
+        self.assertTrue(review.meaningful_fix("const sep = url.includes('?') ? '?' : '&';",
+                                              "const sep = url.includes('?') ? '&' : '?';"))
+
+    def test_ambiguous_partial_quote_not_reanchored(self):
+        lines = {1: "  if (a && b) { x(); }", 2: "  if (a && b) { y(); }"}
+        finding = dict(FINDING, line=7, quote="if (a && b) {", fix="if (a || b) {")
+        self.assertEqual(review.normalize_finding(finding, lines), finding)
+
+    def test_spec_deleted_lines_match_module(self):
+        patches = {"test/spec/modules/intenzeBidAdapter_spec.js": "@@ -1,2 +1,1 @@\n-gone\n kept",
+                   "test/spec/modules/otherBidAdapter_spec.js": "@@ -1,1 +0,0 @@\n-other"}
+        self.assertEqual(review.spec_deleted_lines("modules/intenzeBidAdapter.js", patches), ["gone"])
 
     def test_reject_incomplete_finding(self):
         finding = dict(FINDING, failure_case="")

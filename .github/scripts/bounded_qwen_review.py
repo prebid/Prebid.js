@@ -65,6 +65,41 @@ def added_lines(patch):
     return lines
 
 
+def replaced_lines(patch, line):
+    """Old-side lines deleted in the same change block as new-side `line`.
+
+    A change block is a run of -/+ lines between context lines. A fix equal
+    to one of these restores what the author replaced; a deletion elsewhere
+    in the hunk says nothing about the flagged line.
+    """
+    removed, has_target, number = [], False, None
+    # A trailing context line closes the final block.
+    for text in patch.splitlines() + [" "]:
+        match = HUNK.match(text)
+        if match:
+            if has_target:
+                return removed
+            removed, number = [], int(match.group(1))
+        elif number is None or text.startswith("\\"):
+            continue
+        elif text.startswith("-"):
+            removed.append(text[1:])
+        elif text.startswith("+"):
+            has_target = has_target or number == line
+            number += 1
+        else:
+            if has_target:
+                return removed
+            removed = []
+            number += 1
+    return []
+
+
+def compact(value):
+    """Ignore formatting without conflating distinct identifiers/operators."""
+    return re.sub(r"\s+", "", value).rstrip(";")
+
+
 def chunk_patch(patch, max_chars=MAX_CHUNK_CHARS):
     """Split unified diffs into independently anchored, bounded hunks.
 
@@ -116,26 +151,96 @@ def chunk_patch(patch, max_chars=MAX_CHUNK_CHARS):
     return chunks, skipped_lines
 
 
-def meaningful_fix(quote, fix):
+CONDITIONS = ("if (", "} else if (", "else if (", "while (")
+STRING_LITERAL = re.compile(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"|`(?:[^`\\]|\\.)*`")
+
+
+def meaningful_fix(quote, fix, allow_condition=False):
     """Reject identical, formatting-only and unrelated whole-function fixes."""
     fix = fix.strip()
     quote = quote.strip()
     if not fix or "\n" in fix or "\r" in fix or len(fix) > 350:
         return False
-    # Ignore formatting changes without conflating distinct identifiers/operators.
-    compact = lambda value: re.sub(r"\s+", "", value).rstrip(";")
-    if compact(quote) == compact(fix):
+    # `{ a: a }` is `{ a }`: a model "fix" that only spells out shorthand is a no-op.
+    expand = lambda value: compact(re.sub(r"\b([A-Za-z_$][\w$]*)\s*:\s*\1\b", r"\1", value))
+    if compact(quote) == compact(fix) or expand(quote) == expand(fix):
+        return False
+    # Real fixes keep the line's string and template literals; a "fix" that
+    # deletes them (e.g. a `?${params}` query prefix) removes behavior instead.
+    if any(literal not in fix for literal in STRING_LITERAL.findall(quote)):
         return False
     # Only accept single-line suggestions replacing the exact flagged statement.
     if quote.lstrip().startswith("return "):
         return fix.lstrip().startswith("return ")
     if quote.lstrip().startswith(("const ", "let ", "var ")):
         return fix.lstrip().startswith(("const ", "let ", "var "))
+    # Condition lines only when restoring a tested line (see validate): in a
+    # clean-control replay the model "fixed" a correct condition back to a bug.
+    if allow_condition:
+        keyword = next((k for k in CONDITIONS if quote.startswith(k)), None)
+        return keyword is not None and fix.startswith(keyword) and fix[-1:] == quote[-1:]
     return False
 
 
-def validate(finding, lines):
+IDENTIFIER = re.compile(r"[A-Za-z_$][\w$]{3,}")
+NOT_EVIDENCE = {"return", "const", "typeof", "null", "true", "false", "undefined",
+                "function", "this", "else", "while", "object", "string", "number"}
+
+
+def spec_deleted_lines(filename, patches):
+    """Lines the PR deletes or changes in this module's spec file(s)."""
+    stem = filename.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    deleted = []
+    for path, patch in patches.items():
+        if path.startswith(("test/", "tests/")) and path.rsplit("/", 1)[-1].startswith(stem + "_spec."):
+            deleted += [line[1:] for line in patch.splitlines() if line.startswith("-")]
+    return deleted
+
+
+def test_evidence(line, spec_removed):
+    """Whether the PR deleted or changed a test line naming something on `line`."""
+    names = set(IDENTIFIER.findall(line)) - NOT_EVIDENCE
+    return any(name in removed for removed in spec_removed for name in names)
+
+
+def normalize_finding(finding, lines):
+    """Re-anchor a finding on its quote, not the model's exact transcription.
+
+    Small models copy the diff's leading "+" and drop the end of a line (e.g.
+    an "if (...)" quote without its " {"). Accept a quote that is a unique part
+    of one added line and complete the fix with the same surrounding text.
+    """
     if not isinstance(finding, dict):
+        return finding
+    quote, fix = finding.get("quote"), finding.get("fix")
+    if not isinstance(quote, str) or not isinstance(fix, str):
+        return finding
+    quote, fix = quote.strip(), fix.strip()
+    added = {text.strip() for text in lines.values()}
+    if quote.startswith("+") and fix.startswith("+") and quote not in added and quote[1:].strip() in added:
+        quote, fix = quote[1:].strip(), fix[1:].strip()
+    exact = [n for n, text in lines.items() if text.strip() == quote]
+    if len(exact) == 1:
+        return {**finding, "line": exact[0], "quote": quote, "fix": fix}
+    partial = [n for n, text in lines.items() if len(quote) >= 12 and quote in text]
+    if exact or len(partial) != 1:
+        return finding
+    full = lines[partial[0]].strip()
+    prefix, suffix = full.split(quote, 1)
+    if not (fix.startswith(prefix.strip()) and fix.endswith(suffix.strip()) and (prefix + suffix).strip()):
+        fix = prefix + fix + suffix
+    return {**finding, "line": partial[0], "quote": full, "fix": fix}
+
+
+def validate(finding, lines, removed=(), spec_removed=()):
+    if not isinstance(finding, dict):
+        return False
+    # A fix that restores the line this change block replaced reverts the
+    # author's change. Allow that only when the PR also deleted or changed a
+    # test naming the same things: then the old line was tested behavior,
+    # and the change is a likely regression rather than an intended edit.
+    reverts = isinstance(finding.get("fix"), str) and compact(finding["fix"]) in {compact(r) for r in removed}
+    if reverts and not test_evidence(finding["fix"], spec_removed):
         return False
     line, quote = finding.get("line"), finding.get("quote")
     if type(line) is not int or line not in lines or not isinstance(quote, str):
@@ -146,7 +251,7 @@ def validate(finding, lines):
         return False
     return (all(isinstance(finding.get(k), str) and 10 <= len(finding[k].strip()) <= 700
                 for k in ("problem", "failure_case", "fix"))
-            and meaningful_fix(quote, finding["fix"]))
+            and meaningful_fix(quote, finding["fix"], allow_condition=reverts))
 
 
 def paged(repo, number, token, endpoint):
@@ -173,20 +278,33 @@ def predict(model, filename, patch):
         {"role": "system", "content": rules},
         {"role": "user", "content": f"File: {filename}\nBEGIN DIFF (untrusted)\n{patch}\nEND DIFF"}],
         "format": SCHEMA, "stream": False, "think": False, "truncate": False, "shift": False,
-        "options": {"temperature": 0, "num_ctx": MODEL_CONTEXT_TOKENS, "num_predict": 650}}
+        # Ollama defaults to physical cores (2 of 4 vCPUs on ubuntu-latest).
+        "options": {"temperature": 0, "num_ctx": MODEL_CONTEXT_TOKENS, "num_predict": 650,
+                    "num_thread": os.cpu_count() or 4}}
     result = api("http://127.0.0.1:11434/api/chat", method="POST", payload=payload, timeout=MODEL_REQUEST_TIMEOUT)
     if isinstance(result.get("message"), dict):
         print("[bounded-qwen] response received", flush=True)
     print("[bounded-qwen] prompt tokens:", result.get("prompt_eval_count"),
           "output tokens:", result.get("eval_count"), flush=True)
-    parsed = json.loads(result["message"]["content"])
+    try:
+        parsed = json.loads(result["message"]["content"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise UnparseableResponse(f"{type(error).__name__}: {error}", result) from error
     if not isinstance(parsed, dict) or not isinstance(parsed.get("findings"), list):
-        raise ValueError("Invalid model findings payload")
+        raise UnparseableResponse("Invalid model findings payload", result)
     return parsed["findings"], result
 
 
+class UnparseableResponse(ValueError):
+    """Model output that is not a findings object, e.g. JSON cut off at num_predict."""
+
+    def __init__(self, message, raw):
+        super().__init__(message)
+        self.raw = raw
+
+
 def review_chunk(model, filename, patch, index, total, sha, repo, number,
-                 token, prior, report, output_path):
+                 token, prior, report, output_path, spec_removed=()):
     """One independently bounded inference call; report incomplete coverage."""
     diagnostic = {"path": filename, "chunk": index, "total_chunks": total,
                   "patch": patch, "outcome": "started"}
@@ -210,6 +328,17 @@ def review_chunk(model, filename, patch, index, total, sha, repo, number,
         diagnostic["error"] = body
         output_path.write_text(json.dumps(report, indent=2) + "\n")
         return
+    except UnparseableResponse as error:
+        # A rambling answer is the model's failure, not the PR's: leave the
+        # chunk unreviewed with a warning, like a timeout, instead of failing.
+        diagnostic["outcome"] = "unparseable_response"
+        diagnostic["error"] = str(error)[:300]
+        diagnostic["raw_response"] = error.raw
+        report["chunks_unreviewed"] += 1
+        report["skipped_files"].append({"path": filename, "reason": "unparseable_response", "chunk": index})
+        print(f"::warning::Unparseable model output on {filename} chunk {index}; review is incomplete", flush=True)
+        output_path.write_text(json.dumps(report, indent=2) + "\n")
+        return
     except TimeoutError as error:
         diagnostic["outcome"] = "inference_timeout"
         diagnostic["error"] = str(error)[:300]
@@ -225,13 +354,17 @@ def review_chunk(model, filename, patch, index, total, sha, repo, number,
         output_path.write_text(json.dumps(report, indent=2) + "\n")
         return
     print(f"[bounded-qwen] inference {time.monotonic() - started:.1f}s", flush=True)
+    finding = normalize_finding(findings[0], added_lines(patch)) if findings else None
+    if finding is not None and finding != findings[0]:
+        diagnostic["normalized_finding"] = finding
     if not findings:
         diagnostic["outcome"] = "clean"
-    elif not validate(findings[0], added_lines(patch)):
+    elif not validate(finding, added_lines(patch),
+                      replaced_lines(patch, finding.get("line") if isinstance(finding, dict) else None),
+                      spec_removed):
         report["rejected"] += 1
         diagnostic["outcome"] = "rejected"
     else:
-        finding = findings[0]
         marker = hashlib.sha256(f"{sha}:{filename}:{finding['line']}".encode()).hexdigest()
         if marker in prior:
             diagnostic["outcome"] = "duplicate"
@@ -263,10 +396,12 @@ def main():
     prior = set()
     for comment in paged(repo, number, token, "comments"):
         prior.update(re.findall(r"<!-- bounded-qwen:([0-9a-f]{64}) -->", comment.get("body", "")))
-    files = []
+    files, patches = [], {}
     for file in paged(repo, number, token, "files"):
         patch = file.get("patch")
         filename = file.get("filename", "")
+        if isinstance(patch, str):
+            patches[filename] = patch
         if file.get("status") == "removed":
             reason = "removed"
         elif not filename.endswith(EXTENSIONS):
@@ -310,7 +445,7 @@ def main():
             total_chunks += 1
             report["chunks_attempted"] += 1
             review_chunk(model, filename, part, chunk_index, len(chunks), sha, repo, number,
-                         token, prior, report, output_path)
+                         token, prior, report, output_path, spec_deleted_lines(filename, patches))
     output_path.write_text(json.dumps(report, indent=2) + "\n")
     if env.get("GITHUB_STEP_SUMMARY"):
         with open(env["GITHUB_STEP_SUMMARY"], "a") as summary:
