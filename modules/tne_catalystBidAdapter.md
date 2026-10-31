@@ -37,7 +37,6 @@ ops@thenexusengine.io
 | COPPA | via `regs.coppa` |
 | sChain | ✅ |
 | User IDs / EIDs | ✅ |
-| GVL ID | 1494 |
 
 ## Example Ad Units
 

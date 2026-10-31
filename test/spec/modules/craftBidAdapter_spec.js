@@ -108,6 +108,11 @@ describe('craftAdapter', function () {
     const bidderRequest = {
       refererInfo: {
         topmostLocation: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
+      },
+      ortb2: {
+        device: {
+          ua: 'Mozilla/5.0 (test)'
+        }
       }
     };
 
@@ -132,6 +137,7 @@ describe('craftAdapter', function () {
         nodes: [],
         ver: '1.0',
       });
+      expect(data.ua).to.equal('Mozilla/5.0 (test)');
       expect(data.user).to.deep.equals({
         eids: [
           { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },

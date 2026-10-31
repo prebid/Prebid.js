@@ -1,6 +1,55 @@
-import { cmpClient, MODE_CALLBACK, MODE_RETURN } from '../../../../libraries/cmp/cmpClient.js';
+import { CMP_POLL_INTERVAL, cmpClient, MODE_CALLBACK, MODE_RETURN, pollForCmp } from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
+  describe('pollForCmp', () => {
+    let clock, findCmp, onFound, onMissing;
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+      findCmp = sinon.stub();
+      onFound = sinon.stub();
+      onMissing = sinon.stub();
+    });
+    afterEach(() => {
+      clock.restore();
+    });
+
+    it('passes a CMP that is already present to onFound', () => {
+      findCmp.returns('cmp');
+      pollForCmp(findCmp, { onFound, onMissing });
+      sinon.assert.calledWith(onFound, 'cmp');
+      sinon.assert.notCalled(onMissing);
+    });
+
+    it('calls onMissing, and stops looking, when the CMP is not present', () => {
+      pollForCmp(findCmp, { onFound, onMissing });
+      sinon.assert.calledOnce(onMissing);
+      clock.tick(CMP_POLL_INTERVAL * 2);
+      sinon.assert.calledOnce(findCmp);
+    });
+
+    describe('with wait', () => {
+      it('keeps looking until the CMP appears', () => {
+        pollForCmp(findCmp, { onFound, onMissing, wait: true });
+        clock.tick(CMP_POLL_INTERVAL);
+        sinon.assert.notCalled(onFound);
+        findCmp.returns('cmp');
+        clock.tick(CMP_POLL_INTERVAL);
+        sinon.assert.calledWith(onFound, 'cmp');
+        clock.tick(CMP_POLL_INTERVAL * 2);
+        sinon.assert.calledThrice(findCmp);
+        sinon.assert.notCalled(onMissing);
+      });
+
+      it('stops looking when stopped', () => {
+        const stop = pollForCmp(findCmp, { onFound, onMissing, wait: true });
+        stop();
+        clock.tick(CMP_POLL_INTERVAL * 2);
+        sinon.assert.calledOnce(findCmp);
+        sinon.assert.notCalled(onMissing);
+      });
+    });
+  });
+
   function mockWindow(props = {}) {
     let listeners = [];
     const win = {

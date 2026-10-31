@@ -32,5 +32,8 @@ export function getDealMeta(bid: ORTBBid): DealMeta | undefined {
   if (Number.isInteger(deal.priority)) {
     dealMeta.priority = deal.priority;
   }
+  if (typeof deal.source === 'string' && deal.source !== '') {
+    dealMeta.source = deal.source;
+  }
   return dealMeta;
 }

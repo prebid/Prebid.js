@@ -61,6 +61,14 @@ describe('Nexx360 bid adapter tests', () => {
         expect(alias.gvlid).to.equal(965);
       });
     });
+
+    // wovenwn (Woven Womens Network) is US-only and not registered on the GVL,
+    // so it must not borrow Nexx360's GVL ID.
+    it('declares wovenwn without a GVL ID', () => {
+      const alias = spec.aliases.find((a) => a.code === 'wovenwn');
+      expect(alias).to.exist;
+      expect(alias.gvlid).to.be.undefined;
+    });
   });
 
   describe('getGzipSetting', () => {
