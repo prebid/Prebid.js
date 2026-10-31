@@ -7,7 +7,6 @@ import { deepSetValue, isArray, isPlainObject, logInfo, logWarn, replaceAuctionP
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { deviceTypes, osTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 import { getTimeZone } from '../libraries/timezone/timezone.js';
@@ -132,9 +131,6 @@ function fillDevice(request: any): void {
   }
   if (device.js == null) {
     device.js = 1;
-  }
-  if (device.pxratio == null) {
-    device.pxratio = getDevicePixelRatio(window);
   }
   if (device.connectiontype == null) {
     const connectionType = getConnectionType();

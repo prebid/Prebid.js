@@ -376,7 +376,7 @@ describe('amlimediaBidAdapter', function () {
         expect(device.js).to.equal(1);
         expect([2, 4, 5]).to.include(device.devicetype);
         expect(device.os).to.be.a('string');
-        expect(device.pxratio).to.be.a('number');
+        expect(device.pxratio).to.equal(undefined);
       });
 
       it('never overrides device values present in first party data', function () {

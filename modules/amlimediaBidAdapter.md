@@ -14,7 +14,7 @@ native and audio demand. Every ad unit is sent as its own single-impression requ
 
 The request carries everything Prebid knows about the impression: first party data from
 `ortb2` / `ortb2Imp` (site, app, content, GPID, `bcat`/`badv`, `instl`), device data
-(user agent, client hints, screen size, device type, OS, pixel ratio, connection type, time zone),
+(user agent, client hints, screen size, device type, OS, connection type, time zone),
 geo when the publisher or a geolocation RTD module provides it, price floors from the floors
 module, all user ids as `eids`, the supply chain, and the GDPR, US Privacy, GPP and COPPA signals.
 Fields that moved between OpenRTB 2.5 and 2.6 (`gdpr`, `consent`, `us_privacy`, `gpp`, `gpp_sid`,
