@@ -51,6 +51,8 @@ objects (`ortb2`, `ortb2Imp`) and extensible metadata may contain additional fie
 `bidRequested` and `bidTimeout` keep global `ortb2` at bidder-request level,
 and `ortb2Imp` at individual bid-request level.
 
+Nested OpenRTB fields are not separately reinvented in TypeScript: `ortb2` comes from `DeepPartial<ORTBRequest>` and `ortb2Imp` from `DeepPartial<ORTBImp>` in Prebid's shared OpenRTB 2.6 definitions (`src/types/ortb/request.d.ts`, wrapping `iab-openrtb/v26`). Compile-time assertions in `test/types/skinnyAnalyticsEvents.ts` enforce these relationships. The JSON Schema remains deliberately permissive within these extension-bearing nested objects; it does not validate every OpenRTB field at runtime.
+
 The wire contract is regression-tested by two existing CI suites: browser tests
 compare the five formatter outputs after `JSON.stringify`/`JSON.parse` with
 `test/fixtures/genericAnalyticsSkinnyEvents.v1.json`, and the Node build-logic
