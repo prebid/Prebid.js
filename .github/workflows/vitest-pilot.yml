@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [isolated, shared, shared-stress, core-isolated, core-shared, src-utils, src-activities, src-helpers]
+        mode: [isolated, shared, shared-stress, core-isolated, core-shared, src-utils, src-activities, src-helpers, src-fpd, ortb-converter, ortb-translators, src-rendering]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -51,7 +51,7 @@ jobs:
           VITEST_SET: 'stress'
         run: timeout --signal=TERM --kill-after=10s 180s npm run test:vitest -- --no-isolate --bail=1
       - name: Run additional src suites (bounded diagnostic)
-        if: ${{ matrix.mode == 'src-utils' || matrix.mode == 'src-activities' || matrix.mode == 'src-helpers' }}
+        if: ${{ matrix.mode == 'src-utils' || matrix.mode == 'src-activities' || matrix.mode == 'src-helpers' || matrix.mode == 'src-fpd' || matrix.mode == 'ortb-converter' || matrix.mode == 'ortb-translators' || matrix.mode == 'src-rendering' }}
         env:
           VITEST_SET: ${{ matrix.mode }}
         run: timeout --signal=TERM --kill-after=10s 180s npm run test:vitest -- --bail=1
