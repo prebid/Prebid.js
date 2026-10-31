@@ -9,49 +9,16 @@ on:
       - 'test/vitest/**'
       - '.github/workflows/vitest-pilot.yml'
 
-# Temporary one-time lock refresh for this trial branch. Once the generated
-# lockfile is committed, this job and write permission will be removed.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  refresh-vitest-lockfile:
-    name: Generate pilot lockfile on PR branch
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          persist-credentials: true
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
-      - name: Generate lockfile matching root devDependencies
-        run: npm install --package-lock-only --lockfile-version=2 --ignore-scripts --no-audit --no-fund
-      - name: Commit generated lockfile if changed
-        env:
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: |
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add package-lock.json
-            git commit -m "Build: update lockfile for Vitest alongside Karma"
-            git push origin "HEAD:$BRANCH"
-          fi
-
   vitest-browser-pilot:
     name: Two existing specs in Vitest / Chromium
-    needs: refresh-vitest-lockfile
-    if: ${{ always() && (needs.refresh-vitest-lockfile.result == 'success' || needs.refresh-vitest-lockfile.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
