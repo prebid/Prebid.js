@@ -42,7 +42,25 @@ const stress = [
   'modules/id5AnalyticsAdapter'
 ];
 
-const selected = process.env.VITEST_STRESS === '1' ? stress : baseline;
+// Existing tests of /src core internals. Keep this selection separate from
+// adapter stress diagnostics to expose module/ESM compatibility in the core.
+const core = [
+  'unit/core/auctionIndex',
+  'unit/core/bidderSettings',
+  'unit/core/consentHandler',
+  'unit/core/eventTrackers',
+  'unit/core/events',
+  'unit/core/storageManager',
+  'unit/core/targetingLock',
+  'unit/core/ajax',
+  'unit/core/bidderFactory',
+  'unit/core/adapterManager',
+  'unit/core/targeting'
+];
+
+const selected = process.env.VITEST_CORE === '1'
+  ? core
+  : (process.env.VITEST_STRESS === '1' ? stress : baseline);
 
 export default defineConfig({
   root,
