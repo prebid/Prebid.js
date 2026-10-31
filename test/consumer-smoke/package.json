@@ -4,15 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "smoke": "node verify.mjs"
+    "smoke": "bun verify.mjs"
   },
   "dependencies": {
     "prebid.js": "latest"
   },
   "devDependencies": {
-    "@swc/core": "^1.16.0",
-    "puppeteer-core": "^24.0.0",
-    "swc-loader": "^0.2.7",
-    "webpack": "^5.100.0"
+    "puppeteer-core": "^24.0.0"
   }
 }
