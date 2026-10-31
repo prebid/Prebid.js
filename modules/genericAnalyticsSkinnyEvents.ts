@@ -230,6 +230,26 @@ export function bidTimeout(args: BidRequest<any>[] | ({ [index: number]: BidRequ
   };
 }
 
+/**
+ * Wire payload types for the v1 skinny analytics preset. Unlike the input types
+ * in `src/events`, these describe what the generic analytics handler receives
+ * after the skinny event formatter has run.
+ *
+ * This discriminated union can be narrowed on `eventType`; the matching JSON
+ * Schema lives in genericAnalyticsSkinnyEvents.v1.schema.json. Changing this
+ * shape incompatibly requires a new schema version.
+ */
+export type SkinnyEventPayloads = {
+  [EVENTS.NO_BID]: SkinnyNoBid;
+  [EVENTS.BID_RESPONSE]: SkinnyBidResponse;
+  [EVENTS.BID_WON]: SkinnyBidWon;
+  [EVENTS.BID_REQUESTED]: SkinnyBidRequested;
+  [EVENTS.BID_TIMEOUT]: SkinnyBidTimeout;
+};
+
+export type SkinnyEventType = keyof SkinnyEventPayloads;
+export type SkinnyEventPayload = SkinnyEventPayloads[SkinnyEventType];
+
 export const skinnyEvents = {
   [EVENTS.NO_BID]: noBid,
   [EVENTS.BID_RESPONSE]: bidResponse,
