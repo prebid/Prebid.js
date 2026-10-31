@@ -35,6 +35,13 @@ jobs:
       - name: Precompile tests and source
         run: npx gulp precompile-all-features-disabled
       - name: Run existing tests in Vitest Browser Mode
-        env:
-          VITEST_STRESS: ${{ matrix.mode == 'shared-stress' && '1' || '0' }}
+        if: ${{ matrix.mode != 'shared-stress' }}
         run: ${{ matrix.mode == 'isolated' && 'npm run test:vitest' || 'npm run test:vitest -- --no-isolate' }}
+      # Diagnostic run: the initial stress test hit many failures, then
+      # stayed alive until GitHub cancelled it. Bail early to capture the
+      # first actionable stack trace and cap pathological cleanup hangs.
+      - name: Diagnose first shared-stress failure (bounded)
+        if: ${{ matrix.mode == 'shared-stress' }}
+        env:
+          VITEST_STRESS: '1'
+        run: timeout --signal=TERM --kill-after=10s 180s npm run test:vitest -- --no-isolate --bail=1
