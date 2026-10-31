@@ -216,6 +216,39 @@ describe('floxisBidAdapter', function () {
       expect(data.ext.prebid.version).to.equal('$prebid.version$');
     });
 
+    describe('ext.auction_elapsed_ms', function () {
+      let clock;
+      const NOW = 1_700_000_000_000;
+
+      beforeEach(function () {
+        clock = sinon.useFakeTimers({ now: NOW, toFake: ['Date'] });
+      });
+
+      afterEach(function () {
+        clock.restore();
+      });
+
+      const elapsedFor = (auctionStart) =>
+        spec.buildRequests([validBannerBid], { ...bidderRequest, auctionStart })[0].data.ext;
+
+      it('reports the time since auction start beside ext.prebid', function () {
+        const ext = elapsedFor(NOW - 237);
+        expect(ext.auction_elapsed_ms).to.equal(237);
+        expect(ext.prebid.adapter).to.equal('floxis');
+      });
+
+      it('accepts the 0 and 60000 bounds', function () {
+        expect(elapsedFor(NOW).auction_elapsed_ms).to.equal(0);
+        expect(elapsedFor(NOW - 60000).auction_elapsed_ms).to.equal(60000);
+      });
+
+      it('is omitted when auctionStart is missing or the value is out of range', function () {
+        [undefined, null, '1700000000000', NaN, Infinity, NOW + 1, NOW - 60001].forEach((auctionStart) => {
+          expect(elapsedFor(auctionStart)).to.not.have.property('auction_elapsed_ms');
+        });
+      });
+    });
+
     it('should build banner imp correctly', function () {
       const requests = spec.buildRequests([validBannerBid], bidderRequest);
       const imp = requests[0].data.imp[0];
@@ -1227,18 +1260,28 @@ describe('floxisBidAdapter', function () {
   });
 
   describe('onTimeout', function () {
-    let politeStub;
+    let fetchStub;
 
     beforeEach(function () {
-      // Telemetry beacons route through politeTriggerPixel(url, 'omit'); stub it to capture the call.
-      politeStub = sinon.stub(utils, 'politeTriggerPixel');
+      fetchStub = sinon.stub(window, 'fetch').resolves();
     });
 
     afterEach(function () {
-      politeStub.restore();
+      fetchStub.restore();
     });
 
-    const beaconUrl = (i = 0) => politeStub.getCall(i).args[0];
+    const beaconRequest = (i = 0) => fetchStub.getCall(i).args[0];
+    const beaconUrl = (i = 0) => beaconRequest(i).url;
+    const beaconUrls = () => fetchStub.getCalls().map(({ args }) => args[0].url);
+    const bidIdsOf = (url) => new URL(url).searchParams.get('bidIds');
+
+    const sentBid = (bidId, params) => ({ ...validBannerBid, bidId, params });
+    const buildAndTimeOut = (bids, timeout = 2000) => {
+      spec.buildRequests(bids, { bidderCode: 'floxis', auctionId: 'a1' });
+      // Core hands every timed-out bid the params of all of the bidder's bids on its ad unit.
+      const adUnitParams = bids.map((b) => b.params);
+      spec.onTimeout(bids.map((b) => ({ bidId: b.bidId, adUnitCode: b.adUnitCode, params: adUnitParams, timeout })));
+    };
 
     it('reports each timed-out seat from core ad unit params once across ad units', function () {
       const adUnits = [
@@ -1255,15 +1298,15 @@ describe('floxisBidAdapter', function () {
         { code: 'timeout-unit-2', bids: [{ bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } }] }
       ];
       adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'floxis', adUnitCode: code, auctionId: 'private-auction' })), 2000);
-      expect(politeStub.getCalls().map(({ args }) => args)).to.deep.equal([
-        ['https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000', 'omit'],
-        ['https://px-us-e.floxis.tech/event?event=timeout&seat=Seat2&region=eu&duration=2000', 'omit']
+      expect(beaconUrls()).to.deep.equal([
+        'https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000',
+        'https://px-us-e.floxis.tech/event?event=timeout&seat=Seat2&region=eu&duration=2000'
       ]);
     });
 
     it('should fire a timeout event beacon to the pinned us-e host', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
-      expect(politeStub.calledOnce).to.be.true;
+      expect(fetchStub.calledOnce).to.be.true;
       const url = beaconUrl();
       expect(url).to.include('https://px-us-e.floxis.tech/event');
       expect(url).to.include('event=timeout');
@@ -1273,10 +1316,92 @@ describe('floxisBidAdapter', function () {
       expect(url).not.to.match(/[?&]auctionId=/);
     });
 
-    it('should send the beacon cookieless via politeTriggerPixel (credentials omitted)', function () {
-      spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
-      expect(politeStub.calledOnce).to.be.true;
-      expect(politeStub.firstCall.args[1]).to.equal('omit'); // no Floxis sync cookie rides along
+    it('sends the beacon at once as a cookieless keepalive fetch, not on the background task queue', function () {
+      const politeStub = sinon.stub(utils, 'politeTriggerPixel');
+      const backgroundStub = sinon.stub(utils, 'runBackgroundTask');
+      const pixelStub = sinon.stub(utils, 'triggerPixel');
+      try {
+        spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
+        expect(fetchStub.calledOnce).to.be.true;
+        const request = beaconRequest();
+        expect(request.method).to.equal('GET');
+        expect(request.mode).to.equal('no-cors');
+        expect(request.credentials).to.equal('omit'); // no Floxis sync cookie rides along
+        expect(request.keepalive).to.be.true;
+        expect(politeStub.called).to.be.false;
+        expect(backgroundStub.called).to.be.false;
+        expect(pixelStub.called).to.be.false;
+      } finally {
+        politeStub.restore();
+        backgroundStub.restore();
+        pixelStub.restore();
+      }
+    });
+
+    it('never falls back to a cookie-carrying image pixel when the fetch fails', async function () {
+      fetchStub.rejects(new Error('offline'));
+      const pixelStub = sinon.stub(utils, 'triggerPixel');
+      try {
+        expect(() => spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }])).not.to.throw();
+        await fetchStub.firstCall.returnValue.catch(() => {});
+        await Promise.resolve();
+        expect(pixelStub.called).to.be.false;
+      } finally {
+        pixelStub.restore();
+      }
+    });
+
+    it('carries the timed-out bidIds of exactly its own (seat, region)', function () {
+      const gmtbUs = { seat: 'Gmtb', region: 'us-e' };
+      const seat2Eu = { seat: 'Seat2', region: 'eu' };
+      buildAndTimeOut([sentBid('t-own-1', gmtbUs), sentBid('t-own-2', seat2Eu), sentBid('t-own-3', gmtbUs)]);
+      expect(beaconUrls()).to.deep.equal([
+        'https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000&bidIds=t-own-1%2Ct-own-3',
+        'https://px-us-e.floxis.tech/event?event=timeout&seat=Seat2&region=eu&duration=2000&bidIds=t-own-2'
+      ]);
+    });
+
+    it('carries the bidIds that core hands to the timeout hook', function () {
+      const bid = sentBid('t-core-1', { seat: 'Gmtb', region: 'us-e' });
+      spec.buildRequests([bid], { bidderCode: 'floxis', auctionId: 'a1' });
+      const adUnits = [{ code: bid.adUnitCode, bids: [{ bidder: 'floxis', params: bid.params }] }];
+      adapterManager.callTimedOutBidders(adUnits, [{ bidder: 'floxis', bidId: bid.bidId, adUnitCode: bid.adUnitCode, auctionId: 'a1' }], 1500);
+      expect(beaconUrls()).to.deep.equal([
+        'https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=1500&bidIds=t-core-1'
+      ]);
+    });
+
+    it('caps bidIds at 32 per beacon', function () {
+      const params = { seat: 'Gmtb', region: 'us-e' };
+      const bids = Array.from({ length: 40 }, (_, i) => sentBid(`t-cap-${i}`, params));
+      buildAndTimeOut(bids);
+      expect(fetchStub.calledOnce).to.be.true;
+      expect(bidIdsOf(beaconUrl()).split(',')).to.deep.equal(bids.slice(0, 32).map((b) => b.bidId));
+    });
+
+    it('drops bidIds that are not 1-64 characters of [A-Za-z0-9_-]', function () {
+      const params = { seat: 'Gmtb', region: 'us-e' };
+      buildAndTimeOut([
+        sentBid('t-valid_A9', params),
+        sentBid('bad id', params),
+        sentBid('a,b', params),
+        sentBid('x'.repeat(65), params),
+        sentBid('y'.repeat(64), params)
+      ]);
+      expect(bidIdsOf(beaconUrl())).to.equal(`t-valid_A9,${'y'.repeat(64)}`);
+    });
+
+    it('omits bidIds for bids it never sent', function () {
+      spec.onTimeout([{ bidId: 't-never-sent', params: { seat: 'Gmtb' }, timeout: 2000 }]);
+      expect(beaconUrl()).to.equal('https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000');
+    });
+
+    it('reports a sent bidId in one timeout only', function () {
+      const bid = sentBid('t-once-1', { seat: 'Gmtb', region: 'us-e' });
+      buildAndTimeOut([bid]);
+      spec.onTimeout([{ bidId: bid.bidId, params: [bid.params], timeout: 2000 }]);
+      expect(bidIdsOf(beaconUrl(0))).to.equal('t-once-1');
+      expect(bidIdsOf(beaconUrl(1))).to.be.null;
     });
 
     it('should beacon to px-us-e even when region is eu (host is NOT region-derived)', function () {
@@ -1292,7 +1417,7 @@ describe('floxisBidAdapter', function () {
         { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' },
         { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }
       ]);
-      expect(politeStub.callCount).to.equal(1);
+      expect(fetchStub.callCount).to.equal(1);
     });
 
     it('should emit one beacon per distinct seat+region pair', function () {
@@ -1300,12 +1425,12 @@ describe('floxisBidAdapter', function () {
         { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 1000, auctionId: 'a1' },
         { params: { seat: 'Seat2', region: 'us-e' }, timeout: 1000, auctionId: 'a1' }
       ]);
-      expect(politeStub.callCount).to.equal(2);
+      expect(fetchStub.callCount).to.equal(2);
     });
 
     it('should not throw on an empty array', function () {
       expect(() => spec.onTimeout([])).not.to.throw();
-      expect(politeStub.called).to.be.false;
+      expect(fetchStub.called).to.be.false;
     });
 
     it('should not throw when called with a non-array', function () {
@@ -1315,17 +1440,17 @@ describe('floxisBidAdapter', function () {
 
     it('should skip entries with missing params', function () {
       expect(() => spec.onTimeout([{ timeout: 2000, auctionId: 'a1' }])).not.to.throw();
-      expect(politeStub.called).to.be.false;
+      expect(fetchStub.called).to.be.false;
     });
 
     it('should skip entries with no seat', function () {
       spec.onTimeout([{ params: { region: 'us-e' }, timeout: 2000 }]);
-      expect(politeStub.called).to.be.false;
+      expect(fetchStub.called).to.be.false;
     });
 
     it('should default region to us-e when region is absent from params', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 500 }]);
-      expect(politeStub.calledOnce).to.be.true;
+      expect(fetchStub.calledOnce).to.be.true;
       const url = beaconUrl();
       expect(url).to.include('region=us-e');
     });

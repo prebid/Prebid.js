@@ -131,7 +131,9 @@ Client-observed auction timeouts and bidder transport errors are reported by def
 pbjs.setConfig({ adapex: { enableTelemetry: false } });
 ```
 
-Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, publisher domain) and no user, device or auction identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
+Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons. Timeout beacons are sent immediately, since the background task queue drops them on busy pages; error beacons are scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, publisher domain) and no user, device or auction identifier; a timeout beacon also lists the timed-out bid ids (`bidIds`, at most 32), the same random per-bid ids already sent as `imp.id`. Consent signals are passed through where available. Each beacon fires at most once per seat per event.
+
+The bid request carries `ext.auction_elapsed_ms`, the milliseconds between the auction start and the moment the request was built.
 
 For split requests, transport errors are reported only for the seat identified by the failed response URL. If a network failure provides no URL and multiple seats were requested, the error beacon is omitted to avoid attributing the failure to healthy seats.
 
