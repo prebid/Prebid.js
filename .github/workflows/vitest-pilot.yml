@@ -14,7 +14,11 @@ permissions:
 
 jobs:
   vitest-browser-pilot:
-    name: Existing library and bidder specs in Vitest / Chromium
+    name: Vitest Chromium (${{ matrix.isolation }})
+    strategy:
+      fail-fast: false
+      matrix:
+        isolation: [isolated, shared]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -31,4 +35,4 @@ jobs:
       - name: Precompile tests and source
         run: npx gulp precompile-all-features-disabled
       - name: Run existing tests in Vitest Browser Mode
-        run: npm run test:vitest
+        run: ${{ matrix.isolation == 'shared' && 'npm run test:vitest -- --no-isolate' || 'npm run test:vitest' }}
