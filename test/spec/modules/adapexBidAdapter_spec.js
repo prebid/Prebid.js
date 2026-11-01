@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { isValid, newBidder } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
@@ -800,27 +801,24 @@ describe('adapexBidAdapter', function () {
 
   describe('telemetry', function () {
     let politeStub;
-    let fetchStub;
 
     beforeEach(function () {
       politeStub = sinon.stub(utils, 'politeTriggerPixel');
-      fetchStub = sinon.stub(window, 'fetch').resolves();
     });
 
     afterEach(function () {
       politeStub.restore();
-      fetchStub.restore();
       config.resetConfig();
     });
 
-    const timeoutUrls = () => fetchStub.getCalls().map(({ args }) => args[0].url);
+    const timeoutUrls = () => server.requests.map(({ url }) => url);
 
     it('sends no telemetry when the publisher disables it', function () {
       config.setConfig({ adapex: { enableTelemetry: false } });
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
       spec.onBidderError({ error: { status: 500 }, bidderRequest: { bids: [validBannerBid] } });
       expect(politeStub.called).to.be.false;
-      expect(fetchStub.called).to.be.false;
+      expect(server.requests).to.be.empty;
       expect(spec.buildRequests([validBannerBid], bidderRequest)).to.have.lengthOf(1);
     });
 
@@ -836,7 +834,7 @@ describe('adapexBidAdapter', function () {
     it('sends telemetry when the publisher enables it explicitly', function () {
       config.setConfig({ adapex: { enableTelemetry: true } });
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
-      expect(fetchStub.calledOnce).to.be.true;
+      expect(server.requests).to.have.lengthOf(1);
     });
 
     [false, true].forEach((enableTIDs) => {
@@ -889,8 +887,8 @@ describe('adapexBidAdapter', function () {
 
       it('beacons cookieless to sync.adapex.io', function () {
         spec.onTimeout([{ params: { seat: 'Gmtb', region: 'eu' }, timeout: 2000, auctionId: 'a1' }]);
-        expect(fetchStub.calledOnce).to.be.true;
-        const request = fetchStub.firstCall.args[0];
+        expect(server.requests).to.have.lengthOf(1);
+        const request = server.requests[0].fetch.request;
         expect(request.url).to.equal('https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000');
         expect(request.credentials).to.equal('omit');
         expect(request.keepalive).to.be.true;
@@ -919,13 +917,13 @@ describe('adapexBidAdapter', function () {
           { params: {}, timeout: 1 },
           { timeout: 1 }
         ]);
-        expect(fetchStub.callCount).to.equal(2);
+        expect(server.requests).to.have.lengthOf(2);
       });
 
       it('tolerates non-array input', function () {
         expect(() => spec.onTimeout(null)).to.not.throw();
         expect(() => spec.onTimeout([null])).to.not.throw();
-        expect(fetchStub.called).to.be.false;
+        expect(server.requests).to.be.empty;
       });
     });
 

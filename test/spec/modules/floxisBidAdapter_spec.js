@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { server } from 'test/mocks/xhr.js';
 import adapterManager from 'src/adapterManager.js';
 import { registerActivityControl } from 'src/activities/rules.js';
 import { ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD } from 'src/activities/activities.js';
@@ -1260,19 +1261,9 @@ describe('floxisBidAdapter', function () {
   });
 
   describe('onTimeout', function () {
-    let fetchStub;
-
-    beforeEach(function () {
-      fetchStub = sinon.stub(window, 'fetch').resolves();
-    });
-
-    afterEach(function () {
-      fetchStub.restore();
-    });
-
-    const beaconRequest = (i = 0) => fetchStub.getCall(i).args[0];
-    const beaconUrl = (i = 0) => beaconRequest(i).url;
-    const beaconUrls = () => fetchStub.getCalls().map(({ args }) => args[0].url);
+    const beaconRequest = (i = 0) => server.requests[i].fetch.request;
+    const beaconUrl = (i = 0) => server.requests[i].url;
+    const beaconUrls = () => server.requests.map(({ url }) => url);
     const bidIdsOf = (url) => new URL(url).searchParams.get('bidIds');
 
     const sentBid = (bidId, params) => ({ ...validBannerBid, bidId, params });
@@ -1306,7 +1297,7 @@ describe('floxisBidAdapter', function () {
 
     it('should fire a timeout event beacon to the pinned us-e host', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
-      expect(fetchStub.calledOnce).to.be.true;
+      expect(server.requests).to.have.lengthOf(1);
       const url = beaconUrl();
       expect(url).to.include('https://px-us-e.floxis.tech/event');
       expect(url).to.include('event=timeout');
@@ -1322,7 +1313,7 @@ describe('floxisBidAdapter', function () {
       const pixelStub = sinon.stub(utils, 'triggerPixel');
       try {
         spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
-        expect(fetchStub.calledOnce).to.be.true;
+        expect(server.requests).to.have.lengthOf(1);
         const request = beaconRequest();
         expect(request.method).to.equal('GET');
         expect(request.mode).to.equal('no-cors');
@@ -1339,11 +1330,11 @@ describe('floxisBidAdapter', function () {
     });
 
     it('never falls back to a cookie-carrying image pixel when the fetch fails', async function () {
-      fetchStub.rejects(new Error('offline'));
       const pixelStub = sinon.stub(utils, 'triggerPixel');
       try {
         expect(() => spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }])).not.to.throw();
-        await fetchStub.firstCall.returnValue.catch(() => {});
+        server.requests[0].error(new Error('offline'));
+        await server.requests[0].fetch.promise.catch(() => {});
         await Promise.resolve();
         expect(pixelStub.called).to.be.false;
       } finally {
@@ -1375,7 +1366,7 @@ describe('floxisBidAdapter', function () {
       const params = { seat: 'Gmtb', region: 'us-e' };
       const bids = Array.from({ length: 40 }, (_, i) => sentBid(`t-cap-${i}`, params));
       buildAndTimeOut(bids);
-      expect(fetchStub.calledOnce).to.be.true;
+      expect(server.requests).to.have.lengthOf(1);
       expect(bidIdsOf(beaconUrl()).split(',')).to.deep.equal(bids.slice(0, 32).map((b) => b.bidId));
     });
 
@@ -1417,7 +1408,7 @@ describe('floxisBidAdapter', function () {
         { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' },
         { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }
       ]);
-      expect(fetchStub.callCount).to.equal(1);
+      expect(server.requests).to.have.lengthOf(1);
     });
 
     it('should emit one beacon per distinct seat+region pair', function () {
@@ -1425,12 +1416,12 @@ describe('floxisBidAdapter', function () {
         { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 1000, auctionId: 'a1' },
         { params: { seat: 'Seat2', region: 'us-e' }, timeout: 1000, auctionId: 'a1' }
       ]);
-      expect(fetchStub.callCount).to.equal(2);
+      expect(server.requests).to.have.lengthOf(2);
     });
 
     it('should not throw on an empty array', function () {
       expect(() => spec.onTimeout([])).not.to.throw();
-      expect(fetchStub.called).to.be.false;
+      expect(server.requests).to.be.empty;
     });
 
     it('should not throw when called with a non-array', function () {
@@ -1440,17 +1431,17 @@ describe('floxisBidAdapter', function () {
 
     it('should skip entries with missing params', function () {
       expect(() => spec.onTimeout([{ timeout: 2000, auctionId: 'a1' }])).not.to.throw();
-      expect(fetchStub.called).to.be.false;
+      expect(server.requests).to.be.empty;
     });
 
     it('should skip entries with no seat', function () {
       spec.onTimeout([{ params: { region: 'us-e' }, timeout: 2000 }]);
-      expect(fetchStub.called).to.be.false;
+      expect(server.requests).to.be.empty;
     });
 
     it('should default region to us-e when region is absent from params', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 500 }]);
-      expect(fetchStub.calledOnce).to.be.true;
+      expect(server.requests).to.have.lengthOf(1);
       const url = beaconUrl();
       expect(url).to.include('region=us-e');
     });

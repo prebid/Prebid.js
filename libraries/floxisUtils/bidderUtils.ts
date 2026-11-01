@@ -8,6 +8,7 @@ import type { USPConsentData } from '../../src/types/consent/usp.d.ts';
 import type { GPPConsentData } from '../../src/types/consent/gpp.d.ts';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { ortbConverter } from '../ortbConverter/converter.js';
+import { fetch as prebidFetch } from '../../src/ajax.js';
 import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID, deepAccess } from '../../src/utils.js';
 import { isActivityAllowed } from '../../src/activities/rules.js';
 import { activityParams } from '../../src/activities/activityParams.js';
@@ -151,9 +152,8 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
   // Sent at once rather than on the background task queue, which loses beacons from pages whose main thread is
   // busy; credentials are omitted and there is no image fallback, so the beacon never carries cookies.
   function sendBeaconNow(url: string) {
-    if (!window.fetch || !window.Request) return;
     try {
-      window.fetch(new Request(url, { method: 'GET', mode: 'no-cors', credentials: 'omit', keepalive: true })).catch(() => {});
+      prebidFetch(url, { method: 'GET', mode: 'no-cors', credentials: 'omit', keepalive: true }).catch(() => {});
     } catch (e) { }
   }
 
