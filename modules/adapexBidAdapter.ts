@@ -25,7 +25,7 @@ declare module '../src/config' {
 const BIDDER_CODE = 'adapex';
 const GVLID = 1609;
 const BID_HOST = 'hb.adapex.io';
-const SYNC_ORIGIN = 'https://sync.adapex.io';
+const SYNC_ORIGIN = 'https://px-us-e.floxis.tech';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -40,8 +40,7 @@ export const spec = createFloxisSpec({
   getBidHost: () => BID_HOST,
   getSyncOrigin: () => SYNC_ORIGIN,
   telemetryOrigin: SYNC_ORIGIN,
-  isTelemetryEnabled: () => config.getConfig('adapex')?.enableTelemetry !== false,
-  pinSyncOrigin: true
+  isTelemetryEnabled: () => config.getConfig('adapex')?.enableTelemetry !== false
 });
 
 registerBidder(spec);
