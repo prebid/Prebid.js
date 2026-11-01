@@ -1548,6 +1548,35 @@ describe('auctionmanager.js', function () {
           }).to.not.throw();
           expect(prepared.renderer).to.not.exist;
         });
+
+        describe('bid-level configuration takes precedence over adUnit-level', () => {
+          function prepare(adUnitProps, bidProps) {
+            const adUnit = {
+              code: 'precedence',
+              mediaTypes: { banner: { sizes: [[300, 250]] } },
+              bids: [{ bidder: BIDDER_CODE, params: {}, ...bidProps }],
+              ...adUnitProps,
+            };
+            const [request] = adapterManager.makeBidRequests.wrappedMethod([adUnit], 'precedence-auction', Date.now(), 1000);
+            const index = {
+              getAdUnit: () => adUnit,
+              getBidRequest: () => request.bids[0],
+              getMediaTypes: () => request.bids[0].mediaTypes,
+            };
+            return auctionModule.getPreparedBidForAuction({ cpm: 1, bidderCode: BIDDER_CODE, mediaType: 'banner' }, { index });
+          }
+
+          it('for renderer', () => {
+            const render = () => null;
+            const prepared = prepare({ renderer: { url: 'adunit.js', render } }, { renderer: { url: 'bid.js', render } });
+            expect(prepared.renderer.url).to.eql('bid.js');
+          });
+
+          it('for safeRenderer', () => {
+            const prepared = prepare({ safeRenderer: { url: 'adunit-safe.js' } }, { safeRenderer: { url: 'bid-safe.js' } });
+            expect(prepared.safeRenderer.url).to.eql('bid-safe.js');
+          });
+        });
       });
 
       it('installs publisher-defined backup renderers on bids', function () {

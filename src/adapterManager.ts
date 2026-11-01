@@ -272,7 +272,13 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
     result.push(
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         const [tid, tidSource] = getTid(bid.bidder, adUnit.transactionId, bid.ortb2Imp?.ext?.tid ?? adUnit.ortb2Imp?.ext?.tid);
-        bid = Object.assign({}, bid,
+        // AdUnit-level properties act as defaults: a property set on the
+        // individual bid (adUnit.bids[]) takes precedence over the same
+        // property set on the adUnit, matching the documented behavior for
+        // `renderer` (and `safeRenderer`, which is not copied here at all).
+        bid = Object.assign({},
+          getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES),
+          bid,
           {
             ortb2Imp: mergeDeep(
               {},
@@ -280,7 +286,6 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
               bid.ortb2Imp,
               { ext: { tid, tidSource } })
           },
-          getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES),
         );
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes;
