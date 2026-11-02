@@ -34,8 +34,7 @@ describe('adLoader', function () {
   });
 
   afterEach(function () {
-    utilsinsertElementStub.restore();
-    utilsLogErrorStub.restore();
+    sandbox.restore();
   });
 
   describe('loadExternalScript', function () {
@@ -71,17 +70,49 @@ describe('adLoader', function () {
       const callback = sinon.stub();
       adLoader.loadExternalScript('test-1', MODULE_TYPE_PREBID, 'debugging', callback);
       await flush();
-      insertedScript().onload();
+      insertedScript().dispatchEvent(new Event('load'));
       await flush();
       sinon.assert.called(callback);
     });
 
     it('cleans up script listeners once loaded', async () => {
+      const added = sandbox.spy(EventTarget.prototype, 'addEventListener');
+      const removed = sandbox.spy(EventTarget.prototype, 'removeEventListener');
       adLoader.loadExternalScript('test-cleanup', MODULE_TYPE_PREBID, 'debugging', sinon.stub());
       await flush();
-      insertedScript().onload();
+      insertedScript().dispatchEvent(new Event('load'));
       await flush();
       expect(scriptEl.onload).to.equal(null);
+      expect(scriptEl.onerror).to.equal(null);
+      added.getCalls().filter(call => call.thisValue === scriptEl).forEach(({ args: [type, listener] }) => {
+        const wasRemoved = removed.getCalls().some(call => call.thisValue === scriptEl && call.args[0] === type && call.args[1] === listener);
+        expect(wasRemoved, `'${type}' listener was not removed`).to.be.true;
+      });
+    });
+
+    it('settles when the caller sets onerror on the returned tag', async () => {
+      const callback = { error: sinon.stub() };
+      const onerror = sinon.stub();
+      const tag = adLoader.loadExternalScript('test-caller-onerror', MODULE_TYPE_PREBID, 'debugging', callback);
+      tag.onerror = onerror;
+      tag.dispatchEvent(new Event('error'));
+      await flush();
+      sinon.assert.calledOnce(onerror);
+      sinon.assert.calledOnce(callback.error);
+      adLoader.loadExternalScript('test-caller-onerror', MODULE_TYPE_PREBID, 'debugging');
+      await flush();
+      sinon.assert.calledTwice(utilsinsertElementStub);
+    });
+
+    it('settles when the caller sets onload on the returned tag', async () => {
+      const callback = sinon.stub();
+      const onload = sinon.stub();
+      const tag = adLoader.loadExternalScript('test-caller-onload', MODULE_TYPE_PREBID, 'debugging', callback);
+      tag.onload = onload;
+      tag.dispatchEvent(new Event('load'));
+      await flush();
+      sinon.assert.calledOnce(onload);
+      sinon.assert.calledOnce(callback);
     });
 
     it('should run callback as an object', async () => {
@@ -90,7 +121,7 @@ describe('adLoader', function () {
       };
       adLoader.loadExternalScript('test-2', MODULE_TYPE_PREBID, 'debugging', callback);
       await flush();
-      insertedScript().onload();
+      insertedScript().dispatchEvent(new Event('load'));
       await flush();
       sinon.assert.called(callback.success);
     });
@@ -112,7 +143,7 @@ describe('adLoader', function () {
     it('runs callback when the script was already loaded', async () => {
       adLoader.loadExternalScript('test-cached-loaded', MODULE_TYPE_PREBID, 'debugging', sinon.stub());
       await flush();
-      insertedScript().onload();
+      insertedScript().dispatchEvent(new Event('load'));
       await flush();
       const callback = sinon.stub();
       adLoader.loadExternalScript('test-cached-loaded', MODULE_TYPE_PREBID, 'debugging', callback);
@@ -131,7 +162,7 @@ describe('adLoader', function () {
       await flush();
       sinon.assert.calledTwice(utilsinsertElementStub);
       sinon.assert.notCalled(callback.error);
-      scriptEl.onload();
+      scriptEl.dispatchEvent(new Event('load'));
       await flush();
       sinon.assert.calledOnce(callback.success);
     });
@@ -154,7 +185,7 @@ describe('adLoader', function () {
       callbacks.forEach(cb => adLoader.loadExternalScript('test-queued', MODULE_TYPE_PREBID, 'debugging', cb));
       await flush();
       callbacks.forEach(cb => sinon.assert.notCalled(cb));
-      insertedScript().onload();
+      insertedScript().dispatchEvent(new Event('load'));
       await flush();
       callbacks.forEach(cb => sinon.assert.calledOnce(cb));
       sinon.assert.calledOnce(utilsinsertElementStub);
@@ -165,7 +196,7 @@ describe('adLoader', function () {
       adLoader.loadExternalScript('test-throws-others', MODULE_TYPE_PREBID, 'debugging', () => { throw new Error(); });
       adLoader.loadExternalScript('test-throws-others', MODULE_TYPE_PREBID, 'debugging', callback);
       await flush();
-      insertedScript().onload();
+      insertedScript().dispatchEvent(new Event('load'));
       await flush();
       sinon.assert.calledOnce(callback);
     });
@@ -173,7 +204,7 @@ describe('adLoader', function () {
     it('logs an error when a callback throws', async () => {
       adLoader.loadExternalScript('test-throws', MODULE_TYPE_PREBID, 'debugging', () => { throw new Error(); });
       await flush();
-      insertedScript().onload();
+      insertedScript().dispatchEvent(new Event('load'));
       await flush();
       sinon.assert.called(utilsLogErrorStub);
     });
@@ -289,26 +320,26 @@ describe('adLoader', function () {
     });
 
     it('should not insert the same element a second time', async () => {
-      utilsinsertElementStub.callsFake(elm => elm.onload());
+      utilsinsertElementStub.callsFake(elm => elm.dispatchEvent(new Event('load')));
       await preloadExternalScript('https://example.com', 'type', 'code');
       await preloadExternalScript('https://example.com', 'type', 'otherCode');
       sinon.assert.calledOnce(utilsinsertElementStub);
     });
 
     it('should resolve returned promise on load', async () => {
-      utilsinsertElementStub.callsFake(elm => elm.onload());
+      utilsinsertElementStub.callsFake(elm => elm.dispatchEvent(new Event('load')));
       await preloadExternalScript('url', 'type', 'code');
     });
     it('should reject returned promise on error', async () => {
-      const err = new Error();
-      utilsinsertElementStub.callsFake(elm => elm.onerror(err));
-      expect(await rejectionOf(preloadExternalScript('url', 'type', 'code'))).to.equal(err);
+      const ev = new Event('error');
+      utilsinsertElementStub.callsFake(elm => elm.dispatchEvent(ev));
+      expect(await rejectionOf(preloadExternalScript('url', 'type', 'code'))).to.equal(ev);
     });
 
     it('should not cache a load error', async () => {
-      utilsinsertElementStub.callsFake(elm => setTimeout(() => elm.onerror(new Error('first load failed'))));
+      utilsinsertElementStub.callsFake(elm => setTimeout(() => elm.dispatchEvent(new Event('error'))));
       await rejectionOf(preloadExternalScript('url', 'type', 'code'));
-      utilsinsertElementStub.callsFake(elm => elm.onload());
+      utilsinsertElementStub.callsFake(elm => elm.dispatchEvent(new Event('load')));
       await preloadExternalScript('url', 'type', 'code');
       sinon.assert.calledTwice(utilsinsertElementStub);
     });
