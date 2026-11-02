@@ -44,10 +44,10 @@ var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
 
-// Minimal stand-in for a real bid adapter, registered under the bidder code that the fixtures use,
-// so that these tests do not depend on any particular adapter's request or response format.
+// Minimal stand-in for a real bid adapter, so that these tests do not depend on any particular
+// adapter's request or response format.
 // Responses are expected as `{bids: [...]}`, one entry (minus `requestId`) per bid request.
-const STUB_BIDDER = 'appnexus';
+const STUB_BIDDER = 'msft';
 const stubBidderSpec = {
   code: STUB_BIDDER,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -602,12 +602,12 @@ describe('Unit: Prebid Module', function () {
       currentPriceBucket = configObj.getConfig('priceGranularity');
       configObj.setConfig({ priceGranularity: customConfigObject });
       sinon.stub(adapterManager, 'makeBidRequests').callsFake(() => ([{
-        'bidderCode': 'appnexus',
+        'bidderCode': 'msft',
         'auctionId': '20882439e3238c',
         'bidderRequestId': '331f3cf3f1d9c8',
         'bids': [
           {
-            'bidder': 'appnexus',
+            'bidder': 'msft',
             'params': {
               'placementId': '10433394'
             },
@@ -649,7 +649,7 @@ describe('Unit: Prebid Module', function () {
         code: 'div-gpt-ad-1460505748561-0',
         sizes: [[300, 250], [300, 600]],
         bids: [{
-          bidder: 'appnexus',
+          bidder: 'msft',
           params: {
             placementId: '10433394'
           }
@@ -748,7 +748,7 @@ describe('Unit: Prebid Module', function () {
         code: code,
         sizes: [[300, 250], [300, 600]],
         bids: [{
-          bidder: 'appnexus',
+          bidder: 'msft',
           params: {
             placementId: '10433394'
           }
@@ -836,12 +836,12 @@ describe('Unit: Prebid Module', function () {
       currentPriceBucket = configObj.getConfig('priceGranularity');
       sinon.stub(adapterManager, 'makeBidRequests').callsFake(() => {
         const br = {
-          'bidderCode': 'appnexus',
+          'bidderCode': 'msft',
           'auctionId': '20882439e3238c',
           'bidderRequestId': '331f3cf3f1d9c8',
           'bids': [
             {
-              'bidder': 'appnexus',
+              'bidder': 'msft',
               'params': {
                 'placementId': '10433394'
               },
@@ -2963,7 +2963,7 @@ describe('Unit: Prebid Module', function () {
           },
           sizes: [[300, 250], [300, 600]],
           bids: [
-            { bidder: 'appnexus', params: { placementId: 'id' } },
+            { bidder: 'msft', params: { placementId: 'id' } },
             { bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }
           ]
         }];
@@ -2988,7 +2988,7 @@ describe('Unit: Prebid Module', function () {
         const spyArgs = adapterManager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
 
-        // appnexus and sampleBidder both support banner
+        // msft and sampleBidder both support banner
         expect(biddersCalled.length).to.equal(2);
       });
 
@@ -3001,7 +3001,7 @@ describe('Unit: Prebid Module', function () {
 
         const spyArgs = adapterManager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
-        // only appnexus supports native
+        // only msft supports native
         expect(biddersCalled.length).to.equal(1);
       });
 
@@ -3049,7 +3049,7 @@ describe('Unit: Prebid Module', function () {
           code: 'adUnit-code',
           mediaTypes: { native: {} },
           bids: [
-            { bidder: 'appnexus', params: { placementId: '10433394' } }
+            { bidder: 'msft', params: { placementId: '10433394' } }
           ]
         }];
         await runAuction({ adUnits });
@@ -3061,7 +3061,7 @@ describe('Unit: Prebid Module', function () {
           code: 'adUnit-code',
           mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
           bids: [
-            { bidder: 'appnexus', params: { placementId: '10433394' } }
+            { bidder: 'msft', params: { placementId: '10433394' } }
           ]
         }];
         await runAuction({ adUnits });
@@ -3073,7 +3073,7 @@ describe('Unit: Prebid Module', function () {
           code: 'adUnit-code',
           mediaTypes: { native: { type: 'image' } },
           bids: [
-            { bidder: 'appnexus', params: { placementId: 'id' } }
+            { bidder: 'msft', params: { placementId: 'id' } }
           ]
         }];
         await runAuction({ adUnits });
@@ -3127,13 +3127,18 @@ describe('Unit: Prebid Module', function () {
     describe('part-3', function () {
       const auctionManagerInstance = newAuctionManager();
       let auctionManagerStub;
-      const adUnits1 = getAdUnits().filter((adUnit) => {
+      // the shared fixture ad units bid with 'appnexus'; point them at the stub bidder instead
+      const stubAdUnits = () => getAdUnits().map(adUnit => ({
+        ...adUnit,
+        bids: adUnit.bids.map(bid => bid.bidder === 'appnexus' ? { ...bid, bidder: STUB_BIDDER } : bid)
+      }));
+      const adUnits1 = stubAdUnits().filter((adUnit) => {
         return adUnit.code === '/19968336/header-bid-tag1';
       });
       const adUnitCodes1 = getAdUnits().map(unit => unit.code);
       const auction1 = auctionManagerInstance.createAuction({ adUnits: adUnits1, adUnitCodes: adUnitCodes1 });
 
-      const adUnits2 = getAdUnits().filter((adUnit) => {
+      const adUnits2 = stubAdUnits().filter((adUnit) => {
         return adUnit.code === '/19968336/header-bid-tag-0';
       });
       const adUnitCodes2 = getAdUnits().map(unit => unit.code);
@@ -3342,7 +3347,7 @@ describe('Unit: Prebid Module', function () {
               }
             },
             bids: [{
-              bidder: 'appnexus',
+              bidder: 'msft',
               params: {
                 placementId: 13122370
               }
@@ -3418,7 +3423,7 @@ describe('Unit: Prebid Module', function () {
               }
             },
             bids: [{
-              bidder: 'appnexus',
+              bidder: 'msft',
               params: {
                 placementId: 13122370
               }
@@ -3431,7 +3436,7 @@ describe('Unit: Prebid Module', function () {
               }
             },
             bids: [{
-              bidder: 'appnexus',
+              bidder: 'msft',
               params: {
                 placementId: 14122380
               }
@@ -3479,7 +3484,7 @@ describe('Unit: Prebid Module', function () {
               }
             },
             bids: [{
-              bidder: 'appnexus',
+              bidder: 'msft',
               params: {
                 placementId: 13122370
               }

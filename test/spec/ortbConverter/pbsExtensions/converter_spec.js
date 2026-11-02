@@ -17,7 +17,7 @@ describe('PBS ortbConverter', () => {
 
   let sandbox;
 
-  function buildFixtures(bidderCode = 'appnexus') {
+  function buildFixtures(bidderCode = 'msft') {
     const adUnit = {
       code: IMP_ID,
       transactionId: 'txn-1',
@@ -58,7 +58,7 @@ describe('PBS ortbConverter', () => {
     return { adUnit, bidderRequest, s2sBidRequest };
   }
 
-  function buildRequest(bidderCode = 'appnexus') {
+  function buildRequest(bidderCode = 'msft') {
     const { adUnit, bidderRequest, s2sBidRequest } = buildFixtures(bidderCode);
     return buildPBSRequest(
       s2sBidRequest,
@@ -96,7 +96,7 @@ describe('PBS ortbConverter', () => {
       const rendererUrl = 'https://cdn.example/safe-renderer.js';
       const request = buildRequest();
       const { bids } = interpretSeatBid(request, {
-        seat: 'appnexus',
+        seat: 'msft',
         bid: [{
           id: 'seatbid-1',
           impid: IMP_ID,
@@ -117,7 +117,7 @@ describe('PBS ortbConverter', () => {
       const request = buildRequest();
       const burl = 'https://pbs.example/impression';
       const { bids } = interpretSeatBid(request, {
-        seat: 'appnexus',
+        seat: 'msft',
         bid: [{
           id: 'seatbid-1',
           impid: IMP_ID,
@@ -137,7 +137,7 @@ describe('PBS ortbConverter', () => {
       const request = buildRequest();
       const winUrl = 'https://pbs.example/win';
       const { bids } = interpretSeatBid(request, {
-        seat: 'appnexus',
+        seat: 'msft',
         bid: [{
           id: 'seatbid-1',
           impid: IMP_ID,
