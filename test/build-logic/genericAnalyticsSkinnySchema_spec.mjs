@@ -61,7 +61,8 @@ describe('Generic Analytics skinny events v1 JSON Schema', () => {
 
   it('permits omitted optional fields', () => {
     const response = { ...fixtures.bidResponse };
-    for (const key of ['originalCpm', 'originalCurrency', 'dealId', 'floorData', 'analyticsLabels']) {
+    // size is unset on bidResponse for bids without targeting, e.g. zero-CPM non-deal bids.
+    for (const key of ['originalCpm', 'originalCurrency', 'dealId', 'size', 'floorData', 'analyticsLabels']) {
       delete response[key];
     }
     expect(validate(response), JSON.stringify(validate.errors)).to.equal(true);

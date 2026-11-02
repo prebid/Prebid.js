@@ -53,9 +53,12 @@ export function noBid(bidRequest: NoBidFormatterInput & AnalyticsLabels): Skinny
 type SkinnyBidFields = Pick<Bid,
   'auctionId' | 'adUnitCode' | 'transactionId' | 'requestId' | 'adId' |
   'bidder' | 'bidderCode' | 'cpm' | 'currency' | 'originalCpm' | 'originalCurrency' |
-  'mediaType' | 'width' | 'height' | 'size' | 'dealId' | 'meta' | 'adserverTargeting' |
+  'mediaType' | 'width' | 'height' | 'dealId' | 'meta' | 'adserverTargeting' |
   'requestTimestamp' | 'responseTimestamp' | 'timeToRespond' | 'ttl' | 'source'
 > & {
+  // Set only once targeting keys are computed (CPM-eligible or deal bids),
+  // so a zero-CPM bidResponse may not have it.
+  size?: Bid['size'];
   floorData?: BidFloorData;
 } & AnalyticsLabels;
 

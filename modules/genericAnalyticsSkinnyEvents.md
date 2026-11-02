@@ -48,6 +48,11 @@ formatters. Every event has `eventType` as its discriminator. Fields whose value
 are `undefined` may be omitted during JSON serialization; JSON Schema accordingly
 does not require them. `analyticsLabels`, when present, is an object. Nested OpenRTB
 objects (`ortb2`, `ortb2Imp`) and extensible metadata may contain additional fields.
+The schema describes **one event**. With the default `batchSize: 1`, the generic
+adapter sends that single object; with `batchSize` greater than 1 it sends a JSON
+array of events (each matching the schema), and with `method: 'GET'` the JSON is
+passed in the `data` query parameter. A zero-CPM, non-deal `bidResponse` has no
+`size`, because Prebid sets it only when computing targeting keys.
 `bidRequested` and `bidTimeout` keep global `ortb2` at bidder-request level,
 and `ortb2Imp` at individual bid-request level. For stored-impression requests
 sent to Prebid Server, the bidder request's `bidderCode` and individual bids'
@@ -65,9 +70,10 @@ unknown event types or fields with incorrect types.
 **Versioning policy:** v1 describes existing output; it is not a request to add a
 `schemaVersion` field to events. Schema versions are selected out-of-band by
 collectors. Incompatible changes to the preset's serialized shape should publish
-a new schema version rather than silently rewriting v1. Additive fields can be
-introduced without invalidating v1 consumers, provided the relevant versioned
-schema is updated and those consumers tolerate the added fields. This contract
+a new schema version rather than silently rewriting v1. The v1 schema sets
+`additionalProperties: false` on each event, so collectors that validate against
+it reject a payload with an added top-level field: adding a field also requires
+a new schema version, unless collectors validate permissively. This contract
 does not imply a common schema for all Prebid.js analytics events or Prebid Server.
 
 #### Build
