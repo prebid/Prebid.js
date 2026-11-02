@@ -1,261 +1,330 @@
-// tests/luponmediaBidAdapter_spec.js
-import { converter, resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
-import sinon from 'sinon';
 import { expect } from 'chai';
+import sinon from 'sinon';
+import { resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
+import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 
-describe('luponmediaBidAdapter', function () {
-  let sandbox;
+describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
+  function bidRequest(params, extra = {}) {
+    return {
+      bidder: 'luponmedia',
+      bidId: 'bid-' + params.key,
+      adUnitCode: 'div-' + params.key,
+      auctionId: 'auction-1',
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      params,
+      ...extra,
+    };
+  }
 
-  beforeEach(function () {
-    sandbox = sinon.createSandbox();
-  });
-
-  afterEach(function () {
-    sandbox.restore();
-  });
+  const bidderRequest = {
+    bidderCode: 'luponmedia',
+    auctionId: 'auction-1',
+    timeout: 1000,
+    refererInfo: { page: 'https://example.com/a', domain: 'example.com' },
+    ortb2: { site: { page: 'https://example.com/a', domain: 'example.com' } },
+  };
 
   describe('isBidRequestValid', function () {
-    const bid = {
-      bidder: 'luponmedia',
-      params: { keyId: 'uid@eu_test_300_600' },
-      adUnitCode: 'test-div',
-      sizes: [[300, 250]],
-      bidId: 'g1987234bjkads'
-    };
-
-    it('should return true when required param is found and it is valid', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+    it('requires a valid key', function () {
+      expect(spec.isBidRequestValid(bidRequest({ key: 'acme' }))).to.equal(true);
+      expect(spec.isBidRequestValid(bidRequest({ key: 'Acme.home-mpu' }))).to.equal(true);
+      ['', 'acme.', '.acme', 'a b', 'acme..x', 'acme/x', 'a"b'].forEach(key => {
+        expect(spec.isBidRequestValid(bidRequest({ key })), key).to.equal(false);
+      });
+      expect(spec.isBidRequestValid(bidRequest({ key: 42 }))).to.equal(false);
+      expect(spec.isBidRequestValid({ bidder: 'luponmedia' })).to.equal(false);
     });
 
-    it('should return true with required and without optional param', function () {
-      bid.params = { keyId: 'uid_test_300_600' };
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-
-    it('should return false when keyId is not in the required format', function () {
-      bid.params = { keyId: 12345 };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+    it('rejects the old publisherId / placementId params', function () {
+      expect(spec.isBidRequestValid(bidRequest({ publisherId: 'pub', placementId: 'plc' }))).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [
-      {
-        bidder: 'luponmedia',
-        params: { keyId: 'uid_test_300_600', placement_id: 'test-div' },
-        mediaTypes: { banner: { sizes: [[300, 600]] } },
-        adUnitCode: 'test-div',
-        transactionId: 'txn-id',
-        bidId: 'bid-id',
-        ortb2: { device: { ua: 'test-agent' } }
-      }
-    ];
+    afterEach(function () { config.resetConfig(); });
 
-    const bidderRequest = {
-      bidderCode: 'luponmedia',
-      gdprConsent: {
-        gdprApplies: true
-      },
-      uspConsent: true
-    };
+    it('sends the key per slot and its prefix in the url', function () {
+      const bids = [
+        bidRequest({ key: 'acme' }, { bidId: 'b1', adUnitCode: 'top' }),
+        bidRequest({ key: 'ACME.plc-side' }, { bidId: 'b2', adUnitCode: 'side' }),
+      ];
+      const [req, ...rest] = spec.buildRequests(bids, { ...bidderRequest, bids });
 
-    it('sends bid request to default endpoint', function () {
-      const req = spec.buildRequests(bidRequests, bidderRequest);
-
-      expect(req.url).to.include('https://rtb.adxpremium.services/openrtb2/auction');
+      expect(rest).to.have.length(0);
       expect(req.method).to.equal('POST');
-      expect(req.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
-      expect(req.data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
+      expect(req.url).to.equal('https://api.imanego.com/openrtb2/auction?key=acme');
+      expect(req.data.id).to.equal('auction-1');
+      expect(req.data.tmax).to.be.a('number');
+      expect(req.data.site.publisher).to.equal(undefined);
+      expect(req.data.site.domain).to.equal('example.com');
+      expect(req.data.ext?.prebid?.storedrequest).to.equal(undefined);
+      expect(req.data.ext?.prebid?.analytics).to.equal(undefined);
+      expect(req.data.imp.map(i => i.ext.prebid.imanego.key)).to.deep.equal(['acme', 'acme.plc-side']);
+      expect(req.data.imp.map(i => i.ext.prebid.storedrequest)).to.deep.equal([undefined, undefined]);
+      expect(req.data.imp.map(i => i.ext.prebid.bidder)).to.deep.equal([undefined, undefined]);
+      expect(req.data.imp.map(i => i.ext.prebid.adunitcode)).to.deep.equal(['top', 'side']);
+      expect(req.data.imp[0].banner.format[0]).to.deep.equal({ w: 300, h: 250 });
     });
 
-    it('sends bid request to endpoint specified in keyId', function () {
-      bidRequests[0].params.keyId = 'uid@eu_test_300_600';
+    it('sends one request per key prefix', function () {
+      const bids = [
+        bidRequest({ key: 'acme' }, { bidId: 'b1' }),
+        bidRequest({ key: 'other' }, { bidId: 'b2' }),
+        bidRequest({ key: 'acme.side' }, { bidId: 'b3' }),
+      ];
+      const reqs = spec.buildRequests(bids, { ...bidderRequest, bids });
+      expect(reqs.map(r => r.url)).to.deep.equal([
+        'https://api.imanego.com/openrtb2/auction?key=acme',
+        'https://api.imanego.com/openrtb2/auction?key=other',
+      ]);
+      expect(reqs[0].data.imp.map(i => i.ext.prebid.imanego.key)).to.deep.equal(['acme', 'acme.side']);
+    });
 
-      const req = spec.buildRequests(bidRequests, bidderRequest);
-      expect(req.url).to.include('https://eu.adxpremium.services/openrtb2/auction');
+    it('ignores unknown params such as dc', function () {
+      const bids = [bidRequest({ key: 'acme', dc: 'eu' })];
+      expect(spec.buildRequests(bids, { ...bidderRequest, bids })[0].url).to.equal('https://api.imanego.com/openrtb2/auction?key=acme');
+    });
+
+    it('allows a localhost endpoint for development only', function () {
+      const bids = [bidRequest({ key: 'acme' })];
+      config.setConfig({ luponmedia: { devEndpoint: 'http://localhost:8000' } });
+      expect(spec.buildRequests(bids, { ...bidderRequest, bids })[0].url).to.equal('http://localhost:8000/openrtb2/auction?key=acme');
+      config.setConfig({ luponmedia: { devEndpoint: 'https://evil.example.com' } });
+      expect(spec.buildRequests(bids, { ...bidderRequest, bids })[0].url).to.equal('https://api.imanego.com/openrtb2/auction?key=acme');
     });
   });
 
   describe('interpretResponse', function () {
-    it('should get correct banner bid response', function () {
-      const response = {
-        id: 'resp-id',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: 'bid123',
-                impid: 'bid123',
-                price: 0.43,
-                adm: '<div>Ad Markup</div>',
-                crid: 'creative-id',
-                w: 300,
-                h: 250,
-                ext: {
-                  prebid: {
-                    targeting: {
-                      hb_bidder: 'luponmedia',
-                      hb_pb: '0.40',
-                      hb_size: '300x250'
-                    },
-                    type: 'banner'
-                  }
-                }
-              }
-            ],
-            seat: 'luponmedia'
-          }
-        ],
-        cur: 'USD'
-      };
+    it('returns bids as luponmedia with the seat in meta and the win url', function () {
+      const bids = [bidRequest({ key: 'acme' })];
+      const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const impId = req.data.imp[0].id;
 
-      const bidRequests = [
-        {
-          bidId: 'bid123',
-          adUnitCode: 'test-div',
-          params: { keyId: 'uid_test_300_600' },
-          mediaTypes: { banner: { sizes: [[300, 250]] } }
-        }
-      ];
+      const result = spec.interpretResponse({
+        body: {
+          id: 'auction-1',
+          cur: 'USD',
+          seatbid: [{
+            seat: 'adf',
+            bid: [{
+              id: 'b1',
+              impid: impId,
+              price: 1.25,
+              adm: '<div></div>',
+              crid: 'cr1',
+              w: 300,
+              h: 250,
+              mtype: 1,
+              adomain: ['adv.com'],
+              ext: { prebid: { events: { win: 'https://api.imanego.com/event?t=win&b=b1' } } },
+            }],
+          }],
+        },
+      }, req);
 
-      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
-
-      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
-
-      expect(result).to.be.an('array').with.lengthOf(1);
-      expect(result[0]).to.include({
-        requestId: 'bid123',
-        cpm: 0.43,
-        width: 300,
-        height: 250,
-        creativeId: 'creative-id',
-        currency: 'USD',
-        ttl: 300,
-        ad: '<div>Ad Markup</div>'
-      });
+      expect(result).to.have.length(1);
+      expect(result[0].cpm).to.equal(1.25);
+      expect(result[0].netRevenue).to.equal(true);
+      expect(result[0].bidderCode).to.equal(undefined); // core assigns the adapter code (luponmedia)
+      expect(result[0].meta.seat).to.equal('adf');
+      expect(result[0].winUrl).to.equal('https://api.imanego.com/event?t=win&b=b1');
     });
 
-    it('should enrich bidResponse with crid, dealId, and referrer if missing', function () {
-      const response = {
-        id: 'resp-id',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: 'bid456',
-                impid: 'bid456',
-                price: 0.75,
-                adm: '<div>Creative</div>',
-                crid: 'creative456',
-                dealid: 'deal789',
-                w: 300,
-                h: 250
-              }
-            ],
-            seat: 'luponmedia'
-          }
-        ],
-        cur: 'USD'
-      };
-
-      const bidRequests = [
-        {
-          bidId: 'bid456',
-          adUnitCode: 'test-div',
-          params: { keyId: 'uid_test_300_600' },
-          mediaTypes: { banner: { sizes: [[300, 250]] } },
-          ortb2: {
-            site: {
-              ref: 'https://mysite.com'
-            }
-          }
-        }
+    it('returns every bid, highest first', function () {
+      const bids = [
+        bidRequest({ key: 'acme' }),
+        bidRequest({ key: 'acme.plc-2' }),
       ];
+      const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const [imp1, imp2] = req.data.imp.map(imp => imp.id);
+      const bid = (id, impid, price) => ({ id, impid, price, adm: '<div></div>', crid: id, w: 300, h: 250, mtype: 1 });
 
-      const bidderRequest = {
-        refererInfo: { referer: 'https://mysite.com' }
-      };
+      const result = spec.interpretResponse({
+        body: {
+          id: 'auction-1',
+          cur: 'USD',
+          seatbid: [
+            { seat: 'adf', bid: [bid('a1', imp1, 1.1), bid('a2', imp1, 0.9), bid('a3', imp2, 0.5)] },
+            { seat: 'rubicon', bid: [bid('r1', imp1, 2.0), bid('r2', imp1, 1.0)] },
+          ],
+        },
+      }, req);
 
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
-
-      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
-
-      expect(result[0].creativeId).to.equal('creative456');
-      expect(result[0].dealId).to.equal('deal789');
-      expect(result[0].referrer).to.equal('https://mysite.com');
+      expect(result.map(b => b.cpm)).to.deep.equal([2.0, 1.1, 1.0, 0.9, 0.5]);
+      expect(result.map(b => b.meta.seat)).to.deep.equal(['rubicon', 'adf', 'rubicon', 'adf', 'adf']);
+      expect(result.filter(b => b.requestId === bids[0].bidId)).to.have.length(4);
+      expect(result.filter(b => b.requestId === bids[1].bidId)).to.have.length(1);
     });
 
-    it('should return empty array for unhandled response', function () {
-      const bidRequests = [{
-        bidId: 'bad-response',
-        adUnitCode: 'test-div',
-        params: { keyId: 'uid_test_300_600' },
-        mediaTypes: { banner: { sizes: [[300, 250]] } }
-      }];
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} });
+    it('accepts bids without mtype (takes ext.prebid.type)', function () {
+      const bids = [bidRequest({ key: 'acme' })];
+      const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const impId = req.data.imp[0].id;
+      const result = spec.interpretResponse({
+        body: {
+          id: 'auction-1',
+          cur: 'USD',
+          seatbid: [{ seat: 'adf', bid: [{ id: 'b1', impid: impId, price: 1.5, adm: '<div></div>', crid: 'c', w: 300, h: 250, ext: { prebid: { type: 'banner' } } }] }],
+        },
+      }, req);
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('banner');
+      expect(result[0].cpm).to.equal(1.5);
+    });
 
-      const result = spec.interpretResponse({ status: 400, body: {} }, { data: ortbRequest });
-      expect(result).to.deep.equal([]);
+    it('handles empty responses', function () {
+      expect(spec.interpretResponse({ body: undefined }, {})).to.deep.equal([]);
     });
   });
 
-  describe('getUserSyncs', function () {
-    const bidResponse = {
-      body: {
-        ext: {
-          usersyncs: {
-            bidder_status: [
-              {
-                no_cookie: true,
-                usersync: { url: 'https://sync.img', type: 'image' }
-              },
-              {
-                no_cookie: true,
-                usersync: { url: 'https://sync.iframe', type: 'iframe' }
-              }
-            ]
-          }
-        }
+  // Prebid's test run also builds without video (features disabled).
+  if (FEATURES.VIDEO) {
+    describe('outstream video', function () {
+      const outstream = { video: { context: 'outstream', playerSize: [[640, 360]], mimes: ['video/mp4'], protocols: [2, 3] } };
+      const vast = '<VAST version="3.0"></VAST>';
+
+      function respond(req, bids) {
+        return spec.interpretResponse({ body: { id: 'auction-1', cur: 'USD', seatbid: [{ seat: 'rubicon', bid: bids }] } }, req);
       }
-    };
 
-    it('should return empty syncs when not pixel or iframe enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse]);
-      expect(syncs.length).to.equal(0);
+      it('accepts outstream, rejects instream-only ad units', function () {
+        expect(spec.isBidRequestValid(bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream }))).to.equal(true);
+        expect(spec.isBidRequestValid(bidRequest({ key: 'acme' }, { mediaTypes: { video: { context: 'instream', playerSize: [[640, 360]] } } }))).to.equal(false);
+      });
+
+      it('sends the player as imp.video and no banner', function () {
+        const bids = [bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const imp = req.data.imp[0];
+        expect(imp.video).to.include({ w: 640, h: 360 });
+        expect(imp.video.mimes).to.deep.equal(['video/mp4']);
+        expect(imp.banner).to.equal(undefined);
+        expect(imp.ext.prebid.imanego.key).to.equal('acme.outstream');
+      });
+
+      it('drops instream video from a banner ad unit', function () {
+        const bids = [bidRequest({ key: 'acme' }, { mediaTypes: { banner: { sizes: [[300, 250]] }, video: { context: 'instream', playerSize: [[640, 360]] } } })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        expect(req.data.imp[0].video).to.equal(undefined);
+        expect(req.data.imp[0].banner).to.not.equal(undefined);
+      });
+
+      it('returns VAST bids with the outstream renderer, without the win notice as VAST url', function () {
+        const bids = [bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const impid = req.data.imp[0].id;
+        const result = respond(req, [
+          { id: 'v1', impid, price: 3, adm: vast, nurl: 'https://partner/win', crid: 'c', ext: { prebid: { type: 'video' } } },
+          { id: 'v2', impid, price: 4, nurl: 'https://partner/win', crid: 'c', ext: { prebid: { type: 'video' } } },
+        ]);
+        expect(result).to.have.length(1); // no VAST to play: dropped
+        expect(result[0].mediaType).to.equal('video');
+        expect(result[0].vastXml).to.equal(vast);
+        expect(result[0].vastUrl).to.equal(undefined);
+        expect(result[0].playerWidth).to.equal(640);
+        expect(result[0].renderer.url).to.equal('https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js');
+      });
+
+      it('leaves rendering to a renderer the ad unit brings', function () {
+        const bids = [bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream, renderer: { url: 'https://pub/renderer.js', render() {} } })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const result = respond(req, [{ id: 'v1', impid: req.data.imp[0].id, price: 3, adm: vast, crid: 'c', mtype: 2 }]);
+        expect(result).to.have.length(1);
+        expect(result[0].renderer).to.equal(undefined);
+      });
+    });
+  }
+
+  if (FEATURES.NATIVE) {
+    describe('native', function () {
+      const nativeOrtbRequest = { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 90 } }, { id: 2, required: 1, img: { type: 3, wmin: 300, hmin: 157 } }] };
+      const nativeBid = (extra) => bidRequest({ key: 'acme.native' }, { mediaTypes: { native: { ortb: nativeOrtbRequest } }, nativeOrtbRequest, ...extra });
+      const assets = [{ id: 1, title: { text: 'Hello' } }, { id: 2, img: { url: 'https://img/1.jpg', w: 300, h: 157 } }];
+
+      it('sends the native request and no banner', function () {
+        const bids = [nativeBid()];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const imp = req.data.imp[0];
+        const native = JSON.parse(imp.native.request);
+        expect(native.assets).to.have.length(2);
+        expect(native.plcmttype).to.equal(1);
+        expect(native.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }]);
+        expect(imp.banner).to.equal(undefined);
+      });
+
+      it('returns native bids, unwrapping {"native": ...} and dropping ones without assets', function () {
+        const bids = [nativeBid()];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const impid = req.data.imp[0].id;
+        const result = spec.interpretResponse({
+          body: {
+            id: 'auction-1',
+            cur: 'USD',
+            seatbid: [{
+              seat: 'adf',
+              bid: [
+                { id: 'n1', impid, price: 1, adm: JSON.stringify({ native: { ver: '1.2', assets, link: { url: 'https://adv' } } }), crid: 'c', ext: { prebid: { type: 'native' } } },
+                { id: 'n2', impid, price: 2, adm: JSON.stringify({ ver: '1.2', assets, link: { url: 'https://adv' } }), crid: 'c', mtype: 4 },
+                { id: 'n3', impid, price: 3, adm: 'not json', crid: 'c', mtype: 4 },
+              ],
+            }],
+          },
+        }, req);
+        expect(result.map(b => b.cpm)).to.deep.equal([2, 1]);
+        result.forEach(b => {
+          expect(b.mediaType).to.equal('native');
+          expect(b.native.ortb.assets).to.have.length(2);
+        });
+      });
+    });
+  }
+
+  describe('getUserSyncs', function () {
+    beforeEach(function () { resetUserSync(); });
+    afterEach(function () { config.resetConfig(); });
+
+    it('loads the sync page once with consent params', function () {
+      const bids = [bidRequest({ key: 'acme' })];
+      spec.buildRequests(bids, { ...bidderRequest, bids });
+
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: true, consentString: 'CONSENT' },
+        '1YNN',
+        { gppString: 'GPP', applicableSections: [2, 6] }
+      );
+      expect(syncs).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://sync.imanego.com/sync?gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2%2C6',
+      }]);
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [])).to.deep.equal([]);
     });
 
-    it('returns pixel syncs when pixel enabled and iframe not enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse]);
-      expect(syncs).to.deep.include({ type: 'image', url: 'https://sync.img' });
+    it('needs iframe syncs enabled', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [])).to.deep.equal([]);
     });
 
-    it('returns iframe syncs when iframe enabled and pixel not enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse]);
-      expect(syncs).to.deep.include({ type: 'iframe', url: 'https://sync.iframe' });
+    it('allows a localhost sync endpoint for development only', function () {
+      config.setConfig({ luponmedia: { devSyncEndpoint: 'http://localhost:8001' } });
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [])[0].url).to.equal('http://localhost:8001/sync');
+    });
+  });
+
+  describe('onBidWon', function () {
+    let triggerPixelStub;
+    beforeEach(function () { triggerPixelStub = sinon.stub(utils, 'triggerPixel'); });
+    afterEach(function () { triggerPixelStub.restore(); });
+
+    it('fires the win event', function () {
+      spec.onBidWon({ winUrl: 'https://api.imanego.com/event?t=win&b=b1' });
+      expect(triggerPixelStub.calledOnceWith('https://api.imanego.com/event?t=win&b=b1')).to.equal(true);
     });
 
-    it('returns both syncs when both iframe and pixel enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse]);
-      expect(syncs).to.deep.include.members([
-        { type: 'image', url: 'https://sync.img' },
-        { type: 'iframe', url: 'https://sync.iframe' }
-      ]);
-    });
-
-    it('returns no syncs when usersyncs object missing', function () {
-      const emptyResponse = { body: { ext: {} } };
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [emptyResponse]);
-      expect(syncs).to.deep.equal([]);
-    });
-
-    it('returns empty syncs on empty response array', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
-      expect(syncs).to.deep.equal([]);
+    it('does nothing without a win url', function () {
+      spec.onBidWon({});
+      expect(triggerPixelStub.called).to.equal(false);
     });
   });
 });
