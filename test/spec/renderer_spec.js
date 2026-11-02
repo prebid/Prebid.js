@@ -119,18 +119,19 @@ describe('Renderer', function () {
 
       testRenderer3.setRender(func1);
       testRenderer3.render(testArg);
-      func1.calledWith(testArg).should.be.ok;
+      sinon.assert.calledWith(func1, testArg);
+      sinon.assert.notCalled(loadExternalScriptStub);
     });
   });
 
   describe('3rd party renderer', function () {
-    let utilsSpy;
-    before(function () {
-      utilsSpy = sinon.spy(utils, 'logWarn');
+    let logWarnSpy;
+    beforeEach(function () {
+      logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
-    after(function() {
-      utilsSpy.restore();
+    afterEach(function() {
+      logWarnSpy.restore();
     });
 
     it('should not load renderer and log warn message', function() {
@@ -148,10 +149,13 @@ describe('Renderer', function () {
         id: 1,
         adUnitCode: 'video1'
       });
-      testRenderer.setRender(() => {});
+      const renderFn = sinon.spy();
+      testRenderer.setRender(renderFn);
 
       testRenderer.render();
-      expect(utilsSpy.callCount).to.equal(1);
+      sinon.assert.calledOnce(logWarnSpy);
+      sinon.assert.calledOnce(renderFn);
+      sinon.assert.notCalled(loadExternalScriptStub);
     });
 
     it('should load renderer adunit renderer when backupOnly', function() {
@@ -210,36 +214,42 @@ describe('Renderer', function () {
     it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
       getGlobal().adUnits = [{
         code: 'video1',
-        renderer: {
-          url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
-          render: sinon.spy()
-        }
+        mediaTypes: { video: { context: 'outstream' } }
       }];
       const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
-        adUnitCode: undefined
+        adUnitCode: 'video1'
       });
-      expect(loadExternalScriptStub.called).to.be.false;
+      const renderFn = sinon.spy();
+      testRenderer.setRender(renderFn);
+      sinon.assert.notCalled(loadExternalScriptStub);
 
       testRenderer.render();
-      expect(loadExternalScriptStub.called).to.be.true;
+      sinon.assert.calledWith(loadExternalScriptStub, 'https://httpbin.org/post');
+      sinon.assert.calledOnce(renderFn);
     });
 
-    it('call\'s documentResolver when configured', function () {
-      const documentResolver = sinon.spy(function(bid, sDoc, tDoc) {
-        return document;
-      });
+    it('renders into the document returned by documentResolver', function () {
+      const resolvedDoc = document.implementation.createHTMLDocument('');
+      const renderDoc = document.implementation.createHTMLDocument('');
+      const documentResolver = sinon.stub().returns(resolvedDoc);
+      const bid = {};
 
       const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { documentResolver: documentResolver }
       });
+      const renderFn = sinon.spy();
+      testRenderer.setRender(renderFn);
 
-      executeRenderer(testRenderer, {}, {});
+      executeRenderer(testRenderer, bid, renderDoc);
 
-      expect(documentResolver.called).to.be.true;
+      sinon.assert.calledWith(documentResolver, bid, document, renderDoc);
+      expect(testRenderer.documentContext).to.equal(resolvedDoc);
+      expect(loadExternalScriptStub.firstCall.args[4]).to.equal(resolvedDoc);
+      sinon.assert.calledWith(renderFn, bid, resolvedDoc);
     });
   });
 });
