@@ -347,6 +347,20 @@ describe('Aivertise bid adapter', () => {
         }
       });
 
+      it('ignores aivertiseTest=1 inside another parameter', () => {
+        const request = buildRequest(undefined, {
+          refererInfo: { page: 'https://test.aivertise.example/?not_aivertiseTest=1&q=aivertiseTest%3D1' },
+        });
+        expect(request.data.test).to.equal(0);
+      });
+
+      it('ignores aivertiseTest values other than 1', () => {
+        const request = buildRequest(undefined, {
+          refererInfo: { page: 'https://test.aivertise.example/?aivertiseTest=10' },
+        });
+        expect(request.data.test).to.equal(0);
+      });
+
       it('does not set test mode by default', () => {
         expect(buildRequest().data.test).to.equal(0);
       });
@@ -531,6 +545,7 @@ describe('Aivertise bid adapter', () => {
       const requests = server.requests.filter((r) => r.url === 'https://t.aivertise.com/track');
       expect(requests).to.have.length(1);
       expect(requests[0].method).to.equal('POST');
+      expect(requests[0].fetch.request.keepalive).to.equal(true);
       expect(JSON.parse(requests[0].requestBody).events).to.have.length(1);
     });
 
@@ -592,6 +607,20 @@ describe('Aivertise bid adapter', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, '1YNN');
       expect(syncs[0].url).to.include('us_privacy=1YNN');
       expect(syncs[0].url).not.to.include('gdpr=');
+    });
+
+    it('appends gpp and gpp_sid', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, { gppString: 'DBABMA~CPXxRfA', applicableSections: [2, 6] });
+      expect(syncs[0].url).to.equal(`${SYNC_URL}?gpp=DBABMA~CPXxRfA&gpp_sid=2%2C6`);
+    });
+
+    it('omits gpp without a GPP string', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, { applicableSections: [2] });
+      expect(syncs[0].url).to.equal(SYNC_URL);
+    });
+
+    it('returns no syncs on COPPA pages', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], undefined, undefined, undefined, true)).to.eql([]);
     });
   });
 });

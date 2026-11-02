@@ -20,7 +20,8 @@ const ENDPOINT_URL = 'https://a.aivertise.com/hb/bid';
 const SYNC_URL = 'https://a.aivertise.com/sync';
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'EUR';
-const TEST_FLAG = 'aivertiseTest=1';
+// Page URL query parameter that marks the auction as a test: aivertiseTest=1.
+const TEST_PARAM = 'aivertiseTest';
 // Response headers: the server's ID for the request and, on a 204, why it didn't bid.
 const REQUEST_ID_HEADER = 'X-Aivertise-Request-Id';
 const NO_BID_REASON_HEADER = 'X-Aivertise-No-Bid-Reason';
@@ -73,11 +74,18 @@ export const getDeviceType = (ua: string, sua?: { mobile?: number }): number => 
   return DEVICE_TYPE_PC;
 };
 
-const isTestMode = (bidderRequest): boolean => {
-  const pageHref: string = bidderRequest.refererInfo?.page ?? '';
-  const windowHref = typeof window !== 'undefined' ? window.location?.href ?? '' : '';
-  return pageHref.includes(TEST_FLAG) || windowHref.includes(TEST_FLAG);
+const hasTestParam = (href?: string | null): boolean => {
+  if (!href) return false;
+  try {
+    return new URL(href).searchParams.get(TEST_PARAM) === '1';
+  } catch (e) {
+    return false;
+  }
 };
+
+const isTestMode = (bidderRequest): boolean =>
+  hasTestParam(bidderRequest.refererInfo?.page) ||
+  hasTestParam(typeof window !== 'undefined' ? window.location?.href : undefined);
 
 // Fill site fields Prebid's first-party-data enrichment doesn't cover, using article meta tags.
 const enrichSite = (site) => {
@@ -238,7 +246,7 @@ const flushTargeting = () => {
       // text/plain: no CORS preflight
       const body = JSON.stringify({ events: events.slice(i, i + MAX_TRACKING_BATCH) });
       if (!sendBeacon(endpoint, body)) {
-        noCredsAjax(endpoint, null, body, { method: 'POST', contentType: 'text/plain' });
+        noCredsAjax(endpoint, null, body, { method: 'POST', contentType: 'text/plain', keepalive: true });
       }
     }
   });
@@ -261,7 +269,14 @@ const getUserSyncs = (
   _serverResponses,
   gdprConsent?: { gdprApplies?: boolean; consentString?: string },
   uspConsent?: string,
+  gppConsent?: { gppString?: string; applicableSections?: number[] },
+  coppa?: boolean,
 ) => {
+  // No user ID on child-directed pages.
+  if (coppa) {
+    return [];
+  }
+
   // Prebid sets these per bidder from userSync.filterSettings. The iframe sync
   // is preferred; the image sync is the fallback where iframes aren't allowed.
   let type: 'iframe' | 'image';
@@ -280,6 +295,10 @@ const getUserSyncs = (
   }
   if (uspConsent) {
     params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+  }
+  if (gppConsent?.gppString) {
+    params.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`);
+    params.push(`gpp_sid=${encodeURIComponent((gppConsent.applicableSections ?? []).join(','))}`);
   }
   if (type === 'image') {
     params.push('type=image');
