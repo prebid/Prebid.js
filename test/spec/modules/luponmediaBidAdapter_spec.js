@@ -81,6 +81,15 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
       expect(reqs[0].data.imp.map(i => i.ext.prebid.imanego.key)).to.deep.equal(['acme', 'acme.side']);
     });
 
+    it('groups any valid key, including ones named like object properties', function () {
+      const bids = [bidRequest({ key: 'constructor' }), bidRequest({ key: 'tostring.x' })];
+      const reqs = spec.buildRequests(bids, { ...bidderRequest, bids });
+      expect(reqs.map(r => r.url)).to.deep.equal([
+        'https://api.imanego.com/openrtb2/auction?key=constructor',
+        'https://api.imanego.com/openrtb2/auction?key=tostring',
+      ]);
+    });
+
     it('ignores unknown params such as dc', function () {
       const bids = [bidRequest({ key: 'acme', dc: 'eu' })];
       expect(spec.buildRequests(bids, { ...bidderRequest, bids })[0].url).to.equal('https://api.imanego.com/openrtb2/auction?key=acme');
@@ -173,6 +182,15 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
       expect(result[0].cpm).to.equal(1.5);
     });
 
+    it('uses the bid id as creative id when crid is missing', function () {
+      const bids = [bidRequest({ key: 'acme' })];
+      const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const result = spec.interpretResponse({
+        body: { id: 'auction-1', cur: 'USD', seatbid: [{ seat: 'adf', bid: [{ id: 'b9', impid: req.data.imp[0].id, price: 1, adm: '<div></div>', w: 300, h: 250, mtype: 1 }] }] },
+      }, req);
+      expect(result[0].creativeId).to.equal('b9');
+    });
+
     it('handles empty responses', function () {
       expect(spec.interpretResponse({ body: undefined }, {})).to.deep.equal([]);
     });
@@ -223,6 +241,14 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
         expect(result[0].vastXml).to.equal(vast);
         expect(result[0].vastUrl).to.equal(undefined);
         expect(result[0].playerWidth).to.equal(640);
+        expect(result[0].renderer.url).to.equal('https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js');
+        expect(result[0].winUrl).to.equal('https://partner/win'); // no win event: nurl is the win notice
+      });
+
+      it('installs the default renderer when the ad unit renderer is a backup only', function () {
+        const bids = [bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream, renderer: { url: 'https://pub/renderer.js', render() {}, backupOnly: true } })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const result = respond(req, [{ id: 'v1', impid: req.data.imp[0].id, price: 3, adm: vast, crid: 'c', mtype: 2 }]);
         expect(result[0].renderer.url).to.equal('https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js');
       });
 
@@ -276,6 +302,23 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
           expect(b.mediaType).to.equal('native');
           expect(b.native.ortb.assets).to.have.length(2);
         });
+      });
+
+      it('strips prototype keys from the native response', function () {
+        const bids = [nativeBid()];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const adm = `{"ver":"1.2","assets":${JSON.stringify(assets)},"__proto__":{"polluted":1},"link":{"url":"https://adv"}}`;
+        const result = spec.interpretResponse({
+          body: { id: 'auction-1', cur: 'USD', seatbid: [{ seat: 'adf', bid: [{ id: 'n1', impid: req.data.imp[0].id, price: 1, adm, crid: 'c', mtype: 4 }] }] },
+        }, req);
+        expect(result).to.have.length(1);
+        expect(Object.prototype.hasOwnProperty.call(result[0].native.ortb, '__proto__')).to.equal(false);
+        expect({}.polluted).to.equal(undefined);
+      });
+
+      it('keeps a native ad unit that also lists instream video', function () {
+        const bid = nativeBid({ mediaTypes: { native: { ortb: nativeOrtbRequest }, video: { context: 'instream', playerSize: [[640, 360]] } } });
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
     });
   }

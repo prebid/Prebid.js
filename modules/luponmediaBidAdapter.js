@@ -4,6 +4,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 
 const BIDDER_CODE = 'luponmedia';
 const GVLID = 1132;
@@ -63,6 +64,10 @@ export const converter = ortbConverter({
       }
       bid = { ...bid, adm: ortb };
     }
+    // Prebid requires a creative id; not every partner sets crid.
+    if (!bid.crid) {
+      bid = { ...bid, crid: bid.id };
+    }
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse.mediaType === VIDEO) {
       // The VAST is in adm; nurl is a win notice, not a VAST URL.
@@ -73,7 +78,9 @@ export const converter = ortbConverter({
     }
     // Bids are presented as luponmedia; the seat is kept in meta.
     bidResponse.meta = { ...bidResponse.meta, seat: context.seatbid?.seat };
-    const winUrl = bid.ext?.prebid?.events?.win;
+    // The video nurl is not used as a VAST URL above, so it serves as the win notice when there is
+    // no win event.
+    const winUrl = bid.ext?.prebid?.events?.win ?? (bidResponse.mediaType === VIDEO ? bid.nurl : undefined);
     if (isStr(winUrl)) {
       bidResponse.winUrl = winUrl;
     }
@@ -91,7 +98,8 @@ export const spec = {
       logWarn(`${BIDDER_CODE}: params.key (integration key from LuponMedia) is missing or invalid`, bid?.params);
       return false;
     }
-    if (bid.mediaTypes?.video && !bid.mediaTypes.banner && !isOutstream(bid)) {
+    // Instream video is not sent; the ad unit is valid while another format remains.
+    if (bid.mediaTypes?.video && !bid.mediaTypes.banner && !bid.mediaTypes.native && !isOutstream(bid)) {
       logWarn(`${BIDDER_CODE}: only outstream video is supported (mediaTypes.video.context: 'outstream')`, bid.adUnitCode);
       return false;
     }
@@ -100,14 +108,17 @@ export const spec = {
 
   // One request per key prefix (the key's first part).
   buildRequests(bidRequests, bidderRequest) {
-    const groups = {};
+    const groups = new Map();
     bidRequests.forEach((bidRequest) => {
       const client = keyOf(bidRequest.params).split('.')[0];
-      (groups[client] = groups[client] || []).push(bidRequest);
+      if (!groups.has(client)) {
+        groups.set(client, []);
+      }
+      groups.get(client).push(bidRequest);
     });
 
     const origin = serverOrigin();
-    return Object.entries(groups).map(([client, bidRequests]) => ({
+    return Array.from(groups, ([client, bidRequests]) => ({
       method: 'POST',
       url: `${origin}/openrtb2/auction?key=${encodeURIComponent(client)}`,
       data: converter.toORTB({ bidRequests, bidderRequest }),
@@ -186,7 +197,7 @@ function nativeResponse(adm) {
   let ortb = adm;
   if (isStr(adm)) {
     try {
-      ortb = JSON.parse(adm);
+      ortb = parseUntrustedJSON(adm);
     } catch (e) {
       return undefined;
     }
@@ -199,9 +210,11 @@ function isOutstream(bidRequest) {
   return deepAccess(bidRequest, 'mediaTypes.video.context') === OUTSTREAM;
 }
 
-// A renderer set by the publisher (ad unit or mediaTypes.video) is used instead of the default one.
+// A renderer set by the publisher (ad unit or mediaTypes.video) is used instead of the default one,
+// unless it is a backup only.
 function hasOwnRenderer(bidRequest) {
-  return !!(bidRequest?.renderer || deepAccess(bidRequest, 'mediaTypes.video.renderer'));
+  return [bidRequest?.renderer, deepAccess(bidRequest, 'mediaTypes.video.renderer')]
+    .some((renderer) => renderer && renderer.backupOnly !== true);
 }
 
 function outstreamRenderer(bid) {
