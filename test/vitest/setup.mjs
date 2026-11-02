@@ -4,9 +4,9 @@ import sinon from 'sinon';
 // Vitest provides Mocha-style describe/it/hooks and Chai-style expect with globals:true.
 globalThis.sinon = sinon;
 
-// Karma uses Mocha's before()/after() names. Vitest exposes their
-// beforeAll()/afterAll() equivalents, so keep these unchanged legacy suites
-// executable without modifying their source.
+// Karma supplies Mocha's context()/before()/after() aliases. Mirror these
+// with Vitest's describe()/beforeAll()/afterAll() for unchanged legacy specs.
+globalThis.context = describe;
 globalThis.before = beforeAll;
 globalThis.after = afterAll;
 
