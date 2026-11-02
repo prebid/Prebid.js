@@ -207,19 +207,26 @@ describe('monetsiteBidAdapter', () => {
       expect(data.source.ext.prebidjsver).to.be.a('string');
     });
 
-    it('forwards consent and schain from ortb2', () => {
+    it('sends consent, eids and schain as OpenRTB 2.6 fields', () => {
       const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'monetize.site', sid: '1', hp: 1 }] };
+      const eids = [{ source: 'pubcid.org', uids: [{ id: 'abc', atype: 1 }] }];
       const data = build([makeBid()], {
         ortb2: {
-          regs: { ext: { gdpr: 1, us_privacy: '1YNN' } },
-          user: { ext: { consent: 'consent-string' } },
+          regs: { coppa: 1, gpp: 'DBA', gpp_sid: [7], ext: { gdpr: 1, us_privacy: '1YNN', dsa: { dsarequired: 3 } } },
+          user: { ext: { consent: 'consent-string', eids } },
           source: { ext: { schain } },
         },
       })[0].data;
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.user.ext.consent).to.equal('consent-string');
-      expect(data.source.ext.schain).to.deep.equal(schain);
-      expect(data.source.ext.hb).to.equal(1);
+      expect(data.regs).to.include({ gdpr: 1, us_privacy: '1YNN', coppa: 1, gpp: 'DBA' });
+      expect(data.regs.gpp_sid).to.deep.equal([7]);
+      expect(data.user.consent).to.equal('consent-string');
+      expect(data.user.eids).to.deep.equal(eids);
+      expect(data.source.schain).to.deep.equal(schain);
+      expect(data.regs.ext).to.not.have.any.keys('gdpr', 'us_privacy');
+      expect(data.regs.ext.dsa).to.deep.equal({ dsarequired: 3 });
+      expect(data.user.ext || {}).to.not.have.any.keys('consent', 'eids');
+      expect(data.source.ext).to.not.have.property('schain');
+      expect(data.source.ext).to.include({ hb: 1, adapterver: '1.0.0' });
     });
 
     it('builds video and native imps', () => {
@@ -305,6 +312,39 @@ describe('monetsiteBidAdapter', () => {
       expect(requested).to.not.be.empty;
       expect(requested.every((type) => type === 'banner')).to.equal(true);
       expect(bid.mediaTypes.audio).to.exist;
+    });
+
+    [
+      ['noFloorSignalBidders', { noFloorSignaled: true, skipped: false }],
+      ['a skipped floors auction', { noFloorSignaled: false, skipped: true, skippedReason: 'random' }],
+    ].forEach(([title, floorData]) => {
+      it(`sends no floor when suppressed by ${title}`, () => {
+        const imp = build([makeBid({ params: { zoneID: ZONE_ID, bidfloor: 0.4, cur: 'EUR' }, floorData })])[0].data.imp[0];
+        expect(imp).to.not.have.property('bidfloor');
+        expect(imp).to.not.have.property('bidfloorcur');
+      });
+    });
+
+    it('still uses the params floor when the floors module found no rule', () => {
+      const floorData = { noFloorSignaled: false, skipped: true, skippedReason: 'not_found' };
+      const imp = build([makeBid({ params: { zoneID: ZONE_ID, bidfloor: 0.4 }, floorData })])[0].data.imp[0];
+      expect(imp.bidfloor).to.equal(0.4);
+    });
+
+    it('strips unsupported formats that come from ortb2Imp and ignores their bids', () => {
+      const bid = makeBid({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          audio: { context: 'instream', mimes: ['audio/mp4'] },
+        },
+        ortb2Imp: { audio: { mimes: ['audio/mp4'], minduration: 5 } },
+      });
+      const [request] = build([bid]);
+      expect(request.data.imp[0].banner).to.exist;
+      expect(request.data.imp[0]).to.not.have.property('audio');
+      const response = makeServerResponse();
+      response.body.seatbid[0].bid.push({ id: 'b-2', impid: BID_ID, price: 2, crid: 'cr-2', mtype: 3, adm: '<VAST version="4.0"></VAST>' });
+      expect(spec.interpretResponse(response, request).map((b) => b.mediaType)).to.deep.equal(['banner']);
     });
 
     it('asks for a wildcard floor on multi-format ad units', () => {
@@ -396,6 +436,13 @@ describe('monetsiteBidAdapter', () => {
 
     it('drops an inferred media type that was not requested', () => {
       expect(interpret(makeServerResponse({ mtype: undefined, adm: '<VAST version="4.0"></VAST>' }))).to.deep.equal([]);
+    });
+
+    it('keeps a buyer expiry shorter than the configured ttl', () => {
+      expect(interpret(makeServerResponse({ exp: 30 }))[0].ttl).to.equal(30);
+      expect(interpret(makeServerResponse({ exp: 900 }))[0].ttl).to.equal(500);
+      config.setConfig({ monetsite: { ttl: 20 } });
+      expect(interpret(makeServerResponse({ exp: 30 }))[0].ttl).to.equal(20);
     });
 
     it('infers the media type when mtype is missing', () => {

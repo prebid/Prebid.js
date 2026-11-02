@@ -8,7 +8,7 @@ Maintainer: support@monetize.site
 
 # Description
 
-Connects Prebid.js to Monetize.site demand over OpenRTB 2.x (`https://rtb.monetize.site/ssp`).
+Connects Prebid.js to Monetize.site demand over OpenRTB 2.6 (`https://rtb.monetize.site/ssp`).
 Requests are built with Prebid's `ortbConverter` library, one request per ad unit, with the
 zone id passed in the URL (`?z=<zoneID>`) and as `imp.tagid`.
 
@@ -19,6 +19,9 @@ zone id passed in the URL (`?z=<zoneID>`) and as `imp.tagid`.
 * First party data from `ortb2` / `ortb2Imp`, including supply chain and user ids (eids)
 * Privacy: GDPR consent string, US Privacy, GPP and COPPA are forwarded in the request (see GDPR / TCF below)
 * User syncs (image and iframe), returned by the server in `ext.pixels`
+
+Consent, user ids and supply chain are sent in their OpenRTB 2.6 locations: `regs.gdpr`,
+`regs.us_privacy`, `regs.gpp`/`regs.gpp_sid`, `user.consent`, `user.eids` and `source.schain`.
 
 # Bidder Parameters
 
@@ -106,7 +109,7 @@ pbjs.setConfig({
 ```
 
 `softVendorExceptions` still requires purpose consent; use `vendorExceptions` to skip both checks.
-The TC string itself is always forwarded in the request (`user.ext.consent`, `regs.ext.gdpr`).
+The TC string itself is always forwarded in the request (`user.consent`, `regs.gdpr`).
 
 # Optional Configuration
 

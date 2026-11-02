@@ -1,11 +1,12 @@
 import { type BidderSpec, type ExtendedResponse, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, type MediaType } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { deepSetValue, isArray, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, isArray, logWarn } from '../src/utils.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { resolveResponseMediaType } from '../libraries/ortb2Utils/mediaType.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
+import { toOrtb26 } from '../libraries/ortb2.5Translator/translator.js';
 
 const BIDDER_CODE = 'monetsite';
 const ADAPTER_VERSION = '1.0.0';
@@ -16,6 +17,7 @@ const DEFAULT_TTL = 500;
 const MAX_TTL = 5000;
 const DEFAULT_CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES: MediaType[] = [BANNER, VIDEO, NATIVE];
+const ORTB_IMP_FORMATS = ['banner', 'video', 'native', 'audio'];
 
 export interface MonetsiteBidderParams {
   /**
@@ -128,6 +130,15 @@ function getTtl(): number {
 }
 
 /**
+ * True when the Price Floors module deliberately sends no floor to this bidder (`noFloorSignalBidders`
+ * or a skipped auction); a missing rule (`not_found`) does not count.
+ */
+function isFloorSuppressed(bidRequest: object): boolean {
+  const floorData = deepAccess(bidRequest, 'floorData');
+  return !!(floorData?.noFloorSignaled || (floorData?.skipped && floorData.skippedReason !== 'not_found'));
+}
+
+/**
  * Core passes the ad unit's full `mediaTypes` (e.g. including audio), so keep only the formats this bidder supports.
  */
 function withSupportedMediaTypes<T extends { mediaTypes?: object }>(bidRequest: T): T {
@@ -154,10 +165,15 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    // ortb2Imp can still carry e.g. `imp.audio`; send only the formats this bidder supports
+    ORTB_IMP_FORMATS
+      .filter((format) => !SUPPORTED_MEDIA_TYPES.includes(format as MediaType))
+      .forEach((format) => delete imp[format]);
     const { zoneID, bidfloor, cur } = bidRequest.params;
     imp.tagid = normalizeZoneId(zoneID);
-    // a floor from the Price Floors module wins; otherwise use the ad unit params, defaulting to 0
-    if (imp.bidfloor == null) {
+    // a floor from the Price Floors module wins; otherwise use the ad unit params, defaulting to 0,
+    // unless the module suppressed the floor signal for this bidder
+    if (imp.bidfloor == null && !isFloorSuppressed(bidRequest)) {
       imp.bidfloor = normalizeBidfloor(bidfloor) ?? 0;
       imp.bidfloorcur = normalizeCurrency(cur) || DEFAULT_CURRENCY;
     }
@@ -171,7 +187,8 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     deepSetValue(request, 'source.ext.hb', 1);
     deepSetValue(request, 'source.ext.adapterver', ADAPTER_VERSION);
     deepSetValue(request, 'source.ext.prebidjsver', '$prebid.version$');
-    return request;
+    // Prebid keeps consent, eids and schain in their 2.5 `ext` locations; send them as OpenRTB 2.6 fields
+    return toOrtb26(request);
   },
 
   bidResponse(buildBidResponse, bid, context) {
@@ -180,12 +197,13 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     const mediaType: MediaType | undefined = bid.mtype == null
       ? resolveResponseMediaType(bid, context.imp)
       : ORTB_MTYPES[bid.mtype];
-    if (!mediaType || !context.imp?.[mediaType]) {
+    if (!SUPPORTED_MEDIA_TYPES.includes(mediaType) || !context.imp?.[mediaType]) {
       logWarn(`${BIDDER_CODE}: dropping bid ${bid.id} for impression ${bid.impid}: media type ${mediaType || bid.mtype} was not requested`);
       return undefined;
     }
     const bidResponse = buildBidResponse(bid, { ...context, mediaType });
-    bidResponse.ttl = getTtl();
+    // a buyer-declared expiry shorter than the configured ttl wins
+    bidResponse.ttl = bid.exp > 0 ? Math.min(bid.exp, getTtl()) : getTtl();
     return bidResponse;
   },
 });
