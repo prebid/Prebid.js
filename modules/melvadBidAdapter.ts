@@ -1,4 +1,5 @@
-import { deepAccess, deepSetValue, generateUUID, isPlainObject, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, isPlainObject, isStr, logWarn } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { registerBidder, type AdapterRequest, type BidderSpec, type ExtendedResponse, type ServerResponse } from '../src/adapters/bidderFactory.js';
 import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
@@ -68,6 +69,19 @@ export interface MelvadBidData {
   api?: number[];
   attr?: number[];
   nroa?: MelvadMarking;
+}
+
+declare module '../src/bidfactory' {
+  // bid.melvad is public: a page that renders the markup itself reads it from getBidResponses() and the bid events
+  interface BannerBidProperties {
+    melvad?: MelvadBidData;
+  }
+  interface VideoBidProperties {
+    melvad?: MelvadBidData;
+  }
+  interface NativeBidProperties {
+    melvad?: MelvadBidData;
+  }
 }
 
 type MelvadBid = Bid & { melvad?: MelvadBidData };
@@ -232,7 +246,8 @@ function fillMacros(text: string, cpm: unknown, currency: unknown): string {
 function callLink(bid: Bid, kind: 'win' | 'billing'): void {
   const link = (bid as MelvadBid).melvad?.[kind];
   if (isStr(link) && link !== '') {
-    triggerPixel(fillPriceMacros(link, bid));
+    // a low priority GET that must survive a navigation right after the event: fetch with keepalive, no cookies
+    ajax(fillPriceMacros(link, bid), undefined, undefined, { method: 'GET', keepalive: true, withCredentials: false });
   }
 }
 

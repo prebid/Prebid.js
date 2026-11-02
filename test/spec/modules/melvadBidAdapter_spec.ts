@@ -1,7 +1,7 @@
 /// <reference types="mocha" />
 import { expect } from 'chai';
-import sinon from 'sinon';
-import * as utils from '../../../src/utils.js';
+import type { Bid } from '../../../src/bidfactory.js';
+import { server } from '../../mocks/xhr.js';
 import { config } from '../../../src/config.js';
 import { spec, fillPriceMacros, getEndpoint } from '../../../modules/melvadBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
@@ -292,6 +292,9 @@ describe('melvadBidAdapter', () => {
       expect(list.melvad.nroa).to.deep.equal({ erid: 'e2' });
       const bare = interpret(sspResponse([sspBid({ api: 0, attr: [], ext: { melvad: { mediaType: 'banner' }, nroa: { client: {} } } })]))[0];
       expect(bare.melvad).to.deep.equal({ win: WIN_LINK, billing: BILLING_LINK });
+      // bid.melvad is part of the public bid type: no cast is needed to read it
+      const typed: Bid = bid;
+      expect(typed.melvad?.nroa?.erid).to.equal('2SDnjdXyz12');
     });
 
     it('drops a bid of an unknown impression and keeps the others', () => {
@@ -365,13 +368,9 @@ describe('melvadBidAdapter', () => {
   });
 
   describe('events', () => {
-    beforeEach(() => {
-      sinon.stub(utils, 'triggerPixel');
-    });
-
-    afterEach(() => {
-      (utils.triggerPixel as any).restore();
-    });
+    // ajax is rewritten at build time (plugins/callerContext.js) and cannot be stubbed: the requests are read from
+    // the global fetch mock
+    const notices = () => server.requests.map((req: any) => ({ url: req.url, method: req.method, keepalive: req.fetch.request.keepalive }));
 
     const wonBid = () => ({
       cpm: 80,
@@ -381,12 +380,12 @@ describe('melvadBidAdapter', () => {
 
     it('calls the win link with the price on bidWon', () => {
       spec.onBidWon(wonBid());
-      expect((utils.triggerPixel as any).calledOnceWithExactly('https://pub.supplier.melvad.com/win/abc?price=80&cur=RUB')).to.equal(true);
+      expect(notices()).to.deep.equal([{ url: 'https://pub.supplier.melvad.com/win/abc?price=80&cur=RUB', method: 'GET', keepalive: true }]);
     });
 
     it('calls the billing link on billable', () => {
       spec.onBidBillable(wonBid());
-      expect((utils.triggerPixel as any).calledOnceWithExactly('https://pub.supplier.melvad.com/bill/abc?price=80&cur=RUB')).to.equal(true);
+      expect(notices()).to.deep.equal([{ url: 'https://pub.supplier.melvad.com/bill/abc?price=80&cur=RUB', method: 'GET', keepalive: true }]);
     });
 
     it('uses the original price when the currency module converted the bid', () => {
@@ -396,13 +395,13 @@ describe('melvadBidAdapter', () => {
       bid.originalCpm = 80;
       bid.originalCurrency = 'RUB';
       spec.onBidWon(bid);
-      expect((utils.triggerPixel as any).calledOnceWithExactly('https://pub.supplier.melvad.com/win/abc?price=80&cur=RUB')).to.equal(true);
+      expect(notices()).to.deep.equal([{ url: 'https://pub.supplier.melvad.com/win/abc?price=80&cur=RUB', method: 'GET', keepalive: true }]);
     });
 
     it('calls nothing without links', () => {
       spec.onBidWon({ cpm: 1, currency: 'USD' } as any);
       spec.onBidBillable({ cpm: 1, currency: 'USD', melvad: {} } as any);
-      expect((utils.triggerPixel as any).callCount).to.equal(0);
+      expect(server.requests).to.have.length(0);
     });
 
     it('fills the macros once each', () => {
