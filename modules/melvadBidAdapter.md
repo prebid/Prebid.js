@@ -23,9 +23,8 @@ Every bid also carries `bid.melvad` for pages that render the markup themselves:
 frameworks of the creative), `attr` (the creative attributes) and `nroa` (the advertising marking required
 in Russia: `erid`, `inn`, `name`).
 
-Melvad bids in the currency of the placement: set `currency.adServerCurrency` to it (RUB for the test
-placements) or load the currency module. The user is taken from first party data
-(`ortb2.user.buyeruid`); the adapter runs no user sync of its own.
+Melvad bids in the ad server currency of the request (USD, EUR, GBP or RUB). The user is taken from first
+party data (`ortb2.user.buyeruid`); the adapter runs no user sync of its own.
 
 # Bid Params
 
@@ -37,7 +36,6 @@ placements) or load the currency module. The user is taken from first party data
 
 ```javascript
 pbjs.setConfig({
-  currency: { adServerCurrency: 'RUB' },
   cache: { allowVastXmlOnly: true },
   ortb2: { user: { buyeruid: 'prebid-test-user' } }
 });
