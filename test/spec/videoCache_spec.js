@@ -295,7 +295,9 @@ describe('The video cache', function () {
         const bidResponse = {};
         batchAndStore(auctionInstance, bidResponse, afterBidAdded);
 
-        sinon.assert.calledOnceWithExactly(stubCache, [{
+        // batches.forEach(cache) also passes the index and array.
+        sinon.assert.calledOnce(stubCache);
+        sinon.assert.calledWith(stubCache, [{
           auctionInstance,
           bidResponse,
           afterBidAdded
