@@ -89,9 +89,6 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   }, doc, attributes);
 
   function requestResource(tagSrc, callback, doc, attributes) {
-    if (!doc) {
-      doc = document;
-    }
     var jptScript = doc.createElement('script');
     jptScript.type = 'text/javascript';
     jptScript.async = true;
@@ -110,22 +107,10 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     function exit() {
       jptScript.removeEventListener('error', errorListener);
       jptScript.onload = null;
-      jptScript.onreadystatechange = null;
       callback();
     }
 
-    if (jptScript.readyState) {
-      jptScript.onreadystatechange = function () {
-        if (jptScript.readyState === 'loaded' || jptScript.readyState === 'complete') {
-          jptScript.onreadystatechange = null;
-          exit();
-        }
-      };
-    } else {
-      jptScript.onload = function () {
-        exit();
-      };
-    }
+    jptScript.onload = exit;
 
     jptScript.src = tagSrc;
 
