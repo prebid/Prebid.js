@@ -1,19 +1,19 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
-import { noCredsAjax, sendBeacon } from '../src/ajax.js';
+import { noCredsAjax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { buildUrl, logWarn, parseUrl } from '../src/utils.js';
 
-interface StackupBidParams {
+export interface StackupaiBidParams {
   /**
    * Supply tag ID assigned to this ad placement.
    */
   tag: string;
 }
 
-interface StackupConfig {
+export interface StackupaiConfig {
   /**
    * Overrides the auction endpoint.
    */
@@ -22,18 +22,19 @@ interface StackupConfig {
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    [BIDDER_CODE]: StackupBidParams;
+    [BIDDER_CODE]: StackupaiBidParams;
   }
 }
 
 declare module '../src/config' {
   interface Config {
-    [BIDDER_CODE]?: StackupConfig;
+    [BIDDER_CODE]?: StackupaiConfig;
   }
 }
 
 const BIDDER_CODE = 'stackupai';
-const DEFAULT_ENDPOINT = 'https://adserver.stackup-ai.com/openrtb2/auction';
+const ALLOWED_DOMAIN = 'stackup-ai.com';
+const DEFAULT_ENDPOINT = `https://adserver.${ALLOWED_DOMAIN}/openrtb2/auction`;
 const DEFAULT_TTL = 300;
 const TAG_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 // Upper bound on bids in one timeout report.
@@ -54,11 +55,18 @@ const resolveEndpoint = (): string => {
   if (endpoint == null) {
     return DEFAULT_ENDPOINT;
   }
-  if (typeof endpoint !== 'string' || !/^https?:\/\//.test(endpoint)) {
-    logWarn(`${BIDDER_CODE}: ignoring invalid endpoint override "${endpoint}"`);
+  if (typeof endpoint !== 'string' || !isAllowedEndpoint(endpoint)) {
+    logWarn(`${BIDDER_CODE}: ignoring endpoint override "${endpoint}", it must be an https URL on ${ALLOWED_DOMAIN}`);
     return DEFAULT_ENDPOINT;
   }
   return endpoint;
+};
+
+// Overrides may only point at StackUp's own hosts, over HTTPS.
+const isAllowedEndpoint = (endpoint: string): boolean => {
+  const { protocol, hostname } = parseUrl(endpoint, { noDecodeWholeURL: true });
+  return protocol === 'https' &&
+    (hostname === ALLOWED_DOMAIN || hostname.endsWith(`.${ALLOWED_DOMAIN}`));
 };
 
 // Timeout reports go to `events.` + the endpoint's host,
@@ -96,8 +104,9 @@ const interpretResponse: BidderSpec<typeof BIDDER_CODE>['interpretResponse'] = (
   if (!serverResponse?.body) {
     return [];
   }
+  // OpenRTB defaults a missing response cur to USD; without it Prebid rejects the bids.
   return converter.fromORTB({
-    response: serverResponse.body,
+    response: { ...serverResponse.body, cur: serverResponse.body.cur || 'USD' },
     request: request.data,
   });
 };
@@ -113,7 +122,8 @@ const timedOutTag = (params: unknown): string | undefined => {
 };
 
 // Only the browser knows our response missed the auction, so it reports the
-// timed-out bids to StackUp: one beacon per auction, never read.
+// timed-out bids to StackUp: one keepalive POST per auction, never read and
+// sent without credentials (navigator.sendBeacon would attach cookies).
 const onTimeout: BidderSpec<typeof BIDDER_CODE>['onTimeout'] = (timedOutBids) => {
   const timeout = Math.round(Number(timedOutBids?.[0]?.timeout));
   if (!(timeout > 0)) {
@@ -132,9 +142,7 @@ const onTimeout: BidderSpec<typeof BIDDER_CODE>['onTimeout'] = (timedOutBids) =>
 
   const url = resolveTimeoutUrl();
   const body = JSON.stringify({ v: 1, tmo: timeout, bids });
-  if (!sendBeacon(url, body)) {
-    noCredsAjax(url, undefined, body, { method: 'POST', contentType: 'text/plain', keepalive: true });
-  }
+  noCredsAjax(url, undefined, body, { method: 'POST', contentType: 'text/plain', keepalive: true });
 };
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {

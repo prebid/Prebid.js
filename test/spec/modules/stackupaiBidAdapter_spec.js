@@ -1,14 +1,12 @@
 import { cloneDeep } from 'lodash';
-import sinon from 'sinon';
-import * as ajaxLib from 'src/ajax.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { spec } from '../../../modules/stackupaiBidAdapter.ts';
 
 const DEFAULT_ENDPOINT = 'https://adserver.stackup-ai.com/openrtb2/auction';
-const CUSTOM_ENDPOINT = 'https://pbs.example.com/openrtb2/auction';
+const CUSTOM_ENDPOINT = 'https://pbs.stackup-ai.com/openrtb2/auction';
 const DEFAULT_TIMEOUT_URL = 'https://events.adserver.stackup-ai.com/e/timeout';
-const CUSTOM_TIMEOUT_URL = 'https://events.pbs.example.com/e/timeout';
+const CUSTOM_TIMEOUT_URL = 'https://events.pbs.stackup-ai.com/e/timeout';
 
 const bannerBidRequestBase = {
   adUnitCode: 'banner-ad-unit-code',
@@ -183,11 +181,19 @@ describe('Stackup bid adapter', () => {
       expect(request.url).to.equal(CUSTOM_ENDPOINT);
     });
 
-    it('ignores an endpoint that is not an http(s) URL', () => {
-      config.setConfig({ stackupai: { endpoint: 'javascript:alert(1)' } });
-      const request = spec.buildRequests([bannerBidRequest], bidderRequestFor([bannerBidRequest]));
+    [
+      ['not a URL', 'javascript:alert(1)'],
+      ['plain http', 'http://pbs.stackup-ai.com/openrtb2/auction'],
+      ['on another domain', 'https://pbs.example.com/openrtb2/auction'],
+      ['on a lookalike domain', 'https://evilstackup-ai.com/openrtb2/auction'],
+      ['under our domain as a subdomain of another', 'https://stackup-ai.com.example.com/openrtb2/auction'],
+    ].forEach(([description, endpoint]) => {
+      it(`ignores an endpoint that is ${description}`, () => {
+        config.setConfig({ stackupai: { endpoint } });
+        const request = spec.buildRequests([bannerBidRequest], bidderRequestFor([bannerBidRequest]));
 
-      expect(request.url).to.equal(DEFAULT_ENDPOINT);
+        expect(request.url).to.equal(DEFAULT_ENDPOINT);
+      });
     });
 
     it('puts the tag at imp.ext.prebid.bidder.stackupai (singular "bidder")', () => {
@@ -251,6 +257,24 @@ describe('Stackup bid adapter', () => {
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiser.com']);
     });
 
+    it('defaults the currency to USD when the response has no cur', () => {
+      const request = spec.buildRequests([bannerBidRequest], bidderRequestFor([bannerBidRequest]));
+      const response = cloneDeep(bannerServerResponseBase);
+      delete response.body.cur;
+      const { bids } = spec.interpretResponse(response, request);
+
+      expect(bids[0].currency).to.equal('USD');
+    });
+
+    it('keeps the response cur when present', () => {
+      const request = spec.buildRequests([bannerBidRequest], bidderRequestFor([bannerBidRequest]));
+      const response = cloneDeep(bannerServerResponseBase);
+      response.body.cur = 'EUR';
+      const { bids } = spec.interpretResponse(response, request);
+
+      expect(bids[0].currency).to.equal('EUR');
+    });
+
     if (FEATURES.VIDEO) {
       it('parses a video bid', () => {
         const request = spec.buildRequests([videoBidRequest], bidderRequestFor([videoBidRequest]));
@@ -282,33 +306,25 @@ describe('Stackup bid adapter', () => {
   });
 
   describe('onTimeout', () => {
-    let sandbox;
-    let sendBeacon;
+    const sent = () => server.requests;
+    const sentBody = () => JSON.parse(sent()[0].requestBody);
 
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sendBeacon = sandbox.stub(ajaxLib, 'sendBeacon').returns(true);
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    const sentBody = () => JSON.parse(sendBeacon.firstCall.args[1]);
-
-    it('sends one beacon with every timed-out bid to the timeout URL', () => {
+    it('sends one keepalive text/plain POST without credentials to the timeout URL', () => {
       spec.onTimeout([timedOutBid('bid-1'), timedOutBid('bid-2', [{ tag: 'other-tag' }])]);
 
-      expect(sendBeacon.calledOnce).to.be.true;
-      expect(sendBeacon.firstCall.args[0]).to.equal(DEFAULT_TIMEOUT_URL);
+      expect(sent()).to.have.length(1);
+      const [request] = sent();
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal(DEFAULT_TIMEOUT_URL);
+      expect(request.requestHeaders['content-type']).to.equal('text/plain');
+      expect(request.fetch.request.keepalive).to.be.true;
+      expect(request.withCredentials).to.be.false;
       expect(sentBody()).to.deep.equal({
         v: 1,
         tmo: 1000,
         bids: [{ id: 'bid-1', tag: 'test-tag' }, { id: 'bid-2', tag: 'other-tag' }],
       });
-      expect(server.requests).to.have.length(0);
     });
-
     it('reads the tag from a params object as well as an array', () => {
       spec.onTimeout([timedOutBid('bid-1', { tag: 'test-tag' })]);
 
@@ -367,24 +383,21 @@ describe('Stackup bid adapter', () => {
     it('sends nothing when no bid has a usable id', () => {
       spec.onTimeout([timedOutBid(undefined), timedOutBid('')]);
 
-      expect(sendBeacon.called).to.be.false;
-      expect(server.requests).to.have.length(0);
+      expect(sent()).to.have.length(0);
     });
 
     it('sends nothing without timed-out bids', () => {
       spec.onTimeout([]);
       spec.onTimeout(undefined);
 
-      expect(sendBeacon.called).to.be.false;
-      expect(server.requests).to.have.length(0);
+      expect(sent()).to.have.length(0);
     });
 
     [0, -1, undefined, 'soon'].forEach((timeout) => {
       it(`sends nothing when the timeout is ${String(timeout)}`, () => {
         spec.onTimeout([{ ...timedOutBid('bid-1'), timeout }]);
 
-        expect(sendBeacon.called).to.be.false;
-        expect(server.requests).to.have.length(0);
+        expect(sent()).to.have.length(0);
       });
     });
 
@@ -393,34 +406,21 @@ describe('Stackup bid adapter', () => {
       config.setBidderConfig({ bidders: ['stackupai'], config: { stackupai: { endpoint: CUSTOM_ENDPOINT } } });
       config.runWithBidder('stackupai', () => spec.onTimeout([timedOutBid('bid-1')]));
 
-      expect(sendBeacon.firstCall.args[0]).to.equal(CUSTOM_TIMEOUT_URL);
+      expect(sent()[0].url).to.equal(CUSTOM_TIMEOUT_URL);
     });
 
     it('keeps the endpoint port in the timeout URL', () => {
-      config.setConfig({ stackupai: { endpoint: 'http://pbs.example.com:8000/openrtb2/auction' } });
+      config.setConfig({ stackupai: { endpoint: 'https://pbs.stackup-ai.com:8443/openrtb2/auction' } });
       spec.onTimeout([timedOutBid('bid-1')]);
 
-      expect(sendBeacon.firstCall.args[0]).to.equal('http://events.pbs.example.com:8000/e/timeout');
+      expect(sent()[0].url).to.equal('https://events.pbs.stackup-ai.com:8443/e/timeout');
     });
 
     it('reports to the default timeout URL when the endpoint override is invalid', () => {
       config.setConfig({ stackupai: { endpoint: 'javascript:alert(1)' } });
       spec.onTimeout([timedOutBid('bid-1')]);
 
-      expect(sendBeacon.firstCall.args[0]).to.equal(DEFAULT_TIMEOUT_URL);
-    });
-
-    it('falls back to a keepalive text/plain POST when sendBeacon fails', () => {
-      sendBeacon.returns(false);
-      spec.onTimeout([timedOutBid('bid-1')]);
-
-      expect(server.requests).to.have.length(1);
-      const [request] = server.requests;
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.equal(DEFAULT_TIMEOUT_URL);
-      expect(request.requestHeaders['content-type']).to.equal('text/plain');
-      expect(request.fetch.request.keepalive).to.be.true;
-      expect(JSON.parse(request.requestBody)).to.deep.equal(sentBody());
+      expect(sent()[0].url).to.equal(DEFAULT_TIMEOUT_URL);
     });
   });
 });

@@ -26,6 +26,12 @@ GVL ID. When GDPR applies and the TCF control module enforces its default
 rules, the `stackupai` bidder is blocked on that traffic. Traffic where GDPR
 doesn't apply is unaffected.
 
+# Timeout notifications
+
+When StackUp's response misses the auction timeout, the adapter sends one
+POST per auction to `events.<endpoint host>/e/timeout` with the timed-out bid
+IDs, their `tag` and the timeout in milliseconds. It is sent without cookies.
+
 # Bid params
 
 | Name  | Scope    | Description                       | Example      | Type     |
