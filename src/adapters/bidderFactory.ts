@@ -42,7 +42,7 @@ import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
 import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
 import type { AddBidResponse } from "../auction.ts";
 import type { MediaType } from "../mediaTypes.ts";
-import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, coppaDataHandler, type ConsentDataForKey } from "../consentHandler.ts";
+import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, coppaDataHandler, type ConsentDataForKey, type GVLIDs } from "../consentHandler.ts";
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -134,9 +134,10 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
   /**
    * General Vendorlist ID.
    * Required, if you want to handle bid requests under the GDPR legislation with the TCF (Transparency and Consent Framework).
+   * May be a list, for adapters that act on behalf of several vendors; all of them then need a legal basis.
    * @see https://iabeurope.eu/tcf-for-vendors/
    */
-  gvlid?: number;
+  gvlid?: GVLIDs;
   /**
    * Google Additional Consent provider ID, for vendors that are not on the GVL.
    * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
@@ -144,7 +145,7 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
    * @see https://support.google.com/admanager/answer/9681920
    */
   acpId?: number;
-  aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, acpId?: number, skipPbsAliasing?: boolean })[];
+  aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: GVLIDs, acpId?: number, skipPbsAliasing?: boolean })[];
   isBidRequestValid(request: BidRequest<BIDDER>): boolean;
   buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
   interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;

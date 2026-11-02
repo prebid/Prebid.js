@@ -15,7 +15,7 @@ describe('PixFutureAdapter', function () {
     });
   });
 
-  it('<description of unit or feature being tested>', function () {
+  describe('adapter', function () {
     const adapter = newBidder(spec);
     describe('inherited functions', function () {
       it('exists and is a function', function () {

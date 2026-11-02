@@ -35,6 +35,7 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'modules/oftmediaRtdProvider.js',
   'modules/panxoRtdProvider.js',
   'modules/mileRtdProvider.ts',
+  'modules/transfonSecurityRtdProvider.js',
   // UserId Submodules
   'modules/justIdSystem.js',
   'modules/tncIdSystem.js',

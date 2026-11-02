@@ -26,7 +26,6 @@ import { generateUUID, deepAccess, isArray, isFn, logWarn } from '../src/utils.j
 const BIDDER_CODE = 'tne_catalyst';
 const ENDPOINT_URL = 'https://ads.thenexusengine.com/openrtb2/auction';
 const SYNC_URL = 'https://ads.thenexusengine.com/cookie_sync';
-const GVLID = 1494;
 
 interface TneCatalystBidParams {
   publisherId?: string;
@@ -56,7 +55,6 @@ declare module '../src/adUnits' {
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid(bid) {
