@@ -113,7 +113,7 @@ export function s2sActivityParams(s2sConfig) {
   });
 }
 
-export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
+export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
   /**
    * Unique ID for this request.
    */
@@ -223,8 +223,12 @@ export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderReques
 const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
   'nativeOrtbRequest',
-  'renderer',
   'element',
+] as const;
+
+const RENDERER_PROPERTIES = [
+  'renderer',
+  'safeRenderer',
 ] as const;
 
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
@@ -272,12 +276,8 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
     result.push(
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         const [tid, tidSource] = getTid(bid.bidder, adUnit.transactionId, bid.ortb2Imp?.ext?.tid ?? adUnit.ortb2Imp?.ext?.tid);
-        // AdUnit-level properties act as defaults: a property set on the
-        // individual bid (adUnit.bids[]) takes precedence over the same
-        // property set on the adUnit, matching the documented behavior for
-        // `renderer` (and `safeRenderer`, which is not copied here at all).
         bid = Object.assign({},
-          getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES),
+          getDefinedParams(adUnit, RENDERER_PROPERTIES),
           bid,
           {
             ortb2Imp: mergeDeep(
@@ -286,6 +286,7 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
               bid.ortb2Imp,
               { ext: { tid, tidSource } })
           },
+          getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES),
         );
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes;

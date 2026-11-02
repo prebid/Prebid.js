@@ -1549,32 +1549,68 @@ describe('auctionmanager.js', function () {
           expect(prepared.renderer).to.not.exist;
         });
 
-        describe('bid-level configuration takes precedence over adUnit-level', () => {
-          function prepare(adUnitProps, bidProps) {
+        describe('bid-level configuration', () => {
+          function makeBidRequest(adUnitProps, bidProps) {
             const adUnit = {
               code: 'precedence',
               mediaTypes: { banner: { sizes: [[300, 250]] } },
               bids: [{ bidder: BIDDER_CODE, params: {}, ...bidProps }],
               ...adUnitProps,
             };
-            const [request] = adapterManager.makeBidRequests.wrappedMethod([adUnit], 'precedence-auction', Date.now(), 1000);
+            const [bidderRequest] = adapterManager.makeBidRequests.wrappedMethod([adUnit], 'precedence-auction', Date.now(), 1000);
+            return { bidderRequest, adUnit };
+          }
+
+          function prepareResponse({ adUnit, bidderRequest }) {
             const index = {
               getAdUnit: () => adUnit,
-              getBidRequest: () => request.bids[0],
-              getMediaTypes: () => request.bids[0].mediaTypes,
+              getBidRequest: () => bidderRequest.bids[0],
+              getMediaTypes: () => bidderRequest.bids[0].mediaTypes,
             };
             return auctionModule.getPreparedBidForAuction({ cpm: 1, bidderCode: BIDDER_CODE, mediaType: 'banner' }, { index });
           }
 
-          it('for renderer', () => {
-            const render = () => null;
-            const prepared = prepare({ renderer: { url: 'adunit.js', render } }, { renderer: { url: 'bid.js', render } });
-            expect(prepared.renderer.url).to.eql('bid.js');
-          });
-
-          it('for safeRenderer', () => {
-            const prepared = prepare({ safeRenderer: { url: 'adunit-safe.js' } }, { safeRenderer: { url: 'bid-safe.js' } });
-            expect(prepared.safeRenderer.url).to.eql('bid-safe.js');
+          ['renderer', 'safeRenderer'].forEach(prop => {
+            describe(`for ${prop}`, () => {
+              Object.entries({
+                'defined only on adUnit': {
+                  adUnitProps: {
+                    [prop]: {
+                      url: 'target.js',
+                      render() {}
+                    }
+                  }
+                },
+                'defined on adUnit bid': {
+                  adUnitProps: {
+                    [prop]: {
+                      url: 'noise.js',
+                      render() {}
+                    }
+                  },
+                  bidProps: {
+                    [prop]: {
+                      url: 'target.js',
+                      render() {}
+                    }
+                  }
+                }
+              }).forEach(([desc, { adUnitProps, bidProps }]) => {
+                describe(desc, () => {
+                  let adUnit, bidderRequest, bidResponse;
+                  beforeEach(() => {
+                    ({ adUnit, bidderRequest } = makeBidRequest(adUnitProps, bidProps));
+                    bidResponse = prepareResponse({ adUnit, bidderRequest });
+                  });
+                  it('should be set on the request', () => {
+                    expect(bidderRequest.bids[0][prop].url).to.eql('target.js');
+                  });
+                  it('should be set on the response', () => {
+                    expect(bidResponse[prop].url).to.eql('target.js');
+                  });
+                });
+              });
+            });
           });
         });
       });
