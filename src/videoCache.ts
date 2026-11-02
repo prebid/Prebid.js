@@ -245,7 +245,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
  * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
+export function store(bids: VideoBid[], done: VideoCacheStoreCallback = (_error, _uuids) => {}, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
   const requestData = {
     puts: bids.map(bid => toStorageRequest(bid))
   };
