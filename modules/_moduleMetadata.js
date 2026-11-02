@@ -89,7 +89,7 @@ function analyticsMetadata() {
         return [
           provider,
           {
-            gvlid: formatGvlid(GDPR_GVLIDS.get(name).modules?.[MODULE_TYPE_ANALYTICS] ?? null),
+            gvlid: formatGvlid(GDPR_GVLIDS.get(provider).modules?.[MODULE_TYPE_ANALYTICS] ?? null),
             disclosureURL: adapter.disclosureURL
           }
         ];

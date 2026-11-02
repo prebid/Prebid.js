@@ -1,11 +1,12 @@
-import { mergeDeep, deepEqual, deepAccess, deepSetValue, deepClone } from '../../src/utils.js';
+import { deepEqual, deepAccess, deepSetValue, deepClone } from '../../src/utils.js';
 import { ORTB_EIDS_PATHS } from '../../src/activities/redactor.js';
+import { mergeBidderOrtb2 } from '../../src/fpd/merge.js';
 
 /**
  * Perform a partial pre-merge of bidder config for PBS.
  *
  * Prebid.js and Prebid Server use different strategies for merging global and bidder-specific config; JS attemps to
- * merge arrays (concatenating them, with some deduping, cfr. mergeDeep), while PBS only merges objects -
+ * merge arrays (concatenating them, with some deduping, cfr. mergeBidderOrtb2), while PBS only merges objects -
  * a bidder-specific array will replace a global array.
  *
  * This returns bidder config (from `bidder`) where arrays are replaced with what you get from merging them with `global`,
@@ -14,7 +15,7 @@ import { ORTB_EIDS_PATHS } from '../../src/activities/redactor.js';
 export function getPBSBidderConfig({ global, bidder }) {
   return Object.fromEntries(
     Object.entries(bidder).map(([bidderCode, bidderConfig]) => {
-      return [bidderCode, replaceArrays(bidderConfig, mergeDeep({}, global, bidderConfig))];
+      return [bidderCode, replaceArrays(bidderConfig, mergeBidderOrtb2(global, bidderConfig))];
     })
   );
 }

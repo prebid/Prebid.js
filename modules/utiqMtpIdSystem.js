@@ -17,6 +17,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'utiqMtpId';
 const LOG_PREFIX = 'Utiq MTP module';
+const CATEGORY_PRIORITIES = ['mobile', 'fixed'];
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_UID,
@@ -25,38 +26,54 @@ export const storage = getStorageManager({
 
 /**
  * Get the "mtid" from html5 local storage to make it available to the UserId module.
- * @returns {{utiqMtp: (*|string)}}
+ * @returns {{utiqMtp: (*|{mtid:string,category:string})}}
  */
 function getUtiqFromStorage() {
-  let utiqPass;
-  const utiqPassStorage = JSON.parse(
+  let utiqMtpPass;
+  const utiqMtpPassStorage = JSON.parse(
     storage.getDataFromLocalStorage('utiqPass')
   );
   logInfo(
     `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
-      utiqPassStorage
+      utiqMtpPassStorage
     )}`
   );
 
   if (
-    utiqPassStorage &&
-    utiqPassStorage.connectId &&
-    Array.isArray(utiqPassStorage.connectId.idGraph) &&
-    utiqPassStorage.connectId.idGraph.length > 0
+    utiqMtpPassStorage &&
+    utiqMtpPassStorage.connectId &&
+    Array.isArray(utiqMtpPassStorage.connectId.idGraph) &&
+    utiqMtpPassStorage.connectId.idGraph.length > 0
   ) {
-    utiqPass = utiqPassStorage.connectId.idGraph[0];
+    const idGraph = utiqMtpPassStorage.connectId.idGraph;
+
+    for (let i = 0; i < CATEGORY_PRIORITIES.length; i++) {
+      const found = idGraph.find(g => g.category === CATEGORY_PRIORITIES[i]);
+      if (found) {
+        utiqMtpPass = found;
+        break; // Stop immediately once the highest priority is found
+      }
+    }
+
+    // Fallback to the first item if no prioritized category matched
+    if (!utiqMtpPass) {
+      utiqMtpPass = idGraph[0];
+    }
+
+    logInfo(
+      `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
+        utiqMtpPass
+      )}`
+    );
   }
-  logInfo(
-    `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
-      utiqPass
-    )}`
-  );
 
   return {
-    utiqMtp:
-      utiqPass && utiqPass.mtid
-        ? utiqPass.mtid
-        : null,
+    utiqMtp: utiqMtpPass && utiqMtpPass.mtid
+      ? {
+          mtid: utiqMtpPass.mtid,
+          category: utiqMtpPass.category,
+        }
+      : null
   };
 }
 
@@ -71,7 +88,7 @@ export const utiqMtpIdSubmodule = {
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function
-   * @returns {{utiqMtp: string} | null}
+   * @returns {{utiqMtp: {mtid: string, category: string} | string} | null}
    */
   decode(bidId) {
     logInfo(`${LOG_PREFIX}: Decoded ID value ${JSON.stringify(bidId)}`);
@@ -80,7 +97,7 @@ export const utiqMtpIdSubmodule = {
   /**
    * Get the id from helper function and initiate a new user sync.
    * @param config
-   * @returns {{callback: Function}|{id: {utiqMtp: string}}}
+   * @returns {{callback: Function}|{id: {utiqMtp: {mtid:string,category:string}}}}
    */
   getId: function (config) {
     const data = getUtiqFromStorage();
@@ -135,8 +152,16 @@ export const utiqMtpIdSubmodule = {
       source: 'utiq-mtp.com',
       atype: 1,
       getValue: function (data) {
-        return data;
+        return data.mtid;
       },
+      getUidExt: function (data) {
+        const category = (data && data.category) || false;
+        return {
+          utiq: {
+            category
+          }
+        };
+      }
     },
   }
 };

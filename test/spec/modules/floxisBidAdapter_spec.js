@@ -1,8 +1,14 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec } from 'modules/floxisBidAdapter.js';
+import adapterManager from 'src/adapterManager.js';
+import { registerActivityControl } from 'src/activities/rules.js';
+import { ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD } from 'src/activities/activities.js';
+import { isValid } from 'src/adapters/bidderFactory.js';
+import { stubAuctionIndex } from '../../helpers/indexStub.js';
+import { spec, storage } from 'modules/floxisBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
+import 'modules/priceFloors.js';
 
 describe('floxisBidAdapter', function () {
   const DEFAULT_PARAMS = { seat: 'Gmtb', region: 'us-e', partner: 'floxis' };
@@ -34,13 +40,15 @@ describe('floxisBidAdapter', function () {
     bidId: 'bid-3',
     bidder: 'floxis',
     adUnitCode: 'adunit-native',
+    adUnitId: 'native-unit',
     mediaTypes: {
       native: {
         image: { required: true, sizes: [150, 50] },
         title: { required: true, len: 80 }
       }
     },
-    params: { ...DEFAULT_PARAMS }
+    params: { ...DEFAULT_PARAMS },
+    nativeOrtbRequest: { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }, { id: 2, required: 1, img: { type: 3, w: 150, h: 50 } }] }
   };
 
   describe('isBidRequestValid', function () {
@@ -164,6 +172,11 @@ describe('floxisBidAdapter', function () {
       expect(requests).to.be.an('array').that.is.empty;
     });
 
+    it('rejects a combined partner-region host label longer than 63 characters', function () {
+      const bid = { ...validBannerBid, params: { seat: 'Gmtb', partner: 'p'.repeat(32), region: 'r'.repeat(32) } };
+      expect(spec.buildRequests([bid], bidderRequest)).to.be.empty;
+    });
+
     it('should default region to us-e when missing', function () {
       const bidWithoutRegion = {
         ...validBannerBid,
@@ -209,6 +222,23 @@ describe('floxisBidAdapter', function () {
       expect(imp).to.have.property('banner');
       expect(imp.banner.format).to.be.an('array');
       expect(imp.secure).to.equal(1);
+    });
+
+    it('should set imp.tagid from adUnitCode', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      expect(requests[0].data.imp[0].tagid).to.equal('adunit-banner');
+    });
+
+    it('should keep a publisher-supplied ortb2Imp.tagid', function () {
+      const bidWithTagid = { ...validBannerBid, ortb2Imp: { tagid: 'publisher-placement-1' } };
+      const requests = spec.buildRequests([bidWithTagid], bidderRequest);
+      expect(requests[0].data.imp[0].tagid).to.equal('publisher-placement-1');
+    });
+
+    it('should fall back to adUnitCode when ortb2Imp.tagid is empty', function () {
+      const bidWithEmptyTagid = { ...validBannerBid, ortb2Imp: { tagid: '' } };
+      const requests = spec.buildRequests([bidWithEmptyTagid], bidderRequest);
+      expect(requests[0].data.imp[0].tagid).to.equal('adunit-banner');
     });
 
     if (FEATURES.VIDEO) {
@@ -267,6 +297,11 @@ describe('floxisBidAdapter', function () {
       expect(requests[0].options.withCredentials).to.be.true;
     });
 
+    it('should enable endpoint compression', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      expect(requests[0].options.endpointCompression).to.be.true;
+    });
+
     describe('Floors Module support', function () {
       it('should set bidfloor from getFloor', function () {
         const bidWithFloor = {
@@ -319,6 +354,19 @@ describe('floxisBidAdapter', function () {
         const imp = requests[0].data.imp[0];
         expect(imp.bidfloor).to.equal(1.75);
         expect(imp.bidfloorcur).to.equal('USD');
+      });
+
+      it('should leave a floor without currency unsignaled, as core requires', function () {
+        const bidNoCurrencyFloor = {
+          ...validBannerBid,
+          getFloor: function () {
+            return { floor: 1.5 };
+          }
+        };
+        const requests = spec.buildRequests([bidNoCurrencyFloor], bidderRequest);
+        const imp = requests[0].data.imp[0];
+        expect(imp.bidfloor).to.be.undefined;
+        expect(imp.bidfloorcur).to.be.undefined;
       });
     });
 
@@ -384,6 +432,272 @@ describe('floxisBidAdapter', function () {
       it('should default cur to USD', function () {
         const data = spec.buildRequests([validBannerBid], bidderRequest)[0].data;
         expect(data.cur).to.deep.equal(['USD']);
+      });
+    });
+
+    describe('First-party fallback id (user.ext.floxisId)', function () {
+      const STUBBED_UUID = '11111111-1111-4111-8111-111111111111';
+      const STORED_UUID = '22222222-2222-4222-8222-222222222222';
+      // fixed ortb2.id keeps core's own generateUUID out of the stub's call count
+      const floxisIdBidderRequest = { ...bidderRequest, ortb2: { id: 'fixed-request-id' } };
+      let localStorageIsEnabledStub, cookiesAreEnabledStub;
+      let getDataFromLocalStorageStub, getCookieStub;
+      let setDataInLocalStorageStub, setCookieStub;
+      let generateUUIDStub;
+
+      beforeEach(function () {
+        localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+        cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+        getCookieStub = sinon.stub(storage, 'getCookie');
+        // writes feed the paired get stub so the adapter's read-back behaves like a real store
+        setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (key, value) {
+          getDataFromLocalStorageStub.withArgs(key).returns(value);
+        });
+        setCookieStub = sinon.stub(storage, 'setCookie').callsFake(function (key, value) {
+          getCookieStub.withArgs(key).returns(value);
+        });
+        generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(STUBBED_UUID);
+      });
+
+      afterEach(function () {
+        localStorageIsEnabledStub.restore();
+        cookiesAreEnabledStub.restore();
+        getDataFromLocalStorageStub.restore();
+        getCookieStub.restore();
+        setDataInLocalStorageStub.restore();
+        setCookieStub.restore();
+        generateUUIDStub.restore();
+      });
+
+      it('mints and persists a new id when none is stored', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(generateUUIDStub.calledOnce).to.be.true;
+        expect(setDataInLocalStorageStub.calledWith('flx_uid', STUBBED_UUID)).to.be.true;
+        expect(setCookieStub.calledWith('flx_uid', STUBBED_UUID)).to.be.true;
+      });
+
+      it('reuses a valid stored id without regenerating it', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(STORED_UUID);
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(generateUUIDStub.called).to.be.false;
+      });
+
+      it('falls back to the cookie when localStorage has no stored value', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(STORED_UUID);
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(generateUUIDStub.called).to.be.false;
+      });
+
+      it('regenerates the id when the stored value is a malformed UUID', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns('not-a-uuid');
+        getCookieStub.returns('also-not-a-uuid');
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(generateUUIDStub.calledOnce).to.be.true;
+        expect(setDataInLocalStorageStub.calledWith('flx_uid', STUBBED_UUID)).to.be.true;
+      });
+
+      it('sends no id and does not throw when storage is disallowed', function () {
+        localStorageIsEnabledStub.returns(false);
+        cookiesAreEnabledStub.returns(false);
+
+        let data;
+        expect(function () {
+          data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+        }).to.not.throw();
+
+        expect(data.user?.ext?.floxisId).to.be.undefined;
+        expect(setDataInLocalStorageStub.called).to.be.false;
+        expect(setCookieStub.called).to.be.false;
+      });
+
+      it('sends no id when key-specific access is denied but enablement checks pass (storageControl strict mode)', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+        setDataInLocalStorageStub.callsFake(function () {});
+        setCookieStub.callsFake(function () {});
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user?.ext?.floxisId).to.be.undefined;
+        expect(generateUUIDStub.calledOnce).to.be.true;
+      });
+
+      it('sends no id and does not throw when a storage accessor throws', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.throws(new Error('storage access error'));
+
+        let data;
+        expect(function () {
+          data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+        }).to.not.throw();
+
+        expect(data.user?.ext?.floxisId).to.be.undefined;
+      });
+
+      it('does not clobber other user.ext fields set via ortb2 FPD', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const ortb2BidderRequest = {
+          ...floxisIdBidderRequest,
+          ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: { consent: 'consent-string-123' } } }
+        };
+        const data = spec.buildRequests([validBannerBid], ortb2BidderRequest)[0].data;
+
+        expect(data.user.ext.consent).to.equal('consent-string-123');
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+      });
+
+      it('does not overwrite an existing user.ext.floxisId', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+
+        const ortb2BidderRequest = {
+          ...floxisIdBidderRequest,
+          ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: { floxisId: STORED_UUID } } }
+        };
+        const data = spec.buildRequests([validBannerBid], ortb2BidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(generateUUIDStub.called).to.be.false;
+      });
+
+      [ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_UFPD].forEach((activity) => {
+        it(`does not resolve or transmit a fallback id when ${activity} is denied`, function () {
+          localStorageIsEnabledStub.returns(true);
+          cookiesAreEnabledStub.returns(true);
+          getDataFromLocalStorageStub.returns(null);
+          getCookieStub.returns(null);
+          const unregister = registerActivityControl(activity, 'floxis test', (params) => {
+            if (params.componentName === 'floxis') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+            expect(data.user?.ext?.floxisId).to.be.undefined;
+            expect(localStorageIsEnabledStub.called).to.be.false;
+            expect(cookiesAreEnabledStub.called).to.be.false;
+            expect(generateUUIDStub.called).to.be.false;
+          } finally {
+            unregister();
+          }
+          expect(spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        });
+
+        it(`removes a publisher id when ${activity} is denied and restores it when allowed`, function () {
+          const req = { ...floxisIdBidderRequest, ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: { floxisId: STORED_UUID, wlid: STORED_UUID, consent: 'consent' } } } };
+          const unregister = registerActivityControl(activity, 'floxis test', (params) => {
+            if (params.componentName === 'floxis') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], req)[0].data;
+            expect(data.user.ext).to.deep.equal({ consent: 'consent' });
+            expect(localStorageIsEnabledStub.called).to.be.false;
+            expect(generateUUIDStub.called).to.be.false;
+          } finally {
+            unregister();
+          }
+          expect(spec.buildRequests([validBannerBid], req)[0].data.user.ext.floxisId).to.equal(STORED_UUID);
+        });
+
+        it(`uses the alias identity for ${activity} controls`, function () {
+          localStorageIsEnabledStub.returns(true);
+          cookiesAreEnabledStub.returns(true);
+          getDataFromLocalStorageStub.returns(null);
+          getCookieStub.returns(null);
+          const unregister = registerActivityControl(activity, 'floxis alias test', (params) => {
+            if (params.componentName === 'floxis_alias') return { allow: false };
+          });
+          try {
+            const data = spec.buildRequests([validBannerBid], { ...floxisIdBidderRequest, bidderCode: 'floxis_alias' })[0].data;
+            expect(data.user?.ext?.floxisId).to.be.undefined;
+            expect(localStorageIsEnabledStub.called).to.be.false;
+            expect(spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data.user.ext.floxisId).to.equal(STUBBED_UUID);
+          } finally {
+            unregister();
+          }
+        });
+      });
+
+      it('still sets the id when publisher ortb2 supplies a non-object user', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        [null, [], 'nope'].forEach(function (badUser) {
+          const bidderRequestWithBadUser = {
+            ...floxisIdBidderRequest,
+            ortb2: { ...floxisIdBidderRequest.ortb2, user: badUser }
+          };
+          const data = spec.buildRequests([validBannerBid], bidderRequestWithBadUser)[0].data;
+          expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        });
+      });
+
+      it('still sets the id when publisher ortb2 supplies a non-object user.ext', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const bidderRequestWithBadUserExt = {
+          ...floxisIdBidderRequest,
+          ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: null } }
+        };
+        const data = spec.buildRequests([validBannerBid], bidderRequestWithBadUserExt)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+      });
+
+      it('resolves the id once per auction, not once per seat group', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const secondGroupBid = {
+          ...validBannerBid,
+          bidId: 'bid-3',
+          params: { seat: 'Seat2', region: 'eu-w', partner: 'mypartner' }
+        };
+        const requests = spec.buildRequests([validBannerBid, secondGroupBid], floxisIdBidderRequest);
+
+        expect(requests).to.have.lengthOf(2);
+        requests.forEach(function (request) {
+          expect(request.data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        });
+        expect(localStorageIsEnabledStub.calledOnce).to.be.true;
+        expect(setDataInLocalStorageStub.calledOnce).to.be.true;
+        expect(setCookieStub.calledOnce).to.be.true;
       });
     });
   });
@@ -630,6 +944,14 @@ describe('floxisBidAdapter', function () {
         expect(bids[0].mediaType).to.equal(NATIVE);
         expect(bids[0].cpm).to.equal(2.75);
         expect(bids[0].burl).to.equal(BURL);
+        expect(JSON.parse(request.data.imp[0].native.request).assets).to.deep.equal(validNativeBid.nativeOrtbRequest.assets);
+        const native = JSON.parse(nativeAdm);
+        expect(bids[0].native.ortb).to.deep.equal(native);
+        const bid = { ...bids[0], adUnitId: validNativeBid.adUnitId };
+        const index = stubAuctionIndex({ bidRequests: [validNativeBid], adUnits: [{ ...validNativeBid }] });
+        expect(isValid(validNativeBid.adUnitCode, bid, { index })).to.be.true;
+        const incomplete = { ...bid, native: { ortb: { ...native, assets: [native.assets[0]] } } };
+        expect(isValid(validNativeBid.adUnitCode, incomplete, { index })).to.be.false;
       });
     }
 
@@ -694,6 +1016,11 @@ describe('floxisBidAdapter', function () {
     it('should ignore a malformed sync header that lacks a valid region', function () {
       const malformed = syncResponse('seat=Gmtb&region=evil.com/x');
       expect(spec.getUserSyncs({ iframeEnabled: true }, [malformed])).to.be.an('array').that.is.empty;
+    });
+
+    it('rejects a sync host whose px-region label exceeds 63 characters', function () {
+      const response = syncResponse(`seat=Gmtb&region=${'r'.repeat(61)}`);
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [response])).to.be.empty;
     });
 
     it('should emit an iframe sync to the region trackers host for the seat', function () {
@@ -849,6 +1176,29 @@ describe('floxisBidAdapter', function () {
     });
   });
 
+  describe('onDataDeletionRequest', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('removes both copies of the fallback id when core forwards a CMP deletion request', function () {
+      const removeLocal = sandbox.stub(storage, 'removeDataFromLocalStorage');
+      const setCookie = sandbox.stub(storage, 'setCookie');
+      adapterManager.callDataDeletionRequest({});
+      expect(removeLocal.calledOnceWith('flx_uid')).to.be.true;
+      expect(setCookie.calledOnce).to.be.true;
+      const [name, value, expires] = setCookie.firstCall.args;
+      expect([name, value]).to.deep.equal(['flx_uid', '']);
+      expect(new Date(expires).getTime()).to.be.below(Date.now());
+    });
+  });
+
   describe('onBidBillable', function () {
     let triggerPixelStub;
 
@@ -890,6 +1240,27 @@ describe('floxisBidAdapter', function () {
 
     const beaconUrl = (i = 0) => politeStub.getCall(i).args[0];
 
+    it('reports each timed-out seat from core ad unit params once across ad units', function () {
+      const adUnits = [
+        {
+          code: 'timeout-unit-1',
+          bids: [
+            { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
+            { bidder: 'floxis', params: { seat: 'Gmtb', region: 'us-e' } },
+            { bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } },
+            { bidder: 'floxis', params: {} },
+            { bidder: 'other', params: { seat: 'unrelated' } }
+          ]
+        },
+        { code: 'timeout-unit-2', bids: [{ bidder: 'floxis', params: { seat: 'Seat2', region: 'eu' } }] }
+      ];
+      adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'floxis', adUnitCode: code, auctionId: 'private-auction' })), 2000);
+      expect(politeStub.getCalls().map(({ args }) => args)).to.deep.equal([
+        ['https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000', 'omit'],
+        ['https://px-us-e.floxis.tech/event?event=timeout&seat=Seat2&region=eu&duration=2000', 'omit']
+      ]);
+    });
+
     it('should fire a timeout event beacon to the pinned us-e host', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
       expect(politeStub.calledOnce).to.be.true;
@@ -899,7 +1270,7 @@ describe('floxisBidAdapter', function () {
       expect(url).to.include('seat=Gmtb');
       expect(url).to.include('region=us-e');
       expect(url).to.include('duration=2000');
-      expect(url).to.include('auctionId=a1');
+      expect(url).not.to.match(/[?&]auctionId=/);
     });
 
     it('should send the beacon cookieless via politeTriggerPixel (credentials omitted)', function () {
@@ -990,7 +1361,7 @@ describe('floxisBidAdapter', function () {
       expect(url).to.include('region=us-e');
       expect(url).to.include('status=500');
       expect(url).to.include('timedout=0');
-      expect(url).to.include('auctionId=a1');
+      expect(url).not.to.match(/[?&]auctionId=/);
     });
 
     it('should send the beacon cookieless via politeTriggerPixel (credentials omitted)', function () {
@@ -1043,7 +1414,7 @@ describe('floxisBidAdapter', function () {
       expect(politeStub.callCount).to.equal(1);
     });
 
-    it('should emit one beacon per distinct seat+region pair', function () {
+    it('should omit a split-request error without an identifiable target', function () {
       spec.onBidderError({
         error: { status: 503, timedOut: false },
         bidderRequest: {
@@ -1054,7 +1425,21 @@ describe('floxisBidAdapter', function () {
           ]
         }
       });
-      expect(politeStub.callCount).to.equal(2);
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('matches the normalized response hostname for uppercase routing labels', function () {
+      spec.onBidderError({
+        error: { status: 503, responseURL: 'https://foo-us-e.floxis.tech/pbjs?seat=Gmtb&gzip=1' },
+        bidderRequest: makeBidderRequest({
+          bids: [
+            { params: { seat: 'Gmtb', region: 'US-E', partner: 'Foo' } },
+            { params: { seat: 'Seat2', region: 'us-e' } }
+          ]
+        })
+      });
+      expect(politeStub.calledOnce).to.be.true;
+      expect(beaconUrl()).to.include('seat=Gmtb&region=US-E');
     });
 
     it('should not throw when bidderRequest is missing', function () {

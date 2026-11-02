@@ -1,7 +1,7 @@
 import { logError, _each, generateUUID, buildUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { VIDEO } from '../src/mediaTypes.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'lkqd';
 const BID_TTL_DEFAULT = 300;
@@ -75,8 +75,9 @@ export const spec = {
         }
       };
 
-      if (isSet(config.getConfig('coppa'))) {
-        requestData.regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
+      const coppa = bidderRequest?.ortb2?.regs?.coppa ?? (coppaDataHandler.getCoppa() ? 1 : undefined);
+      if (isSet(coppa)) {
+        requestData.regs.coppa = coppa;
       }
 
       if (isSet(GDPR)) {

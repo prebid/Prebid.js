@@ -1090,6 +1090,27 @@ describe('AppNexusAdapter', function () {
       expect(payload.gdpr_consent.addtl_consent).to.exist.and.to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
     });
 
+    it('should ignore disclosed-vendor identifiers in v2 addtlConsent strings', function () {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true,
+          addtlConsent: '2~1.35.41.101~dv.9.21.81'
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr_consent.addtl_consent).to.exist.and.to.deep.equal([1, 35, 41, 101]);
+    });
+
     it('should add us privacy string to payload', function () {
       const consentString = '1YA-';
       const bidderRequest = {
@@ -1329,18 +1350,12 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should populate coppa if set in config', function () {
+    it('should populate coppa if set in ortb2', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], { ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(request.data);
 
       expect(payload.user.coppa).to.equal(true);
-
-      config.getConfig.restore();
     });
 
     describe('ast_override_div', function () {

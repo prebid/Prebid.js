@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { ortbConverterProps, spec } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
+import { getRefererInfo } from 'src/refererDetection.js';
 import { server } from '../../mocks/xhr.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
@@ -116,6 +117,7 @@ describe('OguryBidAdapter', () => {
     gdprConsent: { consentString: 'myConsentString', vendorData: {}, gdprApplies: true },
     gppConsent: { gppString: 'myGppString', gppData: {}, applicableSections: [7], parsedSections: {} },
     timeout: 1000,
+    refererInfo: { page: currentLocation },
     ortb2
   };
 
@@ -676,7 +678,7 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.ext).to.deep.equal({
         prebidversion: '$prebid.version$',
-        adapterversion: '2.1.0'
+        adapterversion: '2.1.2'
       });
 
       expect(dataRequest.device).to.deep.equal({
@@ -797,12 +799,87 @@ describe('OguryBidAdapter', () => {
       expect(request.data.imp[0].ext.gpid).to.equal(bidRequests[0].adUnitCode);
     });
 
-    it('should set the actual site location in site.page when the ORTB object contains the referrer instead of the current location', () => {
+    it('should keep the publisher provided site.page instead of overriding it with the current location', () => {
       const bidderRequest = utils.deepClone(bidderRequestBase);
-      bidderRequest.ortb2.site.page = 'https://google.com';
+      bidderRequest.ortb2.site.page = 'https://publisher.com/custom-page-url';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('https://publisher.com/custom-page-url');
+    });
+
+    it('should not throw and should keep site.page when the top window location is not readable (cross-origin iframe)', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'https://publisher-page.example/article';
+
+      windowTopStub.returns({
+        get location() {
+          throw new DOMException('Blocked a frame with origin "https://frame.publisher-page.example" from accessing a cross-origin frame.', 'SecurityError');
+        },
+        devicePixelRatio: stubbedDevicePixelRatio
+      });
+
+      expect(() => spec.buildRequests(bidRequests, bidderRequest)).to.not.throw();
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('https://publisher-page.example/article');
+    });
+
+    it('should repair a publisher site.page sent as a bare hostname, restoring the page path', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com';
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.site.page).to.equal(currentLocation);
+    });
+
+    it('should repair a bare hostname even when it carries a path, since the scheme is what fails validation', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com/article-123?a=b';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal(currentLocation);
+    });
+
+    it('should repair a protocol-relative site.page', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = '//www.publisher.com/article-123';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal(currentLocation);
+    });
+
+    it('should keep an http site.page as provided', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'http://www.publisher.com/article-123';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('http://www.publisher.com/article-123');
+    });
+
+    it('should leave a malformed site.page untouched when refererInfo has no page to offer', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com';
+      bidderRequest.refererInfo = {};
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('www.publisher.com');
+    });
+
+    // tripwire: request() has to resolve the page without reading the top window, which throws here
+    it('should resolve site.page without any top-window location read', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'www.publisher.com';
+      bidderRequest.refererInfo = { page: 'https://www.publisher.com/article-123' };
+
+      windowTopStub.returns({
+        get location() {
+          throw new DOMException('Blocked a frame with origin "https://frame.publisher.com" from accessing a cross-origin frame.', 'SecurityError');
+        },
+        devicePixelRatio: stubbedDevicePixelRatio
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal('https://www.publisher.com/article-123');
     });
   });
 
@@ -929,6 +1006,21 @@ describe('OguryBidAdapter', () => {
       expect(requests[0].method).to.equal('GET');
     });
 
+    it('Should still send the nurl ping when writing OG_PREBID_BID_OBJECT on the top window throws (cross-origin iframe)', function() {
+      const frozenTopWindow = Object.freeze({});
+      const windowTopStub = sinon.stub(utils, 'getWindowTop');
+      windowTopStub.returns(frozenTopWindow);
+
+      try {
+        spec.onBidWon({ nurl });
+      } finally {
+        windowTopStub.restore();
+      }
+
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.equal(nurl);
+    });
+
     it('Should trigger getWindowContext method', function() {
       const bidSample = {
         id: 'advertId',
@@ -991,7 +1083,37 @@ describe('OguryBidAdapter', () => {
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal(TIMEOUT_URL);
       expect(requests[0].method).to.equal('POST');
-      expect(JSON.parse(requests[0].requestBody).location).to.equal(window.location.href);
+      expect(JSON.parse(requests[0].requestBody).location).to.equal(getRefererInfo().page);
+    });
+
+    it('should report the same page URL as buildRequests when ortb2.site.page diverges from refererInfo', function() {
+      const bid = {
+        ad: '<img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" />',
+        cpm: 3,
+        ortb2: { site: { page: 'https://publisher.com/custom-page-url' } }
+      };
+
+      spec.onTimeout([bid]);
+
+      expect(requests.length).to.equal(1);
+      // request() sends ortb2.site.page, so timeout monitoring must report the same URL
+      expect(JSON.parse(requests[0].requestBody).location).to.equal('https://publisher.com/custom-page-url');
+      expect(JSON.parse(requests[0].requestBody).location).to.not.equal(getRefererInfo().page);
+    });
+
+    it('should report the resolved page, not the raw ortb2.site.page, when the publisher value is not an absolute URL', function() {
+      const bid = {
+        ad: '<img src="https://assets.example/creative.jpg" alt="creative" />',
+        cpm: 3,
+        ortb2: { site: { page: 'www.publisher.com' } }
+      };
+
+      spec.onTimeout([bid]);
+
+      expect(requests.length).to.equal(1);
+      // request() repairs a schemeless site.page, so monitoring must report the repaired URL
+      expect(JSON.parse(requests[0].requestBody).location).to.equal(getRefererInfo().page);
+      expect(JSON.parse(requests[0].requestBody).location).to.not.equal('www.publisher.com');
     });
   });
 

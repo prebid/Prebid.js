@@ -251,6 +251,45 @@ describe('freedomadnetworkAdapter', function() {
       expect(bid.currency).to.equal('USD');
       expect(bid.ttl).to.equal(300);
     });
+
+    it('should not throw and should skip the renderer when a VIDEO bid has no ext.libertas', function() {
+      const builtRequests = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      const fakeRequest = builtRequests[0];
+
+      const ortbResponse = {
+        id: fakeRequest.data.id,
+        cur: 'USD',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '456',
+                impid: fakeRequest.data.imp[0].id,
+                price: 3.5,
+                adm: '<VAST></VAST>',
+                w: 640,
+                h: 480,
+                crid: 'cr456',
+                mtype: 2, // video, no `ext` at all
+              }
+            ]
+          }
+        ],
+      };
+
+      const serverResponse = { body: ortbResponse };
+
+      let bidResponses;
+      expect(() => {
+        bidResponses = spec.interpretResponse(serverResponse, fakeRequest);
+      }).to.not.throw();
+
+      expect(bidResponses).to.be.an('array').with.lengthOf(1);
+      const bid = bidResponses[0];
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.vastXml).to.equal('<VAST></VAST>');
+      expect(bid.renderer).to.not.exist;
+    });
   });
 
   describe('getUserSyncs', function() {
@@ -343,6 +382,25 @@ describe('freedomadnetworkAdapter', function() {
       // Second call: win tracking URL must start with base
       const winCallArgs = triggerPixelStub.getCall(1).args[0];
       expect(winCallArgs).to.match(/^https:\/\/pxl\.nurl\/track\?bid=req456/);
+    });
+
+    it('onBidWon should not throw when the winning bid has no meta.libertas', function() {
+      const fakeBid = {
+        requestId: 'req789',
+        auctionId: 'auc789',
+        cpm: 2.0,
+        currency: 'USD',
+        creativeId: 'creative789',
+        nurl: 'https://win.nurl/track?bid=req789',
+        meta: {
+          networkName: 'freedomadnetwork',
+          advertiserDomains: []
+        },
+      };
+
+      expect(() => spec.onBidWon(fakeBid)).to.not.throw();
+      expect(triggerPixelStub.calledWith('https://win.nurl/track?bid=req789')).to.be.true;
+      expect(triggerPixelStub.calledOnce).to.be.true;
     });
   });
 });

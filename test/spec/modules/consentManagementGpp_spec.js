@@ -445,10 +445,37 @@ describe('consentManagementGpp', function () {
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.false;
         const consent = gppDataHandler.getConsentData();
-        // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
-        sinon.assert.calledTwice(utils.logError);
+        sinon.assert.calledOnce(utils.logError);
         expect(consent).to.be.null;
         expect(gppDataHandler.ready).to.be.true;
+      });
+
+      describe('with a CMP that appears late', () => {
+        let lateCmpTimer;
+        beforeEach(() => {
+          lateCmpTimer = setTimeout(() => {
+            window.__gpp = sinon.stub().callsFake(function (command, callback) {
+              if (command === 'ping') {
+                callback({ signalStatus: 'ready', applicableSections: [7], gppString: 'late-consent', gppVersion: '1.1' });
+              }
+            });
+          }, 10);
+        });
+        afterEach(() => {
+          clearTimeout(lateCmpTimer);
+          delete window.__gpp;
+        });
+
+        it('should wait for it when configured', async function () {
+          await setConsentConfig({ gpp: { cmpApi: 'iab', timeout: 500, waitForCmp: true } });
+          expect(await runHook()).to.be.true;
+          expect(gppDataHandler.getConsentData().gppString).to.eql('late-consent');
+        });
+
+        it('should not wait for it by default', async function () {
+          await setConsentConfig({ gpp: { cmpApi: 'iab', timeout: 500 } });
+          expect(await runHook()).to.be.false;
+        });
       });
 
       it('should not trip when adUnits have no size', async () => {

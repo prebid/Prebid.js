@@ -27,6 +27,13 @@ userIdAsEids = [
         }]
     },
     {
+        source: 'anonymised.io',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'utiq.com',
         uids: [{
             id: 'some-random-id-value',
@@ -378,6 +385,13 @@ userIdAsEids = [
     },
     {
         source: 'start.io',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'adx.ws',
         uids: [{
             id: 'some-random-id-value',
             atype: 1

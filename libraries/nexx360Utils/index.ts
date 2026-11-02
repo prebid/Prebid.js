@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, generateUUID, getParameterByName, logInfo } from '../../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getParameterByName, logInfo, sizesToSizeTuples } from '../../src/utils.js';
 import { Renderer } from '../../src/Renderer.js';
 import { config } from '../../src/config.js';
 import { getCurrencyFromBidderRequest } from '../ortb2Utils/currency.js';
@@ -7,7 +7,9 @@ import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
 import { StorageManager } from '../../src/storageManager.js';
 import { BidRequest, ORTBImp, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
-import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { AdapterRequest, AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { ClientBidderRequest } from '../../src/adapterManager.js';
+import { Nexx360ServerAuction } from './types.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -129,10 +131,16 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
   const divId = bidRequest.params.divId || bidRequest.adUnitCode;
   deepSetValue(imp, 'ext.divId', divId);
   if (imp.video) {
-    const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    let playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    if (imp.video.w != null && imp.video.h != null) {
+      const declaredPrimary = sizesToSizeTuples(playerSize)[0];
+      if (!declaredPrimary || declaredPrimary[0] !== imp.video.w || declaredPrimary[1] !== imp.video.h) {
+        playerSize = [[imp.video.w, imp.video.h]];
+      }
+    }
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-    deepSetValue(imp, 'video.ext.playerSize', playerSize);
-    deepSetValue(imp, 'video.ext.context', videoContext);
+    if (playerSize != null) deepSetValue(imp, 'video.ext.playerSize', playerSize);
+    if (videoContext != null) deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
 };
@@ -166,6 +174,14 @@ export const enrichRequest = (
   return request;
 };
 
+const MAX_TTL = 120;
+
+// ORTB bid.exp is the buyer's expiry in seconds: honor it, but never hold a bid longer than MAX_TTL.
+const getTtl = (exp:unknown): number => {
+  if (typeof exp !== 'number' || !Number.isFinite(exp) || exp < 1) return MAX_TTL;
+  return Math.min(Math.floor(exp), MAX_TTL);
+};
+
 export function createResponse(bid:any, ortbResponse:any): BidResponse {
   let mediaType: MediaType = BANNER;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) mediaType = VIDEO;
@@ -178,14 +194,14 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
     creativeId: bid.crid,
     currency: ortbResponse.cur,
     netRevenue: true,
-    ttl: 120,
+    ttl: getTtl(bid.exp),
     mediaType,
     meta: {
       advertiserDomains: bid.adomain,
       demandSource: bid.ext.ssp,
     },
   };
-  if (bid.dealid) response.dealid = bid.dealid;
+  if (bid.dealid) response.dealId = bid.dealid;
 
   if (bid.ext.mediaType === BANNER) response.ad = bid.adm;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm;
@@ -213,18 +229,48 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
   return response as BidResponse;
 }
 
-export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
+// --- Server auction data extraction ---
+
+/**
+ * Bidder request carrying the server-side auction data from the response `ext`,
+ * for consumption by the Nexx360 analytics adapter on the `bidderDone` event.
+ */
+export type Nexx360BidderRequest = ClientBidderRequest<string> & { serverAuctionData?: Nexx360ServerAuction };
+
+/** Request built by `buildRequests`, handed back to `interpretResponse` with its bidder request. */
+export type Nexx360AdapterRequest = AdapterRequest & { bidderRequest?: Nexx360BidderRequest };
+
+function getServerAuction(responseBody: any): Nexx360ServerAuction | null {
+  const serverAuction = deepAccess(responseBody, 'ext.serverAuction');
+  if (serverAuction && typeof serverAuction === 'object' && serverAuction.auctionId) {
+    return serverAuction as Nexx360ServerAuction;
+  }
+  return null;
+}
+
+export const interpretResponse = (serverResponse: ServerResponse, request?: Nexx360AdapterRequest): AdapterResponse => {
   if (!serverResponse.body) return [];
   const respBody = serverResponse.body as ORTBResponse;
-  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
+
+  // Store server-auction data on the bidder request, which Prebid emits on `bidderDone`,
+  // rather than on the bids: a response without bids still reports its server auction,
+  // and the data cannot leak into an unrelated auction. Other adapters share this function
+  // and may call it without a request.
+  const serverAuctionData = getServerAuction(respBody);
+  if (serverAuctionData && request?.bidderRequest) {
+    request.bidderRequest.serverAuctionData = serverAuctionData;
+  }
+
+  if (!respBody.seatbid || respBody.seatbid.length === 0) {
+    return [];
+  }
 
   const responses: BidResponse[] = [];
   for (let i = 0; i < respBody.seatbid.length; i++) {
     const seatbid = respBody.seatbid[i];
     for (let j = 0; j < seatbid.bid.length; j++) {
       const bid = seatbid.bid[j];
-      const response:BidResponse = createResponse(bid, respBody);
-      responses.push(response);
+      responses.push(createResponse(bid, respBody));
     }
   }
   return responses;

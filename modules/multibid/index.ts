@@ -4,10 +4,8 @@
  */
 
 import { config } from '../../src/config.js';
-import { setupBeforeHookFnOnce, getHook } from '../../src/hook.js';
-import {
-  logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
-} from '../../src/utils.js';
+import { getHook, setupBeforeHookFnOnce } from '../../src/hook.js';
+import { deepAccess, deepSetValue, getUniqueIdentifierStr, groupBy, logWarn } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { addBidderRequests } from '../../src/auction.js';
@@ -15,7 +13,12 @@ import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrDesirability } 
 import { PBS, registerOrtbProcessor, REQUEST } from '../../src/pbjsORTB.js';
 import { timedBidResponseHook } from '../../src/utils/perfMetrics.js';
 import type { BidderCode } from "../../src/types/common.d.ts";
-import { sortByHighestDesirability } from '../../src/utils/desirability.ts';
+import {
+  highestDesirabilityFirst,
+  priorityCompare,
+  reverseCompare,
+  tiebreakCompare
+} from '../../src/utils/reducers.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -185,11 +188,16 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
   }
 });
 
+export function sortByMultibid(fallback) {
+  const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
+  return tiebreakCompare(reverseCompare(priorityCompare), aliasedBiddersFirst, dealPrioritization ? sortByDealAndPriceBucketOrDesirability(fallback) : fallback);
+}
+
 /**
  * A descending sort function that will sort the list of objects based on the following:
  *  - bids without dynamic aliases are sorted before bids with dynamic aliases
  */
-export function sortByMultibid(a, b) {
+export function aliasedBiddersFirst(a, b) {
   if (a.bidder !== a.bidderCode && b.bidder === b.bidderCode) {
     return 1;
   }
@@ -205,14 +213,13 @@ export function sortByMultibid(a, b) {
  * @summary getHighestCpmBidsFromBidPool before hook
  * @param {Function} fn reference to original function (used by hook logic)
  * @param {Object[]} bidsReceived array of objects containing all bids from bid pool
- * @param {Function} highestCpmCallback function to reduce to only highest cpm value for each bidderCode
+ * @param {Function} winReducer function to reduce to only highest cpm value for each bidderCode
  * @param {Number} adUnitBidLimit bidder targeting limit, default set to 0
  * @param {Boolean} hasModified default set to false, this hook modifies targeting and sets to true
  */
-export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
+export function targetBidPoolHook(fn, bidsReceived, winReducer, adUnitBidLimit = 0, hasModified = false, winSorter = highestDesirabilityFirst) {
   if (!config.getConfig('multibid')) resetMultiConfig();
   if (hasMultibid) {
-    const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
     const modifiedBids = [];
     const buckets = groupBy(bidsReceived, 'adUnitCode');
     const bids = [].concat(...Object.keys(buckets).reduce((result, slotId) => {
@@ -224,7 +231,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
         return bidsByBidderName[key].sort((bidA, bidB) => {
           if (bidA.originalBidder && bidA.originalBidder !== bidA.bidderCode) bidA.bidderCode = bidA.originalBidder;
           if (bidA.originalBidder && bidB.originalBidder !== bidB.bidderCode) bidB.bidderCode = bidB.originalBidder;
-          return bidA.cpm > bidB.cpm ? -1 : (bidA.cpm < bidB.cpm ? 1 : 0);
+          return winSorter(bidA, bidB);
         }).map((bid, index) => {
           // For each bid (post CPM sort), set dynamic bidderCode using prefix and index if less than maxbid amount
           if (deepAccess(multiConfig, `${bid.bidderCode}.prefix`) && index !== 0 && index < multiConfig[bid.bidderCode].maxbids) {
@@ -236,12 +243,12 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
       }));
       // Get adjustedBids by bidderCode and reduce using highestCpmCallback
       const bidsByBidderCode = groupBy(adjustedBids, 'bidderCode');
-      Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(highestCpmCallback)));
+      Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(winReducer)));
       // if adUnitBidLimit is set, pass top N number bids
-      if (adUnitBidLimit > 0) {
-        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(true)) : bucketBids.sort(sortByHighestDesirability);
-        bucketBids.sort(sortByMultibid);
-        modifiedBids.push(...bucketBids.slice(0, adUnitBidLimit));
+      const slotBidLimit = Number(typeof adUnitBidLimit === 'number' ? adUnitBidLimit : adUnitBidLimit?.[slotId]) || 0;
+      if (slotBidLimit > 0) {
+        bucketBids.sort(sortByMultibid(winSorter));
+        modifiedBids.push(...bucketBids.slice(0, slotBidLimit));
       } else {
         modifiedBids.push(...bucketBids);
       }
@@ -249,9 +256,9 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
       return [].concat(...modifiedBids);
     }, []));
 
-    fn.call(this, bids, highestCpmCallback, adUnitBidLimit, true);
+    fn.call(this, bids, winReducer, adUnitBidLimit, true);
   } else {
-    fn.call(this, bidsReceived, highestCpmCallback, adUnitBidLimit);
+    fn.call(this, bidsReceived, winReducer, adUnitBidLimit);
   }
 }
 

@@ -366,6 +366,31 @@ describe('AdstirAdapter', function () {
         expect(d.sua).to.deep.equal(sua);
       });
     });
+
+    it('should add floors param if available', function () {
+      const bidRequest = utils.deepClone(validBidRequests[0]);
+
+      let [request] = spec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(request.data).floors).to.not.exist;
+
+      bidRequest.getFloor = () => null;
+      [request] = spec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(request.data).floors).to.not.exist;
+
+      bidRequest.getFloor = () => ({});
+      [request] = spec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(request.data).floors).to.not.exist;
+
+      bidRequest.getFloor = () => ({ currency: 'USD', floor: 0.01 });
+      [request] = spec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(request.data).floors).to.not.exist;
+
+      bidRequest.getFloor = () => ({ currency: 'JPY', floor: 7.5 });
+      [request] = spec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(request.data).floors).to.deep.equal(
+        { 'banner': { '*': { cur: 'JPY', floor: 7500 } } }
+      );
+    });
   });
 
   describe('interpretResponse', function () {

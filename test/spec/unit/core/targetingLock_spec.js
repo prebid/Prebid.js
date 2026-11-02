@@ -104,6 +104,12 @@ describe('Targeting lock', () => {
         expect(lock.isLocked(targeting)).to.be.false;
       });
 
+      it('can unlock a given slot', () => {
+        lock.lock(targeting);
+        lock.unlock({ getTargeting: (key) => [targeting[key]] });
+        expect(lock.isLocked(targeting)).to.be.false;
+      });
+
       it('should unregister when disabled', () => {
         lock.lock(targeting);
         config.resetConfig();

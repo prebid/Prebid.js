@@ -3,6 +3,12 @@ import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./unrulyBidAdapter.d.ts').UnrulyBidderParams} UnrulyBidderParams
+ * @typedef {BidRequest & {params: UnrulyBidderParams}} UnrulyBidRequest
+ */
+
 function configureUniversalTag(exchangeRenderer, requestId) {
   if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
   if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.');
@@ -216,6 +222,10 @@ export const adapter = {
   code: 'unruly',
   supportedMediaTypes: [VIDEO, BANNER],
   gvlid: 36,
+  /**
+   * @param {UnrulyBidRequest} bid
+   * @return {boolean}
+   */
   isBidRequestValid: function (bid) {
     const siteId = deepAccess(bid, 'params.siteId');
     const isBidValid = siteId && isMediaTypesValid(bid);

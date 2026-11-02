@@ -13,6 +13,8 @@ import {
 } from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
+import * as layoutEpoch from '../../src/utils/layoutEpoch.js';
+import { compressDataWithGZip, isGzipCompressionSupported } from '../../src/utils/gzip.js';
 
 var assert = require('assert');
 
@@ -1421,52 +1423,11 @@ describe('Utils', function () {
   });
 
   describe('isGzipCompressionSupported', () => {
-    let sandbox;
+    it('should validate a gzip round trip and cache the result', async () => {
+      const firstCall = isGzipCompressionSupported();
+      const secondCall = isGzipCompressionSupported();
 
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(utils, 'isGzipCompressionSupported').callsFake((() => {
-        let cachedResult;
-        return function () {
-          if (cachedResult !== undefined) {
-            return cachedResult;
-          }
-          try {
-            if (typeof window.CompressionStream === 'undefined') {
-              cachedResult = false;
-            } else {
-              (() => new window.CompressionStream('gzip'))();
-              cachedResult = true;
-            }
-          } catch (error) {
-            cachedResult = false;
-          }
-          return cachedResult;
-        };
-      })());
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    it('should return true if CompressionStream is available', () => {
-      window.CompressionStream = class {}; // Mock valid CompressionStream
-      expect(utils.isGzipCompressionSupported()).to.be.true;
-    });
-
-    it('should return false if CompressionStream is undefined', () => {
-      delete window.CompressionStream; // Simulate an unsupported environment
-      expect(utils.isGzipCompressionSupported()).to.be.false;
-    });
-
-    it('should cache the result after first execution', () => {
-      window.CompressionStream = class {}; // Mock valid CompressionStream
-
-      const firstCall = utils.isGzipCompressionSupported();
-      const secondCall = utils.isGzipCompressionSupported();
-
-      expect(firstCall).to.equal(secondCall); // Ensure memoization is working
+      expect(firstCall).to.equal(secondCall);
     });
   });
 
@@ -1501,7 +1462,7 @@ describe('Utils', function () {
 
     it('should compress data correctly when CompressionStream is available', async () => {
       const data = JSON.stringify({ test: 'data' });
-      const compressedData = await utils.compressDataWithGZip(data);
+      const compressedData = await compressDataWithGZip(data);
 
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
@@ -1510,7 +1471,7 @@ describe('Utils', function () {
 
     it('should handle non-string input by stringifying it', async () => {
       const nonStringData = { test: 'data' };
-      const compressedData = await utils.compressDataWithGZip(nonStringData);
+      const compressedData = await compressDataWithGZip(nonStringData);
 
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
@@ -1613,19 +1574,19 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should clear cache once per 20ms', () => {
+  it('should cache values for the rest of the task, however long it takes, and clear them once it ends', async () => {
+    layoutEpoch.endLayoutEpoch();
     const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledOnce(resetWinDimensionsSpy);
-    clock.tick(18);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledTwice(resetWinDimensionsSpy);
+    try {
+      expect(getWinDimensions().innerHeight).to.exist;
+      clock.tick(100);
+      expect(getWinDimensions().innerHeight).to.exist;
+      sinon.assert.notCalled(resetWinDimensionsSpy);
+      await Promise.resolve();
+      sinon.assert.calledOnce(resetWinDimensionsSpy);
+    } finally {
+      resetWinDimensionsSpy.restore();
+    }
   });
 });
 
@@ -1723,5 +1684,73 @@ describe('polite sync helpers', () => {
 
     utils.politeInsertUserSyncIframe('http://example.com/iframe');
     expect(window.scheduler.postTask.calledOnce).to.equal(true);
+  });
+});
+
+describe('user sync iframes', () => {
+  let preexisting;
+  const newIframes = () => Array.from(document.querySelectorAll('iframe')).filter(f => !preexisting.has(f));
+
+  beforeEach(() => {
+    utils.removeUserSyncIframes();
+    preexisting = new Set(document.querySelectorAll('iframe'));
+  });
+  afterEach(() => utils.removeUserSyncIframes());
+
+  it('inserts the iframe into the document', () => {
+    utils.insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+
+  it('removes every sync iframe of this instance and returns how many were removed', () => {
+    [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
+    const iframes = newIframes();
+    expect(iframes.length).to.equal(3);
+    expect(utils.removeUserSyncIframes()).to.equal(3);
+    iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
+    expect(newIframes().length).to.equal(0);
+  });
+
+  it('notifies a sync iframe consumer before removing its iframe', () => {
+    let wasAttachedDuringCleanup;
+    let iframe;
+    const onCleanup = sinon.spy(() => {
+      wasAttachedDuringCleanup = iframe.parentNode != null;
+    });
+    utils.insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+    iframe = newIframes()[0];
+
+    expect(utils.removeUserSyncIframes()).to.equal(1);
+
+    expect(onCleanup.calledOnce).to.equal(true);
+    expect(wasAttachedDuringCleanup).to.equal(true);
+    expect(iframe.parentNode).to.equal(null);
+  });
+
+  it('leaves iframes it did not insert alone', () => {
+    const foreign = document.createElement('iframe');
+    document.body.appendChild(foreign);
+    try {
+      utils.insertUserSyncIframe('about:blank');
+      expect(newIframes().length).to.equal(2);
+      expect(utils.removeUserSyncIframes()).to.equal(1);
+      expect(foreign.parentNode).to.equal(document.body);
+      expect(newIframes()).to.eql([foreign]);
+    } finally {
+      foreign.parentNode.removeChild(foreign);
+    }
+  });
+
+  it('does nothing when there is no sync iframe', () => {
+    expect(utils.removeUserSyncIframes()).to.equal(0);
+  });
+
+  it('does not stop later syncs from inserting new iframes', () => {
+    utils.insertUserSyncIframe('about:blank');
+    utils.removeUserSyncIframes();
+    utils.insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
   });
 });

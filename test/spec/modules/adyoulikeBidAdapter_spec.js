@@ -2,7 +2,6 @@ import { expect } from 'chai';
 
 import { spec } from 'modules/adyoulikeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
 
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'https://canonical.url/?t=%26';
@@ -862,25 +861,8 @@ describe('Adyoulike Adapter', function () {
       });
 
       describe('COPPA', function() {
-        let sandbox;
-
-        this.beforeEach(function() {
-          sandbox = sinon.createSandbox();
-        });
-
-        this.afterEach(function() {
-          sandbox.restore();
-        });
-
         it('should add coppa parameters if provided', function() {
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'coppa': true
-            };
-            return config[key];
-          });
-
-          expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal([{
+          expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, undefined, true)).to.deep.equal([{
             type: 'iframe', url: `${syncurl_iframe}&coppa=1`
           }]);
         });

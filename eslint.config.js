@@ -16,7 +16,7 @@ function jsPattern(name) {
 }
 
 function tsPattern(name) {
-  return [`${name}/**/*.ts`]
+  return [`${name}/**/*.ts`, `${name}/**/*.mts`]
 }
 
 function sourcePattern(name) {
@@ -41,7 +41,11 @@ const allowedImports = {
   // even innocuous imports can become problematic if the source changes,
   // and it's too easy to forget this is a problem for debugging-standalone.
   'modules/debugging': [false],
-  libraries: [],
+  libraries: [
+    // ponyfill for the fetch family, injected by plugins/polyfillFetch.js and only
+    // for build targets that lack AbortController - see libraries/fetchPonyfill
+    'whatwg-fetch'
+  ],
   creative: [],
 }
 
@@ -74,6 +78,7 @@ module.exports = [
       'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
+      'web-bundler'
     ],
   },
   jsdoc.configs['flat/recommended'],

@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'ccx';
+const GVLID = 773;
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid';
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
@@ -139,6 +140,7 @@ function _buildResponse (bid, currency, ttl) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {

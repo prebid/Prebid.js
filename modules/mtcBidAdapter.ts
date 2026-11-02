@@ -4,21 +4,16 @@ import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidd
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-import { interpretResponse, enrichImp, enrichRequest, getGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { interpretResponse, enrichImp, enrichRequest, getGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs, Nexx360AdapterRequest } from '../libraries/nexx360Utils/index.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
+import type { RequireAtLeastOne } from '../src/types/objects.d.ts';
 
 const BIDDER_CODE = 'mtc';
 const REQUEST_URL = 'https://fast.nexx360.io/mtc';
 const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '1.0';
 const MTC_KEY = 'mtc_storage';
-
-type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
-  Omit<T, Keys> & {
-    [K in Keys]-?: Required<Pick<T, K>> &
-      Partial<Pick<T, Exclude<Keys, K>>>
-  }[Keys];
 
 type MtcBidParams = RequireAtLeastOne<{
   tagId?: string;
@@ -74,13 +69,14 @@ const buildRequests = (
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
   const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest });
-  const adapterRequest:AdapterRequest = {
+  const adapterRequest:Nexx360AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,
     data,
     options: {
       endpointCompression: getGzipSetting(BIDDER_CODE, true),
     },
+    bidderRequest,
   };
   return adapterRequest;
 };

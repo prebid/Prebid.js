@@ -12,10 +12,12 @@ import {
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { resolveResponseMediaType } from '../libraries/ortb2Utils/mediaType.js';
 
 const BIDDER_CODE = 'adtrgtme';
 const BIDDER_VERSION = '1.0.8';
 const BIDDER_URL = 'https://rtb.cdn.adtarget.market/ssp?prebid&s=';
+const ACP_ID = 931; // Google Additional Consent provider ID
 const PREBIDJS_VERSION = '$prebid.version$';
 const DEFAULT_TTL = 300;
 const DEFAULT_CUR = 'USD';
@@ -46,29 +48,6 @@ function soleMediaType(bidRequests) {
     Object.keys(bid.mediaTypes || {}).forEach((type) => types.add(type));
   });
   return types.size === 1 ? types.values().next().value : undefined;
-}
-
-// The SSP omits ORTB "mtype" on some passback responses; infer the media type
-// from the markup and, failing that, from the matched impression, so the converter
-// can build the proper bid-response shape.
-function resolveResponseMediaType(bid, imp) {
-  if (isStr(bid.adm)) {
-    const markup = bid.adm.trim();
-    if (markup.startsWith('{') || markup.startsWith('[')) {
-      return NATIVE;
-    }
-    if (/<vast/i.test(markup)) {
-      return VIDEO;
-    }
-  }
-  // No usable markup (e.g. VAST delivered via nurl): fall back to the impression.
-  if (imp?.video && (bid.nurl || !imp.banner)) {
-    return VIDEO;
-  }
-  if (imp?.native && !imp.banner && !imp.video) {
-    return NATIVE;
-  }
-  return BANNER;
 }
 
 const converter = ortbConverter({
@@ -195,6 +174,7 @@ function buildServerRequest(data, options, bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

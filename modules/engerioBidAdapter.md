@@ -59,6 +59,17 @@ renders the winning ad it calls `onBidWon`, which routes a `GET` request to the
 `nurl` URL through Prebid's core ajax helper. This triggers impression recording and budget deduction on the
 Engerio server — no additional publisher-side configuration is needed.
 
+## Supply Chain
+
+The adapter forwards the supply chain object as `source.ext.schain`, reading it from
+`ortb2.source.ext.schain` (current Prebid.js) or the legacy per-bid `schain` field.
+
+Engerio's seller ids are published at
+[https://api.engerio.sk/sellers.json](https://api.engerio.sk/sellers.json). The node for this
+bidder uses `asi: 'api.engerio.sk'` and the publisher's own seller id as `sid` — the same id
+that goes into the publisher's `ads.txt` line (`api.engerio.sk, <seller id>, DIRECT`). Engerio
+checks the last node of the chain against the seller id that owns the ad slot.
+
 ## Notes
 
 - Requests are sent without credentials (`withCredentials: false`).

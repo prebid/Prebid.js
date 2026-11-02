@@ -125,6 +125,12 @@ describe('pubstackBidAdapter', function () {
       expect(spec.isBidRequestValid(createBidRequest({ params: { siteId: undefined } }))).to.equal(false);
       expect(spec.isBidRequestValid(createBidRequest({ params: { adUnitName: undefined } }))).to.equal(false);
     });
+
+    it('accepts a missing stackId and rejects a non string one', function () {
+      expect(spec.isBidRequestValid(createBidRequest({ params: { stackId: undefined } }))).to.equal(true);
+      expect(spec.isBidRequestValid(createBidRequest({ params: { stackId: 'stack-1' } }))).to.equal(true);
+      expect(spec.isBidRequestValid(createBidRequest({ params: { stackId: 42 } }))).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -140,6 +146,7 @@ describe('pubstackBidAdapter', function () {
       expect(request.data.imp).to.have.lengthOf(1);
       expect(utils.deepAccess(request, 'data.imp.0.id')).to.equal('bid-1');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.adUnitName')).to.equal('adunit-1');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.stackId')).to.be.undefined;
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.code')).to.equal('adunit-code');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewportDistance')).to.be.a('number');
@@ -151,6 +158,14 @@ describe('pubstackBidAdapter', function () {
       expect(utils.deepAccess(request, 'data.ext.prebid.page.height')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.ext.prebid.page.viewportHeight')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.ext.prebid.page.timeFromNavigation')).to.be.a('number');
+    });
+
+    it('sends the stackId in the bidder params when it is configured', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-stack', params: { stackId: 'stack-1' } });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.stackId')).to.equal('stack-1');
     });
 
     it('sets test to 1 when prebid debug mode is enabled', function () {

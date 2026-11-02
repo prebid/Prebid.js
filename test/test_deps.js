@@ -25,7 +25,7 @@ window.addEventListener('unhandledrejection', function (ev) {
   if (ev.reason === 'pending failure' || ev.reason == null) return;
   // consentManagement tests intentionally exercise missing and rejecting CMP paths
   if ([
-    'TCF2 CMP not found.',
+    'TCF CMP not found',
     'CMP unable to register callback function.',
     'GPP CMP not found'
   ].some(msg => ev.reason?.message?.startsWith(msg))) return;
@@ -46,14 +46,6 @@ sinon.createFakeServer = fakeServer.create.bind(fakeServer);
 sinon.createFakeServerWithClock = fakeServerWithClock.create.bind(fakeServerWithClock);
 
 localStorage.clear();
-
-if (window.frameElement != null) {
-  // sometimes (e.g. chrome headless) the tests run in an iframe that is offset from the top window
-  // other times (e.g. browser debug page) they run in the top window
-  // this can cause inconsistencies with the percentInView libraries; if we are in a frame,
-  // fake the same dimensions as the top window
-  window.frameElement.getBoundingClientRect = () => window.top.getBoundingClientRect();
-}
 
 require('test/helpers/global_hooks.js');
 require('test/helpers/consentData.js');

@@ -10,6 +10,7 @@
       "adriverIdSystem",
       "adtelligentIdSystem",
       "amxIdSystem",
+      "anonymisedIdSystem",
       "ceeIdSystem",
       "connectIdSystem",
       "criteoIdSystem",
@@ -53,6 +54,7 @@
       "pubmaticIdSystem",
       "rediadsIdSystem",
       "rewardedInterestIdSystem",
+      "sevioIdSystem",
       "sharedIdSystem",
       "startioIdSystem",
       "taboolaIdSystem",
@@ -135,6 +137,7 @@
       "sirdataRtdProvider",
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
+      "transfonSecurityRtdProvider",
       "weboramaRtdProvider",
       "wurflRtdProvider",
       "encypherRtdProvider",
@@ -148,6 +151,9 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
+    ],
+    "genericAnalyticsAdapter": [
+      "genericAnalyticsSkinnyEvents"
     ]
   }
 }

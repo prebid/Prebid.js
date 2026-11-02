@@ -4,6 +4,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapterManager.js').BidRequest} BidRequest
+ * @typedef {import('./kargoBidAdapter.d.ts').KargoBidderParams} KargoBidderParams
+ * @typedef {BidRequest & {params: KargoBidderParams}} KargoBidRequest
+ */
+
 const PREBID_VERSION = '$prebid.version$';
 
 const BIDDER = Object.freeze({
@@ -59,6 +65,10 @@ let sessionId,
   lastPageUrl,
   requestCounter;
 
+/**
+ * @param {KargoBidRequest} bid
+ * @returns {boolean}
+ */
 function isBidRequestValid(bid) {
   if (!bid || !bid.params) {
     return false;

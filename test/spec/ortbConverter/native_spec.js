@@ -102,4 +102,16 @@ describe('ortb -> ortb native response', () => {
       });
     });
   });
+  it('should strip polluting keys from a serialized adm', () => {
+    // `adm` crosses the response body as a string, so the guard applied to that body cannot see
+    // inside it. This is a second parse of the same untrusted source.
+    const hostile = JSON.stringify({ ...MOCK_NATIVE_RESPONSE, constructor: { keys: 'pwned' } })
+      .replace(/^\{/, '{"__proto__":{"polluted":true},');
+    const bidResponse = { mediaType: NATIVE };
+
+    fillNativeResponse(bidResponse, { adm: hostile });
+
+    expect(Object.keys(bidResponse.native.ortb)).to.eql(Object.keys(MOCK_NATIVE_RESPONSE));
+    expect(Object.prototype.hasOwnProperty.call(bidResponse.native.ortb, '__proto__')).to.equal(false);
+  });
 });

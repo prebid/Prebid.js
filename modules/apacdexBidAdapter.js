@@ -97,11 +97,11 @@ export const spec = {
     }
 
     payload.device = {};
-    payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.height;
-    payload.device.width = window.screen.width;
+    payload.device.ua = deepAccess(bidderRequest, 'ortb2.device.ua');
+    payload.device.height = deepAccess(bidderRequest, 'ortb2.device.h');
+    payload.device.width = deepAccess(bidderRequest, 'ortb2.device.w');
     payload.device.dnt = getDNT() ? 1 : 0;
-    payload.device.language = navigator.language;
+    payload.device.language = deepAccess(bidderRequest, 'ortb2.device.language');
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};

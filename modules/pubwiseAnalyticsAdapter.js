@@ -332,7 +332,6 @@ pubwiseAnalytics.enableAnalytics = function (config) {
 adapterManager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,
   code: MODULE_CODE,
-  gvlid: 842
 });
 
 export default pubwiseAnalytics;

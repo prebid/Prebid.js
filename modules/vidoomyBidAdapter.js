@@ -1,9 +1,9 @@
 import { deepAccess, isPlainObject, logError, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
@@ -166,7 +166,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       // TODO: does the fallback make sense here?
       sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       usp: bidderRequest.uspConsent || '',
-      coppa: !!config.getConfig('coppa'),
+      coppa: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()),
       videoContext: videoContext || '',
       multiBidsSupport: 1,
       bcat: ortb2.bcat || bid.params.bcat || [],

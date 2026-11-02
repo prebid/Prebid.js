@@ -1,9 +1,8 @@
 import type { TargetingMap } from "../targeting.ts";
 import { config } from "../config.ts";
 import { ttlCollection } from "../utils/ttlCollection.ts";
-import { isGptPubadsDefined } from "../utils.js";
-import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
 import { getSlotTargeting } from "../utils/gptTargeting.ts";
+import { gptEventHandler } from "../utils/gptEvents.ts";
 
 const DEFAULT_LOCK_TIMEOUT = 3000;
 
@@ -39,39 +38,26 @@ export function targetingLock() {
     if (keys != null && !Array.isArray(keys)) {
       keys = [keys];
     } else if (keys == null) {
-      tearDownGpt();
+      gptEvent.disable();
     }
     locked.clear();
   });
-  const [setupGpt, tearDownGpt] = (() => {
-    let enabled = false;
-    function onGptRender({ slot }: SlotRenderEndedEvent) {
-      keys?.forEach(key => getSlotTargeting(slot, key)?.forEach(locked.delete));
-    }
-    return [
-      () => {
-        if (keys != null && !enabled && isGptPubadsDefined()) {
-          googletag.pubads().addEventListener?.('slotRenderEnded', onGptRender);
-          enabled = true;
-        }
-      },
-      () => {
-        if (enabled && isGptPubadsDefined()) {
-          googletag.pubads().removeEventListener?.('slotRenderEnded', onGptRender);
-          enabled = false;
-        }
-      }
-    ];
-  })();
+  function unlock(slot) {
+    keys?.forEach(key => getSlotTargeting(slot, key)?.forEach(locked.delete));
+  }
+  const gptEvent = gptEventHandler('slotRenderEnded', ({ slot }) => unlock(slot));
 
   return {
     isLocked(targeting: TargetingMap<unknown>) {
       return keys?.some(key => targeting[key] != null && locked.has(targeting[key])) ?? false;
     },
     lock(targeting: TargetingMap<unknown>) {
-      setupGpt();
-      keys?.forEach(key => targeting[key] != null && locked.add(targeting[key]));
-    }
+      if (keys != null) {
+        gptEvent.enable();
+        keys.forEach(key => targeting[key] != null && locked.add(targeting[key]));
+      }
+    },
+    unlock
   };
 }
 

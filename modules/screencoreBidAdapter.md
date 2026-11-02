@@ -8,30 +8,66 @@
 
 # Description
 
-Module that connects to Screencore's Open RTB demand sources.
+Module that connects to Screencore's SSP demand source via OpenRTB.
+
+Supported media types: banner, video, native.
+
+The SSP region (US, EU or APAC) is selected automatically from the browser's timezone.
+
+# Bid Parameters
+
+| Name             | Scope      | Description                                                                                         | Example | Type     |
+| ---------------- | ---------- | --------------------------------------------------------------------------------------------------- | ------- | -------- |
+| `sspPlacementId` | required   | Screencore SSP placement ID                                                                         | `'123'` | `string` |
+| `placementId`    | deprecated | Older name for the placement ID, used as `sspPlacementId` when that is not set                      | `'123'` | `string` |
+| `endpointId`     | deprecated | Older name for the placement ID, used as `sspPlacementId` when neither it nor `placementId` is set  | `'123'` | `string` |
+| `bidfloor`       | optional   | Bid floor, used when the Price Floors module sets none; its currency is `currency` (USD by default) | `0.5`   | `number` |
+| `currency`       | optional   | Request currency when the Currency module is not set, defaults to `USD`                             | `'USD'` | `string` |
+
+`placementId` and `endpointId` are still accepted so that existing configurations keep working,
+but they are deprecated: use `sspPlacementId` for new setups. If several are set, `sspPlacementId`
+takes precedence, then `placementId`, then `endpointId`.
 
 # Test Parameters
+
+## SSP Integration
+
 ```js
 var adUnits = [
   {
-    code: 'test-ad',
-    sizes: [[300, 250]],
+    code: "test-banner",
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      },
+    },
     bids: [
       {
-        bidder: 'Screencore',
+        bidder: "screencore",
         params: {
-          cId: '562524b21b1c1f08117fc7f9',
-          pId: '59ac17c192832d0011283fe3',
-          bidFloor: 0.0001,
-          ext: {
-            param1: 'loremipsum',
-            param2: 'dolorsitamet'
-          },
-          placementId: 'testBanner',
-          endpointId: 'testEndpoint'
-        }
-      }
-    ]
-  }
+          sspPlacementId: "123",
+        },
+      },
+    ],
+  },
+  {
+    code: "test-video",
+    mediaTypes: {
+      video: {
+        context: "instream",
+        playerSize: [[640, 480]],
+        mimes: ["video/mp4"],
+        protocols: [2, 3, 5, 6],
+      },
+    },
+    bids: [
+      {
+        bidder: "screencore",
+        params: {
+          sspPlacementId: "123",
+        },
+      },
+    ],
+  },
 ];
 ```

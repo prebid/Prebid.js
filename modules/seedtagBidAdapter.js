@@ -4,6 +4,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
@@ -42,10 +43,19 @@ export const BIDFLOOR_CURRENCY = 'USD';
 function getBidFloor(bidRequest) {
   let floorInfo = {};
 
+  let mediaType = '*';
+  const hasBanner = hasBannerMediaType(bidRequest);
+  const hasVideo = hasVideoMediaType(bidRequest);
+  if (hasBanner && !hasVideo) {
+    mediaType = BANNER;
+  } else if (hasVideo && !hasBanner) {
+    mediaType = VIDEO;
+  }
+
   if (typeof bidRequest.getFloor === 'function') {
     floorInfo = bidRequest.getFloor({
       currency: BIDFLOOR_CURRENCY,
-      mediaType: '*',
+      mediaType: mediaType,
       size: '*'
     });
   }
@@ -304,6 +314,7 @@ export const spec = {
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
+      autoplay: isAutoplayEnabled(),
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),

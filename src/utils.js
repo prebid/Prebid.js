@@ -2,7 +2,7 @@ import { config } from './config.js';
 
 import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
-import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
+import { isArray, isFn, isPlainObject, isStr } from './utils/objects.js';
 import * as logging from './utils/logging.js';
 import * as debug from './utils/debug.js';
 
@@ -10,6 +10,7 @@ export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js';
 export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
+export { compressDataWithGZip, isGzipCompressionSupported } from './utils/gzip.js';
 
 // many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
 export const logInfo = logging.logInfo;
@@ -382,8 +383,8 @@ export function politeTriggerPixel(url, credentials = 'include') {
   runBackgroundTask(triggerSync);
 }
 
-export function politeInsertUserSyncIframe(url) {
-  runBackgroundTask(() => insertUserSyncIframe(url));
+export function politeInsertUserSyncIframe(url, done, timeout, onCleanup) {
+  runBackgroundTask(() => insertUserSyncIframe(url, done, timeout, onCleanup));
 }
 
 export function triggerPixel(url, done, timeout) {
@@ -431,12 +432,20 @@ export function insertHtmlIntoIframe(htmlCode) {
 }
 
 /**
+ * The sync iframes inserted by this instance, tracked by element reference so that several Prebid
+ * instances running on the same page do not remove each other's. Each iframe may have an associated
+ * callback that releases work owned by its consumer before the iframe is removed.
+ */
+const OWN_SYNC_IFRAMES = new WeakMap();
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
+ * @param  {function} [onCleanup] called when the iframe is removed by `removeUserSyncIframes`
  */
-export function insertUserSyncIframe(url, done, timeout) {
+export function insertUserSyncIframe(url, done, timeout, onCleanup) {
   if (!url) return;
   const iframe = createIframe(document, {
     sandbox: 'allow-scripts allow-same-origin',
@@ -446,10 +455,32 @@ export function insertUserSyncIframe(url, done, timeout) {
     height: '0px',
     display: 'none'
   });
+  OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
+}
+
+/**
+ * Removes the user sync iframes that were inserted by this Prebid instance; iframes belonging to
+ * other instances running on the same page are left alone.
+ * @return {Number} the number of iframes that were removed
+ */
+export function removeUserSyncIframes() {
+  const iframes = Array.from(document.querySelectorAll('iframe'))
+    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe));
+  iframes.forEach(iframe => {
+    const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
+    OWN_SYNC_IFRAMES.delete(iframe);
+    try {
+      onCleanup?.();
+    } catch (error) {
+      logError('Error cleaning up user sync iframe', error);
+    }
+    iframe.parentNode?.removeChild(iframe);
+  });
+  return iframes.length;
 }
 
 /**
@@ -1228,48 +1259,6 @@ export function triggerNurlWithCpm(bid, cpm) {
       /\${AUCTION_PRICE}/,
       cpm
     );
-    triggerPixel(bid.nurl);
+    politeTriggerPixel(bid.nurl);
   }
-}
-
-// To ensure that isGzipCompressionSupported() doesn’t become an overhead, we have used memoization to cache the result after the first execution.
-// This way, even if the function is called multiple times, it will only perform the actual check once and return the cached result in subsequent calls.
-export const isGzipCompressionSupported = (function () {
-  let cachedResult; // Store the result
-
-  return function () {
-    if (cachedResult !== undefined) {
-      return cachedResult; // Return cached result if already computed
-    }
-
-    try {
-      if (typeof window.CompressionStream === 'undefined') {
-        cachedResult = false;
-      } else {
-        (() => new window.CompressionStream('gzip'))();
-        cachedResult = true;
-      }
-    } catch (error) {
-      cachedResult = false;
-    }
-
-    return cachedResult;
-  };
-})();
-
-// Make sure to use isGzipCompressionSupported before calling this function
-export async function compressDataWithGZip(data) {
-  if (typeof data !== 'string') { // TextEncoder (below) expects a string
-    data = JSON.stringify(data);
-  }
-
-  const encoder = new TextEncoder();
-  const encodedData = encoder.encode(data);
-  const compressedStream = new Blob([encodedData])
-    .stream()
-    .pipeThrough(new window.CompressionStream('gzip'));
-
-  const compressedBlob = await new Response(compressedStream).blob();
-  const compressedArrayBuffer = await compressedBlob.arrayBuffer();
-  return new Uint8Array(compressedArrayBuffer);
 }

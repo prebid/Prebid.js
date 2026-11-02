@@ -4,6 +4,7 @@ import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
 import { userSync } from 'src/userSync.js';
 import * as utils from 'src/utils.js';
+import * as gzip from 'src/utils/gzip.js';
 import { config } from 'src/config.js';
 import { EVENTS, DEBUG_MODE } from 'src/constants.js';
 import * as events from 'src/events.js';
@@ -402,32 +403,6 @@ describe('bidderFactory', () => {
         expect(spec.buildRequests.firstCall.args[0]).to.deep.equal([MOCK_BIDS_REQUEST.bids[0]]);
       });
 
-      it('can clear cached guarded bid request proxies', () => {
-        const tidGuard = guardTids({ bidderCode: 'mockBidder' });
-        const bidRequest = {
-          adUnitCode: 'mockAU',
-          bidId: 'bid',
-          auctionId: 'aid',
-          ortb2: {
-            source: {
-              tid: 'bidder-tid'
-            }
-          }
-        };
-        const firstProxy = tidGuard.bidRequest(bidRequest);
-
-        expect(tidGuard.bidRequest(bidRequest)).to.equal(firstProxy);
-
-        tidGuard.clear();
-
-        const secondProxy = tidGuard.bidRequest(bidRequest);
-        expect(secondProxy).to.not.equal(firstProxy);
-        expect(secondProxy.auctionId).to.equal('bidder-tid');
-        expect(guardTids({ bidderCode: 'mockBidder' })).to.not.equal(tidGuard);
-
-        tidGuard.clear();
-      });
-
       it('should make no server requests if the spec doesn\'t return any', function () {
         const bidder = newBidder(spec);
 
@@ -589,6 +564,55 @@ describe('bidderFactory', () => {
         ).to.length(2);
 
         eventEmitterSpy.restore();
+      });
+    });
+
+    describe('parsing an untrusted response body', function () {
+      let ajaxStub, responseBody;
+
+      function parsedBody() {
+        const bidder = newBidder(spec);
+        spec.isBidRequestValid.returns(true);
+        spec.buildRequests.returns({ method: 'POST', url: 'test.url.com', data: {} });
+        spec.getUserSyncs.returns([]);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        expect(spec.interpretResponse.calledOnce).to.equal(true);
+        return spec.interpretResponse.firstCall.args[0].body;
+      }
+
+      beforeEach(function () {
+        responseBody = null;
+        ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
+          callbacks.success(responseBody, { getResponseHeader: sinon.stub() });
+        });
+      });
+
+      afterEach(function () {
+        ajaxStub.restore();
+        delete Object.prototype.polluted;
+      });
+
+      // What the guard removes, and that it leaves data alone, is covered where it is defined,
+      // in test/spec/unit/utils/untrustedJson_spec.js. Only the first case below detects the
+      // guard's absence; the other two hold with a plain JSON.parse too, and are here to pin the
+      // way this call site would fail if the guard ever threw - the assignment would not complete
+      // and the adapter would be handed the raw body as text.
+      it('routes the response body through the guard', function () {
+        responseBody = '{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}';
+
+        expect(Object.keys(parsedBody().seatbid[0].bid[0])).to.deep.equal(['impid']);
+      });
+
+      it('hands a hostile response to the adapter parsed, not as raw text', function () {
+        responseBody = '{"seatbid":[{"bid":[{"impid":"imp0","__proto__":{"polluted":true}}]}]}';
+
+        expect(parsedBody()).to.be.an('object');
+      });
+
+      it('leaves a body that is not JSON alone', function () {
+        responseBody = 'not json at all';
+
+        expect(parsedBody()).to.equal('not json at all');
       });
     });
 
@@ -792,12 +816,14 @@ describe('bidderFactory', () => {
 
       it('should register usersync pixels', function () {
         const bidder = newBidder(spec);
+        const onCleanup = sinon.spy();
 
         spec.isBidRequestValid.returns(false);
         spec.buildRequests.returns([]);
         spec.getUserSyncs.returns([{
           type: 'iframe',
-          url: 'usersync.com'
+          url: 'usersync.com',
+          onCleanup
         }]);
 
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
@@ -806,6 +832,7 @@ describe('bidderFactory', () => {
         expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
         expect(userSyncStub.firstCall.args[1]).to.equal(spec.code);
         expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
+        expect(userSyncStub.firstCall.args[3]).to.equal(onCleanup);
       });
 
       it('should logError and reject bid when required bid response params are missing', function () {
@@ -1087,6 +1114,15 @@ describe('bidderFactory', () => {
       expect(registerBidAdapterStub.getCall(1).args[0].getSpec().gvlid).to.equal(1);
       expect(registerBidAdapterStub.getCall(2).args[0].getSpec().gvlid).to.equal(2);
       expect(registerBidAdapterStub.getCall(3).args[0].getSpec().gvlid).to.equal(undefined);
+    });
+
+    it('should register alias with their acpId', function() {
+      const thisSpec = Object.assign(newEmptySpec(), { acpId: 1, aliases: [{ code: 'foo', acpId: 2 }, 'bar'] });
+      registerBidder(thisSpec);
+
+      expect(registerBidAdapterStub.getCall(0).args[0].getSpec().acpId).to.equal(1);
+      expect(registerBidAdapterStub.getCall(1).args[0].getSpec().acpId).to.equal(2);
+      expect(registerBidAdapterStub.getCall(2).args[0].getSpec().acpId).to.equal(undefined);
     });
 
     it('should register alias with skipPbsAliasing', function() {
@@ -1717,8 +1753,8 @@ describe('bidderFactory', () => {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      isGzipSupportedStub = sandbox.stub(utils, 'isGzipCompressionSupported');
-      gzipStub = sandbox.stub(utils, 'compressDataWithGZip');
+      isGzipSupportedStub = sandbox.stub(gzip, 'isGzipCompressionSupported');
+      gzipStub = sandbox.stub(gzip, 'compressDataWithGZip');
       spec = {
         code: CODE,
         isBidRequestValid: sinon.stub(),
@@ -1767,7 +1803,7 @@ describe('bidderFactory', () => {
 
     it('should send a gzip compressed payload when gzip is supported and enabled', async function () {
       const compressedPayload = 'compressedData'; // Simulated compressed payload
-      isGzipSupportedStub.returns(true);
+      isGzipSupportedStub.resolves(true);
       gzipStub.resolves(compressedPayload);
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
@@ -1781,7 +1817,7 @@ describe('bidderFactory', () => {
     });
 
     it('should send the request normally if gzip is not supported', async () => {
-      isGzipSupportedStub.returns(false);
+      isGzipSupportedStub.resolves(false);
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
       await runRequest();
@@ -1791,8 +1827,36 @@ describe('bidderFactory', () => {
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data)); // Ensure original data is sent
     });
 
+    it('should preserve bidder context when gzip is not supported', async () => {
+      let bidderAtDispatch;
+      ajaxStub.callsFake(function(url, callbacks) {
+        bidderAtDispatch = config.getCurrentBidder();
+        callbacks.success('response body', { getResponseHeader: sinon.stub().returns('headerContent') });
+      });
+      isGzipSupportedStub.resolves(false);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+
+      await runRequest();
+
+      expect(bidderAtDispatch).to.equal(CODE);
+    });
+
+    it('should send the request normally if gzip compression rejects', async () => {
+      isGzipSupportedStub.resolves(true);
+      gzipStub.rejects(new Error('compression failed'));
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+
+      await runRequest();
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
+      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+    });
+
     it('should send uncompressed data if gzip is supported but disabled in request options', async function () {
-      isGzipSupportedStub.returns(true);
+      isGzipSupportedStub.resolves(true);
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
       endpointCompression = false;
@@ -1806,7 +1870,7 @@ describe('bidderFactory', () => {
     it('should NOT gzip when debugMode is enabled', async () => {
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('true');
       debugTurnedOnStub.returns(true);
-      isGzipSupportedStub.returns(true);
+      isGzipSupportedStub.resolves(true);
       await runRequest();
 
       expect(gzipStub.called).to.be.false;
@@ -1817,7 +1881,7 @@ describe('bidderFactory', () => {
 
     it('should not count compression time as network time', async () => {
       const COMPRESSION_MS = 100;
-      isGzipSupportedStub.returns(true);
+      isGzipSupportedStub.resolves(true);
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
 
@@ -1839,6 +1903,26 @@ describe('bidderFactory', () => {
       expect(recorded['adapter.client.net']).to.eql([0]);
       // `total` spans compression, so it is the timer that should account for the delay.
       expect(recorded['adapter.client.total']).to.equal(COMPRESSION_MS);
+    });
+  });
+
+  describe('guardTids', () => {
+    it('returns the same guard for the same bidderRequest across calls', () => {
+      const bidderRequest = { bidderCode: 'mockBidder', bids: [] };
+      expect(guardTids(bidderRequest)).to.equal(guardTids(bidderRequest));
+    });
+
+    it('returns independent guards for different bidderRequests', () => {
+      const request1 = { bidderCode: 'mockBidder', bids: [] };
+      const request2 = { bidderCode: 'mockBidder', bids: [] };
+      const guard1 = guardTids(request1);
+      const guard2 = guardTids(request2);
+      expect(guard1).to.not.equal(guard2);
+      // bidRequest is memoized per guard (keyed by bidId): the same guard
+      // returns the same proxy for the same bid, different guards do not.
+      const bid = { bidId: 'bid-1' };
+      expect(guard1.bidRequest(bid)).to.equal(guard1.bidRequest(bid));
+      expect(guard1.bidRequest(bid)).to.not.equal(guard2.bidRequest(bid));
     });
   });
 });

@@ -70,8 +70,8 @@ In the Microsoft Bid Adapter, the new required format is: keyname=keyvalue1,keyn
 {
   bidder: "msft",
   params: {
-    placement_id: "12345",
-    member: "123",
+    placement_id: 12345,
+    member: 123,
     banner_frameworks: [1, 2],
     keywords: "category=sports,team=football"
   }
@@ -100,7 +100,7 @@ var adUnits = [
       {
         bidder: "msft",
         params: {
-          placement_id: "12345"
+          placement_id: 12345
         }
       }
     ]
@@ -126,7 +126,7 @@ var videoAdUnit = {
     {
       bidder: 'msft',
       params: {
-        placement_id: "67890"
+        placement_id: 67890
       }
     }
   ]
@@ -164,15 +164,12 @@ var nativeAdUnit = {
         }],
         eventtrackers:[{
           event:1,
-          methods:[
-            1
-            ]},
-            {
-            event:2,
-            methods:[
-              1
-              ]}]
-          }
+          methods:[1]
+        },
+        {
+          event:2,
+          methods:[1]
+        }]
       }
     }
   },
@@ -180,7 +177,7 @@ var nativeAdUnit = {
     {
       bidder: 'msft',
       params: {
-        placement_id: "13579"
+        placement_id: 13579
       }
     }
   ]
@@ -204,7 +201,7 @@ var multiFormatAdUnit = {
     {
       bidder: 'msft',
       params: {
-        member: "123",
+        member: 123,
         inv_code: "test_inv_code",
         allow_smaller_sizes: true,
         banner_frameworks: [1, 2],
@@ -219,8 +216,8 @@ var multiFormatAdUnit = {
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `placement_id` | String | Yes* | Placement ID from Microsoft Advertising |
-| `member` | String | Yes* | Member ID (required if placement_id not provided) |
+| `placement_id` | Integer | Yes* | Placement ID from Microsoft Advertising |
+| `member` | Integer | Yes* | Member ID (required if placement_id not provided) |
 | `inv_code` | String | Yes* | Inventory code (required if placement_id not provided) |
 | `allow_smaller_sizes` | Boolean | No | Allow smaller ad sizes than requested |
 | `use_pmt_rule` | Boolean | No | Use payment rule |
