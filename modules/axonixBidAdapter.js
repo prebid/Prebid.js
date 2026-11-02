@@ -277,6 +277,8 @@ export const spec = {
         method: 'POST',
         withCredentials: false,
         contentType: 'application/json',
+        // let the deletion signals complete even if the page unloads right after
+        keepalive: true,
       });
     });
   }
