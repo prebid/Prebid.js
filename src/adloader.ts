@@ -3,41 +3,37 @@ import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 
 import { insertElement, logError, logWarn, memoize } from './utils.js';
-import type { ModuleType } from "./activities/modules.ts";
+import type { ModuleType } from './activities/modules.ts';
 
 function isAllowed(url, moduleType, moduleCode) {
   if (!moduleType || !moduleCode || !url) {
     logError('cannot load external script without url, moduleType, or moduleCode');
     return false;
   }
-  if (!isActivityAllowed(ACTIVITY_LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode))) {
-    return false;
-  }
-  return true;
+  return isActivityAllowed(ACTIVITY_LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode));
 }
 
-function checkAllowed(url, moduleType, moduleCode) {
-  if (!isAllowed(url, moduleType, moduleCode)) {
-    throw new Error('Denied');
-  }
+function denyError() {
+  return new Error('Denied');
 }
 
 function makeLoader(mkTag) {
   let loaders;
 
-  function load(doc, url, attrs?) {
+  function load(doc, url, attrs?, onLoad?) {
     if (!loaders.has(doc)) {
       const tags = new Map();
-      const loader = memoize((url, attrs) => {
+      const loader = memoize((url, attrs, onLoad) => {
         let tag, onload, onerror;
         return new Promise((resolve, reject) => {
+          onLoad && onLoad();
           tag = mkTag(doc, url);
-          tags.set(url, tag);
           Object.entries(attrs ?? {})
             .forEach(([key, value]) => tag.setAttribute(key, value));
           tag.addEventListener('load', onload = resolve);
           tag.addEventListener('error', onerror = reject);
           insertElement(tag, doc);
+          tags.set(url, tag);
         }).finally(() => {
           if (tag) {
             tag.removeEventListener('load', onload);
@@ -48,7 +44,7 @@ function makeLoader(mkTag) {
       loaders.set(doc, { loader, scripts: tags });
     }
     const { loader } = loaders.get(doc);
-    return loader(url, attrs)
+    return loader(url, attrs, onLoad)
       .catch(err => {
         loader.invalidate(url);
         throw err;
@@ -68,7 +64,7 @@ function makeLoader(mkTag) {
   return loader;
 }
 
-const preloadLinks = makeLoader((doc, url) => {
+const PRELOAD_LINKS = makeLoader((doc, url) => {
   const link = doc.createElement('link');
   link.rel = 'preload';
   link.as = 'script';
@@ -77,19 +73,25 @@ const preloadLinks = makeLoader((doc, url) => {
 });
 
 export async function preloadExternalScript(url: string, moduleType: ModuleType, moduleCode: string): Promise<void> {
-  checkAllowed(url, moduleType, moduleCode);
-  return preloadLinks.load(document, url);
+  if (!isAllowed(url, moduleType, moduleCode)) throw denyError();
+  return PRELOAD_LINKS.load(document, url);
 }
 
-preloadExternalScript.clear = preloadLinks.clear;
+preloadExternalScript.clear = PRELOAD_LINKS.clear;
 
-const scripts = makeLoader((doc, url) => {
+const SCRIPTS = makeLoader((doc, url) => {
   const script = doc.createElement('script');
   script.type = 'text/javascript';
   script.async = true;
   script.src = url;
   return script;
 });
+
+function loadScript(doc, url, attributes, moduleName) {
+  return SCRIPTS.load(doc, url, attributes, () => {
+    logWarn(`module ${moduleName} is loading external JavaScript`);
+  });
+}
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
@@ -113,23 +115,27 @@ export function loadExternalScript(
     try {
       cb(...args);
     } catch (e) {
-      logError('Error executing callback', 'adloader.js:loadExternalScript', e);
+      logError('Error executing callback', 'adloader:loadExternalScript', e);
     }
   }
 
-  fetchExternalScript(url, moduleType, moduleCode, doc, attributes)
-    .then(() => {
-      if (typeof callback === 'function') {
-        runCallback(callback);
-      } else if (typeof callback?.success === 'function') {
-        runCallback(callback.success);
-      }
-    }, (err) => {
-      if (typeof (callback as any)?.error === 'function') {
-        runCallback((callback as any).error, err);
-      }
-    });
-  return scripts.tagFor(doc, url);
+  if (isAllowed(url, moduleType, moduleCode)) {
+    loadScript(doc, url, attributes, moduleCode)
+      .then(() => {
+        if (typeof callback === 'function') {
+          runCallback(callback);
+        } else if (typeof callback?.success === 'function') {
+          runCallback(callback.success);
+        }
+      }, (err) => {
+        if (typeof (callback as any)?.error === 'function') {
+          runCallback((callback as any).error, err);
+        }
+      });
+    return SCRIPTS.tagFor(doc, url);
+  } else if (typeof (callback as any)?.error === 'function') {
+    (callback as any).error(denyError());
+  }
 }
 
 /**
@@ -142,7 +148,6 @@ export async function fetchExternalScript(
   doc: Document = document,
   attributes: Record<string, unknown> = {}
 ): Promise<void> {
-  checkAllowed(url, moduleType, moduleCode);
-  logWarn(`module ${moduleCode} is loading external JavaScript`);
-  return scripts.load(doc, url, attributes);
+  if (!isAllowed(url, moduleType, moduleCode)) throw denyError();
+  return loadScript(doc, url, attributes, moduleCode);
 }
