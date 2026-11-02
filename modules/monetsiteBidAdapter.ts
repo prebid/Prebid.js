@@ -14,6 +14,7 @@ const HOSTNAME_RE = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{
 const DEFAULT_TTL = 500;
 const MAX_TTL = 5000;
 const DEFAULT_CURRENCY = 'USD';
+const SUPPORTED_MEDIA_TYPES: MediaType[] = [BANNER, VIDEO, NATIVE];
 
 export interface MonetsiteBidderParams {
   /**
@@ -126,6 +127,16 @@ function getTtl(): number {
 }
 
 /**
+ * Core passes the ad unit's full `mediaTypes` (e.g. including audio), so keep only the formats this bidder supports.
+ */
+function withSupportedMediaTypes<T extends { mediaTypes?: object }>(bidRequest: T): T {
+  const mediaTypes = Object.fromEntries(
+    Object.entries(bidRequest.mediaTypes || {}).filter(([type]) => SUPPORTED_MEDIA_TYPES.includes(type as MediaType))
+  );
+  return { ...bidRequest, mediaTypes };
+}
+
+/**
  * Scopes floor lookups to the ad unit's media type when it declares exactly one.
  */
 function getMediaTypeContext(bidRequest: { mediaTypes?: object }): { mediaType?: MediaType } {
@@ -194,7 +205,7 @@ function appendConsentParams(url: string, gdprConsent, uspConsent, gppConsent): 
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid(bid) {
     const params: Partial<MonetsiteBidderParams> = bid?.params || {};
@@ -225,23 +236,27 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     };
 
     // the zone id is part of the endpoint URL, so every bid gets its own request
-    return validBidRequests.map((bidRequest) => ({
-      method: 'POST' as const,
-      url: `${getEndpoint(bidRequest.params)}${encodeURIComponent(normalizeZoneId(bidRequest.params.zoneID))}`,
-      data: converter.toORTB({
-        bidRequests: [bidRequest],
-        bidderRequest,
-        context: getMediaTypeContext(bidRequest),
-      }),
-      options,
-    }));
+    return validBidRequests.map((bidRequest) => {
+      const supported = withSupportedMediaTypes(bidRequest);
+      return {
+        method: 'POST' as const,
+        url: `${getEndpoint(bidRequest.params)}${encodeURIComponent(normalizeZoneId(bidRequest.params.zoneID))}`,
+        data: converter.toORTB({
+          bidRequests: [supported],
+          bidderRequest,
+          context: getMediaTypeContext(supported),
+        }),
+        options,
+      };
+    });
   },
 
   interpretResponse(serverResponse, request) {
     if (!isArray(serverResponse?.body?.seatbid)) {
       return [];
     }
-    return (converter.fromORTB({ response: serverResponse.body, request: request.data }) as ExtendedResponse).bids;
+    const { bids } = converter.fromORTB({ response: serverResponse.body, request: request.data }) as ExtendedResponse;
+    return bids.filter((bid) => SUPPORTED_MEDIA_TYPES.includes(bid.mediaType));
   },
 
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {

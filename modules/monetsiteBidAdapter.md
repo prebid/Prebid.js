@@ -17,7 +17,7 @@ zone id passed in the URL (`?z=<zoneID>`) and as `imp.tagid`.
 * Media Types: Banner, Video, Native (incl. multi-format ad units)
 * Price Floors module
 * First party data from `ortb2` / `ortb2Imp`, including supply chain and user ids (eids)
-* Privacy: GDPR/TCF, US Privacy, GPP, COPPA
+* Privacy: GDPR consent string, US Privacy, GPP and COPPA are forwarded in the request (see GDPR / TCF below)
 * User syncs (image and iframe), returned by the server in `ext.pixels`
 
 # Bidder Parameters
@@ -84,6 +84,29 @@ bids: [{ bidder: 'monetsite', params: { zoneID: '123456', bidfloor: 0.5, cur: 'E
 ```
 
 The request-level `cur` follows the floor currency.
+
+# GDPR / TCF
+
+Monetize.site is not on the IAB Global Vendor List, so the adapter declares no `gvlid`. With the
+`tcfControl` module and its default rules, bid requests to `monetsite` are blocked whenever GDPR
+applies, and so are its user syncs. To allow them, add the bidder to the vendor exceptions of the
+`basicAds` (bid requests) and `storage` (user syncs) rules:
+
+```javascript
+pbjs.setConfig({
+  consentManagement: {
+    gdpr: {
+      rules: [
+        { purpose: 'storage', enforcePurpose: true, enforceVendor: true, softVendorExceptions: ['monetsite'] },
+        { purpose: 'basicAds', enforcePurpose: true, enforceVendor: true, softVendorExceptions: ['monetsite'] }
+      ]
+    }
+  }
+});
+```
+
+`softVendorExceptions` still requires purpose consent; use `vendorExceptions` to skip both checks.
+The TC string itself is always forwarded in the request (`user.ext.consent`, `regs.ext.gdpr`).
 
 # Optional Configuration
 

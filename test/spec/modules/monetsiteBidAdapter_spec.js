@@ -287,6 +287,26 @@ describe('monetsiteBidAdapter', () => {
       expect(imp.bidfloorcur).to.equal('USD');
     });
 
+    it('drops media types the bidder does not support from the imp', () => {
+      const bid = makeBid({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          audio: { context: 'instream', mimes: ['audio/mp4'] },
+        },
+      });
+      const requested = [];
+      bid.getFloor = ({ mediaType }) => {
+        requested.push(mediaType);
+        return { floor: 0.2, currency: 'USD' };
+      };
+      const imp = build([bid])[0].data.imp[0];
+      expect(imp.banner).to.exist;
+      expect(imp.audio).to.equal(undefined);
+      expect(requested).to.not.be.empty;
+      expect(requested.every((type) => type === 'banner')).to.equal(true);
+      expect(bid.mediaTypes.audio).to.exist;
+    });
+
     it('asks for a wildcard floor on multi-format ad units', () => {
       const bid = makeBid({
         mediaTypes: {
@@ -349,6 +369,18 @@ describe('monetsiteBidAdapter', () => {
       expect(interpret(makeServerResponse())[0].ttl).to.equal(500);
       config.setConfig({ monetsite: { ttl: 0 } });
       expect(interpret(makeServerResponse())[0].ttl).to.equal(500);
+    });
+
+    it('drops bids for unsupported media types', () => {
+      const multiFormat = makeBid({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] },
+        },
+      });
+      const response = makeServerResponse();
+      response.body.seatbid[0].bid.push({ id: 'b-2', impid: BID_ID, price: 2, crid: 'cr-2', mtype: 3, adm: '<VAST version="4.0"></VAST>' });
+      expect(interpret(response, [multiFormat]).map((bid) => bid.mediaType)).to.deep.equal(['banner']);
     });
 
     it('infers the media type when mtype is missing', () => {
