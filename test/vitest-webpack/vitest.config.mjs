@@ -23,6 +23,11 @@ export default defineConfig({
     // the browser-mode server listens here: karma's port, which many specs hard-code (see setup.mjs)
     api: { port: 9876, strictPort: true },
     include: ['build/vitest-bundles/**/*_spec.js'],
+    // Only the console reporter. On GitHub Actions Vitest would also add its annotation reporter, which
+    // places a failure at the first stack frame it can map to a repo file. The specs run from webpack
+    // bundles without source maps, so that frame is always the Mocha shim in setup.mjs, not the spec.
+    // The job log names the failing spec and test.
+    reporters: ['default'],
     setupFiles: ['test/vitest-webpack/setup.mjs'],
     globals: false,
     // Mocha runs after/afterEach hooks in registration order
