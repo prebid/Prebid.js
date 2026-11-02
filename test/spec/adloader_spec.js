@@ -5,6 +5,10 @@ import { registerActivityControl } from '../../src/activities/rules.js';
 import { MODULE_TYPE_PREBID } from '../../src/activities/modules.js';
 import { preloadExternalScript } from '../../src/adloader.js';
 
+function rejectionOf(promise) {
+  return promise.then(() => { throw new Error('did not reject'); }, (e) => e);
+}
+
 describe('adLoader', function () {
   let sandbox;
   let utilsinsertElementStub;
@@ -91,14 +95,27 @@ describe('adLoader', function () {
       expect(result).to.equal(tag);
     });
 
-    it('runs error callback immediately when the script previously failed to load', () => {
-      adLoader.loadExternalScript('test-cached-error', MODULE_TYPE_PREBID, 'debugging', { error: sinon.stub() });
-      const ev = new Event('error');
-      scriptEl.dispatchEvent(ev);
+    it('does not cache a load error', () => {
+      adLoader.loadExternalScript('test-retry', MODULE_TYPE_PREBID, 'debugging', { error: sinon.stub() });
+      scriptEl.dispatchEvent(new Event('error'));
       const callback = { success: sinon.stub(), error: sinon.stub() };
-      adLoader.loadExternalScript('test-cached-error', MODULE_TYPE_PREBID, 'debugging', callback);
-      sinon.assert.calledWith(callback.error, ev);
-      sinon.assert.notCalled(callback.success);
+      adLoader.loadExternalScript('test-retry', MODULE_TYPE_PREBID, 'debugging', callback);
+      sinon.assert.calledTwice(utilsinsertElementStub);
+      sinon.assert.notCalled(callback.error);
+      scriptEl.onload();
+      sinon.assert.calledOnce(callback.success);
+    });
+
+    it('runs error callback when denied by activity controls', () => {
+      const unregister = registerActivityControl(ACTIVITY_LOAD_EXTERNAL_SCRIPT, 'test', () => ({ allow: false }));
+      try {
+        const callback = { success: sinon.stub(), error: sinon.stub() };
+        adLoader.loadExternalScript('test-denied', MODULE_TYPE_PREBID, 'debugging', callback);
+        sinon.assert.calledOnce(callback.error);
+        sinon.assert.notCalled(callback.success);
+      } finally {
+        unregister();
+      }
     });
 
     it('runs every callback queued while the script is loading', () => {
@@ -108,6 +125,14 @@ describe('adLoader', function () {
       scriptEl.onload();
       callbacks.forEach(cb => sinon.assert.calledOnce(cb));
       sinon.assert.calledOnce(utilsinsertElementStub);
+    });
+
+    it('runs remaining callbacks when one throws', () => {
+      const callback = sinon.stub();
+      adLoader.loadExternalScript('test-throws-others', MODULE_TYPE_PREBID, 'debugging', () => { throw new Error(); });
+      adLoader.loadExternalScript('test-throws-others', MODULE_TYPE_PREBID, 'debugging', callback);
+      scriptEl.onload();
+      sinon.assert.calledOnce(callback);
     });
 
     it('logs an error when a callback throws', () => {
@@ -171,11 +196,7 @@ describe('adLoader', function () {
       ruleHandle();
     });
     it('should require moduleType and moduleCode', async () => {
-      try {
-        await preloadExternalScript('url');
-        sinon.assert.fail('did not reject');
-      } catch (e) {
-      }
+      await rejectionOf(preloadExternalScript('url'));
 
       sinon.assert.notCalled(utilsinsertElementStub);
       sinon.assert.notCalled(rule);
@@ -185,11 +206,7 @@ describe('adLoader', function () {
       rule.callsFake(params => {
         if (params.component === 'bidder.example') return { allow: false };
       });
-      try {
-        await preloadExternalScript('url', 'bidder', 'example');
-        sinon.assert.fail('did not reject');
-      } catch (e) {
-      }
+      await rejectionOf(preloadExternalScript('url', 'bidder', 'example'));
       sinon.assert.notCalled(utilsinsertElementStub);
     });
 
@@ -223,21 +240,20 @@ describe('adLoader', function () {
     it('should reject returned promise on error', async () => {
       const err = new Error();
       utilsinsertElementStub.callsFake(elm => elm.onerror(err));
-      try {
-        await preloadExternalScript('url', 'type', 'code');
-        sinon.assert.fail('did not reject');
-      } catch (e) {
-        expect(e).to.equal(err);
-      }
+      expect(await rejectionOf(preloadExternalScript('url', 'type', 'code'))).to.equal(err);
+    });
+
+    it('should not cache a load error', async () => {
+      utilsinsertElementStub.callsFake(elm => elm.onerror(new Error('first load failed')));
+      await rejectionOf(preloadExternalScript('url', 'type', 'code'));
+      utilsinsertElementStub.callsFake(elm => elm.onload());
+      await preloadExternalScript('url', 'type', 'code');
+      sinon.assert.calledTwice(utilsinsertElementStub);
     });
 
     it('should allow loading after activities control change', async () => {
       rule.returns({ allow: false });
-      try {
-        await preloadExternalScript('url', 'type', 'code');
-      } catch (e) {
-
-      }
+      await rejectionOf(preloadExternalScript('url', 'type', 'code'));
       sinon.assert.notCalled(utilsinsertElementStub);
       rule.returns(undefined);
       preloadExternalScript('url', 'type', 'code');
