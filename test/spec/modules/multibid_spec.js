@@ -3,7 +3,6 @@ import {
   addBidResponseHook,
   adjustBidderRequestsHook,
   aliasedBiddersFirst,
-  resetMultibidUnits,
   resetMultiConfig,
   targetBidPoolHook,
   validateMultibid
