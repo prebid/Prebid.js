@@ -273,6 +273,40 @@ class ReviewTests(unittest.TestCase):
         finding = dict(FINDING, failure_case="")
         self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
 
+    def test_comment_neutralizes_model_text(self):
+        finding = dict(FINDING,
+                       problem="See https://evil.example and [here](//evil.example) or \\[x\\](//evil.example), ping @everyone <img src=x>",
+                       failure_case="Copy <!-- bounded-qwen:x --> ```js",
+                       fix="  return `[x](//evil.example)` @everyone;")
+        comment = review.build_comment(finding, "a" * 64)
+        prose = comment.split("**Suggested fix:**")[0]
+        self.assertNotIn("https://evil.example", prose)
+        self.assertNotIn("@everyone", prose)
+        self.assertNotIn("<img", prose)
+        self.assertNotIn("<!-- bounded-qwen:x", comment)
+        # Every bracket in the prose is escaped by an odd run of backslashes.
+        for index, char in enumerate(prose):
+            if char in "[]":
+                run = len(prose[:index]) - len(prose[:index].rstrip("\\"))
+                self.assertEqual(run % 2, 1, prose)
+        # The fix is shown literally inside a fence longer than its backticks.
+        self.assertIn("```\n" + finding["fix"].strip() + "\n```", comment)
+        self.assertEqual(review.code_block("a ``` b"), "````\na ``` b\n````")
+
+    def test_marker_is_stable_across_pushes(self):
+        marker = review.finding_marker("a.js", FINDING)
+        self.assertEqual(marker, review.finding_marker("a.js", dict(FINDING, line=9)))
+        self.assertNotEqual(marker, review.finding_marker("b.js", FINDING))
+        self.assertNotEqual(marker, review.finding_marker("a.js", dict(FINDING, fix="  return true;")))
+        self.assertRegex(marker, r"^[0-9a-f]{64}$")
+
+    def test_prior_markers_only_trusted_from_workflow_bot(self):
+        marker = "b" * 64
+        body = "<!-- bounded-qwen:" + marker + " -->"
+        self.assertEqual(review.prior_markers([{"user": {"login": "someone"}, "body": body}]), set())
+        self.assertEqual(review.prior_markers([{"user": None, "body": body}]), set())
+        self.assertEqual(review.prior_markers([{"user": {"login": "github-actions[bot]"}, "body": body}]), {marker})
+
 
 if __name__ == "__main__":
     unittest.main()
