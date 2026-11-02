@@ -159,7 +159,7 @@ module.exports = [
         },
         {
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
-          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Assigning a function to 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
       ],
       'no-restricted-imports': [
