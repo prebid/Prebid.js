@@ -33,14 +33,17 @@ describe('adLoader', function () {
     });
 
     it('loads the script when moduleType and moduleCode are given', function () {
-      adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging');
+      adLoader.loadExternalScript('test-load', MODULE_TYPE_PREBID, 'debugging');
       expect(utilsLogErrorStub.called).to.be.false;
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
     it('should not load cached script again', function () {
-      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID);
-      expect(utilsinsertElementStub.called).to.be.false;
+      const tag = adLoader.loadExternalScript('test-cached', MODULE_TYPE_PREBID, 'debugging');
+      utilsinsertElementStub.resetHistory();
+      const result = adLoader.loadExternalScript('test-cached', MODULE_TYPE_PREBID, 'debugging');
+      sinon.assert.notCalled(utilsinsertElementStub);
+      expect(result).to.equal(tag);
     });
 
     it('should run callback when script loads', () => {
