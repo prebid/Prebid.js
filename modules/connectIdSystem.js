@@ -13,9 +13,6 @@ import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } fr
 import { formatQS, isNumber, isPlainObject, logError, parseUrl } from '../src/utils.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
-// Mutable dependencies support both Karma and native ESM browser test runners.
-export const dep = { getRefererInfo };
-
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -168,12 +165,12 @@ function getStoredId(storageConfig = {}) {
 }
 
 function getSiteHostname() {
-  const pageInfo = parseUrl(dep.getRefererInfo().page);
+  const pageInfo = parseUrl(getRefererInfo().page);
   return pageInfo.hostname;
 }
 
 function isOAndOTraffic() {
-  let referer = dep.getRefererInfo().ref;
+  let referer = getRefererInfo().ref;
 
   if (referer) {
     referer = parseUrl(referer).hostname;
@@ -263,7 +260,7 @@ export const connectIdSubmodule = {
       }
     }
 
-    const topmostLocation = dep.getRefererInfo().topmostLocation;
+    const topmostLocation = getRefererInfo().topmostLocation;
     if (typeof topmostLocation === 'string') {
       data.url = topmostLocation.split('?')[0];
     }

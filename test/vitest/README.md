@@ -93,15 +93,12 @@ reproduce Karma's chunked Webpack bundle or browser startup semantics.
 The GitHub Actions job is scoped to the pilot files and also supports
 manual dispatch, so existing PRs do not inherit another required test.
 
-ConnectID's one ESM-namespace Sinon stub was updated to use a mutable
-`dep.getRefererInfo` export of that module, preserving Sinon and Karma
-compatibility. These diagnostics intentionally do not alter other legacy specs.
-
-The Qwen inline comment about `dep.getRefererInfo()` being an undefined
-identifier is incorrect: `modules/connectIdSystem.js` declares and exports
-`dep` in module scope. Full Karma CI passed with that change. The remaining
-native ESM namespace stubbing errors in other suites are genuine compatibility
-issues, however, and are not suppressed by these additional suites.
+Module source and module test files are deliberately left unchanged. The
+native ESM namespace stubbing errors in these suites (`ES Modules cannot be
+stubbed`) are expected: Karma's webpack build compiles modules with
+`@babel/plugin-transform-modules-commonjs`, which makes exports mutable, and
+the next step is to have Vitest run those webpack test bundles instead, so
+existing `sinon.stub(namespace, ...)` calls keep working without spec edits.
 
 The October 31 helper-group run passed 94/94 tests across 10 files. Other
 expanded groups expose legacy ESM-stubbing and fun-hooks setup issues and

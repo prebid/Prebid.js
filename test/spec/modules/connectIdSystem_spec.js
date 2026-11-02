@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { connectIdSubmodule, dep, storage } from 'modules/connectIdSystem.js';
+import { connectIdSubmodule, storage } from 'modules/connectIdSystem.js';
 import { server } from '../../mocks/xhr.js';
 import { parseQS, parseUrl } from 'src/utils.js';
+import * as refererDetection from '../../../src/refererDetection.js';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
 
@@ -347,7 +348,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const ttl = 60 * 60 * 24 * 1000 * 3;
           const cookieData = { connectId: 'foo', he: HASHED_EMAIL, lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
-          const getRefererInfoStub = sinon.stub(dep, 'getRefererInfo');
+          const getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
           getRefererInfoStub.returns({
             ref: 'https://dev.fc.yahoo.com?test'
           });
