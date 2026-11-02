@@ -320,10 +320,21 @@ def code_block(text):
     return f"{fence}\n{text.strip()}\n{fence}"
 
 
-def finding_marker(filename, finding):
-    """Identify a finding by file, line text and fix, not by head SHA, so
-    later pushes do not repost a finding the author has not acted on."""
-    key = "\0".join((filename, finding["quote"].strip(), finding["fix"].strip()))
+def occurrence(file_lines, finding):
+    """Which of the file's identical added lines the finding is on (0-based).
+
+    Distinguishes the same buggy statement added in several places, while
+    staying stable when unrelated lines shift the line numbers.
+    """
+    quote = finding["quote"].strip()
+    same = [number for number, text in sorted(file_lines.items()) if text.strip() == quote]
+    return same.index(finding["line"]) if finding["line"] in same else 0
+
+
+def finding_marker(filename, finding, occurrence_index=0):
+    """Identify a finding by file, line text, fix and occurrence, not by head
+    SHA, so later pushes do not repost a finding the author has not acted on."""
+    key = "\0".join((filename, finding["quote"].strip(), finding["fix"].strip(), str(occurrence_index)))
     return hashlib.sha256(key.encode()).hexdigest()
 
 
@@ -341,12 +352,16 @@ def prior_markers(comments):
     prior = set()
     for comment in comments:
         if (comment.get("user") or {}).get("login") == "github-actions[bot]":
-            prior.update(re.findall(r"<!-- bounded-qwen:([0-9a-f]{64}) -->", comment.get("body", "")))
+            # Only the marker build_comment appends last: a model-written fix
+            # shown in the comment could otherwise carry a planted marker.
+            match = re.search(r"<!-- bounded-qwen:([0-9a-f]{64}) -->\s*\Z", comment.get("body") or "")
+            if match:
+                prior.add(match.group(1))
     return prior
 
 
 def review_chunk(model, filename, patch, index, total, sha, repo, number,
-                 token, prior, report, output_path, spec_removed=()):
+                 token, prior, report, output_path, spec_removed=(), file_lines=None):
     """One independently bounded inference call; report incomplete coverage."""
     diagnostic = {"path": filename, "chunk": index, "total_chunks": total,
                   "patch": patch, "outcome": "started"}
@@ -407,7 +422,9 @@ def review_chunk(model, filename, patch, index, total, sha, repo, number,
         report["rejected"] += 1
         diagnostic["outcome"] = "rejected"
     else:
-        marker = finding_marker(filename, finding)
+        # Count occurrences across the whole file's added lines, not just this chunk.
+        marker = finding_marker(filename, finding,
+                                occurrence(file_lines if file_lines is not None else added_lines(patch), finding))
         if marker in prior:
             diagnostic["outcome"] = "duplicate"
         else:
@@ -481,7 +498,8 @@ def main():
             total_chunks += 1
             report["chunks_attempted"] += 1
             review_chunk(model, filename, part, chunk_index, len(chunks), sha, repo, number,
-                         token, prior, report, output_path, spec_deleted_lines(filename, patches))
+                         token, prior, report, output_path, spec_deleted_lines(filename, patches),
+                         added_lines(patch))
     output_path.write_text(json.dumps(report, indent=2) + "\n")
     if env.get("GITHUB_STEP_SUMMARY"):
         with open(env["GITHUB_STEP_SUMMARY"], "a") as summary:

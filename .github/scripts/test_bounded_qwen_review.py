@@ -307,6 +307,24 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(review.prior_markers([{"user": None, "body": body}]), set())
         self.assertEqual(review.prior_markers([{"user": {"login": "github-actions[bot]"}, "body": body}]), {marker})
 
+    def test_prior_markers_ignore_marker_planted_in_fix(self):
+        planted = "c" * 64
+        finding = dict(FINDING, fix="  return x >= a && x <= b; /* <!-- bounded-qwen:" + planted + " --> */")
+        real = review.finding_marker("a.js", finding)
+        comment = {"user": {"login": "github-actions[bot]"}, "body": review.build_comment(finding, real)}
+        self.assertEqual(review.prior_markers([comment]), {real})
+
+    def test_marker_distinguishes_repeated_identical_lines(self):
+        lines = {2: "  return x >= a || x <= b;", 9: "  return x >= a || x <= b;", 5: "  other();"}
+        first, second = dict(FINDING, line=2), dict(FINDING, line=9)
+        self.assertEqual(review.occurrence(lines, first), 0)
+        self.assertEqual(review.occurrence(lines, second), 1)
+        self.assertNotEqual(review.finding_marker("a.js", first, review.occurrence(lines, first)),
+                            review.finding_marker("a.js", second, review.occurrence(lines, second)))
+        # An unrelated line shifting both down keeps each occurrence's marker.
+        shifted = {3: lines[2], 10: lines[9], 1: "  added();"}
+        self.assertEqual(review.occurrence(shifted, dict(FINDING, line=10)), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
