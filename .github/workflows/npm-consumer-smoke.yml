@@ -1,17 +1,12 @@
 name: NPM consumer smoke test
 
 # This tests the latest *published* npm release, not the triggering commit, so
-# it never needs to run on PRs. On master it only rechecks the fixture itself.
+# it never needs to run on PRs. It runs on every master push so that a broken
+# published package shows up as a failing master before the next release.
 on:
   push:
     branches: [master]
-    paths:
-      - '.github/workflows/npm-consumer-smoke.yml'
-      - 'test/consumer-smoke/**'
   workflow_dispatch:
-  schedule:
-    # Recheck the latest published npm release each week.
-    - cron: '17 9 * * 1'
 
 permissions:
   contents: read
