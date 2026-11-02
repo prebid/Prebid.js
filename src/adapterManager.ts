@@ -1,4 +1,4 @@
-/** @module adaptermanger */
+/** @module adapterManager */
 
 import {
   deepClone,
