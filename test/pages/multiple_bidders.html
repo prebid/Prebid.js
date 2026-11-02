@@ -4,7 +4,7 @@
 
 <head>
   <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
-  <script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter"></script>
+  <script async src="http://localhost:4444/bundle?modules=msftBidAdapter"></script>
   <meta charset="utf-8">
   <style>
     body {
@@ -44,9 +44,9 @@
           }
         },
         bids: [{
-          bidder: 'appnexus',
+          bidder: 'msft',
           params: {
-            placementId: 13232392,
+            placement_id: 13232392,
           }
         }]
       },
@@ -66,12 +66,14 @@
           }
         },
         bids: [{
-          bidder: 'adasta',
+          bidder: 'msftalias',
           params: {
-            placementId: 13232392,
+            placement_id: 13232392,
           }
         }]
       }];
+      // a second bidder code for the same adapter (and endpoint)
+      pbjs.aliasBidder('msft', 'msftalias');
       pbjs.setConfig({enableTIDs: true});
       pbjs.addAdUnits(adUnits);
       pbjs.requestBids({

@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <!-- prebid.js -->
-    <script src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=gamAdServerVideo" async=true></script>
+    <script src="http://localhost:4444/bundle?modules=msftBidAdapter&modules=gamAdServerVideo" async=true></script>
 
 
     <script>
@@ -32,17 +32,13 @@
         code: 'video1',
         sizes: [640,480],
         mediaTypes: {
-          video: {context: 'instream',  playerSize: [640, 480]}
+          video: {context: 'instream', playerSize: [640, 480], skip: 0, playbackmethod: [2]}
         },
         bids: [
           {
-            bidder: 'appnexus',
+            bidder: 'msft',
             params: {
-              placementId: '13232361',
-              video: {
-                skipppable: false,
-                playback_methods: ['auto_play_sound_off']
-              }
+              placement_id: 13232361
             }
           }
         ]
@@ -81,7 +77,7 @@
         });
       });
       pbjs.bidderSettings = {
-        appnexus: {
+        msft: {
           bidCpmAdjustment: function() {
             return 10.00;
           }
