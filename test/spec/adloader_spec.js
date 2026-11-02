@@ -262,6 +262,40 @@ describe('adLoader', function () {
       }
     });
 
+    it('does not return the tag of an earlier failed load', async () => {
+      const doc = document.implementation.createHTMLDocument('');
+      adLoader.loadExternalScript('test-stale', MODULE_TYPE_PREBID, 'debugging', undefined, doc);
+      insertedScript().dispatchEvent(new Event('error'));
+      await flush();
+      const tag = adLoader.loadExternalScript('test-stale', MODULE_TYPE_PREBID, 'debugging', undefined, doc, { 'invalid name': 'x' });
+      expect(tag).to.not.exist;
+    });
+
+    describe('when denied by activity controls', () => {
+      let unregister;
+      beforeEach(() => {
+        unregister = registerActivityControl(ACTIVITY_LOAD_EXTERNAL_SCRIPT, 'test', () => ({ allow: false }));
+      });
+      afterEach(() => {
+        unregister();
+      });
+
+      it('runs the error callback asynchronously', async () => {
+        const callback = { error: sinon.stub() };
+        adLoader.loadExternalScript('test-denied-async', MODULE_TYPE_PREBID, 'debugging', callback);
+        sinon.assert.notCalled(callback.error);
+        await flush();
+        sinon.assert.calledOnce(callback.error);
+      });
+
+      it('logs an error callback that throws instead of propagating it', async () => {
+        const callback = { error: () => { throw new Error(); } };
+        expect(() => adLoader.loadExternalScript('test-denied-throws', MODULE_TYPE_PREBID, 'debugging', callback)).to.not.throw();
+        await flush();
+        sinon.assert.calledWith(utilsLogErrorStub, 'Error executing callback');
+      });
+    });
+
     it('requires a url to be included once per document', async function () {
       function getDocSpec() {
         return {

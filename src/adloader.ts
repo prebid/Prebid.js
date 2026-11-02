@@ -20,13 +20,13 @@ function denyError() {
 function makeLoader(mkTag) {
   let loaders;
 
-  function load(doc, url, attrs?, onLoad?) {
+  function load(doc, url, attrs?, beforeLoad?) {
     if (!loaders.has(doc)) {
       const tags = new Map();
-      const loader = memoize((url, attrs, onLoad) => {
+      const loader = memoize((url, attrs, beforeLoad) => {
         let tag, onload, onerror;
-        return new Promise((resolve, reject) => {
-          onLoad && onLoad();
+        const loading = new Promise((resolve, reject) => {
+          beforeLoad?.();
           tag = mkTag(doc, url);
           Object.entries(attrs ?? {})
             .forEach(([key, value]) => tag.setAttribute(key, value));
@@ -40,15 +40,16 @@ function makeLoader(mkTag) {
             tag.removeEventListener('error', onerror);
           }
         });
+        // registered before any caller's handlers, so a retry from an error callback starts a fresh load
+        loading.catch(() => {
+          loader.invalidate(url);
+          tags.delete(url);
+        });
+        return loading;
       });
       loaders.set(doc, { loader, scripts: tags });
     }
-    const { loader } = loaders.get(doc);
-    return loader(url, attrs, onLoad)
-      .catch(err => {
-        loader.invalidate(url);
-        throw err;
-      });
+    return loaders.get(doc).loader(url, attrs, beforeLoad);
   }
 
   const loader = {
@@ -119,23 +120,20 @@ export function loadExternalScript(
     }
   }
 
-  if (isAllowed(url, moduleType, moduleCode)) {
-    loadScript(doc, url, attributes, moduleCode)
-      .then(() => {
-        if (typeof callback === 'function') {
-          runCallback(callback);
-        } else if (typeof callback?.success === 'function') {
-          runCallback(callback.success);
-        }
-      }, (err) => {
-        if (typeof (callback as any)?.error === 'function') {
-          runCallback((callback as any).error, err);
-        }
-      });
-    return SCRIPTS.tagFor(doc, url);
-  } else if (typeof (callback as any)?.error === 'function') {
-    (callback as any).error(denyError());
-  }
+  const allowed = isAllowed(url, moduleType, moduleCode);
+  (allowed ? loadScript(doc, url, attributes, moduleCode) : Promise.reject(denyError()))
+    .then(() => {
+      if (typeof callback === 'function') {
+        runCallback(callback);
+      } else if (typeof callback?.success === 'function') {
+        runCallback(callback.success);
+      }
+    }, (err) => {
+      if (typeof (callback as any)?.error === 'function') {
+        runCallback((callback as any).error, err);
+      }
+    });
+  return allowed ? SCRIPTS.tagFor(doc, url) : undefined;
 }
 
 /**
