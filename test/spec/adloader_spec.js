@@ -187,6 +187,28 @@ describe('adLoader', function () {
       sinon.assert.notCalled(callback);
     });
 
+    it('applies each url its own attributes', async () => {
+      const doc = document.implementation.createHTMLDocument('');
+      const tagA = adLoader.loadExternalScript('test-attrs-a', MODULE_TYPE_PREBID, 'debugging', undefined, doc, { 'data-a': '1' });
+      const tagB = adLoader.loadExternalScript('test-attrs-b', MODULE_TYPE_PREBID, 'debugging', undefined, doc, { 'data-b': '2' });
+      await flush();
+      expect(tagA.getAttribute('data-a')).to.equal('1');
+      expect(tagB.getAttribute('data-b')).to.equal('2');
+      expect(tagB.getAttribute('data-a')).to.equal(null);
+    });
+
+    it('does not cache a synchronous load error', async () => {
+      const doc = document.implementation.createHTMLDocument('');
+      const callback = { error: sinon.stub() };
+      adLoader.loadExternalScript('test-sync-error', MODULE_TYPE_PREBID, 'debugging', callback, doc, { 'invalid name': 'x' });
+      await flush();
+      sinon.assert.calledOnce(callback.error);
+      sinon.assert.notCalled(utilsinsertElementStub);
+      adLoader.loadExternalScript('test-sync-error', MODULE_TYPE_PREBID, 'debugging', undefined, doc);
+      await flush();
+      sinon.assert.calledOnce(utilsinsertElementStub);
+    });
+
     it('requires a url to be included once per document', async function () {
       function getDocSpec() {
         return {

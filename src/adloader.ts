@@ -2,7 +2,7 @@ import { ACTIVITY_LOAD_EXTERNAL_SCRIPT } from './activities/activities.js';
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 
-import { insertElement, logError, memoize } from './utils.js';
+import { insertElement, logError, logWarn, memoize } from './utils.js';
 import type { ModuleType } from "./activities/modules.ts";
 
 function isAllowed(url, moduleType, moduleCode) {
@@ -152,5 +152,6 @@ export async function fetchExternalScript(
   attributes: Record<string, unknown> = {}
 ): Promise<void> {
   checkAllowed(url, moduleType, moduleCode);
+  logWarn(`module ${moduleCode} is loading external JavaScript`);
   return scripts.load(doc, url, attributes);
 }
