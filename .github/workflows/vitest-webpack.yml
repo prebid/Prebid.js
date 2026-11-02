@@ -18,11 +18,19 @@ permissions:
 
 jobs:
   vitest:
-    name: Vitest Chromium (chunk ${{ matrix.chunk }})
+    name: Vitest Chromium (${{ matrix.variant }}, chunk ${{ matrix.chunk }})
     strategy:
       fail-fast: false
       matrix:
         chunk: [1, 2, 3, 4, 5, 6, 7, 8]
+        # Like Karma's "Unit tests (all features disabled)" job: the variant is whatever tree
+        # the precompile step leaves in dist/src, which karma.conf.maker.js's webpack config reads.
+        variant: [default, all-features-disabled]
+        include:
+          - variant: default
+            precompile: npx gulp precompile
+          - variant: all-features-disabled
+            precompile: npx gulp precompile-all-features-disabled
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -36,8 +44,8 @@ jobs:
         run: npm ci
       - name: Install browser
         run: npx playwright install --with-deps chromium
-      - name: Precompile
-        run: npx gulp precompile
+      - name: Precompile (${{ matrix.variant }})
+        run: ${{ matrix.precompile }}
       - name: Build and run chunk ${{ matrix.chunk }}
         env:
           TEST_CHUNKS: '8'

@@ -38,6 +38,10 @@ VITEST_FILES=test/spec/unit/core/adapterManager_spec.js npm run test:vitest
 
 `VITEST_CHANNEL=chrome` uses the installed Google Chrome. See `build.js` for the other environment variables.
 
+The bundles test whichever variant is in `dist/src`, as Karma's do. For the all-features-disabled variant (Karma's
+"Unit tests (all features disabled)" job), precompile with `npx gulp precompile-all-features-disabled` instead.
+CI runs both variants, in 8 chunks each.
+
 ## Status
 
 On the full suite, Karma passed 27,478 tests and this runner passed 27,468 in the first trial (a spike on a
@@ -45,7 +49,7 @@ patmmccann/Prebid.js fork branch). The differences were three specs fixed separa
 (consentUtils), #15980 (pixfuture).
 
 Not done yet: coverage collection (Istanbul instrumentation is available with `VITEST_COVERAGE=1`, but nothing
-writes lcov), feature-flag variants, Firefox/WebKit, BrowserStack, and gulp integration.
+writes lcov), Firefox/WebKit, BrowserStack, and gulp integration.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.
