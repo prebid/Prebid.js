@@ -31,9 +31,12 @@ import { config } from 'src/config.js';
  * ortb2Imp: {ext: {data: {pbadslot: string}}}}}
  */
 
-const w = (utils.canAccessWindowTop()) ? utils.getWindowTop() : utils.getWindowSelf();
 const connectionType = getEffectiveConnectionType();
-let domLoadingDuration = utils.getDomLoadingDuration(w).toString();
+// The real value depends on the page's load timing at the moment this file is evaluated, and the
+// buildRequests cases below are built at load time too; pin it so expected and actual agree.
+// Restored once those cases are built, so no other spec sees the stub.
+const domLoadingStub = sinon.stub(utils, 'getDomLoadingDuration').returns(0);
+let domLoadingDuration = '0';
 const getConfigBid = (placement) => {
   return {
     adUnitCode: '/19968336/test',
@@ -966,6 +969,8 @@ const testsBuildRequests = [
     },
   },
 ];
+
+domLoadingStub.restore();
 
 describe('BLIINK Adapter buildRequests', function () {
   for (const test of testsBuildRequests) {
