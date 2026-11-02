@@ -2,7 +2,7 @@ import { config } from "../config.ts";
 import { debugTurnedOn } from "./debug.ts";
 import { EVENTS } from "../constants.ts";
 import type { emit } from '../events.ts';
-import type { BidderCode } from "../types/common";
+import type { BidderCode } from "../types/common.d.ts";
 
 const LEVELS = {
   'log': 'MESSAGE',

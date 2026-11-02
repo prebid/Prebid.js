@@ -31,6 +31,7 @@ describe('logging utils', () => {
           sinon.assert.calledWith(mockEmit, EVENTS.AUCTION_DEBUG, sinon.match({
             type: level,
             arguments: sinon.match(args => args.includes('message')),
+            bidder: null
           }));
         });
         it('should include bidder, when run in a bidder context', () => {
