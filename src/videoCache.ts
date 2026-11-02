@@ -393,7 +393,7 @@ if (FEATURES.VIDEO || FEATURES.AUDIO) {
 export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
   let batches = [[]];
   let debouncing = false;
-  const noTimeout = cb => cb();
+  const noTimeout = cb => timeout(cb, 0);
 
   return function (auctionInstance, bidResponse, afterBidAdded) {
     const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
