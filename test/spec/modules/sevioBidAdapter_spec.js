@@ -349,8 +349,8 @@ describe('sevioBidAdapter', function () {
     timeout: 1200,
     refererInfo: { page: 'https://example.com/page', referer: 'https://referrer.example' },
     gdprConsent: { consentString: 'TCF-STRING' },
-    uspConsent: { uspString: '1NYN' },
-    gppConsent: { consentString: 'GPP-STRING' },
+    uspConsent: '1NYN',
+    gppConsent: { gppString: 'GPP-STRING', applicableSections: [7] },
     ortb2: { device: {}, ext: {} }
   };
 
@@ -635,6 +635,38 @@ describe('sevioBidAdapter', function () {
 
       expect(payload.privacy.gpc).to.equal(0);
       expect(payload.userSyncOption).to.equal('OFF');
+    });
+  });
+
+  describe('privacy consent strings', function () {
+    const bidRequests = [{
+      bidder: 'sevio',
+      params: { zone: 'zoneId' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      bidId: 'bid-privacy'
+    }];
+
+    it('forwards the TCF, USP and GPP strings in the shapes the consent modules provide', function () {
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy).to.deep.equal({
+        gpp: 'GPP-STRING',
+        tcfeu: 'TCF-STRING',
+        usp: '1NYN',
+        gpc: 0
+      });
+    });
+
+    it('sends empty strings when no consent module is active', function () {
+      const { gdprConsent, uspConsent, gppConsent, ...bidderRequest } = baseBidderRequest;
+      const payload = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+
+      expect(payload.privacy).to.deep.equal({
+        gpp: '',
+        tcfeu: '',
+        usp: '',
+        gpc: 0
+      });
     });
   });
 
