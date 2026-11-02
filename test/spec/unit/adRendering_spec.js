@@ -647,6 +647,14 @@ describe('adRendering', () => {
       })).to.equal(AU);
     });
 
+    it('falls through from a backupOnly request safeRenderer to a non-backupOnly ad unit one', () => {
+      expect(prepare({
+        request: { safeRenderer: { ...REQ, backupOnly: true } },
+        adUnit: { safeRenderer: AU },
+        bidSafeRenderer: BIDDER,
+      })).to.equal(AU);
+    });
+
     it('prefers the media type safeRenderer over the request one', () => {
       expect(prepare({ mediaType: { safeRenderer: MT }, request: { safeRenderer: REQ } })).to.equal(MT);
     });
