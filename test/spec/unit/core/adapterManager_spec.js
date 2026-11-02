@@ -43,7 +43,8 @@ import {
 } from '../../../../src/eventTrackers.js';
 import 'src/prebid.js';
 import { registerActivityControl } from '../../../../src/activities/rules.js';
-import * as events from '../../../../src/events.js';
+
+var events = require('../../../../src/events.js');
 
 const CONFIG = {
   enabled: true,

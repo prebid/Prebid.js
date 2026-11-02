@@ -226,7 +226,7 @@ describe('ortb -> pbjs banner conversion', () => {
     }
   ].forEach(({ t, seatbid, response, expected }) => {
     it(`can handle ${t}`, () => {
-      seatbid2Banner(response, seatbid);
+      seatbid2Banner(response, seatbid, context);
       expect(response).to.eql(expected);
     });
   });

@@ -28,13 +28,18 @@ import { deepAccess, deepSetValue, generateUUID } from '../../../src/utils.js';
 import { getCreativeRenderer } from '../../../src/creativeRenderers.js';
 import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS } from 'src/constants.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import { assert, expect } from 'chai';
-import * as utils from 'src/utils.js';
-import adapterManager from 'src/adapterManager.js';
-import * as events from 'src/events.js';
-// Loading the adapter registers the bidder used by these tests.
-import 'modules/appnexusBidAdapter.js';
-import config from 'test/fixtures/config.json';
+
+var assert = require('chai').assert;
+var expect = require('chai').expect;
+
+var utils = require('src/utils');
+var adapterManager = require('src/adapterManager').default;
+var events = require('src/events');
+
+// These bid adapters are required to be loaded for the following tests to work
+require('modules/appnexusBidAdapter');
+
+var config = require('test/fixtures/config.json');
 
 var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
