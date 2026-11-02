@@ -525,10 +525,7 @@ describe('BLIINK Adapter interpretResponse', function () {
   for (const test of testsInterpretResponse) {
     it(test.title, () => {
       const res = test.args.fn;
-
-      if (res) {
-        expect(res).to.eql(test.want);
-      }
+      expect(res).to.eql(test.want);
     });
   }
 });
