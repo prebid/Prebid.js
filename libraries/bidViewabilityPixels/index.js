@@ -26,15 +26,15 @@ export function getViewabilityTrackersFromBid(bid) {
 }
 
 /**
- * Only absolute http(s) URLs with a host are allowed; no base URL is supplied, so missing or relative values are rejected.
+ * Only absolute https URLs with a host are allowed (insecure http trackers are rejected); no base URL is supplied, so missing or relative values are rejected.
  * @param {*} url
  * @returns {boolean}
  */
-function isAbsoluteHttpUrl(url) {
+function isAbsoluteHttpsUrl(url) {
   if (typeof url !== 'string') return false;
   try {
     const { protocol, hostname } = new URL(url);
-    return (protocol === 'http:' || protocol === 'https:') && !!hostname;
+    return protocol === 'https:' && !!hostname;
   } catch (e) {
     return false;
   }
@@ -59,7 +59,7 @@ export function fireViewabilityPixels(bid) {
   }
 
   img.forEach(triggerPixel);
-  const safeJs = js.filter(isAbsoluteHttpUrl);
+  const safeJs = js.filter(isAbsoluteHttpsUrl);
   if (safeJs.length > 0) {
     const markup = safeJs.map(url => `<script async src="${attributeValue(url)}"></script>`).join('\n');
     insertHtmlIntoIframe(markup);

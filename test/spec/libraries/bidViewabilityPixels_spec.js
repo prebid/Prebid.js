@@ -139,8 +139,8 @@ describe('bidViewabilityPixels library', function () {
       };
     }
 
-    ['https://tracker.example/pixel', 'http://tracker.example/pixel'].forEach(url => {
-      it(`should accept absolute JS tracker URL ${url} unchanged`, function () {
+    ['https://tracker.example/pixel', 'HTTPS://tracker.example/pixel'].forEach(url => {
+      it(`should accept absolute https JS tracker URL ${url} unchanged`, function () {
         fireViewabilityPixels(jsBid(url));
         expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
         expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.equal(`<script async src="${url}"></script>`);
@@ -148,6 +148,7 @@ describe('bidViewabilityPixels library', function () {
     });
 
     [
+      'http://tracker.example/pixel',
       'javascript:alert(1)',
       'data:text/html,<script>alert(1)</script>',
       '',
