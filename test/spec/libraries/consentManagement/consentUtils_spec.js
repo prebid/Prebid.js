@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { hasAddtlConsent, hasVendorPurposeConsent, parseAddtlConsent } from '../../../../libraries/consentManagement/consentUtils.js';
+import {
+  DEFAULT_PURPOSE_DECLARATION,
+  hasAddtlConsent,
+  hasVendorPurposeConsent,
+  parseAddtlConsent,
+  setGvlLegalBasisMapping
+} from '../../../../libraries/consentManagement/consentUtils.js';
 
 describe('consentUtils', function () {
   const HOST_GVLID = '52';
@@ -27,6 +33,16 @@ describe('consentUtils', function () {
   }
 
   describe('hasVendorPurposeConsent', function () {
+    // Declare the host vendor's legal bases explicitly: otherwise the result depends on the
+    // module-wide default declaration, which other specs (e.g. tcfControl) may have changed.
+    beforeEach(() => {
+      setGvlLegalBasisMapping({ [HOST_GVLID]: DEFAULT_PURPOSE_DECLARATION });
+    });
+
+    afterEach(() => {
+      setGvlLegalBasisMapping({});
+    });
+
     it('returns true when purpose and vendor consent are granted', function () {
       expect(hasVendorPurposeConsent(mockConsent(), 1, HOST_GVLID)).to.be.true;
     });
