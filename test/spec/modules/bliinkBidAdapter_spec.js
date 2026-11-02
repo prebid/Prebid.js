@@ -238,7 +238,16 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
         <VASTAdTagURI>https://vast.bliink.io/p/508379d0-9f65-4198-8ba5-f61f2b51224f.xml</VASTAdTagURI>
         <Error>https://e.api.bliink.io/e?name=vast-error&token=${SAMPLE_VAST_EVENT_TOKEN}</Error>
         <Impression>https://e.api.bliink.io/e?name=impression&token=${SAMPLE_VAST_EVENT_TOKEN}</Impression>
-        <Extensions><Price>1</Price><Currency>EUR</Currency>
+        <Extensions><Price>1</Price><Currency>EUR</Currency></Extensions>
+        <Creatives>
+          <Creative>
+            <Linear>
+              <TrackingEvents>
+                <Tracking event="start">https://e.api.bliink.io/e?name=start&token=${SAMPLE_VAST_EVENT_TOKEN}</Tracking>
+              </TrackingEvents>
+            </Linear>
+          </Creative>
+        </Creatives>
       </Wrapper>
     </Ad>
   </VAST>
