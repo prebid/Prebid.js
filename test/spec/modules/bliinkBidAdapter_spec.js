@@ -1195,10 +1195,11 @@ describe('getEffectiveConnectionType', () => {
       navigatorStub.restore();
     }
   });
-  if (navigatorStub) {
-    it('should return "unsupported" when effective connection type is undefined', () => {
-      const result = getEffectiveConnectionType();
-      expect(result).to.equal('unsupported');
-    });
-  }
+  it('should return "unsupported" when effective connection type is undefined', function () {
+    if (!('connection' in navigator)) {
+      this.skip();
+    }
+    const result = getEffectiveConnectionType();
+    expect(result).to.equal('unsupported');
+  });
 });
