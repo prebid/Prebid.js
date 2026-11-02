@@ -28,34 +28,31 @@ function makeLoader(mkTag) {
   function load(doc, url, attrs?) {
     if (!loaders.has(doc)) {
       const tags = new Map();
-      const loader = memoize((url) => {
+      const loader = memoize((url, attrs) => {
+        let tag, onload, onerror;
         return new Promise((resolve, reject) => {
-          try {
-            const tag = mkTag(doc, url);
-            tags.set(url, tag);
-            Object.entries(attrs ?? {})
-              .forEach(([key, value]) => tag.setAttribute(key, value));
-            tag.onload = resolve;
-            tag.onerror = (err) => {
-              loader.invalidate(url);
-              reject(err);
-            };
-            insertElement(tag, doc);
-          } catch (e) {
-            loader.invalidate(url);
-            reject(e);
-          }
+          tag = mkTag(doc, url);
+          tags.set(url, tag);
+          Object.entries(attrs ?? {})
+            .forEach(([key, value]) => tag.setAttribute(key, value));
+          tag.addEventListener('load', onload = resolve);
+          tag.addEventListener('error', onerror = reject);
+          insertElement(tag, doc);
         }).finally(() => {
-          const tag = tags.get(url);
           if (tag) {
-            tag.onload = null;
-            tag.onerror = null;
+            tag.removeEventListener('load', onload);
+            tag.removeEventListener('error', onerror);
           }
         });
       });
       loaders.set(doc, { loader, scripts: tags });
     }
-    return loaders.get(doc).loader(url);
+    const { loader } = loaders.get(doc);
+    return loader(url, attrs)
+      .catch(err => {
+        loader.invalidate(url);
+        throw err;
+      });
   }
 
   const loader = {
@@ -137,12 +134,6 @@ export function loadExternalScript(
 
 /**
  * like `loadExternalScript`, except it takes no callbacks and returns a Promise.
- *
- * @param url
- * @param moduleType
- * @param moduleCode
- * @param doc
- * @param attributes
  */
 export async function fetchExternalScript(
   url: string,
