@@ -1,0 +1,283 @@
+// Runs in the browser before each bundled spec file. Supplies what karma-mocha, karma-chai and
+// karma-sinon supply under Karma: Mocha's BDD globals (on top of Vitest's runner), chai globals,
+// and a `window.__karma__` stub for test/test_deps.js. No spec is changed.
+import * as vitest from 'vitest';
+import * as chai from 'chai';
+import sinon from 'sinon';
+
+const DEFAULT_TIMEOUT = 3000; // karma.conf.maker.js: client.mocha.timeout
+const NO_TIMEOUT = 2 ** 31 - 1;
+// like Mocha, keep the real timers: specs install sinon fake timers on the global object
+const realSetTimeout = globalThis.setTimeout.bind(globalThis);
+const realClearTimeout = globalThis.clearTimeout.bind(globalThis);
+
+// karma-chai / karma-sinon globals (test_deps.js replaces `sinon` with the bundled copy)
+globalThis.chai = chai;
+globalThis.expect = chai.expect;
+globalThis.assert = chai.assert;
+globalThis.should = chai.should();
+globalThis.sinon = sinon;
+
+// test_deps.js wraps `window.__karma__.loaded`
+globalThis.__karma__ = { loaded() {} };
+
+// The tester page is test/vitest-webpack/context.html, shaped like karma's: Vitest's own is
+// `<html lang="en">` (FPD enrichment turns that into site.content.language) titled "Vitest Browser Tester".
+// ~170 specs hard-code karma's test page URL (http://localhost:9876/context.html); the config serves
+// Vitest on port 9876, and this gives the test iframe karma's path. Its referrer is karma's parent page.
+if (globalThis.__VITEST_KARMA_URL__ !== false) {
+  history.replaceState(history.state, '', '/context.html');
+  if (window.top !== window) {
+    // karma's top page is http://localhost:9876/?id=<browser id> (karma-chrome-launcher)
+    window.top.history.replaceState(window.top.history.state, '', '/?id=73195742');
+  }
+  Object.defineProperty(document, 'referrer', { value: `${location.origin}/`, configurable: true });
+}
+
+// ---- Mocha BDD interface on top of Vitest -------------------------------------------------------
+
+// A Mocha `Context`: tests and hooks of a suite share it (prototypally inherited from the parent suite),
+// so `this.foo = ...` in a hook is visible in the tests.
+const rootSuite = { title: '', parent: null, timeout: DEFAULT_TIMEOUT, retries: 0, ctx: {} };
+rootSuite.ctx = makeCtx(null);
+let currentSuite = rootSuite;
+// Mocha silently ignores it()/hooks declared while a test or hook is running (they're added to a suite
+// that has already been collected, and never run). Vitest fails the enclosing test instead.
+let running = 0;
+
+function makeCtx(parent) {
+  const ctx = parent ? Object.create(parent) : {};
+  Object.defineProperties(ctx, {
+    timeout: {
+      value(ms) {
+        if (ms === undefined) return this.runnable?.timeout ?? currentSuite.timeout;
+        if (this.runnable) this.runnable.setTimeout(ms);
+        return this;
+      },
+      writable: true
+    },
+    slow: { value() { return this; }, writable: true },
+    retries: { value() { return this; }, writable: true },
+    skip: {
+      value() {
+        if (this.vctx?.skip) return this.vctx.skip();
+        throw new Error('this.skip() is not supported here');
+      },
+      writable: true
+    },
+  });
+  return ctx;
+}
+
+// what a Mocha Suite's `this` looks like inside a describe() body
+function suiteThis(suite) {
+  return {
+    title: suite.title,
+    timeout(ms) { if (ms === undefined) return suite.timeout; suite.timeout = ms; return this; },
+    retries(n) { if (n === undefined) return suite.retries; suite.retries = n; return this; },
+    slow() { return this; },
+    ctx: suite.ctx,
+    beforeAll: (...args) => globalThis.before(...args),
+    afterAll: (...args) => globalThis.after(...args),
+    beforeEach: (...args) => globalThis.beforeEach(...args),
+    afterEach: (...args) => globalThis.afterEach(...args),
+  };
+}
+
+function testInfo(task, ctx) {
+  const parentOf = (t) => {
+    const s = t?.suite;
+    if (!s || s.type !== 'suite' || s.filepath) return { title: '', parent: null, root: true, fullTitle: () => '' };
+    return { title: s.name, parent: parentOf(s), fullTitle() { const p = this.parent.fullTitle(); return p ? `${p} ${this.title}` : this.title; } };
+  };
+  const parent = parentOf(task);
+  return {
+    title: task.name,
+    parent,
+    ctx,
+    get state() {
+      const s = task.result?.state;
+      return s === 'pass' ? 'passed' : s === 'fail' ? 'failed' : s === 'skip' ? 'pending' : undefined;
+    },
+    get err() { return task.result?.errors?.[0]; },
+    fullTitle() { const p = parent.fullTitle(); return p ? `${p} ${task.name}` : task.name; },
+    titlePath() { const out = []; let p = parent; while (p && !p.root) { out.unshift(p.title); p = p.parent; } return [...out, task.name]; },
+  };
+}
+
+// Run a Mocha runnable (test or hook) with Mocha semantics: `this` is the suite context, `done`
+// callbacks, returned promises, a resettable timeout (`this.timeout(n)`), "overspecified" detection.
+// Mocha starts every test and hook from a fresh macrotask (its browser build schedules runnables with
+// setTimeout); Vitest chains them on microtasks. Specs whose previous test leaves timers or yields
+// pending rely on those running first, so give them the same gap.
+const channel = new MessageChannel();
+const waiting = [];
+channel.port1.onmessage = () => waiting.shift()?.();
+function macrotask() {
+  return new Promise(resolve => { waiting.push(resolve); channel.port2.postMessage(null); });
+}
+
+// One gap per test, ahead of all its hooks (a hook per runnable would cost ~4ms each to timer clamping).
+vitest.beforeEach(() => macrotask());
+
+function run(fn, opts) {
+  return runNow(fn, opts);
+}
+
+function runNow(fn, { suite, timeout, title, vctx, test, kind }) {
+  const ctx = suite.ctx;
+  return new Promise((resolve, reject) => {
+    let timer;
+    let finished = false;
+    const runnable = {
+      timeout,
+      setTimeout(ms) {
+        this.timeout = ms;
+        arm();
+      }
+    };
+    function arm() {
+      realClearTimeout(timer);
+      const ms = runnable.timeout;
+      if (ms > 0 && ms < NO_TIMEOUT) {
+        timer = realSetTimeout(() => finish(new Error(
+          `Timeout of ${ms}ms exceeded. For async tests and hooks, ensure "done()" is called; if returning a Promise, ensure it resolves. (${title})`
+        )), ms);
+      }
+    }
+    function finish(err) {
+      if (finished) return;
+      finished = true;
+      realClearTimeout(timer);
+      ctx.runnable = prev.runnable;
+      running--;
+      if (err != null && err !== false) {
+        if (err === vctxSkip) return reject(err);
+        reject(err instanceof Error || (err && err.constructor?.name?.endsWith('Error')) ? err : new Error(`done() invoked with non-Error: ${JSON.stringify(err)}`));
+      } else {
+        resolve();
+      }
+    }
+    const prev = { runnable: ctx.runnable };
+    running++;
+    ctx.runnable = runnable;
+    ctx.vctx = vctx;
+    ctx.test = test ?? (vctx?.task ? testInfo(vctx.task, ctx) : { title, ctx });
+    if (kind === 'test') ctx.currentTest = ctx.test;
+    arm();
+    try {
+      if (fn.length > 0) {
+        const r = fn.call(ctx, (err) => finish(err));
+        if (r && typeof r.then === 'function') {
+          finish(new Error('Resolution method is overspecified. Specify a callback *or* return a Promise; not both.'));
+        }
+      } else {
+        const r = fn.call(ctx);
+        if (r && typeof r.then === 'function') {
+          r.then(() => finish(), (e) => finish(e ?? new Error('Promise rejected with no or falsy reason')));
+        } else {
+          finish();
+        }
+      }
+    } catch (e) {
+      finish(e);
+    }
+  });
+}
+const vctxSkip = Symbol('skip');
+
+// Mocha runs a suite's own tests before its child suites; Vitest runs them in declaration order.
+// Some specs depend on Mocha's order (a test declared after a nested describe that only passes when
+// it runs first), so put the tests first: a stable partition of what this describe() registered.
+function mochaOrder() {
+  const tasks = vitest.TestRunner.getCurrentSuite()?.tasks;
+  if (!Array.isArray(tasks)) return;
+  const tests = tasks.filter(t => t.type !== 'collector');
+  const suites = tasks.filter(t => t.type === 'collector');
+  tasks.splice(0, tasks.length, ...tests, ...suites);
+}
+
+function wrapDescribe(vDescribe) {
+  return function describe(title, fn) {
+    if (running) return ignoredWhileRunning('describe', title, fn);
+    if (typeof fn !== 'function') return vDescribe(title);
+    const parent = currentSuite;
+    const suite = { title, parent, timeout: parent.timeout, retries: parent.retries, ctx: makeCtx(parent.ctx) };
+    return vDescribe(String(title), function () {
+      currentSuite = suite;
+      try {
+        return fn.call(suiteThis(suite));
+      } finally {
+        currentSuite = parent;
+        mochaOrder();
+      }
+    });
+  };
+}
+
+function wrapIt(vIt) {
+  return function it(title, fn) {
+    if (running) return ignoredWhileRunning('it', title);
+    if (typeof fn !== 'function') return vitest.it.skip(String(title), () => {});
+    const suite = currentSuite;
+    const timeout = suite.timeout;
+    const opts = { timeout: NO_TIMEOUT, ...(suite.retries ? { retry: suite.retries } : {}) };
+    return vIt(String(title), opts, (vctx) => run(fn, { suite, timeout, title, vctx, kind: "test" }));
+  };
+}
+
+function ignoredWhileRunning(kind, title, fn) {
+  // eslint-disable-next-line no-console
+  console.warn(`[mocha shim] ${kind}('${title}') called inside a running test or hook; ignored, as Mocha does`);
+  if (kind === 'describe' && typeof fn === 'function') fn.call(suiteThis({ title, timeout: currentSuite.timeout, retries: 0, ctx: makeCtx(currentSuite.ctx) }));
+}
+
+function hookArgs(args) {
+  // Mocha allows before('description', fn)
+  return typeof args[0] === 'function' ? args[0] : args[1];
+}
+
+function wrapEachHook(vHook, setsCurrentTest) {
+  return function (...args) {
+    if (running) return ignoredWhileRunning(vHook.name, '');
+    const fn = hookArgs(args);
+    const suite = currentSuite;
+    const timeout = suite.timeout;
+    vHook((vctx) => {
+      if (setsCurrentTest) suite.ctx.currentTest = testInfo(vctx.task, suite.ctx);
+      return run(fn, { suite, timeout, title: `"${vHook.name}" hook`, vctx, kind: 'hook' });
+    }, NO_TIMEOUT);
+  };
+}
+
+function wrapAllHook(vHook) {
+  return function (...args) {
+    if (running) return ignoredWhileRunning(vHook.name, '');
+    const fn = hookArgs(args);
+    const suite = currentSuite;
+    const timeout = suite.timeout;
+    vHook(() => run(fn, { suite, timeout, title: `"${vHook.name}" hook`, kind: 'hook' }), NO_TIMEOUT);
+  };
+}
+
+const describe = wrapDescribe(vitest.describe);
+describe.only = wrapDescribe(vitest.describe.only);
+describe.skip = wrapDescribe(vitest.describe.skip);
+const it = wrapIt(vitest.it);
+it.only = wrapIt(vitest.it.only);
+it.skip = (title) => vitest.it.skip(String(title), () => {});
+
+Object.assign(globalThis, {
+  describe,
+  context: describe,
+  xdescribe: describe.skip,
+  xcontext: describe.skip,
+  it,
+  specify: it,
+  xit: it.skip,
+  xspecify: it.skip,
+  before: wrapAllHook(vitest.beforeAll),
+  after: wrapAllHook(vitest.afterAll),
+  beforeEach: wrapEachHook(vitest.beforeEach, true),
+  afterEach: wrapEachHook(vitest.afterEach, true),
+});
