@@ -36,7 +36,6 @@ export type MapPayloads = Assert<Equal<
   }
 >>;
 
-
 export type StoredImpressionBidRequestedCode = Assert<Equal<
   SkinnyBidRequested['bidderCode'], string | null
 >>;
