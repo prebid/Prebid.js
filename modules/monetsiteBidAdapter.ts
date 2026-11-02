@@ -5,6 +5,7 @@ import { deepSetValue, isArray, logWarn } from '../src/utils.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { resolveResponseMediaType } from '../libraries/ortb2Utils/mediaType.js';
+import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
 const BIDDER_CODE = 'monetsite';
 const ADAPTER_VERSION = '1.0.0';
@@ -174,11 +175,16 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   },
 
   bidResponse(buildBidResponse, bid, context) {
-    // the imp context is shared by every bid on the same impid, so keep the inferred type per bid
-    const bidContext = bid.mtype == null
-      ? { ...context, mediaType: resolveResponseMediaType(bid, context.imp) }
-      : context;
-    const bidResponse = buildBidResponse(bid, bidContext);
+    // the imp context is shared by every bid on the same impid and already carries the request's
+    // mediaType, so resolve it per bid: the explicit mtype first, otherwise inferred from the markup
+    const mediaType: MediaType | undefined = bid.mtype == null
+      ? resolveResponseMediaType(bid, context.imp)
+      : ORTB_MTYPES[bid.mtype];
+    if (!mediaType || !context.imp?.[mediaType]) {
+      logWarn(`${BIDDER_CODE}: dropping bid ${bid.id} for impression ${bid.impid}: media type ${mediaType || bid.mtype} was not requested`);
+      return undefined;
+    }
+    const bidResponse = buildBidResponse(bid, { ...context, mediaType });
     bidResponse.ttl = getTtl();
     return bidResponse;
   },
@@ -255,8 +261,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     if (!isArray(serverResponse?.body?.seatbid)) {
       return [];
     }
-    const { bids } = converter.fromORTB({ response: serverResponse.body, request: request.data }) as ExtendedResponse;
-    return bids.filter((bid) => SUPPORTED_MEDIA_TYPES.includes(bid.mediaType));
+    return (converter.fromORTB({ response: serverResponse.body, request: request.data }) as ExtendedResponse).bids;
   },
 
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
@@ -272,7 +277,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       if (!isArray(pixels)) {
         return;
       }
-      pixels.forEach(([kind, url]) => {
+      pixels.forEach((pixel) => {
+        if (!isArray(pixel)) {
+          return;
+        }
+        const [kind, url] = pixel;
         const type = SYNC_TYPES[String(kind).toLowerCase()];
         const enabled = type === 'image' ? syncOptions.pixelEnabled : type === 'iframe' && syncOptions.iframeEnabled;
         const key = `${type}|${url}`;

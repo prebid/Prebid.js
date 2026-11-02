@@ -383,6 +383,21 @@ describe('monetsiteBidAdapter', () => {
       expect(interpret(response, [multiFormat]).map((bid) => bid.mediaType)).to.deep.equal(['banner']);
     });
 
+    it('drops a bid whose explicit mtype was not requested on a single-format imp', () => {
+      const bids = interpret(makeServerResponse({ mtype: 2, adm: '<VAST version="4.0"></VAST>' }));
+      expect(bids).to.deep.equal([]);
+    });
+
+    it('drops a bid with an unknown mtype and keeps the others', () => {
+      const response = makeServerResponse();
+      response.body.seatbid[0].bid.push({ id: 'b-2', impid: BID_ID, price: 2, w: 300, h: 250, crid: 'cr-2', mtype: 9, adm: '<div>x</div>' });
+      expect(interpret(response).map((bid) => bid.creativeId)).to.deep.equal(['cr-1']);
+    });
+
+    it('drops an inferred media type that was not requested', () => {
+      expect(interpret(makeServerResponse({ mtype: undefined, adm: '<VAST version="4.0"></VAST>' }))).to.deep.equal([]);
+    });
+
     it('infers the media type when mtype is missing', () => {
       const [bid] = interpret(makeServerResponse({ mtype: undefined }));
       expect(bid.mediaType).to.equal('banner');
@@ -464,6 +479,13 @@ describe('monetsiteBidAdapter', () => {
       expect(second.url).to.equal(
         'https://sync.monetize.site/frame?gdpr=1&gdpr_consent=abc%3D&us_privacy=1YNN&gpp=DBA&gpp_sid=7%2C8'
       );
+    });
+
+    it('skips malformed pixel entries and keeps the valid ones', () => {
+      const malformed = [{ body: { ext: { pixels: [null, {}, 'image', 42, ['image', 'https://sync.monetize.site/ok']] } } }];
+      expect(spec.getUserSyncs({ pixelEnabled: true }, malformed)).to.deep.equal([
+        { type: 'image', url: 'https://sync.monetize.site/ok' },
+      ]);
     });
 
     it('registers each sync once across per-bid responses', () => {

@@ -24,7 +24,7 @@ zone id passed in the URL (`?z=<zoneID>`) and as `imp.tagid`.
 
 | Name       | Scope    | Description                                                          | Example    | Type              |
 |------------|----------|----------------------------------------------------------------------|------------|-------------------|
-| `zoneID`   | required | Zone id provided by Monetize.site                                    | `'123456'` | `string`/`number` |
+| `zoneID`   | required | Zone id provided by Monetize.site                                    | `'922800027'` | `string`/`number` |
 | `bidfloor` | optional | Impression floor, used when the Price Floors module sets none; default `0` | `0.5`      | `number`          |
 | `cur`      | optional | ISO 4217 currency of `bidfloor`; default `USD`                      | `'EUR'`    | `string`          |
 | `mirror`   | optional | Hostname to send the request to instead of `rtb.monetize.site` (https, same path); overrides the `endpoint` config | `'rtb.example.com'` | `string` |
@@ -38,8 +38,8 @@ automatically and is not accepted as a bidder param.
 const adUnits = [
   {
     code: 'banner-div',
-    mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-    bids: [{ bidder: 'monetsite', params: { zoneID: '123456' } }]
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+    bids: [{ bidder: 'monetsite', params: { zoneID: '922800027' } }]
   },
   {
     code: 'video-div',
@@ -52,7 +52,7 @@ const adUnits = [
         maxduration: 30
       }
     },
-    bids: [{ bidder: 'monetsite', params: { zoneID: '123457' } }]
+    bids: [{ bidder: 'monetsite', params: { zoneID: '984341227' } }]
   },
   {
     code: 'native-div',
@@ -61,12 +61,12 @@ const adUnits = [
         ortb: {
           assets: [
             { id: 1, required: 1, title: { len: 80 } },
-            { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
+            { id: 2, required: 1, img: { type: 3, w: 300, h: 300 } }
           ]
         }
       }
     },
-    bids: [{ bidder: 'monetsite', params: { zoneID: '123458' } }]
+    bids: [{ bidder: 'monetsite', params: { zoneID: '917767897' } }]
   }
 ];
 ```
@@ -80,7 +80,7 @@ Every impression is sent with `bidfloor`/`bidfloorcur`, resolved in this order:
 3. `bidfloor: 0`, `bidfloorcur: 'USD'`.
 
 ```javascript
-bids: [{ bidder: 'monetsite', params: { zoneID: '123456', bidfloor: 0.5, cur: 'EUR' } }]
+bids: [{ bidder: 'monetsite', params: { zoneID: '922800027', bidfloor: 0.5, cur: 'EUR' } }]
 ```
 
 The request-level `cur` follows the floor currency.
