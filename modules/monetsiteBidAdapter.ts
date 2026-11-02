@@ -207,7 +207,10 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
 
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    request.cur = [imps.find((imp) => imp.bidfloorcur)?.bidfloorcur || DEFAULT_CURRENCY];
+    // keep the publisher's ortb2.cur; otherwise allow the floor currency
+    if (!request.cur?.length) {
+      request.cur = [imps.find((imp) => imp.bidfloorcur)?.bidfloorcur || DEFAULT_CURRENCY];
+    }
     deepSetValue(request, 'source.ext.hb', 1);
     deepSetValue(request, 'source.ext.adapterver', ADAPTER_VERSION);
     deepSetValue(request, 'source.ext.prebidjsver', '$prebid.version$');
@@ -238,6 +241,10 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     // banner already renders nurl as a pixel. With VAST in adm, nurl is a win notice rather than the VAST
     // location, so keep it off vastUrl (Prebid then points vastUrl at the cached VAST) and send it on win;
     // without adm, nurl serves the VAST itself. Native has no other win notice path.
+    // Prebid expands ${AUCTION_PRICE} only in `ad`/`adUrl` at render time, never in vastUrl
+    if (mediaType === VIDEO && !bid.adm && bid.nurl) {
+      (bidResponse as typeof bidResponse & { vastUrl?: string }).vastUrl = replaceAuctionPrice(bid.nurl, bid.price);
+    }
     if (bid.nurl && (mediaType === NATIVE || (mediaType === VIDEO && bid.adm))) {
       const response = bidResponse as typeof bidResponse & { vastUrl?: string; nurl?: string };
       if (mediaType === VIDEO) {

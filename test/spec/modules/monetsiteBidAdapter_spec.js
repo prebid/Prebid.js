@@ -272,6 +272,12 @@ describe('monetsiteBidAdapter', () => {
       expect(data.cur).to.deep.equal(['EUR']);
     });
 
+    it('keeps the publisher ortb2.cur instead of the floor currency', () => {
+      const data = build([makeBid()], { ortb2: { cur: ['EUR'] } })[0].data;
+      expect(data.cur).to.deep.equal(['EUR']);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
+
     it('sends bidfloor 0 in USD when there is no floor', () => {
       const data = build()[0].data;
       expect(data.imp[0].bidfloor).to.equal(0);
@@ -533,6 +539,12 @@ describe('monetsiteBidAdapter', () => {
         const [bid] = interpret(makeServerResponse({ mtype: 2, adm: undefined, nurl: 'https://vast.monetize.site/v.xml' }), [videoBid()]);
         expect(bid.vastUrl).to.equal('https://vast.monetize.site/v.xml');
         expect(bid).to.not.have.property('nurl');
+      });
+
+      it('expands the auction price in a nurl-backed VAST URL', () => {
+        const nurl = 'https://vast.monetize.site/v.xml?p=${AUCTION_PRICE}';
+        const [bid] = interpret(makeServerResponse({ mtype: 2, price: 1.25, adm: undefined, nurl }), [videoBid()]);
+        expect(bid.vastUrl).to.equal('https://vast.monetize.site/v.xml?p=1.25');
       });
     }
 
