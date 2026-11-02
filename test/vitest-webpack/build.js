@@ -34,13 +34,22 @@ const OUT = path.resolve(ROOT, 'build/vitest-bundles');
 const PUBLIC = path.resolve(ROOT, 'build/vitest-public');
 const SCRIPTS = path.join(PUBLIC, 'wp');
 
+const specName = (spec) => spec.replace(/^test\/spec\//, '').replace(/\.js$/, '');
+
 /**
- * Pick the spec files to bundle: VITEST_FILES, or the TEST_CHUNKS/TEST_CHUNK/TEST_PAT chunk as karmaRunner.js does.
- * @returns {{specs: string[], pipeline: boolean}} spec paths, and whether to include pipeline_setup (chunk runs only)
+ * Pick what to bundle. Each group becomes one bundle and one Vitest test file, i.e. one page with one set
+ * of module instances, as Karma loads one chunk into one page:
+ * - TEST_CHUNKS/TEST_CHUNK/TEST_PAT (as karmaRunner.js): one group per chunk, so a spec that leaks global
+ *   or module state can break a later one, which is what the chunked Karma run checks;
+ * - VITEST_FILES (like `gulp test-only --file`), or VITEST_ISOLATE_SPECS=1: one group per spec, which instead
+ *   finds specs that only pass because of state leaked by others.
+ * @returns {{groups: {name: string, specs: string[]}[], pipeline: boolean}} groups to bundle, and whether to
+ *   include pipeline_setup (chunk runs only, as Karma)
  */
-function selectSpecs () {
+function selectGroups () {
+  const perSpec = (specs) => specs.map(spec => ({ name: specName(spec), specs: [spec] }));
   if (process.env.VITEST_FILES) {
-    return { specs: process.env.VITEST_FILES.split(',').map(f => f.trim()).filter(Boolean), pipeline: false };
+    return { groups: perSpec(process.env.VITEST_FILES.split(',').map(f => f.trim()).filter(Boolean)), pipeline: false };
   }
   // same chunking as karmaRunner.js
   const chunkNum = process.env.TEST_CHUNKS ?? 8;
@@ -54,29 +63,33 @@ function selectSpecs () {
   });
   chunks = chunks.filter(c => c.length > 0);
   const n = process.env.TEST_CHUNK ? Number(process.env.TEST_CHUNK) : null;
-  return { specs: n ? chunks[n - 1] : chunks.flat(), pipeline: true };
+  const selected = n ? [[n, chunks[n - 1]]] : chunks.map((specs, i) => [i + 1, specs]);
+  if (process.env.VITEST_ISOLATE_SPECS) {
+    return { groups: perSpec(selected.flatMap(([, specs]) => specs)), pipeline: true };
+  }
+  return { groups: selected.map(([i, specs]) => ({ name: `chunks/chunk-${i}_spec`, specs })), pipeline: true };
 }
 
 /**
- * Build the webpack config for the selected specs from karma's own webpack config.
+ * Build the webpack config for the selected groups from karma's own webpack config.
  * @param {object} options
- * @param {string[]} options.specs spec paths to bundle, one entry each
- * @param {boolean} options.pipeline whether to load pipeline_setup before each spec, as karma does for chunk runs
+ * @param {{name: string, specs: string[]}[]} options.groups one entry per group
+ * @param {boolean} options.pipeline whether to load pipeline_setup first, as karma does for chunk runs
  * @returns {object} webpack configuration
  */
-function makeConfig ({ specs, pipeline }) {
+function makeConfig ({ groups, pipeline }) {
+  const specs = groups.flatMap(group => group.specs);
   const coverage = !!process.env.VITEST_COVERAGE;
   // Reuse karma's webpack config as-is (babel-loader + @babel/plugin-transform-modules-commonjs,
   // resolution against dist/src, aliases, plugins). Only the entry/output shape changes below.
   const config = karmaConfMaker(coverage, false, false, specs, undefined, 1, false).webpack;
 
-  // Karma loads, as separate entries sharing one runtime: test_deps, [pipeline_setup], ...specs, hookSetup.
-  // Here every spec gets its own entry with the same setup modules, in the same order.
+  // Karma loads, sharing one runtime: test_deps, [pipeline_setup], ...specs, hookSetup.
+  // Each group gets one entry with the same modules in the same order.
   const pre = ['test/test_deps.js', ...(pipeline ? ['test/pipeline_setup.js'] : [])];
   const post = ['test/helpers/hookSetup.js'];
-  config.entry = Object.fromEntries(specs.map(spec => {
-    const name = spec.replace(/^test\/spec\//, '').replace(/\.js$/, '');
-    return [name, [...pre, spec, ...post].map(f => helpers.getPrecompiledPath(f))];
+  config.entry = Object.fromEntries(groups.map(group => {
+    return [group.name, [...pre, ...group.specs, ...post].map(f => helpers.getPrecompiledPath(f))];
   }));
   config.devtool = process.env.VITEST_SOURCEMAPS ? 'inline-source-map' : false;
   config.output = {
@@ -86,9 +99,9 @@ function makeConfig ({ specs, pipeline }) {
     chunkFilename: '_chunks/[id].js',
     clean: true,
   };
-  // Every spec file still gets its own module instances - Vitest gives each test file a fresh iframe,
-  // so the runtime and shared chunks are evaluated once per file, unlike karma's single page - but the
-  // shared *code* lives in one file the browser downloads once and caches.
+  // Every group gets its own module instances - Vitest gives each test file a fresh iframe, so the
+  // runtime and shared chunks are evaluated once per group - but the shared *code* lives in one file
+  // the browser downloads once and caches.
   // VITEST_SPLIT=0 emits fully self-contained bundles instead.
   config.optimization = process.env.VITEST_SPLIT === '0'
     ? { splitChunks: false, runtimeChunk: false, minimize: false }
@@ -130,7 +143,7 @@ function makeConfig ({ specs, pipeline }) {
   return config;
 }
 
-const selection = selectSpecs();
+const selection = selectGroups();
 const started = Date.now();
 webpack(makeConfig(selection), (err, stats) => {
   if (err) {
@@ -142,7 +155,7 @@ webpack(makeConfig(selection), (err, stats) => {
     info.errors.forEach(e => console.error(e.message));
     process.exit(1);
   }
-  // one test file per spec: load its entrypoint's scripts (runtime, shared chunk, entry) in order
+  // one test file per group: load its entrypoint's scripts (runtime, shared chunk, entry) in order
   fs.rmSync(OUT, { recursive: true, force: true });
   const { entrypoints } = stats.toJson({ all: false, entrypoints: true });
   Object.entries(entrypoints).forEach(([name, { assets }]) => {
@@ -153,6 +166,9 @@ webpack(makeConfig(selection), (err, stats) => {
 await loadScripts(${JSON.stringify(urls)});
 `);
   });
-  fs.writeFileSync(path.join(OUT, 'specs.json'), JSON.stringify(selection.specs, null, 2));
-  console.log(`built ${selection.specs.length} spec bundle(s) into ${path.relative(ROOT, OUT)} in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+  // which source specs each test file runs (used by githubReporter.mjs to locate failures)
+  fs.writeFileSync(path.join(OUT, 'groups.json'), JSON.stringify(
+    Object.fromEntries(selection.groups.map(group => [`build/vitest-bundles/${group.name}.js`, group.specs])), null, 2));
+  const specCount = selection.groups.reduce((n, group) => n + group.specs.length, 0);
+  console.log(`built ${selection.groups.length} bundle(s) covering ${specCount} spec file(s) into ${path.relative(ROOT, OUT)} in ${((Date.now() - started) / 1000).toFixed(1)}s`);
 });

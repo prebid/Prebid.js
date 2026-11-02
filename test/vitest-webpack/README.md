@@ -7,10 +7,15 @@ A trial for [#10806](https://github.com/prebid/Prebid.js/issues/10806) (Karma is
 
 Vitest is the runner; webpack is still the bundler.
 
-- `build.js` takes the webpack config from `karma.conf.maker.js` (not a copy). It emits one bundle per spec in
-  Karma's load order (`test_deps`, `pipeline_setup` for chunk runs, the spec, `hookSetup`), with shared
-  `runtime`/`commons` chunks, as classic scripts under `build/vitest-public/wp/`. It also writes a small loader
-  file per spec under `build/vitest-bundles/` for Vitest to collect.
+- `build.js` takes the webpack config from `karma.conf.maker.js` (not a copy). By default it emits **one bundle
+  per Karma chunk**, in Karma's load order (`test_deps`, `pipeline_setup`, the chunk's specs, `hookSetup`), as
+  classic scripts under `build/vitest-public/wp/`. It also writes one loader file per bundle under
+  `build/vitest-bundles/` for Vitest to collect. Each loader file runs in its own page, so a chunk shares one
+  page and one set of module instances, as in Karma. That way a spec that leaks global or module state can
+  break a later one in the same chunk, which is what the chunked Karma run is meant to catch.
+- With `VITEST_FILES`, or `VITEST_ISOLATE_SPECS=1` for a chunk, each spec gets its own bundle and page instead.
+  That catches the opposite problem: specs that only pass because of state leaked by another spec, as
+  `consentUtils_spec` did (#15979).
 - Karma's Babel config compiles modules with `@babel/plugin-transform-modules-commonjs`, so exports stay plain
   mutable objects. That is why the suite's many `sinon.stub(namespace, 'fn')` calls work. Native ESM namespaces
   are frozen ("ES Modules cannot be stubbed"), so the bundles are not served as ESM through Vite.
@@ -37,6 +42,7 @@ npx gulp precompile
 npm run test:vitest                                                # whole suite
 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest                     # one Karma-sized chunk
 VITEST_FILES=test/spec/unit/core/adapterManager_spec.js npm run test:vitest
+VITEST_ISOLATE_SPECS=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest   # same chunk, one page per spec
 ```
 
 `VITEST_CHANNEL=chrome` uses the installed Google Chrome. See `build.js` for the other environment variables.

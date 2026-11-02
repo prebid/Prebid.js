@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import GithubSpecReporter, { formatAnnotation, specPath, testLine } from '../vitest-webpack/githubReporter.mjs';
+import GithubSpecReporter, { formatAnnotation, locateTest, specPath, testLine } from '../vitest-webpack/githubReporter.mjs';
 
 describe('Vitest trial GitHub annotations', () => {
   it('maps a bundle back to its source spec', () => {
@@ -39,7 +39,7 @@ describe('Vitest trial GitHub annotations', () => {
 
   it('annotates only failed tests and failed modules', () => {
     const lines = [];
-    const reporter = new GithubSpecReporter({ write: (line) => lines.push(line) });
+    const reporter = new GithubSpecReporter({ write: (line) => lines.push(line), groups: {} });
     const module = { relativeModuleId: 'build/vitest-bundles/does/not_exist_spec.js', errors: () => [] };
     reporter.onTestCaseResult({ module, name: 'ok', fullName: 'ok', result: () => ({ state: 'passed' }) });
     reporter.onTestModuleEnd(module);
@@ -55,6 +55,39 @@ describe('Vitest trial GitHub annotations', () => {
     expect(lines).to.eql([
       '::error file=test/spec/does/not_exist_spec.js,title=suite > bad::expected false to be true',
       '::error file=test/spec/does/not_exist_spec.js,title=Spec file failed to run::SyntaxError'
+    ]);
+  });
+
+  it('locates a failure among the specs of a chunk', () => {
+    const candidates = [
+      { file: 'test/spec/a_spec.js', source: "it('other', () => {});" },
+      { file: 'test/spec/b_spec.js', source: "describe('b', () => {\n  it('fails here', () => {});\n});" },
+      { file: 'test/spec/c_spec.js', source: "it('shared', () => {});" },
+      { file: 'test/spec/d_spec.js', source: "it('shared', () => {});" },
+    ];
+    expect(locateTest(candidates, 'fails here')).to.eql({ file: 'test/spec/b_spec.js', line: 2 });
+    // the same title in two specs: no file to point at
+    expect(locateTest(candidates, 'shared')).to.eql({ file: null, line: null });
+    expect(locateTest(candidates, 'missing')).to.eql({ file: null, line: null });
+    // a single-spec test file still annotates its spec
+    expect(locateTest([candidates[0]], 'missing')).to.eql({ file: 'test/spec/a_spec.js', line: null });
+  });
+
+  it('uses groups.json to annotate chunk test files', () => {
+    const lines = [];
+    const reporter = new GithubSpecReporter({
+      write: (line) => lines.push(line),
+      groups: { 'build/vitest-bundles/chunks/chunk-1_spec.js': ['test/spec/a_spec.js', 'test/spec/b_spec.js'] }
+    });
+    reporter.read = (file) => (file === 'test/spec/b_spec.js' ? "it('bad', () => {});" : '');
+    const module = { relativeModuleId: 'build/vitest-bundles/chunks/chunk-1_spec.js', errors: () => [{ message: 'boom' }] };
+    reporter.onTestCaseResult({
+      module, name: 'bad', fullName: 'b > bad', result: () => ({ state: 'failed', errors: [{ message: 'nope' }] })
+    });
+    reporter.onTestModuleEnd(module);
+    expect(lines).to.eql([
+      '::error file=test/spec/b_spec.js,line=1,title=b > bad::nope',
+      '::error title=build/vitest-bundles/chunks/chunk-1_spec.js failed to run::boom'
     ]);
   });
 });
