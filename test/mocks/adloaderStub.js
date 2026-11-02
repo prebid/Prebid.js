@@ -1,9 +1,11 @@
 import * as adloader from 'src/adloader.js';
 
-// this export is for adloader's tests against actual implementation
+// these exports are for adloader's tests against actual implementation
 export const loadExternalScript = adloader.loadExternalScript;
+export const fetchExternalScript = adloader.fetchExternalScript;
 
 export let loadExternalScriptStub = createStub();
+export let fetchExternalScriptStub = createFetchStub();
 
 function createStub() {
   return sinon.stub(adloader, 'loadExternalScript').callsFake((...args) => {
@@ -14,7 +16,13 @@ function createStub() {
   });
 }
 
+function createFetchStub() {
+  return sinon.stub(adloader, 'fetchExternalScript').resolves();
+}
+
 beforeEach(function() {
   loadExternalScriptStub.restore();
   loadExternalScriptStub = createStub();
+  fetchExternalScriptStub.restore();
+  fetchExternalScriptStub = createFetchStub();
 });
