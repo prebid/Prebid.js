@@ -240,6 +240,28 @@ describe('adLoader', function () {
       sinon.assert.calledOnce(utilsinsertElementStub);
     });
 
+    it('does not return a tag that failed before insertion', async () => {
+      const doc = document.implementation.createHTMLDocument('');
+      const tag = adLoader.loadExternalScript('test-uninserted', MODULE_TYPE_PREBID, 'debugging', undefined, doc, { 'invalid name': 'x' });
+      await flush();
+      sinon.assert.notCalled(utilsinsertElementStub);
+      expect(tag).to.not.exist;
+    });
+
+    it('does not return a tag to a caller denied by activity controls', async () => {
+      const unregister = registerActivityControl(ACTIVITY_LOAD_EXTERNAL_SCRIPT, 'test', (params) => {
+        if (params.componentName === 'denied') return { allow: false };
+      });
+      try {
+        const allowedTag = adLoader.loadExternalScript('test-denied-tag', MODULE_TYPE_PREBID, 'debugging');
+        expect(allowedTag).to.exist;
+        const deniedTag = adLoader.loadExternalScript('test-denied-tag', MODULE_TYPE_PREBID, 'denied');
+        expect(deniedTag).to.not.exist;
+      } finally {
+        unregister();
+      }
+    });
+
     it('requires a url to be included once per document', async function () {
       function getDocSpec() {
         return {
