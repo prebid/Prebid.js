@@ -1,15 +1,13 @@
 name: NPM consumer smoke test
 
+# This tests the latest *published* npm release, not the triggering commit, so
+# it never needs to run on PRs. On master it only rechecks the fixture itself.
 on:
-  pull_request:
+  push:
     branches: [master]
     paths:
       - '.github/workflows/npm-consumer-smoke.yml'
       - 'test/consumer-smoke/**'
-      - 'package.json'
-      - 'customize/**'
-      - 'plugins/**'
-      - 'gulpfile.*'
   workflow_dispatch:
   schedule:
     # Recheck the latest published npm release each week.
@@ -46,3 +44,12 @@ jobs:
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: bun run smoke
+
+      - name: Note that a published release was tested
+        if: failure()
+        working-directory: test/consumer-smoke
+        run: |
+          version=$(jq -r .version node_modules/prebid.js/package.json 2>/dev/null || echo unknown)
+          msg="This smoke test bundles the latest PUBLISHED prebid.js from npm ($version), not the commit that triggered this run (${GITHUB_SHA::9}). The failure may come from that older release and already be fixed on master, or from a change in Bun, Chrome or another dependency."
+          echo "::error title=npm consumer smoke failed on published prebid.js $version::$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
