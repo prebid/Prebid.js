@@ -3,6 +3,7 @@ import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 
 import { insertElement, logError, logWarn, setScriptAttributes, memoize } from './utils.js';
+import type { ModuleType } from "./activities/modules.ts";
 
 const _requestCache = new WeakMap();
 
@@ -27,7 +28,7 @@ function isAllowed(url, moduleType, moduleCode) {
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
  * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
-export function loadExternalScript(url, moduleType, moduleCode, callback, doc, attributes) {
+export function loadExternalScript(url, moduleType, moduleCode, callback?, doc?, attributes?) {
   if (!isAllowed(url, moduleType, moduleCode)) return;
 
   const hasCallback = typeof callback === 'function' || typeof callback?.success === 'function' || typeof callback?.error === 'function';
@@ -130,32 +131,50 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     }
     return null; // return new cache object?
   }
-};
+}
 
-const doPreload = memoize(function (url) {
-  return new Promise((resolve, reject) => {
-    try {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'script';
-      link.href = url;
-      link.onload = () => resolve();
-      link.onerror = (err) => {
-        doPreload.invalidate(url);
-        reject(err);
-      };
-      insertElement(link);
-    } catch (e) {
-      doPreload.invalidate(url);
-      reject(e);
+function makeLoader(mkTag) {
+  let loaders;
+
+  function load(doc, url) {
+    if (!loaders.has(doc)) {
+      const loader = memoize((url) => {
+        return new Promise((resolve, reject) => {
+          try {
+            const tag = mkTag(doc, url);
+            tag.onload = resolve;
+            tag.onerror = (err) => {
+              loader.invalidate(url);
+              reject(err);
+            };
+            insertElement(tag, doc);
+          } catch (e) {
+            loader.invalidate(url);
+            reject(e);
+          }
+        });
+      });
+      loaders.set(doc, loader);
     }
-  });
+    return loaders.get(doc)(url);
+  }
+  load.clear = () => { loaders = new WeakMap(); };
+  load.clear();
+  return load;
+}
+
+const doPreload = makeLoader((doc, url) => {
+  const link = doc.createElement('link');
+  link.rel = 'preload';
+  link.as = 'script';
+  link.href = url;
+  return link;
 });
 
-export async function preloadExternalScript(url, moduleType, moduleCode) {
+export async function preloadExternalScript(url: string, moduleType: ModuleType, moduleCode: string): Promise<void> {
   if (!isAllowed(url, moduleType, moduleCode)) {
     throw new Error('Denied');
   }
-  return doPreload(url);
+  return doPreload(document, url);
 }
 preloadExternalScript.clear = doPreload.clear;
