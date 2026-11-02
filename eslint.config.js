@@ -69,6 +69,9 @@ module.exports = [
   {
     ignores: [
       'integrationExamples/**/*',
+      // do not lint worktrees created by claude/gemini
+      '.claude/**',
+      '.gemini/**',
       // do not lint build-related stuff
       '*.js',
       '*.mjs',
@@ -78,7 +81,7 @@ module.exports = [
       'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
-      'web-bundler'
+      'web-bundler',
     ],
   },
   jsdoc.configs['flat/recommended'],
