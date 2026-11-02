@@ -1,7 +1,8 @@
 import { type BidderSpec, type ExtendedResponse, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, type MediaType } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { deepAccess, deepSetValue, isArray, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, isArray, isEmpty, logWarn, replaceAuctionPrice } from '../src/utils.js';
+import { noCredsAjax } from '../src/ajax.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { resolveResponseMediaType } from '../libraries/ortb2Utils/mediaType.js';
@@ -17,7 +18,8 @@ const DEFAULT_TTL = 500;
 const MAX_TTL = 5000;
 const DEFAULT_CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES: MediaType[] = [BANNER, VIDEO, NATIVE];
-const ORTB_IMP_FORMATS = ['banner', 'video', 'native', 'audio'];
+// every OpenRTB impression format object, supported or not, so the ones the ad unit does not declare can be stripped
+const ALL_ORTB_IMP_FORMATS = ['banner', 'video', 'native', 'audio'];
 
 export interface MonetsiteBidderParams {
   /**
@@ -130,12 +132,24 @@ function getTtl(): number {
 }
 
 /**
- * True when the Price Floors module deliberately sends no floor to this bidder (`noFloorSignalBidders`
- * or a skipped auction); a missing rule (`not_found`) does not count.
+ * True when the Price Floors module deliberately sends no floor to this bidder: `noFloorSignalBidders`,
+ * a skipped auction, or a matching rule whose value is `null` (getFloor returns null). A missing rule
+ * (`not_found`, or `{}` from getFloor) does not count, so the params floor can still apply.
  */
-function isFloorSuppressed(bidRequest: object): boolean {
+function isFloorSuppressed(bidRequest: any, context: { currency?: string; mediaType?: MediaType }): boolean {
   const floorData = deepAccess(bidRequest, 'floorData');
-  return !!(floorData?.noFloorSignaled || (floorData?.skipped && floorData.skippedReason !== 'not_found'));
+  if (floorData?.noFloorSignaled || (floorData?.skipped && floorData.skippedReason !== 'not_found')) {
+    return true;
+  }
+  if (typeof bidRequest.getFloor !== 'function') {
+    return false;
+  }
+  try {
+    // same lookup the converter makes for imp.bidfloor
+    return bidRequest.getFloor({ currency: context.currency, mediaType: context.mediaType || '*', size: '*' }) === null;
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
@@ -165,15 +179,16 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    // ortb2Imp can still carry e.g. `imp.audio`; send only the formats this bidder supports
-    ORTB_IMP_FORMATS
-      .filter((format) => !SUPPORTED_MEDIA_TYPES.includes(format as MediaType))
+    // ortb2Imp can still carry format objects (e.g. `imp.audio`, or `imp.video` on a banner ad unit);
+    // send only the formats declared on the ad unit, which buildRequests already narrowed to the supported ones
+    ALL_ORTB_IMP_FORMATS
+      .filter((format) => !bidRequest.mediaTypes?.[format])
       .forEach((format) => delete imp[format]);
     const { zoneID, bidfloor, cur } = bidRequest.params;
     imp.tagid = normalizeZoneId(zoneID);
     // a floor from the Price Floors module wins; otherwise use the ad unit params, defaulting to 0,
     // unless the module suppressed the floor signal for this bidder
-    if (imp.bidfloor == null && !isFloorSuppressed(bidRequest)) {
+    if (imp.bidfloor == null && !isFloorSuppressed(bidRequest, context)) {
       imp.bidfloor = normalizeBidfloor(bidfloor) ?? 0;
       imp.bidfloorcur = normalizeCurrency(cur) || DEFAULT_CURRENCY;
     }
@@ -188,7 +203,14 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     deepSetValue(request, 'source.ext.adapterver', ADAPTER_VERSION);
     deepSetValue(request, 'source.ext.prebidjsver', '$prebid.version$');
     // Prebid keeps consent, eids and schain in their 2.5 `ext` locations; send them as OpenRTB 2.6 fields
-    return toOrtb26(request);
+    toOrtb26(request);
+    // the translation can leave behind empty `ext` objects
+    ['site', 'app', 'device', 'user', 'regs', 'source'].forEach((section) => {
+      if (request[section]?.ext && isEmpty(request[section].ext)) {
+        delete request[section].ext;
+      }
+    });
+    return request;
   },
 
   bidResponse(buildBidResponse, bid, context) {
@@ -204,6 +226,16 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     const bidResponse = buildBidResponse(bid, { ...context, mediaType });
     // a buyer-declared expiry shorter than the configured ttl wins
     bidResponse.ttl = bid.exp > 0 ? Math.min(bid.exp, getTtl()) : getTtl();
+    // banner already renders nurl as a pixel. With VAST in adm, nurl is a win notice rather than the VAST
+    // location, so keep it off vastUrl (Prebid then points vastUrl at the cached VAST) and send it on win;
+    // without adm, nurl serves the VAST itself. Native has no other win notice path.
+    if (bid.nurl && (mediaType === NATIVE || (mediaType === VIDEO && bid.adm))) {
+      const response = bidResponse as typeof bidResponse & { vastUrl?: string; nurl?: string };
+      if (mediaType === VIDEO) {
+        delete response.vastUrl;
+      }
+      response.nurl = bid.nurl;
+    }
     return bidResponse;
   },
 });
@@ -280,6 +312,15 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       return [];
     }
     return (converter.fromORTB({ response: serverResponse.body, request: request.data }) as ExtendedResponse).bids;
+  },
+
+  onBidWon(bid) {
+    const { nurl } = bid as { nurl?: unknown };
+    if (typeof nurl === 'string' && nurl !== '') {
+      // keepalive so that navigating away does not cancel the win notice; the notice carries its own ids,
+      // so it never needs cookies
+      noCredsAjax(replaceAuctionPrice(nurl, bid.originalCpm ?? bid.cpm), undefined, undefined, { method: 'GET', keepalive: true });
+    }
   },
 
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {

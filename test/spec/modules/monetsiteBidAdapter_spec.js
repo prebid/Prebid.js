@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 import { spec } from 'modules/monetsiteBidAdapter.js';
 import 'modules/priceFloors.js';
 
@@ -229,6 +230,14 @@ describe('monetsiteBidAdapter', () => {
       expect(data.source.ext).to.include({ hb: 1, adapterver: '1.0.0' });
     });
 
+    it('does not leave empty ext objects behind', () => {
+      const data = build([makeBid()], {
+        ortb2: { user: { ext: { consent: 'consent-string' } }, regs: { ext: { gdpr: 1 } } },
+      })[0].data;
+      expect(data.user).to.deep.equal({ consent: 'consent-string' });
+      expect(data.regs).to.deep.equal({ gdpr: 1 });
+    });
+
     it('builds video and native imps', () => {
       const [videoReq, nativeReq] = build([
         makeBid({
@@ -325,6 +334,20 @@ describe('monetsiteBidAdapter', () => {
       });
     });
 
+    it('sends no floor when a matching floors rule is null', () => {
+      const bid = makeBid({ params: { zoneID: ZONE_ID, bidfloor: 0.4 } });
+      bid.getFloor = () => null;
+      const imp = build([bid])[0].data.imp[0];
+      expect(imp).to.not.have.property('bidfloor');
+      expect(imp).to.not.have.property('bidfloorcur');
+    });
+
+    it('falls back to the params floor when getFloor throws', () => {
+      const bid = makeBid({ params: { zoneID: ZONE_ID, bidfloor: 0.4 } });
+      bid.getFloor = () => { throw new Error('boom'); };
+      expect(build([bid])[0].data.imp[0].bidfloor).to.equal(0.4);
+    });
+
     it('still uses the params floor when the floors module found no rule', () => {
       const floorData = { noFloorSignaled: false, skipped: true, skippedReason: 'not_found' };
       const imp = build([makeBid({ params: { zoneID: ZONE_ID, bidfloor: 0.4 }, floorData })])[0].data.imp[0];
@@ -345,6 +368,21 @@ describe('monetsiteBidAdapter', () => {
       const response = makeServerResponse();
       response.body.seatbid[0].bid.push({ id: 'b-2', impid: BID_ID, price: 2, crid: 'cr-2', mtype: 3, adm: '<VAST version="4.0"></VAST>' });
       expect(spec.interpretResponse(response, request).map((b) => b.mediaType)).to.deep.equal(['banner']);
+    });
+
+    it('strips supported formats from ortb2Imp that the ad unit does not declare', () => {
+      const bid = makeBid({
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        ortb2Imp: {
+          video: { mimes: ['video/mp4'], w: 640, h: 480 },
+          native: { request: '{"assets":[]}' },
+        },
+      });
+      const [request] = build([bid]);
+      expect(request.data.imp[0].banner).to.exist;
+      expect(request.data.imp[0]).to.not.have.any.keys('video', 'native');
+      const response = makeServerResponse({ mtype: 2, adm: '<VAST version="4.0"></VAST>' });
+      expect(spec.interpretResponse(response, request)).to.deep.equal([]);
     });
 
     it('asks for a wildcard floor on multi-format ad units', () => {
@@ -468,6 +506,43 @@ describe('monetsiteBidAdapter', () => {
       });
     }
 
+    it('renders nurl as a pixel for banner and does not keep it for onBidWon', () => {
+      const [bid] = interpret(makeServerResponse({ nurl: 'https://win.monetize.site/n' }));
+      expect(bid.ad).to.include('https://win.monetize.site/n');
+      expect(bid).to.not.have.property('nurl');
+    });
+
+    if (FEATURES.VIDEO) {
+      const videoBid = () => makeBid({
+        mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } },
+      });
+
+      it('treats nurl as a win notice, not the VAST location, when adm has the VAST', () => {
+        const [bid] = interpret(makeServerResponse({ mtype: 2, adm: '<VAST version="3.0"></VAST>', nurl: 'https://win.monetize.site/n' }), [videoBid()]);
+        expect(bid.vastXml).to.equal('<VAST version="3.0"></VAST>');
+        expect(bid).to.not.have.property('vastUrl');
+        expect(bid.nurl).to.equal('https://win.monetize.site/n');
+      });
+
+      it('uses nurl as the VAST location when there is no adm', () => {
+        const [bid] = interpret(makeServerResponse({ mtype: 2, adm: undefined, nurl: 'https://vast.monetize.site/v.xml' }), [videoBid()]);
+        expect(bid.vastUrl).to.equal('https://vast.monetize.site/v.xml');
+        expect(bid).to.not.have.property('nurl');
+      });
+    }
+
+    if (FEATURES.NATIVE) {
+      it('keeps nurl on native bids for onBidWon', () => {
+        const assets = [{ id: 1, required: 1, title: { len: 80 } }];
+        const nativeBid = makeBid({ mediaTypes: { native: { ortb: { assets } } }, nativeOrtbRequest: { ver: '1.2', assets } });
+        const adm = JSON.stringify({ ver: '1.2', assets: [{ id: 1, title: { text: 'Hi' } }], link: { url: 'https://click.monetize.site' } });
+        const [bid] = interpret(makeServerResponse({ mtype: 4, adm, nurl: 'https://win.monetize.site/n' }), [nativeBid]);
+        expect(bid.mediaType).to.equal('native');
+        expect(bid.native.ortb.assets[0].title.text).to.equal('Hi');
+        expect(bid.nurl).to.equal('https://win.monetize.site/n');
+      });
+    }
+
     if (FEATURES.VIDEO) {
       it('converts a video bid', () => {
         const videoBid = makeBid({
@@ -478,6 +553,26 @@ describe('monetsiteBidAdapter', () => {
         expect(bid.vastXml).to.equal('<VAST version="4.0"></VAST>');
       });
     }
+  });
+
+  describe('onBidWon', () => {
+    it('sends nurl with the auction price as a keepalive GET', () => {
+      spec.onBidWon({ nurl: 'https://win.monetize.site/n?p=${AUCTION_PRICE}', cpm: 1.2, originalCpm: 1.5 });
+      const wins = server.requests.filter((req) => req.url.startsWith('https://win.monetize.site/n'));
+      expect(wins).to.have.length(1);
+      expect(wins[0].url).to.equal('https://win.monetize.site/n?p=1.5');
+      expect(wins[0].method).to.equal('GET');
+      expect(wins[0].fetch.request.keepalive).to.equal(true);
+      expect(wins[0].fetch.request.credentials).to.not.equal('include');
+    });
+
+    it('falls back to cpm and does nothing without nurl', () => {
+      spec.onBidWon({ nurl: 'https://win.monetize.site/c?p=${AUCTION_PRICE}', cpm: 0.7 });
+      expect(server.requests.map((req) => req.url)).to.deep.equal(['https://win.monetize.site/c?p=0.7']);
+      spec.onBidWon({ cpm: 1 });
+      spec.onBidWon({ nurl: '', cpm: 1 });
+      expect(server.requests).to.have.length(1);
+    });
   });
 
   describe('getUserSyncs', () => {
