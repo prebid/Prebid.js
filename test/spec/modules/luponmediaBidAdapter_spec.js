@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
 import { resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
 import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
   function bidRequest(params, extra = {}) {
@@ -356,18 +355,19 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
   });
 
   describe('onBidWon', function () {
-    let triggerPixelStub;
-    beforeEach(function () { triggerPixelStub = sinon.stub(utils, 'triggerPixel'); });
-    afterEach(function () { triggerPixelStub.restore(); });
-
-    it('fires the win event', function () {
-      spec.onBidWon({ winUrl: 'https://api.imanego.com/event?t=win&b=b1' });
-      expect(triggerPixelStub.calledOnceWith('https://api.imanego.com/event?t=win&b=b1')).to.equal(true);
+    // ajax cannot be stubbed on the module namespace; the global request mock records the call.
+    it('fires the win event as a keepalive GET', function () {
+      const url = 'https://api.imanego.com/event?t=win&b=b1';
+      spec.onBidWon({ winUrl: url });
+      const wins = server.requests.filter((req) => req.url === url);
+      expect(wins).to.have.length(1);
+      expect(wins[0].method).to.equal('GET');
+      expect(wins[0].fetch.request.keepalive).to.equal(true);
     });
 
     it('does nothing without a win url', function () {
       spec.onBidWon({});
-      expect(triggerPixelStub.called).to.equal(false);
+      expect(server.requests.length).to.equal(0);
     });
   });
 });

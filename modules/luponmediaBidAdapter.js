@@ -1,10 +1,15 @@
-import { deepAccess, deepSetValue, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { deepAccess, deepSetValue, isStr, logWarn } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
+
+/**
+ * @typedef {import('./luponmediaBidAdapter.d.ts').LuponmediaBidderParams} LuponmediaBidderParams
+ */
 
 const BIDDER_CODE = 'luponmedia';
 const GVLID = 1132;
@@ -168,7 +173,7 @@ export const spec = {
 
   onBidWon(bid) {
     if (isStr(bid?.winUrl)) {
-      triggerPixel(bid.winUrl);
+      ajax(bid.winUrl, null, undefined, { method: 'GET', keepalive: true });
     }
   },
 };
