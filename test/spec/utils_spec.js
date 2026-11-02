@@ -1515,6 +1515,14 @@ describe('memoize', () => {
     expect(fn.callCount).to.equal(2);
   });
 
+  it('can invalidate specific items with invalidate', () => {
+    const mem = memoize(fn, (a, b) => `${a}:${b}`);
+    mem('arg1', 'arg2');
+    mem.invalidate('arg1', 'arg2');
+    mem('arg1', 'arg2');
+    expect(fn.callCount).to.equal(2);
+  });
+
   it('allows setting cache keys', () => {
     const mem = memoize(fn, (...args) => args.join(','));
     mem('one', 'two');
