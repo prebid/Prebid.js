@@ -28,6 +28,8 @@ import { deepAccess, deepSetValue, generateUUID } from '../../../src/utils.js';
 import { getCreativeRenderer } from '../../../src/creativeRenderers.js';
 import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS } from 'src/constants.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { nativeAdapters } from '../../../src/native.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -36,14 +38,54 @@ var utils = require('src/utils');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
 
-// These bid adapters are required to be loaded for the following tests to work
-require('modules/appnexusBidAdapter');
-
 var config = require('test/fixtures/config.json');
 
 var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
+
+// Minimal stand-in for a real bid adapter, registered under the bidder code that the fixtures use,
+// so that these tests do not depend on any particular adapter's request or response format.
+// Responses are expected as `{bids: [...]}`, one entry (minus `requestId`) per bid request.
+const STUB_BIDDER = 'appnexus';
+const stubBidderSpec = {
+  code: STUB_BIDDER,
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  isBidRequestValid: () => true,
+  buildRequests: (validBidRequests) => ({
+    method: 'POST',
+    url: 'https://stub-bidder.example/bid',
+    data: {},
+    bidRequests: validBidRequests
+  }),
+  interpretResponse: ({ body }, { bidRequests }) => body.bids.map((bid, i) => ({
+    requestId: bidRequests[i].bidId,
+    creativeId: 'stub-creative',
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300,
+    ...bid
+  }))
+};
+
+function registerStubBidder() {
+  const saved = {
+    adapter: adapterManager.bidderRegistry[STUB_BIDDER],
+    videoAdapters: adapterManager.videoAdapters.slice(),
+    nativeAdapters: nativeAdapters.slice()
+  };
+  registerBidder(stubBidderSpec);
+  return function unregisterStubBidder() {
+    if (saved.adapter) {
+      adapterManager.bidderRegistry[STUB_BIDDER] = saved.adapter;
+    } else {
+      delete adapterManager.bidderRegistry[STUB_BIDDER];
+    }
+    adapterManager.videoAdapters.splice(0, adapterManager.videoAdapters.length, ...saved.videoAdapters);
+    nativeAdapters.splice(0, nativeAdapters.length, ...saved.nativeAdapters);
+  };
+}
+
 const timeout = 2000;
 const auctionId = generateUUID();
 let auction;
@@ -201,8 +243,9 @@ window.apntag = {
 };
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub, sandbox;
+  let bidExpiryStub, sandbox, unregisterStubBidder;
   before((done) => {
+    unregisterStubBidder = registerStubBidder();
     hook.ready();
     pbjsModule.requestBids.getHooks().remove();
     resetDebugging();
@@ -227,6 +270,7 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
+    unregisterStubBidder();
   });
 
   describe('processQueue', () => {
@@ -544,36 +588,12 @@ describe('Unit: Prebid Module', function () {
     let targeting;
 
     const RESPONSE = {
-      'version': '0.0.1',
-      'tags': [{
-        'uuid': '4d0a6829338a07',
-        'tag_id': 4799418,
-        'auction_id': '2256922143947979797',
-        'no_ad_url': 'http://lax1-ib.adnxs.com/no-ad',
-        'timeout_ms': 2500,
-        'ads': [{
-          'content_source': 'rtb',
-          'ad_type': 'banner',
-          'buyer_member_id': 958,
-          'creative_id': 33989846,
-          'media_type_id': 1,
-          'media_subtype_id': 1,
-          'cpm': 1.99,
-          'cpm_publisher_currency': 0.500000,
-          'publisher_currency_code': '$',
-          'client_initiated_ad_counting': true,
-          'rtb': {
-            'banner': {
-              'width': 300,
-              'height': 250,
-              'content': '<!-- Creative -->'
-            },
-            'trackers': [{
-              'impression_urls': ['http://lax1-ib.adnxs.com/impression']
-            }]
-          },
-          'viewability': { 'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>' }
-        }]
+      bids: [{
+        mediaType: 'banner',
+        cpm: 1.99,
+        width: 300,
+        height: 250,
+        ad: '<!-- Creative -->'
       }]
     };
 
@@ -654,7 +674,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should get correct ' + TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 0 to 5', async function () {
-      RESPONSE.tags[0].ads[0].cpm = 2.1234;
+      RESPONSE.bids[0].cpm = 2.1234;
       auction.callBids(cbTimeout);
       await auction.end;
       const bidTargeting = targeting.getAllTargeting();
@@ -662,7 +682,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should get correct ' + TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 5 to 8', async function () {
-      RESPONSE.tags[0].ads[0].cpm = 6.78;
+      RESPONSE.bids[0].cpm = 6.78;
       auction.callBids(cbTimeout);
       await auction.end;
       const bidTargeting = targeting.getAllTargeting();
@@ -670,7 +690,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should get correct ' + TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 8 to 20', async function () {
-      RESPONSE.tags[0].ads[0].cpm = 19.5234;
+      RESPONSE.bids[0].cpm = 19.5234;
       auction.callBids(cbTimeout);
       await auction.end;
       const bidTargeting = targeting.getAllTargeting();
@@ -678,7 +698,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should get correct ' + TARGETING_KEYS.PRICE_BUCKET + ' when using bid.cpm is between 20 to 25', async function () {
-      RESPONSE.tags[0].ads[0].cpm = 21.5234;
+      RESPONSE.bids[0].cpm = 21.5234;
       auction.callBids(cbTimeout);
       await auction.end;
       const bidTargeting = targeting.getAllTargeting();
@@ -697,69 +717,21 @@ describe('Unit: Prebid Module', function () {
     let indexStub;
 
     const bannerResponse = {
-      'version': '0.0.1',
-      'tags': [{
-        'uuid': '4d0a6829338a07',
-        'tag_id': 4799418,
-        'auction_id': '2256922143947979797',
-        'no_ad_url': 'http://lax1-ib.adnxs.com/no-ad',
-        'timeout_ms': 2500,
-        'ads': [{
-          'content_source': 'rtb',
-          'ad_type': 'banner',
-          'buyer_member_id': 958,
-          'creative_id': 33989846,
-          'media_type_id': 1,
-          'media_subtype_id': 1,
-          'cpm': 1.99,
-          'cpm_publisher_currency': 0.500000,
-          'publisher_currency_code': '$',
-          'client_initiated_ad_counting': true,
-          'rtb': {
-            'banner': {
-              'width': 300,
-              'height': 250,
-              'content': '<!-- Creative -->'
-            },
-            'trackers': [{
-              'impression_urls': ['http://lax1-ib.adnxs.com/impression']
-            }]
-          },
-          'viewability': { 'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>' }
-        }]
+      bids: [{
+        mediaType: 'banner',
+        cpm: 1.99,
+        width: 300,
+        height: 250,
+        ad: '<!-- Creative -->'
       }]
     };
     const videoResponse = {
-      'version': '0.0.1',
-      'tags': [{
-        'uuid': '4d0a6829338a07',
-        'tag_id': 4799418,
-        'auction_id': '2256922143947979797',
-        'no_ad_url': 'http://lax1-ib.adnxs.com/no-ad',
-        'timeout_ms': 2500,
-        'ads': [{
-          'content_source': 'rtb',
-          'ad_type': 'video',
-          'buyer_member_id': 958,
-          'creative_id': 33989846,
-          'media_type_id': 1,
-          'media_subtype_id': 1,
-          'cpm': 1.99,
-          'cpm_publisher_currency': 0.500000,
-          'publisher_currency_code': '$',
-          'client_initiated_ad_counting': true,
-          'rtb': {
-            'video': {
-              'width': 300,
-              'height': 250,
-              'content': '<!-- Creative -->'
-            },
-            'trackers': [{
-              'impression_urls': ['http://lax1-ib.adnxs.com/impression']
-            }]
-          },
-          'viewability': { 'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>' }
-        }]
+      bids: [{
+        mediaType: 'video',
+        cpm: 1.99,
+        width: 300,
+        height: 250,
+        vastUrl: 'https://stub-bidder.example/vast.xml'
       }]
     };
 
@@ -922,7 +894,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       response = bannerResponse;
-      response.tags[0].ads[0].cpm = 3.4288;
+      response.bids[0].cpm = 3.4288;
 
       auction.callBids(cbTimeout);
       await auction.end;
@@ -937,7 +909,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       response = bannerResponse;
-      response.tags[0].ads[0].cpm = 43.4288;
+      response.bids[0].cpm = 43.4288;
 
       auction.callBids(cbTimeout);
       await auction.end;
@@ -952,7 +924,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       response = bannerResponse;
-      response.tags[0].ads[0].cpm = 3.4288;
+      response.bids[0].cpm = 3.4288;
 
       auction.callBids(cbTimeout);
       await auction.end;
@@ -968,7 +940,7 @@ describe('Unit: Prebid Module', function () {
         });
 
         response = videoResponse;
-        response.tags[0].ads[0].cpm = 3.4288;
+        response.bids[0].cpm = 3.4288;
 
         auction.callBids(cbTimeout);
         await auction.end;
