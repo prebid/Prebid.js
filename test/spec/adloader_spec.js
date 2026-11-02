@@ -244,7 +244,7 @@ describe('adLoader', function () {
     });
 
     it('should not cache a load error', async () => {
-      utilsinsertElementStub.callsFake(elm => elm.onerror(new Error('first load failed')));
+      utilsinsertElementStub.callsFake(elm => setTimeout(() => elm.onerror(new Error('first load failed'))));
       await rejectionOf(preloadExternalScript('url', 'type', 'code'));
       utilsinsertElementStub.callsFake(elm => elm.onload());
       await preloadExternalScript('url', 'type', 'code');

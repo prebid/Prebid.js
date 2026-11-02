@@ -134,13 +134,21 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
 
 const doPreload = memoize(function (url) {
   return new Promise((resolve, reject) => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'script';
-    link.href = url;
-    link.onload = () => resolve();
-    link.onerror = reject;
-    insertElement(link);
+    try {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'script';
+      link.href = url;
+      link.onload = () => resolve();
+      link.onerror = (err) => {
+        doPreload.invalidate(url);
+        reject(err);
+      };
+      insertElement(link);
+    } catch (e) {
+      doPreload.invalidate(url);
+      reject(e);
+    }
   });
 });
 
