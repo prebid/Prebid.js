@@ -127,6 +127,11 @@ describe('monetsiteBidAdapter', () => {
       });
     });
 
+    it('rejects non-finite numeric zone ids', () => {
+      expect(spec.isBidRequestValid({ params: { zoneID: Infinity } })).to.equal(false);
+      expect(spec.isBidRequestValid({ params: { zoneID: NaN } })).to.equal(false);
+    });
+
     it('rejects a bid without params', () => {
       expect(spec.isBidRequestValid({})).to.equal(false);
       expect(spec.isBidRequestValid(undefined)).to.equal(false);
@@ -575,6 +580,29 @@ describe('monetsiteBidAdapter', () => {
     });
   });
 
+  describe('onBidBillable', () => {
+    it('sends burl with the auction price as a cookieless keepalive GET', () => {
+      spec.onBidBillable({ burl: 'https://bill.monetize.site/b?p=${AUCTION_PRICE}', cpm: 1.2, originalCpm: 1.5 });
+      expect(server.requests).to.have.length(1);
+      expect(server.requests[0].url).to.equal('https://bill.monetize.site/b?p=1.5');
+      expect(server.requests[0].method).to.equal('GET');
+      expect(server.requests[0].fetch.request.keepalive).to.equal(true);
+      expect(server.requests[0].fetch.request.credentials).to.not.equal('include');
+    });
+
+    it('does nothing without burl', () => {
+      spec.onBidBillable({ cpm: 1 });
+      spec.onBidBillable({ burl: '', cpm: 1 });
+      expect(server.requests).to.have.length(0);
+    });
+
+    it('keeps burl from the response for onBidBillable', () => {
+      const [request] = build();
+      const [bid] = spec.interpretResponse(makeServerResponse({ burl: 'https://bill.monetize.site/b' }), request);
+      expect(bid.burl).to.equal('https://bill.monetize.site/b');
+    });
+  });
+
   describe('getUserSyncs', () => {
     const responses = [{
       body: {
@@ -643,6 +671,19 @@ describe('monetsiteBidAdapter', () => {
       const options = { pixelEnabled: true, iframeEnabled: true };
       expect(spec.getUserSyncs(options, responses, undefined, undefined, undefined, true)).to.deep.equal([]);
       expect(spec.getUserSyncs(options, responses, undefined, undefined, undefined, false)).to.have.length(3);
+    });
+
+    it('puts consent parameters before a URL fragment', () => {
+      const pixels = [
+        ['image', 'https://sync.monetize.site/a#route'],
+        ['image', 'https://sync.monetize.site/b?x=1#r?y=2'],
+      ];
+      const withFragment = [{ body: { ext: { pixels } } }];
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, withFragment, { gdprApplies: true, consentString: 'abc' });
+      expect(syncs.map((sync) => sync.url)).to.deep.equal([
+        'https://sync.monetize.site/a?gdpr=1&gdpr_consent=abc#route',
+        'https://sync.monetize.site/b?x=1&gdpr=1&gdpr_consent=abc#r?y=2',
+      ]);
     });
 
     it('sends gdpr=0 and an empty consent string when gdpr does not apply', () => {

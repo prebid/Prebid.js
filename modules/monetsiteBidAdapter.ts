@@ -1,7 +1,9 @@
 import { type BidderSpec, type ExtendedResponse, registerBidder } from '../src/adapters/bidderFactory.js';
+import type { BidRequest } from '../src/adapterManager.js';
+import type { SyncType, UserSync } from '../src/userSync.js';
 import { BANNER, VIDEO, NATIVE, type MediaType } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { deepAccess, deepSetValue, isArray, isEmpty, logWarn, replaceAuctionPrice } from '../src/utils.js';
+import { deepSetValue, isArray, isEmpty, logWarn, replaceAuctionPrice } from '../src/utils.js';
 import { noCredsAjax } from '../src/ajax.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -65,7 +67,14 @@ declare module '../src/config' {
   }
 }
 
-type SyncType = 'image' | 'iframe';
+type ConsentArgs = Parameters<NonNullable<BidderSpec<typeof BIDDER_CODE>['getUserSyncs']>>;
+
+/**
+ * The Price Floors module sets `floorData` on each bid request it processes.
+ */
+type MonetsiteBidRequest = BidRequest<typeof BIDDER_CODE> & {
+  floorData?: { noFloorSignaled?: boolean; skipped?: boolean; skippedReason?: string };
+};
 
 const SYNC_TYPES: Record<string, SyncType> = {
   image: 'image',
@@ -79,7 +88,7 @@ const getBidderConfig = (): MonetsiteConfig => config.getConfig(BIDDER_CODE) || 
  * Returns the zone id as a non-empty string, or undefined when it is missing or malformed.
  */
 function normalizeZoneId(zoneID: unknown): string | undefined {
-  if (typeof zoneID === 'number' && zoneID > 0) {
+  if (typeof zoneID === 'number' && Number.isFinite(zoneID) && zoneID > 0) {
     return String(zoneID);
   }
   if (typeof zoneID === 'string' && zoneID.trim() !== '') {
@@ -136,8 +145,8 @@ function getTtl(): number {
  * a skipped auction, or a matching rule whose value is `null` (getFloor returns null). A missing rule
  * (`not_found`, or `{}` from getFloor) does not count, so the params floor can still apply.
  */
-function isFloorSuppressed(bidRequest: any, context: { currency?: string; mediaType?: MediaType }): boolean {
-  const floorData = deepAccess(bidRequest, 'floorData');
+function isFloorSuppressed(bidRequest: MonetsiteBidRequest, context: { currency?: string; mediaType?: MediaType }): boolean {
+  const { floorData } = bidRequest;
   if (floorData?.noFloorSignaled || (floorData?.skipped && floorData.skippedReason !== 'not_found')) {
     return true;
   }
@@ -240,7 +249,17 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   },
 });
 
-function appendConsentParams(url: string, gdprConsent, uspConsent, gppConsent): string {
+/**
+ * Sends an OpenRTB notice URL (nurl/burl) with `${AUCTION_PRICE}` expanded. keepalive so that navigating away
+ * does not cancel it; the notice carries its own ids, so it never needs cookies.
+ */
+function sendNotice(url: unknown, bid: { cpm?: number; originalCpm?: number }) {
+  if (typeof url === 'string' && url !== '') {
+    noCredsAjax(replaceAuctionPrice(url, bid.originalCpm ?? bid.cpm), undefined, undefined, { method: 'GET', keepalive: true });
+  }
+}
+
+function appendConsentParams(url: string, gdprConsent: ConsentArgs[2], uspConsent: ConsentArgs[3], gppConsent: ConsentArgs[4]): string {
   const params: string[] = [];
   if (gdprConsent) {
     params.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
@@ -256,7 +275,11 @@ function appendConsentParams(url: string, gdprConsent, uspConsent, gppConsent): 
   if (!params.length) {
     return url;
   }
-  return `${url}${url.includes('?') ? '&' : '?'}${params.join('&')}`;
+  // the query must go before any fragment, which is never sent to the server
+  const hashAt = url.indexOf('#');
+  const base = hashAt === -1 ? url : url.slice(0, hashAt);
+  const fragment = hashAt === -1 ? '' : url.slice(hashAt);
+  return `${base}${base.includes('?') ? '&' : '?'}${params.join('&')}${fragment}`;
 }
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
@@ -315,12 +338,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   onBidWon(bid) {
-    const { nurl } = bid as { nurl?: unknown };
-    if (typeof nurl === 'string' && nurl !== '') {
-      // keepalive so that navigating away does not cancel the win notice; the notice carries its own ids,
-      // so it never needs cookies
-      noCredsAjax(replaceAuctionPrice(nurl, bid.originalCpm ?? bid.cpm), undefined, undefined, { method: 'GET', keepalive: true });
-    }
+    sendNotice((bid as { nurl?: unknown }).nurl, bid);
+  },
+
+  // core fires only event trackers on billing, not burl, for client-side bids
+  onBidBillable(bid) {
+    sendNotice((bid as { burl?: unknown }).burl, bid);
   },
 
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
@@ -328,7 +351,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     if (coppa) {
       return [];
     }
-    const syncs: { type: SyncType; url: string }[] = [];
+    const syncs: UserSync[] = [];
     // one request per bid means the same pixels can come back in several responses
     const seen = new Set<string>();
     (serverResponses || []).forEach((response) => {

@@ -122,6 +122,13 @@ pbjs.setConfig({
 });
 ```
 
+# Win Notices
+
+`nurl` is honored as the OpenRTB win notice. For banner it is rendered as a pixel with the creative.
+For native, and for video whose VAST is in `adm`, it is sent from `onBidWon` as a cookieless
+keepalive GET with `${AUCTION_PRICE}` replaced. For video without `adm`, `nurl` is the VAST location.
+`burl` is sent the same way from `onBidBillable`, when Prebid marks the bid billable.
+
 # User Syncs
 
 The adapter does not store anything in the browser itself. Sync pixels are returned by the server in
