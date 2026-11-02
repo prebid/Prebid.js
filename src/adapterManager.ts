@@ -63,6 +63,7 @@ import type {
   Size, StorageDisclosure
 } from "./types/common.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
+import type { AnyFunction } from "./types/functions.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import { mergeBidderOrtb2 } from './fpd/merge.js';
 import type {
@@ -1096,7 +1097,7 @@ function getSupportedMediaTypes(bidderCode) {
   return supportedMediaTypes;
 }
 
-function getBidderMethod(bidder, method): [Record<string, any>, Function] | undefined {
+function getBidderMethod(bidder, method): [Record<string, any>, AnyFunction] | undefined {
   const adapter = _bidderRegistry[bidder];
   const spec = adapter?.getSpec && adapter.getSpec();
   if (spec && spec[method] && typeof spec[method] === 'function') {
