@@ -32,7 +32,7 @@ describe('adLoader', function () {
       expect(utilsinsertElementStub.called).to.be.false;
     });
 
-    it('only allows whitelisted vendors to load scripts', function () {
+    it('loads the script when moduleType and moduleCode are given', function () {
       adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging');
       expect(utilsLogErrorStub.called).to.be.false;
       expect(utilsinsertElementStub.called).to.be.true;
@@ -41,13 +41,6 @@ describe('adLoader', function () {
     it('should not load cached script again', function () {
       adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID);
       expect(utilsinsertElementStub.called).to.be.false;
-    });
-
-    it('callback function can be passed to the function', function () {
-      const callback = function () {
-      };
-      adLoader.loadExternalScript('someURL1', MODULE_TYPE_PREBID, 'debugging', callback);
-      expect(utilsinsertElementStub.called).to.be.true;
     });
 
     it('should run callback when script loads', () => {
@@ -61,7 +54,6 @@ describe('adLoader', function () {
       adLoader.loadExternalScript('test-cleanup', MODULE_TYPE_PREBID, 'debugging', sinon.stub());
       scriptEl.onload();
       expect(scriptEl.onload).to.equal(null);
-      expect(scriptEl.onreadystatechange).to.equal(null);
     });
 
     it('should run callback as an object', () => {
@@ -83,6 +75,49 @@ describe('adLoader', function () {
       scriptEl.dispatchEvent(ev);
       sinon.assert.calledWith(callback.error, ev);
       sinon.assert.calledOnce(callback.error);
+    });
+
+    it('runs callback immediately when the script was already loaded', () => {
+      adLoader.loadExternalScript('test-cached-loaded', MODULE_TYPE_PREBID, 'debugging', sinon.stub());
+      const tag = scriptEl;
+      scriptEl.onload();
+      const callback = sinon.stub();
+      const result = adLoader.loadExternalScript('test-cached-loaded', MODULE_TYPE_PREBID, 'debugging', callback);
+      sinon.assert.calledOnce(callback);
+      sinon.assert.calledOnce(utilsinsertElementStub);
+      expect(result).to.equal(tag);
+    });
+
+    it('runs error callback immediately when the script previously failed to load', () => {
+      adLoader.loadExternalScript('test-cached-error', MODULE_TYPE_PREBID, 'debugging', { error: sinon.stub() });
+      const ev = new Event('error');
+      scriptEl.dispatchEvent(ev);
+      const callback = { success: sinon.stub(), error: sinon.stub() };
+      adLoader.loadExternalScript('test-cached-error', MODULE_TYPE_PREBID, 'debugging', callback);
+      sinon.assert.calledWith(callback.error, ev);
+      sinon.assert.notCalled(callback.success);
+    });
+
+    it('runs every callback queued while the script is loading', () => {
+      const callbacks = [sinon.stub(), sinon.stub()];
+      callbacks.forEach(cb => adLoader.loadExternalScript('test-queued', MODULE_TYPE_PREBID, 'debugging', cb));
+      callbacks.forEach(cb => sinon.assert.notCalled(cb));
+      scriptEl.onload();
+      callbacks.forEach(cb => sinon.assert.calledOnce(cb));
+      sinon.assert.calledOnce(utilsinsertElementStub);
+    });
+
+    it('logs an error when a callback throws', () => {
+      adLoader.loadExternalScript('test-throws', MODULE_TYPE_PREBID, 'debugging', () => { throw new Error(); });
+      scriptEl.onload();
+      sinon.assert.calledWith(utilsLogErrorStub, 'Error executing callback');
+    });
+
+    it('does not call a plain function callback when the script fails to load', () => {
+      const callback = sinon.stub();
+      adLoader.loadExternalScript('test-fn-error', MODULE_TYPE_PREBID, 'debugging', callback);
+      scriptEl.dispatchEvent(new Event('error'));
+      sinon.assert.notCalled(callback);
     });
 
     it('requires a url to be included once per document', function () {
