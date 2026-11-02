@@ -475,8 +475,9 @@ describe('adRendering', () => {
       });
 
       describe('when bid has already expired', () => {
-        const isBidNotExpiredStub = sinon.stub(bidFilters, 'isBidNotExpired');
+        let isBidNotExpiredStub;
         beforeEach(() => {
+          isBidNotExpiredStub = sinon.stub(bidFilters, 'isBidNotExpired');
           isBidNotExpiredStub.returns(false);
         });
         afterEach(() => {
