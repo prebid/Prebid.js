@@ -70,7 +70,6 @@ describe('Generic Analytics skinny events v1 JSON Schema', () => {
     expect(validate(won), JSON.stringify(validate.errors)).to.equal(true);
   });
 
-
   it('accepts null bidder codes for stored-impression PBS requests', () => {
     const requested = structuredClone(fixtures.bidRequested);
     requested.bidderCode = null;
