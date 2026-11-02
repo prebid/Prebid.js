@@ -350,8 +350,8 @@ export function storeBatch(batch) {
     } else {
       cacheIds.forEach((cacheId, i) => {
         const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
-        if (cacheId.uuid === '') {
-          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+        if (cacheId == null || typeof cacheId.uuid !== 'string' || cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was rejected or missing from Prebid Cache. Video bid must be discarded.`);
           afterBidAdded();
         } else {
           bidResponse.cacheUrl = cacheUrl;
