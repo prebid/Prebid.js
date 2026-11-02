@@ -1096,7 +1096,7 @@ function getSupportedMediaTypes(bidderCode) {
   return supportedMediaTypes;
 }
 
-function getBidderMethod(bidder, method): [string, string] {
+function getBidderMethod(bidder, method): [Record<string, any>, Function] | undefined {
   const adapter = _bidderRegistry[bidder];
   const spec = adapter?.getSpec && adapter.getSpec();
   if (spec && spec[method] && typeof spec[method] === 'function') {
