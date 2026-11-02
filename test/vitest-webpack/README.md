@@ -24,6 +24,9 @@ Vitest is the runner; webpack is still the bundler.
 
   It also provides Karma's chai/sinon globals.
 - `context.html`, port 9876 and an 800x600 viewport reproduce Karma's test page, which some specs depend on.
+- On GitHub Actions, `githubReporter.mjs` annotates each failure on the failing test's `it(...)` line in the source
+  spec. Vitest's own GitHub reporter would anchor every failure on the shim in `setup.mjs`, since the bundles
+  have no source maps.
 
 ## Run locally
 
