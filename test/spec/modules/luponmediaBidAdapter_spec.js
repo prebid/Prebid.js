@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
@@ -244,6 +245,26 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
         expect(result[0].winUrl).to.equal('https://partner/win'); // no win event: nurl is the win notice
       });
 
+      it('plays the VAST in the ad unit div with the outstream player', function () {
+        const bids = [bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const [bid] = respond(req, [{ id: 'v1', impid: req.data.imp[0].id, price: 3, adm: vast, crid: 'c', mtype: 2 }]);
+        const renderAd = sinon.spy();
+        window.ANOutstreamVideo = { renderAd };
+        try {
+          bid.renderer._render({ ...bid, adUnitCode: 'div-acme.outstream', renderer: { push: (fn) => fn(), getConfig: () => ({ skippable: true }) } });
+        } finally {
+          delete window.ANOutstreamVideo;
+        }
+        sinon.assert.calledOnce(renderAd);
+        expect(renderAd.firstCall.args[0]).to.deep.equal({
+          sizes: [640, 360],
+          targetId: 'div-acme.outstream',
+          adResponse: { content: vast },
+          rendererOptions: { skippable: true },
+        });
+      });
+
       it('installs the default renderer when the ad unit renderer is a backup only', function () {
         const bids = [bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream, renderer: { url: 'https://pub/renderer.js', render() {}, backupOnly: true } })];
         const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
@@ -313,6 +334,12 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
         expect(result).to.have.length(1);
         expect(Object.prototype.hasOwnProperty.call(result[0].native.ortb, '__proto__')).to.equal(false);
         expect({}.polluted).to.equal(undefined);
+      });
+
+      it('passes a native request that is not JSON through unchanged', function () {
+        const bids = [nativeBid({ ortb2Imp: { native: { request: 'not json' } } })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        expect(req.data.imp[0].native.request).to.equal('not json');
       });
 
       it('keeps a native ad unit that also lists instream video', function () {

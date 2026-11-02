@@ -229,11 +229,7 @@ function outstreamRenderer(bid) {
     adUnitCode: bid.adUnitCode,
     loaded: false,
   });
-  try {
-    renderer.setRender(renderOutstream);
-  } catch (e) {
-    logWarn(`${BIDDER_CODE}: outstream renderer not set`, e);
-  }
+  renderer.setRender(renderOutstream);
   return renderer;
 }
 
