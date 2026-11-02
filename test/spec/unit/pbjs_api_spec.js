@@ -3789,7 +3789,7 @@ describe('Unit: Prebid Module', function () {
       expect(highestBid).to.equal(null);
     });
 
-    it('returns undefined if adUnitCode is provided', () => {
+    it('returns undefined if adUnitCode is not provided', () => {
       const highestBid = pbjs.getHighestUnusedBidResponseForAdUnitCode();
       expect(highestBid).to.be.undefined;
     });
