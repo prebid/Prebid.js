@@ -6,8 +6,6 @@
 import { config } from '../../src/config.js';
 import { getHook, setupBeforeHookFnOnce } from '../../src/hook.js';
 import { deepAccess, deepSetValue, getUniqueIdentifierStr, groupBy, logWarn } from '../../src/utils.js';
-import * as events from '../../src/events.js';
-import { EVENTS } from '../../src/constants.js';
 import { addBidderRequests } from '../../src/auction.js';
 import { auctionStore } from '../../libraries/weakStore/weakStore.js';
 import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrDesirability } from '../../src/targeting.js';
