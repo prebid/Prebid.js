@@ -43,18 +43,21 @@ process.on('message', function (options) {
 
   // Exiting straight away would skip karma's shutdown, which is what kills the browsers it launched;
   // a browser left behind keeps reconnecting to port 9876 and joins the next karma's runs.
-  function stop(karmaHandlesSignal) {
-    if (stopping || server == null) {
+  function stop(signal) {
+    if (server == null || (stopping && signal)) {
       quit();
       return;
     }
+    if (stopping) return;
     stopping = true;
-    if (!karmaHandlesSignal) server.stop();
+    // karma has its own handlers for the signals
+    if (!signal) server.stop();
   }
 
   process.on('SIGINT', () => stop(true));
   process.on('SIGTERM', () => stop(true));
-  // gulp can go away without this process being signalled, e.g. when only gulp is sent SIGINT
+  // gulp can go away without this process being signalled, e.g. when only gulp is sent SIGINT.
+  // A terminal Ctrl+C also disconnects, once gulp exits; that must not cut the shutdown short.
   process.on('disconnect', () => stop(false));
 
   function runKarma(file, chunkNo) {
