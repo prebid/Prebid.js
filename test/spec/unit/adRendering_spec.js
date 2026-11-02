@@ -581,6 +581,101 @@ describe('adRendering', () => {
     });
   });
 
+  Object.entries({
+    renderer: (url) => ({ url, render: () => null }),
+    safeRenderer: (url) => ({ url }),
+  }).forEach(([prop, makeConfig]) => {
+    describe(`${prop} selection`, () => {
+      const BIDDER = makeConfig('https://bidder/renderer.js');
+      const MT = makeConfig('https://publisher/mediatype.js');
+      const REQ = makeConfig('https://publisher/request.js');
+      const AU = makeConfig('https://publisher/adunit.js');
+
+      function prepare({ mediaType = {}, request = {}, adUnit = {}, bidRenderer } = {}) {
+        const index = {
+          getAdUnit: sinon.stub().returns(adUnit),
+          getBidRequest: sinon.stub().returns(request),
+          getMediaTypes: sinon.stub().returns({ video: mediaType }),
+        };
+        const bid = { mediaType: 'video', ...(bidRenderer && { [prop]: bidRenderer }) };
+        return getPreparedBidForAuction(bid, { index })[prop]?.url;
+      }
+
+      beforeEach(() => {
+        sandbox.stub(events, 'emit');
+      });
+
+      Object.entries({
+        'media type': (r) => ({ mediaType: { [prop]: r } }),
+        'bid request': (r) => ({ request: { [prop]: r } }),
+        'ad unit': (r) => ({ adUnit: { [prop]: r } }),
+      }).forEach(([level, setup]) => {
+        describe(`backupOnly ${level} ${prop}`, () => {
+          const pub = { ...makeConfig('https://publisher/backup.js'), backupOnly: true };
+
+          it(`yields to the bidder ${prop}`, () => {
+            expect(prepare({ ...setup(pub), bidRenderer: BIDDER })).to.equal(BIDDER.url);
+          });
+
+          it('is used when the bidder set none', () => {
+            expect(prepare(setup(pub))).to.equal(pub.url);
+          });
+        });
+
+        it(`non-backupOnly ${level} ${prop} overrides the bidder's`, () => {
+          const pub = makeConfig('https://publisher/override.js');
+          expect(prepare({ ...setup(pub), bidRenderer: BIDDER })).to.equal(pub.url);
+        });
+      });
+
+      it('falls through from a backupOnly media type config to a non-backupOnly request one', () => {
+        expect(prepare({
+          mediaType: { [prop]: { ...MT, backupOnly: true } },
+          request: { [prop]: REQ },
+          bidRenderer: BIDDER,
+        })).to.equal(REQ.url);
+      });
+
+      it('falls through from a backupOnly media type config to a non-backupOnly ad unit one', () => {
+        expect(prepare({
+          mediaType: { [prop]: { ...MT, backupOnly: true } },
+          adUnit: { [prop]: AU },
+          bidRenderer: BIDDER,
+        })).to.equal(AU.url);
+      });
+
+      it('falls through from a backupOnly request config to a non-backupOnly ad unit one', () => {
+        expect(prepare({
+          request: { [prop]: { ...REQ, backupOnly: true } },
+          adUnit: { [prop]: AU },
+          bidRenderer: BIDDER,
+        })).to.equal(AU.url);
+      });
+
+      it('prefers the media type config over the request one', () => {
+        expect(prepare({ mediaType: { [prop]: MT }, request: { [prop]: REQ } })).to.equal(MT.url);
+      });
+
+      it('prefers the request config over the ad unit one', () => {
+        expect(prepare({ request: { [prop]: REQ }, adUnit: { [prop]: AU } })).to.equal(REQ.url);
+      });
+    });
+  });
+
+  it('safeRenderer selection is not affected by mediaTypes renderer.backupOnly', () => {
+    sandbox.stub(events, 'emit');
+    const safeRenderer = { url: 'https://publisher/mediatype.js' };
+    const index = {
+      getAdUnit: sinon.stub().returns({}),
+      getBidRequest: sinon.stub().returns({}),
+      getMediaTypes: sinon.stub().returns({
+        video: { renderer: { url: 'r.js', render: sinon.stub(), backupOnly: true }, safeRenderer }
+      }),
+    };
+    const bid = { mediaType: 'video', safeRenderer: { url: 'https://bidder/safe.js' } };
+    expect(getPreparedBidForAuction(bid, { index }).safeRenderer).to.equal(safeRenderer);
+  });
+
   describe('handleCreativeEvent', () => {
     let bid;
     beforeEach(() => {
