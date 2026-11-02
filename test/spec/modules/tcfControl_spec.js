@@ -501,11 +501,7 @@ describe('gdpr enforcement', function () {
           }
         });
         setupConsentData({
-          gdprApplies: false,
-          tcDataMutator: (tcData) => {
-            tcData.purpose = { consents: {} };
-            tcData.vendor = { consents: {} };
-          }
+          gdprApplies: false
         });
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
       });
