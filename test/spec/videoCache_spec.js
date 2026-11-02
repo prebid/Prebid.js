@@ -277,6 +277,32 @@ describe('The video cache', function () {
     });
 
     if (FEATURES.VIDEO) {
+      it('dispatches zero-timeout batches synchronously', () => {
+        const mockTimeout = sinon.stub();
+        const stubCache = sinon.stub();
+        const afterBidAdded = sinon.stub();
+
+        config.setConfig({
+          cache: {
+            url: 'https://test.cache.url/endpoint',
+            batchSize: 1,
+            batchTimeout: 0
+          }
+        });
+
+        const batchAndStore = batchingCache(mockTimeout, stubCache);
+        const auctionInstance = {};
+        const bidResponse = {};
+        batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+
+        sinon.assert.calledOnceWithExactly(stubCache, [{
+          auctionInstance,
+          bidResponse,
+          afterBidAdded
+        }]);
+        sinon.assert.notCalled(mockTimeout);
+      });
+
       it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
         const mockAfterBidAdded = function() {};
         let callback = null;
