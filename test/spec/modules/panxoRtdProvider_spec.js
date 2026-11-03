@@ -463,9 +463,10 @@ describe('panxo RTD module', function () {
         onImplMessage({ type: 'error', data: { userId: 'synthetic-private-id', message: 'synthetic-private-detail' } });
         expect(callbackSpy.calledOnce).to.be.true;
         expect(debugEvent.calledOnce).to.be.true;
-        expect(debugEvent.firstCall.args[0]).to.deep.equal({
+        expect(debugEvent.firstCall.args[0]).to.deep.include({
           type: 'ERROR', arguments: ['[panxo]:', 'impl', 'Implementation script reported an error']
         });
+        expect(JSON.stringify(debugEvent.firstCall.args[0])).to.not.include('synthetic-private');
         expect(reqBidsConfig.ortb2Fragments.global).to.deep.equal({});
       } finally {
         events.off(EVENTS.AUCTION_DEBUG, debugEvent);
