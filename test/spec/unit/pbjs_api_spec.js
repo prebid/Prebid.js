@@ -952,20 +952,28 @@ describe('Unit: Prebid Module', function () {
 
   describe('getBidResponses', function () {
     it('should return empty obj when last auction Id had no responses', function () {
-      auctionManager.getLastAuctionId = () => 999994;
-      var result = pbjs.getBidResponses();
-      assert.deepEqual(result, {}, 'expected bid responses are returned');
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(999994);
+      try {
+        var result = pbjs.getBidResponses();
+        assert.deepEqual(result, {}, 'expected bid responses are returned');
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
 
     it('should return expected bid responses when not passed an adunitCode', function () {
-      auctionManager.getLastAuctionId = () => 654321;
-      var result = pbjs.getBidResponses();
-      var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, { bids }]) => {
-        const arr = bids.slice();
-        arr.bids = arr;
-        return [code, arr];
-      }));
-      assert.deepEqual(result, compare, 'expected bid responses are returned');
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(654321);
+      try {
+        var result = pbjs.getBidResponses();
+        var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, { bids }]) => {
+          const arr = bids.slice();
+          arr.bids = arr;
+          return [code, arr];
+        }));
+        assert.deepEqual(result, compare, 'expected bid responses are returned');
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
 
     it('should return bid responses for most recent auctionId only', function () {
