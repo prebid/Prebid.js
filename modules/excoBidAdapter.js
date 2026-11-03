@@ -200,10 +200,12 @@ export class AdapterHelpers {
       params.maxBidderCalls = bid.maxBidderCalls;
       params.transactionId = bid.transactionId;
 
-      if (bid.params) {
-        params.publisherId = bid.params.publisherId;
-        params.accountId = bid.params.accountId;
-        params.tagId = bid.params.tagId;
+      // timeout data carries the ad unit's params for this bidder as an array (getUserConfiguredParams)
+      const bidParams = bid.params?.[0];
+      if (bidParams) {
+        params.publisherId = bidParams.publisherId;
+        params.accountId = bidParams.accountId;
+        params.tagId = bidParams.tagId;
       }
 
       if (bid.ortb2.device) {
