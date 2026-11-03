@@ -29,6 +29,7 @@ All ad units of an auction are sent in a single POST request to the SSP.
 
 * **Storage.** The adapter stores the Playgama user id returned by the SSP in the first-party cookie `_pgid` (90 days) through the Prebid `StorageManager`, and sends it back on later requests. The id is issued per site and is used by Playgama for frequency capping and audience targeting. It is not derived from or linked to any shared id module. Like any bidder storage in Prebid.js it only takes effect when the publisher allows it with `pbjs.bidderSettings.playgama.storageAllowed = true`; without it the adapter still bids, just without the id.
 * **External scripts.** Outstream video and interstitial bids are rendered by Playgama's own renderers, loaded on demand from `https://playgama.com/prebid-renderers/` (or the staging host when `env: 'staging'`) through the Prebid `Renderer`. No script is loaded for banner or instream bids.
+* **TCF.** Playgama has no IAB GVL ID yet. Where TCF applies, Prebid's `tcfControl` module blocks bidders without a GVL ID by default; to run this adapter there, add it to the module's `vendorExceptions` (`pbjs.setConfig({ consentManagement: { gdpr: { rules: [{ purpose: 'basicAds', enforcePurpose: true, enforceVendor: true, vendorExceptions: ['playgama'] }] } } })`).
 * **User syncs.** The SSP response may carry image and iframe sync pixels of its demand partners; they are registered through `getUserSyncs` and honour the publisher's `userSync` settings.
 
 # Test Parameters
