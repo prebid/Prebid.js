@@ -1,12 +1,16 @@
 // Vitest Browser Mode as the runner for bundles produced by Karma's webpack config (see README.md).
 // Run `npx gulp precompile`, then `npm run test:vitest`: it builds the bundles with build.js (env vars
 // documented there) and runs them. Needs a browser once: `npx playwright install chromium`.
+import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import GithubSpecReporter from './githubReporter.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
+const bundles = path.join(root, 'build/vitest-bundles');
+const rawCoverage = path.join(root, 'build/vitest-coverage');
 
 export default defineConfig({
   root,
@@ -29,6 +33,8 @@ export default defineConfig({
     // the failing test's line in the source spec instead.
     reporters: ['default', ...(process.env.GITHUB_ACTIONS ? [new GithubSpecReporter()] : [])],
     setupFiles: ['test/vitest-webpack/setup.mjs'],
+    // clears raw coverage before the run, and writes lcov after it when VITEST_COVERAGE is set
+    globalSetup: ['test/vitest-webpack/globalSetup.mjs'],
     globals: false,
     // Mocha runs after/afterEach hooks in registration order
     sequence: { hooks: 'list' },
@@ -50,6 +56,15 @@ export default defineConfig({
       viewport: { width: 800, height: 600 },
       // a page shaped like karma's context.html (no lang attribute, empty title)
       testerHtmlPath: 'test/vitest-webpack/context.html',
+      commands: {
+        // setup.mjs sends a test file's Istanbul counters (window.__coverage__) here, one file per test
+        // file, named after its bundle (e.g. chunks__chunk-1_spec.json); coverage.js turns them into lcov
+        writeCoverage(ctx, json) {
+          const name = path.relative(bundles, ctx.testPath).replace(/\.js$/, '').replace(/[\\/]/g, '__');
+          fs.mkdirSync(rawCoverage, { recursive: true });
+          fs.writeFileSync(path.join(rawCoverage, name + '.json'), json);
+        },
+      },
     },
   },
 });

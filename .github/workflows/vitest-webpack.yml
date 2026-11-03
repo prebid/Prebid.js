@@ -29,6 +29,8 @@ jobs:
         include:
           - variant: default
             precompile: npx gulp precompile
+            # like Karma, coverage comes from the default variant
+            coverage: '1'
           - variant: all-features-disabled
             precompile: npx gulp precompile-all-features-disabled
     runs-on: ubuntu-latest
@@ -50,4 +52,37 @@ jobs:
         env:
           TEST_CHUNKS: '8'
           TEST_CHUNK: ${{ matrix.chunk }}
+          VITEST_COVERAGE: ${{ matrix.coverage }}
         run: npm run test:vitest
+      - name: Upload coverage
+        if: ${{ matrix.coverage && !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-coverage-${{ matrix.chunk }}
+          # build/coverage/chunks/<chunk>/lcov.info, the layout Karma's coverage jobs produce
+          path: build/coverage/chunks
+          if-no-files-found: error
+
+  # Combines the chunks the way .github/actions/combine-coverage does for Karma, so the totals in the
+  # job summary can be compared with Karma's coverage report (#16004).
+  vitest-coverage:
+    name: Vitest coverage
+    needs: [vitest]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: vitest-coverage-*
+          path: build/coverage/chunks
+          merge-multiple: true
+      - name: Combine coverage results
+        run: |
+          sudo apt-get update
+          sudo apt-get install lcov -y
+          find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info
+          { echo '### Vitest coverage'; echo '```'; lcov --summary coverage.info 2>&1; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vitest-coverage
+          path: coverage.info

@@ -51,14 +51,28 @@ The bundles test whichever variant is in `dist/src`, as Karma's do. For the all-
 "Unit tests (all features disabled)" job), precompile with `npx gulp precompile-all-features-disabled` instead.
 CI runs both variants, in 8 chunks each.
 
+## Coverage
+
+`VITEST_COVERAGE=1` collects coverage the way Karma's coverage runs do:
+- The bundles are instrumented with babel-plugin-istanbul (Karma's webpack config, with source maps).
+- After each test file, `setup.mjs` sends the page's counters to Node through the `writeCoverage` browser command (`vitest.config.mjs`), which saves them in `build/vitest-coverage`.
+- At the end of the run, `coverage.js` merges them, maps them back to the original sources, and writes `build/coverage/chunks/<chunk>/lcov.info`. That is the file and layout karma-coverage produces, so `.github/actions/combine-coverage` and the coverage comparison read it unchanged.
+
+```sh
+VITEST_COVERAGE=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest
+```
+
+On chunk 1 of 8, the result matches Karma's: the same 238 files and identical line, branch and function counts. It adds a few seconds to the run.
+
+The counters are sent after the spec's own tests and hooks, but before its top-level `after()` hooks, so lines that run only in those hooks aren't counted. In CI, the default variant collects coverage, and the `Vitest coverage` job combines the chunks and writes the totals to its summary.
+
 ## Status
 
 On the full suite, Karma passed 27,478 tests and this runner passed 27,468 in the first trial (a spike on a
 patmmccann/Prebid.js fork branch). The differences were three specs fixed separately: #15978 (bliink), #15979
 (consentUtils), #15980 (pixfuture).
 
-Not done yet: coverage collection (Istanbul instrumentation is available with `VITEST_COVERAGE=1`, but nothing
-writes lcov), Firefox/WebKit, BrowserStack, and gulp integration.
+Not done yet: Firefox/WebKit, BrowserStack, and gulp integration.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.
