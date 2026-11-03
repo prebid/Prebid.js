@@ -36,14 +36,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
-          fetch-depth: 0
 
       - name: Checkout code (push)
         id: checkout-push
         if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -52,11 +49,12 @@ jobs:
 
       - name: Commit info
         id: info
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
-            git fetch origin "$BASE_BRANCH"
-            BASE_COMMIT="$(git merge-base HEAD "origin/$BASE_BRANCH")"
+            BASE_COMMIT="$(gh api "repos/${{ github.repository }}/compare/$BASE_BRANCH...${{ steps.checkout-pr.outputs.commit }}" --jq .merge_base_commit.sha)"
           else
             BASE_BRANCH="${{ github.ref }}"
             BASE_COMMIT="${{ github.event.before }}"
