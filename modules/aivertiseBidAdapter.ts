@@ -6,7 +6,7 @@
  */
 
 import { deepSetValue, logError, logInfo, logWarn } from '../src/utils.js';
-import { noCredsAjax, sendBeacon } from '../src/ajax.js';
+import { noCredsAjax } from '../src/ajax.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -243,11 +243,10 @@ const flushTargeting = () => {
   });
   byEndpoint.forEach((events, endpoint) => {
     for (let i = 0; i < events.length; i += MAX_TRACKING_BATCH) {
-      // text/plain: no CORS preflight
+      // Never with cookies (the events are signed), so not with sendBeacon, which always sends them.
+      // keepalive lets the request finish if the page is left; text/plain avoids a CORS preflight.
       const body = JSON.stringify({ events: events.slice(i, i + MAX_TRACKING_BATCH) });
-      if (!sendBeacon(endpoint, body)) {
-        noCredsAjax(endpoint, null, body, { method: 'POST', contentType: 'text/plain', keepalive: true });
-      }
+      noCredsAjax(endpoint, null, body, { method: 'POST', contentType: 'text/plain', keepalive: true });
     }
   });
 };

@@ -5,6 +5,8 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
+import { registerActivityControl } from 'src/activities/rules.js';
+import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from 'src/activities/activities.js';
 
 const ENDPOINT = 'https://a.aivertise.com/hb/bid';
 const SYNC_URL = 'https://a.aivertise.com/sync';
@@ -354,6 +356,11 @@ describe('Aivertise bid adapter', () => {
         expect(request.data.test).to.equal(0);
       });
 
+      it('ignores a page URL that cannot be parsed', () => {
+        const request = buildRequest(undefined, { refererInfo: { page: 'not a url?aivertiseTest=1' } });
+        expect(request.data.test).to.equal(0);
+      });
+
       it('ignores aivertiseTest values other than 1', () => {
         const request = buildRequest(undefined, {
           refererInfo: { page: 'https://test.aivertise.example/?aivertiseTest=10' },
@@ -498,20 +505,23 @@ describe('Aivertise bid adapter', () => {
   });
 
   describe('onSetTargeting()', () => {
+    const TRACK_URL = 'https://t.aivertise.com/track';
     const targetingUrl = (bidId) =>
-      `https://t.aivertise.com/track?type=bid_targeted&bidId=${bidId}&demandId=1&sig=abc`;
+      `${TRACK_URL}?type=bid_targeted&bidId=${bidId}&demandId=1&sig=abc`;
     let clock;
-    let sendBeaconStub;
+    let sendBeaconSpy;
 
     beforeEach(() => {
       clock = sinon.useFakeTimers();
-      sendBeaconStub = sinon.stub(ajaxLib, 'sendBeacon').returns(true);
+      sendBeaconSpy = sinon.spy(ajaxLib, 'sendBeacon');
     });
 
     afterEach(() => {
       clock.restore();
-      sendBeaconStub.restore();
+      sendBeaconSpy.restore();
     });
+
+    const trackRequests = () => server.requests.filter((r) => r.url === TRACK_URL);
 
     const targetedBid = (bidId) => {
       const request = buildRequest();
@@ -523,30 +533,74 @@ describe('Aivertise bid adapter', () => {
       expect(targetedBid('bid-1').aivertiseTargetingUrl).to.equal(targetingUrl('bid-1'));
     });
 
-    it('sends the targeting events of one call in a single batch', () => {
+    it('sends the targeting events of one call in a single keepalive POST', () => {
       spec.onSetTargeting(targetedBid('bid-1'));
       spec.onSetTargeting(targetedBid('bid-2'));
-      expect(sendBeaconStub.called).to.equal(false);
+      expect(trackRequests()).to.have.length(0);
 
       clock.tick(0);
-      expect(sendBeaconStub.calledOnce).to.equal(true);
-      const [url, body] = sendBeaconStub.firstCall.args;
-      expect(url).to.equal('https://t.aivertise.com/track');
-      expect(JSON.parse(body).events).to.deep.equal([
+      const requests = trackRequests();
+      expect(requests).to.have.length(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].fetch.request.keepalive).to.equal(true);
+      expect(JSON.parse(requests[0].requestBody).events).to.deep.equal([
         { type: 'bid_targeted', bidId: 'bid-1', demandId: '1', sig: 'abc' },
         { type: 'bid_targeted', bidId: 'bid-2', demandId: '1', sig: 'abc' },
       ]);
     });
 
-    it('falls back to a POST when the beacon is refused', () => {
-      sendBeaconStub.returns(false);
+    it('never sends credentials, and never uses sendBeacon', () => {
       spec.onSetTargeting(targetedBid('bid-1'));
       clock.tick(0);
-      const requests = server.requests.filter((r) => r.url === 'https://t.aivertise.com/track');
-      expect(requests).to.have.length(1);
-      expect(requests[0].method).to.equal('POST');
-      expect(requests[0].fetch.request.keepalive).to.equal(true);
-      expect(JSON.parse(requests[0].requestBody).events).to.have.length(1);
+      expect(sendBeaconSpy.called).to.equal(false);
+      expect(trackRequests()[0].fetch.request.credentials).not.to.equal('include');
+    });
+
+    describe('when accessRequestCredentials is denied', () => {
+      let resetRule;
+
+      beforeEach(() => {
+        resetRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test', () => ({ allow: false }));
+      });
+
+      afterEach(() => {
+        resetRule();
+      });
+
+      it('sends the events without credentials', () => {
+        spec.onSetTargeting(targetedBid('bid-1'));
+        clock.tick(0);
+        expect(sendBeaconSpy.called).to.equal(false);
+        const requests = trackRequests();
+        expect(requests).to.have.length(1);
+        expect(requests[0].fetch.request.credentials).not.to.equal('include');
+      });
+    });
+
+    it('splits more than 50 events into several requests', () => {
+      for (let i = 0; i < 51; i++) {
+        spec.onSetTargeting(targetedBid(`bid-${i}`));
+      }
+      clock.tick(0);
+      const requests = trackRequests();
+      expect(requests).to.have.length(2);
+      expect(JSON.parse(requests[0].requestBody).events).to.have.length(50);
+      expect(JSON.parse(requests[1].requestBody).events).to.have.length(1);
+    });
+
+    it('skips invalid targeting URLs with a warning', () => {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+      try {
+        spec.onSetTargeting({ aivertiseTargetingUrl: 'not a url' });
+        spec.onSetTargeting(targetedBid('bid-1'));
+        clock.tick(0);
+        expect(logWarnStub.calledWithMatch('invalid targeting URL')).to.equal(true);
+        const requests = trackRequests();
+        expect(requests).to.have.length(1);
+        expect(JSON.parse(requests[0].requestBody).events).to.have.length(1);
+      } finally {
+        logWarnStub.restore();
+      }
     });
 
     it('does nothing for bids without a targeting URL', () => {
@@ -554,7 +608,6 @@ describe('Aivertise bid adapter', () => {
       const [bid] = interpret(makeServerResponse(request), request);
       spec.onSetTargeting(bid);
       clock.tick(0);
-      expect(sendBeaconStub.called).to.equal(false);
       expect(server.requests.filter((r) => r.url.includes('/track'))).to.have.length(0);
     });
   });
