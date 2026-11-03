@@ -1039,7 +1039,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should set googletag targeting keys to specific slot with customGptSlotMatching', function () {
-      // same ad unit code but two differnt divs
+      // same ad unit code but two different divs
       // we make sure we can set targeting for a specific one with customGptSlotMatching
 
       pbjs.setConfig({
