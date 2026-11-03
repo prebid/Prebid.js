@@ -129,6 +129,64 @@ Notes:
   `0.0.0.0:9876`, and Firefox, which tries `127.0.0.1` first, then reaches Karma and Vitest times out
   connecting to it. Don't run both at once.
 
+## Native project
+
+`test/vitest-native` (#16010) runs most specs without webpack: Vite serves the precompiled tree (`dist/src`) as
+ES modules, so build constants, feature flags and TypeScript are handled exactly as for the bridge. The specs are
+unchanged. A Vite plugin (`plugins.mjs`) and its browser half (`stubs.mjs`) cover what the webpack/Babel CommonJS
+build gave them:
+
+- `require()` in test code becomes an import. At a module's top level it is `await import()` in place, so the
+  order of evaluation is kept. In a CommonJS package it returns `module.exports`, as webpack does.
+- `sinon.stub(namespace, 'fn')` works: each `import * as ns` in test code gets a stand-in whose writes reassign
+  the module's export through a setter the plugin adds to the module. Unlike a CommonJS stub, this also replaces
+  the module's calls to its own export. `VITEST_NATIVE_STUBS=0` turns it off for the specs (the shared
+  `adloaderStub.js` mock still needs it).
+- Bare `src/...`, `modules/...`, `test/...` and `buildOptions.mjs` imports resolve against `dist/src`, as
+  webpack's `resolve.modules` does. `web-bundler/` and `package.json` are aliased as in the webpack config.
+- `test_deps.js` and `pipeline_setup.js` load before each spec, and `hookSetup.js` after it, as under Karma.
+- `VITEST_COVERAGE=1` instruments the sources with babel-plugin-istanbul and Karma's options. The lcov goes to
+  `build/coverage/chunks/native/<chunk>/lcov.info`, next to the bridge's.
+
+Each spec file runs in its own page, like `VITEST_ISOLATE_SPECS=1` on the bridge, and starts with no cookies.
+So it doesn't test what a shared Karma chunk does (a spec leaking state into a later one).
+`test/vitest-native/bridge-specs.json` lists the specs that stay on the bridge, and why. The bridge skips every
+other spec (`VITEST_BRIDGE_ALL=1` turns that off), so in CI each job runs its Karma chunk partly natively and partly
+on the bridge, and every spec runs exactly once. `specs.js` fails the run if the list names a spec that doesn't exist.
+
+```sh
+npx gulp precompile
+npm run test:vitest-native                                             # all native specs; see below
+TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest-native                  # the native specs of one Karma chunk
+npx vitest run --config test/vitest-native/vitest.config.mjs dist/src/test/spec/modules/appnexusBidAdapter_spec.js
+VITEST_NATIVE_ALL=1 VITEST_PARALLEL=4 npm run test:vitest-native       # every spec, bridge ones too (for auditing the list)
+```
+
+It listens on port 9878, so it can run beside the bridge or Karma. Run all the native specs as
+chunks or with `VITEST_PARALLEL`: run serially in one process, Chromium dropped the connection after 200 to 300
+spec files in two local runs.
+
+### Audit (Chromium, 939 spec files)
+
+| | spec files |
+|---|---|
+| pass natively, as plain ES modules (`VITEST_NATIVE_STUBS=0`) | 667 |
+| of which candidates (no namespace stub/spy, by a source scan) | 625 of 628 |
+| pass natively with stubbable namespaces (the default) | 930 |
+| stay on the bridge (`bridge-specs.json`) | 9 |
+
+Before the shared fixes in the config, specs failed on: `require()` (in `test_deps.js`, so every spec), `global`,
+`adloaderStub.js` stubbing a namespace (every spec), faker's non-UTF-8 source, the `web-bundler/` and
+`buildOptions.mjs` paths, CommonJS interop for `require('video.js').default` and `require('assert')`, dependencies
+found mid-run (Vite reloads the page), and cookies left by another file. The 9 on the bridge: 3 hard-code port
+9876, 1 re-evaluates a module through webpack's `require.cache`, 1 stubs an export with a getter, 1 relies on
+CommonJS `dset` ignoring a write to a getter-only property, and 3 still to be diagnosed.
+
+Parity: for all 930, each test's name and result (passed or skipped) matched the bridge's, run one page per spec
+(`VITEST_ISOLATE_SPECS=1`). Coverage of chunk 1, native plus bridge, matched the isolated bridge run to 1 line of
+14,638. It is 1.2% of lines short of the chunked bridge run, where code run by one spec counts for the others on
+the page.
+
 ## Status
 
 On the full suite, Karma passed 27,478 tests and this runner passed 27,468 in the first trial (a spike on a

@@ -45,6 +45,20 @@ export function nativeSpecs({ coverage = false, specStubs = true } = {}) {
   return [{
     name: 'prebid-native-specs',
     enforce: 'pre',
+    configureServer(server) {
+      // Every spec file loads in a new page, and Vite has the browser revalidate each module on every load
+      // (Cache-Control: no-cache), several hundred requests a page. dist/src doesn't change during a run, so
+      // let the browser keep its modules.
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.includes('/dist/src/')) {
+          const setHeader = res.setHeader;
+          res.setHeader = function (name, value) {
+            return setHeader.call(this, name, String(name).toLowerCase() === 'cache-control' ? 'max-age=31536000, immutable' : value);
+          };
+        }
+        next();
+      });
+    },
     async transform(code, id) {
       if (!isDist(id) || !/\.m?js$/.test(file(id))) return null;
       await init;
