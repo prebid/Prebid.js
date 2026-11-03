@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -245,6 +246,14 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+    // No user sync when the publisher flags the page as subject to COPPA (`setConfig({coppa: true})`).
+    // Prebid.js 10.x does not pass that flag to getUserSyncs, so it is read from the config here.
+    // Empty array on purpose: the core then marks the bidder as done with syncs for the page, so a
+    // page once flagged never syncs until it is reloaded, even if the flag is turned off later.
+    if (config.getConfig('coppa')) {
+      return [];
+    }
+
     let syncurl = '';
 
     if (!isSynced && !window.sparteoCrossfire?.started) {
