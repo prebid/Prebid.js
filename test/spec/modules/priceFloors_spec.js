@@ -2527,6 +2527,11 @@ describe('setting null as rule value', () => {
     adUnitId: 'tr_test_div_1',
   };
 
+  // Tests here enable the module; leaving it on adds ext.prebid.floors to later specs' PBS requests.
+  afterEach(() => {
+    handleSetFloorsConfig({ enabled: false });
+  });
+
   it('should validate for null values', function () {
     const data = utils.deepClone(nullFloorData);
     data.floorsSchemaVersion = 1;
@@ -2598,6 +2603,8 @@ describe('Price Floors User ID Tiers', function() {
 
   afterEach(function() {
     sandbox.restore();
+    // some tests here enable the module; don't leave it on for later specs
+    handleSetFloorsConfig({ enabled: false });
   });
 
   describe('resolveTierUserIds', function() {
