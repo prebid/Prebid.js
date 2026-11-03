@@ -1,7 +1,7 @@
 import { ACTIVITY_LOAD_EXTERNAL_SCRIPT } from './activities/activities.js';
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
-
+import { defer } from "./utils/promise.ts";
 import { insertElement, logError, logWarn, memoize } from './utils.js';
 import type { ModuleType } from './activities/modules.ts';
 
@@ -19,29 +19,25 @@ function denyError() {
 
 function makeLoader(mkTag) {
   let loaders;
-
-  function load(doc, url, attrs?, beforeLoad?) {
+  function load(doc, url, attrs?, beforeLoad?): Promise<void> {
     doc = doc ?? document;
     if (!loaders.has(doc)) {
       const tags = new Map();
       const loader = memoize((url, attrs, beforeLoad) => {
-        let tag, onload, onerror;
-        const loading = new Promise((resolve, reject) => {
-          beforeLoad?.();
-          tag = mkTag(doc, url);
-          Object.entries(attrs ?? {})
-            .forEach(([key, value]) => tag.setAttribute(key, value));
-          tag.addEventListener('load', onload = resolve);
-          tag.addEventListener('error', onerror = reject);
-          insertElement(tag, doc);
-          tags.set(url, tag);
-        }).finally(() => {
-          if (tag) {
-            tag.removeEventListener('load', onload);
-            tag.removeEventListener('error', onerror);
-          }
+        beforeLoad?.();
+        const df = defer<void>();
+        const onload = () => df.resolve();
+        const tag = mkTag(doc, url);
+        Object.entries(attrs ?? {})
+          .forEach(([key, value]) => tag.setAttribute(key, value));
+        tag.addEventListener('load', onload);
+        tag.addEventListener('error', df.reject);
+        insertElement(tag, doc);
+        tags.set(url, tag);
+        const loading = df.promise.finally(() => {
+          tag.removeEventListener('load', onload);
+          tag.removeEventListener('error', df.reject);
         });
-        // registered before any caller's handlers, so a retry from an error callback starts a fresh load
         loading.catch(() => {
           loader.invalidate(url);
           tags.delete(url);

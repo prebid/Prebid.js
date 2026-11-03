@@ -52,6 +52,40 @@ describe('adLoader', function () {
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
+    Object.entries({
+      'createElement throws'() {
+        sandbox.stub(document, 'createElement').throws(new Error());
+      },
+      'setAttribute throws'() {
+        sandbox.stub(document, 'createElement').returns({
+          setAttribute() {
+            throw new Error();
+          }
+        });
+      },
+      'addEventListener throws'() {
+        sandbox.stub(document, 'createElement').returns({
+          setAttribute() {},
+          addEventListener() {
+            throw new Error();
+          }
+        });
+      },
+      'insertElement throws'() {
+        utilsinsertElementStub.throws(new Error());
+      }
+    }).forEach(([desc, setup]) => {
+      describe(`when ${desc}`, () => {
+        beforeEach(setup);
+        it('loadExternalScript throws', () => {
+          expect(() => adLoader.loadExternalScript('test-element-throws', MODULE_TYPE_PREBID, 'test', null, null, { attr: 'value' })).to.throw();
+        });
+        it('fetchExternalScript rejects', async () => {
+          await rejectionOf(adLoader.fetchExternalScript('test-element-throws', MODULE_TYPE_PREBID, 'test', null, null, { attr: 'value' }));
+        });
+      });
+    });
+
     it('accepts null document', async () => {
       adLoader.loadExternalScript('test-null-doc', MODULE_TYPE_PREBID, 'test', null, null);
       await flush();
