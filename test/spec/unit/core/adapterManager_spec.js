@@ -1075,6 +1075,23 @@ describe('adapterManager tests', function () {
       'start': 1462918897460
     }];
 
+
+    it('passes only the matching server requests to each PBS instance', () => {
+      adapterManager.callBids(getAdUnits(), bidRequests, () => {}, () => {});
+      sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+
+      const receivedTids = [];
+      prebidServerAdapterMock.callBids.getCalls().forEach(call => {
+        const [pbsRequest, bidderRequests] = call.args;
+        expect(bidderRequests).to.have.lengthOf(1);
+        const [bidderRequest] = bidderRequests;
+        receivedTids.push(bidderRequest.uniquePbsTid);
+        // Both the ORTB ad units and the request list must belong to the same PBS instance.
+        expect(pbsRequest.ad_units).to.equal(bidderRequest.adUnitsS2SCopy);
+      });
+      expect(receivedTids).to.have.members(bidRequests.map(request => request.uniquePbsTid));
+    });
+
     describe('invokes callBids on the S2S adapter', () => {
       let onTimelyResponse, timedOut, done;
       beforeEach(() => {
