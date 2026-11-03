@@ -1343,6 +1343,31 @@ describe("StackUp RTD Provider", function () {
     });
   });
 
+  describe("getBidRequestData – isolation between auctions", function () {
+    it("should not let edits to one auction's ortb2 reach later auctions", async function () {
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(DUAL_TAXONOMY_API_RESPONSE);
+      await flushMicrotasks();
+
+      const first = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(first, sinon.spy(), VALID_CONFIG);
+      const g1 = first.ortb2Fragments.global;
+      // what a module or adapter running after us might do to this auction
+      g1.site.pagecat.push("IAB9-1");
+      g1.site.content.ext.otherVendor = { x: 1 };
+      g1.site.content.data[0].segment[0].name = "mutated";
+      g1.user.data[0].ext.addedBy = "other";
+
+      const second = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(second, sinon.spy(), VALID_CONFIG);
+      const g2 = second.ortb2Fragments.global;
+      expect(g2.site.pagecat).to.eql(["IAB19-6"]);
+      expect(g2.site.content.ext).to.not.have.property("otherVendor");
+      expect(g2.site.content.data[0].segment[0]).to.not.have.property("name");
+      expect(g2.user.data[0].ext).to.not.have.property("addedBy");
+    });
+  });
+
   describe("getBidRequestData – an auction that times out", function () {
     it("should not cancel the shared fetch, so later auctions are still enriched", async function () {
       const clock = sinon.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });

@@ -17,6 +17,7 @@ import {
   isNumber,
   isPlainObject,
   cyrb53Hash,
+  deepClone,
 } from "../src/utils.js";
 import { getRefererInfo } from "../src/refererDetection.js";
 import type { RTDProviderConfig, RtdProviderSpec } from "./rtdModule/spec.ts";
@@ -641,8 +642,11 @@ function mergeIntoOrtb2(
   if (!fragments.global) fragments.global = {};
   const global = fragments.global;
 
-  mergeSiteContent(global, enrichment.site);
-  mergeUserData(global, enrichment.user.data);
+  // The snapshot is shared by every auction on the page; merge a copy so that
+  // whatever later edits this auction's ortb2 cannot reach the next auction.
+  const ours = deepClone(enrichment);
+  mergeSiteContent(global, ours.site);
+  mergeUserData(global, ours.user.data);
 }
 
 function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
