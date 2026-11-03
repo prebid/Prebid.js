@@ -812,7 +812,7 @@ describe('adapexBidAdapter', function () {
       spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 2000 }]);
       spec.onBidderError({ error: { status: 500 }, bidderRequest: { bids: [validBannerBid] } });
       expect(politeStub.calledTwice).to.be.true;
-      expect(politeStub.firstCall.args[0]).to.include('https://px-us-e.floxis.tech/event?event=timeout');
+      expect(politeStub.firstCall.args[0]).to.include('https://sync.adapex.io/event?event=timeout');
     });
 
     it('sends telemetry when the publisher enables it explicitly', function () {
@@ -861,23 +861,23 @@ describe('adapexBidAdapter', function () {
         ];
         adapterManager.callTimedOutBidders(adUnits, adUnits.map(({ code }) => ({ bidder: 'adapex', adUnitCode: code, auctionId: 'private-auction' })), 2000);
         expect(politeStub.getCalls().map(({ args }) => args)).to.deep.equal([
-          ['https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000', 'omit'],
-          ['https://px-us-e.floxis.tech/event?event=timeout&seat=Seat2&region=us-e&duration=2000', 'omit']
+          ['https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000', 'omit'],
+          ['https://sync.adapex.io/event?event=timeout&seat=Seat2&region=us-e&duration=2000', 'omit']
         ]);
       });
 
-      it('beacons cookieless to px-us-e.floxis.tech', function () {
+      it('beacons cookieless to sync.adapex.io', function () {
         spec.onTimeout([{ params: { seat: 'Gmtb', region: 'eu' }, timeout: 2000, auctionId: 'a1' }]);
         expect(politeStub.calledOnce).to.be.true;
         expect(politeStub.firstCall.args).to.deep.equal([
-          'https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000',
+          'https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e&duration=2000',
           'omit'
         ]);
       });
 
       it('omits absent dimensions', function () {
         spec.onTimeout([{ params: { seat: 'Gmtb' } }]);
-        expect(politeStub.firstCall.args[0]).to.equal('https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e');
+        expect(politeStub.firstCall.args[0]).to.equal('https://sync.adapex.io/event?event=timeout&seat=Gmtb&region=us-e');
       });
 
       it('dedupes per seat and skips entries without a seat', function () {
@@ -958,17 +958,17 @@ describe('adapexBidAdapter', function () {
         expect(politeStub.called).to.be.false;
       });
 
-      it('beacons cookieless to px-us-e.floxis.tech with status, timeout flag and publisher domain', function () {
+      it('beacons cookieless to sync.adapex.io with status, timeout flag and publisher domain', function () {
         spec.onBidderError({ error: { status: 500, timedOut: false }, bidderRequest: bidderRequest() });
         expect(politeStub.firstCall.args).to.deep.equal([
-          'https://px-us-e.floxis.tech/event?event=bidder-error&seat=Gmtb&region=us-e&status=500&timedout=0&puburl=pub.example.com',
+          'https://sync.adapex.io/event?event=bidder-error&seat=Gmtb&region=us-e&status=500&timedout=0&puburl=pub.example.com',
           'omit'
         ]);
       });
 
       it('flags a timed-out transport error and omits an absent status', function () {
         spec.onBidderError({ error: { timedOut: true }, bidderRequest: bidderRequest({ auctionId: undefined, refererInfo: undefined }) });
-        expect(politeStub.firstCall.args[0]).to.equal('https://px-us-e.floxis.tech/event?event=bidder-error&seat=Gmtb&region=us-e&timedout=1');
+        expect(politeStub.firstCall.args[0]).to.equal('https://sync.adapex.io/event?event=bidder-error&seat=Gmtb&region=us-e&timedout=1');
       });
 
       it('appends consent params', function () {

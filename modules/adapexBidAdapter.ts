@@ -26,6 +26,7 @@ const BIDDER_CODE = 'adapex';
 const GVLID = 1609;
 const BID_HOST = 'hb.adapex.io';
 const SYNC_ORIGIN = 'https://px-us-e.floxis.tech';
+const TELEMETRY_ORIGIN = 'https://sync.adapex.io';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -39,7 +40,7 @@ export const spec = createFloxisSpec({
   resolveRoute: () => ({ region: 'us-e', partner: BIDDER_CODE }),
   getBidHost: () => BID_HOST,
   getSyncOrigin: () => SYNC_ORIGIN,
-  telemetryOrigin: SYNC_ORIGIN,
+  telemetryOrigin: TELEMETRY_ORIGIN,
   isTelemetryEnabled: () => config.getConfig('adapex')?.enableTelemetry !== false
 });
 

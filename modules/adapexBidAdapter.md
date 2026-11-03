@@ -110,7 +110,7 @@ The fallback identifier is sent only when both `transmitEids` and `transmitUfpd`
 GDPR/TCF, US Privacy, GPP and COPPA signals are handled by Prebid.js core and included in the OpenRTB request; server-provided user-sync URLs carry the applicable consent signals. The adapter declares IAB Europe TCF Vendor ID **1609** via its `gvlid`.
 
 ## User Sync
-The adapter registers cookie syncs to `https://px-us-e.floxis.tech/sync`. Iframe and pixel syncs are both supported; the type emitted follows your `userSync` configuration. An iframe sync matches more demand partners per call, so enable it for the adapter:
+The adapter registers the cookie syncs returned with each bid response. Iframe and pixel syncs are both supported; the type emitted follows your `userSync` configuration. An iframe sync matches more demand partners per call, so enable it for the adapter:
 
 ```javascript
 pbjs.setConfig({
@@ -131,7 +131,7 @@ Client-observed auction timeouts and bidder transport errors are reported by def
 pbjs.setConfig({ adapex: { enableTelemetry: false } });
 ```
 
-Events are reported to `https://px-us-e.floxis.tech/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, publisher domain) and no user, device or auction identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
+Events are reported to `https://sync.adapex.io/event` as cookieless `keepalive` beacons scheduled off the auction's critical path. They carry the seat, event type and operational dimensions (HTTP status, timeout flag, duration, publisher domain) and no user, device or auction identifier; consent signals are passed through where available. Each beacon fires at most once per seat per event.
 
 For split requests, transport errors are reported only for the seat identified by the failed response URL. If a network failure provides no URL and multiple seats were requested, the error beacon is omitted to avoid attributing the failure to healthy seats.
 
