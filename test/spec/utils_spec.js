@@ -566,6 +566,15 @@ describe('Utils', function () {
     it('return iframe - style', function () {
       assert.ok(output.style);
     });
+
+    it('lets attrs and style override the invisible defaults', function () {
+      const frame = utils.createInvisibleIframe(document, { src: 'https://example.com/', sandbox: 'allow-scripts' }, { width: '1px' });
+      assert.equal(frame.src, 'https://example.com/');
+      assert.equal(frame.getAttribute('sandbox'), 'allow-scripts');
+      assert.equal(frame.style.width, '1px');
+      assert.equal(frame.style.display, 'none');
+      assert.equal(frame.height, '0');
+    });
   });
 
   describe('polyfill test', function () {
