@@ -257,7 +257,14 @@ export function store(bids: VideoBid[], done: VideoCacheStoreCallback = (_error,
 }
 
 export function getCacheUrl(cacheUrl, id) {
-  return `${cacheUrl}?uuid=${id}`;
+  try {
+    const url = new URL(cacheUrl);
+    url.searchParams.set('uuid', id);
+    return url.toString();
+  } catch (e) {
+    const separator = cacheUrl.includes('?') ? '&' : '?';
+    return `${cacheUrl}${separator}uuid=${encodeURIComponent(id)}`;
+  }
 }
 
 export const storeLocally = (bid) => {
