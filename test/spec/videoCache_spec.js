@@ -979,4 +979,21 @@ describe('The getCache function', function () {
     const url = getCacheUrl(CACHE_URL, uuid);
     url.should.equal(`https://test.cache.url/endpoint?uuid=${uuid}`);
   });
+  it('preserves existing query parameters and replaces an existing uuid', function () {
+    expect(getCacheUrl(CACHE_URL + '?keep=1&uuid=old', 'new-id')).to.equal(
+      CACHE_URL + '?keep=1&uuid=new-id'
+    );
+  });
+
+  it('encodes cache IDs and keeps fragments after the query', function () {
+    expect(getCacheUrl(CACHE_URL + '?keep=1#fragment', 'id with&special')).to.equal(
+      CACHE_URL + '?keep=1&uuid=id+with%26special#fragment'
+    );
+  });
+
+  it('handles a relative cache URL without dropping its query string', function () {
+    expect(getCacheUrl('/cache?keep=1', 'id & special')).to.equal(
+      '/cache?keep=1&uuid=id%20%26%20special'
+    );
+  });
 });
