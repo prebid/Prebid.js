@@ -824,6 +824,15 @@ describe('user sync iframes', () => {
     }
   });
 
+  it('calls done once when the iframe is removed, even if it loads too', async () => {
+    const done = sinon.spy();
+    insertUserSyncIframe('about:blank', done);
+    removeUserSyncIframes();
+    sinon.assert.calledOnce(done);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    sinon.assert.calledOnce(done);
+  });
+
   it('does nothing when there is no sync iframe', () => {
     expect(removeUserSyncIframes()).to.equal(0);
   });
@@ -962,6 +971,9 @@ describe('user sync iframes', () => {
         setRemoval({ all: delay });
         const iframe = insert();
         sinon.assert.calledWith(logWarnStub, sinon.match('userSync.removeIframes.all'));
+        logWarnStub.resetHistory();
+        insert();
+        sinon.assert.notCalled(logWarnStub);
         clock.tick(14999);
         expect(iframe.parentNode).to.not.equal(null);
         clock.tick(1);

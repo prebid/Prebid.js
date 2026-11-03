@@ -36,7 +36,7 @@ export type RemoveUserSyncsOptions = {
   withChildFrames?: boolean;
 };
 
-type IframeRemovalDelays = {
+export type IframeRemovalDelays = {
   withChildFrames?: number | false;
   all?: number | false;
 };
@@ -109,6 +109,7 @@ const DEFAULT_IFRAME_REMOVAL_DELAYS = { withChildFrames: 15000, all: 15000 };
 
 type SyncIframe = {
   onCleanup?: () => void;
+  done?: () => void;
   removalTimer?: ReturnType<typeof setTimeout>;
 };
 
@@ -120,7 +121,7 @@ const OWN_SYNC_IFRAMES = new WeakMap<HTMLIFrameElement, SyncIframe>();
 /**
  * Insert an invisible iframe that loads `url`, for cookie sync.
  * @param url URL to load
- * @param done called once the iframe loads, or after `timeout`
+ * @param done called once the iframe loads or is removed, or after `timeout`
  * @param timeout maximum time in milliseconds to wait for the iframe to load before calling `done`
  * @param onCleanup called before the iframe is removed, manually or automatically
  */
@@ -130,12 +131,20 @@ export function insertUserSyncIframe(url: string, done?: () => void, timeout?: n
     sandbox: 'allow-scripts allow-same-origin',
     src: url,
   });
-  OWN_SYNC_IFRAMES.set(iframe, { onCleanup: isFn(onCleanup) ? onCleanup : undefined });
+  const entry: SyncIframe = { onCleanup: isFn(onCleanup) ? onCleanup : undefined };
+  if (isFn(done)) {
+    let settled = false;
+    entry.done = () => {
+      if (!settled) {
+        settled = true;
+        done();
+      }
+    };
+    waitForElementToLoad(iframe, timeout).then(entry.done);
+  }
+  OWN_SYNC_IFRAMES.set(iframe, entry);
   // not on load: a sync whose nested frames never finish loading would never fire it
   scheduleIframeRemoval(iframe);
-  if (isFn(done)) {
-    waitForElementToLoad(iframe, timeout).then(done);
-  }
   insertElement(iframe, document, 'html', true);
 }
 
@@ -143,11 +152,20 @@ export function politeInsertUserSyncIframe(url: string, done?: () => void, timeo
   runBackgroundTask(() => internal.insertUserSyncIframe(url, done, timeout, onCleanup));
 }
 
+const loggedRemovalWarnings = new Set<string>();
+
+function warnOnce(message: string) {
+  if (!loggedRemovalWarnings.has(message)) {
+    loggedRemovalWarnings.add(message);
+    logWarn(message);
+  }
+}
+
 function iframeRemovalDelays(): { withChildFrames?: number; all?: number } {
   const setting = config.getConfig('userSync.removeIframes');
   if (setting === false) return {};
   if (setting != null && setting !== true && !isPlainObject(setting)) {
-    logWarn(`Invalid userSync.removeIframes setting: ${setting}; using defaults`);
+    warnOnce(`Invalid userSync.removeIframes setting: ${setting}; using defaults`);
   }
   const delays = {};
   Object.entries(DEFAULT_IFRAME_REMOVAL_DELAYS).forEach(([step, defaultDelay]) => {
@@ -156,7 +174,7 @@ function iframeRemovalDelays(): { withChildFrames?: number; all?: number } {
     if (typeof delay === 'number' && Number.isFinite(delay) && delay >= 0) {
       delays[step] = delay;
     } else {
-      logWarn(`Invalid userSync.removeIframes.${step} setting: ${delay}; using ${defaultDelay}`);
+      warnOnce(`Invalid userSync.removeIframes.${step} setting: ${delay}; using ${defaultDelay}`);
       delays[step] = defaultDelay;
     }
   });
@@ -202,6 +220,7 @@ function removeSyncIframe(iframe: HTMLIFrameElement) {
     logError('Error cleaning up user sync iframe', error);
   }
   iframe.parentNode?.removeChild(iframe);
+  entry.done?.();
 }
 
 /**
