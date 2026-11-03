@@ -229,17 +229,19 @@ export const createIframe = (() => {
   };
 })();
 
-export function createInvisibleIframe() {
-  return createIframe(document, {
+export function createInvisibleIframe(doc = document, attrs = {}, style = {}) {
+  return createIframe(doc, {
     id: getUniqueIdentifierStr(),
     width: 0,
     height: 0,
-    src: 'about:blank'
+    src: 'about:blank',
+    ...attrs
   }, {
     display: 'none',
     height: '0px',
     width: '0px',
-    border: '0px'
+    border: '0px',
+    ...style
   });
 }
 
@@ -447,13 +449,9 @@ const OWN_SYNC_IFRAMES = new WeakMap();
  */
 export function insertUserSyncIframe(url, done, timeout, onCleanup) {
   if (!url) return;
-  const iframe = createIframe(document, {
+  const iframe = createInvisibleIframe(document, {
     sandbox: 'allow-scripts allow-same-origin',
     src: url,
-  }, {
-    width: '0px',
-    height: '0px',
-    display: 'none'
   });
   OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
   if (done && internal.isFn(done)) {
