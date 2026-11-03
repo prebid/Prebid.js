@@ -456,11 +456,12 @@ export function insertUserSyncIframe(url, done, timeout, onCleanup) {
     display: 'none'
   });
   OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
-  iframe.addEventListener('load', () => scheduleSyncIframeRemoval(iframe), { once: true });
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
+  // counted from insertion rather than load: 'load' is not guaranteed, and a sync that never loads should go too
+  scheduleSyncIframeRemoval(iframe);
 }
 
 const DEFAULT_SYNC_IFRAME_REMOVAL = { withChildFrames: 15000, all: 15000 };
@@ -469,7 +470,7 @@ let syncIframeRemoval = DEFAULT_SYNC_IFRAME_REMOVAL;
 /**
  * Configure the automatic removal of sync iframes (`userSync.removeIframes`).
  * @param {boolean|{withChildFrames?: number|false, all?: number|false}} [settings] delays in milliseconds after an
- *   iframe loads (missing ones use the defaults): `withChildFrames` removes it then if it has created frames of its
+ *   iframe is inserted (missing ones use the defaults): `withChildFrames` removes it then if it has created frames of its
  *   own, with a warning; `all` removes it then regardless; `false` skips that step. Undefined or `true` uses the
  *   defaults; `false` turns it off.
  */

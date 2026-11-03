@@ -1782,7 +1782,7 @@ describe('user sync iframes', () => {
     });
   });
 
-  describe('automatic removal after load', () => {
+  describe('automatic removal', () => {
     let clock;
 
     function addChildFrame(iframe) {
@@ -1790,12 +1790,9 @@ describe('user sync iframes', () => {
       (doc.body ?? doc.documentElement).appendChild(doc.createElement('iframe'));
     }
 
-    function insertLoaded() {
+    function insertSync() {
       utils.insertUserSyncIframe('about:blank');
-      const iframe = newIframes().pop();
-      // about:blank may already have fired load on insertion; the listener only runs once either way
-      iframe.dispatchEvent(new Event('load'));
-      return iframe;
+      return newIframes().pop();
     }
 
     beforeEach(() => {
@@ -1808,12 +1805,12 @@ describe('user sync iframes', () => {
       utils.setSyncIframeRemoval();
     });
 
-    it('removes a sync iframe that created frames 15s after it loads, with a warning', () => {
+    it('removes a sync iframe that created frames 15s after it is inserted, with a warning', () => {
       const warnings = [];
       const onDebug = ({ type, arguments: args }) => type === 'WARNING' && warnings.push(args.join(' '));
       events.on(EVENTS.AUCTION_DEBUG, onDebug);
       try {
-        const iframe = insertLoaded();
+        const iframe = insertSync();
         addChildFrame(iframe);
         clock.tick(14999);
         expect(iframe.parentNode).to.not.equal(null);
@@ -1825,11 +1822,10 @@ describe('user sync iframes', () => {
       }
     });
 
-    it('removes the remaining sync iframes 15s after they load', () => {
+    it('removes the remaining sync iframes 15s after they are inserted', () => {
       const onCleanup = sinon.spy();
       utils.insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
       const iframe = newIframes().pop();
-      iframe.dispatchEvent(new Event('load'));
       clock.tick(3000);
       expect(iframe.parentNode).to.not.equal(null);
       clock.tick(12000);
@@ -1837,9 +1833,17 @@ describe('user sync iframes', () => {
       expect(onCleanup.calledOnce).to.equal(true);
     });
 
+    it('counts from insertion, not from load', () => {
+      const iframe = insertSync();
+      clock.tick(10000);
+      iframe.dispatchEvent(new Event('load'));
+      clock.tick(5000);
+      expect(iframe.parentNode).to.equal(null);
+    });
+
     it('honors custom delays', () => {
       utils.setSyncIframeRemoval({ withChildFrames: false, all: 1000 });
-      const iframe = insertLoaded();
+      const iframe = insertSync();
       addChildFrame(iframe);
       clock.tick(999);
       expect(iframe.parentNode).to.not.equal(null);
@@ -1849,7 +1853,7 @@ describe('user sync iframes', () => {
 
     it('is on by default', () => {
       utils.setSyncIframeRemoval();
-      const iframe = insertLoaded();
+      const iframe = insertSync();
       clock.tick(14999);
       expect(iframe.parentNode).to.not.equal(null);
       clock.tick(1);
@@ -1858,7 +1862,7 @@ describe('user sync iframes', () => {
 
     it('can be turned off', () => {
       utils.setSyncIframeRemoval(false);
-      const iframe = insertLoaded();
+      const iframe = insertSync();
       addChildFrame(iframe);
       clock.tick(60000);
       expect(iframe.parentNode).to.not.equal(null);
