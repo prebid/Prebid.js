@@ -1,6 +1,7 @@
 import 'src/prebid.js';
 import { expect } from 'chai';
-import { PbVideo } from 'modules/videoModule/index.js';
+import { PbVideo, getNearestSizeBucket, normalizeSizeBuckets } from 'modules/videoModule/index.js';
+import * as utils from 'src/utils.js';
 import { EVENTS } from 'src/constants.js';
 
 let ortbVideoMock;
@@ -203,6 +204,134 @@ describe('Prebid Video', function () {
       expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
       expect(adUnit.mediaTypes.video).to.have.property('test2', 'publisherValue');
       expect(nextFn.calledOnce).to.be.true;
+    });
+  });
+
+  describe('Size buckets', function () {
+    let getConfigCallback;
+    let beforeBidRequestCallback;
+    let logWarnStub;
+
+    const getConfig = (propertyName, callback) => {
+      if (propertyName === 'video' && callback) {
+        getConfigCallback = callback;
+      }
+    };
+
+    beforeEach(() => {
+      logWarnStub = sinon.stub(utils, 'logWarn');
+      videoCoreMock.getOrtbVideo = () => ({ w: 495, h: 655, plcmt: 1 });
+      pbVideoFactory(null, getConfig, Object.assign({}, pbGlobalMock), {
+        before: callback_ => { beforeBidRequestCallback = callback_; }
+      });
+    });
+
+    afterEach(() => {
+      logWarnStub.restore();
+    });
+
+    function runAuction(adUnit) {
+      const adUnits = [Object.assign({ code: 'ad1', video: { divId: 'divId' } }, adUnit)];
+      beforeBidRequestCallback(sinon.spy(), { adUnits });
+      return adUnits[0];
+    }
+
+    function setVideoConfig(video) {
+      getConfigCallback({ video: Object.assign({ providers: [] }, video) });
+    }
+
+    it('reports the actual player size when sizeBuckets is not set', function () {
+      setVideoConfig({});
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video).to.include({ w: 495, h: 655 });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([495, 655]);
+      expect(adUnit.ortb2Imp).to.be.undefined;
+    });
+
+    it('reports the nearest bucket and sets ext.true_size when sizeBuckets is set', function () {
+      setVideoConfig({ sizeBuckets: [[640, 360], [480, 640], [300, 250]] });
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video).to.include({ w: 480, h: 640, plcmt: 1 });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([480, 640]);
+      expect(adUnit.ortb2Imp.video.ext.true_size).to.eql({ w: 495, h: 655 });
+    });
+
+    it('preserves other ortb2Imp fields', function () {
+      setVideoConfig({ sizeBuckets: [[480, 640]] });
+      const adUnit = runAuction({ mediaTypes: { video: {} }, ortb2Imp: { ext: { gpid: 'gpid' }, video: { ext: { other: 1 } } } });
+      expect(adUnit.ortb2Imp).to.eql({ ext: { gpid: 'gpid' }, video: { ext: { other: 1, true_size: { w: 495, h: 655 } } } });
+    });
+
+    it('reverts to the actual size when sizeBuckets is unset again', function () {
+      setVideoConfig({ sizeBuckets: [[480, 640]] });
+      setVideoConfig({});
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([495, 655]);
+      expect(adUnit.ortb2Imp).to.be.undefined;
+    });
+
+    it('ignores invalid buckets', function () {
+      setVideoConfig({ sizeBuckets: [[500, 'x'], [500, 650, 1], [0, 650], 'abc', [490.5, 650], [300, 250]] });
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([300, 250]);
+      expect(logWarnStub.callCount).to.equal(5);
+    });
+
+    it('reports the actual size, without true_size, when no bucket is valid', function () {
+      setVideoConfig({ sizeBuckets: [['a', 'b']] });
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([495, 655]);
+      expect(adUnit.ortb2Imp).to.be.undefined;
+    });
+
+    Object.entries({
+      'mediaTypes.video.playerSize': { mediaTypes: { video: { playerSize: [640, 480] } } },
+      'mediaTypes.video.w/h': { mediaTypes: { video: { w: 640, h: 480 } } },
+      'ortb2Imp.video.w/h': { mediaTypes: { video: {} }, ortb2Imp: { video: { w: 640, h: 480 } } },
+    }).forEach(([t, adUnitProps]) => {
+      it(`does not apply buckets when the publisher sets ${t}`, function () {
+        setVideoConfig({ sizeBuckets: [[480, 640]] });
+        const adUnit = runAuction(adUnitProps);
+        expect(adUnit.mediaTypes.video.playerSize).to.not.eql([480, 640]);
+        expect(adUnit.ortb2Imp?.video?.ext?.true_size).to.be.undefined;
+      });
+    });
+
+    describe('normalizeSizeBuckets', function () {
+      it('returns null when unset, empty or not an array', function () {
+        expect(normalizeSizeBuckets(undefined)).to.be.null;
+        expect(normalizeSizeBuckets([])).to.be.null;
+        expect(normalizeSizeBuckets({ w: 1, h: 1 })).to.be.null;
+        expect(logWarnStub.calledOnce).to.be.true;
+      });
+
+      it('keeps valid entries in order', function () {
+        expect(normalizeSizeBuckets([[1, 2], [-1, 2], [3, 4]])).to.eql([[1, 2], [3, 4]]);
+      });
+    });
+
+    describe('getNearestSizeBucket', function () {
+      it('picks the bucket with the smallest euclidean distance', function () {
+        // [400, 300] is 100 away on both axes (distance ~141); [640, 360] is 140 away on width only
+        expect(getNearestSizeBucket([500, 400], [[640, 360], [400, 300]])).to.eql([400, 300]);
+        expect(getNearestSizeBucket([620, 350], [[400, 300], [640, 360], [640, 480]])).to.eql([640, 360]);
+      });
+
+      it('returns an exact match', function () {
+        expect(getNearestSizeBucket([640, 480], [[640, 360], [640, 480]])).to.eql([640, 480]);
+      });
+
+      it('breaks ties in favor of the bucket listed first', function () {
+        expect(getNearestSizeBucket([500, 500], [[400, 500], [600, 500]])).to.eql([400, 500]);
+        expect(getNearestSizeBucket([500, 500], [[600, 500], [400, 500]])).to.eql([600, 500]);
+      });
+
+      it('returns a copy of the bucket', function () {
+        const buckets = [[640, 480]];
+        const result = getNearestSizeBucket([1, 1], buckets);
+        result[0] = 1;
+        expect(buckets[0]).to.eql([640, 480]);
+      });
     });
   });
 
