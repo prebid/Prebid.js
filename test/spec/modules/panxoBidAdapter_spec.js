@@ -5,6 +5,11 @@ import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { setConfig as setCurrencyConfig } from 'modules/currency.js';
+import { config } from 'src/config.js';
+import { redactor } from 'src/activities/redactor.js';
+import { activityParams } from 'src/activities/activityParams.js';
+import { ACTIVITY_TRANSMIT_TID } from 'src/activities/activities.js';
+import { registerActivityControl } from 'src/activities/rules.js';
 
 describe('PanxoBidAdapter', function () {
   const PROPERTY_KEY = 'abc123def456';
@@ -755,6 +760,73 @@ describe('PanxoBidAdapter', function () {
       expect(data.source.tid).to.equal('transaction-id');
       expect(data.source.ext.tidSource).to.equal('pbjs');
       expect(data.source.ext.schain).to.deep.equal(contextualBidderRequest.ortb2.source.ext.schain);
+    });
+
+    [
+      { name: 'no OpenRTB context', ortb2: undefined },
+      { name: 'no source', ortb2: {} },
+      { name: 'empty source', ortb2: { source: {} } },
+      { name: 'source without a TID', ortb2: { source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [] } } } } }
+    ].forEach(({ name, ortb2 }) => {
+      it(`does not replace a missing source.tid with auctionId (${name})`, function () {
+        const request = { ...bidderRequest, ortb2 };
+        const before = JSON.stringify(request);
+        const [result] = spec.buildRequests(validBidRequests, request);
+
+        expect(result.data.source.tid).to.be.undefined;
+        expect(JSON.parse(JSON.stringify(result.data)).source).to.not.have.property('tid');
+        expect(JSON.stringify(result.data)).to.not.include(bidderRequest.auctionId);
+        expect(JSON.stringify(request)).to.equal(before);
+      });
+    });
+
+    describe('core transaction ID activity decisions', function () {
+      let unregister;
+
+      beforeEach(function () {
+        config.resetConfig();
+      });
+
+      afterEach(function () {
+        if (unregister) unregister();
+        unregister = undefined;
+        config.resetConfig();
+      });
+
+      [
+        { name: 'default configuration', settings: {}, allowed: false },
+        { name: 'enableTIDs disabled', settings: { enableTIDs: false }, allowed: false },
+        { name: 'enableTIDs enabled', settings: { enableTIDs: true }, allowed: true },
+        { name: 'transmitTid denied with enableTIDs enabled', settings: { enableTIDs: true }, deny: true, allowed: false }
+      ].forEach(({ name, settings, deny, allowed }) => {
+        it(`preserves the core decision for ${name}`, function () {
+          config.setConfig(settings);
+          if (deny) {
+            unregister = registerActivityControl(ACTIVITY_TRANSMIT_TID, 'panxo test', () => ({ allow: false }));
+          }
+          const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'seller.example', sid: 'seller-1', hp: 1 }] };
+          const ortb2 = { source: { tid: 'core-transaction-id', ext: { tidSource: 'pbjs', schain } } };
+          redactor(activityParams('bidder', 'panxo')).ortb2(ortb2);
+          expect(ortb2.source.tid).to.equal(allowed ? 'core-transaction-id' : undefined);
+          const before = JSON.stringify(ortb2);
+
+          const requests = spec.buildRequests([
+            ...validBidRequests,
+            { ...validBidRequests[0], bidId: 'bid-id-2', params: { propertyKey: 'second-property' } }
+          ], { ...bidderRequest, ortb2 });
+
+          expect(requests).to.have.lengthOf(2);
+          requests.forEach(({ data }) => {
+            expect(data.source.tid).to.equal(allowed ? 'core-transaction-id' : undefined);
+            expect(data.source.ext.tidSource).to.equal(allowed ? 'pbjs' : undefined);
+            expect(data.source.ext.schain).to.deep.equal(schain);
+            expect(data.source).to.not.equal(ortb2.source);
+            expect(data.source.ext.schain).to.not.equal(schain);
+            expect(JSON.stringify(data)).to.not.include(bidderRequest.auctionId);
+          });
+          expect(JSON.stringify(ortb2)).to.equal(before);
+        });
+      });
     });
 
     it('should not mutate normalized OpenRTB context while applying adapter overrides', function () {

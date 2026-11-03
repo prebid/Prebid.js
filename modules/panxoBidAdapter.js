@@ -548,10 +548,10 @@ function buildApp(bidderRequest) {
 }
 
 function buildSource(bidderRequest) {
+  // Only forward the source TID that survived core activity redaction.
   const fpd = deepAccess(bidderRequest, 'ortb2.source');
   const source = isPlainObject(fpd) ? cloneOrtbValue(fpd) : {};
   source.ext = isPlainObject(source.ext) ? source.ext : {};
-  source.tid = source.tid || bidderRequest.auctionId;
 
   return source;
 }
