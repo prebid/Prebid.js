@@ -1800,7 +1800,7 @@ describe('user sync iframes', () => {
 
     beforeEach(() => {
       clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-      utils.setSyncIframeRemoval();
+      utils.setSyncIframeRemoval(true);
     });
 
     afterEach(() => {
@@ -1845,6 +1845,14 @@ describe('user sync iframes', () => {
       expect(iframe.parentNode).to.not.equal(null);
       clock.tick(1);
       expect(iframe.parentNode).to.equal(null);
+    });
+
+    it('is off unless configured', () => {
+      utils.setSyncIframeRemoval();
+      const iframe = insertLoaded();
+      addChildFrame(iframe);
+      clock.tick(60000);
+      expect(iframe.parentNode).to.not.equal(null);
     });
 
     it('can be turned off', () => {

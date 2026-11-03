@@ -74,14 +74,15 @@ export interface UserSyncConfig {
    */
   usePoliteSync?: boolean;
   /**
-   * Remove sync iframes automatically, some time after each one loads. Delays are in milliseconds:
+   * Remove sync iframes automatically, some time after each one loads. Off by default.
+   * `true` turns it on with the default delays; an object sets the delays in milliseconds (missing ones use the defaults):
    * - `withChildFrames`: remove the iframe at this point if it has created frames of its own (syncs that fan out
-   *   into many nested frames). Default: 3000.
+   *   into many nested frames), and log a warning. Default: 3000.
    * - `all`: remove the iframe at this point regardless. Default: 15000.
    *
-   * Set either to `false` to turn it off, or set `removeIframes: false` to keep sync iframes for the life of the page.
+   * Set either delay to `false` to skip that step.
    */
-  removeIframes?: false | {
+  removeIframes?: boolean | {
     withChildFrames?: number | false;
     all?: number | false;
   };
