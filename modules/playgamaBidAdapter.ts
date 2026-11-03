@@ -232,6 +232,20 @@ function readFloors(bid: BidRequest<typeof BIDDER_CODE>): Record<string, unknown
   );
 }
 
+function requestGroups(bidRequests: BidRequest<typeof BIDDER_CODE>[]): BidRequest<typeof BIDDER_CODE>[][] {
+  const groups = new Map<string, BidRequest<typeof BIDDER_CODE>[]>();
+  bidRequests.forEach((bid) => {
+    const key = `${environment(bid.params).endpoint}\n${bid.params.publisherId}`;
+    const group = groups.get(key);
+    if (group) {
+      group.push(bid);
+    } else {
+      groups.set(key, [bid]);
+    }
+  });
+  return [...groups.values()];
+}
+
 function withRenderer(sspBid: SspBid, request: BidRequest<typeof BIDDER_CODE>): BidResponse {
   const { render, requestId, ...bid } = sspBid;
   const { renderersBase } = environment(request.params);
@@ -271,30 +285,27 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   buildRequests(validBidRequests, bidderRequest): PlaygamaAdapterRequest[] {
-    const [first] = validBidRequests;
-    if (!first) {
-      return [];
-    }
-    return [
-      {
-        method: 'POST',
-        url: environment(first.params).endpoint,
-        data: JSON.stringify({
-          // Prebid repeats bidderRequest.ortb2 on every bid and the bids themselves
-          // under bidderRequest.bids; the SSP reads them once from bidder_request.
-          valid_bid_requests: validBidRequests.map((bid) => ({
-            ...bid,
-            ortb2: undefined,
-            floors: readFloors(bid),
-          })),
-          bidder_request: { ...bidderRequest, bids: undefined },
-          device: { pxratio: window.devicePixelRatio ?? 1 },
-          user: { id: storage.getCookie(PGID_COOKIE) || undefined },
-        }),
-        options: { contentType: 'text/plain' },
-        bidRequests: validBidRequests,
-      },
-    ];
+    const pgid = storage.getCookie(PGID_COOKIE) || undefined;
+    // One request per SSP environment and publisher: the SSP runs one publisher per auction,
+    // and a staging unit on the page must not drag the production units to the staging SSP.
+    return requestGroups(validBidRequests).map((bidRequests) => ({
+      method: 'POST',
+      url: environment(bidRequests[0].params).endpoint,
+      data: JSON.stringify({
+        // Prebid repeats bidderRequest.ortb2 on every bid and the bids themselves
+        // under bidderRequest.bids; the SSP reads them once from bidder_request.
+        valid_bid_requests: bidRequests.map((bid) => ({
+          ...bid,
+          ortb2: undefined,
+          floors: readFloors(bid),
+        })),
+        bidder_request: { ...bidderRequest, bids: undefined },
+        device: { pxratio: window.devicePixelRatio ?? 1 },
+        user: { id: pgid },
+      }),
+      options: { contentType: 'text/plain' },
+      bidRequests,
+    }));
   },
 
   interpretResponse(serverResponse, request) {

@@ -140,6 +140,19 @@ describe('playgamaBidAdapter', function () {
       expect(request.url).to.equal(STAGING_ENDPOINT);
     });
 
+    it('sends one request per environment and publisher, in first-seen order', function () {
+      const production = withParams({});
+      const staging = withParams({ env: 'staging' });
+      const otherPublisher = bidRequest({ bidId: 'bid-2', params: { publisherId: 'pub-2', adUnitId: 'au-1' } });
+
+      const requests = spec.buildRequests([production, staging, otherPublisher, withParams({ env: 'production' })], {});
+
+      expect(requests.map((request) => request.url)).to.deep.equal([PRODUCTION_ENDPOINT, STAGING_ENDPOINT, PRODUCTION_ENDPOINT]);
+      expect(requests.map((request) => request.bidRequests.length)).to.deep.equal([2, 1, 1]);
+      expect(JSON.parse(requests[1].data).valid_bid_requests[0].params.env).to.equal('staging');
+      expect(JSON.parse(requests[2].data).valid_bid_requests[0].params.publisherId).to.equal('pub-2');
+    });
+
     it('ignores an unknown env', function () {
       const [request] = spec.buildRequests([withParams({ env: 'local' })], {});
 
