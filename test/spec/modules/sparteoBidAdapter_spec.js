@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { deepClone, mergeDeep } from 'src/utils';
 import { spec as adapter } from 'modules/sparteoBidAdapter';
+import { config } from 'src/config.js';
 
 const CURRENCY = 'EUR';
 const TTL = 60;
@@ -516,6 +517,36 @@ describe('SparteoAdapter', function () {
 
   describe('getUserSyncs', function () {
     describe('Check methods succeed', function () {
+      afterEach(function () {
+        config.resetConfig();
+      });
+
+      // `isSynced` is a module-level flag that only ever flips false -> true, never back (it is
+      // never reset between tests since the module is loaded once for the whole spec run). The COPPA
+      // test must therefore run BEFORE the sync url test below: it returns before the flag is touched,
+      // so the next test passing is also the proof that the COPPA call marked nothing as synced.
+      it('returns no sync when the publisher flags the page as subject to COPPA', function () {
+        config.setConfig({ coppa: true });
+        const syncOptions = {
+          'iframeEnabled': true,
+          'pixelEnabled': false
+        };
+        const gdprConsent = {
+          gdprApplies: 1,
+          consentString: 'tcfv2'
+        };
+        const uspConsent = {
+          consentString: '1YNN'
+        };
+
+        const result = adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent);
+
+        // `[]`, not a falsy value: the core marks the bidder as done with syncs for the page only when
+        // it gets a truthy value, and a page once flagged must not sync until it is reloaded.
+        expect(result).to.deep.equal([]);
+        expect(window.sparteoCrossfire).to.be.undefined;
+      });
+
       it('should return the sync url', function () {
         const syncOptions = {
           'iframeEnabled': true,
@@ -526,12 +557,12 @@ describe('SparteoAdapter', function () {
           consentString: 'tcfv2'
         };
         const uspConsent = {
-          consentString: '1Y---'
+          consentString: '1YNN'
         };
 
         const syncUrls = [{
           type: 'iframe',
-          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1Y---'
+          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1YNN'
         }];
 
         expect(adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent)).to.deep.equal(syncUrls);
