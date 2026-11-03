@@ -52,6 +52,12 @@ describe('adLoader', function () {
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
+    it('accepts null document', async () => {
+      adLoader.loadExternalScript('test-null-doc', MODULE_TYPE_PREBID, 'test', null, null);
+      await flush();
+      sinon.assert.calledWith(utilsinsertElementStub, sinon.match.any, document);
+    });
+
     it('returns the inserted script tag', function () {
       const result = adLoader.loadExternalScript('test-return', MODULE_TYPE_PREBID, 'debugging');
       expect(result).to.be.instanceOf(HTMLScriptElement);

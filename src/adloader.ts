@@ -21,6 +21,7 @@ function makeLoader(mkTag) {
   let loaders;
 
   function load(doc, url, attrs?, beforeLoad?) {
+    doc = doc ?? document;
     if (!loaders.has(doc)) {
       const tags = new Map();
       const loader = memoize((url, attrs, beforeLoad) => {
