@@ -3304,7 +3304,7 @@ describe('Unit: Prebid Module', function () {
         }
       });
 
-      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', async function () {
+      it('should allow creation of a fpd.context.pbAdSlot property on a single adUnit from inside the event handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
