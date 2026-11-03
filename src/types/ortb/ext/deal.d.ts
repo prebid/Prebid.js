@@ -24,4 +24,8 @@ export type DealExt = Partial<{
    * Relative precedence among deals.
    */
   priority: number;
+  /**
+   * Who validated the deal metadata; Prebid Server sets "adserver" on metadata from bidders listed in `ext.prebid.as.apb`.
+   */
+  source: string;
 }>;

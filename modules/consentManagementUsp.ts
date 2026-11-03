@@ -10,7 +10,7 @@ import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';
 import { getHook } from '../src/hook.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
 import type { USPConsentData } from "../src/types/consent/usp.d.ts";
@@ -22,13 +22,20 @@ const USPAPI_VERSION = 1;
 export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
+let waitForCmp = false;
 
-type BaseUSPConfig = {
+export type BaseUSPConfig = {
   /**
    * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
    * Default is 50.
    */
   timeout?: number;
+  /**
+   * Wait for a CMP API that is not present when consent lookup begins.
+   * This supports non-compliant integrations that load the CMP stub late and defaults to false.
+   * The CMP is looked for every 100ms, until `timeout` - which should then be set well above its default of 50ms.
+   */
+  waitForCmp?: boolean;
 };
 
 type StaticUSPData = {
@@ -36,7 +43,7 @@ type StaticUSPData = {
     uspString: USPConsentData;
   }
 };
-type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
+export type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
 
 declare module '../src/consentHandler' {
   interface ConsentManagementConfig {
@@ -72,8 +79,10 @@ function lookupStaticConsentData({ onSuccess, onError }) {
  * This function handles interacting with an USP compliant consent manager to obtain the consent information of the user.
  * Given the async nature of the USP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
+ *
+ * @returns a function that stops looking for the CMP.
  */
-function lookupUspConsent({ onSuccess, onError }) {
+function lookupUspConsent({ onSuccess, onError }): () => void {
   function handleUspApiResponseCallbacks() {
     const uspResponse = {} as any;
 
@@ -97,39 +106,41 @@ function lookupUspConsent({ onSuccess, onError }) {
 
   const callbackHandler = handleUspApiResponseCallbacks();
 
-  const cmp = cmpClient({
+  function setupCmp(cmp) {
+    if (cmp.isDirect) {
+      logInfo('Detected USP CMP is directly accessible, calling it now...');
+    } else {
+      logInfo(
+        'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
+      );
+    }
+
+    cmp({
+      command: 'getUSPData',
+      callback: callbackHandler.consentDataCallback
+    });
+
+    if (!deletionRequestRegistered) {
+      deletionRequestRegistered = true;
+      cmp({
+        command: 'registerDeletion',
+        callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
+      }).catch(e => {
+        deletionRequestRegistered = false;
+        logError('Error invoking CMP `registerDeletion`:', e);
+      });
+    }
+  }
+
+  return pollForCmp(() => cmpClient({
     apiName: '__uspapi',
     apiVersion: USPAPI_VERSION,
     apiArgs: ['command', 'version', 'callback'],
-  }) as any;
-
-  if (!cmp) {
-    return onError('USP CMP not found.');
-  }
-
-  if (cmp.isDirect) {
-    logInfo('Detected USP CMP is directly accessible, calling it now...');
-  } else {
-    logInfo(
-      'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
-    );
-  }
-
-  cmp({
-    command: 'getUSPData',
-    callback: callbackHandler.consentDataCallback
+  }), {
+    onFound: setupCmp,
+    onMissing: () => onError('USP CMP not found.'),
+    wait: waitForCmp
   });
-
-  if (!deletionRequestRegistered) {
-    deletionRequestRegistered = true;
-    cmp({
-      command: 'registerDeletion',
-      callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
-    }).catch(e => {
-      deletionRequestRegistered = false;
-      logError('Error invoking CMP `registerDeletion`:', e);
-    });
-  }
 }
 
 /**
@@ -141,11 +152,18 @@ function lookupUspConsent({ onSuccess, onError }) {
 function loadConsentData(cb?) {
   let timer = null;
   let isDone = false;
+  let stopLookup;
 
   function done(consentData, errMsg, ...extraArgs) {
+    if (isDone) {
+      // the auction has moved on, but consent that arrives late is still good for the next one
+      consentData != null && uspDataHandler.setConsentData(consentData);
+      return;
+    }
     if (timer != null) {
       clearTimeout(timer);
     }
+    stopLookup?.();
     isDone = true;
     uspDataHandler.setConsentData(consentData);
     if (cb != null) {
@@ -165,7 +183,7 @@ function loadConsentData(cb?) {
     }
   };
 
-  uspCallMap[consentAPI](callbacks);
+  stopLookup = uspCallMap[consentAPI](callbacks);
 
   if (!isDone) {
     if (consentTimeout === 0) {
@@ -232,10 +250,12 @@ function storeUspConsentData(consentObject) {
  */
 export function resetConsentData() {
   consentData = undefined;
+  staticConsentData = undefined;
   consentAPI = undefined;
   consentTimeout = undefined;
   uspDataHandler.reset();
   enabled = false;
+  waitForCmp = false;
 }
 
 /**
@@ -244,6 +264,7 @@ export function resetConsentData() {
  */
 export function setConsentConfig(config) {
   config = config && config.usp;
+  staticConsentData = undefined;
   if (!config || typeof config !== 'object') {
     logWarn('consentManagement.usp config not defined, using defaults');
   }
@@ -260,6 +281,7 @@ export function setConsentConfig(config) {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
+  waitForCmp = config?.waitForCmp === true;
   if (consentAPI === 'static') {
     if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {
       if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };

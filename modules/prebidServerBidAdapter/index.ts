@@ -129,6 +129,10 @@ export type S2SConfig = {
    * Configures the default TTL in the Prebid Server adapter to use when Prebid Server does not return a bid TTL.
    * Defaults to 60.
    */
+  defaultTtl?: number;
+  /**
+   * @deprecated use defaultTtl
+   */
   defaultTTL?: number;
   /**
    * Arguments will be added to resulting OpenRTB payload to Prebid Server in every impression object at request.imp[].ext.BIDDER

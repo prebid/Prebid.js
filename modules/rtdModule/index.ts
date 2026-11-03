@@ -36,7 +36,7 @@ let _userConsent;
  *
  * @param {Object} submodule The RTD submodule to register.
  * @param {string} submodule.name The name of the RTD submodule.
- * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
+ * @param {number|number[]} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
  * @param {number} [submodule.acpId] The Google Additional Consent provider ID of the RTD submodule.
  */
 export function attachRealTimeDataProvider(submodule) {

@@ -69,6 +69,9 @@ module.exports = [
   {
     ignores: [
       'integrationExamples/**/*',
+      // do not lint worktrees created by claude/gemini
+      '.claude/**',
+      '.gemini/**',
       // do not lint build-related stuff
       '*.js',
       '*.mjs',
@@ -78,7 +81,7 @@ module.exports = [
       'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
-      'web-bundler'
+      'web-bundler',
     ],
   },
   jsdoc.configs['flat/recommended'],
@@ -156,7 +159,7 @@ module.exports = [
         },
         {
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
-          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Assigning a function to 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
       ],
       'no-restricted-imports': [
@@ -351,9 +354,9 @@ module.exports = [
   // Override: allow loadExternalScript import in approved files (excluding BidAdapters)
   {
     files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.filter(p => !p.includes('BidAdapter')).map(p => {
-      // If path doesn't end with .js/.ts/.mjs, treat as folder pattern
-      if (!p.match(/\.(js|ts|mjs)$/)) {
-        return `${p}/**/*.{js,ts,mjs}`;
+      // If path doesn't end with .js/.ts/.mjs/.mts, treat as folder pattern
+      if (!p.match(/\.(js|ts|mjs|mts)$/)) {
+        return `${p}/**/*.{js,ts,mjs,mts}`;
       }
       return p;
     }),

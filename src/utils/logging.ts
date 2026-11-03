@@ -2,6 +2,7 @@ import { config } from "../config.ts";
 import { debugTurnedOn } from "./debug.ts";
 import { EVENTS } from "../constants.ts";
 import type { emit } from '../events.ts';
+import type { BidderCode } from "../types/common.d.ts";
 
 const LEVELS = {
   'log': 'MESSAGE',
@@ -12,7 +13,8 @@ const LEVELS = {
 
 export type DebugEvent = {
   type: 'WARNING' | 'ERROR',
-  arguments: any[]
+  arguments: any[],
+  bidder: BidderCode | null
 };
 
 declare module '../events' {
@@ -45,7 +47,7 @@ function makeLogger<L extends keyof typeof LEVELS>(level: L, emit = false): (typ
       logFn.apply(console, decorateLog(args, prefix));
     }
     if (emit) {
-      emitEvent(EVENTS.AUCTION_DEBUG, { type: LEVELS[level] as DebugEvent['type'], arguments: args });
+      emitEvent(EVENTS.AUCTION_DEBUG, { type: LEVELS[level] as DebugEvent['type'], arguments: args, bidder: config.getCurrentBidder() ?? null });
     }
   };
 }

@@ -321,7 +321,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     bidRequests: proxyBidRequests,
     context: {
       currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
-      ttl: s2sBidRequest.s2sConfig.defaultTtl || DEFAULT_S2S_TTL,
+      ttl: s2sBidRequest.s2sConfig.defaultTtl || s2sBidRequest.s2sConfig.defaultTTL || DEFAULT_S2S_TTL,
       requestTimestamp,
       s2sBidRequest: {
         ...s2sBidRequest,

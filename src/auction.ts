@@ -796,8 +796,6 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
 
   // a publisher-defined renderer can be used to render bids
   const bidRequest = index.getBidRequest(bid);
-  const bidRenderer = bidRequest?.renderer || adUnit?.renderer;
-  const bidSafeRenderer = bidRequest?.safeRenderer || adUnit?.safeRenderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;
@@ -807,22 +805,11 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   const mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
   const mediaTypeSafeRenderer = bidMediaType && bidMediaType.safeRenderer;
 
-  let renderer = null;
+  const renderer = [mediaTypeRenderer, bidRequest?.renderer, adUnit?.renderer]
+    .find(candidate => candidate?.render && !(candidate.backupOnly === true && bid.renderer));
 
-  // the renderer for the mediaType takes precendence
-  if (mediaTypeRenderer && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
-    renderer = mediaTypeRenderer;
-  } else if (bidRenderer && bidRenderer.render && !(bidRenderer.backupOnly === true && bid.renderer)) {
-    renderer = bidRenderer;
-  }
-
-  let safeRenderer: SafeRendererConfig | undefined = null;
-
-  if (mediaTypeSafeRenderer && mediaTypeSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
-    safeRenderer = mediaTypeSafeRenderer;
-  } else if (bidSafeRenderer && bidSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
-    safeRenderer = bidSafeRenderer;
-  }
+  const safeRenderer: SafeRendererConfig | undefined = [mediaTypeSafeRenderer, bidRequest?.safeRenderer, adUnit?.safeRenderer]
+    .find(candidate => candidate?.url && !(candidate.backupOnly === true && bid.safeRenderer));
 
   if (safeRenderer != null) {
     bid.safeRenderer = safeRenderer;
