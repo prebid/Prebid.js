@@ -7,6 +7,7 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, { PBS_ADAPTER_NAME } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
+import * as userSyncModule from 'src/userSync.js';
 import * as gzip from 'src/utils/gzip.js';
 import { deepAccess, deepClone, getWinDimensions } from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
@@ -3359,14 +3360,14 @@ describe('S2S Adapter', function () {
   describe('response handler', function () {
     beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
-      sinon.stub(utils, 'insertUserSyncIframe');
+      sinon.stub(userSyncModule, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
       sinon.stub(events, 'emit');
     });
 
     afterEach(function () {
       utils.triggerPixel.restore();
-      utils.insertUserSyncIframe.restore();
+      userSyncModule.insertUserSyncIframe.restore();
       utils.logError.restore();
       events.emit.restore();
     });
@@ -3982,7 +3983,7 @@ describe('S2S Adapter', function () {
       });
 
       Object.entries({
-        iframe: () => utils.insertUserSyncIframe,
+        iframe: () => userSyncModule.insertUserSyncIframe,
         image: () => utils.triggerPixel,
       }).forEach(([type, syncer]) => {
         it(`passes timeout to ${type} syncs`, () => {
@@ -4019,7 +4020,7 @@ describe('S2S Adapter', function () {
     });
 
     beforeEach(function () {
-      sinon.stub(utils, 'insertUserSyncIframe');
+      sinon.stub(userSyncModule, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
       sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => {
         uniqueIdCount++;
@@ -4038,7 +4039,7 @@ describe('S2S Adapter', function () {
 
     afterEach(function () {
       utils.politeTriggerPixel.resetHistory();
-      utils.insertUserSyncIframe.restore();
+      userSyncModule.insertUserSyncIframe.restore();
       utils.logError.restore();
       utils.getUniqueIdentifierStr.restore();
       uniqueIdCount = 0;
