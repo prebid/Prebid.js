@@ -134,6 +134,19 @@ describe('user sync', function () {
       }
     });
 
+    it('should configure automatic iframe removal from userSync.removeIframes', function () {
+      const setStub = sinon.stub(utils, 'setSyncIframeRemoval');
+      try {
+        config.setConfig({ userSync: { removeIframes: { withChildFrames: 1000, all: false } } });
+        sinon.assert.calledWith(setStub, { withChildFrames: 1000, all: false });
+        config.setConfig({ userSync: { removeIframes: false } });
+        sinon.assert.calledWith(setStub, false);
+      } finally {
+        setStub.restore();
+        config.resetConfig();
+      }
+    });
+
     it('should pass the withChildFrames option through', function () {
       const removeStub = sinon.stub(utils, 'removeUserSyncIframes').returns(1);
       try {

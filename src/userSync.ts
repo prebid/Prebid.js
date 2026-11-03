@@ -1,5 +1,5 @@
 import {
-  deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
+  deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray, setSyncIframeRemoval,
   logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeInsertUserSyncIframe, politeTriggerPixel,
   removeUserSyncIframes
 } from './utils.js';
@@ -73,6 +73,18 @@ export interface UserSyncConfig {
    * Can be toggled via `setConfig({userSync: {usePoliteSync: ...}})`. Default: false.
    */
   usePoliteSync?: boolean;
+  /**
+   * Remove sync iframes automatically, some time after each one loads. Delays are in milliseconds:
+   * - `withChildFrames`: remove the iframe at this point if it has created frames of its own (syncs that fan out
+   *   into many nested frames). Default: 3000.
+   * - `all`: remove the iframe at this point regardless. Default: 15000.
+   *
+   * Set either to `false` to turn it off, or set `removeIframes: false` to keep sync iframes for the life of the page.
+   */
+  removeIframes?: false | {
+    withChildFrames?: number | false;
+    all?: number | false;
+  };
 }
 
 export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
@@ -93,6 +105,8 @@ export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
 config.setDefaults({
   'userSync': deepClone(USERSYNC_DEFAULT_CONFIG)
 });
+
+config.getConfig('userSync', (conf) => setSyncIframeRemoval(conf.userSync?.removeIframes));
 
 const storage = getCoreStorageManager('usersync');
 

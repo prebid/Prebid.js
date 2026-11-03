@@ -1,6 +1,7 @@
 import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
-import { TARGETING_KEYS } from 'src/constants.js';
+import { EVENTS, TARGETING_KEYS } from 'src/constants.js';
+import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import {
   binarySearch,
@@ -1778,6 +1779,80 @@ describe('user sync iframes', () => {
       expect(utils.removeUserSyncIframes({ withChildFrames: true })).to.equal(0);
       expect(newIframes().length).to.equal(1);
       expect(utils.removeUserSyncIframes()).to.equal(1);
+    });
+  });
+
+  describe('automatic removal after load', () => {
+    let clock;
+
+    function addChildFrame(iframe) {
+      const doc = iframe.contentDocument;
+      (doc.body ?? doc.documentElement).appendChild(doc.createElement('iframe'));
+    }
+
+    function insertLoaded() {
+      utils.insertUserSyncIframe('about:blank');
+      const iframe = newIframes().pop();
+      // about:blank may already have fired load on insertion; the listener only runs once either way
+      iframe.dispatchEvent(new Event('load'));
+      return iframe;
+    }
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      utils.setSyncIframeRemoval();
+    });
+
+    afterEach(() => {
+      clock.restore();
+      utils.setSyncIframeRemoval();
+    });
+
+    it('removes a sync iframe that created frames 3s after it loads, with a warning', () => {
+      const warnings = [];
+      const onDebug = ({ type, arguments: args }) => type === 'WARNING' && warnings.push(args.join(' '));
+      events.on(EVENTS.AUCTION_DEBUG, onDebug);
+      try {
+        const iframe = insertLoaded();
+        addChildFrame(iframe);
+        clock.tick(2999);
+        expect(iframe.parentNode).to.not.equal(null);
+        clock.tick(1);
+        expect(iframe.parentNode).to.equal(null);
+        expect(warnings.some(warning => warning.includes('created 1 frame(s)'))).to.equal(true);
+      } finally {
+        events.off(EVENTS.AUCTION_DEBUG, onDebug);
+      }
+    });
+
+    it('removes the remaining sync iframes 15s after they load', () => {
+      const onCleanup = sinon.spy();
+      utils.insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+      const iframe = newIframes().pop();
+      iframe.dispatchEvent(new Event('load'));
+      clock.tick(3000);
+      expect(iframe.parentNode).to.not.equal(null);
+      clock.tick(12000);
+      expect(iframe.parentNode).to.equal(null);
+      expect(onCleanup.calledOnce).to.equal(true);
+    });
+
+    it('honors custom delays', () => {
+      utils.setSyncIframeRemoval({ withChildFrames: false, all: 1000 });
+      const iframe = insertLoaded();
+      addChildFrame(iframe);
+      clock.tick(999);
+      expect(iframe.parentNode).to.not.equal(null);
+      clock.tick(1);
+      expect(iframe.parentNode).to.equal(null);
+    });
+
+    it('can be turned off', () => {
+      utils.setSyncIframeRemoval(false);
+      const iframe = insertLoaded();
+      addChildFrame(iframe);
+      clock.tick(60000);
+      expect(iframe.parentNode).to.not.equal(null);
     });
   });
 

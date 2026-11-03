@@ -456,10 +456,53 @@ export function insertUserSyncIframe(url, done, timeout, onCleanup) {
     display: 'none'
   });
   OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
+  iframe.addEventListener('load', () => scheduleSyncIframeRemoval(iframe), { once: true });
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
+}
+
+const DEFAULT_SYNC_IFRAME_REMOVAL = { withChildFrames: 3000, all: 15000 };
+let syncIframeRemoval = DEFAULT_SYNC_IFRAME_REMOVAL;
+
+/**
+ * Configure the automatic removal of sync iframes (`userSync.removeIframes`).
+ * @param {false|{withChildFrames?: number|false, all?: number|false}} [settings] delays in milliseconds
+ *   after an iframe loads: `withChildFrames` removes it then if it has created frames of its own, `all`
+ *   removes it then regardless. `false` turns off one or both; undefined uses the defaults.
+ */
+export function setSyncIframeRemoval(settings) {
+  syncIframeRemoval = settings === false ? {} : { ...DEFAULT_SYNC_IFRAME_REMOVAL, ...settings };
+}
+
+function scheduleSyncIframeRemoval(iframe) {
+  const { withChildFrames, all } = syncIframeRemoval;
+  if (typeof withChildFrames === 'number') {
+    setTimeout(() => {
+      const frames = OWN_SYNC_IFRAMES.has(iframe) ? childFrameCount(iframe) : 0;
+      if (frames > 0) {
+        logWarn(`Removing user sync iframe that created ${frames} frame(s) of its own: ${iframe.src}`);
+        removeSyncIframe(iframe);
+      }
+    }, withChildFrames);
+  }
+  if (typeof all === 'number') {
+    setTimeout(() => {
+      if (OWN_SYNC_IFRAMES.has(iframe)) removeSyncIframe(iframe);
+    }, all);
+  }
+}
+
+function removeSyncIframe(iframe) {
+  const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
+  OWN_SYNC_IFRAMES.delete(iframe);
+  try {
+    onCleanup?.();
+  } catch (error) {
+    logError('Error cleaning up user sync iframe', error);
+  }
+  iframe.parentNode?.removeChild(iframe);
 }
 
 /**
@@ -488,16 +531,7 @@ export function removeUserSyncIframes({ withChildFrames = false } = {}) {
   const iframes = Array.from(document.querySelectorAll('iframe'))
     .filter(iframe => OWN_SYNC_IFRAMES.has(iframe))
     .filter(iframe => !withChildFrames || childFrameCount(iframe) > 0);
-  iframes.forEach(iframe => {
-    const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
-    OWN_SYNC_IFRAMES.delete(iframe);
-    try {
-      onCleanup?.();
-    } catch (error) {
-      logError('Error cleaning up user sync iframe', error);
-    }
-    iframe.parentNode?.removeChild(iframe);
-  });
+  iframes.forEach(removeSyncIframe);
   return iframes.length;
 }
 
