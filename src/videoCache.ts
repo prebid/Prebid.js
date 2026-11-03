@@ -257,19 +257,16 @@ export function store(bids: VideoBid[], done: VideoCacheStoreCallback = (_error,
 }
 
 export function getCacheUrl(cacheUrl, id) {
+  let url;
   try {
-    const url = new URL(cacheUrl);
-    url.searchParams.set('uuid', id);
-    return url.toString();
+    url = new URL(cacheUrl, document.baseURI);
   } catch (e) {
-    // Relative URLs cannot be parsed without a base. Keep fragments after the
-    // query string so the UUID is actually sent to the cache server.
-    const fragmentIndex = cacheUrl.indexOf('#');
-    const base = fragmentIndex === -1 ? cacheUrl : cacheUrl.slice(0, fragmentIndex);
-    const fragment = fragmentIndex === -1 ? '' : cacheUrl.slice(fragmentIndex);
-    const separator = base.includes('?') ? '&' : '?';
-    return `${base}${separator}uuid=${encodeURIComponent(id)}${fragment}`;
+    return `${cacheUrl}?uuid=${encodeURIComponent(id)}`;
   }
+  const params = url.search.replace(/^\?/, '').split('&').filter(param => param && param.split('=')[0] !== 'uuid');
+  params.push(`uuid=${encodeURIComponent(id)}`);
+  url.search = `?${params.join('&')}`;
+  return url.toString();
 }
 
 export const storeLocally = (bid) => {
