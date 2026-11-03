@@ -158,8 +158,12 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run, so the session's idle
   timeout is raised to BrowserStack's maximum (300 s).
-- The `vitest-browserstack` job in `vitest-webpack.yml` runs the 8 chunks one at a time, only when the BrowserStack
-  secrets are available (not on fork PRs), and waits until two sessions are free so it never takes the last one
+- `VITEST_BROWSERSTACK=1` is only the switch that picks BrowserStack over Playwright for a run. CI doesn't
+  need it turned on: the `vitest-browserstack` job in `vitest-webpack.yml` runs on every run of that workflow
+  wherever the BrowserStack secrets are available, as Karma's BrowserStack job does (neither runs on fork PRs).
+  For now the workflow's `paths:` filter limits all its jobs to PRs that touch the trial; that filter goes when
+  Vitest is promoted (#16007).
+- The job runs the 8 chunks one at a time and waits until two sessions are free, so it never takes the last one
   from Karma's BrowserStack job or the ES5 e2e job.
 
 ## Status

@@ -227,13 +227,13 @@ jobs:
       - name: Precompile
         run: npx gulp precompile
       - name: BrowserStack env setup
-        uses: browserstack/github-actions/setup-env@master
+        uses: browserstack/github-actions/setup-env@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
         with:
           username: ${{ secrets.BROWSERSTACK_USER_NAME }}
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
           build-name: Vitest run ${{ github.run_id }}, attempt ${{ github.run_attempt }}, chunk ${{ matrix.chunk }}, ${{ github.ref }}
       - name: BrowserStack Local setup
-        uses: browserstack/github-actions/setup-local@master
+        uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
         with:
           local-testing: start
           local-identifier: random
@@ -254,6 +254,6 @@ jobs:
         run: npm run test:vitest
       - name: BrowserStack Local stop
         if: ${{ always() }}
-        uses: browserstack/github-actions/setup-local@master
+        uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
         with:
           local-testing: stop
