@@ -2588,8 +2588,9 @@ describe('setting null as rule value', () => {
     });
     server.respond();
 
-    const floorsData = getFloorsDataForAuction(basicBidRequest.auctionId);
-    expect(floorsData && floorsData.data && floorsData.data.values && floorsData.data.values['banner|600x300']).to.equal(null);
+    const auctionFloors = _floorDataForAuction[basicBidRequest.auctionId];
+    expect(auctionFloors, 'auction floor data should be stored').to.exist;
+    expect(auctionFloors.data.values['banner|600x300']).to.equal(null);
 
     const inputParams = { mediaType: 'banner', size: [600, 300] };
 
