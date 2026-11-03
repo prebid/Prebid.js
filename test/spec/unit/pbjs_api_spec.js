@@ -1021,6 +1021,9 @@ describe('Unit: Prebid Module', function () {
 
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
+      slots.forEach(function(slot) {
+        slot.setTargeting('hb_pb', 'stale');
+      });
 
       pbjs.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
@@ -1032,9 +1035,8 @@ describe('Unit: Prebid Module', function () {
         });
 
         expect(targeting['pos1']).to.equal('750x350'); // non prebid targeting that was set should still be there
-        // ensure that all of the keys with the hb_ prefix have values with length === 0, ignore other keys
-        const hasNoPrebidTargetingValues = Object.keys(targeting).every(targetKey => (targetKey.startsWith('hb_') && targeting[targetKey] === null) || !targetKey.startsWith('hb_'));
-        expect(hasNoPrebidTargetingValues).to.equal(true);
+        // ensure stale prebid targeting is cleared when no bids are returned
+        expect(targeting['hb_pb']).to.equal(null);
       });
     });
 
