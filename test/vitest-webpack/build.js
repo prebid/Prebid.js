@@ -15,7 +15,8 @@
 //   TEST_CHUNK     which chunk to build (1-based); omit to build every spec
 //   TEST_PAT       spec file pattern (default *_spec.js)
 //   VITEST_SOURCEMAPS=1  emit inline source maps (slower, larger)
-//   VITEST_COVERAGE=1    instrument with babel-plugin-istanbul, as karma does with coverage on
+//   VITEST_COVERAGE=1    instrument with babel-plugin-istanbul, as karma does with coverage on, and write
+//                        lcov to build/coverage/chunks/<chunk>/lcov.info (see README.md, "Coverage")
 //
 // Run `npx gulp precompile` first, exactly as for `test-only-nobuild`.
 const path = require('path');
@@ -92,7 +93,9 @@ function makeConfig ({ groups, pipeline }) {
   config.entry = Object.fromEntries(groups.map(group => {
     return [group.name, [...pre, ...group.specs, ...post].map(f => helpers.getPrecompiledPath(f))];
   }));
-  config.devtool = process.env.VITEST_SOURCEMAPS ? 'inline-source-map' : false;
+  // with coverage, source maps also let babel-plugin-istanbul record each file's inputSourceMap, which
+  // coverage.js uses to map counters back to the original sources (as karma-coverage does)
+  config.devtool = process.env.VITEST_SOURCEMAPS || coverage ? 'inline-source-map' : false;
   config.output = {
     ...config.output,
     path: SCRIPTS,

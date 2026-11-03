@@ -1,8 +1,9 @@
 name: Vitest runner trial (non-blocking)
 
 # Runs the existing unit specs, bundled by Karma's own webpack/Babel config,
-# under Vitest Browser Mode in Chromium, chunked like the Karma job. This is
-# a trial alongside Karma (prebid/Prebid.js#10806); Karma remains the gate.
+# under Vitest Browser Mode in Chromium, Firefox, WebKit, Edge and Chrome 113,
+# chunked like the Karma job. This is a trial alongside Karma
+# (prebid/Prebid.js#10806); Karma remains the gate.
 on:
   workflow_dispatch:
   pull_request:
@@ -29,6 +30,8 @@ jobs:
         include:
           - variant: default
             precompile: npx gulp precompile
+            # like Karma, coverage comes from the default variant
+            coverage: '1'
           - variant: all-features-disabled
             precompile: npx gulp precompile-all-features-disabled
     runs-on: ubuntu-latest
@@ -66,4 +69,106 @@ jobs:
         env:
           TEST_CHUNKS: '8'
           TEST_CHUNK: ${{ matrix.chunk }}
+          VITEST_COVERAGE: ${{ matrix.coverage }}
+        run: npm run test:vitest
+      - name: Upload coverage
+        if: ${{ matrix.coverage && !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-coverage-${{ matrix.chunk }}
+          # build/coverage/chunks/<chunk>/lcov.info, the layout Karma's coverage jobs produce
+          path: build/coverage/chunks
+          if-no-files-found: error
+
+  # Combines the chunks the way .github/actions/combine-coverage does for Karma, so the totals in the
+  # job summary can be compared with Karma's coverage report (#16004).
+  vitest-coverage:
+    name: Vitest coverage
+    needs: [vitest]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: vitest-coverage-*
+          path: build/coverage/chunks
+          merge-multiple: true
+      - name: Combine coverage results
+        run: |
+          # a chunk that failed before writing coverage would otherwise leave a plausible but partial total
+          for chunk in 1 2 3 4 5 6 7 8; do
+            if [ ! -s "build/coverage/chunks/$chunk/lcov.info" ]; then
+              echo "::error::No coverage for chunk $chunk; not combining a partial result"
+              exit 1
+            fi
+          done
+          sudo apt-get update
+          sudo apt-get install lcov -y
+          find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info
+          { echo '### Vitest coverage'; echo '```'; lcov --summary coverage.info 2>&1; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vitest-coverage
+          path: coverage.info
+
+  # The rest of Karma's runner browsers (.github/workflows/browser_testing.json), on the same runner OS
+  # as their Karma jobs. Like Karma, only the default variant runs on these; BrowserStack is #16006.
+  vitest-browsers:
+    name: Vitest ${{ matrix.browser }} (chunk ${{ matrix.chunk }})
+    strategy:
+      fail-fast: false
+      matrix:
+        chunk: [1, 2, 3, 4, 5, 6, 7, 8]
+        browser: [Firefox, WebKit, Edge, Chrome 113]
+        include:
+          # Karma: FirefoxHeadless on ubuntu-latest
+          - browser: Firefox
+            runs-on: ubuntu-latest
+            vitest-browser: firefox
+            playwright: firefox
+          # Karma: SafariNative on macos-latest. Playwright's WebKit is the closest thing it can drive.
+          - browser: WebKit
+            runs-on: macos-latest
+            vitest-browser: webkit
+            playwright: webkit
+          # Karma: EdgeHeadless on windows-latest, which has Microsoft Edge installed
+          - browser: Edge
+            runs-on: windows-latest
+            channel: msedge
+          # Karma: "ChromeNoSandbox 113", the same binary from @puppeteer/browsers (see run-tests.yml)
+          - browser: Chrome 113
+            runs-on: ubuntu-latest
+            chrome-version: 113.0.5672.0
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install browser
+        if: ${{ matrix.playwright }}
+        run: npx playwright install --with-deps ${{ matrix.playwright }}
+      - name: Install Chrome ${{ matrix.chrome-version }}
+        if: ${{ matrix.chrome-version }}
+        env:
+          CHROME_VERSION: ${{ matrix.chrome-version }}
+        run: |
+          out=($(npx @puppeteer/browsers install "chrome@$CHROME_VERSION"))
+          echo "VITEST_EXECUTABLE_PATH=${out[1]}" >> "$GITHUB_ENV"
+      - name: Precompile
+        run: npx gulp precompile
+      - name: Build and run chunk ${{ matrix.chunk }}
+        env:
+          TEST_CHUNKS: '8'
+          TEST_CHUNK: ${{ matrix.chunk }}
+          VITEST_BROWSER: ${{ matrix.vitest-browser }}
+          VITEST_CHANNEL: ${{ matrix.channel }}
         run: npm run test:vitest

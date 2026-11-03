@@ -1,6 +1,8 @@
 // Vitest Browser Mode as the runner for bundles produced by Karma's webpack config (see README.md).
 // Run `npx gulp precompile`, then `npm run test:vitest`: it builds the bundles with build.js (env vars
 // documented there) and runs them. Needs a browser once: `npx playwright install chromium`.
+import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
@@ -13,6 +15,29 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 // Off by default: pages running at once share one origin's storage, which Karma's sequential chunks never do.
 const parallel = Number(process.env.VITEST_PARALLEL);
 const maxPages = parallel >= 2 ? parallel : 3;
+
+const bundles = path.join(root, 'build/vitest-bundles');
+const rawCoverage = path.join(root, 'build/vitest-coverage');
+
+// Which browser runs the bundles, standing in for Karma's matrix (.github/workflows/browser_testing.json):
+//   VITEST_BROWSER=chromium|firefox|webkit  Playwright browser (default chromium)
+//   VITEST_CHANNEL=chrome|msedge            installed Google Chrome / Microsoft Edge (chromium only)
+//   VITEST_EXECUTABLE_PATH=<path>           a fixed binary, e.g. the Chrome 113 that Karma's
+//                                           "ChromeNoSandbox 113" job installs with @puppeteer/browsers
+const browserName = process.env.VITEST_BROWSER || 'chromium';
+const launchOptions = {
+  ...(process.env.VITEST_CHANNEL ? { channel: process.env.VITEST_CHANNEL } : {}),
+  ...(process.env.VITEST_EXECUTABLE_PATH ? { executablePath: process.env.VITEST_EXECUTABLE_PATH } : {}),
+  // the prefs karma-firefox-launcher writes that bear on tests: no popup blocking, no slow-script
+  // dialog, and karma's background timer clamp
+  ...(browserName === 'firefox' ? {
+    firefoxUserPrefs: {
+      'dom.disable_open_during_load': false,
+      'dom.max_script_run_time': 0,
+      'dom.min_background_timeout_value': 10,
+    },
+  } : {}),
+};
 
 export default defineConfig({
   root,
@@ -35,6 +60,8 @@ export default defineConfig({
     // the failing test's line in the source spec instead.
     reporters: ['default', ...(process.env.GITHUB_ACTIONS ? [new GithubSpecReporter()] : [])],
     setupFiles: ['test/vitest-webpack/setup.mjs'],
+    // clears raw coverage before the run, and writes lcov after it when VITEST_COVERAGE is set
+    globalSetup: ['test/vitest-webpack/globalSetup.mjs'],
     globals: false,
     // Mocha runs after/afterEach hooks in registration order
     sequence: { hooks: 'list' },
@@ -49,14 +76,25 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
-      // VITEST_CHANNEL=chrome runs the installed Google Chrome (what karma launches) instead of Playwright's Chromium
-      provider: playwright(process.env.VITEST_CHANNEL ? { launchOptions: { channel: process.env.VITEST_CHANNEL } } : {}),
-      instances: [{ browser: 'chromium' }],
+      // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking,
+      // no background timer throttling) and --no-sandbox, as karma's ChromeNoSandbox launcher does
+      provider: playwright({ launchOptions }),
+      // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
+      instances: [{ browser: browserName, name: process.env.VITEST_CHANNEL || browserName }],
       screenshotFailures: false,
       // karma's ChromeHeadless window size (Vitest defaults to a 414x896 phone viewport)
       viewport: { width: 800, height: 600 },
       // a page shaped like karma's context.html (no lang attribute, empty title)
       testerHtmlPath: 'test/vitest-webpack/context.html',
+      commands: {
+        // setup.mjs sends a test file's Istanbul counters (window.__coverage__) here, one file per test
+        // file, named after its bundle (e.g. chunks__chunk-1_spec.json); coverage.js turns them into lcov
+        writeCoverage(ctx, json) {
+          const name = path.relative(bundles, ctx.testPath).replace(/\.js$/, '').replace(/[\\/]/g, '__');
+          fs.mkdirSync(rawCoverage, { recursive: true });
+          fs.writeFileSync(path.join(rawCoverage, name + '.json'), json);
+        },
+      },
     },
   },
 });
