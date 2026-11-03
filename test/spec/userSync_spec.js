@@ -268,6 +268,41 @@ describe('user sync', function () {
     expect(syncUsersSpy.called).to.be.true;
   });
 
+  describe('fireBidderSyncs', function () {
+    it('should fire only the syncs of the given bidders and keep the others queued', function () {
+      const userSync = newTestUserSync({ filterSettings: { iframe: { bidders: '*', filter: 'include' } } });
+      userSync.registerSync('iframe', 'early', 'http://example.com/early-iframe');
+      userSync.registerSync('image', 'late', 'http://example.com/late-image');
+      userSync.registerSync('iframe', 'late', 'http://example.com/late-iframe');
+      expect(userSync.canBidderRegisterSync('iframe', 'early')).to.be.true;
+
+      userSync.fireBidderSyncs(['early']);
+      expect(insertUserSyncIframeStub.callCount).to.equal(1);
+      expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/early-iframe');
+      expect(triggerPixelStub.called).to.be.false;
+
+      userSync.syncUsers();
+      expect(insertUserSyncIframeStub.callCount).to.equal(2);
+      expect(insertUserSyncIframeStub.getCall(1).args[0]).to.equal('http://example.com/late-iframe');
+    });
+
+    it('should not fire the same syncs twice', function () {
+      const userSync = newTestUserSync();
+      userSync.registerSync('image', 'early', 'http://example.com/early');
+      userSync.fireBidderSyncs(['early']);
+      userSync.syncUsers();
+      userSync.fireBidderSyncs(['early']);
+      expect(triggerPixelStub.callCount).to.equal(1);
+    });
+
+    it('should not fire anything when the browser does not support sync cookies', function () {
+      const userSync = newTestUserSync({}, true);
+      userSync.registerSync('image', 'early', 'http://example.com/early');
+      userSync.fireBidderSyncs(['early']);
+      expect(triggerPixelStub.called).to.be.false;
+    });
+  });
+
   it('should limit the number of syncs per bidder', function () {
     const userSync = newTestUserSync({ syncsPerBidder: 2 });
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');

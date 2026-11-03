@@ -65,6 +65,12 @@ export interface UserSyncConfig {
    * Can be toggled via `setConfig({userSync: {usePoliteSync: ...}})`. Default: false.
    */
   usePoliteSync?: boolean;
+  /**
+   * Bidders whose user syncs should fire as soon as consent data is available, without waiting for an auction;
+   * '*' means every registered bidder that supports it. Only bidders whose spec sets `supportsPreloadSync` are synced.
+   * Auctions never wait for these syncs.
+   */
+  preloadSyncBidders?: '*' | BidderCode[];
 }
 
 export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
@@ -390,6 +396,26 @@ export function newUserSync(deps) {
     if (usConfig.enableOverride) {
       publicApi.syncUsers();
     }
+  };
+
+  /**
+   * @function fireBidderSyncs
+   * @summary Trigger the queued user syncs of the given bidders, leaving every other bidder's syncs in the queue
+   * @public
+   * @param {string[]} bidders The bidders whose syncs should fire now
+   */
+  publicApi.fireBidderSyncs = (bidders: BidderCode[]) => {
+    const isSelected = ([bidder]) => bidders.includes(bidder);
+    const pending = queue;
+    queue = {
+      image: pending.image.filter(isSelected),
+      iframe: pending.iframe.filter(isSelected)
+    };
+    fireSyncs();
+    queue = {
+      image: pending.image.filter(sync => !isSelected(sync)),
+      iframe: pending.iframe.filter(sync => !isSelected(sync))
+    };
   };
 
   publicApi.removeUserSyncs = () => removeUserSyncIframes();
