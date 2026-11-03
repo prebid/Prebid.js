@@ -123,7 +123,7 @@ export class AdapterHelpers {
     bidResponse.meta.advertiserDomains = bidResponse.meta.advertiserDomains || [];
 
     bidResponse.creativeId = bidResponse.creativeId || `creative-${Date.now()}`;
-    bidResponse.netRevenue = bid.netRevenue || true;
+    bidResponse.netRevenue = bid.netRevenue ?? true;
     bidResponse.currency = CURRENCY;
 
     bidResponse.cpm = bid.cpm;
