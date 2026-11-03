@@ -804,7 +804,7 @@ const adapterManager = {
             // make bid requests
             s2sAdapter.callBids(
               s2sBidRequest,
-              serverBidderRequests,
+              uniqueServerRequests,
               addBidResponse,
               (timedOut) => doneCbs.forEach(done => done(timedOut)),
               s2sAjax
