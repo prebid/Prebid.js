@@ -996,4 +996,12 @@ describe('The getCache function', function () {
       '/cache?keep=1&uuid=id%20%26%20special'
     );
   });
+  it('puts UUID before fragments on relative and protocol-relative URLs', function () {
+    expect(getCacheUrl('/cache?keep=1#fragment', 'new-id')).to.equal(
+      '/cache?keep=1&uuid=new-id#fragment'
+    );
+    expect(getCacheUrl('//cache.example/path#fragment', 'id & special')).to.equal(
+      '//cache.example/path?uuid=id%20%26%20special#fragment'
+    );
+  });
 });
