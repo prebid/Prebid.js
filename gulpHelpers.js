@@ -65,11 +65,24 @@ tokens.forEach((token) => {
   if (token.kind !== 'option') {
     return;
   }
-  const match = booleanSpellings.get(token.name);
-  if (!match || (match.negated && token.value !== undefined)) {
+  const rawOption = typeof token.rawName === 'string'
+    ? token.rawName.replace(/^-+/, '')
+    : undefined;
+  const rawBaseName = rawOption ? rawOption.replace(/^no-/, '') : undefined;
+  const tokenOptionName = booleanSpellings.has(token.name)
+    ? token.name
+    : rawBaseName;
+  const match = tokenOptionName ? booleanSpellings.get(tokenOptionName) : undefined;
+  if (!match) {
     return;
   }
-  argv[match.option] = match.negated ? false : (token.value ?? true);
+
+  const isNegated = rawOption ? rawOption.startsWith('no-') : match.negated;
+  if (isNegated && token.value !== undefined) {
+    return;
+  }
+
+  argv[match.option] = isNegated ? false : (token.value ?? true);
   if (token.name !== match.option) {
     delete argv[token.name];
   }
