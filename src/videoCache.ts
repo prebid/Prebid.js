@@ -262,8 +262,13 @@ export function getCacheUrl(cacheUrl, id) {
     url.searchParams.set('uuid', id);
     return url.toString();
   } catch (e) {
-    const separator = cacheUrl.includes('?') ? '&' : '?';
-    return `${cacheUrl}${separator}uuid=${encodeURIComponent(id)}`;
+    // Relative URLs cannot be parsed without a base. Keep fragments after the
+    // query string so the UUID is actually sent to the cache server.
+    const fragmentIndex = cacheUrl.indexOf('#');
+    const base = fragmentIndex === -1 ? cacheUrl : cacheUrl.slice(0, fragmentIndex);
+    const fragment = fragmentIndex === -1 ? '' : cacheUrl.slice(fragmentIndex);
+    const separator = base.includes('?') ? '&' : '?';
+    return `${base}${separator}uuid=${encodeURIComponent(id)}${fragment}`;
   }
 }
 
