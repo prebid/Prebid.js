@@ -1075,20 +1075,34 @@ describe('adapterManager tests', function () {
       'start': 1462918897460
     }];
 
-    it('passes only the matching server requests to each PBS instance', () => {
-      adapterManager.callBids(getAdUnits(), bidRequests, () => {}, () => {});
+    // With several s2sConfigs, each Prebid Server call must only see the bidder requests for its own bidders.
+    // The PBS adapter copies the shared fields of its request (e.g. `ortb2`, which is merged with bidder-specific
+    // first party data) from the first bidder request it receives, so a call that also receives another
+    // server's bidder requests can send that server's bidder data, and emit BIDDER_DONE / BIDDER_ERROR for
+    // bidders it never called.
+    it('does not send one Prebid Server the bidder requests (and bidder data) meant for another', () => {
+      const requests = utils.deepClone(bidRequests);
+      const [appnexusRequest, pubmaticRequest] = requests;
+      appnexusRequest.ortb2 = { site: { keywords: 'appnexus-only' } };
+      pubmaticRequest.ortb2 = { site: { keywords: 'pubmatic-only' } };
+
+      adapterManager.callBids(getAdUnits(), requests, () => {}, () => {});
       sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
 
-      const receivedTids = [];
+      const sentToServer = {};
       prebidServerAdapterMock.callBids.getCalls().forEach(call => {
-        const [pbsRequest, bidderRequests] = call.args;
-        expect(bidderRequests).to.have.lengthOf(1);
-        const [bidderRequest] = bidderRequests;
-        receivedTids.push(bidderRequest.uniquePbsTid);
-        // Both the ORTB ad units and the request list must belong to the same PBS instance.
-        expect(pbsRequest.ad_units).to.equal(bidderRequest.adUnitsS2SCopy);
+        const [{ s2sConfig }, bidderRequests] = call.args;
+        const server = s2sConfig.accountId;
+        sentToServer[server] = bidderRequests.map(request => request.bidderCode);
+        bidderRequests.forEach(request => {
+          expect(s2sConfig.bidders, `server '${server}' received the '${request.bidderCode}' bidder request`).to.include(request.bidderCode);
+        });
+        expect(
+          bidderRequests[0].ortb2.site.keywords,
+          `server '${server}' would build its request from another server's bidder data`
+        ).to.equal(`${s2sConfig.bidders[0]}-only`);
       });
-      expect(receivedTids).to.have.members(bidRequests.map(request => request.uniquePbsTid));
+      expect(sentToServer).to.eql({ abc: ['appnexus'], def: ['pubmatic'] });
     });
 
     describe('invokes callBids on the S2S adapter', () => {
