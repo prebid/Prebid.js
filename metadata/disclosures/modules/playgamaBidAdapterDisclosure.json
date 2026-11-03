@@ -1,0 +1,18 @@
+{
+  "disclosures": [
+    {
+      "identifier": "_pgid",
+      "type": "cookie",
+      "maxAgeSeconds": 7776000,
+      "cookieRefresh": true,
+      "domains": ["*"],
+      "purposes": [1, 2, 3, 4]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Playgama bidder stores the Playgama user id issued by the SSP on the first-party domain."
+    }
+  ]
+}
