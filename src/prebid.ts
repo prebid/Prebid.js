@@ -25,7 +25,7 @@ import {
   unsupportedBidderMessage
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
-import { userSync } from './userSync.js';
+import { userSync, type RemoveUserSyncsOptions } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { isBidUsable } from './targeting/filters.js';
@@ -459,7 +459,11 @@ declare module './prebidGlobal' {
      * Re-trigger user syncs. Requires the `userSync.enableOverride` config to be set.
      */
     triggerUserSyncs: typeof triggerUserSyncs;
-    removeUserSyncs: () => number;
+    /**
+     * Remove the user sync iframes inserted by this Prebid instance, and return how many were removed.
+     * With `{withChildFrames: true}`, only remove those that have created frames of their own.
+     */
+    removeUserSyncs: (options?: RemoveUserSyncsOptions) => number;
     getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
     getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
     getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
