@@ -2694,7 +2694,7 @@ describe('Unit: Prebid Module', function () {
             });
             const EXPDIR = ['ortb2Imp.banner.expdir', 'mediaTypes.banner.expdir'];
             EXPDIR.forEach(prop => {
-              it(`should make ${prop} avaliable under both ${EXPDIR.join(' and ')}`, async () => {
+              it(`should make ${prop} available under both ${EXPDIR.join(' and ')}`, async () => {
                 au.mediaTypes.banner.sizes = [1, 2];
                 deepSetValue(au, prop, [1, 2]);
                 await runAuction({
