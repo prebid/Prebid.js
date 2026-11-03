@@ -9,8 +9,11 @@ export let fetchExternalScriptStub = createFetchStub();
 
 function createStub() {
   return sinon.stub(adloader, 'loadExternalScript').callsFake((...args) => {
-    if (typeof args[3] === 'function') {
-      args[3]();
+    const callback = args[3];
+    if (typeof callback === 'function') {
+      callback();
+    } else {
+      callback?.success?.();
     }
     return document.createElement('script');
   });

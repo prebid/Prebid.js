@@ -4,6 +4,7 @@ import {
 } from './utils.js';
 import { getGlobal } from './prebidGlobal.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
+import { defer, PbPromise, type Defer } from './utils/promise.js';
 import type { AdUnitCode, Identifier } from './types/common.d.ts';
 
 const pbjsInstance = getGlobal();
@@ -64,7 +65,11 @@ export class Renderer {
   cmd: (() => void)[];
   push: (func: () => void) => void;
   callback: () => void;
-  render: RenderFn;
+  /**
+   * Renders the bid. The returned promise rejects if the renderer script fails to load,
+   * or if the render function or a command given to `push` throws.
+   */
+  render: (...args: any[]) => Promise<void>;
   /**
    * Set by `executeRenderer`; not available before rendering is requested.
    */
@@ -73,6 +78,7 @@ export class Renderer {
    * Set by `setRender`; renderers that were installed without a render function do not have one.
    */
   _render: RenderFn | undefined;
+  private pendingRenders: Defer<void>[];
 
   constructor(options: RendererOptions) {
     const { url, config, id, callback, loaded, adUnitCode, renderNow, requiresVastUrl } = options;
@@ -89,6 +95,7 @@ export class Renderer {
     // queue will be processed
     this.loaded = loaded;
     this.cmd = [];
+    this.pendingRenders = [];
     this.push = func => {
       if (typeof func !== 'function') {
         logError('Commands given to Renderer.push must be wrapped in a function');
@@ -112,15 +119,46 @@ export class Renderer {
         }
       };
 
+      const renderImmediately = () => {
+        try {
+          runRender();
+          return PbPromise.resolve();
+        } catch (e) {
+          return PbPromise.reject(e);
+        }
+      };
+
       if (isRendererPreferredFromAdUnit(adUnitCode)) {
         logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
-        runRender();
+        return renderImmediately();
       } else if (renderNow) {
-        runRender();
+        return renderImmediately();
       } else {
-        // we expect to load a renderer url once only so cache the request to load script
-        this.cmd.unshift(runRender); // should render run first ?
-        loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, this.callback, this.documentContext);
+        const rendered = defer<void>();
+        this.pendingRenders.push(rendered);
+        this.cmd.unshift(runRender);
+        // `this.callback` may be replaced by the bidder, so failures are tracked here rather than in it
+        loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, {
+          success: () => {
+            try {
+              if (typeof this.callback === 'function') {
+                this.callback();
+              } else {
+                (this.callback as any)?.success?.();
+              }
+            } catch (e) {
+              rendered.reject(e);
+              throw e;
+            }
+          },
+          error: (err) => {
+            this.cmd = this.cmd.filter(cmd => cmd !== runRender);
+            this.pendingRenders = this.pendingRenders.filter(pending => pending !== rendered);
+            rendered.reject(err);
+            (this.callback as any).error?.(err);
+          }
+        }, this.documentContext);
+        return rendered.promise;
       }
     };
   }
@@ -155,13 +193,22 @@ export class Renderer {
    * renderer was loaded by `loadExternalScript`
    */
   process() {
+    let failed = false;
+    let error;
     while (this.cmd.length > 0) {
       try {
         this.cmd.shift()();
-      } catch (error) {
-        logError(`Error processing Renderer command on ad unit '${this.adUnitCode}':`, error);
+      } catch (e) {
+        logError(`Error processing Renderer command on ad unit '${this.adUnitCode}':`, e);
+        if (!failed) {
+          failed = true;
+          error = e;
+        }
       }
     }
+    const pending = this.pendingRenders;
+    this.pendingRenders = [];
+    pending.forEach(rendered => failed ? rendered.reject(error) : rendered.resolve());
   }
 }
 
@@ -178,7 +225,7 @@ export function isRendererRequired(renderer: Pick<Renderer, 'url' | 'renderNow'>
  * @param bid Bid response
  * @param doc context document of bid
  */
-export function executeRenderer(renderer: Renderer, bid: any, doc?: Document) {
+export function executeRenderer(renderer: Renderer, bid: any, doc?: Document): Promise<void> {
   let docContext = null;
   if (renderer.config && renderer.config.documentResolver) {
     docContext = renderer.config.documentResolver(bid, document, doc);// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
@@ -187,7 +234,7 @@ export function executeRenderer(renderer: Renderer, bid: any, doc?: Document) {
     docContext = document;
   }
   renderer.documentContext = docContext;
-  renderer.render(bid, renderer.documentContext);
+  return PbPromise.resolve(renderer.render(bid, renderer.documentContext));
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode: AdUnitCode) {
