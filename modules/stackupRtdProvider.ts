@@ -52,7 +52,6 @@ type RtdState =
   | "initializing"
   | "fetching"
   | "ready"
-  | "timedOut"
   | "error";
 
 interface RtdInternalState {
@@ -60,7 +59,6 @@ interface RtdInternalState {
   articleId: string | null;
   enrichment: EnrichmentSnapshot | null;
   fetchPromise: Promise<EnrichmentSnapshot> | null;
-  fetchAbortController: AbortController | null;
   pendingCallbacks: Array<() => void>;
   snapshotsByAuctionId: Map<string, EnrichmentSnapshot>;
   config: RTDProviderConfig<"stackupRtd">;
@@ -71,7 +69,6 @@ const state: RtdInternalState = {
   articleId: null,
   enrichment: null,
   fetchPromise: null,
-  fetchAbortController: null,
   pendingCallbacks: [],
   snapshotsByAuctionId: new Map(),
   config: null as any,
@@ -321,15 +318,12 @@ function fetchEnrichment(
     return Promise.resolve({ ...cached, source: "cache" });
   }
 
-  // AbortController lets getBidRequestData abort this fetch from its safety net
-  // when the auction-delay budget is exceeded, stopping the wasted network round-trip.
-  // The safety net in getBidRequestData fires at params.timeout and is the single
-  // source of truth for abort timing — do not add a second independent timer here.
-  const ctl = new AbortController();
-  state.fetchAbortController = ctl;
-
+  // The fetch is shared by every auction on the page, so an auction that stops
+  // waiting for it must not cancel it: letting it land (and get cached) is what
+  // enriches the auctions that follow. prebidFetch bounds it with its own
+  // default request timeout.
   const url = buildEnrichmentUrl(articleId, params);
-  return prebidFetch(url, { signal: ctl.signal })
+  return prebidFetch(url)
     .then((response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.text();
@@ -464,9 +458,12 @@ function setCachedEnrichment(
   }
 }
 
+// Checked both at init and again for every auction: init normally runs at
+// setConfig time, before the CMP has been queried (consent is only loaded by
+// the first requestBids), so the consent passed to init is usually still empty.
 function hasRequiredConsent(userConsent: AllConsentData): boolean {
   // COPPA: block all processing in child-directed contexts.
-  if (userConsent.coppa === true) return false;
+  if (userConsent?.coppa === true) return false;
 
   // GDPR: require per-purpose consent when GDPR applies.
   // No USP/CCPA or GPP checks — this module sends only a URL path and domain
@@ -475,16 +472,12 @@ function hasRequiredConsent(userConsent: AllConsentData): boolean {
   const gdprApplies = deepAccess(userConsent, "gdpr.gdprApplies");
   if (!gdprApplies) return true;
 
+  // Consent only: TCF 2.2 does not allow legitimate interest as the legal
+  // basis for purpose 1 or purpose 4.
   const purposeConsents =
     deepAccess(userConsent, "gdpr.vendorData.purpose.consents") || {};
-  const purposeLegitimateInterests =
-    deepAccess(userConsent, "gdpr.vendorData.purpose.legitimateInterests") ||
-    {};
 
-  return REQUIRED_PURPOSES.every(
-    (id) =>
-      purposeConsents[id] === true || purposeLegitimateInterests[id] === true
-  );
+  return REQUIRED_PURPOSES.every((id) => purposeConsents[id] === true);
 }
 
 function resolveArticleId(params: StackupRtdParams): {
@@ -551,7 +544,7 @@ function getBidRequestData(
   reqBidsConfigObj: StartAuctionOptions,
   callback: () => void,
   config: RTDProviderConfig<"stackupRtd">,
-  _userConsent: AllConsentData,
+  userConsent: AllConsentData,
   timeout?: number
 ): void {
   const requestedTimeout = config.params?.timeout;
@@ -576,7 +569,8 @@ function getBidRequestData(
     callback();
   };
 
-  // Safety net — always release the auction, no matter what
+  // Safety net — always release the auction, no matter what. Only this auction
+  // stops waiting; the shared fetch keeps going for the auctions that follow.
   const timeoutId = setTimeout(() => {
     if (state.state === "fetching") {
       logWarn(
@@ -584,16 +578,20 @@ function getBidRequestData(
           effectiveTimeout +
           "ms, releasing auction clean"
       );
-      state.state = "timedOut";
-      // Abort the in-flight AJAX request so the network round-trip stops
-      // immediately rather than running until params.timeout fires.
-      state.fetchAbortController?.abort();
     }
     release();
   }, effectiveTimeout);
 
   const onReady = () => {
     clearTimeout(timeoutId);
+    // This auction may already have been released by the safety net; it is
+    // under way by now, so its ortb2 must not change underneath it.
+    if (callbackFired) return;
+    if (!hasRequiredConsent(userConsent)) {
+      logInfo("[stackupRtd] consent not granted, auction proceeds clean");
+      release();
+      return;
+    }
     if (state.enrichment) {
       try {
         mergeIntoOrtb2(reqBidsConfigObj, state.enrichment);
@@ -613,7 +611,7 @@ function getBidRequestData(
   } else if (state.state === "fetching") {
     state.pendingCallbacks.push(onReady);
   } else {
-    // error, timedOut, idle — give up cleanly
+    // error, idle — give up cleanly
     clearTimeout(timeoutId);
     release();
   }
@@ -634,9 +632,14 @@ function mergeIntoOrtb2(
   reqBidsConfigObj: StartAuctionOptions,
   enrichment: EnrichmentSnapshot
 ): void {
-  const global = reqBidsConfigObj.ortb2Fragments?.global ?? {};
-  reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments ?? {};
-  reqBidsConfigObj.ortb2Fragments.global = global;
+  // RTD providers receive a guarded ortb2Fragments whose `global` is
+  // getter-only: assigning to it throws in strict mode, so only fill it in
+  // when it is missing.
+  const fragments =
+    reqBidsConfigObj.ortb2Fragments ??
+    (reqBidsConfigObj.ortb2Fragments = {} as any);
+  if (!fragments.global) fragments.global = {};
+  const global = fragments.global;
 
   mergeSiteContent(global, enrichment.site);
   mergeUserData(global, enrichment.user.data);
@@ -691,9 +694,15 @@ function mergeSiteCategories(
 
 function mergeUserData(global: any, ours: any[]): void {
   global.user = global.user ?? {};
-  global.user.data = isArray(global.user.data) ? global.user.data : [];
+  const user = global.user;
+  // Activity controls can hide the publisher's user.data from our reads
+  // (transmitUfpd) or drop our writes to it (enrichUfpd). `in` still sees
+  // data we cannot read, so we never overwrite it with an empty array.
+  if (!("data" in user)) user.data = [];
+  const target = user.data;
+  if (!isArray(target)) return;
 
-  mergeDataBlocks(global.user.data, ours);
+  mergeDataBlocks(target, ours);
 }
 
 function mergeDataBlocks(target: any[], ours: any[]): void {
@@ -793,7 +802,6 @@ export function _resetStateForTesting(): void {
   state.articleId = null;
   state.enrichment = null;
   state.fetchPromise = null;
-  state.fetchAbortController = null;
   state.pendingCallbacks.length = 0;
   state.snapshotsByAuctionId.clear();
   inMemoryEnrichmentCache.clear();

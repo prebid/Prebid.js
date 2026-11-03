@@ -5,6 +5,12 @@ import {
   _snapshotMapSizeForTesting,
 } from "modules/stackupRtdProvider.js";
 import { server } from "test/mocks/xhr.js";
+import {
+  guardOrtb2Fragments,
+  ortb2FragmentsGuardFactory,
+  ortb2GuardFactory,
+} from "libraries/objectGuard/ortbGuard.js";
+import * as utils from "src/utils.js";
 
 // ─── fixtures ───────────────────────────────────────────────────────────────
 
@@ -338,7 +344,7 @@ describe("StackUp RTD Provider", function () {
       expect(server.requests.length).to.equal(1);
     });
 
-    it("should fetch when GDPR applies and purposes 1+4 granted via legitimateInterests", function () {
+    it("should not fetch when GDPR applies and purposes 1+4 are only granted via legitimateInterests", function () {
       subModuleObj.init(VALID_CONFIG, {
         gdpr: {
           gdprApplies: true,
@@ -350,7 +356,7 @@ describe("StackUp RTD Provider", function () {
           },
         },
       });
-      expect(server.requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(0);
     });
   });
 
@@ -1242,6 +1248,172 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site.content.title).to.equal(
         "Cached Title"
       );
+    });
+  });
+
+  // ── regressions: running behind rtdModule's guarded ortb2Fragments ───────
+
+  describe("getBidRequestData – guarded ortb2Fragments (as passed by rtdModule)", function () {
+    let logErrorSpy;
+
+    beforeEach(async function () {
+      logErrorSpy = sinon.spy(utils, "logError");
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
+    });
+
+    afterEach(function () {
+      logErrorSpy.restore();
+    });
+
+    it("should merge without reassigning the getter-only global fragment", function () {
+      const fragments = { global: {}, bidder: {} };
+      subModuleObj.getBidRequestData(
+        { ortb2Fragments: guardOrtb2Fragments(fragments, {}) },
+        sinon.spy(),
+        VALID_CONFIG
+      );
+      expect(logErrorSpy.called).to.be.false;
+      expect(fragments.global.site.content.data).to.have.length(1);
+      expect(fragments.global.user.data).to.have.length(1);
+    });
+
+    it("should never assign ortb2Fragments.global, whatever the strictness of the build", function () {
+      const global = {};
+      const fragments = {
+        get global() {
+          return global;
+        },
+        set global(v) {
+          throw new Error("global must not be reassigned");
+        },
+      };
+      subModuleObj.getBidRequestData(
+        { ortb2Fragments: fragments },
+        sinon.spy(),
+        VALID_CONFIG
+      );
+      expect(logErrorSpy.called).to.be.false;
+      expect(global.site.content.data).to.have.length(1);
+    });
+
+    function guardDenying(...activities) {
+      return ortb2FragmentsGuardFactory(
+        ortb2GuardFactory((activity) => !activities.includes(activity))
+      );
+    }
+
+    it("should merge site data and skip user data cleanly when enrichUfpd and transmitUfpd are denied", function () {
+      const fragments = { global: {}, bidder: {} };
+      subModuleObj.getBidRequestData(
+        { ortb2Fragments: guardDenying("enrichUfpd", "transmitUfpd")(fragments, {}) },
+        sinon.spy(),
+        VALID_CONFIG
+      );
+      expect(logErrorSpy.called).to.be.false;
+      expect(fragments.global.site.content.data).to.have.length(1);
+      // the guard lets an empty user.data through, but none of our segments
+      expect(fragments.global.user?.data ?? []).to.be.empty;
+    });
+
+    it("should keep the publisher's user.data when enrichUfpd is denied", function () {
+      const publisherData = [{ name: "publisher.com", segment: [{ id: "p1" }] }];
+      const fragments = { global: { user: { data: publisherData } }, bidder: {} };
+      subModuleObj.getBidRequestData(
+        { ortb2Fragments: guardDenying("enrichUfpd")(fragments, {}) },
+        sinon.spy(),
+        VALID_CONFIG
+      );
+      expect(logErrorSpy.called).to.be.false;
+      expect(fragments.global.user.data.map((b) => b.name)).to.eql(["publisher.com"]);
+    });
+
+    it("should not overwrite publisher user.data it cannot read when only transmitUfpd is denied", function () {
+      const publisherData = [{ name: "publisher.com", segment: [{ id: "p1" }] }];
+      const fragments = { global: { user: { data: publisherData } }, bidder: {} };
+      subModuleObj.getBidRequestData(
+        { ortb2Fragments: guardDenying("transmitUfpd")(fragments, {}) },
+        sinon.spy(),
+        VALID_CONFIG
+      );
+      expect(logErrorSpy.called).to.be.false;
+      expect(fragments.global.user.data).to.equal(publisherData);
+      expect(publisherData.map((b) => b.name)).to.eql(["publisher.com"]);
+    });
+  });
+
+  describe("getBidRequestData – an auction that times out", function () {
+    it("should not cancel the shared fetch, so later auctions are still enriched", async function () {
+      const clock = sinon.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      try {
+        subModuleObj.init(VALID_CONFIG, {});
+        const first = { ortb2Fragments: { global: {} } };
+        const firstCb = sinon.spy();
+        subModuleObj.getBidRequestData(first, firstCb, VALID_CONFIG, {}, 50);
+        clock.tick(60);
+        expect(firstCb.calledOnce).to.be.true;
+
+        // the API answers after the first auction stopped waiting
+        respond200(VALID_API_RESPONSE);
+        await flushMicrotasks();
+
+        expect(server.requests.length).to.equal(1);
+        expect(storageSetStub.calledOnce).to.be.true;
+        // the first auction is already under way: its ortb2 is left alone
+        expect(first.ortb2Fragments.global).to.eql({});
+        expect(firstCb.calledOnce).to.be.true;
+
+        const second = { ortb2Fragments: { global: {} } };
+        const secondCb = sinon.spy();
+        subModuleObj.getBidRequestData(second, secondCb, VALID_CONFIG, {}, 50);
+        expect(secondCb.calledOnce).to.be.true;
+        expect(second.ortb2Fragments.global.site.content.data).to.have.length(1);
+      } finally {
+        clock.restore();
+      }
+    });
+  });
+
+  describe("getBidRequestData – consent known only at auction time", function () {
+    const gdpr = (consents) => ({
+      gdpr: {
+        gdprApplies: true,
+        vendorData: { purpose: { consents, legitimateInterests: { 1: true, 4: true } } },
+      },
+    });
+
+    beforeEach(async function () {
+      // init runs before the CMP has been queried: no consent data yet
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
+    });
+
+    it("should not merge when the auction's consent denies purpose 4", function () {
+      const req = { ortb2Fragments: { global: {} } };
+      const cb = sinon.spy();
+      subModuleObj.getBidRequestData(req, cb, VALID_CONFIG, gdpr({ 1: true }));
+      expect(cb.calledOnce).to.be.true;
+      expect(req.ortb2Fragments.global).to.eql({});
+    });
+
+    it("should not merge on legitimate interest alone", function () {
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, gdpr({}));
+      expect(req.ortb2Fragments.global).to.eql({});
+    });
+
+    it("should not merge when COPPA applies to the auction", function () {
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, { coppa: true });
+      expect(req.ortb2Fragments.global).to.eql({});
+    });
+
+    it("should merge when the auction's consent grants purposes 1 and 4", function () {
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, gdpr({ 1: true, 4: true }));
+      expect(req.ortb2Fragments.global.site.content.data).to.have.length(1);
     });
   });
 });
