@@ -46,8 +46,10 @@ jobs:
       # would add an apt-get run of 10s or more, occasionally minutes, to every job.
       - name: Install browser
         run: npx playwright install chromium
-      # These caches are content-addressed, so an entry from another commit is only ever a hit or a miss,
-      # never stale. Restored, they take about half off precompile and webpack time (#16009).
+      # Restored, these caches take about half off precompile and webpack time (#16009). They are keyed on
+      # each source file's contents, but not on the build system itself (see gulp.precompilation.js): a
+      # change to the Babel config, the local Babel plugins, the precompile code or the dependencies would
+      # otherwise reuse stale output. Those files are hashed into the key, so such a change starts empty.
       - name: Restore precompile and babel caches
         uses: actions/cache@v5
         with:
@@ -55,9 +57,9 @@ jobs:
             .cache/precompile
             .cache/ts
             .cache/babel-loader
-          key: vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          key: vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
           restore-keys: |
-            vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json') }}-
+            vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
       - name: Precompile (${{ matrix.variant }})
         run: ${{ matrix.precompile }}
       - name: Build and run chunk ${{ matrix.chunk }}
