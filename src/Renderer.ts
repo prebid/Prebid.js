@@ -4,7 +4,7 @@ import {
 } from './utils.js';
 import { getGlobal } from './prebidGlobal.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
-import { defer, PbPromise, type Defer } from './utils/promise.js';
+import { defer, PbPromise } from './utils/promise.js';
 import type { AdUnitCode, Identifier } from './types/common.d.ts';
 
 const pbjsInstance = getGlobal();
@@ -67,7 +67,7 @@ export class Renderer {
   callback: () => void;
   /**
    * Renders the bid. The returned promise rejects if the renderer script fails to load,
-   * or if the render function or a command given to `push` throws.
+   * or if the render function (including commands it gives to `push`) throws.
    */
   render: (...args: any[]) => Promise<void>;
   /**
@@ -78,7 +78,6 @@ export class Renderer {
    * Set by `setRender`; renderers that were installed without a render function do not have one.
    */
   _render: RenderFn | undefined;
-  private pendingRenders: Defer<void>[];
 
   constructor(options: RendererOptions) {
     const { url, config, id, callback, loaded, adUnitCode, renderNow, requiresVastUrl } = options;
@@ -95,7 +94,6 @@ export class Renderer {
     // queue will be processed
     this.loaded = loaded;
     this.cmd = [];
-    this.pendingRenders = [];
     this.push = func => {
       if (typeof func !== 'function') {
         logError('Commands given to Renderer.push must be wrapped in a function');
@@ -135,8 +133,16 @@ export class Renderer {
         return renderImmediately();
       } else {
         const rendered = defer<void>();
-        this.pendingRenders.push(rendered);
-        this.cmd.unshift(runRender);
+        const queuedRender = () => {
+          try {
+            runRender();
+            rendered.resolve();
+          } catch (e) {
+            rendered.reject(e);
+            throw e;
+          }
+        };
+        this.cmd.unshift(queuedRender);
         // `this.callback` may be replaced by the bidder, so failures are tracked here rather than in it
         loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, {
           success: () => {
@@ -152,8 +158,7 @@ export class Renderer {
             }
           },
           error: (err) => {
-            this.cmd = this.cmd.filter(cmd => cmd !== runRender);
-            this.pendingRenders = this.pendingRenders.filter(pending => pending !== rendered);
+            this.cmd = this.cmd.filter(cmd => cmd !== queuedRender);
             rendered.reject(err);
             (this.callback as any).error?.(err);
           }
@@ -193,22 +198,13 @@ export class Renderer {
    * renderer was loaded by `loadExternalScript`
    */
   process() {
-    let failed = false;
-    let error;
     while (this.cmd.length > 0) {
       try {
         this.cmd.shift()();
       } catch (e) {
         logError(`Error processing Renderer command on ad unit '${this.adUnitCode}':`, e);
-        if (!failed) {
-          failed = true;
-          error = e;
-        }
       }
     }
-    const pending = this.pendingRenders;
-    this.pendingRenders = [];
-    pending.forEach(rendered => failed ? rendered.reject(error) : rendered.resolve());
   }
 }
 

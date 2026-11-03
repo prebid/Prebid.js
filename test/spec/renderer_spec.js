@@ -164,12 +164,38 @@ describe('Renderer', function () {
       expect(await rejectionOf(renderer.render())).to.equal(err);
     });
 
-    it('rejects when a command given to push throws', async () => {
+    it('rejects when a command pushed by the render function throws', async () => {
       const err = new Error('command failed');
       const renderer = install();
-      renderer.setRender(() => {});
-      renderer.push(() => { throw err; });
+      renderer.setRender(() => renderer.push(() => { throw err; }));
       expect(await rejectionOf(renderer.render())).to.equal(err);
+    });
+
+    it('settles each queued render on its own outcome', async () => {
+      const callbacks = [];
+      loadExternalScriptStub.callsFake((url, type, code, callback) => { callbacks.push(callback); });
+      const err = new Error('render failed');
+      const renderer = install();
+      renderer.setRender((bid) => renderer.push(() => {
+        if (bid === 'bad') throw err;
+      }));
+      const good = renderer.render('good');
+      const bad = renderer.render('bad');
+      callbacks.forEach(cb => cb.success());
+      await good;
+      expect(await rejectionOf(bad)).to.equal(err);
+    });
+
+    it('resolves when the queue is drained by something other than process()', async () => {
+      let renderer;
+      renderer = install({
+        callback() {
+          renderer.loaded = true;
+          renderer.cmd.splice(0).forEach(cmd => cmd());
+        }
+      });
+      renderer.setRender(() => {});
+      await renderer.render();
     });
 
     it('does not render a failed attempt when rendering again', async () => {
