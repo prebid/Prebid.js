@@ -10,13 +10,13 @@ Maintainer: tech@panxo.ai
 
 Panxo is a specialized SSP for AI-referred traffic monetization. This adapter enables publishers to monetize traffic coming from AI assistants like ChatGPT, Perplexity, Claude, and Gemini through Prebid.js header bidding.
 
-## Availability and coordinated update
+## Availability
 
 `panxoBidAdapter` has been published in Prebid.js since version 10.23. The
 Panxo provider, `panxoRtdProvider`, has been published since version 10.25.
-The proposed compatibility update changes both existing modules and their
-tests/docs together. The core Prebid `rtdModule` remains an unchanged build
-dependency.
+This proposal updates only the bid adapter. The RTD provider is reviewed in
+a separate PR; the adapter accepts absent or legacy RTD signals and filters
+the Panxo namespace independently. The core `rtdModule` is unchanged.
 
 This documentation covers a proposed update; it is not yet a released version.
 
@@ -136,126 +136,6 @@ var adUnits = [{
     }]
 }];
 ```
-
-# Reviewer Test Ad Units
-
-The isolated synthetic reviewer uses the fixed origin
-`https://panxo-prebid-reviewer-external.okpbidgx.workers.dev`. The fixtures below
-exercise synthetic inventory and do not verify a commercial integration.
-
-For Prebid.js, set numeric `ortb2.test: 1` and use one of the six reserved
-`propertyKey` values below. Both are required: a reserved key without that
-exact flag produces no request. Other keys retain the commercial endpoint,
-including ordinary auctions carrying OpenRTB `test: 1`. No bidder `params.test`
-or arbitrary endpoint parameter is supported. The reviewer additionally checks
-the synthetic publisher/domain or app tuple and returns no bid for a mismatch.
-It returns synthetic creatives and local notices without live demand or billing.
-
-Run one case per clean test page, before any auction. Do not mix these values
-with real publisher inventory. The six shapes include app/CTV protocol fixtures;
-browser execution does not prove a mobile SDK or physical CTV device integration.
-
-```javascript
-const reviewerBanner = { banner: { sizes: [[300, 250]] } };
-const reviewerVideo = {
-    video: {
-        context: 'instream',
-        playerSize: [[640, 360]],
-        mimes: ['video/mp4'],
-        protocols: [3],
-        minduration: 1,
-        maxduration: 1,
-        plcmt: 1
-    }
-};
-const reviewerNative = {
-    native: {
-        ortb: {
-            ver: '1.2',
-            assets: [{ id: 1, required: 1, title: { len: 80 } }, {
-                id: 2, required: 1,
-                img: { type: 3, wmin: 1200, hmin: 627 }
-            }]
-        }
-    }
-};
-const reviewerPublisher = { id: 'local-reviewer' };
-const reviewerSite = {
-    domain: 'publisher.reviewer.invalid', publisher: reviewerPublisher
-};
-const reviewerApp = {
-    id: 'LAB02_REVIEWER_APP', bundle: 'invalid.reviewer.app',
-    publisher: reviewerPublisher
-};
-const reviewerCtv = {
-    id: 'LAB02_REVIEWER_CTV', bundle: 'invalid.reviewer.ctv',
-    publisher: reviewerPublisher
-};
-const panxoReviewerCases = [{
-    lane: 'banner', propertyKey: 'LAB02_BANNER', siteId: '0000000000000001',
-    mediaTypes: reviewerBanner, ortb2: { test: 1, site: reviewerSite }
-}, {
-    lane: 'instream-video', propertyKey: 'LAB02_INSTREAM_VIDEO', siteId: '0000000000000002',
-    mediaTypes: reviewerVideo, ortb2: { test: 1, site: reviewerSite }
-}, {
-    lane: 'native', propertyKey: 'LAB02_NATIVE', siteId: '0000000000000003',
-    mediaTypes: reviewerNative, ortb2: { test: 1, site: reviewerSite }
-}, {
-    lane: 'ctv-video', propertyKey: 'LAB02_CTV_VIDEO', siteId: '0000000000000004',
-    mediaTypes: reviewerVideo,
-    ortb2: { test: 1, app: reviewerCtv, device: { devicetype: 3 } }
-}, {
-    lane: 'inapp-banner', propertyKey: 'LAB02_INAPP_BANNER', siteId: '0000000000000005',
-    mediaTypes: reviewerBanner,
-    ortb2: { test: 1, app: reviewerApp, device: { devicetype: 4 } }
-}, {
-    lane: 'inapp-native', propertyKey: 'LAB02_INAPP_NATIVE', siteId: '0000000000000006',
-    mediaTypes: reviewerNative,
-    ortb2: { test: 1, app: reviewerApp, device: { devicetype: 4 } }
-}];
-
-// Choose exactly one case on this clean test page.
-const selected = panxoReviewerCases[0];
-pbjs.setConfig({
-    ortb2: selected.ortb2,
-    realTimeData: {
-        auctionDelay: 1500,
-        dataProviders: [{
-            name: 'panxo', waitForIt: true,
-            params: { siteId: selected.siteId, test: true }
-        }]
-    }
-});
-pbjs.addAdUnits([{
-    code: `panxo-review-${selected.lane}`,
-    mediaTypes: selected.mediaTypes,
-    bids: [{ bidder: 'panxo', params: { propertyKey: selected.propertyKey } }]
-}]);
-```
-
-The RTD provider's separate `params.test: true` loads `/rtd.js` from the same
-fixed reviewer origin. Its activity/consent gates remain in force. RTD mode
-does not choose the bidder endpoint; the bidder still requires `ortb2.test: 1`
-and the reserved key. Configure RTD before its first initialization.
-
-For Prebid Server, the adapter code and bidder schema are unchanged. Configure
-an isolated test instance's Panxo endpoint through the host configuration:
-
-```yaml
-adapters:
-  panxo:
-    endpoint: https://panxo-prebid-reviewer-external.okpbidgx.workers.dev/openrtb/2.6/bid
-```
-
-Send top-level OpenRTB `test: 1`, the corresponding site/app/device tuple above,
-and the reserved key as `imp[].ext.prebid.bidder.panxo.propertyKey`. This host
-override applies to the whole test adapter instance; it is not a per-publisher
-parameter or a change to PBS's default commercial endpoint. Never apply it to
-a shared production PBS instance. Missing `test: 1` or an incompatible tuple
-cannot obtain a reviewer bid.
-
-The reviewer exercises synthetic bids, creatives and notices. A successful
-test does not establish commercial serving or physical app/CTV compatibility.
 
 # Full Page Example
 
@@ -484,8 +364,8 @@ Native response. When `mtype` is omitted it is inferred only for a single-format
 impression, never for an ambiguous multi-format impression. Invalid prices,
 empty creative markup and cross-property impression IDs are rejected; malformed
 optional notification/deal fields are omitted. For Prebid.js TTL, a finite
-positive `bid.exp` is rounded down to whole seconds; absent, non-finite or
-non-positive values use the 300-second fallback.
+`bid.exp` of at least one second is rounded down and capped at 300 seconds;
+absent, non-finite or smaller values use the 300-second fallback.
 An omitted OpenRTB response currency is USD by specification. JS validates the
 response against the USD transport request before the Currency module converts
 the bid to the publisher's currency. An explicitly malformed ad-server currency

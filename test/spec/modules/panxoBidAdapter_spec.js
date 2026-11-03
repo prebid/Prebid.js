@@ -150,74 +150,48 @@ describe('PanxoBidAdapter', function () {
       mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } }
     }];
 
-    describe('isolated external reviewer routing', function () {
-      const endpoint = 'https://panxo-prebid-reviewer-external.okpbidgx.workers.dev/openrtb/2.6/bid';
-      const keys = [
-        'LAB02_BANNER', 'LAB02_INSTREAM_VIDEO', 'LAB02_NATIVE',
-        'LAB02_CTV_VIDEO', 'LAB02_INAPP_BANNER', 'LAB02_INAPP_NATIVE'
-      ];
-      function bidFor(propertyKey, bidId = 'review-bid') {
-        return { ...validBidRequests[0], bidId, params: { propertyKey } };
-      }
-
-      keys.forEach(propertyKey => {
-        it(`routes the reserved ${propertyKey} only with numeric OpenRTB test: 1`, () => {
-          const input = { ...bidderRequest, ortb2: { test: 1 } };
-          const before = JSON.stringify(input);
-          const [result] = spec.buildRequests([bidFor(propertyKey)], input);
-          expect(result.url).to.equal(`${endpoint}?key=${propertyKey}&source=prebid`);
-          expect(result.data.test).to.equal(1);
-          expect(result.options).to.deep.equal({ contentType: 'text/plain', withCredentials: false });
-          expect(JSON.stringify(input)).to.equal(before);
-        });
-      });
-
-      [undefined, 0, false, true, '1', null, 2, {}].forEach(test => {
-        it(`does not send reserved inventory to either endpoint for test=${JSON.stringify(test)}`, () => {
-          const input = { ...bidderRequest, ortb2: { test } };
-          expect(spec.buildRequests(keys.map((key, i) => bidFor(key, `review-${i}`)), input)).to.deep.equal([]);
-        });
-      });
-
-      [undefined, 1, '1'].forEach(test => {
-        it(`preserves the commercial endpoint for ordinary keys with test=${JSON.stringify(test)}`, () => {
-          const [result] = spec.buildRequests([bidFor(PROPERTY_KEY)], { ...bidderRequest, ortb2: { test } });
-          expect(result.url).to.equal(`https://panxo-sys.com/openrtb/2.6/bid?key=${PROPERTY_KEY}&source=prebid`);
-          expect(result.data.test).to.equal(test);
-        });
-      });
-
-      it('keeps ordinary and reviewer impressions in distinct requests in a mixed auction', () => {
-        const result = spec.buildRequests([
-          bidFor('LAB02_BANNER', 'review-one'), bidFor(PROPERTY_KEY, 'ordinary'),
-          bidFor('LAB02_BANNER', 'review-two')
-        ], { ...bidderRequest, ortb2: { test: 1 } });
-        expect(result.map(item => item.url)).to.deep.equal([
-          `${endpoint}?key=LAB02_BANNER&source=prebid`,
-          `https://panxo-sys.com/openrtb/2.6/bid?key=${PROPERTY_KEY}&source=prebid`
-        ]);
-        expect(result.map(item => item.data.imp.map(imp => imp.id))).to.deep.equal([
-          ['review-one', 'review-two'], ['ordinary']
-        ]);
-      });
-
-      it('retains ordinary siblings when reserved inventory lacks test mode', () => {
-        const result = spec.buildRequests([
-          bidFor('LAB02_BANNER', 'reserved'), bidFor(PROPERTY_KEY, 'ordinary')
-        ], bidderRequest);
-        expect(result).to.have.lengthOf(1);
-        expect(result[0].url).to.equal(`https://panxo-sys.com/openrtb/2.6/bid?key=${PROPERTY_KEY}&source=prebid`);
-        expect(result[0].data.imp.map(imp => imp.id)).to.deep.equal(['ordinary']);
-      });
-
-      it('does not turn bidder params, debug flags or arbitrary endpoints into reviewer routing', () => {
-        const input = bidFor(PROPERTY_KEY);
-        input.params.test = true;
-        input.params.endpoint = 'https://untrusted.example.invalid/bid';
-        const [result] = spec.buildRequests([input], { ...bidderRequest, debug: true });
+    [undefined, 0, 1].forEach(test => {
+      it(`keeps the fixed bidder endpoint for OpenRTB test=${test}`, () => {
+        const bid = {
+          ...validBidRequests[0],
+          params: { propertyKey: PROPERTY_KEY, test: true, endpoint: 'https://unapproved.example.invalid/bid' }
+        };
+        const [result] = spec.buildRequests([bid], { ...bidderRequest, ortb2: { test } });
         expect(result.url).to.equal(`https://panxo-sys.com/openrtb/2.6/bid?key=${PROPERTY_KEY}&source=prebid`);
-        expect(result.data).not.to.have.property('test');
+        expect(result.data.test).to.equal(test);
       });
+    });
+
+    [
+      { device: {}, expected: { js: 1 } },
+      { device: { js: 0 }, expected: { js: 0 } },
+      { device: { js: 1 }, expected: { js: 1 } },
+      { device: { js: 'yes' }, expected: { js: 1 } },
+      { app: { bundle: 'publisher.example' }, device: {}, expected: {} },
+      { app: { bundle: 'publisher.example' }, device: { js: 0 }, expected: { js: 0 } },
+      { app: { bundle: 'publisher.example' }, device: { js: 1 }, expected: { js: 1 } },
+      { app: { bundle: 'publisher.example' }, device: { js: 'yes' }, expected: {} },
+      { device: { devicetype: 3 }, expected: { devicetype: 3 } },
+      { device: { devicetype: 7 }, expected: { devicetype: 7 } },
+      { device: { devicetype: 3, js: 0 }, expected: { devicetype: 3, js: 0 } }
+    ].forEach(({ expected, ...ortb2 }, i) => {
+      it(`preserves explicit JavaScript capabilities without assuming App/CTV support (${i})`, () => {
+        const before = JSON.stringify(ortb2);
+        const [result] = spec.buildRequests(validBidRequests, { ...bidderRequest, ortb2 });
+        expect(result.data.device).to.deep.equal(expected);
+        expect(JSON.stringify(ortb2)).to.equal(before);
+      });
+    });
+
+    it('reads schain only from normalized OpenRTB context', () => {
+      const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'publisher.example', sid: 'seller', hp: 1 }] };
+      const input = { ...bidderRequest, ortb2: { source: { ext: { schain } } } };
+      const removedRead = sandbox.spy(() => { throw new Error('removed bidderRequest.schain'); });
+      Object.defineProperty(input, 'schain', { get: removedRead });
+      const [result] = spec.buildRequests(validBidRequests, input);
+      expect(result.data.source.ext.schain).to.deep.equal(schain);
+      expect(result.data.source.ext.schain).to.not.equal(schain);
+      expect(removedRead.notCalled).to.be.true;
     });
 
     it('should not restore rejected media through ortb2Imp extensions', function () {
@@ -661,7 +635,7 @@ describe('PanxoBidAdapter', function () {
         const imp = request.data.imp[0];
 
         expect(request.data).to.not.have.property('ext');
-        expect(request.data.device).to.deep.equal({ devicetype: 3, js: 1 });
+        expect(request.data.device).to.deep.equal({ devicetype: 3 });
         expect(imp).to.not.have.property('ext');
         expect(request.data.cur).to.deep.equal(['USD']);
         expect(imp.bidfloor).to.equal(floor);
@@ -713,11 +687,6 @@ describe('PanxoBidAdapter', function () {
       }];
       const contextualBidderRequest = {
         ...bidderRequest,
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{ asi: 'direct.example', sid: 'seller-1', hp: 1 }]
-        },
         ortb2: {
           test: 1,
           wlang: ['es', 'en'],
@@ -760,7 +729,7 @@ describe('PanxoBidAdapter', function () {
           },
           source: {
             tid: 'transaction-id',
-            ext: { tidSource: 'pbjs' }
+            ext: { tidSource: 'pbjs', schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'direct.example', sid: 'seller-1', hp: 1 }] } }
           }
         }
       };
@@ -785,7 +754,7 @@ describe('PanxoBidAdapter', function () {
       expect(data.regs.ext.customRegulation).to.equal(1);
       expect(data.source.tid).to.equal('transaction-id');
       expect(data.source.ext.tidSource).to.equal('pbjs');
-      expect(data.source.ext.schain).to.deep.equal(contextualBidderRequest.schain);
+      expect(data.source.ext.schain).to.deep.equal(contextualBidderRequest.ortb2.source.ext.schain);
     });
 
     it('should not mutate normalized OpenRTB context while applying adapter overrides', function () {
@@ -797,7 +766,7 @@ describe('PanxoBidAdapter', function () {
             data: [{ name: 'panxo.ai', segment: [{ id: '7' }] }]
           },
           device: { ext: { panxo: { uid: 'psid-value' } } },
-          source: { ext: { tidSource: 'pbjs' } }
+          source: { ext: { tidSource: 'pbjs', schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'direct.example', sid: 'seller-1', hp: 1 }] } } }
         }
       };
       const before = JSON.stringify(contextualBidderRequest.ortb2);
@@ -891,8 +860,7 @@ describe('PanxoBidAdapter', function () {
         lmt: 1,
         language: 'ca',
         w: 1920,
-        h: 1080,
-        js: 1
+        h: 1080
       });
       expect(request.data.user).to.deep.equal({ ext: {} });
       expect(JSON.stringify(otherBidderRequest)).to.equal(before);
@@ -1591,6 +1559,26 @@ describe('PanxoBidAdapter', function () {
       expect(bids[0].ttl).to.equal(300);
       expect(bids[0].nurl).to.be.undefined;
       expect(bids[0].burl).to.be.undefined;
+    });
+
+    [
+      { exp: 60, ttl: 60 }, { exp: 60.9, ttl: 60 }, { exp: 300, ttl: 300 },
+      { exp: 301, ttl: 300 }, { exp: 86400, ttl: 300 }, { exp: Number.MAX_VALUE, ttl: 300 },
+      { exp: undefined, ttl: 300 }, { exp: 0, ttl: 300 }, { exp: -1, ttl: 300 },
+      { exp: 0.5, ttl: 300 }, { exp: NaN, ttl: 300 }, { exp: Infinity, ttl: 300 },
+      { exp: '600', ttl: 300 }
+    ].forEach(({ exp, ttl }) => {
+      it(`bounds bid lifetime for exp=${exp}`, () => {
+        const response = {
+          body: {
+            ...serverResponse.body,
+            seatbid: [{ bid: [{ ...serverResponse.body.seatbid[0].bid[0], exp }] }]
+          }
+        };
+        const bids = spec.interpretResponse(response, request);
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].ttl).to.equal(ttl);
+      });
     });
 
     it('should map an OpenRTB video bid to a Prebid VAST response', function () {

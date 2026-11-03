@@ -23,12 +23,6 @@ import { convertCurrency } from '../libraries/currencyUtils/currency.js';
 
 const BIDDER_CODE = 'panxo';
 const ENDPOINT_URL = 'https://panxo-sys.com/openrtb/2.6/bid';
-const REVIEW_ENDPOINT_URL = 'https://panxo-prebid-reviewer-external.okpbidgx.workers.dev/openrtb/2.6/bid';
-// Reserved synthetic inventory; no publisher-supplied endpoint is accepted.
-const REVIEW_PROPERTY_KEYS = new Set([
-  'LAB02_BANNER', 'LAB02_INSTREAM_VIDEO', 'LAB02_NATIVE',
-  'LAB02_CTV_VIDEO', 'LAB02_INAPP_BANNER', 'LAB02_INAPP_NATIVE'
-]);
 const DEFAULT_CURRENCY = 'USD';
 const TTL = 300;
 const NET_REVENUE = true;
@@ -519,7 +513,13 @@ function buildDevice(bidderRequest) {
 
   // Prebid owns device detection and activity-control normalization.
   // Preserve publisher-supplied App/CTV values without reading browser globals.
-  device.js = 1;
+  // Only default JavaScript support for web inventory. App/CTV capabilities
+  // come from normalized OpenRTB context and must not be inferred here.
+  if (device.js !== 0 && device.js !== 1) {
+    delete device.js;
+    if (!isPlainObject(deepAccess(bidderRequest, 'ortb2.app')) &&
+        device.devicetype !== 3 && device.devicetype !== 7) device.js = 1;
+  }
   // Prebid normalizes browser privacy context into ortb2.device. Direct access
   // to navigator.doNotTrack is deprecated and prohibited by Prebid's linting.
   if (device.dnt !== 0 && device.dnt !== 1) delete device.dnt;
@@ -552,13 +552,6 @@ function buildSource(bidderRequest) {
   const source = isPlainObject(fpd) ? cloneOrtbValue(fpd) : {};
   source.ext = isPlainObject(source.ext) ? source.ext : {};
   source.tid = source.tid || bidderRequest.auctionId;
-
-  // Prebid exposes schain directly on bidderRequest; ortb2 is retained as a
-  // compatibility fallback.
-  const schain = bidderRequest.schain || deepAccess(bidderRequest, 'ortb2.source.ext.schain');
-  if (isPlainObject(schain)) {
-    source.ext.schain = cloneOrtbValue(schain);
-  }
 
   return source;
 }
@@ -614,12 +607,6 @@ export const spec = {
     // Build one request per propertyKey
     const requests = [];
     bidsByPropertyKey.forEach((bidEntriesForKey, propertyKey) => {
-      const reviewer = REVIEW_PROPERTY_KEYS.has(propertyKey);
-      if (reviewer && deepAccess(bidderRequest, 'ortb2.test') !== 1) {
-        logWarn('Panxo: Synthetic reviewer inventory requires OpenRTB test: 1');
-        return;
-      }
-      const endpoint = reviewer ? REVIEW_ENDPOINT_URL : ENDPOINT_URL;
       const impressions = bidEntriesForKey.map(({ bid, media }) => {
         const offeredMediaTypes = Object.keys(media);
         if (offeredMediaTypes.length === 0) return null;
@@ -718,7 +705,7 @@ export const spec = {
 
       requests.push({
         method: 'POST',
-        url: `${endpoint}?key=${encodeURIComponent(propertyKey)}&source=prebid`,
+        url: `${ENDPOINT_URL}?key=${encodeURIComponent(propertyKey)}&source=prebid`,
         data: openrtbRequest,
         options: { contentType: 'text/plain', withCredentials: false },
         bidderRequest: bidderRequest
@@ -797,7 +784,7 @@ export const spec = {
           creativeId: normalizeNonEmptyString(bid.crid) || bidId,
           dealId: normalizeNonEmptyString(bid.dealid),
           netRevenue: NET_REVENUE,
-          ttl: Number.isFinite(bid.exp) && bid.exp > 0 ? Math.floor(bid.exp) : TTL,
+          ttl: Number.isFinite(bid.exp) && bid.exp >= 1 ? Math.min(TTL, Math.floor(bid.exp)) : TTL,
           mediaType: mediaType,
           meta: buildBidResponseMeta(bid, mediaType)
         };
