@@ -184,12 +184,13 @@ export class AdapterHelpers {
       prebidVersion: '$prebid.version$',
       pageLoadUid: SID,
       eventName,
-      extraData: {
-        timepassed: bid.metrics.timeSince('requestBids'),
-      }
+      extraData: {}
     };
 
     if (bid) {
+      if (bid.metrics && typeof bid.metrics.timeSince === 'function') {
+        params.extraData.timepassed = bid.metrics.timeSince('requestBids');
+      }
       params.adUnitCode = bid.adUnitCode;
       params.auctionId = bid.auctionId;
       params.bidId = bid.bidId;
