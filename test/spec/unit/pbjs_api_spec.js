@@ -977,8 +977,13 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return bid responses for most recent auctionId only', function () {
-      const responses = pbjs.getBidResponses();
-      assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(654321);
+      try {
+        const responses = pbjs.getBidResponses();
+        assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
   });
 
