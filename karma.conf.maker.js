@@ -27,6 +27,10 @@ function newWebpackConfig(codeCoverage, disableFeatures, watchMode, singleSpec) 
   Object.assign(webpackConfig, {
     mode: 'development',
     devtool: 'inline-source-map',
+    // `extractSourceMap` makes each module's `.map` an input to the build, and a precompile writes
+    // it separately from - and after - the module's `.js`. Without a wait long enough to collect
+    // both, one edit rebuilds and re-runs the tests once per write.
+    ...(watchMode ? {watchOptions: {aggregateTimeout: 1000}} : {}),
     // an untracked tree - never precompiled, or precompiled before the stamp existed - offers
     // nothing safe to key on, so reuse nothing
     cache: (treeKey == null || !singleSpec) ? false : {
@@ -54,11 +58,16 @@ function newWebpackConfig(codeCoverage, disableFeatures, watchMode, singleSpec) 
     },
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
+  webpackConfig.resolve = webpackConfig.resolve || {};
+  webpackConfig.resolve.alias = webpackConfig.resolve.alias || {};
+  Object.assign(webpackConfig.resolve.alias, {
+    'web-bundler': path.resolve(__dirname, 'web-bundler')
+  })
   webpackConfig.module = webpackConfig.module || {};
   webpackConfig.module.rules = webpackConfig.module.rules || [];
   webpackConfig.module.rules.push({
     test: /\.js$/,
-    exclude: path.resolve('./node_modules'),
+    exclude: [path.resolve('./node_modules'), path.resolve(__dirname, 'web-bundler')],
     loader: 'babel-loader',
     options: {
       cacheDirectory: cacheDir, cacheCompression: false,

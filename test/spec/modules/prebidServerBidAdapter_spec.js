@@ -7,13 +7,13 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, { PBS_ADAPTER_NAME } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
+import * as gzip from 'src/utils/gzip.js';
 import { deepAccess, deepClone, getWinDimensions } from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import { EVENTS, DEBUG_MODE } from 'src/constants.js';
 import { server } from 'test/mocks/xhr.js';
-import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
 import { requestBids } from 'src/prebid.js';
 import 'modules/currency.js'; // adServerCurrency test
@@ -680,8 +680,28 @@ describe('S2S Adapter', function () {
   });
 
   describe('request function', function () {
+    const STUB_BIDDER = 'pbsStubBidder';
+    const STUB_ALIAS = 'pbsStubBidderAlias';
+
+    function registerStubBidder() {
+      registerBidder({
+        code: STUB_BIDDER,
+        aliases: [STUB_ALIAS],
+        isBidRequestValid: () => true,
+        buildRequests: () => [],
+        interpretResponse: () => [],
+      });
+    }
+
     beforeEach(function () {
       resetSyncedStatus();
+    });
+
+    afterEach(function () {
+      [STUB_BIDDER, STUB_ALIAS, 'foobar', 'foobar_1'].forEach(code => {
+        delete adapterManager.bidderRegistry[code];
+        delete adapterManager.aliasRegistry[code];
+      });
     });
 
     describe('FPD redaction', () => {
@@ -781,6 +801,38 @@ describe('S2S Adapter', function () {
       });
     });
 
+    describe('allowPriorityBids', () => {
+      function makeRequest(allowPriorityBids) {
+        config.setConfig({ s2sConfig: CONFIG });
+        const bidRequests = BID_REQUESTS.map(req => ({ ...req, allowPriorityBids }));
+        adapter.callBids({ ...REQUEST, s2sConfig: CONFIG }, bidRequests, addBidResponse, done, ajax);
+        return JSON.parse(server.requests[0].requestBody);
+      }
+
+      it('sends ext.prebid.as with ap: true and the bidders whose requests allow priority bids as apb', () => {
+        expect(makeRequest(true).ext.prebid.as).to.eql({ ap: true, apb: ['appnexus'] });
+      });
+
+      Object.entries({
+        'not set': undefined,
+        'false': false,
+      }).forEach(([desc, allowPriorityBids]) => {
+        it(`does not send ext.prebid.as when allowPriorityBids is ${desc} on every bidder request`, () => {
+          expect(makeRequest(allowPriorityBids).ext.prebid.as).to.not.exist;
+        });
+      });
+
+      it('getPriorityBidders keeps only requested bidders, and ignores the null bidder of module-only requests', () => {
+        const bidderRequests = [
+          { bidderCode: 'appnexus', allowPriorityBids: true },
+          { bidderCode: 'other', allowPriorityBids: true },
+          { bidderCode: 'rubicon', allowPriorityBids: false },
+          { bidderCode: null, allowPriorityBids: false },
+        ];
+        expect(pbsOrtbConverter.getPriorityBidders(bidderRequests, [null, 'appnexus', 'rubicon'])).to.eql(['appnexus']);
+      });
+    });
+
     describe('browsingTopics', () => {
       const sandbox = sinon.createSandbox();
       afterEach(() => {
@@ -863,7 +915,7 @@ describe('S2S Adapter', function () {
           });
 
           it('should be set to 0.75 * requestTimeout, if lower than maxTimeout', () => {
-            adapter.callBids({ ...REQUEST, requestBidsTimeout: maxTimeout / 2 }, BID_REQUESTS, addBidResponse, done, ajax);
+            adapter.callBids({ ...REQUEST, requestBidsTimeout: maxTimeout / 2, s2sConfig: cfg }, BID_REQUESTS, addBidResponse, done, ajax);
             const req = JSON.parse(server.requests[0].requestBody);
             expect(req.tmax).to.eql(Math.floor(maxTimeout / 2 * 0.75));
           });
@@ -989,8 +1041,8 @@ describe('S2S Adapter', function () {
     describe('gzip compression', function () {
       let gzipStub, gzipSupportStub, getParamStub, debugStub;
       beforeEach(function() {
-        gzipStub = sinon.stub(utils, 'compressDataWithGZip').resolves('compressed');
-        gzipSupportStub = sinon.stub(utils, 'isGzipCompressionSupported');
+        gzipStub = sinon.stub(gzip, 'compressDataWithGZip').resolves('compressed');
+        gzipSupportStub = sinon.stub(gzip, 'isGzipCompressionSupported');
         getParamStub = sinon.stub(utils, 'getParameterByName');
         debugStub = sinon.stub(utils, 'debugTurnedOn');
       });
@@ -1007,7 +1059,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: s2sCfg });
         const req = utils.deepClone(REQUEST);
         req.s2sConfig = s2sCfg;
-        gzipSupportStub.returns(true);
+        gzipSupportStub.resolves(true);
         getParamStub.withArgs(DEBUG_MODE).returns('false');
         debugStub.returns(false);
 
@@ -1026,7 +1078,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: s2sCfg });
         const req = utils.deepClone(REQUEST);
         req.s2sConfig = s2sCfg;
-        gzipSupportStub.returns(true);
+        gzipSupportStub.resolves(true);
         getParamStub.withArgs(DEBUG_MODE).returns('true');
         debugStub.returns(true);
 
@@ -1035,6 +1087,25 @@ describe('S2S Adapter', function () {
         setTimeout(() => {
           expect(gzipStub.called).to.be.false;
           expect(server.requests[0].url).to.not.include('gzip=1');
+          done();
+        });
+      });
+
+      it('should send the uncompressed payload when gzip compression rejects', function(done) {
+        const s2sCfg = Object.assign({}, CONFIG, { endpointCompression: true });
+        config.setConfig({ s2sConfig: s2sCfg });
+        const req = utils.deepClone(REQUEST);
+        req.s2sConfig = s2sCfg;
+        gzipSupportStub.resolves(true);
+        gzipStub.rejects(new Error('compression failed'));
+        getParamStub.withArgs(DEBUG_MODE).returns('false');
+        debugStub.returns(false);
+
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+
+        setTimeout(() => {
+          expect(server.requests[0].url).to.not.include('gzip=1');
+          expect(server.requests[0].requestBody).to.be.a('string');
           done();
         });
       });
@@ -1772,7 +1843,7 @@ describe('S2S Adapter', function () {
           });
         });
 
-        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
+        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define ratio_width and ratio_height', () => {
           const req = deepClone(REQUEST);
           req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = { 'min_width': 1, 'min_height': 2 };
           prepRequest(req);
@@ -1861,11 +1932,12 @@ describe('S2S Adapter', function () {
       expect(requestBid.app.bundle).to.eql('com.test.app');
     });
 
-    it('adds appnexus aliases to request', function () {
+    it('adds static aliases to request', function () {
       config.setConfig({ s2sConfig: CONFIG });
+      registerStubBidder();
 
       const aliasBidder = {
-        bidder: 'beintoo',
+        bidder: STUB_ALIAS,
         bid_id: REQUEST.ad_units[0].bids[0].bid_id,
         params: { placementId: '123456' }
       };
@@ -1873,13 +1945,13 @@ describe('S2S Adapter', function () {
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: 'beintoo' }], addBidResponse, done, ajax);
+      adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: STUB_ALIAS }], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.include({
         aliases: {
-          beintoo: 'appnexus'
+          [STUB_ALIAS]: STUB_BIDDER
         },
         auctiontimestamp: 1510852447530,
         targeting: {
@@ -1927,15 +1999,15 @@ describe('S2S Adapter', function () {
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      // TODO: stub this
-      getGlobal().aliasBidder('appnexus', alias);
+      registerStubBidder();
+      getGlobal().aliasBidder(STUB_BIDDER, alias);
       adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: 'foobar' }], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.include({
         aliases: {
-          [alias]: 'appnexus'
+          [alias]: STUB_BIDDER
         },
         auctiontimestamp: 1510852447530,
         targeting: {
@@ -2003,8 +2075,9 @@ describe('S2S Adapter', function () {
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      // TODO: stub this
-      getGlobal().aliasBidder('appnexus', alias, { skipPbsAliasing: true });
+      registerStubBidder();
+      getGlobal().aliasBidder(STUB_BIDDER, alias, { skipPbsAliasing: true });
+      expect(adapterManager.aliasRegistry[alias]).to.equal(STUB_BIDDER);
       adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: aliasBidder.bidder }], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
@@ -3053,8 +3126,6 @@ describe('S2S Adapter', function () {
         ortb2Fragments
       }, bidRequests), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      // eslint-disable-next-line no-console
-      console.log(parsedRequestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
       expect(parsedRequestBody.user).to.deep.equal(commonUser);
@@ -3521,11 +3592,10 @@ describe('S2S Adapter', function () {
     });
 
     it('emits the PBS_ANALYTICS event and captures atag responses', function () {
-      const original = CONFIG;
-      CONFIG.extPrebid = { returnallbidstatus: true };
+      const localConfig = deepClone(CONFIG);
+      localConfig.extPrebid = { returnallbidstatus: true };
       const atagResponse = { ...RESPONSE_OPENRTB, ext: { prebid: { analytics: { tags: ['data'] } } } };
-      config.setConfig({ CONFIG });
-      CONFIG = original;
+      config.setConfig({ s2sConfig: localConfig });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const responding = deepClone(atagResponse);
       Object.assign(responding.ext.prebid.analytics.tags, ['stuff']);
@@ -3562,6 +3632,22 @@ describe('S2S Adapter', function () {
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledTwice(events.emit);
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('ttl', 30);
+    });
+
+    it('respects defaultTTL', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        defaultTTL: 30
+      });
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -4591,10 +4677,50 @@ describe('S2S Adapter', function () {
             array: [{ id: 1 }, { id: 2 }]
           }
         }
+      },
+      {
+        t: 'concatenates schain nodes from global config and a bidder schain by default',
+        global: {
+          source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }] } } }
+        },
+        bidder: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        },
+        expected: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }, { asi: 'bidderA' }] } } }
+          }
+        }
+      },
+      {
+        t: 'does not merge schain nodes from global config into a bidder schain with firstPartyData.replaceGlobalSchain',
+        fpdConfig: { replaceGlobalSchain: true },
+        global: {
+          source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'global' }] } } }
+        },
+        bidder: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        },
+        expected: {
+          bidderA: {
+            source: { ext: { schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'bidderA' }] } } }
+          }
+        }
       }
-    ].forEach(({ t, global, bidder, expected }) => {
+    ].forEach(({ t, global, bidder, expected, fpdConfig }) => {
       it(t, () => {
-        expect(getPBSBidderConfig({ global, bidder })).to.eql(expected);
+        if (fpdConfig) {
+          config.setConfig({ firstPartyData: fpdConfig });
+        }
+        try {
+          expect(getPBSBidderConfig({ global, bidder })).to.eql(expected);
+        } finally {
+          config.resetConfig();
+        }
       });
     });
   });

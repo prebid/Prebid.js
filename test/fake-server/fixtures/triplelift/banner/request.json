@@ -5,9 +5,14 @@
     "body": {
       "imp": [
         {
-          "id": 0,
-          "tagid": "test_inventory_code",
+          "ext": {
+            "tid": "u3b9aa159-9442-4d72-b5ce-3b1d4e4656e2",
+            "tidSource": "pbjs",
+            "parentId": "test_parent_id"
+          },
+          "id": "8d3f527c-fcf6-4f6e-b9e9-bccb5ffa9824",
           "banner": {
+            "topframe": 1,
             "format": [
               {
                 "w": 300,
@@ -19,19 +24,18 @@
               }
             ]
           },
-          "fpd": {
-            "context": {
-              "tidSource": "pbjs"
-            }
-          },
-          "ext": {
-            "tidSource": "pbjs"
-          }
+          "secure": 1,
+          "tagid": "test_inventory_code"
         },
         {
-          "id": 1,
-          "tagid": "test_inventory_code",
+          "ext": {
+            "tid": "u326ae537-e905-4d50-b8a7-ef4d710727ce",
+            "tidSource": "pbjs",
+            "parentId": "test_parent_id"
+          },
+          "id": "a22975f3-6edf-4cf3-95f8-b3b57e7b068e",
           "banner": {
+            "topframe": 1,
             "format": [
               {
                 "w": 300,
@@ -43,94 +47,71 @@
               }
             ]
           },
-          "fpd": {
-            "context": {
-              "tidSource": "pbjs"
-            }
-          },
-          "ext": {
-            "tidSource": "pbjs"
-          }
+          "secure": 1,
+          "tagid": "test_inventory_code"
         }
       ],
-      "ext": {
-        "fpd": {
-          "context": {
-            "domain": "localhost:9999",
-            "publisher": {
-              "domain": "localhost:9999"
-            },
-            "page": "http://localhost:9999/test/pages/triplelift_banner.html?pbjs_debug=true",
-            "ext": {
-              "data": {
-                "documentLang": "en"
-              }
-            },
-            "content": {
-              "language": "en"
-            }
+      "site": {
+        "domain": "localhost:9999",
+        "publisher": {
+          "domain": "localhost:9999"
+        },
+        "page": "http://localhost:9999/test/pages/triplelift_banner.html?pbjs_debug=true",
+        "ext": {
+          "data": {
+            "documentLang": "en"
           }
         },
-        "ortb2": {
-          "site": {
-            "domain": "localhost:9999",
-            "publisher": {
-              "domain": "localhost:9999"
-            },
-            "page": "http://localhost:9999/test/pages/triplelift_banner.html?pbjs_debug=true",
-            "ext": {
-              "data": {
-                "documentLang": "en"
-              }
-            },
-            "content": {
-              "language": "en"
-            }
-          },
-          "device": {
-            "w": 5120,
-            "h": 1440,
-            "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-            "language": "en",
-            "ext": {
-              "vpw": 1416,
-              "vph": 1353
-            },
-            "sua": {
-              "source": 1,
-              "platform": {
-                "brand": "macOS"
-              },
-              "browsers": [
-                {
-                  "brand": "Google Chrome",
-                  "version": [
-                    "149"
-                  ]
-                },
-                {
-                  "brand": "Chromium",
-                  "version": [
-                    "149"
-                  ]
-                },
-                {
-                  "brand": "Not)A;Brand",
-                  "version": [
-                    "24"
-                  ]
-                }
-              ],
-              "mobile": 0
-            }
-          },
-          "source": {
-            "ext": {
-              "tidSource": "pbjs"
-            }
-          }
+        "content": {
+          "language": "en"
         }
-      }
+      },
+      "device": {
+        "w": 800,
+        "h": 600,
+        "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+        "language": "en",
+        "ext": {
+          "vpw": 756,
+          "vph": 413
+        },
+        "sua": {
+          "source": 1,
+          "platform": {
+            "brand": "macOS"
+          },
+          "browsers": [
+            {
+              "brand": "Chromium",
+              "version": [
+                "152"
+              ]
+            },
+            {
+              "brand": "Not?A_Brand",
+              "version": [
+                "24"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "152"
+              ]
+            }
+          ],
+          "mobile": 0
+        }
+      },
+      "source": {
+        "tid": "ueb7428f8-4699-4c18-a028-8aea94ed7b0a",
+        "ext": {
+          "tidSource": "pbjs"
+        }
+      },
+      "id": "3826d4d2-8027-4132-ae3a-71049f80705f",
+      "test": 0,
+      "tmax": 3000
     }
   }
 }

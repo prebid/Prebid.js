@@ -21,7 +21,8 @@ runs:
     - name: 'Clear working directory'
       shell: bash
       run: |
-        rm -r "$(pwd)"/*
+        # remove hidden checkout files too; symlinks there can block tar on macOS.
+        find "$(pwd)" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
     - name: Download artifact
       id: download
       continue-on-error: true

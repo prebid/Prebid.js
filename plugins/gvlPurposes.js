@@ -17,8 +17,8 @@ module.exports = function (api) {
         const purposes = getPurposes(state.filename);
         if (purposes != null) {
           const gvlPurposes = getFreeName(path, '__gvl_purposes');
-          path.node.body.unshift(...api.parse(`import {GVL_PURPOSES as ${gvlPurposes}} from '${relPath(state.filename, 'src/consentHandler.js')}';`, { filename: state.filename }).program.body);
-          path.node.body.push(...api.parse(`Object.assign(${gvlPurposes}, ${JSON.stringify(getPurposes(state.filename))});`, { filename: state.filename }).program.body);
+          path.node.body.unshift(...api.parseSync(`import {GVL_PURPOSES as ${gvlPurposes}} from '${relPath(state.filename, 'src/consentHandler.js')}';`, { filename: state.filename }).program.body);
+          path.node.body.push(...api.parseSync(`Object.assign(${gvlPurposes}, ${JSON.stringify(getPurposes(state.filename))});`, { filename: state.filename }).program.body);
         }
       }
     }

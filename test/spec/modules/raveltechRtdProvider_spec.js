@@ -11,6 +11,7 @@ describe('raveltechRtdProvider', () => {
 
   const fakeZkad = sinon.spy((id) => id.substr(0, 3));
   const fakeAjax = sinon.spy();
+  const identity = sinon.stub().callsFake(ob => ob);
 
   const fakeBidReq = {
     adUnitCode: 'adunit',
@@ -52,7 +53,7 @@ describe('raveltechRtdProvider', () => {
       bidderCode: 'alias2',
       bidderRequestId: 'abc',
       bids: [{ ...fakeBidReq, bidder: 'alias2' }]
-    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
+    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), identity);
     expect(fakeAjax.calledOnce).to.be.true;
     expect(fakeZkad.called).to.be.false;
     expect(fakeBuildRequests.calledOnce).to.be.true;
@@ -66,7 +67,7 @@ describe('raveltechRtdProvider', () => {
       bidderCode: 'test',
       bidderRequestId: 'abc',
       bids: [{ ...fakeBidReq, bidder: 'test' }]
-    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
+    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), identity);
     expect(fakeAjax.calledOnce).to.be.true;
     expect(fakeZkad.called).to.be.false;
     expect(fakeBuildRequests.calledOnce).to.be.true;
@@ -80,7 +81,7 @@ describe('raveltechRtdProvider', () => {
       bidderCode: 'test',
       bidderRequestId: 'abc',
       bids: [{ ...fakeBidReq, bidder: 'test' }]
-    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
+    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), identity);
     expect(fakeAjax.calledOnce).to.be.true;
     expect(fakeZkad.called).to.be.false;
     expect(fakeBuildRequests.calledOnce).to.be.true;
@@ -95,7 +96,7 @@ describe('raveltechRtdProvider', () => {
       bidderCode: 'test',
       bidderRequestId: 'abc',
       bids: [{ ...fakeBidReq, bidder: 'test' }]
-    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
+    }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), identity);
     expect(fakeAjax.calledTwice).to.be.true;
     expect(fakeZkad.calledOnce).to.be.true;
     expect(fakeBuildRequests.calledTwice).to.be.true;

@@ -20,13 +20,17 @@ export type MobianContextTargetingKey =
  */
 export type MobianTrafficQualityTargetingKey = 'tq';
 
-export type MobianTargetingKey = MobianContextTargetingKey | MobianTrafficQualityTargetingKey;
+/**
+ * Targeting keys that come from the viewability endpoint.
+ */
+export type MobianViewabilityTargetingKey = 'vp';
+
+export type MobianTargetingKey = MobianContextTargetingKey | MobianTrafficQualityTargetingKey | MobianViewabilityTargetingKey;
 
 /**
- * `true` enables every contextual key (plus `tq` when `includeTrafficQuality` is
- * also `true`), `false` disables targeting, and an array picks specific keys.
- * Keys that are not in the array are dropped, and `includeTrafficQuality` is
- * ignored - list `tq` in the array to request traffic quality.
+ * `true` enables every contextual key, plus `tq` and `vp` when their respective
+ * include flags are also `true`. `false` disables targeting, and an array picks
+ * specific keys. Keys that are not in the array are dropped.
  */
 export type MobianTargeting = boolean | MobianTargetingKey[];
 
@@ -36,7 +40,8 @@ export interface MobianRtdProviderParams {
    */
   prefix?: string;
   /**
-   * Keys set as GAM slot targeting via `setKeyValue`. Defaults to `false`.
+   * Keys set as GAM targeting. Contextual and traffic quality keys are page-level;
+   * `vp` is slot-level. Defaults to `false`.
    */
   publisherTargeting?: MobianTargeting;
   /**
@@ -49,6 +54,16 @@ export interface MobianRtdProviderParams {
    * `false`.
    */
   includeTrafficQuality?: boolean;
+  /**
+   * Adds `vp` when `advertiserTargeting` is `true`. Has no effect when
+   * `advertiserTargeting` is an array; list `vp` explicitly in that case.
+   * Defaults to `false`.
+   */
+  includeViewabilityTargeting?: boolean;
+  /**
+   * Placement source sent to the viewability endpoint.
+   */
+  viewabilityTargetingPlacementSource?: string;
 }
 
 export interface MobianRtdProviderConfig {
@@ -74,6 +89,7 @@ export interface MobianResolvedConfig {
   prefix: string;
   publisherTargeting: MobianTargetingKey[];
   advertiserTargeting: MobianTargetingKey[];
+  viewabilityTargetingPlacementSource?: string;
 }
 
 /**
@@ -101,6 +117,17 @@ export interface MobianContextData {
   themes?: string[];
   tones?: string[];
   tq?: number;
+}
+
+/**
+ * Viewability targeting values returned by the viewability endpoint after
+ * conversion to strings for GPT.
+ */
+export interface MobianViewabilityData {
+  likely_viewable?: string;
+  probability?: string;
+  bucket_percent?: string;
+  confidence?: string;
 }
 
 declare module './rtdModule/spec' {

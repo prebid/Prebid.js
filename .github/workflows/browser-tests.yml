@@ -112,6 +112,16 @@ jobs:
       built-key: ${{ needs.build.outputs.linux }}
       test-cmd: gulp test-build-logic
 
+  ts-consumer-packed:
+    needs: build
+    if: ${{ !inputs.coverage-only }}
+    name: "Type check the packed NPM package"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.linux }}
+      test-cmd: npx gulp ts-consumer-packed
+
   e2e-tests:
     needs: [setup, build]
     if: ${{ !inputs.coverage-only }}

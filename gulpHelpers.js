@@ -37,6 +37,7 @@ const {values: argv, tokens} = parseArgs({
     // string options
     host: {type: 'string'},
     file: {type: 'string'},
+    files: {type: 'string'},
     modules: {type: 'string'},
     browsers: {type: 'string'},
     disable: {type: 'string'},
@@ -99,6 +100,10 @@ function isModuleDirectory(filePath) {
   } catch (error) {}
 }
 
+function getParentModule(module) {
+  return Object.entries(submodules).find(([, children])=> children.includes(module))?.[0];
+};
+
 module.exports = {
   getSourceFolders() {
     return SOURCE_FOLDERS
@@ -128,17 +133,12 @@ module.exports = {
     }
 
     // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
-    Object.keys(submodules).forEach(parentModule => {
-      if (
-        !modules.includes(parentModule) &&
-        modules.some(module => submodules[parentModule].includes(module))
-      ) {
-        modules.unshift(parentModule);
-      }
-    });
-
+    new Set(
+      modules.map(getParentModule).filter(module => module != null && !modules.includes(module))
+    ).forEach((module => modules.unshift(module)));
     return modules;
   },
+  getParentModule,
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;

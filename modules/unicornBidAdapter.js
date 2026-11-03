@@ -13,6 +13,7 @@ import { getBoundingBox, getViewportOffset, getViewability } from '../libraries/
 
 const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://rtbf.uncn.jp/pb/0/bid.json';
+const ACP_ID = 2416; // Google Additional Consent provider ID
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
 const UNICORN_PB_VERSION = '1.1';
@@ -99,7 +100,7 @@ function measureAdslot(bidRequest) {
   const size = { w: deepAccess(bidRequest, 'sizes.0.0'), h: deepAccess(bidRequest, 'sizes.0.1') };
   const win = el.ownerDocument.defaultView;
 
-  // getBoundingBox uses Prebid's shared (per-auction, cached) getBoundingClientRect
+  // getBoundingBox uses Prebid's shared (cached) getBoundingClientRect
   // helper and applies the size override when the element measures 0x0 (e.g. an
   // empty GPT slot div before the creative renders).
   const box = getBoundingBox(el, size);
@@ -108,8 +109,7 @@ function measureAdslot(bidRequest) {
   // measured from inside a friendly iframe.
   const offset = getViewportOffset(win);
   const dims = getWinDimensions();
-  const scrollX = dims.document.documentElement.scrollLeft || dims.document.body.scrollLeft || 0;
-  const scrollY = dims.document.documentElement.scrollTop || dims.document.body.scrollTop || 0;
+  const { scrollX, scrollY } = dims;
   const x = Math.round(box.left + offset.x + scrollX);
   const y = Math.round(box.top + offset.y + scrollY);
 
@@ -309,7 +309,8 @@ const makeFormat = arr => arr.map((s) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['uncn'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'uncn', acpId: ACP_ID }],
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

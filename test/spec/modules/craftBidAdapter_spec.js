@@ -108,6 +108,11 @@ describe('craftAdapter', function () {
     const bidderRequest = {
       refererInfo: {
         topmostLocation: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
+      },
+      ortb2: {
+        device: {
+          ua: 'Mozilla/5.0 (test)'
+        }
       }
     };
 
@@ -132,12 +137,44 @@ describe('craftAdapter', function () {
         nodes: [],
         ver: '1.0',
       });
+      expect(data.ua).to.equal('Mozilla/5.0 (test)');
       expect(data.user).to.deep.equals({
         eids: [
           { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },
           { source: 'foobar2.com', uids: [{ id: 'yyyyyyy', atype: 1 }] },
         ]
       });
+    });
+
+    it('sends bidfloor from getFloor in JPY', function () {
+      const getFloorArgs = [];
+      const bidRequestsWithFloor = [{
+        ...bidRequests[0],
+        getFloor: function (args) {
+          getFloorArgs.push(args);
+          return { currency: 'JPY', floor: 150 };
+        }
+      }];
+      const request = spec.buildRequests(bidRequestsWithFloor, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(getFloorArgs).to.deep.equals([{ currency: 'JPY', mediaType: '*', size: '*' }]);
+      expect(data.tags[0].bidfloor).to.equal(150);
+    });
+
+    it('does not send bidfloor when getFloor returns another currency', function () {
+      const bidRequestsWithFloor = [{
+        ...bidRequests[0],
+        getFloor: () => ({ currency: 'USD', floor: 1.5 })
+      }];
+      const request = spec.buildRequests(bidRequestsWithFloor, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.tags[0]).to.not.have.property('bidfloor');
+    });
+
+    it('does not send bidfloor when getFloor is not available', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.tags[0]).to.not.have.property('bidfloor');
     });
   });
 

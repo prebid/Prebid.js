@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import {
   getImp,
   setImpPos,
@@ -1392,5 +1393,14 @@ describe('nextMillenniumBidAdapterTests', () => {
         expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
+
+    it('reports the scroll offset from getWinDimensions', () => {
+      const stub = sinon.stub(winDimensions, 'getWinDimensions').returns({ scrollY: 1234 });
+      try {
+        expect(getExtNextMilImp('1', { params: {} }).nextMillennium.scrollTop).to.equal(1234);
+      } finally {
+        stub.restore();
+      }
+    });
   });
 });

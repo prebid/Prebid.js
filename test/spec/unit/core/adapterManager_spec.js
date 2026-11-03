@@ -24,7 +24,8 @@ import { setSizeConfig } from 'modules/sizeMapping.js';
 import s2sTestingMod from 'modules/s2sTesting.js';
 import { hook } from '../../../../src/hook.js';
 import { auctionManager } from '../../../../src/auctionManager.js';
-import { GDPR_GVLIDS } from '../../../../src/consentHandler.js';
+import { getGlobal } from '../../../../src/prebidGlobal.js';
+import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../../../src/consentHandler.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
 import { server } from '../../../mocks/xhr.js';
 
@@ -1196,6 +1197,17 @@ describe('adapterManager tests', function () {
         delete adapterManager.bidderRegistry['adequant'];
       });
     });
+
+    it('calls a later s2sConfig when no bidder from an earlier one is in the auction', () => {
+      const adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder === 'pubmatic');
+        return adUnit;
+      }).filter(adUnit => adUnit.bids.length > 0);
+      const bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+      expect(prebidServerAdapterMock.callBids.firstCall.args[0].s2sConfig.accountId).to.equal(CONFIG2.accountId);
+    });
   }); // end multiple s2s tests
 
   describe('s2sTesting', function () {
@@ -1746,6 +1758,22 @@ describe('adapterManager tests', function () {
         adapterManager.aliasBidAdapter(CODE, alias, { useBaseGvlid: true });
         expect(adapterManager.bidderRegistry[alias].getSpec()?.gvlid).to.deep.eql(gvlid);
       });
+
+      it('should use acpId of original adapter when useBaseGvlid is set', () => {
+        const thisSpec = Object.assign(spec, { acpId: 123 });
+        registerBidder(thisSpec);
+        const alias = 'bidderWithAcpId';
+        adapterManager.aliasBidAdapter(CODE, alias, { useBaseGvlid: true });
+        expect(adapterManager.bidderRegistry[alias].getSpec()?.acpId).to.eql(123);
+      });
+
+      it('should use acpId from alias options', () => {
+        const thisSpec = Object.assign(spec, { acpId: 123 });
+        registerBidder(thisSpec);
+        const alias = 'bidderWithAliasAcpId';
+        adapterManager.aliasBidAdapter(CODE, alias, { acpId: 321 });
+        expect(adapterManager.bidderRegistry[alias].getSpec()?.acpId).to.eql(321);
+      });
     });
 
     describe('special case for s2s-only bidders', function () {
@@ -1864,6 +1892,30 @@ describe('adapterManager tests', function () {
         } else {
           expect(bidRequest.element).to.not.exist;
         }
+      });
+    });
+
+    describe('allowPriorityBids on client requests', () => {
+      let origBidderSettings;
+      beforeEach(() => {
+        origBidderSettings = getGlobal().bidderSettings;
+      });
+      afterEach(() => {
+        getGlobal().bidderSettings = origBidderSettings;
+      });
+
+      function allowedByBidder() {
+        return Object.fromEntries(makeBidRequests().map(req => [req.bidderCode, req.allowPriorityBids]));
+      }
+
+      it('is set from the adapter\'s own bidderSettings', () => {
+        getGlobal().bidderSettings = { appnexus: { allowPriorityBids: true } };
+        expect(allowedByBidder()).to.eql({ appnexus: true, rubicon: false });
+      });
+
+      it('is not taken from the standard settings', () => {
+        getGlobal().bidderSettings = { standard: { allowPriorityBids: true } };
+        expect(allowedByBidder()).to.eql({ appnexus: false, rubicon: false });
       });
     });
 
@@ -2068,6 +2120,34 @@ describe('adapterManager tests', function () {
           ]);
         });
 
+        it('should set allowPriorityBids on requests for bidders listed in the s2s config they were routed through', () => {
+          config.setConfig({
+            s2sConfig: config.getConfig('s2sConfig').map(cfg => cfg.name === 'mock1' ? { ...cfg, allowPriorityBids: ['mockBidder2'] } : cfg)
+          });
+          adUnits = [
+            {
+              code: 'one',
+              bids: [
+                { bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2'] },
+                { bidder: 'mockBidder2', s2sConfigName: 'mock1' },
+                { bidder: 'mockBidder3' }
+              ]
+            },
+          ];
+          dep.isAllowed.returns(true);
+          const allowed = makeBidRequests().map(request => [
+            request.adUnitsS2SCopy.flatMap(au => au.bids).map(bid => bid.bidder).join(','),
+            request.bidderCode,
+            request.allowPriorityBids
+          ]);
+          expect(allowed).to.have.deep.members([
+            ['mockBidder3', 'mockBidder3', false],
+            ['mockBidder1,mockBidder2', 'mockBidder1', false],
+            ['mockBidder1,mockBidder2', 'mockBidder2', true],
+            ['mockBidder1', 'mockBidder1', false],
+          ]);
+        });
+
         it('should keep stored impressions, even if everything else is denied', () => {
           adUnits = [
             { code: 'one', bids: [{ bidder: null }] },
@@ -2136,6 +2216,36 @@ describe('adapterManager tests', function () {
       });
       requests.rubicon.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.rubicon.ortb2));
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
+    });
+
+    describe('bidder-specific schain', () => {
+      const schain = (asi) => ({ ver: '1.0', complete: 1, nodes: [{ asi, sid: '1', hp: 1 }] });
+      function requestsWithSchains() {
+        return Object.fromEntries(
+          adapterManager.makeBidRequests(adUnits, 123, 'auction-id', 123, [], {
+            global: { source: { ext: { schain: schain('global') } } },
+            bidder: { appnexus: { source: { ext: { schain: schain('appnexus') } } } }
+          }).map((r) => [r.bidderCode, r])
+        );
+      }
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('should append the bidder schain nodes to the global ones by default', () => {
+        const requests = requestsWithSchains();
+        expect(requests.appnexus.ortb2.source.ext.schain.nodes.map(n => n.asi)).to.eql(['global', 'appnexus']);
+        expect(requests.rubicon.ortb2.source.ext.schain).to.eql(schain('global'));
+      });
+
+      it('should give bidders their own schain with firstPartyData.replaceGlobalSchain', () => {
+        config.setConfig({ firstPartyData: { replaceGlobalSchain: true } });
+        const requests = requestsWithSchains();
+        expect(requests.appnexus.ortb2.source.ext.schain).to.eql(schain('appnexus'));
+        expect(requests.rubicon.ortb2.source.ext.schain).to.eql(schain('global'));
+        requests.appnexus.bids.forEach((bid) => expect(bid.ortb2.source.ext.schain).to.eql(schain('appnexus')));
+      });
     });
 
     describe('transaction IDs', () => {
@@ -3359,6 +3469,25 @@ describe('adapterManager tests', function () {
     it('for analytics adapters', () => {
       adapterManager.registerAnalyticsAdapter({ adapter: { enableAnalytics: sinon.stub() }, code: 'mock', gvlid: 123 });
       sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_ANALYTICS, 'mock', 123);
+    });
+  });
+
+  describe('registers Additional Consent provider IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_ACPIDS, 'register');
+    });
+    afterEach(() => {
+      GDPR_ACPIDS.register.restore();
+    });
+
+    it('for bid adapters', () => {
+      adapterManager.registerBidAdapter({ getSpec: () => ({ acpId: 123 }), callBids: sinon.stub() }, 'mock');
+      sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_BIDDER, 'mock', 123);
+    });
+
+    it('for analytics adapters', () => {
+      adapterManager.registerAnalyticsAdapter({ adapter: { enableAnalytics: sinon.stub() }, code: 'mock', acpId: 123 });
+      sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_ANALYTICS, 'mock', 123);
     });
   });
 });

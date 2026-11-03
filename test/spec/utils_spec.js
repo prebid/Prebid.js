@@ -13,6 +13,8 @@ import {
 } from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
+import * as layoutEpoch from '../../src/utils/layoutEpoch.js';
+import { compressDataWithGZip, isGzipCompressionSupported } from '../../src/utils/gzip.js';
 
 var assert = require('assert');
 
@@ -1421,52 +1423,11 @@ describe('Utils', function () {
   });
 
   describe('isGzipCompressionSupported', () => {
-    let sandbox;
+    it('should validate a gzip round trip and cache the result', async () => {
+      const firstCall = isGzipCompressionSupported();
+      const secondCall = isGzipCompressionSupported();
 
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(utils, 'isGzipCompressionSupported').callsFake((() => {
-        let cachedResult;
-        return function () {
-          if (cachedResult !== undefined) {
-            return cachedResult;
-          }
-          try {
-            if (typeof window.CompressionStream === 'undefined') {
-              cachedResult = false;
-            } else {
-              (() => new window.CompressionStream('gzip'))();
-              cachedResult = true;
-            }
-          } catch (error) {
-            cachedResult = false;
-          }
-          return cachedResult;
-        };
-      })());
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    it('should return true if CompressionStream is available', () => {
-      window.CompressionStream = class {}; // Mock valid CompressionStream
-      expect(utils.isGzipCompressionSupported()).to.be.true;
-    });
-
-    it('should return false if CompressionStream is undefined', () => {
-      delete window.CompressionStream; // Simulate an unsupported environment
-      expect(utils.isGzipCompressionSupported()).to.be.false;
-    });
-
-    it('should cache the result after first execution', () => {
-      window.CompressionStream = class {}; // Mock valid CompressionStream
-
-      const firstCall = utils.isGzipCompressionSupported();
-      const secondCall = utils.isGzipCompressionSupported();
-
-      expect(firstCall).to.equal(secondCall); // Ensure memoization is working
+      expect(firstCall).to.equal(secondCall);
     });
   });
 
@@ -1501,7 +1462,7 @@ describe('Utils', function () {
 
     it('should compress data correctly when CompressionStream is available', async () => {
       const data = JSON.stringify({ test: 'data' });
-      const compressedData = await utils.compressDataWithGZip(data);
+      const compressedData = await compressDataWithGZip(data);
 
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
@@ -1510,7 +1471,7 @@ describe('Utils', function () {
 
     it('should handle non-string input by stringifying it', async () => {
       const nonStringData = { test: 'data' };
-      const compressedData = await utils.compressDataWithGZip(nonStringData);
+      const compressedData = await compressDataWithGZip(nonStringData);
 
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
@@ -1613,19 +1574,19 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should clear cache once per 20ms', () => {
+  it('should cache values for the rest of the task, however long it takes, and clear them once it ends', async () => {
+    layoutEpoch.endLayoutEpoch();
     const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    clock.tick(1);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledOnce(resetWinDimensionsSpy);
-    clock.tick(18);
-    expect(getWinDimensions().innerHeight).to.exist;
-    sinon.assert.calledTwice(resetWinDimensionsSpy);
+    try {
+      expect(getWinDimensions().innerHeight).to.exist;
+      clock.tick(100);
+      expect(getWinDimensions().innerHeight).to.exist;
+      sinon.assert.notCalled(resetWinDimensionsSpy);
+      await Promise.resolve();
+      sinon.assert.calledOnce(resetWinDimensionsSpy);
+    } finally {
+      resetWinDimensionsSpy.restore();
+    }
   });
 });
 

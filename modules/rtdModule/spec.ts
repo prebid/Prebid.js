@@ -1,4 +1,4 @@
-import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { AllConsentData, GVLIDs } from "../../src/consentHandler.ts";
 import type { AdUnitCode, ByAdUnit, StorageDisclosure } from "../../src/types/common";
 import { EVENTS } from '../../src/constants.ts';
 import type { EventPayload } from "../../src/events.ts";
@@ -45,9 +45,17 @@ export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> &
    */
   name: P;
   /**
-   * global vendor list ID for your submodule
+   * global vendor list ID for your submodule.
+   * May be a list, for submodules that act on behalf of several vendors; all of them then need a legal basis.
    */
-  gvlid?: number;
+  gvlid?: GVLIDs;
+  /**
+   * Google Additional Consent provider ID, for vendors that are not on the GVL.
+   * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
+   * when the module has no GVL ID. This is a different ID space from GVL IDs.
+   * @see https://support.google.com/admanager/answer/9681920
+   */
+  acpId?: number;
   /**
    * Invoked once on initialization.
    */

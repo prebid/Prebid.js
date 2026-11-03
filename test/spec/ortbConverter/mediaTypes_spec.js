@@ -41,15 +41,17 @@ describe('ortb -> pbjs mediaType conversion based on ext.prebid.type', () => {
   testMtype(extPrebidMediaType);
   describe('respects ext.prebid.type', () => {
     Object.values(ORTB_MTYPES).forEach(mediaType => {
-      const response = {};
-      extPrebidMediaType(response, {
-        ext: {
-          prebid: {
-            type: mediaType
+      it(`${mediaType}`, () => {
+        const response = {};
+        extPrebidMediaType(response, {
+          ext: {
+            prebid: {
+              type: mediaType
+            }
           }
-        }
-      }, {});
-      expect(response.mediaType).to.eql(mediaType);
+        }, {});
+        expect(response.mediaType).to.eql(mediaType);
+      });
     });
   });
 
