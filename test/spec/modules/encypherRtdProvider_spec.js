@@ -1260,8 +1260,10 @@ describe('encypherRtdProvider decision-network v1', () => {
     ));
     requests[0].respond(200, HEADERS, JSON.stringify(ready(lowRecord, 10)));
     requests[1].respond(200, HEADERS, JSON.stringify(ready(highRecord, 11)));
-    for (let attempt = 0; attempt < 20; attempt += 1) await nextTask();
-    assert.ok(resolveLow && resolveHigh, 'both signature verifications must be pending');
+    // stop as soon as both verifications have started (verify calls 1 and 2): each task can take tens of ms
+    // (e.g. WebKit), so a fixed number of tasks could outlast the 300ms module timeout before they are resolved
+    for (let attempt = 0; attempt < 20 && verify.callCount < 3; attempt += 1) await nextTask();
+    assert.strictEqual(verify.callCount, 3, 'both signature verifications must be pending');
 
     resolveHigh(true);
     await high.completion;

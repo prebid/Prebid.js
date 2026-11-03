@@ -49,6 +49,11 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
   `N cached declaration(s) had no source and were left out of 'dist/src'`. That is routine — the
   compiler keeps its old output. Anything in that list you did *not* just rename or delete is
   missing from the build, not housekeeping.
+- **In a new git worktree, do not symlink `node_modules`.** webpack resolves the symlink to the
+  main checkout, so the build's `node_modules` excludes (which use the worktree's path) stop
+  matching and babel compiles dependencies, failing with `exports is not defined`. Hard-link a copy
+  instead — `cp -al <main checkout>/node_modules .` takes about a second and no extra disk space —
+  or run `npm ci`.
 - If you add tests, make sure they pass in this environment, not just in principle.
 
 ## PR message guidelines
