@@ -27,7 +27,6 @@ export const internal = {
   getWindowTop,
   canAccessWindowTop,
   getWindowLocation,
-  insertUserSyncIframe,
   insertElement,
   isFn,
   triggerPixel,
@@ -385,10 +384,6 @@ export function politeTriggerPixel(url, credentials = 'include') {
   runBackgroundTask(triggerSync);
 }
 
-export function politeInsertUserSyncIframe(url, done, timeout, onCleanup) {
-  runBackgroundTask(() => insertUserSyncIframe(url, done, timeout, onCleanup));
-}
-
 export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
@@ -431,113 +426,6 @@ export function insertHtmlIntoIframe(htmlCode) {
     doc.write(htmlCode);
     doc.close();
   })(iframe.contentWindow.document);
-}
-
-/**
- * The sync iframes inserted by this instance, tracked by element reference so that several Prebid
- * instances running on the same page do not remove each other's. Each iframe may have an associated
- * callback that releases work owned by its consumer before the iframe is removed.
- */
-const OWN_SYNC_IFRAMES = new WeakMap();
-
-/**
- * Inserts empty iframe with the specified `url` for cookie sync
- * @param  {string} url URL to be requested
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
- * @param  {function} [onCleanup] called when the iframe is removed by `removeUserSyncIframes`
- */
-export function insertUserSyncIframe(url, done, timeout, onCleanup) {
-  if (!url) return;
-  const iframe = createInvisibleIframe(document, {
-    sandbox: 'allow-scripts allow-same-origin',
-    src: url,
-  });
-  OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
-  iframe.addEventListener('load', () => scheduleSyncIframeRemoval(iframe), { once: true });
-  if (done && internal.isFn(done)) {
-    waitForElementToLoad(iframe, timeout).then(done);
-  }
-  internal.insertElement(iframe, document, 'html', true);
-}
-
-const DEFAULT_SYNC_IFRAME_REMOVAL = { withChildFrames: 15000, all: 15000 };
-let syncIframeRemoval = DEFAULT_SYNC_IFRAME_REMOVAL;
-
-/**
- * Configure the automatic removal of sync iframes (`userSync.removeIframes`).
- * @param {boolean|{withChildFrames?: number|false, all?: number|false}} [settings] delays in milliseconds after an
- *   iframe loads (missing ones use the defaults): `withChildFrames` removes it then if it has created frames of its
- *   own, with a warning; `all` removes it then regardless; `false` skips that step. Undefined or `true` uses the
- *   defaults; `false` turns it off.
- */
-export function setSyncIframeRemoval(settings) {
-  if (settings === false) {
-    syncIframeRemoval = {};
-  } else if (settings != null && typeof settings === 'object') {
-    syncIframeRemoval = { ...DEFAULT_SYNC_IFRAME_REMOVAL, ...settings };
-  } else {
-    syncIframeRemoval = DEFAULT_SYNC_IFRAME_REMOVAL;
-  }
-}
-
-function scheduleSyncIframeRemoval(iframe) {
-  const { withChildFrames, all } = syncIframeRemoval;
-  if (typeof withChildFrames === 'number') {
-    setTimeout(() => {
-      const frames = OWN_SYNC_IFRAMES.has(iframe) ? childFrameCount(iframe) : 0;
-      if (frames > 0) {
-        logWarn(`Removing user sync iframe that created ${frames} frame(s) of its own: ${iframe.src}`);
-        removeSyncIframe(iframe);
-      }
-    }, withChildFrames);
-  }
-  if (typeof all === 'number') {
-    setTimeout(() => {
-      if (OWN_SYNC_IFRAMES.has(iframe)) removeSyncIframe(iframe);
-    }, all);
-  }
-}
-
-function removeSyncIframe(iframe) {
-  const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
-  OWN_SYNC_IFRAMES.delete(iframe);
-  try {
-    onCleanup?.();
-  } catch (error) {
-    logError('Error cleaning up user sync iframe', error);
-  }
-  iframe.parentNode?.removeChild(iframe);
-}
-
-/**
- * Number of frames a sync iframe has created. `length` can be read on a cross-origin window,
- * so this works without any cooperation from the sync page.
- * @param {HTMLIFrameElement} iframe
- * @return {Number}
- */
-function childFrameCount(iframe) {
-  try {
-    return iframe.contentWindow?.length ?? 0;
-  } catch (e) {
-    return 0;
-  }
-}
-
-/**
- * Removes the user sync iframes that were inserted by this Prebid instance; iframes belonging to
- * other instances running on the same page are left alone.
- * @param {Object} [options]
- * @param {Boolean} [options.withChildFrames] if true, only remove sync iframes that have created frames
- *   of their own; these are the syncs that fan out into many nested frames.
- * @return {Number} the number of iframes that were removed
- */
-export function removeUserSyncIframes({ withChildFrames = false } = {}) {
-  const iframes = Array.from(document.querySelectorAll('iframe'))
-    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe))
-    .filter(iframe => !withChildFrames || childFrameCount(iframe) > 0);
-  iframes.forEach(removeSyncIframe);
-  return iframes.length;
 }
 
 /**

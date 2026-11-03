@@ -1,5 +1,4 @@
 import { clearEvents } from '../../src/events.js';
-import { removeUserSyncIframes } from '../../src/utils.js';
 
 window.describe = window.context = ((orig) => {
   let level = 0;
@@ -12,9 +11,9 @@ window.describe = window.context = ((orig) => {
             after(() => {
               // run this after each top-level "describe", roughly equivalent to each file
               clearEvents();
-              // remove sync iframes a spec left behind now, rather than when their automatic removal
-              // timers come due in the middle of some later, possibly timing-sensitive, test
-              removeUserSyncIframes();
+              // leftover sync iframes' removal timers could otherwise fire during a later test;
+              // required lazily because importing userSync first creates an import cycle
+              require('../../src/userSync.js').removeUserSyncIframes();
             });
             return result;
           };

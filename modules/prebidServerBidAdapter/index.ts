@@ -6,7 +6,6 @@ import {
   flatten,
   generateUUID,
   getParameterByName,
-  insertUserSyncIframe,
   isGzipCompressionSupported,
   isNumber,
   isPlainObject,
@@ -25,6 +24,7 @@ import { isValid } from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import { ajax } from '../../src/ajax.js';
 import { hook } from '../../src/hook.js';
+import { insertUserSyncIframe } from '../../src/userSync.js';
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
 import { parseUntrustedJSON } from '../../src/utils/untrustedJson.js';
 import { hasVendorPurposeConsent } from '../../libraries/consentManagement/consentUtils.js';
