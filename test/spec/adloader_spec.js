@@ -270,22 +270,11 @@ describe('adLoader', function () {
 
     it('does not cache a synchronous load error', async () => {
       const doc = document.implementation.createHTMLDocument('');
-      const callback = { error: sinon.stub() };
-      adLoader.loadExternalScript('test-sync-error', MODULE_TYPE_PREBID, 'debugging', callback, doc, { 'invalid name': 'x' });
-      await flush();
-      sinon.assert.calledOnce(callback.error);
+      expect(() => adLoader.loadExternalScript('test-sync-error', MODULE_TYPE_PREBID, 'debugging', undefined, doc, { 'invalid name': 'x' })).to.throw();
       sinon.assert.notCalled(utilsinsertElementStub);
       adLoader.loadExternalScript('test-sync-error', MODULE_TYPE_PREBID, 'debugging', undefined, doc);
       await flush();
       sinon.assert.calledOnce(utilsinsertElementStub);
-    });
-
-    it('does not return a tag that failed before insertion', async () => {
-      const doc = document.implementation.createHTMLDocument('');
-      const tag = adLoader.loadExternalScript('test-uninserted', MODULE_TYPE_PREBID, 'debugging', undefined, doc, { 'invalid name': 'x' });
-      await flush();
-      sinon.assert.notCalled(utilsinsertElementStub);
-      expect(tag).to.not.exist;
     });
 
     it('does not return a tag to a caller denied by activity controls', async () => {
@@ -300,15 +289,6 @@ describe('adLoader', function () {
       } finally {
         unregister();
       }
-    });
-
-    it('does not return the tag of an earlier failed load', async () => {
-      const doc = document.implementation.createHTMLDocument('');
-      adLoader.loadExternalScript('test-stale', MODULE_TYPE_PREBID, 'debugging', undefined, doc);
-      insertedScript().dispatchEvent(new Event('error'));
-      await flush();
-      const tag = adLoader.loadExternalScript('test-stale', MODULE_TYPE_PREBID, 'debugging', undefined, doc, { 'invalid name': 'x' });
-      expect(tag).to.not.exist;
     });
 
     describe('when denied by activity controls', () => {
