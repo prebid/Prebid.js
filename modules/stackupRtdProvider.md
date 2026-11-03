@@ -84,10 +84,10 @@ pbjs.setConfig({
 
 ## Consent
 
-The module respects user consent before making any network requests:
+The module checks consent when it initializes and again for every auction. Initialization usually happens before the CMP has been queried, so the per-auction check is the one that decides whether enrichment is added to the bid request:
 
-- **COPPA**: if `coppa: true` is set, the module is inert.
-- **GDPR**: when GDPR applies, the module requires consent (or legitimate interest) for **Purpose 1** (Store/access information on a device) and **Purpose 4** (Select personalised content). If either purpose is missing, or if `vendorData` is absent (e.g. CMP timeout), the module does nothing.
+- **COPPA**: if `coppa: true` is set, the module adds no enrichment.
+- **GDPR**: when GDPR applies, the module requires consent for **Purpose 1** (Store/access information on a device) and **Purpose 4** (Select personalised content); legitimate interest is not accepted for either. If either purpose is missing, or if `vendorData` is absent (e.g. CMP timeout), the module adds no enrichment.
 - **USP / CCPA / GPP**: not enforced — the Stack Up API receives only a URL path and domain, no user identifiers, so US sale-of-data frameworks do not apply.
 
 ## Article ID Resolution
