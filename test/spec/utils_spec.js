@@ -1746,6 +1746,41 @@ describe('user sync iframes', () => {
     expect(utils.removeUserSyncIframes()).to.equal(0);
   });
 
+  describe('withChildFrames', () => {
+    function addChildFrame(iframe) {
+      const doc = iframe.contentDocument;
+      (doc.body ?? doc.documentElement).appendChild(doc.createElement('iframe'));
+    }
+
+    it('removes only the sync iframes that have created frames of their own', () => {
+      [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
+      const [fanOut, simple, otherFanOut] = newIframes();
+      addChildFrame(fanOut);
+      addChildFrame(otherFanOut);
+
+      expect(utils.removeUserSyncIframes({ withChildFrames: true })).to.equal(2);
+
+      expect(fanOut.parentNode).to.equal(null);
+      expect(otherFanOut.parentNode).to.equal(null);
+      expect(newIframes()).to.eql([simple]);
+    });
+
+    it('notifies the consumer of a removed sync iframe', () => {
+      const onCleanup = sinon.spy();
+      utils.insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+      addChildFrame(newIframes()[0]);
+      utils.removeUserSyncIframes({ withChildFrames: true });
+      expect(onCleanup.calledOnce).to.equal(true);
+    });
+
+    it('leaves sync iframes without child frames, so a later call can still remove them', () => {
+      utils.insertUserSyncIframe('about:blank');
+      expect(utils.removeUserSyncIframes({ withChildFrames: true })).to.equal(0);
+      expect(newIframes().length).to.equal(1);
+      expect(utils.removeUserSyncIframes()).to.equal(1);
+    });
+  });
+
   it('does not stop later syncs from inserting new iframes', () => {
     utils.insertUserSyncIframe('about:blank');
     utils.removeUserSyncIframes();

@@ -29,6 +29,14 @@ type SyncConfig = {
 };
 type FilterSettings = { [K in SyncType | 'all']?: SyncConfig };
 
+export type RemoveUserSyncsOptions = {
+  /**
+   * If true, only remove sync iframes that have created frames of their own. These are the syncs that
+   * fan out into many nested frames; simple syncs are left in place.
+   */
+  withChildFrames?: boolean;
+};
+
 export interface UserSyncConfig {
   /**
    * Enable/disable the user syncing feature. Default: true.
@@ -392,7 +400,7 @@ export function newUserSync(deps) {
     }
   };
 
-  publicApi.removeUserSyncs = () => removeUserSyncIframes();
+  publicApi.removeUserSyncs = (options?: RemoveUserSyncsOptions) => removeUserSyncIframes(options);
 
   publicApi.canBidderRegisterSync = (type, bidder) => {
     if (usConfig.filterSettings) {

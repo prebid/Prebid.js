@@ -134,6 +134,17 @@ describe('user sync', function () {
       }
     });
 
+    it('should pass the withChildFrames option through', function () {
+      const removeStub = sinon.stub(utils, 'removeUserSyncIframes').returns(1);
+      try {
+        const userSync = newTestUserSync(iframeConfig);
+        expect(userSync.removeUserSyncs({ withChildFrames: true })).to.equal(1);
+        sinon.assert.calledWith(removeStub, { withChildFrames: true });
+      } finally {
+        removeStub.restore();
+      }
+    });
+
     it('should not prevent later syncs from inserting new iframes', function () {
       const userSync = newTestUserSync(iframeConfig);
       const removeStub = sinon.stub(utils, 'removeUserSyncIframes').returns(1);

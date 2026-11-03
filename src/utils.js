@@ -463,13 +463,31 @@ export function insertUserSyncIframe(url, done, timeout, onCleanup) {
 }
 
 /**
+ * Number of frames a sync iframe has created. `length` can be read on a cross-origin window,
+ * so this works without any cooperation from the sync page.
+ * @param {HTMLIFrameElement} iframe
+ * @return {Number}
+ */
+function childFrameCount(iframe) {
+  try {
+    return iframe.contentWindow?.length ?? 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+/**
  * Removes the user sync iframes that were inserted by this Prebid instance; iframes belonging to
  * other instances running on the same page are left alone.
+ * @param {Object} [options]
+ * @param {Boolean} [options.withChildFrames] if true, only remove sync iframes that have created frames
+ *   of their own; these are the syncs that fan out into many nested frames.
  * @return {Number} the number of iframes that were removed
  */
-export function removeUserSyncIframes() {
+export function removeUserSyncIframes({ withChildFrames = false } = {}) {
   const iframes = Array.from(document.querySelectorAll('iframe'))
-    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe));
+    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe))
+    .filter(iframe => !withChildFrames || childFrameCount(iframe) > 0);
   iframes.forEach(iframe => {
     const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
     OWN_SYNC_IFRAMES.delete(iframe);
