@@ -4097,6 +4097,84 @@ describe('S2S Adapter', function () {
     });
   });
 
+  describe('with multiple s2sConfigs', () => {
+    const ALIAS = 'pbsMultiConfigAlias';
+    const ENDPOINT_A = 'https://pbs-a.example/auction';
+    const ENDPOINT_B = 'https://pbs-b.example/auction';
+    const SCHAIN = { ver: '1.0', complete: 1, nodes: [{ asi: 'a.example', sid: '1', hp: 1 }] };
+
+    function s2sConfig(accountId, endpoint, bidders) {
+      return { ...CONFIG, accountId, bidders, endpoint: { p1Consent: endpoint, noP1Consent: endpoint } };
+    }
+
+    function requestTo(endpoint) {
+      const req = server.requests.find(req => req.url.startsWith(endpoint));
+      return [req, JSON.parse(req.requestBody)];
+    }
+
+    let bidderRequests;
+
+    beforeEach(() => {
+      sinon.stub(events, 'emit');
+      adapterManager.aliasBidAdapter('rubicon', ALIAS);
+      config.setConfig({
+        s2sConfig: [
+          s2sConfig('a', ENDPOINT_A, [ALIAS]),
+          s2sConfig('b', ENDPOINT_B, ['appnexus'])
+        ]
+      });
+      const adUnits = [{
+        code: 'au',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [
+          { bidder: ALIAS, params: { accountId: 1, siteId: 2, zoneId: 3 } },
+          { bidder: 'appnexus', params: { placementId: 1 } }
+        ]
+      }];
+      const ortb2Fragments = { global: {}, bidder: { [ALIAS]: { source: { ext: { schain: SCHAIN } } } } };
+      bidderRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 'auction-id', 1000, [], ortb2Fragments);
+      adapterManager.callBids(adUnits, bidderRequests, addBidResponse, done, undefined, 1000, sinon.stub(), ortb2Fragments);
+    });
+
+    afterEach(() => {
+      events.emit.restore();
+      delete adapterManager.bidderRegistry[ALIAS];
+      delete adapterManager.aliasRegistry[ALIAS];
+    });
+
+    it('does not list another server\'s bidders in ext.prebid', () => {
+      const [, body] = requestTo(ENDPOINT_B);
+      expect(Object.keys(body.ext.prebid.page_view_ids)).to.eql(['appnexus']);
+      expect(body.ext.prebid.aliases).to.not.exist;
+      expect(body.ext.prebid.schains).to.not.exist;
+    });
+
+    it('still sends each server its own bidders in ext.prebid', () => {
+      const [, body] = requestTo(ENDPOINT_A);
+      expect(Object.keys(body.ext.prebid.page_view_ids)).to.eql([ALIAS]);
+      expect(body.ext.prebid.aliases).to.eql({ [ALIAS]: 'rubicon' });
+      expect(body.ext.prebid.schains).to.eql([{ bidders: [ALIAS], schain: SCHAIN }]);
+    });
+
+    it('emits BIDDER_DONE only for the bidders of the server that responded', () => {
+      const [req] = requestTo(ENDPOINT_B);
+      req.respond(200, {}, JSON.stringify({ id: 'resp', seatbid: [] }));
+      const doneFor = events.emit.getCalls()
+        .filter(call => call.args[0] === EVENTS.BIDDER_DONE)
+        .map(call => call.args[1].bidderCode);
+      expect(doneFor).to.eql(['appnexus']);
+    });
+
+    it('emits BIDDER_ERROR only for the bidders of the server that failed', () => {
+      const [req] = requestTo(ENDPOINT_B);
+      req.respond(500, {}, '');
+      const errorFor = events.emit.getCalls()
+        .filter(call => call.args[0] === EVENTS.BIDDER_ERROR)
+        .map(call => call.args[1].bidderRequest.bidderCode);
+      expect(errorFor).to.eql(['appnexus']);
+    });
+  });
+
   describe('s2sConfig', function () {
     let logErrorSpy;
 
