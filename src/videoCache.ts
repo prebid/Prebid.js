@@ -405,20 +405,16 @@ export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
 
   return function (auctionInstance, bidResponse, afterBidAdded) {
     const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
-    const currentBatch = batches[batches.length - 1];
-    currentBatch.push({ auctionInstance, bidResponse, afterBidAdded });
-
-    if (currentBatch.length >= batchSize) {
-      cache(currentBatch);
-      batches[batches.length - 1] = [];
-      debouncing = false;
-      return;
+    if (batches[batches.length - 1].length >= batchSize) {
+      batches.push([]);
     }
+
+    batches[batches.length - 1].push({ auctionInstance, bidResponse, afterBidAdded });
 
     if (!debouncing) {
       debouncing = true;
       batchFunc(() => {
-        batches.filter(batch => batch.length > 0).forEach(cache);
+        batches.forEach(cache);
         batches = [[]];
         debouncing = false;
       }, batchTimeout);
