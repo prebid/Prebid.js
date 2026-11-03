@@ -78,6 +78,13 @@ jobs:
           merge-multiple: true
       - name: Combine coverage results
         run: |
+          # a chunk that failed before writing coverage would otherwise leave a plausible but partial total
+          for chunk in 1 2 3 4 5 6 7 8; do
+            if [ ! -s "build/coverage/chunks/$chunk/lcov.info" ]; then
+              echo "::error::No coverage for chunk $chunk; not combining a partial result"
+              exit 1
+            fi
+          done
           sudo apt-get update
           sudo apt-get install lcov -y
           find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info

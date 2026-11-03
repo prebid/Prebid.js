@@ -32,24 +32,28 @@ function chunkOf(file) {
 
 /**
  * Write lcov reports for the raw coverage collected in this run.
+ * @param {object} [options]
+ * @param {string} [options.raw] directory holding the raw coverage files
+ * @param {string} [options.out] directory to write `<chunk>/lcov.info` into
+ * @param {string} [options.root] directory the report's paths are relative to
  * @returns {Promise<string[]>} the lcov files written
  */
-async function writeLcov() {
-  if (!fs.existsSync(RAW)) return [];
+async function writeLcov({ raw = RAW, out = OUT, root = ROOT } = {}) {
+  if (!fs.existsSync(raw)) return [];
   const byChunk = new Map();
-  for (const file of fs.readdirSync(RAW).filter(name => name.endsWith('.json'))) {
+  for (const file of fs.readdirSync(raw).filter(name => name.endsWith('.json'))) {
     const chunk = chunkOf(file);
     if (!byChunk.has(chunk)) byChunk.set(chunk, libCoverage.createCoverageMap({}));
-    byChunk.get(chunk).merge(JSON.parse(fs.readFileSync(path.join(RAW, file), 'utf8')));
+    byChunk.get(chunk).merge(JSON.parse(fs.readFileSync(path.join(raw, file), 'utf8')));
   }
   const written = [];
   for (const [chunk, coverageMap] of byChunk) {
     const remapped = await libSourceMaps.createSourceMapStore().transformCoverage(coverageMap);
-    const dir = path.join(OUT, chunk);
+    const dir = path.join(out, chunk);
     fs.mkdirSync(dir, { recursive: true });
     // paths in the report are relative to the repository root, as in karma-coverage's output
     const context = libReport.createContext({ dir, coverageMap: remapped, defaultSummarizer: 'nested' });
-    reports.create('lcovonly', { file: 'lcov.info', projectRoot: ROOT }).execute(context);
+    reports.create('lcovonly', { file: 'lcov.info', projectRoot: root }).execute(context);
     written.push(path.join(dir, 'lcov.info'));
   }
   return written;
