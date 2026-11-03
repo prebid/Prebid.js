@@ -1,6 +1,6 @@
 # Overview
 
-```
+```text
 Module Name: LINA Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: linadev@lge.com
@@ -26,9 +26,13 @@ The adapter passes OpenRTB request fields through without duplicating server
 field-removal policies. It only maps LINA identifiers and selected media formats.
 LINA SSP determines which fields to use and applies inventory, pricing,
 supply-chain, and privacy policies. Explicit SSP settings take precedence.
-A placement without a floor uses the SSP's currency default;
-if no currency default is configured, the floor is zero. Client floors are not
-used as a fallback.
+The SSP placement floor takes priority, including an explicit zero. If it is
+unset, the SSP uses `ortb2Imp.bidfloor`; if both are unset or null, no floor
+restriction applies. There are no currency-specific default floors. Floors are
+publisher Net CPM and are converted to DSP Gross CPM using the publisher fee.
+A positive request floor's `bidfloorcur` must match the publisher currency;
+when omitted, it is USD under OpenRTB. Currency conversion is not supported.
+The adapter passes these OpenRTB fields through without calling `getFloor()`.
 
 The adapter does not access cookies or local storage and does not register
 user syncs.
