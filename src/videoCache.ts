@@ -245,7 +245,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
  * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
+export function store(bids: VideoBid[], done: VideoCacheStoreCallback = (_error, _uuids) => {}, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
   const requestData = {
     puts: bids.map(bid => toStorageRequest(bid))
   };
@@ -350,8 +350,8 @@ export function storeBatch(batch) {
     } else {
       cacheIds.forEach((cacheId, i) => {
         const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
-        if (cacheId.uuid === '') {
-          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+        if (cacheId == null || typeof cacheId.uuid !== 'string' || cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was rejected or missing from Prebid Cache. Video bid must be discarded.`);
           afterBidAdded();
         } else {
           bidResponse.cacheUrl = cacheUrl;
@@ -393,6 +393,7 @@ if (FEATURES.VIDEO || FEATURES.AUDIO) {
 export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
   let batches = [[]];
   let debouncing = false;
+  // Preserve synchronous dispatch when batching is not delayed.
   const noTimeout = cb => cb();
 
   return function (auctionInstance, bidResponse, afterBidAdded) {
