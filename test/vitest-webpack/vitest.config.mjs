@@ -70,7 +70,7 @@ async function browserProvider() {
   const { webdriverio } = await import('@vitest/browser-webdriverio');
   const { BROWSERSTACK_USERNAME: user, BROWSERSTACK_ACCESS_KEY: key } = process.env;
   if (!user || !key) throw new Error('VITEST_BROWSERSTACK needs BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY');
-  return webdriverio({
+  const provider = webdriverio({
     protocol: 'https',
     hostname: 'hub.browserstack.com',
     port: 443,
@@ -103,6 +103,13 @@ async function browserProvider() {
       },
     },
   });
+  if (bsDevice) {
+    // Vitest sizes the window to `viewport` through WebDriver's window/rect, which iOS doesn't implement
+    // ("Method has not yet been implemented"). The test iframe still gets the 800x600 viewport.
+    const { providerFactory } = provider;
+    provider.providerFactory = (project) => Object.assign(providerFactory(project), { async setViewport() {} });
+  }
+  return provider;
 }
 
 export default defineConfig({
