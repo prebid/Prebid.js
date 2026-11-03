@@ -42,12 +42,12 @@ export class AdapterHelpers {
 
       url.searchParams.set('pbv', '$prebid.version$');
       url.searchParams.set('network', networks.join(','));
-      url.searchParams.set('gdpr', encodeURIComponent((Number(gdprApplies) || 0).toString()));
-      url.searchParams.set('gdpr_consent', encodeURIComponent(consentString || ''));
+      url.searchParams.set('gdpr', (Number(gdprApplies) || 0).toString());
+      url.searchParams.set('gdpr_consent', consentString || '');
 
       if (gppString && applicableSections?.length) {
-        url.searchParams.set('gpp', encodeURIComponent(gppString));
-        url.searchParams.set('gpp_sid', encodeURIComponent(applicableSections.join(',')));
+        url.searchParams.set('gpp', gppString);
+        url.searchParams.set('gpp_sid', applicableSections.join(','));
       }
 
       return url.toString();
