@@ -36,6 +36,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import { ACTIVITY_TRANSMIT_UFPD } from '../../../src/activities/activities.js';
 import { MODULE_TYPE_PREBID } from '../../../src/activities/modules.js';
+import { ACTIVITY_PARAM_S2S_NAME } from '../../../src/activities/params.js';
 import {
   consolidateEids,
   extractEids,
@@ -4094,6 +4095,130 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(addBidResponse);
       markWinningBid(addBidResponse.getCall(0).args[1]);
       expect(utils.politeTriggerPixel.called).to.be.false;
+    });
+  });
+
+  describe('with multiple s2sConfigs', () => {
+    const ALIAS = 'pbsMultiConfigAlias';
+    const ENDPOINT_A = 'https://pbs-a.example/auction';
+    const ENDPOINT_B = 'https://pbs-b.example/auction';
+    const SCHAIN = { ver: '1.0', complete: 1, nodes: [{ asi: 'a.example', sid: '1', hp: 1 }] };
+
+    function s2sConfig(name, endpoint, bidders) {
+      return { ...CONFIG, name, accountId: name, bidders, endpoint: { p1Consent: endpoint, noP1Consent: endpoint } };
+    }
+
+    function requestTo(endpoint) {
+      const req = server.requests.find(req => req.url.startsWith(endpoint));
+      return [req, JSON.parse(req.requestBody)];
+    }
+
+    let bidderRequests, unregisterRules;
+
+    function runAuction() {
+      const adUnits = [{
+        code: 'au',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [
+          { bidder: ALIAS, params: { accountId: 1, siteId: 2, zoneId: 3 } },
+          { bidder: 'appnexus', params: { placementId: 1 } }
+        ]
+      }];
+      const ortb2Fragments = {
+        global: { site: { domain: 'global.example' }, user: { keywords: 'global-kw' } },
+        bidder: {
+          [ALIAS]: {
+            source: { ext: { schain: SCHAIN } },
+            site: { keywords: 'alias-only' },
+            user: { yob: 1984 }
+          }
+        }
+      };
+      bidderRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 'auction-id', 1000, [], ortb2Fragments);
+      adapterManager.callBids(adUnits, bidderRequests, addBidResponse, done, undefined, 1000, sinon.stub(), ortb2Fragments);
+    }
+
+    beforeEach(() => {
+      unregisterRules = [];
+      sinon.stub(events, 'emit');
+      adapterManager.aliasBidAdapter('rubicon', ALIAS);
+      config.setConfig({
+        s2sConfig: [
+          s2sConfig('a', ENDPOINT_A, [ALIAS]),
+          s2sConfig('b', ENDPOINT_B, ['appnexus'])
+        ]
+      });
+    });
+
+    afterEach(() => {
+      unregisterRules.forEach(unregister => unregister());
+      events.emit.restore();
+      delete adapterManager.bidderRegistry[ALIAS];
+      delete adapterManager.aliasRegistry[ALIAS];
+    });
+
+    describe('FPD', () => {
+      it('keeps bidder-specific FPD out of the top level of every server\'s request', () => {
+        runAuction();
+        expect(bidderRequests.find(req => req.bidderCode === ALIAS).ortb2.site.keywords).to.equal('alias-only');
+        [ENDPOINT_A, ENDPOINT_B].forEach(endpoint => {
+          const [, body] = requestTo(endpoint);
+          expect(body.site.keywords, endpoint).to.not.exist;
+          expect(body.user.yob, endpoint).to.not.exist;
+        });
+        expect(requestTo(ENDPOINT_A)[1].ext.prebid.bidderconfig).to.eql([{
+          bidders: [ALIAS],
+          config: { ortb2: { source: { ext: { schain: SCHAIN } }, site: { keywords: 'alias-only' }, user: { yob: 1984 } } }
+        }]);
+        expect(requestTo(ENDPOINT_B)[1].ext.prebid.bidderconfig).to.not.exist;
+      });
+
+      it('redacts each server\'s request under that server\'s own activity controls', () => {
+        unregisterRules.push(activityRules.registerActivityControl(ACTIVITY_TRANSMIT_UFPD, 'test',
+          params => params[ACTIVITY_PARAM_S2S_NAME] === 'b' ? { allow: false } : undefined));
+        runAuction();
+        const [, bodyA] = requestTo(ENDPOINT_A);
+        const [, bodyB] = requestTo(ENDPOINT_B);
+        expect(bodyA.user.keywords).to.equal('global-kw');
+        expect(bodyB.site.domain).to.equal('global.example');
+        expect(bodyB.user?.keywords).to.not.exist;
+      });
+    });
+
+    describe('ext.prebid and events', () => {
+      beforeEach(runAuction);
+
+      it('does not list another server\'s bidders in ext.prebid', () => {
+        const [, body] = requestTo(ENDPOINT_B);
+        expect(Object.keys(body.ext.prebid.page_view_ids)).to.eql(['appnexus']);
+        expect(body.ext.prebid.aliases).to.not.exist;
+        expect(body.ext.prebid.schains).to.not.exist;
+      });
+
+      it('still sends each server its own bidders in ext.prebid', () => {
+        const [, body] = requestTo(ENDPOINT_A);
+        expect(Object.keys(body.ext.prebid.page_view_ids)).to.eql([ALIAS]);
+        expect(body.ext.prebid.aliases).to.eql({ [ALIAS]: 'rubicon' });
+        expect(body.ext.prebid.schains).to.eql([{ bidders: [ALIAS], schain: SCHAIN }]);
+      });
+
+      it('emits BIDDER_DONE only for the bidders of the server that responded', () => {
+        const [req] = requestTo(ENDPOINT_B);
+        req.respond(200, {}, JSON.stringify({ id: 'resp', seatbid: [] }));
+        const doneFor = events.emit.getCalls()
+          .filter(call => call.args[0] === EVENTS.BIDDER_DONE)
+          .map(call => call.args[1].bidderCode);
+        expect(doneFor).to.eql(['appnexus']);
+      });
+
+      it('emits BIDDER_ERROR only for the bidders of the server that failed', () => {
+        const [req] = requestTo(ENDPOINT_B);
+        req.respond(500, {}, '');
+        const errorFor = events.emit.getCalls()
+          .filter(call => call.args[0] === EVENTS.BIDDER_ERROR)
+          .map(call => call.args[1].bidderRequest.bidderCode);
+        expect(errorFor).to.eql(['appnexus']);
+      });
     });
   });
 

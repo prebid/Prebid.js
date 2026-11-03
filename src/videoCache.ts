@@ -257,7 +257,16 @@ export function store(bids: VideoBid[], done: VideoCacheStoreCallback = (_error,
 }
 
 export function getCacheUrl(cacheUrl, id) {
-  return `${cacheUrl}?uuid=${id}`;
+  let url;
+  try {
+    url = new URL(cacheUrl, document.baseURI);
+  } catch (e) {
+    return `${cacheUrl}?uuid=${encodeURIComponent(id)}`;
+  }
+  const params = url.search.replace(/^\?/, '').split('&').filter(param => param && param.split('=')[0] !== 'uuid');
+  params.push(`uuid=${encodeURIComponent(id)}`);
+  url.search = `?${params.join('&')}`;
+  return url.toString();
 }
 
 export const storeLocally = (bid) => {
