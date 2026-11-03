@@ -409,7 +409,7 @@ describe('Unit: Prebid Module', function () {
     it('should return current targeting data for slots', function () {
       pbjs.setConfig({ enableSendAllBids: true });
       const targeting = pbjs.getAdserverTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
-      const expected = getAdServerTargeting(['/19968336/header-bid-tag-0, /19968336/header-bid-tag1']);
+      const expected = getAdServerTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       sinon.assert.match(targeting, expected);
     });
 
