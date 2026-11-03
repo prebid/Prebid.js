@@ -861,6 +861,85 @@ describe('validate native', function () {
     });
   });
 
+  describe('image asset sizes / aspect_ratios with multiple entries', () => {
+    let sandbox, logWarnStub, logErrorStub;
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      logWarnStub = sandbox.stub(utils, 'logWarn');
+      logErrorStub = sandbox.stub(utils, 'logError');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    ['image', 'icon'].forEach(key => {
+      it(`should keep only the first of multiple ${key}.sizes, and warn about the rest`, () => {
+        const ortb = toOrtbNativeRequest({
+          [key]: {
+            required: true,
+            sizes: [[300, 250], [600, 500], [150, 125]]
+          }
+        });
+        expect(ortb.assets[0].img).to.include({ w: 300, h: 250 });
+        expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin');
+        sinon.assert.calledOnce(logWarnStub);
+        sinon.assert.calledWith(logWarnStub, sinon.match(`${key}.sizes`), [[600, 500], [150, 125]]);
+        sinon.assert.notCalled(logErrorStub);
+      });
+
+      it(`should accept a single size wrapped in an array for ${key}.sizes, without warning`, () => {
+        const ortb = toOrtbNativeRequest({
+          [key]: {
+            sizes: [[300, 250]]
+          }
+        });
+        expect(ortb.assets[0].img).to.include({ w: 300, h: 250 });
+        sinon.assert.notCalled(logWarnStub);
+        sinon.assert.notCalled(logErrorStub);
+      });
+
+      it(`should use the first entry's min sizes for multiple ${key}.aspect_ratios, and warn about the rest`, () => {
+        const ortb = toOrtbNativeRequest({
+          [key]: {
+            aspect_ratios: [
+              { min_width: 300, min_height: 200, ratio_width: 3, ratio_height: 2 },
+              { min_width: 100, min_height: 100, ratio_width: 1, ratio_height: 1 }
+            ]
+          }
+        });
+        expect(ortb.assets[0].img).to.include({ wmin: 300, hmin: 200 });
+        expect(ortb.assets[0].img.ext).to.eql({ aspectratios: ['3:2', '1:1'] });
+        sinon.assert.calledOnce(logWarnStub);
+        sinon.assert.calledWith(logWarnStub, sinon.match(`${key}.aspect_ratios`));
+      });
+    });
+
+    it('should not warn for a single size', () => {
+      const ortb = toOrtbNativeRequest({ image: { sizes: [150, 50] } });
+      expect(ortb.assets[0].img).to.include({ w: 150, h: 50 });
+      sinon.assert.notCalled(logWarnStub);
+      sinon.assert.notCalled(logErrorStub);
+    });
+
+    it('should not warn when extra aspect_ratios entries only specify ratios', () => {
+      toOrtbNativeRequest({
+        image: {
+          aspect_ratios: [
+            { min_width: 300, min_height: 200, ratio_width: 3, ratio_height: 2 },
+            { ratio_width: 1, ratio_height: 1 }
+          ]
+        }
+      });
+      sinon.assert.notCalled(logWarnStub);
+    });
+
+    it('should still reject invalid sizes', () => {
+      const ortb = toOrtbNativeRequest({ image: { sizes: [[300, 250], 'bogus'] } });
+      expect(ortb.assets[0].img).to.not.have.any.keys('w', 'h');
+      sinon.assert.calledOnce(logErrorStub);
+    });
+  });
+
   ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
     it(`should not generate an empty asset for key ${nativeKey}`, () => {
       const ortbReq = toOrtbNativeRequest({

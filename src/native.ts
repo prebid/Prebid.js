@@ -8,6 +8,7 @@ import {
   isNumber,
   isPlainObject,
   logError,
+  logWarn,
   pick,
   politeTriggerPixel,
   triggerPixel
@@ -512,6 +513,11 @@ export function getAllAssetsMessage(data, adObject) {
 function getAssetValue(value) {
   return value?.url || value?.content || value;
 }
+
+function isValidSize(size) {
+  return isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+}
+
 /**
  * converts Prebid legacy native assets request to OpenRTB format
  * @param {object} legacyNativeAssets an object that describes a native bid request in Prebid proprietary format
@@ -568,6 +574,10 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
         } else if (!asset.aspect_ratios.length) {
           logError("image.aspect_ratios was passed, but it's empty:", asset.aspect_ratios);
         } else {
+          if (asset.aspect_ratios.slice(1).some(ar => ar?.min_width != null || ar?.min_height != null)) {
+            // ORTB native has a single wmin/hmin per image asset; for the other entries only the ratios are forwarded (in img.ext.aspectratios)
+            logWarn(`${key}.aspect_ratios has multiple entries; only the first entry's min_width/min_height will be used in the ORTB native request. Extra values are dropped:`, asset.aspect_ratios.slice(1));
+          }
           const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
           if (!isInteger(minWidth) || !isInteger(minHeight)) {
             logError('image.aspect_ratios min_width or min_height are invalid: ', minWidth, minHeight);
@@ -588,11 +598,19 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
 
       // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
-        if (asset.sizes.length !== 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
+        let size: any = asset.sizes;
+        if (isArray(size) && size.length > 0 && size.every(isValidSize)) {
+          // ORTB native allows a single w/h per image asset: use the first size and drop the rest
+          if (size.length > 1) {
+            logWarn(`${key}.sizes has multiple sizes; only the first one (${size[0].join('x')}) will be used in the ORTB native request. Extra sizes are dropped:`, size.slice(1));
+          }
+          size = size[0];
+        }
+        if (!isValidSize(size)) {
           logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
         } else {
-          ortbAsset.img.w = asset.sizes[0];
-          ortbAsset.img.h = asset.sizes[1];
+          ortbAsset.img.w = size[0];
+          ortbAsset.img.h = size[1];
           delete ortbAsset.img.hmin;
           delete ortbAsset.img.wmin;
         }
