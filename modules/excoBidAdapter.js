@@ -199,10 +199,10 @@ export class AdapterHelpers {
       params.maxBidderCalls = bid.maxBidderCalls;
       params.transactionId = bid.transactionId;
 
-      if (bid.params && bid.params[0]) {
-        params.publisherId = bid.params[0].publisherId;
-        params.accountId = bid.params[0].accountId;
-        params.tagId = bid.params[0].tagId;
+      if (bid.params) {
+        params.publisherId = bid.params.publisherId;
+        params.accountId = bid.params.accountId;
+        params.tagId = bid.params.tagId;
       }
 
       if (bid.ortb2.device) {
