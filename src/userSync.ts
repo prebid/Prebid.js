@@ -78,7 +78,7 @@ export interface UserSyncConfig {
    */
   usePoliteSync?: boolean;
   /**
-   * Remove sync iframes automatically, some time after each one loads; `false` keeps them for the life of the page.
+   * Remove sync iframes automatically, some time after each one is inserted; `false` keeps them for the life of the page.
    * An object sets the delays in milliseconds, or `false` to skip a step:
    * - `withChildFrames`: remove the iframe if it has created frames of its own. Default: 15000.
    * - `all`: remove the iframe regardless. Default: 15000.
@@ -131,7 +131,8 @@ export function insertUserSyncIframe(url: string, done?: () => void, timeout?: n
     src: url,
   });
   OWN_SYNC_IFRAMES.set(iframe, { onCleanup: isFn(onCleanup) ? onCleanup : undefined });
-  iframe.addEventListener('load', () => scheduleIframeRemoval(iframe), { once: true });
+  // not on load: a sync whose nested frames never finish loading would never fire it
+  scheduleIframeRemoval(iframe);
   if (isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }

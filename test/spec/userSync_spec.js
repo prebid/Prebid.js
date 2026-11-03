@@ -869,12 +869,9 @@ describe('user sync iframes', () => {
   describe('automatic removal', () => {
     let clock, logWarnStub;
 
-    function insertLoaded(onCleanup) {
+    function insert(onCleanup) {
       insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
-      const iframe = newIframes().pop();
-      // about:blank may already have fired load on insertion; the listener only runs once either way
-      iframe.dispatchEvent(new Event('load'));
-      return iframe;
+      return newIframes().pop();
     }
 
     function setRemoval(removeIframes) {
@@ -893,9 +890,9 @@ describe('user sync iframes', () => {
       config.resetConfig();
     });
 
-    it('is on by default, removing every sync iframe 15s after it loads', () => {
+    it('is on by default, removing every sync iframe 15s after it is inserted', () => {
       const onCleanup = sinon.spy();
-      const iframe = insertLoaded(onCleanup);
+      const iframe = insert(onCleanup);
       clock.tick(14999);
       expect(iframe.parentNode).to.not.equal(null);
       clock.tick(1);
@@ -905,7 +902,7 @@ describe('user sync iframes', () => {
     });
 
     it('warns when it removes a sync iframe that created frames', () => {
-      const iframe = insertLoaded();
+      const iframe = insert();
       addChildFrame(iframe);
       clock.tick(15000);
       expect(iframe.parentNode).to.equal(null);
@@ -914,8 +911,8 @@ describe('user sync iframes', () => {
 
     it('removes sync iframes with child frames earlier when withChildFrames < all', () => {
       setRemoval({ withChildFrames: 1000, all: 5000 });
-      const fanOut = insertLoaded();
-      const simple = insertLoaded();
+      const fanOut = insert();
+      const simple = insert();
       addChildFrame(fanOut);
       clock.tick(1000);
       expect(fanOut.parentNode).to.equal(null);
@@ -928,7 +925,7 @@ describe('user sync iframes', () => {
 
     it('can skip a step', () => {
       setRemoval({ withChildFrames: false, all: 1000 });
-      const iframe = insertLoaded();
+      const iframe = insert();
       addChildFrame(iframe);
       clock.tick(999);
       expect(iframe.parentNode).to.not.equal(null);
@@ -938,7 +935,7 @@ describe('user sync iframes', () => {
 
     it('can be turned off', () => {
       setRemoval(false);
-      const iframe = insertLoaded();
+      const iframe = insert();
       addChildFrame(iframe);
       clock.tick(60000);
       expect(iframe.parentNode).to.not.equal(null);
@@ -947,7 +944,7 @@ describe('user sync iframes', () => {
     it('follows the current config', () => {
       setRemoval(false);
       setRemoval({ all: 1000 });
-      const iframe = insertLoaded();
+      const iframe = insert();
       clock.tick(1000);
       expect(iframe.parentNode).to.equal(null);
     });
@@ -955,7 +952,7 @@ describe('user sync iframes', () => {
     it('goes back to the defaults after resetConfig', () => {
       setRemoval(false);
       config.resetConfig();
-      const iframe = insertLoaded();
+      const iframe = insert();
       clock.tick(15000);
       expect(iframe.parentNode).to.equal(null);
     });
@@ -963,7 +960,7 @@ describe('user sync iframes', () => {
     [['5000'], [-1], [Infinity], [NaN]].forEach(([delay]) => {
       it(`warns and uses the default for an invalid delay: ${delay}`, () => {
         setRemoval({ all: delay });
-        const iframe = insertLoaded();
+        const iframe = insert();
         sinon.assert.calledWith(logWarnStub, sinon.match('userSync.removeIframes.all'));
         clock.tick(14999);
         expect(iframe.parentNode).to.not.equal(null);
@@ -973,17 +970,9 @@ describe('user sync iframes', () => {
     });
 
     it('cancels its timer when the iframe is removed manually', () => {
-      insertLoaded();
+      insert();
       expect(clock.countTimers()).to.equal(1);
       removeUserSyncIframes();
-      expect(clock.countTimers()).to.equal(0);
-    });
-
-    it('does not schedule anything for an iframe that loads after it was removed', () => {
-      insertUserSyncIframe('about:blank');
-      const iframe = newIframes().pop();
-      removeUserSyncIframes();
-      iframe.dispatchEvent(new Event('load'));
       expect(clock.countTimers()).to.equal(0);
     });
   });
