@@ -45,7 +45,7 @@ VITEST_FILES=test/spec/unit/core/adapterManager_spec.js npm run test:vitest
 VITEST_ISOLATE_SPECS=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest   # same chunk, one page per spec
 ```
 
-`VITEST_CHANNEL=chrome` uses the installed Google Chrome. See `build.js` for the other environment variables.
+See `build.js` for the other environment variables.
 
 The bundles test whichever variant is in `dist/src`, as Karma's do. For the all-features-disabled variant (Karma's
 "Unit tests (all features disabled)" job), precompile with `npx gulp precompile-all-features-disabled` instead.
@@ -66,13 +66,53 @@ On chunk 1 of 8, the result matches Karma's: the same 238 files and identical li
 
 The counters are sent after the spec's own tests and hooks, but before its top-level `after()` hooks, so lines that run only in those hooks aren't counted. In CI, the default variant collects coverage, and the `Vitest coverage` job combines the chunks and writes the totals to its summary.
 
+## Browsers
+
+Playwright's Chromium is the default. Environment variables in `vitest.config.mjs` select another browser:
+
+```sh
+npx playwright install firefox webkit
+VITEST_BROWSER=firefox TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest
+VITEST_BROWSER=webkit TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest
+VITEST_CHANNEL=msedge TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest      # installed Microsoft Edge
+VITEST_CHANNEL=chrome TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest      # installed Google Chrome
+# a fixed Chrome binary, here the Chrome 113 that Karma's "ChromeNoSandbox 113" job uses
+VITEST_EXECUTABLE_PATH="$(npx @puppeteer/browsers install chrome@113.0.5672.0 | cut -d' ' -f2-)" npm run test:vitest
+```
+
+CI mirrors Karma's runner browsers (`.github/workflows/browser_testing.json`), each on the runner OS its Karma job
+uses, in 8 chunks of the default variant:
+
+| Karma | Vitest | Runner |
+| --- | --- | --- |
+| ChromeHeadless (latest) | Playwright Chromium (also runs all-features-disabled) | ubuntu-latest |
+| ChromeNoSandbox 113 | Chrome 113 from `@puppeteer/browsers`, via `VITEST_EXECUTABLE_PATH` | ubuntu-latest |
+| FirefoxHeadless | Playwright Firefox | ubuntu-latest |
+| EdgeHeadless | installed Edge, `VITEST_CHANNEL=msedge` | windows-latest |
+| SafariNative | Playwright WebKit | macos-latest |
+
+Notes:
+
+- Chrome 113 is installed the same way the Karma job does it, and Playwright drives it through `executablePath`.
+  Playwright only promises to support its bundled Chromium, so a Playwright upgrade could break this job. If it
+  does, the fallback is to keep Karma's Chrome 113 job until the oldest supported Chrome moves on.
+- Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking, no
+  background timer throttling) and `--no-sandbox` (Karma's ChromeNoSandbox). For Firefox the config sets the
+  karma-firefox-launcher prefs that can affect tests.
+- Playwright's WebKit is not Safari. It is closest on macOS; on Windows and Linux it is a different port.
+  In it, Playwright's screen emulation applies only to the top frame, so `screen` in the test iframe reports the
+  real monitor while `window.top.screen` reports the emulated one. Specs comparing the two fail there.
+- Vite listens on `localhost`, which on Windows is `::1`. A Karma run elsewhere on the machine holds
+  `0.0.0.0:9876`, and Firefox, which tries `127.0.0.1` first, then reaches Karma and Vitest times out
+  connecting to it. Don't run both at once.
+
 ## Status
 
 On the full suite, Karma passed 27,478 tests and this runner passed 27,468 in the first trial (a spike on a
 patmmccann/Prebid.js fork branch). The differences were three specs fixed separately: #15978 (bliink), #15979
 (consentUtils), #15980 (pixfuture).
 
-Not done yet: Firefox/WebKit, BrowserStack, and gulp integration.
+Not done yet: BrowserStack and gulp integration.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.

@@ -12,6 +12,26 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const bundles = path.join(root, 'build/vitest-bundles');
 const rawCoverage = path.join(root, 'build/vitest-coverage');
 
+// Which browser runs the bundles, standing in for Karma's matrix (.github/workflows/browser_testing.json):
+//   VITEST_BROWSER=chromium|firefox|webkit  Playwright browser (default chromium)
+//   VITEST_CHANNEL=chrome|msedge            installed Google Chrome / Microsoft Edge (chromium only)
+//   VITEST_EXECUTABLE_PATH=<path>           a fixed binary, e.g. the Chrome 113 that Karma's
+//                                           "ChromeNoSandbox 113" job installs with @puppeteer/browsers
+const browserName = process.env.VITEST_BROWSER || 'chromium';
+const launchOptions = {
+  ...(process.env.VITEST_CHANNEL ? { channel: process.env.VITEST_CHANNEL } : {}),
+  ...(process.env.VITEST_EXECUTABLE_PATH ? { executablePath: process.env.VITEST_EXECUTABLE_PATH } : {}),
+  // the prefs karma-firefox-launcher writes that bear on tests: no popup blocking, no slow-script
+  // dialog, and karma's background timer clamp
+  ...(browserName === 'firefox' ? {
+    firefoxUserPrefs: {
+      'dom.disable_open_during_load': false,
+      'dom.max_script_run_time': 0,
+      'dom.min_background_timeout_value': 10,
+    },
+  } : {}),
+};
+
 export default defineConfig({
   root,
   // The webpack bundles are served untouched from here (build.js writes them to build/vitest-public/wp).
@@ -48,9 +68,11 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
-      // VITEST_CHANNEL=chrome runs the installed Google Chrome (what karma launches) instead of Playwright's Chromium
-      provider: playwright(process.env.VITEST_CHANNEL ? { launchOptions: { channel: process.env.VITEST_CHANNEL } } : {}),
-      instances: [{ browser: 'chromium' }],
+      // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking,
+      // no background timer throttling) and --no-sandbox, as karma's ChromeNoSandbox launcher does
+      provider: playwright({ launchOptions }),
+      // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
+      instances: [{ browser: browserName, name: process.env.VITEST_CHANNEL || browserName }],
       screenshotFailures: false,
       // karma's ChromeHeadless window size (Vitest defaults to a 414x896 phone viewport)
       viewport: { width: 800, height: 600 },
