@@ -1075,11 +1075,6 @@ describe('adapterManager tests', function () {
       'start': 1462918897460
     }];
 
-    // With several s2sConfigs, each Prebid Server call must only see the bidder requests for its own bidders.
-    // The PBS adapter copies the shared fields of its request (e.g. `ortb2`, which is merged with bidder-specific
-    // first party data) from the first bidder request it receives, so a call that also receives another
-    // server's bidder requests can send that server's bidder data, and emit BIDDER_DONE / BIDDER_ERROR for
-    // bidders it never called.
     it('does not send one Prebid Server the bidder requests (and bidder data) meant for another', () => {
       const requests = utils.deepClone(bidRequests);
       const [appnexusRequest, pubmaticRequest] = requests;
