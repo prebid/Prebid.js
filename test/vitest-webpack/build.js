@@ -14,6 +14,8 @@
 //   TEST_CHUNKS    number of chunks the full suite is split into (default 8, as in gulpfile.js)
 //   TEST_CHUNK     which chunk to build (1-based); omit to build every spec
 //   TEST_PAT       spec file pattern (default *_spec.js)
+//   VITEST_BRIDGE_ALL=1  also bundle the specs the native project runs (README.md, "Native project"); by
+//                        default a chunk or VITEST_ISOLATE_SPECS run only has the ones in bridge-specs.json
 //   VITEST_SOURCEMAPS=1  emit inline source maps (slower, larger)
 //   VITEST_COVERAGE=1    instrument with babel-plugin-istanbul, as karma does with coverage on, and write
 //                        lcov to build/coverage/chunks/<chunk>/lcov.info (see README.md, "Coverage")
@@ -21,13 +23,11 @@
 // Run `npx gulp precompile` first, exactly as for `test-only-nobuild`.
 const path = require('path');
 const fs = require('fs');
-// glob is a devDependency; this is a build script, not shipped code.
-// eslint-disable-next-line import/no-extraneous-dependencies
-const glob = require('glob');
 const webpack = require('webpack');
 const karmaConfMaker = require('../../karma.conf.maker.js');
 const helpers = require('../../gulpHelpers.js');
 const { readPrecompilationKey } = require('../../gulp.cache.js');
+const { bridgeOnly, karmaChunks } = require('../vitest-native/specs.js');
 
 const ROOT = path.resolve(__dirname, '../..');
 // the test files Vitest collects (one small ES module per spec)
@@ -54,18 +54,12 @@ function selectGroups () {
     return { groups: perSpec(process.env.VITEST_FILES.split(',').map(f => f.trim()).filter(Boolean)), pipeline: false };
   }
   // same chunking as karmaRunner.js
-  const chunkNum = process.env.TEST_CHUNKS ?? 8;
-  const pat = process.env.TEST_PAT ?? '*_spec.js';
-  const tests = glob.sync('test/spec/**/' + pat, { cwd: ROOT }).map(f => f.replace(/\\/g, '/')).sort();
-  const chunkLen = chunkNum === 'MAX' ? 0 : Math.floor(tests.length / Number(chunkNum));
-  let chunks = [[]];
-  tests.forEach((fn) => {
-    chunks[chunks.length - 1].push(fn);
-    if (chunks[chunks.length - 1].length > chunkLen) chunks.push([]);
-  });
-  chunks = chunks.filter(c => c.length > 0);
+  const chunks = karmaChunks();
+  // Karma's chunks, less the specs the native project runs (../vitest-native), unless VITEST_BRIDGE_ALL is set
+  const keep = process.env.VITEST_BRIDGE_ALL ? (specs) => specs : bridgeOnly;
   const n = process.env.TEST_CHUNK ? Number(process.env.TEST_CHUNK) : null;
-  const selected = n ? [[n, chunks[n - 1]]] : chunks.map((specs, i) => [i + 1, specs]);
+  const selected = (n ? [[n, chunks[n - 1]]] : chunks.map((specs, i) => [i + 1, specs]))
+    .map(([i, specs]) => [i, keep(specs)]).filter(([, specs]) => specs.length > 0);
   if (process.env.VITEST_ISOLATE_SPECS) {
     return { groups: perSpec(selected.flatMap(([, specs]) => specs)), pipeline: true };
   }
@@ -152,6 +146,12 @@ function makeConfig ({ groups, pipeline }) {
 
 const selection = selectGroups();
 const started = Date.now();
+if (selection.groups.length === 0) {
+  // every spec selected runs natively; Vitest then finds no test files and passes (passWithNoTests)
+  fs.rmSync(OUT, { recursive: true, force: true });
+  console.log('no bridge specs selected');
+  process.exit(0);
+}
 webpack(makeConfig(selection), (err, stats) => {
   if (err) {
     console.error(err);

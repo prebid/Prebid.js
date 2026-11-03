@@ -1,0 +1,21 @@
+{
+  "hard-code karma's port, 9876; the native project listens elsewhere": [
+    "test/spec/modules/docereeAdManagerBidAdapter_spec.js",
+    "test/spec/modules/intentIqAnalyticsAdapter_spec.js",
+    "test/spec/modules/ixBidAdapter_spec.js"
+  ],
+  "re-evaluate a module through webpack's require.cache": [
+    "test/spec/libraries/autoplayDetection_spec.js"
+  ],
+  "stub an export with a getter (sinon's .get()), which a module binding can't be": [
+    "test/spec/modules/chromeAiRtdProvider_spec.js"
+  ],
+  "rely on dset, CommonJS under webpack, ignoring a write to a getter-only property; as an ES module it throws": [
+    "test/spec/modules/transfonSecurityRtdProvider_spec.js"
+  ],
+  "fail natively for reasons not yet diagnosed": [
+    "test/spec/modules/connectIdSystem_spec.js",
+    "test/spec/modules/optimeraRtdProvider_spec.js",
+    "test/spec/modules/richaudienceBidAdapter_spec.js"
+  ]
+}
