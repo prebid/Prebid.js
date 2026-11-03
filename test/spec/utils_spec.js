@@ -1808,14 +1808,14 @@ describe('user sync iframes', () => {
       utils.setSyncIframeRemoval();
     });
 
-    it('removes a sync iframe that created frames 3s after it loads, with a warning', () => {
+    it('removes a sync iframe that created frames 15s after it loads, with a warning', () => {
       const warnings = [];
       const onDebug = ({ type, arguments: args }) => type === 'WARNING' && warnings.push(args.join(' '));
       events.on(EVENTS.AUCTION_DEBUG, onDebug);
       try {
         const iframe = insertLoaded();
         addChildFrame(iframe);
-        clock.tick(2999);
+        clock.tick(14999);
         expect(iframe.parentNode).to.not.equal(null);
         clock.tick(1);
         expect(iframe.parentNode).to.equal(null);
@@ -1847,12 +1847,13 @@ describe('user sync iframes', () => {
       expect(iframe.parentNode).to.equal(null);
     });
 
-    it('is off unless configured', () => {
+    it('is on by default', () => {
       utils.setSyncIframeRemoval();
       const iframe = insertLoaded();
-      addChildFrame(iframe);
-      clock.tick(60000);
+      clock.tick(14999);
       expect(iframe.parentNode).to.not.equal(null);
+      clock.tick(1);
+      expect(iframe.parentNode).to.equal(null);
     });
 
     it('can be turned off', () => {

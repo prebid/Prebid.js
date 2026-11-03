@@ -463,24 +463,23 @@ export function insertUserSyncIframe(url, done, timeout, onCleanup) {
   internal.insertElement(iframe, document, 'html', true);
 }
 
-const DEFAULT_SYNC_IFRAME_REMOVAL = { withChildFrames: 3000, all: 15000 };
-// off unless configured (userSync.removeIframes)
-let syncIframeRemoval = {};
+const DEFAULT_SYNC_IFRAME_REMOVAL = { withChildFrames: 15000, all: 15000 };
+let syncIframeRemoval = DEFAULT_SYNC_IFRAME_REMOVAL;
 
 /**
  * Configure the automatic removal of sync iframes (`userSync.removeIframes`).
- * @param {boolean|{withChildFrames?: number|false, all?: number|false}} [settings] `true` turns it on with the
- *   default delays, an object turns it on with these delays in milliseconds after an iframe loads (missing ones
- *   use the defaults): `withChildFrames` removes it then if it has created frames of its own, `all` removes it
- *   then regardless; `false` skips that step. Undefined or `false` turns it off.
+ * @param {boolean|{withChildFrames?: number|false, all?: number|false}} [settings] delays in milliseconds after an
+ *   iframe loads (missing ones use the defaults): `withChildFrames` removes it then if it has created frames of its
+ *   own, with a warning; `all` removes it then regardless; `false` skips that step. Undefined or `true` uses the
+ *   defaults; `false` turns it off.
  */
 export function setSyncIframeRemoval(settings) {
-  if (settings === true) {
-    syncIframeRemoval = DEFAULT_SYNC_IFRAME_REMOVAL;
+  if (settings === false) {
+    syncIframeRemoval = {};
   } else if (settings != null && typeof settings === 'object') {
     syncIframeRemoval = { ...DEFAULT_SYNC_IFRAME_REMOVAL, ...settings };
   } else {
-    syncIframeRemoval = {};
+    syncIframeRemoval = DEFAULT_SYNC_IFRAME_REMOVAL;
   }
 }
 
