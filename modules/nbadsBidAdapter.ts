@@ -2,7 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import type { MediaType } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { deepAccess, deepSetValue, isArray, isStr, triggerPixel } from '../src/utils.js';
+import { noCredsAjax } from '../src/ajax.js';
+import { deepAccess, deepSetValue, isArray, isStr } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 import type { AdapterRequest, AdapterResponse, BidderSpec, ExtendedResponse, ServerResponse } from '../src/adapters/bidderFactory.js';
@@ -10,9 +11,9 @@ import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import type { Bid } from '../src/bidfactory.js';
 
 /**
- * Bid parameters for the NexBids adapter.
+ * nbads(NexBids) 适配器公开的竞价参数。
  */
-export interface NexbidsBidderParams {
+export interface NbadsBidderParams {
   /**
    * Publisher ID assigned by NexBids (`Pub-…`).
    * Sent as the `publisherId` query parameter; the NexBids gateway resolves it against its
@@ -27,14 +28,14 @@ export interface NexbidsBidderParams {
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    nexbids: NexbidsBidderParams;
+    nbads: NbadsBidderParams;
   }
 }
 
 /**
- * Adapter configuration, set with `pbjs.setConfig({ nexbids: { env: 'test' } })`.
+ * 通过 `pbjs.setConfig({ nbads: { env: 'test' } })` 设置适配器配置。
  */
-export interface NexbidsConfig {
+export interface NbadsConfig {
   /**
    * Gateway environment. `prod` (default) is the production endpoint; `test` is the
    * NexBids staging gateway for integration testing.
@@ -44,11 +45,11 @@ export interface NexbidsConfig {
 
 declare module '../src/config' {
   interface Config {
-    nexbids?: NexbidsConfig;
+    nbads?: NbadsConfig;
   }
 }
 
-const BIDDER_CODE = 'nexbids';
+const BIDDER_CODE = 'nbads';
 const AUCTION_PATH = '/openrtb2/auction';
 /**
  * One hostname per environment. Production is a single GeoDNS name that resolves to the
@@ -66,7 +67,7 @@ const DEFAULT_TTL = 300;
 const DEFAULT_BANNER_MIMES = ['text/html', 'text/javascript', 'image/jpeg', 'image/png', 'image/gif'];
 
 function gatewayHost(): string {
-  const cfg: NexbidsConfig = config.getConfig('nexbids') || {};
+  const cfg: NbadsConfig = config.getConfig('nbads') || {};
   // Prebid requires fixed endpoint domains and HTTPS, including integration tests.
   return cfg.env === 'test' ? GATEWAY_HOSTS.test : GATEWAY_HOSTS.prod;
 }
@@ -132,12 +133,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     if (!bidResponse.meta.advertiserDomains) {
       bidResponse.meta.advertiserDomains = [];
     }
-    // The gateway strips nurl/burl/lurl and relays them server-side. What it hands down instead
-    // is a signed billing pixel (relative path) in `ext.nexbids.pixel`; it is exposed as `burl`
-    // so that it fires once when Prebid marks the bid billable (i.e. when the ad renders).
-    // For video and native the gateway also writes the same pixel into the creative (VAST
-    // <Impression> / native eventtrackers), because an instream player served through an ad server
-    // may never trigger `bidWon`; the gateway de-duplicates the two.
+    // 网关剥离并代发上游通知，客户端只在可计费时发送签名曝光地址。
+    // ext.nexbids 属于网关协议，不随对外 bidder code 更名。
+    // 视频和原生素材还携带同一个曝光地址，重复请求由网关去重。
     const pixel = deepAccess(bid, 'ext.nexbids.pixel');
     if (isStr(pixel) && pixel) {
       bidResponse.burl = pixel;
@@ -169,7 +167,7 @@ function hasNative(bid: BidRequest<typeof BIDDER_CODE>): boolean {
 }
 
 function isBidRequestValid(bid: BidRequest<typeof BIDDER_CODE>): boolean {
-  const params = bid.params || ({} as NexbidsBidderParams);
+  const params = bid.params || ({} as NbadsBidderParams);
   if (!isStr(params.publisherId) || !params.publisherId) {
     return false;
   }
@@ -230,7 +228,8 @@ function interpretResponse(serverResponse: ServerResponse, request: AdapterReque
 
 function onBidBillable(bid: Bid): void {
   if (isStr(bid.burl) && bid.burl) {
-    triggerPixel(bid.burl);
+    // 保活请求降低页面跳转时通知丢失的概率；同一出价由 Prebid 核心去重。
+    noCredsAjax(bid.burl, undefined, undefined, { method: 'GET', keepalive: true, withCredentials: false });
   }
 }
 
