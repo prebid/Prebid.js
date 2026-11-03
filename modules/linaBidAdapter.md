@@ -51,6 +51,17 @@ Transaction ID sharing is optional. The adapter preserves shared
 LINA SSP accepts requests without TIDs and generates its own request ID for
 request tracking. Publishers do not need to enable TID sharing to use LINA.
 
+## Timeout
+
+The adapter forwards Prebid Core's `bidderRequest.timeout` as `timeoutMs`.
+LINA uses this request budget first. If it is absent or null, the SSP uses
+`BID_DEFAULT_TMAX_MS`, or 1000ms when that environment variable is unset.
+The total budget is capped at 5000ms, then 200ms is reserved once for network
+and SSP processing. The remainder is sent to ADEx as `tmax`. Explicit budgets
+of 200ms or less are rejected. SDK requests follow the same policy using their
+OpenRTB `tmax` as the client budget. Prebid's `ortb2.tmax` is not a replacement
+for `timeoutMs`.
+
 # Test Parameters
 
 The IDs below are defined by the mandatory LINA SSP official inventory Seed.
