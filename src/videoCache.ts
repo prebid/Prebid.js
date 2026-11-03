@@ -102,15 +102,7 @@ declare module './bidfactory' {
   }
 }
 
-export interface CacheConfig {
-  /**
-   * The URL of the Prebid Cache server endpoint where VAST creatives will be sent.
-   */
-  url: string;
-  /**
-   * Flag determining whether to locally save VAST XML as a blob
-   */
-  useLocal?: boolean;
+interface BaseCacheConfig {
   /**
    * When true, allows VAST XML-only bids to pass even without cache.url or cache.useLocal.
    */
@@ -141,6 +133,30 @@ export interface CacheConfig {
    */
   batchTimeout?: number;
 }
+
+export interface RemoteCacheConfig extends BaseCacheConfig {
+  /**
+   * The URL of the Prebid Cache server endpoint where VAST creatives will be sent.
+   */
+  url: string;
+  /**
+   * Flag determining whether to locally save VAST XML as a blob
+   */
+  useLocal?: false;
+}
+
+export interface LocalCacheConfig extends BaseCacheConfig {
+  /**
+   * The URL of the Prebid Cache server endpoint. Not used when `useLocal` is true.
+   */
+  url?: string;
+  /**
+   * Flag determining whether to locally save VAST XML as a blob
+   */
+  useLocal: true;
+}
+
+export type CacheConfig = RemoteCacheConfig | LocalCacheConfig;
 
 declare module './config' {
   interface Config {

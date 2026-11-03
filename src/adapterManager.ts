@@ -113,7 +113,7 @@ export function s2sActivityParams(s2sConfig) {
   });
 }
 
-export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
+export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
   /**
    * Unique ID for this request.
    */
@@ -223,8 +223,12 @@ export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderReques
 const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
   'nativeOrtbRequest',
-  'renderer',
   'element',
+] as const;
+
+const RENDERER_PROPERTIES = [
+  'renderer',
+  'safeRenderer',
 ] as const;
 
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
@@ -272,7 +276,9 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
     result.push(
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         const [tid, tidSource] = getTid(bid.bidder, adUnit.transactionId, bid.ortb2Imp?.ext?.tid ?? adUnit.ortb2Imp?.ext?.tid);
-        bid = Object.assign({}, bid,
+        bid = Object.assign({},
+          getDefinedParams(adUnit, RENDERER_PROPERTIES),
+          bid,
           {
             ortb2Imp: mergeDeep(
               {},
