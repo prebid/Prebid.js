@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec } from 'modules/nexbidsBidAdapter.js';
+import { spec } from 'modules/nbadsBidAdapter.js';
 import { config } from 'src/config.js';
+import adapterManager from 'src/adapterManager.js';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 
 const PROD_HOST = 'https://us.nexbids.com';
@@ -9,7 +11,7 @@ const TEST_HOST = 'https://test.ssp.nexbids.com';
 
 function makeBid(overrides = {}) {
   return Object.assign({
-    bidder: 'nexbids',
+    bidder: 'nbads',
     bidId: 'bid-1',
     adUnitCode: 'div-1',
     auctionId: 'auction-1',
@@ -29,7 +31,7 @@ function makeBid(overrides = {}) {
 
 function makeBidderRequest(bids) {
   return {
-    bidderCode: 'nexbids',
+    bidderCode: 'nbads',
     auctionId: 'auction-1',
     bidderRequestId: 'br-1',
     timeout: 1000,
@@ -117,14 +119,14 @@ function requestFor(bid) {
   return spec.buildRequests([bid], makeBidderRequest([bid]))[0];
 }
 
-describe('NexBids bid adapter', function () {
+describe('nbads(NexBids) bid adapter', function () {
   afterEach(function () {
     config.resetConfig();
   });
 
   describe('spec', function () {
-    it('registers the nexbids code for banner, video and native', function () {
-      expect(spec.code).to.equal('nexbids');
+    it('registers the nbads code for banner, video and native', function () {
+      expect(spec.code).to.equal('nbads');
       expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video', 'native']);
     });
   });
@@ -189,8 +191,8 @@ describe('NexBids bid adapter', function () {
       expect(requests[0].url).to.equal(PROD_HOST + '/openrtb2/auction?publisherId=Pub%20a%2Fb');
     });
 
-    it('switches to the staging gateway with config nexbids.env = test', function () {
-      config.setConfig({ nexbids: { env: 'test' } });
+    it('switches to the staging gateway with config nbads.env = test', function () {
+      config.setConfig({ nbads: { env: 'test' } });
       const bids = [makeBid()];
       const requests = spec.buildRequests(bids, makeBidderRequest(bids));
       expect(requests[0].url.indexOf(TEST_HOST + '/openrtb2/auction?')).to.equal(0);
@@ -198,7 +200,7 @@ describe('NexBids bid adapter', function () {
 
     it('keeps the gateway domain fixed even if an unsupported endpoint setting is supplied', function () {
       ['http://localhost:8082', 'https://other.example'].forEach((endpoint) => {
-        config.setConfig({ nexbids: { env: 'test', endpoint } });
+        config.setConfig({ nbads: { env: 'test', endpoint } });
         const bids = [makeBid()];
         const requests = spec.buildRequests(bids, makeBidderRequest(bids));
         expect(requests[0].url).to.equal(TEST_HOST + '/openrtb2/auction?publisherId=Pub-aaaaaaaaaaaaaaaa');
@@ -207,7 +209,7 @@ describe('NexBids bid adapter', function () {
 
     it('falls back to production for an unknown env', function () {
       ['nowhere', '__proto__', 'constructor', 'toString'].forEach((env) => {
-        config.setConfig({ nexbids: { env } });
+        config.setConfig({ nbads: { env } });
         const bids = [makeBid()];
         const requests = spec.buildRequests(bids, makeBidderRequest(bids));
         expect(requests[0].url).to.equal(PROD_HOST + '/openrtb2/auction?publisherId=Pub-aaaaaaaaaaaaaaaa');
@@ -402,7 +404,7 @@ describe('NexBids bid adapter', function () {
     });
 
     it('uses the origin of the request that was actually sent (staging gateway)', function () {
-      config.setConfig({ nexbids: { env: 'test' } });
+      config.setConfig({ nbads: { env: 'test' } });
       const bidRequests = [makeBid()];
       const testRequest = spec.buildRequests(bidRequests, makeBidderRequest(bidRequests))[0];
       const bids = spec.interpretResponse({ body: makeOrtbResponse() }, testRequest);
@@ -519,15 +521,45 @@ describe('NexBids bid adapter', function () {
       sandbox.restore();
     });
 
-    it('fires the billing pixel once', function () {
-      spec.onBidBillable({ burl: PROD_HOST + '/openrtb2/track/pixel?t=token-imp' });
-      sinon.assert.calledOnce(triggerPixelStub);
-      sinon.assert.calledWith(triggerPixelStub, PROD_HOST + '/openrtb2/track/pixel?t=token-imp');
+    it('通过公共请求接口发送可在离页后继续的无跨站凭据计费通知', function () {
+      const url = PROD_HOST + '/openrtb2/track/pixel?t=token-imp';
+      spec.onBidBillable({ burl: url });
+
+      expect(server.requests).to.have.lengthOf(1);
+      const request = server.requests[0];
+      expect(request.url).to.equal(url);
+      expect(request.method).to.equal('GET');
+      expect(request.fetch.request.keepalive).to.equal(true);
+      expect(request.withCredentials).to.equal(false);
+      sinon.assert.notCalled(triggerPixelStub);
+      request.respond(200, {}, '');
     });
 
-    it('does nothing without a billing pixel', function () {
-      spec.onBidBillable({});
-      spec.onBidBillable({ burl: '' });
+    it('重复触发同一出价的核心计费事件只发送一次通知', function () {
+      const bid = { bidder: 'nbads', burl: PROD_HOST + '/openrtb2/track/pixel?t=same-bid' };
+      adapterManager.triggerBilling(bid);
+      adapterManager.triggerBilling(bid);
+
+      expect(server.requests).to.have.lengthOf(1);
+      expect(server.requests[0].url).to.equal(bid.burl);
+      server.requests[0].respond(200, {}, '');
+    });
+
+    it('不同出价分别发送计费通知', function () {
+      ['first', 'second'].forEach((token) => {
+        adapterManager.triggerBilling({ bidder: 'nbads', burl: PROD_HOST + '/openrtb2/track/pixel?t=' + token });
+      });
+
+      expect(server.requests.map((request) => request.url)).to.deep.equal([
+        PROD_HOST + '/openrtb2/track/pixel?t=first',
+        PROD_HOST + '/openrtb2/track/pixel?t=second'
+      ]);
+      server.requests.forEach((request) => request.respond(200, {}, ''));
+    });
+
+    it('计费地址缺失或类型非法时不发送请求', function () {
+      [undefined, null, '', 123].forEach((burl) => spec.onBidBillable({ burl }));
+      expect(server.requests).to.have.lengthOf(0);
       sinon.assert.notCalled(triggerPixelStub);
     });
   });
