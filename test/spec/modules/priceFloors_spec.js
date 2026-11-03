@@ -2586,6 +2586,10 @@ describe('setting null as rule value', () => {
       auctionId: basicBidRequest.auctionId,
       adUnits
     });
+    server.respond();
+
+    const floorsData = getFloorsDataForAuction(basicBidRequest.auctionId);
+    expect(floorsData && floorsData.data && floorsData.data.values && floorsData.data.values['banner|600x300']).to.equal(null);
 
     const inputParams = { mediaType: 'banner', size: [600, 300] };
 
