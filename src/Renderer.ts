@@ -109,40 +109,30 @@ export class Renderer {
     });
 
     this.render = (...renderArgs) => {
+      const rendered = defer<void>();
+      let rethrow = false;
       const runRender = () => {
-        if (this._render) {
-          this._render(...renderArgs);
-        } else {
-          logWarn(`No render function was provided, please use .setRender on the renderer`);
-        }
-      };
-
-      const renderImmediately = () => {
         try {
-          runRender();
-          return PbPromise.resolve();
+          if (this._render) {
+            this._render(...renderArgs);
+          } else {
+            logWarn(`No render function was provided, please use .setRender on the renderer`);
+          }
+          rendered.resolve();
         } catch (e) {
-          return PbPromise.reject(e);
+          rendered.reject(e);
+          if (rethrow) throw e;
         }
       };
 
       if (isRendererPreferredFromAdUnit(adUnitCode)) {
         logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
-        return renderImmediately();
+        runRender();
       } else if (renderNow) {
-        return renderImmediately();
+        runRender();
       } else {
-        const rendered = defer<void>();
-        const queuedRender = () => {
-          try {
-            runRender();
-            rendered.resolve();
-          } catch (e) {
-            rendered.reject(e);
-            throw e;
-          }
-        };
-        this.cmd.unshift(queuedRender);
+        rethrow = true;
+        this.cmd.unshift(runRender);
         // `this.callback` may be replaced by the bidder, so failures are tracked here rather than in it
         loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, {
           success: () => {
@@ -158,13 +148,13 @@ export class Renderer {
             }
           },
           error: (err) => {
-            this.cmd = this.cmd.filter(cmd => cmd !== queuedRender);
+            this.cmd = this.cmd.filter(cmd => cmd !== runRender);
             rendered.reject(err);
             (this.callback as any).error?.(err);
           }
         }, this.documentContext);
-        return rendered.promise;
       }
+      return rendered.promise;
     };
   }
 
