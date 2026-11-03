@@ -1075,7 +1075,6 @@ describe('adapterManager tests', function () {
       'start': 1462918897460
     }];
 
-
     it('passes only the matching server requests to each PBS instance', () => {
       adapterManager.callBids(getAdUnits(), bidRequests, () => {}, () => {});
       sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
