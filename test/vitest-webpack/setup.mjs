@@ -4,6 +4,7 @@
 import * as vitest from 'vitest';
 import * as chai from 'chai';
 import sinon from 'sinon';
+import { commands } from 'vitest/browser';
 
 const DEFAULT_TIMEOUT = 3000; // karma.conf.maker.js: client.mocha.timeout
 const NO_TIMEOUT = 2 ** 31 - 1;
@@ -280,4 +281,12 @@ Object.assign(globalThis, {
   after: wrapAllHook(vitest.afterAll),
   beforeEach: wrapEachHook(vitest.beforeEach, true),
   afterEach: wrapEachHook(vitest.afterEach, true),
+});
+
+// With VITEST_COVERAGE=1 the bundles are instrumented (babel-plugin-istanbul, as under karma-coverage);
+// hand this page's counters to Node once the file is done (the writeCoverage command in vitest.config.mjs).
+// Registered before the spec loads, so with sequence.hooks 'list' it runs ahead of the spec's top-level
+// after() hooks; those are cleanup code, so their few counters are missed.
+vitest.afterAll(async () => {
+  if (window.__coverage__) await commands.writeCoverage(JSON.stringify(window.__coverage__));
 });
