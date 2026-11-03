@@ -129,13 +129,37 @@ Notes:
   `0.0.0.0:9876`, and Firefox, which tries `127.0.0.1` first, then reaches Karma and Vitest times out
   connecting to it. Don't run both at once.
 
+### BrowserStack
+
+Karma's "Browserstack tests" job runs `browsers.json` minus every browser GitHub runners already cover, which
+leaves one: desktop Safari, the oldest WebKit `browserslist` targets (iOS Safari 16.6). `VITEST_BROWSERSTACK=1`
+runs the bundles there through `@vitest/browser-webdriverio` (#16006):
+
+```sh
+export BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=...
+VITEST_BROWSERSTACK=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest            # Safari 16.6 on Ventura
+VITEST_BROWSERSTACK=1 VITEST_BROWSER_VERSION=17.6 VITEST_OS_VERSION=Sonoma npm run test:vitest
+```
+
+- `VITEST_BROWSER` (default `safari`), `VITEST_BROWSER_VERSION` (default `16.6`), `VITEST_OS` (default `OS X`) and
+  `VITEST_OS_VERSION` (default `Ventura`) become the session's capabilities.
+- The remote browser loads `http://localhost:9876` through a BrowserStack Local tunnel, as Karma's does, so the
+  specs that hard-code that URL still work. `globalSetup.mjs` starts and stops the tunnel with the
+  `browserstack-local` package, unless `BROWSERSTACK_LOCAL_IDENTIFIER` names one that is already running (CI starts
+  it with `browserstack/github-actions/setup-local`, as Karma's job does).
+- A run is one BrowserStack session, which carries no WebDriver traffic while the tests run, so the session's idle
+  timeout is raised to BrowserStack's maximum (300 s).
+- The `vitest-browserstack` job in `vitest-webpack.yml` runs the 8 chunks one at a time, only when the BrowserStack
+  secrets are available (not on fork PRs), and waits until two sessions are free so it never takes the last one
+  from Karma's BrowserStack job or the ES5 e2e job.
+
 ## Status
 
 On the full suite, Karma passed 27,478 tests and this runner passed 27,468 in the first trial (a spike on a
 patmmccann/Prebid.js fork branch). The differences were three specs fixed separately: #15978 (bliink), #15979
 (consentUtils), #15980 (pixfuture).
 
-Not done yet: BrowserStack and gulp integration.
+Not done yet: gulp integration.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.

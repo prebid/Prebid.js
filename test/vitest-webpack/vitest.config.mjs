@@ -24,7 +24,24 @@ const rawCoverage = path.join(root, 'build/vitest-coverage');
 //   VITEST_CHANNEL=chrome|msedge            installed Google Chrome / Microsoft Edge (chromium only)
 //   VITEST_EXECUTABLE_PATH=<path>           a fixed binary, e.g. the Chrome 113 that Karma's
 //                                           "ChromeNoSandbox 113" job installs with @puppeteer/browsers
-const browserName = process.env.VITEST_BROWSER || 'chromium';
+//
+// VITEST_BROWSERSTACK=1 runs the bundles on a BrowserStack browser through WebdriverIO instead (#16006),
+// the way Karma's "Browserstack tests" job uses browsers.json. It needs BROWSERSTACK_USERNAME and
+// BROWSERSTACK_ACCESS_KEY, and a BrowserStack Local tunnel: globalSetup.mjs starts one unless
+// BROWSERSTACK_LOCAL_IDENTIFIER names a running one (CI starts it with browserstack/github-actions).
+// The remote browser loads http://localhost:9876 through that tunnel, as Karma's does.
+//   VITEST_BROWSER=safari|chrome|firefox|edge  (default safari)
+//   VITEST_BROWSER_VERSION=<version>           (default 16.6, the oldest WebKit browserslist targets)
+//   VITEST_OS / VITEST_OS_VERSION              (default OS X / Ventura)
+const browserstack = !!process.env.VITEST_BROWSERSTACK;
+const browserName = process.env.VITEST_BROWSER || (browserstack ? 'safari' : 'chromium');
+const browserVersion = process.env.VITEST_BROWSER_VERSION || '16.6';
+if (browserstack && !process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
+  // no tunnel running: globalSetup.mjs starts one under this name, and stops it after the run
+  process.env.BROWSERSTACK_LOCAL_IDENTIFIER = `vitest-${process.pid}-${Date.now()}`;
+  process.env.VITEST_BROWSERSTACK_TUNNEL = '1';
+}
+
 const launchOptions = {
   ...(process.env.VITEST_CHANNEL ? { channel: process.env.VITEST_CHANNEL } : {}),
   ...(process.env.VITEST_EXECUTABLE_PATH ? { executablePath: process.env.VITEST_EXECUTABLE_PATH } : {}),
@@ -38,6 +55,45 @@ const launchOptions = {
     },
   } : {}),
 };
+
+async function browserProvider() {
+  if (!browserstack) return playwright({ launchOptions });
+  const { webdriverio } = await import('@vitest/browser-webdriverio');
+  const { BROWSERSTACK_USERNAME: user, BROWSERSTACK_ACCESS_KEY: key } = process.env;
+  if (!user || !key) throw new Error('VITEST_BROWSERSTACK needs BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY');
+  return webdriverio({
+    protocol: 'https',
+    hostname: 'hub.browserstack.com',
+    port: 443,
+    path: '/wd/hub',
+    user,
+    key,
+    // remote sessions take a while to start, and a request can stall on a busy grid
+    connectionRetryTimeout: 180000,
+    connectionRetryCount: 2,
+    capabilities: {
+      browserVersion,
+      // Safari 16 has no WebDriver BiDi; stay on classic WebDriver for every browser
+      'wdio:enforceWebDriverClassic': true,
+      'bstack:options': {
+        os: process.env.VITEST_OS || 'OS X',
+        osVersion: process.env.VITEST_OS_VERSION || 'Ventura',
+        local: true,
+        // the tunnel globalSetup.mjs starts, or the one browserstack/github-actions setup-local started
+        localIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
+        buildName: process.env.BROWSERSTACK_BUILD_NAME || 'vitest-webpack (local)',
+        projectName: process.env.BROWSERSTACK_PROJECT_NAME || 'Prebid.js',
+        sessionName: `vitest ${process.env.TEST_CHUNK ? `chunk ${process.env.TEST_CHUNK}/${process.env.TEST_CHUNKS ?? 8}` : 'run'}`,
+        // a run is one session with no WebDriver traffic while the tests run; BrowserStack's 90s
+        // idle timeout would otherwise end a long chunk
+        idleTimeout: 300,
+        consoleLogs: 'errors',
+        networkLogs: false,
+        video: false,
+      },
+    },
+  });
+}
 
 export default defineConfig({
   root,
@@ -75,12 +131,13 @@ export default defineConfig({
     ...(process.env.VITEST_PARALLEL ? { maxWorkers: maxPages } : {}),
     browser: {
       enabled: true,
-      headless: true,
+      // BrowserStack desktop browsers run headed (WebdriverIO refuses headless Safari)
+      headless: !browserstack,
       // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking,
       // no background timer throttling) and --no-sandbox, as karma's ChromeNoSandbox launcher does
-      provider: playwright({ launchOptions }),
+      provider: await browserProvider(),
       // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
-      instances: [{ browser: browserName, name: process.env.VITEST_CHANNEL || browserName }],
+      instances: [{ browser: browserName, name: browserstack ? `${browserName} ${browserVersion} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName }],
       screenshotFailures: false,
       // karma's ChromeHeadless window size (Vitest defaults to a 414x896 phone viewport)
       viewport: { width: 800, height: 600 },
