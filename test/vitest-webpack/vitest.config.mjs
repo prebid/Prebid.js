@@ -7,6 +7,12 @@ import { playwright } from '@vitest/browser-playwright';
 import GithubSpecReporter from './githubReporter.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
+// VITEST_PARALLEL runs several test files (pages) at once: as many as its value if that is 2 or more, otherwise 3.
+// Vitest's own default is a page per CPU core but one, which on a large machine is a lot of pages and memory. On a
+// 4-core runner, 3 pages ran the full suite in about half the serial time and a 4th gained only noise (#16009).
+// Off by default: pages running at once share one origin's storage, which Karma's sequential chunks never do.
+const parallel = Number(process.env.VITEST_PARALLEL);
+const maxPages = parallel >= 2 ? parallel : 3;
 
 export default defineConfig({
   root,
@@ -39,6 +45,7 @@ export default defineConfig({
     // Mocha allows empty describe() blocks; Vitest fails them unless this is set
     passWithNoTests: true,
     fileParallelism: !!process.env.VITEST_PARALLEL,
+    ...(process.env.VITEST_PARALLEL ? { maxWorkers: maxPages } : {}),
     browser: {
       enabled: true,
       headless: true,

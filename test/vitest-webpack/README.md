@@ -47,6 +47,29 @@ VITEST_ISOLATE_SPECS=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest   # same c
 
 `VITEST_CHANNEL=chrome` uses the installed Google Chrome. See `build.js` for the other environment variables.
 
+`VITEST_PARALLEL=1` runs 3 test files (pages) at once, and `VITEST_PARALLEL=<n>` runs n. It only helps when a run has
+several files: the whole suite, or `VITEST_FILES`/`VITEST_ISOLATE_SPECS`. A CI job runs one chunk, which is one file.
+It is off by default because pages running at once share one origin's cookies and storage, which Karma's sequential
+chunks never do.
+
+## Performance
+
+Measured on GitHub's ubuntu-latest (4 vCPU) for #16009, full suite, default variant, no coverage, 3 runners per row:
+
+| | wall clock |
+|---|---|
+| Karma, 8 chunks (`gulp test-only-nobuild --no-coverage`) | 158 s cold, 129 s with a warm babel cache |
+| `npx gulp precompile` | 29–36 s cold, 16 s from `.cache/precompile` |
+| `build.js`, all 8 chunks | 30 s cold, 11 s with a warm babel cache, 3 s with a warm webpack cache too |
+| this runner, serial (the default) | 65 s |
+| `VITEST_PARALLEL=2` / `3` / `4` | 36 s / 29 s / 27 s |
+| `VITEST_ISOLATE_SPECS=1`, serial / `VITEST_PARALLEL=4` | 121 s / 62 s |
+
+In a serial run the browser is ready within about 3 s, and loading the bundles takes another 3–5 s. The rest is the
+tests themselves. Neither `VITEST_SPLIT=0` nor `VITEST_CHANNEL=chrome` was faster. Fewer, larger chunks
+(`TEST_CHUNKS=4`) were no faster either, and they failed about 40 tests that leak state into each other. Numbers with
+coverage on are still to come.
+
 The bundles test whichever variant is in `dist/src`, as Karma's do. For the all-features-disabled variant (Karma's
 "Unit tests (all features disabled)" job), precompile with `npx gulp precompile-all-features-disabled` instead.
 CI runs both variants, in 8 chunks each.
