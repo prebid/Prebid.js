@@ -514,8 +514,11 @@ describe('viantOrtbBidAdapter', function () {
       expect(bids.length).to.equal(1);
       const bid = bids[0];
       expect(bid.mediaType).to.equal('video');
-      expect(bid.vastXml).to.equal('<VAST version="4.2"></VAST>');
-      expect(bid.vastUrl).to.equal('http://0.0.0.0:8181/nurl');
+      if (FEATURES.VIDEO) {
+        // filled in by the ORTB converter's video response processor, which isn't built without VIDEO
+        expect(bid.vastXml).to.equal('<VAST version="4.2"></VAST>');
+        expect(bid.vastUrl).to.equal('http://0.0.0.0:8181/nurl');
+      }
       expect(bid.cpm).to.equal(1.09);
     });
   });
