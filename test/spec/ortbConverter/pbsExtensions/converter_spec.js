@@ -3,12 +3,13 @@ import { buildPBSRequest, interpretPBSResponse } from '../../../../modules/prebi
 import { config } from 'src/config.js';
 import * as redactor from 'src/activities/redactor.js';
 import { deepClone } from 'src/utils.js';
+import adapterManager from 'src/adapterManager.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
 import {
   EVENT_TYPE_IMPRESSION,
   EVENT_TYPE_WIN,
   TRACKER_METHOD_IMG,
 } from '../../../../src/eventTrackers.js';
-import 'modules/appnexusBidAdapter.js';
 
 describe('PBS ortbConverter', () => {
   const IMP_ID = 'ad-slot-1';
@@ -16,7 +17,7 @@ describe('PBS ortbConverter', () => {
 
   let sandbox;
 
-  function buildFixtures(bidderCode = 'appnexus') {
+  function buildFixtures(bidderCode = 'msft') {
     const adUnit = {
       code: IMP_ID,
       transactionId: 'txn-1',
@@ -57,7 +58,7 @@ describe('PBS ortbConverter', () => {
     return { adUnit, bidderRequest, s2sBidRequest };
   }
 
-  function buildRequest(bidderCode = 'appnexus') {
+  function buildRequest(bidderCode = 'msft') {
     const { adUnit, bidderRequest, s2sBidRequest } = buildFixtures(bidderCode);
     return buildPBSRequest(
       s2sBidRequest,
@@ -95,7 +96,7 @@ describe('PBS ortbConverter', () => {
       const rendererUrl = 'https://cdn.example/safe-renderer.js';
       const request = buildRequest();
       const { bids } = interpretSeatBid(request, {
-        seat: 'appnexus',
+        seat: 'msft',
         bid: [{
           id: 'seatbid-1',
           impid: IMP_ID,
@@ -116,7 +117,7 @@ describe('PBS ortbConverter', () => {
       const request = buildRequest();
       const burl = 'https://pbs.example/impression';
       const { bids } = interpretSeatBid(request, {
-        seat: 'appnexus',
+        seat: 'msft',
         bid: [{
           id: 'seatbid-1',
           impid: IMP_ID,
@@ -136,7 +137,7 @@ describe('PBS ortbConverter', () => {
       const request = buildRequest();
       const winUrl = 'https://pbs.example/win';
       const { bids } = interpretSeatBid(request, {
-        seat: 'appnexus',
+        seat: 'msft',
         bid: [{
           id: 'seatbid-1',
           impid: IMP_ID,
@@ -158,10 +159,29 @@ describe('PBS ortbConverter', () => {
   });
 
   describe('toORTB', () => {
+    const STUB_BIDDER = 'pbsConverterStubBidder';
+    const STUB_ALIAS = 'pbsConverterStubAlias';
+
+    beforeEach(() => {
+      registerBidder({
+        code: STUB_BIDDER,
+        aliases: [STUB_ALIAS],
+        isBidRequestValid: () => true,
+        buildRequests: () => [],
+        interpretResponse: () => [],
+      });
+    });
+
+    afterEach(() => {
+      delete adapterManager.bidderRegistry[STUB_BIDDER];
+      delete adapterManager.bidderRegistry[STUB_ALIAS];
+      delete adapterManager.aliasRegistry[STUB_ALIAS];
+    });
+
     it('maps alias bidder codes to ext.prebid.aliases via extPrebidAliases processor', () => {
-      const request = buildRequest('beintoo');
+      const request = buildRequest(STUB_ALIAS);
       expect(request.ext.prebid.aliases).to.deep.include({
-        beintoo: 'appnexus',
+        [STUB_ALIAS]: STUB_BIDDER,
       });
     });
   });
