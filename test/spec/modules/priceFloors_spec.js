@@ -2624,7 +2624,7 @@ describe('Price Floors User ID Tiers', function() {
         tierOne: ['liveintent.com', 'sharedid.org'],
         tierTwo: ['pairid.com']
       };
-      const result = resolveTierUserIds(tiers, { userIdAsEid: [] });
+      const result = resolveTierUserIds(tiers, {});
       expect(result).to.deep.equal({});
     });
 
