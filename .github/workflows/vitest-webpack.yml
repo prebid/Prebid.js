@@ -42,8 +42,22 @@ jobs:
           node-version-file: '.nvmrc'
       - name: Install dependencies
         run: npm ci
+      # ubuntu-latest already has the system libraries Chromium needs (it ships Google Chrome); --with-deps
+      # would add an apt-get run of 10s or more, occasionally minutes, to every job.
       - name: Install browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
+      # These caches are content-addressed, so an entry from another commit is only ever a hit or a miss,
+      # never stale. Restored, they take about half off precompile and webpack time (#16009).
+      - name: Restore precompile and babel caches
+        uses: actions/cache@v5
+        with:
+          path: |
+            .cache/precompile
+            .cache/ts
+            .cache/babel-loader
+          key: vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json') }}-
       - name: Precompile (${{ matrix.variant }})
         run: ${{ matrix.precompile }}
       - name: Build and run chunk ${{ matrix.chunk }}
