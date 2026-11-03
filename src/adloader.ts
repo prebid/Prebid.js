@@ -44,7 +44,7 @@ function makeLoader(mkTag) {
         });
         return loading;
       });
-      loaders.set(doc, { loader, scripts: tags });
+      loaders.set(doc, { loader, tags });
     }
     return loaders.get(doc).loader(url, attrs, beforeLoad);
   }
@@ -55,7 +55,7 @@ function makeLoader(mkTag) {
       loaders = new WeakMap();
     },
     tagFor(doc, url) {
-      return loaders.get(doc)?.scripts?.get(url);
+      return loaders.get(doc)?.tags?.get(url);
     }
   };
   loader.clear();
