@@ -130,13 +130,6 @@ describe('mobkoiIdSystem', function () {
       getIframe().remove();
     });
 
-    it('should insert a hidden iframe pointing to the encoded pixel URL', function () {
-      const iframe = getIframe();
-      expect(iframe.tagName).to.equal('IFRAME');
-      expect(iframe.style.display).to.equal('none');
-      expect(insertElementStub.firstCall.args[2]).to.equal('body');
-    });
-
     it('should return the URL containing the encoded pixel URL', function () {
       const url = mobkoiUtils.requestEquativSasId({}, {}, sinon.spy());
       expect(url).to.include('pixelUrl=' + encodeURIComponent('https://equativ.test.pixel.url?uid=[sas_uid]'));

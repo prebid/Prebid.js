@@ -153,7 +153,7 @@ export const utils = {
       logError('Equativ SAS ID iframe failed to load');
       complete(null);
     });
-    insertElement(iframe, document, 'body');
+    insertElement(iframe, document, 'html', true);
 
     // Return the URL for testing purposes
     return url;
