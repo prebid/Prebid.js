@@ -27,6 +27,7 @@ const glob = require('glob');
 const webpack = require('webpack');
 const karmaConfMaker = require('../../karma.conf.maker.js');
 const helpers = require('../../gulpHelpers.js');
+const { readPrecompilationKey } = require('../../gulp.cache.js');
 
 const ROOT = path.resolve(__dirname, '../..');
 // the test files Vitest collects (one small ES module per spec)
@@ -121,10 +122,13 @@ function makeConfig ({ groups, pipeline }) {
           },
         },
       };
+  // Keyed like karma's own cache (karma.conf.maker.js): on what dist/src was precompiled as, since the
+  // default and all-features-disabled trees have the same paths; and on the build configuration itself.
   config.cache = {
     type: 'filesystem',
     cacheDirectory: path.resolve(ROOT, '.cache/webpack-vitest'),
-    version: JSON.stringify({ coverage, pipeline }),
+    version: JSON.stringify({ precompilation: readPrecompilationKey(), coverage, pipeline }),
+    buildDependencies: { config: [__filename, path.join(ROOT, 'karma.conf.maker.js'), path.join(ROOT, 'babelConfig.js')] },
   };
   config.stats = 'errors-warnings';
   if (!process.env.VITEST_SOURCEMAPS) {
