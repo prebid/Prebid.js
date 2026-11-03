@@ -14,7 +14,6 @@ import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import { EVENTS, DEBUG_MODE } from 'src/constants.js';
 import { server } from 'test/mocks/xhr.js';
-import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
 import { requestBids } from 'src/prebid.js';
 import 'modules/currency.js'; // adServerCurrency test
@@ -681,8 +680,28 @@ describe('S2S Adapter', function () {
   });
 
   describe('request function', function () {
+    const STUB_BIDDER = 'pbsStubBidder';
+    const STUB_ALIAS = 'pbsStubBidderAlias';
+
+    function registerStubBidder() {
+      registerBidder({
+        code: STUB_BIDDER,
+        aliases: [STUB_ALIAS],
+        isBidRequestValid: () => true,
+        buildRequests: () => [],
+        interpretResponse: () => [],
+      });
+    }
+
     beforeEach(function () {
       resetSyncedStatus();
+    });
+
+    afterEach(function () {
+      [STUB_BIDDER, STUB_ALIAS, 'foobar', 'foobar_1'].forEach(code => {
+        delete adapterManager.bidderRegistry[code];
+        delete adapterManager.aliasRegistry[code];
+      });
     });
 
     describe('FPD redaction', () => {
@@ -1913,11 +1932,12 @@ describe('S2S Adapter', function () {
       expect(requestBid.app.bundle).to.eql('com.test.app');
     });
 
-    it('adds appnexus aliases to request', function () {
+    it('adds static aliases to request', function () {
       config.setConfig({ s2sConfig: CONFIG });
+      registerStubBidder();
 
       const aliasBidder = {
-        bidder: 'beintoo',
+        bidder: STUB_ALIAS,
         bid_id: REQUEST.ad_units[0].bids[0].bid_id,
         params: { placementId: '123456' }
       };
@@ -1925,13 +1945,13 @@ describe('S2S Adapter', function () {
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: 'beintoo' }], addBidResponse, done, ajax);
+      adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: STUB_ALIAS }], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.include({
         aliases: {
-          beintoo: 'appnexus'
+          [STUB_ALIAS]: STUB_BIDDER
         },
         auctiontimestamp: 1510852447530,
         targeting: {
@@ -1979,15 +1999,15 @@ describe('S2S Adapter', function () {
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      // TODO: stub this
-      getGlobal().aliasBidder('appnexus', alias);
+      registerStubBidder();
+      getGlobal().aliasBidder(STUB_BIDDER, alias);
       adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: 'foobar' }], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.include({
         aliases: {
-          [alias]: 'appnexus'
+          [alias]: STUB_BIDDER
         },
         auctiontimestamp: 1510852447530,
         targeting: {
@@ -2055,8 +2075,9 @@ describe('S2S Adapter', function () {
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
 
-      // TODO: stub this
-      getGlobal().aliasBidder('appnexus', alias, { skipPbsAliasing: true });
+      registerStubBidder();
+      getGlobal().aliasBidder(STUB_BIDDER, alias, { skipPbsAliasing: true });
+      expect(adapterManager.aliasRegistry[alias]).to.equal(STUB_BIDDER);
       adapter.callBids(request, [{ ...BID_REQUESTS[0], bidderCode: aliasBidder.bidder }], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);

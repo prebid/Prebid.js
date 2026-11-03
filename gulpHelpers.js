@@ -37,6 +37,7 @@ const {values: argv, tokens} = parseArgs({
     // string options
     host: {type: 'string'},
     file: {type: 'string'},
+    files: {type: 'string'},
     modules: {type: 'string'},
     browsers: {type: 'string'},
     disable: {type: 'string'},
