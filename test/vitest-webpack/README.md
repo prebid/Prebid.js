@@ -132,21 +132,30 @@ Notes:
 ### BrowserStack
 
 Karma's "Browserstack tests" job runs `browsers.json` minus every browser GitHub runners already cover, which
-leaves one: desktop Safari, the oldest WebKit `browserslist` targets (iOS Safari 16.6). `VITEST_BROWSERSTACK=1`
-runs the bundles there through `@vitest/browser-webdriverio` (#16006):
+leaves one: desktop Safari 16.5 on Ventura. It stands in for the WebKit floor `browserslist` resolves to (iOS
+Safari 16.6), because karma-browserstack-launcher can't drive real iOS devices. `VITEST_BROWSERSTACK=1` runs the
+bundles on BrowserStack through `@vitest/browser-webdriverio` instead (#16006), by default in Safari on a real
+iPhone 14 on iOS 16:
 
 ```sh
 export BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=...
-VITEST_BROWSERSTACK=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest            # Safari 16.6 on Ventura
-VITEST_BROWSERSTACK=1 VITEST_BROWSER_VERSION=17.6 VITEST_OS_VERSION=Sonoma npm run test:vitest
+VITEST_BROWSERSTACK=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest                    # iPhone 14, iOS 16
+VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest
+# Karma's desktop browser instead
+VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
 ```
 
-- `VITEST_BROWSER` (default `safari`), `VITEST_BROWSER_VERSION` (default `16.6`), `VITEST_OS` (default `OS X`) and
-  `VITEST_OS_VERSION` (default `Ventura`) become the session's capabilities.
-- The remote browser loads `http://localhost:9876` through a BrowserStack Local tunnel, as Karma's does, so the
-  specs that hard-code that URL still work. `globalSetup.mjs` starts and stops the tunnel with the
-  `browserstack-local` package, unless `BROWSERSTACK_LOCAL_IDENTIFIER` names one that is already running (CI starts
-  it with `browserstack/github-actions/setup-local`, as Karma's job does).
+- `VITEST_DEVICE` (default `iPhone 14`) and `VITEST_OS_VERSION` (default `16`) select a real device. BrowserStack
+  picks the iOS minor version, so `setup.mjs` logs the session's user agent and screen size. Setting `VITEST_OS`
+  selects a desktop browser (`VITEST_BROWSER`, default `safari`, and `VITEST_BROWSER_VERSION`) instead.
+- The remote browser reaches the Vite server through a BrowserStack Local tunnel. `globalSetup.mjs` starts and
+  stops one with the `browserstack-local` package, unless `BROWSERSTACK_LOCAL_IDENTIFIER` names one that is already
+  running (CI starts it with `browserstack/github-actions/setup-local`, as Karma's job does).
+- Safari on iOS can't load `http://localhost` through the tunnel; BrowserStack rewrites it to `bs-local.com`, which
+  resolves to 127.0.0.1. On a device the server is therefore opened at `http://bs-local.com:9876` (`VITEST_HOST`
+  overrides it), and specs that hard-code `http://localhost:9876/context.html` see a different origin there.
+  Desktop browsers load `http://localhost:9876`, as Karma's do.
+- A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run, so the session's idle
   timeout is raised to BrowserStack's maximum (300 s).
 - The `vitest-browserstack` job in `vitest-webpack.yml` runs the 8 chunks one at a time, only when the BrowserStack

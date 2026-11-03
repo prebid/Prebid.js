@@ -25,17 +25,26 @@ const rawCoverage = path.join(root, 'build/vitest-coverage');
 //   VITEST_EXECUTABLE_PATH=<path>           a fixed binary, e.g. the Chrome 113 that Karma's
 //                                           "ChromeNoSandbox 113" job installs with @puppeteer/browsers
 //
-// VITEST_BROWSERSTACK=1 runs the bundles on a BrowserStack browser through WebdriverIO instead (#16006),
-// the way Karma's "Browserstack tests" job uses browsers.json. It needs BROWSERSTACK_USERNAME and
-// BROWSERSTACK_ACCESS_KEY, and a BrowserStack Local tunnel: globalSetup.mjs starts one unless
-// BROWSERSTACK_LOCAL_IDENTIFIER names a running one (CI starts it with browserstack/github-actions).
-// The remote browser loads http://localhost:9876 through that tunnel, as Karma's does.
+// VITEST_BROWSERSTACK=1 runs the bundles on a BrowserStack browser through WebdriverIO instead (#16006).
+// It needs BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY, and a BrowserStack Local tunnel:
+// globalSetup.mjs starts one unless BROWSERSTACK_LOCAL_IDENTIFIER names a running one (CI starts it with
+// browserstack/github-actions). The default target is a real iPhone on iOS 16, the WebKit floor browserslist
+// resolves to (ios_saf 16.6), which Karma's launcher can't drive:
+//   VITEST_DEVICE=<name>                       real device (default iPhone 14)
+//   VITEST_OS_VERSION=<version>                device OS major version (default 16; BrowserStack picks the minor)
+// Setting VITEST_OS selects a desktop browser instead, e.g. Karma's (browsers.json):
+//   VITEST_OS=OS X VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5
 //   VITEST_BROWSER=safari|chrome|firefox|edge  (default safari)
-//   VITEST_BROWSER_VERSION=<version>           (default 16.6, the oldest WebKit browserslist targets)
-//   VITEST_OS / VITEST_OS_VERSION              (default OS X / Ventura)
+// Safari on iOS can't load http://localhost through the tunnel (BrowserStack rewrites it to bs-local.com,
+// which resolves to 127.0.0.1), so on a device the server is opened at http://bs-local.com:9876 instead;
+// VITEST_HOST overrides that. Desktop browsers load http://localhost:9876, as Karma's do.
 const browserstack = !!process.env.VITEST_BROWSERSTACK;
 const browserName = process.env.VITEST_BROWSER || (browserstack ? 'safari' : 'chromium');
-const browserVersion = process.env.VITEST_BROWSER_VERSION || '16.6';
+const bsDesktop = !!process.env.VITEST_OS;
+const bsDevice = browserstack && !bsDesktop ? process.env.VITEST_DEVICE || 'iPhone 14' : null;
+const bsOsVersion = process.env.VITEST_OS_VERSION || (bsDevice ? '16' : 'Ventura');
+const host = process.env.VITEST_HOST || (bsDevice ? 'bs-local.com' : null);
+const bsLabel = bsDevice ? `${bsDevice} iOS ${bsOsVersion}` : `${process.env.VITEST_BROWSER_VERSION || 'latest'} ${process.env.VITEST_OS} ${bsOsVersion}`;
 if (browserstack && !process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
   // no tunnel running: globalSetup.mjs starts one under this name, and stops it after the run
   process.env.BROWSERSTACK_LOCAL_IDENTIFIER = `vitest-${process.pid}-${Date.now()}`;
@@ -72,12 +81,13 @@ async function browserProvider() {
     connectionRetryTimeout: 180000,
     connectionRetryCount: 2,
     capabilities: {
-      browserVersion,
       // Safari 16 has no WebDriver BiDi; stay on classic WebDriver for every browser
       'wdio:enforceWebDriverClassic': true,
+      ...(bsDevice ? {} : { browserVersion: process.env.VITEST_BROWSER_VERSION || 'latest' }),
       'bstack:options': {
-        os: process.env.VITEST_OS || 'OS X',
-        osVersion: process.env.VITEST_OS_VERSION || 'Ventura',
+        ...(bsDevice
+          ? { deviceName: bsDevice, osVersion: bsOsVersion, realMobile: true }
+          : { os: process.env.VITEST_OS, osVersion: bsOsVersion }),
         local: true,
         // the tunnel globalSetup.mjs starts, or the one browserstack/github-actions setup-local started
         localIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
@@ -97,6 +107,8 @@ async function browserProvider() {
 
 export default defineConfig({
   root,
+  // setup.mjs logs the remote browser's user agent, since BrowserStack picks the exact OS version
+  define: { __VITEST_BROWSERSTACK__: JSON.stringify(browserstack) },
   // The webpack bundles are served untouched from here (build.js writes them to build/vitest-public/wp).
   publicDir: 'build/vitest-public',
   // Keep Vite from scanning for dependencies to pre-bundle; only the setup file's imports need it.
@@ -106,10 +118,18 @@ export default defineConfig({
   },
   server: {
     watch: null,
+    // Vite answers only requests for localhost unless told otherwise
+    ...(host ? { allowedHosts: [host] } : {}),
   },
   test: {
     // the browser-mode server listens here: karma's port, which many specs hard-code (see setup.mjs)
-    api: { port: 9876, strictPort: true },
+    api: {
+      port: 9876,
+      strictPort: true,
+      // bs-local.com resolves to 127.0.0.1, so this still listens on loopback only: keep the browser
+      // commands Vitest disables for a non-localhost host
+      ...(host ? { host, allowWrite: true, allowExec: true } : {}),
+    },
     include: ['build/vitest-bundles/**/*_spec.js'],
     // Listing reporters stops Vitest adding its GitHub Actions reporter, which would anchor every failure
     // on the Mocha shim in setup.mjs (the bundles have no source maps). githubReporter.mjs anchors it at
@@ -131,13 +151,13 @@ export default defineConfig({
     ...(process.env.VITEST_PARALLEL ? { maxWorkers: maxPages } : {}),
     browser: {
       enabled: true,
-      // BrowserStack desktop browsers run headed (WebdriverIO refuses headless Safari)
+      // BrowserStack browsers run headed (WebdriverIO refuses headless Safari)
       headless: !browserstack,
       // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking,
       // no background timer throttling) and --no-sandbox, as karma's ChromeNoSandbox launcher does
       provider: await browserProvider(),
       // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
-      instances: [{ browser: browserName, name: browserstack ? `${browserName} ${browserVersion} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName }],
+      instances: [{ browser: browserName, name: browserstack ? `${browserName} ${bsLabel} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName }],
       screenshotFailures: false,
       // karma's ChromeHeadless window size (Vitest defaults to a 414x896 phone viewport)
       viewport: { width: 800, height: 600 },

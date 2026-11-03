@@ -35,6 +35,12 @@ if (globalThis.__VITEST_KARMA_URL__ !== false) {
   Object.defineProperty(document, 'referrer', { value: `${location.origin}/`, configurable: true });
 }
 
+// BrowserStack selects a device's OS by major version only, so record what this session actually runs
+if (typeof __VITEST_BROWSERSTACK__ !== 'undefined' && __VITEST_BROWSERSTACK__) {
+  // eslint-disable-next-line no-console
+  console.info(`browserstack: ${navigator.userAgent}; screen ${screen.width}x${screen.height}, window ${innerWidth}x${innerHeight}, top ${top.innerWidth}x${top.innerHeight}`);
+}
+
 // ---- Mocha BDD interface on top of Vitest -------------------------------------------------------
 
 // A Mocha `Context`: tests and hooks of a suite share it (prototypally inherited from the parent suite),

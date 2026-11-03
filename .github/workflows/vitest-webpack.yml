@@ -2,7 +2,7 @@ name: Vitest runner trial (non-blocking)
 
 # Runs the existing unit specs, bundled by Karma's own webpack/Babel config,
 # under Vitest Browser Mode in Chromium, Firefox, WebKit, Edge, Chrome 113 and
-# (when BrowserStack secrets are available) BrowserStack Safari,
+# (when BrowserStack secrets are available) Safari on a real iOS 16 device,
 # chunked like the Karma job. This is a trial alongside Karma
 # (prebid/Prebid.js#10806); Karma remains the gate.
 on:
@@ -113,7 +113,7 @@ jobs:
           path: coverage.info
 
   # The rest of Karma's runner browsers (.github/workflows/browser_testing.json), on the same runner OS
-  # as their Karma jobs. Like Karma, only the default variant runs on these; BrowserStack Safari is vitest-browserstack below.
+  # as their Karma jobs. Like Karma, only the default variant runs on these; real iOS Safari is vitest-browserstack below.
   vitest-browsers:
     name: Vitest ${{ matrix.browser }} (chunk ${{ matrix.chunk }})
     strategy:
@@ -175,9 +175,10 @@ jobs:
         run: npm run test:vitest
 
   # Karma's "Browserstack tests" job runs browsers.json minus what GitHub runners cover, which leaves desktop
-  # Safari, the oldest WebKit browserslist targets. This runs the same bundles there through
-  # @vitest/browser-webdriverio and BrowserStack Local (#16006). Fork PRs get no BrowserStack secrets, so the
-  # job only runs when they are available.
+  # Safari 16.5, standing in for the WebKit floor browserslist resolves to (ios_saf 16.6) because
+  # karma-browserstack-launcher can't drive real iOS devices. This runs the same bundles on a real iPhone on
+  # iOS 16 through @vitest/browser-webdriverio and BrowserStack Local (#16006). Fork PRs get no BrowserStack
+  # secrets, so the job only runs when they are available.
   browserstack-check:
     name: Check for BrowserStack credentials
     runs-on: ubuntu-latest
@@ -190,7 +191,7 @@ jobs:
         run: echo "available=${BROWSERSTACK_USER_NAME:+true}" >> "$GITHUB_OUTPUT"
 
   vitest-browserstack:
-    name: Vitest BrowserStack Safari ${{ matrix.browser-version }} (chunk ${{ matrix.chunk }})
+    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (chunk ${{ matrix.chunk }})
     needs: browserstack-check
     if: ${{ needs.browserstack-check.outputs.available == 'true' }}
     strategy:
@@ -200,8 +201,8 @@ jobs:
       max-parallel: 1
       matrix:
         chunk: [1, 2, 3, 4, 5, 6, 7, 8]
-        os-version: [Ventura]
-        browser-version: ['16.6']
+        device: [iPhone 14]
+        os-version: ['16']
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -248,9 +249,8 @@ jobs:
           TEST_CHUNK: ${{ matrix.chunk }}
           VITEST_BROWSERSTACK: '1'
           VITEST_BROWSER: safari
-          VITEST_OS: OS X
+          VITEST_DEVICE: ${{ matrix.device }}
           VITEST_OS_VERSION: ${{ matrix.os-version }}
-          VITEST_BROWSER_VERSION: ${{ matrix.browser-version }}
         run: npm run test:vitest
       - name: BrowserStack Local stop
         if: ${{ always() }}
