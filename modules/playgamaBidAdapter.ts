@@ -38,10 +38,6 @@ export interface PlaygamaBidParams {
    * `'staging'` is for integration testing only.
    */
   env?: keyof typeof ENVIRONMENTS;
-  /**
-   * Test mode: the impression is not billed.
-   */
-  test?: boolean;
 }
 
 declare module '../src/adUnits' {
@@ -294,7 +290,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           bidder_request: { ...bidderRequest, bids: undefined },
           device: { pxratio: window.devicePixelRatio ?? 1 },
           user: { id: storage.getCookie(PGID_COOKIE) || undefined },
-          test: first.params.test === true,
         }),
         options: { contentType: 'text/plain' },
         bidRequests: validBidRequests,

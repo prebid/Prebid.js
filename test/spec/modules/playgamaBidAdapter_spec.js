@@ -131,12 +131,7 @@ describe('playgamaBidAdapter', function () {
         bidder_request: { ortb2, gdprConsent: bidderRequest.gdprConsent },
         device: { pxratio: window.devicePixelRatio },
         user: {},
-        test: false,
       });
-    });
-
-    it('sends test mode when the publisher sets params.test', function () {
-      expect(sentPayload([withParams({ test: true })]).test).to.equal(true);
     });
 
     it('routes to the staging SSP when params.env is staging', function () {

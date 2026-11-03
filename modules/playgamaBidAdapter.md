@@ -13,12 +13,11 @@ All ad units of an auction are sent in a single POST request to the SSP.
 
 # Bid Params
 
-| Name          | Scope    | Type    | Description                                                                                       |
-| ------------- | -------- | ------- | ------------------------------------------------------------------------------------------------- |
-| `publisherId` | required | String  | Publisher ID issued by Playgama.                                                                  |
-| `adUnitId`    | required | String  | Ad unit ID issued by Playgama.                                                                    |
-| `env`         | optional | String  | `'production'` (default) or `'staging'`. Staging is for integration testing only.                 |
-| `test`        | optional | Boolean | Test mode: the impression is not billed. Default `false`.                                         |
+| Name          | Scope    | Type   | Description                                                                          |
+| ------------- | -------- | ------ | ------------------------------------------------------------------------------------ |
+| `publisherId` | required | String | Publisher ID issued by Playgama.                                                     |
+| `adUnitId`    | required | String | Ad unit ID issued by Playgama.                                                       |
+| `env`         | optional | String | `'production'` (default) or `'staging'`, Playgama's own pre-production environment.  |
 
 # Supported Features
 
@@ -34,6 +33,8 @@ All ad units of an auction are sent in a single POST request to the SSP.
 
 # Test Parameters
 
+The test publisher below is answered by Playgama's own house creative, never by demand partners; nothing is billed.
+
 ```javascript
 var adUnits = [
   {
@@ -47,10 +48,8 @@ var adUnits = [
       {
         bidder: 'playgama',
         params: {
-          publisherId: 'pub-demo-001',
-          adUnitId: 'au-banner-300x250',
-          env: 'staging',
-          test: true,
+          publisherId: 'playgama-test',
+          adUnitId: 'banner-300x250',
         },
       },
     ],
@@ -69,10 +68,8 @@ var adUnits = [
       {
         bidder: 'playgama',
         params: {
-          publisherId: 'pub-demo-001',
-          adUnitId: 'au-multi-outstream',
-          env: 'staging',
-          test: true,
+          publisherId: 'playgama-test',
+          adUnitId: 'video-outstream',
         },
       },
     ],
