@@ -1,6 +1,6 @@
 import { config } from '../../src/config.js';
 import * as events from '../../src/events.js';
-import { deepSetValue, isArrayOfNums, logError, logWarn, mergeDeep } from '../../src/utils.js';
+import { isArrayOfNums, logError, logWarn, mergeDeep } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import { EVENTS } from '../../src/constants.js';
 import {
@@ -40,7 +40,7 @@ declare module '../../src/events' {
   }
 }
 
-interface AdServerConfig {
+export interface AdServerConfig {
   /**
    * The identifier of the AdServer vendor (i.e. gam, etc).
    */
@@ -67,7 +67,7 @@ interface AdUnitVideoOptions {
   adServer?: AdServerConfig
 }
 
-interface VideoProviderConfig {
+export interface VideoProviderConfig {
   /**
    * The identifier of the Video Provider vendor (i.e. 1 for JW Player, 2 for videojs, etc).
    */
@@ -280,9 +280,14 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
       enrichOrtb2(mainContentDivId, bidderRequest);
     }
 
-    const adUnits = bidderRequest.adUnits || pbGlobal.adUnits || [];
-    adUnits.forEach(adUnit => {
+    const adUnits = bidderRequest.adUnits ?? (bidderRequest.adUnits = (pbGlobal.adUnits || []).slice());
+    adUnits.forEach((adUnit, i) => {
       const divId = getDivId(adUnit);
+      if (divId) {
+        // enrich a copy: requestBids only copies the array, and publishers often reuse ad unit objects, so the sizes
+        // written here would otherwise stick to the publisher's object and skip enrichment in later auctions
+        adUnit = adUnits[i] = { ...adUnit, mediaTypes: { ...adUnit.mediaTypes } };
+      }
       enrichAdUnit(adUnit, divId);
       if (contentEnrichmentEnabled && !mainContentDivId) {
         enrichOrtb2(divId, bidderRequest);
@@ -322,7 +327,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
       if (bucket) {
         [video.w, video.h] = bucket;
         video.playerSize = bucket;
-        deepSetValue(adUnit, 'ortb2Imp.video.ext.true_size', { w: width, h: height });
+        adUnit.ortb2Imp = mergeDeep({}, adUnit.ortb2Imp, { video: { ext: { true_size: { w: width, h: height } } } });
       } else {
         video.playerSize = [width, height];
       }

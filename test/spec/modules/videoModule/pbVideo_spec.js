@@ -262,6 +262,22 @@ describe('Prebid Video', function () {
       expect(adUnit.ortb2Imp).to.eql({ ext: { gpid: 'gpid' }, video: { ext: { other: 1, true_size: { w: 495, h: 655 } } } });
     });
 
+    it('recomputes sizes for an ad unit object reused across auctions, without changing it', function () {
+      setVideoConfig({ sizeBuckets: [[480, 640], [640, 360]] });
+      const publisherAdUnit = { code: 'ad1', video: { divId: 'divId' }, mediaTypes: { video: {} } };
+      const first = [publisherAdUnit];
+      beforeBidRequestCallback(sinon.spy(), { adUnits: first });
+      expect(first[0].mediaTypes.video.playerSize).to.eql([480, 640]);
+
+      videoCoreMock.getOrtbVideo = () => ({ w: 650, h: 370, plcmt: 1 });
+      const second = [publisherAdUnit];
+      beforeBidRequestCallback(sinon.spy(), { adUnits: second });
+      expect(second[0].mediaTypes.video.playerSize).to.eql([640, 360]);
+      expect(second[0].ortb2Imp.video.ext.true_size).to.eql({ w: 650, h: 370 });
+
+      expect(publisherAdUnit).to.eql({ code: 'ad1', video: { divId: 'divId' }, mediaTypes: { video: {} } });
+    });
+
     it('reverts to the actual size when sizeBuckets is unset again', function () {
       setVideoConfig({ sizeBuckets: [[480, 640]] });
       setVideoConfig({});
