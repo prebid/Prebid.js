@@ -24,7 +24,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 export const storageKey = '__im_uid';
 export const storagePpKey = '__im_ppid';
 export const cookieKey = '_im_vid';
-export const apiDomain = 'sync6.im-apps.net';
+export const apiDomain = 'ups.im-apps.net';
 const storageMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
 
