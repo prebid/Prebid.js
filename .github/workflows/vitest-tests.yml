@@ -1,47 +1,63 @@
-name: Vitest runner trial (non-blocking)
+name: Vitest unit tests
 
-# Runs the existing unit specs under Vitest Browser Mode in Chromium, Firefox,
-# WebKit, Edge and Chrome 113, chunked like the Karma job. Each job runs one Karma
-# chunk: most specs as native ES modules served by Vite (test/vitest-native), the
-# rest bundled by Karma's own webpack/Babel config (test/vitest-webpack). This is a
-# trial alongside Karma (prebid/Prebid.js#10806, #16010); Karma remains the gate.
-# With BrowserStack credentials, an additional job covers real iOS 16 Safari.
+# The unit test gate (#16007): every spec under Vitest Browser Mode, in Karma's 8 chunks. Each chunk runs most
+# specs as native ES modules served by Vite (test/vitest-native) and the rest bundled by Karma's webpack/Babel
+# config (test/vitest-webpack); see test/vitest-webpack/README.md. Called from test.yml.
+#
+# Browsers, as Karma's browser_testing.json and BrowserStack jobs had them:
+#   Chromium, default and all-features-disabled builds, with coverage from the default build
+#   Firefox (ubuntu), Safari (macOS, the real browser through safaridriver), Edge (windows), Chrome 113
+#   a real iPhone on iOS 16 through BrowserStack, where the BrowserStack secrets are available (not on fork
+#   PRs, as with Karma's BrowserStack job; their changes are tested there by the master run after merge)
 on:
-  workflow_dispatch:
-  pull_request:
-    paths:
-      - 'test/vitest-webpack/**'
-      - 'test/vitest-native/**'
-      - '.github/workflows/vitest-webpack.yml'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'karma.conf.maker.js'
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to test (default the triggering ref)
+        type: string
+        default: ''
+        required: false
+      coverage-only:
+        description: Only run the coverage build (Chromium, default variant), e.g. for the base branch
+        type: boolean
+        default: false
+        required: false
+    outputs:
+      coverage:
+        description: Name of the artifact holding the combined lcov file (coverage.info)
+        value: ${{ jobs.coverage.outputs.artifact }}
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: BrowserStack user name
+      BROWSERSTACK_ACCESS_KEY:
+        description: BrowserStack access key
 
 permissions:
   contents: read
 
 jobs:
-  vitest:
+  chromium:
     name: Vitest Chromium (${{ matrix.variant }}, chunk ${{ matrix.chunk }})
     strategy:
       fail-fast: false
       matrix:
         chunk: [1, 2, 3, 4, 5, 6, 7, 8]
-        # Like Karma's "Unit tests (all features disabled)" job: the variant is whatever tree
-        # the precompile step leaves in dist/src, which karma.conf.maker.js's webpack config reads.
-        variant: [default, all-features-disabled]
-        include:
-          - variant: default
-            precompile: npx gulp precompile
-            # like Karma, coverage comes from the default variant
-            coverage: '1'
-          - variant: all-features-disabled
-            precompile: npx gulp precompile-all-features-disabled
+        # Like Karma's "Unit tests (all features disabled)" job: the variant is whatever tree the precompile
+        # step leaves in dist/src. Coverage comes from the default variant, as it did with Karma.
+        variant: ${{ fromJSON(inputs.coverage-only && '["default"]' || '["default", "all-features-disabled"]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Base coverage is informational: a base commit that can't produce it (one from before Vitest) leaves
+    # the coverage output empty instead of failing the run, and test.yml then skips the comparison.
+    continue-on-error: ${{ inputs.coverage-only }}
+    env:
+      TEST_CHUNKS: '8'
+      TEST_CHUNK: ${{ matrix.chunk }}
+      VITEST_COVERAGE: ${{ matrix.variant == 'default' && '1' || '' }}
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.ref }}
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
@@ -67,41 +83,35 @@ jobs:
           restore-keys: |
             vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
       - name: Precompile (${{ matrix.variant }})
-        run: ${{ matrix.precompile }}
+        run: npx gulp ${{ matrix.variant == 'default' && 'precompile' || 'precompile-all-features-disabled' }}
       - name: Build and run chunk ${{ matrix.chunk }} (webpack bridge)
-        env:
-          TEST_CHUNKS: '8'
-          TEST_CHUNK: ${{ matrix.chunk }}
-          VITEST_COVERAGE: ${{ matrix.coverage }}
         run: npm run test:vitest
       - name: Run chunk ${{ matrix.chunk }} (native)
         if: ${{ !cancelled() }}
-        env:
-          TEST_CHUNKS: '8'
-          TEST_CHUNK: ${{ matrix.chunk }}
-          VITEST_COVERAGE: ${{ matrix.coverage }}
         run: npm run test:vitest-native
       - name: Upload coverage
-        if: ${{ matrix.coverage && !cancelled() }}
+        if: ${{ matrix.variant == 'default' && !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: vitest-coverage-${{ matrix.chunk }}
-          # build/coverage/chunks/<chunk>/lcov.info, the layout Karma's coverage jobs produce, from the
-          # bridge; build/coverage/chunks/native/<chunk>/lcov.info from the native project
+          name: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-${{ matrix.chunk }}
+          # build/coverage/chunks/<chunk>/lcov.info from the bridge (the layout Karma's coverage jobs produced);
+          # build/coverage/chunks/native/<chunk>/lcov.info from the native project
           path: build/coverage/chunks
           if-no-files-found: error
 
-  # Combines the chunks the way .github/actions/combine-coverage does for Karma, so the totals in the
-  # job summary can be compared with Karma's coverage report (#16004).
-  vitest-coverage:
+  # Combines the chunks the way .github/actions/combine-coverage does, into one lcov file for test.yml.
+  coverage:
     name: Vitest coverage
-    needs: [vitest]
+    needs: [chromium]
     if: ${{ !cancelled() }}
+    continue-on-error: ${{ inputs.coverage-only }}
     runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.name.outputs.artifact }}
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: vitest-coverage-*
+          pattern: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-*
           path: build/coverage/chunks
           merge-multiple: true
       - name: Combine coverage results
@@ -118,36 +128,39 @@ jobs:
           sudo apt-get install lcov -y
           find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info
           { echo '### Vitest coverage'; echo '```'; lcov --summary coverage.info 2>&1; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - id: name
+        run: echo "artifact=vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         with:
-          name: vitest-coverage
+          name: ${{ steps.name.outputs.artifact }}
           path: coverage.info
 
-  # The rest of Karma's runner browsers (.github/workflows/browser_testing.json), on the same runner OS
-  # as their Karma jobs. Like Karma, only the default variant runs on these; BrowserStack is #16006.
-  vitest-browsers:
+  # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs.
+  # Like Karma, only the default variant runs on these.
+  browsers:
     name: Vitest ${{ matrix.browser }} (chunk ${{ matrix.chunk }})
+    if: ${{ !inputs.coverage-only }}
     strategy:
       fail-fast: false
       matrix:
         chunk: [1, 2, 3, 4, 5, 6, 7, 8]
-        browser: [Firefox, WebKit, Edge, Chrome 113]
+        browser: [Firefox, Safari, Edge, Chrome 113]
         include:
           # Karma: FirefoxHeadless on ubuntu-latest
           - browser: Firefox
             runs-on: ubuntu-latest
             vitest-browser: firefox
             playwright: firefox
-          # Karma: SafariNative on macos-latest. Playwright's WebKit is the closest thing it can drive.
-          - browser: WebKit
+          # Karma: SafariNative on macos-latest. The same installed Safari, through safaridriver.
+          - browser: Safari
             runs-on: macos-latest
-            vitest-browser: webkit
-            playwright: webkit
+            vitest-browser: safari
+            safari: true
           # Karma: EdgeHeadless on windows-latest, which has Microsoft Edge installed
           - browser: Edge
             runs-on: windows-latest
             channel: msedge
-          # Karma: "ChromeNoSandbox 113", the same binary from @puppeteer/browsers (see run-tests.yml)
+          # Karma: "ChromeNoSandbox 113", the same binary from @puppeteer/browsers
           - browser: Chrome 113
             runs-on: ubuntu-latest
             chrome-version: 113.0.5672.0
@@ -156,9 +169,15 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      TEST_CHUNKS: '8'
+      TEST_CHUNK: ${{ matrix.chunk }}
+      VITEST_BROWSER: ${{ matrix.vitest-browser }}
+      VITEST_CHANNEL: ${{ matrix.channel }}
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.ref }}
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
@@ -175,30 +194,27 @@ jobs:
         run: |
           out=($(npx @puppeteer/browsers install "chrome@$CHROME_VERSION"))
           echo "VITEST_EXECUTABLE_PATH=${out[1]}" >> "$GITHUB_ENV"
+      # as Karma's "Configure Safari" step (run-tests.yml)
+      - name: Configure Safari
+        if: ${{ matrix.safari }}
+        run: |
+          defaults write com.apple.Safari IncludeDevelopMenu YES
+          defaults write com.apple.Safari AllowRemoteAutomation 1
+          sudo safaridriver --enable
       - name: Precompile
         run: npx gulp precompile
       - name: Build and run chunk ${{ matrix.chunk }} (webpack bridge)
-        env:
-          TEST_CHUNKS: '8'
-          TEST_CHUNK: ${{ matrix.chunk }}
-          VITEST_BROWSER: ${{ matrix.vitest-browser }}
-          VITEST_CHANNEL: ${{ matrix.channel }}
         run: npm run test:vitest
       - name: Run chunk ${{ matrix.chunk }} (native)
         if: ${{ !cancelled() }}
-        env:
-          TEST_CHUNKS: '8'
-          TEST_CHUNK: ${{ matrix.chunk }}
-          VITEST_BROWSER: ${{ matrix.vitest-browser }}
-          VITEST_CHANNEL: ${{ matrix.channel }}
         run: npm run test:vitest-native
-  # Karma's "Browserstack tests" job runs browsers.json minus what GitHub runners cover, which leaves desktop
-  # Safari 16.5, standing in for the WebKit floor browserslist resolves to (ios_saf 16.6) because
-  # karma-browserstack-launcher can't drive real iOS devices. This runs the same bundles on a real iPhone on
-  # iOS 16 through @vitest/browser-webdriverio and BrowserStack Local (#16006). Fork PRs get no BrowserStack
-  # secrets, so the job only runs when they are available.
+
+  # Safari on a real iPhone on iOS 16, the WebKit floor browserslist resolves to (ios_saf 16.6), through
+  # @vitest/browser-webdriverio and BrowserStack Local (#16006). Karma's BrowserStack job ran desktop Safari
+  # 16.5 in its place, because karma-browserstack-launcher can't drive real iOS devices.
   browserstack-check:
     name: Check for BrowserStack credentials
+    if: ${{ !inputs.coverage-only }}
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.check.outputs.available }}
@@ -208,14 +224,14 @@ jobs:
           BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
         run: echo "available=${BROWSERSTACK_USER_NAME:+true}" >> "$GITHUB_OUTPUT"
 
-  vitest-browserstack:
+  browserstack:
     name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (chunk ${{ matrix.chunk }})
     needs: browserstack-check
     if: ${{ needs.browserstack-check.outputs.available == 'true' }}
     strategy:
       fail-fast: false
-      # One BrowserStack session per chunk, one chunk at a time, as Karma's BrowserStack job does
-      # (run-tests.yml), so this job never holds more than one of the account's parallel sessions.
+      # One BrowserStack session per chunk, one chunk at a time, so this job never holds more than one of the
+      # account's parallel sessions.
       max-parallel: 1
       matrix:
         chunk: [1, 2, 3, 4, 5, 6, 7, 8]
@@ -226,6 +242,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.ref }}
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
@@ -255,7 +272,7 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
-      # Leaves at least one session free for Karma's BrowserStack job and the ES5 e2e job.
+      # Leaves at least one session free for the ES5 e2e job (test.yml).
       - name: Wait for BrowserStack
         uses: ./.github/actions/wait-for-browserstack
         with:
@@ -266,6 +283,7 @@ jobs:
           TEST_CHUNKS: '8'
           TEST_CHUNK: ${{ matrix.chunk }}
           VITEST_BROWSERSTACK: '1'
+          # the complete suite through the bridge (test/vitest-webpack/README.md, "BrowserStack")
           VITEST_BRIDGE_ALL: '1'
           VITEST_BROWSER: safari
           VITEST_DEVICE: ${{ matrix.device }}

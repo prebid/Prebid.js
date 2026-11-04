@@ -22,6 +22,9 @@ const rawCoverage = path.join(root, 'build/vitest-coverage');
 
 // Which browser runs the bundles, standing in for Karma's matrix (.github/workflows/browser_testing.json):
 //   VITEST_BROWSER=chromium|firefox|webkit  Playwright browser (default chromium)
+//   VITEST_BROWSER=safari                   the installed Safari, through safaridriver and WebdriverIO, as
+//                                           Karma's SafariNative launcher does (macOS; run `sudo safaridriver
+//                                           --enable` once, and Safari's Develop > Allow Remote Automation)
 //   VITEST_CHANNEL=chrome|msedge            installed Google Chrome / Microsoft Edge (chromium only)
 //   VITEST_EXECUTABLE_PATH=<path>           a fixed binary, e.g. the Chrome 113 that Karma's
 //                                           "ChromeNoSandbox 113" job installs with @puppeteer/browsers
@@ -41,6 +44,8 @@ const rawCoverage = path.join(root, 'build/vitest-coverage');
 // VITEST_HOST overrides that. Desktop browsers load http://localhost:9876, as Karma's do.
 const browserstack = !!process.env.VITEST_BROWSERSTACK;
 const browserName = process.env.VITEST_BROWSER || (browserstack ? 'safari' : 'chromium');
+// real Safari on this machine: Playwright only drives its own WebKit build, so this goes through WebdriverIO
+const localSafari = !browserstack && browserName === 'safari';
 const bsDesktop = !!process.env.VITEST_OS;
 const bsDevice = browserstack && !bsDesktop ? process.env.VITEST_DEVICE || 'iPhone 14' : null;
 const bsOsVersion = process.env.VITEST_OS_VERSION || (bsDevice ? '16' : 'Ventura');
@@ -88,6 +93,18 @@ const launchOptions = {
 };
 
 async function browserProvider() {
+  if (localSafari) {
+    const { webdriverio } = await import('@vitest/browser-webdriverio');
+    // WebdriverIO starts /usr/bin/safaridriver itself. Safari allows one automation session at a time,
+    // which is all a run uses (test files run one after another unless VITEST_PARALLEL is set).
+    return webdriverio({
+      capabilities: {
+        browserName: 'safari',
+        'wdio:enforceWebDriverClassic': true,
+        ...(https ? { acceptInsecureCerts: true } : {}),
+      },
+    });
+  }
   if (!browserstack) return playwright({ launchOptions, ...(https ? { contextOptions: { ignoreHTTPSErrors: true } } : {}) });
   const { webdriverio } = await import('@vitest/browser-webdriverio');
   const { BROWSERSTACK_USERNAME: user, BROWSERSTACK_ACCESS_KEY: key } = process.env;
@@ -196,8 +213,8 @@ export default defineConfig({
     ...(process.env.VITEST_PARALLEL ? { maxWorkers: maxPages } : {}),
     browser: {
       enabled: true,
-      // BrowserStack browsers run headed (WebdriverIO refuses headless Safari)
-      headless: !browserstack,
+      // BrowserStack browsers and local Safari run headed (WebdriverIO refuses headless Safari)
+      headless: !browserstack && !localSafari,
       // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking,
       // no background timer throttling) and --no-sandbox, as karma's ChromeNoSandbox launcher does
       provider: await browserProvider(),
