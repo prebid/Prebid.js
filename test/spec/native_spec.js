@@ -970,7 +970,8 @@ describe('validate native', function () {
       expect(ortb.assets[0].img).to.include({ w: 300, h: 250 });
       expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin');
       expect(ortb.assets[0].img.ext).to.eql({ aspectratios: ['3:2', '1:1'] });
-      sinon.assert.calledTwice(logWarnStub);
+      sinon.assert.calledOnce(logWarnStub);
+      sinon.assert.calledWith(logWarnStub, sinon.match('image.sizes'));
       sinon.assert.notCalled(logErrorStub);
     });
   });

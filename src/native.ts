@@ -564,6 +564,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
       ortbAsset.img = {
         type: key === 'icon' ? NATIVE_IMAGE_TYPES.ICON : NATIVE_IMAGE_TYPES.MAIN,
       };
+      const sizes = validateSizes(asset.sizes);
       // if min_width and min_height are defined in aspect_ratio, they are preferred
       if (asset.aspect_ratios) {
         if (!isArray(asset.aspect_ratios)) {
@@ -571,7 +572,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
         } else if (!asset.aspect_ratios.length) {
           logError("image.aspect_ratios was passed, but it's empty:", asset.aspect_ratios);
         } else {
-          if (asset.aspect_ratios.slice(1).some(ar => ar?.min_width != null || ar?.min_height != null)) {
+          if (!sizes.length && asset.aspect_ratios.slice(1).some(ar => ar?.min_width != null || ar?.min_height != null)) {
             logWarn(`${key}.aspect_ratios has multiple entries; only the first entry's min_width/min_height will be used in the ORTB native request. Extra values are dropped:`, asset.aspect_ratios.slice(1));
           }
           const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0] ?? {};
@@ -594,7 +595,6 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
 
       // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
-        const sizes = validateSizes(asset.sizes);
         if (!sizes.length) {
           logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
         } else {
