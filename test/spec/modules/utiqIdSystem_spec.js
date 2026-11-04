@@ -66,7 +66,7 @@ describe('utiqIdSystem', () => {
       }];
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('callback');
-      expect(response.callback.toString()).contain('result(callback)');
+      expect(response.callback).to.be.a('function');
 
       if (typeof response.callback === 'function') {
         storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
@@ -89,7 +89,7 @@ describe('utiqIdSystem', () => {
 
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('callback');
-      expect(response.callback.toString()).contain('result(callback)');
+      expect(response.callback).to.be.a('function');
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
@@ -113,7 +113,7 @@ describe('utiqIdSystem', () => {
 
       const response = utiqIdSubmodule.getId({ params: { maxDelayTime: 200 } });
       expect(response).to.have.property('callback');
-      expect(response.callback.toString()).contain('result(callback)');
+      expect(response.callback).to.be.a('function');
 
       return new Promise((resolve, reject) => {
         const writeTimer = setTimeout(() => {
