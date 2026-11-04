@@ -182,6 +182,13 @@ async function browserProvider() {
           const web = contexts.map(c => (typeof c === 'string' ? c : c.id)).filter(c => c !== 'NATIVE_APP').pop();
           if (web) await this.browser.switchContext(web).catch(e => log(`switching to ${web} failed: ${e.message}`));
           log(`contexts ${JSON.stringify(contexts)}; url ${await url()}`);
+          // temporary: does the tester page load after the tap, or does its wss connection fail?
+          for (let i = 0; i < 10; i++) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const state = await this.browser.execute(() => `${location.href} ${document.readyState} ${document.title}`).catch(e => e.message);
+            log(`page: ${state}`);
+            if (!/CertificateWarning/.test(state)) break;
+          }
         }
       };
     }
