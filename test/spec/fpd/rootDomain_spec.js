@@ -62,4 +62,9 @@ describe('findRootDomain', function () {
     // returns before probing cookies, so count the cookiesAreEnabled check it always makes)
     sinon.assert.calledOnce(coreStorage.cookiesAreEnabled);
   });
+
+  // DO NOT MERGE: fails on purpose, to show the failure annotation on this line in the PR diff
+  it('fails on purpose to demonstrate the inline failure annotation', () => {
+    expect(findRootDomain('sub.example.com')).to.equal('this is not the root domain');
+  });
 });
