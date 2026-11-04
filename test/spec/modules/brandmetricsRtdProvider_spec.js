@@ -2,6 +2,9 @@ import * as brandmetricsRTD from '../../../modules/brandmetricsRtdProvider.js';
 import { config } from 'src/config.js';
 import * as events from '../../../src/events.js';
 import * as sinon from 'sinon';
+import { guardOrtb2Fragments } from '../../../libraries/objectGuard/ortbGuard.js';
+import { activityParams } from '../../../src/activities/activityParams.js';
+import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 
 const VALID_CONFIG = {
   name: 'brandmetrics',
@@ -154,6 +157,28 @@ describe('getBidRequestData', () => {
       survey: {
         measurementId: 'mockMeasurementId'
       }
+    });
+  });
+
+  it('should set targeting keys through the guarded ortb2Fragments the RTD core passes', () => {
+    // as rtdModule passes them to a submodule: `bidder` is a getter-only property of the guard
+    const fragments = { global: {}, bidder: {} };
+    const ortb2Fragments = guardOrtb2Fragments(fragments, activityParams(MODULE_TYPE_RTD, 'brandmetrics'));
+    let error;
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ ortb2Fragments }, () => {}, VALID_CONFIG);
+
+    try {
+      mockSurveyLoaded({
+        available: true,
+        conf: { displayOption: { type: 'pbjs', targetKey: 'mockTargetKey' } },
+        survey: { measurementId: 'mockMeasurementId' }
+      });
+    } catch (e) {
+      error = e;
+    }
+    expect(error).to.equal(undefined);
+    VALID_CONFIG.params.bidders.forEach(bidder => {
+      expect(fragments.bidder[bidder].user.ext.data.mockTargetKey).to.equal('mockMeasurementId');
     });
   });
 

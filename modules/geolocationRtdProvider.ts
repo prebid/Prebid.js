@@ -50,7 +50,11 @@ export const geolocationSubmodule: RtdProviderSpec<'geolocation'> = {
       if (done) return;
       done = true;
       if (geolocation) {
-        deepSetValue(requestBidsObject, 'ortb2Fragments.global.device.geo', {
+        // Into ortb2Fragments.global itself: the RTD core passes a guarded ortb2Fragments whose `global` is
+        // getter-only, and setting a path from the request (dset assigns every key on it) throws in strict mode.
+        const fragments = requestBidsObject.ortb2Fragments ?? (requestBidsObject.ortb2Fragments = {} as any);
+        fragments.global ??= {};
+        deepSetValue(fragments.global, 'device.geo', {
           lat: geolocation.coords.latitude,
           lon: geolocation.coords.longitude,
           lastfix: Math.round((timestamp() - geolocation.timestamp) / 1000),
