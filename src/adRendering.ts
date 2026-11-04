@@ -292,7 +292,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
+  if (usesLegacyRenderer(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId });
     next.bail();
@@ -300,6 +300,31 @@ doRender.before(function (next, args) {
     next(args);
   }
 }, 100);
+
+export function isRenderSuppressed(bidResponse: Bid) {
+  const { adId } = bidResponse;
+  const { suppressStaleRender, suppressExpiredRender } = config.getConfig('auctionOptions');
+  const reasons = [];
+  function logReasons() {
+    reasons.forEach(([event, msg]) => {
+      logWarn(msg);
+      events.emit(event, bidResponse);
+    });
+  }
+  if (bidResponse.status === BID_STATUS.RENDERED) {
+    reasons.push([STALE_RENDER, `Ad id ${adId} has been rendered before`]);
+    if (suppressStaleRender) {
+      return { suppress: true, logReasons };
+    }
+  }
+  if (!bidFilters.isBidNotExpired(bidResponse)) {
+    reasons.push([EXPIRED_RENDER, `Ad id ${adId} has been expired`]);
+    if (suppressExpiredRender) {
+      return { suppress: true, logReasons };
+    }
+  }
+  return { suppress: false, logReasons };
+}
 
 export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
   if (bidResponse != null && options?.viewUrl != null) {
@@ -314,20 +339,9 @@ export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, d
       });
       return;
     }
-    if (bidResponse.status === BID_STATUS.RENDERED) {
-      logWarn(`Ad id ${adId} has been rendered before`);
-      events.emit(STALE_RENDER, bidResponse);
-      if (config.getConfig('auctionOptions')?.suppressStaleRender) {
-        return;
-      }
-    }
-    if (!bidFilters.isBidNotExpired(bidResponse)) {
-      logWarn(`Ad id ${adId} has been expired`);
-      events.emit(EXPIRED_RENDER, bidResponse);
-      if (config.getConfig('auctionOptions')?.suppressExpiredRender) {
-        return;
-      }
-    }
+    const { suppress, logReasons } = isRenderSuppressed(bidResponse);
+    logReasons();
+    if (suppress) return;
 
     try {
       doRender({ renderFn, resizeFn, bidResponse, options, doc });
@@ -481,4 +495,11 @@ export function insertLocatorFrame() {
 
 export function getSafeRenderer(bidResponse: Bid): SafeRendererConfig | undefined {
   return bidResponse.safeRenderer;
+}
+
+/**
+ * True if the bid is rendered by running its renderer in the publisher's document, outside any creative frame.
+ */
+export function usesLegacyRenderer(bidResponse: Bid): boolean {
+  return isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse);
 }
