@@ -123,13 +123,8 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
 function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
   const bidders = deepAccess(moduleConfig, 'params.bidders');
   if (bidders && bidders.length > 0) {
-    // Into ortb2Fragments.bidder itself: the RTD core passes a guarded ortb2Fragments whose `bidder` is
-    // getter-only, and setting a path from the request (dset assigns every key on it) throws in strict mode.
-    const fragments = reqBidsConfigObj.ortb2Fragments ?? (reqBidsConfigObj.ortb2Fragments = {});
-    fragments.bidder ??= {};
     bidders.forEach(bidder => {
-      fragments.bidder[bidder] ??= {};
-      deepSetValue(fragments.bidder[bidder], `user.ext.data.${key}`, val);
+      deepSetValue(reqBidsConfigObj, `ortb2Fragments.bidder.${bidder}.user.ext.data.${key}`, val);
     });
   }
 }
