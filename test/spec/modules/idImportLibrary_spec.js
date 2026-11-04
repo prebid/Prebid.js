@@ -8,6 +8,7 @@ import * as activities from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 import { CONF_DEFAULT_FULL_BODY_SCAN, CONF_DEFAULT_INPUT_SCAN } from '../../../modules/idImportLibrary.js';
 import { server } from 'test/mocks/xhr.js';
+import { normalizeEmail, sha256Base64 } from '../../../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 
 var expect = require('chai').expect;
 
@@ -228,6 +229,58 @@ describe('IdImportLibrary Tests', function () {
       expect(refreshUserIdSpy.calledOnce).to.equal(true);
     });
   });
+  describe('normalizeEmail', function () {
+    it('trims and lowercases the address', function () {
+      expect(normalizeEmail('  Test.User@Example.COM ')).to.equal('test.user@example.com');
+    });
+    it('drops the dots and the + suffix of a gmail.com address, as UID2 does', function () {
+      expect(normalizeEmail('Test.User+promo@Gmail.com')).to.equal('testuser@gmail.com');
+    });
+    it('keeps the dots and the + suffix of another domain', function () {
+      expect(normalizeEmail('test.user+promo@example.com')).to.equal('test.user+promo@example.com');
+    });
+    ['', 'test', 'test@', '@example.com', 'a@b@example.com', 'te st@example.com', '+promo@gmail.com'].forEach(value => {
+      it(`rejects ${JSON.stringify(value)}`, function () {
+        expect(normalizeEmail(value)).to.equal(undefined);
+      });
+    });
+  });
+
+  // WebCrypto is only there in a secure context
+  (window.isSecureContext ? describe : () => {})('hashed email', function () {
+    let stubs;
+    beforeEach(function () {
+      stubs = [
+        sinon.stub(getGlobal(), 'refreshUserIds'),
+        sinon.stub(getGlobal(), 'getUserIds').returns({ id: { 'MOCKID': '1111' } }),
+        sinon.stub(window, 'MutationObserver').returns(mockMutationObserver),
+      ];
+    });
+    afterEach(function () {
+      stubs.forEach(stub => stub.restore());
+      document.body.innerHTML = '';
+    });
+
+    it('sha256Base64 hashes as UID2 does: SHA-256, base64-encoded', async function () {
+      expect(await sha256Base64('testuser@gmail.com')).to.equal('2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=');
+    });
+
+    it('posts the hash of the address normalized as UID2 does', async function () {
+      document.body.innerHTML = '<body><input type="text" id="userid" value=" Test.User@Gmail.com "></body>';
+      idImportlibrary.setConfig({ url: 'URL', formElementId: 'userid', debounce: 0 });
+      let request;
+      for (let i = 0; i < 100 && !request; i++) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        request = server.requests.find(r => r.url.endsWith('/URL'));
+      }
+      expect(request.method).to.equal('POST');
+      expect(JSON.parse(request.requestBody)).to.deep.equal({
+        hid: '2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=',
+        uids: { id: { 'MOCKID': '1111' } },
+      });
+    });
+  });
+
   describe('Tests with no user ids', function () {
     let mutationObserverStub;
 
