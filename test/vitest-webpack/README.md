@@ -255,12 +255,13 @@ failure there is reported quickly and doesn't take macOS, Windows and BrowserSta
 Each job runs its chunk's native specs and bridge specs (see [Native project](#native-project)). A failure is
 annotated at the failing test's line in the source spec (`githubReporter.mjs`).
 
-Karma's unit test jobs no longer run in CI, though `gulp test` still runs Karma locally until #16008 removes it.
+Karma was removed in #16008; the `gulp test*` tasks run Vitest (see the top-level README).
 The e2e tests, the build logic tests and the packed package's type check stay in `browser-tests.yml`.
 
 ### Rollback
 
-If Vitest turns out to miss regressions or block PRs it shouldn't, revert the #16007 PR. That restores Karma's
+If Vitest turns out to miss regressions or block PRs it shouldn't, revert the #16008 PR (Karma's removal: its
+runner, configuration and packages) and then the #16007 PR. Reverting #16007 restores Karma's
 unit, all-features-disabled and BrowserStack jobs and Karma-based coverage in `test.yml` and
 `browser-tests.yml`. The Vitest trial workflow (`vitest-webpack.yml`) comes back with it, so Vitest keeps running
 non-blocking beside Karma. Karma's coverage cache keys (`coverage-<commit>`) are separate from Vitest's, so

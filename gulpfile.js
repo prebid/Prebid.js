@@ -35,7 +35,7 @@ var prebid = require('./package.json');
 var port = 9999;
 const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const INTEG_SERVER_PORT = 4444;
-const { spawn, fork } = require('child_process');
+const { spawn } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const {precompile} = require('./gulp.precompilation.js');
@@ -360,14 +360,16 @@ function setupDist() {
     .pipe(gulp.dest('dist/chunks'))
 }
 
-// Run the unit tests.
+// Run the unit tests, under Vitest Browser Mode (test/vitest-webpack/README.md).
 //
-// By default, this runs in headless chrome.
+// By default, this runs every spec in headless Chromium: the native project (test/vitest-native) and the specs
+// that stay on the webpack bridge (test/vitest-webpack), in 8 chunks.
 //
-// If --watch is given, the task will re-run unit tests whenever the source code changes
-// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
-// If --browserstack is given, it will run the full suite of currently supported browsers.
-// If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
+// If --watch is given, the task will re-run unit tests whenever the source code changes (the native project in
+//   Vitest's watch mode; with `gulp serve-and-test`, sources are re-precompiled as they change).
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file(s), comma separated.
+// If --browserstack is given, it will run on BrowserStack (a real iPhone by default; see vitest.config.mjs).
+// If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,safari,edge,webkit
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {
@@ -379,7 +381,55 @@ function testTaskMaker(options = {}) {
     if (options.notest) {
       done();
     } else {
-      runKarma(options, done)
+      runVitest(options).then(() => done(), done);
+    }
+  }
+}
+
+// --browsers names, as Karma's launchers knew them, to Vitest's browser settings (vitest.config.mjs)
+const VITEST_BROWSERS = {
+  chrome: {VITEST_BROWSER: 'chromium'},
+  chromium: {VITEST_BROWSER: 'chromium'},
+  chromeheadless: {VITEST_BROWSER: 'chromium'},
+  firefox: {VITEST_BROWSER: 'firefox'},
+  firefoxheadless: {VITEST_BROWSER: 'firefox'},
+  safari: {VITEST_BROWSER: 'safari'},
+  safarinative: {VITEST_BROWSER: 'safari'},
+  webkit: {VITEST_BROWSER: 'webkit'},
+  edge: {VITEST_CHANNEL: 'msedge'},
+  edgeheadless: {VITEST_CHANNEL: 'msedge'},
+};
+
+function npmRun(script, env, args = []) {
+  return execaCmd('npm', ['run', script, ...(args.length ? ['--', ...args] : [])], {
+    stdio: 'inherit',
+    env: Object.assign({FORCE_COLOR: '1'}, process.env, env),
+  });
+}
+
+async function runVitest(options) {
+  const browsers = options.browsers ?? helpers.parseBrowserArgs(argv);
+  const variants = browsers.length ? browsers.map(name => {
+    const browser = VITEST_BROWSERS[name.toLowerCase()];
+    if (!browser) throw new Error(`Unknown browser "${name}"; one of ${Object.keys(VITEST_BROWSERS).join(', ')}`);
+    return browser;
+  }) : [{}];
+  for (const browserEnv of variants) {
+    const env = Object.assign({TEST_CHUNKS: String(TEST_CHUNKS)}, options.env, browserEnv,
+      options.coverage ? {VITEST_COVERAGE: '1'} : {},
+      options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {});
+    if (options.watch) {
+      // the native project: Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
+      await npmRun('test:vitest-native:watch', env, options.file ? options.file.split(',') : []);
+    } else if (options.file) {
+      // one bundle per spec through the bridge, as Karma ran them
+      await npmRun('test:vitest', Object.assign(env, {VITEST_FILES: options.file}));
+    } else if (options.browserstack) {
+      // the complete suite through the bridge, one chunk at a time on one session (vitest-tests.yml)
+      await npmRun('test:vitest', Object.assign(env, {VITEST_BRIDGE_ALL: '1'}));
+    } else {
+      await npmRun('test:vitest', env);
+      await npmRun('test:vitest-native', env);
     }
   }
 }
@@ -433,39 +483,16 @@ function runWebdriver({file}) {
   });
 }
 
-function runKarma(options, done) {
-  // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
-  // here we run it in a separate process to bypass the problem
-  options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
-  const env = Object.assign({}, options.env, process.env);
-  if (!env.TEST_CHUNKS) {
-    env.TEST_CHUNKS = TEST_CHUNKS;
-  }
-  const child = fork('./karmaRunner.js', null, {
-    env
-  });
-  child.on('exit', (exitCode) => {
-    if (exitCode) {
-      done(new Error('Karma tests failed with exit code ' + exitCode));
-    } else {
-      done();
-    }
-  })
-  child.send(options);
-}
-
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
+// Writes lcov to build/coverage/chunks/ (see test/vitest-webpack/README.md, "Coverage").
 function testCoverage(done) {
-  runKarma({
+  runVitest({
     coverage: true,
     browserstack: false,
     watch: false,
     file: argv.file,
-    env: {
-      NODE_OPTIONS: '--max-old-space-size=8096',
-      TEST_CHUNKS
-    }
-  }, done);
+    env: {NODE_OPTIONS: '--max-old-space-size=8096'}
+  }).then(() => done(), done);
 }
 
 // This task creates postbid.js. Postbid setup is different from prebid.js
@@ -606,7 +633,8 @@ gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverag
 // neither slows down iterating on that spec nor stops it when one of its own tests fails
 gulp.task('test-only', gulp.series(...(argv.file ? [] : ['test-build-logic']), 'precompile', test));
 
-gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
+// tests whatever variant is in dist/src, which test-all-features-disabled precompiles first
+gulp.task('test-all-features-disabled-nobuild', testTaskMaker({browsers: ['chrome'], watch: false}));
 gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
 
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));

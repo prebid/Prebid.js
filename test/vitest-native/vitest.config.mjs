@@ -33,7 +33,7 @@ export default defineConfig({
       // webpack resolves bare paths against dist/src (resolve.modules in webpack.conf.js)
       ...DIST_ENTRIES.map(e => e.replace(/\/$/, '')).map(e => ({ find: e, replacement: `${posix(DIST)}/${e}` })),
       { find: /^package\.json$/, replacement: path.join(root, 'package.json') },
-      // karma.conf.maker.js's alias
+      // the unit test webpack config's alias (test/webpackTestConfig.js)
       { find: /^web-bundler\//, replacement: posix(path.join(root, 'web-bundler')) + '/' },
       // faker's CommonJS sources include a file that isn't UTF-8, which Vite's dependency optimizer
       // rejects (webpack reads it); its prebuilt browser bundle is the same library

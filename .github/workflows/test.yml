@@ -119,9 +119,9 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
   # Exercise the --ES5 bundle end-to-end on the oldest browser it claims to
-  # support. Unit tests are deliberately not used here: gulp forks karmaRunner.js
-  # without forwarding argv, so `--ES5` never reaches karma's webpack config and
-  # the bundle under test would not actually be ES5.
+  # support. Unit tests are deliberately not used here: their bundles are built
+  # with the unit test webpack config (test/webpackTestConfig.js), which `--ES5`
+  # doesn't reach, so the code under test would not actually be ES5.
   setup-es5:
     name: "Define ES5 testing strategy"
     needs: [checkout]
