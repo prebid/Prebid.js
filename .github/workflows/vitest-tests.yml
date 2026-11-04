@@ -9,6 +9,7 @@ name: Vitest unit tests
 #   Firefox (ubuntu), Safari (macOS, the real browser through safaridriver), Edge (windows), Chrome 113
 #   a real iPhone on iOS 16 through BrowserStack, where the BrowserStack secrets are available (not on fork
 #   PRs, as with Karma's BrowserStack job; their changes are tested there by the master run after merge)
+# Chromium runs first; the other browsers start only if all of its jobs passed.
 on:
   workflow_call:
     inputs:
@@ -137,8 +138,13 @@ jobs:
 
   # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs.
   # Like Karma, only the default variant runs on these.
+  #
+  # These and the iPhone jobs start only once every Chromium job has passed: Chromium gives the first answer, and
+  # a failure there is almost always one every browser would hit, so the macOS, Windows and BrowserStack runs
+  # it would cost are skipped and the run fails on Chromium's result.
   browsers:
     name: Vitest ${{ matrix.browser }} (chunk ${{ matrix.chunk }})
+    needs: [chromium]
     if: ${{ !inputs.coverage-only }}
     strategy:
       fail-fast: false
@@ -214,6 +220,8 @@ jobs:
   # 16.5 in its place, because karma-browserstack-launcher can't drive real iOS devices.
   browserstack-check:
     name: Check for BrowserStack credentials
+    # after Chromium, like the other browsers
+    needs: [chromium]
     if: ${{ !inputs.coverage-only }}
     runs-on: ubuntu-latest
     outputs:

@@ -249,6 +249,9 @@ push to master, and a failed chunk fails the run, as a failed Karma chunk did. I
 - Firefox, Safari (macOS), Edge (Windows) and Chrome 113, 8 chunks of the default variant each.
 - A real iPhone on iOS 16 through BrowserStack, where the secrets are available (see [BrowserStack](#browserstack)).
 
+Chromium runs first. The other browsers and the iPhone start only once every Chromium job has passed, so a
+failure there is reported quickly and doesn't take macOS, Windows and BrowserStack time as well.
+
 Each job runs its chunk's native specs and bridge specs (see [Native project](#native-project)). A failure is
 annotated at the failing test's line in the source spec (`githubReporter.mjs`).
 
