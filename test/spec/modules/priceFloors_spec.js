@@ -2586,6 +2586,11 @@ describe('setting null as rule value', () => {
       auctionId: basicBidRequest.auctionId,
       adUnits
     });
+    server.respond();
+
+    const auctionFloors = _floorDataForAuction[basicBidRequest.auctionId];
+    expect(auctionFloors, 'auction floor data should be stored').to.exist;
+    expect(auctionFloors.data.values['banner|600x300']).to.equal(null);
 
     const inputParams = { mediaType: 'banner', size: [600, 300] };
 
@@ -2624,7 +2629,7 @@ describe('Price Floors User ID Tiers', function() {
         tierOne: ['liveintent.com', 'sharedid.org'],
         tierTwo: ['pairid.com']
       };
-      const result = resolveTierUserIds(tiers, { userIdAsEid: [] });
+      const result = resolveTierUserIds(tiers, {});
       expect(result).to.deep.equal({});
     });
 
