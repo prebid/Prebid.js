@@ -840,7 +840,7 @@ describe('the price floors module', function () {
         noFloorSignaled: true
       });
     });
-    it('should not do floor stuff and use first floors.data.noFloorSignalBidders if its defined betwen enforcement.noFloorSignalBidders', function() {
+    it('should not do floor stuff and use first floors.data.noFloorSignalBidders if it is defined between enforcement.noFloorSignalBidders', function() {
       handleSetFloorsConfig({
         ...basicFloorConfig,
         enforcement: {
