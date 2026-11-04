@@ -524,6 +524,7 @@ describe('unicornBidAdapterTest', () => {
     });
     it('buildBidRequest', () => {
       const req = spec.buildRequests(validBidRequests, bidderRequest);
+      assert.strictEqual(req.url, 'https://ds.uncn.jp/pb/0/bid.json');
       const uid = JSON.parse(req.data)['user']['id'];
       const reqData = removeUntestableAttrs(JSON.parse(req.data));
       const openRTBRequestData = removeUntestableAttrs(openRTBRequest);
