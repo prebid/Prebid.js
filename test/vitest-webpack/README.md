@@ -179,17 +179,18 @@ spec files in two local runs.
 |---|---|
 | pass natively, as plain ES modules (`VITEST_NATIVE_STUBS=0`) | 667 |
 | of which candidates (no namespace stub/spy, by a source scan) | 625 of 628 |
-| pass natively with stubbable namespaces (the default) | 930 |
-| stay on the bridge (`bridge-specs.json`) | 9 |
+| pass natively with stubbable namespaces (the default) | 936 |
+| stay on the bridge (`bridge-specs.json`) | 3 |
 
 Before the shared fixes in the config, specs failed on: `require()` (in `test_deps.js`, so every spec), `global`,
 `adloaderStub.js` stubbing a namespace (every spec), faker's non-UTF-8 source, the `web-bundler/` and
 `buildOptions.mjs` paths, CommonJS interop for `require('video.js').default` and `require('assert')`, dependencies
-found mid-run (Vite reloads the page), and cookies left by another file. The 9 on the bridge: 3 hard-code port
-9876, 1 re-evaluates a module through webpack's `require.cache`, 1 stubs an export with a getter, 1 relies on
-CommonJS `dset` ignoring a write to a getter-only property, and 3 still to be diagnosed.
+found mid-run (Vite reloads the page), and cookies left by another file. The 3 left on the bridge: 1 re-evaluates
+a module through webpack's `require.cache`, 1 stubs an export with a getter, and 1 relies on CommonJS `dset`
+ignoring a write to a getter-only property (#16011). Six more used to stay there, 3 hard-coding port 9876 and 3
+failing for reasons not diagnosed; they run natively since their specs take the page's host and URL from the page.
 
-Parity: for all 930, each test's name and result (passed or skipped) matched the bridge's, run one page per spec
+Parity: for the first 930, each test's name and result (passed or skipped) matched the bridge's, run one page per spec
 (`VITEST_ISOLATE_SPECS=1`). Coverage of chunk 1, native plus bridge, matched the isolated bridge run to 1 line of
 14,638. It is 1.2% of lines short of the chunked bridge run, where code run by one spec counts for the others on
 the page.
@@ -229,7 +230,7 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run, so the session's idle
   timeout is raised to BrowserStack's maximum (300 s).
 - `VITEST_BROWSERSTACK=1` is only the switch that picks BrowserStack over Playwright for a run. CI doesn't
-  need it turned on: the `browserstack` job in `vitest-tests.yml` runs wherever the BrowserStack secrets are
+  need it turned on: the `browserstack` job in `vitest-browsers.yml` runs wherever the BrowserStack secrets are
   available, as Karma's BrowserStack job did. Fork PRs get no secrets, so it doesn't run on them; their changes
   are tested on the real iPhone by the run on master after merge.
 - The job runs the 8 chunks one at a time and waits until two sessions are free, so it never takes the last one
@@ -240,13 +241,13 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
 
 ## CI
 
-`.github/workflows/vitest-tests.yml` is the unit test gate: `test.yml` ("Run tests") calls it on every PR and every
-push to master, and a failed job fails the run, as a failed Karma chunk did. It runs in two stages, one call each:
+`.github/workflows/vitest-chromium.yml` and `vitest-browsers.yml` are the unit test gate: `test.yml` ("Run tests") calls it on every PR and every
+push to master, and a failed job fails the run, as a failed Karma chunk did. It runs in two stages, one workflow each:
 
-1. **Chromium** (`stage: chromium`): 2 shards each of the default and all-features-disabled variants. The default
+1. **Chromium** (`vitest-chromium.yml`): 2 shards each of the default and all-features-disabled variants. The default
    variant's coverage is combined into the run's coverage report and compared with the base commit's (also
    computed with Vitest, and cached as `coverage-vitest-<commit>`).
-2. **Browsers** (`stage: browsers`), started only once the Chromium stage has passed: Firefox (2 shards), Safari
+2. **Browsers** (`vitest-browsers.yml`), started only once the Chromium stage has passed: Firefox (2 shards), Safari
    on macOS (2), Edge on Windows (1), Chrome 113 (1), and a real iPhone on iOS 16 through BrowserStack in 8
    chunks, where the secrets are available (see [BrowserStack](#browserstack)).
 
@@ -274,7 +275,7 @@ unit, all-features-disabled and BrowserStack jobs and Karma-based coverage in `t
 `browser-tests.yml`. The Vitest trial workflow (`vitest-webpack.yml`) comes back with it, so Vitest keeps running
 non-blocking beside Karma. Karma's coverage cache keys (`coverage-<commit>`) are separate from Vitest's, so
 the coverage comparison works again without clearing anything. To roll back only part of it, for example to
-take one browser out of the gate while it is fixed, remove that browser from the matrix in `vitest-tests.yml`.
+take one browser out of the gate while it is fixed, remove that browser from the matrix in `vitest-browsers.yml`.
 
 ## Status
 

@@ -1,17 +1,10 @@
-name: Vitest unit tests
+name: Vitest unit tests (browsers)
 
-# The unit test gate (#16007): every spec under Vitest Browser Mode. Most specs run as native ES modules served by
-# Vite (test/vitest-native), split between jobs with Vitest's `--shard`; the rest are bundled by Karma's
-# webpack/Babel config (test/vitest-webpack). See test/vitest-webpack/README.md. Called from test.yml.
-#
-# Browsers, as Karma's browser_testing.json and BrowserStack jobs had them:
-#   Chromium, default and all-features-disabled builds, with coverage from the default build
-#   Firefox (ubuntu), Safari (macOS, the real browser through safaridriver), Edge (windows), Chrome 113
-#   a real iPhone on iOS 16 through BrowserStack, where the BrowserStack secrets are available (not on fork
-#   PRs, as with Karma's BrowserStack job; their changes are tested there by the master run after merge)
-# It runs in two stages, one call each from test.yml: `stage: chromium` (Chromium and coverage), then
-# `stage: browsers` (the rest), which test.yml starts only once the Chromium stage has passed. Base branch
-# coverage also waits for the Chromium stage, so neither takes runners from it or runs for a PR that fails it.
+# Stage 2 of the unit test gate (#16007), called from test.yml once the Chromium stage (vitest-chromium.yml) has
+# passed: Firefox, Safari (macOS, the real browser through safaridriver), Edge (Windows) and Chrome 113, in shards
+# (Vitest's `--shard`, 3 pages at once), and a real iPhone on iOS 16 through BrowserStack where the secrets are
+# available (not on fork PRs, as with Karma's BrowserStack job; their changes are tested there by the master run
+# after merge). See test/vitest-webpack/README.md, "CI".
 on:
   workflow_call:
     inputs:
@@ -20,20 +13,6 @@ on:
         type: string
         default: ''
         required: false
-      stage:
-        description: chromium (Chromium in both feature variants, and coverage) or browsers (every other browser)
-        type: string
-        default: chromium
-        required: false
-      coverage-only:
-        description: Only run the coverage build (Chromium, default variant), e.g. for the base branch
-        type: boolean
-        default: false
-        required: false
-    outputs:
-      coverage:
-        description: Name of the artifact holding the combined lcov file (coverage.info)
-        value: ${{ jobs.coverage.outputs.artifact }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: BrowserStack user name
@@ -44,116 +23,6 @@ permissions:
   contents: read
 
 jobs:
-  # Two shards per feature variant. Each runs half of the native specs (Vitest's `--shard`, balanced by file)
-  # with 3 pages at once: each spec file runs in its own page, so there is no Karma-style chunk to keep
-  # together, and the whole native suite takes about a minute that way. Shard 1 also runs the few specs that
-  # stay on the webpack bridge (test/vitest-native/bridge-specs.json).
-  chromium:
-    name: Vitest Chromium (${{ matrix.variant }}, shard ${{ matrix.shard }}/2)
-    if: ${{ inputs.stage == 'chromium' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
-        # Like Karma's "Unit tests (all features disabled)" job: the variant is whatever tree the precompile
-        # step leaves in dist/src. Coverage comes from the default variant, as it did with Karma.
-        variant: ${{ fromJSON(inputs.coverage-only && '["default"]' || '["default", "all-features-disabled"]') }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # Base coverage is informational: a base commit that can't produce it (one from before Vitest) leaves
-    # the coverage output empty instead of failing the run, and test.yml then skips the comparison.
-    continue-on-error: ${{ inputs.coverage-only }}
-    env:
-      VITEST_PARALLEL: '3'
-      VITEST_COVERAGE: ${{ matrix.variant == 'default' && '1' || '' }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-          persist-credentials: false
-      # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
-      - name: Install dependencies
-        uses: ./.github/actions/npm-ci
-      # ubuntu-latest already has the system libraries Chromium needs (it ships Google Chrome); --with-deps
-      # would add an apt-get run of 10s or more, occasionally minutes, to every job.
-      - name: Install browser
-        run: npx playwright install chromium
-      # Restored, these caches take about half off precompile and webpack time (#16009). They are keyed on
-      # each source file's contents, but not on the build system itself (see gulp.precompilation.js): a
-      # change to the Babel config, the local Babel plugins, the precompile code or the dependencies would
-      # otherwise reuse stale output. Those files are hashed into the key, so such a change starts empty.
-      - name: Restore precompile and babel caches
-        uses: actions/cache@v5
-        with:
-          path: |
-            .cache/precompile
-            .cache/ts
-            .cache/babel-loader
-          key: vitest-${{ matrix.variant }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
-          restore-keys: |
-            vitest-${{ matrix.variant }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
-      # Vitest's record of each spec file's last result and duration: with it, files that failed last time run
-      # first, so their annotations show up on the PR within seconds of the tests starting. Per PR branch,
-      # falling back to the base branch's.
-      - name: Restore Vitest results
-        uses: actions/cache@v5
-        with:
-          path: node_modules/.vite/vitest
-          key: vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-
-            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.base_ref || 'master' }}-
-      - name: Precompile (${{ matrix.variant }})
-        run: npx gulp ${{ matrix.variant == 'default' && 'precompile' || 'precompile-all-features-disabled' }}
-      - name: Run native specs, shard ${{ matrix.shard }} of 2
-        run: npm run test:vitest-native -- --shard=${{ matrix.shard }}/2
-      - name: Build and run the bridge specs
-        if: ${{ matrix.shard == 1 && !cancelled() }}
-        run: npm run test:vitest
-      - name: Upload coverage
-        if: ${{ matrix.variant == 'default' && !cancelled() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-${{ matrix.shard }}
-          # build/coverage/chunks/native/shard-<i>/lcov.info from the native project; in shard 1 also
-          # build/coverage/chunks/<chunk>/lcov.info from the bridge
-          path: build/coverage/chunks
-          if-no-files-found: error
-
-  # Combines the chunks the way .github/actions/combine-coverage does, into one lcov file for test.yml.
-  coverage:
-    name: Vitest coverage
-    needs: [chromium]
-    if: ${{ !cancelled() && inputs.stage == 'chromium' }}
-    continue-on-error: ${{ inputs.coverage-only }}
-    runs-on: ubuntu-latest
-    outputs:
-      artifact: ${{ steps.name.outputs.artifact }}
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          pattern: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-*
-          path: build/coverage/chunks
-          merge-multiple: true
-      - name: Combine coverage results
-        run: |
-          # a shard that failed before writing coverage would otherwise leave a plausible but partial total.
-          for shard in 1 2; do
-            if [ ! -s "build/coverage/chunks/native/shard-$shard/lcov.info" ]; then
-              echo "::error::No coverage for shard $shard; not combining a partial result"
-              exit 1
-            fi
-          done
-          sudo apt-get update
-          sudo apt-get install lcov -y
-          find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info
-          { echo '### Vitest coverage'; echo '```'; lcov --summary coverage.info 2>&1; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-      - id: name
-        run: echo "artifact=vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: ${{ steps.name.outputs.artifact }}
-          path: coverage.info
 
   # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs.
   # Like Karma, only the default variant runs on these.
@@ -162,7 +31,6 @@ jobs:
   # also runs the bridge specs. Shard counts follow each browser's speed: about two minutes of tests per job.
   browsers:
     name: Vitest ${{ matrix.browser }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
-    if: ${{ inputs.stage == 'browsers' }}
     strategy:
       fail-fast: false
       matrix:
@@ -259,12 +127,12 @@ jobs:
         if: ${{ matrix.shard == 1 && !cancelled() }}
         run: npm run test:vitest
 
+
   # Safari on a real iPhone on iOS 16, the WebKit floor browserslist resolves to (ios_saf 16.6), through
   # @vitest/browser-webdriverio and BrowserStack Local (#16006). Karma's BrowserStack job ran desktop Safari
   # 16.5 in its place, because karma-browserstack-launcher can't drive real iOS devices.
   browserstack-check:
     name: Check for BrowserStack credentials
-    if: ${{ inputs.stage == 'browsers' }}
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.check.outputs.available }}
@@ -273,6 +141,7 @@ jobs:
         env:
           BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
         run: echo "available=${BROWSERSTACK_USER_NAME:+true}" >> "$GITHUB_OUTPUT"
+
 
   browserstack:
     name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (chunk ${{ matrix.chunk }})

@@ -64,7 +64,7 @@ export default defineConfig({
   },
   test: {
     ...bridge.test,
-    // not karma's 9876, so this can run beside the bridge; specs that hard-code 9876 stay on the bridge
+    // not karma's 9876, so this can run beside the bridge
     api: { port: Number(process.env.VITEST_NATIVE_PORT || 9878), strictPort: true },
     include: specs,
     setupFiles: ['test/vitest-webpack/setup.mjs', 'test/vitest-native/setup.mjs'],

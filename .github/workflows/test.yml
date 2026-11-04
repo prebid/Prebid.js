@@ -103,18 +103,16 @@ jobs:
   vitest:
     name: "Unit tests (Chromium)"
     needs: checkout
-    uses: ./.github/workflows/vitest-tests.yml
+    uses: ./.github/workflows/vitest-chromium.yml
     with:
       ref: ${{ needs.checkout.outputs.commit }}
-      stage: chromium
 
   vitest-browsers:
     name: "Unit tests (browsers)"
     needs: [checkout, vitest]
-    uses: ./.github/workflows/vitest-tests.yml
+    uses: ./.github/workflows/vitest-browsers.yml
     with:
       ref: ${{ needs.checkout.outputs.commit }}
-      stage: browsers
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -223,7 +221,7 @@ jobs:
     # a PR that fails it gets no coverage report anyway
     needs: [checkout, base-coverage-check, vitest]
     if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' }}
-    uses: ./.github/workflows/vitest-tests.yml
+    uses: ./.github/workflows/vitest-chromium.yml
     with:
       ref: ${{ needs.checkout.outputs.base-commit }}
       coverage-only: true
