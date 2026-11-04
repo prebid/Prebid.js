@@ -105,7 +105,7 @@ describe('utiqIdSystem', () => {
       }
     });
 
-    it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
+    it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', () => {
       const idGraph = [{
         'domain': 'test.domain',
         'atid': 'atidValue',
@@ -115,15 +115,21 @@ describe('utiqIdSystem', () => {
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
-      if (typeof response.callback === 'function') {
-        setTimeout(() => {
+      return new Promise((resolve, reject) => {
+        const writeTimer = setTimeout(() => {
           storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
-          expect(result).to.be.null;
-          done();
+          // Avoid a late write leaking into the next test once the deadline has passed.
+          clearTimeout(writeTimer);
+          try {
+            expect(result).to.be.null;
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
         });
-      }
+      });
     });
   });
 

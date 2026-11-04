@@ -132,23 +132,22 @@ export const utiqIdSubmodule = {
       ) {
         config.params.maxDelayTime = 1000;
       }
-      // Current delay and delay step in milliseconds
-      let currentDelay = 0;
+      // Measure elapsed time, not the number of polling callbacks: browsers can throttle timers.
       const delayStep = 50;
-      const result = (callback) => {
+      const result = (callback, startedAt = Date.now()) => {
+        // Check the deadline before storage: an ID arriving after maxDelayTime must not be used.
+        if (Date.now() - startedAt > config.params.maxDelayTime) {
+          logInfo(
+            `${LOG_PREFIX}: No utiq value set after ${config.params.maxDelayTime} max allowed delay time`
+          );
+          callback(null);
+          return;
+        }
         const data = getUtiqFromStorage();
         if (!data.utiq) {
-          if (currentDelay > config.params.maxDelayTime) {
-            logInfo(
-              `${LOG_PREFIX}: No utiq value set after ${config.params.maxDelayTime} max allowed delay time`
-            );
-            callback(null);
-          } else {
-            currentDelay += delayStep;
-            setTimeout(() => {
-              result(callback);
-            }, delayStep);
-          }
+          setTimeout(() => {
+            result(callback, startedAt);
+          }, delayStep);
         } else {
           const dataToReturn = { utiq: data.utiq };
           logInfo(
