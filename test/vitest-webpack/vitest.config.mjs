@@ -153,69 +153,35 @@ async function browserProvider() {
       instance.setViewport = async () => {};
     }
     if (https) {
-      // On Safari and iOS, acceptInsecureCerts alone leaves the certificate warning up: BrowserStack's
-      // acceptSsl executor accepts it once the page has loaded (docs: automate/selenium/accept-insecure-certificates)
+      // iOS Safari stops on its certificate warning (CertificateWarning.html) for the self-signed certificate:
+      // acceptInsecureCerts and BrowserStack's acceptSsl executor leave it up, and the confirmation it asks for
+      // is a native sheet the web context can't see. So tap through it as a user would, in Appium's native
+      // context (BrowserStack runs real iOS devices' Safari under Appium's XCUITest driver).
       const { openPage } = instance;
       instance.openPage = async function (...args) {
         const t0 = Date.now();
         const log = (msg) => console.info(`browserstack: ${msg} (+${Date.now() - t0}ms)`); // eslint-disable-line no-console
-        log(`opening ${args[1]}`);
         await openPage.apply(this, args);
-        log(`opened; url ${await this.browser.getUrl().catch(e => e.message)}, title "${await this.browser.getTitle().catch(e => e.message)}"`);
+        const url = () => this.browser.getUrl().catch(e => e.message);
+        if (!/CertificateWarning/.test(await url())) return;
+        log('certificate warning; tapping through it');
         try {
-          log(`acceptSsl: ${JSON.stringify(await this.browser.execute('browserstack_executor: {"action": "acceptSsl"}'))}`);
-        } catch (e) {
-          log(`acceptSsl failed: ${e.message}`);
-        }
-        const url = async () => this.browser.getUrl().catch(e => e.message);
-        const warning = async () => /CertificateWarning/.test(await url());
-        for (let i = 0; i < 10 && await warning(); i++) await new Promise(resolve => setTimeout(resolve, 500));
-        log(`after acceptSsl and waiting; url ${await url()}`);
-        const settle = async (what) => {
-          // iOS may ask to confirm visiting the site
-          await this.browser.acceptAlert().then(() => log(`${what}: accepted an alert`), () => {});
-          for (let i = 0; i < 10 && await warning(); i++) await new Promise(resolve => setTimeout(resolve, 500));
-          log(`${what}: url ${await url()}`);
-        };
-        if (await warning()) {
-          // Safari's warning page: "Show Details", then "visit this website", as a user would tap them
-          try {
-            await (await this.browser.$('#detailsButton')).click();
-            await (await this.browser.$('a=visit this website')).click();
-          } catch (e) {
-            log(`tapping through failed: ${e.message}`);
-          }
-          await settle('tapped visit this website');
-        }
-        if (await warning()) {
-          await this.browser.execute(() => window.CertificateWarningController.visitInsecureWebsite())
-            .catch(e => log(`visitInsecureWebsite failed: ${e.message}`));
-          await settle('called visitInsecureWebsite');
-        }
-        if (await warning()) {
-          // iOS confirms "visit this website" in a native sheet the web context can't see: tap it in Appium's
-          // native context (BrowserStack's real iOS devices run Safari under Appium's XCUITest driver)
-          try {
-            const contexts = await this.browser.getContexts();
-            log(`contexts: ${JSON.stringify(contexts)}`);
-            const web = (await this.browser.getContext());
-            await this.browser.switchContext('NATIVE_APP');
-            const labels = await this.browser.execute('mobile: source', { format: 'description' })
-              .then(src => String(src).match(/(Button|Link)[^\n]{0,120}/g)?.slice(0, 40), e => e.message);
-            log(`native controls: ${JSON.stringify(labels)}`);
-            for (const name of ['Visit Website', 'visit this website', 'Visit']) {
-              const el = await this.browser.$(`~${name}`);
-              if (await el.isExisting()) {
-                await el.click();
-                log(`native: tapped "${name}"`);
-                break;
-              }
+          await this.browser.switchContext('NATIVE_APP');
+          for (const name of ['Show Details', 'visit this website', 'Visit Website']) {
+            const el = await this.browser.$(`~${name}`);
+            if (await el.waitForExist({ timeout: 5000 }).catch(() => false)) {
+              await el.click();
+              log(`tapped "${name}"`);
             }
-            await this.browser.switchContext(typeof web === 'string' ? web : web?.id ?? contexts.find(c => c !== 'NATIVE_APP'));
-          } catch (e) {
-            log(`native context failed: ${e.message}`);
           }
-          await settle('native tap');
+        } catch (e) {
+          log(`tapping through failed: ${e.message}`);
+        } finally {
+          // the page that loads is a new web view: switch to the newest one
+          const contexts = await this.browser.getContexts().catch(() => []);
+          const web = contexts.map(c => (typeof c === 'string' ? c : c.id)).filter(c => c !== 'NATIVE_APP').pop();
+          if (web) await this.browser.switchContext(web).catch(e => log(`switching to ${web} failed: ${e.message}`));
+          log(`contexts ${JSON.stringify(contexts)}; url ${await url()}`);
         }
       };
     }
@@ -279,6 +245,8 @@ export default defineConfig({
       // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
       instances: [{ browser: browserName, name: browserstack ? `${browserName} ${bsLabel} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName }],
       screenshotFailures: false,
+      // a device takes ~15s to open the page and more to tap through the certificate warning (default 60s)
+      ...(browserstack ? { connectTimeout: 180000 } : {}),
       // karma's ChromeHeadless window size (Vitest defaults to a 414x896 phone viewport)
       viewport: { width: 800, height: 600 },
       // a page shaped like karma's context.html (no lang attribute, empty title)
