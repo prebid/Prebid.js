@@ -126,9 +126,28 @@ describe('adRendering', () => {
           sinon.assert.called(bidResponse.renderer.render);
         });
 
-        it('emits AD_RENDER_SUCCEDED', () => {
+        it('emits AD_RENDER_SUCCEDED once the renderer has rendered', async () => {
+          let rendered;
+          bidResponse.renderer.render.returns(new Promise(resolve => { rendered = resolve; }));
           doRender({ renderFn, bidResponse });
+          await Promise.resolve();
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match.has('bid', sinon.match.same(bidResponse)));
+          rendered();
+          await new Promise(resolve => setTimeout(resolve));
           sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
+            bid: bidResponse,
+            adId: bidResponse.adId
+          }));
+        });
+
+        it('emits AD_RENDER_FAILED instead when the renderer fails', async () => {
+          bidResponse.renderer.render.returns(Promise.reject(new Error('renderer failed')));
+          doRender({ renderFn, bidResponse });
+          await new Promise(resolve => setTimeout(resolve));
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match.has('bid', sinon.match.same(bidResponse)));
+          sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+            reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+            message: 'renderer failed',
             bid: bidResponse,
             adId: bidResponse.adId
           }));

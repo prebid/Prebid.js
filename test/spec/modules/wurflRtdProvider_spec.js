@@ -4,7 +4,7 @@ import {
   __testing__,
   dep
 } from 'modules/wurflRtdProvider';
-import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import { fetchExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as prebidGlobalModule from 'src/prebidGlobal.js';
 import { guardOrtb2Fragments } from 'libraries/objectGuard/ortbGuard.js';
 import { config } from 'src/config.js';
@@ -159,8 +159,8 @@ describe('wurflRtdProvider', function () {
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
           // loadWurflJsAsync chains on suaPromise, so fire assertions after microtasks flush.
           setTimeout(() => {
-            expect(loadExternalScriptStub.called).to.be.true;
-            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            expect(fetchExternalScriptStub.called).to.be.true;
+            const scriptUrl = fetchExternalScriptStub.getCall(0).args[0];
             const url = new URL(scriptUrl);
             const suaParam = url.searchParams.get('sua');
             expect(suaParam).to.not.be.null;
@@ -182,8 +182,8 @@ describe('wurflRtdProvider', function () {
 
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
           setTimeout(() => {
-            expect(loadExternalScriptStub.calledOnce).to.be.true;
-            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            expect(fetchExternalScriptStub.calledOnce).to.be.true;
+            const scriptUrl = fetchExternalScriptStub.getCall(0).args[0];
             const url = new URL(scriptUrl);
             expect(url.searchParams.get('sua')).to.be.null;
             done();
@@ -209,7 +209,7 @@ describe('wurflRtdProvider', function () {
             // Tier 2: bid-request SUA unchanged
             expect(reqBidsConfigObj.ortb2Fragments.global.device.sua).to.deep.equal(publisherSUA);
             // Tier 1: wurfl.js URL carries our own high-entropy SUA
-            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            const scriptUrl = fetchExternalScriptStub.getCall(0).args[0];
             const url = new URL(scriptUrl);
             expect(JSON.parse(url.searchParams.get('sua'))).to.deep.equal(mockSUA);
             done();
@@ -244,7 +244,7 @@ describe('wurflRtdProvider', function () {
           });
 
           // Verify no async load was triggered (cache is valid)
-          expect(loadExternalScriptStub.called).to.be.false;
+          expect(fetchExternalScriptStub.called).to.be.false;
 
           done();
         };
@@ -281,7 +281,7 @@ describe('wurflRtdProvider', function () {
           // loadWurflJsAsync chains on suaPromise; wait for microtasks to flush.
           setTimeout(() => {
             // Verify async load WAS triggered for refresh (cache expired)
-            expect(loadExternalScriptStub.calledOnce).to.be.true;
+            expect(fetchExternalScriptStub.calledOnce).to.be.true;
             done();
           }, 0);
         };
@@ -688,10 +688,10 @@ describe('wurflRtdProvider', function () {
 
         describe('control group WURFL.js cache lifecycle', () => {
           // A dedicated host isolates this auction's WURFL.js loads from async loads still
-          // pending from earlier tests, which also land on the shared loadExternalScriptStub.
+          // pending from earlier tests, which also land on the shared fetchExternalScriptStub.
           const controlHost = 'https://control.wurfl.test';
           const controlConfig = { params: { abTest: true, abName: 'test_cache', abSplit: 0.5, altHost: controlHost } };
-          const controlLoads = () => loadExternalScriptStub.getCalls()
+          const controlLoads = () => fetchExternalScriptStub.getCalls()
             .filter(call => new URL(call.args[0]).origin === controlHost);
 
           beforeEach(() => {
@@ -1061,10 +1061,10 @@ describe('wurflRtdProvider', function () {
 
         // loadWurflJsAsync chains on suaPromise; wait for microtasks.
         setTimeout(() => {
-          expect(loadExternalScriptStub.calledOnce).to.be.true;
-          const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
-          expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
-          expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
+          expect(fetchExternalScriptStub.calledOnce).to.be.true;
+          const fetchCall = fetchExternalScriptStub.getCall(0);
+          expect(fetchCall.args[0]).to.equal(expectedURL.toString());
+          expect(fetchCall.args[2]).to.equal('wurfl');
           done();
         }, 0);
       };
@@ -2980,7 +2980,7 @@ describe('wurflRtdProvider', function () {
           wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
             setTimeout(() => {
               // The rejected SUA promise is swallowed and the script still loads.
-              expect(loadExternalScriptStub.called).to.be.true;
+              expect(fetchExternalScriptStub.called).to.be.true;
               done();
             }, 0);
           }, { params: {} }, {});
