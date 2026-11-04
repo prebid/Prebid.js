@@ -41,8 +41,6 @@ const TerserPlugin = require('terser-webpack-plugin');
 const {precompile} = require('./gulp.precompilation.js');
 const {tsConsumer, TS_MIN, TS_CURRENT} = require('./gulp.consumerTypes.js');
 
-const TEST_CHUNKS = 8;
-
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
   'pre1api'
@@ -360,13 +358,12 @@ function setupDist() {
     .pipe(gulp.dest('dist/chunks'))
 }
 
-// Run the unit tests, under Vitest Browser Mode (test/vitest-webpack/README.md).
+// Run the unit tests, under Vitest Browser Mode (test/vitest/README.md).
 //
-// By default, this runs every spec in headless Chromium: the native project (test/vitest-native) and the specs
-// that stay on the webpack bridge (test/vitest-webpack), in 8 chunks.
+// By default, this runs every spec in headless Chromium.
 //
-// If --watch is given, the task will re-run unit tests whenever the source code changes (the native project in
-//   Vitest's watch mode; with `gulp serve-and-test`, sources are re-precompiled as they change).
+// If --watch is given, the task will re-run unit tests whenever the source code changes (Vitest's watch mode;
+//   with `gulp serve-and-test`, sources are re-precompiled as they change).
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file(s), comma separated.
 // If --browserstack is given, it will run on BrowserStack (a real iPhone by default; see vitest.config.mjs).
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,safari,edge,webkit
@@ -415,23 +412,14 @@ async function runVitest(options) {
     return browser;
   }) : [{}];
   for (const browserEnv of variants) {
-    // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through; 8 chunks by default
-    const env = Object.assign({TEST_CHUNKS: process.env.TEST_CHUNKS || String(TEST_CHUNKS)}, options.env, browserEnv,
+    // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through (specs.js)
+    const env = Object.assign({}, options.env, browserEnv,
       options.coverage ? {VITEST_COVERAGE: '1'} : {},
       options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {});
-    if (options.watch) {
-      // the native project: Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
-      await npmRun('test:vitest-native:watch', env, options.file ? options.file.split(',') : []);
-    } else if (options.file) {
-      // one bundle per spec through the bridge, as Karma ran them
-      await npmRun('test:vitest', Object.assign(env, {VITEST_FILES: options.file}));
-    } else if (options.browserstack) {
-      // the complete suite through the bridge, one chunk at a time on one session (vitest-tests.yml)
-      await npmRun('test:vitest', Object.assign(env, {VITEST_BRIDGE_ALL: '1'}));
-    } else {
-      await npmRun('test:vitest', env);
-      await npmRun('test:vitest-native', env);
-    }
+    // --file narrows the run to those specs (as Vitest file filters); without it, every spec runs
+    const files = options.file ? options.file.split(',') : [];
+    // in watch mode Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
+    await npmRun(options.watch ? 'test:vitest:watch' : 'test:vitest', env, files);
   }
 }
 
@@ -485,7 +473,7 @@ function runWebdriver({file}) {
 }
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
-// Writes lcov to build/coverage/chunks/ (see test/vitest-webpack/README.md, "Coverage").
+// Writes lcov to build/coverage/chunks/ (see test/vitest/README.md, "Coverage").
 function testCoverage(done) {
   runVitest({
     coverage: true,

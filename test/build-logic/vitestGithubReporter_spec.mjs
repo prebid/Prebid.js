@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import GithubSpecReporter, { formatAnnotation, locateTest, specPath, testLine } from '../vitest-webpack/githubReporter.mjs';
+import GithubSpecReporter, { formatAnnotation, locateTest, specPath, testLine } from '../vitest/githubReporter.mjs';
 
-describe('Vitest trial GitHub annotations', () => {
-  it('maps a bundle back to its source spec', () => {
-    expect(specPath('build/vitest-bundles/libraries/consentManagement/consentUtils_spec.js'))
+describe('Vitest GitHub annotations', () => {
+  it('maps a precompiled spec back to its source', () => {
+    expect(specPath('dist/src/test/spec/libraries/consentManagement/consentUtils_spec.js'))
       .to.equal('test/spec/libraries/consentManagement/consentUtils_spec.js');
-    expect(specPath('build\\vitest-bundles\\modules\\aSpec_spec.js')).to.equal('test/spec/modules/aSpec_spec.js');
+    expect(specPath('dist\\src\\test\\spec\\modules\\aSpec_spec.js')).to.equal('test/spec/modules/aSpec_spec.js');
     expect(specPath('test/spec/other_spec.js')).to.equal('test/spec/other_spec.js');
   });
 
@@ -39,8 +39,8 @@ describe('Vitest trial GitHub annotations', () => {
 
   it('annotates only failed tests and failed modules', () => {
     const lines = [];
-    const reporter = new GithubSpecReporter({ write: (line) => lines.push(line), groups: {} });
-    const module = { relativeModuleId: 'build/vitest-bundles/does/not_exist_spec.js', errors: () => [] };
+    const reporter = new GithubSpecReporter({ write: (line) => lines.push(line) });
+    const module = { relativeModuleId: 'dist/src/test/spec/does/not_exist_spec.js', errors: () => [] };
     reporter.onTestCaseResult({ module, name: 'ok', fullName: 'ok', result: () => ({ state: 'passed' }) });
     reporter.onTestModuleEnd(module);
     expect(lines).to.eql([]);
@@ -73,21 +73,14 @@ describe('Vitest trial GitHub annotations', () => {
     expect(locateTest([candidates[0]], 'missing')).to.eql({ file: 'test/spec/a_spec.js', line: null });
   });
 
-  it('uses groups.json to annotate chunk test files', () => {
+  it('anchors a failure at its line in the source spec', () => {
     const lines = [];
-    const reporter = new GithubSpecReporter({
-      write: (line) => lines.push(line),
-      groups: { 'build/vitest-bundles/chunks/chunk-1_spec.js': ['test/spec/a_spec.js', 'test/spec/b_spec.js'] }
-    });
-    reporter.read = (file) => (file === 'test/spec/b_spec.js' ? "it('bad', () => {});" : '');
-    const module = { relativeModuleId: 'build/vitest-bundles/chunks/chunk-1_spec.js', errors: () => [{ message: 'boom' }] };
+    const reporter = new GithubSpecReporter({ write: (line) => lines.push(line) });
+    reporter.read = (file) => (file === 'test/spec/b_spec.js' ? "describe('b', () => {\n  it('bad', () => {});\n});" : '');
+    const module = { relativeModuleId: 'dist/src/test/spec/b_spec.js', errors: () => [] };
     reporter.onTestCaseResult({
       module, name: 'bad', fullName: 'b > bad', result: () => ({ state: 'failed', errors: [{ message: 'nope' }] })
     });
-    reporter.onTestModuleEnd(module);
-    expect(lines).to.eql([
-      '::error file=test/spec/b_spec.js,line=1,title=b > bad::nope',
-      '::error title=build/vitest-bundles/chunks/chunk-1_spec.js failed to run::boom'
-    ]);
+    expect(lines).to.eql(['::error file=test/spec/b_spec.js,line=2,title=b > bad::nope']);
   });
 });

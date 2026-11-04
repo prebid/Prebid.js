@@ -1,11 +1,11 @@
 // A Vite plugin that lets the precompiled specs (dist/src/test) run as native ES modules, unchanged. It
-// covers what webpack and @babel/plugin-transform-modules-commonjs give the bridge (../vitest-webpack):
+// covers what webpack and @babel/plugin-transform-modules-commonjs gave them under Karma:
 //   - `require()` in test code (test_deps.js, global_hooks.js, ~80 specs);
 //   - `sinon.stub(namespace, 'fn')`, which ~300 specs and test/mocks/adloaderStub.js do: the namespaces that
 //     test code imports are replaced by stand-ins whose writes reassign the module's exports (stubs.mjs).
 //     Unlike a CommonJS stub, this also replaces the module's own calls to the export;
 //   - test/helpers/hookSetup.js loading after each spec, as Karma loads it after the specs;
-//   - with coverage, babel-plugin-istanbul over the sources, as test/webpackTestConfig.js does.
+//   - with coverage, babel-plugin-istanbul over the sources, as Karma's webpack config did.
 // vitest.config.mjs resolves bare `src/...`, `modules/...`, `test/...` imports against dist/src.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,7 +17,7 @@ const ROOT = path.resolve(import.meta.dirname, '../..');
 export const DIST = path.join(ROOT, 'dist/src');
 const DIST_TEST = path.join(DIST, 'test') + path.sep;
 // root-relative URLs
-const STUBS = '/test/vitest-native/stubs.mjs';
+const STUBS = '/test/vitest/stubs.mjs';
 const HOOK_SETUP = '/dist/src/test/helpers/hookSetup.js';
 const SETTER = '__vitestNativeSet__';
 // what webpack resolves bare specifiers against first (resolve.modules in webpack.conf.js): `src/`, `modules/`,
@@ -101,13 +101,13 @@ function addSetter(code, id) {
     `\nexport function ${SETTER}(n, v) { switch (n) { ${cases} } return false; }\n`;
 }
 
-// What test/webpackTestConfig.js does with coverage on: babel-plugin-istanbul over the precompiled sources, with
+// What Karma's webpack config did with coverage on: babel-plugin-istanbul over the precompiled sources, with
 // their source maps, so coverage.js can map the counters back to the original files.
 function instrument(code, id) {
   const babel = require('@babel/core');
   let inputSourceMap;
   try {
-    // with absolute sources, as webpack's extractSourceMap hands them to the bridge's babel-loader
+    // with absolute sources, as webpack's extractSourceMap handed them to babel-loader under Karma
     const map = JSON.parse(fs.readFileSync(file(id) + '.map', 'utf8'));
     const base = path.resolve(path.dirname(file(id)), map.sourceRoot ?? '');
     inputSourceMap = { ...map, sourceRoot: undefined, sources: map.sources.map(s => path.resolve(base, s)) };

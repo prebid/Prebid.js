@@ -1,4 +1,4 @@
-// Runs in the browser before each bundled spec file. Supplies the globals the specs were written against
+// Runs in the browser before each spec file. Supplies the globals the specs were written against
 // (karma-mocha, karma-chai and karma-sinon supplied them under Karma): Mocha's BDD interface on top of
 // Vitest's runner, chai's expect/assert/should, and sinon. No spec is changed.
 import * as vitest from 'vitest';
@@ -19,7 +19,7 @@ globalThis.assert = chai.assert;
 globalThis.should = chai.should();
 globalThis.sinon = sinon;
 
-// The tester page is test/vitest-webpack/context.html, shaped like karma's: Vitest's own is
+// The tester page is test/vitest/context.html, shaped like karma's: Vitest's own is
 // `<html lang="en">` (FPD enrichment turns that into site.content.language) titled "Vitest Browser Tester".
 // ~170 specs hard-code karma's test page URL (http://localhost:9876/context.html); the config serves
 // Vitest on port 9876, and this gives the test iframe karma's path. Its referrer is karma's parent page.
@@ -318,7 +318,7 @@ Object.assign(globalThis, {
   afterEach: wrapEachHook(vitest.afterEach, true),
 });
 
-// With VITEST_COVERAGE=1 the bundles are instrumented (babel-plugin-istanbul, as under karma-coverage);
+// With VITEST_COVERAGE=1 the sources are instrumented (babel-plugin-istanbul, as under karma-coverage);
 // hand this page's counters to Node once the file is done (the writeCoverage command in vitest.config.mjs).
 // Registered before the spec loads, so with sequence.hooks 'list' it runs ahead of the spec's top-level
 // after() hooks; those are cleanup code, so their few counters are missed.

@@ -6,7 +6,7 @@ import { expect } from 'chai';
 
 const require = createRequire(import.meta.url);
 const babel = require('@babel/core');
-const { writeLcov, chunkOf } = require('../vitest-webpack/coverage.js');
+const { writeLcov, chunkOf } = require('../vitest/coverage.js');
 
 const ORIGINAL = [
   'export function diff(a, b) {',
@@ -20,7 +20,7 @@ const ORIGINAL = [
 
 /**
  * Coverage for ORIGINAL the way the Vitest runner collects it: "precompiled" with a source map, instrumented by
- * babel-plugin-istanbul with that map as its input (as test/webpackTestConfig.js does), then run once.
+ * babel-plugin-istanbul with that map as its input (as Karma's webpack config did), then run once.
  */
 function collectCoverage(root, args) {
   const precompiled = babel.transformSync(ORIGINAL, {
@@ -67,7 +67,7 @@ function readLcov(file) {
   return records;
 }
 
-describe('Vitest coverage (test/vitest-webpack/coverage.js)', function () {
+describe('Vitest coverage (test/vitest/coverage.js)', function () {
   let root, raw, out;
 
   beforeEach(function () {
@@ -86,12 +86,13 @@ describe('Vitest coverage (test/vitest-webpack/coverage.js)', function () {
   }
 
   describe('chunkOf', function () {
-    it('maps chunk bundles to their Karma chunk', function () {
-      expect(chunkOf('chunks__chunk-3_spec.json')).to.equal('3');
-      expect(chunkOf('chunks__chunk-12_spec.json')).to.equal('12');
+    it('reads the chunk or CI shard a spec file ran in from its name', function () {
+      expect(chunkOf('test__spec__modules__appnexusBidAdapter_spec.chunk-3_spec.json')).to.equal('3');
+      expect(chunkOf('test__spec__modules__appnexusBidAdapter_spec.chunk-12_spec.json')).to.equal('12');
+      expect(chunkOf('test__spec__modules__appnexusBidAdapter_spec.chunk-shard-2_spec.json')).to.equal('shard-2');
     });
 
-    it('reports single-spec bundles (VITEST_FILES, VITEST_ISOLATE_SPECS) as chunk 1', function () {
+    it('reports a file without one as chunk 1', function () {
       expect(chunkOf('modules__appnexusBidAdapter_spec.json')).to.equal('1');
     });
   });

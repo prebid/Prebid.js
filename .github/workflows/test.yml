@@ -127,9 +127,9 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
   # Exercise the --ES5 bundle end-to-end on the oldest browser it claims to
-  # support. Unit tests are deliberately not used here: their bundles are built
-  # with the unit test webpack config (test/webpackTestConfig.js), which `--ES5`
-  # doesn't reach, so the code under test would not actually be ES5.
+  # support. Unit tests are deliberately not used here: they run the precompiled
+  # sources under Vite, which `--ES5` doesn't reach, so the code under test would
+  # not actually be ES5.
   setup-es5:
     name: "Define ES5 testing strategy"
     needs: [checkout]
@@ -191,7 +191,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BASE: ${{ needs.checkout.outputs.base-commit }}
         run: |
-          if gh api "repos/${{ github.repository }}/contents/test/vitest-native/vitest.config.mjs?ref=$BASE" --silent 2>/dev/null; then
+          if gh api "repos/${{ github.repository }}/contents/test/vitest/vitest.config.mjs?ref=$BASE" --silent 2>/dev/null; then
             echo vitest=true >> "$GITHUB_OUTPUT"
           else
             echo "::notice::The base commit $BASE has no Vitest setup, so there is no base coverage to compare with"

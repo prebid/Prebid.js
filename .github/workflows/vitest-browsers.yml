@@ -4,7 +4,7 @@ name: Vitest unit tests (browsers)
 # passed: Firefox, Safari (macOS, the real browser through safaridriver), Edge (Windows) and Chrome 113, in shards
 # (Vitest's `--shard`, 3 pages at once), and a real iPhone on iOS 16 through BrowserStack where the secrets are
 # available (not on fork PRs, as with Karma's BrowserStack job; their changes are tested there by the master run
-# after merge). See test/vitest-webpack/README.md, "CI".
+# after merge). See test/vitest/README.md, "CI".
 on:
   workflow_call:
     inputs:
@@ -27,8 +27,8 @@ jobs:
   # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs.
   # Like Karma, only the default variant runs on these.
   # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs, default
-  # variant only. Each job runs its share of the native specs (Vitest's `--shard`) with 3 pages at once; shard 1
-  # also runs the bridge specs. Shard counts follow each browser's speed: about two minutes of tests per job.
+  # variant only. Each job runs its share of the specs (Vitest's `--shard`) with 3 pages at once. Shard counts
+  # follow each browser's speed: about two minutes of tests per job.
   browsers:
     name: Vitest ${{ matrix.browser }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
     strategy:
@@ -121,11 +121,8 @@ jobs:
             vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
       - name: Precompile
         run: npx gulp precompile
-      - name: Run native specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
-        run: npm run test:vitest-native -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
-      - name: Build and run the bridge specs
-        if: ${{ matrix.shard == 1 && !cancelled() }}
-        run: npm run test:vitest
+      - name: Run specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
+        run: npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
 
 
   # Safari on a real iPhone on iOS 16, the WebKit floor browserslist resolves to (ios_saf 16.6), through
@@ -144,16 +141,17 @@ jobs:
 
 
   browserstack:
-    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (chunk ${{ matrix.chunk }})
+    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (shard ${{ matrix.shard }}/2)
     needs: browserstack-check
     if: ${{ needs.browserstack-check.outputs.available == 'true' }}
     strategy:
       fail-fast: false
-      # One BrowserStack session per chunk, one chunk at a time, so this job never holds more than one of the
-      # account's parallel sessions.
+      # One BrowserStack session per shard, one shard at a time, so this job never holds more than one of the
+      # account's parallel sessions. A session ends after 300s without WebDriver traffic, which a test run sends
+      # none of, so each shard has to finish within that: 2 shards, with 3 pages at once.
       max-parallel: 1
       matrix:
-        chunk: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2]
         device: [iPhone 14]
         os-version: ['16']
     runs-on: ubuntu-latest
@@ -173,9 +171,9 @@ jobs:
             .cache/precompile
             .cache/ts
             .cache/babel-loader
-          key: vitest-default-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
+          key: vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
           restore-keys: |
-            vitest-default-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
+            vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
       - name: Precompile
         run: npx gulp precompile
       - name: BrowserStack env setup
@@ -183,7 +181,7 @@ jobs:
         with:
           username: ${{ secrets.BROWSERSTACK_USER_NAME }}
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-          build-name: Vitest run ${{ github.run_id }}, attempt ${{ github.run_attempt }}, chunk ${{ matrix.chunk }}, ${{ github.ref }}
+          build-name: Vitest run ${{ github.run_id }}, attempt ${{ github.run_attempt }}, shard ${{ matrix.shard }}, ${{ github.ref }}
       - name: BrowserStack Local setup
         uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
         with:
@@ -194,18 +192,15 @@ jobs:
         uses: ./.github/actions/wait-for-browserstack
         with:
           sessions: 2
-      - name: Build and run chunk ${{ matrix.chunk }}
+      - name: Run specs, shard ${{ matrix.shard }} of 2
         timeout-minutes: 15
         env:
-          TEST_CHUNKS: '8'
-          TEST_CHUNK: ${{ matrix.chunk }}
           VITEST_BROWSERSTACK: '1'
-          # the complete suite through the bridge (test/vitest-webpack/README.md, "BrowserStack")
-          VITEST_BRIDGE_ALL: '1'
+          VITEST_PARALLEL: '3'
           VITEST_BROWSER: safari
           VITEST_DEVICE: ${{ matrix.device }}
           VITEST_OS_VERSION: ${{ matrix.os-version }}
-        run: npm run test:vitest
+        run: npm run test:vitest -- --shard=${{ matrix.shard }}/2
       - name: BrowserStack Local stop
         if: ${{ always() }}
         uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6

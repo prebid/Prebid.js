@@ -1,9 +1,8 @@
 name: Vitest unit tests (Chromium)
 
-# Stage 1 of the unit test gate (#16007), called from test.yml: every native spec in Chromium, in 2 shards per
-# feature variant (Vitest's `--shard`, 3 pages at once), the bridge specs in shard 1, and coverage from the
-# default variant. test.yml starts stage 2 (vitest-browsers.yml) and base branch coverage only once this passes.
-# See test/vitest-webpack/README.md, "CI".
+# Stage 1 of the unit test gate (#16007), called from test.yml: every spec in Chromium, in 2 shards per feature
+# variant (Vitest's `--shard`, 3 pages at once), and coverage from the default variant. test.yml starts stage 2
+# (vitest-browsers.yml) and base branch coverage only once this passes. See test/vitest/README.md, "CI".
 on:
   workflow_call:
     inputs:
@@ -26,10 +25,9 @@ permissions:
   contents: read
 
 jobs:
-  # Two shards per feature variant. Each runs half of the native specs (Vitest's `--shard`, balanced by file)
-  # with 3 pages at once: each spec file runs in its own page, so there is no Karma-style chunk to keep
-  # together, and the whole native suite takes about a minute that way. Shard 1 also runs the few specs that
-  # stay on the webpack bridge (test/vitest-native/bridge-specs.json).
+  # Two shards per feature variant. Each runs half of the specs (Vitest's `--shard`, balanced by file) with 3 pages
+  # at once: each spec file runs in its own page, so there is no Karma-style chunk to keep together, and the whole
+  # suite takes about a minute that way.
   chromium:
     name: Vitest Chromium (${{ matrix.variant }}, shard ${{ matrix.shard }}/2)
     strategy:
@@ -86,18 +84,14 @@ jobs:
             vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.base_ref || 'master' }}-
       - name: Precompile (${{ matrix.variant }})
         run: npx gulp ${{ matrix.variant == 'default' && 'precompile' || 'precompile-all-features-disabled' }}
-      - name: Run native specs, shard ${{ matrix.shard }} of 2
-        run: npm run test:vitest-native -- --shard=${{ matrix.shard }}/2
-      - name: Build and run the bridge specs
-        if: ${{ matrix.shard == 1 && !cancelled() }}
-        run: npm run test:vitest
+      - name: Run specs, shard ${{ matrix.shard }} of 2
+        run: npm run test:vitest -- --shard=${{ matrix.shard }}/2
       - name: Upload coverage
         if: ${{ matrix.variant == 'default' && !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-${{ matrix.shard }}
-          # build/coverage/chunks/native/shard-<i>/lcov.info from the native project; in shard 1 also
-          # build/coverage/chunks/<chunk>/lcov.info from the bridge
+          # build/coverage/chunks/shard-<i>/lcov.info
           path: build/coverage/chunks
           if-no-files-found: error
 
@@ -121,7 +115,7 @@ jobs:
         run: |
           # a shard that failed before writing coverage would otherwise leave a plausible but partial total.
           for shard in 1 2; do
-            if [ ! -s "build/coverage/chunks/native/shard-$shard/lcov.info" ]; then
+            if [ ! -s "build/coverage/chunks/shard-$shard/lcov.info" ]; then
               echo "::error::No coverage for shard $shard; not combining a partial result"
               exit 1
             fi

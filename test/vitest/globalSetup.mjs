@@ -1,15 +1,19 @@
 /* eslint-disable no-console */
-// Runs in Node around the whole Vitest run. With VITEST_COVERAGE=1, setup.mjs sends each test file's
-// Istanbul counters here through the `writeCoverage` command; at the end of the run they are turned into
-// lcov (see coverage.js). Teardown runs even when tests fail, as karma-coverage still reports then.
-// With VITEST_BROWSERSTACK=1 and no tunnel already running, it also starts and stops BrowserStack Local
-// (vitest.config.mjs names the tunnel and sets VITEST_BROWSERSTACK_TUNNEL).
+// Runs in Node around the whole Vitest run.
+// - With VITEST_COVERAGE=1, setup.mjs sends each spec file's Istanbul counters here through the `writeCoverage`
+//   command (vitest.config.mjs); at the end of the run they become lcov, in build/coverage/chunks/<chunk or
+//   shard>/lcov.info (coverage.js). Teardown runs even when tests fail, as karma-coverage still reported then.
+// - With VITEST_BROWSERSTACK=1 and no tunnel already running, it starts and stops BrowserStack Local
+//   (vitest.config.mjs names the tunnel and sets VITEST_BROWSERSTACK_TUNNEL).
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { writeLcov, RAW } = require('./coverage.js');
+const { writeLcov } = require('./coverage.js');
+
+const ROOT = path.resolve(import.meta.dirname, '../..');
+export const RAW = path.join(ROOT, 'build/vitest-coverage');
 
 let tunnel;
 
@@ -37,6 +41,6 @@ export async function setup() {
 export async function teardown() {
   if (tunnel) await new Promise(resolve => tunnel.stop(resolve));
   if (!process.env.VITEST_COVERAGE) return;
-  const files = await writeLcov();
+  const files = await writeLcov({ raw: RAW, out: path.join(ROOT, 'build/coverage/chunks') });
   files.forEach(file => console.log(`coverage: wrote ${path.relative(process.cwd(), file)}`));
 }

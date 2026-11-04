@@ -32,7 +32,7 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
   until you kill it.
 - **`--watch` on a gulp command line never reaches the task.** gulp passes it to Node, which then
   re-runs gulp on file changes. To watch the tests, use `npx gulp serve-and-test` or
-  `npm run test:vitest-native:watch`.
+  `npm run test:vitest:watch`.
 - **`gulp test` is not your gate.** On top of `test-only` it runs `clean`, a repo-wide auto-fixing
   lint, and a second feature variant, and runs the suite twice. Use `test-only`.
 - **`--file` does not narrow the Babel/precompile step.** It selects which specs run. Only

@@ -1,28 +1,23 @@
-// GitHub Actions annotations for the webpack-bundled specs, in place of Vitest's own GitHub reporter.
-// That one anchors a failure at the first stack frame it can map to a repo file; the specs run from
-// bundles without source maps, so it always landed on the Mocha shim in setup.mjs. This one anchors
-// it at the failing test's `it(...)` line in the source spec instead. A test file runs one spec, or a
-// whole Karma chunk (see build.js); build.js records which in build/vitest-bundles/groups.json.
-// When the title can't be located uniquely (e.g. titles built in a loop), the annotation falls back
-// to the spec file, or has no file when the chunk has several candidates.
+// GitHub Actions annotations for the unit tests, in place of Vitest's own GitHub reporter: a failure is anchored at
+// the failing test's `it(...)` line in the source spec (test/spec/...), not in the precompiled copy (dist/src/...)
+// that ran. When the title can't be located uniquely (e.g. titles built in a loop), the annotation falls back to
+// the spec file.
 import fs from 'node:fs';
 import path from 'node:path';
-
-const BUNDLES = 'build/vitest-bundles/';
-const GROUPS = BUNDLES + 'groups.json';
 
 // https://docs.github.com/actions/reference/workflow-commands-for-github-actions
 const escapeData = (value) => String(value).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 const escapeProperty = (value) => escapeData(value).replace(/:/g, '%3A').replace(/,/g, '%2C');
 
 /**
- * Source spec for a single-spec bundle: build.js writes build/vitest-bundles/<x>.js for test/spec/<x>.js.
+ * Source spec for a test file: test/spec/<x> runs as its precompiled copy, dist/src/test/spec/<x>.
  * @param {string} relativeModuleId test file path relative to the repository root
  * @returns {string} path of the source spec
  */
 export function specPath(relativeModuleId) {
   const id = relativeModuleId.replace(/\\/g, '/');
-  return id.startsWith(BUNDLES) ? 'test/spec/' + id.slice(BUNDLES.length) : id;
+  const at = id.indexOf('test/spec/');
+  return at > 0 ? id.slice(at) : id;
 }
 
 /**
@@ -89,10 +84,9 @@ export function formatAnnotation({ file, line, title, message }) {
 const errorMessages = (errors, fallback) => (errors ?? []).map(error => error?.message).filter(Boolean).join('\n') || fallback;
 
 export default class GithubSpecReporter {
-  constructor({ write = (line) => process.stdout.write(line + '\n'), root = process.cwd(), groups } = {}) {
+  constructor({ write = (line) => process.stdout.write(line + '\n'), root = process.cwd() } = {}) {
     this.write = write;
     this.root = root;
-    this.groups = groups;
   }
 
   onInit(vitest) {
@@ -100,20 +94,12 @@ export default class GithubSpecReporter {
   }
 
   /**
-   * Source specs a test file runs.
+   * Source specs a test file runs (one).
    * @param {string} relativeModuleId test file path relative to the repository root
    * @returns {string[]} spec paths
    */
   specsFor(relativeModuleId) {
-    if (this.groups == null) {
-      try {
-        this.groups = JSON.parse(fs.readFileSync(path.join(this.root, GROUPS), 'utf8'));
-      } catch (e) {
-        this.groups = {};
-      }
-    }
-    const id = relativeModuleId.replace(/\\/g, '/');
-    return this.groups[id] ?? [specPath(id)];
+    return [specPath(relativeModuleId)];
   }
 
   read(file) {

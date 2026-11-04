@@ -1,12 +1,10 @@
 /* eslint-disable no-console */
-// Turn the browser coverage collected by setup.mjs (one JSON file per Vitest test file, written by the
-// `writeCoverage` command in vitest.config.mjs) into lcov, the way karma-coverage does: merge, remap
-// through each file's inputSourceMap back to the original sources, and write an lcov report per Karma
-// chunk to build/coverage/chunks/<n>/lcov.info. The CI coverage job (.github/actions/combine-coverage)
-// combines every build/coverage/chunks/**/lcov.info, so it consumes this output unchanged.
+// Turn the browser coverage collected by setup.mjs (one JSON file per spec file, written by the `writeCoverage`
+// command in vitest.config.mjs) into lcov, the way karma-coverage did: merge, remap through each file's
+// inputSourceMap back to the original sources, and write an lcov report per chunk or CI shard to
+// build/coverage/chunks/<label>/lcov.info. CI combines every build/coverage/chunks/**/lcov.info.
 //
-// Usage: `node test/vitest-webpack/coverage.js` after a run with VITEST_COVERAGE=1; globalSetup.mjs
-// also calls it at the end of such a run.
+// globalSetup.mjs calls it at the end of a run with VITEST_COVERAGE=1.
 const fs = require('fs');
 const path = require('path');
 const libCoverage = require('istanbul-lib-coverage');
@@ -19,9 +17,8 @@ const RAW = path.join(ROOT, 'build/vitest-coverage');
 const OUT = path.join(ROOT, 'build/coverage/chunks');
 
 /**
- * Which Karma chunk a raw coverage file belongs to: chunk bundles are named chunks/chunk-<n>_spec, and the
- * native project names its files after its chunk or shard (chunk-<n>, chunk-shard-<i>); anything else
- * (VITEST_FILES or VITEST_ISOLATE_SPECS runs) is reported as chunk 1, as a single-file Karma run is.
+ * Which chunk or CI shard a raw coverage file belongs to: vitest.config.mjs ends each file's name in it
+ * (chunk-<n>_spec, chunk-shard-<i>_spec); anything else is reported as chunk 1.
  * @param {string} file raw coverage file name
  * @returns {string} chunk directory name
  */

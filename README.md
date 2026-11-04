@@ -381,7 +381,7 @@ If you are contributing code, you should [configure your editor](http://eslint.o
 ### Unit Testing
 
 The unit tests run in real browsers under [Vitest Browser Mode](https://vitest.dev/guide/browser/). See
-[test/vitest-webpack/README.md](test/vitest-webpack/README.md) for how they are run and the options.
+[test/vitest/README.md](test/vitest/README.md) for how they are run and the options.
 
         $ gulp test-only --browsers=chrome,firefox
 
