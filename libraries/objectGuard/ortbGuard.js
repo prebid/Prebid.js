@@ -7,7 +7,7 @@ import {
   ORTB_UFPD_PATHS
 } from '../../src/activities/redactor.js';
 import { objectGuard, writeProtectRule } from './objectGuard.js';
-import { logError } from '../../src/utils.js';
+import { logError, mergeDeep } from '../../src/utils.js';
 
 function ortb2EnrichRules(isAllowed = isActivityAllowed) {
   return [
@@ -70,7 +70,7 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
       {},
       Object.fromEntries(
         // disallow overwriting of the top level `global` / `bidder`
-        Object.entries(guard).map(([prop, obj]) => [prop, { get: () => obj }])
+        Object.entries(guard).map(([prop, obj]) => [prop, { get: () => obj, set: (rval) => rval !== obj && mergeDeep(obj, rval) }])
       )
     );
   };

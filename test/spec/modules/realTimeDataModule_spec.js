@@ -1,10 +1,14 @@
 import * as rtdModule from 'modules/rtdModule/index.js';
+import {
+  attachRealTimeDataProvider,
+  detachRealTimeDataProvider,
+  onDataDeletionRequest
+} from 'modules/rtdModule/index.js';
 import { config } from 'src/config.js';
 import * as sinon from 'sinon';
 import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
-import { attachRealTimeDataProvider, detachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
 import { submodule } from 'src/hook.js';
 import * as utils from 'src/utils.js';
 import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../../src/consentHandler.js';
@@ -165,6 +169,70 @@ describe('Real time module', function () {
         expect(request.foo).to.eql('bar');
         done();
       }, request);
+    });
+
+    [
+      {
+        scope: 'global',
+        set(request, val) {
+          request.ortb2Fragments.global = val;
+        },
+        get(request) {
+          return request.ortb2Fragments.global;
+        }
+      },
+      {
+        scope: 'bidder',
+        set(request, val) {
+          request.ortb2Fragments.bidder = {
+            mockBidder: val
+          };
+        },
+        get(request) {
+          return request.ortb2Fragments.bidder.mockBidder;
+        }
+      },
+    ].forEach(({ scope, set, get }) => {
+      describe(`ortb2Fragments.${scope}`, () => {
+        let request;
+        beforeEach(() => {
+          request = {
+            ortb2Fragments: {}
+          };
+          set(request, { foo: 'bar' });
+        });
+
+        it('can be assigned into', (done) => {
+          let complete = false;
+          getBidRequestDataStub.callsFake((req) => {
+            set(req, { test: 1 });
+            complete = true;
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(get(request)).to.eql({
+              foo: 'bar',
+              test: 1
+            });
+            expect(complete).to.be.true;
+            done();
+          }, request);
+        });
+
+        it('can be assigned to itself', (done) => {
+          let complete = false;
+          getBidRequestDataStub.callsFake((req) => {
+            set(req, get(req));
+            complete = true;
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(get(request)).to.eql({
+              foo: 'bar',
+            });
+            expect(complete).to.be.true;
+            done();
+          }, request);
+        });
+      });
     });
 
     it('should apply guard to modules, but not affect ortb2Fragments otherwise', (done) => {
