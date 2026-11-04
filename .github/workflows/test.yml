@@ -180,9 +180,25 @@ jobs:
     name: Check for base branch coverage
     needs: [checkout]
     outputs:
-      needs-base-coverage: ${{ steps.restore.outputs.cache-hit != 'true' }}
+      # whether there is base coverage to compare with: cached, or computable on the base commit
+      available: ${{ steps.restore.outputs.cache-hit == 'true' || steps.base.outputs.vitest == 'true' }}
+      needs-base-coverage: ${{ steps.restore.outputs.cache-hit != 'true' && steps.base.outputs.vitest == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      # A base commit from before Vitest (as for the PR that brings it to master) has nothing to compute base
+      # coverage with: don't start jobs that can only fail, and skip the comparison.
+      - name: Check that the base commit runs Vitest
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ needs.checkout.outputs.base-commit }}
+        run: |
+          if gh api "repos/${{ github.repository }}/contents/test/vitest-native/vitest.config.mjs?ref=$BASE" --silent 2>/dev/null; then
+            echo vitest=true >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::The base commit $BASE has no Vitest setup, so there is no base coverage to compare with"
+            echo vitest=false >> "$GITHUB_OUTPUT"
+          fi
       - name: Restore from cache
         id: restore
         uses: actions/cache/restore@v6
@@ -240,7 +256,7 @@ jobs:
     # the browsers that run without instrumentation. The output is only set once every chunk's coverage was
     # combined, so a non-empty value is exactly the condition under which there is something to report.
     # Base coverage comes from the cache or from base-coverage-combine; without either there is nothing to compare.
-    if: always() && needs.vitest.outputs.coverage && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-check.outputs.needs-base-coverage == 'false')
+    if: always() && needs.vitest.outputs.coverage && needs.base-coverage-check.outputs.available == 'true' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-check.outputs.needs-base-coverage == 'false')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
