@@ -15,6 +15,7 @@ import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD, ACTIVITY_TRANSMIT_EIDS } from '../../../src/activities/activities.js';
+import { deepSetValue } from 'src/utils.js';
 
 describe('Real time module', function () {
   let eventHandlers;
@@ -59,7 +60,7 @@ describe('Real time module', function () {
       getTargetingData: (adUnitsCodes) => {
         return { 'ad1': { 'key': 'validSMWait' } };
       },
-      getBidRequestData: getBidRequestDataStub
+      getBidRequestData: sinon.stub(),
     };
 
     invalidSM = {
@@ -164,7 +165,7 @@ describe('Real time module', function () {
         req.foo = 'bar';
       });
       rtdModule.setBidRequestsData(() => {
-        assert(getBidRequestDataStub.calledTwice);
+        assert(getBidRequestDataStub.calledOnce);
         assert(getBidRequestDataStub.calledWith(sinon.match({ bidRequest: {} })));
         expect(request.foo).to.eql('bar');
         done();
@@ -233,6 +234,21 @@ describe('Real time module', function () {
           }, request);
         });
       });
+    });
+
+    it('can assign new bidder-specific ortb2', (done) => {
+      const request = {
+        ortb2Fragments: {
+          bidder: {}
+        }
+      };
+      getBidRequestDataStub.callsFake((req) => {
+        deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.foo', 'bar');
+      });
+      rtdModule.setBidRequestsData(() => {
+        expect(request.ortb2Fragments.bidder.mockBidder).to.eql({ foo: 'bar' });
+        done();
+      }, request);
     });
 
     it('should apply guard to modules, but not affect ortb2Fragments otherwise', (done) => {

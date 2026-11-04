@@ -44,10 +44,10 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
       bidder: new Proxy(fragments.bidder, {
         get(target, prop, receiver) {
           let bidderData = Reflect.get(target, prop, receiver);
-          if (bidderData != null) {
-            bidderData = guardOrtb2(bidderData, params);
+          if (bidderData == null) {
+            bidderData = target[prop] = {};
           }
-          return bidderData;
+          return guardOrtb2(bidderData, params);
         },
         set(target, prop, newValue, receiver) {
           if (newValue == null || typeof newValue !== 'object') {
@@ -70,7 +70,15 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
       {},
       Object.fromEntries(
         // disallow overwriting of the top level `global` / `bidder`
-        Object.entries(guard).map(([prop, obj]) => [prop, { get: () => obj, set: (rval) => rval !== obj && mergeDeep(obj, rval) }])
+        Object.entries(guard).map(([prop, obj]) => [
+          prop,
+          {
+            get: () => obj,
+            set(rval) {
+              rval !== obj && mergeDeep(obj, rval);
+            }
+          }
+        ])
       )
     );
   };
