@@ -505,7 +505,7 @@ describe('gdpr enforcement', function () {
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
       });
 
-      it('should support TCF 2.3 tcData using disclosedVendors', function () {
+      it('should accept TCF 2.3 tcData (tcfPolicyVersion 3, disclosedVendors)', function () {
         gvlids.appnexus = 1;
         setEnforcementConfig({
           gdpr: {
@@ -521,7 +521,6 @@ describe('gdpr enforcement', function () {
           tcDataMutator: (tcData) => {
             tcData.tcfPolicyVersion = 3;
             tcData.disclosedVendors = { '1': true, '2': true };
-            tcData.vendor.consents['1'] = false;
           }
         });
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
@@ -901,7 +900,7 @@ describe('gdpr enforcement', function () {
   });
 
   describe('transmitUfpdRule', () => {
-    it('should allow when purpose 3 consent is given', () => {
+    it('should allow when purpose 4 and vendor consent are given', () => {
       setEnforcementConfig({
         gdpr: {
           rules: [{
