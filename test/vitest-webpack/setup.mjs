@@ -235,10 +235,12 @@ function wrapIt(vIt) {
   };
 }
 
-function ignoredWhileRunning(kind, title, fn) {
-  // eslint-disable-next-line no-console
-  console.warn(`[mocha shim] ${kind}('${title}') called inside a running test or hook; ignored, as Mocha does`);
-  if (kind === 'describe' && typeof fn === 'function') fn.call(suiteThis({ title, timeout: currentSuite.timeout, retries: 0, ctx: makeCtx(currentSuite.ctx) }));
+// Mocha silently ignores it()/describe()/hooks called while a test or hook is running, so whatever they
+// assert never runs and the spec still passes (#16043). Fail the running test instead, so a new one can't
+// go unnoticed. ESLint's mocha/no-nested-tests reports most of these too, but not a hook inside a test.
+function ignoredWhileRunning(kind, title) {
+  throw new Error(`[mocha shim] ${kind}(${title ? `'${title}'` : ''}) called inside a running test or hook. Mocha ignores ` +
+    `it, so it would never run: move it to the enclosing describe() (for cleanup, use try/finally in the test).`);
 }
 
 function hookArgs(args) {

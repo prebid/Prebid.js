@@ -94,6 +94,10 @@ Anything you post to GitHub may run under a person's account, so readers will as
 ## Testing scope
 - When you modify or add source or test files, run only the affected unit tests while you iterate, then the full suite once before you finish.
 - Do not invoke commands that rebuild all modules when only a subset are changed.
+- Never call `it()`, `describe()` or a hook (`before`, `after`, `beforeEach`, `afterEach`) inside a test or hook.
+  Mocha ignores them, so their assertions never run and the spec passes anyway. Define them in the enclosing
+  `describe()`, and do cleanup a test needs with `try`/`finally` in the test. Lint (`mocha/no-nested-tests`)
+  and the test runner both fail on it.
 
 ## Additional context
 - for additional context on repo history, consult https://github.com/prebid/github-activity-db/blob/main/CLAUDE.md on how to download and access repo history in a database you can search locally.
