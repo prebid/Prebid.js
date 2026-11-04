@@ -1,7 +1,8 @@
-# Vitest runner trial
+# Vitest unit tests
 
-A trial for [#10806](https://github.com/prebid/Prebid.js/issues/10806) (Karma is deprecated). It runs the
-**existing, unchanged** unit specs under Vitest Browser Mode instead of Karma. Karma remains the CI gate.
+Part of [#10806](https://github.com/prebid/Prebid.js/issues/10806) (Karma is deprecated). It runs the
+**existing, unchanged** unit specs under Vitest Browser Mode instead of Karma. It is the CI gate for unit tests
+(#16007, see [CI](#ci)); Karma itself is removed in #16008.
 
 ## Approach
 
@@ -101,6 +102,8 @@ VITEST_CHANNEL=msedge TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest      # inst
 VITEST_CHANNEL=chrome TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest      # installed Google Chrome
 # a fixed Chrome binary, here the Chrome 113 that Karma's "ChromeNoSandbox 113" job uses
 VITEST_EXECUTABLE_PATH="$(npx @puppeteer/browsers install chrome@113.0.5672.0 | cut -d' ' -f2-)" npm run test:vitest
+# macOS: the installed Safari, through safaridriver (once: `sudo safaridriver --enable`)
+VITEST_BROWSER=safari TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest
 ```
 
 CI mirrors Karma's runner browsers (`.github/workflows/browser_testing.json`), each on the runner OS its Karma job
@@ -112,7 +115,7 @@ uses, in 8 chunks of the default variant:
 | ChromeNoSandbox 113 | Chrome 113 from `@puppeteer/browsers`, via `VITEST_EXECUTABLE_PATH` | ubuntu-latest |
 | FirefoxHeadless | Playwright Firefox | ubuntu-latest |
 | EdgeHeadless | installed Edge, `VITEST_CHANNEL=msedge` | windows-latest |
-| SafariNative | Playwright WebKit | macos-latest |
+| SafariNative | the installed Safari, `VITEST_BROWSER=safari` (WebdriverIO and safaridriver) | macos-latest |
 
 Notes:
 
@@ -122,7 +125,11 @@ Notes:
 - Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking, no
   background timer throttling) and `--no-sandbox` (Karma's ChromeNoSandbox). For Firefox the config sets the
   karma-firefox-launcher prefs that can affect tests.
-- Playwright's WebKit is not Safari. It is closest on macOS; on Windows and Linux it is a different port.
+- Safari runs headed, as Karma's SafariNative does: WebdriverIO starts `safaridriver`, which allows one session at
+  a time. CI enables it the way Karma's job did (`sudo safaridriver --enable` and Safari's remote automation
+  setting).
+- Playwright's WebKit (`VITEST_BROWSER=webkit`) is not Safari, so CI doesn't use it. It is closest on macOS; on
+  Windows and Linux it is a different port.
   In it, Playwright's screen emulation applies only to the top frame, so `screen` in the test iframe reports the
   real monitor while `window.top.screen` reports the emulated one. Specs comparing the two fail there.
 - Vite listens on `localhost`, which on Windows is `::1`. A Karma run elsewhere on the machine holds
@@ -222,15 +229,44 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run, so the session's idle
   timeout is raised to BrowserStack's maximum (300 s).
 - `VITEST_BROWSERSTACK=1` is only the switch that picks BrowserStack over Playwright for a run. CI doesn't
-  need it turned on: the `vitest-browserstack` job in `vitest-webpack.yml` runs on every run of that workflow
-  wherever the BrowserStack secrets are available, as Karma's BrowserStack job does (neither runs on fork PRs).
-  For now the workflow's `paths:` filter limits all its jobs to PRs that touch the trial; that filter goes when
-  Vitest is promoted (#16007).
+  need it turned on: the `browserstack` job in `vitest-tests.yml` runs wherever the BrowserStack secrets are
+  available, as Karma's BrowserStack job did. Fork PRs get no secrets, so it doesn't run on them; their changes
+  are tested on the real iPhone by the run on master after merge.
 - The job runs the 8 chunks one at a time and waits until two sessions are free, so it never takes the last one
-  from Karma's BrowserStack job or the ES5 e2e job.
+  from the ES5 e2e job.
 
 - The native migration excludes most specs from the webpack bridge by default. CI sets
   `VITEST_BRIDGE_ALL=1` for the BrowserStack run to cover the complete suite on iOS.
+
+## CI
+
+`.github/workflows/vitest-tests.yml` is the unit test gate: `test.yml` ("Run tests") calls it on every PR and every
+push to master, and a failed chunk fails the run, as a failed Karma chunk did. It runs:
+
+- Chromium, 8 chunks each of the default and all-features-disabled variants. The default variant's coverage is
+  combined into the run's coverage report and compared with the base commit's (also computed with Vitest, and
+  cached as `coverage-vitest-<commit>`).
+- Firefox, Safari (macOS), Edge (Windows) and Chrome 113, 8 chunks of the default variant each.
+- A real iPhone on iOS 16 through BrowserStack, where the secrets are available (see [BrowserStack](#browserstack)).
+
+Chromium runs first. The other browsers and the iPhone start only once every Chromium job has passed, so a
+failure there is reported quickly and doesn't take macOS, Windows and BrowserStack time as well.
+
+Each job runs its chunk's native specs and bridge specs (see [Native project](#native-project)). A failure is
+annotated at the failing test's line in the source spec (`githubReporter.mjs`).
+
+Karma was removed in #16008; the `gulp test*` tasks run Vitest (see the top-level README).
+The e2e tests, the build logic tests and the packed package's type check stay in `browser-tests.yml`.
+
+### Rollback
+
+If Vitest turns out to miss regressions or block PRs it shouldn't, revert the #16008 PR (Karma's removal: its
+runner, configuration and packages) and then the #16007 PR. Reverting #16007 restores Karma's
+unit, all-features-disabled and BrowserStack jobs and Karma-based coverage in `test.yml` and
+`browser-tests.yml`. The Vitest trial workflow (`vitest-webpack.yml`) comes back with it, so Vitest keeps running
+non-blocking beside Karma. Karma's coverage cache keys (`coverage-<commit>`) are separate from Vitest's, so
+the coverage comparison works again without clearing anything. To roll back only part of it, for example to
+take one browser out of the gate while it is fixed, remove that browser from the matrix in `vitest-tests.yml`.
 
 ## Status
 
@@ -238,7 +274,7 @@ On the full suite, Karma passed 27,478 tests and this runner passed 27,468 in th
 patmmccann/Prebid.js fork branch). The differences were three specs fixed separately: #15978 (bliink), #15979
 (consentUtils), #15980 (pixfuture).
 
-Not done yet: gulp integration; BrowserStack iOS coverage is under trial.
+Not done yet: gulp integration.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.

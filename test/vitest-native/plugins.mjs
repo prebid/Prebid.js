@@ -5,7 +5,7 @@
 //     test code imports are replaced by stand-ins whose writes reassign the module's exports (stubs.mjs).
 //     Unlike a CommonJS stub, this also replaces the module's own calls to the export;
 //   - test/helpers/hookSetup.js loading after each spec, as Karma loads it after the specs;
-//   - with coverage, babel-plugin-istanbul over the sources, as karma.conf.maker.js does.
+//   - with coverage, babel-plugin-istanbul over the sources, as test/webpackTestConfig.js does.
 // vitest.config.mjs resolves bare `src/...`, `modules/...`, `test/...` imports against dist/src.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -101,7 +101,7 @@ function addSetter(code, id) {
     `\nexport function ${SETTER}(n, v) { switch (n) { ${cases} } return false; }\n`;
 }
 
-// What karma.conf.maker.js does with coverage on: babel-plugin-istanbul over the precompiled sources, with
+// What test/webpackTestConfig.js does with coverage on: babel-plugin-istanbul over the precompiled sources, with
 // their source maps, so coverage.js can map the counters back to the original files.
 function instrument(code, id) {
   const babel = require('@babel/core');

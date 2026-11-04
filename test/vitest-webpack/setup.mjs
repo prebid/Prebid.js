@@ -1,12 +1,12 @@
-// Runs in the browser before each bundled spec file. Supplies what karma-mocha, karma-chai and
-// karma-sinon supply under Karma: Mocha's BDD globals (on top of Vitest's runner), chai globals,
-// and a `window.__karma__` stub for test/test_deps.js. No spec is changed.
+// Runs in the browser before each bundled spec file. Supplies the globals the specs were written against
+// (karma-mocha, karma-chai and karma-sinon supplied them under Karma): Mocha's BDD interface on top of
+// Vitest's runner, chai's expect/assert/should, and sinon. No spec is changed.
 import * as vitest from 'vitest';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import { commands } from 'vitest/browser';
 
-const DEFAULT_TIMEOUT = 3000; // karma.conf.maker.js: client.mocha.timeout
+const DEFAULT_TIMEOUT = 3000; // Mocha's timeout under Karma (client.mocha.timeout)
 const NO_TIMEOUT = 2 ** 31 - 1;
 // like Mocha, keep the real timers: specs install sinon fake timers on the global object
 const realSetTimeout = globalThis.setTimeout.bind(globalThis);
@@ -19,18 +19,20 @@ globalThis.assert = chai.assert;
 globalThis.should = chai.should();
 globalThis.sinon = sinon;
 
-// test_deps.js wraps `window.__karma__.loaded`
-globalThis.__karma__ = { loaded() {} };
-
 // The tester page is test/vitest-webpack/context.html, shaped like karma's: Vitest's own is
 // `<html lang="en">` (FPD enrichment turns that into site.content.language) titled "Vitest Browser Tester".
 // ~170 specs hard-code karma's test page URL (http://localhost:9876/context.html); the config serves
 // Vitest on port 9876, and this gives the test iframe karma's path. Its referrer is karma's parent page.
 if (globalThis.__VITEST_KARMA_URL__ !== false) {
-  history.replaceState(history.state, '', '/context.html');
+  // Only when the URL isn't already karma's: Safari throws a SecurityError on more than 100 replaceState calls
+  // per page in 10 seconds, and the top page outlives every test file of the run.
+  const karmaUrl = (win, url) => {
+    if (win.location.pathname + win.location.search !== url) win.history.replaceState(win.history.state, '', url);
+  };
+  karmaUrl(window, '/context.html');
   if (window.top !== window) {
     // karma's top page is http://localhost:9876/?id=<browser id> (karma-chrome-launcher)
-    window.top.history.replaceState(window.top.history.state, '', '/?id=73195742');
+    karmaUrl(window.top, '/?id=73195742');
   }
   Object.defineProperty(document, 'referrer', { value: `${location.origin}/`, configurable: true });
 }

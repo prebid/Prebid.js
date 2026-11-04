@@ -9,7 +9,7 @@
 // every bundled module in it - including sloppy-mode CommonJS from node_modules (e.g. dset), where
 // assigning to a getter-only property is silently ignored under karma but throws in strict mode.
 //
-// Environment (mirrors karmaRunner.js):
+// Environment (as Karma's runner took it):
 //   VITEST_FILES   comma separated spec paths (like `gulp test-only --file`); no pipeline_setup, like Karma
 //   TEST_CHUNKS    number of chunks the full suite is split into (default 8, as in gulpfile.js)
 //   TEST_CHUNK     which chunk to build (1-based); omit to build every spec
@@ -24,7 +24,7 @@
 const path = require('path');
 const fs = require('fs');
 const webpack = require('webpack');
-const karmaConfMaker = require('../../karma.conf.maker.js');
+const { webpackTestConfig } = require('../webpackTestConfig.js');
 const helpers = require('../../gulpHelpers.js');
 const { readPrecompilationKey } = require('../../gulp.cache.js');
 const { bridgeOnly, karmaChunks } = require('../vitest-native/specs.js');
@@ -41,7 +41,7 @@ const specName = (spec) => spec.replace(/^test\/spec\//, '').replace(/\.js$/, ''
 /**
  * Pick what to bundle. Each group becomes one bundle and one Vitest test file, i.e. one page with one set
  * of module instances, as Karma loads one chunk into one page:
- * - TEST_CHUNKS/TEST_CHUNK/TEST_PAT (as karmaRunner.js): one group per chunk, so a spec that leaks global
+ * - TEST_CHUNKS/TEST_CHUNK/TEST_PAT (as Karma's runner): one group per chunk, so a spec that leaks global
  *   or module state can break a later one, which is what the chunked Karma run checks;
  * - VITEST_FILES (like `gulp test-only --file`), or VITEST_ISOLATE_SPECS=1: one group per spec, which instead
  *   finds specs that only pass because of state leaked by others.
@@ -53,7 +53,7 @@ function selectGroups () {
   if (process.env.VITEST_FILES) {
     return { groups: perSpec(process.env.VITEST_FILES.split(',').map(f => f.trim()).filter(Boolean)), pipeline: false };
   }
-  // same chunking as karmaRunner.js
+  // the chunking Karma's runner used (../vitest-native/specs.js)
   const chunks = karmaChunks();
   // Karma's chunks, less the specs the native project runs (../vitest-native), unless VITEST_BRIDGE_ALL is set
   const keep = process.env.VITEST_BRIDGE_ALL ? (specs) => specs : bridgeOnly;
@@ -67,7 +67,7 @@ function selectGroups () {
 }
 
 /**
- * Build the webpack config for the selected groups from karma's own webpack config.
+ * Build the webpack config for the selected groups from the unit test webpack config (test/webpackTestConfig.js).
  * @param {object} options
  * @param {{name: string, specs: string[]}[]} options.groups one entry per group
  * @param {boolean} options.pipeline whether to load pipeline_setup first, as karma does for chunk runs
@@ -76,9 +76,10 @@ function selectGroups () {
 function makeConfig ({ groups, pipeline }) {
   const specs = groups.flatMap(group => group.specs);
   const coverage = !!process.env.VITEST_COVERAGE;
-  // Reuse karma's webpack config as-is (babel-loader + @babel/plugin-transform-modules-commonjs,
-  // resolution against dist/src, aliases, plugins). Only the entry/output shape changes below.
-  const config = karmaConfMaker(coverage, false, false, specs, undefined, 1, false).webpack;
+  // The unit test webpack config as-is (babel-loader + @babel/plugin-transform-modules-commonjs, resolution
+  // against dist/src, aliases, plugins); only the entry/output shape changes below. A one-spec build keeps
+  // webpack's filesystem cache, as `gulp test --file` did under Karma.
+  const config = webpackTestConfig({ coverage, singleSpec: specs.length === 1 });
 
   // Karma loads, sharing one runtime: test_deps, [pipeline_setup], ...specs, hookSetup.
   // Each group gets one entry with the same modules in the same order.
@@ -116,13 +117,13 @@ function makeConfig ({ groups, pipeline }) {
           },
         },
       };
-  // Keyed like karma's own cache (karma.conf.maker.js): on what dist/src was precompiled as, since the
+  // Keyed like the single-spec cache (test/webpackTestConfig.js): on what dist/src was precompiled as, since the
   // default and all-features-disabled trees have the same paths; and on the build configuration itself.
   config.cache = {
     type: 'filesystem',
     cacheDirectory: path.resolve(ROOT, '.cache/webpack-vitest'),
     version: JSON.stringify({ precompilation: readPrecompilationKey(), coverage, pipeline }),
-    buildDependencies: { config: [__filename, path.join(ROOT, 'karma.conf.maker.js'), path.join(ROOT, 'babelConfig.js')] },
+    buildDependencies: { config: [__filename, path.join(ROOT, 'test/webpackTestConfig.js'), path.join(ROOT, 'babelConfig.js')] },
   };
   config.stats = 'errors-warnings';
   if (!process.env.VITEST_SOURCEMAPS) {
