@@ -421,7 +421,7 @@ describe('gdpr enforcement', function () {
             describe(`restriction is ${restriction}`, () => {
               const restrictedExpectation = type === 'feature' ? expectation : newExpectation;
 
-              it(`shold return ${JSON.stringify(restrictedExpectation)}`, () => {
+              it(`should return ${JSON.stringify(restrictedExpectation)}`, () => {
                 consentData.vendorData.publisher.restrictions = {
                   [purpose]: {
                     [gvlid]: restriction
@@ -499,7 +499,9 @@ describe('gdpr enforcement', function () {
             }]
           }
         });
-        setupConsentData();
+        setupConsentData({
+          gdprApplies: false
+        });
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
       });
 
