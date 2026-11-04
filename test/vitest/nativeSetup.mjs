@@ -2,6 +2,7 @@
 // Loads what Karma loads ahead of the specs, from the precompiled tree: test_deps.js and pipeline_setup.js.
 // hookSetup.js, which Karma loads after them, is imported at the end of each spec (plugins.mjs).
 import { loadLater } from './stubs.mjs';
+import { snapshotTop } from './stateGuard.mjs';
 
 // Each spec file gets a fresh page, but pages share the origin's storage. Start each file with none, as a
 // fresh browser would, so a spec can't pass or fail on cookies another file left (test_deps.js clears
@@ -23,3 +24,7 @@ globalThis.global = globalThis;
 await import('test/test_deps.js');
 await import('test/pipeline_setup.js');
 await loadLater();
+
+// window.top as this spec file finds it, after the shared setup above and before the spec: stateGuard.mjs fails the
+// file if the spec leaves something behind there
+globalThis.__vitestTopSnapshot__ = snapshotTop();
