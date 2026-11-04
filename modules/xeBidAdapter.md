@@ -14,7 +14,7 @@ Module that connects to xe.works demand sources
 
 | Name  | Scope    | Description                 | Type     |
 |-------|----------|-----------------------------|----------|
-| `pid` | required | Uniq placement ID           | `string` |
+| `pid` | required | Unique placement ID         | `string` |
 | `env` | required | Environment name            | `string` |
 | `ext` | optional | Specific integration config | `object` |
 
