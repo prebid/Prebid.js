@@ -1,21 +1,16 @@
 import * as rtdModule from 'modules/rtdModule/index.js';
-import {
-  attachRealTimeDataProvider,
-  detachRealTimeDataProvider,
-  onDataDeletionRequest
-} from 'modules/rtdModule/index.js';
 import { config } from 'src/config.js';
 import * as sinon from 'sinon';
 import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
+import { attachRealTimeDataProvider, detachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
 import { submodule } from 'src/hook.js';
 import * as utils from 'src/utils.js';
 import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD, ACTIVITY_TRANSMIT_EIDS } from '../../../src/activities/activities.js';
-import { deepSetValue } from 'src/utils.js';
 
 describe('Real time module', function () {
   let eventHandlers;
@@ -240,7 +235,7 @@ describe('Real time module', function () {
       it('can be set on a new bidder', (done) => {
         const request = { ortb2Fragments: { bidder: {} } };
         getBidRequestDataStub.callsFake((req) => {
-          deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.foo', 'bar');
+          utils.deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.foo', 'bar');
         });
         rtdModule.setBidRequestsData(() => {
           expect(request.ortb2Fragments.bidder.mockBidder).to.eql({ foo: 'bar' });
@@ -252,7 +247,7 @@ describe('Real time module', function () {
         const user = { foo: 'bar' };
         const request = { ortb2Fragments: { bidder: { mockBidder: { user } } } };
         getBidRequestDataStub.callsFake((req) => {
-          deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.user.ext.data.test', 1);
+          utils.deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.user.ext.data.test', 1);
         });
         rtdModule.setBidRequestsData(() => {
           const bidderData = request.ortb2Fragments.bidder.mockBidder;
@@ -261,6 +256,94 @@ describe('Real time module', function () {
           expect(() => structuredClone(request.ortb2Fragments.bidder)).to.not.throw();
           done();
         }, request);
+      });
+
+      it('keeps writes made through a view held while another submodule creates the bidder', (done) => {
+        const request = { ortb2Fragments: { bidder: {} } };
+        let held;
+        validSMWait.getBidRequestData = (req, callback) => {
+          held = req.ortb2Fragments.bidder.mockBidder;
+          callback();
+        };
+        getBidRequestDataStub.callsFake((req) => {
+          utils.deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.b', 2);
+          held.a = 1;
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(request.ortb2Fragments.bidder.mockBidder).to.eql({ a: 1, b: 2 });
+          expect(held.b).to.equal(2);
+          done();
+        }, request);
+      });
+
+      describe('prototype properties', () => {
+        const PROTO = '__proto__';
+
+        afterEach(() => {
+          delete Object.prototype.polluted;
+        });
+
+        it('refuses to set __proto__ as a bidder', (done) => {
+          const request = { ortb2Fragments: { bidder: {} } };
+          let error;
+          getBidRequestDataStub.callsFake((req) => {
+            try {
+              req.ortb2Fragments.bidder[PROTO] = { polluted: true };
+            } catch (e) {
+              error = e;
+            }
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(error).to.be.instanceOf(TypeError);
+            expect(Object.getPrototypeOf(request.ortb2Fragments.bidder)).to.equal(Object.prototype);
+            expect(({}).polluted).to.not.exist;
+            done();
+          }, request);
+        });
+
+        it('does not treat inherited properties as bidders', (done) => {
+          const request = { ortb2Fragments: { bidder: { mockBidder: {} } } };
+          let result;
+          getBidRequestDataStub.callsFake((req) => {
+            const bidder = req.ortb2Fragments.bidder;
+            result = [bidder.hasOwnProperty('mockBidder'), bidder.hasOwnProperty('other'), String(bidder)];
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(result).to.eql([true, false, '[object Object]']);
+            expect(Object.keys(request.ortb2Fragments.bidder)).to.eql(['mockBidder']);
+            done();
+          }, request);
+        });
+
+        it('ignores __proto__ keys in assigned bidder data', (done) => {
+          const request = { ortb2Fragments: { bidder: {} } };
+          getBidRequestDataStub.callsFake((req) => {
+            req.ortb2Fragments.bidder.mockBidder = JSON.parse('{"__proto__": {"polluted": true}, "site": {"id": "x"}}');
+          });
+          rtdModule.setBidRequestsData(() => {
+            const bidderData = request.ortb2Fragments.bidder.mockBidder;
+            expect(Object.getPrototypeOf(bidderData)).to.equal(Object.prototype);
+            expect(bidderData.polluted).to.not.exist;
+            expect(bidderData).to.eql({ site: { id: 'x' } });
+            done();
+          }, request);
+        });
+      });
+
+      [null, 'value'].forEach(value => {
+        it(`is not created by assigning ${JSON.stringify(value)}`, (done) => {
+          const request = { ortb2Fragments: { bidder: {} } };
+          let complete = false;
+          getBidRequestDataStub.callsFake((req) => {
+            req.ortb2Fragments.bidder.mockBidder = value;
+            complete = true;
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(complete).to.be.true;
+            expect(request.ortb2Fragments.bidder).to.eql({});
+            done();
+          }, request);
+        });
       });
 
       it('is not created by reads', (done) => {

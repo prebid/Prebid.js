@@ -363,6 +363,15 @@ describe('objectGuard', () => {
       expect(() => structuredClone(dst)).to.not.throw();
     });
 
+    it('copies __proto__ keys as own properties', () => {
+      const src = JSON.parse('{"outer": {"__proto__": {"polluted": true}, "other": "val"}}');
+      const dst = {};
+      guard(dst).copy = guard(src).outer;
+      expect(Object.getPrototypeOf(dst.copy)).to.equal(Object.prototype);
+      expect(dst.copy.polluted).to.not.exist;
+      expect(Object.keys(dst.copy)).to.have.members(['__proto__', 'other']);
+    });
+
     it('still unwraps its own views', () => {
       const obj = { outer: { inner: 'val' } };
       const g = guard(obj);

@@ -12,6 +12,13 @@ import { deepEqual, logWarn } from '../../src/utils.js';
 const TARGET = Symbol('TARGET');
 
 /**
+ * The object behind a guard, or undefined if `value` is not one.
+ */
+export function targetOf(value) {
+  return value?.[TARGET];
+}
+
+/**
  * Plain copy of what a guarded view exposes.
  */
 function copyView(view, copies = new Map()) {
@@ -21,7 +28,13 @@ function copyView(view, copies = new Map()) {
   const copy = isArray ? [] : {};
   copies.set(view, copy);
   Object.entries(view).forEach(([k, v]) => {
-    if (isArray || v !== undefined) copy[k] = copyView(v, copies);
+    if (!isArray && v === undefined) return;
+    if (k === '__proto__') {
+      // assigning it would replace the copy's prototype
+      Object.defineProperty(copy, k, { value: copyView(v, copies), writable: true, enumerable: true, configurable: true });
+    } else {
+      copy[k] = copyView(v, copies);
+    }
   });
   return copy;
 }
@@ -172,9 +185,10 @@ export function objectGuard(rules) {
      * where the `set` proxy trap would get an already proxied object as argument.
      */
     function deref(obj, visited = new Set()) {
-      if (cache.has(obj?.[TARGET])) return obj[TARGET];
+      const target = targetOf(obj);
+      if (cache.has(target)) return target;
       // another guard's view: its target may hold data this guard should not see, and is shared with its other users
-      if (obj?.[TARGET] != null) return copyView(obj);
+      if (target != null) return copyView(obj);
       if (obj == null || typeof obj !== 'object') return obj;
       if (visited.has(obj)) return obj;
       visited.add(obj);

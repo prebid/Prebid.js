@@ -6,7 +6,7 @@ import {
   ORTB_EIDS_PATHS,
   ORTB_UFPD_PATHS
 } from '../../src/activities/redactor.js';
-import { objectGuard, writeProtectRule } from './objectGuard.js';
+import { objectGuard, targetOf, writeProtectRule } from './objectGuard.js';
 import { logError, mergeDeep } from '../../src/utils.js';
 
 function ortb2EnrichRules(isAllowed = isActivityAllowed) {
@@ -41,14 +41,14 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
     fragments.bidder = fragments.bidder || {};
     // one guard per object, so that nested guards handed out by it are recognized (and unwrapped) when written back
     const guards = new WeakMap();
-    const views = new WeakMap();
     function guardBidder(data) {
-      if (!guards.has(data)) {
-        const guard = guardOrtb2(data, params);
-        guards.set(data, guard);
-        views.set(guard, data);
-      }
+      if (!guards.has(data)) guards.set(data, guardOrtb2(data, params));
       return guards.get(data);
+    }
+    // inherited properties (`hasOwnProperty`, `constructor`, ...) are not bidders
+    function entry(target, prop) {
+      const bidderData = Object.hasOwn(target, prop) ? target[prop] : undefined;
+      return bidderData != null && typeof bidderData === 'object' ? bidderData : undefined;
     }
     // bidders that have been read but not written to; they are attached to `fragments.bidder` on first write,
     // so that reads (including `toJSON`, `then`, etc.) do not create entries
@@ -57,21 +57,30 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
       if (!pending.has(prop)) {
         const data = {};
         const guard = guardBidder(data);
+        // another submodule may create the bidder while this view is held; from then on, the view is of that
+        const current = () => {
+          const bidderData = entry(target, prop);
+          return bidderData ? guardBidder(bidderData) : guard;
+        };
         const attach = () => {
-          if (target[prop] == null) target[prop] = data;
+          if (!entry(target, prop)) target[prop] = data;
           pending.delete(prop);
         };
         const view = new Proxy(guard, {
+          get: (t, p) => Reflect.get(current(), p),
+          has: (t, p) => Reflect.has(current(), p),
+          ownKeys: () => Reflect.ownKeys(current()),
+          getOwnPropertyDescriptor: (t, p) => Reflect.getOwnPropertyDescriptor(current(), p),
           set(t, p, v) {
             attach();
-            return Reflect.set(guard, p, v);
+            return Reflect.set(current(), p, v);
           },
           defineProperty(t, p, desc) {
             attach();
-            return Reflect.defineProperty(guard, p, desc);
-          }
+            return Reflect.defineProperty(current(), p, desc);
+          },
+          deleteProperty: (t, p) => Reflect.deleteProperty(current(), p),
         });
-        views.set(view, data);
         pending.set(prop, { data, view });
       }
       return pending.get(prop).view;
@@ -81,25 +90,28 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
       bidder: new Proxy(fragments.bidder, {
         get(target, prop, receiver) {
           const bidderData = Reflect.get(target, prop, receiver);
-          if (bidderData == null) {
-            return typeof prop === 'string' ? pendingBidder(target, prop) : bidderData;
-          }
-          return typeof bidderData === 'object' ? guardBidder(bidderData) : bidderData;
+          if (bidderData == null) return typeof prop === 'string' ? pendingBidder(target, prop) : bidderData;
+          return entry(target, prop) ? guardBidder(bidderData) : bidderData;
         },
         set(target, prop, newValue, receiver) {
+          if (prop === '__proto__') {
+            throw new TypeError('ortb2Fragments.bidder.__proto__ cannot be set');
+          }
           if (newValue == null || typeof newValue !== 'object') {
             logError(`ortb2Fragments.bidder[bidderCode] must be an object`);
+            return true;
           }
-          let bidderData = Reflect.get(target, prop, receiver) ?? pending.get(prop)?.data;
-          if (bidderData != null && views.get(newValue) === bidderData) {
+          let bidderData = entry(target, prop) ?? pending.get(prop)?.data;
+          if (bidderData != null && targetOf(newValue) === bidderData) {
             return true;
           }
           bidderData = bidderData ?? {};
-          if (target[prop] == null) target[prop] = bidderData;
+          if (!entry(target, prop)) target[prop] = bidderData;
           pending.delete(prop);
           const guarded = guardBidder(bidderData);
           Object.entries(newValue).forEach(([prop, value]) => {
-            guarded[prop] = value;
+            // a `__proto__` key would replace the bidder data's prototype; the guard has no safe way to define it
+            if (prop !== '__proto__') guarded[prop] = value;
           });
           return true;
         }
