@@ -140,8 +140,17 @@ async function browserProvider() {
       // acceptSsl executor accepts it once the page has loaded (docs: automate/selenium/accept-insecure-certificates)
       const { openPage } = instance;
       instance.openPage = async function (...args) {
+        const t0 = Date.now();
+        const log = (msg) => console.info(`browserstack: ${msg} (+${Date.now() - t0}ms)`); // eslint-disable-line no-console
+        log(`opening ${args[1]}`);
         await openPage.apply(this, args);
-        await this.browser.execute('browserstack_executor: {"action": "acceptSsl"}');
+        log(`opened; url ${await this.browser.getUrl().catch(e => e.message)}, title "${await this.browser.getTitle().catch(e => e.message)}"`);
+        try {
+          log(`acceptSsl: ${JSON.stringify(await this.browser.execute('browserstack_executor: {"action": "acceptSsl"}'))}`);
+        } catch (e) {
+          log(`acceptSsl failed: ${e.message}`);
+        }
+        log(`after acceptSsl; url ${await this.browser.getUrl().catch(e => e.message)}, title "${await this.browser.getTitle().catch(e => e.message)}"`);
       };
     }
     return instance;
