@@ -208,12 +208,15 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: ${{ needs.base-coverage-compute.outputs.coverage }}
-      - name: Rename file
-        run: mv coverage.info base-coverage.info
+          path: ${{ runner.temp }}
+      # Cached from the same path base-coverage-check restores it to: the cache version includes the path,
+      # so an entry saved from anywhere else would never be found.
       - uses: actions/cache/save@v6
         with:
-          path: base-coverage.info
+          path: ${{ runner.temp }}/coverage.info
           key: coverage-vitest-${{ needs.checkout.outputs.base-commit }}
+      - name: Rename file
+        run: cp "${{ runner.temp }}/coverage.info" base-coverage.info
       - uses: actions/upload-artifact@v7
         with:
           name: base-coverage.info
@@ -234,12 +237,15 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: ${{ needs.vitest.outputs.coverage }}
-      # base coverage for later PRs on this commit
+          path: ${{ runner.temp }}
+      # base coverage for later PRs on this commit, from the path base-coverage-check restores it to
       - name: Save to cache
         uses: actions/cache/save@v6
         with:
-          path: coverage.info
+          path: ${{ runner.temp }}/coverage.info
           key: coverage-vitest-${{ needs.checkout.outputs.commit }}
+      - name: Copy coverage results
+        run: cp "${{ runner.temp }}/coverage.info" coverage.info
       - name: Fetch base branch coverage
         uses: actions/download-artifact@v8
         with:
