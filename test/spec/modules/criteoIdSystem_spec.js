@@ -22,13 +22,8 @@ describe('CriteoId module', function () {
   const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
   const nowTimestamp = new Date().getTime();
-  // The module computes its cookie expiry once, from the real clock, when it is loaded, not from
-  // utils.timestamp() (stubbed below) when it writes. Loading comes before this suite is collected,
-  // so the expiry can be a second or more earlier than nowTimestamp + cookiesMaxAge.
-  const expirationTs = sinon.match(
-    (value) => Math.abs(new Date(value).getTime() - (nowTimestamp + cookiesMaxAge)) < 60 * 1000,
-    'a date about 13 months after now'
-  );
+  // the module computes the expiry when it writes, from utils.timestamp() (stubbed below)
+  const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
 
   let getCookieStub;
   let setCookieStub;
