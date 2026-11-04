@@ -150,7 +150,22 @@ async function browserProvider() {
         } catch (e) {
           log(`acceptSsl failed: ${e.message}`);
         }
-        log(`after acceptSsl; url ${await this.browser.getUrl().catch(e => e.message)}, title "${await this.browser.getTitle().catch(e => e.message)}"`);
+        const url = async () => this.browser.getUrl().catch(e => e.message);
+        const warning = async () => /CertificateWarning/.test(await url());
+        for (let i = 0; i < 10 && await warning(); i++) await new Promise(resolve => setTimeout(resolve, 500));
+        log(`after acceptSsl and waiting; url ${await url()}`);
+        if (await warning()) {
+          await this.browser.url(args[1]).catch(e => log(`reopen failed: ${e.message}`));
+          log(`reopened; url ${await url()}`);
+        }
+        if (await warning()) {
+          const dump = await this.browser.execute(() => ({
+            controls: [...document.querySelectorAll('button, a, input, [onclick], [role=button]')]
+              .map(el => `${el.tagName}#${el.id}.${el.className} "${(el.textContent || el.value || '').trim().slice(0, 60)}" ${el.getAttribute('onclick') || el.getAttribute('href') || ''}`),
+            body: document.body.innerHTML.slice(0, 3000),
+          })).catch(e => ({ error: e.message }));
+          log(`warning page: ${JSON.stringify(dump)}`);
+        }
       };
     }
     return instance;
