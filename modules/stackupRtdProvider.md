@@ -10,13 +10,15 @@ Maintainers: anton@stackup-ai.com, chen@stackup-ai.com, nicolas@stackup-ai.com
 
 The Stack Up RTD module enriches Prebid.js bid requests with contextual and audience segments derived from the content of the current page. Before the auction fires, the module calls the Stack Up enrichment API (or reads from a `sessionStorage` cache on revisit) and merges the response into the global `ortb2` fragments:
 
-- **`site.content.data`** — IAB Content Taxonomy 2.2 (`segtax: 6`) and 3.1 (`segtax: 9`) segments, untagged Stack Up proprietary segments, and optional publisher profile data (`segtax: 600`).
+- **`site.content.data`** — IAB Content Taxonomy 2.2 (`segtax: 6`) and 3.1 (`segtax: 9`) segments and untagged Stack Up proprietary segments.
 - **`site.cattax` / `site.pagecat`** — the matching Content Taxonomy 2.2 page category when one is available.
+- **`site.keywords`** — comma-separated article keywords. Added after any keywords the publisher already set, without repeating a token.
+- **`site.ext.data`** — publisher-level data. Available only to publishers with a separate agreement with Stack Up. Only keys the publisher hasn't set are added.
 - **`user.data`** — IAB Audience Taxonomy segments (`segtax: 4`) and untagged Stack Up proprietary audience segments inferred from contextual signals.
 
 During migration the module also accepts the legacy Stack Up content and audience values (`segtax: 502` and `segtax: 501`) from cached or not-yet-rebuilt enrichment responses.
 
-Every bidder that participates in the auction receives these segments in its `ortb2` object. No cookies, fingerprints, or user identifiers are transmitted to the Stack Up API — only a URL path and publisher domain.
+Every bidder that participates in the auction receives these segments in its `ortb2` object, unless Prebid's activity controls withhold them (see [Consent](#consent)). No cookies, fingerprints, or user identifiers are transmitted to the Stack Up API — only a URL path and publisher domain.
 
 Become a member of Stack Up in order to receive your `pubId`. Contact [support@stackup-ai.com](mailto:support@stackup-ai.com) for more details.
 
@@ -45,10 +47,10 @@ pbjs.setConfig({
     dataProviders: [
       {
         name: "stackupRtd",
-        waitForIt: true, // keep in sync with auctionDelay
+        waitForIt: true, // required for the auction to wait for enrichment
         params: {
           pubId: "YOUR-PUB-ID", // required — issued by Stack Up
-          timeout: 300, // optional — enrichment budget in ms (default: 300)
+          timeout: 300, // optional — ms to hold the auction (default: 300); keep below auctionDelay
           articleIdMode: "path", // optional — 'path' (default) or 'explicit'
           articleId: "", // required when articleIdMode is 'explicit'
           apiUrl: "https://api.stackup-ai.com/v1/enrich-ortb-rtd", // optional — override API endpoint
@@ -69,26 +71,38 @@ pbjs.setConfig({
 | Name                      |    Scope    |  Type   | Description                                                                                                                 |                      Default                      |
 | :------------------------ | :---------: | :-----: | :-------------------------------------------------------------------------------------------------------------------------- | :-----------------------------------------------: |
 | `name`                    |  required   | String  | Must be `'stackupRtd'`                                                                                                      |                         —                         |
-| `waitForIt`               | recommended | Boolean | Set `true` when an `auctionDelay` is defined                                                                                |                      `false`                      |
+| `waitForIt`               | recommended | Boolean | Required for the auction to wait for enrichment (with an `auctionDelay`). Without it, only auctions that start once the enrichment has loaded or is cached are enriched |                      `false`                      |
 | `params`                  |  required   | Object  | Module configuration                                                                                                        |                         —                         |
 | `params.pubId`            |  required   | String  | Publisher ID issued by Stack Up                                                                                             |                         —                         |
-| `params.timeout`          |  optional   | Integer | Max ms to wait for the enrichment API before releasing the auction                                                          |                       `300`                       |
+| `params.timeout`          |  optional   | Integer | Max ms to hold the auction for the enrichment. Applies only with `waitForIt` and an `auctionDelay`, and is capped at `auctionDelay` minus 5 ms |                       `300`                       |
 | `params.articleIdMode`    |  optional   | String  | How the article ID is determined. `'path'` derives it from the page URL path; `'explicit'` uses `params.articleId` directly |                     `'path'`                      |
 | `params.articleId`        | optional\*  | String  | Article identifier — required when `articleIdMode` is `'explicit'`. Max 512 characters                                      |                         —                         |
 | `params.apiUrl`           |  optional   | String  | Override the Stack Up enrichment endpoint                                                                                   | `'https://api.stackup-ai.com/v1/enrich-ortb-rtd'` |
 | `params.cache.enabled`    |  optional   | Boolean | Enable/disable cache usage entirely                                                                                         |                      `true`                       |
 | `params.cache.ttlSeconds` |  optional   | Integer | How long a cached result is considered fresh (sessionStorage TTL)                                                           |                      `3600`                       |
 | `params.cache.storage`    |  optional   | String  | Cache backend: `'session'` for browser sessionStorage or `'memory'` for in-process cache                                    |                    `'session'`                    |
-| `params.debug`            |  optional   | Boolean | Enable verbose `[stackupRtd]` console logging                                                                               |                      `false`                      |
+| `params.debug`            |  optional   | Boolean | Send `debugDomain` to the API instead of the page's domain                                                                  |                      `false`                      |
 | `params.debugDomain`      |  optional   | String  | Override the domain sent to the API when `debug: true`                                                                      |                    page domain                    |
+
+## Timing
+
+The module holds an auction only while Prebid waits for it: `waitForIt: true` and an `auctionDelay` above zero. It then releases the auction as soon as the enrichment is merged, or after `params.timeout` ms (capped at `auctionDelay` minus 5 ms, so it always releases before Prebid's own timer). An auction that stops waiting doesn't cancel the request: when the response arrives it is cached and used by the auctions that follow. The request itself gives up after 3 seconds, and isn't retried while the page stays on that article.
+
+Without `waitForIt`, the module never holds an auction: it enriches the auction if the enrichment is already loaded or cached, and otherwise lets it go as is. This also applies when another provider sets `waitForIt` and Prebid delays the auction for it: enrichment that arrives during that delay is not added.
 
 ## Consent
 
-The module respects user consent before making any network requests:
+The module checks consent for every auction, and adds no enrichment to an auction whose consent doesn't allow it:
 
-- **COPPA**: if `coppa: true` is set, the module is inert.
-- **GDPR**: when GDPR applies, the module requires consent (or legitimate interest) for **Purpose 1** (Store/access information on a device) and **Purpose 4** (Select personalised content). If either purpose is missing, or if `vendorData` is absent (e.g. CMP timeout), the module does nothing.
+- **COPPA**: if `coppa: true` is set, the module adds no enrichment.
+- **GDPR**: Stack Up is not yet registered on the IAB Global Vendor List, so users can't consent to it as a vendor. Until it is, the module adds no enrichment to any auction where GDPR applies (`gdprApplies: true`), whatever purposes the user has allowed.
 - **USP / CCPA / GPP**: not enforced — the Stack Up API receives only a URL path and domain, no user identifiers, so US sale-of-data frameworks do not apply.
+
+The enrichment request is sent when the module initializes, at `setConfig` time, so that it runs alongside the CMP lookup instead of after it, and the first auction doesn't wait for one and then the other. It is therefore usually sent before the CMP has answered, including for users GDPR turns out to apply to; for them the result is never added to an auction. It carries no cookies or user identifiers, only a URL path and domain. If GDPR is already known to apply when the module initializes, no request is sent.
+
+The module doesn't read or write `sessionStorage` until consent says GDPR doesn't apply: at initialization when consent is already known by then, otherwise at the first auction whose consent says so. Until then a fetched result is kept in memory only. On pages without a consent management module, the cache is used from initialization. If `consentManagement` is configured after `realTimeData`, the module treats the page as having none at that point. The in-memory cache (`cache.storage: 'memory'`) doesn't touch device storage and is used regardless.
+
+When the CMP doesn't answer in time, Prebid sets `gdprApplies` from `consentManagement.gdpr.defaultGdprScope`, which defaults to `false`, so those users are enriched, as they are bid on. Publishers with EU traffic should set `defaultGdprScope: true`.
 
 ## Article ID Resolution
 
@@ -102,9 +116,11 @@ The module normalises the current page URL path using Prebid's built-in referer 
 
 The resulting path is sent to the API and is also used as the `sessionStorage` cache key (via a fast hash) so cache hits are consistent across AMP and canonical URLs for the same article.
 
+The path is resolved again for every auction, so single-page apps that change the URL without reloading Prebid get the enrichment for the article currently shown. On a change the module drops the previous article (its in-flight request is cancelled), serves the new one from cache when available, and otherwise fetches it. If you set `pageUrl` through `setConfig`, update it on each navigation.
+
 ### `articleIdMode: 'explicit'`
 
-Pass a stable, opaque article identifier directly in `params.articleId`. Use this when you have a CMS-issued slug or numeric ID that is more stable than the URL.
+Pass a stable, opaque article identifier directly in `params.articleId`. Use this when you have a CMS-issued slug or numeric ID that is more stable than the URL. The identifier is fixed by configuration, so single-page apps should use `path` mode.
 
 ## Caching
 
@@ -115,8 +131,8 @@ With `params.cache.storage: 'session'`, it writes to `sessionStorage` under the 
 stackup:enrich:v1:path_<hash>
 ```
 
-With `params.cache.storage: 'memory'`, entries are kept in runtime memory only and are cleared on full page reload.
-Cache entries expire after `params.cache.ttlSeconds` (default 1 hour). Setting `params.cache.enabled: false` disables both reads and writes.
+With `params.cache.storage: 'memory'`, entries are kept in runtime memory only (the 20 most recent articles) and are cleared on full page reload.
+Cache entries expire after `params.cache.ttlSeconds` (default 1 hour). An entry that doesn't pass the same validation as an API response, or that was written by an earlier version of the module with a different snapshot format, is ignored and the article is fetched again. Setting `params.cache.enabled: false` disables both reads and writes.
 
 The hash is derived from article context (articleId plus publisher/request context), preventing cross-publisher/context cache reuse in a shared browser session.
 
@@ -177,7 +193,7 @@ After a successful enrichment the following fields are merged into the global `o
 }
 ```
 
-Data blocks are matched by `name` plus `ext.segtax`, so the 2.2 and 3.1 blocks remain separate. Matching blocks are unioned by `segment[].id`; publisher-provided segment fields win on an ID collision. Existing publisher `site.cattax`, `site.pagecat`, and content extension values are preserved. The `site.cattax`/`site.pagecat` pair is copied only when the enrichment response carries both halves and the publisher has declared no `site.cat`, `site.sectioncat`, or `site.pagecat` of their own — one `site.cattax` governs all three arrays, so a partial copy would reinterpret category ids the module never set. The resolved URL path is used for the API lookup and cache key, but is not synthesized into `site.content.id`.
+Data blocks are matched by `name`, `ext.segtax` and `ext.stackup.dimension`, so the 2.2 and 3.1 blocks remain separate. Matching blocks are unioned by `segment[].id`; publisher-provided segment fields win on an ID collision. Existing publisher `site.cattax`, `site.pagecat`, and content extension values are preserved. The `site.cattax`/`site.pagecat` pair is copied only when the enrichment response carries both halves and the publisher has declared no `site.cat`, `site.sectioncat`, or `site.pagecat` of their own — one `site.cattax` governs all three arrays, so a partial copy would reinterpret category ids the module never set. The resolved URL path is used for the API lookup and cache key, but is not synthesized into `site.content.id`.
 
 ## Integration Example
 

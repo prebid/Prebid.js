@@ -1,5 +1,5 @@
 import { fetch as prebidFetch } from "../src/ajax.ts";
-import { AllConsentData } from "../src/consentHandler.ts";
+import { AllConsentData, gdprDataHandler } from "../src/consentHandler.ts";
 import { submodule } from "../src/hook.js";
 import { StartAuctionOptions } from "../src/prebid.ts";
 import {
@@ -17,30 +17,45 @@ import {
   isNumber,
   isPlainObject,
   cyrb53Hash,
+  deepClone,
+  generateUUID,
 } from "../src/utils.js";
 import { getRefererInfo } from "../src/refererDetection.js";
+import {
+  recordAuctionEnrichment,
+  resetAuctionEnrichments,
+  type AuctionEnrichmentStatus,
+  type EnrichmentSnapshot,
+} from "../libraries/stackupUtils/enrichment.js";
 import type { RTDProviderConfig, RtdProviderSpec } from "./rtdModule/spec.ts";
 
-// TCF purposes required by stackupRtd:
+// TCF purposes declared for the sessionStorage cache in the storage disclosure,
+// as in metadata/modules/stackupRtdProvider.json:
 //   1 = Store and/or access information on a device
-//   4 = Select personalised content
-const REQUIRED_PURPOSES = [1, 4];
+//   4 = Use profiles to select personalised advertising
+const STORAGE_PURPOSES = [1, 4];
 
 const MODULE_NAME = "stackupRtd";
 const MODULE_TYPE = "realTimeData";
 const DEFAULT_TIMEOUT = 300;
+// Upper bound for the shared enrichment fetch, independent of any auction.
+const FETCH_TIMEOUT = 3000;
+// How much earlier than core's auctionDelay timer we release a waiting auction.
+// Both timers would otherwise expire together and core's, scheduled first, wins.
+const RELEASE_MARGIN = 5;
+// In-memory cache entries kept at once: a long single-page-app session can visit
+// many articles, and without a cap the map would grow for the page's lifetime.
+const MAX_MEMORY_CACHE_ENTRIES = 20;
 const DEFAULT_API_URL = "https://api.stackup-ai.com/v1/enrich-ortb-rtd";
 const CACHE_KEY_PREFIX = "stackup:enrich:v1:";
-const CACHE_SCHEMA_VERSION = 2;
-const CONTENT_SEGTAXES = new Set([6, 9, 502, 600]);
+// Bumped whenever the cached snapshot changes shape, so that entries written by
+// an earlier version of the module are fetched again rather than served without
+// the new fields. 3: site.keywords and site.ext.data.
+const CACHE_SCHEMA_VERSION = 3;
+const CONTENT_SEGTAXES = new Set([6, 9, 502]);
 const USER_SEGTAXES = new Set([4, 501]);
 // Site category arrays governed by a single `site.cattax`.
 const SITE_CATEGORY_FIELDS = ["cat", "sectioncat", "pagecat"];
-// Maximum number of auction snapshots to keep in memory at once.
-// On long-lived SPA sessions many auctions can fire; without a cap the map
-// grows without bound. FIFO eviction keeps the last N entries — enough for
-// any analytics adapter to read a snapshot before it is evicted.
-const MAX_SNAPSHOTS = 10;
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -52,7 +67,6 @@ type RtdState =
   | "initializing"
   | "fetching"
   | "ready"
-  | "timedOut"
   | "error";
 
 interface RtdInternalState {
@@ -62,8 +76,14 @@ interface RtdInternalState {
   fetchPromise: Promise<EnrichmentSnapshot> | null;
   fetchAbortController: AbortController | null;
   pendingCallbacks: Array<() => void>;
-  snapshotsByAuctionId: Map<string, EnrichmentSnapshot>;
   config: RTDProviderConfig<"stackupRtd">;
+  // Whether consent has said GDPR doesn't apply (at init or at an auction), so
+  // the sessionStorage cache may be used.
+  storageAllowed: boolean;
+  // The enrichment came from the API and is not in the cache yet.
+  unsaved: boolean;
+  // The cache has been looked up for the current article.
+  cacheChecked: boolean;
 }
 
 const state: RtdInternalState = {
@@ -73,8 +93,10 @@ const state: RtdInternalState = {
   fetchPromise: null,
   fetchAbortController: null,
   pendingCallbacks: [],
-  snapshotsByAuctionId: new Map(),
   config: null as any,
+  storageAllowed: false,
+  unsaved: false,
+  cacheChecked: false,
 };
 
 export interface StackupRtdParams {
@@ -100,74 +122,18 @@ declare module "./rtdModule/spec.ts" {
   }
 }
 
-type BrandSafetyBlock = unknown; // TODO: define properly when we have real data
-type EmotionBlock = unknown; // TODO: define properly when we have real data
-
-interface Ortb2Segment {
-  id: string;
-  name?: string;
-  value?: string;
-  ext?: { confidence?: number };
-}
-
-interface Ortb2DataBlock<TSegtax extends number> {
-  id?: string;
-  name: string;
-  ext?: {
-    segtax?: TSegtax;
-    [key: string]: unknown;
-  };
-  segment: Ortb2Segment[];
-}
-
-// types/stackup.ts — shared between RTD and analytics modules
-
-export interface EnrichmentSnapshot {
-  articleId: string;
-  fetchedAt: number; // unix ms when enrichment landed
-  source: "api" | "cache";
-  site: {
-    cattax?: number;
-    pagecat?: string[];
-    content: {
-      id?: string;
-      title?: string;
-      data: Ortb2ContentSegment[];
-      ext?: Record<string, unknown> & {
-        brand_safety?: BrandSafetyBlock;
-        emotion?: EmotionBlock;
-      };
-    };
-  };
-  user: {
-    data: Ortb2UserSegment[];
-  };
-}
-
-export type Ortb2ContentSegment = Ortb2DataBlock<6 | 9 | 502 | 600>;
-
-export type Ortb2UserSegment = Ortb2DataBlock<4 | 501>;
+export type {
+  EnrichmentSnapshot,
+  Ortb2ContentSegment,
+  Ortb2UserSegment,
+} from "../libraries/stackupUtils/enrichment.js";
 
 // Raw JSON shape returned by the Stackup enrichment API.
 // Mirrors EnrichmentSnapshot.site/user but without the client-added fields
 // (articleId, fetchedAt, source) that are stamped on after a successful fetch.
 interface RawEnrichmentResponse {
-  site: {
-    cattax?: number;
-    pagecat?: string[];
-    content: {
-      id?: string;
-      title?: string;
-      data: Ortb2ContentSegment[];
-      ext?: Record<string, unknown> & {
-        brand_safety?: BrandSafetyBlock;
-        emotion?: EmotionBlock;
-      };
-    };
-  };
-  user?: {
-    data?: Ortb2UserSegment[];
-  };
+  site: EnrichmentSnapshot["site"];
+  user?: Partial<EnrichmentSnapshot["user"]>;
 }
 
 type CacheStorageMode = "session" | "memory";
@@ -212,7 +178,7 @@ function init(
   discloseStorageUse(MODULE_NAME, {
     type: "web",
     identifier: CACHE_KEY_PREFIX + "*",
-    purposes: REQUIRED_PURPOSES,
+    purposes: STORAGE_PURPOSES,
   });
 
   // Guard against being called with no config (defensive — framework shouldn't do this)
@@ -232,44 +198,106 @@ function init(
     return false;
   }
 
-  // Respect consent — no enrichment if user has not granted relevant purposes
-  if (!hasRequiredConsent(userConsent)) {
-    logInfo("[stackupRtd] consent not granted, module inert");
+  // No request when consent already rules enrichment out (GDPR applies, or COPPA)
+  if (!enrichmentAllowed(userConsent)) {
+    logInfo("[stackupRtd] consent rules out enrichment, module inert");
     state.state = "error";
     return false;
   }
+  // Consent is usually not known yet at init: the sessionStorage cache is only
+  // used here when it already says GDPR doesn't apply, or when the page has no
+  // GDPR consent module, so no such signal will come. Otherwise the first
+  // auction whose consent says GDPR doesn't apply unlocks it. A consent module
+  // configured only after realTimeData isn't enabled yet here.
+  state.storageAllowed =
+    deepAccess(userConsent, "gdpr.gdprApplies") === false ||
+    !gdprDataHandler.enabled;
 
+  let articleId: string | null;
   try {
-    const { id } = resolveArticleId(params);
-    state.articleId = id;
+    articleId = resolveArticleId(params).id;
   } catch (e) {
     logError("[stackupRtd] article id resolution failed", e);
     state.state = "error";
     return false;
   }
-
-  // Kick off background fetch — do not await
-  if (!state.articleId) {
+  if (!articleId) {
     logWarn("[stackupRtd] no article ID resolved, module inert");
     state.state = "error";
     return false;
   }
-  state.fetchPromise = fetchEnrichment(state.articleId, params);
-  state.state = "fetching";
 
+  // Kick off background fetch — do not await
+  loadEnrichment(articleId, params);
+  return true;
+}
+
+// Makes `articleId` the article the module enriches auctions with. Called at
+// init, and again whenever a single-page app has moved on to another article:
+// whatever was loaded or loading for the previous one is dropped.
+function loadEnrichment(articleId: string, params: StackupRtdParams): void {
+  // The previous page is gone: stop its fetch, and let auctions still waiting
+  // for it go now (they find no enrichment for their article).
+  state.fetchAbortController?.abort();
+  state.fetchAbortController = null;
+  state.fetchPromise = null;
+  state.articleId = articleId;
+  state.enrichment = null;
+  state.state = "fetching";
+  state.unsaved = false;
+  state.cacheChecked = false;
+  drainPendingCallbacks();
+
+  if (cacheUsable() && useCachedEnrichment(articleId)) {
+    // Synchronous, so an auction for an article seen earlier is enriched at
+    // once, whether or not core waits for us.
+    return;
+  }
+
+  const ctl = new AbortController();
+  state.fetchAbortController = ctl;
+  // Results of a fetch that was superseded by a later navigation are ignored.
+  const isCurrent = () => state.fetchAbortController === ctl;
+  state.fetchPromise = fetchEnrichment(articleId, params, ctl);
   state.fetchPromise
     .then((data) => {
+      if (!isCurrent()) return;
       state.enrichment = data;
+      state.unsaved = true;
       state.state = "ready";
+      saveEnrichment();
       drainPendingCallbacks();
     })
     .catch((err) => {
+      if (!isCurrent()) return;
       logError("[stackupRtd] fetch failed", err);
       state.state = "error";
       drainPendingCallbacks();
     });
+}
 
+// sessionStorage is device storage: it is used only once consent says GDPR
+// doesn't apply. The in-memory cache is not, and is always usable.
+function cacheUsable(): boolean {
+  return getCacheConfig().storage === "memory" || state.storageAllowed;
+}
+
+// Looks up the cache for `articleId`; makes it the enrichment on a hit.
+function useCachedEnrichment(articleId: string): boolean {
+  state.cacheChecked = true;
+  const cached = getCachedEnrichment(articleId);
+  if (!cached) return false;
+  state.enrichment = { ...cached, source: "cache" };
+  state.unsaved = false;
+  state.state = "ready";
   return true;
+}
+
+// Writes an enrichment fetched from the API to the cache, once it may be used.
+function saveEnrichment(): void {
+  if (!state.unsaved || !state.enrichment || !cacheUsable()) return;
+  state.unsaved = false;
+  setCachedEnrichment(state.enrichment.articleId, state.enrichment);
 }
 
 // Builds the enrichment API request URL from the resolved articleId and publisher params.
@@ -279,18 +307,7 @@ function buildEnrichmentUrl(
   params: StackupRtdParams
 ): string {
   const base = params.apiUrl ?? DEFAULT_API_URL;
-  // Use Prebid's referer detection so domain is correct inside iframes.
-  const domain = getRefererInfo().domain;
-
-  if (params.debug) {
-    const debugDomain = params.debugDomain ?? domain;
-    return `${base}?pubId=${encodeURIComponent(
-      params.pubId
-    )}&articleId=${encodeURIComponent(articleId)}&domain=${encodeURIComponent(
-      debugDomain
-    )}`;
-  }
-
+  const domain = requestDomain(params);
   return `${base}?pubId=${encodeURIComponent(
     params.pubId
   )}&articleId=${encodeURIComponent(articleId)}&domain=${encodeURIComponent(
@@ -313,21 +330,14 @@ function drainPendingCallbacks(): void {
 
 function fetchEnrichment(
   articleId: string,
-  params: StackupRtdParams
+  params: StackupRtdParams,
+  ctl: AbortController
 ): Promise<EnrichmentSnapshot> {
-  // Check cache first
-  const cached = getCachedEnrichment(articleId);
-  if (cached) {
-    return Promise.resolve({ ...cached, source: "cache" });
-  }
-
-  // AbortController lets getBidRequestData abort this fetch from its safety net
-  // when the auction-delay budget is exceeded, stopping the wasted network round-trip.
-  // The safety net in getBidRequestData fires at params.timeout and is the single
-  // source of truth for abort timing — do not add a second independent timer here.
-  const ctl = new AbortController();
-  state.fetchAbortController = ctl;
-
+  // The fetch is shared by every auction on the page, so an auction that stops
+  // waiting for it must not cancel it: letting it land (and get cached) is what
+  // enriches the auctions that follow. It is bounded here rather than by
+  // prebidFetch's own timeout, which publishers can turn off (disableAjaxTimeout).
+  const fetchTimer = setTimeout(() => ctl.abort(), FETCH_TIMEOUT);
   const url = buildEnrichmentUrl(articleId, params);
   return prebidFetch(url, { signal: ctl.signal })
     .then((response) => {
@@ -350,13 +360,39 @@ function fetchEnrichment(
           ...(data.site.pagecat !== undefined
             ? { pagecat: data.site.pagecat }
             : {}),
+          ...siteFirstPartyData(data.site),
           content: { ...data.site.content },
         },
         user: { data: data.user?.data ?? [] },
       };
-      setCachedEnrichment(articleId, snapshot);
+      // Not cached here: consent may not allow storage yet (see saveEnrichment).
       return snapshot;
-    });
+    })
+    .finally(() => clearTimeout(fetchTimer));
+}
+
+// site.keywords and site.ext.data are optional extras: a value of the wrong
+// type is left out instead of failing the response, so it cannot cost the
+// auction the segments that came with it.
+function siteFirstPartyData(
+  site: any
+): Pick<EnrichmentSnapshot["site"], "keywords" | "ext"> {
+  const keywords = keywordTokens(site.keywords);
+  const extData = site.ext?.data;
+  return {
+    ...(keywords.length > 0 ? { keywords: keywords.join(",") } : {}),
+    ...(isPlainObject(extData) && Object.keys(extData).length > 0
+      ? { ext: { data: extData } }
+      : {}),
+  };
+}
+
+function keywordTokens(keywords: unknown): string[] {
+  if (typeof keywords !== "string") return [];
+  return keywords
+    .split(",")
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
 }
 
 function isValidEnrichment(data: any): data is RawEnrichmentResponse {
@@ -413,9 +449,16 @@ function isValidDataBlock(block: any, allowedSegtaxes: Set<number>): boolean {
   return true;
 }
 
+// The domain the API is asked about, which cache entries are keyed by too.
+function requestDomain(params?: StackupRtdParams): string {
+  // Use Prebid's referer detection so domain is correct inside iframes.
+  const domain = getRefererInfo().domain ?? "";
+  return params?.debug ? params.debugDomain ?? domain : domain;
+}
+
 function cacheKey(articleId: string, params?: StackupRtdParams): string {
   const p = params ?? state.config?.params;
-  const domain = (p?.debug ? p?.debugDomain : getRefererInfo().domain) ?? "";
+  const domain = requestDomain(p);
   const base = p?.apiUrl ?? DEFAULT_API_URL;
   const keyInput = `${articleId}|pub:${
     p?.pubId ?? ""
@@ -439,7 +482,18 @@ function getCachedEnrichment(articleId: string): EnrichmentSnapshot | null {
     if (parsed.v !== CACHE_SCHEMA_VERSION) return null;
     const ttlMs = cache.ttlSeconds * 1000;
     if (Date.now() - parsed.t > ttlMs) return null;
-    return parsed.d;
+    // sessionStorage outlives this code and anything on the page can write to
+    // it: only use an entry shaped like the snapshot a fresh response gives.
+    const d: EnrichmentSnapshot = parsed.d;
+    if (
+      !isPlainObject(d) ||
+      d.articleId !== articleId ||
+      !isValidEnrichment(d) ||
+      !isArray(d.user?.data)
+    ) {
+      return null;
+    }
+    return d;
   } catch {
     return null;
   }
@@ -456,6 +510,12 @@ function setCachedEnrichment(
     const payload = { v: CACHE_SCHEMA_VERSION, t: Date.now(), d: data };
     if (cache.storage === "memory") {
       inMemoryEnrichmentCache.set(key, payload);
+      // Map iteration follows insertion order, so the first key is the oldest
+      if (inMemoryEnrichmentCache.size > MAX_MEMORY_CACHE_ENTRIES) {
+        inMemoryEnrichmentCache.delete(
+          inMemoryEnrichmentCache.keys().next().value
+        );
+      }
       return;
     }
     storage.setDataInSessionStorage(key, JSON.stringify(payload));
@@ -464,27 +524,20 @@ function setCachedEnrichment(
   }
 }
 
-function hasRequiredConsent(userConsent: AllConsentData): boolean {
+// Checked both at init and again for every auction: init runs at setConfig
+// time, and the CMP lookup that consent management starts then is asynchronous,
+// so the consent passed to init is usually still empty.
+function enrichmentAllowed(userConsent: AllConsentData): boolean {
   // COPPA: block all processing in child-directed contexts.
-  if (userConsent.coppa === true) return false;
+  if (userConsent?.coppa === true) return false;
 
-  // GDPR: require per-purpose consent when GDPR applies.
+  // GDPR: StackUp is not on the IAB Global Vendor List, so a user cannot
+  // consent to it as a vendor, whatever purposes they allow. Until it is, no
+  // enrichment where GDPR applies.
   // No USP/CCPA or GPP checks — this module sends only a URL path and domain
   // to the enrichment API; no user identifiers are transmitted or stored,
   // so US sale-of-data opt-outs have no legal basis here.
-  const gdprApplies = deepAccess(userConsent, "gdpr.gdprApplies");
-  if (!gdprApplies) return true;
-
-  const purposeConsents =
-    deepAccess(userConsent, "gdpr.vendorData.purpose.consents") || {};
-  const purposeLegitimateInterests =
-    deepAccess(userConsent, "gdpr.vendorData.purpose.legitimateInterests") ||
-    {};
-
-  return REQUIRED_PURPOSES.every(
-    (id) =>
-      purposeConsents[id] === true || purposeLegitimateInterests[id] === true
-  );
+  return !deepAccess(userConsent, "gdpr.gdprApplies");
 }
 
 function resolveArticleId(params: StackupRtdParams): {
@@ -551,7 +604,7 @@ function getBidRequestData(
   reqBidsConfigObj: StartAuctionOptions,
   callback: () => void,
   config: RTDProviderConfig<"stackupRtd">,
-  _userConsent: AllConsentData,
+  userConsent: AllConsentData,
   timeout?: number
 ): void {
   const requestedTimeout = config.params?.timeout;
@@ -561,93 +614,207 @@ function getBidRequestData(
     requestedTimeout > 0
       ? requestedTimeout
       : DEFAULT_TIMEOUT;
-  // Honor the auction-delay budget passed by core as the 5th argument.
-  // Core computes it as `shouldDelayAuction ? auctionDelay : 0`, so it is 0
-  // when the publisher runs us non-blocking or omits auctionDelay entirely.
-  // A naive Math.min would zero-out our own budget in that case, so treat
-  // 0/falsy as "no external cap" and fall back to our own timeout.
-  const budget = isNumber(timeout) && timeout > 0 ? timeout : Infinity;
-  const effectiveTimeout = Math.min(ownTimeout, budget);
+  // Core passes its auctionDelay as the 5th argument, or 0 when it does not
+  // delay auctions at all. It only waits for providers configured with
+  // waitForIt; for anything else the auction starts without us, so waiting
+  // would only merge into an auction whose bid requests are already built.
+  const coreWaits =
+    config.waitForIt === true && isNumber(timeout) && timeout > 0;
+  // Release before core's own timer, so the auction never starts while we still
+  // hold it and our per-auction record exists when the auction is created.
+  const effectiveTimeout = coreWaits
+    ? Math.max(0, Math.min(ownTimeout, timeout - RELEASE_MARGIN))
+    : 0;
+
+  // The auction keeps an ID already set on the request, by the publisher or by
+  // priceFloors (its requestBids hook runs before the RTD providers). Without
+  // one, core only generates it once the RTD providers have run: set it now so
+  // what we do here can be recorded for analytics under the auction's ID.
+  const auctionId = (reqBidsConfigObj.auctionId =
+    reqBidsConfigObj.auctionId || generateUUID());
+
+  // A single-page app changes the page without reloading Prebid: find the
+  // article this auction is for. Nothing to find if init never succeeded.
+  const params = config.params ?? state.config?.params;
+  const articleId =
+    state.articleId === null || !params ? null : resolveArticleId(params).id;
 
   let callbackFired = false;
-  const release = () => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const release = (
+    status: AuctionEnrichmentStatus,
+    enrichment: EnrichmentSnapshot | null = null
+  ) => {
     if (callbackFired) return; // CRITICAL — never call back twice
     callbackFired = true;
+    clearTimeout(timeoutId);
+    // A released auction no longer needs the fetch; do not keep it alive until then.
+    const pending = state.pendingCallbacks.indexOf(onReady);
+    if (pending >= 0) state.pendingCallbacks.splice(pending, 1);
+    recordAuctionEnrichment({ auctionId, status, enrichment });
     callback();
   };
 
-  // Safety net — always release the auction, no matter what
-  const timeoutId = setTimeout(() => {
-    if (state.state === "fetching") {
-      logWarn(
-        "[stackupRtd] enrichment fetch exceeded " +
-          effectiveTimeout +
-          "ms, releasing auction clean"
-      );
-      state.state = "timedOut";
-      // Abort the in-flight AJAX request so the network round-trip stops
-      // immediately rather than running until params.timeout fires.
-      state.fetchAbortController?.abort();
-    }
-    release();
-  }, effectiveTimeout);
-
   const onReady = () => {
-    clearTimeout(timeoutId);
-    if (state.enrichment) {
-      try {
-        mergeIntoOrtb2(reqBidsConfigObj, state.enrichment);
-        // Stash snapshot keyed by auctionId so analytics adapter can retrieve it
-        if (reqBidsConfigObj.auctionId) {
-          storeSnapshot(reqBidsConfigObj.auctionId, state.enrichment);
-        }
-      } catch (e) {
-        logError("[stackupRtd] merge failed, auction proceeds clean", e);
-      }
+    if (callbackFired) return;
+    if (!state.enrichment || state.enrichment.articleId !== articleId) {
+      release("unavailable");
+      return;
     }
-    release();
+    let merged: EnrichmentSnapshot;
+    try {
+      merged = mergeIntoOrtb2(reqBidsConfigObj, state.enrichment);
+    } catch (e) {
+      logError("[stackupRtd] merge failed, auction proceeds clean", e);
+      release("error");
+      return;
+    }
+    release("enriched", merged);
   };
+
+  // This auction's consent is already known: when it rules enrichment out, do
+  // not hold the auction for a result that would be discarded.
+  if (!enrichmentAllowed(userConsent)) {
+    logInfo("[stackupRtd] consent rules out enrichment, auction proceeds clean");
+    release("noConsent");
+    return;
+  }
+
+  if (!articleId) {
+    release("unavailable");
+    return;
+  }
+  // This auction's consent says GDPR doesn't apply: the cache may be used from
+  // now on. Save what was fetched before it could be, then look for this article.
+  state.storageAllowed = true;
+  saveEnrichment();
+  if (articleId !== state.articleId) {
+    loadEnrichment(articleId, params);
+  } else if (
+    state.state !== "ready" &&
+    !state.cacheChecked &&
+    useCachedEnrichment(articleId)
+  ) {
+    // init could not read the cache: the hit enriches this auction at once, and
+    // the fetch init started would only bring the same data again
+    const ctl = state.fetchAbortController;
+    state.fetchAbortController = null; // its result is ignored from now on
+    state.fetchPromise = null;
+    ctl?.abort();
+  }
 
   if (state.state === "ready") {
     onReady();
-  } else if (state.state === "fetching") {
-    state.pendingCallbacks.push(onReady);
-  } else {
-    // error, timedOut, idle — give up cleanly
-    clearTimeout(timeoutId);
-    release();
+    return;
   }
-}
+  if (state.state !== "fetching") {
+    // error, idle — give up cleanly
+    release("unavailable");
+    return;
+  }
+  if (!coreWaits) {
+    release("timedOut");
+    return;
+  }
 
-// Inserts a snapshot keyed by auctionId, evicting the oldest entry when the
-// map exceeds MAX_SNAPSHOTS. Map insertion order is guaranteed by the spec so
-// `.keys().next().value` always returns the oldest key.
-function storeSnapshot(auctionId: string, snapshot: EnrichmentSnapshot): void {
-  state.snapshotsByAuctionId.set(auctionId, snapshot);
-  if (state.snapshotsByAuctionId.size > MAX_SNAPSHOTS) {
-    const oldest = state.snapshotsByAuctionId.keys().next().value;
-    state.snapshotsByAuctionId.delete(oldest);
-  }
+  state.pendingCallbacks.push(onReady);
+  // Safety net — always release the auction, no matter what. Only this auction
+  // stops waiting; the shared fetch keeps going for the auctions that follow.
+  timeoutId = setTimeout(() => {
+    logWarn(
+      "[stackupRtd] enrichment fetch exceeded " +
+        effectiveTimeout +
+        "ms, releasing auction clean"
+    );
+    release("timedOut");
+  }, effectiveTimeout);
 }
 
 function mergeIntoOrtb2(
   reqBidsConfigObj: StartAuctionOptions,
   enrichment: EnrichmentSnapshot
-): void {
-  const global = reqBidsConfigObj.ortb2Fragments?.global ?? {};
-  reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments ?? {};
-  reqBidsConfigObj.ortb2Fragments.global = global;
+): EnrichmentSnapshot {
+  // RTD providers receive a guarded ortb2Fragments whose `global` is
+  // getter-only: assigning to it throws in strict mode, so only fill it in
+  // when it is missing.
+  const fragments =
+    reqBidsConfigObj.ortb2Fragments ??
+    (reqBidsConfigObj.ortb2Fragments = {} as any);
+  if (!fragments.global) fragments.global = {};
+  const global = fragments.global;
 
-  mergeSiteContent(global, enrichment.site);
-  mergeUserData(global, enrichment.user.data);
+  // The snapshot is shared by every auction on the page; merge a copy so that
+  // whatever later edits this auction's ortb2 cannot reach the next auction.
+  const ours = deepClone(enrichment);
+  mergeSiteContent(global, ours.site);
+  mergeSiteKeywords(global, ours.site.keywords);
+  mergeSiteExtData(global, ours.site.ext?.data);
+  const userDataAdded = mergeUserData(global, ours.user.data);
+  // Return what reached the auction, for its record: activity controls can keep
+  // our user.data out of it.
+  return userDataAdded || enrichment.user.data.length === 0
+    ? enrichment
+    : { ...enrichment, user: { data: [] } };
 }
 
+// One comma-separated list: the publisher's tokens first, then ours that are
+// not already in it. The publisher's value is left as it is when we have
+// nothing new to add, or when it is not a string.
+function mergeSiteKeywords(global: any, ours: unknown): void {
+  const publisher = global.site?.keywords;
+  if (publisher !== undefined && !isStr(publisher)) return;
+
+  const tokens = keywordTokens(publisher);
+  const seen = new Set(tokens);
+  const added = keywordTokens(ours).filter((token) => {
+    if (seen.has(token)) return false;
+    seen.add(token);
+    return true;
+  });
+  if (added.length === 0) return;
+
+  global.site = global.site ?? {};
+  global.site.keywords = [...tokens, ...added].join(",");
+}
+
+// Adds only the keys the publisher has not set. A publisher site.ext or
+// site.ext.data that is not an object is left alone.
+function mergeSiteExtData(global: any, ours: unknown): void {
+  if (!isPlainObject(ours) || Object.keys(ours).length === 0) return;
+  const ext = global.site?.ext;
+  if (ext !== undefined && !isPlainObject(ext)) return;
+  const data = ext?.data;
+  if (data !== undefined && !isPlainObject(data)) return;
+
+  global.site = global.site ?? {};
+  global.site.ext = global.site.ext ?? {};
+  if (data === undefined) {
+    global.site.ext.data = { ...(ours as Record<string, unknown>) };
+    return;
+  }
+  for (const [key, value] of Object.entries(ours as Record<string, unknown>)) {
+    if (!(key in data)) data[key] = value;
+  }
+}
+
+// The merges below only create objects they are about to fill: an empty
+// site.content.data or user.data in the bid request would read as first-party
+// data the publisher never sent.
 function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
+  const ourContent = ours.content;
+  const hasContent =
+    ourContent.id !== undefined ||
+    ourContent.title !== undefined ||
+    ourContent.data.length > 0 ||
+    ourContent.ext !== undefined;
+  const hasCategories = ours.cattax !== undefined && ours.pagecat !== undefined;
+  if (!hasContent && !hasCategories) return;
+
   global.site = global.site ?? {};
   mergeSiteCategories(global.site, ours);
-  global.site.content = global.site.content ?? { data: [] };
+  if (!hasContent) return;
+  global.site.content = global.site.content ?? {};
   const target = global.site.content;
-  const ourContent = ours.content;
 
   if (target.id === undefined && ourContent.id !== undefined) {
     target.id = ourContent.id;
@@ -656,8 +823,10 @@ function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
     target.title = ourContent.title;
   }
 
-  target.data = isArray(target.data) ? target.data : [];
-  mergeDataBlocks(target.data, ourContent.data);
+  if (ourContent.data.length > 0) {
+    target.data = isArray(target.data) ? target.data : [];
+    mergeDataBlocks(target.data, ourContent.data);
+  }
 
   if (ourContent.ext !== undefined) {
     target.ext = mergeContentExtPublisherFirst(target.ext, ourContent.ext);
@@ -689,11 +858,48 @@ function mergeSiteCategories(
   site.pagecat = ours.pagecat;
 }
 
-function mergeUserData(global: any, ours: any[]): void {
-  global.user = global.user ?? {};
-  global.user.data = isArray(global.user.data) ? global.user.data : [];
+// Returns whether our blocks ended up in user.data.
+function mergeUserData(global: any, ours: any[]): boolean {
+  if (ours.length === 0) return false;
+  const created = !global.user;
+  if (created) global.user = {};
+  const user = global.user;
+  // Activity controls can hide the publisher's user.data from our reads
+  // (transmitUfpd) or drop our writes to it (enrichUfpd). `in` still sees
+  // data we cannot read, so we never overwrite it.
+  if ("data" in user) {
+    if (!isArray(user.data)) return false;
+    mergeDataBlocks(user.data, ours);
+    // enrichUfpd drops these writes without an error: check that they landed.
+    return hasDataBlocks(user.data, ours);
+  }
 
-  mergeDataBlocks(global.user.data, ours);
+  // Write the merged list in one assignment: the guard lets an empty array
+  // through even under enrichUfpd, so `user.data = []` followed by pushes
+  // would leave an empty list behind.
+  const data: any[] = [];
+  mergeDataBlocks(data, ours);
+  user.data = data;
+  if ("data" in user) return true;
+  if (created) {
+    // enrichUfpd dropped the write: the user object we created for it would
+    // reach bidders empty. `user` itself is not write-protected, so the delete
+    // goes through the guard.
+    delete global.user;
+  }
+  return false;
+}
+
+// Whether every segment of ours is in target, in a block with the same key.
+function hasDataBlocks(target: any[], ours: any[]): boolean {
+  return ours.every((ourBlock) => {
+    const key = dataBlockKey(ourBlock);
+    const block = target.find((candidate: any) => dataBlockKey(candidate) === key);
+    const ids = new Set(
+      (isArray(block?.segment) ? block.segment : []).map((seg: any) => seg?.id)
+    );
+    return ourBlock.segment.every((seg: any) => ids.has(seg.id));
+  });
 }
 
 function mergeDataBlocks(target: any[], ours: any[]): void {
@@ -724,7 +930,7 @@ function mergeDataBlock(publisherBlock: any, stackupBlock: any): any {
   const publisher = dedupeSegments(publisherBlock);
   const stackup = dedupeSegments(stackupBlock);
   const segments = [...publisher.segment];
-  const publisherIds = new Set(segments.map((segment: any) => segment.id));
+  const publisherIds = new Set(segments.map((segment: any) => segment?.id));
   for (const segment of stackup.segment) {
     if (!publisherIds.has(segment.id)) {
       publisherIds.add(segment.id);
@@ -753,12 +959,13 @@ function mergeDataBlockExtPublisherFirst(publisher: any, stackup: any): any {
 function dedupeSegments(block: any): any {
   const byId = new Map<string, any>();
   for (const seg of isArray(block?.segment) ? block.segment : []) {
-    const existing = byId.get(seg.id);
+    // A publisher segment may not be an object; keep it rather than throw.
+    const existing = byId.get(seg?.id);
     if (!existing) {
-      byId.set(seg.id, seg);
+      byId.set(seg?.id, seg);
       continue;
     }
-    const ourConf = seg.ext?.confidence ?? 0;
+    const ourConf = seg?.ext?.confidence ?? 0;
     const theirConf = existing.ext?.confidence ?? 0;
     if (ourConf > theirConf) byId.set(seg.id, seg);
   }
@@ -782,20 +989,19 @@ function registerSubmodule() {
 
 registerSubmodule();
 
-// Exported only for unit tests — returns the current size of the snapshot map.
-export function _snapshotMapSizeForTesting(): number {
-  return state.snapshotsByAuctionId.size;
-}
-
 // Exported only for unit tests — resets the module-level singleton between test cases.
 export function _resetStateForTesting(): void {
   state.state = "idle";
   state.articleId = null;
   state.enrichment = null;
   state.fetchPromise = null;
+  state.fetchAbortController?.abort();
   state.fetchAbortController = null;
   state.pendingCallbacks.length = 0;
-  state.snapshotsByAuctionId.clear();
+  resetAuctionEnrichments();
   inMemoryEnrichmentCache.clear();
   state.config = null as any;
+  state.storageAllowed = false;
+  state.unsaved = false;
+  state.cacheChecked = false;
 }
