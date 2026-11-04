@@ -4,7 +4,8 @@ import { server } from '../../mocks/xhr.js';
 import { parseQS, parseUrl } from 'src/utils.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 
-const TEST_SERVER_URL = 'http://localhost:9876/';
+// the top page without its query: http://localhost:9876/ under Karma, bs-local.com on a BrowserStack device
+const TEST_SERVER_URL = `${window.top.location.origin}/`;
 
 describe('Yahoo ConnectID Submodule', () => {
   const HASHED_EMAIL = '6bda6f2fa268bf0438b5423a9861a2cedaa5dec163c03f743cfe05c08a8397b2';
@@ -44,6 +45,9 @@ describe('Yahoo ConnectID Submodule', () => {
       getAjaxFnStub = sinon.stub(connectIdSubmodule, 'getAjaxFn');
       getAjaxFnStub.returns(ajaxStub);
       getCookieStub = sinon.stub(storage, 'getCookie');
+      // The module writes its cookie on the broadest domain that takes it, trying '.com' before '.bs-local.com'
+      // and checking each write by reading it back, which getCookieStub never confirms. So there is one write per
+      // level of the page's host (one on localhost) and the assertions check the last.
       setCookieStub = sinon.stub(storage, 'setCookie');
       cookiesEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
       getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
@@ -192,10 +196,10 @@ describe('Yahoo ConnectID Submodule', () => {
 
           const expiryDelta = new Date(60 * 60 * 24 * 365 * 1000);
           expect(result).to.be.an('object').that.has.all.keys('id');
-          expect(setCookieStub.calledOnce).to.be.true;
-          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(newCookieData));
-          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setCookieStub.called).to.be.true;
+          expect(setCookieStub.lastCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.lastCall.args[1]).to.equal(JSON.stringify(newCookieData));
+          expect(setCookieStub.lastCall.args[2]).to.equal(expiryDelta.toUTCString());
           expect(setLocalStorageStub.calledOnce).to.be.true;
           expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
           expect(setLocalStorageStub.firstCall.args[1]).to.equal(JSON.stringify(newCookieData));
@@ -284,10 +288,10 @@ describe('Yahoo ConnectID Submodule', () => {
 
           const expiryDelta = new Date(1 + 60 * 60 * 24 * 365 * 1000);
           expect(result).to.be.an('object').that.has.all.keys('id', 'callback');
-          expect(setCookieStub.calledOnce).to.be.true;
-          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(localStorageData));
-          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setCookieStub.called).to.be.true;
+          expect(setCookieStub.lastCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.lastCall.args[1]).to.equal(JSON.stringify(localStorageData));
+          expect(setCookieStub.lastCall.args[2]).to.equal(expiryDelta.toUTCString());
         });
 
         it('returns an object with the stored ID from cookies and syncs because of expired TTL', () => {
@@ -767,13 +771,13 @@ describe('Yahoo ConnectID Submodule', () => {
           });
           dateNowStub.restore();
 
-          expect(setCookieStub.calledOnce).to.be.true;
-          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(storage));
-          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
-          expect(setCookieStub.firstCall.args[3]).to.equal(null);
+          expect(setCookieStub.called).to.be.true;
+          expect(setCookieStub.lastCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.lastCall.args[1]).to.equal(JSON.stringify(storage));
+          expect(setCookieStub.lastCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setCookieStub.lastCall.args[3]).to.equal(null);
           const cookieDomain = parseUrl(TEST_SERVER_URL).hostname;
-          expect(setCookieStub.firstCall.args[4]).to.equal(`.${cookieDomain}`);
+          expect(setCookieStub.lastCall.args[4]).to.equal(`.${cookieDomain}`);
           expect(setLocalStorageStub.calledOnce).to.be.true;
           expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
           expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(JSON.stringify(storage));
@@ -861,10 +865,10 @@ describe('Yahoo ConnectID Submodule', () => {
           );
           dateNowStub.restore();
 
-          expect(setCookieStub.calledOnce).to.be.true;
-          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(expectedStoredData));
-          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setCookieStub.called).to.be.true;
+          expect(setCookieStub.lastCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.lastCall.args[1]).to.equal(JSON.stringify(expectedStoredData));
+          expect(setCookieStub.lastCall.args[2]).to.equal(expiryDelta.toUTCString());
           expect(setLocalStorageStub.called).to.be.false;
         });
 
@@ -923,10 +927,10 @@ describe('Yahoo ConnectID Submodule', () => {
           );
           dateNowStub.restore();
 
-          expect(setCookieStub.calledOnce).to.be.true;
-          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(expectedStoredData));
-          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setCookieStub.called).to.be.true;
+          expect(setCookieStub.lastCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.lastCall.args[1]).to.equal(JSON.stringify(expectedStoredData));
+          expect(setCookieStub.lastCall.args[2]).to.equal(expiryDelta.toUTCString());
           expect(setLocalStorageStub.calledOnce).to.be.true;
           expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
           expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(JSON.stringify(expectedStoredData));
