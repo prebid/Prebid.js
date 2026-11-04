@@ -14,7 +14,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
-import sha1 from 'crypto-js/sha1';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
+import { sha1 } from '@noble/hashes/legacy.js';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getPageTargetingMap, getSlotTargetingMap } from '../src/utils/gptTargeting.js';
 
@@ -316,7 +317,7 @@ function getCanonicalUrl(canonicalUrl, isOgUrlOption) {
 }
 
 function getCanonicalUrlHash(canonicalUrl) {
-  return (canonicalUrl) ? sha1(canonicalUrl).toString() : null;
+  return (canonicalUrl) ? bytesToHex(sha1(utf8ToBytes(canonicalUrl))) : null;
 }
 
 function hasBannerMediaType(bid) {

@@ -225,7 +225,6 @@ export default defineConfig({
     include: [
       'chai', 'chai/index.js', 'chai/index.mjs', 'sinon', 'nise', 'faker', 'assert', 'lodash', 'lodash/cloneDeep', 'lodash/unset',
       'dset', 'dlv/index.js', 'klona/json', 'fun-hooks/no-eval/index.js', 'live-connect-js', 'url-parse', 'whatwg-fetch',
-      'crypto-js/sha1', 'crypto-js/md5.js', 'crypto-js/hmac-sha512', 'crypto-js/enc-utf8', 'crypto-js/enc-base64',
       'video.js', 'videojs-ima', 'videojs-contrib-ads', 'videojs-playlist',
     ],
   },
