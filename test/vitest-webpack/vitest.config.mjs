@@ -127,12 +127,25 @@ async function browserProvider() {
       },
     },
   });
-  if (bsDevice) {
-    // Vitest sizes the window to `viewport` through WebDriver's window/rect, which iOS doesn't implement
-    // ("Method has not yet been implemented"). The test iframe still gets the 800x600 viewport.
-    const { providerFactory } = provider;
-    provider.providerFactory = (project) => Object.assign(providerFactory(project), { async setViewport() {} });
-  }
+  const { providerFactory } = provider;
+  provider.providerFactory = (project) => {
+    const instance = providerFactory(project);
+    if (bsDevice) {
+      // Vitest sizes the window to `viewport` through WebDriver's window/rect, which iOS doesn't implement
+      // ("Method has not yet been implemented"). The test iframe still gets the 800x600 viewport.
+      instance.setViewport = async () => {};
+    }
+    if (https) {
+      // On Safari and iOS, acceptInsecureCerts alone leaves the certificate warning up: BrowserStack's
+      // acceptSsl executor accepts it once the page has loaded (docs: automate/selenium/accept-insecure-certificates)
+      const { openPage } = instance;
+      instance.openPage = async function (...args) {
+        await openPage.apply(this, args);
+        await this.browser.execute('browserstack_executor: {"action": "acceptSsl"}');
+      };
+    }
+    return instance;
+  };
   return provider;
 }
 
