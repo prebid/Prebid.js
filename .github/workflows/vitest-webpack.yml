@@ -5,6 +5,7 @@ name: Vitest runner trial (non-blocking)
 # chunk: most specs as native ES modules served by Vite (test/vitest-native), the
 # rest bundled by Karma's own webpack/Babel config (test/vitest-webpack). This is a
 # trial alongside Karma (prebid/Prebid.js#10806, #16010); Karma remains the gate.
+# With BrowserStack credentials, an additional job covers real iOS 16 Safari.
 on:
   workflow_dispatch:
   pull_request:
@@ -191,3 +192,87 @@ jobs:
           VITEST_BROWSER: ${{ matrix.vitest-browser }}
           VITEST_CHANNEL: ${{ matrix.channel }}
         run: npm run test:vitest-native
+  # Karma's "Browserstack tests" job runs browsers.json minus what GitHub runners cover, which leaves desktop
+  # Safari 16.5, standing in for the WebKit floor browserslist resolves to (ios_saf 16.6) because
+  # karma-browserstack-launcher can't drive real iOS devices. This runs the same bundles on a real iPhone on
+  # iOS 16 through @vitest/browser-webdriverio and BrowserStack Local (#16006). Fork PRs get no BrowserStack
+  # secrets, so the job only runs when they are available.
+  browserstack-check:
+    name: Check for BrowserStack credentials
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - id: check
+        env:
+          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+        run: echo "available=${BROWSERSTACK_USER_NAME:+true}" >> "$GITHUB_OUTPUT"
+
+  vitest-browserstack:
+    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (chunk ${{ matrix.chunk }})
+    needs: browserstack-check
+    if: ${{ needs.browserstack-check.outputs.available == 'true' }}
+    strategy:
+      fail-fast: false
+      # One BrowserStack session per chunk, one chunk at a time, as Karma's BrowserStack job does
+      # (run-tests.yml), so this job never holds more than one of the account's parallel sessions.
+      max-parallel: 1
+      matrix:
+        chunk: [1, 2, 3, 4, 5, 6, 7, 8]
+        device: [iPhone 14]
+        os-version: ['16']
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - name: Install dependencies
+        run: npm ci
+      - name: Restore precompile and babel caches
+        uses: actions/cache@v5
+        with:
+          path: |
+            .cache/precompile
+            .cache/ts
+            .cache/babel-loader
+          key: vitest-default-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
+          restore-keys: |
+            vitest-default-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
+      - name: Precompile
+        run: npx gulp precompile
+      - name: BrowserStack env setup
+        uses: browserstack/github-actions/setup-env@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
+        with:
+          username: ${{ secrets.BROWSERSTACK_USER_NAME }}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          build-name: Vitest run ${{ github.run_id }}, attempt ${{ github.run_attempt }}, chunk ${{ matrix.chunk }}, ${{ github.ref }}
+      - name: BrowserStack Local setup
+        uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
+        with:
+          local-testing: start
+          local-identifier: random
+      # Leaves at least one session free for Karma's BrowserStack job and the ES5 e2e job.
+      - name: Wait for BrowserStack
+        uses: ./.github/actions/wait-for-browserstack
+        with:
+          sessions: 2
+      - name: Build and run chunk ${{ matrix.chunk }}
+        timeout-minutes: 15
+        env:
+          TEST_CHUNKS: '8'
+          TEST_CHUNK: ${{ matrix.chunk }}
+          VITEST_BROWSERSTACK: '1'
+          VITEST_BRIDGE_ALL: '1'
+          VITEST_BROWSER: safari
+          VITEST_DEVICE: ${{ matrix.device }}
+          VITEST_OS_VERSION: ${{ matrix.os-version }}
+        run: npm run test:vitest
+      - name: BrowserStack Local stop
+        if: ${{ always() }}
+        uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
+        with:
+          local-testing: stop

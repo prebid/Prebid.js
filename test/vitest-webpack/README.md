@@ -187,13 +187,53 @@ Parity: for all 930, each test's name and result (passed or skipped) matched the
 14,638. It is 1.2% of lines short of the chunked bridge run, where code run by one spec counts for the others on
 the page.
 
+## BrowserStack
+
+Karma's "Browserstack tests" job runs `browsers.json` minus every browser GitHub runners already cover, which
+leaves one: desktop Safari 16.5 on Ventura. It stands in for the WebKit floor `browserslist` resolves to (iOS
+Safari 16.6), because karma-browserstack-launcher can't drive real iOS devices. `VITEST_BROWSERSTACK=1` runs the
+bundles on BrowserStack through `@vitest/browser-webdriverio` instead (#16006), by default in Safari on a real
+iPhone 14 on iOS 16:
+
+```sh
+export BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=...
+VITEST_BROWSERSTACK=1 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest                    # iPhone 14, iOS 16
+VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest
+# Karma's desktop browser instead
+VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
+```
+
+- `VITEST_DEVICE` (default `iPhone 14`) and `VITEST_OS_VERSION` (default `16`) select a real device. BrowserStack
+  picks the iOS minor version, so `setup.mjs` logs the session's user agent and screen size. Setting `VITEST_OS`
+  selects a desktop browser (`VITEST_BROWSER`, default `safari`, and `VITEST_BROWSER_VERSION`) instead.
+- The remote browser reaches the Vite server through a BrowserStack Local tunnel. `globalSetup.mjs` starts and
+  stops one with the `browserstack-local` package, unless `BROWSERSTACK_LOCAL_IDENTIFIER` names one that is already
+  running (CI starts it with `browserstack/github-actions/setup-local`, as Karma's job does).
+- Safari on iOS can't load `http://localhost` through the tunnel; BrowserStack rewrites it to `bs-local.com`, which
+  resolves to 127.0.0.1. On a device the server is therefore opened at `http://bs-local.com:9876` (`VITEST_HOST`
+  overrides it), and specs that hard-code `http://localhost:9876/context.html` see a different origin there.
+  Desktop browsers load `http://localhost:9876`, as Karma's do.
+- A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
+- A run is one BrowserStack session, which carries no WebDriver traffic while the tests run, so the session's idle
+  timeout is raised to BrowserStack's maximum (300 s).
+- `VITEST_BROWSERSTACK=1` is only the switch that picks BrowserStack over Playwright for a run. CI doesn't
+  need it turned on: the `vitest-browserstack` job in `vitest-webpack.yml` runs on every run of that workflow
+  wherever the BrowserStack secrets are available, as Karma's BrowserStack job does (neither runs on fork PRs).
+  For now the workflow's `paths:` filter limits all its jobs to PRs that touch the trial; that filter goes when
+  Vitest is promoted (#16007).
+- The job runs the 8 chunks one at a time and waits until two sessions are free, so it never takes the last one
+  from Karma's BrowserStack job or the ES5 e2e job.
+
+- The native migration excludes most specs from the webpack bridge by default. CI sets
+  `VITEST_BRIDGE_ALL=1` for the BrowserStack run to cover the complete suite on iOS.
+
 ## Status
 
 On the full suite, Karma passed 27,478 tests and this runner passed 27,468 in the first trial (a spike on a
 patmmccann/Prebid.js fork branch). The differences were three specs fixed separately: #15978 (bliink), #15979
 (consentUtils), #15980 (pixfuture).
 
-Not done yet: BrowserStack and gulp integration.
+Not done yet: gulp integration; BrowserStack iOS coverage is under trial.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.
