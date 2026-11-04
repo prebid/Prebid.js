@@ -242,10 +242,12 @@ function postData() {
     _logInfo('WebCrypto is not available (the page is not a secure context): no hashed email to send');
     return;
   }
+  // the hash is asynchronous: send to the URL configured now, even if setConfig changes it meanwhile
+  const url = conf.url;
   return sha256Base64(normalizedEmail).then((hid) => {
     const payloadString = JSON.stringify({ hid, uids: userIds });
     _logInfo(payloadString);
-    qualifiedAjaxBuilder(MODULE_TYPE_PREBID, moduleName)(conf.url, syncCallback(), payloadString, { method: 'POST', withCredentials: true });
+    qualifiedAjaxBuilder(MODULE_TYPE_PREBID, moduleName)(url, syncCallback(), payloadString, { method: 'POST', withCredentials: true });
   }, (e) => _logError('Could not hash the email address: ' + e));
 }
 

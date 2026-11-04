@@ -246,8 +246,9 @@ describe('IdImportLibrary Tests', function () {
     });
   });
 
-  // WebCrypto is only there in a secure context
-  (window.isSecureContext ? describe : () => {})('hashed email', function () {
+  describe('hashed email', function () {
+    // WebCrypto is only there in a secure context
+    if (!window.isSecureContext) return;
     let stubs;
     beforeEach(function () {
       stubs = [
@@ -278,6 +279,17 @@ describe('IdImportLibrary Tests', function () {
         hid: '2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=',
         uids: { id: { 'MOCKID': '1111' } },
       });
+    });
+
+    it('posts to the URL configured when the hash started, even if setConfig changes it meanwhile', async function () {
+      document.body.innerHTML = '<body><input type="text" id="userid" value="test@test.com"></body>';
+      idImportlibrary.setConfig({ url: 'URL1', formElementId: 'userid', debounce: 0 });
+      idImportlibrary.setConfig({ url: 'URL2', formElementId: 'userid', debounce: 0 });
+      for (let i = 0; i < 100 && server.requests.filter(r => ['URL1', 'URL2'].includes(r.url.slice(-4))).length < 2; i++) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      expect(server.requests.map(r => r.url).map(url => url.slice(-4)).filter(url => ['URL1', 'URL2'].includes(url)).sort())
+        .to.deep.equal(['URL1', 'URL2']);
     });
   });
 
