@@ -192,6 +192,31 @@ async function browserProvider() {
             .catch(e => log(`visitInsecureWebsite failed: ${e.message}`));
           await settle('called visitInsecureWebsite');
         }
+        if (await warning()) {
+          // iOS confirms "visit this website" in a native sheet the web context can't see: tap it in Appium's
+          // native context (BrowserStack's real iOS devices run Safari under Appium's XCUITest driver)
+          try {
+            const contexts = await this.browser.getContexts();
+            log(`contexts: ${JSON.stringify(contexts)}`);
+            const web = (await this.browser.getContext());
+            await this.browser.switchContext('NATIVE_APP');
+            const labels = await this.browser.execute('mobile: source', { format: 'description' })
+              .then(src => String(src).match(/(Button|Link)[^\n]{0,120}/g)?.slice(0, 40), e => e.message);
+            log(`native controls: ${JSON.stringify(labels)}`);
+            for (const name of ['Visit Website', 'visit this website', 'Visit']) {
+              const el = await this.browser.$(`~${name}`);
+              if (await el.isExisting()) {
+                await el.click();
+                log(`native: tapped "${name}"`);
+                break;
+              }
+            }
+            await this.browser.switchContext(typeof web === 'string' ? web : web?.id ?? contexts.find(c => c !== 'NATIVE_APP'));
+          } catch (e) {
+            log(`native context failed: ${e.message}`);
+          }
+          await settle('native tap');
+        }
       };
     }
     return instance;
