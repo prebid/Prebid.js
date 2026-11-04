@@ -9,7 +9,6 @@ import {
   flatten,
   generateUUID,
   isArray,
-  isArrayOfNums,
   isEmpty,
   isFn,
   isGptPubadsDefined,
@@ -22,7 +21,8 @@ import {
   mergeDeep,
   transformAdServerTargetingObj,
   uniques,
-  unsupportedBidderMessage
+  unsupportedBidderMessage,
+  validateSizes
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
@@ -117,19 +117,6 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 pbjsInstance.pageViewIdPerBidder = pbjsInstance.pageViewIdPerBidder || new Map<string | null, string>();
-
-function validateSizes(sizes, targLength?: number) {
-  let cleanSizes = [];
-  if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
-    // check if an array of arrays or array of numbers
-    if (sizes.every(sz => isArrayOfNums(sz, 2))) {
-      cleanSizes = sizes;
-    } else if (isArrayOfNums(sizes, 2)) {
-      cleanSizes.push(sizes);
-    }
-  }
-  return cleanSizes;
-}
 
 // synchronize fields between mediaTypes[mediaType] and ortb2Imp[mediaType]
 export function syncOrtb2(adUnit, mediaType) {

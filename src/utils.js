@@ -2,7 +2,7 @@ import { config } from './config.js';
 
 import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
-import { isArray, isFn, isPlainObject, isStr } from './utils/objects.js';
+import { isArray, isArrayOfNums, isFn, isPlainObject, isStr } from './utils/objects.js';
 import * as logging from './utils/logging.js';
 import * as debug from './utils/debug.js';
 
@@ -112,6 +112,22 @@ export function transformAdServerTargetingObj(targeting) {
   } else {
     return '';
   }
+}
+
+/**
+ * Normalize a single size `[w, h]` or an array of sizes `[[w, h], ...]` into an array of sizes.
+ * Returns an empty array if the input is invalid, or (when `targLength` is given) does not have exactly that many elements.
+ */
+export function validateSizes(sizes, targLength) {
+  let cleanSizes = [];
+  if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
+    if (sizes.every(sz => isArrayOfNums(sz, 2))) {
+      cleanSizes = sizes;
+    } else if (isArrayOfNums(sizes, 2)) {
+      cleanSizes.push(sizes);
+    }
+  }
+  return cleanSizes;
 }
 
 /**

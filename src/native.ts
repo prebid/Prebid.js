@@ -3,7 +3,6 @@ import {
   getDefinedParams,
   insertHtmlIntoIframe,
   isArray,
-  isArrayOfNums,
   isBoolean,
   isInteger,
   isNumber,
@@ -12,7 +11,8 @@ import {
   logWarn,
   pick,
   politeTriggerPixel,
-  triggerPixel
+  triggerPixel,
+  validateSizes
 } from './utils.js';
 
 import { auctionManager } from './auctionManager.js';
@@ -594,15 +594,15 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
 
       // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
-        const size = isArray(asset.sizes) && asset.sizes.length > 0 && asset.sizes.every(s => isArrayOfNums(s, 2)) ? asset.sizes[0] : asset.sizes;
-        if (size !== asset.sizes && asset.sizes.length > 1) {
-          logWarn(`${key}.sizes has multiple sizes; only the first one (${size.join('x')}) will be used in the ORTB native request. Extra sizes are dropped:`, asset.sizes.slice(1));
-        }
-        if (!isArrayOfNums(size, 2)) {
+        const sizes = validateSizes(asset.sizes);
+        if (!sizes.length) {
           logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
         } else {
-          ortbAsset.img.w = size[0];
-          ortbAsset.img.h = size[1];
+          if (sizes.length > 1) {
+            logWarn(`${key}.sizes has multiple sizes; only the first one (${sizes[0].join('x')}) will be used in the ORTB native request. Extra sizes are dropped:`, sizes.slice(1));
+          }
+          ortbAsset.img.w = sizes[0][0];
+          ortbAsset.img.h = sizes[0][1];
           delete ortbAsset.img.hmin;
           delete ortbAsset.img.wmin;
         }
