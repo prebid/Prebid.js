@@ -346,32 +346,31 @@ describe('User ID', function () {
     });
 
     it('Check different cookies', async function () {
-      let pubcid1;
-      let pubcid2;
+      // Each auction's id comes from its EIDs rather than from reading the pubcid cookie back, which real Safari
+      // doesn't reliably return on the test page.
+      const pubcidOf = (eids) => {
+        expect(eids).to.have.length(1);
+        expect(eids[0].source).to.equal('pubcid.org');
+        expect(eids[0].uids).to.have.length(1);
+        expect(eids[0].uids[0].atype).to.equal(1);
+        expect(eids[0].uids[0].id).to.be.a('string').and.not.be.empty;
+        return eids[0].uids[0].id;
+      };
 
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
-      const eids1 = await getGlobalEids();
-      pubcid1 = coreStorage.getCookie('pubcid'); // get first cookie
+      const pubcid1 = pubcidOf(await getGlobalEids());
       eraseCookie('pubcid'); // erase cookie
-      expect(eids1).to.eql([{
-        source: 'pubcid.org',
-        uids: [{ id: pubcid1, atype: 1 }]
-      }]);
 
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
-      const eids2 = await getGlobalEids();
-      pubcid2 = coreStorage.getCookie('pubcid'); // get second cookie
-      expect(eids2).to.eql([{
-        source: 'pubcid.org',
-        uids: [{ id: pubcid2, atype: 1 }]
-      }]);
+      const pubcid2 = pubcidOf(await getGlobalEids());
+      // the erased cookie's id wasn't reused
       expect(pubcid1).to.not.equal(pubcid2);
     });
 
