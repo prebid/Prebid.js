@@ -41,14 +41,30 @@ function getAdUnitCode(bid) {
  * no data.
  *
  * `bidViewability` needs GAM/GPT; `bidViewabilityIO` uses IntersectionObserver and needs no
- * ad server. Either is enough.
+ * ad server. Either is enough — but `bidViewabilityIO` only starts observing where the browser
+ * supports IntersectionObserver, so on its own it counts only there.
  *
  * @returns {boolean}
  */
 function isViewabilityMeasured() {
   return (
     config.getConfig('bidViewability')?.enabled === true ||
-    config.getConfig('bidViewabilityIO')?.enabled === true
+    (config.getConfig('bidViewabilityIO')?.enabled === true && clientSupportsIntersectionObserver())
+  );
+}
+
+/**
+ * The same check `modules/bidViewabilityIO.js` makes (`CLIENT_SUPPORTS_IO`) before it registers
+ * anything; that module does not export it. Read on each call rather than once at load.
+ *
+ * @returns {boolean}
+ */
+function clientSupportsIntersectionObserver() {
+  return !!(
+    window.IntersectionObserver &&
+    window.IntersectionObserverEntry &&
+    window.IntersectionObserverEntry.prototype &&
+    'intersectionRatio' in window.IntersectionObserverEntry.prototype
   );
 }
 
@@ -103,8 +119,11 @@ export const spec = {
       // Page- and user-level FPD already reaches the backend through the `ortb2` merge lower
       // down; this is the per-ad-unit half (`adUnit.ortb2Imp`), which Prebid keeps on each
       // bid request and which that merge does not see. Same order the canonical ortbConverter
-      // uses (libraries/ortbConverter/processors/default.js).
-      const imp = mergeDeep({}, bid.ortb2Imp || {}, {
+      // uses (libraries/ortbConverter/processors/default.js). Media sections other than banner
+      // are dropped: on a multi-format ad unit ortb2Imp also carries e.g. `video`, and sending
+      // it would offer formats we do not serve.
+      const { video, native, audio, ...impFpd } = bid.ortb2Imp || {};
+      const imp = mergeDeep({}, impFpd, {
         id: bid.bidId,
         ext: {
           adUnitCode,

@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/engerioBidAdapter.js';
 import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
+import * as sinon from 'sinon';
 
 import { server } from 'test/mocks/xhr.js';
 
@@ -329,6 +331,17 @@ describe('engerioBidAdapter', () => {
       expect(spec.interpretResponse({}, validBidRequest)).to.deep.equal([]);
     });
 
+    it('logs the no-bid reason and returns an empty array', () => {
+      const logInfoStub = sinon.stub(utils, 'logInfo');
+      try {
+        const resp = { body: { id: 'req-001', seatbid: [], nbr: 2, ext: { nobid: 'no eligible campaign' } } };
+        expect(spec.interpretResponse(resp, validBidRequest)).to.deep.equal([]);
+        expect(logInfoStub.calledWith('engerio: no bid', 'no eligible campaign')).to.be.true;
+      } finally {
+        logInfoStub.restore();
+      }
+    });
+
     it('skips bids with empty adm', () => {
       const resp = {
         body: {
@@ -421,6 +434,24 @@ describe('engerioBidAdapter', () => {
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
     });
+
+    // A multi-format ad unit carries its other formats in ortb2Imp too; we serve banner only.
+    it('drops media sections other than banner that ortb2Imp carries', () => {
+      const bid = {
+        ...validBid,
+        ortb2Imp: {
+          video: { mimes: ['video/mp4'], w: 640, h: 480 },
+          native: { request: '{}' },
+          audio: { mimes: ['audio/mp4'] },
+          ext: { data: { placementType: 'in-article' } },
+        },
+      };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0]).to.not.have.any.keys('video', 'native', 'audio');
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+      expect(payload.imp[0].ext.data).to.deep.equal({ placementType: 'in-article' });
+    });
   });
 
   // ── viewability ──────────────────────────────────────────────────────────────
@@ -448,6 +479,35 @@ describe('engerioBidAdapter', () => {
       const request = spec.buildRequests([validBid], bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+    });
+
+    // bidViewabilityIO registers nothing without IntersectionObserver, so no viewable event
+    // can follow; reporting "measured" would turn unmeasured impressions into unviewed ones.
+    describe('without IntersectionObserver', () => {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(window, 'IntersectionObserver').value(undefined);
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('reports viewability as unmeasured when bidViewabilityIO is the only module enabled', () => {
+        config.setConfig({ bidViewabilityIO: { enabled: true } });
+        const request = spec.buildRequests([validBid], bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+      });
+
+      it('still reports viewability as measured when bidViewability is enabled too', () => {
+        config.setConfig({ bidViewability: { enabled: true }, bidViewabilityIO: { enabled: true } });
+        const request = spec.buildRequests([validBid], bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+      });
     });
 
     // The whole point of the flag: Engerio uses it to tell "measured, not viewed" apart from
