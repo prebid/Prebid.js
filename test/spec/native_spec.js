@@ -939,6 +939,17 @@ describe('validate native', function () {
       sinon.assert.calledOnce(logErrorStub);
     });
 
+    it('should not throw on null aspect_ratios entries', () => {
+      const ortb = toOrtbNativeRequest({
+        image: {
+          aspect_ratios: [null, { min_width: 100, min_height: 100, ratio_width: 1, ratio_height: 1 }, null]
+        }
+      });
+      expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin');
+      expect(ortb.assets[0].img.ext).to.eql({ aspectratios: ['1:1'] });
+      sinon.assert.calledOnce(logErrorStub);
+    });
+
     it('should reject multiple sizes when a non-first entry is invalid', () => {
       const ortb = toOrtbNativeRequest({ image: { sizes: [[300, 250], [600, '500']] } });
       expect(ortb.assets[0].img).to.not.have.any.keys('w', 'h');

@@ -574,7 +574,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
           if (asset.aspect_ratios.slice(1).some(ar => ar?.min_width != null || ar?.min_height != null)) {
             logWarn(`${key}.aspect_ratios has multiple entries; only the first entry's min_width/min_height will be used in the ORTB native request. Extra values are dropped:`, asset.aspect_ratios.slice(1));
           }
-          const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
+          const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0] ?? {};
           if (!isInteger(minWidth) || !isInteger(minHeight)) {
             logError('image.aspect_ratios min_width or min_height are invalid: ', minWidth, minHeight);
           } else {
@@ -582,7 +582,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
             ortbAsset.img.hmin = minHeight;
           }
           const aspectRatios = asset.aspect_ratios
-            .filter((ar) => ar.ratio_width && ar.ratio_height)
+            .filter((ar) => ar?.ratio_width && ar?.ratio_height)
             .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
           if (aspectRatios.length > 0) {
             ortbAsset.img.ext = {
