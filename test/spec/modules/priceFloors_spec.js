@@ -2577,7 +2577,7 @@ describe('setting null as rule value', () => {
     handleSetFloorsConfig({ ...basicFloorConfig, floorProvider: 'floorprovider', endpoint: { url: 'http://www.fakefloorprovider.json/' } });
 
     const adUnits = [{
-      cod: 'test_div_1',
+      code: 'test_div_1',
       mediaTypes: { banner: { sizes: [[600, 300]] }, native: {} },
       bids: [{ bidder: 'someBidder', adUnitCode: 'test_div_1' }, { bidder: 'someOtherBidder', adUnitCode: 'test_div_1' }]
     }];
