@@ -41,7 +41,8 @@
     "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint",
-    "test:vitest": "node test/vitest-webpack/build.js && vitest run --config test/vitest-webpack/vitest.config.mjs"
+    "test:vitest": "node test/vitest-webpack/build.js && vitest run --config test/vitest-webpack/vitest.config.mjs",
+    "test:vitest-native": "vitest run --config test/vitest-native/vitest.config.mjs"
   },
   "repository": {
     "type": "git",
@@ -98,6 +99,7 @@
     "chai": "^4.2.0",
     "core-js-pure": "^3.49.0",
     "deep-equal": "^2.0.3",
+    "es-module-lexer": "^2.3.2",
     "eslint": "^9.31.0",
     "eslint-import-resolver-typescript": "^3.10.1",
     "eslint-plugin-chai-friendly": "^1.1.0",
