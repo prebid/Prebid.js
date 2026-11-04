@@ -731,7 +731,7 @@ describe('the price floors module', function () {
       expect(floorData.skipped).to.equal(true);
     });
 
-    it('should should use the skipRate if its not available in the data property ', function() {
+    it('should use the skipRate if it\'s not available in the data property', function() {
       // this will force skipped to be true
       floorConfig.skipRate = 101;
       handleSetFloorsConfig(floorConfig);
