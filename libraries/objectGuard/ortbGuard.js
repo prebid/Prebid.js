@@ -7,7 +7,7 @@ import {
   ORTB_UFPD_PATHS
 } from '../../src/activities/redactor.js';
 import { objectGuard, targetOf, writeProtectRule } from './objectGuard.js';
-import { logError, mergeDeep } from '../../src/utils.js';
+import { logError } from '../../src/utils.js';
 
 function ortb2EnrichRules(isAllowed = isActivityAllowed) {
   return [
@@ -34,6 +34,18 @@ export function ortb2GuardFactory(isAllowed = isActivityAllowed) {
  *
  */
 export const ortb2Guard = ortb2GuardFactory();
+
+const isObject = (value) => value != null && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * `Object.assign` through a guard, so that each property is subject to its rules.
+ */
+function assign(guard, value) {
+  Object.entries(value).forEach(([key, val]) => {
+    // the guard has no safe way to define a `__proto__` key; assigning it would replace the prototype
+    if (key !== '__proto__') guard[key] = val;
+  });
+}
 
 export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
   return function guardOrtb2Fragments(fragments, params) {
@@ -63,7 +75,7 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
           return bidderData ? guardBidder(bidderData) : guard;
         };
         const attach = () => {
-          if (!entry(target, prop)) target[prop] = data;
+          if (pending.get(prop)?.view === view && !entry(target, prop)) target[prop] = data;
           pending.delete(prop);
         };
         const view = new Proxy(guard, {
@@ -97,7 +109,7 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
           if (prop === '__proto__') {
             throw new TypeError('ortb2Fragments.bidder.__proto__ cannot be set');
           }
-          if (newValue == null || typeof newValue !== 'object') {
+          if (!isObject(newValue)) {
             logError(`ortb2Fragments.bidder[bidderCode] must be an object`);
             return true;
           }
@@ -108,11 +120,20 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
           bidderData = bidderData ?? {};
           if (!entry(target, prop)) target[prop] = bidderData;
           pending.delete(prop);
+          assign(guardBidder(bidderData), newValue);
+          return true;
+        },
+        deleteProperty(target, prop) {
+          // a view held from before is of a deleted bidder; writing through it must not bring it back
+          pending.delete(prop);
+          const bidderData = entry(target, prop);
+          if (!bidderData) return Reflect.deleteProperty(target, prop);
           const guarded = guardBidder(bidderData);
-          Object.entries(newValue).forEach(([prop, value]) => {
-            // a `__proto__` key would replace the bidder data's prototype; the guard has no safe way to define it
-            if (prop !== '__proto__') guarded[prop] = value;
+          Object.keys(bidderData).forEach(key => {
+            delete guarded[key];
           });
+          // what the guard would not delete keeps the bidder
+          if (Object.keys(bidderData).length === 0) delete target[prop];
           return true;
         }
       })
@@ -121,13 +142,17 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
     return Object.defineProperties(
       {},
       Object.fromEntries(
-        // disallow overwriting of the top level `global` / `bidder`
+        // `global` / `bidder` cannot be swapped out; assigning them assigns their properties
         Object.entries(guard).map(([prop, obj]) => [
           prop,
           {
             get: () => obj,
             set(rval) {
-              rval !== obj && mergeDeep(obj, rval);
+              if (!isObject(rval)) {
+                logError(`ortb2Fragments.${prop} must be an object`);
+              } else if (rval !== obj) {
+                assign(obj, rval);
+              }
             }
           }
         ])

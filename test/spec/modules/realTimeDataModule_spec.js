@@ -214,6 +214,57 @@ describe('Real time module', function () {
           }, request);
         });
 
+        it('has arrays replaced, not merged, by assignment', (done) => {
+          set(request, { site: { cat: ['b'] } });
+          getBidRequestDataStub.callsFake((req) => {
+            set(req, { site: { cat: ['a'] } });
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(get(request)).to.eql({ site: { cat: ['a'] } });
+            done();
+          }, request);
+        });
+
+        it('does not assign what the guard protects', (done) => {
+          // ACTIVITY_ENRICH_UFPD is denied for these tests
+          set(request, { user: { data: ['b'] } });
+          getBidRequestDataStub.callsFake((req) => {
+            set(req, { user: { data: ['a'] }, site: { id: 1 } });
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(get(request)).to.eql({ user: { data: ['b'] }, site: { id: 1 } });
+            done();
+          }, request);
+        });
+
+        it('can be assigned into through ortb2Fragments', (done) => {
+          set(request, { site: { cat: ['b'] } });
+          getBidRequestDataStub.callsFake((req) => {
+            const value = { ortb2Fragments: {} };
+            set(value, { site: { cat: ['a'] } });
+            req.ortb2Fragments = value.ortb2Fragments;
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(get(request)).to.eql({ site: { cat: ['a'] } });
+            done();
+          }, request);
+        });
+
+        [null, ['value']].forEach(value => {
+          it(`ignores assignment of ${JSON.stringify(value)}`, (done) => {
+            let complete = false;
+            getBidRequestDataStub.callsFake((req) => {
+              req.ortb2Fragments[scope] = value;
+              complete = true;
+            });
+            rtdModule.setBidRequestsData(() => {
+              expect(get(request)).to.eql({ foo: 'bar' });
+              expect(complete).to.be.true;
+              done();
+            }, request);
+          });
+        });
+
         it('can be assigned to itself', (done) => {
           let complete = false;
           getBidRequestDataStub.callsFake((req) => {
@@ -386,6 +437,50 @@ describe('Real time module', function () {
             done();
           }, request);
         });
+      });
+
+      it('are kept when assigning ortb2Fragments.bidder without them', (done) => {
+        const request = { ortb2Fragments: { bidder: { mockBidder: { site: { id: 1 } } } } };
+        getBidRequestDataStub.callsFake((req) => {
+          req.ortb2Fragments.bidder = { other: { site: { id: 2 } } };
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(request.ortb2Fragments.bidder).to.eql({ mockBidder: { site: { id: 1 } }, other: { site: { id: 2 } } });
+          done();
+        }, request);
+      });
+
+      it('are not brought back by writes through views held before they were deleted', (done) => {
+        const request = { ortb2Fragments: { bidder: {} } };
+        getBidRequestDataStub.callsFake((req) => {
+          const held = req.ortb2Fragments.bidder.mockBidder;
+          delete req.ortb2Fragments.bidder.mockBidder;
+          held.site = { id: 1 };
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(request.ortb2Fragments.bidder).to.eql({});
+          done();
+        }, request);
+      });
+
+      it('can be deleted, except for what the guard protects', (done) => {
+        // ACTIVITY_ENRICH_UFPD is denied for these tests
+        const request = {
+          ortb2Fragments: {
+            bidder: {
+              mockBidder: { site: { id: 1 } },
+              protectedBidder: { site: { id: 1 }, user: { data: ['b'] } }
+            }
+          }
+        };
+        getBidRequestDataStub.callsFake((req) => {
+          delete req.ortb2Fragments.bidder.mockBidder;
+          delete req.ortb2Fragments.bidder.protectedBidder;
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(request.ortb2Fragments.bidder).to.eql({ protectedBidder: { user: { data: ['b'] } } });
+          done();
+        }, request);
       });
 
       it('can be created by assigning ortb2Fragments.bidder', (done) => {
