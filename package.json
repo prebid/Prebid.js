@@ -105,6 +105,7 @@
     "eslint-plugin-chai-friendly": "^1.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsdoc": "^50.6.6",
+    "eslint-plugin-mocha": "^11.3.0",
     "execa": "^1.0.0",
     "express": "^4.15.4",
     "faker": "^5.5.3",
