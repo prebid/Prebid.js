@@ -37,7 +37,6 @@ const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 const STORAGE_TYPE_COOKIES = 'cookie';
 
 const pastDateString = new Date(0).toString();
-const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
 
 function normalizeBidId(value) {
   let bidId = value;
@@ -86,6 +85,8 @@ function getFromStorage(submoduleConfig, key) {
 
 function saveOnStorage(submoduleConfig, key, value, hostname) {
   if (key && value) {
+    // counted from this write, not from when the module was loaded
+    const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
     if (submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) {
       storage.setDataInLocalStorage(key, value);
     } else if (submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) {
