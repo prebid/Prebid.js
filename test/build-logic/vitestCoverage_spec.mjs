@@ -20,7 +20,7 @@ const ORIGINAL = [
 
 /**
  * Coverage for ORIGINAL the way the Vitest runner collects it: "precompiled" with a source map, instrumented by
- * babel-plugin-istanbul with that map as its input (as karma.conf.maker.js does), then run once.
+ * babel-plugin-istanbul with that map as its input (as test/webpackTestConfig.js does), then run once.
  */
 function collectCoverage(root, args) {
   const precompiled = babel.transformSync(ORIGINAL, {

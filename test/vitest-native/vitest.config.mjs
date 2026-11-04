@@ -23,9 +23,13 @@ const posix = (p) => p.split(path.sep).join('/');
 const dist = posix(path.relative(root, DIST));
 const specs = nativeSpecFiles({ all: !!process.env.VITEST_NATIVE_ALL }).map(f => `${dist}/${f}`);
 const chunk = process.env.TEST_CHUNK || '1';
+// `vitest` without `run` (`npm run test:vitest-native:watch`, `gulp serve-and-test`) re-runs the specs whose
+// imports change, which needs Vite's file watcher; the bridge's config turns it off for one-shot runs.
+const watching = !process.env.CI && !process.argv.slice(2).some(arg => arg === 'run' || arg === '--run');
 
 export default defineConfig({
   ...bridge,
+  ...(watching ? { server: { ...bridge.server, watch: {} } } : {}),
   publicDir: false,
   plugins: [nativeSpecs({ coverage: !!process.env.VITEST_COVERAGE, specStubs: process.env.VITEST_NATIVE_STUBS !== '0' })],
   resolve: {
@@ -33,7 +37,7 @@ export default defineConfig({
       // webpack resolves bare paths against dist/src (resolve.modules in webpack.conf.js)
       ...DIST_ENTRIES.map(e => e.replace(/\/$/, '')).map(e => ({ find: e, replacement: `${posix(DIST)}/${e}` })),
       { find: /^package\.json$/, replacement: path.join(root, 'package.json') },
-      // karma.conf.maker.js's alias
+      // the unit test webpack config's alias (test/webpackTestConfig.js)
       { find: /^web-bundler\//, replacement: posix(path.join(root, 'web-bundler')) + '/' },
       // faker's CommonJS sources include a file that isn't UTF-8, which Vite's dependency optimizer
       // rejects (webpack reads it); its prebuilt browser bundle is the same library

@@ -24,20 +24,24 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
 
 ### Things that will cost you a wrong answer
 
-- **`--file` iterates; it does not validate.** With `--file`, karma loads only that spec, so nothing
-  about specs leaking global state into each other is exercised — and that is what CI checks. A spec
-  passing alone does not mean the suite passes. Finish with a full `npx gulp test-only`.
-- **`gulp serve-and-test`, and every `gulp serve*`, never exits.** Karma runs with
-  `singleRun: false` there. Do not reach for one as a one-shot check; it will hang until you kill it.
+- **`--file` iterates; it does not validate.** With `--file`, only that spec runs, so nothing about
+  specs leaking global state into each other is exercised — and CI runs every spec. A spec passing
+  alone does not mean the suite passes. Finish with a full `npx gulp test-only`.
+- **`gulp serve-and-test`, and every `gulp serve*`, never exits.** They watch for changes (Vitest
+  runs in watch mode in `serve-and-test`). Do not reach for one as a one-shot check; it will hang
+  until you kill it.
+- **`--watch` on a gulp command line never reaches the task.** gulp passes it to Node, which then
+  re-runs gulp on file changes. To watch the tests, use `npx gulp serve-and-test` or
+  `npm run test:vitest-native:watch`.
 - **`gulp test` is not your gate.** On top of `test-only` it runs `clean`, a repo-wide auto-fixing
   lint, and a second feature variant, and runs the suite twice. Use `test-only`.
-- **`--file` does not narrow the Babel/precompile step.** It selects which specs karma loads. Only
+- **`--file` does not narrow the Babel/precompile step.** It selects which specs run. Only
   `test-only-nobuild` skips compilation.
 - **`--nolint` only does something for `gulp test` and `gulp serve`.** Every `test-only*` task, and
   `test-coverage`, already skip linting.
 - **Use `--no-coverage`, never `--coverage=false`.** The latter parses to the string `"false"`, which
   is truthy, so coverage stays on.
-- **`TEST_CHUNKS`, `TEST_CHUNK`, `TEST_ALL` and `TEST_PAT` are ignored when `--file` is given.** A
+- **`TEST_CHUNKS`, `TEST_CHUNK` and `TEST_PAT` are ignored when `--file` is given.** A
   full run already splits into chunks; you do not need to switch that on.
 - **Never read an aggregate coverage number off a single chunk.** A file is exercised by specs in
   different chunks, so any one chunk understates it — that is what the merge in the table is for.

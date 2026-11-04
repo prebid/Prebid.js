@@ -1,14 +1,3 @@
-window.__karma__.loaded = ((orig) => {
-  // for some reason, tests sometimes run before the DOM is ready
-  return function () {
-    if (document.readyState === "complete") {
-      orig();
-    } else {
-      window.onload = orig;
-    }
-  };
-})(window.__karma__.loaded.bind(window.__karma__));
-
 window.process = {
   env: {
     NODE_ENV: 'production'

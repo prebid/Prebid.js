@@ -17,7 +17,7 @@ function allSpecFiles (pat = '*_spec.js') {
 }
 
 /**
- * The full suite split into chunks the way karmaRunner.js does it.
+ * The full suite split into chunks the way Karma's runner did it (and CI's 8 chunks still are).
  * @param {object} [options]
  * @param {number|string} [options.chunks] number of chunks, or 'MAX' (TEST_CHUNKS, default 8)
  * @param {string} [options.pat] spec file pattern (TEST_PAT)

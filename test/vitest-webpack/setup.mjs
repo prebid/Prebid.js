@@ -1,12 +1,12 @@
-// Runs in the browser before each bundled spec file. Supplies what karma-mocha, karma-chai and
-// karma-sinon supply under Karma: Mocha's BDD globals (on top of Vitest's runner), chai globals,
-// and a `window.__karma__` stub for test/test_deps.js. No spec is changed.
+// Runs in the browser before each bundled spec file. Supplies the globals the specs were written against
+// (karma-mocha, karma-chai and karma-sinon supplied them under Karma): Mocha's BDD interface on top of
+// Vitest's runner, chai's expect/assert/should, and sinon. No spec is changed.
 import * as vitest from 'vitest';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import { commands } from 'vitest/browser';
 
-const DEFAULT_TIMEOUT = 3000; // karma.conf.maker.js: client.mocha.timeout
+const DEFAULT_TIMEOUT = 3000; // Mocha's timeout under Karma (client.mocha.timeout)
 const NO_TIMEOUT = 2 ** 31 - 1;
 // like Mocha, keep the real timers: specs install sinon fake timers on the global object
 const realSetTimeout = globalThis.setTimeout.bind(globalThis);
@@ -18,9 +18,6 @@ globalThis.expect = chai.expect;
 globalThis.assert = chai.assert;
 globalThis.should = chai.should();
 globalThis.sinon = sinon;
-
-// test_deps.js wraps `window.__karma__.loaded`
-globalThis.__karma__ = { loaded() {} };
 
 // The tester page is test/vitest-webpack/context.html, shaped like karma's: Vitest's own is
 // `<html lang="en">` (FPD enrichment turns that into site.content.language) titled "Vitest Browser Tester".
