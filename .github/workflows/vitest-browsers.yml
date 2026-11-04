@@ -141,17 +141,17 @@ jobs:
 
 
   browserstack:
-    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (shard ${{ matrix.shard }}/2)
+    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (shard ${{ matrix.shard }}/4)
     needs: browserstack-check
     if: ${{ needs.browserstack-check.outputs.available == 'true' }}
     strategy:
       fail-fast: false
-      # One BrowserStack session per shard, both shards at once (one at a time took 25 minutes). A run sends no
-      # WebDriver traffic of its own, so vitest.config.mjs keeps each session alive past BrowserStack's 300s idle
-      # limit; with 3 pages at once, a shard takes several minutes on the device.
+      # One BrowserStack session per shard, two at a time (one at a time took 25 minutes). vitest.config.mjs keeps
+      # each session alive past BrowserStack's 300s idle limit, but iOS Safari still closes the page after about
+      # 400 spec files (at 398s in one session, 525s in another), so a shard is a quarter of the suite.
       max-parallel: 2
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
         device: [iPhone 14]
         os-version: ['16']
     runs-on: ubuntu-latest
@@ -193,7 +193,7 @@ jobs:
         uses: ./.github/actions/wait-for-browserstack
         with:
           sessions: 2
-      - name: Run specs, shard ${{ matrix.shard }} of 2
+      - name: Run specs, shard ${{ matrix.shard }} of 4
         timeout-minutes: 15
         env:
           VITEST_BROWSERSTACK: '1'
@@ -201,7 +201,7 @@ jobs:
           VITEST_BROWSER: safari
           VITEST_DEVICE: ${{ matrix.device }}
           VITEST_OS_VERSION: ${{ matrix.os-version }}
-        run: npm run test:vitest -- --shard=${{ matrix.shard }}/2
+        run: npm run test:vitest -- --shard=${{ matrix.shard }}/4
       - name: BrowserStack Local stop
         if: ${{ always() }}
         uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
