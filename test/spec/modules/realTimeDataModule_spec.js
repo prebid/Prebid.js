@@ -286,6 +286,25 @@ describe('Real time module', function () {
         }, request);
       });
 
+      Object.entries({
+        'another bidder': (fragments) => { fragments.bidder.other = fragments.bidder.mockBidder; },
+        'another bidder through spread': (fragments) => { fragments.bidder.other = { ...fragments.bidder.mockBidder }; },
+        'global': (fragments) => { fragments.global.user = fragments.bidder.mockBidder.user; },
+      }).forEach(([t, copy]) => {
+        it(`can be copied to ${t} without sharing data`, (done) => {
+          const user = { foo: 'bar' };
+          const request = { ortb2Fragments: { global: {}, bidder: { mockBidder: { user } } } };
+          getBidRequestDataStub.callsFake((req) => copy(req.ortb2Fragments));
+          rtdModule.setBidRequestsData(() => {
+            const copied = request.ortb2Fragments.bidder.other?.user ?? request.ortb2Fragments.global.user;
+            expect(copied).to.eql({ foo: 'bar' });
+            expect(copied).to.not.equal(user);
+            expect(() => structuredClone(request.ortb2Fragments)).to.not.throw();
+            done();
+          }, request);
+        });
+      });
+
       it('can be created by assigning ortb2Fragments.bidder', (done) => {
         const request = { ortb2Fragments: { bidder: {} } };
         getBidRequestDataStub.callsFake((req) => {
