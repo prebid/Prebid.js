@@ -208,7 +208,7 @@ function mochaOrder() {
 
 function wrapDescribe(vDescribe) {
   return function describe(title, fn) {
-    if (running) return ignoredWhileRunning('describe', title, fn);
+    if (running) return ignoredWhileRunning('describe', title);
     if (typeof fn !== 'function') return vDescribe(title);
     const parent = currentSuite;
     const suite = { title, parent, timeout: parent.timeout, retries: parent.retries, ctx: makeCtx(parent.ctx) };
