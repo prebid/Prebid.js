@@ -141,18 +141,17 @@ jobs:
 
 
   browserstack:
-    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (shard ${{ matrix.shard }}/4)
+    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (shard ${{ matrix.shard }}/2)
     needs: browserstack-check
     if: ${{ needs.browserstack-check.outputs.available == 'true' }}
     strategy:
       fail-fast: false
-      # One BrowserStack session per shard, one shard at a time, so this job never holds more than one of the
-      # account's parallel sessions. A session ends after 300s without WebDriver traffic, which a test run sends
-      # none of, so each shard has to finish within that: 4 shards with 3 pages at once (with 2, the session
-      # ended after about 380 of a shard's 470 files).
-      max-parallel: 1
+      # One BrowserStack session per shard, both shards at once (one at a time took 25 minutes). A run sends no
+      # WebDriver traffic of its own, so vitest.config.mjs keeps each session alive past BrowserStack's 300s idle
+      # limit; with 3 pages at once, a shard takes several minutes on the device.
+      max-parallel: 2
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2]
         device: [iPhone 14]
         os-version: ['16']
     runs-on: ubuntu-latest
@@ -188,12 +187,13 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
-      # Leaves at least one session free for the ES5 e2e job (test.yml).
+      # Waits for 2 free sessions (counting the account's queue), so neither shard takes the last one from the ES5
+      # e2e job (test.yml).
       - name: Wait for BrowserStack
         uses: ./.github/actions/wait-for-browserstack
         with:
           sessions: 2
-      - name: Run specs, shard ${{ matrix.shard }} of 4
+      - name: Run specs, shard ${{ matrix.shard }} of 2
         timeout-minutes: 15
         env:
           VITEST_BROWSERSTACK: '1'
@@ -201,7 +201,7 @@ jobs:
           VITEST_BROWSER: safari
           VITEST_DEVICE: ${{ matrix.device }}
           VITEST_OS_VERSION: ${{ matrix.os-version }}
-        run: npm run test:vitest -- --shard=${{ matrix.shard }}/4
+        run: npm run test:vitest -- --shard=${{ matrix.shard }}/2
       - name: BrowserStack Local stop
         if: ${{ always() }}
         uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6

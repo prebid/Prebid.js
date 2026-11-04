@@ -133,12 +133,33 @@ async function browserProvider() {
       },
     },
   });
-  if (bsDevice) {
-    // Vitest sizes the window to `viewport` through WebDriver's window/rect, which iOS doesn't implement ("Method
-    // has not yet been implemented"). The test iframe still gets the 800x600 viewport.
-    const { providerFactory } = provider;
-    provider.providerFactory = (project) => Object.assign(providerFactory(project), { async setViewport() {} });
-  }
+  const { providerFactory } = provider;
+  provider.providerFactory = (project) => {
+    const instance = providerFactory(project);
+    if (bsDevice) {
+      // Vitest sizes the window to `viewport` through WebDriver's window/rect, which iOS doesn't implement ("Method
+      // has not yet been implemented"). The test iframe still gets the 800x600 viewport.
+      instance.setViewport = async () => {};
+    }
+    // A run sends no WebDriver commands while the tests run, and BrowserStack ends a session after 300s without
+    // any (its idleTimeout maximum), mid-run. So ask the page for its title every minute until the session closes.
+    const { openPage, close } = instance;
+    let keepAlive;
+    instance.openPage = async function (...args) {
+      const result = await openPage.apply(this, args);
+      if (!keepAlive) {
+        keepAlive = setInterval(() => this.browser?.getTitle().catch(() => {}), 60000);
+        keepAlive.unref?.();
+      }
+      return result;
+    };
+    instance.close = async function (...args) {
+      clearInterval(keepAlive);
+      keepAlive = undefined;
+      return close.apply(this, args);
+    };
+    return instance;
+  };
   return provider;
 }
 
