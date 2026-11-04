@@ -521,6 +521,7 @@ describe('gdpr enforcement', function () {
           tcDataMutator: (tcData) => {
             tcData.tcfPolicyVersion = 3;
             tcData.disclosedVendors = { '1': true, '2': true };
+            tcData.vendor.consents['1'] = false;
           }
         });
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
