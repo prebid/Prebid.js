@@ -241,9 +241,21 @@ patmmccann/Prebid.js fork branch). The differences were three specs fixed separa
 (consentUtils), #15980 (pixfuture). Every spec now runs natively; the last ones to move needed fixes in their modules
 or specs (#16011).
 
-Each spec file running in its own page means the suite no longer catches a spec leaking state into a later one, as a
-shared Karma chunk could, except through `window.top`, which all spec files share (sevio's spec once broke oolo's).
-Running with `--sequence.shuffle.files` and a fixed `--sequence.seed` reproduces order-dependent failures.
+### State leaking between spec files
+
+Each spec file runs in its own page and starts with no cookies or storage, so it can't leak state into a later file
+the way a shared Karma chunk could, with one exception: `window.top`, the page every spec file runs inside. sevio's
+spec once hid `window.top.performance.timing`, which broke oolo's. Two checks cover it (#16011):
+
+- **`stateGuard.mjs`, on every run:** `nativeSetup.mjs` snapshots `window.top` before each spec file (its own
+  properties, those of its `document`, `performance`, `history` and `navigator`, and the elements in its body), and
+  the file fails if it leaves anything new behind once its last `after()` hook has run. Delete what the spec or the
+  module added in an `after()` hook (several adapters keep a global on the top window: `ADAGIO`, `sublime`, ...).
+  With `VITEST_PARALLEL`, files running at the same time share `window.top`, so the file reported may not be the one
+  that left it; the property names the module.
+- **`vitest-shuffle.yml`, daily and on demand:** the whole suite in Chromium with the spec files in a random order,
+  one page at a time, for order dependencies the guard can't see (a module's own state, the origin's storage). The
+  job summary has the seed; `npm run test:vitest -- --sequence.shuffle.files --sequence.seed=<seed>` reproduces it.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.
