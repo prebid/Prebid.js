@@ -415,7 +415,8 @@ async function runVitest(options) {
     return browser;
   }) : [{}];
   for (const browserEnv of variants) {
-    const env = Object.assign({TEST_CHUNKS: String(TEST_CHUNKS)}, options.env, browserEnv,
+    // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through; 8 chunks by default
+    const env = Object.assign({TEST_CHUNKS: process.env.TEST_CHUNKS || String(TEST_CHUNKS)}, options.env, browserEnv,
       options.coverage ? {VITEST_COVERAGE: '1'} : {},
       options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {});
     if (options.watch) {

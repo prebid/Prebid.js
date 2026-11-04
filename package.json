@@ -43,7 +43,7 @@
     "lint": "gulp lint",
     "test:vitest": "node test/vitest-webpack/build.js && vitest run --config test/vitest-webpack/vitest.config.mjs",
     "test:vitest-native": "vitest run --config test/vitest-native/vitest.config.mjs",
-    "test:vitest-native:watch": "vitest --config test/vitest-native/vitest.config.mjs"
+    "test:vitest-native:watch": "vitest watch --config test/vitest-native/vitest.config.mjs"
   },
   "repository": {
     "type": "git",

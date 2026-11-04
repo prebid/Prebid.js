@@ -23,9 +23,13 @@ const posix = (p) => p.split(path.sep).join('/');
 const dist = posix(path.relative(root, DIST));
 const specs = nativeSpecFiles({ all: !!process.env.VITEST_NATIVE_ALL }).map(f => `${dist}/${f}`);
 const chunk = process.env.TEST_CHUNK || '1';
+// `vitest` without `run` (`npm run test:vitest-native:watch`, `gulp serve-and-test`) re-runs the specs whose
+// imports change, which needs Vite's file watcher; the bridge's config turns it off for one-shot runs.
+const watching = !process.env.CI && !process.argv.slice(2).some(arg => arg === 'run' || arg === '--run');
 
 export default defineConfig({
   ...bridge,
+  ...(watching ? { server: { ...bridge.server, watch: {} } } : {}),
   publicDir: false,
   plugins: [nativeSpecs({ coverage: !!process.env.VITEST_COVERAGE, specStubs: process.env.VITEST_NATIVE_STUBS !== '0' })],
   resolve: {
