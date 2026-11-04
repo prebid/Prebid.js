@@ -450,20 +450,27 @@ describe('Real time module', function () {
         }, request);
       });
 
-      it('are not brought back by writes through views held before they were deleted', (done) => {
-        const request = { ortb2Fragments: { bidder: {} } };
-        getBidRequestDataStub.callsFake((req) => {
-          const held = req.ortb2Fragments.bidder.mockBidder;
-          delete req.ortb2Fragments.bidder.mockBidder;
-          held.site = { id: 1 };
+      [
+        ['an existing bidder', { mockBidder: { site: { id: 1 } } }],
+        ['a missing bidder', {}],
+      ].forEach(([t, bidder]) => {
+        it(`keeps writes through views of ${t} held across a delete`, (done) => {
+          const request = { ortb2Fragments: { bidder } };
+          getBidRequestDataStub.callsFake((req) => {
+            const held = req.ortb2Fragments.bidder.mockBidder;
+            delete req.ortb2Fragments.bidder.mockBidder;
+            const again = req.ortb2Fragments.bidder.mockBidder;
+            held.site = { id: 2 };
+            again.device = { w: 1 };
+          });
+          rtdModule.setBidRequestsData(() => {
+            expect(request.ortb2Fragments.bidder).to.eql({ mockBidder: { site: { id: 2 }, device: { w: 1 } } });
+            done();
+          }, request);
         });
-        rtdModule.setBidRequestsData(() => {
-          expect(request.ortb2Fragments.bidder).to.eql({});
-          done();
-        }, request);
       });
 
-      it('can be deleted, except for what the guard protects', (done) => {
+      it('have their contents deleted, except for what the guard protects', (done) => {
         // ACTIVITY_ENRICH_UFPD is denied for these tests
         const request = {
           ortb2Fragments: {
@@ -478,7 +485,7 @@ describe('Real time module', function () {
           delete req.ortb2Fragments.bidder.protectedBidder;
         });
         rtdModule.setBidRequestsData(() => {
-          expect(request.ortb2Fragments.bidder).to.eql({ protectedBidder: { user: { data: ['b'] } } });
+          expect(request.ortb2Fragments.bidder).to.eql({ mockBidder: {}, protectedBidder: { user: { data: ['b'] } } });
           done();
         }, request);
       });

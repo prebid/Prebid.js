@@ -75,7 +75,7 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
           return bidderData ? guardBidder(bidderData) : guard;
         };
         const attach = () => {
-          if (pending.get(prop)?.view === view && !entry(target, prop)) target[prop] = data;
+          if (!entry(target, prop)) target[prop] = data;
           pending.delete(prop);
         };
         const view = new Proxy(guard, {
@@ -124,16 +124,13 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
           return true;
         },
         deleteProperty(target, prop) {
-          // a view held from before is of a deleted bidder; writing through it must not bring it back
-          pending.delete(prop);
           const bidderData = entry(target, prop);
           if (!bidderData) return Reflect.deleteProperty(target, prop);
+          // only the contents go, through the guard; the entry stays, so that views of it stay valid
           const guarded = guardBidder(bidderData);
           Object.keys(bidderData).forEach(key => {
             delete guarded[key];
           });
-          // what the guard would not delete keeps the bidder
-          if (Object.keys(bidderData).length === 0) delete target[prop];
           return true;
         }
       })
