@@ -241,19 +241,27 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
 ## CI
 
 `.github/workflows/vitest-tests.yml` is the unit test gate: `test.yml` ("Run tests") calls it on every PR and every
-push to master, and a failed chunk fails the run, as a failed Karma chunk did. It runs:
+push to master, and a failed job fails the run, as a failed Karma chunk did. It runs in two stages, one call each:
 
-- Chromium, 8 chunks each of the default and all-features-disabled variants. The default variant's coverage is
-  combined into the run's coverage report and compared with the base commit's (also computed with Vitest, and
-  cached as `coverage-vitest-<commit>`).
-- Firefox, Safari (macOS), Edge (Windows) and Chrome 113, 8 chunks of the default variant each.
-- A real iPhone on iOS 16 through BrowserStack, where the secrets are available (see [BrowserStack](#browserstack)).
+1. **Chromium** (`stage: chromium`): 2 shards each of the default and all-features-disabled variants. The default
+   variant's coverage is combined into the run's coverage report and compared with the base commit's (also
+   computed with Vitest, and cached as `coverage-vitest-<commit>`).
+2. **Browsers** (`stage: browsers`), started only once the Chromium stage has passed: Firefox (2 shards), Safari
+   on macOS (2), Edge on Windows (1), Chrome 113 (1), and a real iPhone on iOS 16 through BrowserStack in 8
+   chunks, where the secrets are available (see [BrowserStack](#browserstack)).
 
-Chromium runs first. The other browsers and the iPhone start only once every Chromium job has passed, so a
-failure there is reported quickly and doesn't take macOS, Windows and BrowserStack time as well.
+Base branch coverage, when it isn't cached, is also computed only after the Chromium stage passes, so it never
+takes runners from it. The coverage report needs only the Chromium stage, not the browsers.
 
-Each job runs its chunk's native specs and bridge specs (see [Native project](#native-project)). A failure is
-annotated at the failing test's line in the source spec (`githubReporter.mjs`).
+Each job runs its share of the native specs with Vitest's `--shard=<i>/<n>` (balanced by file) and 3 pages at once
+(`VITEST_PARALLEL`); every spec file has a page of its own, so nothing needs Karma's chunks to stay together. Shard
+1 also runs the specs that stay on the webpack bridge (see [Native project](#native-project)). Locally, the whole
+native suite takes about 67 s in Chromium that way, against 147 s one page at a time.
+
+A failure is annotated at the failing test's line in the source spec (`githubReporter.mjs`) as soon as the test
+fails. Vitest's record of past results is cached per branch, so the spec files that failed last time run first and
+their annotations come first. `node_modules` is restored from a cache (per OS, CPU, lockfile and Node version)
+instead of running `npm ci`.
 
 Karma was removed in #16008; the `gulp test*` tasks run Vitest (see the top-level README).
 The e2e tests, the build logic tests and the packed package's type check stay in `browser-tests.yml`.

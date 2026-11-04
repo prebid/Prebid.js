@@ -4,7 +4,8 @@
 // Run `npx gulp precompile`, then `npm run test:vitest-native`. See "Native project" in
 // ../vitest-webpack/README.md. Browser selection (VITEST_BROWSER, ...) and VITEST_PARALLEL work as there.
 //   TEST_CHUNKS/TEST_CHUNK  run the native specs of one Karma chunk, as the bridge does
-//   VITEST_COVERAGE=1       instrument as Karma does; lcov goes to build/coverage/chunks/native/<chunk>
+//   VITEST_COVERAGE=1       instrument as Karma does; lcov goes to build/coverage/chunks/native/<chunk>, or
+//                           native/shard-<i> with `--shard=<i>/<n>`
 //   VITEST_NATIVE_STUBS=0   leave the specs' own namespaces plain ES modules (see plugins.mjs)
 //   VITEST_NATIVE_ALL=1     ignore bridge-specs.json and run every spec (for auditing it)
 //   VITEST_NATIVE_PORT      the port to serve on (default 9878)
@@ -22,7 +23,11 @@ const root = path.resolve(import.meta.dirname, '../..');
 const posix = (p) => p.split(path.sep).join('/');
 const dist = posix(path.relative(root, DIST));
 const specs = nativeSpecFiles({ all: !!process.env.VITEST_NATIVE_ALL }).map(f => `${dist}/${f}`);
-const chunk = process.env.TEST_CHUNK || '1';
+// Labels this run's coverage: the Karma chunk, or with Vitest's `--shard=<i>/<n>` (CI) `shard-<i>`, so the
+// lcov of each CI job lands in its own build/coverage/chunks/native/<label>/ when the jobs' reports are combined.
+const shardArg = process.argv.find((arg, i, all) => arg.startsWith('--shard=') || all[i - 1] === '--shard');
+const shard = shardArg && /(\d+)\/\d+$/.exec(shardArg)?.[1];
+const chunk = process.env.TEST_CHUNK || (shard ? `shard-${shard}` : '1');
 // `vitest` without `run` (`npm run test:vitest-native:watch`, `gulp serve-and-test`) re-runs the specs whose
 // imports change, which needs Vite's file watcher; the bridge's config turns it off for one-shot runs.
 const watching = !process.env.CI && !process.argv.slice(2).some(arg => arg === 'run' || arg === '--run');

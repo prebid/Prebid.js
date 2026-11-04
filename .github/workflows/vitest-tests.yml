@@ -1,15 +1,17 @@
 name: Vitest unit tests
 
-# The unit test gate (#16007): every spec under Vitest Browser Mode, in Karma's 8 chunks. Each chunk runs most
-# specs as native ES modules served by Vite (test/vitest-native) and the rest bundled by Karma's webpack/Babel
-# config (test/vitest-webpack); see test/vitest-webpack/README.md. Called from test.yml.
+# The unit test gate (#16007): every spec under Vitest Browser Mode. Most specs run as native ES modules served by
+# Vite (test/vitest-native), split between jobs with Vitest's `--shard`; the rest are bundled by Karma's
+# webpack/Babel config (test/vitest-webpack). See test/vitest-webpack/README.md. Called from test.yml.
 #
 # Browsers, as Karma's browser_testing.json and BrowserStack jobs had them:
 #   Chromium, default and all-features-disabled builds, with coverage from the default build
 #   Firefox (ubuntu), Safari (macOS, the real browser through safaridriver), Edge (windows), Chrome 113
 #   a real iPhone on iOS 16 through BrowserStack, where the BrowserStack secrets are available (not on fork
 #   PRs, as with Karma's BrowserStack job; their changes are tested there by the master run after merge)
-# Chromium runs first; the other browsers start only if all of its jobs passed.
+# It runs in two stages, one call each from test.yml: `stage: chromium` (Chromium and coverage), then
+# `stage: browsers` (the rest), which test.yml starts only once the Chromium stage has passed. Base branch
+# coverage also waits for the Chromium stage, so neither takes runners from it or runs for a PR that fails it.
 on:
   workflow_call:
     inputs:
@@ -17,6 +19,11 @@ on:
         description: Commit to test (default the triggering ref)
         type: string
         default: ''
+        required: false
+      stage:
+        description: chromium (Chromium in both feature variants, and coverage) or browsers (every other browser)
+        type: string
+        default: chromium
         required: false
       coverage-only:
         description: Only run the coverage build (Chromium, default variant), e.g. for the base branch
@@ -37,12 +44,17 @@ permissions:
   contents: read
 
 jobs:
+  # Two shards per feature variant. Each runs half of the native specs (Vitest's `--shard`, balanced by file)
+  # with 3 pages at once: each spec file runs in its own page, so there is no Karma-style chunk to keep
+  # together, and the whole native suite takes about a minute that way. Shard 1 also runs the few specs that
+  # stay on the webpack bridge (test/vitest-native/bridge-specs.json).
   chromium:
-    name: Vitest Chromium (${{ matrix.variant }}, chunk ${{ matrix.chunk }})
+    name: Vitest Chromium (${{ matrix.variant }}, shard ${{ matrix.shard }}/2)
+    if: ${{ inputs.stage == 'chromium' }}
     strategy:
       fail-fast: false
       matrix:
-        chunk: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2]
         # Like Karma's "Unit tests (all features disabled)" job: the variant is whatever tree the precompile
         # step leaves in dist/src. Coverage comes from the default variant, as it did with Karma.
         variant: ${{ fromJSON(inputs.coverage-only && '["default"]' || '["default", "all-features-disabled"]') }}
@@ -52,19 +64,16 @@ jobs:
     # the coverage output empty instead of failing the run, and test.yml then skips the comparison.
     continue-on-error: ${{ inputs.coverage-only }}
     env:
-      TEST_CHUNKS: '8'
-      TEST_CHUNK: ${{ matrix.chunk }}
+      VITEST_PARALLEL: '3'
       VITEST_COVERAGE: ${{ matrix.variant == 'default' && '1' || '' }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
+      # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/npm-ci
       # ubuntu-latest already has the system libraries Chromium needs (it ships Google Chrome); --with-deps
       # would add an apt-get run of 10s or more, occasionally minutes, to every job.
       - name: Install browser
@@ -80,23 +89,34 @@ jobs:
             .cache/precompile
             .cache/ts
             .cache/babel-loader
-          key: vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
+          key: vitest-${{ matrix.variant }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
           restore-keys: |
-            vitest-${{ matrix.variant }}-${{ matrix.chunk }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
+            vitest-${{ matrix.variant }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
+      # Vitest's record of each spec file's last result and duration: with it, files that failed last time run
+      # first, so their annotations show up on the PR within seconds of the tests starting. Per PR branch,
+      # falling back to the base branch's.
+      - name: Restore Vitest results
+        uses: actions/cache@v5
+        with:
+          path: node_modules/.vite/vitest
+          key: vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-
+            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.base_ref || 'master' }}-
       - name: Precompile (${{ matrix.variant }})
         run: npx gulp ${{ matrix.variant == 'default' && 'precompile' || 'precompile-all-features-disabled' }}
-      - name: Build and run chunk ${{ matrix.chunk }} (webpack bridge)
+      - name: Run native specs, shard ${{ matrix.shard }} of 2
+        run: npm run test:vitest-native -- --shard=${{ matrix.shard }}/2
+      - name: Build and run the bridge specs
+        if: ${{ matrix.shard == 1 && !cancelled() }}
         run: npm run test:vitest
-      - name: Run chunk ${{ matrix.chunk }} (native)
-        if: ${{ !cancelled() }}
-        run: npm run test:vitest-native
       - name: Upload coverage
         if: ${{ matrix.variant == 'default' && !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-${{ matrix.chunk }}
-          # build/coverage/chunks/<chunk>/lcov.info from the bridge (the layout Karma's coverage jobs produced);
-          # build/coverage/chunks/native/<chunk>/lcov.info from the native project
+          name: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-${{ matrix.shard }}
+          # build/coverage/chunks/native/shard-<i>/lcov.info from the native project; in shard 1 also
+          # build/coverage/chunks/<chunk>/lcov.info from the bridge
           path: build/coverage/chunks
           if-no-files-found: error
 
@@ -104,7 +124,7 @@ jobs:
   coverage:
     name: Vitest coverage
     needs: [chromium]
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && inputs.stage == 'chromium' }}
     continue-on-error: ${{ inputs.coverage-only }}
     runs-on: ubuntu-latest
     outputs:
@@ -117,11 +137,10 @@ jobs:
           merge-multiple: true
       - name: Combine coverage results
         run: |
-          # a chunk that failed before writing coverage would otherwise leave a plausible but partial total.
-          # Every chunk has native specs; the bridge only writes a report for a chunk with bridge specs in it.
-          for chunk in 1 2 3 4 5 6 7 8; do
-            if [ ! -s "build/coverage/chunks/native/$chunk/lcov.info" ]; then
-              echo "::error::No coverage for chunk $chunk; not combining a partial result"
+          # a shard that failed before writing coverage would otherwise leave a plausible but partial total.
+          for shard in 1 2; do
+            if [ ! -s "build/coverage/chunks/native/shard-$shard/lcov.info" ]; then
+              echo "::error::No coverage for shard $shard; not combining a partial result"
               exit 1
             fi
           done
@@ -138,36 +157,52 @@ jobs:
 
   # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs.
   # Like Karma, only the default variant runs on these.
-  #
-  # These and the iPhone jobs start only once every Chromium job has passed: Chromium gives the first answer, and
-  # a failure there is almost always one every browser would hit, so the macOS, Windows and BrowserStack runs
-  # it would cost are skipped and the run fails on Chromium's result.
+  # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs, default
+  # variant only. Each job runs its share of the native specs (Vitest's `--shard`) with 3 pages at once; shard 1
+  # also runs the bridge specs. Shard counts follow each browser's speed: about two minutes of tests per job.
   browsers:
-    name: Vitest ${{ matrix.browser }} (chunk ${{ matrix.chunk }})
-    needs: [chromium]
-    if: ${{ !inputs.coverage-only }}
+    name: Vitest ${{ matrix.browser }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
+    if: ${{ inputs.stage == 'browsers' }}
     strategy:
       fail-fast: false
       matrix:
-        chunk: [1, 2, 3, 4, 5, 6, 7, 8]
-        browser: [Firefox, Safari, Edge, Chrome 113]
         include:
-          # Karma: FirefoxHeadless on ubuntu-latest
+          # Karma: FirefoxHeadless on ubuntu-latest. The slowest per spec, so 2 shards.
           - browser: Firefox
+            shard: 1
+            shards: 2
+            runs-on: ubuntu-latest
+            vitest-browser: firefox
+            playwright: firefox
+          - browser: Firefox
+            shard: 2
+            shards: 2
             runs-on: ubuntu-latest
             vitest-browser: firefox
             playwright: firefox
           # Karma: SafariNative on macos-latest. The same installed Safari, through safaridriver.
           - browser: Safari
+            shard: 1
+            shards: 2
+            runs-on: macos-latest
+            vitest-browser: safari
+            safari: true
+          - browser: Safari
+            shard: 2
+            shards: 2
             runs-on: macos-latest
             vitest-browser: safari
             safari: true
           # Karma: EdgeHeadless on windows-latest, which has Microsoft Edge installed
           - browser: Edge
+            shard: 1
+            shards: 1
             runs-on: windows-latest
             channel: msedge
           # Karma: "ChromeNoSandbox 113", the same binary from @puppeteer/browsers
           - browser: Chrome 113
+            shard: 1
+            shards: 1
             runs-on: ubuntu-latest
             chrome-version: 113.0.5672.0
     runs-on: ${{ matrix.runs-on }}
@@ -176,8 +211,7 @@ jobs:
       run:
         shell: bash
     env:
-      TEST_CHUNKS: '8'
-      TEST_CHUNK: ${{ matrix.chunk }}
+      VITEST_PARALLEL: '3'
       VITEST_BROWSER: ${{ matrix.vitest-browser }}
       VITEST_CHANNEL: ${{ matrix.channel }}
     steps:
@@ -185,11 +219,9 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
+      # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/npm-ci
       - name: Install browser
         if: ${{ matrix.playwright }}
         run: npx playwright install --with-deps ${{ matrix.playwright }}
@@ -207,22 +239,32 @@ jobs:
           defaults write com.apple.Safari IncludeDevelopMenu YES
           defaults write com.apple.Safari AllowRemoteAutomation 1
           sudo safaridriver --enable
+      # what the Chromium stage's default variant just saved; Linux only, since the caches hold Linux paths
+      - name: Restore precompile and babel caches
+        if: ${{ runner.os == 'Linux' }}
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            .cache/precompile
+            .cache/ts
+            .cache/babel-loader
+          key: vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
+          restore-keys: |
+            vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
       - name: Precompile
         run: npx gulp precompile
-      - name: Build and run chunk ${{ matrix.chunk }} (webpack bridge)
+      - name: Run native specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
+        run: npm run test:vitest-native -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
+      - name: Build and run the bridge specs
+        if: ${{ matrix.shard == 1 && !cancelled() }}
         run: npm run test:vitest
-      - name: Run chunk ${{ matrix.chunk }} (native)
-        if: ${{ !cancelled() }}
-        run: npm run test:vitest-native
 
   # Safari on a real iPhone on iOS 16, the WebKit floor browserslist resolves to (ios_saf 16.6), through
   # @vitest/browser-webdriverio and BrowserStack Local (#16006). Karma's BrowserStack job ran desktop Safari
   # 16.5 in its place, because karma-browserstack-launcher can't drive real iOS devices.
   browserstack-check:
     name: Check for BrowserStack credentials
-    # after Chromium, like the other browsers
-    needs: [chromium]
-    if: ${{ !inputs.coverage-only }}
+    if: ${{ inputs.stage == 'browsers' }}
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.check.outputs.available }}
@@ -252,11 +294,9 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
+      # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/npm-ci
       - name: Restore precompile and babel caches
         uses: actions/cache@v5
         with:

@@ -19,14 +19,14 @@ const RAW = path.join(ROOT, 'build/vitest-coverage');
 const OUT = path.join(ROOT, 'build/coverage/chunks');
 
 /**
- * Which Karma chunk a raw coverage file belongs to: chunk bundles are named chunks/chunk-<n>_spec;
- * anything else (VITEST_FILES or VITEST_ISOLATE_SPECS runs) is reported as chunk 1, as a single-file
- * Karma run is.
+ * Which Karma chunk a raw coverage file belongs to: chunk bundles are named chunks/chunk-<n>_spec, and the
+ * native project names its files after its chunk or shard (chunk-<n>, chunk-shard-<i>); anything else
+ * (VITEST_FILES or VITEST_ISOLATE_SPECS runs) is reported as chunk 1, as a single-file Karma run is.
  * @param {string} file raw coverage file name
  * @returns {string} chunk directory name
  */
 function chunkOf(file) {
-  const match = /chunk-(\d+)_spec\.json$/.exec(file);
+  const match = /chunk-(\d+|shard-\d+)_spec\.json$/.exec(file);
   return match ? match[1] : '1';
 }
 
