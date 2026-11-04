@@ -1,4 +1,5 @@
-import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
+import { utf8ToBytes } from '../libraries/utf8Utils/utf8Utils.js';
 import { md5 } from '@noble/hashes/legacy.js';
 import { ACTIVITY_ENRICH_UFPD } from '../src/activities/activities.js';
 import { activityParams } from '../src/activities/activityParams.js';

@@ -1,5 +1,5 @@
 import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
-import { utf8ToBytes } from '@noble/hashes/utils.js';
+import { utf8ToBytes } from '../libraries/utf8Utils/utf8Utils.js';
 import { hmac } from '@noble/hashes/hmac.js';
 import { sha512 } from '@noble/hashes/sha2.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
