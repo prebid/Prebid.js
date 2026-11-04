@@ -1,11 +1,1 @@
-{
-  "re-evaluate a module through webpack's require.cache": [
-    "test/spec/libraries/autoplayDetection_spec.js"
-  ],
-  "stub an export with a getter (sinon's .get()), which a module binding can't be": [
-    "test/spec/modules/chromeAiRtdProvider_spec.js"
-  ],
-  "rely on dset, CommonJS under webpack, ignoring a write to a getter-only property; as an ES module it throws": [
-    "test/spec/modules/transfonSecurityRtdProvider_spec.js"
-  ]
-}
+{}

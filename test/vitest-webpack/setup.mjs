@@ -174,11 +174,36 @@ function runNow(fn, { suite, timeout, title, vctx, test, kind }) {
     ctx.test = test ?? (vctx?.task ? testInfo(vctx.task, ctx) : { title, ctx });
     if (kind === 'test') ctx.currentTest = ctx.test;
     arm();
+    // As Mocha does, a done() called before the function returns only settles once it has returned, so an
+    // error thrown after it still fails the test; and a second done() is an error, raised out of band (where
+    // Vitest reports it, failing the run) when the test has already settled.
+    let calling = false;
+    let calls = 0;
+    let early;
+    function done(err) {
+      calls++;
+      const e = calls > 1 ? new Error(`done() called multiple times in ${kind === 'test' ? 'test' : 'hook'} <${title}>`) : err;
+      if (calling) {
+        early = { err: e };
+      } else if (!finished) {
+        finish(e);
+      } else if (e != null && e !== false) {
+        realSetTimeout(() => { throw e; });
+      }
+    }
     try {
       if (fn.length > 0) {
-        const r = fn.call(ctx, (err) => finish(err));
+        calling = true;
+        let r;
+        try {
+          r = fn.call(ctx, done);
+        } finally {
+          calling = false;
+        }
         if (r && typeof r.then === 'function') {
           finish(new Error('Resolution method is overspecified. Specify a callback *or* return a Promise; not both.'));
+        } else if (early) {
+          finish(early.err);
         }
       } else {
         const r = fn.call(ctx);

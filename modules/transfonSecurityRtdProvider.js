@@ -466,7 +466,11 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent, auct
     let removed = false;
     if (data && !late) {
       reqBidsConfigObj[APPLIED] = true;
-      deepSetValue(reqBidsConfigObj, `ortb2Fragments.global.site.ext.data.${TARGETING_KEY}`, getTssQs(data));
+      // Into ortb2Fragments.global itself: the RTD core passes a guarded ortb2Fragments whose `global` is
+      // getter-only, and setting a path from the request (dset assigns every key on it) throws in strict mode.
+      const fragments = reqBidsConfigObj.ortb2Fragments ?? (reqBidsConfigObj.ortb2Fragments = {});
+      fragments.global ??= {};
+      deepSetValue(fragments.global, `site.ext.data.${TARGETING_KEY}`, getTssQs(data));
       if (blockIvt && shouldBlock(data)) {
         const adUnits = blockedAdUnits(reqBidsConfigObj.adUnits);
         reqBidsConfigObj.adUnits = adUnits;

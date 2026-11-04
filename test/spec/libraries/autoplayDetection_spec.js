@@ -1,9 +1,11 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import * as autoplay from '../../../libraries/autoplayDetection/autoplay.js';
 
+// runs the detection again, as loading the library does, with whatever document.createElement now returns
 function loadAutoplay() {
-  delete require.cache[require.resolve('../../../libraries/autoplayDetection/autoplay.js')];
-  return require('../../../libraries/autoplayDetection/autoplay.js');
+  autoplay.startDetection();
+  return autoplay;
 }
 
 describe('autoplay detection', () => {
@@ -12,7 +14,6 @@ describe('autoplay detection', () => {
     if (createElementStub) {
       createElementStub?.restore();
     }
-    delete require.cache[require.resolve('../../../libraries/autoplayDetection/autoplay.js')];
   });
 
   it('does not throw when play() does not return a promise', () => {
