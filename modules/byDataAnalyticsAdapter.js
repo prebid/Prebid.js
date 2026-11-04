@@ -1,7 +1,7 @@
 import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
-import Base64 from 'crypto-js/enc-base64';
-import hmacSHA512 from 'crypto-js/hmac-sha512';
-import enc from 'crypto-js/enc-utf8';
+import { utf8ToBytes } from '@noble/hashes/utils.js';
+import { hmac } from '@noble/hashes/hmac.js';
+import { sha512 } from '@noble/hashes/sha2.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
@@ -185,8 +185,8 @@ ascAdapter.getVisitorData = function (data = {}) {
       return '';
     }
   }
-  function base64url(source) {
-    var encodedSource = Base64.stringify(source);
+  function base64url(bytes) {
+    var encodedSource = btoa(String.fromCharCode.apply(null, bytes));
     encodedSource = encodedSource.replace(/=+$/, '');
     encodedSource = encodedSource.replace(/\+/g, '-');
     encodedSource = encodedSource.replace(/\//g, '_');
@@ -197,12 +197,12 @@ ascAdapter.getVisitorData = function (data = {}) {
       'alg': 'HS256',
       'typ': 'JWT'
     };
-    var stringifiedHeader = enc.parse(JSON.stringify(header));
+    var stringifiedHeader = utf8ToBytes(JSON.stringify(header));
     var encodedHeader = base64url(stringifiedHeader);
-    var stringifiedData = enc.parse(JSON.stringify(data));
+    var stringifiedData = utf8ToBytes(JSON.stringify(data));
     var encodedData = base64url(stringifiedData);
     var token = encodedHeader + '.' + encodedData;
-    var signature = hmacSHA512(token, secretKey);
+    var signature = hmac(sha512, utf8ToBytes(secretKey), utf8ToBytes(token));
     signature = base64url(signature);
     var signedToken = token + '.' + signature;
     return signedToken;
