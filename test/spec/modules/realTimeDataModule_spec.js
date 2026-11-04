@@ -535,7 +535,7 @@ describe('Real time module', function () {
       }, request);
     });
 
-    it('sould place targeting on adUnits', function (done) {
+    it('should place targeting on adUnits', function (done) {
       const auction = {
         adUnitCodes: ['ad1', 'ad2'],
         adUnits: [
