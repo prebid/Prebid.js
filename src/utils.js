@@ -121,7 +121,8 @@ export function transformAdServerTargetingObj(targeting) {
 export function validateSizes(sizes, targLength) {
   let cleanSizes = [];
   if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
-    if (sizes.every(sz => isArrayOfNums(sz, 2))) {
+    // Array.from because every() skips holes in sparse arrays
+    if (Array.from(sizes).every(sz => isArrayOfNums(sz, 2))) {
       cleanSizes = sizes;
     } else if (isArrayOfNums(sizes, 2)) {
       cleanSizes.push(sizes);
