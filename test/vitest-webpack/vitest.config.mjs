@@ -1,6 +1,7 @@
 // Vitest Browser Mode as the runner for bundles produced by Karma's webpack config (see README.md).
 // Run `npx gulp precompile`, then `npm run test:vitest`: it builds the bundles with build.js (env vars
 // documented there) and runs them. Needs a browser once: `npx playwright install chromium`.
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,7 +37,7 @@ const rawCoverage = path.join(root, 'build/vitest-coverage');
 //   VITEST_OS=OS X VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5
 //   VITEST_BROWSER=safari|chrome|firefox|edge  (default safari)
 // Safari on iOS can't load http://localhost through the tunnel (BrowserStack rewrites it to bs-local.com,
-// which resolves to 127.0.0.1), so on a device the server is opened at http://bs-local.com:9876 instead;
+// which resolves to 127.0.0.1), so on a device the server is opened at https://bs-local.com:9876 instead;
 // VITEST_HOST overrides that. Desktop browsers load http://localhost:9876, as Karma's do.
 const browserstack = !!process.env.VITEST_BROWSERSTACK;
 const browserName = process.env.VITEST_BROWSER || (browserstack ? 'safari' : 'chromium');
@@ -44,11 +45,32 @@ const bsDesktop = !!process.env.VITEST_OS;
 const bsDevice = browserstack && !bsDesktop ? process.env.VITEST_DEVICE || 'iPhone 14' : null;
 const bsOsVersion = process.env.VITEST_OS_VERSION || (bsDevice ? '16' : 'Ventura');
 const host = process.env.VITEST_HOST || (bsDevice ? 'bs-local.com' : null);
+// Browsers treat http://localhost as a secure context but not http://bs-local.com, so over plain http a device
+// has no crypto.subtle and drops `Secure` cookies (every SameSite=None cookie). A device run is therefore served
+// over https with a self-signed certificate (VITEST_HTTPS=0 turns that off, VITEST_HTTPS=1 turns it on elsewhere).
+const https = process.env.VITEST_HTTPS ? process.env.VITEST_HTTPS !== '0' : !!bsDevice;
 const bsLabel = bsDevice ? `${bsDevice} iOS ${bsOsVersion}` : `${process.env.VITEST_BROWSER_VERSION || 'latest'} ${process.env.VITEST_OS} ${bsOsVersion}`;
 if (browserstack && !process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
   // no tunnel running: globalSetup.mjs starts one under this name, and stops it after the run
   process.env.BROWSERSTACK_LOCAL_IDENTIFIER = `vitest-${process.pid}-${Date.now()}`;
   process.env.VITEST_BROWSERSTACK_TUNNEL = '1';
+}
+
+// A self-signed certificate for `host` (or localhost), made once with openssl and kept under build/.
+function selfSignedCert() {
+  const dir = path.join(root, 'build/vitest-cert');
+  const name = host || 'localhost';
+  const keyFile = path.join(dir, `${name}.key`);
+  const certFile = path.join(dir, `${name}.crt`);
+  if (!fs.existsSync(certFile)) {
+    fs.mkdirSync(dir, { recursive: true });
+    execFileSync('openssl', [
+      'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '30',
+      '-keyout', keyFile, '-out', certFile,
+      '-subj', `/CN=${name}`, '-addext', `subjectAltName=DNS:${name},DNS:localhost,IP:127.0.0.1`,
+    ], { stdio: 'ignore', env: { ...process.env, MSYS_NO_PATHCONV: '1' } });
+  }
+  return { key: fs.readFileSync(keyFile), cert: fs.readFileSync(certFile) };
 }
 
 const launchOptions = {
@@ -66,7 +88,7 @@ const launchOptions = {
 };
 
 async function browserProvider() {
-  if (!browserstack) return playwright({ launchOptions });
+  if (!browserstack) return playwright({ launchOptions, ...(https ? { contextOptions: { ignoreHTTPSErrors: true } } : {}) });
   const { webdriverio } = await import('@vitest/browser-webdriverio');
   const { BROWSERSTACK_USERNAME: user, BROWSERSTACK_ACCESS_KEY: key } = process.env;
   if (!user || !key) throw new Error('VITEST_BROWSERSTACK needs BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY');
@@ -83,6 +105,8 @@ async function browserProvider() {
     capabilities: {
       // Safari 16 has no WebDriver BiDi; stay on classic WebDriver for every browser
       'wdio:enforceWebDriverClassic': true,
+      // the https server's certificate is self-signed
+      ...(https ? { acceptInsecureCerts: true } : {}),
       ...(bsDevice ? {} : { browserVersion: process.env.VITEST_BROWSER_VERSION || 'latest' }),
       'bstack:options': {
         ...(bsDevice
@@ -127,6 +151,7 @@ export default defineConfig({
     watch: null,
     // Vite answers only requests for localhost unless told otherwise
     ...(host ? { allowedHosts: [host] } : {}),
+    ...(https ? { https: selfSignedCert() } : {}),
   },
   test: {
     // the browser-mode server listens here: karma's port, which many specs hard-code (see setup.mjs)

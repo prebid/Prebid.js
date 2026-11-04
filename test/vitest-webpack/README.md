@@ -210,9 +210,14 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
   stops one with the `browserstack-local` package, unless `BROWSERSTACK_LOCAL_IDENTIFIER` names one that is already
   running (CI starts it with `browserstack/github-actions/setup-local`, as Karma's job does).
 - Safari on iOS can't load `http://localhost` through the tunnel; BrowserStack rewrites it to `bs-local.com`, which
-  resolves to 127.0.0.1. On a device the server is therefore opened at `http://bs-local.com:9876` (`VITEST_HOST`
+  resolves to 127.0.0.1. On a device the server is therefore opened at `https://bs-local.com:9876` (`VITEST_HOST`
   overrides it), and specs that hard-code `http://localhost:9876/context.html` see a different origin there.
   Desktop browsers load `http://localhost:9876`, as Karma's do.
+- Browsers treat `http://localhost` as a secure context but not `http://bs-local.com`: there Safari has no
+  `crypto.subtle` and drops `Secure` cookies (every `SameSite=None` cookie). A device run is therefore served over
+  https with a self-signed certificate that `vitest.config.mjs` makes with `openssl` (kept in `build/vitest-cert`),
+  and the session accepts it (`acceptInsecureCerts`). `VITEST_HTTPS=0` turns that off, `VITEST_HTTPS=1` turns it on
+  for any run (Playwright then ignores the certificate errors).
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run, so the session's idle
   timeout is raised to BrowserStack's maximum (300 s).
