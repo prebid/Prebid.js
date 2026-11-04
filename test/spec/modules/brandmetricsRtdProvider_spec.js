@@ -161,7 +161,8 @@ describe('getBidRequestData', () => {
   });
 
   it('should set targeting keys through the guarded ortb2Fragments the RTD core passes', () => {
-    // as rtdModule passes them to a submodule: `bidder` is a getter-only property of the guard
+    // as rtdModule passes them to a submodule; the module sets a path from the request, through the guard's `bidder`
+    // (which threw in strict mode before #16054)
     const fragments = { global: {}, bidder: {} };
     const ortb2Fragments = guardOrtb2Fragments(fragments, activityParams(MODULE_TYPE_RTD, 'brandmetrics'));
     let error;
