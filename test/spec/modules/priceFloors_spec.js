@@ -777,7 +777,7 @@ describe('the price floors module', function () {
     afterEach(function() {
       exposedAdUnits = undefined;
     });
-    it('should not do floor stuff if no resulting floor object can be resolved for auciton', function () {
+    it('should not do floor stuff if no resulting floor object can be resolved for auction', function () {
       handleSetFloorsConfig({
         ...basicFloorConfig,
         data: undefined
