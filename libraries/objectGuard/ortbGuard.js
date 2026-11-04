@@ -39,27 +39,67 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
   return function guardOrtb2Fragments(fragments, params) {
     fragments.global = fragments.global || {};
     fragments.bidder = fragments.bidder || {};
+    // one guard per object, so that nested guards handed out by it are recognized (and unwrapped) when written back
+    const guards = new WeakMap();
+    const views = new WeakMap();
+    function guardBidder(data) {
+      if (!guards.has(data)) {
+        const guard = guardOrtb2(data, params);
+        guards.set(data, guard);
+        views.set(guard, data);
+      }
+      return guards.get(data);
+    }
+    // bidders that have been read but not written to; they are attached to `fragments.bidder` on first write,
+    // so that reads (including `toJSON`, `then`, etc.) do not create entries
+    const pending = new Map();
+    function pendingBidder(target, prop) {
+      if (!pending.has(prop)) {
+        const data = {};
+        const guard = guardBidder(data);
+        const attach = () => {
+          if (target[prop] == null) target[prop] = data;
+          pending.delete(prop);
+        };
+        const view = new Proxy(guard, {
+          set(t, p, v) {
+            attach();
+            return Reflect.set(guard, p, v);
+          },
+          defineProperty(t, p, desc) {
+            attach();
+            return Reflect.defineProperty(guard, p, desc);
+          }
+        });
+        views.set(view, data);
+        pending.set(prop, { data, view });
+      }
+      return pending.get(prop).view;
+    }
     const guard = {
       global: guardOrtb2(fragments.global, params),
       bidder: new Proxy(fragments.bidder, {
         get(target, prop, receiver) {
-          let bidderData = Reflect.get(target, prop, receiver);
+          const bidderData = Reflect.get(target, prop, receiver);
           if (bidderData == null) {
-            bidderData = target[prop] = {};
+            return typeof prop === 'string' ? pendingBidder(target, prop) : bidderData;
           }
-          return guardOrtb2(bidderData, params);
+          return typeof bidderData === 'object' ? guardBidder(bidderData) : bidderData;
         },
         set(target, prop, newValue, receiver) {
           if (newValue == null || typeof newValue !== 'object') {
             logError(`ortb2Fragments.bidder[bidderCode] must be an object`);
           }
-          let bidderData = Reflect.get(target, prop, receiver);
-          if (bidderData == null) {
-            bidderData = target[prop] = {};
+          let bidderData = Reflect.get(target, prop, receiver) ?? pending.get(prop)?.data;
+          if (bidderData != null && views.get(newValue) === bidderData) {
+            return true;
           }
-          bidderData = guardOrtb2(bidderData, params);
+          bidderData = bidderData ?? {};
+          if (target[prop] == null) target[prop] = bidderData;
+          pending.delete(prop);
+          const guarded = guardBidder(bidderData);
           Object.entries(newValue).forEach(([prop, value]) => {
-            bidderData[prop] = value;
+            guarded[prop] = value;
           });
           return true;
         }

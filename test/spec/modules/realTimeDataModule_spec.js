@@ -236,19 +236,66 @@ describe('Real time module', function () {
       });
     });
 
-    it('can assign new bidder-specific ortb2', (done) => {
-      const request = {
-        ortb2Fragments: {
-          bidder: {}
-        }
-      };
-      getBidRequestDataStub.callsFake((req) => {
-        deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.foo', 'bar');
+    describe('bidder-specific ortb2', () => {
+      it('can be set on a new bidder', (done) => {
+        const request = { ortb2Fragments: { bidder: {} } };
+        getBidRequestDataStub.callsFake((req) => {
+          deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.foo', 'bar');
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(request.ortb2Fragments.bidder.mockBidder).to.eql({ foo: 'bar' });
+          done();
+        }, request);
       });
-      rtdModule.setBidRequestsData(() => {
-        expect(request.ortb2Fragments.bidder.mockBidder).to.eql({ foo: 'bar' });
-        done();
-      }, request);
+
+      it('can be set on an existing bidder without replacing its data with guarded views', (done) => {
+        const user = { foo: 'bar' };
+        const request = { ortb2Fragments: { bidder: { mockBidder: { user } } } };
+        getBidRequestDataStub.callsFake((req) => {
+          deepSetValue(req, 'ortb2Fragments.bidder.mockBidder.user.ext.data.test', 1);
+        });
+        rtdModule.setBidRequestsData(() => {
+          const bidderData = request.ortb2Fragments.bidder.mockBidder;
+          expect(bidderData.user).to.equal(user);
+          expect(bidderData).to.eql({ user: { foo: 'bar', ext: { data: { test: 1 } } } });
+          expect(() => structuredClone(request.ortb2Fragments.bidder)).to.not.throw();
+          done();
+        }, request);
+      });
+
+      it('is not created by reads', (done) => {
+        const request = { ortb2Fragments: { bidder: {} } };
+        getBidRequestDataStub.callsFake((req) => {
+          Object.assign({}, req.ortb2Fragments.bidder.mockBidder);
+          JSON.stringify(req.ortb2Fragments.bidder);
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(Object.keys(request.ortb2Fragments.bidder)).to.eql([]);
+          done();
+        }, request);
+      });
+
+      it('is not created by assigning it to itself', (done) => {
+        const request = { ortb2Fragments: { bidder: {} } };
+        getBidRequestDataStub.callsFake((req) => {
+          req.ortb2Fragments.bidder.mockBidder = req.ortb2Fragments.bidder.mockBidder || {};
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(Object.keys(request.ortb2Fragments.bidder)).to.eql([]);
+          done();
+        }, request);
+      });
+
+      it('can be created by assigning ortb2Fragments.bidder', (done) => {
+        const request = { ortb2Fragments: { bidder: {} } };
+        getBidRequestDataStub.callsFake((req) => {
+          req.ortb2Fragments.bidder = { mockBidder: { site: { ext: { data: { test: 1 } } } } };
+        });
+        rtdModule.setBidRequestsData(() => {
+          expect(request.ortb2Fragments.bidder).to.eql({ mockBidder: { site: { ext: { data: { test: 1 } } } } });
+          done();
+        }, request);
+      });
     });
 
     it('should apply guard to modules, but not affect ortb2Fragments otherwise', (done) => {
