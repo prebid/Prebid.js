@@ -919,7 +919,7 @@ describe('gdpr enforcement', function () {
       expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
 
-    it('should return deny by default when purpose 4 consent is withheld', () => {
+    it('should return deny by default when vendor consent is withheld', () => {
       setEnforcementConfig({});
       Object.assign(gvlids, {
         mockBidder: 123
