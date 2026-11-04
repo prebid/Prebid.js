@@ -118,8 +118,8 @@ desktop Safari 16.5 in its place, because karma-browserstack-launcher can't driv
 
 ```sh
 export BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=...
-VITEST_BROWSERSTACK=1 VITEST_PARALLEL=3 npm run test:vitest -- --shard=1/2           # iPhone 14, iOS 16
-VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/2
+VITEST_BROWSERSTACK=1 VITEST_PARALLEL=3 npm run test:vitest -- --shard=1/4           # iPhone 14, iOS 16
+VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/4
 # a desktop browser instead
 VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
 ```
@@ -138,7 +138,8 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
   certificate didn't work: iOS asks to confirm it in a native sheet, and even past that, no test ran (#16006).
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run. BrowserStack ends a
-  session after at most 300 s of that, so CI splits the suite into 2 shards with 3 pages at once.
+  session after at most 300 s of that, so CI splits the suite into 4 shards with 3 pages at once (with 2, the
+  session ended after about 380 of a shard's 470 files).
 - CI runs the iPhone job wherever the BrowserStack secrets are available. Fork PRs get no secrets, so it doesn't run
   on them; their changes are tested on the iPhone by the run on master after merge. Its shards run one at a time and
   wait until two sessions are free, so they never take the last one from the ES5 e2e job.
@@ -153,7 +154,7 @@ each:
    variant's coverage is combined into the run's coverage report and compared with the base commit's (also computed
    with Vitest, and cached as `coverage-vitest-<commit>`).
 2. **Browsers** (`vitest-browsers.yml`), started only once the Chromium stage has passed: Firefox (2 shards), Safari
-   on macOS (2), Edge on Windows (1), Chrome 113 (1), and the iPhone through BrowserStack (2), where the secrets are
+   on macOS (2), Edge on Windows (1), Chrome 113 (1), and the iPhone through BrowserStack (4), where the secrets are
    available.
 
 Base branch coverage, when it isn't cached, is also computed only after the Chromium stage passes, so it never takes
