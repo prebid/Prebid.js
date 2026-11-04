@@ -939,6 +939,11 @@ describe('validate native', function () {
       sinon.assert.calledOnce(logErrorStub);
     });
 
+    it('should name the asset key in sizes errors', () => {
+      toOrtbNativeRequest({ icon: { sizes: ['bogus'] } });
+      sinon.assert.calledWith(logErrorStub, sinon.match('icon.sizes'));
+    });
+
     it('should not throw on null aspect_ratios entries', () => {
       const ortb = toOrtbNativeRequest({
         image: {

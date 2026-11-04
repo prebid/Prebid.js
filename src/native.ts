@@ -568,16 +568,16 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
       // if min_width and min_height are defined in aspect_ratio, they are preferred
       if (asset.aspect_ratios) {
         if (!isArray(asset.aspect_ratios)) {
-          logError("image.aspect_ratios was passed, but it's not a an array:", asset.aspect_ratios);
+          logError(`${key}.aspect_ratios was passed, but it's not an array:`, asset.aspect_ratios);
         } else if (!asset.aspect_ratios.length) {
-          logError("image.aspect_ratios was passed, but it's empty:", asset.aspect_ratios);
+          logError(`${key}.aspect_ratios was passed, but it's empty:`, asset.aspect_ratios);
         } else {
           if (!sizes.length && asset.aspect_ratios.slice(1).some(ar => ar?.min_width != null || ar?.min_height != null)) {
             logWarn(`${key}.aspect_ratios has multiple entries; only the first entry's min_width/min_height will be used in the ORTB native request. Extra values are dropped:`, asset.aspect_ratios.slice(1));
           }
           const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0] ?? {};
           if (!isInteger(minWidth) || !isInteger(minHeight)) {
-            logError('image.aspect_ratios min_width or min_height are invalid: ', minWidth, minHeight);
+            logError(`${key}.aspect_ratios min_width or min_height are invalid: `, minWidth, minHeight);
           } else {
             ortbAsset.img.wmin = minWidth;
             ortbAsset.img.hmin = minHeight;
@@ -596,7 +596,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
       // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
         if (!sizes.length) {
-          logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
+          logError(`${key}.sizes was passed, but its value is not a size or an array of sizes:`, asset.sizes);
         } else {
           if (sizes.length > 1) {
             logWarn(`${key}.sizes has multiple sizes; only the first one (${sizes[0].join('x')}) will be used in the ORTB native request. Extra sizes are dropped:`, sizes.slice(1));
