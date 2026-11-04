@@ -99,12 +99,22 @@ jobs:
 
   # The unit test gate (#16007), in place of Karma: every browser, both feature variants, and coverage.
   # Like Karma's jobs, it tests the PR's head commit.
+  # Chromium first; the other browsers and base branch coverage start only if it passes.
   vitest:
-    name: "Unit tests"
+    name: "Unit tests (Chromium)"
     needs: checkout
     uses: ./.github/workflows/vitest-tests.yml
     with:
       ref: ${{ needs.checkout.outputs.commit }}
+      stage: chromium
+
+  vitest-browsers:
+    name: "Unit tests (browsers)"
+    needs: [checkout, vitest]
+    uses: ./.github/workflows/vitest-tests.yml
+    with:
+      ref: ${{ needs.checkout.outputs.commit }}
+      stage: browsers
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -193,7 +203,9 @@ jobs:
           path: base-coverage.info
   base-coverage-compute:
     name: Compute base branch coverage
-    needs: [checkout, base-coverage-check]
+    # after the PR's own Chromium stage has passed: it would otherwise take 8 runners from that stage, and
+    # a PR that fails it gets no coverage report anyway
+    needs: [checkout, base-coverage-check, vitest]
     if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' }}
     uses: ./.github/workflows/vitest-tests.yml
     with:
