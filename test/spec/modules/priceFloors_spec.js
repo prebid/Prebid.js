@@ -1315,7 +1315,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(false, sinon.match({ location: 'noData', skipped: true }));
     });
-    it('should dynamically add new schema fileds and functions if added via setConfig', function () {
+    it('should dynamically add new schema fields and functions if added via setConfig', function () {
       let deviceSpoof;
       handleSetFloorsConfig({
         ...basicFloorConfig,
