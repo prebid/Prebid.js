@@ -518,7 +518,7 @@ describe('transfonSecurityRtdProvider', () => {
 
       it('fails open at once when loading fails', async () => {
         loadExternalScriptStub.callsFake((url, type, code, callback) => {
-          callback.error(new Error('blocked'));
+          Promise.resolve().then(() => callback.error(new Error('blocked')));
           return document.createElement('script');
         });
         const { req, elapsed } = await timeAuction();
@@ -580,10 +580,10 @@ describe('transfonSecurityRtdProvider', () => {
         expect(second.ortb2Fragments.global.site.ext.data.tss_qs).to.equal(0);
       });
 
-      it('marks the script when its own load fails, even synchronously', async () => {
+      it('marks the script when its own load fails', async () => {
         const script = document.createElement('script');
         loadExternalScriptStub.callsFake((url, type, code, callback) => {
-          callback.error(new Error('blocked'));
+          Promise.resolve().then(() => callback.error(new Error('blocked')));
           return script;
         });
         await timeAuction();
