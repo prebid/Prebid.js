@@ -140,6 +140,29 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
       expect(result[0].winUrl).to.equal('https://api.imanego.com/event?t=win&b=b1');
     });
 
+    it('marks bids on the publisher\'s own account in meta.billing', function () {
+      const bids = [bidRequest({ key: 'acme' })];
+      const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const impId = req.data.imp[0].id;
+      const bid = (id, ext) => ({ id, impid: impId, price: 1, adm: '<div></div>', crid: id, w: 300, h: 250, mtype: 1, ext });
+
+      const result = spec.interpretResponse({
+        body: {
+          id: 'auction-1',
+          cur: 'USD',
+          seatbid: [
+            { seat: 'smartadserver', bid: [bid('own', { imanego: { billing: 'publisher_account', account: '4812' } })] },
+            { seat: 'adf', bid: [bid('lupon', {})] },
+          ],
+        },
+      }, req);
+
+      const own = result.find(b => b.meta.seat === 'smartadserver');
+      expect(own.meta.billing).to.equal('publisher_account');
+      expect(own.meta.billingAccount).to.equal('4812');
+      expect(result.find(b => b.meta.seat === 'adf').meta.billing).to.equal(undefined);
+    });
+
     it('returns every bid, highest first', function () {
       const bids = [
         bidRequest({ key: 'acme' }),

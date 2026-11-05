@@ -83,6 +83,14 @@ export const converter = ortbConverter({
     }
     // Bids are presented as luponmedia; the seat is kept in meta.
     bidResponse.meta = { ...bidResponse.meta, seat: context.seatbid?.seat };
+    // A partner on the publisher's own account (it pays the publisher directly): meta.billing =
+    // 'publisher_account' and the account, so the page's analytics can keep it apart.
+    if (isStr(bid.ext?.imanego?.billing)) {
+      bidResponse.meta.billing = bid.ext.imanego.billing;
+      if (isStr(bid.ext.imanego.account)) {
+        bidResponse.meta.billingAccount = bid.ext.imanego.account;
+      }
+    }
     // The video nurl is not used as a VAST URL above, so it serves as the win notice when there is
     // no win event.
     const winUrl = bid.ext?.prebid?.events?.win ?? (bidResponse.mediaType === VIDEO ? bid.nurl : undefined);
