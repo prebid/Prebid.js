@@ -952,25 +952,38 @@ describe('Unit: Prebid Module', function () {
 
   describe('getBidResponses', function () {
     it('should return empty obj when last auction Id had no responses', function () {
-      auctionManager.getLastAuctionId = () => 999994;
-      var result = pbjs.getBidResponses();
-      assert.deepEqual(result, {}, 'expected bid responses are returned');
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(999994);
+      try {
+        var result = pbjs.getBidResponses();
+        assert.deepEqual(result, {}, 'expected bid responses are returned');
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
 
     it('should return expected bid responses when not passed an adunitCode', function () {
-      auctionManager.getLastAuctionId = () => 654321;
-      var result = pbjs.getBidResponses();
-      var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, { bids }]) => {
-        const arr = bids.slice();
-        arr.bids = arr;
-        return [code, arr];
-      }));
-      assert.deepEqual(result, compare, 'expected bid responses are returned');
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(654321);
+      try {
+        var result = pbjs.getBidResponses();
+        var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, { bids }]) => {
+          const arr = bids.slice();
+          arr.bids = arr;
+          return [code, arr];
+        }));
+        assert.deepEqual(result, compare, 'expected bid responses are returned');
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
 
     it('should return bid responses for most recent auctionId only', function () {
-      const responses = pbjs.getBidResponses();
-      assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(654321);
+      try {
+        const responses = pbjs.getBidResponses();
+        assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
   });
 
@@ -2435,7 +2448,7 @@ describe('Unit: Prebid Module', function () {
         expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
         expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
-        expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
+        expect(auctionArgs.adUnits[1].ortb2Imp?.ext?.tid).to.not.exist;
       });
 
       it('should notify targeting of the latest auction for each adUnit', async function () {
@@ -3304,7 +3317,7 @@ describe('Unit: Prebid Module', function () {
         }
       });
 
-      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', async function () {
+      it('should allow creation of a fpd.context.pbAdSlot property on a single adUnit from inside the event handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -3364,7 +3377,7 @@ describe('Unit: Prebid Module', function () {
         sinon.assert.calledOnce(bidRequestedSpy);
       });
 
-      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', async function () {
+      it('should allow creation of fpd.context.pbAdSlot on multiple adUnits from inside the event handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -3628,18 +3641,6 @@ describe('Unit: Prebid Module', function () {
       const newCustomPriceBucket = configObj.getConfig('customPriceBucket');
       expect(goodConfig).to.deep.equal(newCustomPriceBucket);
       expect(priceGranularity).to.equal(GRANULARITY_OPTIONS.CUSTOM);
-    });
-  });
-
-  describe('emit event', function () {
-    beforeEach(function () {
-      sinon.stub(auctionManager, 'createAuction').callsFake(function() {
-        return auction;
-      });
-    });
-
-    afterEach(function () {
-      auctionManager.createAuction.restore();
     });
   });
 

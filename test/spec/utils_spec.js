@@ -208,6 +208,34 @@ describe('Utils', function () {
     });
   });
 
+  describe('isArrayOfNums', () => {
+    it('rejects sparse arrays', () => {
+      // eslint-disable-next-line no-sparse-arrays
+      expect(utils.isArrayOfNums([, 250], 2)).to.be.false;
+    });
+  });
+
+  describe('validateSizes', () => {
+    Object.entries({
+      'single size': [[300, 250], [[300, 250]]],
+      'array of sizes': [[[300, 250], [728, 90]], [[300, 250], [728, 90]]],
+      'array with an invalid size': [[[300, 250], [728, '90']], []],
+      // eslint-disable-next-line no-sparse-arrays
+      'sparse array of sizes': [[[300, 250], , [728, 90]], []],
+      'all-holes array': [new Array(2), []],
+      'empty array': [[], []],
+      'non-array': ['300x250', []],
+    }).forEach(([t, [input, expected]]) => {
+      it(`handles ${t}`, () => {
+        expect(utils.validateSizes(input)).to.eql(expected);
+      });
+    });
+
+    it('rejects arrays not matching targLength', () => {
+      expect(utils.validateSizes([[300, 250], [728, 90]], 1)).to.eql([]);
+    });
+  });
+
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
       var sizes = [[728, 90], [970, 90]];
@@ -670,6 +698,26 @@ describe('Utils', function () {
       assert.deepEqual(builtObject, {
         mediaType: 'video',
         comeWithMe: 'ifuwant2live',
+      });
+    });
+
+    it('preserves falsy values, but omits null and undefined', function () {
+      const params = {
+        enabled: false,
+        count: 0,
+        label: '',
+        optional: null,
+        unset: undefined
+      };
+
+      const actual = utils.getDefinedParams(params, [
+        'enabled', 'count', 'label', 'optional', 'unset', 'missing'
+      ]);
+
+      assert.deepEqual(actual, {
+        enabled: false,
+        count: 0,
+        label: ''
       });
     });
   });
@@ -1527,6 +1575,14 @@ describe('memoize', () => {
     mem('arg');
     mem.clear();
     expect(mem('arg')).to.eql(['arg']);
+    expect(fn.callCount).to.equal(2);
+  });
+
+  it('can invalidate specific items with invalidate', () => {
+    const mem = memoize(fn, (a, b) => `${a}:${b}`);
+    mem('arg1', 'arg2');
+    mem.invalidate('arg1', 'arg2');
+    mem('arg1', 'arg2');
     expect(fn.callCount).to.equal(2);
   });
 
