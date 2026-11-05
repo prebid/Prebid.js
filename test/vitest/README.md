@@ -127,6 +127,8 @@ VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_
 # every browsers.json entry with `browserstack` in turn, or the ones named; one session per shard of its `vitest.shards`
 npx gulp test-only-nobuild --browserstack
 npx gulp test-only-nobuild --browserstack --browsers=safari_16,firefox
+# safari_16 runs only the specs its `vitest.specsMatching` selects, unless --file is given
+npx gulp test-only-nobuild --browserstack --browsers=safari_16
 ```
 
 - `VITEST_DEVICE` (default `iPhone 14`) and `VITEST_OS_VERSION` (default `16`) select a real device. BrowserStack
@@ -141,16 +143,17 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16,firefox
   tunnel at all, so a device run is served for `bs-local.com` (`VITEST_HOST` overrides it). Specs that need the
   page's host or URL take it from the page.
 - `http://bs-local.com` is not a secure context (`http://localhost` is), so the specs that need `crypto.subtle`
-  (encypher, byData) define those tests only in a secure context; `VITEST_HOST=bs-local.com` reproduces that
-  locally. Serving the device over https with a self-signed certificate didn't work: iOS asks to confirm it in a
-  native sheet, and even past that, no test ran (#16006).
+  (encypher, byData, uid2, euid, symitri) define those tests only in a secure context; `VITEST_HOST=bs-local.com`
+  reproduces that locally. CI runs those specs (the ones mentioning `isSecureContext` or `subtle`) on desktop Safari
+  16.5 as well, where they do run. Serving the device over https with a self-signed certificate didn't work: iOS
+  asks to confirm it in a native sheet, and even past that, no test ran (#16006).
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run. BrowserStack ends a
   session after at most 300 s of that, mid-run, so `vitest.config.mjs` asks the page for its title every minute to
   keep it alive. Past about 400 spec files in one session, iOS Safari closes the page anyway, so CI runs 4 shards,
   two at a time, with 3 pages at once each.
-- CI runs the iPhone job wherever the BrowserStack secrets are available. Fork PRs get no secrets, so it doesn't run
-  on them; their changes are tested on the iPhone by the run on master after merge. Each shard waits until
+- CI runs the BrowserStack jobs wherever the BrowserStack secrets are available. Fork PRs get no secrets, so they
+  don't run on them; their changes are tested on BrowserStack by the run on master after merge. Each job waits until
   two sessions are free, so they never take the last one from the ES5 e2e job.
 
 ## CI
@@ -163,8 +166,8 @@ each:
    variant's coverage is combined into the run's coverage report and compared with the base commit's (also computed
    with Vitest, and cached as `coverage-vitest-<commit>`).
 2. **Browsers** (`vitest-browsers.yml`), started only once the Chromium stage has passed: Firefox (2 shards), Safari
-   on macOS (2), Edge on Windows (1), Chrome 113 (1), and the iPhone through BrowserStack (4, two at a time), where the secrets are
-   available.
+   on macOS (2), Edge on Windows (1), Chrome 113 (1), and through BrowserStack where the secrets are available: the
+   iPhone (4) and desktop Safari 16.5 for the specs that need a secure context (1), two at a time.
 
 Base branch coverage, when it isn't cached, is also computed only after the Chromium stage passes, so it never takes
 runners from it; it is skipped when the base commit has no Vitest setup. The coverage report needs only the Chromium
@@ -200,7 +203,10 @@ run in has an object of its own:
   (`VITEST_BROWSER`), `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`),
   `chromeVersion` (a Chrome from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on
   BrowserStack, `maxParallel`. GitHub can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most
-  the lowest `maxParallel` at once.
+  the lowest `maxParallel` at once. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
+  job labelled `specsLabel`, only the spec files under `test/spec` whose source matches it, found when the job is
+  defined; with none, there is no job. `gulp test --browserstack` does the same for that entry, unless `--file` is
+  given.
 
 Chromium's own jobs (`vitest-chromium.yml`) aren't in it. `browsers-es5.json` lists, in the same format, the
 BrowserStack browsers for the ES5 build's e2e job (`test.yml`).

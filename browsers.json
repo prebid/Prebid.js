@@ -87,7 +87,11 @@
       "browserName": "safari",
       "browserVersion": "16.5",
       "os": "OS X",
-      "osVersion": "Ventura"
+      "osVersion": "Ventura",
+      "vitest": {
+        "specsMatching": "isSecureContext|\\bsubtle\\b",
+        "specsLabel": "secure-context specs"
+      }
     }
   },
   "iphone_14": {

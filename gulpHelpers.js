@@ -7,6 +7,7 @@ const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
+const {specsMatching} = require('./.github/workflows/scripts/browserMatrices.js');
 
 const BOOLEAN_OPTIONS = [
   'nolint',
@@ -116,7 +117,8 @@ module.exports = {
   },
 
   /**
-   * The Vitest environment for each browsers.json entry that has `browserstack`, or for the ones named in `keys`.
+   * The Vitest environment for each browsers.json entry that has `browserstack`, or for the ones named in `keys`, and
+   * the spec files to run for an entry with `vitest.specsMatching`.
    */
   browserstackTargets(keys = [], browsers = require('./browsers.json')) {
     const available = Object.keys(browsers).filter(key => browsers[key].browserstack);
@@ -129,6 +131,7 @@ module.exports = {
       return {
         key,
         shards: bs.vitest?.shards ?? 1,
+        ...(bs.vitest?.specsMatching ? {files: specsMatching(bs.vitest.specsMatching, __dirname)} : {}),
         // undefined rather than left out, so that the caller's environment can't mix a device with a desktop OS
         env: bs.deviceName
           ? {VITEST_DEVICE: bs.deviceName, VITEST_OS: undefined, VITEST_OS_VERSION: bs.osVersion, VITEST_BROWSER: bs.browserName, VITEST_BROWSER_VERSION: undefined}
