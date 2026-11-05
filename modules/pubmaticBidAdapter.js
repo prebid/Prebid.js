@@ -97,7 +97,7 @@ const converter = ortbConverter({
     setFloorInImp(imp, bidRequest);
     if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
     if (imp.hasOwnProperty('video')) updateVideoImp(mediaTypes?.video, adUnitCode, imp);
-    if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
+    if (imp.hasOwnProperty('native')) updateNativeImp(imp, bidRequest.nativeParams);
     if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, bidRequest, bidRequest?.sizes);
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
