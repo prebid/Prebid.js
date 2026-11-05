@@ -35,6 +35,7 @@ function vitestBrowserstack(browsers, listSpecs = specsMatching) {
       const entry = {
         name,
         browser: bs.browserName,
+        pages: bs.vitest.pages ?? 3,
         ...(bs.deviceName
           ? {device: bs.deviceName, osVersion: bs.osVersion}
           : {os: bs.os, osVersion: bs.osVersion, browserVersion: bs.browserVersion}),
