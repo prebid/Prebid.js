@@ -409,7 +409,7 @@ describe('Unit: Prebid Module', function () {
     it('should return current targeting data for slots', function () {
       pbjs.setConfig({ enableSendAllBids: true });
       const targeting = pbjs.getAdserverTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
-      const expected = getAdServerTargeting(['/19968336/header-bid-tag-0, /19968336/header-bid-tag1']);
+      const expected = getAdServerTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       sinon.assert.match(targeting, expected);
     });
 
@@ -952,25 +952,38 @@ describe('Unit: Prebid Module', function () {
 
   describe('getBidResponses', function () {
     it('should return empty obj when last auction Id had no responses', function () {
-      auctionManager.getLastAuctionId = () => 999994;
-      var result = pbjs.getBidResponses();
-      assert.deepEqual(result, {}, 'expected bid responses are returned');
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(999994);
+      try {
+        var result = pbjs.getBidResponses();
+        assert.deepEqual(result, {}, 'expected bid responses are returned');
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
 
     it('should return expected bid responses when not passed an adunitCode', function () {
-      auctionManager.getLastAuctionId = () => 654321;
-      var result = pbjs.getBidResponses();
-      var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, { bids }]) => {
-        const arr = bids.slice();
-        arr.bids = arr;
-        return [code, arr];
-      }));
-      assert.deepEqual(result, compare, 'expected bid responses are returned');
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(654321);
+      try {
+        var result = pbjs.getBidResponses();
+        var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, { bids }]) => {
+          const arr = bids.slice();
+          arr.bids = arr;
+          return [code, arr];
+        }));
+        assert.deepEqual(result, compare, 'expected bid responses are returned');
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
 
     it('should return bid responses for most recent auctionId only', function () {
-      const responses = pbjs.getBidResponses();
-      assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
+      const getLastAuctionIdStub = sinon.stub(auctionManager, 'getLastAuctionId').returns(654321);
+      try {
+        const responses = pbjs.getBidResponses();
+        assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
+      } finally {
+        getLastAuctionIdStub.restore();
+      }
     });
   });
 
@@ -1021,6 +1034,9 @@ describe('Unit: Prebid Module', function () {
 
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
+      slots.forEach(function(slot) {
+        slot.setTargeting('hb_pb', 'stale');
+      });
 
       pbjs.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
@@ -1032,14 +1048,13 @@ describe('Unit: Prebid Module', function () {
         });
 
         expect(targeting['pos1']).to.equal('750x350'); // non prebid targeting that was set should still be there
-        // ensure that all of the keys with the hb_ prefix have values with length === 0, ignore other keys
-        const hasNoPrebidTargetingValues = Object.keys(targeting).every(targetKey => (targetKey.startsWith('hb_') && targeting[targetKey] === null) || !targetKey.startsWith('hb_'));
-        expect(hasNoPrebidTargetingValues).to.equal(true);
+        // ensure stale prebid targeting is cleared when no bids are returned
+        expect(targeting['hb_pb']).to.equal(null);
       });
     });
 
     it('should set googletag targeting keys to specific slot with customGptSlotMatching', function () {
-      // same ad unit code but two differnt divs
+      // same ad unit code but two different divs
       // we make sure we can set targeting for a specific one with customGptSlotMatching
 
       pbjs.setConfig({
@@ -2433,7 +2448,7 @@ describe('Unit: Prebid Module', function () {
         expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
         expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
-        expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
+        expect(auctionArgs.adUnits[1].ortb2Imp?.ext?.tid).to.not.exist;
       });
 
       it('should notify targeting of the latest auction for each adUnit', async function () {
@@ -2694,7 +2709,7 @@ describe('Unit: Prebid Module', function () {
             });
             const EXPDIR = ['ortb2Imp.banner.expdir', 'mediaTypes.banner.expdir'];
             EXPDIR.forEach(prop => {
-              it(`should make ${prop} avaliable under both ${EXPDIR.join(' and ')}`, async () => {
+              it(`should make ${prop} available under both ${EXPDIR.join(' and ')}`, async () => {
                 au.mediaTypes.banner.sizes = [1, 2];
                 deepSetValue(au, prop, [1, 2]);
                 await runAuction({
@@ -3302,7 +3317,7 @@ describe('Unit: Prebid Module', function () {
         }
       });
 
-      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', async function () {
+      it('should allow creation of a fpd.context.pbAdSlot property on a single adUnit from inside the event handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -3362,7 +3377,7 @@ describe('Unit: Prebid Module', function () {
         sinon.assert.calledOnce(bidRequestedSpy);
       });
 
-      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', async function () {
+      it('should allow creation of fpd.context.pbAdSlot on multiple adUnits from inside the event handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -3851,8 +3866,8 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('returns an empty array when the given adUnit has no bids', function () {
-      const _bidsReceived = getBidResponses()[0];
-      _bidsReceived.cpm = 0;
+      const _bidsReceived = [getBidResponses()[0]];
+      _bidsReceived[0].cpm = 0;
       auction.getBidsReceived = function() { return _bidsReceived; };
 
       const highestCpmBids = pbjs.getHighestCpmBids('/19968336/header-bid-tag-0');

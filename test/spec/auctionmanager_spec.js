@@ -1940,28 +1940,21 @@ describe('auctionmanager.js', function () {
           }]
         });
         adUnits[0].bids.push({ bidder: 'mock-s2s-1' }, { bidder: 'mock-s2s-2' });
-        const s2sAdUnits = deepClone(adUnits);
-        bids.unshift(
-          mockBid({ bidderCode: 'mock-s2s-1', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '1' }),
-          mockBid({ bidderCode: 'mock-s2s-2', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '2' })
-        );
-        Object.assign(s2sAdUnits[0], {
+        const s2sBids = ['1', '2'].map(pbsTid => mockBid({
+          bidderCode: `mock-s2s-${pbsTid}`,
+          src: S2S.SRC,
+          adUnits: deepClone(adUnits),
+          uniquePbsTid: pbsTid
+        }));
+        s2sBids.forEach(bid => Object.assign(bid._ctx.adUnits[0], {
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [300, 600]]
             }
           },
-          bids: [
-            {
-              bidder: 'mock-s2s-1',
-              bid_id: bids[0].requestId
-            },
-            {
-              bidder: 'mock-s2s-2',
-              bid_id: bids[1].requestId
-            }
-          ]
-        });
+          bids: [{ bidder: bid.bidderCode, bid_id: bid.requestId }]
+        }));
+        bids.unshift(...s2sBids);
 
         const pm = runAuction().then(() => {
           const toBids = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).getCalls()[0].args[1];
