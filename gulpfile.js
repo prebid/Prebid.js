@@ -412,10 +412,12 @@ async function runVitest(options) {
     return browser;
   }) : [{}];
   for (const browserEnv of variants) {
-    // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through (specs.js)
+    // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through (specs.js), except with --file;
+    // set to undefined rather than left out, as execa merges process.env back in
     const env = Object.assign({}, options.env, browserEnv,
       options.coverage ? {VITEST_COVERAGE: '1'} : {},
-      options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {});
+      options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {},
+      options.file ? {TEST_CHUNKS: undefined, TEST_CHUNK: undefined, TEST_PAT: undefined} : {});
     // --file narrows the run to those specs (as Vitest file filters); without it, every spec runs
     const files = options.file ? options.file.split(',') : [];
     // in watch mode Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
