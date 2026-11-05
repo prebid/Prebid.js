@@ -2,7 +2,9 @@ import {
   subModuleObj,
   storage,
   _resetStateForTesting,
+  releaseWaitingAuction,
 } from "modules/stackupRtdProvider.js";
+import { getHook } from "src/hook.js";
 import {
   getAuctionEnrichment,
   auctionEnrichmentCount,
@@ -759,7 +761,7 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site.content.data).to.have.length(1);
     });
 
-    it("should release just before core's own auctionDelay timer", function () {
+    it("should wait the whole auctionDelay when params.timeout is longer", function () {
       const clock = sinon.useFakeTimers();
       try {
         const cb = sinon.spy();
@@ -775,13 +777,66 @@ describe("StackUp RTD Provider", function () {
           {},
           100
         );
-        clock.tick(94);
+        clock.tick(99);
         expect(cb.called).to.be.false;
-        clock.tick(1); // 95 ms: 5 ms ahead of core's 100 ms timer
+        clock.tick(1);
         expect(cb.calledOnce).to.be.true;
       } finally {
         clock.restore();
       }
+    });
+
+    it("should register its release hook right after rtdModule's", function () {
+      expect(
+        getHook("startAuction").getHooks({ hook: releaseWaitingAuction }).length
+      ).to.equal(1);
+    });
+
+    it("should release a waiting auction as soon as core lets it go", function () {
+      const cb = sinon.spy();
+      const next = sinon.spy();
+      const req = { auctionId: "a-core", ortb2Fragments: { global: {} } };
+      subModuleObj.init(VALID_CONFIG, {});
+      subModuleObj.getBidRequestData(req, cb, VALID_CONFIG, {}, AUCTION_DELAY);
+      expect(cb.called).to.be.false;
+
+      // core's timer started before ours, so it lets the auction go first
+      releaseWaitingAuction(next, req);
+      expect(cb.calledOnce).to.be.true;
+      expect(next.calledOnceWith(req)).to.be.true;
+      expect(getAuctionEnrichment("a-core").status).to.equal("timedOut");
+    });
+
+    it("should not merge or record an enrichment that arrives after core released the auction", async function () {
+      const cb = sinon.spy();
+      const req = { auctionId: "a-late", ortb2Fragments: { global: {} } };
+      subModuleObj.init(VALID_CONFIG, {});
+      subModuleObj.getBidRequestData(req, cb, VALID_CONFIG, {}, AUCTION_DELAY);
+      releaseWaitingAuction(sinon.spy(), req);
+
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
+      expect(cb.calledOnce).to.be.true;
+      expect(req.ortb2Fragments.global).to.eql({});
+      expect(getAuctionEnrichment("a-late").status).to.equal("timedOut");
+    });
+
+    it("should pass through auctions it is not holding", async function () {
+      subModuleObj.init(VALID_CONFIG, {});
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
+      const cb = sinon.spy();
+      const req = { auctionId: "a-done", ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, cb, VALID_CONFIG, {}, AUCTION_DELAY);
+      expect(getAuctionEnrichment("a-done").status).to.equal("enriched");
+
+      const next = sinon.spy();
+      releaseWaitingAuction(next, req);
+      releaseWaitingAuction(next, { auctionId: "a-unknown" });
+      expect(next.calledTwice).to.be.true;
+      expect(cb.calledOnce).to.be.true;
+      expect(getAuctionEnrichment("a-done").status).to.equal("enriched");
+      expect(getAuctionEnrichment("a-unknown")).to.be.undefined;
     });
   });
 

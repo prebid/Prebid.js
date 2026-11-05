@@ -74,7 +74,7 @@ pbjs.setConfig({
 | `waitForIt`               | recommended | Boolean | Required for the auction to wait for enrichment (with an `auctionDelay`). Without it, only auctions that start once the enrichment has loaded or is cached are enriched |                      `false`                      |
 | `params`                  |  required   | Object  | Module configuration                                                                                                        |                         —                         |
 | `params.pubId`            |  required   | String  | Publisher ID issued by Stack Up                                                                                             |                         —                         |
-| `params.timeout`          |  optional   | Integer | Max ms to hold the auction for the enrichment. Applies only with `waitForIt` and an `auctionDelay`, and is capped at `auctionDelay` minus 5 ms |                       `300`                       |
+| `params.timeout`          |  optional   | Integer | Max ms to hold the auction for the enrichment. Applies only with `waitForIt` and an `auctionDelay`, and is capped at `auctionDelay`              |                       `300`                       |
 | `params.articleIdMode`    |  optional   | String  | How the article ID is determined. `'path'` derives it from the page URL path; `'explicit'` uses `params.articleId` directly |                     `'path'`                      |
 | `params.articleId`        | optional\*  | String  | Article identifier — required when `articleIdMode` is `'explicit'`. Max 512 characters                                      |                         —                         |
 | `params.apiUrl`           |  optional   | String  | Override the Stack Up enrichment endpoint                                                                                   | `'https://api.stackup-ai.com/v1/enrich-ortb-rtd'` |
@@ -86,7 +86,7 @@ pbjs.setConfig({
 
 ## Timing
 
-The module holds an auction only while Prebid waits for it: `waitForIt: true` and an `auctionDelay` above zero. It then releases the auction as soon as the enrichment is merged, or after `params.timeout` ms (capped at `auctionDelay` minus 5 ms, so it always releases before Prebid's own timer). An auction that stops waiting doesn't cancel the request: when the response arrives it is cached and used by the auctions that follow. The request itself gives up after 3 seconds, and isn't retried while the page stays on that article.
+The module holds an auction only while Prebid waits for it: `waitForIt: true` and an `auctionDelay` above zero. It then releases the auction as soon as the enrichment is merged, or after `params.timeout` ms, or when Prebid's own `auctionDelay` timer lets the auction go, whichever comes first. An enrichment that arrives after that is not added to the auction. An auction that stops waiting doesn't cancel the request: when the response arrives it is cached and used by the auctions that follow. The request itself gives up after 3 seconds, and isn't retried while the page stays on that article.
 
 Without `waitForIt`, the module never holds an auction: it enriches the auction if the enrichment is already loaded or cached, and otherwise lets it go as is. This also applies when another provider sets `waitForIt` and Prebid delays the auction for it: enrichment that arrives during that delay is not added.
 

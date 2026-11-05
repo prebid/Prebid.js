@@ -1,6 +1,6 @@
 import { fetch as prebidFetch } from "../src/ajax.ts";
 import { AllConsentData, gdprDataHandler } from "../src/consentHandler.ts";
-import { submodule } from "../src/hook.js";
+import { getHook, submodule } from "../src/hook.js";
 import { StartAuctionOptions } from "../src/prebid.ts";
 import {
   getStorageManager,
@@ -40,9 +40,9 @@ const MODULE_TYPE = "realTimeData";
 const DEFAULT_TIMEOUT = 300;
 // Upper bound for the shared enrichment fetch, independent of any auction.
 const FETCH_TIMEOUT = 3000;
-// How much earlier than core's auctionDelay timer we release a waiting auction.
-// Both timers would otherwise expire together and core's, scheduled first, wins.
-const RELEASE_MARGIN = 5;
+// Runs right after rtdModule's own startAuction hook (priority 20), so it sees
+// every auction the moment core releases it, before the auction is created.
+const RELEASE_HOOK_PRIORITY = 19;
 // In-memory cache entries kept at once: a long single-page-app session can visit
 // many articles, and without a cap the map would grow for the page's lifetime.
 const MAX_MEMORY_CACHE_ENTRIES = 20;
@@ -98,6 +98,9 @@ const state: RtdInternalState = {
   unsaved: false,
   cacheChecked: false,
 };
+
+// Auctions held for the enrichment, by auction ID, each with what releases it.
+const waitingAuctions = new Map<string, () => void>();
 
 export interface StackupRtdParams {
   apiUrl?: string; // default: "https://api.stackup-ai.com/v1/enrich-ortb-rtd"
@@ -620,11 +623,10 @@ function getBidRequestData(
   // would only merge into an auction whose bid requests are already built.
   const coreWaits =
     config.waitForIt === true && isNumber(timeout) && timeout > 0;
-  // Release before core's own timer, so the auction never starts while we still
-  // hold it and our per-auction record exists when the auction is created.
-  const effectiveTimeout = coreWaits
-    ? Math.max(0, Math.min(ownTimeout, timeout - RELEASE_MARGIN))
-    : 0;
+  // Core's timer started before any provider ran: when auctionDelay is the
+  // shorter bound, ours would expire after it, so releaseWaitingAuction releases
+  // the auction as core lets it go.
+  const effectiveTimeout = coreWaits ? Math.min(ownTimeout, timeout) : 0;
 
   // The auction keeps an ID already set on the request, by the publisher or by
   // priceFloors (its requestBids hook runs before the RTD providers). Without
@@ -651,6 +653,9 @@ function getBidRequestData(
     // A released auction no longer needs the fetch; do not keep it alive until then.
     const pending = state.pendingCallbacks.indexOf(onReady);
     if (pending >= 0) state.pendingCallbacks.splice(pending, 1);
+    if (waitingAuctions.get(auctionId) === releaseByCore) {
+      waitingAuctions.delete(auctionId);
+    }
     recordAuctionEnrichment({ auctionId, status, enrichment });
     callback();
   };
@@ -670,6 +675,15 @@ function getBidRequestData(
       return;
     }
     release("enriched", merged);
+  };
+
+  // Core started the auction without us: an enrichment arriving from now on
+  // would reach neither the bid requests nor this auction's record.
+  const releaseByCore = () => {
+    logWarn(
+      "[stackupRtd] auctionDelay ended before the enrichment arrived, auction proceeds clean"
+    );
+    release("timedOut");
   };
 
   // This auction's consent is already known: when it rules enrichment out, do
@@ -718,6 +732,7 @@ function getBidRequestData(
   }
 
   state.pendingCallbacks.push(onReady);
+  waitingAuctions.set(auctionId, releaseByCore);
   // Safety net — always release the auction, no matter what. Only this auction
   // stops waiting; the shared fetch keeps going for the auctions that follow.
   timeoutId = setTimeout(() => {
@@ -983,8 +998,18 @@ function mergeContentExtPublisherFirst(publisher: any, stackup: any): any {
   return merged;
 }
 
+// rtdModule calls this once it stops waiting for its providers, by its
+// auctionDelay timer or because every one of them is done. An auction we still
+// hold was let go by the timer: release it now, before the auction is created,
+// so that a late enrichment can't be merged into it or recorded as enriched.
+export function releaseWaitingAuction(next, reqBidsConfigObj?: StartAuctionOptions) {
+  waitingAuctions.get(reqBidsConfigObj?.auctionId)?.();
+  next.call(this, reqBidsConfigObj);
+}
+
 function registerSubmodule() {
   submodule(MODULE_TYPE, subModuleObj as unknown as RtdProviderSpec<string>);
+  getHook("startAuction").before(releaseWaitingAuction, RELEASE_HOOK_PRIORITY);
 }
 
 registerSubmodule();
@@ -998,6 +1023,7 @@ export function _resetStateForTesting(): void {
   state.fetchAbortController?.abort();
   state.fetchAbortController = null;
   state.pendingCallbacks.length = 0;
+  waitingAuctions.clear();
   resetAuctionEnrichments();
   inMemoryEnrichmentCache.clear();
   state.config = null as any;
