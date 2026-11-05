@@ -32,7 +32,7 @@ It is stricter than Mocha in two places, so a spec can't pass by accident:
   them; ESLint's `mocha/no-nested-tests` reports most of these too.
 - A throw after a synchronous `done()`, and a second `done()`, fail the test.
 
-`context.html`, port 9876 and an 800x600 viewport reproduce Karma's test page, which some specs depend on. On GitHub
+`context.html`, port 9876 (or, like Karma, the next free port) and an 800x600 viewport reproduce Karma's test page, which some specs depend on. On GitHub
 Actions, `githubReporter.mjs` annotates each failure on the failing test's `it(...)` line in the source spec.
 
 ## Run locally
@@ -107,8 +107,8 @@ Notes:
 - Playwright's WebKit (`VITEST_BROWSER=webkit`) is not Safari, so CI doesn't use it. In it, Playwright's screen
   emulation applies only to the top frame, so `screen` in the test iframe reports the real monitor while
   `window.top.screen` reports the emulated one.
-- Vite listens on `localhost`, which on Windows is `::1`. Another server holding `0.0.0.0:9876` makes Firefox, which
-  tries `127.0.0.1` first, reach that one instead. `VITEST_PORT` picks another port.
+- If 9876 is taken (on any address, e.g. by a Karma run), the config moves to the next free port, as Karma did.
+  `VITEST_PORT` sets the port instead; BrowserStack runs always use 9876.
 
 ## BrowserStack
 

@@ -6,7 +6,7 @@
 //                           build/coverage/chunks/shard-<i> with `--shard=<i>/<n>`
 //   VITEST_PARALLEL         run several spec files (pages) at once: as many as its value, or 3 if it is 'true'
 //   VITEST_NATIVE_STUBS=0   leave the specs' own namespaces plain ES modules (see plugins.mjs)
-//   VITEST_PORT             the port to serve on (default 9876, Karma's)
+//   VITEST_PORT             the port to serve on (default: 9876, Karma's, or the next free one as Karma did)
 //
 // Which browser runs the specs, standing in for Karma's matrix (.github/workflows/browser_testing.json):
 //   VITEST_BROWSER=chromium|firefox|webkit  Playwright browser (default chromium)
@@ -29,6 +29,7 @@
 // resolves to 127.0.0.1, so a device run is served for bs-local.com (VITEST_HOST overrides it). That page isn't a
 // secure context, so the specs that need one are skipped there (setup.mjs, insecure-context.json).
 import fs from 'node:fs';
+import net from 'node:net';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { defineConfig } from 'vitest/config';
@@ -69,6 +70,24 @@ const bsDesktop = !!process.env.VITEST_OS;
 const bsDevice = browserstack && !bsDesktop ? process.env.VITEST_DEVICE || 'iPhone 14' : null;
 const bsOsVersion = process.env.VITEST_OS_VERSION || (bsDevice ? '16' : 'Ventura');
 const host = process.env.VITEST_HOST || (bsDevice ? 'bs-local.com' : null);
+
+// Vite's own check covers only the address it binds (localhost), so a server holding the port on the wildcard
+// address goes unnoticed and each browser reaches one server or the other. Listening without a host collides with both.
+function portFree(port) {
+  return new Promise(resolve => {
+    const probe = net.createServer();
+    probe.once('error', () => resolve(false));
+    probe.listen(port, () => probe.close(() => resolve(true)));
+  });
+}
+async function freePort(from) {
+  for (let port = from; port < from + 100; port++) {
+    if (await portFree(port)) return port;
+  }
+  throw new Error(`No free port in ${from}-${from + 99}; set VITEST_PORT`);
+}
+// BrowserStack Local only proxies some ports to iOS devices; 9876 is one
+const port = process.env.VITEST_PORT ? Number(process.env.VITEST_PORT) : browserstack ? 9876 : await freePort(9876);
 const bsLabel = bsDevice ? `${bsDevice} iOS ${bsOsVersion}` : `${process.env.VITEST_BROWSER_VERSION || 'latest'} ${process.env.VITEST_OS} ${bsOsVersion}`;
 if (browserstack && !process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
   // no tunnel running: globalSetup.mjs starts one under this name, and stops it after the run
@@ -201,7 +220,7 @@ export default defineConfig({
   test: {
     // the browser-mode server listens on Karma's port
     api: {
-      port: Number(process.env.VITEST_PORT || 9876),
+      port,
       strictPort: true,
       // bs-local.com resolves to 127.0.0.1, so this still listens on loopback only: keep the browser commands
       // Vitest disables for a non-localhost host
