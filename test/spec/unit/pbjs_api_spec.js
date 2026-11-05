@@ -3642,18 +3642,6 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('emit event', function () {
-    beforeEach(function () {
-      sinon.stub(auctionManager, 'createAuction').callsFake(function() {
-        return auction;
-      });
-    });
-
-    afterEach(function () {
-      auctionManager.createAuction.restore();
-    });
-  });
-
   describe('removeAdUnit', function () {
     it('should remove given adUnit in adUnits array', function () {
       const adUnit1 = {
