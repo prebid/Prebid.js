@@ -240,8 +240,6 @@ export default defineConfig({
     testTimeout: 0,
     hookTimeout: 0,
     isolate: true,
-    // Mocha allows empty describe() blocks; Vitest fails them unless this is set
-    passWithNoTests: true,
     fileParallelism: maxPages > 1,
     ...(maxPages > 1 ? { maxWorkers: maxPages } : {}),
     browser: {
