@@ -41,10 +41,11 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
   `test-coverage`, already skip linting.
 - **Use `--no-coverage`, never `--coverage=false`.** The latter parses to the string `"false"`, which
   is truthy, so coverage stays on.
-- **`TEST_CHUNKS`, `TEST_CHUNK` and `TEST_PAT` are ignored when `--file` is given.** A
-  full run already splits into chunks; you do not need to switch that on.
-- **Never read an aggregate coverage number off a single chunk.** A file is exercised by specs in
-  different chunks, so any one chunk understates it — that is what the merge in the table is for.
+- **`TEST_CHUNKS`, `TEST_CHUNK` and `TEST_PAT` are ignored when `--file` is given.** Without
+  them a run covers the whole suite at once; you do not need to set them.
+- **Never read a file's coverage off a `--file` run.** Other specs exercise it too, so only a
+  whole-suite run (`test-coverage`) gives its real number. The merge in the table also combines
+  per-shard reports, such as the ones CI uploads.
 - **Do not run bare `npx eslint`.** Without `--cache` it *deletes* `.eslintcache`, and rebuilding it
   costs a full pass over the repo. Go through `gulp lint`, which always passes the cache flags. (CI
   runs bare `npx eslint` on purpose: it has no cache to lose, and it keeps `eslint.config.js`
