@@ -4,7 +4,7 @@
 //   TEST_CHUNKS/TEST_CHUNK  run one of the chunks Karma split the suite into (TEST_PAT: the spec file pattern)
 //   VITEST_COVERAGE=1       instrument as Karma did; lcov goes to build/coverage/chunks/<chunk>, or
 //                           build/coverage/chunks/shard-<i> with `--shard=<i>/<n>`
-//   VITEST_PARALLEL         run several spec files (pages) at once: as many as its value if 2 or more, else 3
+//   VITEST_PARALLEL         run several spec files (pages) at once: as many as its value, or 3 if it is 'true'
 //   VITEST_NATIVE_STUBS=0   leave the specs' own namespaces plain ES modules (see plugins.mjs)
 //   VITEST_PORT             the port to serve on (default 9876, Karma's)
 //
@@ -36,6 +36,7 @@ import { playwright } from '@vitest/browser-playwright';
 import GithubSpecReporter from './githubReporter.mjs';
 import { DIST, DIST_ENTRIES, nativeSpecs } from './plugins.mjs';
 import { RAW } from './globalSetup.mjs';
+import { envFlag } from './env.mjs';
 
 // CommonJS; required rather than imported so Vite doesn't bundle it into the config
 const { specFiles } = createRequire(import.meta.url)('./specs.js');
@@ -49,7 +50,7 @@ const specs = specFiles().map(f => `${dist}/${f}`);
 // the time of one and a 4th gained only noise (#16009). Off by default: pages running at once share one origin's
 // cookies and storage, which sequential runs don't.
 const parallel = Number(process.env.VITEST_PARALLEL);
-const maxPages = parallel >= 2 ? parallel : 3;
+const maxPages = parallel >= 1 ? parallel : envFlag('VITEST_PARALLEL') ? 3 : 1;
 
 // Labels this run's coverage: the Karma chunk, or with Vitest's `--shard=<i>/<n>` (CI) `shard-<i>`, so the lcov of
 // each CI job lands in its own build/coverage/chunks/<label>/ when the jobs' reports are combined.
@@ -60,7 +61,7 @@ const chunk = process.env.TEST_CHUNK || (shard ? `shard-${shard}` : '1');
 // change, which needs Vite's file watcher; one-shot runs leave it off.
 const watching = !process.env.CI && !process.argv.slice(2).some(arg => arg === 'run' || arg === '--run');
 
-const browserstack = !!process.env.VITEST_BROWSERSTACK;
+const browserstack = envFlag('VITEST_BROWSERSTACK');
 const browserName = process.env.VITEST_BROWSER || (browserstack ? 'safari' : 'chromium');
 // real Safari on this machine: Playwright only drives its own WebKit build, so this goes through WebdriverIO
 const localSafari = !browserstack && browserName === 'safari';
@@ -168,7 +169,7 @@ export default defineConfig({
   // setup.mjs logs the remote browser's user agent, since BrowserStack picks the exact OS version
   define: { __VITEST_BROWSERSTACK__: JSON.stringify(browserstack) },
   publicDir: false,
-  plugins: [nativeSpecs({ coverage: !!process.env.VITEST_COVERAGE, specStubs: process.env.VITEST_NATIVE_STUBS !== '0' })],
+  plugins: [nativeSpecs({ coverage: envFlag('VITEST_COVERAGE'), specStubs: envFlag('VITEST_NATIVE_STUBS', true), cacheModules: !watching })],
   resolve: {
     alias: [
       // bare paths resolve against dist/src, as webpack's resolve.modules (webpack.conf.js) does for the builds
@@ -222,8 +223,8 @@ export default defineConfig({
     isolate: true,
     // Mocha allows empty describe() blocks; Vitest fails them unless this is set
     passWithNoTests: true,
-    fileParallelism: !!process.env.VITEST_PARALLEL,
-    ...(process.env.VITEST_PARALLEL ? { maxWorkers: maxPages } : {}),
+    fileParallelism: maxPages > 1,
+    ...(maxPages > 1 ? { maxWorkers: maxPages } : {}),
     browser: {
       enabled: true,
       // BrowserStack browsers and local Safari run headed (WebdriverIO refuses headless Safari)

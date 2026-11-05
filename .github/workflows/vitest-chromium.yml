@@ -57,20 +57,13 @@ jobs:
       # would add an apt-get run of 10s or more, occasionally minutes, to every job.
       - name: Install browser
         run: npx playwright install chromium
-      # Restored, these caches take about half off precompile and webpack time (#16009). They are keyed on
-      # each source file's contents, but not on the build system itself (see gulp.precompilation.js): a
-      # change to the Babel config, the local Babel plugins, the precompile code or the dependencies would
-      # otherwise reuse stale output. Those files are hashed into the key, so such a change starts empty.
-      - name: Restore precompile and babel caches
-        uses: actions/cache@v5
+      # takes about half off precompile time (#16009)
+      - name: Restore precompile cache
+        uses: ./.github/actions/precompile-cache
         with:
-          path: |
-            .cache/precompile
-            .cache/ts
-            .cache/babel-loader
-          key: vitest-${{ matrix.variant }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
-          restore-keys: |
-            vitest-${{ matrix.variant }}-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
+          variant: ${{ matrix.variant }}
+          save: 'true'
+          ref: ${{ inputs.ref }}
       # Vitest's record of each spec file's last result and duration: with it, files that failed last time run
       # first, so their annotations show up on the PR within seconds of the tests starting. Per PR branch,
       # falling back to the base branch's.
@@ -96,7 +89,7 @@ jobs:
           if-no-files-found: error
 
 
-  # Combines the chunks the way .github/actions/combine-coverage does, into one lcov file for test.yml.
+  # Combines the chunks into one lcov file for test.yml.
   coverage:
     name: Vitest coverage
     needs: [chromium]

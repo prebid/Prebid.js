@@ -128,7 +128,23 @@ describe('utiqIdSystem', () => {
           } catch (err) {
             reject(err);
           }
-        });
+        }, () => null); // userId passes getStoredValue as a second argument
+      });
+    });
+
+    it('stops polling and resolves without an ID when userId supplies a second callback argument', () => {
+      const response = utiqIdSubmodule.getId({ params: { maxDelayTime: 100 } });
+      expect(response.callback).to.be.a('function');
+
+      return new Promise((resolve, reject) => {
+        response.callback((id) => {
+          try {
+            expect(id).to.be.null;
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        }, () => null);
       });
     });
   });

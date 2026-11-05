@@ -134,29 +134,33 @@ export const utiqIdSubmodule = {
       }
       // Measure elapsed time, not the number of polling callbacks: browsers can throttle timers.
       const delayStep = 50;
-      const result = (callback, startedAt = Date.now()) => {
-        // Check the deadline before storage: an ID arriving after maxDelayTime must not be used.
-        if (Date.now() - startedAt > config.params.maxDelayTime) {
-          logInfo(
-            `${LOG_PREFIX}: No utiq value set after ${config.params.maxDelayTime} max allowed delay time`
-          );
-          callback(null);
-          return;
-        }
-        const data = getUtiqFromStorage();
-        if (!data.utiq) {
-          setTimeout(() => {
-            result(callback, startedAt);
-          }, delayStep);
-        } else {
-          const dataToReturn = { utiq: data.utiq };
-          logInfo(
-            `${LOG_PREFIX}: Returning ID value data of ${JSON.stringify(
-              dataToReturn
-            )}`
-          );
-          callback(dataToReturn);
-        }
+      const result = (callback) => {
+        // userId passes a stored-value getter as the second callback argument.
+        // Keep the start time private so that argument cannot override the deadline.
+        const startedAt = Date.now();
+        const poll = () => {
+          // Check the deadline before storage: an ID arriving after maxDelayTime must not be used.
+          if (Date.now() - startedAt > config.params.maxDelayTime) {
+            logInfo(
+              `${LOG_PREFIX}: No utiq value set after ${config.params.maxDelayTime} max allowed delay time`
+            );
+            callback(null);
+            return;
+          }
+          const data = getUtiqFromStorage();
+          if (!data.utiq) {
+            setTimeout(poll, delayStep);
+          } else {
+            const dataToReturn = { utiq: data.utiq };
+            logInfo(
+              `${LOG_PREFIX}: Returning ID value data of ${JSON.stringify(
+                dataToReturn
+              )}`
+            );
+            callback(dataToReturn);
+          }
+        };
+        poll();
       };
       return { callback: result };
     }

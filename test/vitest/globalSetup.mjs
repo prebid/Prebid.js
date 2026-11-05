@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { envFlag } from './env.mjs';
 
 const require = createRequire(import.meta.url);
 const { writeLcov } = require('./coverage.js');
@@ -40,7 +41,7 @@ export async function setup() {
 
 export async function teardown() {
   if (tunnel) await new Promise(resolve => tunnel.stop(resolve));
-  if (!process.env.VITEST_COVERAGE) return;
+  if (!envFlag('VITEST_COVERAGE')) return;
   const files = await writeLcov({ raw: RAW, out: path.join(ROOT, 'build/coverage/chunks') });
   files.forEach(file => console.log(`coverage: wrote ${path.relative(process.cwd(), file)}`));
 }

@@ -108,17 +108,11 @@ jobs:
           defaults write com.apple.Safari AllowRemoteAutomation 1
           sudo safaridriver --enable
       # what the Chromium stage's default variant just saved; Linux only, since the caches hold Linux paths
-      - name: Restore precompile and babel caches
+      - name: Restore precompile cache
         if: ${{ runner.os == 'Linux' }}
-        uses: actions/cache/restore@v5
+        uses: ./.github/actions/precompile-cache
         with:
-          path: |
-            .cache/precompile
-            .cache/ts
-            .cache/babel-loader
-          key: vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
-          restore-keys: |
-            vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
+          ref: ${{ inputs.ref }}
       - name: Precompile
         run: npx gulp precompile
       - name: Run specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
@@ -164,16 +158,11 @@ jobs:
       # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
       - name: Install dependencies
         uses: ./.github/actions/npm-ci
-      - name: Restore precompile and babel caches
-        uses: actions/cache@v5
+      # what the Chromium stage's default variant just saved
+      - name: Restore precompile cache
+        uses: ./.github/actions/precompile-cache
         with:
-          path: |
-            .cache/precompile
-            .cache/ts
-            .cache/babel-loader
-          key: vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-${{ github.sha }}
-          restore-keys: |
-            vitest-default-${{ hashFiles('package-lock.json', 'babelConfig.js', 'plugins/**', 'gulp.precompilation.js', 'gulpHelpers.js', 'tsconfig.json') }}-
+          ref: ${{ inputs.ref }}
       - name: Precompile
         run: npx gulp precompile
       - name: BrowserStack env setup
