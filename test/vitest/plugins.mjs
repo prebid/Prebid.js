@@ -19,7 +19,6 @@ const DIST_TEST = path.join(DIST, 'test') + path.sep;
 // root-relative URLs
 const STUBS = '/test/vitest/stubs.mjs';
 const HOOK_SETUP = '/dist/src/test/helpers/hookSetup.js';
-const SETTER = '__vitestNativeSet__';
 // what webpack resolves bare specifiers against first (resolve.modules in webpack.conf.js): `src/`, `modules/`,
 // `test/`, ..., and top-level files such as `buildOptions.mjs`
 export const DIST_ENTRIES = fs.existsSync(DIST)
@@ -65,8 +64,7 @@ export function nativeSpecs({ coverage = false, specStubs = true, cacheModules =
       if (!isDist(id) || !/\.m?js$/.test(file(id))) return null;
       await init;
       if (!isTest(id)) {
-        const instrumented = coverage ? instrument(code, id) : code;
-        return { code: addSetter(instrumented, id) ?? instrumented, map: null };
+        return transformSource(code, id, coverage);
       }
       let out = code;
       let prelude = '';
@@ -83,30 +81,76 @@ export function nativeSpecs({ coverage = false, specStubs = true, cacheModules =
   }];
 }
 
-// `export function f` and `export let x` bindings can be reassigned inside their module, and importers see
-// the new value through the live binding. A setter export lets stubs.mjs do that from outside, which is
-// what `sinon.stub(namespace, 'f')` does to a CommonJS exports object.
-function addSetter(code, id) {
-  let exports;
+// babel-plugin-istanbul with coverage, and stubSetter when the module has named exports of its own
+function transformSource(code, id, coverage) {
+  let stubs;
   try {
-    [, exports] = parse(code, id);
+    stubs = parse(code, id)[1].some(e => e.ln && e.n !== 'default');
   } catch {
-    return null;
+    stubs = false;
   }
-  // `export const` can't be reassigned; `let` behaves the same otherwise
-  const locals = [...new Set(exports.filter(e => e.ln && e.n !== 'default').map(e => [e.n, e.ln]).map(JSON.stringify))].map(s => JSON.parse(s));
-  if (!locals.length) return null;
-  const cases = locals.map(([n, ln]) => `case ${JSON.stringify(n)}: ${ln} = v; return true;`).join(' ');
-  // (padded to the same length, so the source map still lines up; not only at line starts, as instrumented
-  // code with retainLines puts several statements on a line)
-  return code.replace(/(?<![\w$.])export const /g, 'export let   ') +
-    `\nexport function ${SETTER}(n, v) { switch (n) { ${cases} } return false; }\n`;
+  if (!coverage && !stubs) return null;
+  const plugins = stubs ? [[stubSetter, { self: '/' + path.relative(ROOT, file(id)).split(path.sep).join('/') }]] : [];
+  if (coverage) plugins.push(istanbul(id));
+  const result = require('@babel/core').transformSync(code, {
+    filename: file(id),
+    configFile: false,
+    babelrc: false,
+    sourceType: 'module',
+    retainLines: true,
+    sourceMaps: true,
+    // Vite chains the map onto the precompile's
+    inputSourceMap: false,
+    plugins,
+  });
+  return { code: result.code, map: result.map };
+}
+
+/**
+ * Babel plugin that lets stubs.mjs reassign a module's named exports from outside, as `sinon.stub(namespace,
+ * 'f')` does to a CommonJS exports object; importers see the new value through the live binding. It registers
+ * a setter under the module's namespace (imported from the module itself, at `self`), rather than exporting
+ * one, so the namespace's keys stay the same. Exported `const`s become `let`s; imports can't be reassigned.
+ */
+export function stubSetter({ types: t, template }) {
+  return {
+    visitor: {
+      Program: {
+        // ahead of istanbul's enter, which instruments the body and adds its own bindings
+        enter(p, state) {
+          state.cases = [];
+          for (const { node } of p.get('body')) {
+            if (node.type !== 'ExportNamedDeclaration' || node.source) continue;
+            const names = node.declaration
+              ? Object.keys(t.getOuterBindingIdentifiers(node.declaration)).map(n => [n, n])
+              : node.specifiers.map(s => [s.exported.name ?? s.exported.value, s.local.name]);
+            for (const [exported, local] of names) {
+              const binding = exported !== 'default' && p.scope.getOwnBinding(local);
+              if (!binding || !['var', 'let', 'const', 'hoisted'].includes(binding.kind)) continue;
+              if (binding.kind === 'const') binding.path.parentPath.node.kind = 'let';
+              state.cases.push([exported, local]);
+            }
+          }
+        },
+        // after istanbul's enter, so the setter isn't instrumented
+        exit(p, state) {
+          if (!state.cases.length) return;
+          const self = p.scope.generateUid('vitestSelf');
+          const [n, v] = [p.scope.generateUid('n'), p.scope.generateUid('v')];
+          const cases = state.cases.map(([exported, local]) => `case ${JSON.stringify(exported)}: ${local} = ${v}; return true;`).join(' ');
+          p.unshiftContainer('body', template.statements.ast(`
+            import * as ${self} from ${JSON.stringify(state.opts.self)};
+            (globalThis.__vitestNativeSetters ??= new WeakMap()).set(${self}, (${n}, ${v}) => { switch (${n}) { ${cases} } return false; });
+          `));
+        },
+      },
+    },
+  };
 }
 
 // What Karma's webpack config did with coverage on: babel-plugin-istanbul over the precompiled sources, with
 // their source maps, so coverage.js can map the counters back to the original files.
-function instrument(code, id) {
-  const babel = require('@babel/core');
+function istanbul(id) {
   let inputSourceMap;
   try {
     // with absolute sources, as webpack's extractSourceMap handed them to babel-loader under Karma
@@ -114,14 +158,7 @@ function instrument(code, id) {
     const base = path.resolve(path.dirname(file(id)), map.sourceRoot ?? '');
     inputSourceMap = { ...map, sourceRoot: undefined, sources: map.sources.map(s => path.resolve(base, s)) };
   } catch {}
-  return babel.transformSync(code, {
-    filename: file(id),
-    configFile: false,
-    babelrc: false,
-    sourceType: 'module',
-    retainLines: true,
-    plugins: [['babel-plugin-istanbul', { cwd: DIST, exclude: ['test/**', 'buildOptions.mjs'], inputSourceMap }]],
-  }).code;
+  return ['babel-plugin-istanbul', { cwd: DIST, exclude: ['test/**', 'buildOptions.mjs'], inputSourceMap }];
 }
 
 // `require('x')` at a module's top level becomes `await import('x')` in place, keeping evaluation order

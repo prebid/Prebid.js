@@ -1,12 +1,13 @@
 // Runtime half of plugins.mjs, loaded in the browser.
-const SETTER = '__vitestNativeSet__';
 // on the global object, so they are shared even if this file is loaded under two URLs (setup.mjs imports it
 // relatively, transformed code by its root-relative URL)
 const facades = globalThis.__vitestNativeFacades ??= new WeakMap();
+// filled by the modules themselves (stubSetter in plugins.mjs), keyed by their namespace
+const setters = globalThis.__vitestNativeSetters ??= new WeakMap();
 
 /**
  * A stand-in for an ES module namespace that sinon can stub, as it can a CommonJS exports object. Reads go
- * to the module's live bindings; writes reassign them through the setter plugins.mjs adds to the module,
+ * to the module's live bindings; writes reassign them through the setter the module registers,
  * so every importer, not just this one, sees the stub (and its restore). One facade per namespace, so a
  * stub made through one importer's facade can be restored through another's.
  * @param {object} ns module namespace
@@ -17,17 +18,21 @@ export function stubbable(ns, fallback) {
   if (ns == null || typeof ns !== 'object' || ns[Symbol.toStringTag] !== 'Module') return ns;
   let facade = facades.get(ns);
   if (facade) return facade;
-  const set = typeof ns[SETTER] === 'function' ? ns[SETTER] : () => false;
   // keys added by test code (e.g. `sinon.sandbox = ...` on a required namespace) live here
   const extra = Object.create(null);
-  const has = (k) => typeof k === 'string' && k in ns && k !== SETTER;
+  const has = (k) => typeof k === 'string' && k in ns;
+  // looked up on use: in an import cycle, the facade can exist before the module has run
+  const set = (k, v) => {
+    if (!setters.get(ns)?.(k, v)) throw new TypeError(`Cannot stub '${String(k)}': it is not a reassignable export`);
+    return true;
+  };
   const target = {};
   facade = new Proxy(target, {
     get: (t, k) => has(k) ? ns[k] : k in extra ? extra[k] : fallback != null && k in Object(fallback) ? fallback[k] : t[k],
     has: (t, k) => has(k) || k in extra || k in t,
     set(t, k, v) {
       if (has(k)) {
-        if (!set(k, v)) throw new TypeError(`Cannot stub '${String(k)}': it is not a reassignable export`);
+        set(k, v);
       } else {
         extra[k] = v;
       }

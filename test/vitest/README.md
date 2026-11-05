@@ -13,8 +13,9 @@ handled exactly as for the Prebid.js builds, and each spec file runs in a page o
 - `require()` in test code becomes an import. At a module's top level it is `await import()` in place, so the order
   of evaluation is kept. In a CommonJS package it returns `module.exports`, as webpack does.
 - `sinon.stub(namespace, 'fn')` works: each `import * as ns` in test code gets a stand-in whose writes reassign the
-  module's export through a setter the plugin adds to the module. Unlike a CommonJS stub, this also replaces the
-  module's calls to its own export. `VITEST_NATIVE_STUBS=0` turns it off for the specs (the shared
+  module's export through a setter that a Babel plugin adds to the module. The module registers the setter under its
+  own namespace rather than exporting it, and its exported `const`s become `let`s; re-exported imports can't be
+  stubbed. Unlike a CommonJS stub, this also replaces the module's calls to its own export. `VITEST_NATIVE_STUBS=0` turns it off for the specs (the shared
   `adloaderStub.js` mock still needs it).
 - Bare `src/...`, `modules/...`, `test/...` and `buildOptions.mjs` imports resolve against `dist/src`, as webpack's
   `resolve.modules` does. `web-bundler/` and `package.json` are aliased.
