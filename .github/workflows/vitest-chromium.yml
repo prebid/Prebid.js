@@ -96,7 +96,7 @@ jobs:
           if-no-files-found: error
 
 
-  # Combines the chunks the way .github/actions/combine-coverage does, into one lcov file for test.yml.
+  # Combines the chunks into one lcov file for test.yml.
   coverage:
     name: Vitest coverage
     needs: [chromium]
