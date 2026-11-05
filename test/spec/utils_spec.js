@@ -700,6 +700,26 @@ describe('Utils', function () {
         comeWithMe: 'ifuwant2live',
       });
     });
+
+    it('preserves falsy values, but omits null and undefined', function () {
+      const params = {
+        enabled: false,
+        count: 0,
+        label: '',
+        optional: null,
+        unset: undefined
+      };
+
+      const actual = utils.getDefinedParams(params, [
+        'enabled', 'count', 'label', 'optional', 'unset', 'missing'
+      ]);
+
+      assert.deepEqual(actual, {
+        enabled: false,
+        count: 0,
+        label: ''
+      });
+    });
   });
 
   describe('deepClone', function () {

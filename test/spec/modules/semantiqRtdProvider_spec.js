@@ -511,5 +511,207 @@ describe('semantiqRtdProvider', () => {
         },
       });
     });
+
+    it('logs an error thrown while writing ortb2 and still calls onDone once', async () => {
+      const error = new Error('merge failed');
+      const mergeDeepStub = sinon.stub(utils, 'mergeDeep').throws(error);
+      const logErrorStub = sinon.stub(utils, 'logError');
+      const onDoneSpy = sinon.spy();
+
+      try {
+        const promise = new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData({
+          adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+          ortb2Fragments: { global: {} },
+        }, () => {
+          onDoneSpy();
+          resolve();
+        }, { params: {} }, {}));
+
+        server.requests[0].respond(
+          200,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify({ sentiment: 'negative' })
+        );
+
+        await promise;
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+        expect(logErrorStub.calledOnceWith(sinon.match.string, error)).to.be.true;
+      } finally {
+        mergeDeepStub.restore();
+        logErrorStub.restore();
+      }
+    });
+
+    it('does not log a failed keyword request twice', async () => {
+      const logErrorStub = sinon.stub(utils, 'logError');
+
+      try {
+        const promise = new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData({
+          adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+          ortb2Fragments: { global: {} },
+        }, resolve, { params: {} }, {}));
+
+        server.requests[0].respond(204, { 'Content-Type': 'application/json' });
+
+        await promise;
+
+        expect(logErrorStub.calledOnceWith(sinon.match.string, 'Invalid response status')).to.be.true;
+      } finally {
+        logErrorStub.restore();
+      }
+    });
+
+    describe('IAB categories', () => {
+      const IAB_KEYWORDS = {
+        iab_category_id: ['386', '387'],
+        iab2_category_id: ['123'],
+        sentiment: 'positive',
+        ctx_segment: ['C001'],
+      };
+
+      const getGlobalOrtb = async (keywords, global = {}) => {
+        const reqBidsConfigObj = {
+          adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+          ortb2Fragments: { global },
+        };
+
+        const promise = new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData(reqBidsConfigObj, resolve, { params: {} }, {}));
+
+        server.requests[0].respond(
+          200,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify(keywords)
+        );
+
+        await promise;
+
+        return reqBidsConfigObj.ortb2Fragments.global;
+      };
+
+      it('writes both taxonomies to site.content.data', async () => {
+        const global = await getGlobalOrtb(IAB_KEYWORDS);
+
+        expect(global.site).to.deep.equal({
+          keywords: 'iab_category_id=386,iab_category_id=387,iab2_category_id=123,sentiment=positive,ctx_segment=C001',
+          content: {
+            data: [
+              { name: 'semantiq', ext: { segtax: 6 }, segment: [{ id: '123' }] },
+              { name: 'semantiq', ext: { segtax: 7 }, segment: [{ id: '386' }, { id: '387' }] },
+            ],
+          },
+        });
+      });
+
+      it('handles a page-keywords response with single category ids', async () => {
+        const global = await getGlobalOrtb({
+          sentiment: 'negative',
+          iab_category_id: '386',
+          iab_category: 'politics',
+          ctx_segment: [],
+          adnz_news_type: [],
+          iab2_category: 'news and politics',
+          iab2_category_id: '379',
+        });
+
+        expect(global.site).to.deep.equal({
+          keywords: 'sentiment=negative,iab_category_id=386,iab_category=politics,iab2_category=news and politics,iab2_category_id=379',
+          content: {
+            data: [
+              { name: 'semantiq', ext: { segtax: 6 }, segment: [{ id: '379' }] },
+              { name: 'semantiq', ext: { segtax: 7 }, segment: [{ id: '386' }] },
+            ],
+          },
+        });
+      });
+
+      it('skips a taxonomy without ids and drops blank and duplicate ids', async () => {
+        const global = await getGlobalOrtb({ iab_category_id: ['386', ' ', '', '386', ' 387 '], iab2_category_id: [] });
+
+        expect(global.site.content.data).to.deep.equal([
+          { name: 'semantiq', ext: { segtax: 7 }, segment: [{ id: '386' }, { id: '387' }] },
+        ]);
+      });
+
+      it('accepts a single category id as a string and skips a null one', async () => {
+        const global = await getGlobalOrtb({ iab_category_id: '386', iab2_category_id: null });
+
+        expect(global.site.content.data).to.deep.equal([
+          { name: 'semantiq', ext: { segtax: 7 }, segment: [{ id: '386' }] },
+        ]);
+      });
+
+      it('does not write site.content.data without IAB fields', async () => {
+        const global = await getGlobalOrtb({ sentiment: 'positive', ctx_segment: ['C001'] });
+
+        expect(global).to.deep.equal({ site: { keywords: 'sentiment=positive,ctx_segment=C001' } });
+      });
+
+      it('keeps existing site.content.data and keywords', async () => {
+        const publisherData = { name: 'publisher', segment: [{ id: 'news' }] };
+        const global = await getGlobalOrtb(IAB_KEYWORDS, {
+          site: { keywords: 'section=news', content: { data: [publisherData] } },
+        });
+
+        expect(global.site.keywords).to.equal('section=news,iab_category_id=386,iab_category_id=387,iab2_category_id=123,sentiment=positive,ctx_segment=C001');
+        expect(global.site.content.data).to.deep.equal([
+          publisherData,
+          { name: 'semantiq', ext: { segtax: 6 }, segment: [{ id: '123' }] },
+          { name: 'semantiq', ext: { segtax: 7 }, segment: [{ id: '386' }, { id: '387' }] },
+        ]);
+      });
+
+      it('does not write site.cat or site.cattax without site.cattax', async () => {
+        const global = await getGlobalOrtb(IAB_KEYWORDS);
+
+        expect(global.site).not.to.have.any.keys('cat', 'cattax');
+      });
+
+      it('leaves publisher categories without site.cattax alone', async () => {
+        const global = await getGlobalOrtb(IAB_KEYWORDS, {
+          site: { cat: ['IAB1'], pagecat: ['IAB1-1'] },
+        });
+
+        expect(global.site.cat).to.deep.equal(['IAB1']);
+        expect(global.site.pagecat).to.deep.equal(['IAB1-1']);
+        expect(global.site).not.to.have.property('cattax');
+      });
+
+      [
+        { cattax: 6, cat: ['123'] },
+        { cattax: 7, cat: ['386', '387'] },
+      ].forEach(({ cattax, cat }) => {
+        it(`writes site.cat in the publisher's site.cattax ${cattax}`, async () => {
+          const global = await getGlobalOrtb(IAB_KEYWORDS, { site: { cattax } });
+
+          expect(global.site.cat).to.deep.equal(cat);
+          expect(global.site.cattax).to.equal(cattax);
+        });
+      });
+
+      it('appends to the publisher site.cat in the same taxonomy', async () => {
+        const global = await getGlobalOrtb(IAB_KEYWORDS, {
+          site: { cat: ['1', '386'], cattax: 7 },
+        });
+
+        expect(global.site.cat).to.deep.equal(['1', '386', '387']);
+        expect(global.site.cattax).to.equal(7);
+      });
+
+      it('leaves site.cat alone when site.cattax is another taxonomy', async () => {
+        const global = await getGlobalOrtb(IAB_KEYWORDS, {
+          site: { cat: ['IAB1'], cattax: 1 },
+        });
+
+        expect(global.site.cat).to.deep.equal(['IAB1']);
+        expect(global.site.cattax).to.equal(1);
+      });
+
+      it('does not write site.cat when the taxonomy has no ids', async () => {
+        const global = await getGlobalOrtb({ iab_category_id: ['386'] }, { site: { cattax: 6 } });
+
+        expect(global.site).not.to.have.property('cat');
+      });
+    });
   });
 });
