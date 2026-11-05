@@ -1,7 +1,7 @@
 import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
+import { uid2IdSubmodule, storage as uid2Storage } from 'modules/uid2IdSystem.js';
 import { requestBids } from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -183,6 +183,21 @@ describe(`UID2 module`, function () {
   });
 
   describe('Configuration', function() {
+    it('sets a valid 24-hour expiration on the module cookie', async function() {
+      const setCookie = testSandbox.spy(uid2Storage, 'setCookie');
+      config.setConfig(makePrebidConfig({ uid2Token: apiHelpers.makeTokenResponse(initialToken), storage: 'cookie' }));
+      await runAuction();
+
+      const write = setCookie.getCalls().find(call => call.args[0] === moduleCookieName);
+      expect(write, 'UID2 module cookie should be written').to.exist;
+      const expires = write.args[2];
+      expect(expires).to.be.a('string').and.match(/GMT$/);
+      const remainingMs = Date.parse(expires) - Date.now();
+      expect(remainingMs).to.be.greaterThan(23 * 60 * 60 * 1000);
+      expect(remainingMs).to.be.lessThan(25 * 60 * 60 * 1000);
+      expect(coreStorage.getCookie(moduleCookieName)).to.not.be.null;
+    });
+
     it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({ uid2Token }));
