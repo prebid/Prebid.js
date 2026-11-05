@@ -520,7 +520,7 @@ describe('Real time module', function () {
       const request = { ortb2Fragments };
       getBidRequestDataStub.callsFake((req) => {
         expect(req.ortb2Fragments.global.user.eids).to.not.exist;
-        expect(req.ortb2Fragments.bidder.bidderA.eids).to.not.exist;
+        expect(req.ortb2Fragments.bidder.bidderA.user.eids).to.not.exist;
         req.ortb2Fragments.global.user.yob = 123;
         req.ortb2Fragments.bidder.bidderB = {
           user: {
@@ -535,7 +535,7 @@ describe('Real time module', function () {
       }, request);
     });
 
-    it('sould place targeting on adUnits', function (done) {
+    it('should place targeting on adUnits', function (done) {
       const auction = {
         adUnitCodes: ['ad1', 'ad2'],
         adUnits: [
