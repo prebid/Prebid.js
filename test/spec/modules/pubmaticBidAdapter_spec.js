@@ -4,7 +4,7 @@ import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
+import { decorateAdUnitsWithNativeParams, IMAGE } from '../../../src/native.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
@@ -759,11 +759,11 @@ describe('PubMatic adapter', () => {
           it('should expand the native type shorthand', () => {
             const bid = nativeBidderRequest.bids[0];
             bid.mediaTypes.native = { type: 'image' };
+            delete bid.nativeParams;
             decorateAdUnitsWithNativeParams([bid]);
             const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
             const nativeRequest = JSON.parse(request.data.imp[0].native.request);
-            expect(nativeRequest.assets).to.eql(bid.nativeOrtbRequest.assets);
-            expect(nativeRequest.assets).to.not.be.empty;
+            expect(nativeRequest.assets).to.eql(IMAGE.ortb.assets);
           });
         });
       }
