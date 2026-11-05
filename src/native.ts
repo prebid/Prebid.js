@@ -862,7 +862,12 @@ export function toLegacyResponse(ortbResponse: NativeResponse, ortbRequest: Nati
         height: asset.img.h
       };
     } else if (asset.data) {
-      legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset?.data?.type]]] = asset.data.value;
+      const requestDataType = requestAsset?.data?.type;
+      const nativeAssetType = requestDataType != null ? NATIVE_ASSET_TYPES_INVERSE[requestDataType] : undefined;
+      const legacyDataKey = nativeAssetType != null ? PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[nativeAssetType] : undefined;
+      if (legacyDataKey != null) {
+        legacyResponse[legacyDataKey] = asset.data.value;
+      }
     } else if (asset.video) {
       legacyResponse.video = asset.video.vasttag;
     }
