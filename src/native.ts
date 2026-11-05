@@ -11,9 +11,9 @@ import {
   logWarn,
   pick,
   politeTriggerPixel,
-  triggerPixel,
-  validateSizes
+  triggerPixel
 } from './utils.js';
+import { validateSizes } from './utils/objects.js';
 
 import { auctionManager } from './auctionManager.js';
 import {

@@ -1,6 +1,7 @@
 import { klona } from "klona/json";
 import type { AnyFunction } from "../types/functions.d.ts";
 import type { Repeat } from "../types/tuples.d.ts";
+import type { Size } from "../types/common.d.ts";
 
 export function deepClone<T>(obj: T): T {
   return (klona(obj) || {}) as T;
@@ -56,4 +57,20 @@ export const isInteger: (value) => value is number = Number.isInteger.bind(Numbe
 export function isArrayOfNums<L extends number>(val, size?: L): val is Repeat<number, L> {
   // Array.from because every() skips holes in sparse arrays
   return (isArray(val)) && ((size) ? val.length === size : true) && (Array.from(val).every(v => isInteger(v)));
+}
+
+/**
+ * Normalize a single size `[w, h]` or an array of sizes `[[w, h], ...]` into an array of sizes.
+ * Returns an empty array if the input is invalid, or (when `targLength` is given) does not have exactly that many elements.
+ */
+export function validateSizes(sizes, targLength?: number): Size[] {
+  if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
+    // Array.from because every() skips holes in sparse arrays
+    if (Array.from(sizes).every(sz => isArrayOfNums(sz, 2))) {
+      return sizes as Size[];
+    } else if (isArrayOfNums(sizes, 2)) {
+      return [sizes];
+    }
+  }
+  return [];
 }

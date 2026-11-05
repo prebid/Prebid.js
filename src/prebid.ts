@@ -21,9 +21,9 @@ import {
   mergeDeep,
   transformAdServerTargetingObj,
   uniques,
-  unsupportedBidderMessage,
-  validateSizes
+  unsupportedBidderMessage
 } from './utils.js';
+import { validateSizes } from './utils/objects.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
