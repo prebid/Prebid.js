@@ -944,6 +944,17 @@ describe('validate native', function () {
       sinon.assert.calledWith(logErrorStub, sinon.match('icon.sizes'));
     });
 
+    Object.entries({
+      'not an array': { min_width: 100, min_height: 100 },
+      'empty': [],
+    }).forEach(([t, aspectRatios]) => {
+      it(`should log an error naming the asset key when aspect_ratios is ${t}`, () => {
+        const ortb = toOrtbNativeRequest({ icon: { aspect_ratios: aspectRatios } });
+        expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin', 'ext');
+        sinon.assert.calledWith(logErrorStub, sinon.match('icon.aspect_ratios'));
+      });
+    });
+
     it('should not throw on null aspect_ratios entries', () => {
       const ortb = toOrtbNativeRequest({
         image: {
