@@ -129,11 +129,7 @@ function macrotask() {
 // One gap per test, ahead of all its hooks (a hook per runnable would cost ~4ms each to timer clamping).
 vitest.beforeEach(() => macrotask());
 
-function run(fn, opts) {
-  return runNow(fn, opts);
-}
-
-function runNow(fn, { suite, timeout, title, vctx, test, kind }) {
+function run(fn, { suite, timeout, title, vctx, kind }) {
   const ctx = suite.ctx;
   return new Promise((resolve, reject) => {
     let timer;
@@ -161,7 +157,6 @@ function runNow(fn, { suite, timeout, title, vctx, test, kind }) {
       ctx.runnable = prev.runnable;
       running--;
       if (err != null && err !== false) {
-        if (err === vctxSkip) return reject(err);
         reject(err instanceof Error || (err && err.constructor?.name?.endsWith('Error')) ? err : new Error(`done() invoked with non-Error: ${JSON.stringify(err)}`));
       } else {
         resolve();
@@ -171,7 +166,7 @@ function runNow(fn, { suite, timeout, title, vctx, test, kind }) {
     running++;
     ctx.runnable = runnable;
     ctx.vctx = vctx;
-    ctx.test = test ?? (vctx?.task ? testInfo(vctx.task, ctx) : { title, ctx });
+    ctx.test = vctx?.task ? testInfo(vctx.task, ctx) : { title, ctx };
     if (kind === 'test') ctx.currentTest = ctx.test;
     arm();
     // As Mocha does, a done() called before the function returns only settles once it has returned, so an
@@ -218,7 +213,6 @@ function runNow(fn, { suite, timeout, title, vctx, test, kind }) {
     }
   });
 }
-const vctxSkip = Symbol('skip');
 
 // Mocha runs a suite's own tests before its child suites; Vitest runs them in declaration order.
 // Some specs depend on Mocha's order (a test declared after a nested describe that only passes when
