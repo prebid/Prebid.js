@@ -36,18 +36,18 @@ const converter = ortbConverter({
     // the ad unit.
     delete imp.native;
     delete imp.audio;
-    // A multiformat ad unit whose video part cannot be served still passes
-    // isBidRequestValid on its banner part; send it as banner only. imp.video
-    // can also come from ortb2Imp alone, with no mediaTypes.video for
-    // isBidRequestValid to have checked.
-    let videoError = null;
-    if (imp.video) {
-      const declaresVideo = deepAccess(bidRequest, 'mediaTypes.video') != null;
-      videoError = declaresVideo ? validateVideo(bidRequest)
-        : 'mediaTypes.video is not declared';
+    // A multiformat ad unit passes isBidRequestValid while either of its parts
+    // can be sent; send only the parts that can. imp.banner / imp.video can
+    // also come from the ad unit's ortb2Imp alone, e.g. after size mapping
+    // drops that media type from this bidder's mediaTypes.
+    const bannerError = imp.banner ? validateBanner(bidRequest) : null;
+    const videoError = imp.video ? validateVideo(bidRequest) : null;
+    if (bannerError !== null) {
+      logWarn(`[${BIDDER_CODE}] ${bannerError}; not sending the banner part.`);
+      delete imp.banner;
     }
     if (videoError !== null) {
-      logWarn(`[${BIDDER_CODE}] ${videoError}; sending the banner part only.`);
+      logWarn(`[${BIDDER_CODE}] ${videoError}; not sending the video part.`);
       delete imp.video;
     }
     // priceFloors looks imp.bidfloor up with mediaType '*' when the ad unit
@@ -207,15 +207,42 @@ function validatePlacementId(bid) {
 }
 
 /**
- * Validates that the bid's video part can be sent to the Exchange: the build
- * includes video and the mimes sent (mediaTypes.video.mimes merged with
- * ortb2Imp.video.mimes) is a non-empty array of strings.
+ * Validates that the bid's banner part can be sent to the Exchange: the bid
+ * declares mediaTypes.banner and its sizes is not empty.
  *
- * @param {BidRequest} bid - a bid that declares mediaTypes.video.
+ * @param {BidRequest} bid - the bid to validate.
+ * @return {string|null} the reason the banner part cannot be sent, or null when
+ *     it can.
+ */
+function validateBanner(bid) {
+  const banner = deepAccess(bid, 'mediaTypes.banner');
+  if (banner === undefined || banner === null) {
+    return 'mediaTypes.banner is not declared';
+  }
+  // Core removes a banner without sizes when it validates the ad unit, but the
+  // sizeMapping module runs later and empties the sizes it filters out,
+  // keeping the banner.
+  if (isArray(banner.sizes) && banner.sizes.length === 0) {
+    return 'mediaTypes.banner.sizes is empty';
+  }
+  return null;
+}
+
+/**
+ * Validates that the bid's video part can be sent to the Exchange: the bid
+ * declares mediaTypes.video, the build includes video and the mimes sent
+ * (mediaTypes.video.mimes merged with ortb2Imp.video.mimes) is a non-empty
+ * array of strings.
+ *
+ * @param {BidRequest} bid - the bid to validate.
  * @return {string|null} the reason the video part cannot be sent, or null when
  *     it can.
  */
 function validateVideo(bid) {
+  const video = deepAccess(bid, 'mediaTypes.video');
+  if (video === undefined || video === null) {
+    return 'mediaTypes.video is not declared';
+  }
   // Without the video feature the converter never fills imp.video, while core
   // keeps mediaTypes.video, so a video-only bid would go out with an empty imp.
   if (!FEATURES.VIDEO) {
@@ -353,21 +380,13 @@ export const spec = {
       return false;
     }
 
-    // No need to check banner.sizes: core's validateBannerMediaType
-    // (src/prebid.ts) deletes mediaTypes.banner when it has no valid sizes, so
-    // a surviving banner always has non-empty sizes.
-    const hasBanner = deepAccess(bid, 'mediaTypes.banner') != null;
-    const hasVideo = deepAccess(bid, 'mediaTypes.video') != null;
-    if (!hasBanner && !hasVideo) {
-      logError(`[${
-          BIDDER_CODE}] mediaTypes.banner or mediaTypes.video is required.`);
-      return false;
-    }
-    // With a banner part the bid stays valid even when its video part cannot
-    // be sent; the imp processor then drops the video.
-    const videoError = hasVideo ? validateVideo(bid) : null;
-    if (videoError !== null && !hasBanner) {
-      logError(`[${BIDDER_CODE}] ${videoError}.`);
+    // The bid stays valid while either of its parts can be sent; the imp
+    // processor then drops the other one.
+    const bannerError = validateBanner(bid);
+    const videoError = validateVideo(bid);
+    if (bannerError !== null && videoError !== null) {
+      logError(`[${BIDDER_CODE}] Neither the banner nor the video part can be sent: ${
+          bannerError}; ${videoError}.`);
       return false;
     }
 

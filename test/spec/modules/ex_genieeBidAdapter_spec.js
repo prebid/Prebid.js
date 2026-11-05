@@ -160,6 +160,13 @@ describe('Geniee Exchange bid adapter', () => {
       }))).to.equal(false);
     });
 
+    // the sizeMapping module empties banner.sizes when it filters out every size
+    it('is invalid when banner.sizes is empty and there is no video part', () => {
+      expect(spec.isBidRequestValid(makeBid({
+        mediaTypes: { banner: { sizes: [] } }
+      }))).to.equal(false);
+    });
+
     describe('with mediaTypes.video', () => {
       const MIMES = ['video/mp4'];
 
@@ -198,6 +205,17 @@ describe('Geniee Exchange bid adapter', () => {
             const bid = makeBid({
               mediaTypes: { video: { context: 'instream', mimes: ['video/mp4'] } },
               ortb2Imp: { video: { mimes: [] } },
+            });
+            expect(spec.isBidRequestValid(bid)).to.equal(true);
+          });
+
+        it('is valid on the video part when banner.sizes of a multiformat ad unit is empty',
+          () => {
+            const bid = makeBid({
+              mediaTypes: {
+                banner: { sizes: [] },
+                video: { context: 'instream', mimes: MIMES },
+              },
             });
             expect(spec.isBidRequestValid(bid)).to.equal(true);
           });
@@ -334,6 +352,29 @@ describe('Geniee Exchange bid adapter', () => {
 
             expect(imp.banner).to.be.an('object');
             expect(imp.video, 'imp.video').to.equal(undefined);
+          });
+
+        // size mapping can drop banner from mediaTypes while the ad unit's
+        // ortb2Imp.banner stays
+        it('sends no banner part when mediaTypes.banner is not declared', () => {
+          const imp = buildImp(
+            { video: { context: 'instream', mimes: MIMES, playerSize: [[640, 480]] } },
+            { ortb2Imp: { banner: { pos: 1 } } },
+          );
+
+          expect(imp.banner, 'imp.banner').to.equal(undefined);
+          expect(imp.video).to.be.an('object');
+        });
+
+        it('sends only the video part when banner.sizes of a multiformat ad unit is empty',
+          () => {
+            const imp = buildImp({
+              banner: { sizes: [] },
+              video: { context: 'instream', mimes: MIMES, playerSize: [[640, 480]] },
+            });
+
+            expect(imp.banner, 'imp.banner').to.equal(undefined);
+            expect(imp.video).to.be.an('object');
           });
       });
     }
