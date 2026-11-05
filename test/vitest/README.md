@@ -138,9 +138,10 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16,firefox
 - Safari on iOS can't load `http://localhost` through the tunnel; BrowserStack rewrites it to `bs-local.com`, which
   resolves to 127.0.0.1, so a device run is served for `bs-local.com` (`VITEST_HOST` overrides it). Specs that need
   the page's host or URL take it from the page.
-- `http://bs-local.com` is not a secure context (`http://localhost` is), so the one spec that needs `crypto.subtle`
-  (encypher) defines its suite only in a secure context. Serving the device over https with a self-signed
-  certificate didn't work: iOS asks to confirm it in a native sheet, and even past that, no test ran (#16006).
+- `http://bs-local.com` is not a secure context (`http://localhost` is), so the specs that need `crypto.subtle`
+  (encypher, byData) define those tests only in a secure context; `VITEST_HOST=bs-local.com` reproduces that
+  locally. Serving the device over https with a self-signed certificate didn't work: iOS asks to confirm it in a
+  native sheet, and even past that, no test ran (#16006).
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run. BrowserStack ends a
   session after at most 300 s of that, mid-run, so `vitest.config.mjs` asks the page for its title every minute to

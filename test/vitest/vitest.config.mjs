@@ -27,7 +27,7 @@
 //   VITEST_BROWSER=safari|chrome|firefox|edge  (default safari)
 // Safari on iOS can't load http://localhost through the tunnel: BrowserStack rewrites it to bs-local.com, which
 // resolves to 127.0.0.1, so a device run is served for bs-local.com (VITEST_HOST overrides it). That page isn't a
-// secure context, so the specs that need one are skipped there (setup.mjs, insecure-context.json).
+// secure context, so the specs that need one define those tests only in a secure context.
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
