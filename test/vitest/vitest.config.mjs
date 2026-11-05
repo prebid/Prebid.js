@@ -27,7 +27,8 @@
 //   VITEST_BROWSER=safari|chrome|firefox|edge  (default safari)
 // Safari on iOS can't load http://localhost through the tunnel: BrowserStack rewrites it to bs-local.com, which
 // resolves to 127.0.0.1, so a device run is served for bs-local.com (VITEST_HOST overrides it). That page isn't a
-// secure context, so the specs that need one define those tests only in a secure context.
+// secure context, so the specs that need one define those tests only in a secure context. Desktop Safari gets the
+// same rewrite, but loads localhost when the page navigates there itself (see browserProvider).
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -68,6 +69,7 @@ const browserName = process.env.VITEST_BROWSER || (browserstack ? 'safari' : 'ch
 const localSafari = !browserstack && browserName === 'safari';
 const bsDesktop = !!process.env.VITEST_OS;
 const bsDevice = browserstack && !bsDesktop ? process.env.VITEST_DEVICE || 'iPhone 14' : null;
+const bsDesktopSafari = browserstack && bsDesktop && browserName === 'safari';
 const bsOsVersion = process.env.VITEST_OS_VERSION || (bsDevice ? '16' : 'Ventura');
 const host = process.env.VITEST_HOST || (bsDevice ? 'bs-local.com' : null);
 
@@ -160,6 +162,20 @@ async function browserProvider() {
       // Vitest sizes the window to `viewport` through WebDriver's window/rect, which iOS doesn't implement ("Method
       // has not yet been implemented"). The test iframe still gets the 800x600 viewport.
       instance.setViewport = async () => {};
+    }
+    if (bsDesktopSafari) {
+      // BrowserStack rewrites the URL of Safari's WebDriver `url` command from localhost to bs-local.com, which isn't
+      // a secure context; navigating from the page itself still reaches localhost through the tunnel
+      const { openBrowser } = instance;
+      const patched = new WeakSet();
+      instance.openBrowser = async function (...args) {
+        const browser = await openBrowser.apply(this, args);
+        if (!patched.has(browser)) {
+          patched.add(browser);
+          browser.overwriteCommand('url', (_url, url) => browser.execute((url) => { window.location.href = url; }, url));
+        }
+        return browser;
+      };
     }
     // A run sends no WebDriver commands while the tests run, and BrowserStack ends a session after 300s without
     // any (its idleTimeout maximum), mid-run. So ask the page for its title every minute until the session closes.
