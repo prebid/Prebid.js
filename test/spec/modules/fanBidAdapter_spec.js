@@ -402,5 +402,57 @@ describe('freedomadnetworkAdapter', function() {
       expect(triggerPixelStub.calledWith('https://win.nurl/track?bid=req789')).to.be.true;
       expect(triggerPixelStub.calledOnce).to.be.true;
     });
+
+    it('onBidViewable should fire only view impression pixels', function() {
+      const fakeBid = {
+        requestId: 'req321',
+        nurl: 'https://win.nurl/track?bid=req321',
+        meta: {
+          libertas: {
+            pxl: [
+              { url: 'https://pxl.nurl/imp?bid=req321', type: 0 },
+              { url: 'https://pxl.nurl/view?bid=req321', type: 1 }
+            ],
+          },
+        },
+      };
+
+      spec.onBidViewable(fakeBid);
+
+      expect(triggerPixelStub.calledOnce).to.be.true;
+      expect(triggerPixelStub.getCall(0).args[0]).to.equal('https://pxl.nurl/view?bid=req321');
+    });
+
+    it('onBidWon should not fire view impression pixels', function() {
+      const fakeBid = {
+        requestId: 'req654',
+        nurl: 'https://win.nurl/track?bid=req654',
+        meta: {
+          libertas: {
+            pxl: [
+              { url: 'https://pxl.nurl/view?bid=req654', type: 1 }
+            ],
+          },
+        },
+      };
+
+      spec.onBidWon(fakeBid);
+
+      expect(triggerPixelStub.calledOnce).to.be.true;
+      expect(triggerPixelStub.getCall(0).args[0]).to.equal('https://win.nurl/track?bid=req654');
+    });
+
+    it('onBidViewable should not throw or fire when the bid has no meta.libertas', function() {
+      const fakeBid = {
+        requestId: 'req987',
+        meta: {
+          networkName: 'freedomadnetwork',
+          advertiserDomains: []
+        },
+      };
+
+      expect(() => spec.onBidViewable(fakeBid)).to.not.throw();
+      expect(triggerPixelStub.called).to.be.false;
+    });
   });
 });

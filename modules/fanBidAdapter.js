@@ -304,6 +304,19 @@ export const spec = {
       }
     }
   },
+
+  onBidViewable(bid) {
+    const pxl = bid.meta?.libertas?.pxl;
+    if (!Array.isArray(pxl)) {
+      return;
+    }
+
+    for (let i = 0; i < pxl.length; i++) {
+      if (Number(pxl[i].type) === 1) {
+        triggerPixel(pxl[i].url);
+      }
+    }
+  },
 };
 
 /**
