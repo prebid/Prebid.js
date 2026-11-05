@@ -721,30 +721,31 @@ describe('adRendering', () => {
     });
   });
 
-  describe('handleNativeMessage', () => {
-    if (!FEATURES.NATIVE) return;
-    let bid;
-    beforeEach(() => {
-      bid = {
-        adId: '123'
-      };
-    });
+  if (FEATURES.NATIVE) {
+    describe('handleNativeMessage', () => {
+      let bid;
+      beforeEach(() => {
+        bid = {
+          adId: '123'
+        };
+      });
 
-    it('should resize', () => {
-      const resizeFn = sinon.stub();
-      handleNativeMessage({ action: 'resizeNativeHeight', height: 100 }, bid, { resizeFn });
-      sinon.assert.calledWith(resizeFn, undefined, 100);
-    });
+      it('should resize', () => {
+        const resizeFn = sinon.stub();
+        handleNativeMessage({ action: 'resizeNativeHeight', height: 100 }, bid, { resizeFn });
+        sinon.assert.calledWith(resizeFn, undefined, 100);
+      });
 
-    it('should fire trackers', () => {
-      const data = {
-        action: 'click'
-      };
-      const fireTrackers = sinon.stub();
-      handleNativeMessage(data, bid, { fireTrackers });
-      sinon.assert.calledWith(fireTrackers, data, bid);
+      it('should fire trackers', () => {
+        const data = {
+          action: 'click'
+        };
+        const fireTrackers = sinon.stub();
+        handleNativeMessage(data, bid, { fireTrackers });
+        sinon.assert.calledWith(fireTrackers, data, bid);
+      });
     });
-  });
+  }
 
   describe('onAdRenderSucceeded', () => {
     let mockAdapterSpec, bids;
