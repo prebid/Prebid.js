@@ -251,7 +251,7 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
       expect(data.canonical_url).to.equal('https://publisher.com/home');
-      expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
+      expect(data.canonical_url_hash).to.equal('3262727827037870');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
       expect(request.ad_unit_code).to.equal(bidRequest.adUnitCode);
@@ -266,6 +266,19 @@ describe('RelaidoAdapter', function () {
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');
       expect(request.userIdAsEids).to.be.an('array');
+    });
+
+    it('should keep canonical_url_hash deterministic and update it with the URL', function () {
+      const initial = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data);
+      const repeat = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data);
+      expect(initial.canonical_url_hash).to.equal('3262727827037870');
+      expect(repeat.canonical_url_hash).to.equal(initial.canonical_url_hash);
+      expect(initial.canonical_url_hash).to.be.a('string');
+
+      bidderRequest.refererInfo.canonicalUrl = 'https://publisher.com/other';
+      const changed = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data);
+      expect(changed.canonical_url).to.equal('https://publisher.com/other');
+      expect(changed.canonical_url_hash).to.equal('5047449900900398');
     });
 
     it('should build bid requests by banner', function () {
@@ -364,7 +377,7 @@ describe('RelaidoAdapter', function () {
       const data = JSON.parse(bidRequests.data);
       expect(data.bids).to.have.lengthOf(1);
       expect(data.canonical_url).to.equal('http://localhost:9999/fb-test');
-      expect(data.canonical_url_hash).to.equal('cd106829f866d60ee4ed43c6e2a5d0a5212ffc97');
+      expect(data.canonical_url_hash).to.equal('7441503550351659');
     });
 
     it('should not get canonicalUrl (ogUrl:false)', function () {
