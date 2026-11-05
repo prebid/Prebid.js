@@ -14,6 +14,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess,
+  deepClone,
   deepSetValue,
   getBidIdParameter,
   isArray,
@@ -82,17 +83,16 @@ const converter = ortbConverter({
         delete imp.bidfloorcur;
       }
     }
-    const nativeReq = bidRequest.nativeOrtbRequest;
-    if (nativeReq) {
+    if (bidRequest.nativeOrtbRequest) {
       try {
-        populateNativeImp(imp, nativeReq);
+        populateNativeImp(imp, deepClone(bidRequest.nativeOrtbRequest));
       } catch (e) {
         logWarn(LOG_WARN_PREFIX + `populateNativeImp failed: ${e.message}`);
         delete imp.native;
-        if (!imp.banner) {
-          return null;
-        }
       }
+    }
+    if (!imp.banner && !imp.native) {
+      return null;
     }
 
     const { id: storageId, type: storageIdType } = resolveStorageId(bidRequest);

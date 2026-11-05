@@ -764,6 +764,28 @@ describe('Mgid bid adapter', function () {
         'ortbRequest': data,
       });
     });
+    it('should not modify bidRequest.nativeOrtbRequest', function () {
+      const bid = Object.assign({}, abid);
+      bid.mediaTypes = { native: {} };
+      bid.nativeParams = { title: { required: true }, image: {}, sponsoredBy: {} };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
+      const original = utils.deepClone(bid.nativeOrtbRequest);
+      const request = spec.buildRequests([bid], {});
+      expect(JSON.parse(JSON.parse(request.data).imp[0].native.request).context).to.equal(1);
+      expect(bid.nativeOrtbRequest).to.eql(original);
+    });
+    it('should not send a native-only imp when core provides no nativeOrtbRequest', function () {
+      const bid = Object.assign({}, abid);
+      bid.mediaTypes = { native: { ortb: { assets: [{ id: 1, title: { len: 80 } }, { id: 1, data: { type: 1 } }] } } };
+      expect(spec.buildRequests([bid], {})).to.be.undefined;
+    });
+    it('should keep the banner imp when core provides no nativeOrtbRequest', function () {
+      const bid = Object.assign({}, abid);
+      bid.mediaTypes = { banner: { sizes: [[300, 250]] }, native: { ortb: { assets: [{ id: 1, title: { len: 80 } }] } } };
+      const imp = JSON.parse(spec.buildRequests([bid], {}).data).imp[0];
+      expect(imp.banner).to.exist;
+      expect(imp.native).to.not.exist;
+    });
     it('should use bidRequest.nativeOrtbRequest for ORTB-native ad units', function () {
       const bid = Object.assign({}, abid);
       bid.nativeOrtbRequest = {

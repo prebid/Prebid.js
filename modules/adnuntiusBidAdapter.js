@@ -22,7 +22,7 @@ const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
   return BIDDER_CODE_DEAL_ALIAS_BASE + num;
 });
 const GVLID = 855;
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, ...(FEATURES.NATIVE ? [NATIVE] : [])];
 const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
@@ -502,7 +502,7 @@ export const spec = {
       if (renderSource.vastXml) {
         adResponse.vastXml = renderSource.vastXml;
         adResponse.mediaType = VIDEO;
-      } else if (renderSource.nativeJson) {
+      } else if (FEATURES.NATIVE && renderSource.nativeJson) {
         adResponse.mediaType = NATIVE;
         if (bidOnRequest.mediaTypes?.native && !bidOnRequest.mediaTypes?.native?.ortb) {
           adResponse.native = toLegacyResponse(renderSource.nativeJson.ortb, bidOnRequest.nativeOrtbRequest);
