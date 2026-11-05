@@ -520,6 +520,9 @@ export const intentIqIdSubmodule = {
     // Must run before any storeData so identifiers are never persisted for new GDPR users
     if (gdprDetected && !('isOptedOut' in firstPartyData)) {
       firstPartyData.isOptedOut = true;
+      // Strip identifiers already on device and let the server decide the actual status
+      needsStore = true;
+      shouldCallServer = true;
     }
 
     if (needsStore) {
