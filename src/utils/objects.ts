@@ -16,7 +16,7 @@ export function deepClone<T>(obj: T): T {
  */
 export function getDefinedParams<T extends object, K extends readonly (keyof T)[]>(object: T, params: K): Partial<Pick<T, K[number]>> {
   return params
-    .filter(param => object[param])
+    .filter(param => object[param] !== undefined)
     .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
 }
 
