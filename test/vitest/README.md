@@ -85,7 +85,7 @@ VITEST_EXECUTABLE_PATH="$(npx @puppeteer/browsers install chrome@113.0.5672.0 | 
 VITEST_BROWSER=safari npm run test:vitest
 ```
 
-CI runs Karma's runner browsers (`.github/workflows/browser_testing.json`), each on the runner OS its Karma job used:
+CI runs the browsers in `browsers.json` (see [Browsers in CI](#browsers-in-ci)), each on the runner OS its Karma job used:
 
 | Karma | Vitest | Runner |
 | --- | --- | --- |
@@ -123,6 +123,9 @@ VITEST_BROWSERSTACK=1 VITEST_PARALLEL=3 npm run test:vitest -- --shard=1/4      
 VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/4
 # a desktop browser instead
 VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
+# every BrowserStack entry of browsers.json in turn, or the ones named
+npx gulp test-only-nobuild --browserstack
+npx gulp test-only-nobuild --browserstack --browsers=bs_safari_16_ventura,bs_firefox_latest_windows_11
 ```
 
 - `VITEST_DEVICE` (default `iPhone 14`) and `VITEST_OS_VERSION` (default `16`) select a real device. BrowserStack
@@ -173,13 +176,31 @@ first. `node_modules` is restored from a cache (per OS, CPU, lockfile and Node v
 
 The e2e tests, the build logic tests and the packed package's type check stay in `browser-tests.yml`.
 
+### Browsers in CI
+
+`browsers.json` (at the repository root) lists the browsers for every matrix, keyed by a name that
+`gulp test --browserstack --browsers=<key>` also takes:
+
+- An entry with `runsOn` (a GitHub runner label) runs on that runner. `name` labels its jobs. With `wdioName` (the
+  WebdriverIO browser name) it runs the e2e tests (`browser-tests.yml`).
+- An entry without `runsOn` is a BrowserStack target: `browser`, `browser_version`, `os` and `os_version` for a
+  desktop browser, or `device` and `os_version` for a real device. `gulp test --browserstack` runs on each of them,
+  and `gulp e2e-test` (without `--local`) on the desktop ones on `latest`, except Safari.
+- `vitest` puts an entry in `vitest-browsers.yml`, in `shards` jobs: on runners, `browser` (`VITEST_BROWSER`),
+  `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`), `chromeVersion` (a Chrome
+  from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on BrowserStack, `maxParallel`. GitHub
+  can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most the lowest `maxParallel` at once.
+
+Chromium's own jobs (`vitest-chromium.yml`) aren't in it. `browsers-es5.json` lists the BrowserStack browsers for the
+ES5 build's e2e job (`test.yml`).
+
 ### Rollback
 
 If Vitest turns out to miss regressions or block PRs it shouldn't, revert the #16008 PR (Karma's removal: its
 runner, configuration and packages) and then the #16007 PR, which restores Karma's unit, all-features-disabled and
 BrowserStack jobs and Karma-based coverage. Karma's coverage cache keys (`coverage-<commit>`) are separate from
 Vitest's, so the coverage comparison works again without clearing anything. To take one browser out of the gate while
-it is fixed, remove it from the matrix in `vitest-browsers.yml`.
+it is fixed, remove its `vitest` from `browsers.json`.
 
 ## Status
 

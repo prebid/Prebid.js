@@ -365,8 +365,9 @@ function setupDist() {
 // If --watch is given, the task will re-run unit tests whenever the source code changes (Vitest's watch mode;
 //   with `gulp serve-and-test`, sources are re-precompiled as they change).
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file(s), comma separated.
-// If --browserstack is given, it will run on BrowserStack (a real iPhone by default; see vitest.config.mjs).
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,safari,edge,webkit
+// If --browserstack is given, it will run once on each BrowserStack entry of browsers.json, or with --browsers on the
+//   entries named, e.g. --browserstack --browsers=bs_iphone_14_ios_16,bs_safari_16_ventura
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {
@@ -404,13 +405,19 @@ function npmRun(script, env, args = []) {
   });
 }
 
-async function runVitest(options) {
-  const browsers = options.browsers ?? helpers.parseBrowserArgs(argv);
-  const variants = browsers.length ? browsers.map(name => {
+function localBrowsers(names) {
+  return names.length ? names.map(name => {
     const browser = VITEST_BROWSERS[name.toLowerCase()];
     if (!browser) throw new Error(`Unknown browser "${name}"; one of ${Object.keys(VITEST_BROWSERS).join(', ')}`);
     return browser;
   }) : [{}];
+}
+
+async function runVitest(options) {
+  // a task's own `browsers` choose local browsers; on BrowserStack only --browsers selects
+  const variants = options.browserstack
+    ? helpers.browserstackTargets(helpers.parseBrowserArgs(argv)).map(({env}) => env)
+    : localBrowsers(options.browsers ?? helpers.parseBrowserArgs(argv));
   for (const browserEnv of variants) {
     // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through (specs.js), except with --file;
     // set to undefined rather than left out, as execa merges process.env back in

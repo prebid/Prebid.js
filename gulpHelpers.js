@@ -115,6 +115,28 @@ module.exports = {
     return (argv.browsers) ? argv.browsers.split(',') : [];
   },
 
+  /**
+   * The Vitest environment for each BrowserStack entry of browsers.json (those without `runsOn`), or for the ones
+   * named in `keys`.
+   */
+  browserstackTargets(keys = [], browsers = require('./browsers.json')) {
+    const available = Object.keys(browsers).filter(key => !browsers[key].runsOn);
+    const unknown = keys.filter(key => !available.includes(key));
+    if (unknown.length) {
+      throw new Error(`Unknown BrowserStack browser(s) ${unknown.join(', ')}; browsers.json has ${available.join(', ')}`);
+    }
+    return (keys.length ? keys : available).map(key => {
+      const def = browsers[key];
+      return {
+        key,
+        // undefined rather than left out, so that the caller's environment can't mix a device with a desktop OS
+        env: def.device
+          ? {VITEST_DEVICE: def.device, VITEST_OS: undefined, VITEST_OS_VERSION: def.os_version, VITEST_BROWSER: def.browser, VITEST_BROWSER_VERSION: undefined}
+          : {VITEST_DEVICE: undefined, VITEST_OS: def.os, VITEST_OS_VERSION: def.os_version, VITEST_BROWSER: def.browser, VITEST_BROWSER_VERSION: def.browser_version},
+      };
+    });
+  },
+
   getArgModules() {
     var modules = (argv.modules || '')
       .split(',')

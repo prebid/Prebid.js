@@ -7,14 +7,12 @@ const process = require('process');
 const browsersFile = process.env.BROWSERS_JSON || 'browsers.json';
 const allBrowsers = require(`./${browsersFile}`);
 
-// An explicitly requested set is used as-is; the default matrix gets filtered.
-const browsers = process.env.BROWSERS_JSON ? allBrowsers : Object.fromEntries(
+// Another file is used as-is. browsers.json also lists runner browsers and devices; from it, take the BrowserStack
+// desktop entries on latest, except Safari
+// (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
+const browsers = browsersFile !== 'browsers.json' ? allBrowsers : Object.fromEntries(
   Object.entries(allBrowsers)
-    .filter(([k, v]) => {
-      // run only on latest; exclude Safari
-      // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
-      return v.browser_version === 'latest' && v.browser !== 'safari'
-    })
+    .filter(([k, v]) => !v.runsOn && !v.device && v.os && v.browser_version === 'latest' && v.browser !== 'safari')
 );
 
 /**

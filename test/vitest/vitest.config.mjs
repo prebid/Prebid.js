@@ -8,7 +8,7 @@
 //   VITEST_NATIVE_STUBS=0   leave the specs' own namespaces plain ES modules (see plugins.mjs)
 //   VITEST_PORT             the port to serve on (default: 9876, Karma's, or the next free one as Karma did)
 //
-// Which browser runs the specs, standing in for Karma's matrix (.github/workflows/browser_testing.json):
+// Which browser runs the specs (CI's are in browsers.json, see README.md):
 //   VITEST_BROWSER=chromium|firefox|webkit  Playwright browser (default chromium)
 //   VITEST_BROWSER=safari                   the installed Safari, through safaridriver and WebdriverIO, as
 //                                           Karma's SafariNative launcher does (macOS; run `sudo safaridriver

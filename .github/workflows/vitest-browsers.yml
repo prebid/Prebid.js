@@ -1,10 +1,10 @@
 name: Vitest unit tests (browsers)
 
 # Stage 2 of the unit test gate (#16007), called from test.yml once the Chromium stage (vitest-chromium.yml) has
-# passed: Firefox, Safari (macOS, the real browser through safaridriver), Edge (Windows) and Chrome 113, in shards
-# (Vitest's `--shard`, 3 pages at once), and a real iPhone on iOS 16 through BrowserStack where the secrets are
-# available (not on fork PRs, as with Karma's BrowserStack job; their changes are tested there by the master run
-# after merge). See test/vitest/README.md, "CI".
+# passed: the browsers.json entries that have `vitest`. Today that is Firefox, Safari (macOS, through safaridriver),
+# Edge (Windows) and Chrome 113 on runners, in shards (Vitest's `--shard`, 3 pages at once), and a real iPhone on
+# iOS 16 through BrowserStack where the secrets are available (not on fork PRs, as with Karma's BrowserStack job;
+# their changes are tested there by the master run after merge). See test/vitest/README.md, "CI".
 on:
   workflow_call:
     inputs:
@@ -24,63 +24,54 @@ permissions:
 
 jobs:
 
-  # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs.
-  # Like Karma, only the default variant runs on these.
-  # The rest of Karma's runner browsers (browser_testing.json), on the same runner OS as their Karma jobs, default
-  # variant only. Each job runs its share of the specs (Vitest's `--shard`) with 3 pages at once. Shard counts
-  # follow each browser's speed: about two minutes of tests per job.
+  define:
+    name: Define browser matrices
+    runs-on: ubuntu-latest
+    outputs:
+      runners: ${{ toJSON(fromJSON(steps.define.outputs.result).runners) }}
+      browserstack: ${{ toJSON(fromJSON(steps.define.outputs.result).browserstack) }}
+      browserstack-max-parallel: ${{ fromJSON(steps.define.outputs.result).browserstackMaxParallel }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+          sparse-checkout: |
+            browsers.json
+            .github/workflows/scripts/browserMatrices.js
+          sparse-checkout-cone-mode: false
+      - id: define
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const m = require('./.github/workflows/scripts/browserMatrices.js');
+            const browsers = require('./browsers.json');
+            return {
+              runners: m.vitestRunners(browsers),
+              browserstack: m.vitestBrowserstack(browsers),
+              browserstackMaxParallel: m.vitestBrowserstackMaxParallel(browsers),
+            };
+
+
+  # The runner entries of browsers.json that have `vitest`, on the same runner OS as their Karma jobs, default variant
+  # only. Each job runs its share of the specs (Vitest's `--shard`) with 3 pages at once. Shard counts follow each
+  # browser's speed: about two minutes of tests per job.
   browsers:
-    name: Vitest ${{ matrix.browser }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
+    name: Vitest ${{ matrix.name }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
+    needs: define
+    if: ${{ needs.define.outputs.runners != '[]' }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Karma: FirefoxHeadless on ubuntu-latest. The slowest per spec, so 2 shards.
-          - browser: Firefox
-            shard: 1
-            shards: 2
-            runs-on: ubuntu-latest
-            vitest-browser: firefox
-            playwright: firefox
-          - browser: Firefox
-            shard: 2
-            shards: 2
-            runs-on: ubuntu-latest
-            vitest-browser: firefox
-            playwright: firefox
-          # Karma: SafariNative on macos-latest. The same installed Safari, through safaridriver.
-          - browser: Safari
-            shard: 1
-            shards: 2
-            runs-on: macos-latest
-            vitest-browser: safari
-            safari: true
-          - browser: Safari
-            shard: 2
-            shards: 2
-            runs-on: macos-latest
-            vitest-browser: safari
-            safari: true
-          # Karma: EdgeHeadless on windows-latest, which has Microsoft Edge installed
-          - browser: Edge
-            shard: 1
-            shards: 1
-            runs-on: windows-latest
-            channel: msedge
-          # Karma: "ChromeNoSandbox 113", the same binary from @puppeteer/browsers
-          - browser: Chrome 113
-            shard: 1
-            shards: 1
-            runs-on: ubuntu-latest
-            chrome-version: 113.0.5672.0
-    runs-on: ${{ matrix.runs-on }}
+        include: ${{ fromJSON(needs.define.outputs.runners) }}
+    runs-on: ${{ matrix.runsOn }}
     timeout-minutes: 30
     defaults:
       run:
         shell: bash
     env:
       VITEST_PARALLEL: '3'
-      VITEST_BROWSER: ${{ matrix.vitest-browser }}
+      VITEST_BROWSER: ${{ matrix.browser }}
       VITEST_CHANNEL: ${{ matrix.channel }}
     steps:
       - uses: actions/checkout@v7
@@ -93,10 +84,10 @@ jobs:
       - name: Install browser
         if: ${{ matrix.playwright }}
         run: npx playwright install --with-deps ${{ matrix.playwright }}
-      - name: Install Chrome ${{ matrix.chrome-version }}
-        if: ${{ matrix.chrome-version }}
+      - name: Install Chrome ${{ matrix.chromeVersion }}
+        if: ${{ matrix.chromeVersion }}
         env:
-          CHROME_VERSION: ${{ matrix.chrome-version }}
+          CHROME_VERSION: ${{ matrix.chromeVersion }}
         run: |
           out=($(npx @puppeteer/browsers install "chrome@$CHROME_VERSION"))
           echo "VITEST_EXECUTABLE_PATH=${out[1]}" >> "$GITHUB_ENV"
@@ -119,9 +110,10 @@ jobs:
         run: npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
 
 
-  # Safari on a real iPhone on iOS 16, the WebKit floor browserslist resolves to (ios_saf 16.6), through
-  # @vitest/browser-webdriverio and BrowserStack Local (#16006). Karma's BrowserStack job ran desktop Safari
-  # 16.5 in its place, because karma-browserstack-launcher can't drive real iOS devices.
+  # The BrowserStack entries of browsers.json that have `vitest`: Safari on a real iPhone on iOS 16, the WebKit floor
+  # browserslist resolves to (ios_saf 16.6), through @vitest/browser-webdriverio and BrowserStack Local (#16006).
+  # Karma's BrowserStack job ran desktop Safari 16.5 in its place, because karma-browserstack-launcher can't drive
+  # real iOS devices.
   browserstack-check:
     name: Check for BrowserStack credentials
     runs-on: ubuntu-latest
@@ -135,19 +127,18 @@ jobs:
 
 
   browserstack:
-    name: Vitest BrowserStack ${{ matrix.device }} iOS ${{ matrix.os-version }} (shard ${{ matrix.shard }}/4)
-    needs: browserstack-check
-    if: ${{ needs.browserstack-check.outputs.available == 'true' }}
+    name: Vitest BrowserStack ${{ matrix.name }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
+    needs: [define, browserstack-check]
+    if: ${{ needs.browserstack-check.outputs.available == 'true' && needs.define.outputs.browserstack != '[]' }}
     strategy:
       fail-fast: false
-      # One BrowserStack session per shard, two at a time (one at a time took 25 minutes). vitest.config.mjs keeps
-      # each session alive past BrowserStack's 300s idle limit, but iOS Safari still closes the page after about
-      # 400 spec files (at 398s in one session, 525s in another), so a shard is a quarter of the suite.
-      max-parallel: 2
+      # One BrowserStack session per shard, two at a time for the iPhone (one at a time took 25 minutes).
+      # vitest.config.mjs keeps each session alive past BrowserStack's 300s idle limit, but iOS Safari still closes
+      # the page after about 400 spec files (at 398s in one session, 525s in another), so a shard is a quarter of the
+      # suite. The limit is the whole job's, across entries: the lowest `maxParallel` in browsers.json.
+      max-parallel: ${{ fromJSON(needs.define.outputs.browserstack-max-parallel) }}
       matrix:
-        shard: [1, 2, 3, 4]
-        device: [iPhone 14]
-        os-version: ['16']
+        include: ${{ fromJSON(needs.define.outputs.browserstack) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -170,7 +161,7 @@ jobs:
         with:
           username: ${{ secrets.BROWSERSTACK_USER_NAME }}
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-          build-name: Vitest run ${{ github.run_id }}, attempt ${{ github.run_attempt }}, shard ${{ matrix.shard }}, ${{ github.ref }}
+          build-name: Vitest run ${{ github.run_id }}, attempt ${{ github.run_attempt }}, ${{ matrix.name }}, shard ${{ matrix.shard }}, ${{ github.ref }}
       - name: BrowserStack Local setup
         uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
         with:
@@ -182,15 +173,17 @@ jobs:
         uses: ./.github/actions/wait-for-browserstack
         with:
           sessions: 2
-      - name: Run specs, shard ${{ matrix.shard }} of 4
+      - name: Run specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
         timeout-minutes: 15
         env:
           VITEST_BROWSERSTACK: '1'
           VITEST_PARALLEL: '3'
-          VITEST_BROWSER: safari
+          VITEST_BROWSER: ${{ matrix.browser }}
           VITEST_DEVICE: ${{ matrix.device }}
-          VITEST_OS_VERSION: ${{ matrix.os-version }}
-        run: npm run test:vitest -- --shard=${{ matrix.shard }}/4
+          VITEST_OS: ${{ matrix.os }}
+          VITEST_OS_VERSION: ${{ matrix.osVersion }}
+          VITEST_BROWSER_VERSION: ${{ matrix.browserVersion }}
+        run: npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
       - name: BrowserStack Local stop
         if: ${{ always() }}
         uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6

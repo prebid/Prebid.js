@@ -1,6 +1,57 @@
 {
+  "chrome": {
+    "name": "Chrome",
+    "runsOn": "ubuntu-latest",
+    "wdioName": "chrome"
+  },
+  "firefox": {
+    "name": "Firefox",
+    "runsOn": "ubuntu-latest",
+    "wdioName": "firefox",
+    "vitest": {
+      "browser": "firefox",
+      "playwright": "firefox",
+      "shards": 2
+    }
+  },
+  "safari": {
+    "name": "Safari",
+    "runsOn": "macos-latest",
+    "wdioName": "safari",
+    "vitest": {
+      "browser": "safari",
+      "safari": true,
+      "shards": 2
+    }
+  },
+  "edge": {
+    "name": "Edge",
+    "runsOn": "windows-latest",
+    "wdioName": "msedge",
+    "vitest": {
+      "channel": "msedge",
+      "shards": 1
+    }
+  },
+  "chrome_113": {
+    "name": "Chrome 113",
+    "runsOn": "ubuntu-latest",
+    "vitest": {
+      "chromeVersion": "113.0.5672.0",
+      "shards": 1
+    }
+  },
+  "bs_iphone_14_ios_16": {
+    "name": "iPhone 14 iOS 16",
+    "os_version": "16",
+    "browser": "safari",
+    "device": "iPhone 14",
+    "vitest": {
+      "shards": 4,
+      "maxParallel": 2
+    }
+  },
   "bs_edge_latest_windows_11": {
-    "base": "BrowserStack",
     "os_version": "11",
     "browser": "edge",
     "browser_version": "latest",
@@ -8,7 +59,6 @@
     "os": "Windows"
   },
   "bs_chrome_latest_windows_11": {
-    "base": "BrowserStack",
     "os_version": "11",
     "browser": "chrome",
     "browser_version": "latest",
@@ -16,7 +66,6 @@
     "os": "Windows"
   },
   "bs_chrome_113_windows_10": {
-    "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
     "browser_version": "113.0",
@@ -24,7 +73,6 @@
     "os": "Windows"
   },
   "bs_firefox_latest_windows_11": {
-    "base": "BrowserStack",
     "os_version": "11",
     "browser": "firefox",
     "browser_version": "latest",
@@ -32,7 +80,6 @@
     "os": "Windows"
   },
   "bs_safari_latest_mac": {
-    "base": "BrowserStack",
     "os_version": "Tahoe",
     "browser": "safari",
     "browser_version": "latest",
@@ -40,7 +87,6 @@
     "os": "OS X"
   },
   "bs_safari_16_ventura": {
-    "base": "BrowserStack",
     "os_version": "Ventura",
     "browser": "safari",
     "browser_version": "16.5",
