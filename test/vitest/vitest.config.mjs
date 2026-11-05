@@ -234,8 +234,8 @@ export default defineConfig({
       // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
       instances: [{ browser: browserName, name: browserstack ? `${browserName} ${bsLabel} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName }],
       screenshotFailures: false,
-      // a real device takes ~15s to open the page (default 60s)
-      ...(browserstack ? { connectTimeout: 180000 } : {}),
+      // A BrowserStack session may queue when all device slots are occupied.
+      ...(browserstack ? { connectTimeout: 300000 } : {}),
       // Karma's ChromeHeadless window size (Vitest defaults to a 414x896 phone viewport)
       viewport: { width: 800, height: 600 },
       // a page shaped like Karma's context.html (no lang attribute, empty title)
