@@ -1,6 +1,7 @@
 import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
+import { server } from 'test/mocks/xhr.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
@@ -176,17 +177,40 @@ describe('byData Analytics Adapter ', () => {
         options: initOptions
       });
     });
-    it('sends and formatted auction data ', function () {
+    it('sends and formatted auction data ', async function () {
       events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(EVENTS.NO_BID, noBidArgs);
       events.emit(EVENTS.BID_WON, bidWonArgs);
-      var userToken = ascAdapter.getVisitorData(userData);
+      var userToken = await ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
       var newBwData = ascAdapter.getBidWonData(bidWonArgs);
       newAuData['visitor_data'] = userToken;
       newBwData['visitor_data'] = userToken;
       expect(newAuData).to.deep.equal(expectedDataArgs);
       expect(newBwData).to.deep.equal(expectedBidWonArgs);
+    });
+
+    it('waits for signing and snapshots each outgoing payload', async function () {
+      const tokenPromise = ascAdapter.getVisitorData(userData);
+      const first = { aid: 'first-auction', auctionData: [{ bid: 'first-bid' }] };
+      const firstSend = ascAdapter.sendPayload(first);
+      first.aid = 'second-auction';
+      first.auctionData[0].bid = 'second-bid';
+      const secondSend = ascAdapter.sendPayload(first);
+
+      expect(server.requests).to.have.length(0);
+      const token = await tokenPromise;
+      await Promise.all([firstSend, secondSend]);
+
+      expect(token).to.equal(expectedDataArgs.visitor_data);
+      expect(server.requests).to.have.length(2);
+      const values = server.requests.map(req => JSON.parse(req.requestBody).records[0].value);
+      expect(values[0]).to.deep.equal({
+        aid: 'first-auction', auctionData: [{ bid: 'first-bid' }], visitor_data: token
+      });
+      expect(values[1]).to.deep.equal({
+        aid: 'second-auction', auctionData: [{ bid: 'second-bid' }], visitor_data: token
+      });
     });
   });
 });
