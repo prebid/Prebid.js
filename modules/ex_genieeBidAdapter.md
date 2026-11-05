@@ -25,8 +25,10 @@ Please contact us before using the adapter.
 Supported media types: **banner** and **video**. Bids whose ad unit declares neither
 `mediaTypes.banner` nor `mediaTypes.video` (for example native-only ad units) are rejected by
 `isBidRequestValid` and never reach the Exchange. A multiformat ad unit (banner + video) is sent
-as one `imp` carrying both `banner` and `video`; native and audio are never sent. See
-[Video](#video) for the video requirements.
+as one `imp` carrying both `banner` and `video`; native and audio are never sent. Banner and
+video set up only through `ortb2Imp`, and a banner disabled by size mapping for the current
+viewport or for this bidder, are not sent; when neither is left, the bid is rejected by
+`isBidRequestValid`. See [Video](#video) for the video requirements.
 
 We will provide ads when the following conditions are satisfied:
 
@@ -136,9 +138,6 @@ var adUnits = [
 - When the video part of an ad unit cannot be sent (no `mimes`, or a `mimes` entry, including
   one set in `bids[].ortb2Imp.video.mimes`, that is not a string), a multiformat ad unit is
   sent as banner only, and a video-only ad unit is rejected by `isBidRequestValid`.
-- Video is sent only for ad units that declare `mediaTypes.video`. A video set up through
-  `ortb2Imp.video` alone is not sent: the adapter drops that `imp.video` and sends the banner
-  part, if any.
 - Instream: bids are VAST XML, so
   [Prebid Cache](https://docs.prebid.org/dev-docs/show-video-with-a-dfp-video-tag.html) is
   required.
