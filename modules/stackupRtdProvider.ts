@@ -882,10 +882,13 @@ function mergeUserData(global: any, ours: any[]): boolean {
   // (transmitUfpd) or drop our writes to it (enrichUfpd). `in` still sees
   // data we cannot read, so we never overwrite it.
   if ("data" in user) {
-    if (!isArray(user.data)) return false;
-    mergeDataBlocks(user.data, ours);
+    const data = user.data;
+    if (!isArray(data)) return false;
+    mergeDataBlocks(data, ours);
     // enrichUfpd drops these writes without an error: check that they landed.
-    return hasDataBlocks(user.data, ours);
+    // Read the array we merged into: transmitUfpd lets an empty user.data
+    // through, but hides it once our merge has filled it.
+    return hasDataBlocks(data, ours);
   }
 
   // Write the merged list in one assignment: the guard lets an empty array

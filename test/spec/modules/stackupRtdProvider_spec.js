@@ -1817,6 +1817,21 @@ describe("StackUp RTD Provider", function () {
       expect(getAuctionEnrichment("a-transmit-denied").enrichment.user.data).to.eql([]);
     });
 
+    it("should merge into an empty publisher user.data when only transmitUfpd is denied", function () {
+      // the guard lets an empty user.data through, then hides it once it holds data
+      const fragments = { global: { user: { data: [] } }, bidder: {} };
+      subModuleObj.getBidRequestData(
+        { auctionId: "a-transmit-denied-empty", ortb2Fragments: guardDenying("transmitUfpd")(fragments, {}) },
+        sinon.spy(),
+        VALID_CONFIG
+      );
+      expect(logErrorSpy.called).to.be.false;
+      expect(fragments.global.user.data).to.have.length(1);
+      const record = getAuctionEnrichment("a-transmit-denied-empty");
+      expect(record.status).to.equal("enriched");
+      expect(record.enrichment.user.data).to.have.length(1);
+    });
+
     it("should keep user.data in the auction's record when it was added", function () {
       const fragments = { global: {}, bidder: {} };
       subModuleObj.getBidRequestData(
