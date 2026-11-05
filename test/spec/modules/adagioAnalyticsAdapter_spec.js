@@ -10,6 +10,11 @@ const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
 
 describe('adagio analytics adapter - adagio.js', () => {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.ADAGIO;
+  });
+
   let sandbox;
   let adagioQueuePushSpy;
 
