@@ -208,6 +208,34 @@ describe('Utils', function () {
     });
   });
 
+  describe('isArrayOfNums', () => {
+    it('rejects sparse arrays', () => {
+      // eslint-disable-next-line no-sparse-arrays
+      expect(utils.isArrayOfNums([, 250], 2)).to.be.false;
+    });
+  });
+
+  describe('validateSizes', () => {
+    Object.entries({
+      'single size': [[300, 250], [[300, 250]]],
+      'array of sizes': [[[300, 250], [728, 90]], [[300, 250], [728, 90]]],
+      'array with an invalid size': [[[300, 250], [728, '90']], []],
+      // eslint-disable-next-line no-sparse-arrays
+      'sparse array of sizes': [[[300, 250], , [728, 90]], []],
+      'all-holes array': [new Array(2), []],
+      'empty array': [[], []],
+      'non-array': ['300x250', []],
+    }).forEach(([t, [input, expected]]) => {
+      it(`handles ${t}`, () => {
+        expect(utils.validateSizes(input)).to.eql(expected);
+      });
+    });
+
+    it('rejects arrays not matching targLength', () => {
+      expect(utils.validateSizes([[300, 250], [728, 90]], 1)).to.eql([]);
+    });
+  });
+
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
       var sizes = [[728, 90], [970, 90]];
