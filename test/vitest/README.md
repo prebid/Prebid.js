@@ -19,7 +19,8 @@ handled exactly as for the Prebid.js builds, and each spec file runs in a page o
 - Bare `src/...`, `modules/...`, `test/...` and `buildOptions.mjs` imports resolve against `dist/src`, as webpack's
   `resolve.modules` does. `web-bundler/` and `package.json` are aliased.
 - `test_deps.js` and `pipeline_setup.js` load before each spec (`nativeSetup.mjs`), and `hookSetup.js` after it, as
-  under Karma. Each spec file starts with no cookies or session storage.
+  under Karma. Spec files share the origin's cookies and storage, so a spec cleans up what it writes and clears what
+  it needs empty.
 
 `setup.mjs` emulates the Mocha behaviors the specs rely on, and provides Karma's chai/sinon globals:
 - suite `this`, `done` callbacks, and the 3000ms timeout with `this.timeout()`;
