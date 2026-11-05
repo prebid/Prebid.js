@@ -39,11 +39,11 @@
     "device": null,
     "os": "OS X"
   },
-  "bs_safari_15_catalina": {
+  "bs_safari_16_ventura": {
     "base": "BrowserStack",
-    "os_version": "Monterey",
+    "os_version": "Ventura",
     "browser": "safari",
-    "browser_version": "15.6",
+    "browser_version": "16.5",
     "device": null,
     "os": "OS X"
   }
