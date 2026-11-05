@@ -63,47 +63,78 @@ export function nativeSpecs({ coverage = false, specStubs = true, cacheModules =
     async transform(code, id) {
       if (!isDist(id) || !/\.m?js$/.test(file(id))) return null;
       await init;
-      if (!isTest(id)) {
-        return transformSource(code, id, coverage);
-      }
-      let out = code;
-      let prelude = '';
-      if (stubbable(id)) {
-        out = out.replace(/\bimport \* as (\w+) from (['"][^'"]+['"]);?/g, (m, name, src) => {
-          prelude = prelude || `import { stubbable as __stubbable } from '${STUBS}'; `;
-          return `import * as __ns_${name} from ${src}; const ${name} = __stubbable(__ns_${name});`;
-        });
-      }
-      if (/\brequire\(/.test(out)) out = rewriteRequire(out, id);
-      if (isSpec(id)) out += `\nawait import('${HOOK_SETUP}');\n`;
-      return out === code ? null : { code: prelude + out, map: null };
+      return transformFile(code, id, { coverage, facades: stubbable(id) });
     },
   }];
 }
 
-// babel-plugin-istanbul with coverage, and stubSetter when the module has named exports of its own
-function transformSource(code, id, coverage) {
-  let stubs;
-  try {
-    stubs = parse(code, id)[1].some(e => e.ln && e.n !== 'default');
-  } catch {
-    stubs = false;
+// At most one Babel pass per file. Sources: stubSetter when the module has named exports of its own, and
+// babel-plugin-istanbul with coverage. Test code: namespaceFacades, requireToImport, and hookSetup.js after a spec.
+function transformFile(code, id, { coverage, facades }) {
+  const plugins = [];
+  const test = isTest(id);
+  if (!test) {
+    if (hasOwnNamedExports(code, id)) plugins.push([stubSetter, { self: '/' + path.relative(ROOT, file(id)).split(path.sep).join('/') }]);
+    if (coverage) plugins.push(istanbul(id));
+  } else {
+    if (facades && /\bimport\s*\*\s*as\b/.test(code)) plugins.push(namespaceFacades);
+    if (/\brequire\(/.test(code)) plugins.push([requireToImport, { spec: isSpec(id) }]);
   }
-  if (!coverage && !stubs) return null;
-  const plugins = stubs ? [[stubSetter, { self: '/' + path.relative(ROOT, file(id)).split(path.sep).join('/') }]] : [];
-  if (coverage) plugins.push(istanbul(id));
-  const result = require('@babel/core').transformSync(code, {
-    filename: file(id),
-    configFile: false,
-    babelrc: false,
-    sourceType: 'module',
-    retainLines: true,
-    sourceMaps: true,
-    // Vite chains the map onto the precompile's
-    inputSourceMap: false,
-    plugins,
-  });
-  return { code: result.code, map: result.map };
+  let out = code;
+  let map = null;
+  if (plugins.length) {
+    const result = require('@babel/core').transformSync(code, {
+      filename: file(id),
+      configFile: false,
+      babelrc: false,
+      sourceType: 'module',
+      // keeps the lines, so test code can go on using the precompile's source map
+      retainLines: true,
+      sourceMaps: !test,
+      // Vite chains the map onto the precompile's
+      inputSourceMap: false,
+      plugins,
+    });
+    out = result.code;
+    map = result.map;
+  }
+  if (isSpec(id)) out += `\nawait import('${HOOK_SETUP}');\n`;
+  return out === code ? null : { code: out, map };
+}
+
+function hasOwnNamedExports(code, id) {
+  try {
+    return parse(code, id)[1].some(e => e.ln && e.n !== 'default');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Babel plugin that makes `import * as ns` in test code bind `ns` to a stubbable facade (stubs.mjs) of the
+ * namespace, rather than the namespace itself.
+ */
+export function namespaceFacades({ types: t, template }) {
+  return {
+    visitor: {
+      Program(p) {
+        const facades = [];
+        for (const { node } of p.get('body')) {
+          if (node.type !== 'ImportDeclaration') continue;
+          for (const s of node.specifiers) {
+            if (s.type !== 'ImportNamespaceSpecifier') continue;
+            const name = s.local.name;
+            s.local = t.identifier(`__ns_${name}`);
+            p.scope.removeOwnBinding(name);
+            facades.push(`const ${name} = __stubbable(${s.local.name});`);
+          }
+        }
+        if (!facades.length) return;
+        p.unshiftContainer('body', template.statements.ast(
+          `import { stubbable as __stubbable } from '${STUBS}'; ${facades.join(' ')}`));
+      },
+    },
+  };
 }
 
 /**
@@ -166,42 +197,42 @@ function istanbul(id) {
 // static import in a spec (its describe() callbacks run while the module evaluates, and need it then), and
 // elsewhere a dynamic import that setup.mjs runs once everything has loaded, read when the require() runs:
 // global_hooks.js requires userSync lazily to avoid an import cycle, which an earlier import brings back.
-function rewriteRequire(code, id) {
-  const babel = require('@babel/core');
-  const hoisted = [];
-  const result = babel.transformSync(code, {
-    filename: file(id),
-    configFile: false,
-    babelrc: false,
-    sourceType: 'module',
-    sourceMaps: false,
-    // keep line numbers, so the spec's source map (and failure locations) still apply
-    retainLines: true,
-    plugins: [({ types: t }) => ({
-      visitor: {
-        CallExpression(p) {
-          const { callee, arguments: args } = p.node;
-          if (!t.isIdentifier(callee, { name: 'require' }) || p.scope.hasBinding('require') ||
-            args.length !== 1 || !t.isStringLiteral(args[0])) return;
-          const src = args[0].value;
-          let ns;
-          if (p.getFunctionParent() && isSpec(id)) {
-            ns = t.identifier(`__req_${hoisted.length}`);
-            hoisted.push(`import * as ${ns.name} from ${JSON.stringify(src)};`);
-          } else if (p.getFunctionParent()) {
-            ns = t.identifier(`__req_${hoisted.length}`);
-            hoisted.push(`const ${ns.name} = __vitestLater(() => import(${JSON.stringify(src)}), ${JSON.stringify(src)});`);
-            ns = t.callExpression(ns, []);
-          } else {
-            ns = t.awaitExpression(t.callExpression(t.import(), [t.stringLiteral(src)]));
-          }
-          p.replaceWith(t.callExpression(t.identifier('__vitestRequire'),
-            [ns, t.stringLiteral(src), t.booleanLiteral(isCommonJsPackage(src))]));
+function requireToImport({ types: t, template }) {
+  return {
+    visitor: {
+      Program: {
+        enter(p, state) {
+          state.hoisted = [];
+        },
+        exit(p, state) {
+          if (!state.required) return;
+          p.unshiftContainer('body', template.statements.ast(
+            `import { required as __vitestRequire, later as __vitestLater } from '${STUBS}'; ${state.hoisted.join(' ')}`));
         },
       },
-    })],
-  });
-  return `import { required as __vitestRequire, later as __vitestLater } from '${STUBS}'; ${hoisted.join(' ')} ${result.code}`;
+      CallExpression(p, state) {
+        const { callee, arguments: args } = p.node;
+        if (!t.isIdentifier(callee, { name: 'require' }) || p.scope.hasBinding('require') ||
+          args.length !== 1 || !t.isStringLiteral(args[0])) return;
+        const src = args[0].value;
+        const { hoisted } = state;
+        let ns;
+        if (p.getFunctionParent() && state.opts.spec) {
+          ns = t.identifier(`__req_${hoisted.length}`);
+          hoisted.push(`import * as ${ns.name} from ${JSON.stringify(src)};`);
+        } else if (p.getFunctionParent()) {
+          ns = t.identifier(`__req_${hoisted.length}`);
+          hoisted.push(`const ${ns.name} = __vitestLater(() => import(${JSON.stringify(src)}), ${JSON.stringify(src)});`);
+          ns = t.callExpression(ns, []);
+        } else {
+          ns = t.awaitExpression(t.callExpression(t.import(), [t.stringLiteral(src)]));
+        }
+        state.required = true;
+        p.replaceWith(t.callExpression(t.identifier('__vitestRequire'),
+          [ns, t.stringLiteral(src), t.booleanLiteral(isCommonJsPackage(src))]));
+      },
+    },
+  };
 }
 
 // Whether webpack's require() of a package specifier gets CommonJS (module.exports) rather than an ES
