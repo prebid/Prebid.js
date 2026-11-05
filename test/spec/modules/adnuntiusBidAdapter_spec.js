@@ -159,6 +159,10 @@ describe('adnuntiusBidAdapter', function() {
               sizes: [250, 250]
             }
           }
+        },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [{ id: 0, required: 1, img: { type: 3, w: 250, h: 250 } }]
         }
       }]
   };

@@ -11,7 +11,6 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { toOrtbNativeRequest } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess,
@@ -83,8 +82,7 @@ const converter = ortbConverter({
         delete imp.bidfloorcur;
       }
     }
-    const legacyNative = normalizeLegacyNativeParams(bidRequest.nativeParams || deepAccess(bidRequest, 'mediaTypes.native'));
-    const nativeReq = bidRequest.nativeOrtbRequest || (legacyNative ? toOrtbNativeRequest(legacyNative) : null);
+    const nativeReq = bidRequest.nativeOrtbRequest;
     if (nativeReq) {
       try {
         populateNativeImp(imp, nativeReq);
@@ -322,28 +320,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-const LEGACY_NATIVE_ALIASES = {
-  sponsored: 'sponsoredBy',
-  saleprice: 'salePrice',
-  displayurl: 'displayUrl',
-  data: 'body',
-};
-
-function normalizeLegacyNativeParams(params) {
-  if (!params) {
-    return params;
-  }
-  let normalized = Object.assign({}, params);
-  for (const alias of Object.keys(LEGACY_NATIVE_ALIASES)) {
-    const canonical = LEGACY_NATIVE_ALIASES[alias];
-    if (params[alias] && !params[canonical]) {
-      normalized[canonical] = normalized[alias];
-      delete normalized[alias];
-    }
-  }
-  return normalized;
-}
 
 function populateNativeImp(imp, nativeReq) {
   if (!nativeReq) {
