@@ -392,7 +392,7 @@ describe('ColossussspAdapter', function () {
       }
     });
     it('Returns an empty array if invalid response is passed', function () {
-      serverResponses = spec.interpretResponse({ body: [{}] });
+      serverResponses = spec.interpretResponse({ body: 'invalid_response' });
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
 
@@ -435,7 +435,7 @@ describe('ColossussspAdapter', function () {
       }
     });
     it('Returns an empty array if invalid video response is passed', function () {
-      videoServerResponses = spec.interpretResponse({ body: [{}] });
+      videoServerResponses = spec.interpretResponse({ body: 'invalid_response' });
       expect(videoServerResponses).to.be.an('array').that.is.empty;
     });
   });
