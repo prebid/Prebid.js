@@ -501,6 +501,30 @@ describe('native.js', function () {
       expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
       expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
     });
+
+    it('ignores unmatched and unrecognized data assets without setting an undefined property', () => {
+      const request = {
+        assets: [
+          { id: 1, data: { type: 2 } },
+          { id: 2, data: {} },
+          { id: 3, data: { type: 999 } }
+        ]
+      };
+      const response = {
+        assets: [
+          { id: 0, data: { value: 'unmatched' } },
+          { id: 1, data: { value: 'valid body' } },
+          { id: 2, data: { value: 'missing type' } },
+          { id: 3, data: { value: 'unknown type' } }
+        ]
+      };
+
+      const actual = toLegacyResponse(response, request);
+      expect(actual.body).to.equal('valid body');
+      expect(actual).to.not.have.property('undefined');
+      expect(Object.keys(actual)).to.have.members(['clickUrl', 'privacyLink', 'body', 'impressionTrackers']);
+    });
+
     ['img.type', 'title.text', 'data.type', 'video.vasttag'].forEach(prop => {
       it(`does not choke when the request does not have ${prop}, but the response does`, () => {
         const request = { ortb: { assets: [{ id: 1 }] } };
@@ -837,6 +861,23 @@ describe('validate native', function () {
       }
     });
     expect(ortb.privacy).to.equal(1);
+  });
+
+  it('rejects invalid native request inputs', () => {
+    const errorStub = sinon.stub(utils, 'logError');
+    try {
+      const invalidInputs = [undefined, null, false, 0, 'native', 42, [], new Date()];
+      invalidInputs.forEach(input => {
+        expect(toOrtbNativeRequest(input)).to.be.undefined;
+      });
+      sinon.assert.callCount(errorStub, invalidInputs.length);
+    } finally {
+      errorStub.restore();
+    }
+  });
+
+  it('accepts an empty plain object as a native request', () => {
+    expect(toOrtbNativeRequest({})).to.deep.equal({ ver: '1.2', assets: [] });
   });
 
   it('should convert legacy video asset to OpenRTB request', () => {
