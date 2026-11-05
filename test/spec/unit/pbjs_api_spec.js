@@ -2961,183 +2961,181 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    describe('multiformat requests', function () {
-      if (!FEATURES.NATIVE) {
-        return;
-      }
-      let adUnits, auctionStarted;
+    if (FEATURES.NATIVE) {
+      describe('multiformat requests', function () {
+        let adUnits, auctionStarted;
 
-      beforeEach(function () {
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
+        beforeEach(function () {
+          adUnits = [{
+            code: 'adUnit-code',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              },
+              native: {},
             },
-            native: {},
-          },
-          sizes: [[300, 250], [300, 600]],
-          bids: [
-            { bidder: 'msft', params: { placementId: 'id' } },
-            { bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }
-          ]
-        }];
-        configObj.setConfig({ maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999 });
-        auctionStarted = new Promise(resolve => {
-          sinon.stub(adapterManager, 'callBids').callsFake(function() {
-            resolve();
-            return adapterManager.callBids.wrappedMethod.apply(this, arguments);
+            sizes: [[300, 250], [300, 600]],
+            bids: [
+              { bidder: 'msft', params: { placementId: 'id' } },
+              { bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }
+            ]
+          }];
+          configObj.setConfig({ maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999 });
+          auctionStarted = new Promise(resolve => {
+            sinon.stub(adapterManager, 'callBids').callsFake(function() {
+              resolve();
+              return adapterManager.callBids.wrappedMethod.apply(this, arguments);
+            });
           });
         });
-      });
 
-      afterEach(function () {
-        adapterManager.callBids.restore();
-      });
-
-      it('bidders that support one of the declared formats are allowed to participate', async function () {
-        pbjs.requestBids({ adUnits });
-        await auctionStarted;
-        sinon.assert.calledOnce(adapterManager.callBids);
-
-        const spyArgs = adapterManager.callBids.getCall(0);
-        const biddersCalled = spyArgs.args[0][0].bids;
-
-        // msft and sampleBidder both support banner
-        expect(biddersCalled.length).to.equal(2);
-      });
-
-      it('bidders that do not support one of the declared formats are dropped', async function () {
-        delete adUnits[0].mediaTypes.banner;
-
-        pbjs.requestBids({ adUnits });
-        await auctionStarted;
-        sinon.assert.calledOnce(adapterManager.callBids);
-
-        const spyArgs = adapterManager.callBids.getCall(0);
-        const biddersCalled = spyArgs.args[0][0].bids;
-        // only msft supports native
-        expect(biddersCalled.length).to.equal(1);
-      });
-
-      it('module bids should not be filtered out', async () => {
-        delete adUnits[0].mediaTypes.banner;
-        adUnits[0].bids.push({
-          module: 'pbsBidAdapter',
-          ortb2Imp: {}
+        afterEach(function () {
+          adapterManager.callBids.restore();
         });
 
-        pbjs.requestBids({ adUnits });
-        await auctionStarted;
-        expect(adapterManager.callBids.getCall(0).args[0][0].bids.length).to.eql(2);
-      });
-    });
+        it('bidders that support one of the declared formats are allowed to participate', async function () {
+          pbjs.requestBids({ adUnits });
+          await auctionStarted;
+          sinon.assert.calledOnce(adapterManager.callBids);
 
-    describe('part 2', function () {
-      if (!FEATURES.NATIVE) {
-        return;
-      }
-      let spyCallBids;
-      let adUnits;
+          const spyArgs = adapterManager.callBids.getCall(0);
+          const biddersCalled = spyArgs.args[0][0].bids;
 
-      beforeEach(function () {
-        spyCallBids = sinon.spy(adapterManager, 'callBids');
-      });
+          // msft and sampleBidder both support banner
+          expect(biddersCalled.length).to.equal(2);
+        });
 
-      afterEach(function () {
-        adapterManager.callBids.restore();
-      });
+        it('bidders that do not support one of the declared formats are dropped', async function () {
+          delete adUnits[0].mediaTypes.banner;
 
-      function runAuction(request = {}) {
-        const auctionStarted = new Promise(resolve => {
-          sandbox.stub(auctionModule, 'newAuction').callsFake((...args) => {
-            resolve();
-            return auctionModule.newAuction.wrappedMethod(...args);
+          pbjs.requestBids({ adUnits });
+          await auctionStarted;
+          sinon.assert.calledOnce(adapterManager.callBids);
+
+          const spyArgs = adapterManager.callBids.getCall(0);
+          const biddersCalled = spyArgs.args[0][0].bids;
+          // only msft supports native
+          expect(biddersCalled.length).to.equal(1);
+        });
+
+        it('module bids should not be filtered out', async () => {
+          delete adUnits[0].mediaTypes.banner;
+          adUnits[0].bids.push({
+            module: 'pbsBidAdapter',
+            ortb2Imp: {}
           });
+
+          pbjs.requestBids({ adUnits });
+          await auctionStarted;
+          expect(adapterManager.callBids.getCall(0).args[0][0].bids.length).to.eql(2);
         });
-        pbjs.requestBids(request);
-        return auctionStarted;
-      }
-
-      it('should callBids if a native adUnit has all native bidders', async function () {
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaTypes: { native: {} },
-          bids: [
-            { bidder: 'msft', params: { placementId: '10433394' } }
-          ]
-        }];
-        await runAuction({ adUnits });
-        sinon.assert.calledOnce(adapterManager.callBids);
       });
+    }
 
-      it('should call callBids function on adapterManager', async function () {
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-          bids: [
-            { bidder: 'msft', params: { placementId: '10433394' } }
-          ]
-        }];
-        await runAuction({ adUnits });
-        assert.ok(spyCallBids.called, 'called adapterManager.callBids');
-      });
+    if (FEATURES.NATIVE) {
+      describe('part 2', function () {
+        let spyCallBids;
+        let adUnits;
 
-      it('splits native type to individual native assets', async function () {
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaTypes: { native: { type: 'image' } },
-          bids: [
-            { bidder: 'msft', params: { placementId: 'id' } }
-          ]
-        }];
-        await runAuction({ adUnits });
-        const spyArgs = adapterManager.callBids.getCall(0);
-        const nativeRequest = spyArgs.args[1][0].bids[0].nativeParams;
-        expect(nativeRequest.ortb.assets).to.deep.equal([
-          {
-            required: 1,
-            id: 1,
-            img: {
-              type: 3,
-              wmin: 100,
-              hmin: 100,
-            }
-          },
-          {
-            required: 1,
-            id: 2,
-            title: {
-              len: 140,
-            }
-          },
-          {
-            required: 1,
-            id: 3,
-            data: {
-              type: 1,
-            }
-          },
-          {
-            required: 0,
-            id: 4,
-            data: {
-              type: 2,
-            }
-          },
-          {
-            required: 0,
-            id: 5,
-            img: {
-              type: 1,
-              wmin: 20,
-              hmin: 20,
-            }
-          },
-        ]);
-        resetAuction();
+        beforeEach(function () {
+          spyCallBids = sinon.spy(adapterManager, 'callBids');
+        });
+
+        afterEach(function () {
+          adapterManager.callBids.restore();
+        });
+
+        function runAuction(request = {}) {
+          const auctionStarted = new Promise(resolve => {
+            sandbox.stub(auctionModule, 'newAuction').callsFake((...args) => {
+              resolve();
+              return auctionModule.newAuction.wrappedMethod(...args);
+            });
+          });
+          pbjs.requestBids(request);
+          return auctionStarted;
+        }
+
+        it('should callBids if a native adUnit has all native bidders', async function () {
+          adUnits = [{
+            code: 'adUnit-code',
+            mediaTypes: { native: {} },
+            bids: [
+              { bidder: 'msft', params: { placementId: '10433394' } }
+            ]
+          }];
+          await runAuction({ adUnits });
+          sinon.assert.calledOnce(adapterManager.callBids);
+        });
+
+        it('should call callBids function on adapterManager', async function () {
+          adUnits = [{
+            code: 'adUnit-code',
+            mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+            bids: [
+              { bidder: 'msft', params: { placementId: '10433394' } }
+            ]
+          }];
+          await runAuction({ adUnits });
+          assert.ok(spyCallBids.called, 'called adapterManager.callBids');
+        });
+
+        it('splits native type to individual native assets', async function () {
+          adUnits = [{
+            code: 'adUnit-code',
+            mediaTypes: { native: { type: 'image' } },
+            bids: [
+              { bidder: 'msft', params: { placementId: 'id' } }
+            ]
+          }];
+          await runAuction({ adUnits });
+          const spyArgs = adapterManager.callBids.getCall(0);
+          const nativeRequest = spyArgs.args[1][0].bids[0].nativeParams;
+          expect(nativeRequest.ortb.assets).to.deep.equal([
+            {
+              required: 1,
+              id: 1,
+              img: {
+                type: 3,
+                wmin: 100,
+                hmin: 100,
+              }
+            },
+            {
+              required: 1,
+              id: 2,
+              title: {
+                len: 140,
+              }
+            },
+            {
+              required: 1,
+              id: 3,
+              data: {
+                type: 1,
+              }
+            },
+            {
+              required: 0,
+              id: 4,
+              data: {
+                type: 2,
+              }
+            },
+            {
+              required: 0,
+              id: 5,
+              img: {
+                type: 1,
+                wmin: 20,
+                hmin: 20,
+              }
+            },
+          ]);
+          resetAuction();
+        });
       });
-    });
+    }
 
     describe('part-3', function () {
       const auctionManagerInstance = newAuctionManager();
