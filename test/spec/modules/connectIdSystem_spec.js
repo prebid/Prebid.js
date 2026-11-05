@@ -7,6 +7,13 @@ import * as refererDetection from '../../../src/refererDetection.js';
 // the top page without its query: http://localhost:9876/ under Karma, bs-local.com on a BrowserStack device
 const TEST_SERVER_URL = `${window.top.location.origin}/`;
 
+// The module writes its cookie on the broadest domain that takes it ('.com' before '.bs-local.com'), checking each
+// write by reading it back, which getCookieStub never confirms: so one write per level of the page's host.
+function expectedCookieWrites(key, value, expires) {
+  const levels = new URL(TEST_SERVER_URL).hostname.split('.');
+  return levels.map((_, i) => [key, value, expires, null, '.' + levels.slice(levels.length - i - 1).join('.')]);
+}
+
 describe('Yahoo ConnectID Submodule', () => {
   const HASHED_EMAIL = '6bda6f2fa268bf0438b5423a9861a2cedaa5dec163c03f743cfe05c08a8397b2';
   const PUBLISHER_USER_ID = '975484817';
@@ -45,9 +52,6 @@ describe('Yahoo ConnectID Submodule', () => {
       getAjaxFnStub = sinon.stub(connectIdSubmodule, 'getAjaxFn');
       getAjaxFnStub.returns(ajaxStub);
       getCookieStub = sinon.stub(storage, 'getCookie');
-      // The module writes its cookie on the broadest domain that takes it, trying '.com' before '.bs-local.com'
-      // and checking each write by reading it back, which getCookieStub never confirms. So there is one write per
-      // level of the page's host (one on localhost) and the assertions check the last.
       setCookieStub = sinon.stub(storage, 'setCookie');
       cookiesEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
       getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
@@ -196,10 +200,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           const expiryDelta = new Date(60 * 60 * 24 * 365 * 1000);
           expect(result).to.be.an('object').that.has.all.keys('id');
-          expect(setCookieStub.called).to.be.true;
-          expect(setCookieStub.lastCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.lastCall.args[1]).to.equal(JSON.stringify(newCookieData));
-          expect(setCookieStub.lastCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setCookieStub.args).to.eql(expectedCookieWrites(STORAGE_KEY, JSON.stringify(newCookieData), expiryDelta.toUTCString()));
           expect(setLocalStorageStub.calledOnce).to.be.true;
           expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
           expect(setLocalStorageStub.firstCall.args[1]).to.equal(JSON.stringify(newCookieData));
@@ -288,10 +289,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           const expiryDelta = new Date(1 + 60 * 60 * 24 * 365 * 1000);
           expect(result).to.be.an('object').that.has.all.keys('id', 'callback');
-          expect(setCookieStub.called).to.be.true;
-          expect(setCookieStub.lastCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.lastCall.args[1]).to.equal(JSON.stringify(localStorageData));
-          expect(setCookieStub.lastCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setCookieStub.args).to.eql(expectedCookieWrites(STORAGE_KEY, JSON.stringify(localStorageData), expiryDelta.toUTCString()));
         });
 
         it('returns an object with the stored ID from cookies and syncs because of expired TTL', () => {
