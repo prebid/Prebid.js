@@ -230,9 +230,9 @@ function validateBanner(bid) {
 
 /**
  * Validates that the bid's video part can be sent to the Exchange: the bid
- * declares mediaTypes.video, the build includes video and the mimes sent
- * (mediaTypes.video.mimes merged with ortb2Imp.video.mimes) is a non-empty
- * array of strings.
+ * declares mediaTypes.video, the build includes video, its playerSize, when
+ * set, is not empty and the mimes sent (mediaTypes.video.mimes merged with
+ * ortb2Imp.video.mimes) is a non-empty array of strings.
  *
  * @param {BidRequest} bid - the bid to validate.
  * @return {string|null} the reason the video part cannot be sent, or null when
@@ -247,6 +247,12 @@ function validateVideo(bid) {
   // keeps mediaTypes.video, so a video-only bid would go out with an empty imp.
   if (!FEATURES.VIDEO) {
     return 'video is not included in this Prebid.js build';
+  }
+  // As with banner.sizes, the sizeMapping module empties a playerSize it
+  // filters out; the w/h core filled from it earlier stay, so the converter
+  // would still send the video.
+  if (isArray(video.playerSize) && video.playerSize.length === 0) {
+    return 'mediaTypes.video.playerSize is empty';
   }
   // Core only drops mimes when it is malformed, so a missing mimes reaches the
   // adapter. Core also checks only what mediaTypes.video sets before the

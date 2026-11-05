@@ -209,6 +209,13 @@ describe('Geniee Exchange bid adapter', () => {
             expect(spec.isBidRequestValid(bid)).to.equal(true);
           });
 
+        // the sizeMapping module empties playerSize when it filters out the size
+        it('is invalid for a video-only ad unit whose playerSize is empty', () => {
+          expect(spec.isBidRequestValid(makeBid({
+            mediaTypes: { video: { context: 'instream', mimes: MIMES, playerSize: [] } }
+          }))).to.equal(false);
+        });
+
         it('is valid on the video part when banner.sizes of a multiformat ad unit is empty',
           () => {
             const bid = makeBid({
@@ -349,6 +356,18 @@ describe('Geniee Exchange bid adapter', () => {
               },
               { ortb2Imp: { video: { mimes: [1] } } },
             );
+
+            expect(imp.banner).to.be.an('object');
+            expect(imp.video, 'imp.video').to.equal(undefined);
+          });
+
+        // w/h stay as filled from playerSize before size mapping emptied it
+        it('sends only the banner part when the playerSize of a multiformat ad unit is empty',
+          () => {
+            const imp = buildImp({
+              banner: { sizes: [[300, 250]] },
+              video: { context: 'instream', mimes: MIMES, playerSize: [], w: 640, h: 480 },
+            });
 
             expect(imp.banner).to.be.an('object');
             expect(imp.video, 'imp.video').to.equal(undefined);
