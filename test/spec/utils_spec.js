@@ -701,7 +701,7 @@ describe('Utils', function () {
       });
     });
 
-    it('preserves falsy values that are defined, but omits undefined values', function () {
+    it('preserves falsy values, but omits null and undefined', function () {
       const params = {
         enabled: false,
         count: 0,
@@ -717,8 +717,7 @@ describe('Utils', function () {
       assert.deepEqual(actual, {
         enabled: false,
         count: 0,
-        label: '',
-        optional: null
+        label: ''
       });
     });
   });
