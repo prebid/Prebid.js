@@ -425,14 +425,15 @@ describe('secureCreatives', () => {
 
       describe('resizing', () => {
         let container, slot;
+        let gtag, atag;
         before(() => {
-          const [gtag, atag] = [window.googletag, window.apntag];
+          [gtag, atag] = [window.googletag, window.apntag];
           delete window.googletag;
           delete window.apntag;
-          after(() => {
-            window.googletag = gtag;
-            window.apntag = atag;
-          });
+        });
+        after(() => {
+          window.googletag = gtag;
+          window.apntag = atag;
         });
         beforeEach(() => {
           pushBidResponseToAuction({
