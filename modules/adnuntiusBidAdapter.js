@@ -398,7 +398,7 @@ export const spec = {
         const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: targetId };
         if (mediaType === VIDEO) {
           adUnit.adType = 'VAST';
-        } else if (mediaType === NATIVE) {
+        } else if (FEATURES.NATIVE && mediaType === NATIVE) {
           adUnit.adType = 'NATIVE';
           if (!mediaTypeData.ortb) {
             // assume it's using old format if ortb not specified
