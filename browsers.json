@@ -1,96 +1,105 @@
 {
   "chrome": {
     "name": "Chrome",
-    "runsOn": "ubuntu-latest",
-    "wdioName": "chrome"
+    "runner": {
+      "runsOn": "ubuntu-latest",
+      "wdio": "chrome"
+    },
+    "browserstack": {
+      "browserName": "chrome",
+      "browserVersion": "latest",
+      "os": "Windows",
+      "osVersion": "11"
+    }
   },
   "firefox": {
     "name": "Firefox",
-    "runsOn": "ubuntu-latest",
-    "wdioName": "firefox",
-    "vitest": {
-      "browser": "firefox",
-      "playwright": "firefox",
-      "shards": 2
+    "runner": {
+      "runsOn": "ubuntu-latest",
+      "wdio": "firefox",
+      "vitest": {
+        "browser": "firefox",
+        "playwright": "firefox",
+        "shards": 2
+      }
+    },
+    "browserstack": {
+      "browserName": "firefox",
+      "browserVersion": "latest",
+      "os": "Windows",
+      "osVersion": "11"
     }
   },
   "safari": {
     "name": "Safari",
-    "runsOn": "macos-latest",
-    "wdioName": "safari",
-    "vitest": {
-      "browser": "safari",
-      "safari": true,
-      "shards": 2
+    "runner": {
+      "runsOn": "macos-latest",
+      "wdio": "safari",
+      "vitest": {
+        "browser": "safari",
+        "safari": true,
+        "shards": 2
+      }
+    },
+    "browserstack": {
+      "browserName": "safari",
+      "browserVersion": "latest",
+      "os": "OS X",
+      "osVersion": "Tahoe"
     }
   },
   "edge": {
     "name": "Edge",
-    "runsOn": "windows-latest",
-    "wdioName": "msedge",
-    "vitest": {
-      "channel": "msedge",
-      "shards": 1
+    "runner": {
+      "runsOn": "windows-latest",
+      "wdio": "msedge",
+      "vitest": {
+        "channel": "msedge",
+        "shards": 1
+      }
+    },
+    "browserstack": {
+      "browserName": "edge",
+      "browserVersion": "latest",
+      "os": "Windows",
+      "osVersion": "11"
     }
   },
   "chrome_113": {
     "name": "Chrome 113",
-    "runsOn": "ubuntu-latest",
-    "vitest": {
-      "chromeVersion": "113.0.5672.0",
-      "shards": 1
+    "runner": {
+      "runsOn": "ubuntu-latest",
+      "vitest": {
+        "chromeVersion": "113.0.5672.0",
+        "shards": 1
+      }
+    },
+    "browserstack": {
+      "browserName": "chrome",
+      "browserVersion": "113.0",
+      "os": "Windows",
+      "osVersion": "10"
     }
   },
-  "bs_iphone_14_ios_16": {
+  "safari_16": {
+    "name": "Safari 16",
+    "browserstack": {
+      "browserName": "safari",
+      "browserVersion": "16.5",
+      "os": "OS X",
+      "osVersion": "Ventura"
+    }
+  },
+  "iphone_14": {
     "name": "iPhone 14 iOS 16",
-    "os_version": "16",
-    "browser": "safari",
-    "device": "iPhone 14",
-    "vitest": {
-      "shards": 4,
-      "maxParallel": 2
+    "browserstack": {
+      "browserName": "safari",
+      "deviceName": "iPhone 14",
+      "osVersion": "16",
+      "vitest": {
+        "shards": 4,
+        "maxParallel": 2
+      }
     }
-  },
-  "bs_edge_latest_windows_11": {
-    "os_version": "11",
-    "browser": "edge",
-    "browser_version": "latest",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_chrome_latest_windows_11": {
-    "os_version": "11",
-    "browser": "chrome",
-    "browser_version": "latest",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_chrome_113_windows_10": {
-    "os_version": "10",
-    "browser": "chrome",
-    "browser_version": "113.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_firefox_latest_windows_11": {
-    "os_version": "11",
-    "browser": "firefox",
-    "browser_version": "latest",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_safari_latest_mac": {
-    "os_version": "Tahoe",
-    "browser": "safari",
-    "browser_version": "latest",
-    "device": null,
-    "os": "OS X"
-  },
-  "bs_safari_16_ventura": {
-    "os_version": "Ventura",
-    "browser": "safari",
-    "browser_version": "16.5",
-    "device": null,
-    "os": "OS X"
   }
 }

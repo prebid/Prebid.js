@@ -123,9 +123,9 @@ VITEST_BROWSERSTACK=1 VITEST_PARALLEL=3 npm run test:vitest -- --shard=1/4      
 VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/4
 # a desktop browser instead
 VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
-# every BrowserStack entry of browsers.json in turn, or the ones named; one session per shard of its `vitest.shards`
+# every browsers.json entry with `browserstack` in turn, or the ones named; one session per shard of its `vitest.shards`
 npx gulp test-only-nobuild --browserstack
-npx gulp test-only-nobuild --browserstack --browsers=bs_safari_16_ventura,bs_firefox_latest_windows_11
+npx gulp test-only-nobuild --browserstack --browsers=safari_16,firefox
 ```
 
 - `VITEST_DEVICE` (default `iPhone 14`) and `VITEST_OS_VERSION` (default `16`) select a real device. BrowserStack
@@ -178,21 +178,23 @@ The e2e tests, the build logic tests and the packed package's type check stay in
 
 ### Browsers in CI
 
-`browsers.json` (at the repository root) lists the browsers for every matrix, keyed by a name that
-`gulp test --browserstack --browsers=<key>` also takes:
+`browsers.json` (at the repository root) lists the browsers for every matrix, one entry per browser, keyed by a name
+that `gulp test --browserstack --browsers=<key>` also takes. `name` labels its jobs. Each environment the browser can
+run in has an object of its own:
 
-- An entry with `runsOn` (a GitHub runner label) runs on that runner. `name` labels its jobs. With `wdioName` (the
-  WebdriverIO browser name) it runs the e2e tests (`browser-tests.yml`).
-- An entry without `runsOn` is a BrowserStack target: `browser`, `browser_version`, `os` and `os_version` for a
-  desktop browser, or `device` and `os_version` for a real device. `gulp test --browserstack` runs on each of them,
-  and `gulp e2e-test` (without `--local`) on the desktop ones on `latest`, except Safari.
-- `vitest` puts an entry in `vitest-browsers.yml`, in `shards` jobs: on runners, `browser` (`VITEST_BROWSER`),
-  `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`), `chromeVersion` (a Chrome
-  from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on BrowserStack, `maxParallel`. GitHub
-  can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most the lowest `maxParallel` at once.
+- `runner`: a GitHub runner, `runsOn` (its label). With `wdio` (the WebdriverIO browser name) it runs the e2e tests
+  (`browser-tests.yml`).
+- `browserstack`: BrowserStack, as its capabilities: `browserName`, `browserVersion`, `os` and `osVersion` for a
+  desktop browser, or `deviceName`, `osVersion` and `browserName` for a real device. `gulp test --browserstack` runs on
+  each of them, and `gulp e2e-test` (without `--local`) on the desktop ones on `latest`, except Safari.
+- `vitest`, in either, puts the entry in `vitest-browsers.yml`, in `shards` jobs: on runners, `browser`
+  (`VITEST_BROWSER`), `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`),
+  `chromeVersion` (a Chrome from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on
+  BrowserStack, `maxParallel`. GitHub can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most
+  the lowest `maxParallel` at once.
 
-Chromium's own jobs (`vitest-chromium.yml`) aren't in it. `browsers-es5.json` lists the BrowserStack browsers for the
-ES5 build's e2e job (`test.yml`).
+Chromium's own jobs (`vitest-chromium.yml`) aren't in it. `browsers-es5.json` lists, in the same format, the
+BrowserStack browsers for the ES5 build's e2e job (`test.yml`).
 
 ### Rollback
 

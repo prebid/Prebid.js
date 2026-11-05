@@ -116,24 +116,23 @@ module.exports = {
   },
 
   /**
-   * The Vitest environment for each BrowserStack entry of browsers.json (those without `runsOn`), or for the ones
-   * named in `keys`.
+   * The Vitest environment for each browsers.json entry that has `browserstack`, or for the ones named in `keys`.
    */
   browserstackTargets(keys = [], browsers = require('./browsers.json')) {
-    const available = Object.keys(browsers).filter(key => !browsers[key].runsOn);
+    const available = Object.keys(browsers).filter(key => browsers[key].browserstack);
     const unknown = keys.filter(key => !available.includes(key));
     if (unknown.length) {
-      throw new Error(`Unknown BrowserStack browser(s) ${unknown.join(', ')}; browsers.json has ${available.join(', ')}`);
+      throw new Error(`No BrowserStack settings for ${unknown.join(', ')}; browsers.json has them for ${available.join(', ')}`);
     }
     return (keys.length ? keys : available).map(key => {
-      const def = browsers[key];
+      const bs = browsers[key].browserstack;
       return {
         key,
-        shards: def.vitest?.shards ?? 1,
+        shards: bs.vitest?.shards ?? 1,
         // undefined rather than left out, so that the caller's environment can't mix a device with a desktop OS
-        env: def.device
-          ? {VITEST_DEVICE: def.device, VITEST_OS: undefined, VITEST_OS_VERSION: def.os_version, VITEST_BROWSER: def.browser, VITEST_BROWSER_VERSION: undefined}
-          : {VITEST_DEVICE: undefined, VITEST_OS: def.os, VITEST_OS_VERSION: def.os_version, VITEST_BROWSER: def.browser, VITEST_BROWSER_VERSION: def.browser_version},
+        env: bs.deviceName
+          ? {VITEST_DEVICE: bs.deviceName, VITEST_OS: undefined, VITEST_OS_VERSION: bs.osVersion, VITEST_BROWSER: bs.browserName, VITEST_BROWSER_VERSION: undefined}
+          : {VITEST_DEVICE: undefined, VITEST_OS: bs.os, VITEST_OS_VERSION: bs.osVersion, VITEST_BROWSER: bs.browserName, VITEST_BROWSER_VERSION: bs.browserVersion},
       };
     });
   },

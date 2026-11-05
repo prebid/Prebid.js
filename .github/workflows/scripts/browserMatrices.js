@@ -4,32 +4,32 @@ const byShard = (entry) => Array.from({length: entry.shards}, (_, i) => ({...ent
 
 function e2eBrowsers(browsers) {
   return Object.values(browsers)
-    .filter(def => def.runsOn && def.wdioName)
-    .map(({name, wdioName, runsOn}) => ({name, wdioName, runsOn, os: os(runsOn), version: 'latest'}));
+    .filter(def => def.runner?.wdio)
+    .map(({name, runner: {wdio, runsOn}}) => ({name, wdioName: wdio, runsOn, os: os(runsOn), version: 'latest'}));
 }
 
 function vitestRunners(browsers) {
   return Object.values(browsers)
-    .filter(def => def.runsOn && def.vitest)
-    .flatMap(({name, runsOn, vitest}) => byShard({name, runsOn, ...vitest}));
+    .filter(def => def.runner?.vitest)
+    .flatMap(({name, runner: {runsOn, vitest}}) => byShard({name, runsOn, ...vitest}));
 }
 
 function vitestBrowserstack(browsers) {
   return Object.values(browsers)
-    .filter(def => !def.runsOn && def.vitest)
-    .flatMap(def => byShard({
-      name: def.name,
-      browser: def.browser,
-      ...(def.device
-        ? {device: def.device, osVersion: def.os_version}
-        : {os: def.os, osVersion: def.os_version, browserVersion: def.browser_version}),
-      shards: def.vitest.shards,
+    .filter(def => def.browserstack?.vitest)
+    .flatMap(({name, browserstack: bs}) => byShard({
+      name,
+      browser: bs.browserName,
+      ...(bs.deviceName
+        ? {device: bs.deviceName, osVersion: bs.osVersion}
+        : {os: bs.os, osVersion: bs.osVersion, browserVersion: bs.browserVersion}),
+      shards: bs.vitest.shards,
     }));
 }
 
 // GitHub can't vary max-parallel per matrix entry, so the BrowserStack job takes the strictest entry's
 function vitestBrowserstackMaxParallel(browsers) {
-  const limits = Object.values(browsers).filter(def => !def.runsOn && def.vitest?.maxParallel).map(def => def.vitest.maxParallel);
+  const limits = Object.values(browsers).map(def => def.browserstack?.vitest?.maxParallel).filter(Boolean);
   return limits.length ? Math.min(...limits) : vitestBrowserstack(browsers).length || 1;
 }
 

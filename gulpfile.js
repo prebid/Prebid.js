@@ -366,8 +366,8 @@ function setupDist() {
 //   with `gulp serve-and-test`, sources are re-precompiled as they change).
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file(s), comma separated.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,safari,edge,webkit
-// If --browserstack is given, it will run once on each BrowserStack entry of browsers.json, or with --browsers on the
-//   entries named, e.g. --browserstack --browsers=bs_iphone_14_ios_16,bs_safari_16_ventura
+// If --browserstack is given, it will run once on each browsers.json entry that has `browserstack`, or with --browsers
+//   on the entries named, e.g. --browserstack --browsers=iphone_14,chrome
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {

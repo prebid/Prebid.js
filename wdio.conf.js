@@ -7,13 +7,12 @@ const process = require('process');
 const browsersFile = process.env.BROWSERS_JSON || 'browsers.json';
 const allBrowsers = require(`./${browsersFile}`);
 
-// Another file is used as-is. browsers.json also lists runner browsers and devices; from it, take the BrowserStack
-// desktop entries on latest, except Safari
+// Another file is used as-is. From browsers.json, take the BrowserStack desktop browsers on latest, except Safari
 // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
-const browsers = browsersFile !== 'browsers.json' ? allBrowsers : Object.fromEntries(
-  Object.entries(allBrowsers)
-    .filter(([k, v]) => !v.runsOn && !v.device && v.os && v.browser_version === 'latest' && v.browser !== 'safari')
-);
+const browsers = Object.values(allBrowsers)
+  .map(def => def.browserstack)
+  .filter(bs => bs && (browsersFile !== 'browsers.json' ||
+    (!bs.deviceName && bs.browserVersion === 'latest' && bs.browserName !== 'safari')));
 
 /**
  * Specs that cannot pass on a given browser because of a limitation of the *creative*
@@ -47,15 +46,15 @@ function getCapabilities() {
   }
 
   let capabilities = []
-  Object.values(browsers).forEach(browser => {
-    const exclude = UNSUPPORTED_SPECS[`${browser.browser}@${browser.browser_version}`];
+  browsers.forEach(browser => {
+    const exclude = UNSUPPORTED_SPECS[`${browser.browserName}@${browser.browserVersion}`];
     capabilities.push({
-      browserName: browser.browser,
-      browserVersion: browser.browser_version,
+      browserName: browser.browserName,
+      browserVersion: browser.browserVersion,
       ...(exclude ? { exclude } : {}),
       'bstack:options': {
         os: getPlatform(browser.os),
-        osVersion: browser.os_version,
+        osVersion: browser.osVersion,
         networkLogs: true,
         consoleLogs: 'verbose',
         buildName: process.env.BROWSERSTACK_BUILD_NAME,
