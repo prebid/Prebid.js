@@ -40,7 +40,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    if (typeof bid.params !== 'object') {
+    if (bid.params == null || typeof bid.params !== 'object') {
       logError('[SMAATO] Missing params object');
       return false;
     }
@@ -113,8 +113,8 @@ export const spec = {
     logInfo('[SMAATO] OpenRTB Response:', response);
 
     const bids = [];
-    response.seatbid.forEach(seatbid => {
-      seatbid.bid.forEach(bid => {
+    (response.seatbid || []).forEach(seatbid => {
+      (seatbid.bid || []).forEach(bid => {
         const resultingBid = {
           requestId: bid.impid,
           cpm: bid.price || 0,

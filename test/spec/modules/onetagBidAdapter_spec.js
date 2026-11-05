@@ -300,6 +300,24 @@ describe('onetag', function () {
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
         expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
+      describe('legacy native (no mediaTypes.native.ortb)', function () {
+        let legacyBid;
+        beforeEach(() => {
+          legacyBid = createBid();
+          legacyBid.mediaTypes = { native: { adTemplate: '<div></div>', title: { required: true }, image: { required: true } } };
+          legacyBid.nativeParams = legacyBid.mediaTypes.native;
+          legacyBid.nativeOrtbRequest = toOrtbNativeRequest(legacyBid.nativeParams);
+        });
+        it('Should use nativeOrtbRequest for validation', function () {
+          expect(spec.isBidRequestValid(legacyBid)).to.be.true;
+          delete legacyBid.nativeOrtbRequest;
+          expect(spec.isBidRequestValid(legacyBid)).to.be.false;
+        });
+        it('Should send nativeOrtbRequest as mediaTypeInfo.ortb', function () {
+          const data = JSON.parse(spec.buildRequests([legacyBid]).data);
+          expect(data.bids[0].mediaTypeInfo).to.eql({ adTemplate: '<div></div>', ortb: legacyBid.nativeOrtbRequest });
+        });
+      });
       it('Should return false when native.ortb if defined but it isn\'t an object', function () {
         const nativeBid = createNativeBid();
         nativeBid.mediaTypes.native.ortb = 30;
