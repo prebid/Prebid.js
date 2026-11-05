@@ -1,7 +1,7 @@
 import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
+import { uid2IdSubmodule, storage as uid2Storage } from 'modules/uid2IdSystem.js';
 import { requestBids } from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -204,6 +204,18 @@ describe(`UID2 module`, function () {
   });
 
   describe('Configuration', function() {
+    it('stores a valid expiry date on the module cookie', async function() {
+      const writeCookie = testSandbox.spy(uid2Storage, 'setCookie');
+      config.setConfig(makePrebidConfig({ uid2Token: apiHelpers.makeTokenResponse(initialToken), storage: 'cookie' }));
+      await runAuction();
+
+      const write = writeCookie.getCalls().find(call => call.args[0] === moduleCookieName);
+      expect(write, 'UID2 module cookie should be written').to.exist;
+      expect(write.args[2]).to.be.a('string').and.match(/GMT$/);
+      expect(Date.parse(write.args[2])).to.be.greaterThan(Date.now());
+      expect(coreStorage.getCookie(moduleCookieName)).to.not.be.null;
+    });
+
     it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({ uid2Token }));
