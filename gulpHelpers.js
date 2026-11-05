@@ -65,10 +65,16 @@ tokens.forEach((token) => {
   if (token.kind !== 'option') {
     return;
   }
-  const match = booleanSpellings.get(token.name);
+  // Newer Node versions may normalize token.name for --no-* flags, so
+  // match their original spelling. Reject malformed extra-dash prefixes.
+  const rawOption = typeof token.rawName === 'string' && /^--[^-]/.test(token.rawName)
+    ? token.rawName.slice(2)
+    : undefined;
+  const match = booleanSpellings.get(rawOption);
   if (!match || (match.negated && token.value !== undefined)) {
     return;
   }
+
   argv[match.option] = match.negated ? false : (token.value ?? true);
   if (token.name !== match.option) {
     delete argv[token.name];
