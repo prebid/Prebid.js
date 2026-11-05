@@ -129,6 +129,7 @@ module.exports = {
       const def = browsers[key];
       return {
         key,
+        shards: def.vitest?.shards ?? 1,
         // undefined rather than left out, so that the caller's environment can't mix a device with a desktop OS
         env: def.device
           ? {VITEST_DEVICE: def.device, VITEST_OS: undefined, VITEST_OS_VERSION: def.os_version, VITEST_BROWSER: def.browser, VITEST_BROWSER_VERSION: undefined}

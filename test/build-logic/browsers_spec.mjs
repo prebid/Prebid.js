@@ -12,8 +12,8 @@ const BROWSERS = {
 describe('browserstackTargets', () => {
   it('runs every BrowserStack entry, skipping runner entries', () => {
     expect(helpers.browserstackTargets([], BROWSERS)).to.eql([
-      { key: 'device', env: { VITEST_DEVICE: 'iPhone 14', VITEST_OS: undefined, VITEST_OS_VERSION: '16', VITEST_BROWSER: 'safari', VITEST_BROWSER_VERSION: undefined } },
-      { key: 'desktop', env: { VITEST_DEVICE: undefined, VITEST_OS: 'Windows', VITEST_OS_VERSION: '11', VITEST_BROWSER: 'edge', VITEST_BROWSER_VERSION: 'latest' } },
+      { key: 'device', shards: 2, env: { VITEST_DEVICE: 'iPhone 14', VITEST_OS: undefined, VITEST_OS_VERSION: '16', VITEST_BROWSER: 'safari', VITEST_BROWSER_VERSION: undefined } },
+      { key: 'desktop', shards: 1, env: { VITEST_DEVICE: undefined, VITEST_OS: 'Windows', VITEST_OS_VERSION: '11', VITEST_BROWSER: 'edge', VITEST_BROWSER_VERSION: 'latest' } },
     ]);
   });
 

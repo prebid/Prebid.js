@@ -123,7 +123,7 @@ VITEST_BROWSERSTACK=1 VITEST_PARALLEL=3 npm run test:vitest -- --shard=1/4      
 VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/4
 # a desktop browser instead
 VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
-# every BrowserStack entry of browsers.json in turn, or the ones named
+# every BrowserStack entry of browsers.json in turn, or the ones named; one session per shard of its `vitest.shards`
 npx gulp test-only-nobuild --browserstack
 npx gulp test-only-nobuild --browserstack --browsers=bs_safari_16_ventura,bs_firefox_latest_windows_11
 ```

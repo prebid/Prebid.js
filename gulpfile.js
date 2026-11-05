@@ -416,9 +416,13 @@ function localBrowsers(names) {
 async function runVitest(options) {
   // a task's own `browsers` choose local browsers; on BrowserStack only --browsers selects
   const variants = options.browserstack
-    ? helpers.browserstackTargets(helpers.parseBrowserArgs(argv)).map(({env}) => env)
-    : localBrowsers(options.browsers ?? helpers.parseBrowserArgs(argv));
-  for (const browserEnv of variants) {
+    ? helpers.browserstackTargets(helpers.parseBrowserArgs(argv)).flatMap(({env, shards}) =>
+      // a BrowserStack session can only take so many spec files (see browsers.json), so one session per shard
+      options.file || options.watch || shards === 1
+        ? [{env}]
+        : Array.from({length: shards}, (_, i) => ({env, shard: `--shard=${i + 1}/${shards}`})))
+    : localBrowsers(options.browsers ?? helpers.parseBrowserArgs(argv)).map(env => ({env}));
+  for (const {env: browserEnv, shard} of variants) {
     // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through (specs.js), except with --file;
     // set to undefined rather than left out, as execa merges process.env back in
     const env = Object.assign({}, options.env, browserEnv,
@@ -428,7 +432,7 @@ async function runVitest(options) {
     // --file narrows the run to those specs (as Vitest file filters); without it, every spec runs
     const files = options.file ? options.file.split(',') : [];
     // in watch mode Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
-    await npmRun(options.watch ? 'test:vitest:watch' : 'test:vitest', env, files);
+    await npmRun(options.watch ? 'test:vitest:watch' : 'test:vitest', env, shard ? [...files, shard] : files);
   }
 }
 
