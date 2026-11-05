@@ -26,8 +26,8 @@ Supported media types: **banner** and **video**. Bids whose ad unit declares nei
 `mediaTypes.banner` nor `mediaTypes.video` (for example native-only ad units) are rejected by
 `isBidRequestValid` and never reach the Exchange. A multiformat ad unit (banner + video) is sent
 as one `imp` carrying both `banner` and `video`; native and audio are never sent. Banner and
-video set up only through `ortb2Imp`, and a banner disabled by size mapping for the current
-viewport or for this bidder, are not sent; when neither is left, the bid is rejected by
+video set up only through `ortb2Imp`, or disabled by size mapping for the current viewport or
+for this bidder, are not sent; when neither is left, the bid is rejected by
 `isBidRequestValid`. See [Video](#video) for the video requirements.
 
 We will provide ads when the following conditions are satisfied:
