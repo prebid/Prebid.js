@@ -38,17 +38,19 @@ const isSpec = (id) => isTest(id) && /_spec\.m?js$/.test(file(id));
  * @param {boolean} options.specStubs also make specs' own `import * as ns` namespaces stubbable. Without it,
  *   only the shared mocks and helpers get stubbable namespaces (test/mocks/adloaderStub.js needs one) and
  *   a spec that stubs a namespace fails with "ES Modules cannot be stubbed", as under plain Vite.
+ * @param {boolean} options.cacheModules let the browser keep dist/src modules for the whole run; only safe when
+ *   dist/src can't change mid-run (not in watch mode)
  * @returns {import('vite').Plugin[]} the plugins
  */
-export function nativeSpecs({ coverage = false, specStubs = true } = {}) {
+export function nativeSpecs({ coverage = false, specStubs = true, cacheModules = true } = {}) {
   const stubbable = (id) => isTest(id) && (specStubs || !isSpec(id));
   return [{
     name: 'prebid-native-specs',
     enforce: 'pre',
     configureServer(server) {
       // Every spec file loads in a new page, and Vite has the browser revalidate each module on every load
-      // (Cache-Control: no-cache), several hundred requests a page. dist/src doesn't change during a run, so
-      // let the browser keep its modules.
+      // (Cache-Control: no-cache), several hundred requests a page.
+      if (!cacheModules) return;
       server.middlewares.use((req, res, next) => {
         if (req.url?.includes('/dist/src/')) {
           const setHeader = res.setHeader;

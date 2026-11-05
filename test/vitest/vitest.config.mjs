@@ -168,7 +168,7 @@ export default defineConfig({
   // setup.mjs logs the remote browser's user agent, since BrowserStack picks the exact OS version
   define: { __VITEST_BROWSERSTACK__: JSON.stringify(browserstack) },
   publicDir: false,
-  plugins: [nativeSpecs({ coverage: !!process.env.VITEST_COVERAGE, specStubs: process.env.VITEST_NATIVE_STUBS !== '0' })],
+  plugins: [nativeSpecs({ coverage: !!process.env.VITEST_COVERAGE, specStubs: process.env.VITEST_NATIVE_STUBS !== '0', cacheModules: !watching })],
   resolve: {
     alias: [
       // bare paths resolve against dist/src, as webpack's resolve.modules (webpack.conf.js) does for the builds
