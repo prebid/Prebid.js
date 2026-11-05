@@ -77,9 +77,6 @@ interface RtdInternalState {
   fetchAbortController: AbortController | null;
   pendingCallbacks: Array<() => void>;
   config: RTDProviderConfig<"stackupRtd">;
-  // Whether consent has said GDPR doesn't apply (at init or at an auction), so
-  // the sessionStorage cache may be used.
-  storageAllowed: boolean;
   // The enrichment came from the API and is not in the cache yet.
   unsaved: boolean;
   // The cache has been looked up for the current article.
@@ -94,7 +91,6 @@ const state: RtdInternalState = {
   fetchAbortController: null,
   pendingCallbacks: [],
   config: null as any,
-  storageAllowed: false,
   unsaved: false,
   cacheChecked: false,
 };
@@ -207,15 +203,6 @@ function init(
     state.state = "error";
     return false;
   }
-  // Consent is usually not known yet at init: the sessionStorage cache is only
-  // used here when it already says GDPR doesn't apply, or when the page has no
-  // GDPR consent module, so no such signal will come. Otherwise the first
-  // auction whose consent says GDPR doesn't apply unlocks it. A consent module
-  // configured only after realTimeData isn't enabled yet here.
-  state.storageAllowed =
-    deepAccess(userConsent, "gdpr.gdprApplies") === false ||
-    !gdprDataHandler.enabled;
-
   let articleId: string | null;
   try {
     articleId = resolveArticleId(params).id;
@@ -279,10 +266,22 @@ function loadEnrichment(articleId: string, params: StackupRtdParams): void {
     });
 }
 
-// sessionStorage is device storage: it is used only once consent says GDPR
+// sessionStorage is device storage: it is used only while consent says GDPR
 // doesn't apply. The in-memory cache is not, and is always usable.
 function cacheUsable(): boolean {
-  return getCacheConfig().storage === "memory" || state.storageAllowed;
+  return getCacheConfig().storage === "memory" || storageAllowed();
+}
+
+// Asked of the consent module at every storage access, not remembered: it has
+// no answer until the CMP gives one (none at all with an unsupported cmpApi),
+// and the CMP may change its answer later. A page without a GDPR consent module
+// gets no such signal; a consent module configured only after realTimeData
+// counts from the moment it is enabled.
+function storageAllowed(): boolean {
+  return (
+    !gdprDataHandler.enabled ||
+    deepAccess(gdprDataHandler.getConsentData(), "gdprApplies") === false
+  );
 }
 
 // Looks up the cache for `articleId`; makes it the enrichment on a hit.
@@ -698,15 +697,15 @@ function getBidRequestData(
     release("unavailable");
     return;
   }
-  // This auction's consent says GDPR doesn't apply: the cache may be used from
-  // now on. Save what was fetched before it could be, then look for this article.
-  state.storageAllowed = true;
+  // Consent may have come to allow the cache since the fetch landed: save what
+  // was fetched before it could be, then look for this article.
   saveEnrichment();
   if (articleId !== state.articleId) {
     loadEnrichment(articleId, params);
   } else if (
     state.state !== "ready" &&
     !state.cacheChecked &&
+    cacheUsable() &&
     useCachedEnrichment(articleId)
   ) {
     // init could not read the cache: the hit enriches this auction at once, and
@@ -1027,7 +1026,6 @@ export function _resetStateForTesting(): void {
   resetAuctionEnrichments();
   inMemoryEnrichmentCache.clear();
   state.config = null as any;
-  state.storageAllowed = false;
   state.unsaved = false;
   state.cacheChecked = false;
 }

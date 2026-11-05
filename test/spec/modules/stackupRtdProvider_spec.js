@@ -1540,6 +1540,12 @@ describe("StackUp RTD Provider", function () {
     const GDPR = {
       gdpr: { gdprApplies: true, vendorData: { purpose: { consents: { 1: true, 4: true } } } },
     };
+    // The CMP answers: consent management stores the answer, and rtdModule
+    // passes the same to the auctions that follow.
+    const cmpAnswers = (consent) => {
+      gdprDataHandler.setConsentData(consent.gdpr);
+      return consent;
+    };
     const cachedEntry = () =>
       JSON.stringify({
         v: 3,
@@ -1569,7 +1575,7 @@ describe("StackUp RTD Provider", function () {
       respond200(VALID_API_RESPONSE);
       await flushMicrotasks();
       const req = { ortb2Fragments: { global: {} } };
-      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, GDPR);
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, cmpAnswers(GDPR));
       expect(req.ortb2Fragments.global).to.eql({});
       expect(storageGetStub.called).to.be.false;
       expect(storageSetStub.called).to.be.false;
@@ -1582,7 +1588,7 @@ describe("StackUp RTD Provider", function () {
       expect(storageSetStub.called).to.be.false;
 
       const req = { ortb2Fragments: { global: {} } };
-      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, OUTSIDE_GDPR);
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, cmpAnswers(OUTSIDE_GDPR));
       expect(storageSetStub.calledOnce).to.be.true;
       expect(JSON.parse(storageSetStub.firstCall.args[1]).d.source).to.equal("api");
       expect(req.ortb2Fragments.global.site.content.data).to.have.length(1);
@@ -1594,7 +1600,7 @@ describe("StackUp RTD Provider", function () {
     it("should write the cache when the fetch lands after an auction allowed it", async function () {
       subModuleObj.init(VALID_CONFIG, {});
       // core is not waiting for us: the auction goes before the fetch lands
-      subModuleObj.getBidRequestData({ ortb2Fragments: { global: {} } }, sinon.spy(), VALID_CONFIG, OUTSIDE_GDPR);
+      subModuleObj.getBidRequestData({ ortb2Fragments: { global: {} } }, sinon.spy(), VALID_CONFIG, cmpAnswers(OUTSIDE_GDPR));
       expect(storageSetStub.called).to.be.false;
       respond200(VALID_API_RESPONSE);
       await flushMicrotasks();
@@ -1609,7 +1615,7 @@ describe("StackUp RTD Provider", function () {
       const req = { ortb2Fragments: { global: {} } };
       const cb = sinon.spy();
       // core is not waiting for us: only a synchronous cache hit can enrich it
-      subModuleObj.getBidRequestData(req, cb, VALID_CONFIG, OUTSIDE_GDPR, 0);
+      subModuleObj.getBidRequestData(req, cb, VALID_CONFIG, cmpAnswers(OUTSIDE_GDPR), 0);
       expect(cb.calledOnce).to.be.true;
       expect(storageGetStub.calledOnce).to.be.true;
       expect(req.ortb2Fragments.global.site.content.title).to.equal("Cached Title");
@@ -1618,7 +1624,7 @@ describe("StackUp RTD Provider", function () {
     it("should ignore the init fetch once the first auction finds the cache", async function () {
       storageGetStub.returns(cachedEntry());
       subModuleObj.init(VALID_CONFIG, {});
-      subModuleObj.getBidRequestData({ ortb2Fragments: { global: {} } }, sinon.spy(), VALID_CONFIG, OUTSIDE_GDPR, 0);
+      subModuleObj.getBidRequestData({ ortb2Fragments: { global: {} } }, sinon.spy(), VALID_CONFIG, cmpAnswers(OUTSIDE_GDPR), 0);
 
       const late = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
       late.site.content.title = "Late Title";
@@ -1632,6 +1638,32 @@ describe("StackUp RTD Provider", function () {
       const req = { ortb2Fragments: { global: {} } };
       subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, OUTSIDE_GDPR, 0);
       expect(req.ortb2Fragments.global.site.content.title).to.equal("Cached Title");
+      expect(storageSetStub.called).to.be.false;
+    });
+
+    it("should neither read nor write sessionStorage when consent management has no GDPR answer", async function () {
+      // e.g. an unsupported cmpApi: consent management stores no consent and lets the auction go
+      storageGetStub.returns(cachedEntry());
+      subModuleObj.init(VALID_CONFIG, {});
+      const noAnswer = cmpAnswers({ gdpr: null });
+      subModuleObj.getBidRequestData({ ortb2Fragments: { global: {} } }, sinon.spy(), VALID_CONFIG, noAnswer);
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
+
+      const req = { ortb2Fragments: { global: {} } };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG, noAnswer);
+      expect(req.ortb2Fragments.global.site.content.data).to.have.length(1); // still enriched
+      expect(storageGetStub.called).to.be.false;
+      expect(storageSetStub.called).to.be.false;
+    });
+
+    it("should not write the cache once the CMP says GDPR applies, though an earlier auction allowed it", async function () {
+      subModuleObj.init(VALID_CONFIG, {});
+      // e.g. defaultGdprScope: false after a CMP timeout; core is not waiting for us
+      subModuleObj.getBidRequestData({ ortb2Fragments: { global: {} } }, sinon.spy(), VALID_CONFIG, cmpAnswers(OUTSIDE_GDPR));
+      cmpAnswers(GDPR); // the CMP answers late, while the fetch is still in flight
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
       expect(storageSetStub.called).to.be.false;
     });
 
@@ -2109,6 +2141,7 @@ describe("StackUp RTD Provider", function () {
       await flushMicrotasks();
       expect(stored.size).to.equal(0);
 
+      gdprDataHandler.setConsentData({ gdprApplies: false }); // the CMP answers
       navigate("/news/b");
       auction(); // consent allows it: article A is saved before moving on
       expect(stored.size).to.equal(1);
