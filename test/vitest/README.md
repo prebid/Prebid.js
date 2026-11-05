@@ -178,6 +178,11 @@ A failure is annotated at the failing test's line in the source spec as soon as 
 past results is cached per branch, so the spec files that failed last time run first and their annotations come
 first. `node_modules` is restored from a cache (per OS, CPU, lockfile and Node version) instead of running `npm ci`.
 
+A job runs its specs up to 3 times, but only when the run lost (or never got) its connection to the browser and no
+test failed: `infraFailureReporter.mjs` leaves `build/vitest-infra-failure` then, and
+`.github/workflows/scripts/retry-vitest.sh` reruns the whole shard. A failing test is never retried, and a retry never
+runs only the files that didn't finish, so specs that interfere with each other still fail.
+
 The e2e tests, the build logic tests and the packed package's type check stay in `browser-tests.yml`.
 
 ### Browsers in CI

@@ -78,7 +78,7 @@ jobs:
       - name: Precompile (${{ matrix.variant }})
         run: npx gulp ${{ matrix.variant == 'default' && 'precompile' || 'precompile-all-features-disabled' }}
       - name: Run specs, shard ${{ matrix.shard }} of 2
-        run: npm run test:vitest -- --shard=${{ matrix.shard }}/2
+        run: bash .github/workflows/scripts/retry-vitest.sh npm run test:vitest -- --shard=${{ matrix.shard }}/2
       - name: Upload coverage
         if: ${{ matrix.variant == 'default' && !cancelled() }}
         uses: actions/upload-artifact@v7

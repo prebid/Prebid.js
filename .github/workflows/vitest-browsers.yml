@@ -107,7 +107,7 @@ jobs:
       - name: Precompile
         run: npx gulp precompile
       - name: Run specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
-        run: npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
+        run: bash .github/workflows/scripts/retry-vitest.sh npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
 
 
   # The BrowserStack entries of browsers.json that have `vitest`: Safari on a real iPhone on iOS 16, the WebKit floor
@@ -140,7 +140,7 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.define.outputs.browserstack) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
         with:
@@ -173,8 +173,10 @@ jobs:
         uses: ./.github/actions/wait-for-browserstack
         with:
           sessions: 2
+      # Up to 3 attempts (retry-vitest.sh), each a new session. A retry doesn't wait for free sessions again: it takes
+      # the place of the session that just ended.
       - name: Run specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
-        timeout-minutes: 15
+        timeout-minutes: 40
         env:
           VITEST_BROWSERSTACK: '1'
           VITEST_PARALLEL: '3'
@@ -183,7 +185,7 @@ jobs:
           VITEST_OS: ${{ matrix.os }}
           VITEST_OS_VERSION: ${{ matrix.osVersion }}
           VITEST_BROWSER_VERSION: ${{ matrix.browserVersion }}
-        run: npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
+        run: bash .github/workflows/scripts/retry-vitest.sh npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
       - name: BrowserStack Local stop
         if: ${{ always() }}
         uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6

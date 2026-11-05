@@ -36,6 +36,7 @@ import { createRequire } from 'node:module';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import GithubSpecReporter from './githubReporter.mjs';
+import InfraFailureReporter from './infraFailureReporter.mjs';
 import { DIST, DIST_ENTRIES, nativeSpecs } from './plugins.mjs';
 import { RAW } from './globalSetup.mjs';
 import { envFlag } from './env.mjs';
@@ -245,7 +246,7 @@ export default defineConfig({
     include: specs,
     // Listing reporters stops Vitest adding its GitHub Actions reporter; githubReporter.mjs anchors a failure at
     // the failing test's line in the source spec, not in the precompiled copy that ran
-    reporters: ['default', ...(process.env.GITHUB_ACTIONS ? [new GithubSpecReporter()] : [])],
+    reporters: ['default', new InfraFailureReporter(), ...(process.env.GITHUB_ACTIONS ? [new GithubSpecReporter()] : [])],
     setupFiles: ['test/vitest/setup.mjs', 'test/vitest/nativeSetup.mjs'],
     // BrowserStack Local, and coverage: clears raw coverage before the run, writes lcov after it
     globalSetup: ['test/vitest/globalSetup.mjs'],
