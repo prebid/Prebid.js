@@ -62,6 +62,17 @@ describe('autoplay detection', () => {
     expect(mod.isAutoplayEnabled()).to.equal(false);
   });
 
+  it('ignores an earlier detection that settles after a restart', async () => {
+    let resolveEarlier;
+    loadAutoplayWithPlay(() => new Promise((resolve) => { resolveEarlier = resolve; }));
+    createElementStub.restore();
+    const mod = loadAutoplayWithPlay(() => Promise.reject(new DOMException('play() is not allowed', 'NotAllowedError')));
+    await flushPromises();
+    resolveEarlier();
+    await flushPromises();
+    expect(mod.isAutoplayEnabled()).to.equal(false);
+  });
+
   ['AbortError', 'NotSupportedError'].forEach((name) => {
     it(`returns true when play() is rejected with a ${name}`, async () => {
       const mod = loadAutoplayWithPlay(() => Promise.reject(new DOMException('play() failed', name)));

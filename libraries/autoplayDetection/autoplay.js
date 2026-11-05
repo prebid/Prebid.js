@@ -1,4 +1,5 @@
 let autoplayEnabled = null;
+let detection = 0;
 
 /**
  * Note: this function returns true if detection is not done yet. This is by design: if autoplay is not allowed,
@@ -26,6 +27,8 @@ const autoplayVideoUrl =
  */
 export function startDetection() {
   autoplayEnabled = null;
+  // a restart must not be overwritten by an earlier detection's play() settling late
+  const current = ++detection;
   const version = navigator.userAgent.match(/iPhone OS (\d+)_(\d+)/);
   if (version !== null && parseInt(version[1]) < 17 && !navigator.userAgent.includes('Safari')) {
     // skip autodetection on iOS 16 WebView
@@ -46,7 +49,7 @@ export function startDetection() {
 
   videoPlay
     .then(() => {
-      autoplayEnabled = true;
+      if (current === detection) autoplayEnabled = true;
       // if the video is played on a WebView with playsinline = false, this stops the video, to prevent it from being displayed fullscreen
       videoElement.src = '';
     })
@@ -54,7 +57,7 @@ export function startDetection() {
       // only NotAllowedError means that the browser refuses autoplay. Other errors say nothing about the autoplay policy:
       // NotSupportedError is caused by a Content Security Policy that disables data: scheme for media URLs,
       // AbortError is raised when the browser pauses the video to save power, e.g. on a page loaded in a background tab
-      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+      if (current === detection && error instanceof DOMException && error.name === 'NotAllowedError') {
         autoplayEnabled = false;
       }
     });
