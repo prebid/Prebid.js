@@ -521,7 +521,7 @@ function getAssetValue(value) {
  * @returns an OpenRTB format of the same bid request
  */
 export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): NativeRequest {
-  if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
+  if (!legacyNativeAssets || !isPlainObject(legacyNativeAssets)) {
     logError('Native assets object is empty or not an object: ', legacyNativeAssets);
     return;
   }
