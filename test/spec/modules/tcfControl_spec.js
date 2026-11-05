@@ -1359,6 +1359,11 @@ describe('gdpr enforcement', function () {
                         const allowed = validateRules(rule, consentData, 'mockVendor', 123);
                         expect(allowed).to.be.false;
                       });
+                    } else {
+                      it(`should return true (nothing is enforced)`, () => {
+                        const allowed = validateRules(rule, consentData, 'mockVendor', 123);
+                        expect(allowed).to.be.true;
+                      });
                     }
                   });
                 });

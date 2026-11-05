@@ -1340,12 +1340,13 @@ describe('Utils', function () {
       expect(deepEqual({ outer: obj }, { outer: new Typed(obj) }, { checkTypes: true })).to.be.false;
     });
     it('should work when adding properties to the prototype of Array', () => {
-      after(function () {
-        delete Array.prototype.unitTestTempProp;
-      });
       // eslint-disable-next-line no-extend-native
       Array.prototype.unitTestTempProp = 'testing';
-      expect(deepEqual([], [])).to.be.true;
+      try {
+        expect(deepEqual([], [])).to.be.true;
+      } finally {
+        delete Array.prototype.unitTestTempProp;
+      }
     });
 
     describe('cyrb53Hash', function() {
@@ -1407,9 +1408,14 @@ describe('Utils', function () {
   });
 
   describe('getUnixTimestampFromNow', () => {
+    let nowStub;
+    afterEach(() => {
+      nowStub?.restore();
+    });
+
     it('correctly obtains unix timestamp', () => {
       const nowValue = new Date('2024-01-01').valueOf();
-      sinon.stub(Date, 'now').returns(nowValue);
+      nowStub = sinon.stub(Date, 'now').returns(nowValue);
       let val = utils.getUnixTimestampFromNow();
       expect(val).equal(nowValue);
 
