@@ -192,7 +192,7 @@ ascAdapter.getVisitorData = function (data = {}) {
     return btoa(binary).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
   }
   async function getJWToken(data) {
-    const subtle = window.crypto && window.crypto.subtle;
+    const subtle = getSubtle();
     if (!subtle) {
       throw new Error('ByData requires Web Crypto in a secure context');
     }
@@ -237,17 +237,20 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua['de'] = deviceType;
     ua['tz'] = getTimeZone();
   }
-  const signedTokenPromise = getJWToken(ua).then(signedToken => {
-    // An older signing operation must not overwrite a newer visitor token.
-    if (visitorDataPromise === signedTokenPromise) {
-      payload['visitor_data'] = signedToken;
-      winPayload['visitor_data'] = signedToken;
+  const signing = getJWToken(ua).catch(error => {
+    // retry on the next send, unless Web Crypto is missing - that is permanent
+    if (visitorDataPromise === signing && getSubtle()) {
+      visitorDataPromise = null;
     }
-    return signedToken;
+    throw error;
   });
-  visitorDataPromise = signedTokenPromise;
-  return signedTokenPromise;
+  visitorDataPromise = signing;
+  return signing;
 };
+
+function getSubtle() {
+  return window.crypto && window.crypto.subtle;
+}
 
 ascAdapter.dataProcess = function (t) {
   if (isBydata) { payload['bydata_debug'] = 'true'; }

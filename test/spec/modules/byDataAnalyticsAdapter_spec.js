@@ -177,6 +177,12 @@ describe('byData Analytics Adapter ', () => {
         options: initOptions
       });
     });
+    function sentValues() {
+      return server.requests
+        .filter(req => req.url === 'https://pbjs-stream.bydata.com/topics/prebid')
+        .map(req => JSON.parse(req.requestBody).records[0].value);
+    }
+
     it('sends and formatted auction data ', async function () {
       events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(EVENTS.NO_BID, noBidArgs);
@@ -198,19 +204,51 @@ describe('byData Analytics Adapter ', () => {
       first.auctionData[0].bid = 'second-bid';
       const secondSend = ascAdapter.sendPayload(first);
 
-      expect(server.requests).to.have.length(0);
+      const sent = () => sentValues().filter(value => ['first-auction', 'second-auction'].includes(value.aid));
+      expect(sent()).to.have.length(0);
       const token = await tokenPromise;
       await Promise.all([firstSend, secondSend]);
 
       expect(token).to.equal(expectedDataArgs.visitor_data);
-      expect(server.requests).to.have.length(2);
-      const values = server.requests.map(req => JSON.parse(req.requestBody).records[0].value);
+      const values = sent();
+      expect(values).to.have.length(2);
       expect(values[0]).to.deep.equal({
         aid: 'first-auction', auctionData: [{ bid: 'first-bid' }], visitor_data: token
       });
       expect(values[1]).to.deep.equal({
         aid: 'second-auction', auctionData: [{ bid: 'second-bid' }], visitor_data: token
       });
+    });
+
+    it('retries signing after a failure', async function () {
+      const sent = () => sentValues().filter(value => value.aid === 'retry-auction');
+      const importKey = sinon.stub(window.crypto.subtle, 'importKey').rejects(new Error('fail'));
+      try {
+        await ascAdapter.getVisitorData(userData).catch(() => {});
+        await ascAdapter.sendPayload({ aid: 'retry-auction' });
+        expect(sent()).to.have.length(0);
+      } finally {
+        importKey.restore();
+      }
+      await ascAdapter.sendPayload({ aid: 'retry-auction' });
+      expect(sent()).to.have.length(1);
+      expect(sent()[0].visitor_data).to.be.a('string');
+    });
+
+    it('does not retry signing when Web Crypto is unavailable', async function () {
+      const subtle = sinon.stub(window.crypto, 'subtle').get(() => undefined);
+      const getVisitorData = sinon.spy(ascAdapter, 'getVisitorData');
+      try {
+        await ascAdapter.getVisitorData(userData).catch(() => {});
+        await ascAdapter.sendPayload({ aid: 'no-crypto-auction' });
+        await ascAdapter.sendPayload({ aid: 'no-crypto-auction' });
+        expect(getVisitorData.callCount).to.equal(1);
+        expect(sentValues().filter(value => value.aid === 'no-crypto-auction')).to.have.length(0);
+      } finally {
+        subtle.restore();
+        getVisitorData.restore();
+        await ascAdapter.getVisitorData(userData);
+      }
     });
   });
 });
