@@ -2,7 +2,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { stripTypeScriptTypes } from 'node:module';
 
 const [, , coverageFile = 'coverage.info', baseCommit = ''] = process.argv;
 const threshold = 80;
@@ -10,44 +10,42 @@ const sourceRoots = ['src', 'modules', 'libraries', 'creative'];
 
 function isSourceFile(file) {
   return /\.(?:js|mjs|ts|mts)$/.test(file) &&
-    !/\.d\.(?:ts|mts)$/.test(file) &&
-    sourceRoots.some(root => file === root || file.startsWith(root + '/'));
+    !/\.d\.m?ts$/.test(file) &&
+    sourceRoots.some(root => file.startsWith(root + '/'));
+}
+
+function isCommit(ref) {
+  try {
+    execFileSync('git', ['cat-file', '-e', ref + '^{commit}'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function changedSourceFiles(base) {
-  if (!base) throw new Error('A base commit is required');
-  const diff = execFileSync(
+  return execFileSync(
     'git',
-    ['diff', '--name-status', '--diff-filter=AMR', '-M', base + '...HEAD'],
+    ['diff', '--name-only', '--diff-filter=AMR', '-M', base + '...HEAD'],
     { encoding: 'utf8' }
-  ).trim();
-
-  return diff.split('\n').filter(Boolean).flatMap(line => {
-    const parts = line.split('\t');
-    const status = parts[0];
-    const file = status.startsWith('R') ? parts[2] : parts[1];
-    return file && isSourceFile(file) ? [file] : [];
-  });
+  ).split('\n').filter(isSourceFile);
 }
 
-function isTypeOnlyModule(file) {
-  if (!/\.(?:ts|mts)$/.test(file)) return false;
-
-  const source = readFileSync(file, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|\\s)\/\/.*$/gm, '')
-    .trim();
-
-  if (!source) return true;
-
-  const statements = source
-    .split(';')
-    .map(statement => statement.trim())
-    .filter(Boolean);
-
-  return statements.every(statement =>
-    /^(?:interface|type|declare(?:\\s+(?:global|module))?|import\\s+type|export\\s+(?:type|interface|declare)|export\\{\\s*type\\b)/.test(statement)
-  );
+// Files that are never loaded at runtime (only ever imported with `import type`) get no coverage record.
+function hasNoOwnCode(file) {
+  let code;
+  try {
+    code = file.endsWith('ts') ? stripTypeScriptTypes(readFileSync(file, 'utf8')) : readFileSync(file, 'utf8');
+  } catch {
+    // stripTypeScriptTypes rejects syntax that emits code, such as enums
+    return false;
+  }
+  return code
+    .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+    .replace(/\bimport\s*(['"])[^'"\n]*\1\s*;?/g, '')
+    .replace(/\b(?:import|export)\b[^;'"]*?\bfrom\s*(['"])[^'"\n]*\1\s*;?/g, '')
+    .replace(/\bexport\s*\{[^}]*\}\s*;?/g, '')
+    .trim() === '';
 }
 
 function parseLcov(text) {
@@ -56,9 +54,7 @@ function parseLcov(text) {
   for (const line of text.split('\n')) {
     if (line.startsWith('SF:')) {
       current = { linesFound: 0, linesHit: 0 };
-      const raw = line.slice(3);
-      files.set(raw, current);
-      files.set(raw.replace(/^[./]+/, ''), current);
+      files.set(line.slice(3).replace(/^\.\//, ''), current);
     } else if (current && line.startsWith('LF:')) {
       current.linesFound = Number(line.slice(3));
     } else if (current && line.startsWith('LH:')) {
@@ -70,31 +66,30 @@ function parseLcov(text) {
   return files;
 }
 
+if (!isCommit(baseCommit)) {
+  // e.g. the push that creates a branch, or a force push whose previous head is gone
+  console.log(`::notice::No usable base commit ('${baseCommit}'); skipping the changed-file coverage check`);
+  process.exit(0);
+}
+
 const coverage = parseLcov(readFileSync(coverageFile, 'utf8'));
-const root = process.cwd();
 const failures = [];
 
 for (const file of changedSourceFiles(baseCommit)) {
-  const rel = relative(root, resolve(root, file));
-  const record = coverage.get(file) || coverage.get(rel) || coverage.get('./' + rel);
-
+  const record = coverage.get(file);
   if (!record) {
-    if (isTypeOnlyModule(rel)) continue;
-    failures.push({ file, percent: 0, reason: 'no coverage record' });
+    if (!hasNoOwnCode(file)) failures.push(`${file}: no coverage record`);
     continue;
   }
-
   const percent = record.linesFound === 0 ? 100 : (record.linesHit / record.linesFound) * 100;
   if (percent < threshold) {
-    failures.push({ file, percent, reason: record.linesHit + '/' + record.linesFound + ' lines covered' });
+    failures.push(`${file}: ${percent.toFixed(1)}% (${record.linesHit}/${record.linesFound} lines covered)`);
   }
 }
 
 if (failures.length) {
-  console.error('Changed source files must have at least ' + threshold + '% line coverage.');
-  for (const failure of failures) {
-    console.error('- ' + failure.file + ': ' + failure.percent.toFixed(1) + '% (' + failure.reason + ')');
-  }
+  console.error(`Changed source files must have at least ${threshold}% line coverage:`);
+  failures.forEach(failure => console.error('- ' + failure));
   process.exit(1);
 }
-console.log('All changed executable source JS/TS files meet the ' + threshold + '% line coverage threshold.');
+console.log(`All changed source files meet the ${threshold}% line coverage threshold.`);
