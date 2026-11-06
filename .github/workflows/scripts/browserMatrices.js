@@ -28,8 +28,14 @@ function vitestRunners(browsers) {
     .flatMap(({name, runner: {runsOn, vitest}}) => byShard({name, runsOn, ...vitest}));
 }
 
+// Lanes are concurrency groups shared by every BrowserStack job in every run, so the strictest entry's limit applies to all
+function vitestBrowserstackLanes(browsers) {
+  const limits = Object.values(browsers).map(def => def.browserstack?.vitest?.maxParallel).filter(Boolean);
+  return limits.length ? Math.min(...limits) : Infinity;
+}
+
 function vitestBrowserstack(browsers, listSpecs = specsMatching) {
-  return Object.values(browsers)
+  const jobs = Object.values(browsers)
     .filter(def => def.browserstack?.vitest)
     .flatMap(({name, browserstack: bs}) => {
       const entry = {
@@ -46,12 +52,8 @@ function vitestBrowserstack(browsers, listSpecs = specsMatching) {
       }
       return byShard({...entry, shards: bs.vitest.shards}).map(e => ({...e, label: `shard ${e.shard}/${e.shards}`}));
     });
+  const lanes = vitestBrowserstackLanes(browsers);
+  return jobs.map((job, i) => ({...job, lane: i % lanes + 1}));
 }
 
-// GitHub can't vary max-parallel per matrix entry, so the BrowserStack job takes the strictest entry's
-function vitestBrowserstackMaxParallel(browsers) {
-  const limits = Object.values(browsers).map(def => def.browserstack?.vitest?.maxParallel).filter(Boolean);
-  return limits.length ? Math.min(...limits) : vitestBrowserstack(browsers).length || 1;
-}
-
-module.exports = {e2eBrowsers, vitestRunners, vitestBrowserstack, vitestBrowserstackMaxParallel, specsMatching};
+module.exports = {e2eBrowsers, vitestRunners, vitestBrowserstack, specsMatching};

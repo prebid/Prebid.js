@@ -83,11 +83,15 @@ describe('CI browser matrices', () => {
   it('expands Vitest BrowserStack entries by shard, or runs the specs an entry matches in one job', () => {
     expect(matrices.vitestBrowserstack(BROWSERS, listSpecs)).to.eql([
       ...[1, 2].map(shard => (
-        { name: 'Phone', browser: 'safari', device: 'iPhone 14', osVersion: '16', shards: 2, shard, label: `shard ${shard}/2` }
+        { name: 'Phone', browser: 'safari', device: 'iPhone 14', osVersion: '16', shards: 2, shard, label: `shard ${shard}/2`, lane: shard }
       )),
-      { name: 'Desktop', browser: 'safari', os: 'OS X', osVersion: 'Ventura', browserVersion: '16.5', label: 'secure specs', files: 'test/spec/a_spec.js test/spec/b_spec.js' },
+      { name: 'Desktop', browser: 'safari', os: 'OS X', osVersion: 'Ventura', browserVersion: '16.5', label: 'secure specs', files: 'test/spec/a_spec.js test/spec/b_spec.js', lane: 3 },
     ]);
-    expect(matrices.vitestBrowserstackMaxParallel(BROWSERS)).to.equal(3);
+  });
+
+  it('spreads Vitest BrowserStack jobs over the lowest maxParallel lanes', () => {
+    const browsers = { ...BROWSERS, device: { ...BROWSERS.device, browserstack: { ...BROWSERS.device.browserstack, vitest: { shards: 4, maxParallel: 2 } } } };
+    expect(matrices.vitestBrowserstack(browsers, listSpecs).map(e => e.lane)).to.eql([1, 2, 1, 2, 1]);
   });
 
   it('leaves out an entry no spec matches', () => {
