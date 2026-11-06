@@ -17,6 +17,10 @@ request with one impression, because the endpoint accepts one impression per req
 Bids are net CPMs in USD. Price floors are sent in USD; a floor in another currency is left
 out of the request, and Prebid still enforces it on the bids.
 
+The adapter hands the notice URLs to Prebid as event trackers, with `${AUCTION_PRICE}` filled
+in, and Prebid fires them: `burl` when the bid becomes billable, and `nurl` of video and native
+bids when the bid wins. Banner markup already carries its `nurl`.
+
 User sync is an image pixel on `pbjs.algotoro.com`. It carries the GDPR, US Privacy and GPP
 signals Prebid has, and no sync is made when COPPA applies.
 

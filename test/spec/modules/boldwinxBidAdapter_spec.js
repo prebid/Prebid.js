@@ -3,6 +3,9 @@ import { spec } from 'modules/boldwinxBidAdapter.ts';
 import { setConfig as setCurrencyConfig } from 'modules/currency.js';
 import 'modules/priceFloors.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import * as utils from 'src/utils.js';
+import adapterManager from 'src/adapterManager.js';
+import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
 
 const BID_URL = 'https://pbjs.algotoro.com/bid';
 const SYNC_URL = 'https://pbjs.algotoro.com/usersync';
@@ -341,6 +344,53 @@ describe('boldwinx bid adapter', function () {
     it('leaves out empty privacy signals', function () {
       const gppConsent = { gppString: '', applicableSections: [] };
       expect(spec.getUserSyncs(PIXEL, [], { consentString: '' }, '', gppConsent, false)).to.deep.equal([{ type: 'image', url: SYNC_URL }]);
+    });
+  });
+
+  describe('win and billing notices', function () {
+    const NURL = 'https://ssp.example.com/win?p=${AUCTION_PRICE}';
+    const BURL = 'https://ssp.example.com/bill?p=${AUCTION_PRICE}';
+    const WIN = { event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'https://ssp.example.com/win?p=1.5' };
+    const BILL = { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'https://ssp.example.com/bill?p=1.5' };
+
+    function interpret(mediaTypes, fields, extra = {}) {
+      const [request] = buildRequests([makeBid({ mediaTypes, ...extra })]);
+      const response = makeResponse(request, [{ id: 'x', impid: request.data.imp[0].id, price: 1.5, crid: 'c', ...fields }]);
+      return spec.interpretResponse(response, request)[0];
+    }
+
+    it('hands nurl next to VAST markup to Prebid as a win tracker, not as the VAST URL', function () {
+      const bid = interpret({ video: VIDEO_PARAMS }, { adm: VAST, nurl: NURL, burl: BURL, mtype: 2 });
+      expect(bid.vastXml).to.equal(VAST);
+      expect(bid.vastUrl).to.equal(undefined);
+      expect(bid.eventtrackers).to.deep.equal([BILL, WIN]);
+    });
+
+    it('hands nurl next to native markup to Prebid as a win tracker', function () {
+      const bid = interpret({ native: { ortb: NATIVE_REQUEST } }, { adm: NATIVE_ADM, nurl: NURL, mtype: 4 }, { nativeOrtbRequest: NATIVE_REQUEST });
+      expect(bid.eventtrackers).to.deep.equal([WIN]);
+    });
+
+    it('leaves banner nurl inside the markup only, so it is not fired twice', function () {
+      const bid = interpret({ banner: { sizes: [[300, 250]] } }, { adm: '<div>ad</div>', nurl: NURL, burl: BURL, w: 300, h: 250, mtype: 1 });
+      expect(bid.ad).to.include('ssp.example.com/win');
+      expect(bid.eventtrackers).to.deep.equal([BILL]);
+    });
+
+    it('keeps nurl as the VAST URL when there is no markup', function () {
+      const bid = interpret({ video: VIDEO_PARAMS }, { nurl: 'https://cdn.example.com/vast.xml', mtype: 2 });
+      expect(bid.vastUrl).to.equal('https://cdn.example.com/vast.xml');
+      expect(bid.eventtrackers).to.equal(undefined);
+    });
+
+    it('lets Prebid core fire the billing notice', function () {
+      const pixel = sinon.stub(utils, 'politeTriggerPixel');
+      try {
+        adapterManager.triggerBilling(interpret({ video: VIDEO_PARAMS }, { adm: VAST, burl: BURL, mtype: 2 }));
+        expect(pixel.args).to.deep.equal([[BILL.url]]);
+      } finally {
+        pixel.restore();
+      }
     });
   });
 });

@@ -6,8 +6,9 @@ import {
   type ExtendedResponse,
   registerBidder
 } from '../src/adapters/bidderFactory.js';
+import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { isPlainObject, isStr } from '../src/utils.js';
+import { isPlainObject, isStr, replaceAuctionPrice } from '../src/utils.js';
 
 /**
  * Boldwin bid parameters.
@@ -72,7 +73,25 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     if (!ORTB_MTYPES.hasOwnProperty(bid.mtype)) {
       context.mediaType = guessMediaType(bid, context.imp);
     }
-    return buildBidResponse(bid, context);
+    const bidResponse = buildBidResponse(bid, context);
+    // Prebid core fires image event trackers itself: win trackers when the bid wins, impression
+    // trackers when it becomes billable. It does not fill in macros there, so the price goes in now.
+    const trackers = [];
+    if (isStr(bid.burl) && bid.burl !== '') {
+      trackers.push({ event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: replaceAuctionPrice(bid.burl, bid.price) });
+    }
+    // Banner markup already fires nurl as a pixel. Next to VAST or native markup nurl is a win
+    // notice, so it must not end up as the VAST URL.
+    if (isStr(bid.nurl) && bid.nurl !== '' && bid.adm != null && bidResponse.mediaType !== BANNER) {
+      if (bidResponse.mediaType === VIDEO) {
+        delete bidResponse.vastUrl;
+      }
+      trackers.push({ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: replaceAuctionPrice(bid.nurl, bid.price) });
+    }
+    if (trackers.length > 0) {
+      bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(trackers);
+    }
+    return bidResponse;
   },
 });
 
