@@ -376,9 +376,17 @@ function getAdUnitCopyForPrebidServer(adUnits: AdUnit[], s2sConfig) {
     } else if (s2sBids.length > 1) {
       logWarn('Multiple "module" bids for the same s2s configuration; all will be ignored', s2sBids);
     }
+    // The Prebid Server adapter does not read raw `userId` off ad unit copies -
+    // user IDs already reach it as EIDs - so do not forward it on either the
+    // bids or the module ("s2s") bid. This only affects the S2S copy; the
+    // publisher's own ad units are unchanged.
+    if (adUnit.s2sBid != null) {
+      delete (adUnit.s2sBid as any).userId;
+    }
     adUnit.bids = filterBidsForAdUnit(adUnit.bids, s2sConfig)
       .map((bid) => {
         bid.bid_id = getUniqueIdentifierStr();
+        delete (bid as any).userId;
         return bid;
       });
   });

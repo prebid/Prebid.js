@@ -1101,9 +1101,28 @@ describe('auctionmanager.js', function () {
 
     describe('setConfig(minBidCacheTTL)', () => {
       it('should update getMinBidCacheTTL', () => {
-        expect(getMinBidCacheTTL()).to.eql(null);
+        config.resetConfig();
+        // since Prebid 12, minBidCacheTTL defaults to 300 seconds when unset
+        expect(getMinBidCacheTTL()).to.eql(300);
         config.setConfig({ minBidCacheTTL: 123 });
         expect(getMinBidCacheTTL()).to.eql(123);
+      });
+
+      it('should fall back to the 300 second default when minBidCacheTTL is unset again', () => {
+        config.setConfig({ minBidCacheTTL: 123 });
+        expect(getMinBidCacheTTL()).to.eql(123);
+        config.resetConfig();
+        expect(getMinBidCacheTTL()).to.eql(300);
+      });
+
+      it('getEffectiveMinBidCacheTTL translates the Infinity opt-out to null (no expiry)', () => {
+        config.setConfig({ minBidCacheTTL: Infinity });
+        expect(getEffectiveMinBidCacheTTL({})).to.eql(null);
+        config.setConfig({ minBidCacheTTL: 30, minTargetedBidCacheTTL: Infinity });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(null);
+        expect(getEffectiveMinBidCacheTTL({})).to.eql(30);
+        config.resetConfig();
       });
 
       it('should run listeners registered with onMinBidCacheTTLChange', () => {
@@ -1326,13 +1345,25 @@ describe('auctionmanager.js', function () {
             entries: () => auctionManager.getNoBids()
           }
         }).forEach(([t, { bd, entries }]) => {
-          it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
+          it(`with ${t} are never dropped if minBidCacheTTL is set to Infinity (the page-lifetime opt-out)`, () => {
+            config.setConfig({ minBidCacheTTL: Infinity });
             bids = bd;
             auction.callBids();
             return auction.end.then(() => {
               clock.tick(100 * 1000);
               expect(entries().length > 0).to.be.true;
             });
+          });
+
+          it(`with ${t} are dropped once the default minBidCacheTTL (300s) passes`, async () => {
+            bids = bd;
+            auction.callBids();
+            await auction.end;
+            await clock.tick(299 * 1000);
+            expect(entries().length > 0).to.be.true;
+            // ttlCollection purges on a sweep up to its 5s slack past expiry
+            await clock.tick(20 * 1000);
+            expect(entries().length).to.eql(0);
           });
         });
       });
