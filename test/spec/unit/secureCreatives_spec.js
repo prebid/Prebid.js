@@ -244,6 +244,7 @@ describe('secureCreatives', () => {
           sinon.assert.notCalled(adResponse.renderer.render);
           sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
           sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
+        }).finally(() => {
           configObj.setConfig({ 'auctionOptions': {} });
         });
       });

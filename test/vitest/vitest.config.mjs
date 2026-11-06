@@ -148,8 +148,7 @@ async function browserProvider() {
         idleTimeout: 300,
         consoleLogs: 'errors',
         networkLogs: false,
-        // TODO: back to false once a recording shows why iOS closes the page partway through a shard
-        video: !!bsDevice,
+        video: false,
       },
     },
   });

@@ -135,8 +135,8 @@ jobs:
     if: ${{ needs.browserstack-check.outputs.available == 'true' && needs.define.outputs.browserstack != '[]' }}
     strategy:
       fail-fast: false
-      # vitest.config.mjs keeps each session alive past BrowserStack's 300s idle limit, but iOS Safari still closes
-      # the page partway through a long session, so a shard is a quarter of the suite.
+      # vitest.config.mjs keeps each session alive past BrowserStack's 300s idle limit, but iOS Safari's page process
+      # still dies partway through a long session, so the iPhone's suite is split into 6 shards.
       matrix:
         include: ${{ fromJSON(needs.define.outputs.browserstack) }}
     # One BrowserStack session per job, at most one job per lane across all workflow runs: the lowest `maxParallel` in
@@ -172,7 +172,8 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
-      # Up to 3 attempts (retry-vitest.sh), each a new session.
+      # Up to 4 attempts (retry-vitest.sh), each a new session. A retry waits a few minutes first only when BrowserStack
+      # refused the session as over its queue limit.
       - name: Run specs (${{ matrix.label }})
         timeout-minutes: 40
         env:
