@@ -302,6 +302,9 @@ module.exports = [
       '**/*BidAdapter.{js,mjs,ts,mts}',
       '**/*BidAdapter/**/*.{js,mjs,ts,mts}'
     ],
+    ignores: [
+      'modules/prebidServerBidAdapter/**/*'
+    ],
     rules: {
       'no-restricted-imports': [
         'error', {
