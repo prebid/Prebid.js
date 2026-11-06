@@ -3,21 +3,44 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
+import ts from 'typescript';
 
 const [, , coverageFile = 'coverage.info', baseCommit = ''] = process.argv;
 const threshold = 80;
 const sourceRoots = ['src', 'modules', 'libraries', 'creative'];
 
 function isSourceFile(file) {
-  return /\.(?:js|mjs|ts|mts)$/.test(file) && !/\.d\.ts$/.test(file) &&
+  return /\.(?:js|mjs|ts|mts)$/.test(file) &&
+    !/\.d\.(?:ts|mts)$/.test(file) &&
     sourceRoots.some(root => file === root || file.startsWith(root + '/'));
 }
 
 function changedSourceFiles(base) {
   if (!base) throw new Error('A base commit is required');
-  return execFileSync('git', ['diff', '--name-only', '--diff-filter=AM', base + '...HEAD'], {
-    encoding: 'utf8'
-  }).trim().split('\n').filter(Boolean).filter(isSourceFile);
+  const diff = execFileSync(
+    'git',
+    ['diff', '--name-status', '--diff-filter=AMR', '-M', base + '...HEAD'],
+    { encoding: 'utf8' }
+  ).trim();
+
+  return diff.split('\n').filter(Boolean).flatMap(line => {
+    const parts = line.split('\t');
+    const status = parts[0];
+    const file = status.startsWith('R') ? parts[2] : parts[1];
+    return file && isSourceFile(file) ? [file] : [];
+  });
+}
+
+function isTypeOnlyModule(file) {
+  if (!/\.(?:ts|mts)$/.test(file)) return false;
+  const source = readFileSync(file, 'utf8');
+  return ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022
+    },
+    fileName: file
+  }).outputText.trim() === '';
 }
 
 function parseLcov(text) {
@@ -47,10 +70,13 @@ const failures = [];
 for (const file of changedSourceFiles(baseCommit)) {
   const rel = relative(root, resolve(root, file));
   const record = coverage.get(file) || coverage.get(rel) || coverage.get('./' + rel);
+
   if (!record) {
+    if (isTypeOnlyModule(rel)) continue;
     failures.push({ file, percent: 0, reason: 'no coverage record' });
     continue;
   }
+
   const percent = record.linesFound === 0 ? 100 : (record.linesHit / record.linesFound) * 100;
   if (percent < threshold) {
     failures.push({ file, percent, reason: record.linesHit + '/' + record.linesFound + ' lines covered' });
@@ -64,4 +90,4 @@ if (failures.length) {
   }
   process.exit(1);
 }
-console.log('All changed source JS/TS files meet the ' + threshold + '% line coverage threshold.');
+console.log('All changed executable source JS/TS files meet the ' + threshold + '% line coverage threshold.');
