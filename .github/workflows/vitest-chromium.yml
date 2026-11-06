@@ -1,7 +1,7 @@
 name: Vitest unit tests (Chromium)
 
 # Stage 1 of the unit test gate (#16007), called from test.yml: every spec in Chromium, in 2 shards per feature
-# variant (Vitest's `--shard`, 3 pages at once), and coverage from the default variant. test.yml starts stage 2
+# variant (Vitest's `--shard`, several pages at once), and coverage from the default variant. test.yml starts stage 2
 # (vitest-browsers.yml) and base branch coverage only once this passes. See test/vitest/README.md, "CI".
 on:
   workflow_call:
@@ -25,8 +25,8 @@ permissions:
   contents: read
 
 jobs:
-  # Two shards per feature variant. Each runs half of the specs (Vitest's `--shard`, balanced by file) with 3 pages
-  # at once: each spec file runs in its own page, so there is no Karma-style chunk to keep together, and the whole
+  # Two shards per feature variant. Each runs half of the specs (Vitest's `--shard`, balanced by file) with several
+  # pages at once (Vitest's default: a page per CPU core but one): each spec file runs in its own page, so there is no Karma-style chunk to keep together, and the whole
   # suite takes about a minute that way.
   chromium:
     name: Vitest Chromium (${{ matrix.variant }}, shard ${{ matrix.shard }}/2)
@@ -43,7 +43,7 @@ jobs:
     # the coverage output empty instead of failing the run, and test.yml then skips the comparison.
     continue-on-error: ${{ inputs.coverage-only }}
     env:
-      VITEST_PARALLEL: '3'
+      VITEST_PARALLEL: 'true'
       VITEST_COVERAGE: ${{ matrix.variant == 'default' && '1' || '' }}
     steps:
       - uses: actions/checkout@v7

@@ -45,7 +45,7 @@ npx playwright install chromium
 npx gulp precompile
 npm run test:vitest                                             # every spec
 npm run test:vitest -- test/spec/modules/appnexusBidAdapter_spec.js   # some specs (Vitest file filters)
-VITEST_PARALLEL=3 npm run test:vitest                           # 3 pages at once: about half the time (Playwright only)
+VITEST_PARALLEL=true npm run test:vitest                        # a page per CPU core but one (Playwright only)
 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest                  # one of the chunks Karma split the suite into
 npm run test:vitest:watch                                       # re-run as dist/src changes
 ```
@@ -53,8 +53,10 @@ npm run test:vitest:watch                                       # re-run as dist
 The `gulp test*` tasks run these (see the top-level README and AGENTS.md); `npx gulp test-only --file <spec>`
 precompiles first. `vitest.config.mjs` documents the environment variables.
 
-`VITEST_PARALLEL` is off by default because pages running at once share one origin's cookies and storage. It only
-applies to browsers driven by Playwright, headless: WebdriverIO (Safari, BrowserStack) runs one spec file at a time.
+`VITEST_PARALLEL` is off by default because pages running at once share one origin's cookies and storage. `true`
+leaves the number of pages to Vitest (a page per CPU core but one, at most 12: 3 on a CI runner); a number sets it.
+It only applies to browsers driven by Playwright, headless: WebdriverIO (Safari, BrowserStack) runs one spec file at
+a time.
 
 For the all-features-disabled variant (Karma's "Unit tests (all features disabled)" job), precompile with
 `npx gulp precompile-all-features-disabled` instead.
@@ -175,8 +177,8 @@ Base branch coverage, when it isn't cached, is also computed only after the Chro
 runners from it; it is skipped when the base commit has no Vitest setup. The coverage report needs only the Chromium
 stage.
 
-Each job runs its share of the specs with Vitest's `--shard=<i>/<n>` (balanced by file), 3 pages at once where
-Playwright drives the browser (Safari and BrowserStack run one at a time). Every
+Each job runs its share of the specs with Vitest's `--shard=<i>/<n>` (balanced by file), 3 pages at once (Vitest's
+default on a 4-core runner) where Playwright drives the browser (Safari and BrowserStack run one at a time). Every
 spec file has a page of its own, so nothing needs Karma's chunks to stay together. Locally, the whole suite takes
 about 70 s in Chromium that way, against 147 s one page at a time.
 

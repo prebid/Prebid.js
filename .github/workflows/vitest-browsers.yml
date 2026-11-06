@@ -57,8 +57,8 @@ jobs:
 
 
   # The runner entries of browsers.json that have `vitest`, on the same runner OS as their Karma jobs, default variant
-  # only. Each job runs its share of the specs (Vitest's `--shard`), 3 pages at once where the browser is driven by
-  # Playwright; Safari (WebdriverIO) runs one at a time whatever VITEST_PARALLEL says. Shard counts follow each
+  # only. Each job runs its share of the specs (Vitest's `--shard`), several pages at once (a page per CPU core but
+  # one) where Playwright drives the browser; Safari (WebdriverIO) runs one at a time whatever VITEST_PARALLEL says. Shard counts follow each
   # browser's speed: about two minutes of tests per job.
   browsers:
     name: Vitest ${{ matrix.name }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
@@ -74,7 +74,7 @@ jobs:
       run:
         shell: bash
     env:
-      VITEST_PARALLEL: '3'
+      VITEST_PARALLEL: 'true'
       VITEST_BROWSER: ${{ matrix.browser }}
       VITEST_CHANNEL: ${{ matrix.channel }}
     steps:
