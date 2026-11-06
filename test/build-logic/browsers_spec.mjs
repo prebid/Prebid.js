@@ -81,7 +81,7 @@ describe('CI browser matrices', () => {
   });
 
   it('expands Vitest BrowserStack entries by shard, or runs the specs an entry matches in one job', () => {
-    expect(matrices.vitestBrowserstack(BROWSERS, listSpecs)).to.eql([
+    expect(matrices.vitestBrowserstack(BROWSERS, {}, listSpecs)).to.eql([
       ...[1, 2].map(shard => (
         { name: 'Phone', browser: 'safari', device: 'iPhone 14', osVersion: '16', shards: 2, shard, label: `shard ${shard}/2`, lane: shard }
       )),
@@ -91,16 +91,25 @@ describe('CI browser matrices', () => {
 
   it('spreads Vitest BrowserStack jobs over the lowest maxParallel lanes', () => {
     const browsers = { ...BROWSERS, device: { ...BROWSERS.device, browserstack: { ...BROWSERS.device.browserstack, vitest: { shards: 4, maxParallel: 2 } } } };
-    expect(matrices.vitestBrowserstack(browsers, listSpecs).map(e => e.lane)).to.eql([1, 2, 1, 2, 1]);
+    expect(matrices.vitestBrowserstack(browsers, {}, listSpecs).map(e => e.lane)).to.eql([1, 2, 1, 2, 1]);
+  });
+
+  it('leaves the ES5 e2e job a session per browser', () => {
+    const lanes = (browsers, es5) => Math.max(...matrices.vitestBrowserstack(browsers, es5, listSpecs).map(e => e.lane));
+    const unlimited = { ...BROWSERS, device: { ...BROWSERS.device, browserstack: { ...BROWSERS.device.browserstack, vitest: { shards: 6 } } } };
+    expect(lanes(unlimited, {})).to.equal(5);
+    expect(lanes(unlimited, { a: {}, b: {} })).to.equal(3);
+    expect(lanes(BROWSERS, { a: {}, b: {}, c: {} })).to.equal(2);
+    expect(lanes(BROWSERS, { a: {}, b: {}, c: {}, d: {}, e: {} })).to.equal(1);
   });
 
   it('leaves out an entry no spec matches', () => {
-    expect(matrices.vitestBrowserstack(BROWSERS, () => []).map(e => e.name)).to.eql(['Phone', 'Phone']);
+    expect(matrices.vitestBrowserstack(BROWSERS, {}, () => []).map(e => e.name)).to.eql(['Phone', 'Phone']);
   });
 
   it('labels an entry without specsLabel by its pattern', () => {
     const browsers = { secure: { ...BROWSERS.secure, browserstack: { ...BROWSERS.secure.browserstack, vitest: { specsMatching: 'isSecureContext' } } } };
-    expect(matrices.vitestBrowserstack(browsers, listSpecs)[0].label).to.equal('specs matching /isSecureContext/');
+    expect(matrices.vitestBrowserstack(browsers, {}, listSpecs)[0].label).to.equal('specs matching /isSecureContext/');
   });
 
   it('finds the spec files whose source matches', () => {

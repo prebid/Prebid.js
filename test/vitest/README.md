@@ -214,7 +214,8 @@ run in has an object of its own:
   (`VITEST_BROWSER`), `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`),
   `chromeVersion` (a Chrome from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on
   BrowserStack, `maxParallel`. The BrowserStack jobs of all workflow runs share the lowest `maxParallel` lanes, and
-  run at most one job per lane at once. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
+  run at most one job per lane at once. The lanes never take more of the account's 5 sessions than the ES5 e2e job
+  (one per `browsers-es5.json` browser) leaves free. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
   job labelled `specsLabel`, only the spec files under `test/spec` whose source matches it, found when the job is
   defined; with none, there is no job. `gulp test --browserstack` does the same for that entry, unless `--file` is
   given.

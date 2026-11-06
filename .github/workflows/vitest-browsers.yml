@@ -39,6 +39,7 @@ jobs:
           # test/spec for browsers.json's `specsMatching`
           sparse-checkout: |
             browsers.json
+            browsers-es5.json
             .github/workflows/scripts/browserMatrices.js
             test/spec/
           sparse-checkout-cone-mode: false
@@ -50,7 +51,7 @@ jobs:
             const browsers = require('./browsers.json');
             return {
               runners: m.vitestRunners(browsers),
-              browserstack: m.vitestBrowserstack(browsers),
+              browserstack: m.vitestBrowserstack(browsers, require('./browsers-es5.json')),
             };
 
 
@@ -139,7 +140,7 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.define.outputs.browserstack) }}
     # One BrowserStack session per job, at most one job per lane across all workflow runs: the lowest `maxParallel` in
-    # browsers.json, two for the iPhone (one took 25 minutes).
+    # browsers.json (two for the iPhone; one took 25 minutes), capped by the sessions the ES5 e2e job leaves free.
     concurrency:
       group: browserstack-vitest-lane-${{ matrix.lane }}
       queue: max
