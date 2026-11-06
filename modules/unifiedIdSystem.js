@@ -60,14 +60,15 @@ export const unifiedIdSubmodule = {
       const queryParams = { ttd_pid: configParams.partner, fmt: 'json' };
       const ridUrl = new URL(customUrl ? customUrl.href : `https://match.adsrvr.org/track/rid?${parseQueryStringParameters(queryParams)}`);
       const gdprConsent = consentData?.gdpr;
-      if (typeof gdprConsent?.gdprApplies === 'boolean') {
+      // Preserve publisher-supplied parameters, including empty values.
+      if (!ridUrl.searchParams.has('gdpr') && typeof gdprConsent?.gdprApplies === 'boolean') {
         ridUrl.searchParams.set('gdpr', gdprConsent.gdprApplies ? '1' : '0');
       }
-      if (typeof gdprConsent?.consentString === 'string' && gdprConsent.consentString) {
+      if (!ridUrl.searchParams.has('gdpr_consent') && typeof gdprConsent?.consentString === 'string' && gdprConsent.consentString) {
         ridUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
       }
       const domain = getRefererInfo().domain;
-      if (domain) {
+      if (!ridUrl.searchParams.has('domain') && domain) {
         ridUrl.searchParams.set('domain', domain);
       }
       url = ridUrl.toString();
