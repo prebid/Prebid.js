@@ -156,7 +156,7 @@ module.exports = [
         'error',
         {
           selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
-          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Defining a function named 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
         {
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
@@ -376,6 +376,8 @@ module.exports = [
       'no-restricted-imports': [
         'error',
         {
+          // Approved files intentionally clear inherited no-restricted-imports patterns.
+          // The BidAdapter restriction above is the authoritative block for events.js/adloader.js.
           patterns: []
         }
       ],
