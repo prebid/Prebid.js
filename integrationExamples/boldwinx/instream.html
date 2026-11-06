@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BoldwinX instream demo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/7.20.2/video-js.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/7.20.2/video.min.js"></script>
+  <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.min.js"></script>
+  <script async src="../../build/dev/prebid.js"></script>
+  <script src="demo.js"></script>
+</head>
+<body>
+  <header>
+    <h1>BoldwinX instream video</h1>
+    <p>The ad plays before the video, inside the site's own player (video.js with Google IMA). epid: <code id="epid"></code></p>
+    <form id="epid-form" hidden><input name="epid" placeholder="epid from Boldwin" aria-label="epid"><button>Load</button></form>
+    <nav><a href="instream.html" aria-current="page">Instream</a><a href="outstream.html">Outstream</a></nav>
+  </header>
+  <main>
+    <section>
+      <div class="player">
+        <video id="player" class="video-js vjs-big-play-centered" controls preload="auto" playsinline></video>
+      </div>
+      <p class="hint">Press play when the log says the ad is ready. To see the pixels themselves, open DevTools, then Network, and filter by <code>algotoro</code>.</p>
+    </section>
+    <aside>
+      <div class="panel">
+        <h2>What happens</h2>
+        <ol id="log"></ol>
+      </div>
+      <div class="panel">
+        <h2>Impression pixels in the VAST</h2>
+        <p class="hint">The player opens these when the ad starts: Boldwin's own pixel, then burl and nurl.</p>
+        <ul id="pixels"></ul>
+      </div>
+    </aside>
+  </main>
+  <script>
+    var AD_UNIT = 'instream';
+    var CONTENT = { src: 'https://vjs.zencdn.net/v/oceans.mp4', type: 'video/mp4' };
+    var player = videojs('player');
+    var pbjs = window.pbjs = window.pbjs || { que: [] };
+
+    if (demo.requireEpid()) {
+      demo.log('Prebid asks Boldwin for a video bid', 'POST pbjs.algotoro.com/bid?epid=' + demo.epid);
+      pbjs.que.push(function () {
+        // Instream bids need a VAST cache; the local one keeps the demo free of a cache server.
+        pbjs.setConfig({ cache: { useLocal: true } });
+        pbjs.addAdUnits([{
+          code: AD_UNIT,
+          mediaTypes: {
+            video: { context: 'instream', playerSize: [640, 360], mimes: ['video/mp4'], protocols: [2, 3, 5, 6], plcmt: 1 }
+          },
+          bids: [{ bidder: 'boldwinx', params: { epid: demo.epid } }]
+        }]);
+        pbjs.requestBids({
+          timeout: 3000,
+          bidsBackHandler: function () {
+            var bid = pbjs.getHighestCpmBids(AD_UNIT)[0];
+            if (!bid) {
+              demo.log('No bid from Boldwin', 'Check that the Boldwin test mode is on. The video plays without an ad.', 'error');
+              player.src(CONTENT);
+              return;
+            }
+            var count = demo.showVastPixels(bid.vastXml);
+            demo.log('Bid received', bid.cpm + ' ' + bid.currency + ', VAST with ' + count + ' impression pixels');
+            startAds(bid.vastXml);
+          }
+        });
+      });
+    }
+
+    function startAds(vastXml) {
+      // The plugin takes ad event listeners only once IMA has loaded the ad.
+      player.on('ads-manager', function (e) {
+        e.adsManager.addEventListener(google.ima.AdEvent.Type.IMPRESSION, function () {
+          demo.log('Ad started: the player opened the impression pixels', 'Boldwin pixel, burl and nurl, each once', 'ok');
+        });
+        e.adsManager.addEventListener(google.ima.AdEvent.Type.COMPLETE, function () {
+          demo.log('Ad finished', 'The video goes on.');
+        });
+      });
+      player.ima({ adsResponse: vastXml });
+      // The ads plugin has to see the content load, so the content goes in only after the plugin starts.
+      player.src(CONTENT);
+      demo.log('Ad is ready', 'Press play.');
+      player.on('adserror', function (e) {
+        var error = e.data && e.data.AdError;
+        demo.log('The player could not play the ad', error ? error.getMessage() : '', 'error');
+      });
+      // Browsers let the ad start only after a click, so the click on play also unlocks the ad container.
+      player.one('play', function () {
+        player.ima.initializeAdDisplayContainer();
+      });
+    }
+  </script>
+</body>
+</html>

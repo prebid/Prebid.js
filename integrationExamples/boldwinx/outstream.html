@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BoldwinX outstream demo</title>
+  <link rel="stylesheet" href="demo.css">
+  <script async src="../../build/dev/prebid.js"></script>
+  <script src="demo.js"></script>
+</head>
+<body>
+  <header>
+    <h1>BoldwinX outstream video</h1>
+    <p>The ad is a video block of its own in the middle of an article. epid: <code id="epid"></code></p>
+    <form id="epid-form" hidden><input name="epid" placeholder="epid from Boldwin" aria-label="epid"><button>Load</button></form>
+    <nav><a href="instream.html">Instream</a><a href="outstream.html" aria-current="page">Outstream</a></nav>
+  </header>
+  <main>
+    <article>
+      <p>This is a sample article. Outstream video has no video of its own around it: the ad is the video. It starts muted when at least half of it is on the screen, like on most news sites.</p>
+      <p>Scroll down a little if the ad block is not on the screen yet. The log on the right shows each step.</p>
+      <p class="ad-label" id="ad-label">Advertisement</p>
+      <div id="outstream" class="outstream"></div>
+      <p>The article goes on after the ad. When the ad finishes, the block closes.</p>
+      <p>To see the pixels themselves, open DevTools, then Network, and filter by <code>algotoro</code>.</p>
+    </article>
+    <aside>
+      <div class="panel">
+        <h2>What happens</h2>
+        <ol id="log"></ol>
+      </div>
+      <div class="panel">
+        <h2>Impression pixels in the VAST</h2>
+        <p class="hint">The player opens these when the ad starts: Boldwin's own pixel, then burl and nurl.</p>
+        <ul id="pixels"></ul>
+      </div>
+    </aside>
+  </main>
+  <script>
+    var AD_UNIT = 'outstream';
+    var SIZE = [640, 360];
+    var pbjs = window.pbjs = window.pbjs || { que: [] };
+
+    if (demo.requireEpid()) {
+      demo.log('Prebid asks Boldwin for a video bid', 'POST pbjs.algotoro.com/bid?epid=' + demo.epid);
+      pbjs.que.push(function () {
+        pbjs.addAdUnits([{
+          code: AD_UNIT,
+          mediaTypes: {
+            video: { context: 'outstream', playerSize: SIZE, mimes: ['video/mp4'], protocols: [2, 3, 5, 6], plcmt: 4 }
+          },
+          // BoldwinX has no player of its own, so the site gives Prebid one. Here it is Google IMA.
+          renderer: {
+            url: 'https://imasdk.googleapis.com/js/sdkloader/ima3.js',
+            render: renderOutstream
+          },
+          bids: [{ bidder: 'boldwinx', params: { epid: demo.epid } }]
+        }]);
+        pbjs.requestBids({
+          timeout: 3000,
+          bidsBackHandler: function () {
+            var bid = pbjs.getHighestCpmBids(AD_UNIT)[0];
+            if (!bid) {
+              demo.log('No bid from Boldwin', 'Check that the Boldwin test mode is on.', 'error');
+              document.getElementById(AD_UNIT).hidden = true;
+              document.getElementById('ad-label').hidden = true;
+              return;
+            }
+            var count = demo.showVastPixels(bid.vastXml);
+            demo.log('Bid received', bid.cpm + ' ' + bid.currency + ', VAST with ' + count + ' impression pixels');
+            pbjs.renderAd(document, bid.adId);
+          }
+        });
+      });
+    }
+
+    function renderOutstream(bid) {
+      var slot = document.getElementById(AD_UNIT);
+      var video = document.createElement('video');
+      video.muted = true;
+      video.setAttribute('playsinline', '');
+      var adContainer = document.createElement('div');
+      adContainer.className = 'ad-container';
+      slot.append(video, adContainer);
+
+      var displayContainer = new google.ima.AdDisplayContainer(adContainer, video);
+      var adsLoader = new google.ima.AdsLoader(displayContainer);
+      var request = new google.ima.AdsRequest();
+      request.adsResponse = bid.vastXml;
+      request.linearAdSlotWidth = slot.clientWidth;
+      request.linearAdSlotHeight = slot.clientHeight;
+      request.setAdWillAutoPlay(true);
+      request.setAdWillPlayMuted(true);
+
+      adsLoader.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onError);
+      adsLoader.addEventListener(google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, function (e) {
+        var adsManager = e.getAdsManager(video);
+        adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onError);
+        adsManager.addEventListener(google.ima.AdEvent.Type.IMPRESSION, function () {
+          demo.log('Ad started: the player opened the impression pixels', 'Boldwin pixel, burl and nurl, each once', 'ok');
+        });
+        adsManager.addEventListener(google.ima.AdEvent.Type.ALL_ADS_COMPLETED, function () {
+          adsManager.destroy();
+          slot.replaceChildren();
+          slot.classList.add('done');
+          document.getElementById('ad-label').hidden = true;
+          demo.log('Ad finished', 'The block closes.');
+        });
+        demo.log('Ad is ready', 'It starts when half of the block is on the screen.');
+        whenHalfVisible(slot, function () {
+          displayContainer.initialize();
+          adsManager.init(slot.clientWidth, slot.clientHeight, google.ima.ViewMode.NORMAL);
+          adsManager.setVolume(0);
+          adsManager.start();
+          addSoundButton(slot, adsManager);
+        });
+      });
+      adsLoader.requestAds(request);
+
+      function onError(e) {
+        demo.log('The player could not play the ad', e.getError().getMessage(), 'error');
+        slot.hidden = true;
+        document.getElementById('ad-label').hidden = true;
+      }
+    }
+
+    function whenHalfVisible(node, callback) {
+      var observer = new IntersectionObserver(function (entries) {
+        if (entries[0].intersectionRatio >= 0.5) {
+          observer.disconnect();
+          callback();
+        }
+      }, { threshold: 0.5 });
+      observer.observe(node);
+    }
+
+    function addSoundButton(slot, adsManager) {
+      var button = document.createElement('button');
+      button.className = 'button sound';
+      button.textContent = 'Sound on';
+      button.addEventListener('click', function () {
+        adsManager.setVolume(1);
+        button.remove();
+      });
+      slot.appendChild(button);
+    }
+  </script>
+</body>
+</html>
