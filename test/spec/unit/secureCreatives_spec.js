@@ -53,7 +53,7 @@ describe('secureCreatives', () => {
       sinon.assert.calledWith(ev.source.postMessage, JSON.stringify('test'));
     });
 
-    it('should use MesagePort.postMessage if available', () => {
+    it('should use MessagePort.postMessage if available', () => {
       const ev = {
         ports: [{
           postMessage: sinon.spy()
