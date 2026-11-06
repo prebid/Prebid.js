@@ -6,10 +6,13 @@ import {
   maximum,
   getHighestCpm,
   getHighestDesirability,
+  highestDesirabilityFirst,
+  bidDesirabilityCompare,
   getOldestHighestCpmBid, getLatestHighestCpmBid, reverseCompare
 } from '../../../../src/utils/reducers.js';
 
 import 'assert';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../../../src/utils/desirability.js';
 
 describe('reducers', () => {
   describe('simpleCompare', () => {
@@ -146,6 +149,60 @@ describe('reducers', () => {
       };
       expect(getHighestDesirability(boosted, plain)).to.eql(boosted);
       expect(getHighestDesirability(plain, boosted)).to.eql(boosted);
+    });
+  });
+
+  describe('priority', () => {
+    // a priority one step higher than the other; "higher" is a step of PRIORITY_INCREMENT
+    const HIGH = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+    const LOW = DEFAULT_PRIORITY;
+    let hi, lo;
+
+    Object.entries({
+      'has lower cpm and desirability': [{ cpm: 1, desirability: 1 }, { cpm: 100, desirability: 100 }],
+      'has lower desirability, higher cpm': [{ cpm: 100, desirability: 1 }, { cpm: 1, desirability: 100 }],
+      'has zero cpm and desirability': [{ cpm: 0, desirability: 0 }, { cpm: 100, desirability: 100 }],
+      'has no desirability and lower cpm': [{ cpm: 1 }, { cpm: 100 }],
+      'is otherwise identical': [{ cpm: 1, desirability: 1 }, { cpm: 1, desirability: 1 }],
+      'is slower': [{ cpm: 1, desirability: 1, timeToRespond: 1000 }, { cpm: 1, desirability: 1, timeToRespond: 10 }],
+    }).forEach(([t, [hiProps, loProps]]) => {
+      describe(`when the higher priority bid ${t}`, () => {
+        beforeEach(() => {
+          hi = { timeToRespond: 100, ...hiProps, priority: HIGH, bidderCode: 'hi' };
+          lo = { timeToRespond: 100, ...loProps, priority: LOW, bidderCode: 'lo' };
+        });
+
+        it('bidDesirabilityCompare ranks it higher', () => {
+          expect(bidDesirabilityCompare(hi, lo)).to.be.greaterThan(0);
+          expect(bidDesirabilityCompare(lo, hi)).to.be.lessThan(0);
+        });
+
+        it('highestDesirabilityFirst sorts it first', () => {
+          expect([lo, hi].sort(highestDesirabilityFirst)).to.eql([hi, lo]);
+          expect([hi, lo].sort(highestDesirabilityFirst)).to.eql([hi, lo]);
+        });
+
+        it('getHighestDesirability picks it', () => {
+          expect(getHighestDesirability(hi, lo)).to.equal(hi);
+          expect(getHighestDesirability(lo, hi)).to.equal(hi);
+          expect([lo, hi, lo].reduce(getHighestDesirability)).to.equal(hi);
+        });
+      });
+    });
+
+    it('orders by priority first, then by desirability within the same priority', () => {
+      const bids = [
+        { cpm: 50, desirability: 50, priority: LOW, bidderCode: 'low-50' },
+        { cpm: 1, desirability: 1, priority: HIGH + PRIORITY_INCREMENT, bidderCode: 'highest-1' },
+        { cpm: 2, desirability: 2, priority: HIGH, bidderCode: 'high-2' },
+        { cpm: 100, desirability: 100, priority: LOW - PRIORITY_INCREMENT, bidderCode: 'lowest-100' },
+        { cpm: 3, desirability: 3, priority: HIGH, bidderCode: 'high-3' },
+        { cpm: 60, desirability: 60, priority: LOW, bidderCode: 'low-60' },
+      ];
+      expect(bids.slice().sort(highestDesirabilityFirst).map(b => b.bidderCode)).to.eql([
+        'highest-1', 'high-3', 'high-2', 'low-60', 'low-50', 'lowest-100'
+      ]);
+      expect(bids.reduce(getHighestDesirability).bidderCode).to.equal('highest-1');
     });
   });
 

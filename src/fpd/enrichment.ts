@@ -37,6 +37,12 @@ export interface FirstPartyDataConfig {
    */
   uaHints?: string[]
   /**
+   * If true, a bidder-specific schain (`ortb2.source.ext.schain` in `setBidderConfig`)
+   * replaces the global schain for that bidder. By default (false), bidder-specific FPD is deep-merged into global
+   * FPD, so the bidder's schain nodes are appended to the global schain's nodes.
+   */
+  replaceGlobalSchain?: boolean
+  /**
    * Control keyword enrichment - `site.keywords`, `dooh.keywords` and/or `app.keywords`.
    */
   keywords?: {
@@ -45,7 +51,7 @@ export interface FirstPartyDataConfig {
      */
     meta?: boolean,
     /**
-     * If true (the default), look for keywords in a JSON-LD tag (<script type="application/json+ld">) and add themm to first party data.
+     * If true (the default), look for keywords in a JSON-LD tag (<script type="application/ld+json">) and add themm to first party data.
      */
     json?: boolean
   }

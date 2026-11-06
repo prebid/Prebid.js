@@ -39,7 +39,7 @@ import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
 import { wrapInBids } from "./utils/wrapsInBids.ts";
-import { adjustDesirability } from './utils/desirability.ts';
+import { adjustDesirability, getPriority, isCpmEligible, isHouseBid } from './utils/desirability.ts';
 
 const { syncUsers } = userSync;
 
@@ -98,7 +98,7 @@ declare module './events' {
      */
     [EVENTS.AUCTION_TIMEOUT]: [AuctionProperties];
     /**
-     * Fired when an auction times out.
+     * Fired when a bid times out.
      */
     [EVENTS.BID_TIMEOUT]: [BidRequest<BidderCode>[]];
     /**
@@ -188,6 +188,13 @@ export interface AuctionOptionsConfig {
    * Default is true; set to false to keep mismatched mediaType responses.
    */
   rejectInvalidMediaTypes?: boolean;
+
+  /**
+   * If true, and the browser supports [`scheduler.yield`](https://developer.mozilla.org/en-US/docs/Web/API/Scheduler/yield),
+   * auctions yield the main thread after calling each bid adapter.
+   * Default is false.
+   */
+  yield?: boolean
 }
 
 export interface PriceBucketConfig {
@@ -657,10 +664,7 @@ export function addBidToAuction(auctionInstance, bidResponse: Bid) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, { index = auctionManager.index } = {}) {
-  const videoMediaType = index.getMediaTypes({
-    requestId: bidResponse.originalRequestId || bidResponse.requestId,
-    adUnitId: bidResponse.adUnitId
-  })?.video;
+  const videoMediaType = index.getMediaTypes(bidResponse)?.video;
   handleVideoBidCaching({
     bidResponse,
     auctionInstance,
@@ -792,8 +796,6 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
 
   // a publisher-defined renderer can be used to render bids
   const bidRequest = index.getBidRequest(bid);
-  const bidRenderer = bidRequest?.renderer || adUnit?.renderer;
-  const bidSafeRenderer = bidRequest?.safeRenderer || adUnit?.safeRenderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;
@@ -803,22 +805,11 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   const mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
   const mediaTypeSafeRenderer = bidMediaType && bidMediaType.safeRenderer;
 
-  let renderer = null;
+  const renderer = [mediaTypeRenderer, bidRequest?.renderer, adUnit?.renderer]
+    .find(candidate => candidate?.render && !(candidate.backupOnly === true && bid.renderer));
 
-  // the renderer for the mediaType takes precendence
-  if (mediaTypeRenderer && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
-    renderer = mediaTypeRenderer;
-  } else if (bidRenderer && bidRenderer.render && !(bidRenderer.backupOnly === true && bid.renderer)) {
-    renderer = bidRenderer;
-  }
-
-  let safeRenderer: SafeRendererConfig | undefined = null;
-
-  if (mediaTypeSafeRenderer && mediaTypeSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
-    safeRenderer = mediaTypeSafeRenderer;
-  } else if (bidSafeRenderer && bidSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
-    safeRenderer = bidSafeRenderer;
-  }
+  const safeRenderer: SafeRendererConfig | undefined = [mediaTypeSafeRenderer, bidRequest?.safeRenderer, adUnit?.safeRenderer]
+    .find(candidate => candidate?.url && !(candidate.backupOnly === true && bid.safeRenderer));
 
   if (safeRenderer != null) {
     bid.safeRenderer = safeRenderer;
@@ -829,7 +820,7 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   if (allowTopWindowRenderers) {
     if (renderer) {
       // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null, requiresVastUrl: renderer.requiresVastUrl });// rename options to config, to make it consistent?
       bid.renderer.setRender(renderer.render);
     }
   } else {
@@ -855,8 +846,7 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
 
 function setupBidTargeting(bidObject: Bid) {
   let keyValues;
-  const cpmCheck = (bidderSettings.get(bidObject.bidderCode, 'allowZeroCpmBids') === true) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
-  if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
+  if (bidObject.bidderCode && (isCpmEligible(bidObject) || bidObject.dealId)) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
   }
 
@@ -1148,17 +1138,19 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
   return keyValues;
 }
 
-export function adjustBids(bid) {
-  const bidRequest = auctionManager.index.getBidRequest(bid);
+export function adjustBids(bid, { index = auctionManager.index } = {}) {
+  const bidRequest = index.getBidRequest(bid);
   const bidPriceAdjusted = adjustCpm(bid.cpm, bid, bidRequest);
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
   }
 
-  // defaults to  cpm
-  const bidDesirabilityAdjusted = adjustDesirability(bid, bidRequest);
-  bid.desirability = bidDesirabilityAdjusted;
+  const bidderRequest = index.getBidderRequest(bid);
+  bid.desirability = adjustDesirability(bid, bidRequest, { bidderRequest });
+  // always set, so that a value set by the adapter itself has no effect
+  bid.houseBid = isHouseBid(bid, bidderRequest);
+  bid.priority = getPriority(bid, bidderRequest);
 }
 
 /**

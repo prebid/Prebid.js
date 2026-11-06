@@ -334,6 +334,53 @@ describe('connatixBidAdapter', function () {
 
       expect(result[0]).to.have.property('floor', 0);
     });
+
+    it('should include gpid when present in ortb2Imp.ext.gpid', function () {
+      bid = mockBidRequest();
+      bid.ortb2Imp = { ext: { gpid: '/1234/homepage/top' } };
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.have.property('gpid', '/1234/homepage/top');
+    });
+
+    it('should not include gpid when ortb2Imp is absent', function () {
+      bid = mockBidRequest();
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.not.have.property('gpid');
+    });
+
+    it('should not include gpid when ortb2Imp.ext.gpid is empty or not a string', function () {
+      bid = mockBidRequest();
+      bid.ortb2Imp = { ext: { gpid: '' } };
+      expect(_getBidRequests([bid])[0]).to.not.have.property('gpid');
+
+      bid.ortb2Imp = { ext: { gpid: 123 } };
+      expect(_getBidRequests([bid])[0]).to.not.have.property('gpid');
+
+      bid.ortb2Imp = { ext: {} };
+      expect(_getBidRequests([bid])[0]).to.not.have.property('gpid');
+    });
+
+    it('should not include gpid when ortb2Imp.ext.gpid is null', function () {
+      bid = mockBidRequest();
+      bid.ortb2Imp = { ext: { gpid: null } };
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.not.have.property('gpid');
+    });
+
+    it('should not include gpid when ortb2Imp has no ext', function () {
+      bid = mockBidRequest();
+      bid.ortb2Imp = {};
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.not.have.property('gpid');
+    });
   });
 
   describe('onTimeout', function () {
@@ -648,11 +695,14 @@ describe('connatixBidAdapter', function () {
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
     const UserSyncEndpoint = 'https://connatix.com/sync';
     const UserSyncEndpointWithParams = 'https://connatix.com/sync?param1=value1';
+    const PixelSyncEndpoint = 'https://connatix.com/pixel';
+    const PixelSyncEndpointWithParams = 'https://connatix.com/pixel?param1=value1';
     const Bid = { Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId };
 
     const serverResponse = {
       body: {
         UserSyncEndpoint,
+        PixelSyncEndpoint,
         Bids: [Bid]
       },
       headers: function() { }
@@ -660,6 +710,22 @@ describe('connatixBidAdapter', function () {
     const serverResponse2 = {
       body: {
         UserSyncEndpoint: UserSyncEndpointWithParams,
+        PixelSyncEndpoint: PixelSyncEndpointWithParams,
+        Bids: [Bid]
+      },
+      headers: function() { }
+    };
+    const serverResponseNullPixel = {
+      body: {
+        UserSyncEndpoint,
+        PixelSyncEndpoint: null,
+        Bids: [Bid]
+      },
+      headers: function() { }
+    };
+    const serverResponseNoPixel = {
+      body: {
+        UserSyncEndpoint,
         Bids: [Bid]
       },
       headers: function() { }
@@ -669,21 +735,113 @@ describe('connatixBidAdapter', function () {
       config.resetConfig();
     });
 
-    it('Should return an empty array when iframeEnabled: false', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], {}, {}, {})).to.be.an('array').that.is.empty;
+    it('Should return an empty array when both iframeEnabled and pixelEnabled are false', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [serverResponse], {}, {}, {})).to.be.an('array').that.is.empty;
     });
-    it('Should return an empty array when serverResponses is emprt array', function () {
+    it('Should return an empty array when serverResponses is an empty array', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], {}, {}, {})).to.be.an('array').that.is.empty;
     });
-    it('Should return an empty array when iframeEnabled: true but serverResponses in an empty array', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [serverResponse], {}, {}, {})).to.be.an('array').that.is.empty;
+    it('Should return an empty array when serverResponses is not defined or null', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, undefined, {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, null, {}, {}, {})).to.be.an('array').that.is.empty;
     });
-    it('Should return an empty array when iframeEnabled: true but serverResponses in an not defined or null', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, undefined, {}, {}, {})).to.be.an('array').that.is.empty;
-      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, null, {}, {}, {})).to.be.an('array').that.is.empty;
+    it('Should return an empty array when the response body is missing', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [{ headers: function() { } }], {}, {}, {})).to.be.an('array').that.is.empty;
     });
-    it('Should return one user sync object when iframeEnabled is true and serverResponses is not an empry array', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], {}, {}, {})).to.be.an('array').that.is.not.empty;
+    it('Should return one user sync object when iframeEnabled is true and serverResponses is not an empty array', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], {}, {}, {})).to.be.an('array').that.has.lengthOf(1);
+    });
+    it('Should prefer the iframe sync when both iframeEnabled and pixelEnabled are true', function () {
+      const userSyncList = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);
+      expect(userSyncList).to.have.lengthOf(1);
+      expect(userSyncList[0]).to.deep.equal({ type: 'iframe', url: UserSyncEndpoint });
+    });
+    it('Should return an image sync with PixelSyncEndpoint when only pixelEnabled is true', function () {
+      const userSyncList = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);
+      expect(userSyncList).to.have.lengthOf(1);
+      expect(userSyncList[0]).to.deep.equal({ type: 'image', url: PixelSyncEndpoint });
+    });
+    it('Should append consent params to the image sync url', function () {
+      const userSyncList = spec.getUserSyncs(
+        { iframeEnabled: false, pixelEnabled: true },
+        [serverResponse],
+        { gdprApplies: true, consentString: 'test&2' },
+        '1YYYN',
+        { gppString: 'GPP', applicableSections: [2, 4] },
+        true
+      );
+      expect(userSyncList[0].type).to.equal('image');
+      expect(userSyncList[0].url).to.equal(`${PixelSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4&coppa=1`);
+    });
+    it('Should append consent params to the image sync url with & when it already has query params', function () {
+      const userSyncList = spec.getUserSyncs(
+        { iframeEnabled: false, pixelEnabled: true },
+        [serverResponse2],
+        { gdprApplies: false },
+        undefined,
+        undefined
+      );
+      expect(userSyncList[0].url).to.equal(`${PixelSyncEndpointWithParams}&gdpr=0`);
+    });
+    it('Should return an empty array when only pixelEnabled is true and PixelSyncEndpoint is null', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [serverResponseNullPixel], {}, {}, {})).to.be.an('array').that.is.empty;
+    });
+    it('Should return an empty array when only pixelEnabled is true and PixelSyncEndpoint is missing', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [serverResponseNoPixel], {}, {}, {})).to.be.an('array').that.is.empty;
+    });
+    it('Should fall back to the image sync when iframeEnabled is true but UserSyncEndpoint is missing', function () {
+      const response = { body: { PixelSyncEndpoint, Bids: [Bid] }, headers: function() { } };
+      const userSyncList = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response], undefined, undefined, undefined);
+      expect(userSyncList).to.deep.equal([{ type: 'image', url: PixelSyncEndpoint }]);
+    });
+    it('Should return an empty array when iframeEnabled is true, pixelEnabled is false and UserSyncEndpoint is missing', function () {
+      const response = { body: { PixelSyncEndpoint, Bids: [Bid] }, headers: function() { } };
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [response], {}, {}, {})).to.be.an('array').that.is.empty;
+    });
+    it('Should register the message listener only for the iframe sync', function () {
+      const addListener = sinon.stub(window, 'addEventListener');
+      try {
+        spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);
+        expect(addListener.calledWith('message')).to.be.false;
+
+        spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);
+        expect(addListener.calledWith('message')).to.be.true;
+      } finally {
+        addListener.restore();
+      }
+    });
+    it('Should store identity data and remove the listener when the iframe posts the resolved message', function () {
+      const sandbox = sinon.createSandbox();
+      const addListener = sandbox.stub(window, 'addEventListener');
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      try {
+        spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);
+        const handler = addListener.firstCall.args[1];
+        const target = { removeEventListener: sinon.spy() };
+        const payload = { supplementalEids: [{ provider: 2, group: 1, eidsList: ['123'] }] };
+
+        // ignored: wrong origin
+        handler.call(target, { data: { cnx: { message: 'cnx_all_identity_providers_resolved', data: payload } }, origin: 'https://evil.com', stopImmediatePropagation: sinon.spy() });
+        expect(storage.setDataInLocalStorage.notCalled).to.be.true;
+
+        // collection updated: stored, listener kept
+        handler.call(target, { data: { cnx: { message: 'cnx_identity_provider_collection_updated', data: payload } }, origin: 'https://cds.connatix.com', stopImmediatePropagation: sinon.spy() });
+        expect(storage.setDataInLocalStorage.calledOnceWith('cnx_user_ids', JSON.stringify(payload))).to.be.true;
+        expect(target.removeEventListener.notCalled).to.be.true;
+
+        // all providers resolved: stored, listener removed, propagation stopped
+        const resolved = { data: { cnx: { message: 'cnx_all_identity_providers_resolved', data: payload } }, origin: 'https://cds.connatix.com', stopImmediatePropagation: sinon.spy() };
+        handler.call(target, resolved);
+        expect(storage.setDataInLocalStorage.calledTwice).to.be.true;
+        expect(target.removeEventListener.calledOnceWith('message', handler)).to.be.true;
+        expect(resolved.stopImmediatePropagation.calledOnce).to.be.true;
+
+        // resolved without data: nothing stored
+        handler.call(target, { data: { cnx: { message: 'cnx_all_identity_providers_resolved' } }, origin: 'https://cds.connatix.com', stopImmediatePropagation: sinon.spy() });
+        expect(storage.setDataInLocalStorage.calledTwice).to.be.true;
+      } finally {
+        sandbox.restore();
+      }
     });
     it('Should return a list containing a single object having type: iframe and url: syncUrl', function () {
       const userSyncList = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);

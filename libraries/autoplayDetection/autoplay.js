@@ -46,9 +46,10 @@ function startDetection() {
       videoElement.src = '';
     })
     .catch((error) => {
-      if (error instanceof DOMException && error.name === 'NotSupportedError') {
-        // ignore this error caused by a Content Security Policy that disables data: scheme for media URLs
-      } else {
+      // only NotAllowedError means that the browser refuses autoplay. Other errors say nothing about the autoplay policy:
+      // NotSupportedError is caused by a Content Security Policy that disables data: scheme for media URLs,
+      // AbortError is raised when the browser pauses the video to save power, e.g. on a page loaded in a background tab
+      if (error instanceof DOMException && error.name === 'NotAllowedError') {
         autoplayEnabled = false;
       }
     });

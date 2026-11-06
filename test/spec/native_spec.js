@@ -451,7 +451,13 @@ describe('native.js', function () {
 
   const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
     title: 'vtitle',
-    body: 'vbody'
+    body: 'vbody',
+    video: {
+      mimes: ['video/mp4'],
+      protocols: [2, 3],
+      minduration: 5,
+      maxduration: 60
+    }
   });
   const SAMPLE_ORTB_RESPONSE = {
     link: {
@@ -469,6 +475,12 @@ describe('native.js', function () {
         data: {
           value: 'vbody'
         }
+      },
+      {
+        id: 2,
+        video: {
+          vasttag: 'https://vast.example/tag.xml'
+        }
       }
     ],
     eventtrackers: [
@@ -482,13 +494,38 @@ describe('native.js', function () {
       const actual = toLegacyResponse(SAMPLE_ORTB_RESPONSE, SAMPLE_ORTB_REQUEST);
       expect(actual.body).to.equal('vbody');
       expect(actual.title).to.equal('vtitle');
+      expect(actual.video).to.equal('https://vast.example/tag.xml');
       expect(actual.clickUrl).to.equal('url');
       expect(actual.javascriptTrackers).to.equal('<script async src="https://sampleurljs.com"></script>');
       expect(actual.impressionTrackers.length).to.equal(2);
       expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
       expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
     });
-    ['img.type', 'title.text', 'data.type'].forEach(prop => {
+
+    it('ignores unmatched and unrecognized data assets without setting an undefined property', () => {
+      const request = {
+        assets: [
+          { id: 1, data: { type: 2 } },
+          { id: 2, data: {} },
+          { id: 3, data: { type: 999 } }
+        ]
+      };
+      const response = {
+        assets: [
+          { id: 0, data: { value: 'unmatched' } },
+          { id: 1, data: { value: 'valid body' } },
+          { id: 2, data: { value: 'missing type' } },
+          { id: 3, data: { value: 'unknown type' } }
+        ]
+      };
+
+      const actual = toLegacyResponse(response, request);
+      expect(actual.body).to.equal('valid body');
+      expect(actual).to.not.have.property('undefined');
+      expect(Object.keys(actual)).to.have.members(['clickUrl', 'privacyLink', 'body', 'impressionTrackers']);
+    });
+
+    ['img.type', 'title.text', 'data.type', 'video.vasttag'].forEach(prop => {
       it(`does not choke when the request does not have ${prop}, but the response does`, () => {
         const request = { ortb: { assets: [{ id: 1 }] } };
         const response = { ortb: { assets: [{ id: 1 }] } };
@@ -826,6 +863,176 @@ describe('validate native', function () {
     expect(ortb.privacy).to.equal(1);
   });
 
+  it('rejects invalid native request inputs', () => {
+    const errorStub = sinon.stub(utils, 'logError');
+    try {
+      const invalidInputs = [undefined, null, false, 0, 'native', 42, [], new Date()];
+      invalidInputs.forEach(input => {
+        expect(toOrtbNativeRequest(input)).to.be.undefined;
+      });
+      sinon.assert.callCount(errorStub, invalidInputs.length);
+    } finally {
+      errorStub.restore();
+    }
+  });
+
+  it('accepts an empty plain object as a native request', () => {
+    expect(toOrtbNativeRequest({})).to.deep.equal({ ver: '1.2', assets: [] });
+  });
+
+  it('should convert legacy video asset to OpenRTB request', () => {
+    const ortb = toOrtbNativeRequest({
+      video: {
+        required: true,
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+    expect(ortb.assets[0]).to.deep.include({
+      id: 0,
+      required: 1,
+      video: {
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+  });
+
+  describe('image asset sizes / aspect_ratios with multiple entries', () => {
+    let sandbox, logWarnStub, logErrorStub;
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      logWarnStub = sandbox.stub(utils, 'logWarn');
+      logErrorStub = sandbox.stub(utils, 'logError');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    ['image', 'icon'].forEach(key => {
+      it(`should keep only the first of multiple ${key}.sizes, and warn about the rest`, () => {
+        const ortb = toOrtbNativeRequest({
+          [key]: {
+            required: true,
+            sizes: [[300, 250], [600, 500], [150, 125]]
+          }
+        });
+        expect(ortb.assets[0].img).to.include({ w: 300, h: 250 });
+        expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin');
+        sinon.assert.calledOnce(logWarnStub);
+        sinon.assert.calledWith(logWarnStub, sinon.match(`${key}.sizes`), [[600, 500], [150, 125]]);
+        sinon.assert.notCalled(logErrorStub);
+      });
+
+      it(`should accept a single size wrapped in an array for ${key}.sizes, without warning`, () => {
+        const ortb = toOrtbNativeRequest({
+          [key]: {
+            sizes: [[300, 250]]
+          }
+        });
+        expect(ortb.assets[0].img).to.include({ w: 300, h: 250 });
+        sinon.assert.notCalled(logWarnStub);
+        sinon.assert.notCalled(logErrorStub);
+      });
+
+      it(`should use the first entry's min sizes for multiple ${key}.aspect_ratios, and warn about the rest`, () => {
+        const ortb = toOrtbNativeRequest({
+          [key]: {
+            aspect_ratios: [
+              { min_width: 300, min_height: 200, ratio_width: 3, ratio_height: 2 },
+              { min_width: 100, min_height: 100, ratio_width: 1, ratio_height: 1 }
+            ]
+          }
+        });
+        expect(ortb.assets[0].img).to.include({ wmin: 300, hmin: 200 });
+        expect(ortb.assets[0].img.ext).to.eql({ aspectratios: ['3:2', '1:1'] });
+        sinon.assert.calledOnce(logWarnStub);
+        sinon.assert.calledWith(logWarnStub, sinon.match(`${key}.aspect_ratios`));
+      });
+    });
+
+    it('should not warn for a single size', () => {
+      const ortb = toOrtbNativeRequest({ image: { sizes: [150, 50] } });
+      expect(ortb.assets[0].img).to.include({ w: 150, h: 50 });
+      sinon.assert.notCalled(logWarnStub);
+      sinon.assert.notCalled(logErrorStub);
+    });
+
+    it('should not warn when extra aspect_ratios entries only specify ratios', () => {
+      toOrtbNativeRequest({
+        image: {
+          aspect_ratios: [
+            { min_width: 300, min_height: 200, ratio_width: 3, ratio_height: 2 },
+            { ratio_width: 1, ratio_height: 1 }
+          ]
+        }
+      });
+      sinon.assert.notCalled(logWarnStub);
+    });
+
+    it('should still reject invalid sizes', () => {
+      const ortb = toOrtbNativeRequest({ image: { sizes: [[300, 250], 'bogus'] } });
+      expect(ortb.assets[0].img).to.not.have.any.keys('w', 'h');
+      sinon.assert.calledOnce(logErrorStub);
+    });
+
+    it('should name the asset key in sizes errors', () => {
+      toOrtbNativeRequest({ icon: { sizes: ['bogus'] } });
+      sinon.assert.calledWith(logErrorStub, sinon.match('icon.sizes'));
+    });
+
+    Object.entries({
+      'not an array': { min_width: 100, min_height: 100 },
+      'empty': [],
+    }).forEach(([t, aspectRatios]) => {
+      it(`should log an error naming the asset key when aspect_ratios is ${t}`, () => {
+        const ortb = toOrtbNativeRequest({ icon: { aspect_ratios: aspectRatios } });
+        expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin', 'ext');
+        sinon.assert.calledWith(logErrorStub, sinon.match('icon.aspect_ratios'));
+      });
+    });
+
+    it('should not throw on null aspect_ratios entries', () => {
+      const ortb = toOrtbNativeRequest({
+        image: {
+          aspect_ratios: [null, { min_width: 100, min_height: 100, ratio_width: 1, ratio_height: 1 }, null]
+        }
+      });
+      expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin');
+      expect(ortb.assets[0].img.ext).to.eql({ aspectratios: ['1:1'] });
+      sinon.assert.calledOnce(logErrorStub);
+    });
+
+    it('should reject multiple sizes when a non-first entry is invalid', () => {
+      const ortb = toOrtbNativeRequest({ image: { sizes: [[300, 250], [600, '500']] } });
+      expect(ortb.assets[0].img).to.not.have.any.keys('w', 'h');
+      sinon.assert.notCalled(logWarnStub);
+      sinon.assert.calledOnce(logErrorStub);
+    });
+
+    it('should use the first size and drop min sizes when sizes and multiple aspect_ratios are both given', () => {
+      const ortb = toOrtbNativeRequest({
+        image: {
+          sizes: [[300, 250], [600, 500]],
+          aspect_ratios: [
+            { min_width: 300, min_height: 200, ratio_width: 3, ratio_height: 2 },
+            { min_width: 100, min_height: 100, ratio_width: 1, ratio_height: 1 }
+          ]
+        }
+      });
+      expect(ortb.assets[0].img).to.include({ w: 300, h: 250 });
+      expect(ortb.assets[0].img).to.not.have.any.keys('wmin', 'hmin');
+      expect(ortb.assets[0].img.ext).to.eql({ aspectratios: ['3:2', '1:1'] });
+      sinon.assert.calledOnce(logWarnStub);
+      sinon.assert.calledWith(logWarnStub, sinon.match('image.sizes'));
+      sinon.assert.notCalled(logErrorStub);
+    });
+  });
+
   ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
     it(`should not generate an empty asset for key ${nativeKey}`, () => {
       const ortbReq = toOrtbNativeRequest({
@@ -897,6 +1104,16 @@ describe('validate native', function () {
             'type': 2,
             'len': 140
           }
+        },
+        {
+          'id': 129,
+          'required': 1,
+          'video': {
+            'mimes': ['video/mp4'],
+            'protocols': [2, 3],
+            'minduration': 5,
+            'maxduration': 60
+          }
         }
       ]
     };
@@ -938,6 +1155,13 @@ describe('validate native', function () {
     });
     expect(oldNativeRequest.privacyLink).to.include({
       required: false
+    });
+    expect(oldNativeRequest.video).to.deep.include({
+      required: true,
+      mimes: ['video/mp4'],
+      protocols: [2, 3],
+      minduration: 5,
+      maxduration: 60
     });
   });
 
@@ -1364,5 +1588,56 @@ describe('toOrtbNativeResponse', () => {
         url: 'image-url'
       }
     });
+  });
+
+  it('should convert a legacy video asset to an ORTB vasttag', () => {
+    const legacyResponse = {
+      video: 'https://vast.example/tag.xml'
+    };
+    const request = toOrtbNativeRequest({
+      video: {
+        required: true,
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    sinon.assert.match(response.assets[0], {
+      video: {
+        vasttag: 'https://vast.example/tag.xml'
+      }
+    });
+  });
+
+  it('should extract vasttag from a legacy video object with content', () => {
+    const vastXml = '<?xml version="1.0" encoding="UTF-8"?><VAST version="3.0"></VAST>';
+    const legacyResponse = {
+      video: { content: vastXml }
+    };
+    const request = toOrtbNativeRequest({
+      video: {
+        required: true,
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        minduration: 5,
+        maxduration: 60
+      }
+    });
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    sinon.assert.match(response.assets[0], {
+      video: {
+        vasttag: vastXml
+      }
+    });
+  });
+
+  it('should substitute ##hb_native_video## from a video object with content', () => {
+    const vastXml = '<?xml version="1.0" encoding="UTF-8"?><VAST version="3.0"></VAST>';
+    const data = getNativeRenderingData({
+      native: { video: { content: vastXml } }
+    }, { mediaTypes: { native: {} } });
+    expect(data.assets).to.deep.include({ key: 'video', value: vastXml });
   });
 });

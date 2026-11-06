@@ -25,7 +25,7 @@ window.addEventListener('unhandledrejection', function (ev) {
   if (ev.reason === 'pending failure' || ev.reason == null) return;
   // consentManagement tests intentionally exercise missing and rejecting CMP paths
   if ([
-    'TCF2 CMP not found.',
+    'TCF CMP not found',
     'CMP unable to register callback function.',
     'GPP CMP not found'
   ].some(msg => ev.reason?.message?.startsWith(msg))) return;

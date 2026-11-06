@@ -9,7 +9,6 @@ import {
   flatten,
   generateUUID,
   isArray,
-  isArrayOfNums,
   isEmpty,
   isFn,
   isGptPubadsDefined,
@@ -24,8 +23,9 @@ import {
   uniques,
   unsupportedBidderMessage
 } from './utils.js';
+import { validateSizes } from './utils/objects.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
-import { userSync } from './userSync.js';
+import { userSync, type RemoveUserSyncsOptions } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { isBidUsable } from './targeting/filters.js';
@@ -49,7 +49,7 @@ import {
   renderAdDirect,
   renderIfDeferred
 } from './adRendering.js';
-import { getHighestCpm } from './utils/reducers.js';
+import { getHighestCpm, getHighestDesirability } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { AUDIO, BANNER, VIDEO } from './mediaTypes.js';
@@ -117,19 +117,6 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 pbjsInstance.pageViewIdPerBidder = pbjsInstance.pageViewIdPerBidder || new Map<string | null, string>();
-
-function validateSizes(sizes, targLength?: number) {
-  let cleanSizes = [];
-  if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
-    // check if an array of arrays or array of numbers
-    if (sizes.every(sz => isArrayOfNums(sz, 2))) {
-      cleanSizes = sizes;
-    } else if (isArrayOfNums(sizes, 2)) {
-      cleanSizes.push(sizes);
-    }
-  }
-  return cleanSizes;
-}
 
 // synchronize fields between mediaTypes[mediaType] and ortb2Imp[mediaType]
 export function syncOrtb2(adUnit, mediaType) {
@@ -417,6 +404,8 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
       validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateAudioMediaType(adUnit);
     }
 
+    if (!validatedBanner && !validatedVideo && !validatedNative && !validatedAudio) return;
+
     const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative, validatedAudio);
 
     validatedAdUnits.push(validatedAdUnit);
@@ -457,7 +446,11 @@ declare module './prebidGlobal' {
      * Re-trigger user syncs. Requires the `userSync.enableOverride` config to be set.
      */
     triggerUserSyncs: typeof triggerUserSyncs;
-    removeUserSyncs: () => number;
+    /**
+     * Remove the user sync iframes inserted by this Prebid instance, and return how many were removed.
+     * With `{withChildFrames: true}`, only remove those that have created frames of their own.
+     */
+    removeUserSyncs: (options?: RemoveUserSyncsOptions) => number;
     getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
     getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
     getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
@@ -484,6 +477,7 @@ declare module './prebidGlobal' {
     getAllWinningBids: typeof getAllWinningBids;
     getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
     getHighestCpmBids: typeof getHighestCpmBids;
+    getBestBids: typeof getBestBids;
     clearAllAuctions: typeof clearAllAuctions;
     getBidResponseByAdId: typeof getBidResponseByAdId;
     markWinningBidAsUsed: typeof markWinningBidAsUsed;
@@ -816,6 +810,9 @@ export const requestBids = (function() {
     enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
       return startAuction({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer });
+    }).catch((e) => {
+      defer.reject(e);
+      throw e;
     });
   }, 'requestBids');
 
@@ -851,7 +848,17 @@ export const requestBids = (function() {
       defer: defer({ promiseFactory: (r) => new Promise(r) })
     });
     delegate.call(this, req);
-    return req.defer.promise;
+    return req.defer.promise
+      .catch((e) => {
+        if (typeof options.bidsBackHandler === 'function') {
+          try {
+            options.bidsBackHandler();
+          } catch (e) {
+            logError('Error executing bidsBackHandler', e);
+          }
+        }
+        throw e;
+      });
   })));
 })();
 
@@ -1126,6 +1133,16 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
 }
 
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
+
+/**
+ * Get the most desirable bids for all adUnits, or the most desirable bid object for the given adUnit
+ * @param adUnitCode - ad unit code
+ */
+function getBestBids(adUnitCode?: string): Bid[] {
+  return targeting.getWinningBids(adUnitCode, undefined, getHighestDesirability);
+}
+
+addApiMethod('getBestBids', getBestBids);
 
 /**
  * Clear all auctions (and their bids) from the bid cache.

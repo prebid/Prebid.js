@@ -4,6 +4,10 @@ description: Run npm install and cache dependencies
 runs:
   using: 'composite'
   steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v7
+      with:
+        node-version-file: '.nvmrc'
     - name: Restore dependencies
       id: restore-modules
       uses: actions/cache/restore@v5
