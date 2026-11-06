@@ -299,7 +299,13 @@ module.exports = [
     }
   }),
   {
-    files: ['**/*BidAdapter.js'],
+    files: [
+      '**/*BidAdapter.{js,mjs,ts,mts}',
+      '**/*BidAdapter/**/*.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/prebidServerBidAdapter/**/*'
+    ],
     rules: {
       'no-restricted-imports': [
         'error', {
