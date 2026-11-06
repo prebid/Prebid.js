@@ -288,7 +288,7 @@ module.exports = [
             property: 'getBoundingClientRect',
             message: 'use libraries/boundingClientRect instead'
           },
-          ...['scrollTop', 'scrollLeft', 'innerHeight', 'innerWidth', 'visualViewport'].map((property) => ({
+          ...['scrollTop', 'scrollLeft', 'scrollX', 'scrollY', 'innerHeight', 'innerWidth', 'visualViewport'].map((property) => ({
             object: 'window',
             property,
             message: 'use utils/getWinDimensions instead'
