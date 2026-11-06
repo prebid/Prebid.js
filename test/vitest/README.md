@@ -128,8 +128,8 @@ desktop Safari 16.5 in its place, because karma-browserstack-launcher can't driv
 
 ```sh
 export BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=...
-VITEST_BROWSERSTACK=1 npm run test:vitest -- --shard=1/4                             # iPhone 14, iOS 16
-VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/4
+VITEST_BROWSERSTACK=1 npm run test:vitest -- --shard=1/6                             # iPhone 14, iOS 16
+VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/6
 # a desktop browser instead
 VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
 # every browsers.json entry with `browserstack` in turn, or the ones named; one session per shard of its `vitest.shards`
@@ -158,9 +158,10 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run. BrowserStack ends a
   session after at most 300 s of that, mid-run, so `vitest.config.mjs` asks the page for its title every minute to
-  keep it alive. iOS Safari still closes the page partway through a long session (after about 150 spec files in
-  recent runs), so CI runs 4 shards, two at a time. Each session runs one spec file at a time: WebdriverIO can't run
-  several pages at once, so more sessions (shards) are the only way to run more at once.
+  keep it alive. iOS Safari's page process still dies partway through a long session (3-4 minutes in; Safari reloads
+  the tab, which then reads "Invalid session ID"), likely out of memory, so CI runs 6 shards, two at a time. Each
+  session runs one spec file at a time: WebdriverIO can't run several pages at once, so more sessions (shards) are
+  the only way to run more at once.
 - CI runs the BrowserStack jobs wherever the BrowserStack secrets are available. Fork PRs get no secrets, so they
   don't run on them; their changes are tested on BrowserStack by the run on master after merge. Each job waits until
   two sessions are free, so they never take the last one from the ES5 e2e job.
