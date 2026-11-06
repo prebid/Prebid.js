@@ -177,8 +177,9 @@ jobs:
         uses: ./.github/actions/wait-for-browserstack
         with:
           sessions: 2
-      # Up to 3 attempts (retry-vitest.sh), each a new session. A retry doesn't wait for free sessions again: it takes
-      # the place of the session that just ended.
+      # Up to 4 attempts (retry-vitest.sh), each a new session. A retry doesn't wait for free sessions again: it takes
+      # the place of the session that just ended. Only when BrowserStack refused the session as over its queue limit does
+      # it wait a few minutes first.
       - name: Run specs (${{ matrix.label }})
         timeout-minutes: 40
         env:
