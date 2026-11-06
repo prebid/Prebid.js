@@ -4,7 +4,7 @@
 //   TEST_CHUNKS/TEST_CHUNK  run one of the chunks Karma split the suite into (TEST_PAT: the spec file pattern)
 //   VITEST_COVERAGE=1       instrument as Karma did; lcov goes to build/coverage/chunks/<chunk>, or
 //                           build/coverage/chunks/shard-<i> with `--shard=<i>/<n>`
-//   VITEST_PARALLEL         run several spec files (pages) at once: as many as its value, or Vitest's default if 'true'
+//   VITEST_PARALLEL         spec files (pages) at once: Vitest's default (as in CI) unless set to a number or '0'
 //   VITEST_NATIVE_STUBS=0   leave the specs' own namespaces plain ES modules (see plugins.mjs)
 //   VITEST_PORT             the port to serve on (default: 9876, Karma's, or the next free one as Karma did)
 //
@@ -48,9 +48,8 @@ const posix = (p) => p.split(path.sep).join('/');
 const dist = posix(path.relative(root, DIST));
 const specs = specFiles().map(f => `${dist}/${f}`);
 
-// Off by default: pages running at once share one origin's cookies and storage, which sequential runs don't.
 const parallel = Number(process.env.VITEST_PARALLEL);
-const parallelFiles = parallel >= 1 ? parallel > 1 : envFlag('VITEST_PARALLEL');
+const parallelFiles = parallel >= 1 ? parallel > 1 : envFlag('VITEST_PARALLEL', true);
 
 // Labels this run's coverage: the Karma chunk, or with Vitest's `--shard=<i>/<n>` (CI) `shard-<i>`, so the lcov of
 // each CI job lands in its own build/coverage/chunks/<label>/ when the jobs' reports are combined.

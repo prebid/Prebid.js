@@ -43,7 +43,6 @@ jobs:
     # the coverage output empty instead of failing the run, and test.yml then skips the comparison.
     continue-on-error: ${{ inputs.coverage-only }}
     env:
-      VITEST_PARALLEL: 'true'
       VITEST_COVERAGE: ${{ matrix.variant == 'default' && '1' || '' }}
     steps:
       - uses: actions/checkout@v7

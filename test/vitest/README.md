@@ -45,7 +45,7 @@ npx playwright install chromium
 npx gulp precompile
 npm run test:vitest                                             # every spec
 npm run test:vitest -- test/spec/modules/appnexusBidAdapter_spec.js   # some specs (Vitest file filters)
-VITEST_PARALLEL=true npm run test:vitest                        # a page per CPU core but one (Playwright only)
+VITEST_PARALLEL=0 npm run test:vitest                           # one page at a time instead of several
 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest                  # one of the chunks Karma split the suite into
 npm run test:vitest:watch                                       # re-run as dist/src changes
 ```
@@ -53,10 +53,11 @@ npm run test:vitest:watch                                       # re-run as dist
 The `gulp test*` tasks run these (see the top-level README and AGENTS.md); `npx gulp test-only --file <spec>`
 precompiles first. `vitest.config.mjs` documents the environment variables.
 
-`VITEST_PARALLEL` is off by default because pages running at once share one origin's cookies and storage. `true`
-leaves the number of pages to Vitest (a page per CPU core but one, at most 12: 3 on a CI runner); a number sets it.
-It only applies to browsers driven by Playwright, headless: WebdriverIO (Safari, BrowserStack) runs one spec file at
-a time.
+Spec files run in several pages at once, as in CI: Vitest's default of a page per CPU core but one, at most 12 (3 on
+a CI runner). `VITEST_PARALLEL=<n>` sets the number; `VITEST_PARALLEL=0` (or `1`) runs one page at a time, which helps
+when a spec might be failing because of another one running alongside it (pages share one origin's cookies and
+storage). It only applies to browsers driven by Playwright, headless: WebdriverIO (Safari, BrowserStack) runs one spec
+file at a time.
 
 For the all-features-disabled variant (Karma's "Unit tests (all features disabled)" job), precompile with
 `npx gulp precompile-all-features-disabled` instead.
