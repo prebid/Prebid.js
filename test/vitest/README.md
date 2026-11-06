@@ -34,6 +34,10 @@ It is stricter than Mocha in two places, so a spec can't pass by accident:
   them; ESLint's `mocha/no-nested-tests` reports most of these too.
 - A throw after a synchronous `done()`, and a second `done()`, fail the test.
 
+In WebKit, `document.cookie` can briefly show a value that a newer write already replaced or deleted (see
+`cookies.mjs`). So there `setup.mjs` starts a test or hook that follows one that wrote cookies only once the cookies
+read as they did after the last write.
+
 `context.html`, port 9876 (or, like Karma, the next free port) and an 800x600 viewport reproduce Karma's test page, which some specs depend on. On GitHub
 Actions, `githubReporter.mjs` annotates each failure on the failing test's `it(...)` line in the source spec.
 

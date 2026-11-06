@@ -199,8 +199,12 @@ async function browserProvider() {
 
 export default defineConfig({
   root,
-  // setup.mjs logs the remote browser's user agent, since BrowserStack picks the exact OS version
-  define: { __VITEST_BROWSERSTACK__: JSON.stringify(browserstack) },
+  define: {
+    // setup.mjs logs the remote browser's user agent, since BrowserStack picks the exact OS version
+    __VITEST_BROWSERSTACK__: JSON.stringify(browserstack),
+    // every browser on iOS is WebKit
+    __VITEST_WEBKIT__: JSON.stringify(['webkit', 'safari'].includes(browserName) || !!bsDevice),
+  },
   publicDir: false,
   plugins: [nativeSpecs({ coverage: envFlag('VITEST_COVERAGE'), specStubs: envFlag('VITEST_NATIVE_STUBS', true), cacheModules: !watching })],
   resolve: {
