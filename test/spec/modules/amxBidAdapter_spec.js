@@ -302,7 +302,7 @@ describe('AmxBidAdapter', () => {
           ref: 'http://search-traffic-source.com',
         },
       });
-      expect(data.do).to.equal('localhost');
+      expect(data.do).to.equal(window.location.hostname);
       expect(data.re).to.equal('http://search-traffic-source.com');
     });
 
