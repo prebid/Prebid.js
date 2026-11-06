@@ -561,7 +561,7 @@ if (FEATURES.UID2_CSTG) {
                 }
               } else if (xhr.status === 403) {
                 const response = JSON.parse(xhr.responseText);
-                if (this.isCstgApiForbiddenResponse(xhr)) {
+                if (this.isCstgApiForbiddenResponse(response)) {
                   rejectPromise(prependMessage(`Forbidden: ${response.message}`));
                 } else {
                   // A 403 should always be a forbidden response.
