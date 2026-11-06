@@ -261,6 +261,9 @@ function prepareAuction(auction) {
   return isolatedAuction;
 }
 
+// far beyond real WebCrypto latency (hundreds of ms on a loaded runner); deadline tests use fake timers instead
+const REAL_TIMER_BUDGET = 10000;
+
 function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare = true) {
   if (prepare) auction = prepareAuction(auction);
   let callbackCount = 0;
@@ -268,7 +271,7 @@ function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare
     encypherSubmodule.getBidRequestData(auction, () => {
       callbackCount += 1;
       resolve();
-    }, { params: Object.assign({ timeout: 300 }, params) }, userConsent);
+    }, { params: Object.assign({ timeout: REAL_TIMER_BUDGET }, params) }, userConsent);
   });
   return {
     auction,
@@ -904,7 +907,7 @@ function utf8Chunks(text, chunkSizes = []) {
         callbackCount += 1;
         abortedAtCallback = lookup.fetch.request.signal.aborted;
         resolve();
-      }, { params: { timeout: 300 } });
+      }, { params: { timeout: REAL_TIMER_BUDGET } });
     });
     lookup = pendingLookup();
     lookup.respond(503, HEADERS, 'unavailable');
@@ -1264,7 +1267,7 @@ function utf8Chunks(text, chunkSizes = []) {
     requests[0].respond(200, HEADERS, JSON.stringify(ready(lowRecord, 10)));
     requests[1].respond(200, HEADERS, JSON.stringify(ready(highRecord, 11)));
     // stop as soon as both verifications have started (verify calls 1 and 2): each task can take tens of ms
-    // (e.g. WebKit), so a fixed number of tasks could outlast the 300ms module timeout before they are resolved
+    // (e.g. WebKit), so a fixed number of tasks could outlast the module timeout before they are resolved
     for (let attempt = 0; attempt < 20 && verify.callCount < 3; attempt += 1) await nextTask();
     assert.strictEqual(verify.callCount, 3, 'both signature verifications must be pending');
 
@@ -1595,10 +1598,10 @@ function utf8Chunks(text, chunkSizes = []) {
     startAuction.before(captureActualAuction, 18);
     try {
       configureActualRtd({
-        auctionDelay: 300,
+        auctionDelay: REAL_TIMER_BUDGET,
         dataProviders: [
           { name: before.name, waitForIt: true },
-          { name: MODULE_NAME, waitForIt: true, params: { timeout: 300 } },
+          { name: MODULE_NAME, waitForIt: true, params: { timeout: REAL_TIMER_BUDGET } },
           { name: after.name, waitForIt: true },
         ],
       });
