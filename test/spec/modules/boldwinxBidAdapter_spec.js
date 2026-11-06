@@ -108,16 +108,16 @@ describe('boldwinx bid adapter', function () {
       expect(request.url).to.equal(`${BID_URL}?epid=a%20b%26c`);
     });
 
-    it('groups bids by epid, one request per endpoint', function () {
+    it('sends every bid in its own request, even when bids share an epid', function () {
       const bids = [
         makeBid({ bidId: 'bid-1', params: { epid: '1' } }),
         makeBid({ bidId: 'bid-2', params: { epid: '2' } }),
         makeBid({ bidId: 'bid-3', params: { epid: 1 } }),
       ];
       const requests = buildRequests(bids);
-      expect(requests.map((request) => request.url)).to.deep.equal([`${BID_URL}?epid=1`, `${BID_URL}?epid=2`]);
-      expect(requests[0].data.imp).to.have.lengthOf(2);
-      expect(requests[1].data.imp).to.have.lengthOf(1);
+      expect(requests.map((request) => request.url)).to.deep.equal([`${BID_URL}?epid=1`, `${BID_URL}?epid=2`, `${BID_URL}?epid=1`]);
+      requests.forEach((request) => expect(request.data.imp).to.have.lengthOf(1));
+      expect(new Set(requests.map((request) => request.data.id)).size).to.equal(3);
     });
 
     it('builds video and native impressions', function () {
@@ -125,8 +125,7 @@ describe('boldwinx bid adapter', function () {
         makeBid({ bidId: 'bid-v', mediaTypes: { video: VIDEO_PARAMS } }),
         makeBid({ bidId: 'bid-n', mediaTypes: { native: { ortb: NATIVE_REQUEST } }, nativeOrtbRequest: NATIVE_REQUEST }),
       ];
-      const [request] = buildRequests(bids);
-      const [video, native] = request.data.imp;
+      const [video, native] = buildRequests(bids).map((request) => request.data.imp[0]);
       expect(video.video).to.include({ w: 640, h: 480 });
       expect(video.video.mimes).to.deep.equal(['video/mp4']);
       expect(JSON.parse(native.native.request).assets).to.have.lengthOf(2);
@@ -265,14 +264,15 @@ describe('boldwinx bid adapter', function () {
           makeBid({ bidId: 'bid-v', mediaTypes: { video: VIDEO_PARAMS } }),
           makeBid({ bidId: 'bid-n', mediaTypes: { native: { ortb: NATIVE_REQUEST } }, nativeOrtbRequest: NATIVE_REQUEST }),
         ];
-        const [request] = buildRequests(bids);
-        const [banner, video, native] = request.data.imp;
-        const response = makeResponse(request, [
-          { id: 'b', impid: banner.id, price: 1, adm: '<div>ad</div>', crid: 'c', w: 300, h: 250 },
-          { id: 'v', impid: video.id, price: 1, adm: VAST, crid: 'c' },
-          { id: 'n', impid: native.id, price: 1, adm: NATIVE_ADM, crid: 'c' },
-        ]);
-        const result = spec.interpretResponse(response, request);
+        const markups = [
+          { adm: '<div>ad</div>', w: 300, h: 250 },
+          { adm: VAST },
+          { adm: NATIVE_ADM },
+        ];
+        const result = buildRequests(bids).flatMap((request, i) => {
+          const response = makeResponse(request, [{ id: `b${i}`, impid: request.data.imp[0].id, price: 1, crid: 'c', ...markups[i] }]);
+          return spec.interpretResponse(response, request);
+        });
         expect(result.map((bid) => [bid.requestId, bid.mediaType])).to.deep.equal([
           ['bid-b', BANNER], ['bid-v', VIDEO], ['bid-n', NATIVE],
         ]);

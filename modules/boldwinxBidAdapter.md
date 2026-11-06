@@ -11,8 +11,8 @@ Maintainer: info@bold-win.com
 Connects to the Boldwin OpenRTB endpoint at `pbjs.algotoro.com` for bids. Supports banner,
 video (instream; outstream needs the publisher's own renderer) and native (ORTB native request).
 
-Contact info@bold-win.com to get an `epid` (endpoint ID). Every ad unit with the same `epid`
-goes into one request; ad units with different `epid` values go into separate requests.
+Contact info@bold-win.com to get an `epid` (endpoint ID). Every ad unit goes into its own
+request with one impression, because the endpoint accepts one impression per request.
 
 Bids are net CPMs in USD. Price floors are sent in USD; a floor in another currency is left
 out of the request, and Prebid still enforces it on the bids.
