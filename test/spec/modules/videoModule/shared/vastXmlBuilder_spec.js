@@ -1,9 +1,13 @@
 import {
   buildVastWrapper, getVastNode, getAdNode, getWrapperNode, getAdSystemNode,
-  getAdTagUriNode, getErrorNode, getImpressionNode
+  getAdTagUriNode, getErrorNode, getImpressionNode, getLinearTrackingCreativesNode, getTrackingNode
 } from 'libraries/video/shared/vastXmlBuilder.js';
 import { expect } from 'chai';
 import { getGlobal } from '../../../../../src/prebidGlobal.js';
+
+function compactXml(indentedXml) {
+  return indentedXml.trim().replace(/>\s+</g, '><');
+}
 
 describe('buildVastWrapper', function () {
   it('should include impression and error nodes when requested', function () {
@@ -33,6 +37,92 @@ describe('buildVastWrapper', function () {
       'http://wwww.testUrl.com/redirectUrl.xml',
     );
     expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${getGlobal().version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI></Wrapper></Ad></VAST>`);
+  });
+  it('should include the bidder\'s vast trackers', function () {
+    const vastXml = buildVastWrapper(
+      'adId123',
+      'http://wwww.testUrl.com/redirectUrl.xml',
+      'http://wwww.testUrl.com/impression.jpg',
+      'impressionId123',
+      'http://wwww.testUrl.com/error.jpg',
+      {
+        impression: ['http://wwww.testUrl.com/bidderImpression.jpg'],
+        error: ['http://wwww.testUrl.com/bidderError.jpg'],
+        trackingEvents: [{ event: 'start', url: 'http://wwww.testUrl.com/start.jpg' }]
+      }
+    );
+    expect(vastXml).to.be.equal(compactXml(`
+      <VAST version="4.2">
+        <Ad id="adId123">
+          <Wrapper>
+            <AdSystem version="${getGlobal().version}">Prebid org</AdSystem>
+            <VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI>
+            <Impression id="impressionId123"><![CDATA[http://wwww.testUrl.com/impression.jpg]]></Impression>
+            <Impression><![CDATA[http://wwww.testUrl.com/bidderImpression.jpg]]></Impression>
+            <Error><![CDATA[http://wwww.testUrl.com/error.jpg]]></Error>
+            <Error><![CDATA[http://wwww.testUrl.com/bidderError.jpg]]></Error>
+            <Creatives>
+              <Creative>
+                <Linear>
+                  <TrackingEvents>
+                    <Tracking event="start"><![CDATA[http://wwww.testUrl.com/start.jpg]]></Tracking>
+                  </TrackingEvents>
+                </Linear>
+              </Creative>
+            </Creatives>
+          </Wrapper>
+        </Ad>
+      </VAST>
+    `));
+  });
+
+  it('should omit the tracker nodes when the vast trackers are empty', function () {
+    const vastXml = buildVastWrapper(
+      'adId123',
+      'http://wwww.testUrl.com/redirectUrl.xml',
+      undefined,
+      undefined,
+      undefined,
+      { impression: [], error: [], trackingEvents: [] }
+    );
+    expect(vastXml).to.be.equal(compactXml(`
+      <VAST version="4.2">
+        <Ad id="adId123">
+          <Wrapper>
+            <AdSystem version="${getGlobal().version}">Prebid org</AdSystem>
+            <VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI>
+          </Wrapper>
+        </Ad>
+      </VAST>
+    `));
+  });
+});
+
+describe('getLinearTrackingCreativesNode', function () {
+  it('should return well formed Creatives node with one Tracking node per tracking event', function () {
+    const creativesNode = getLinearTrackingCreativesNode([
+      { event: 'start', url: 'http://wwww.testUrl.com/start.jpg' },
+      { event: 'complete', url: 'http://wwww.testUrl.com/complete.jpg' }
+    ]);
+    expect(creativesNode).to.be.equal(compactXml(`
+      <Creatives>
+        <Creative>
+          <Linear>
+            <TrackingEvents>
+              <Tracking event="start"><![CDATA[http://wwww.testUrl.com/start.jpg]]></Tracking>
+              <Tracking event="complete"><![CDATA[http://wwww.testUrl.com/complete.jpg]]></Tracking>
+            </TrackingEvents>
+          </Linear>
+        </Creative>
+      </Creatives>
+    `));
+  });
+});
+
+describe('getTrackingNode', function () {
+  it('should return well formed Tracking node', function () {
+    const trackingNode = getTrackingNode('midpoint', 'http://wwww.testUrl.com/midpoint.jpg');
+    expect(trackingNode).to.be.equal('<Tracking event="midpoint"><![CDATA[http://wwww.testUrl.com/midpoint.jpg]]></Tracking>');
   });
 });
 
@@ -141,6 +231,13 @@ describe('values containing XML syntax', function () {
     const ad = parse(buildVastWrapper(adId, 'http://wwww.testUrl.com/redirectUrl.xml')).getElementsByTagName('Ad')[0];
     expect(ad.getAttributeNames()).to.eql(['id']);
     expect(ad.getAttribute('id')).to.equal(adId);
+  });
+
+  it('does not let a tracking event add attributes to the Tracking node', function () {
+    const event = 'start" foo="bar';
+    const tracking = parse(getTrackingNode(event, 'http://wwww.testUrl.com/t.jpg')).getElementsByTagName('Tracking')[0];
+    expect(tracking.getAttributeNames()).to.eql(['event']);
+    expect(tracking.getAttribute('event')).to.equal(event);
   });
 
   it('keeps the ad tag uri in a single VASTAdTagURI element', function () {
