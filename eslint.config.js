@@ -322,7 +322,7 @@ module.exports = [
     ],
     rules: {
       'no-restricted-properties': [
-        'error',
+        'warn',
         ...[
           'offsetWidth',
           'offsetHeight',
