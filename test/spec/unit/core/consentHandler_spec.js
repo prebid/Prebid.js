@@ -263,7 +263,7 @@ describe('gvlidRegistry', () => {
     registry = gvlidRegistry();
   });
 
-  it('returns undef when id cannoot be found', () => {
+  it('returns undef when id cannot be found', () => {
     expect(registry.get('name')).to.eql({ modules: {} });
   });
 

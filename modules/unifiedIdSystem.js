@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { logError } from '../src/utils.js';
+import { logError, parseQueryStringParameters } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js';
@@ -14,6 +15,7 @@ import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js';
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../src/consentHandler.js').AllConsentData} ConsentData
  * @typedef {import('./unifiedIdSystem.d.ts').UnifiedId} UnifiedId
  */
 
@@ -43,16 +45,32 @@ export const unifiedIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
+   * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId(config, consentData) {
     const configParams = (config && config.params) || {};
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
       logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
     }
-    // use protocol relative urls for http or https
-    const url = configParams.url || `https://match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
+    // Custom URLs are used verbatim; enrich only the default RID request.
+    let url = configParams.url;
+    if (!url) {
+      const queryParams = { ttd_pid: configParams.partner, fmt: 'json' };
+      const gdprConsent = consentData?.gdpr;
+      if (typeof gdprConsent?.gdprApplies === 'boolean') {
+        queryParams.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+      }
+      if (typeof gdprConsent?.consentString === 'string' && gdprConsent.consentString) {
+        queryParams.gdpr_consent = gdprConsent.consentString;
+      }
+      const domain = getRefererInfo().domain;
+      if (domain) {
+        queryParams.domain = domain;
+      }
+      url = `https://match.adsrvr.org/track/rid?${parseQueryStringParameters(queryParams)}`;
+    }
 
     const resp = function (callback) {
       const callbacks = {

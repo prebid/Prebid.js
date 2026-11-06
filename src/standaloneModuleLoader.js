@@ -1,6 +1,6 @@
 import { getGlobal } from './prebidGlobal.js';
 import { logMessage } from './utils.js';
-import { loadExternalScript } from './adloader.js';
+import { fetchExternalScript } from './adloader.js';
 import { PbPromise } from './utils/promise.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 import { getDistUrlBase } from './buildOptions.js';
@@ -29,9 +29,7 @@ export function standaloneModuleLoader({
   bundle,
   deps,
   alreadyInstalled = () => getGlobal().installedModules.includes(moduleName),
-  script = (url) => new PbPromise((resolve, reject) => {
-    loadExternalScript(url, MODULE_TYPE_PREBID, moduleName, { success: resolve, error: reject });
-  })
+  script = (url) => fetchExternalScript(url, MODULE_TYPE_PREBID, moduleName)
 } = {}) {
   let loading = null;
   return function () {
