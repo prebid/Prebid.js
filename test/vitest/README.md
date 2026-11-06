@@ -150,8 +150,8 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run. BrowserStack ends a
   session after at most 300 s of that, mid-run, so `vitest.config.mjs` asks the page for its title every minute to
-  keep it alive. iOS Safari still closes the page partway through a long run (seen after about 400 spec files with
-  one page at a time, and after about 150 with 3), so CI runs 4 shards, two at a time, with 2 pages at once each.
+  keep it alive. Past about 400 spec files in one session, iOS Safari closes the page anyway, so CI runs 4 shards,
+  two at a time, with 3 pages at once each.
 - CI runs the BrowserStack jobs wherever the BrowserStack secrets are available. Fork PRs get no secrets, so they
   don't run on them; their changes are tested on BrowserStack by the run on master after merge. Each job waits until
   two sessions are free, so they never take the last one from the ES5 e2e job.
@@ -202,7 +202,7 @@ run in has an object of its own:
 - `vitest`, in either, puts the entry in `vitest-browsers.yml`, in `shards` jobs: on runners, `browser`
   (`VITEST_BROWSER`), `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`),
   `chromeVersion` (a Chrome from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on
-  BrowserStack, `maxParallel` and `pages` (`VITEST_PARALLEL`, default 3). GitHub can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most
+  BrowserStack, `maxParallel`. GitHub can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most
   the lowest `maxParallel` at once. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
   job labelled `specsLabel`, only the spec files under `test/spec` whose source matches it, found when the job is
   defined; with none, there is no job. `gulp test --browserstack` does the same for that entry, unless `--file` is

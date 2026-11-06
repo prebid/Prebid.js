@@ -138,7 +138,8 @@ jobs:
       fail-fast: false
       # One BrowserStack session per shard, two at a time for the iPhone (one at a time took 25 minutes).
       # vitest.config.mjs keeps each session alive past BrowserStack's 300s idle limit, but iOS Safari still closes
-      # the page partway through a long run, so a shard is a quarter of the suite (and `pages` in browsers.json is 2). The limit is the whole job's, across entries: the lowest `maxParallel` in browsers.json (entries without
+      # the page after about 400 spec files (at 398s in one session, 525s in another), so a shard is a quarter of the
+      # suite. The limit is the whole job's, across entries: the lowest `maxParallel` in browsers.json (entries without
       # one don't lower it).
       max-parallel: ${{ fromJSON(needs.define.outputs.browserstack-max-parallel) }}
       matrix:
@@ -183,7 +184,7 @@ jobs:
         timeout-minutes: 40
         env:
           VITEST_BROWSERSTACK: '1'
-          VITEST_PARALLEL: ${{ matrix.pages }}
+          VITEST_PARALLEL: '3'
           VITEST_BROWSER: ${{ matrix.browser }}
           VITEST_DEVICE: ${{ matrix.device }}
           VITEST_OS: ${{ matrix.os }}

@@ -102,8 +102,7 @@
       "osVersion": "16",
       "vitest": {
         "shards": 4,
-        "maxParallel": 2,
-        "pages": 2
+        "maxParallel": 2
       }
     }
   }

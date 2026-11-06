@@ -15,7 +15,7 @@ const BROWSERS = {
   },
   device: {
     name: 'Phone',
-    browserstack: { deviceName: 'iPhone 14', osVersion: '16', browserName: 'safari', vitest: { shards: 2, maxParallel: 3, pages: 2 } },
+    browserstack: { deviceName: 'iPhone 14', osVersion: '16', browserName: 'safari', vitest: { shards: 2, maxParallel: 3 } },
   },
   secure: {
     name: 'Desktop',
@@ -83,9 +83,9 @@ describe('CI browser matrices', () => {
   it('expands Vitest BrowserStack entries by shard, or runs the specs an entry matches in one job', () => {
     expect(matrices.vitestBrowserstack(BROWSERS, listSpecs)).to.eql([
       ...[1, 2].map(shard => (
-        { name: 'Phone', browser: 'safari', pages: 2, device: 'iPhone 14', osVersion: '16', shards: 2, shard, label: `shard ${shard}/2` }
+        { name: 'Phone', browser: 'safari', device: 'iPhone 14', osVersion: '16', shards: 2, shard, label: `shard ${shard}/2` }
       )),
-      { name: 'Desktop', browser: 'safari', pages: 3, os: 'OS X', osVersion: 'Ventura', browserVersion: '16.5', label: 'secure specs', files: 'test/spec/a_spec.js test/spec/b_spec.js' },
+      { name: 'Desktop', browser: 'safari', os: 'OS X', osVersion: 'Ventura', browserVersion: '16.5', label: 'secure specs', files: 'test/spec/a_spec.js test/spec/b_spec.js' },
     ]);
     expect(matrices.vitestBrowserstackMaxParallel(BROWSERS)).to.equal(3);
   });
