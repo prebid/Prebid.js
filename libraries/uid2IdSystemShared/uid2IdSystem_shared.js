@@ -85,8 +85,14 @@ export class Uid2ApiClient {
                 const response = JSON.parse(decryptedResponse);
                 const result = this.ResponseToRefreshResult(response);
                 if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
-              }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
-            }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
+              }, (reason) => {
+                this._logWarn(prependMessage(`Call to UID2 API failed`), reason);
+                rejectPromise(prependMessage('Call to UID2 API failed'));
+              });
+            }, (reason) => {
+              this._logWarn(prependMessage(`Call to UID2 API failed`), reason);
+              rejectPromise(prependMessage('Call to UID2 API failed'));
+            });
           }
         } catch (_err) {
           rejectPromise(prependMessage(responseText));
