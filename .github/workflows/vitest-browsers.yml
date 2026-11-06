@@ -172,7 +172,8 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
-      # Up to 3 attempts (retry-vitest.sh), each a new session.
+      # Up to 4 attempts (retry-vitest.sh), each a new session. A retry waits a few minutes first only when BrowserStack
+      # refused the session as over its queue limit.
       - name: Run specs (${{ matrix.label }})
         timeout-minutes: 40
         env:
