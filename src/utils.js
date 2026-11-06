@@ -1055,6 +1055,9 @@ export function memoize(fn, key = function (arg) { return arg; }) {
     return cache.get(cacheKey);
   };
   memoized.clear = cache.clear.bind(cache);
+  memoized.invalidate = function () {
+    cache.delete(key.apply(this, arguments));
+  };
   return memoized;
 }
 

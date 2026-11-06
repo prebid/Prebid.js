@@ -643,6 +643,18 @@ describe('Media.net Analytics Adapter', function () {
     beforeEach(function () {
       sandbox.stub(mnUtils, 'onHidden').callsFake(() => {
       });
+      // These tests expect every event to be logged at once: the adapter's debug mode, which it turns on for a
+      // `medianet_test` query parameter or a page on localhost. Ask for it, rather than depend on where the tests
+      // run (on 127.0.0.1 or bs-local.com it would sample, after fetching its configuration).
+      const refererInfo = refererDetection.getRefererInfo();
+      const topmostLocation = refererInfo.topmostLocation || 'http://localhost/';
+      sandbox.stub(refererDetection, 'getRefererInfo').returns({
+        ...refererInfo,
+        topmostLocation: topmostLocation + (topmostLocation.includes('?') ? '&' : '?') + 'medianet_test=1'
+      });
+      // the adapter configures itself once per page: start over, or these tests get whatever an earlier describe
+      // left (a configuration fetch that is still pending, then random sampling)
+      mnetGlobals.initialized = false;
       medianetAnalytics.enableAnalytics({
         options: {
           cid: 'test123'
@@ -653,6 +665,7 @@ describe('Media.net Analytics Adapter', function () {
     afterEach(function () {
       sandbox.restore();
       medianetAnalytics.disableAnalytics();
+      mnetGlobals.initialized = false;
     });
 
     it('can handle multi bid module', function (done) {
