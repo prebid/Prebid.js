@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import { normalizeFPD } from 'src/fpd/normalize.js';
+import { continueAuction, handleSetFloorsConfig } from 'modules/priceFloors.js';
 import { spec } from '../../../modules/loglyBidAdapter.ts';
 
 describe('loglyBidAdapter', function () {
@@ -38,7 +40,6 @@ describe('loglyBidAdapter', function () {
 
   beforeEach(function () {
     config.setConfig({
-      bidderTimeout: 3000,
       currency: {
         adServerCurrency: 'JPY'
       },
@@ -87,37 +88,215 @@ describe('loglyBidAdapter', function () {
       expect(data).to.not.have.property('im_uid');
     });
 
-    it('should send im_uid from bid userIdAsEids', function () {
-      const bidRequest = {
-        ...utils.deepClone(bannerBidRequest),
-        userIdAsEids: [{
-          source: 'intimatemerger.com',
-          uids: [{
-            id: 'bid-eid-imuid',
-            atype: 1
-          }]
-        }]
-      };
+    it('should send bidderRequest.timeout as timeout', function () {
+      const request = spec.buildRequests([bannerBidRequest], { ...bidderRequest, timeout: 1500 })[0];
 
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      expect(JSON.parse(request.data).timeout).to.equal(1500);
+    });
 
-      expect(JSON.parse(request.data)).to.include({
-        im_uid: 'bid-eid-imuid'
+    describe('im_uid', function () {
+      it('should send im_uid from ortb2.user.ext.eids', function () {
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          ortb2: {
+            user: {
+              ext: {
+                eids: [{
+                  source: 'other-provider.com',
+                  uids: [{ id: 'some-id', atype: 1 }]
+                }, {
+                  source: 'intimatemerger.com',
+                  uids: [{
+                    id: 'bid-eid-imuid',
+                    atype: 1
+                  }]
+                }]
+              }
+            }
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+
+        expect(JSON.parse(request.data)).to.include({
+          im_uid: 'bid-eid-imuid'
+        });
+      });
+
+      it('should not send im_uid when ortb2.user.ext.eids has no intimatemerger.com entry', function () {
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          ortb2: {
+            user: {
+              ext: {
+                eids: [{
+                  source: 'other-provider.com',
+                  uids: [{ id: 'some-id', atype: 1 }]
+                }]
+              }
+            }
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+
+        expect(JSON.parse(request.data)).to.not.have.property('im_uid');
+      });
+
+      it('should find im_uid past null or undefined entries in ortb2.user.ext.eids', function () {
+        const imEid = { source: 'intimatemerger.com', uids: [{ id: 'bid-eid-imuid', atype: 1 }] };
+        const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: { user: { ext: { eids: [null, undefined, imEid] } } } };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.im_uid).to.equal('bid-eid-imuid');
       });
     });
 
-    it('should not send im_uid when userIdAsEids has no intimatemerger.com entry', function () {
-      const bidRequest = {
-        ...utils.deepClone(bannerBidRequest),
-        userIdAsEids: [{
-          source: 'other-provider.com',
-          uids: [{ id: 'some-id', atype: 1 }]
-        }]
-      };
+    describe('bidfloors', function () {
+      it('should send the floor of each banner size from getFloor in JPY', function () {
+        const getFloorStub = sinon.stub();
+        getFloorStub.withArgs({ currency: 'JPY', mediaType: 'banner', size: [300, 250] }).returns({ floor: 27.5, currency: 'JPY' });
+        getFloorStub.withArgs({ currency: 'JPY', mediaType: 'banner', size: [336, 280] }).returns({ floor: 30, currency: 'JPY' });
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+          getFloor: getFloorStub
+        };
 
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
 
-      expect(JSON.parse(request.data)).to.not.have.property('im_uid');
+        expect(data.bidfloors).to.deep.equal({
+          '300x250': { floor: 27.5, currency: 'JPY' },
+          '336x280': { floor: 30, currency: 'JPY' }
+        });
+      });
+
+      it('should send the floor in the currency returned by getFloor when it cannot be converted to JPY', function () {
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          getFloor: () => ({ floor: 0.18, currency: 'USD' })
+        };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.bidfloors).to.deep.equal({ '300x250': { floor: 0.18, currency: 'USD' } });
+      });
+
+      it('should send only the sizes that have a floor', function () {
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+          getFloor: ({ size }) => (size[0] === 300 ? { floor: 27.5, currency: 'JPY' } : {})
+        };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.bidfloors).to.deep.equal({ '300x250': { floor: 27.5, currency: 'JPY' } });
+      });
+
+      it('should not send bidfloors when getFloor is not available or returns no floor', function () {
+        const withoutGetFloor = utils.deepClone(bannerBidRequest);
+        const withEmptyFloor = { ...utils.deepClone(bannerBidRequest), getFloor: () => ({}) };
+        const withNullFloor = { ...utils.deepClone(bannerBidRequest), getFloor: () => null };
+        const withNaNFloor = { ...utils.deepClone(bannerBidRequest), getFloor: () => ({ floor: NaN, currency: 'JPY' }) };
+
+        [withoutGetFloor, withEmptyFloor, withNullFloor, withNaNFloor].forEach(bidRequest => {
+          const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+          expect(data).to.not.have.property('bidfloors');
+        });
+      });
+
+      it('should send the other floors and the other ad units when getFloor throws for one size', function () {
+        const throwingBidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } },
+          getFloor: ({ size }) => {
+            if (size[0] === 336) {
+              throw new Error('floor error');
+            }
+            return { floor: 27.5, currency: 'JPY' };
+          }
+        };
+        const otherBidRequest = { ...utils.deepClone(bannerBidRequest), bidId: '3a1f0b7e5c2d4a', getFloor: () => ({ floor: 30, currency: 'JPY' }) };
+
+        const requests = spec.buildRequests([throwingBidRequest, otherBidRequest], bidderRequest);
+
+        expect(requests).to.have.lengthOf(2);
+        expect(JSON.parse(requests[0].data).bidfloors).to.deep.equal({ '300x250': { floor: 27.5, currency: 'JPY' } });
+        expect(JSON.parse(requests[1].data).bidfloors).to.deep.equal({ '300x250': { floor: 30, currency: 'JPY' } });
+      });
+
+      it('should send the floor of each size from the price floors module when floors are set only per size', function () {
+        try {
+          handleSetFloorsConfig({
+            enabled: true,
+            enforcement: { bidAdjustment: false },
+            data: {
+              currency: 'JPY',
+              schema: { fields: ['mediaType', 'size'] },
+              values: { 'banner|300x250': 100, 'banner|336x280': 120 }
+            }
+          });
+          const bid = { ...utils.deepClone(bannerBidRequest), mediaTypes: { banner: { sizes: [[300, 250], [336, 280]] } } };
+          const adUnits = [{ code: bid.adUnitCode, mediaTypes: bid.mediaTypes, bids: [bid] }];
+          continueAuction({ reqBidsConfigObj: { auctionId: 'logly-floors', adUnits }, nextFn: sinon.stub() });
+
+          const data = JSON.parse(spec.buildRequests([bid], { ...bidderRequest, auctionId: 'logly-floors' })[0].data);
+
+          expect(data.bidfloors).to.deep.equal({
+            '300x250': { floor: 100, currency: 'JPY' },
+            '336x280': { floor: 120, currency: 'JPY' }
+          });
+        } finally {
+          handleSetFloorsConfig({ enabled: false });
+        }
+      });
+    });
+
+    describe('eids', function () {
+      it('should send all eids from ortb2.user.ext.eids', function () {
+        const eids = [{
+          source: 'intimatemerger.com',
+          uids: [{ id: 'bid-eid-imuid', atype: 1 }]
+        }, {
+          source: 'pubcid.org',
+          uids: [{ id: 'pubcid-value', atype: 1 }]
+        }];
+        const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: { user: { ext: { eids } } } };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.eids).to.deep.equal(eids);
+      });
+
+      // Goes through core's normalizeFPD so this test fails if core stops moving ortb2.user.eids into ortb2.user.ext.eids, which the adapter reads.
+      it('should send eids written by the publisher as ortb2.user.eids', function () {
+        const eids = [{ source: 'intimatemerger.com', uids: [{ id: 'bid-eid-imuid', atype: 1 }] }];
+        const { global } = normalizeFPD({ global: { user: { eids } }, bidder: {} });
+        const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: global };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.eids).to.deep.equal(eids);
+      });
+
+      it('should send empty eids when ortb2 has no eids', function () {
+        const data = JSON.parse(spec.buildRequests([bannerBidRequest], bidderRequest)[0].data);
+
+        expect(data.eids).to.deep.equal([]);
+      });
+
+      it('should send empty eids when ortb2.user.ext.eids is not an array', function () {
+        [{}, 'eids', 1].forEach(eids => {
+          const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: { user: { ext: { eids } } } };
+
+          const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+          expect(data.eids).to.deep.equal([]);
+          expect(data).to.not.have.property('im_uid');
+        });
+      });
     });
   });
 

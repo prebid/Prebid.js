@@ -1,6 +1,7 @@
 import { config } from '../src/config.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { isFn, logWarn } from '../src/utils.js';
 const BIDDER_CODE = 'logly';
 const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v2';
 
@@ -81,7 +82,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 function newBidRequest(bid, bidderRequest) {
   const currencyObj = config.getConfig('currency');
   const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
-  const imUid = getImUid(bid);
+  const eids = getEids(bid);
+  const imUid = getImUid(eids);
 
   return {
     auctionId: bid.auctionId,
@@ -97,14 +99,45 @@ function newBidRequest(bid, bidderRequest) {
     referer: bidderRequest.refererInfo.ref,
     auctionStartTime: bidderRequest.auctionStart,
     currency: currency,
-    timeout: config.getConfig('bidderTimeout'),
-    ...(imUid ? { im_uid: imUid } : {})
+    timeout: bidderRequest.timeout,
+    ...(imUid ? { im_uid: imUid } : {}),
+    ...getBidFloors(bid),
+    eids
   };
 }
 
-function getImUid(bid) {
-  const eids = bid.userIdAsEids || [];
-  const imEid = eids.find(eid => eid.source === 'intimatemerger.com');
+function getBidFloors(bid) {
+  if (!isFn(bid.getFloor)) {
+    return {};
+  }
+  // Request the floor per size, not once with '*': the LOGLY server reads the floor of the size it bids with,
+  // and a publisher may set floors only per size, in which case '*' returns no floor for an ad unit with several sizes.
+  // LOGLY bids in JPY. getFloor returns the floor in the currency of the floors configuration when it cannot convert
+  // (e.g. no currency module or no rates), so the currency is sent with each floor.
+  const bidfloors = {};
+  (bid.mediaTypes?.banner?.sizes || []).forEach(size => {
+    let floorInfo;
+    try {
+      floorInfo = bid.getFloor({ currency: 'JPY', mediaType: BANNER, size });
+    } catch (e) {
+      // Leave out only the floor of this size: a throw here would drop every LOGLY bid in the auction.
+      logWarn(`${BIDDER_CODE}: getFloor failed for size ${size[0]}x${size[1]}`, e);
+      return;
+    }
+    if (Number.isFinite(floorInfo?.floor)) {
+      bidfloors[`${size[0]}x${size[1]}`] = { floor: floorInfo.floor, currency: floorInfo.currency };
+    }
+  });
+  return Object.keys(bidfloors).length > 0 ? { bidfloors } : {};
+}
+
+function getEids(bid) {
+  const eids = bid.ortb2?.user?.ext?.eids;
+  return Array.isArray(eids) ? eids : [];
+}
+
+function getImUid(eids) {
+  const imEid = eids.find(eid => eid?.source === 'intimatemerger.com');
 
   return imEid?.uids?.[0]?.id;
 }
