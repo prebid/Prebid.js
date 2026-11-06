@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import { normalizeFPD } from 'src/fpd/normalize.js';
 import { spec } from '../../../modules/loglyBidAdapter.ts';
 
 describe('loglyBidAdapter', function () {
@@ -92,37 +93,108 @@ describe('loglyBidAdapter', function () {
       expect(JSON.parse(request.data).timeout).to.equal(1500);
     });
 
-    it('should send im_uid from bid userIdAsEids', function () {
-      const bidRequest = {
-        ...utils.deepClone(bannerBidRequest),
-        userIdAsEids: [{
-          source: 'intimatemerger.com',
-          uids: [{
-            id: 'bid-eid-imuid',
-            atype: 1
-          }]
-        }]
-      };
+    describe('im_uid', function () {
+      it('should send im_uid from ortb2.user.ext.eids', function () {
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          ortb2: {
+            user: {
+              ext: {
+                eids: [{
+                  source: 'other-provider.com',
+                  uids: [{ id: 'some-id', atype: 1 }]
+                }, {
+                  source: 'intimatemerger.com',
+                  uids: [{
+                    id: 'bid-eid-imuid',
+                    atype: 1
+                  }]
+                }]
+              }
+            }
+          }
+        };
 
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
 
-      expect(JSON.parse(request.data)).to.include({
-        im_uid: 'bid-eid-imuid'
+        expect(JSON.parse(request.data)).to.include({
+          im_uid: 'bid-eid-imuid'
+        });
+      });
+
+      it('should not send im_uid when ortb2.user.ext.eids has no intimatemerger.com entry', function () {
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          ortb2: {
+            user: {
+              ext: {
+                eids: [{
+                  source: 'other-provider.com',
+                  uids: [{ id: 'some-id', atype: 1 }]
+                }]
+              }
+            }
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+
+        expect(JSON.parse(request.data)).to.not.have.property('im_uid');
+      });
+
+      it('should find im_uid past null or undefined entries in ortb2.user.ext.eids', function () {
+        const imEid = { source: 'intimatemerger.com', uids: [{ id: 'bid-eid-imuid', atype: 1 }] };
+        const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: { user: { ext: { eids: [null, undefined, imEid] } } } };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.im_uid).to.equal('bid-eid-imuid');
       });
     });
 
-    it('should not send im_uid when userIdAsEids has no intimatemerger.com entry', function () {
-      const bidRequest = {
-        ...utils.deepClone(bannerBidRequest),
-        userIdAsEids: [{
-          source: 'other-provider.com',
-          uids: [{ id: 'some-id', atype: 1 }]
-        }]
-      };
+    describe('eids', function () {
+      it('should send all eids from ortb2.user.ext.eids', function () {
+        const eids = [{
+          source: 'intimatemerger.com',
+          uids: [{ id: 'bid-eid-imuid', atype: 1 }]
+        }, {
+          source: 'pubcid.org',
+          uids: [{ id: 'pubcid-value', atype: 1 }]
+        }];
+        const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: { user: { ext: { eids } } } };
 
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
 
-      expect(JSON.parse(request.data)).to.not.have.property('im_uid');
+        expect(data.eids).to.deep.equal(eids);
+      });
+
+      // Goes through core's normalizeFPD so this test fails if core stops moving ortb2.user.eids into ortb2.user.ext.eids, which the adapter reads.
+      it('should send eids written by the publisher as ortb2.user.eids', function () {
+        const eids = [{ source: 'intimatemerger.com', uids: [{ id: 'bid-eid-imuid', atype: 1 }] }];
+        const { global } = normalizeFPD({ global: { user: { eids } }, bidder: {} });
+        const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: global };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.eids).to.deep.equal(eids);
+      });
+
+      it('should send empty eids when ortb2 has no eids', function () {
+        const data = JSON.parse(spec.buildRequests([bannerBidRequest], bidderRequest)[0].data);
+
+        expect(data.eids).to.deep.equal([]);
+      });
+
+      it('should send empty eids when ortb2.user.ext.eids is not an array', function () {
+        [{}, 'eids', 1].forEach(eids => {
+          const bidRequest = { ...utils.deepClone(bannerBidRequest), ortb2: { user: { ext: { eids } } } };
+
+          const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+          expect(data.eids).to.deep.equal([]);
+          expect(data).to.not.have.property('im_uid');
+        });
+      });
     });
   });
 

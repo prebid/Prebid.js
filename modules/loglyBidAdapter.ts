@@ -81,7 +81,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 function newBidRequest(bid, bidderRequest) {
   const currencyObj = config.getConfig('currency');
   const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
-  const imUid = getImUid(bid);
+  const eids = getEids(bid);
+  const imUid = getImUid(eids);
 
   return {
     auctionId: bid.auctionId,
@@ -98,13 +99,18 @@ function newBidRequest(bid, bidderRequest) {
     auctionStartTime: bidderRequest.auctionStart,
     currency: currency,
     timeout: bidderRequest.timeout,
-    ...(imUid ? { im_uid: imUid } : {})
+    ...(imUid ? { im_uid: imUid } : {}),
+    eids
   };
 }
 
-function getImUid(bid) {
-  const eids = bid.userIdAsEids || [];
-  const imEid = eids.find(eid => eid.source === 'intimatemerger.com');
+function getEids(bid) {
+  const eids = bid.ortb2?.user?.ext?.eids;
+  return Array.isArray(eids) ? eids : [];
+}
+
+function getImUid(eids) {
+  const imEid = eids.find(eid => eid?.source === 'intimatemerger.com');
 
   return imEid?.uids?.[0]?.id;
 }
