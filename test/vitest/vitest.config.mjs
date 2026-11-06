@@ -264,6 +264,9 @@ export default defineConfig({
       enabled: true,
       // BrowserStack browsers and local Safari run headed (WebdriverIO refuses headless Safari)
       headless: !browserstack && !localSafari,
+      // Vitest shows its UI in a headed browser unless CI is set, and scales the test iframe down inside it, which
+      // breaks specs that measure layout
+      ...(browserstack ? { ui: false } : {}),
       // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking, no
       // background timer throttling) and --no-sandbox, as Karma's ChromeNoSandbox launcher did
       provider: await browserProvider(),
