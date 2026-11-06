@@ -146,6 +146,24 @@ describe(`UID2 module`, function () {
   const configureUid2ApiSuccessResponse = (apiUrl, responseToken) => configureUid2Response(apiUrl, 200, makeSuccessResponseBody(responseToken));
   const configureUid2ApiFailResponse = (apiUrl) => configureUid2Response(apiUrl, 500, 'Error');
   const configureUid2CstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
+  // A fixed 1ms timeout can fire before WebKit has queued the fetch. Respond when the request exists.
+  const respondWhenRequested = async (url, timeout = 1000) => {
+    const start = Date.now();
+    while (!server.requests.some(req => req.url === url)) {
+      if (Date.now() - start >= timeout) throw new Error(`No UID2 API request for ${url} within ${timeout}ms`);
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    server.respond();
+    // Let fetch and the UID2 promise handler process the mocked response.
+    await new Promise(resolve => setTimeout(resolve, 0));
+  };
+  const waitForStoredToken = async (expected, timeout = 1000) => {
+    const start = Date.now();
+    while (JSON.parse(getFromAppropriateStorage() || 'null')?.latestToken?.advertising_token !== expected) {
+      if (Date.now() - start >= timeout) throw new Error(`UID2 did not store ${expected} within ${timeout}ms`);
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+  };
   // Runs the provided test twice - once with a successful API mock, once with one which returns a server error
   const testApiSuccessAndFailure = (act, apiUrl, testDescription, failTestDescription, only = false, responseToken = refreshedToken) => {
     const testFn = only ? it.only : it;
@@ -161,6 +179,9 @@ describe(`UID2 module`, function () {
 
   beforeEach(function () {
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
+    // Do not inherit tokens from an earlier test if Safari deferred its cookie cleanup.
+    cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);
+    coreStorage.removeDataFromLocalStorage(moduleCookieName);
     testSandbox = sinon.createSandbox();
     testSandbox.stub(utils, 'logWarn');
     init(config);
@@ -377,10 +398,10 @@ describe(`UID2 module`, function () {
         }, refreshApiUrl, 'it should not be refreshed before the auction runs');
 
         testApiSuccessAndFailure(async function(success) {
-          const promise = apiHelpers.respondAfterDelay(1, server);
           await runAuction();
-          await promise;
+          await respondWhenRequested(refreshApiUrl);
           if (success) {
+            await waitForStoredToken(refreshedToken);
             expectModuleStorageToContain(initialToken, refreshedToken);
           } else {
             expectModuleStorageToContain(initialToken, initialToken);
@@ -455,9 +476,11 @@ describe(`UID2 module`, function () {
 
             describe('When the token generated in time', function() {
               testApiSuccessAndFailure(async function(apiSucceeds) {
-                scenario.setConfig();
-                apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+                // Give the async CSTG crypto/fetch chain room to queue a request on Safari.
+                scenario.setConfig({ auctionDelay: 100 });
+                const response = respondWhenRequested(cstgApiUrl);
                 const bid = await runAuction();
+                await response;
 
                 if (apiSucceeds) expectToken(bid, clientSideGeneratedToken);
                 else expectNoIdentity(bid);
