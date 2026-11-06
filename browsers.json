@@ -101,7 +101,7 @@
       "deviceName": "iPhone 14",
       "osVersion": "16",
       "vitest": {
-        "shards": 4,
+        "shards": 6,
         "maxParallel": 2
       }
     }
