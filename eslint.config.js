@@ -298,7 +298,10 @@ module.exports = [
     }
   }),
   {
-    files: ['**/*BidAdapter.js'],
+    files: [
+      '**/*BidAdapter.{js,mjs,ts,mts}',
+      '**/*BidAdapter/**/*.{js,mjs,ts,mts}'
+    ],
     rules: {
       'no-restricted-imports': [
         'error', {
