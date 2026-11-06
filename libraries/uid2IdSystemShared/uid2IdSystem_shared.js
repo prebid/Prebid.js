@@ -72,21 +72,26 @@ export class Uid2ApiClient {
           } else {
             this._logInfo('Decrypting refresh API response');
             const encodeResp = this.createArrayBuffer(atob(responseText));
-            window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
-              this._logInfo('Imported decryption key');
-              // returns the symmetric key
-              window.crypto.subtle.decrypt({
-                name: 'AES-GCM',
-                iv: encodeResp.slice(0, 12),
-                tagLength: 128, // The tagLength you used to encrypt (if any)
-              }, key, encodeResp.slice(12)).then((decrypted) => {
+            window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt'])
+              .then((key) => {
+                this._logInfo('Imported decryption key');
+                return window.crypto.subtle.decrypt({
+                  name: 'AES-GCM',
+                  iv: encodeResp.slice(0, 12),
+                  tagLength: 128, // The tagLength you used to encrypt (if any)
+                }, key, encodeResp.slice(12));
+              })
+              .then((decrypted) => {
                 const decryptedResponse = String.fromCharCode(...new Uint8Array(decrypted));
                 this._logInfo('Decrypted to:', decryptedResponse);
                 const response = JSON.parse(decryptedResponse);
                 const result = this.ResponseToRefreshResult(response);
                 if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
-              }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
-            }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
+              })
+              .catch((reason) => {
+                this._logWarn(prependMessage(`Call to UID2 API failed`), reason);
+                rejectPromise(prependMessage('Call to UID2 API failed'));
+              });
           }
         } catch (_err) {
           rejectPromise(prependMessage(responseText));
@@ -561,7 +566,7 @@ if (FEATURES.UID2_CSTG) {
                 }
               } else if (xhr.status === 403) {
                 const response = JSON.parse(xhr.responseText);
-                if (this.isCstgApiForbiddenResponse(xhr)) {
+                if (this.isCstgApiForbiddenResponse(response)) {
                   rejectPromise(prependMessage(`Forbidden: ${response.message}`));
                 } else {
                   // A 403 should always be a forbidden response.
