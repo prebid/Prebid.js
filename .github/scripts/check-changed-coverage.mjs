@@ -34,7 +34,7 @@ function isTypeOnlyModule(file) {
   if (!/\.(?:ts|mts)$/.test(file)) return false;
 
   const source = readFileSync(file, 'utf8')
-    .replace(/\/\*[\\s\\S]*?\*\//g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/(^|\\s)\/\/.*$/gm, '')
     .trim();
 
