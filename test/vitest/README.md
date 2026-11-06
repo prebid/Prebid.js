@@ -163,8 +163,9 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16
   session runs one spec file at a time: WebdriverIO can't run several pages at once, so more sessions (shards) are
   the only way to run more at once.
 - CI runs the BrowserStack jobs wherever the BrowserStack secrets are available. Fork PRs get no secrets, so they
-  don't run on them; their changes are tested on BrowserStack by the run on master after merge. Each job waits until
-  two sessions are free, so they never take the last one from the ES5 e2e job.
+  don't run on them; their changes are tested on BrowserStack by the run on master after merge. The jobs of every run
+  queue for the same few concurrency groups ("lanes", see `maxParallel` below), and the ES5 e2e job for one of its
+  own, so CI never holds more BrowserStack sessions than the lanes allow.
 
 ## CI
 
@@ -213,8 +214,9 @@ run in has an object of its own:
 - `vitest`, in either, puts the entry in `vitest-browsers.yml`, in `shards` jobs: on runners, `browser`
   (`VITEST_BROWSER`), `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`),
   `chromeVersion` (a Chrome from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on
-  BrowserStack, `maxParallel`. GitHub can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most
-  the lowest `maxParallel` at once. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
+  BrowserStack, `maxParallel`. The BrowserStack jobs of all workflow runs share the lowest `maxParallel` lanes, and
+  run at most one job per lane at once. The lanes never take more of the account's 5 sessions than the ES5 e2e job
+  (one per `browsers-es5.json` browser) leaves free. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
   job labelled `specsLabel`, only the spec files under `test/spec` whose source matches it, found when the job is
   defined; with none, there is no job. `gulp test --browserstack` does the same for that entry, unless `--file` is
   given.
