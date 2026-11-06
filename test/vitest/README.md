@@ -45,7 +45,7 @@ npx playwright install chromium
 npx gulp precompile
 npm run test:vitest                                             # every spec
 npm run test:vitest -- test/spec/modules/appnexusBidAdapter_spec.js   # some specs (Vitest file filters)
-VITEST_PARALLEL=3 npm run test:vitest                           # 3 pages at once: about half the time
+VITEST_PARALLEL=3 npm run test:vitest                           # 3 pages at once: about half the time (Playwright only)
 TEST_CHUNKS=8 TEST_CHUNK=1 npm run test:vitest                  # one of the chunks Karma split the suite into
 npm run test:vitest:watch                                       # re-run as dist/src changes
 ```
@@ -53,7 +53,8 @@ npm run test:vitest:watch                                       # re-run as dist
 The `gulp test*` tasks run these (see the top-level README and AGENTS.md); `npx gulp test-only --file <spec>`
 precompiles first. `vitest.config.mjs` documents the environment variables.
 
-`VITEST_PARALLEL` is off by default because pages running at once share one origin's cookies and storage.
+`VITEST_PARALLEL` is off by default because pages running at once share one origin's cookies and storage. It only
+applies to browsers driven by Playwright, headless: WebdriverIO (Safari, BrowserStack) runs one spec file at a time.
 
 For the all-features-disabled variant (Karma's "Unit tests (all features disabled)" job), precompile with
 `npx gulp precompile-all-features-disabled` instead.
@@ -120,7 +121,7 @@ desktop Safari 16.5 in its place, because karma-browserstack-launcher can't driv
 
 ```sh
 export BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=...
-VITEST_BROWSERSTACK=1 VITEST_PARALLEL=3 npm run test:vitest -- --shard=1/4           # iPhone 14, iOS 16
+VITEST_BROWSERSTACK=1 npm run test:vitest -- --shard=1/4                             # iPhone 14, iOS 16
 VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/4
 # a desktop browser instead
 VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
@@ -150,8 +151,9 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run. BrowserStack ends a
   session after at most 300 s of that, mid-run, so `vitest.config.mjs` asks the page for its title every minute to
-  keep it alive. Past about 400 spec files in one session, iOS Safari closes the page anyway, so CI runs 4 shards,
-  two at a time, with 3 pages at once each.
+  keep it alive. iOS Safari still closes the page partway through a long session (after about 150 spec files in
+  recent runs), so CI runs 4 shards, two at a time. Each session runs one spec file at a time: WebdriverIO can't run
+  several pages at once, so more sessions (shards) are the only way to run more at once.
 - CI runs the BrowserStack jobs wherever the BrowserStack secrets are available. Fork PRs get no secrets, so they
   don't run on them; their changes are tested on BrowserStack by the run on master after merge. Each job waits until
   two sessions are free, so they never take the last one from the ES5 e2e job.
@@ -173,7 +175,8 @@ Base branch coverage, when it isn't cached, is also computed only after the Chro
 runners from it; it is skipped when the base commit has no Vitest setup. The coverage report needs only the Chromium
 stage.
 
-Each job runs its share of the specs with Vitest's `--shard=<i>/<n>` (balanced by file) and 3 pages at once. Every
+Each job runs its share of the specs with Vitest's `--shard=<i>/<n>` (balanced by file), 3 pages at once where
+Playwright drives the browser (Safari and BrowserStack run one at a time). Every
 spec file has a page of its own, so nothing needs Karma's chunks to stay together. Locally, the whole suite takes
 about 70 s in Chromium that way, against 147 s one page at a time.
 
