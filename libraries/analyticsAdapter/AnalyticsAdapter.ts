@@ -278,6 +278,8 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
     Object.entries(handlers || {}).forEach(([event, handler]: any) => {
       events.off(event, handler);
     });
+    // drop events that are still waiting to be tracked; they are not marked as tracked, so they are replayed if analytics is enabled again
+    queue.length = 0;
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
     enabled = false;
   }

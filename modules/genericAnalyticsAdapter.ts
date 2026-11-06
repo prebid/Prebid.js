@@ -228,6 +228,14 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
           parent.enableAnalytics.call(this, config);
         }
       },
+      disableAnalytics() {
+        if (timer != null) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        batch = [];
+        parent.disableAnalytics?.call(this);
+      },
       track(event) {
         const datum = translate(event);
         if (datum != null) {
