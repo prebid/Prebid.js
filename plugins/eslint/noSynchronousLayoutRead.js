@@ -6,7 +6,9 @@ const LAYOUT_PROPERTIES = new Set([
   'clientWidth',
   'clientHeight',
   'scrollWidth',
-  'scrollHeight'
+  'scrollHeight',
+  'scrollX',
+  'scrollY'
 ]);
 
 const MESSAGE = 'Avoid synchronous layout reads; use the Prebid viewport/bounding-client-rect utilities instead.';
