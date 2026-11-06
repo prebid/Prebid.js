@@ -9,7 +9,7 @@ const threshold = 80;
 const sourceRoots = ['src', 'modules', 'libraries', 'creative'];
 
 function isSourceFile(file) {
-  return /\.(?:js|ts)$/.test(file) &&
+  return /\.(?:js|mjs|ts|mts)$/.test(file) && !/\.d\.ts$/.test(file) &&
     sourceRoots.some(root => file === root || file.startsWith(root + '/'));
 }
 
