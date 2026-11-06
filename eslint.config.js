@@ -133,6 +133,7 @@ module.exports = [
       'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
       'prebid/no-extra-function-args': 'error',
+      'prebid/no-synchronous-layout-read': 'warn',
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
       'import/no-unresolved': 'error',
