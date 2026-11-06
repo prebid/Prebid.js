@@ -1,0 +1,94 @@
+# Overview
+
+```
+Module Name: BoldwinX Bidder Adapter
+Module Type: Bidder Adapter
+Maintainer: info@bold-win.com
+```
+
+# Description
+
+Connects to the Boldwin OpenRTB endpoint at `pbjs.algotoro.com` for bids. Supports banner,
+video (instream; outstream needs the publisher's own renderer) and native (ORTB native request).
+
+Contact info@bold-win.com to get an `epid` (endpoint ID). Every ad unit with the same `epid`
+goes into one request; ad units with different `epid` values go into separate requests.
+
+Bids are net CPMs in USD. Price floors are sent in USD; a floor in another currency is left
+out of the request, and Prebid still enforces it on the bids.
+
+User sync is an image pixel on `pbjs.algotoro.com`. It carries the GDPR, US Privacy and GPP
+signals Prebid has, and no sync is made when COPPA applies.
+
+# Bid Params
+
+| Name   | Scope    | Description                                          | Example   | Type     |
+|--------|----------|------------------------------------------------------|-----------|----------|
+| `epid` | required | Endpoint ID issued by Boldwin. A number is accepted. | `'12345'` | `string` |
+
+# Test Parameters
+
+Replace `epid` with the value issued by Boldwin. Instream video bids return VAST XML, so
+they need Prebid Cache (`cache: { url: ... }` or `cache: { useLocal: true }`).
+
+```js
+var adUnits = [
+  // Banner
+  {
+    code: 'test-banner',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [728, 90]]
+      }
+    },
+    bids: [{
+      bidder: 'boldwinx',
+      params: {
+        epid: '12345'
+      }
+    }]
+  },
+  // Video, instream
+  {
+    code: 'test-video',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4'],
+        protocols: [2, 3, 5, 6],
+        plcmt: 1
+      }
+    },
+    bids: [{
+      bidder: 'boldwinx',
+      params: {
+        epid: '12345'
+      }
+    }]
+  },
+  // Native
+  {
+    code: 'test-native',
+    mediaTypes: {
+      native: {
+        ortb: {
+          ver: '1.2',
+          assets: [
+            { id: 1, required: 1, title: { len: 90 } },
+            { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+            { id: 3, required: 1, data: { type: 1 } },
+            { id: 4, required: 0, data: { type: 2 } }
+          ]
+        }
+      }
+    },
+    bids: [{
+      bidder: 'boldwinx',
+      params: {
+        epid: '12345'
+      }
+    }]
+  }
+];
+```
