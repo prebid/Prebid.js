@@ -309,7 +309,8 @@ module.exports = [
         }
       ]
     }
-  },\n  {
+  },
+  {
     files: [
       'modules/**/*BidAdapter.{js,mjs,ts,mts}',
       'modules/**/*RtdProvider.{js,mjs,ts,mts}',
