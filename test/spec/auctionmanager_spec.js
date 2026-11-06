@@ -1115,6 +1115,16 @@ describe('auctionmanager.js', function () {
         expect(getMinBidCacheTTL()).to.eql(300);
       });
 
+      it('getEffectiveMinBidCacheTTL translates the Infinity opt-out to null (no expiry)', () => {
+        config.setConfig({ minBidCacheTTL: Infinity });
+        expect(getEffectiveMinBidCacheTTL({})).to.eql(null);
+        config.setConfig({ minBidCacheTTL: 30, minTargetedBidCacheTTL: Infinity });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(null);
+        expect(getEffectiveMinBidCacheTTL({})).to.eql(30);
+        config.resetConfig();
+      });
+
       it('should run listeners registered with onMinBidCacheTTLChange', () => {
         config.setConfig({ minBidCacheTTL: 1 });
         let newTTL = null;

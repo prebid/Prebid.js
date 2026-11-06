@@ -64,17 +64,20 @@ export function getMinTargetedBidCacheTTL() {
  * Returns the effective minimum cache TTL in seconds for a bid.
  * When minTargetedBidCacheTTL is set and the bid has had targeting set, uses that;
  * otherwise uses minBidCacheTTL (which defaults to DEFAULT_MIN_BID_CACHE_TTL).
- * Returns null only if no minimum applies.
+ * Returns null if no minimum applies. A non-finite TTL (the Infinity opt-out)
+ * is also reported as null: ttlCollection treats null as "never expires",
+ * whereas an infinite delay would overflow the purge timer and reschedule
+ * itself in a loop.
  */
 export function getEffectiveMinBidCacheTTL(bid) {
   const baseTTL = minCacheTTL;
   if (baseTTL == null && minTargetedBidCacheTTL == null) {
     return null;
   }
-  if (bid?.status === BID_STATUS.BID_TARGETING_SET && typeof minTargetedBidCacheTTL === 'number') {
-    return minTargetedBidCacheTTL;
-  }
-  return baseTTL;
+  const ttl = bid?.status === BID_STATUS.BID_TARGETING_SET && typeof minTargetedBidCacheTTL === 'number'
+    ? minTargetedBidCacheTTL
+    : baseTTL;
+  return ttl == null || !Number.isFinite(ttl) ? null : ttl;
 }
 
 function notifyCacheTTLChange() {
