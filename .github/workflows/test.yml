@@ -247,10 +247,10 @@ jobs:
         with:
           name: base-coverage.info
           path: base-coverage.info
-  changed-file-coverage:
-    name: Changed file coverage
-    needs: [checkout, vitest, coverage]
-    if: always() && needs.vitest.outputs.coverage && needs.coverage.result == 'success'
+  coverage:
+    name: Coverage
+    needs: [checkout, vitest, base-coverage-check, base-coverage-combine]
+    if: always() && needs.vitest.outputs.coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -263,9 +263,26 @@ jobs:
         with:
           name: ${{ needs.vitest.outputs.coverage }}
           path: ${{ runner.temp }}
+      - name: Save to cache
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/coverage.info
+          key: coverage-vitest-${{ needs.checkout.outputs.commit }}
+      - name: Copy coverage results
+        run: cp "${{ runner.temp }}/coverage.info" coverage.info
+      - name: Generate coverage annotations
+        if: ${{ needs.base-coverage-check.outputs.available == 'true' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-check.outputs.needs-base-coverage == 'false') }}
+        uses: barecheck/code-coverage-action@v1
+        with:
+          github-token: ${{ github.token }}
+          lcov-file: "coverage.info"
+          base-lcov-file: "base-coverage.info"
+          minimum-ratio: 0.01
+          send-summary-comment: false
+          show-annotations: "warning"
       - name: Check changed source file coverage
         run: node .github/scripts/check-changed-coverage.mjs "${{ runner.temp }}/coverage.info" "${{ needs.checkout.outputs.base-commit }}"
-  coverage:
+
     name: Coverage
     needs: [checkout, vitest, base-coverage-check, base-coverage-combine]
     # Gate on the coverage artifact rather than on the result of the whole Vitest call, which also covers
