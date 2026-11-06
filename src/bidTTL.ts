@@ -3,8 +3,15 @@ import { logError } from './utils.js';
 import { BID_STATUS } from './constants.js';
 const CACHE_TTL_SETTING = 'minBidCacheTTL';
 const MIN_TARGETED_BID_CACHE_TTL_SETTING = 'minTargetedBidCacheTTL';
+/**
+ * Default for minBidCacheTTL (in seconds) since Prebid 12: auctions are dropped
+ * once their bids expire, or after this long for auctions without bids, unless
+ * the publisher sets minBidCacheTTL explicitly. Setting it to Infinity opts
+ * out and keeps bids for the lifetime of the page.
+ */
+export const DEFAULT_MIN_BID_CACHE_TTL = 300;
 let TTL_BUFFER = 1;
-let minCacheTTL = null;
+let minCacheTTL = DEFAULT_MIN_BID_CACHE_TTL;
 let minTargetedBidCacheTTL = null;
 const listeners = [];
 
@@ -21,7 +28,7 @@ declare module './config' {
      * When set, bids are only kept in memory for the duration of their actual TTL lifetime or the value of minBidCacheTTL, whichever is greater.
      * Setting minBidCacheTTL: 0 causes bids to be dropped as soon as they expire.
      *
-     * If unset (the default), bids are kept for the lifetime of the page.
+     * If unset, this defaults to 300 seconds. Set minBidCacheTTL: Infinity to keep bids for the lifetime of the page instead.
      */
     [CACHE_TTL_SETTING]?: number;
     /**
@@ -56,7 +63,8 @@ export function getMinTargetedBidCacheTTL() {
 /**
  * Returns the effective minimum cache TTL in seconds for a bid.
  * When minTargetedBidCacheTTL is set and the bid has had targeting set, uses that;
- * otherwise uses minBidCacheTTL. Returns null if no minimum applies (bid kept for page lifetime).
+ * otherwise uses minBidCacheTTL (which defaults to DEFAULT_MIN_BID_CACHE_TTL).
+ * Returns null only if no minimum applies.
  */
 export function getEffectiveMinBidCacheTTL(bid) {
   const baseTTL = minCacheTTL;
@@ -76,7 +84,7 @@ function notifyCacheTTLChange() {
 config.getConfig(CACHE_TTL_SETTING, (cfg) => {
   const prev = minCacheTTL;
   minCacheTTL = cfg?.[CACHE_TTL_SETTING];
-  minCacheTTL = typeof minCacheTTL === 'number' ? minCacheTTL : null;
+  minCacheTTL = typeof minCacheTTL === 'number' ? minCacheTTL : DEFAULT_MIN_BID_CACHE_TTL;
   if (prev !== minCacheTTL) {
     notifyCacheTTLChange();
   }
