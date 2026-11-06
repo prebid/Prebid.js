@@ -1879,6 +1879,9 @@ describe('auctionmanager.js', function () {
           assert.equal(auctionProps.adUnits, adUnits);
           assert.equal(auctionProps.timeout, 20);
           assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED);
+          assert.lengthOf(auctionProps.timedOutRequests, 1);
+          assert.equal(auctionProps.timedOutRequests[0].bidder, BIDDER_CODE1);
+          assert.equal(auctionProps.timedOutRequests[0].bidId, timedOutBids[0].bidId);
         });
         respondToRequest(0);
         return pm;
