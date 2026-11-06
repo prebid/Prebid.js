@@ -32,13 +32,22 @@ function changedSourceFiles(base) {
 
 function isTypeOnlyModule(file) {
   if (!/\.(?:ts|mts)$/.test(file)) return false;
+
   const source = readFileSync(file, 'utf8')
     .replace(/\/\*[\\s\\S]*?\*\//g, '')
     .replace(/(^|\\s)\/\/.*$/gm, '')
     .trim();
+
   if (!source) return true;
-  const runtimePattern = /\b(class|enum|function|const|let|var|new|return|throw|if|for|while|switch|try|catch|await|yield)\b|(^|[=({;])\s*(?:async\s+)?[A-Za-z_$][\w$]*\s*\(/m;
-  return !runtimePattern.test(source);
+
+  const statements = source
+    .split(';')
+    .map(statement => statement.trim())
+    .filter(Boolean);
+
+  return statements.every(statement =>
+    /^(?:interface|type|declare(?:\\s+(?:global|module))?|import\\s+type|export\\s+(?:type|interface|declare)|export\\{\\s*type\\b)/.test(statement)
+  );
 }
 
 function parseLcov(text) {
