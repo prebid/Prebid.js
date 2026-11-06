@@ -504,15 +504,18 @@ describe(`UID2 module`, function () {
       });
       it('should reject the refresh promise when Web Crypto decryption fails', async function() {
         const client = new Uid2ApiClient({ baseUrl: 'https://prod.uidapi.com' }, 'test-client', () => {}, () => {});
-        window.crypto.subtle.decrypt.rejects(new Error('decrypt failed'));
-        configureUid2Response(refreshApiUrl, 200, makeSuccessResponseBody(refreshedToken));
+        window.crypto.subtle.importKey.rejects(new Error('import failed'));
+        configureUid2Response(refreshApiUrl, 200, 'encrypted response');
         const response = respondWhenRequested(refreshApiUrl);
         const promise = client.callRefreshApi(apiHelpers.makeTokenResponse(initialToken, true, true));
 
-        await expect(promise).to.be.rejectedWith('UID2 shared library - decrypt failed');
+        await promise.then(
+          () => { throw new Error('refresh promise should reject'); },
+          (error) => expect(error).to.equal('UID2 shared library - Call to UID2 API failed')
+        );
         await response;
 
-        window.crypto.subtle.decrypt.callsFake((settings, key, data) => Promise.resolve(new Uint8Array([...settings.iv, ...data])));
+        window.crypto.subtle.importKey.callsFake(() => Promise.resolve());
       });
 
       it('should report a specific forbidden error for an invalid HTTP origin response', async function() {
@@ -524,6 +527,7 @@ describe(`UID2 module`, function () {
         await responseHandled;
 
         expectNoIdentity(bid);
+        sinon.assert.calledWithMatch(utils.logError, /Forbidden: origin is not allowed/);
       });
 
       it('Should receive an optout response when the user has opted out.', async function() {
