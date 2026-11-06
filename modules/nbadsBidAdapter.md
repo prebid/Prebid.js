@@ -1,4 +1,4 @@
-# 概览
+# Overview
 
 ```
 Module Name: nbads(NexBids) Bidder Adapter
@@ -6,63 +6,88 @@ Module Type: Bidder Adapter
 Maintainer: tangyongchun@tingxue.net
 ```
 
-# 说明
+# Description
 
-`nbads(NexBids)` 是 NexBids SSP 的 Prebid.js 适配器，bidder code 为 `nbads`。
-通过 OpenRTB 2.6 接入 NexBids 网关，支持 Banner、Video 和 Native。
+`nbads(NexBids)` is the Prebid.js adapter for NexBids SSP. Its bidder code is `nbads`.
+It connects to the NexBids gateway using OpenRTB 2.6 and supports banner, video, and native.
 
-每个发行方发送一份请求。网关按页面 `Origin` 校验登记域名、发行方和广告位，
-在服务端补齐 IP、地区及设备信息，返回每个曝光的胜出广告并完成价格宏替换。
-网关代发上游赢标、计费通知；适配器在 `onBidBillable` 中通过 Prebid 公共 Ajax 接口
-发送签名曝光地址，使用 `GET`、`keepalive: true` 和 `withCredentials: false`。
-Prebid 核心对同一出价对象的重复计费事件去重，网关对同一曝光的追踪请求去重。
-Video、Native 的素材中还包含同一个曝光地址，由播放器或原生渲染器触发。
+Requests are grouped by publisher and media format, batching placements of the same format.
+The gateway validates the page `Origin`, registered domain, publisher, and placement. It adds
+server-side IP, geographic, and device information, selects the winning bid for each impression,
+and replaces price macros. The gateway sends upstream win and billing notices.
 
-# 广告格式
+The adapter sends the signed impression URL from `onBidBillable` through Prebid's shared Ajax
+API with `GET`, `keepalive: true`, and `withCredentials: false`. Prebid core deduplicates billing
+for the same bid object; the gateway deduplicates repeated tracking requests for an impression.
+Video and native creatives also contain the same impression URL for their players or renderers.
 
-- **Banner**：通过 `mediaTypes.banner.sizes` 声明尺寸。
-- **Video**：通过 `mediaTypes.video.playerSize` 声明尺寸，其他标准 OpenRTB 视频字段原样传递。
-  支持 `instream`、`outstream`；适配器不提供播放器，Outstream 需要发行方配置 `renderer`。
-- **Native**：通过 `mediaTypes.native.ortb` 声明资产，响应为 `native.ortb`，
-  网关点击追踪地址追加到 `link.clicktrackers`。
-- **多格式广告位**：网关按已登记的格式，从 Banner、Video、Native 中选取一种竞价。
+# Media formats
 
-# 竞价参数
+- **Banner**: declare dimensions in `mediaTypes.banner.sizes`.
+- **Video**: declare player dimensions in `mediaTypes.video.playerSize`. Standard OpenRTB video
+  fields are forwarded. Both `instream` and `outstream` are supported; outstream requires a
+  publisher-provided `renderer`. The adapter does not supply a player.
+  Responses contain `vastXml`. Ad-server delivery requires a configured Prebid video cache.
+  A publisher whose own player consumes VAST XML directly can explicitly set
+  `pbjs.setConfig({ cache: { allowVastXmlOnly: true } })`, as the demo does.
+  Without a cache or an explicit XML-player configuration, Prebid core rejects XML-only bids.
+- **Native**: declare assets in `mediaTypes.native.ortb`. Responses use `native.ortb`, with the
+  gateway click tracker appended to `link.clicktrackers`.
+- **Mixed-format ad units**: each declared format enabled in the build is requested separately,
+  allowing all formats to compete without a fixed banner-first preference. Each request contains
+  one format. The gateway still enforces the placement's registered format allowlist, and all
+  responses remain associated with the original Prebid bid request.
 
-| 参数 | 必填 | 说明 | 示例 | 类型 |
+# Bid parameters
+
+| Parameter | Required | Description | Example | Type |
 |---|---|---|---|---|
-| `publisherId` | 是 | NexBids 分配的发行方 ID | `'Pub-d253acc11ce4b315'` | `string` |
-| `adUnitCode` | 是 | 后台登记的完整广告位代码，对应 `imp.tagid` | `'Unit-59c572bf7ac1ebb1'` | `string` |
+| `publisherId` | When the standard field is absent | Overrides `ortb2.site.publisher.id`, `ortb2.app.publisher.id`, or `ortb2.dooh.publisher.id` | `'Pub-d253acc11ce4b315'` | `string` |
+| `adUnitCode` | When the standard field is absent | Overrides `ortb2Imp.tagid`; use the complete registered placement code | `'Unit-59c572bf7ac1ebb1'` | `string` |
 
-# 配置
+Each parameter can be omitted independently when its standard field is present. The resolved
+publisher and placement identifiers must be nonempty strings.
+For example, set the publisher with
+`pbjs.setConfig({ ortb2: { site: { publisher: { id: 'Pub-d253acc11ce4b315' } } } })`
+and set `ortb2Imp: { tagid: 'Unit-59c572bf7ac1ebb1' }` on the ad unit. Its bidder entry can then
+be `bids: [{ bidder: 'nbads', params: {} }]`.
+
+An OpenRTB response without `cur` defaults to `USD`. Explicit response currencies are preserved.
+This response fallback does not override the request floor currency or ad server currency.
+
+# Configuration
 
 ```javascript
 pbjs.setConfig({
   nbads: {
-    env: 'prod' // Prebid 审核使用线上环境，也是默认值。
+    env: 'prod' // Use production for Prebid review; this is also the default.
   }
 });
 ```
 
-生产地址为 `https://us.nexbids.com`，测试地址为 `https://test.ssp.nexbids.com`。
-仅支持这两个固定 HTTPS 地址，不接受自定义端点。
+The fixed HTTPS endpoints are `https://us.nexbids.com` for production and
+`https://test.ssp.nexbids.com` for integration testing. Custom endpoints are not supported.
 
-对外使用 `nbads` 命名；网关响应协议仍为 `ext.nexbids.pixel`、`ext.nexbids.click`，
-域名、发行方和广告位标识继续使用 NexBids 的现有值。
+The public bidder code and configuration namespace are `nbads`. The gateway response protocol
+continues to use `ext.nexbids.pixel` and `ext.nexbids.click`; NexBids domains and identifiers
+retain their existing values.
 
-# Prebid 审核参数
+# Prebid review parameters
 
-审核使用生产网关 `https://us.nexbids.com`，配置 `nbads.env: 'prod'`。
-三个广告位共用发行方 `Pub-d253acc11ce4b315`；广告位代码必须包含 `Unit-` 前缀。
+Use the production gateway `https://us.nexbids.com` with `nbads.env: 'prod'`.
+All three placements belong to publisher `Pub-d253acc11ce4b315`. Placement codes must retain
+their `Unit-` prefix.
 
-| 类型 | 广告位 | 尺寸或格式 |
+| Format | Placement | Size or format |
 |---|---|---|
-| Banner | `Unit-59c572bf7ac1ebb1` | 320×50 |
-| Video | `Unit-570416538ad202ef` | 1280×720 |
-| Native | `Unit-156842bb1da61c0f` | 图片原生，自适应 |
+| Banner | `Unit-59c572bf7ac1ebb1` | 320x50 |
+| Video | `Unit-570416538ad202ef` | 1280x720 |
+| Native | `Unit-156842bb1da61c0f` | Responsive image native |
 
-用户确认的审核站点域名为 `test.ssp.nexbids.com`，页面来源需匹配该发行方白名单。这些参数用于生产环境，不要切换到 `env: 'test'`。
-需求还需覆盖审核者所在地区；HTTP 204 仅表示没有出价，不能证明展示和计费链路正常。
+The registered review domain is `test.ssp.nexbids.com`. The page origin must match this
+publisher's domain allowlist. These are production parameters; do not switch them to `env: 'test'`.
+Demand must also be available in the reviewer's region. HTTP 204 indicates no bid and does not
+validate rendering or billing.
 
 ```javascript
 pbjs.setConfig({ nbads: { env: 'prod' } });
@@ -127,15 +152,19 @@ var nativeAdUnit = {
 };
 ```
 
+# Integration notes
 
-# 注意事项
+- Creative viewability measurement requires a same-origin iframe. Do not use SafeFrame or other
+  cross-origin creative frames.
+- `publisherId` is an identifier, not a secret. The gateway validates the registered domain and
+  the page origin.
+- NexBids does not currently have an IAB GVL ID and does not declare TCF-EU support. Privacy
+  signals, supply chain information, and first-party data use Prebid's standard fields.
 
-- 创意的可见性测量依赖同源 iframe；不要在 SafeFrame 或其他跨域 iframe 中展示。
-- `publisherId` 是标识符，不是密钥。网关按页面来源和已登记域名校验请求。
-- 没有 IAB GVL ID，不声明 TCF-EU 支持。隐私信号、供应链和第一方数据使用 Prebid 标准字段。
-
-使用 `pbjs.renderAd` 展示原生模板时，Prebid 构建还需包含 `nativeRendering` 模块。
-`onBidBillable` 由 Prebid 判定可计费时触发；若要求成功渲染后才计费，应配置
-`adUnit.deferBilling: true`，并在当前广告的 `adRenderSucceeded` 后调用 `pbjs.triggerBilling`。
-同步渲染的成功事件可能早于核心登记赢标，应通过微任务等到当前调用栈结束后再调用 `triggerBilling`，并检查请求仍有效。
-视频则在播放器开始播放时触发；不要将 `bidWon` 或通用的 `billableEvent` 当成展示成功的证明。
+Include `nativeRendering` when using `pbjs.renderAd` to render the native template.
+Prebid determines when `onBidBillable` runs. To bill only after successful rendering, set
+`adUnit.deferBilling: true` and call `pbjs.triggerBilling` after `adRenderSucceeded` for the
+current ad. A synchronous render-success event may run before core registers the winning bid;
+defer billing to a microtask after the current call stack and verify that the request is still current.
+For video, trigger billing when playback begins. Neither `bidWon` nor a general `billableEvent`
+proves that the creative was displayed.

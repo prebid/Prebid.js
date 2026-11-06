@@ -5,25 +5,23 @@ import { config } from '../src/config.js';
 import { noCredsAjax } from '../src/ajax.js';
 import { deepAccess, deepSetValue, isArray, isStr } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 import type { AdapterRequest, AdapterResponse, BidderSpec, ExtendedResponse, ServerResponse } from '../src/adapters/bidderFactory.js';
 import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import type { Bid } from '../src/bidfactory.js';
 
 /**
- * nbads(NexBids) 适配器公开的竞价参数。
+ * Public bidding parameters for the nbads(NexBids) adapter.
  */
 export interface NbadsBidderParams {
   /**
-   * Publisher ID assigned by NexBids (`Pub-…`).
-   * Sent as the `publisherId` query parameter; the NexBids gateway resolves it against its
-   * registry and fills `site.publisher.id` itself, so the value is an identifier, not a secret.
+   * NexBids publisher ID; overrides ortb2.site/app/dooh.publisher.id.
+   * Optional when a standard field is present. The gateway validates the ID and registered domain.
    */
-  publisherId: string;
+  publisherId?: string;
   /**
-   * Ad unit code registered in the NexBids console. Sent as `imp.tagid`.
+   * NexBids placement ID; overrides ortb2Imp.tagid. Optional when the standard field is present.
    */
-  adUnitCode: string;
+  adUnitCode?: string;
 }
 
 declare module '../src/adUnits' {
@@ -33,7 +31,7 @@ declare module '../src/adUnits' {
 }
 
 /**
- * 通过 `pbjs.setConfig({ nbads: { env: 'test' } })` 设置适配器配置。
+ * Adapter configuration set with `pbjs.setConfig({ nbads: { env: 'test' } })`.
  */
 export interface NbadsConfig {
   /**
@@ -85,44 +83,30 @@ function absoluteUrl(url: string, origin: string): string {
   return url.charAt(0) === '/' && url.charAt(1) !== '/' ? origin + url : url;
 }
 
-/**
- * Media type of a response bid that carries no `mtype`. The gateway sets `mtype` from the format it
- * forwarded; without it (older gateways), fall back to the only format declared on the imp, then to
- * the creative itself (VAST markup for video, a native JSON document for native).
- */
-function inferMediaType(bid, imp): MediaType {
-  const declared = ([BANNER, VIDEO, NATIVE] as MediaType[]).filter((type) => imp && imp[type]);
-  if (declared.length === 1) {
-    return declared[0];
-  }
-  const adm = isStr(bid.adm) ? bid.adm.trim() : '';
-  if (/^(<\?xml[^>]*>\s*)?<VAST[\s>]/i.test(adm)) {
-    return VIDEO;
-  }
-  if (adm.charAt(0) === '{' && /"assets"\s*:/.test(adm)) {
-    return NATIVE;
-  }
-  return BANNER;
-}
-
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
     netRevenue: true,
     ttl: DEFAULT_TTL
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    imp.tagid = String(bidRequest.params.adUnitCode);
+    // Remove other media formats before conversion and floor calculation without mutating the original request.
+    const ortb2Imp = { ...bidRequest.ortb2Imp };
+    [BANNER, VIDEO, NATIVE].forEach((type) => {
+      if (type !== context.mediaType) {
+        delete ortb2Imp[type];
+      }
+    });
+    const imp = buildImp({ ...bidRequest, ortb2Imp }, context);
+    imp.tagid = placementId(bidRequest);
     if (imp.banner && !deepAccess(imp, 'banner.mimes')) {
       deepSetValue(imp, 'banner.mimes', DEFAULT_BANNER_MIMES);
     }
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    if (!ORTB_MTYPES.hasOwnProperty(bid.mtype)) {
-      context.mediaType = inferMediaType(bid, context.imp);
-    }
     const bidResponse = buildBidResponse(bid, context);
+    // The response currency defaults to USD, independently of request floors or the ad server currency.
+    bidResponse.currency = context.ortbResponse.cur || 'USD';
     // `bid.price` is already the settled price (the exchange applies first/second price
     // before responding). `ext.clearprice`, when present, is an explicit clearing price and wins.
     const clearPrice = Number(deepAccess(bid, 'ext.clearprice'));
@@ -133,9 +117,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     if (!bidResponse.meta.advertiserDomains) {
       bidResponse.meta.advertiserDomains = [];
     }
-    // 网关剥离并代发上游通知，客户端只在可计费时发送签名曝光地址。
-    // ext.nexbids 属于网关协议，不随对外 bidder code 更名。
-    // 视频和原生素材还携带同一个曝光地址，重复请求由网关去重。
+    // The gateway strips and sends upstream notices; the client sends its signed impression URL when billable.
+    // ext.nexbids is part of the gateway protocol and does not change with the public bidder code.
+    // Video and native creatives also carry this URL; the gateway deduplicates repeated impression requests.
     const pixel = deepAccess(bid, 'ext.nexbids.pixel');
     if (isStr(pixel) && pixel) {
       bidResponse.burl = pixel;
@@ -166,17 +150,33 @@ function hasNative(bid: BidRequest<typeof BIDDER_CODE>): boolean {
   return isArray(assets) && assets.length > 0;
 }
 
+function publisherId(bid: BidRequest<typeof BIDDER_CODE>): string {
+  return bid.params?.publisherId ?? deepAccess(bid, 'ortb2.site.publisher.id') ??
+    deepAccess(bid, 'ortb2.app.publisher.id') ?? deepAccess(bid, 'ortb2.dooh.publisher.id');
+}
+
+function placementId(bid: BidRequest<typeof BIDDER_CODE>): string {
+  return bid.params?.adUnitCode ?? deepAccess(bid, 'ortb2Imp.tagid');
+}
+
+function requestMediaTypes(bid: BidRequest<typeof BIDDER_CODE>): MediaType[] {
+  const types: MediaType[] = [];
+  if (hasBanner(bid)) types.push(BANNER);
+  if (FEATURES.VIDEO && hasVideo(bid)) types.push(VIDEO);
+  if (FEATURES.NATIVE && hasNative(bid)) types.push(NATIVE);
+  return types;
+}
+
 function isBidRequestValid(bid: BidRequest<typeof BIDDER_CODE>): boolean {
-  const params = bid.params || ({} as NbadsBidderParams);
-  if (!isStr(params.publisherId) || !params.publisherId) {
+  const publisher = publisherId(bid);
+  const placement = placementId(bid);
+  if (!isStr(publisher) || !publisher) {
     return false;
   }
-  if (!isStr(params.adUnitCode) || !params.adUnitCode) {
+  if (!isStr(placement) || !placement) {
     return false;
   }
-  // At least one format the gateway can size. For multi-format ad units the gateway picks the
-  // format by what the registered ad unit allows, banner first.
-  return hasBanner(bid) || hasVideo(bid) || hasNative(bid);
+  return requestMediaTypes(bid).length > 0;
 }
 
 function buildRequests(
@@ -184,22 +184,26 @@ function buildRequests(
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>
 ): AdapterRequest[] {
   const host = gatewayHost();
-  // One request per publisher: the gateway authenticates each request by its `publisherId`.
-  // Insertion order is kept so the first ad unit's publisher goes first.
-  const groups: Record<string, BidRequest<typeof BIDDER_CODE>[]> = Object.create(null);
-  const publisherIds: string[] = [];
+  type RequestGroup = { publisher: string; mediaType: MediaType; bids: BidRequest<typeof BIDDER_CODE>[] };
+  const groups: Record<string, Partial<Record<MediaType, RequestGroup>>> = Object.create(null);
+  const orderedGroups: RequestGroup[] = [];
   validBidRequests.forEach((bid) => {
-    const key = bid.params.publisherId;
-    if (!groups[key]) {
-      groups[key] = [];
-      publisherIds.push(key);
-    }
-    groups[key].push(bid);
+    const publisher = publisherId(bid);
+    requestMediaTypes(bid).forEach((mediaType) => {
+      const publisherGroups = groups[publisher] || (groups[publisher] = {});
+      if (!publisherGroups[mediaType]) {
+        const group: RequestGroup = { publisher, mediaType, bids: [] };
+        publisherGroups[mediaType] = group;
+        orderedGroups.push(group);
+      }
+      publisherGroups[mediaType].bids.push(bid);
+    });
   });
-  return publisherIds.map((publisherId) => ({
+  // Batch placements by publisher and format so each format on a mixed-format ad unit can bid independently.
+  return orderedGroups.map(({ publisher, mediaType, bids }) => ({
     method: 'POST' as const,
-    url: `${host}${AUCTION_PATH}?publisherId=${encodeURIComponent(publisherId)}`,
-    data: converter.toORTB({ bidRequests: groups[publisherId], bidderRequest }),
+    url: `${host}${AUCTION_PATH}?publisherId=${encodeURIComponent(publisher)}`,
+    data: converter.toORTB({ bidRequests: bids, bidderRequest, context: { mediaType } }),
     // Keep this a CORS "simple request": text/plain body (Prebid's default), no credentials and
     // the publisher id on the query string instead of a custom header, so there is no preflight.
     options: { withCredentials: false }
@@ -228,7 +232,7 @@ function interpretResponse(serverResponse: ServerResponse, request: AdapterReque
 
 function onBidBillable(bid: Bid): void {
   if (isStr(bid.burl) && bid.burl) {
-    // 保活请求降低页面跳转时通知丢失的概率；同一出价由 Prebid 核心去重。
+    // Keepalive reduces notice loss during navigation; Prebid core deduplicates billing for the same bid.
     noCredsAjax(bid.burl, undefined, undefined, { method: 'GET', keepalive: true, withCredentials: false });
   }
 }
