@@ -132,7 +132,8 @@ export class Uid2StorageManager {
   }
 
   writeModuleCookie(value) {
-    this._storage.setCookie(this._storageName, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
+    const expires = new Date(Date.now() + 60 * 60 * 24 * 1000).toUTCString();
+    this._storage.setCookie(this._storageName, JSON.stringify(value), expires);
   }
 
   readModuleStorage() {

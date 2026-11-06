@@ -15,7 +15,7 @@ describe('PixFutureAdapter', function () {
     });
   });
 
-  it('<description of unit or feature being tested>', function () {
+  describe('adapter', function () {
     const adapter = newBidder(spec);
     describe('inherited functions', function () {
       it('exists and is a function', function () {
@@ -62,7 +62,7 @@ describe('PixFutureAdapter', function () {
 
     // Test of buildRequest method
 
-    describe('Test of buildRequest method', function () {
+    it('buildRequests should include sizes, params and ad unit code', function () {
       const validBidRequests = [{
         'labelAny': ['display'],
         'bidder': 'pixfuture',

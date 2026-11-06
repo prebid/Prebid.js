@@ -150,6 +150,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "aditgen",
+      "aliasOf": "admixer",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
       "gvlid": null,
@@ -3495,6 +3502,13 @@
       "componentName": "stmbidder",
       "aliasOf": "nexx360",
       "gvlid": 965,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "wovenwn",
+      "aliasOf": "nexx360",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
