@@ -5,6 +5,7 @@ import 'modules/priceFloors.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
 import adapterManager from 'src/adapterManager.js';
+import { markWinningBid } from 'src/adRendering.js';
 import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
 
 const BID_URL = 'https://pbjs.algotoro.com/bid';
@@ -176,6 +177,20 @@ describe('boldwinx bid adapter', function () {
       expect(request.data.imp[0]).to.not.have.property('bidfloorcur');
     });
 
+    it('drops per-format and per-size floors that are not in USD', function () {
+      const bid = makeBid({
+        getFloor({ size }) {
+          return { currency: 'EUR', floor: size?.[0] === 300 ? 3 : 2 };
+        },
+      });
+      const [request] = buildRequests([bid]);
+      const { banner } = request.data.imp[0];
+      [banner, ...banner.format].forEach((target) => {
+        expect(target.ext?.bidfloor, JSON.stringify(target)).to.equal(undefined);
+        expect(target.ext?.bidfloorcur, JSON.stringify(target)).to.equal(undefined);
+      });
+    });
+
     it('sets request.cur to USD regardless of the ad server currency', function () {
       setCurrencyConfig({ adServerCurrency: 'EUR' });
       try {
@@ -303,6 +318,19 @@ describe('boldwinx bid adapter', function () {
         });
       });
 
+      it('guesses each bid on its own when one impression gets several bids', function () {
+        const bid = makeBid({ mediaTypes: { banner: { sizes: [[300, 250]] }, video: VIDEO_PARAMS } });
+        const [request] = buildRequests([bid]);
+        const impid = request.data.imp[0].id;
+        const response = makeResponse(request, [
+          { id: 'a', impid, price: 1, crid: 'c', adm: VAST },
+          { id: 'b', impid, price: 1, crid: 'c', adm: '<div>ad</div>', w: 300, h: 250, mtype: 1 },
+        ]);
+        const bids = spec.interpretResponse(response, request);
+        expect(bids.map((b) => b.mediaType)).to.deep.equal([VIDEO, BANNER]);
+        expect(bids[1].ad).to.equal('<div>ad</div>');
+      });
+
       it('prefers banner markup over video when both formats are offered and the markup is HTML', function () {
         const bid = makeBid({ mediaTypes: { banner: { sizes: [[300, 250]] }, video: VIDEO_PARAMS } });
         const [request] = buildRequests([bid]);
@@ -359,11 +387,20 @@ describe('boldwinx bid adapter', function () {
       return spec.interpretResponse(response, request)[0];
     }
 
-    it('hands nurl next to VAST markup to Prebid as a win tracker, not as the VAST URL', function () {
+    it('puts burl and nurl into the VAST as impression pixels, not nurl as the VAST URL', function () {
       const bid = interpret({ video: VIDEO_PARAMS }, { adm: VAST, nurl: NURL, burl: BURL, mtype: 2 });
-      expect(bid.vastXml).to.equal(VAST);
+      const impressions = [...new DOMParser().parseFromString(bid.vastXml, 'text/xml').querySelectorAll('InLine > Impression')];
+      expect(impressions.map((node) => node.textContent)).to.deep.equal([BILL.url, WIN.url]);
       expect(bid.vastUrl).to.equal(undefined);
-      expect(bid.eventtrackers).to.deep.equal([BILL, WIN]);
+      expect(bid.eventtrackers).to.equal(undefined);
+    });
+
+    it('fills in the price inside VAST and native markup', function () {
+      const vast = '<VAST version="3.0"><Ad><InLine><Impression><![CDATA[https://ssp.example.com/imp?p=${AUCTION_PRICE}]]></Impression></InLine></Ad></VAST>';
+      expect(interpret({ video: VIDEO_PARAMS }, { adm: vast, mtype: 2 }).vastXml).to.include('imp?p=1.5]]>');
+      const nativeAdm = JSON.stringify({ ...JSON.parse(NATIVE_ADM), imptrackers: ['https://ssp.example.com/imp?p=${AUCTION_PRICE}'] });
+      const bid = interpret({ native: { ortb: NATIVE_REQUEST } }, { adm: nativeAdm, mtype: 4 }, { nativeOrtbRequest: NATIVE_REQUEST });
+      expect(bid.native.ortb.imptrackers).to.deep.equal(['https://ssp.example.com/imp?p=1.5']);
     });
 
     it('hands nurl next to native markup to Prebid as a win tracker', function () {
@@ -377,17 +414,30 @@ describe('boldwinx bid adapter', function () {
       expect(bid.eventtrackers).to.deep.equal([BILL]);
     });
 
-    it('keeps nurl as the VAST URL when there is no markup', function () {
-      const bid = interpret({ video: VIDEO_PARAMS }, { nurl: 'https://cdn.example.com/vast.xml', mtype: 2 });
-      expect(bid.vastUrl).to.equal('https://cdn.example.com/vast.xml');
-      expect(bid.eventtrackers).to.equal(undefined);
+    it('keeps nurl as the VAST URL when there is no markup and wraps burl around it', function () {
+      [undefined, ''].forEach((adm) => {
+        const bid = interpret({ video: VIDEO_PARAMS }, { adm, nurl: 'https://cdn.example.com/vast.xml', burl: BURL, mtype: 2 });
+        expect(bid.vastUrl, String(adm)).to.equal('https://cdn.example.com/vast.xml');
+        expect(bid.vastTrackers, String(adm)).to.deep.equal({ impression: [BILL.url] });
+        expect(bid.eventtrackers, String(adm)).to.equal(undefined);
+      });
     });
 
     it('lets Prebid core fire the billing notice', function () {
       const pixel = sinon.stub(utils, 'politeTriggerPixel');
       try {
-        adapterManager.triggerBilling(interpret({ video: VIDEO_PARAMS }, { adm: VAST, burl: BURL, mtype: 2 }));
+        adapterManager.triggerBilling(interpret({ banner: { sizes: [[300, 250]] } }, { adm: '<div>ad</div>', burl: BURL, w: 300, h: 250, mtype: 1 }));
         expect(pixel.args).to.deep.equal([[BILL.url]]);
+      } finally {
+        pixel.restore();
+      }
+    });
+
+    it('lets Prebid core fire the win notice when the bid wins', function () {
+      const pixel = sinon.stub(utils, 'politeTriggerPixel');
+      try {
+        markWinningBid(interpret({ native: { ortb: NATIVE_REQUEST } }, { adm: NATIVE_ADM, nurl: NURL, mtype: 4 }, { nativeOrtbRequest: NATIVE_REQUEST }));
+        expect(pixel.args).to.deep.equal([[WIN.url]]);
       } finally {
         pixel.restore();
       }

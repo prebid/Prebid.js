@@ -1,5 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
+import { insertVastTrackers } from '../libraries/vastTrackers/vastTrackers.js';
 import {
   type AdapterRequest,
   type BidderSpec,
@@ -62,6 +63,13 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       delete imp.bidfloor;
       delete imp.bidfloorcur;
     }
+    // The floors module also puts per-format and per-size floors into ext, in the floor's own currency.
+    [imp.banner, imp.video, imp.native, ...(imp.banner?.format ?? [])].forEach((target) => {
+      if (target?.ext?.bidfloorcur != null && target.ext.bidfloorcur !== CURRENCY) {
+        delete target.ext.bidfloor;
+        delete target.ext.bidfloorcur;
+      }
+    });
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -70,23 +78,39 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    if (!ORTB_MTYPES.hasOwnProperty(bid.mtype)) {
-      context.mediaType = guessMediaType(bid, context.imp);
+    // The endpoint puts ${AUCTION_PRICE} into its own trackers inside VAST and native markup too,
+    // and Prebid core fills the macro in only for banner markup.
+    if (isStr(bid.adm)) {
+      bid.adm = replaceAuctionPrice(bid.adm, bid.price);
     }
-    const bidResponse = buildBidResponse(bid, context);
-    // Prebid core fires image event trackers itself: win trackers when the bid wins, impression
-    // trackers when it becomes billable. It does not fill in macros there, so the price goes in now.
-    const trackers = [];
-    if (isStr(bid.burl) && bid.burl !== '') {
-      trackers.push({ event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: replaceAuctionPrice(bid.burl, bid.price) });
-    }
-    // Banner markup already fires nurl as a pixel. Next to VAST or native markup nurl is a win
-    // notice, so it must not end up as the VAST URL.
-    if (isStr(bid.nurl) && bid.nurl !== '' && bid.adm != null && bidResponse.mediaType !== BANNER) {
-      if (bidResponse.mediaType === VIDEO) {
+    // Core hands the same context to every bid on the impression, so a guess must not stay in it.
+    const bidResponse = ORTB_MTYPES.hasOwnProperty(bid.mtype)
+      ? buildBidResponse(bid, context)
+      : buildBidResponse(bid, { ...context, mediaType: guessMediaType(bid, context.imp) });
+    const burl = isStr(bid.burl) && bid.burl !== '' ? replaceAuctionPrice(bid.burl, bid.price) : null;
+    const nurl = isStr(bid.nurl) && bid.nurl !== '' ? replaceAuctionPrice(bid.nurl, bid.price) : null;
+    if (bidResponse.mediaType === VIDEO) {
+      // The publisher's player, not Prebid, shows instream video, so the notices go into the VAST as
+      // impression pixels. Next to VAST markup nurl is the win notice; without markup it is the VAST URL.
+      if (bidResponse.vastXml) {
         delete bidResponse.vastUrl;
+        const impression = [burl, nurl].filter(isStr);
+        if (impression.length > 0) {
+          bidResponse.vastXml = insertVastTrackers({ impression }, bidResponse.vastXml);
+        }
+      } else if (burl) {
+        bidResponse.vastTrackers = { impression: [burl] };
       }
-      trackers.push({ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: replaceAuctionPrice(bid.nurl, bid.price) });
+      return bidResponse;
+    }
+    // Prebid core fires image event trackers of the ads it renders: win trackers when the bid wins,
+    // impression trackers when it becomes billable. Banner markup already fires nurl as a pixel.
+    const trackers = [];
+    if (burl) {
+      trackers.push({ event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: burl });
+    }
+    if (nurl && bidResponse.mediaType === NATIVE) {
+      trackers.push({ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: nurl });
     }
     if (trackers.length > 0) {
       bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(trackers);
