@@ -102,6 +102,24 @@ describe('BidlabBidAdapter', function () {
       expect(dataItem.meta.advertiserDomains).to.be.an('array').that.is.not.empty;
       expect(dataItem.meta.advertiserDomains[0]).to.equal('doceree.com');
     });
+
+    it('should return no bids when cpmBid is 0 or the creative is missing', function () {
+      const noBid = {
+        body: {
+          DIVID: 'DOC_7jm9j5eqkl0xvc5w',
+          guid: 'G125fzC5NKl3FHeOT8yvL98ILfQS9TVUgk6Q',
+          cpmBid: 0,
+          width: 0,
+          height: 0,
+        }
+      };
+      expect(spec.interpretResponse(noBid)).to.be.an('array').that.is.empty;
+    });
+
+    it('should return no bids for an empty response body', function () {
+      expect(spec.interpretResponse({ body: '' })).to.be.an('array').that.is.empty;
+      expect(spec.interpretResponse({})).to.be.an('array').that.is.empty;
+    });
   });
   describe('onBidWon', function () {
     beforeEach(function() {

@@ -8,7 +8,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { toOrtbNativeRequest } from '../src/native.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
@@ -59,9 +58,8 @@ export function isValid(type, bid) {
   } else if (type === NATIVE) {
     if (typeof bid.mediaTypes.native !== 'object' || bid.mediaTypes.native === null) return false;
     if (!isNativeOrtbVersion(bid)) {
-      if (bid.nativeParams === undefined) return false;
-      const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
-      return ortbConversion && ortbConversion.assets && Array.isArray(ortbConversion.assets) && ortbConversion.assets.length > 0 && ortbConversion.assets.every(asset => isValidAsset(asset));
+      const assets = bid.nativeOrtbRequest?.assets;
+      return Array.isArray(assets) && assets.length > 0 && assets.every(asset => isValidAsset(asset));
     }
 
     let isValidAssets = false;
@@ -338,10 +336,9 @@ function requestsToBids(bidRequests) {
     nativeObj['type'] = NATIVE + NATIVE_SUFFIX;
     nativeObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.native);
     if (!isNativeOrtbVersion(bidRequest)) {
-      const ortbConversion = toOrtbNativeRequest(bidRequest.nativeParams);
       nativeObj['mediaTypeInfo'] = {};
       nativeObj['mediaTypeInfo'].adTemplate = bidRequest.nativeParams.adTemplate;
-      nativeObj['mediaTypeInfo'].ortb = ortbConversion;
+      nativeObj['mediaTypeInfo'].ortb = bidRequest.nativeOrtbRequest;
     }
     nativeObj['priceFloors'] = getBidFloor(bidRequest, NATIVE, nativeObj['sizes']);
     return nativeObj;
