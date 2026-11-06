@@ -310,41 +310,6 @@ module.exports = [
       ]
     }
   },\n  {
-    files: [
-      'modules/**/*BidAdapter.{js,mjs,ts,mts}',
-      'modules/**/*RtdProvider.{js,mjs,ts,mts}',
-      'modules/**/*AnalyticsAdapter.{js,mjs,ts,mts}'
-    ],
-    ignores: [
-      // These modules inspect document layout as part of their core functionality.
-      'modules/adagioRtdProvider.js',
-      'modules/contxtfulRtdProvider.js'
-    ],
-    rules: {
-      'no-restricted-properties': [
-        'warn',
-        ...[
-          'offsetWidth',
-          'offsetHeight',
-          'offsetLeft',
-          'offsetTop',
-          'clientWidth',
-          'clientHeight',
-          'scrollWidth',
-          'scrollHeight'
-        ].map(property => ({
-          property,
-          message: 'Avoid synchronous layout reads; use the Prebid viewport/bounding-client-rect utilities instead.'
-        })),
-        {
-          property: 'getComputedStyle',
-          message: 'Avoid synchronous layout reads from computed style in bidder/RTD/analytics modules.'
-        }
-      ]
-    }
-  },
-
-  {
     files: sourcePattern('test'),
     plugins: {
       'chai-friendly': chaiFriendly
