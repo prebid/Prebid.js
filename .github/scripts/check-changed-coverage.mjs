@@ -3,7 +3,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import ts from 'typescript';
 
 const [, , coverageFile = 'coverage.info', baseCommit = ''] = process.argv;
 const threshold = 80;
@@ -33,14 +32,13 @@ function changedSourceFiles(base) {
 
 function isTypeOnlyModule(file) {
   if (!/\.(?:ts|mts)$/.test(file)) return false;
-  const source = readFileSync(file, 'utf8');
-  return ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022
-    },
-    fileName: file
-  }).outputText.trim() === '';
+  const source = readFileSync(file, 'utf8')
+    .replace(/\/\*[\\s\\S]*?\*\//g, '')
+    .replace(/(^|\\s)\/\/.*$/gm, '')
+    .trim();
+  if (!source) return true;
+  const runtimePattern = /\\b(class|enum|function|const|let|var|new|return|throw|if|for|while|switch|try|catch|await|yield)\\b|(^|[=({;])\\s*(async\\s+)?[A-Za-z_$][\\w$]*\\s*\\(/m;
+  return !runtimePattern.test(source);
 }
 
 function parseLcov(text) {
