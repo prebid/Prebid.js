@@ -2,6 +2,7 @@ import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule, storage as uid2Storage } from 'modules/uid2IdSystem.js';
+import { Uid2ApiClient } from '../../../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 import { requestBids } from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -501,6 +502,30 @@ describe(`UID2 module`, function () {
           });
         });
       });
+      it('should reject the refresh promise when Web Crypto decryption fails', async function() {
+        const client = new Uid2ApiClient({ baseUrl: 'https://prod.uidapi.com' }, 'test-client', () => {}, () => {});
+        window.crypto.subtle.decrypt.rejects(new Error('decrypt failed'));
+        configureUid2Response(refreshApiUrl, 200, makeSuccessResponseBody(refreshedToken));
+        const response = respondWhenRequested(refreshApiUrl);
+        const promise = client.callRefreshApi(apiHelpers.makeTokenResponse(initialToken, true, true));
+
+        await expect(promise).to.be.rejectedWith('UID2 shared library - decrypt failed');
+        await response;
+
+        window.crypto.subtle.decrypt.callsFake((settings, key, data) => Promise.resolve(new Uint8Array([...settings.iv, ...data])));
+      });
+
+      it('should report a specific forbidden error for an invalid HTTP origin response', async function() {
+        const response = JSON.stringify({ status: 'invalid_http_origin', message: 'origin is not allowed' });
+        configureUid2CstgResponse(403, response);
+        config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com', auctionDelay: 100 }));
+        const responseHandled = respondWhenRequested(cstgApiUrl);
+        const bid = await runAuction();
+        await responseHandled;
+
+        expectNoIdentity(bid);
+      });
+
       it('Should receive an optout response when the user has opted out.', async function() {
         const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
         configureUid2CstgResponse(200, makeOptoutResponseBody(optoutToken));
