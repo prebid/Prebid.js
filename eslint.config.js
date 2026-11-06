@@ -376,9 +376,9 @@ module.exports = [
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            '**/src/adloader.js'
-          ]
+          // Approved files intentionally clear inherited no-restricted-imports patterns.
+          // The BidAdapter restriction above is the authoritative block for events.js/adloader.js.
+          patterns: []
         }
       ],
       }
