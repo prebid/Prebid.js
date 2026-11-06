@@ -20,15 +20,10 @@ on:
         required: true
         type: string
       browserstack:
-        description: If true, set up browserstack environment and adjust concurrency
+        description: If true, set up browserstack environment and run one test-cmd at a time across all workflow runs
         required: false
         type: boolean
         default: false
-      browserstack-sessions:
-        description: Number of browserstack sessions needed to run tests
-        required: false
-        type: number
-        default: 6
       timeout:
         description: Timeout on test run
         required: false
@@ -79,7 +74,6 @@ jobs:
     needs: [define]
     strategy:
       fail-fast: false
-      max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
       matrix:
         chunk-no: ${{ fromJSON(needs.define.outputs.chunks) }}
 
@@ -93,20 +87,8 @@ jobs:
       BROWSER_VERSION: ${{ inputs.browser-version }}
       BROWSERS_JSON: ${{ inputs.browsers-json }}
     concurrency:
-      # The following generates 'browserstack-<test-cmd>-<run_id>' when inputs.browserstack is
-      # true, and a hopefully unique ID otherwise
-      # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
-      # (cfr. https://github.com/orgs/community/discussions/12835)
-      # so we add the run_id to serialize only within one push / pull request.
-      # test-cmd is in the key for the same reason. Every browserstack suite in a run
-      # would otherwise share one group, and anything past the single queue slot is
-      # *cancelled* rather than queued: one chunk runs, one waits, the rest die. That
-      # holds a second suite (the ES5 e2e job) hostage to the 8 chunks of the first,
-      # and adding a third suite starts killing jobs outright.
-      # Keying by command gives each suite its own queue; the account's parallel session
-      # limit is enforced separately by the wait-for-browserstack step below.
-      group: ${{ inputs.browserstack && format('browserstack-{0}-{1}', inputs.test-cmd, github.run_id) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
-      cancel-in-progress: false
+      group: ${{ inputs.browserstack && format('browserstack-{0}', inputs.test-cmd) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
+      queue: max
 
     runs-on: ${{ inputs.runs-on }}
     steps:
@@ -139,12 +121,6 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
-
-      - name: 'Wait for browserstack'
-        if: ${{ inputs.browserstack }}
-        uses: ./.github/actions/wait-for-browserstack
-        with:
-          sessions: ${{ inputs.browserstack-sessions }}
 
       - name: Run tests
         uses: nick-fields/retry@v4
