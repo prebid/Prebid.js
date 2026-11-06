@@ -5,12 +5,14 @@ import * as vitest from 'vitest';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import { commands } from 'vitest/browser';
+import { cookieSettler } from './cookies.mjs';
 
 const DEFAULT_TIMEOUT = 3000; // Mocha's timeout under Karma (client.mocha.timeout)
 const NO_TIMEOUT = 2 ** 31 - 1;
 // like Mocha, keep the real timers: specs install sinon fake timers on the global object
 const realSetTimeout = globalThis.setTimeout.bind(globalThis);
 const realClearTimeout = globalThis.clearTimeout.bind(globalThis);
+const realNow = performance.now.bind(performance);
 
 // karma-chai / karma-sinon globals (test_deps.js replaces `sinon` with the bundled copy)
 globalThis.chai = chai;
@@ -129,7 +131,34 @@ function macrotask() {
 // One gap per test, ahead of all its hooks (a hook per runnable would cost ~4ms each to timer clamping).
 vitest.beforeEach(() => macrotask());
 
-function run(fn, { suite, timeout, title, vctx, kind }) {
+const cookieAccessor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+// In WebKit, a runnable after one that wrote cookies starts once document.cookie stops showing stale values (cookies.mjs)
+const cookies = typeof __VITEST_WEBKIT__ !== 'undefined' && __VITEST_WEBKIT__ ? cookieSettler({
+  read: () => cookieAccessor.get.call(document),
+  now: realNow,
+  wait: () => new Promise(resolve => realSetTimeout(resolve, 1)),
+  // a round trip to the network process, which (in Playwright's WebKit) answers after the echoes of earlier writes
+  barrier: globalThis.cookieStore ? () => globalThis.cookieStore.get('__vitest_cookie_barrier').catch(() => {}) : null,
+  quietMs: globalThis.cookieStore ? 0 : 5,
+  timeoutMs: 500,
+}) : null;
+if (cookies) {
+  Object.defineProperty(Document.prototype, 'cookie', {
+    ...cookieAccessor,
+    get: cookieAccessor.get,
+    set(value) {
+      cookieAccessor.set.call(this, value);
+      if (this === document) cookies.written(value);
+    },
+  });
+}
+
+function run(fn, options) {
+  const settling = cookies?.settle();
+  return settling ? settling.then(() => runNow(fn, options)) : runNow(fn, options);
+}
+
+function runNow(fn, { suite, timeout, title, vctx, kind }) {
   const ctx = suite.ctx;
   return new Promise((resolve, reject) => {
     let timer;
