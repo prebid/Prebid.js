@@ -247,6 +247,24 @@ jobs:
         with:
           name: base-coverage.info
           path: base-coverage.info
+  changed-file-coverage:
+    name: Changed file coverage
+    needs: [checkout, vitest, coverage]
+    if: always() && needs.vitest.outputs.coverage && needs.coverage.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.checkout.outputs.commit }}
+          fetch-depth: 0
+      - name: Fetch coverage results
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.vitest.outputs.coverage }}
+          path: ${{ runner.temp }}
+      - name: Check changed source file coverage
+        run: node .github/scripts/check-changed-coverage.mjs "${{ runner.temp }}/coverage.info" "${{ needs.checkout.outputs.base-commit }}"
   coverage:
     name: Coverage
     needs: [checkout, vitest, base-coverage-check, base-coverage-combine]
