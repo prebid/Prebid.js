@@ -188,6 +188,9 @@ jobs:
           VITEST_OS: ${{ matrix.os }}
           VITEST_OS_VERSION: ${{ matrix.osVersion }}
           VITEST_BROWSER_VERSION: ${{ matrix.browserVersion }}
+          # A shard should use one BrowserStack session. Vitest's default file parallelism creates
+          # multiple WebDriver sessions on real iOS devices and exhausts the account queue.
+          VITEST_PARALLEL: '1'
           SPEC_FILES: ${{ matrix.files }}
           SHARD: ${{ matrix.shard }}/${{ matrix.shards }}
         run: |
