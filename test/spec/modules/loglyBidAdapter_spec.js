@@ -38,7 +38,6 @@ describe('loglyBidAdapter', function () {
 
   beforeEach(function () {
     config.setConfig({
-      bidderTimeout: 3000,
       currency: {
         adServerCurrency: 'JPY'
       },
@@ -85,6 +84,12 @@ describe('loglyBidAdapter', function () {
       expect(data.currency).to.equal('JPY');
       expect(data.timeout).to.equal(3000);
       expect(data).to.not.have.property('im_uid');
+    });
+
+    it('should send bidderRequest.timeout as timeout', function () {
+      const request = spec.buildRequests([bannerBidRequest], { ...bidderRequest, timeout: 1500 })[0];
+
+      expect(JSON.parse(request.data).timeout).to.equal(1500);
     });
 
     it('should send im_uid from bid userIdAsEids', function () {

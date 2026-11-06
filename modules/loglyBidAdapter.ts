@@ -97,7 +97,7 @@ function newBidRequest(bid, bidderRequest) {
     referer: bidderRequest.refererInfo.ref,
     auctionStartTime: bidderRequest.auctionStart,
     currency: currency,
-    timeout: config.getConfig('bidderTimeout'),
+    timeout: bidderRequest.timeout,
     ...(imUid ? { im_uid: imUid } : {})
   };
 }
