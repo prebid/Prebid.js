@@ -37,7 +37,7 @@ function isTypeOnlyModule(file) {
     .replace(/(^|\\s)\/\/.*$/gm, '')
     .trim();
   if (!source) return true;
-  const runtimePattern = /\\b(class|enum|function|const|let|var|new|return|throw|if|for|while|switch|try|catch|await|yield)\\b|(^|[=({;])\\s*(async\\s+)?[A-Za-z_$][\\w$]*\\s*\\(/m;
+  const runtimePattern = /\b(class|enum|function|const|let|var|new|return|throw|if|for|while|switch|try|catch|await|yield)\b|(^|[=({;])\s*(?:async\s+)?[A-Za-z_$][\w$]*\s*\(/m;
   return !runtimePattern.test(source);
 }
 
