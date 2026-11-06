@@ -386,7 +386,10 @@ function utf8Chunks(text, chunkSizes = []) {
   return chunks;
 }
 
-describe('encypherRtdProvider decision-network v1', () => {
+// The provider hashes with crypto.subtle, which browsers only expose in a secure context. A BrowserStack iPhone
+// loads the tests from http://bs-local.com (iOS can't reach localhost through the tunnel), which isn't one, so the suite
+// is only defined in a secure context; the suite at the end runs everywhere, so the file is never empty.
+(window.isSecureContext ? describe : () => {})('encypherRtdProvider decision-network v1', () => {
   let sandbox;
   let cleanups;
   let digestStub;
@@ -1990,5 +1993,22 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertNoInjection(run.auction);
     assert.deepStrictEqual(decodeClaims(PAGE_ATT).record_revision, 7);
     assert.strictEqual(server.requests.some(request => request.url.includes('/.well-known/jwks.json')), false);
+  });
+});
+
+describe('encypherRtdProvider without crypto.subtle', () => {
+  it('calls back without requesting a decision', async () => {
+    const subtle = window.crypto.subtle && sinon.stub(window.crypto, 'subtle').get(() => undefined);
+    try {
+      resetProviderState();
+      encypherSubmodule.init({ params: {} });
+      const requests = server.requests.length;
+      const { completion, callbackCount } = beginAuction();
+      await completion;
+      assert.strictEqual(callbackCount(), 1);
+      assert.strictEqual(server.requests.length, requests);
+    } finally {
+      if (subtle) subtle.restore();
+    }
   });
 });

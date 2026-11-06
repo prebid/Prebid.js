@@ -4,6 +4,7 @@ const neostandard = require('neostandard')
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
 const chaiFriendly = require('eslint-plugin-chai-friendly');
+const mochaPlugin = require('eslint-plugin-mocha').default;
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
@@ -313,7 +314,8 @@ module.exports = [
   {
     files: sourcePattern('test'),
     plugins: {
-      'chai-friendly': chaiFriendly
+      'chai-friendly': chaiFriendly,
+      'mocha': mochaPlugin
     },
     languageOptions: {
       globals: {
@@ -326,6 +328,10 @@ module.exports = [
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
+      // Mocha silently ignores it()/describe()/hooks called while a test or hook is running: their
+      // assertions never run, and the spec still passes (#16043). This rule doesn't report a hook
+      // (e.g. after()) registered inside a test; see AGENTS.md.
+      'mocha/no-nested-tests': 'error',
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-useless-escape': 'off',
