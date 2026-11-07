@@ -4,7 +4,7 @@ const { checkDeclarationFilename } = require('./filename.js');
 const noRedundantValidatedCondition = require('./noRedundantValidatedCondition.js');
 const noExtraFunctionArgs = require('./noExtraFunctionArgs.js');
 const augmentationReachable = require('./augmentationReachable.js');
-const noDeepAccessImport = require('./noDeepAccessImport.js');
+const noDeepAccessImport = require('./noDeepAccessImport.js')
 
 const COMPARISON_OPERATORS = new Set(['<', '<=', '>', '>=']);
 
