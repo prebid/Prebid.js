@@ -392,7 +392,11 @@ function utf8Chunks(text, chunkSizes = []) {
 // The provider hashes with crypto.subtle, which browsers only expose in a secure context. A BrowserStack iPhone
 // loads the tests from http://bs-local.com (iOS can't reach localhost through the tunnel), which isn't one, so the suite
 // is only defined in a secure context; the suite at the end runs everywhere, so the file is never empty.
-(window.isSecureContext ? describe : describe.skip)('encypherRtdProvider decision-network v1', () => {
+function describeSecureContext(name, fn) {
+  if (window.isSecureContext) describe(name, fn);
+}
+
+describeSecureContext('encypherRtdProvider decision-network v1', () => {
   let sandbox;
   let cleanups;
   let digestStub;
