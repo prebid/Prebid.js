@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
-import { getWinDimensions } from '../src/utils.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const BIDDER_CODE = 'lasso';
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
@@ -165,12 +165,11 @@ function getBidRequestUrl(aimXR, params) {
 }
 
 function getDeviceData() {
-  const win = window.top;
-  const winDimensions = getWinDimensions();
+  const { width, height } = getViewportSize();
   return {
     ua: navigator.userAgent,
-    width: winDimensions.innerWidth || winDimensions.document.documentElement.clientWidth || win.document.body.clientWidth,
-    height: winDimensions.innerHeight || winDimensions.document.documentElement.clientHeight || win.document.body.clientHeight,
+    width,
+    height,
     browserLanguage: navigator.language,
   };
 }
