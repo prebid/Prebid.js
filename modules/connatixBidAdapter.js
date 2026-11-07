@@ -142,7 +142,8 @@ export function detectViewability(bid) {
       element = getDomElement(viewabilityContainerIdentifier);
 
       if (element) {
-        bidParamSizes = [element.offsetWidth, element.offsetHeight];
+        const { width, height } = getBoundingClientRect(element);
+        bidParamSizes = [width, height];
         minSize = _getMinSize(bidParamSizes);
       }
     } catch (e) {
