@@ -632,12 +632,10 @@ function getTopMostAccessibleWindow() {
 }
 
 function getViewportDimensions() {
-  const topWin = getTopMostAccessibleWindow();
-  const documentElement = topWin.document.documentElement;
-
+  const winDimensions = getWinDimensions();
   return {
-    w: documentElement.clientWidth,
-    h: documentElement.clientHeight,
+    w: winDimensions.document.documentElement.clientWidth,
+    h: winDimensions.document.documentElement.clientHeight,
   };
 }
 
