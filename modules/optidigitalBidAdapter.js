@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
+import { deepAccess, getWinDimensions, isPlainObject, parseSizesInput } from '../src/utils.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
