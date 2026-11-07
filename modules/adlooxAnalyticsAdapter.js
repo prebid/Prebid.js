@@ -12,7 +12,6 @@ import { AUCTION_COMPLETED } from '../src/auction.js';
 import { EVENTS } from '../src/constants.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import {
-  deepAccess,
   getUniqueIdentifierStr,
   isFn,
   isNumber,
@@ -65,7 +64,7 @@ MACRO['pageurl'] = function(b, c) {
 };
 MACRO['gpid'] = function(b, c) {
   const adUnit = ((auctionManager.getAdUnits()) || []).find(a => b.adUnitCode === a.code);
-  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+  return adUnit?.ortb2Imp?.ext?.gpid || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
 MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
@@ -237,7 +236,7 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
 };
 
 analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
-  if (deepAccess(bid, 'ext.adloox.video.adserver')) {
+  if (bid?.ext?.adloox?.video?.adserver) {
     logMessage(MODULE, `measuring '${bid.mediaType}' ad unit code '${bid.adUnitCode}' via Ad Server module`);
     return;
   }
