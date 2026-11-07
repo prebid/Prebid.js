@@ -331,7 +331,53 @@ module.exports = [
       prebid
     },
     rules: {
-      'prebid/no-synchronous-layout-read': 'warn'
+      'prebid/no-synchronous-layout-read': 'warn',
+      'no-restricted-properties': [
+        'error',
+        ...noGlobals({
+          require: 'use import instead',
+          ...Object.fromEntries(['localStorage', 'sessionStorage'].map(k => [k, 'use storageManager instead'])),
+          XMLHttpRequest: 'use ajax.js instead'
+        }).props,
+        {
+          property: 'cookie',
+          object: 'document',
+          message: 'use storageManager instead'
+        },
+        {
+          property: 'sendBeacon',
+          object: 'navigator',
+          message: 'use ajax.js instead'
+        },
+        {
+          property: 'doNotTrack',
+          object: 'navigator',
+          message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+        },
+        {
+          property: 'msDoNotTrack',
+          object: 'navigator',
+          message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+        },
+        {
+          property: 'doNotTrack',
+          object: 'window',
+          message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+        },
+        ...['outerText', 'innerText'].map(property => ({
+          property,
+          message: 'use .textContent instead'
+        })),
+        {
+          property: 'getBoundingClientRect',
+          message: 'use libraries/boundingClientRect instead'
+        },
+        ...['scrollTop', 'scrollLeft', 'innerHeight', 'innerWidth', 'visualViewport'].map((property) => ({
+          object: 'window',
+          property,
+          message: 'use utils/getWinDimensions instead'
+        }))
+      ]
     }
   },
   {
