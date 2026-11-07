@@ -295,7 +295,7 @@ function getPageInfo(bidderRequest) {
     xOffset: topmostFrame.pageXOffset,
     yOffset: topmostFrame.pageYOffset,
     docHidden: getDocumentVisibility(topmostFrame),
-    docHeight: topmostFrame.document.body ? topmostFrame.document.body.scrollHeight : null,
+    docHeight: topmostFrame.document.body ? getWinDimensions(topmostFrame).document.body.scrollHeight : null,
     hLength: history.length,
     timing: getTiming(),
     version: {
