@@ -1,4 +1,4 @@
-import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf } from '../src/utils.js';
+import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf, getWinDimensions } from '../src/utils.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
