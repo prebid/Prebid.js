@@ -8,7 +8,7 @@
 import { registerBidder, type BidderSpec } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
-import { deepAccess, isArray, logError, logWarn, isFn } from '../src/utils.js';
+import { isArray, logError, logWarn, isFn } from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'advergic';
@@ -453,12 +453,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       ortbRequest.regs.ext.gpp_sid = bidderRequest.gppConsent.applicableSections;
     }
 
-    const schain = deepAccess(validBidRequests[0], 'schain');
+    const schain = validBidRequests[0]?.schain;
     if (schain) {
       ortbRequest.source.ext.schain = schain;
     }
 
-    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    const eids = validBidRequests[0]?.userIdAsEids;
     if (eids && eids.length) {
       ortbRequest.user.ext = {
         ...asRecord(ortbRequest.user.ext),
