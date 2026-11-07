@@ -1,5 +1,5 @@
 import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf } from '../src/utils.js';
-import { getWinDimensions } from '../src/utils/winDimensions.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -118,7 +118,7 @@ function measureAdslot(bidRequest) {
   // y against the viewport height, not the (scroll-dependent) viewport-relative
   // rect.top. This keeps `pos` stable across refresh auctions after the user
   // has scrolled.
-  const vh = dims.document.documentElement.clientHeight;
+  const { height: vh } = getViewportSize();
   const pos = y < vh ? 1 : 3; // OpenRTB AdPosition: 1 = above the fold, 3 = below the fold
 
   const topWin = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
