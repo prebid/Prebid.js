@@ -312,7 +312,7 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
 }
 
 function normalizeCoordinates(coordinates) {
-  const { scrollX, scrollY } = window;
+  const { scrollX, scrollY } = getWinDimensions();
   return {
     top_left: {
       x: coordinates.top_left.x + scrollX,
