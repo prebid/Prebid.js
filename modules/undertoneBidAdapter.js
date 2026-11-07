@@ -2,9 +2,9 @@
  * Adapter to send bids to Undertone
  */
 
-import { deepAccess, parseUrl, extractDomainFromHost, getWinDimensions } from '../src/utils.js';
+import { deepAccess, parseUrl, extractDomainFromHost } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { getViewportCoordinates, getViewportSize } from '../libraries/viewport/viewport.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
@@ -70,7 +70,6 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const windowDimensions = getWinDimensions();
     const { width: vw, height: vh } = getViewportSize();
     const pageSizeArray = vw === 0 || vh === 0 ? null : [vw, vh];
     const commons = {
