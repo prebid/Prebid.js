@@ -1,4 +1,4 @@
-import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '../src/utils.js';
+import { inIframe, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
