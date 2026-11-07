@@ -42,12 +42,12 @@ export class AdapterHelpers {
 
       url.searchParams.set('pbv', '$prebid.version$');
       url.searchParams.set('network', networks.join(','));
-      url.searchParams.set('gdpr', encodeURIComponent((Number(gdprApplies) || 0).toString()));
-      url.searchParams.set('gdpr_consent', encodeURIComponent(consentString || ''));
+      url.searchParams.set('gdpr', (Number(gdprApplies) || 0).toString());
+      url.searchParams.set('gdpr_consent', consentString || '');
 
       if (gppString && applicableSections?.length) {
-        url.searchParams.set('gpp', encodeURIComponent(gppString));
-        url.searchParams.set('gpp_sid', encodeURIComponent(applicableSections.join(',')));
+        url.searchParams.set('gpp', gppString);
+        url.searchParams.set('gpp_sid', applicableSections.join(','));
       }
 
       return url.toString();
@@ -123,7 +123,7 @@ export class AdapterHelpers {
     bidResponse.meta.advertiserDomains = bidResponse.meta.advertiserDomains || [];
 
     bidResponse.creativeId = bidResponse.creativeId || `creative-${Date.now()}`;
-    bidResponse.netRevenue = bid.netRevenue || true;
+    bidResponse.netRevenue = bid.netRevenue ?? true;
     bidResponse.currency = CURRENCY;
 
     bidResponse.cpm = bid.cpm;
@@ -184,12 +184,13 @@ export class AdapterHelpers {
       prebidVersion: '$prebid.version$',
       pageLoadUid: SID,
       eventName,
-      extraData: {
-        timepassed: bid.metrics.timeSince('requestBids'),
-      }
+      extraData: {}
     };
 
     if (bid) {
+      if (bid.metrics && typeof bid.metrics.timeSince === 'function') {
+        params.extraData.timepassed = bid.metrics.timeSince('requestBids');
+      }
       params.adUnitCode = bid.adUnitCode;
       params.auctionId = bid.auctionId;
       params.bidId = bid.bidId;
@@ -199,10 +200,12 @@ export class AdapterHelpers {
       params.maxBidderCalls = bid.maxBidderCalls;
       params.transactionId = bid.transactionId;
 
-      if (bid.params && bid.params[0]) {
-        params.publisherId = bid.params[0].publisherId;
-        params.accountId = bid.params[0].accountId;
-        params.tagId = bid.params[0].tagId;
+      // timeout data carries the ad unit's params for this bidder as an array (getUserConfiguredParams)
+      const bidParams = bid.params?.[0];
+      if (bidParams) {
+        params.publisherId = bidParams.publisherId;
+        params.accountId = bidParams.accountId;
+        params.tagId = bidParams.tagId;
       }
 
       if (bid.ortb2.device) {

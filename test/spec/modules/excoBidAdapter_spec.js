@@ -218,6 +218,11 @@ describe('ExcoBidAdapter', function () {
       });
     });
 
+    it('should keep netRevenue false when the bid says so', function () {
+      expect(helpers.adoptBidResponse({ meta: {} }, { netRevenue: false }, {}).netRevenue).to.equal(false);
+      expect(helpers.adoptBidResponse({ meta: {} }, {}, {}).netRevenue).to.equal(true);
+    });
+
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null, BUILT_REQ);
       expect(responses).to.have.length(0);
@@ -266,6 +271,18 @@ describe('ExcoBidAdapter', function () {
       expect(params.get('gdpr_consent')).to.equal('abc');
     });
 
+    it('should not double-encode consent strings in the exco sync url', function () {
+      const params = new URL(helpers.createSyncUrl({
+        gdprApplies: true,
+        consentString: 'a+b/c=',
+        gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+        applicableSections: [2, 6]
+      })).searchParams;
+      expect(params.get('gdpr_consent')).to.equal('a+b/c=');
+      expect(params.get('gpp')).to.equal('DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(params.get('gpp_sid')).to.equal('2,6');
+    });
+
     it('should return pixels only user syncs', function () {
       const syncs = adapter.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses);
       expect(syncs).to.deep.equal([
@@ -280,11 +297,12 @@ describe('ExcoBidAdapter', function () {
       bidder: adapter.code,
       adUnitCode: 'adunit-code',
       sizes: [[300, 250]],
-      params: {
+      // as adapterManager.callTimedOutBidders passes them: one entry per bid of this bidder on the ad unit
+      params: [{
         accountId: 'accountId',
         publisherId: 'publisherId',
         tagId: 'tagId',
-      },
+      }],
       metrics: {
         timeSince: () => 500,
       },
@@ -311,6 +329,21 @@ describe('ExcoBidAdapter', function () {
     it('Should trigger event url', function() {
       adapter.onTimeout([bid]);
       expect(stubbedFetch.callCount).to.equal(1);
+    });
+
+    it('Should include the bid params and time passed in the event url', function() {
+      const params = new URL(helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout')).searchParams;
+      expect(params.get('publisherId')).to.equal('publisherId');
+      expect(params.get('accountId')).to.equal('accountId');
+      expect(params.get('tagId')).to.equal('tagId');
+      expect(params.get('extraData.timepassed')).to.equal('500');
+    });
+
+    it('Should not throw when the bid has no metrics', function() {
+      const { metrics, ...noMetrics } = bid;
+      const params = new URL(helpers.getEventUrl([noMetrics], 'mcd_bidder_auction_timeout')).searchParams;
+      expect(params.has('extraData.timepassed')).to.be.false;
+      expect(params.get('tagId')).to.equal('tagId');
     });
   });
 
