@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getWinDimensions } from '../src/utils.js';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -174,16 +175,14 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
-    const body = document.body;
-    const html = document.documentElement;
+    const { document: { body, documentElement: html } } = getWinDimensions();
     const pageHeight = Math.max(
       body.scrollHeight,
-      body.offsetHeight,
+      body.clientHeight,
       html.clientHeight,
-      html.scrollHeight,
-      html.offsetHeight
+      html.scrollHeight
     );
-    const pageWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+    const pageWidth = Math.max(body.scrollWidth, body.clientWidth, html.clientWidth, html.scrollWidth);
 
     for (let i = 0; i < validBidRequests.length; i++) {
       const bidderURL = validBidRequests[i].params.bidderURL || 'https://bidder.adhash.com';
