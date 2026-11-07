@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getWinDimensions } from '../src/utils.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 export const storage = getStorageManager({ bidderCode: 'mantis' });
 
@@ -75,9 +75,7 @@ export function onVisible(win, element, doOnVisible, time, pct) {
     });
   }
   interval = setInterval(function () {
-    const windowDimensions = getWinDimensions();
-    var winHeight = (windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight);
-    var winWidth = (windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth);
+    const { width: winWidth, height: winHeight } = getViewportSize();
     doCheck(winWidth, winHeight, getBoundingClientRect(element));
   }, 100);
 }
