@@ -1,4 +1,4 @@
-import { deepAccess, isArray, logError, logWarn, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { isArray, logError, logWarn, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -27,8 +27,8 @@ function getBidFloor(bidRequest) {
 }
 
 function getPageUrl(bidRequest, bidderRequest) {
-  const refererPage = deepAccess(bidderRequest, 'refererInfo.page');
-  const fallbackPage = deepAccess(bidderRequest, 'ortb2.site.page');
+  const refererPage = bidderRequest?.refererInfo?.page;
+  const fallbackPage = bidderRequest?.ortb2?.site?.page;
   let pageUrl = bidRequest?.params?.referrer || refererPage || fallbackPage || '';
 
   if (/^http:/i.test(pageUrl)) {
@@ -128,8 +128,8 @@ export const spec = {
 
       const ortb2 = bidderRequest?.ortb2 || {};
       const ortb2Imp = validBidRequest?.ortb2Imp || {};
-      const ortb2Site = deepAccess(ortb2, 'site');
-      const ortb2App = deepAccess(ortb2, 'app');
+      const ortb2Site = ortb2?.site;
+      const ortb2App = ortb2?.app;
 
       // Backward-compatible behavior: keep legacy app/site logic, then enrich.
       if (typeof config.getConfig('app') === 'object') {
@@ -149,7 +149,7 @@ export const spec = {
       const gppConsent = bidderRequest?.gppConsent || null;
       const schain = getSchain(validBidRequest, bidderRequest);
       const userIdAsEids = validBidRequest?.userIdAsEids ||
-        deepAccess(validBidRequest, 'user.ext.eids') ||
+        validBidRequest?.user?.ext?.eids ||
         [];
 
       const bidForPayload = validBidRequest.mediaTypes?.[BANNER]
@@ -193,9 +193,9 @@ export const spec = {
         gdprConsent,
         uspConsent,
         gppConsent,
-        regs: deepAccess(ortb2, 'regs') || {},
-        user: deepAccess(ortb2, 'user') || {},
-        device: deepAccess(ortb2, 'device') || {}
+        regs: ortb2?.regs || {},
+        user: ortb2?.user || {},
+        device: ortb2?.device || {}
       };
 
       return {
@@ -248,7 +248,7 @@ export const spec = {
   },
 
   onBidderError: function({ error, bidderRequest }) {
-    logWarn(`${BIDDER_CODE}: bidder endpoint error`, error?.status, deepAccess(bidderRequest, 'auctionId'));
+    logWarn(`${BIDDER_CODE}: bidder endpoint error`, error?.status, bidderRequest?.auctionId);
   },
 
   onDataDeletionRequest: function(bidderRequests) {
