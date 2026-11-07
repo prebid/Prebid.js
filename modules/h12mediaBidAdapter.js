@@ -56,14 +56,6 @@ export const spec = {
         pubcontainerid,
       };
 
-      let windowTop;
-      try {
-        windowTop = window.top;
-      } catch (e) {
-        logMessage(e);
-        windowTop = window;
-      }
-
       return {
         method: 'POST',
         url: requestUrl,
