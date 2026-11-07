@@ -12,6 +12,7 @@ import {
   uniques
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
@@ -632,10 +633,10 @@ function getTopMostAccessibleWindow() {
 }
 
 function getViewportDimensions() {
-  const winDimensions = getWinDimensions();
+  const { width, height } = getViewportSize();
   return {
-    w: winDimensions.document.documentElement.clientWidth,
-    h: winDimensions.document.documentElement.clientHeight,
+    w: width,
+    h: height,
   };
 }
 
