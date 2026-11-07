@@ -55,8 +55,12 @@ export interface OptableRtdProviderParams {
   instance?: string;
   /**
    * Optional custom handler that enriches the bid request with Optable data.
-   * When omitted, the module waits for the `optable-targeting:change` event
-   * (or cached targeting) and merges `ortb2` into the global fragment.
+   * It is called as soon as the auction starts, whether or not the Optable
+   * bundle has loaded, and decides for itself whether to wait for it (for
+   * example through `window.optable.cmd`). When omitted, the module uses
+   * the bundle's `window.optable.rtd.handleRtd` if available; before the bundle
+   * loads, it merges targeting data cached on a previous page, or waits for the
+   * bundle if there is none.
    */
   handleRtd?: OptableHandleRtd | null;
 }
